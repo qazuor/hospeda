@@ -10,24 +10,11 @@ import {
 } from '../../fixtures/arrears-cycle.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
-import {
-    addUtcMonths,
-    adminJson,
-    cleanupManualAdminRows,
-    createManualPartnerSetup,
-    mailText,
-    RegisterPreviewSchema,
-    RegisterResultSchema,
-    RejectionSchema,
-    snapshotSubscription,
-    superAdminRecipients,
-    UnpaidPreviewSchema,
-    UnpaidResultSchema,
-    unpaidNoticeRows
-} from './helpers/manual-installment-admin.ts';
+import * as m from './helpers/manual-installment-admin.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 const MAIL_TIMEOUT_MS = 30_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Exercises the live admin billing routes against the E2E database and local fake services. */
 test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimputation, unallocated and reruns @p0 @billing @clock', () => {
@@ -53,7 +40,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
 
     test.afterAll(async () => {
         try {
-            await cleanupManualAdminRows({ userIds, partnerIds });
+            await m.cleanupManualAdminRows({ userIds, partnerIds });
         } finally {
             await world?.mailCapture.close().catch(() => undefined);
             await world?.fakeServer.close().catch(() => undefined);
@@ -87,7 +74,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             if (!partnerId) throw new Error('Expected the test Partner row.');
             partnerIds.push(partnerId);
 
-            const setup = await createManualPartnerSetup({
+            const setup = await m.createManualPartnerSetup({
                 partnerId,
                 optionId,
                 cookie: actors.admin.sessionCookie,
@@ -102,12 +89,12 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             expect(initial).toHaveLength(1);
             periodStart1 = initial[0]?.period_start ?? new Date(0);
 
-            const expected = await superAdminRecipients();
+            const expected = await m.superAdminRecipients();
             const expectedIds = expected.map(({ userId }) => userId);
             expect(expectedIds).toContain(actors.admin.id);
             expect(expectedIds).toContain(secondAdmin.id);
             expect(expectedIds).not.toContain(deletedAdmin.id);
-            let notices = await unpaidNoticeRows({ manualPaymentId: firstId });
+            let notices = await m.unpaidNoticeRows({ manualPaymentId: firstId });
             expect(notices.map(({ recipient_user_id }) => recipient_user_id)).toEqual(expectedIds);
             for (const notice of notices) {
                 expect(notice.payload).toEqual({
@@ -128,7 +115,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                     jobName: 'email-outbox-sender',
                     adminCookie: actors.admin.sessionCookie
                 });
-                notices = await unpaidNoticeRows({ manualPaymentId: firstId });
+                notices = await m.unpaidNoticeRows({ manualPaymentId: firstId });
             }
             expect(notices.map(({ status }) => status)).toEqual(notices.map(() => 'sent'));
             for (const recipient of expected) {
@@ -137,28 +124,28 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                     .filter(
                         (message) =>
                             message.subject === 'Cuota de pago manual sin pago' &&
-                            mailText(message.html).includes(firstId)
+                            m.mailText(message.html).includes(firstId)
                     );
                 expect(mail).toHaveLength(1);
-                expect(mailText(mail[0]?.html ?? '')).toContain(subscriptionId);
-                expect(mailText(mail[0]?.html ?? '')).toContain(
+                expect(m.mailText(mail[0]?.html ?? '')).toContain(subscriptionId);
+                expect(m.mailText(mail[0]?.html ?? '')).toContain(
                     'Registrá el pago o declarala impaga desde el panel de administración.'
                 );
             }
 
-            const beforePreview = await snapshotSubscription({
+            const beforePreview = await m.snapshotSubscription({
                 subscriptionId,
                 userId: actors.user.id
             });
             const registerPath = `/api/v1/admin/billing-subscription/${subscriptionId}/manual-payments/${firstId}/register`;
-            const registerPreviewResponse = await adminJson({
+            const registerPreviewResponse = await m.adminJson({
                 method: 'GET',
                 path: registerPath,
                 cookie: actors.admin.sessionCookie
             });
-            const registerPreview = RegisterPreviewSchema.parse(registerPreviewResponse.body);
+            const registerPreview = m.ManualPaymentDataSchema.parse(registerPreviewResponse.body);
             expect(registerPreviewResponse.status).toBe(200);
-            nextCharge1 = addUtcMonths({ date: periodStart1, months: 1 });
+            nextCharge1 = m.addUtcMonths({ date: periodStart1, months: 1 });
             expect(registerPreview.data).toEqual({
                 subscriptionId,
                 manualPaymentId: firstId,
@@ -166,20 +153,20 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 effect: 'S29',
                 nextChargeAt: nextCharge1.toISOString()
             });
-            const afterPreview = await snapshotSubscription({
+            const afterPreview = await m.snapshotSubscription({
                 subscriptionId,
                 userId: actors.user.id
             });
             expect(afterPreview).toEqual(beforePreview);
 
             const registerBody = { proofRef: `hos2160-${nonce}` };
-            const registerResultResponse = await adminJson({
+            const registerResultResponse = await m.adminJson({
                 method: 'POST',
                 path: registerPath,
                 cookie: actors.admin.sessionCookie,
                 body: registerBody
             });
-            const registerResult = RegisterResultSchema.parse(registerResultResponse.body);
+            const registerResult = m.ManualPaymentDataSchema.parse(registerResultResponse.body);
             expect(registerResultResponse.status).toBe(200);
             expect(registerResult.data.outcome).toBe('REGISTERED');
             expect(registerResult.data.effect).toBe('S29');
@@ -191,13 +178,13 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             expect(persisted[0]?.status).toBe('ACTIVE');
             expect(persisted[0]?.next_charge_at.toISOString()).toBe(nextCharge1.toISOString());
 
-            const repeated = await adminJson({
+            const repeated = await m.adminJson({
                 method: 'POST',
                 path: registerPath,
                 cookie: actors.admin.sessionCookie,
                 body: registerBody
             });
-            const repeatedError = RejectionSchema.parse(repeated.body);
+            const repeatedError = m.RejectionSchema.parse(repeated.body);
             expect(repeated.status).toBe(409);
             expect(repeatedError.error.reason).toBe('MANUAL_PAYMENT_NOT_AWAITING');
             const receiptRows = await execSQL<{ count: number }>(
@@ -229,7 +216,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             expect(beforeDue[0]?.count).toBe(0);
 
             await fakeServer.setClock({ at: nextCharge1 });
-            const expected = await superAdminRecipients();
+            const expected = await m.superAdminRecipients();
             const expectedIds = expected.map(({ userId }) => userId);
             await runCron({
                 jobName: 'manual-installment-open',
@@ -252,7 +239,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             expect(opened[0]?.status).toBe('AWAITING');
             expect(opened[0]?.subscription_status).toBe('GRACE_PERIOD');
             expect(opened[0]?.grace_started_at?.toISOString()).toBe(nextCharge1.toISOString());
-            let notices = await unpaidNoticeRows({ manualPaymentId: secondId });
+            let notices = await m.unpaidNoticeRows({ manualPaymentId: secondId });
             expect(notices.map(({ recipient_user_id }) => recipient_user_id)).toEqual(expectedIds);
             for (const notice of notices) {
                 expect(notice.payload).toEqual({
@@ -278,7 +265,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 'SELECT count(*)::int AS count FROM manual_payment WHERE subscription_id = $1',
                 [subscriptionId]
             );
-            notices = await unpaidNoticeRows({ manualPaymentId: secondId });
+            notices = await m.unpaidNoticeRows({ manualPaymentId: secondId });
             expect(afterRerun[0]?.count).toBe(1);
             expect(allInstallments[0]?.count).toBe(2);
             expect(notices).toHaveLength(expectedIds.length);
@@ -286,17 +273,17 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
         });
 
         await test.step('P1, P2 and P6 (AC:B5:16): the MP2 preview writes nothing; declaring unpaid suspends and mails the payer once', async () => {
-            const beforePreview = await snapshotSubscription({
+            const beforePreview = await m.snapshotSubscription({
                 subscriptionId,
                 userId: actors.user.id
             });
             const unpaidPath = `/api/v1/admin/billing-subscription/${subscriptionId}/manual-payments/${secondId}/declare-unpaid`;
-            const unpaidPreviewResponse = await adminJson({
+            const unpaidPreviewResponse = await m.adminJson({
                 method: 'GET',
                 path: unpaidPath,
                 cookie: actors.admin.sessionCookie
             });
-            const unpaidPreview = UnpaidPreviewSchema.parse(unpaidPreviewResponse.body);
+            const unpaidPreview = m.ManualPaymentDataSchema.parse(unpaidPreviewResponse.body);
             expect(unpaidPreviewResponse.status).toBe(200);
             expect(unpaidPreview.data).toEqual({
                 subscriptionId,
@@ -304,18 +291,18 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 periodStart: nextCharge1.toISOString(),
                 effect: 'S6'
             });
-            const afterPreview = await snapshotSubscription({
+            const afterPreview = await m.snapshotSubscription({
                 subscriptionId,
                 userId: actors.user.id
             });
             expect(afterPreview).toEqual(beforePreview);
 
-            const declaration = await adminJson({
+            const declaration = await m.adminJson({
                 method: 'POST',
                 path: unpaidPath,
                 cookie: actors.admin.sessionCookie
             });
-            const result = UnpaidResultSchema.parse(declaration.body);
+            const result = m.ManualPaymentDataSchema.parse(declaration.body);
             expect(declaration.status).toBe(200);
             expect(result.data).toEqual({ outcome: 'SUSPENDED', notice: 'SENT' });
             const persisted = await execSQL<{
@@ -344,17 +331,17 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                 subject: 'Tu suscripción se suspendió',
                 timeoutMs: MAIL_TIMEOUT_MS
             });
-            expect(mailText(suspensionMail.html)).toContain(
+            expect(m.mailText(suspensionMail.html)).toContain(
                 'Para volver, registrá el pago de la cuota adeudada.'
             );
-            expect(mailText(suspensionMail.html)).not.toContain('tarjeta');
+            expect(m.mailText(suspensionMail.html)).not.toContain('tarjeta');
 
-            const repeated = await adminJson({
+            const repeated = await m.adminJson({
                 method: 'POST',
                 path: unpaidPath,
                 cookie: actors.admin.sessionCookie
             });
-            const repeatedError = RejectionSchema.parse(repeated.body);
+            const repeatedError = m.RejectionSchema.parse(repeated.body);
             expect(repeated.status).toBe(409);
             expect(repeatedError.error.reason).toBe('MANUAL_PAYMENT_NOT_AWAITING');
             const suspensionCount = await execSQL<{ count: number }>(
@@ -364,6 +351,150 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             );
             expect(suspensionCount[0]?.count).toBe(1);
             expect(fakeServer.requests()).toHaveLength(0);
+        });
+    });
+
+    test('seeded rows: MP6 marks 20 and 2, manual-grace-expiry rerun and MP4 reimputation', async () => {
+        test.setTimeout(240_000);
+        if (!world || !subscriber) throw new Error('Missing manual test world.');
+        const actors = subscriber;
+        const T2 = new Date(Math.floor(Date.now() / 1000) * 1000 + 120 * DAY_MS);
+        await world.fakeServer.setClock({ at: T2 });
+        const optionId = await monthlyOptionForSlug('partner-silver');
+        const seed = async (
+            args: Omit<
+                Parameters<typeof m.seedManualSubscription>[0],
+                'userId' | 'optionId' | 'adminId'
+            >
+        ) => {
+            const created = await createUser({}, { apiBaseUrl: API_URL });
+            userIds.push(created.id);
+            return {
+                payer: created,
+                ...(await m.seedManualSubscription({
+                    ...args,
+                    userId: created.id,
+                    optionId,
+                    adminId: actors.admin.id
+                }))
+            };
+        };
+        const daysBefore = (days: number) => new Date(T2.getTime() - days * DAY_MS);
+
+        await test.step('P1 and P5 (AC:B5:19): MP6 previews write nothing; marks 20 and 2 hang the new row', async () => {
+            const postTerminationMark = 'COBRO_POSTERIOR_A_LA_BAJA';
+            const cases = [
+                ['duplicate', 'ACTIVE', 10, 20, 'REGISTERED', true, 'COBRO_DUPLICADO'],
+                ['cancelled', 'CANCELLED', 20, 20, 'DECLARED_UNPAID', false, postTerminationMark],
+                ['abandoned', 'ABANDONED', 30, 30, 'DECLARED_UNPAID', false, postTerminationMark]
+            ] as const;
+            for (const [name, status, age, nextOffset, installment, covered, mark] of cases) {
+                const period = daysBefore(age);
+                const { payer, subscriptionId, installmentIds } = await seed({
+                    status,
+                    nextChargeAt:
+                        status === 'ACTIVE' ? new Date(T2.getTime() + nextOffset * DAY_MS) : period,
+                    installments: [{ periodStart: period, status: installment, covered }]
+                });
+                const seededId = installmentIds[0];
+                if (!seededId) throw new Error(`Missing ${name} installment.`);
+                await m.exerciseUnallocatedManualPayment({
+                    subscriptionId,
+                    userId: payer.id,
+                    cookie: actors.admin.sessionCookie,
+                    adminId: actors.admin.id,
+                    seededInstallmentId: seededId,
+                    periodStart: period,
+                    mark,
+                    proofRef: `hos2160-${name}-${randomUUID()}`
+                });
+            }
+        });
+
+        await test.step('P6 (AC:B5:17): manual-grace-expiry twice leaves one DECLARED_UNPAID installment and one notice', async () => {
+            const graceStart = daysBefore(11);
+            const { payer, subscriptionId } = await seed({
+                status: 'GRACE_PERIOD',
+                nextChargeAt: graceStart,
+                grace: { startedAt: graceStart, endsAt: new Date(T2.getTime() - 60_000) },
+                installments: [
+                    {
+                        periodStart: m.addUtcMonths({ date: graceStart, months: -1 }),
+                        status: 'REGISTERED',
+                        covered: true
+                    },
+                    { periodStart: graceStart, status: 'AWAITING', covered: false }
+                ]
+            });
+            await m.runManualGraceExpiryTwice({
+                subscriptionId,
+                userId: payer.id,
+                periodStart: graceStart,
+                adminCookie: actors.admin.sessionCookie
+            });
+        });
+
+        await test.step('P1 and P4 (AC:B5:18): the MP4 preview names the reimputation; the act moves period, coverage and date', async () => {
+            const latePeriod = daysBefore(45);
+            const previousPeriod = m.addUtcMonths({ date: latePeriod, months: -1 });
+            const expectedNext = m.addUtcMonths({ date: T2, months: 1 });
+            const { payer, subscriptionId, installmentIds } = await seed({
+                status: 'SUSPENDED',
+                nextChargeAt: latePeriod,
+                installments: [
+                    { periodStart: previousPeriod, status: 'REGISTERED', covered: true },
+                    { periodStart: latePeriod, status: 'DECLARED_UNPAID', covered: false }
+                ]
+            });
+            const [previousId, lateId] = installmentIds;
+            if (!previousId || !lateId) throw new Error('Missing MP4 seeded installments.');
+            const snapshotArgs = { subscriptionId, userId: payer.id };
+            const before = await m.snapshotSubscription(snapshotArgs);
+            const path = `/api/v1/admin/billing-subscription/${subscriptionId}/manual-payments/${lateId}/register-late`;
+            const previewResponse = await m.adminJson({
+                method: 'GET',
+                path,
+                cookie: actors.admin.sessionCookie
+            });
+            const preview = m.ManualPaymentDataSchema.parse(previewResponse.body);
+            expect(previewResponse.status).toBe(200);
+            expect(preview.data.subscriptionId).toBe(subscriptionId);
+            expect(preview.data.manualPaymentId).toBe(lateId);
+            expect(preview.data.periodStart).toBe(latePeriod.toISOString());
+            expect(preview.data.effect).toBe('S7');
+            expect(preview.data.reimputedPeriodStart).toBe(T2.toISOString());
+            expect(preview.data.nextChargeAt).toBe(expectedNext.toISOString());
+            expect(await m.snapshotSubscription(snapshotArgs)).toEqual(before);
+
+            const proofRef = `hos2160-late-${randomUUID()}`;
+            const response = await m.adminJson({
+                method: 'POST',
+                path,
+                cookie: actors.admin.sessionCookie,
+                body: { proofRef }
+            });
+            const result = m.ManualPaymentDataSchema.parse(response.body);
+            const receiptId = await m.assertLateManualPaymentPersisted({
+                subscriptionId: late.subscriptionId,
+                userId: payer.id,
+                previousId,
+                manualPaymentId: lateId,
+                previousPeriod,
+                originalPeriod: latePeriod,
+                periodStart: T2,
+                nextChargeAt: expectedNext,
+                proofRef,
+                adminId: actors.admin.id
+            });
+            expect(response.status).toBe(200);
+            expect(result.data).toEqual({
+                effect: 'S7',
+                nextChargeAt: expectedNext.toISOString(),
+                periodStart: T2.toISOString(),
+                reimputedFrom: latePeriod.toISOString(),
+                receiptId
+            });
+            expect(world.fakeServer.requests()).toHaveLength(0);
         });
     });
 });
