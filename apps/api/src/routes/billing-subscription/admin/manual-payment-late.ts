@@ -107,11 +107,14 @@ export const adminLateManualPaymentPreviewRoute = createAdminRoute({
     handler: async (ctx, params) => {
         const actor = getActorFromContext(ctx);
         try {
-            const preview = await previewLateManualPaymentRegistration({
-                actor,
-                subscriptionId: params.subscriptionId as string,
-                manualPaymentId: params.manualPaymentId as string
-            });
+            const preview = await previewLateManualPaymentRegistration(
+                {
+                    actor,
+                    subscriptionId: params.subscriptionId as string,
+                    manualPaymentId: params.manualPaymentId as string
+                },
+                { clock: getClock().clock }
+            );
             auditLog({
                 auditEvent: AuditEventType.BILLING_READ,
                 actorId: actor.id,
