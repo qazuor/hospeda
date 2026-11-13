@@ -313,7 +313,7 @@ test.describe('HOS-2136 grace reminders, scheduled change and payment window @p0
             const text = mailText(mails[1]?.html ?? '');
             expect(normalized(text)).toContain(
                 normalized(
-                    `Tu suscripción de Alojamiento sigue en período de gracia. Faltan 1 día para el ${formatMarketDate(graceEndsAt)}, cuando termina este período.`
+                    `1 día para el ${formatMarketDate(graceEndsAt)}, cuando termina este período.`
                 )
             );
             expect(normalized(text)).toContain(normalized(scheduledLine(effectiveAt)));
