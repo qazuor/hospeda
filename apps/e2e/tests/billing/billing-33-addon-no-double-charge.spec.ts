@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { expect, type Locator, test } from '@playwright/test';
+import { expect, type Locator, type Request as PlaywrightRequest, test } from '@playwright/test';
 import { AddonPurchaseResponseSchema, PublicationStatusEnum } from '@repo/schemas';
 import { z } from 'zod';
 import esBilling from '../../../../packages/i18n/src/locales/es/billing.json' with { type: 'json' };
@@ -139,9 +139,12 @@ async function postPurchase(args: {
         headers: { 'content-type': 'application/json', cookie: args.sessionCookie },
         body: JSON.stringify(args.body)
     });
+    const text = await response.text();
+    // A refusal has no `data`; surface its status and body instead of a bare schema error.
+    if (!response.ok) throw new Error(`Addon purchase HTTP ${response.status}: ${text}`);
     return {
         status: response.status,
-        data: PurchaseResponseSchema.parse(await response.json()).data
+        data: PurchaseResponseSchema.parse(JSON.parse(text)).data
     };
 }
 
@@ -267,14 +270,15 @@ test.describe('TEST:2158:1 TEST:2158:2 TEST:2158:3 addon purchase without double
         });
         const catalog = await ensureAddonPurchaseCatalog();
         const postsBefore = preapprovalPosts(world).length;
-        const sentBodies: PurchaseBody[] = [];
-        const listener = (request: import('@playwright/test').Request): void => {
+        // Raw bodies: parsing inside the listener would throw out of Playwright's emitter.
+        const sentBodies: unknown[] = [];
+        const listener = (request: PlaywrightRequest): void => {
             const url = new URL(request.url());
             if (
                 request.method() === 'POST' &&
                 url.pathname === '/api/v1/protected/billing/addons/purchases'
             ) {
-                sentBodies.push(PurchaseBodySchema.parse(request.postDataJSON()));
+                sentBodies.push(request.postDataJSON());
             }
         };
         page.on('request', listener);
@@ -286,15 +290,14 @@ test.describe('TEST:2158:1 TEST:2158:2 TEST:2158:3 addon purchase without double
                 inspectSummary
             });
             expect(sentBodies).toHaveLength(1);
-            const body = sentBodies[0];
-            if (!body) throw new Error('Expected the addon purchase request body.');
-            expect(body).toEqual({
+            expect(sentBodies[0]).toEqual({
                 productId: catalog.recurringProductId,
                 addonVersionId: 'b10c0000-0000-4000-8000-000000000005',
                 targetId: listingA.id,
                 orderRequestId: expect.any(String),
                 payerEmail: owner.email
             });
+            const body = PurchaseBodySchema.parse(sentBodies[0]);
             const instance = await readAddonInstance({ instanceId: bought.instanceId });
             expect(preapprovalPosts(world)).toHaveLength(postsBefore + 1);
             const post = preapprovalPosts(world)[postsBefore];
