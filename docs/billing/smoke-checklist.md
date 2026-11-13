@@ -32,6 +32,32 @@ Each part is executed in its own environment and signed off separately.
 Sign off each part by filling the table at the end of that part. Leave fields blank if not yet
 available.
 
+## Smoke scope rule (HOS-2134)
+
+A billing change does **not** re-run this whole checklist. Smoke only:
+
+1. **What the change touched**: the steps whose area the diff modifies.
+2. **The `sólo MP real` and `sólo entorno real` steps that run through that area**: no e2e can
+   see them.
+
+A step marked `e2e:` is **not** repeated by hand when the PR's `E2E P0 Suite` check is green. A
+`(nocturno)` mark only counts once the nightly run after the merge is green; until then, smoke
+that step if the change touched it. `en curso` and `hueco` steps are smoked by hand whenever the
+change touches their area, exactly as before.
+
+Each step carries one **Coverage** line with one of these marks:
+
+| Mark | Meaning |
+| --- | --- |
+| `e2e: <file>:<test> (PR\|nocturno)` | A Playwright spec under `apps/e2e/tests/` asserts the step against the fake provider. `PR` = the test or its `describe` carries `@p0` or `@clock` (`e2e-pr.yml` runs `e2e:test:p0`); `nocturno` = only `e2e-nightly.yml` runs it. |
+| `sólo MP real` | Only real Mercado Pago shows it: the real checkout and its redirect, the real signature, the provider's own emails, real provider reads, or the measured quirks M1–M13 (`packages/payments/src/fake/fake-lists.json`). |
+| `sólo entorno real (<service>)` | Only a live environment shows it, and the service is not Mercado Pago: Cloudflare edge, Sentry, the real cron scheduler, Resend delivery, Cloudinary, Google sign-in. |
+| `en curso: HOS-NNNN` | A child of HOS-2133 will add the e2e. Smoke it until that child closes. |
+| `hueco` | No e2e asserts it and no child covers it yet. |
+
+The marks come from reading each spec in full, not from test names. A spec that only covers part
+of a step is listed with what it misses.
+
 ## Part 1 — Staging (cutover rehearsal)
 
 Executed inside the cutover rehearsal on `staging`, with MP sandbox, before merging any billing
@@ -51,6 +77,11 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   `provider_notification` for the last inserted rows.
 - **Covers:** TEST:B3:23 (via the small payment of B3.11); TEST:U3:12 (cutover smoke: the probe
   path).
+- **Coverage:**
+  - Steps 1–2 (real checkout page and card form): `sólo MP real`.
+  - Step 3 and `ACTIVE` after the signed notice: `e2e: billing/billing-02-signup-end-to-end.spec.ts:A authorizes in the web checkout and reaches ACTIVE with the signup email (PR)`; the duplicate notice in `e2e: resilience/res-04-webhook-duplicate.spec.ts:accepts two identical signed deliveries and records effects only once (PR)`.
+  - Preapproval created without a provider plan: `hueco` (no test checks that `preapproval_plan_id` is absent from the request).
+  - Delivery row in `provider_notification` with its channel: `hueco` (no e2e reads that table).
 
 ### S2 — Our emails (outbox)
 
@@ -63,6 +94,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Read-only query on `email_outbox` filtering by `recipient_user_id` and
   `template_name`; confirm the `email_outbox` row exists even though the email does not deliver.
 - **Covers:** LISTA:B13 ("nuestro correo sale antes que el del proveedor").
+- **Coverage:**
+  - Our email in the outbox: `e2e: billing/billing-02-signup-end-to-end.spec.ts:A authorizes in the web checkout and reaches ACTIVE with the signup email (PR)`.
+  - Our mail before the provider acts (our side): `e2e: billing/billing-15-cancellation-end-to-end.spec.ts:ACTIVE: S11 from the screen, our email before the provider cancellation, and S12 when the clock reaches the end of service (PR)` and `e2e: billing/billing-10-admin-revocation.spec.ts:ACTIVE revocation shows the full refund and sends our notice before provider cancellation (PR)`. `billing-02` test B does not prove this order: its check only passes when there is no provider call at all.
+  - Our mail before the provider's own email: `sólo MP real` (the fake sends no provider email).
 
 ### S3 — Self-service cancellation (full path)
 
@@ -75,6 +110,8 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   cancellation email is enqueued in the outbox.
 - **Evidence:** Read-only query on `subscriptions` confirming the final status.
 - **Covers:** B8a (the self-service cancellation, hand-on).
+- **Coverage:**
+  - Steps 1–3, the transition to the terminal state and the enqueued email: `e2e: billing/billing-15-cancellation-end-to-end.spec.ts:ACTIVE: S11 from the screen, our email before the provider cancellation, and S12 when the clock reaches the end of service (PR)`. The grace and suspended paths are in the same spec and in `billing-08-self-cancel.spec.ts` (PR).
 
 ### S4 — Renewal notice
 
@@ -96,6 +133,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   read-only query on `email_outbox` filtering by `template_name = 'billing.renewal-upcoming'`.
 - **Covers:** HOS-1685 (provider next charge date copy); AC:B13a:13 (renewal notices at 5 and 1 day);
   TEST:B13a:13 (integration).
+- **Coverage:**
+  - Step 1, `next_charge_at` equals the preapproval date after the `newCycle` sweep: `e2e: billing/billing-09-my-subscription-notices.spec.ts:TEST:B13a:6 TEST:B8b:14 offers changing an ACTIVE plan with the original notices intact (PR)`. The format of a real `next_payment_date`: `sólo MP real`.
+  - Steps 2–4, `subscription-renewal-notice` and the `billing.renewal-upcoming` email: `en curso: HOS-2136`.
 
 ### S4a — Resumable sweep slicing
 
@@ -106,6 +146,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   3. Read the completed cycle summary from `cron_runs` and confirm the interrupted row was safely retried.
 - **Expected:** The cycle reaches `CYCLE_DONE`, preserves completed row/pass progress, and reports its aggregate summary.
 - **Evidence:** The three slice records and the final cycle summary in `cron_runs`.
+- **Coverage:**
+  - All steps: `hueco` (no e2e kills a slice or reads `CYCLE_DONE`; integration covers it in `packages/service-core/test/integration/services/reconciliation-sweep-cycle.test.ts`).
+  - The real 02:10, 03:10 and 04:10 schedule: `sólo entorno real (cron scheduler)`.
 
 ### S5 — Cloudflare edge cache and revalidation
 
@@ -119,6 +162,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** `curl -I https://staging.hospeda.com.ar/<listing-slug>/` before and after the change;
   the listing content reflects the update.
 - **Covers:** Cloudflare edge caching; ISR revalidation on coverage change.
+- **Coverage:**
+  - `CF-Cache-Status` HIT, then REVALIDATED or MISS: `sólo entorno real (Cloudflare)`.
+  - A coverage change records a revalidation: `hueco` (`accommodation/acc-02-edit-revalidation.spec.ts` checks `revalidation_log` only after an owner edit, not after a coverage change).
 
 ### S6 — Cron schedules on the first day
 
@@ -133,6 +179,8 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Screenshot of the Sentry Crons page for the staging environment; the manifest file.
   Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
 - **Covers:** Cron schedule correctness on staging.
+- **Coverage:**
+  - Running schedules against the manifest and the Sentry monitors: `sólo entorno real (Sentry, cron scheduler)`.
 
 ### S7 — Promo redemption: Mercado Pago amount-change email (CT-3)
 
@@ -141,6 +189,11 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The 7-bis notice appears on screen, `transaction_amount` is mutated, and Mercado Pago's “El vendedor Hospeda cambió el monto” email reaches the payer (not us).
 - **Evidence:** Screenshot of the notice, the preapproval, and the email.
 - **Covers:** AC:B9b:12; TEST:B9b:12; CT-3 (`B/14` §2.4).
+- **Coverage:**
+  - Creating the «N cobros» code: `e2e: admin/adm-14-promo-code-editor.spec.ts:creates with a consequence review and closes without changing its redemption (PR)`.
+  - Redeeming it and the 7-bis notice: `e2e: billing/billing-14-promo-redeem-notice.spec.ts:shows the N-charge terms and records three remaining charges (PR)`.
+  - `transaction_amount` mutated: `en curso: HOS-2139` (`billing-14` checks only that a rejected code sends no amount change; HOS-2139 must also cover a redemption on a live subscription).
+  - Mercado Pago's «cambió el monto» email: `sólo MP real`.
 
 ### S8 — A deferred cancellation leaves within minutes (HOS-1955)
 
@@ -159,6 +212,11 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   `email_outbox` filtered by `recipient_user_id` and template.
 - **Covers:** AC:1955:1, AC:1955:6; the HOS-1955 measurement (29 October: about one hour with
   a manual sweep).
+- **Coverage:**
+  - Steps 1–2, the button and the `ABANDONED` row: `e2e: billing/billing-17-change-pending-option.spec.ts:TEST:1735:16 changes from monthly to annual after cancelling the pending attempt (PR)`.
+  - Step 3, the `billing.attempt-cancelled-cancel` row becomes `sent`: `hueco` (`billing-17` checks that the row exists, never that it is sent).
+  - Step 4, `billing-deferred-cancellation-retry` confirms the cancellation (`details.retried.confirmed` = 1) and exactly one email: `hueco` (the retry job runs only in the addon and grant specs).
+  - The preapproval reads `cancelled` at MP within 10 minutes: `sólo MP real`.
 
 ### S9 — Partner applications: claim notice, claim on verification, rejection
 
@@ -167,6 +225,11 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** A receives “Reclamá tu Partner en Hospeda” with a `/partners/reclamar/#partner=…&secret=…` link; B receives Better Auth verification and, after opening it, B's account owns the Partner with `PARTNER_OWNER`; C receives the rejection communication with the date from which they can apply again and without the reason; no email arrives twice.
 - **Evidence:** `hops psql --target=staging`, read-only: A's Partner has a non-null `claim_secret_hash` different from the link secret; the payloads of both `email_outbox` rows contain neither the secret nor the reason; B's Partner `owner_user_id` equals B's account and has a `partner.claimed` event. V7.2 (HOS-1486) covers A's claim-link screen; do not open it in this step.
 - **Covers:** AC:V7:4, AC:V7:5; TEST:V7:4, TEST:V7:5.
+- **Coverage:**
+  - Claim notice to A (subject, link, `claim_secret_hash` differs from the link secret): `hueco`.
+  - B owns the Partner after following the verification email: `hueco` (`verticals/v7-partner-claim.spec.ts` claims with a hand-built link and an account created without verification).
+  - Rejection email to C with the date and without the reason, and no email sent twice: `hueco` (`admin/adm-15-partner-applications-panel.spec.ts` checks only the `REJECTED` state).
+  - Real delivery of the three emails: `sólo entorno real (Resend)`.
 
 ### S10 — Partner claim by link
 
@@ -175,6 +238,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** B owns the Partner with `PARTNER_OWNER` and A is unchanged; the second claim shows «Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; the altered secret shows the nonexistent-Partner state; C becomes verified, its other session stops working within 5 minutes (session-cache window, R-1) and Google can no longer sign in; the sign-in URL never contains the secret.
 - **Evidence:** `hops psql --target=staging`, read-only queries: `owner_user_id` and `claim_secret_hash` for the Partner before and after (the hash is unchanged); the `partner.claimed` event with `reason = 'claim_link'` and, for C, `changes` containing `email_verified`, `revoked_session_count`, and `removed_credential_providers`; C's `session` and `account` rows.
 - **Covers:** AC:V7:7, AC:V7:8, AC:V7:9; TEST:V7:7, TEST:V7:8, TEST:V7:9, TEST:V7:22.
+- **Coverage:**
+  - B claims with `PARTNER_OWNER`, the second-claim message, the altered secret and no secret in the sign-in URL: `e2e: verticals/v7-partner-claim.spec.ts:submits PP1, approves, claims, and exposes the Gold page only after MP1 (PR)`. The link is hand-built and `claim_secret_hash` is not re-read.
+  - Account C (unverified): becomes verified, its other session stops working and its external credentials are removed: `hueco`.
+  - Google can no longer sign in: `sólo entorno real (Google)`.
 
 ### V7.3 · Alta directa de Partner (HOS-1487)
 
@@ -186,6 +253,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
   4. Verify the Partner is owned by the claiming account and the mailbox account received no other email.
 - **Expected:** The Partner remains unowned until the link is claimed; the claiming account receives `PARTNER_OWNER`.
 - **Covers:** AC:V7:11, AC:V7:12; TEST:V7:11 and TEST:V7:12(a).
+- **Coverage:**
+  - Steps 1–2, the Partner is created without an owner and exactly one claim notice is queued: `e2e: admin/adm-16-partner-direct-create.spec.ts:creates the Partner without an owner and enqueues one claim notice (PR)`. Real delivery: `sólo entorno real (Resend)`.
+  - Steps 3–4, another account claims through the link from that notice: `hueco` (no e2e claims a Partner created from the admin form).
 
 ### V7.5 · Acción 6: configurar plan y pago de un Partner (HOS-1489)
 
@@ -198,6 +268,11 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The action writes only after explicit confirmation and records actor, subject and reason.
 - **Evidence:** The preview and POST responses; read-only queries on `subscription`, `manual_payment`, `domain_event` and `email_outbox`.
 - **Covers:** AC:V7:17; TEST:V7:18.
+- **Coverage:**
+  - Step 1, the review panel writes nothing: `e2e: admin/adm-18-partner-billing-setup.spec.ts:writes only after the explicit confirmation and hides the action without its permission (PR)`. It does not check the owner, plan or amount in the panel.
+  - Step 2, the `MANUAL` subscription, the `AWAITING` installment and the event: `e2e: admin/adm-18-partner-billing-setup.spec.ts:writes only after the explicit confirmation and hides the action without its permission (PR)`. The unpaid installment notice per SUPER_ADMIN: `hueco`.
+  - Step 3, the registered installment gives `ACTIVE` and a Gold page: `e2e: verticals/v7-partner-claim.spec.ts:submits PP1, approves, claims, and exposes the Gold page only after MP1 (PR)`. The carousel presence: `hueco`.
+  - Step 4, the button is hidden without the permission: covered by the `adm-18` test above. The 403 from `POST …/billing-setup`: `hueco`.
 
 ### S11 — Manual payment installments (HOS-1541, HOS-1542)
 
@@ -215,6 +290,16 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** Steps 1–9 reach the stated states, dates, notices, receipts, marks and HTTP responses; MP4 and MP6 previews preserve subscription, installments and marks; retries do not duplicate installments or notices.
 - **Evidence:** The API responses, the test subscription and installment rows, receipts, coverage, reconciliation marks, per-admin outbox rows and the `manual-installment-open` and `manual-grace-expiry` cron runs.
 - **Covers:** AC:B5:13–19, AC:B5:35; TEST:B5:7, TEST:B5:8 (MP2 and MP3), TEST:B5:9, TEST:B5:10 and the MP5 half of TEST:B5:18; AC:B7:32 (manual path); TEST:B7:20.
+- **Coverage:**
+  - Step 1: as V7.5 steps 1–2, the same `adm-18` test (PR); the notice per SUPER_ADMIN is a `hueco`.
+  - Step 2, the `GET` preview with effect `S29`, the receipt, one cycle of `next_charge_at` and the signup confirmation: `hueco` (the `v7` fixture registers the installment and checks only `ACTIVE`).
+  - Step 3, `manual-installment-open` opens the installment and `GRACE_PERIOD` with the plan's grace days: `e2e: billing/billing-18-manual-arrears-cycle.spec.ts:TEST:B7:20 manual installment, clock suspension email, and MP4 S7 (PR)`. The admin notice and the rerun with exact counts: `hueco`.
+  - Step 4, registering the second installment before it expires: `hueco`.
+  - Step 5, declaring an installment unpaid: `hueco`.
+  - Step 6, 403, 404 and 409 on the manual payment routes: `hueco`.
+  - Step 7, `manual-grace-expiry` gives `DECLARED_UNPAID`, the suspension email without a card, and «Pago pendiente», «Suspendida» and «Activa»: `e2e: billing/billing-18-manual-arrears-cycle.spec.ts:TEST:B7:20 manual installment, clock suspension email, and MP4 S7 (PR)`. The rerun with exact counts and the overdue installment named in the email: `hueco`.
+  - Step 8, register-late in a live period (`S7`): `e2e: billing/billing-18-manual-arrears-cycle.spec.ts:TEST:B7:20 manual installment, clock suspension email, and MP4 S7 (PR)`. The `GET` preview without writes and the ended period carried to the reactivation period: `hueco`.
+  - Step 9, unallocated payments with marks 20 and 2: `hueco` (integration only: `packages/service-core/test/integration/services/manual-payment-unallocated.test.ts`).
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
 ### S12 — Partner presence and moderation (HOS-1488)
@@ -228,6 +313,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The presence is hidden and restored without changing the partner's billing; only an admin with `LISTING_MODERATE` can use the control.
 - **Evidence:** Read-only query on `domain_event` for `partner.presence_moderation_changed` and on the Partner moderation bit; the public page's HTTP response code before, during, and after moderation.
 - **Covers:** AC:V7:14; TEST:V7:14.
+- **Coverage:**
+  - Step 1, the page answers 200 and the logo is in the carousel: `hueco`.
+  - Step 2, moderation with a reason records the flag and the event: `e2e: admin/adm-17-partner-presence-moderation.spec.ts:moderates and lifts the presence while recording both actions (PR)`. The public 404 (not 410), leaving the carousel and the unchanged subscription: `hueco` (the test Partner has no owner or plan, so it answers 404 anyway).
+  - Step 3, the lift: covered by the `adm-17` test above. The page answers 200 again: `hueco`.
+  - Step 4, the 403 without `listing.moderate`: `hueco`.
+  - Related: the owner's row 22 notice in `e2e: verticals/v8b-partner-presence-row22.spec.ts:shows the notice for absent presence and the moderation reason for moderated presence (PR)`.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
 ### S13 — Partner screens for row 33 and row 34 (HOS-1497)
@@ -243,6 +334,10 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** A sees «Tu cuenta ya es dueña de un Partner. Cada cuenta administra un solo Partner: el segundo negocio se reclama con otra cuenta. Si necesitás ayuda, escribinos a soporte.» with the support link, and B's claim link still works for another account; C sees «Para postular un Partner primero tenés que verificar el correo de tu cuenta. Todavía no registramos tu postulación.» and the resend button, no application exists for the typed email after step 3, the resend sends a verification email whose link comes back to the application page, and after verifying the submit is accepted (a short delay of up to 5 minutes from the session cache is acceptable and must be noted).
 - **Evidence:** `hops psql --target=staging`, read-only: B's `owner_user_id` and `claim_secret_hash` before and after step 1 (unchanged) and after step 2 (`owner_user_id` = the second account); `SELECT count(*) FROM partner_application WHERE lower(email) = lower('<typed email>')` = 0 after step 3 and 1 after step 5; the `email_outbox`/Better Auth verification email for C. No secrets in the sign-off.
 - **Covers:** AC:V8b:4, AC:V8b:5; TEST:V8b:4, TEST:V8b:5.
+- **Coverage:**
+  - Steps 1–2, row 33 and the link left for another account: `e2e: verticals/v8b-partner-claim-row33.spec.ts:shows row 33 and leaves the claim link available to another account (PR)`.
+  - Steps 3–6, row 34 for an unverified account, the resend and the accepted submit after verifying: `hueco`.
+  - The verification email delivered: `sólo entorno real (Resend)`.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
 ### S14 — Empty a Partner presence on request (HOS-1498)
@@ -258,6 +353,11 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The real Cloudinary asset is gone; the public Partner page is 404 after edge revalidation; the event records actor and reason without exposing the URL; billing remains unchanged; and action 24 can proceed.
 - **Evidence:** Cloudinary's 404 response; public page response after the S5 cache procedure; read-only Partner, `domain_event` and billing queries with no logo URL; action 24 preview and result.
 - **Covers:** AC:V8b:6; TEST:V8b:6 (real provider through this staging smoke).
+- **Coverage:**
+  - Step 2 and step 5, the dialog, the reason, the emptied content and the `partner.presence_emptied` event with actor and reason: `e2e: admin/adm-19-partner-empty-presence.spec.ts:names the irreversible action and empties the Partner presence only after confirmation (PR)`. The event is not checked for the absence of the logo URL.
+  - Steps 1 and 3, the real Cloudinary asset returns 404: `sólo entorno real (Cloudinary)`.
+  - Step 4, the public page answers 404: `hueco` for the origin (the test Partner has no plan); past the edge: `sólo entorno real (Cloudflare)`.
+  - Step 6, billing unchanged and action 24 no longer blocked by the Partner: `hueco`. Action 24 for a plain account: `e2e: admin/adm-08-account-close-on-request.spec.ts:an account with nothing left: says whose it is, needs a reason, and closes it (nocturno)`.
 
 ### S15 — Plan change by route (HOS-1579)
 
@@ -270,6 +370,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The route chooses the direction and preserves the predecessor until the successor is authorized.
 - **Evidence:** Route responses, fake or sandbox provider reads, subscription and addon rows, email order and cron runs.
 - **Covers:** AC:B8b:8, AC:B8b:9, AC:B8b:10, AC:B8b:14, AC:B8b:15, AC:B8b:24.
+- **Coverage:**
+  - Step 1, the checkout amount and the credited first charge: `hueco`.
+  - Step 1, the old subscription stays `ACTIVE` while the successor waits: `e2e: billing/billing-19-plan-change-offer.spec.ts:ACTIVE monthly upgrade reaches fake checkout; old stays ACTIVE and successor waits (PR)`. That it keeps billing after the checkout is abandoned: `hueco`.
+  - Step 2, our email before the cancellation, old `CANCELLED` and successor `ACTIVE`: `e2e: billing/billing-21-plan-change-end-to-end.spec.ts:upgrade: checkout activates successor and mail precedes predecessor cancellation (PR)`. Our email before Mercado Pago's cancellation email: `sólo MP real`. The old addon moving to the successor: `hueco`.
+  - Step 3, downgrade: `e2e: billing/billing-21-plan-change-end-to-end.spec.ts:downgrade: scheduled date applies lower plan and amount; sin correo propio: no existe plantilla (PR)` asserts the new amount at MP only after the scheduled date and the `subscription-scheduled-change` job, not right after the request as this step says. Reading the amount immediately and keeping capabilities until `next_charge_at`: `hueco`.
+  - Step 4, EX-33 (checkout resets the future first charge date, M9): `sólo MP real`.
 - **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
 
 ### S16 — Pause, resume and act notices (HOS-1580)
@@ -284,6 +390,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The owner and admin surfaces state the effects and dates before each act; S22 ends the paused service today unless unconsumed credit sets its later end.
 - **Evidence:** Preview and action responses, sandbox provider reads, listing visibility, subscription rows, and audit entries.
 - **Covers:** AC:B8b:22, AC:B8b:25 (TEST:B8b:22, TEST:B8b:25).
+- **Coverage:**
+  - Step 1, the confirmation names the listing, the addons and this customer's end date, and the pause is sent to the provider: `e2e: billing/billing-20-act-notices.spec.ts:pauses a paid subscription after explaining the listing and addons with this customer date (PR)` and `e2e: billing/billing-22-pause-end-to-end.spec.ts:one monthly subscriber pauses twice, resumes at expiry and early through real routes (PR)`. The sandbox preapproval reads `paused`: `sólo MP real`. The listing leaves the public site: `hueco`.
+  - Step 2, early resume shows only the charge day and amount: `e2e: billing/billing-22-pause-end-to-end.spec.ts:one monthly subscriber pauses twice, resumes at expiry and early through real routes (PR)`. The sandbox preapproval reads `authorized` with that date: `sólo MP real`.
+  - Step 3, cancelling while `PAUSED`: `hueco`.
+  - Step 4, a SUPER_ADMIN pauses and resumes in the panel with the `ACC_9` audit: `hueco` (`admin/adm-24-subscription-finder.spec.ts` only opens the pause screen).
+  - Step 5, an upgrade from the panel returns the checkout: `hueco`; authorizing with the test card: `sólo MP real`.
 
 ### S17 — Temporary courtesy and revocation (HOS-1590)
 
@@ -300,6 +412,13 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The subscription returns to `ACTIVE`, the pause has `actual_end_at` written immediately, the next charge dates agree, and the two provider email outcomes are recorded.
 - **Evidence:** Route response, read-only subscription, pause, grant and outbox rows; sandbox preapproval reads; both provider email observations and our notice.
 - **Covers:** AC:B9b:11, AC:B9b:13, AC:B9b:14; TEST:B9b:11, TEST:B9b:13, TEST:B9b:14, TEST:B9b:15.
+- **Coverage:**
+  - Step 1, the grant pauses the preapproval and the row reads `PAUSED · COURTESY`: `hueco`.
+  - Step 1, the panel end date and adding months: `e2e: admin/adm-21-temporary-courtesy-confirmations.spec.ts:an existing monthly courtesy adds two calendar months and confirms the new end (PR)`. The `ACC_1` / `GRANT_COURTESY` audit and no second pause request: `hueco`.
+  - Step 1, annual unavailable with both alternatives: `e2e: admin/adm-21-temporary-courtesy-confirmations.spec.ts:annual plan explains unavailability and both alternatives (PR)`.
+  - Step 1, Mercado Pago's pause email: `sólo MP real`.
+  - Step 2, the revocation preview and the confirmed charge day: `e2e: admin/adm-21-temporary-courtesy-confirmations.spec.ts:revocation explains the loss, refund, ACTIVE and charge day (PR)`. The date compared with the provider, the preapproval reading `authorized` and `actual_end_at` written: `hueco`. Mercado Pago's resume email: `sólo MP real`.
+  - Step 3, our `billing.courtesy-revoked` email and its date: `hueco`.
 
 ### S18 — Addon purchase: recurring checkout and one-time order (HOS-1593)
 
@@ -308,6 +427,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The addon has its own preapproval and its `external_reference` names the complement row; the principal amount stays unchanged. Replay creates no second preapproval. The one-time order has a payment on its `ACTIVE` instance and an end date. A3 sends our email before cancelling the expired preapproval.
 - **Evidence:** API responses, read-only sandbox preapprovals and order, addon instance and payment rows, receipt, and outbox delivery time.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
+- **Coverage:**
+  - Recurring addon on its own preapproval with the principal amount unchanged: `e2e: billing/billing-24-addon-end-to-end.spec.ts:recurring addon bought from the screen is authorized on its own preapproval (PR)`.
+  - `external_reference` names the complement row: `hueco`.
+  - Replaying the same `orderRequestId` creates no second preapproval (M3): `hueco`.
+  - One-time addon order: `hueco`, deferred with the one-time flow to HOS-2094 (no e2e catalog has a one-time product).
+  - A3, our email before the expired checkout is cancelled: `e2e: billing/billing-24-addon-end-to-end.spec.ts:abandoned recurring checkout: our mail first, then exactly one cancellation (PR)`.
 
 ### S19 — Addon end of life: expiry, purged listing and declined order (HOS-1594)
 
@@ -320,6 +445,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** Purging consumes the addon and closes its complement once; the rejected order yields `ABANDONED` immediately; the new request creates a new instance and order; fixed-days expiry reaches `EXPIRED` while unpublished.
 - **Evidence:** Read-only addon, complement, principal, order and outbox rows; sandbox preapproval and order reads; delivery and cancellation timestamps.
 - **Covers:** AC:B10:5, AC:B10:6, AC:B10:7; TEST:B10:6, TEST:B10:7, TEST:B10:8.
+- **Coverage:**
+  - Step 1, the purge sends our email before the addon preapproval is cancelled, exactly once: `e2e: billing/billing-24-addon-end-to-end.spec.ts:deleting the listing names the addon and its price, then A6 mails before cancelling (PR)`. The principal unchanged after the purge: `hueco`.
+  - Steps 2–4, the one-time order rejected, retried and expired: `hueco`, deferred to HOS-2094.
 
 ### S20 — Addon version publication, free addon under grant and purchase screen (HOS-1595)
 
@@ -333,6 +461,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** Admin API responses, read-only addon product and instance rows, grant anchor, sandbox preapprovals and orders, purchase screen captures, checkout return URL and purchase status reads.
 - **Covers:** AC:B10:8, AC:B10:11, AC:B10:12, AC:B10:13; TEST:B10:9, TEST:B10:13, TEST:B10:14, TEST:B10:15.
 - **Nota:** pago único: ver HOS-2094.
+- **Coverage:**
+  - Step 1, the old instance keeps its version: `e2e: admin/adm-22-addon-version-editor.spec.ts:Publicar una versión muestra qué cambia contra la vigente y deja las compras previas en su versión (PR)`. A new version with a new price used by the next checkout: `hueco` (that test changes only a limit).
+  - Step 1, the admin without permission: `e2e: admin/adm-22-addon-version-editor.spec.ts:un admin sin SUPER_ADMIN no tiene el editor (PR)` checks the missing link and a 403 on the catalog `GET`. The 403 on the publish route: `hueco`.
+  - Step 2, the free addon under an `includesAddons` grant, without a provider, cancelled on revoke: `hueco`.
+  - Step 3, the draft and published summaries: `e2e: billing/billing-23-addon-hidden-listing-notice.spec.ts:${status} RECURRING: summary and correct pre-confirmation notice (PR)`.
+  - Step 4, the redirect from the real checkout: `sólo MP real`. The screen at `?compra=…` waits until `ACTIVE`, and one-time offers are absent: `hueco`.
 
 ### S21 — B10 addon exit and end-to-end rehearsal (HOS-1596)
 
@@ -341,6 +475,9 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The addon has its own preapproval; the principal amount stays unchanged. The purge closes the instance and complement once, after our email, and the exit suites cover all LISTA:B10 clauses on real A1 rows where required.
 - **Evidence:** Purchase screen and purge preview captures; read-only addon, complement, principal and outbox rows; sandbox preapproval and cancellation records; B10 integration and E2E P0 CI results.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
+- **Coverage:**
+  - The purchase from the screen, its own preapproval, the deletion preview with the addon and its price, and our email before the cancellation: `e2e: billing/billing-24-addon-end-to-end.spec.ts:recurring addon bought from the screen is authorized on its own preapproval (PR)` and `e2e: billing/billing-24-addon-end-to-end.spec.ts:deleting the listing names the addon and its price, then A6 mails before cancelling (PR)`.
+  - Authorizing the real sandbox checkout: `sólo MP real`.
 
 ### S22 — B13b moderation, unpublication, withdrawal and action 20 (HOS-1625)
 
@@ -354,6 +491,12 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** The unpublish and moderation surfaces name the live recurring boost and offer its withdrawal. Withdrawal closes its own instance after our email and before the provider cancellation, without changing the principal. Action 20 shows the version diff, preserves earlier purchases, retires and restores saleability, and rejects the unpermitted admin. Total retirement of live purchases is outside this smoke and belongs to HOS-2097.
 - **Evidence:** Dialog, email, My Account, withdrawal and editor captures; read-only instance, complement, product, version, principal and outbox rows; sandbox preapproval and cancellation records; E2E P0 CI result.
 - **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3.
+- **Coverage:**
+  - Step 1, the unpublish dialog names the boost, the continuing charge and the withdrawal link: `e2e: billing/billing-26-unpublish-recurring-addon.spec.ts:the confirmation names the recurring feature and its continuing charge and offers withdrawal (PR)`. Unpublishing and publishing again: `hueco`.
+  - Step 2, the moderation dialog, email and My Account notice name the boost: `e2e: billing/billing-25-moderation-recurring-addon.spec.ts:the moderation notice names the charged recurring feature, offers withdrawal, and withdrawal cancels it (PR)`.
+  - Step 3, withdrawal sends our email before the provider cancellation: the same `billing-25` test (PR); it checks that the principal is not cancelled, not its amount. Mercado Pago's cancellation email: `sólo MP real`.
+  - Step 4, create, version diff, anchored purchases and retire: `e2e: admin/adm-22-addon-version-editor.spec.ts:Publicar una versión muestra qué cambia contra la vigente y deja las compras previas en su versión (PR)`. Restoring the product to sale: `hueco`.
+  - Step 5, the editor link absent and the API rejecting: `e2e: admin/adm-22-addon-version-editor.spec.ts:un admin sin SUPER_ADMIN no tiene el editor (PR)`; the admin route itself is not opened.
 
 ### S23 — B12 plan migration and price increase (HOS-1616)
 
@@ -368,6 +511,14 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Expected:** Retiring moves nobody. Each email carries the customer's own date. The amount mutates seven days before that date, after our email, on the same preapproval, and is verified by reading it back. The annual customer is untouched. Cancelling leaves applied rows alone and notifies each pending customer.
 - **Evidence:** Preview and retired-versions captures; the four emails (ours before the provider's); read-only preapproval, scope row and outbox records; CI results of TEST:B12:8, TEST:B12:9, TEST:B12:10 and the E2E P0 TEST:B12:12.
 - **Covers:** AC:B12:8, AC:B12:9, AC:B12:10, AC:B12:11; TEST:B12:8, TEST:B12:10, TEST:B12:11, TEST:B12:12.
+- **Coverage:**
+  - Step 1, retiring by action 18 moves nobody: `hueco` (no assertion on amounts, dates or entitlements right after retiring).
+  - Step 2, the preview per customer: `e2e: admin/adm-23-plan-migration-preview.spec.ts:Dado un plan retirado con clientes, SUPER_ADMIN ve a cada cliente con subida o bajada, precios y fecha; su cuenta queda excluida; destino no vendible se rechaza y el lanzamiento guarda plazos (PR)` (the version label is not checked). The announcement email per customer: `e2e: billing/billing-27-plan-migration-end-to-end.spec.ts:the first contact notice states the date and both prices (PR)`.
+  - Step 3, the price increase with the 60-day notice and the live promo: `hueco`.
+  - Step 4, our third email before the amount mutation and `transaction_amount` read back: `e2e: billing/billing-27-plan-migration-end-to-end.spec.ts:S37 mutates the card amount only after our mails, waits for paused and grace, and applies the manual payer without the provider (PR)`, for a retirement, not an increase. Mercado Pago's amount-change email: `sólo MP real`.
+  - Step 5, the retired versions list: `hueco`.
+  - Step 6, cancelling a migration and the «nothing changes» email: `hueco`.
+  - The annual customer untouched: `hueco`.
 
 ### Sign-off
 
@@ -391,6 +542,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Read-only query on `subscriptions` and `provider_notification` from the admin
   database.
 - **Covers:** TEST:B3:36 (real checkout); AC:B3:34 (checkout confirmed).
+- **Coverage:**
+  - The owner's real card and checkout: `sólo MP real`. The simulated counterpart of `ACTIVE` is S1 step 3. `provider_notification`: `hueco` (see S1).
 
 ### P2 — Refund (revocation from the admin panel)
 
@@ -402,6 +555,9 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The subscription is cancelled; the payment shows a full refund.
 - **Evidence:** Read-only query on `subscriptions`, `payments`, and `payment_refunds`.
 - **Covers:** H-11 (return via admin panel revocation).
+- **Coverage:**
+  - Steps 1–2, the revocation cancels and creates a full refund request: `e2e: billing/billing-10-admin-revocation.spec.ts:ACTIVE revocation shows the full refund and sends our notice before provider cancellation (PR)`.
+  - Step 3, the refund executed at the provider: `sólo MP real` (e2e stops at `REQUESTED`, or settles it as an external refund). The refund from the admin end to end: `en curso: HOS-2153`.
 
 ### P3 — Mercado Pago email
 
@@ -411,6 +567,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
   (do not quote email text as a contract — it has not been measured).
 - **Evidence:** Screenshot of the email in the inbox (subject, date, presence).
 - **Covers:** Mercado Pago transactional emails to the customer.
+- **Coverage:**
+  - All steps: `sólo MP real`.
 
 ### P4 — Edge cache on production
 
@@ -422,6 +580,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** Same behavior as on staging: cache HIT, then REVALIDATED or MISS after a change.
 - **Evidence:** `curl -I https://<production-domain>/<listing-slug>/` before and after the change.
 - **Covers:** Cloudflare edge cache in production.
+- **Coverage:**
+  - All steps: `sólo entorno real (Cloudflare)`.
 
 ### P5 — Cron schedules on the first day
 
@@ -438,6 +598,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
   Sentry monitors: see [Cutover smoke: the Sentry cron monitors](../../scripts/cutover/README.md#cutover-smoke-the-sentry-cron-monitors).
 - **Covers:** Cron schedules on production, the first day (includes
   `billing-reconciliation-sweep` and `subscription-renewal-notice`).
+- **Coverage:**
+  - All steps: `sólo entorno real (Sentry, cron scheduler)`.
 
 ### P6 — Real plan change
 
@@ -448,6 +610,9 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The successor activates before the predecessor closes.
 - **Evidence:** Route response, provider read, subscription rows and cron panel.
 - **Covers:** AC:B8b:8, AC:B8b:24.
+- **Coverage:**
+  - Step 1, the job in the cron panel: `sólo entorno real (cron scheduler)`.
+  - Step 2 with the owner's card: `sólo MP real`. The order successor-before-predecessor is simulated in S15 step 2.
 
 ### P7 — Real pause and resume (HOS-1580, HOS-1581)
 
@@ -458,6 +623,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The preapproval moves from `paused` to `authorized`, and its next charge date matches the screen.
 - **Evidence:** Owner screen, subscription and pause rows, and read-only provider preapproval reads.
 - **Covers:** AC:B8b:22, AC:B8b:23, AC:B8b:26; TEST:B8b:25, TEST:B8b:26.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S16 steps 1–2.
 
 ### P8 — Temporary courtesy and revocation (HOS-1590)
 
@@ -467,6 +634,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The subscription moves `PAUSED · COURTESY` → `ACTIVE`; the next charge dates agree, and both provider emails are observed.
 - **Evidence:** Read-only subscription, pause, grant and outbox rows; read-only provider preapproval reads; both provider emails and our notice.
 - **Covers:** AC:B9b:11, AC:B9b:13, AC:B9b:14; TEST:B9b:11, TEST:B9b:13, TEST:B9b:14, TEST:B9b:15.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated parts and the gaps are in S17.
 
 ### P9 — Real addon purchase (HOS-1593)
 
@@ -475,6 +644,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The plan and addon have separate charges and preapprovals; the one-time order has its own payment on an `ACTIVE` instance.
 - **Evidence:** Owner account responses, read-only provider records, card summary, provider email, and read-only addon/payment rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:3, AC:B10:4; TEST:B10:1, TEST:B10:2, TEST:B10:3, TEST:B10:4, TEST:B10:5.
+- **Coverage:**
+  - All steps: `sólo MP real`. The recurring half is simulated in S18; the one-time half is deferred to HOS-2094.
 
 ### P10 — Real purged-listing addon cancellation (HOS-1594)
 
@@ -483,6 +654,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The addon and its complement are `CANCELLED`, our notice precedes cancellation, the principal stays active, and the addon has no later charge.
 - **Evidence:** Read-only instance, complement, principal, outbox and provider records; both emails and subsequent provider charge history.
 - **Covers:** AC:B10:6; TEST:B10:7.
+- **Coverage:**
+  - All steps: `sólo MP real`. The order of our notice and the cancellation is simulated in S19 step 1.
 
 ### P11 — Phase 3 real recurring addon purchase (HOS-1595)
 
@@ -492,6 +665,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Evidence:** Owner account screen and purchase response, read-only provider and payment records, card statement, provider email, and read-only addon instance rows.
 - **Covers:** AC:B10:1, AC:B10:2, AC:B10:11; TEST:B10:13 and the Phase 3 production go-live smoke.
 - **Nota:** pago único: ver HOS-2094.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S21.
 
 ### P12 — B10 real recurring addon and exit smoke (HOS-1596)
 
@@ -500,6 +675,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The addon reaches `ACTIVE` with a separate preapproval and charge, while the principal amount stays unchanged. Purging closes the addon and complement once; our notice arrives before cancellation and no later addon charge occurs.
 - **Evidence:** Owner purchase screen and deletion preview; read-only provider, addon, complement, principal, payment and outbox records; card statement and both email observations; E2E P0 CI result.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S21.
 
 ### P13 — B13b real owner withdrawal (HOS-1625)
 
@@ -508,6 +685,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** The boost and its complement become `CANCELLED`, the principal remains active and its amount unchanged, the provider preapproval is cancelled after our email, and the boost has no next charge. Action 20 is not executed in production smoke. Total retirement of live purchases belongs to HOS-2097.
 - **Evidence:** Owner confirmation and withdrawal captures; read-only addon, complement, principal and outbox rows; provider preapproval and charge history; both email observations; E2E P0 CI result.
 - **Covers:** AC:B13b:1, AC:B13b:2, AC:B13b:3, AC:B13b:4; TEST:B13b:1, TEST:B13b:2, TEST:B13b:3. The editor and retirement coverage is from staging S22 and CI, not a production action.
+- **Coverage:**
+  - All steps: `sólo MP real`. The simulated counterpart is S22 steps 1–3.
 
 ### P14 — B12 real price increase mutation (HOS-1616)
 
@@ -516,6 +695,8 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Expected:** No charge at the new price before the account's date; the amount mutates seven days before it, after our email, on the same preapproval; on the date the subscription moves to the new version and the charge is the new amount.
 - **Evidence:** Announcement and both emails; read-only preapproval, scope row, scheduled change and payment records; card statement.
 - **Covers:** AC:B12:8, AC:B12:9; TEST:B12:10, TEST:B12:12. Retirement mutation in production is covered by staging S23 and CI, not a production action.
+- **Coverage:**
+  - All steps: `sólo MP real`. The mutation order is simulated in S23 step 4, for a retirement only; the price increase is a `hueco` (S23 step 3).
 
 ### Sign-off
 
