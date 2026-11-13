@@ -131,7 +131,9 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
 
     test('covers opening, registering and renewing a manual installment', async ({ page }) => {
         test.setTimeout(300_000);
-        if (!world || !subscriber) throw new Error('Expected the Partner billing test world.');
+        const activeWorld = world;
+        if (!activeWorld || !subscriber)
+            throw new Error('Expected the Partner billing test world.');
         const actors = subscriber;
         const partnerId = partnerIds[0];
         if (!partnerId) throw new Error('Expected the Partner fixture id.');
@@ -209,7 +211,7 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
                 jobName: 'email-outbox-sender',
                 adminCookie: actors.admin.sessionCookie
             });
-            const firstMail = await world.mailCapture.waitForMail({
+            const firstMail = await activeWorld.mailCapture.waitForMail({
                 to: actors.user.email,
                 subject: SUBJECT,
                 timeoutMs: 30_000
@@ -285,7 +287,7 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
         });
 
         await test.step('Point 3: renewal opens one installment and sends one email', async () => {
-            await world.fakeServer.setClock({ at: nextChargeAt });
+            await activeWorld.fakeServer.setClock({ at: nextChargeAt });
             await runCron({
                 jobName: 'manual-installment-open',
                 adminCookie: actors.admin.sessionCookie
@@ -345,7 +347,7 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
                 adminCookie: actors.admin.sessionCookie
             });
             const mailsToUser = () =>
-                world.mailCapture
+                activeWorld.mailCapture
                     .mailsTo({ to: actors.user.email })
                     .filter((mail) => mail.subject === SUBJECT);
             await expect.poll(() => mailsToUser().length, { timeout: 30_000 }).toBe(2);
@@ -402,7 +404,7 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
             );
             expect(renewalDue).toBe(norm(`Vence el ${formatMarketDate(graceEndsAt)}`));
             await expect(card.locator('p').nth(3)).toHaveText(HOW_TO_PAY);
-            expect(world.fakeServer.requests()).toHaveLength(0);
+            expect(activeWorld.fakeServer.requests()).toHaveLength(0);
         });
     });
 });
