@@ -213,3 +213,69 @@ export async function monthlyOptionForAnySlug(args: { readonly slug: string }): 
     if (!id) throw new Error(`No current monthly option for ${args.slug}.`);
     return id;
 }
+
+/** Insert a published venue for a case-local featured-listing scenario. */
+export async function insertVenue(args: {
+    readonly ownerId: string;
+    readonly destinationId: string;
+    readonly name: string;
+}): Promise<{ readonly id: string }> {
+    const rows = await execSQL<{ id: string }>(
+        `INSERT INTO venues (
+             slug, name, summary, description, type, owner_id, destination_id,
+             business_lines, publication_status, inactive_since, deadlines_version
+         ) VALUES ($1, $2, 'E2E summary', 'E2E description', 'RESTAURANT', $3, $4,
+                   ARRAY['food']::text[], 'PUBLISHED', NOW(), 1)
+         RETURNING id`,
+        [`hos2138-${randomUUID()}`, args.name, args.ownerId, args.destinationId]
+    );
+    const id = rows[0]?.id;
+    if (!id) throw new Error('insertVenue: insert returned no id.');
+    return { id };
+}
+
+/** Insert a published excursion for a case-local featured-listing scenario. */
+export async function insertExperience(args: {
+    readonly ownerId: string;
+    readonly destinationId: string;
+    readonly name: string;
+}): Promise<{ readonly id: string }> {
+    const rows = await execSQL<{ id: string }>(
+        `INSERT INTO experiences (
+             slug, name, summary, description, type, owner_id, destination_id,
+             publication_status, inactive_since, deadlines_version
+         ) VALUES ($1, $2, 'E2E summary', 'E2E description', 'EXCURSION', $3, $4,
+                   'PUBLISHED', NOW(), 1)
+         RETURNING id`,
+        [`hos2138-${randomUUID()}`, args.name, args.ownerId, args.destinationId]
+    );
+    const id = rows[0]?.id;
+    if (!id) throw new Error('insertExperience: insert returned no id.');
+    return { id };
+}
+
+/** Delete only venue and experience rows created by a case. */
+export async function deleteVerticalListings(args: {
+    readonly venueIds: readonly string[];
+    readonly experienceIds: readonly string[];
+}): Promise<void> {
+    if (args.venueIds.length > 0)
+        await execSQL('DELETE FROM venues WHERE id = ANY($1::uuid[])', [args.venueIds]);
+    if (args.experienceIds.length > 0)
+        await execSQL('DELETE FROM experiences WHERE id = ANY($1::uuid[])', [args.experienceIds]);
+}
+
+/** Read the current plan and version ids for a catalog slug and vertical. */
+export async function currentPlanVersion(args: {
+    readonly slug: string;
+}): Promise<{ readonly planId: string; readonly versionId: string }> {
+    const rows = await execSQL<{ plan_id: string; version_id: string }>(
+        `SELECT p.id AS plan_id, pv.id AS version_id
+           FROM plan p JOIN plan_version pv ON pv.plan_id = p.id
+          WHERE p.slug = $1 AND pv.current = true`,
+        [args.slug]
+    );
+    const row = rows[0];
+    if (!row) throw new Error(`No current plan version for ${args.slug}.`);
+    return { planId: row.plan_id, versionId: row.version_id };
+}
