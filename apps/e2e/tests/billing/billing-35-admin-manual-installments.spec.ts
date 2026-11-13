@@ -380,7 +380,6 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
             };
         };
         const daysBefore = (days: number) => new Date(T2.getTime() - days * DAY_MS);
-
         await test.step('P1 and P5 (AC:B5:19): MP6 previews write nothing; marks 20 and 2 hang the new row', async () => {
             const postTerminationMark = 'COBRO_POSTERIOR_A_LA_BAJA';
             const cases = [
@@ -404,6 +403,7 @@ test.describe('TEST:HOS-2160 admin manual installments: previews, unpaid, reimpu
                     cookie: actors.admin.sessionCookie,
                     adminId: actors.admin.id,
                     seededInstallmentId: seededId,
+                    seededStatus: installment,
                     periodStart: period,
                     mark,
                     proofRef: `hos2160-${name}-${randomUUID()}`

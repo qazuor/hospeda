@@ -197,6 +197,7 @@ export async function exerciseUnallocatedManualPayment(args: {
     readonly cookie: string;
     readonly adminId: string;
     readonly seededInstallmentId: string;
+    readonly seededStatus: 'REGISTERED' | 'DECLARED_UNPAID';
     readonly periodStart: Date;
     readonly mark: 'COBRO_DUPLICADO' | 'COBRO_POSTERIOR_A_LA_BAJA';
     readonly proofRef: string;
@@ -243,15 +244,11 @@ export async function exerciseUnallocatedManualPayment(args: {
     expect(rows).toHaveLength(2);
     expect(rows.find(({ id }) => id === args.seededInstallmentId)).toEqual({
         id: args.seededInstallmentId,
-        status: before.manualPayments.find(({ id }) => id === args.seededInstallmentId)?.status,
+        status: args.seededStatus,
         entry: 'INSTALLMENT',
         period_start: args.periodStart,
         proof_ref: null,
-        registered_by:
-            before.manualPayments.find(({ id }) => id === args.seededInstallmentId)?.status ===
-            'REGISTERED'
-                ? args.adminId
-                : null
+        registered_by: args.seededStatus === 'REGISTERED' ? args.adminId : null
     });
     expect(rows.find(({ id }) => id === result.data.manualPaymentId)).toEqual({
         id: result.data.manualPaymentId,
