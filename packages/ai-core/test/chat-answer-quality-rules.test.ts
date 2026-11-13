@@ -41,8 +41,8 @@ it('does not quote forbidden Spanish or Portuguese examples in any chat feature 
         'otra opción',
         'depende…',
         'Claro',
-        'sí',
-        'la capacidad',
+        // "sí" and "la capacidad" stay quoted in the reply-language sentence on
+        // purpose: HOS-2113 measured more Spanish leaking without them.
         'imagina',
         'ven',
         'déjate',
@@ -272,8 +272,10 @@ describe.each(CHAT_FEATURES)('DEFAULT_RULES.%s — round 2 answer-quality rules'
         expect(rules).toContain(
             'the rule examples above and the listing data are Spanish illustrations of WHAT to say, not phrases to copy'
         );
-        expect(rules).toContain('never leave any Spanish word in the reply');
-        expect(rules).toContain('even a lone yes/no response or article');
+        // HOS-2113 measured that dropping these lone-word examples made nano leak
+        // MORE Spanish into Portuguese answers, so they stay quoted on purpose.
+        expect(rules).toContain('not even a lone word such as "sí" instead of "yes"/"sim"');
+        expect(rules).toContain('"la capacidad" instead of "the capacity"/"a capacidade"');
     });
 
     it('HOS-2102 the voseo examples apply only to Spanish answers', () => {

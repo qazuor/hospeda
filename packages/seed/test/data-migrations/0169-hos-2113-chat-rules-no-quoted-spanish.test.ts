@@ -61,7 +61,6 @@ const HOS_2113_CLAUSES = [
     'never close an over-capacity answer with the confirmation phrase used for groups that fit, and never suggest',
     'When your context states that the listing does not inform pets, NEVER use any verb or adjective meaning acceptance, permission or welcome next to pets or animals, in any language',
     'never say they are rejected either: say only that the listing does not inform it',
-    'never leave any Spanish word in the reply, even a lone yes/no response or article.',
     'and do not begin with an affirmative or enthusiastic opener.',
     'Spanish output MUST use the rioplatense voseo register: "imaginate" / "vení" / "dejate" / "elegí" / "descubrí"; never use tuteo imperatives.',
     'Never address the reader with tuteo pronouns or with any vosotros form.'
@@ -70,8 +69,6 @@ const HOS_2113_CLAUSES = [
 /** Retired Spanish example phrases the rules carried before HOS-2113. */
 const RETIRED_PHRASES = [
     'such as "Claro" or "Sure"',
-    'not even a lone word such as "sí"',
-    '"la capacidad" instead of',
     'do not use the words "acepta", "aceptan", "admite", "admiten"',
     '"aceita(m)" next to "animais"',
     '"repartirse", "otra opción"',
