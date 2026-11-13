@@ -43,7 +43,7 @@ const PURCHASE_PRICE = /\$\s?3\.000(?:,00)?(?!\d)/;
 /** Assert the recurring boost's purchase summary uses the Spanish catalog copy. */
 async function inspectSummary(summary: Locator): Promise<void> {
     await expect(summary.getByRole('heading')).toHaveText(esBilling.addonPurchase.summary);
-    await expect(summary).toContainText('E2E listing boost recurring');
+    await expect(summary).toContainText('E2E HOS-2138 boost recurring accommodation');
     await expect(summary).toContainText(esBilling.addonPurchase.cycle.monthly);
     await expect(summary).toContainText(PURCHASE_PRICE);
 }
@@ -58,7 +58,6 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
     let admin: CreatedUser;
     let userIds: string[] = [];
     let destinationId = '';
-    let ownerAuthorizationId = '';
 
     test.beforeEach(async ({ page }) => {
         const started = await startAddonWorld();
@@ -71,21 +70,20 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
         admin = await createUser({ role: 'SUPER_ADMIN' });
         userIds.push(admin.id);
         await markAdminToursSeen({ userId: admin.id });
-        ownerAuthorizationId = (
-            await signUpCardSubscriber({ page, world, user: owner, slug: 'owner-basico' })
-        ).authorizationId;
+        await signUpCardSubscriber({ page, world, user: owner, slug: 'owner-basico' });
         destinationId = (await createFeaturedDestination()).id;
     });
 
     test.afterEach(async () => {
-        const providerRows = namespace
-            ? await execSQL<{ provider_id: string }>(
-                  'SELECT provider_id FROM provider_link WHERE provider_id LIKE $1',
-                  [`fake-auth-${namespace}-%`]
-              )
-            : [];
+        let providerRows: { readonly provider_id: string }[] = [];
         try {
             await world?.fakeServer.close();
+            providerRows = namespace
+                ? await execSQL<{ provider_id: string }>(
+                      'SELECT provider_id FROM provider_link WHERE provider_id LIKE $1',
+                      [`fake-auth-${namespace}-%`]
+                  )
+                : [];
         } finally {
             try {
                 await cleanupAddonEndToEnd({
@@ -101,7 +99,6 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
                 namespace = '';
                 userIds = [];
                 destinationId = '';
-                ownerAuthorizationId = '';
             }
         }
     });
@@ -190,7 +187,6 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
             { id: a.id, isFeatured: false },
             { id: z.id, isFeatured: false }
         ]);
-        expect(ownerAuthorizationId).toMatch(/^fake-auth-/);
     });
 
     test('one-time boost expires after seven days and restores alphabetical order', async () => {

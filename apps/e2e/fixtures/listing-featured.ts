@@ -5,26 +5,57 @@ import { execSQL, getDbPool } from './db-helpers.ts';
 
 const catalog = {
     recurring: {
-        productId: 'c2138000-0000-4000-8000-000000000001',
-        addonId: 'c2138000-0000-4000-8000-000000000002',
-        versionId: 'c2138000-0000-4000-8000-000000000003',
-        slug: 'e2e-hos2138-featured-recurring',
-        name: 'E2E listing boost recurring',
+        accommodation: {
+            productId: '21380000-0000-4000-8000-000000000003',
+            addonId: '21380000-0000-4000-8000-000000000001',
+            versionId: '21380000-0000-4000-8000-000000000002'
+        },
+        venue: {
+            productId: '21380000-0000-4000-8000-000000000009',
+            addonId: '21380000-0000-4000-8000-000000000007',
+            versionId: '21380000-0000-4000-8000-000000000008'
+        },
+        experience: {
+            productId: '21380000-0000-4000-8000-000000000015',
+            addonId: '21380000-0000-4000-8000-000000000013',
+            versionId: '21380000-0000-4000-8000-000000000014'
+        }
+    },
+    'one-time': {
+        accommodation: {
+            productId: '21380000-0000-4000-8000-000000000006',
+            addonId: '21380000-0000-4000-8000-000000000004',
+            versionId: '21380000-0000-4000-8000-000000000005'
+        },
+        venue: {
+            productId: '21380000-0000-4000-8000-000000000012',
+            addonId: '21380000-0000-4000-8000-000000000010',
+            versionId: '21380000-0000-4000-8000-000000000011'
+        },
+        experience: {
+            productId: '21380000-0000-4000-8000-000000000018',
+            addonId: '21380000-0000-4000-8000-000000000016',
+            versionId: '21380000-0000-4000-8000-000000000017'
+        }
+    }
+} as const;
+
+const catalogProperties = {
+    recurring: {
         chargeKind: 'PERIODICO',
         validity: 'WHILE_SUBSCRIPTION_ALIVE',
         days: null,
-        cycle: 'monthly'
+        cycle: 'monthly',
+        price: 300000,
+        className: 'recurring'
     },
     'one-time': {
-        productId: 'c2138000-0000-4000-8000-000000000004',
-        addonId: 'c2138000-0000-4000-8000-000000000005',
-        versionId: 'c2138000-0000-4000-8000-000000000006',
-        slug: 'e2e-hos2138-featured-once',
-        name: 'E2E listing boost once',
         chargeKind: 'UNA_VEZ',
         validity: 'FIXED_DAYS',
         days: 7,
-        cycle: null
+        cycle: null,
+        price: 150000,
+        className: 'one-time'
     }
 } as const;
 
@@ -33,50 +64,72 @@ export async function ensureFeaturedBoostCatalog(args: {
     readonly kind: 'recurring' | 'one-time';
     readonly vertical: 'accommodation' | 'venue' | 'experience';
 }): Promise<{ readonly productId: string; readonly addonVersionId: string }> {
-    const item = catalog[args.kind];
+    const ids = catalog[args.kind][args.vertical];
+    const properties = catalogProperties[args.kind];
+    const slug = `e2e-hos2138-featured-${properties.className}-${args.vertical}`;
+    const name = `E2E HOS-2138 boost ${properties.className} ${args.vertical}`;
     const client = await getDbPool().connect();
     try {
         await client.query('BEGIN');
         await client.query("SELECT pg_advisory_xact_lock(hashtext('HOS-2138 featured catalog'))");
         await client.query(
             `INSERT INTO addon (id, slug, name) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`,
-            [item.addonId, item.slug, item.name]
+            [ids.addonId, slug, name]
         );
-        await client.query(
-            `INSERT INTO addon_version (id, addon_id, validity, validity_days, scope_type)
-             VALUES ($1, $2, $3, $4, 'LISTING') ON CONFLICT DO NOTHING`,
-            [item.versionId, item.addonId, item.validity, item.days]
-        );
+        const existingVersion = await client.query('SELECT id FROM addon_version WHERE id = $1', [
+            ids.versionId
+        ]);
+        if (existingVersion.rowCount === 0) {
+            await client.query(
+                `INSERT INTO addon_version (id, addon_id, validity, validity_days, scope_type)
+                 VALUES ($1, $2, $3, $4, 'LISTING')`,
+                [ids.versionId, ids.addonId, properties.validity, properties.days]
+            );
+            await client.query(
+                `INSERT INTO addon_version_entitlement (addon_version_id, key)
+                 VALUES ($1, 'featured_listing')`,
+                [ids.versionId]
+            );
+        }
         await client.query(
             `INSERT INTO addon_product
              (id, addon_id, version_id, price, currency, charge_kind, cycle, compatible_verticals)
-             VALUES ($1, $2, $3, 300000, 'ARS', $4, $5,
-                     ARRAY['accommodation', 'venue', 'experience']::varchar[])
+             VALUES ($1, $2, $3, $4, 'ARS', $5, $6, ARRAY[$7]::varchar[])
              ON CONFLICT DO NOTHING`,
-            [item.productId, item.addonId, item.versionId, item.chargeKind, item.cycle]
+            [
+                ids.productId,
+                ids.addonId,
+                ids.versionId,
+                properties.price,
+                properties.chargeKind,
+                properties.cycle,
+                args.vertical
+            ]
         );
         const check = await client.query(
             `SELECT ap.id FROM addon_product ap JOIN addon_version av ON av.id = ap.version_id
              JOIN addon a ON a.id = ap.addon_id
+             JOIN addon_version_entitlement ave ON ave.addon_version_id = av.id
              WHERE ap.id = $1 AND a.id = $2 AND a.slug = $3 AND av.id = $4
                AND av.validity = $5 AND av.validity_days IS NOT DISTINCT FROM $6::integer
-               AND av.scope_type = 'LISTING' AND ap.charge_kind = $7
-               AND ap.cycle IS NOT DISTINCT FROM $8::text AND ap.price = 300000
-               AND ap.currency = 'ARS' AND $9 = ANY(ap.compatible_verticals)`,
+               AND av.scope_type = 'LISTING' AND ave.key = 'featured_listing'
+               AND ap.charge_kind = $7 AND ap.cycle IS NOT DISTINCT FROM $8::text
+               AND ap.price = $9 AND ap.currency = 'ARS'
+               AND $10 = ANY(ap.compatible_verticals)`,
             [
-                item.productId,
-                item.addonId,
-                item.slug,
-                item.versionId,
-                item.validity,
-                item.days,
-                item.chargeKind,
-                item.cycle,
+                ids.productId,
+                ids.addonId,
+                slug,
+                ids.versionId,
+                properties.validity,
+                properties.days,
+                properties.chargeKind,
+                properties.cycle,
+                properties.price,
                 args.vertical
             ]
         );
-        if (check.rowCount !== 1)
-            throw new Error(`Invalid HOS-2138 catalog row ${item.productId}.`);
+        if (check.rowCount !== 1) throw new Error(`Invalid HOS-2138 catalog row ${ids.productId}.`);
         await client.query('COMMIT');
     } catch (error) {
         await client.query('ROLLBACK').catch(() => undefined);
@@ -84,12 +137,7 @@ export async function ensureFeaturedBoostCatalog(args: {
     } finally {
         client.release();
     }
-    await execSQL(
-        `INSERT INTO addon_version_entitlement (addon_version_id, key)
-         VALUES ($1, 'featured_listing') ON CONFLICT DO NOTHING`,
-        [item.versionId]
-    );
-    return { productId: item.productId, addonVersionId: item.versionId };
+    return { productId: ids.productId, addonVersionId: ids.versionId };
 }
 
 /** Insert a private city destination owned by the case's fixtures. */
