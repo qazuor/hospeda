@@ -287,7 +287,7 @@ describe('regression: "all day" or unset never yields permission (HOS-2098)', ()
             'If there are no such lines, the minimum age covers the whole venue at every hour.'
         );
         expect(rules).toContain(
-            'the lines say the minimum age applies at every hour, there are no such lines, a sector text is not only a name, or the visitor names no time, meal, area or activity (only a day, or nothing, for example "¿pueden entrar menores?" or "el sábado", even when that day also has a line without minimum age) — never start with "sí" and do NOT answer "yes" or use permission wording'
+            'the lines say the minimum age applies at every hour, there are no such lines, a sector text is not only a name, or the visitor names no time, meal, area or activity (only a day, or nothing, for example "¿pueden entrar menores?" or "el sábado", even when that day also has a line without minimum age) — never begin with an affirmative response and do NOT give an affirmative response or use wording that grants permission'
         );
     });
 });
