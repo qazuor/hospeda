@@ -1,5 +1,6 @@
 export * from './action-reason';
 export * from './administrative-authorization';
+export * from './catalog-sort';
 export * from './correlation';
 export * from './foreign-row';
 export * from './identifier';

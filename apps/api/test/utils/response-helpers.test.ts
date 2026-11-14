@@ -300,3 +300,88 @@ describe('handleRouteError — RefinedBodyValidationError (HOS-607)', () => {
         expect(typeof body.error.userFriendlyMessage).toBe('string');
     });
 });
+
+describe('invalidItems: "drop" (HOS-2177)', () => {
+    const schema = z.object({ id: z.string(), required: z.string().min(3) });
+    const pagination = {
+        page: 1,
+        pageSize: 10,
+        total: 3,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+    };
+
+    it('answers a 200 listing without the invalid row and logs ONE aggregated error', () => {
+        const { ctx, calls } = createMockContext();
+        const items = [
+            { id: '1', required: 'valid' },
+            { id: '2', required: 'x' },
+            { id: '4', required: 'y' },
+            { id: '3', required: 'also valid' }
+        ];
+
+        createPaginatedResponse(items, pagination, ctx, 200, schema, { invalidItems: 'drop' });
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.status).toBe(200);
+        const envelope = calls[0]?.body as { success: boolean; data: { items: { id: string }[] } };
+        expect(envelope.success).toBe(true);
+        expect(envelope.data.items.map((i) => i.id)).toEqual(['1', '3']);
+        expect(apiLogger.error).toHaveBeenCalledTimes(1);
+        const [payload] = vi.mocked(apiLogger.error).mock.calls[0] as unknown as [
+            { droppedCount: number; droppedIds: string[]; summary: string; path: string }
+        ];
+        expect(payload.droppedCount).toBe(2);
+        expect(payload.droppedIds).toEqual(['2', '4']);
+        expect(payload.summary).toContain('required');
+        expect(payload.path).toBe('/test');
+        expect(apiLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('caps the dropped ids in the log at 10', () => {
+        const { ctx } = createMockContext();
+        const items = [
+            { id: 'ok', required: 'valid' },
+            ...Array.from({ length: 15 }, (_, i) => ({ id: `bad-${i}`, required: 'x' }))
+        ];
+
+        createPaginatedResponse(items, pagination, ctx, 200, schema, { invalidItems: 'drop' });
+
+        const [payload] = vi.mocked(apiLogger.error).mock.calls[0] as unknown as [
+            { droppedCount: number; droppedIds: string[] }
+        ];
+        expect(payload.droppedCount).toBe(15);
+        expect(payload.droppedIds).toHaveLength(10);
+    });
+
+    it('throws when EVERY row fails (systemic drift must stay a 500)', () => {
+        const { ctx, calls } = createMockContext();
+        const items = [
+            { id: '1', required: 'x' },
+            { id: '2', required: 'y' }
+        ];
+
+        expect(() =>
+            createPaginatedResponse(items, pagination, ctx, 200, schema, { invalidItems: 'drop' })
+        ).toThrow(/Response payload does not match/i);
+        expect(calls).toHaveLength(0);
+        expect(apiLogger.error).toHaveBeenCalled();
+    });
+
+    it('answers an empty page normally in drop mode', () => {
+        const { ctx, calls } = createMockContext();
+
+        createPaginatedResponse([], pagination, ctx, 200, schema, { invalidItems: 'drop' });
+
+        expect(calls[0]?.status).toBe(200);
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('still throws by default when the option is omitted', () => {
+        const { ctx } = createMockContext();
+        expect(() =>
+            createPaginatedResponse([{ id: '2', required: 'x' }], pagination, ctx, 200, schema)
+        ).toThrow(/Response payload does not match/i);
+    });
+});
