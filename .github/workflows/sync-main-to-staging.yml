@@ -12,6 +12,12 @@
 # secret (Contents: read/write + Pull requests: read/write, scoped to this repo)
 # to have the sync PR run CI automatically. Without it, the PR still opens; just
 # re-trigger CI manually (a trivial push, or close/reopen).
+#
+# Author note: with `SYNC_PAT` set, the PR is authored by the PAT's owner, not
+# `github-actions[bot]`, so it loses the bot exemption in `validate-pr-title.yml`
+# and in the What's New promotion gate. That is why the title carries a
+# `[NOSPEC:...]` tag and the PR is opened with the `whats-new-none` label: both
+# hold for either author.
 name: Sync main to staging
 
 on:
@@ -57,5 +63,6 @@ jobs:
           fi
 
           gh pr create --base staging --head main \
-            --title "chore: back-merge main into staging (security sync)" \
+            --title "[NOSPEC:back-merge] chore: back-merge main into staging (security sync)" \
+            --label whats-new-none \
             --body "Auto-opened after a merge to \`main\` so \`staging\` does not fall behind on security fixes routed to \`main\` by Dependabot. Merge once CI is green. See the Dependabot security exception in CLAUDE.md."

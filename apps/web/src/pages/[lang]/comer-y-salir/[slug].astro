@@ -62,7 +62,7 @@ import type { DetailFaq, VenueOpeningHoursEntry } from '@/data/types';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -120,6 +120,11 @@ applyCacheHeaders({
             ? [primaryVenueTag, ...extraVenueTags]
             : [CACHE_TAG_COLLECTIONS.venue]
 });
+
+// HOS-2009: a 2xx answer flagged `no-store` is the API's degraded state (the
+// owner's effective set failed to resolve, paid sections withheld). Veto the
+// edge cache so the failure is not frozen in as "this owner did not pay".
+markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
 // --- Parallel secondary fetches ---
 const [reviewsSettled, faqsSettled] = await Promise.allSettled([

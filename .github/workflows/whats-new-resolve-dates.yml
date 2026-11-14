@@ -38,6 +38,11 @@
 # `sync-main-to-staging.yml` documents; both workflows share the fallback
 # `secrets.SYNC_PAT || secrets.GITHUB_TOKEN` for that reason.
 #
+# With `SYNC_PAT` set, the PR is authored by the PAT's owner and loses the bot
+# exemption in `validate-pr-title.yml` and in the promotion gate, so the title
+# carries a `[NOSPEC:...]` tag and the PR is opened with `whats-new-none` (same
+# reasoning as the author note in `sync-main-to-staging.yml`).
+#
 # =============================================================================
 # WHERE THE ACTUAL REWRITE LOGIC LIVES
 # =============================================================================
@@ -229,5 +234,6 @@ jobs:
           fi
 
           gh pr create --base staging --head "${BRANCH}" \
-            --title "chore(whats-new): resolve on-promotion markers (${MERGED_AT})" \
+            --title "[NOSPEC:whats-new-dates] chore(whats-new): resolve on-promotion markers (${MERGED_AT})" \
+            --label whats-new-none \
             --body "${BODY}"

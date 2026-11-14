@@ -562,6 +562,8 @@ export const createListRoute = (
     options: CreateOpenApiRouteInterface & {
         requestQuery?: Record<string, z.ZodTypeAny>; // Now optional - pagination is auto-added
         allowedQueryParams?: string[]; // Whitelist of additional allowed params
+        /** Public listings drop rows that fail the response schema instead of answering 500 (HOS-2177). */
+        invalidItems?: 'throw' | 'drop';
     }
 ) => {
     const app = createRouter();
@@ -644,7 +646,8 @@ export const createListRoute = (
                 typedResult.pagination,
                 ctx,
                 200,
-                options.responseSchema
+                options.responseSchema,
+                { invalidItems: options.invalidItems }
             );
         } catch (error) {
             return handleRouteError(error, ctx);

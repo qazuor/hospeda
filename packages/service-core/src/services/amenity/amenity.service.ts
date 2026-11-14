@@ -33,6 +33,7 @@ import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
+import { resolveCatalogSort } from '../../utils/catalog-sort';
 // generateAmenitySlug removed: JSONB name column dropped in SPEC-266 T-001.
 import {
     checkCanAddAmenityToAccommodation,
@@ -568,7 +569,12 @@ export class AmenityService extends BaseCrudRelatedService<
         // (data migration 0147) would otherwise reach the public filters.
         return this.model.findAll(
             { ...filterParams, deletedAt: null },
-            { page, pageSize },
+            {
+                page,
+                pageSize,
+                // HOS-2068: allow-listed sort only, with a deterministic tie-break.
+                ...resolveCatalogSort({ pagination: ctx.pagination })
+            },
             additionalConditions
         );
     }

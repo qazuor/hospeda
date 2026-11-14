@@ -244,14 +244,21 @@ async function request<T>({
                 };
             }
 
+            // HOS-2009: `no-store` on a 2xx is the API's degraded-state signal
+            // (public reads whose effective set failed to resolve). Surface it
+            // so the calling page can refuse to cache its own HTML at the edge.
+            const degraded = /\bno-store\b/i.test(response.headers?.get('cache-control') ?? '')
+                ? ({ degraded: true } as const)
+                : {};
+
             // API responses are wrapped in { success, data, metadata }
             const successBody = responseBody as ApiSuccessResponse<T>;
             if (successBody && typeof successBody === 'object' && 'data' in successBody) {
-                return { ok: true, data: successBody.data };
+                return { ok: true, data: successBody.data, ...degraded };
             }
 
             // Fallback: return raw body as data
-            return { ok: true, data: responseBody as T };
+            return { ok: true, data: responseBody as T, ...degraded };
         } catch (err) {
             if (err instanceof DOMException && err.name === 'AbortError') {
                 return {
