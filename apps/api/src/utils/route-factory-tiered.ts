@@ -472,6 +472,8 @@ export const createPublicListRoute = (options: PublicListRouteOptions) => {
     return createListRoute({
         ...routeOptions,
         tags,
+        // HOS-2177: one row failing the schema must not 500 the whole public listing.
+        invalidItems: 'drop',
         options: {
             ...routeOptions.options,
             skipAuth: true,

@@ -173,3 +173,59 @@ describe('apiClient X-Client-Locale header (HOS-605)', () => {
         expect(headers['X-Client-Locale']).toBeUndefined();
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-2009: surfacing the API's `Cache-Control: no-store` on a successful read
+// ---------------------------------------------------------------------------
+
+describe('apiClient degraded flag (HOS-2009)', () => {
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    function mockJsonFetch({ cacheControl }: { readonly cacheControl?: string }) {
+        return vi.fn(async () => ({
+            ok: true,
+            status: 200,
+            headers: new Headers(cacheControl ? { 'Cache-Control': cacheControl } : {}),
+            json: async () => ({ success: true, data: { id: 'v1' } })
+        })) as unknown as typeof fetch;
+    }
+
+    it('flags a 2xx answer carrying no-store as degraded', async () => {
+        const { apiClient } = await import('@/lib/api/client');
+        global.fetch = mockJsonFetch({ cacheControl: 'no-store' });
+
+        const result = await apiClient.get({ path: '/api/v1/public/venues/slug/x' });
+
+        expect(result).toMatchObject({ ok: true, degraded: true });
+    });
+
+    it('does not flag a normal answer', async () => {
+        const { apiClient } = await import('@/lib/api/client');
+        global.fetch = mockJsonFetch({ cacheControl: 'public, max-age=60' });
+
+        const result = await apiClient.get({ path: '/api/v1/public/venues/slug/x' });
+
+        expect(result.ok).toBe(true);
+        expect(result).not.toHaveProperty('degraded');
+    });
+
+    it('does not flag an answer without Cache-Control', async () => {
+        const { apiClient } = await import('@/lib/api/client');
+        global.fetch = mockJsonFetch({});
+
+        const result = await apiClient.get({ path: '/api/v1/public/venues/slug/x' });
+
+        expect(result).not.toHaveProperty('degraded');
+    });
+
+    it('flags list answers too', async () => {
+        const { apiClient } = await import('@/lib/api/client');
+        global.fetch = mockJsonFetch({ cacheControl: 'No-Store' });
+
+        const result = await apiClient.getList({ path: '/api/v1/public/venues' });
+
+        expect(result).toMatchObject({ ok: true, degraded: true });
+    });
+});

@@ -134,7 +134,7 @@ describe('carta.astro — SEO (canonical to listing, noindex, out of sitemap by 
 describe('carta.astro — cache headers mirror the listing', () => {
     it('imports and calls applyCacheHeaders, same as the listing', () => {
         expect(cartaSrc).toContain(
-            "import { applyCacheHeaders } from '@/lib/cache/response-cache'"
+            "import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache'"
         );
         expect(cartaSrc).toContain('applyCacheHeaders({');
         expect(listingSrc).toContain('applyCacheHeaders({');

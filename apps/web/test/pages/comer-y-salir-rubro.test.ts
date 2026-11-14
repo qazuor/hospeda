@@ -121,7 +121,7 @@ describe('comer-y-salir/rubro/[rubro]/index.astro', () => {
                 "import VenueFilterOptionsDegradation from '@/components/venue/VenueFilterOptionsDegradation.astro';"
             );
             expect(src).toMatch(/<VenueFilterOptionsDegradation\s+failed=\{/);
-            expect(src).not.toContain('markResponseDegraded');
+            expect(src).not.toContain('markResponseDegraded(');
             const helperImport = src.match(
                 /import\s*\{([\s\S]*?)\}\s*from\s*'@\/lib\/venue\/venue-listing-filters'/
             );

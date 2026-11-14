@@ -314,6 +314,32 @@ export function markResponseDegraded({ locals }: { readonly locals: App.Locals }
 }
 
 /**
+ * Mark the response degraded when any public API read it rendered came back
+ * flagged `degraded` (HOS-2009): the API answered 2xx with `Cache-Control:
+ * no-store`, meaning the owner's effective set could not be resolved and paid
+ * sections were withheld. Caching that HTML at the edge would present a
+ * transient failure as "this owner did not pay" until the TTL expired.
+ *
+ * Distinguishes "failed to resolve" (flagged) from "resolved: not entitled"
+ * (a normal, cacheable answer). Depends only on the API response, never on the
+ * visitor, so the page stays session-blind.
+ *
+ * @param params.locals - `Astro.locals` for the current request.
+ * @param params.results - The API results the page renders.
+ */
+export function markResponseDegradedFromApi({
+    locals,
+    results
+}: {
+    readonly locals: App.Locals;
+    readonly results: ReadonlyArray<{ readonly ok: boolean; readonly degraded?: true }>;
+}): void {
+    if (results.some((result) => result.ok && result.degraded === true)) {
+        markResponseDegraded({ locals });
+    }
+}
+
+/**
  * Whether the current render declared itself degraded.
  *
  * Read by middleware Step 11 to strip a shared-cacheable `Cache-Control` before
