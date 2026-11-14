@@ -146,7 +146,9 @@ render means its outage takes the panel down.
   the Hospeda database server.
 - Tracker and ingestion served from a **same-origin path behind Cloudflare** (OQ-4),
   reusing the `/api/relay/*` pattern of the PostHog proxy so ad-block recovery is
-  kept. Exact path and script name settled in T-0.
+  kept. Exact path and script name settled in T-0. Whatever T-0 picks must not
+  depend on `infra/cloudflare/posthog-proxy/`: that worker is deleted in the same
+  cut (§6.6).
 - One Umami website per surface: `hospeda-web`, `hospeda-admin`. Server events go
   to the website of the surface they describe (billing/onboarding facts →
   `hospeda-web`).
@@ -165,8 +167,8 @@ render means its outage takes the panel down.
 - New `packages/analytics/src/providers/umami-browser.ts`: wraps `window.umami`
   behind the existing browser interface; no-op when the tracker is not loaded.
 - `apps/api/src/lib/posthog.ts` → `apps/api/src/lib/analytics-client.ts`, which
-  returns a **fan-out client** during coexistence (PostHog + Umami) and only Umami
-  after the cut (OQ-2).
+  returns the Umami client only. There is no fan-out and no coexistence window
+  (OQ-2, direct cut).
 - Mapping:
   - `event` → Umami event name (unchanged, snake_case).
   - `properties` (already sanitized by `prepareAnalyticsEvent`) → event `data`.
@@ -231,7 +233,8 @@ render means its outage takes the panel down.
 
 ### 6.6 Removal
 
-After the cut (OQ-2): delete PostHog clients, env vars (registry, `env.ts`,
+Part of the cut itself (OQ-2, direct cut), shipped in the same release that turns
+Umami on: delete PostHog clients, env vars (registry, `env.ts`,
 `.env.example`, Coolify via `hops env-*`), CI references, the Cloudflare worker
 (and its Wrangler deploy), `scripts/posthog`, PostHog docs. Rewrite
 `docs/analytics/README.md` and `event-catalog.md` for Umami. Add an ADR
@@ -260,9 +263,10 @@ After the cut (OQ-2): delete PostHog clients, env vars (registry, `env.ts`,
 
 - AC-1 Staging and prod Umami instances run in Coolify, are backed up, and a
   restore was tested once (runbook entry).
-- AC-2 With `HOSPEDA_UMAMI_*` set, every server call site in §5.2 produces the
-  same event name and properties in Umami that it produces in PostHog (compared
-  over the coexistence window, ±5% on counts).
+- AC-2 With `HOSPEDA_UMAMI_*` set, every server call site in §5.2 produces in
+  Umami the same event name and properties it produced in PostHog. Verified by
+  adapter unit tests (payload per catalog event) and observed on Umami staging
+  before the cut; there is no prod count comparison (OQ-2).
 - AC-3 With Umami unreachable, no api request fails or slows by more than the
   adapter's timeout budget; errors are logged once per flush.
 - AC-4 A unit test fails if any catalog event exceeds Umami's limits.
@@ -280,6 +284,9 @@ After the cut (OQ-2): delete PostHog clients, env vars (registry, `env.ts`,
   green.
 - AC-10 HOS-1878's pending smoke checks (AC-P4, AC-P5) can be signed from Umami
   if the cut happens before they are observed.
+- AC-11 In the 48 h after the cut reaches prod, Umami prod shows pageviews and
+  at least the server events that occurred in that window; any gap is filed
+  before the prod smoke is signed.
 
 ## 10. Risks
 
@@ -299,7 +306,11 @@ After the cut (OQ-2): delete PostHog clients, env vars (registry, `env.ts`,
 - R-5 **Operational load**: two more stateful containers on the VPS (Umami and its
   own Postgres — disk, upgrades, backups).
 - R-6 **HOS-1878 verification gap** if PostHog is removed before its external
-  events occur. Mitigated by coexistence (OQ-2) and AC-10.
+  events occur. Mitigated by AC-10 (sign from Umami).
+- R-7 **Silent event loss after a direct cut.** An adapter bug drops events
+  until someone notices, with no PostHog to fall back on. Accepted because
+  traffic is still low (OQ-2). Mitigated by AC-2 (staging first) and AC-11
+  (48 h prod watch).
 
 ## 11. Open questions — all RESOLVED (owner, 2026-11-14)
 
@@ -312,12 +323,17 @@ funnel. The HOS-734 precedent stands; no new ADR for this point.
 *Rejected:* Umami only — would retire `entity_views`, need an ADR superseding
 HOS-734, and lose ad-blocked views in owner numbers.
 
-### OQ-2 · Coexistence or direct cut — RESOLVED: dual-write 2–4 weeks
+### OQ-2 · Coexistence or direct cut — RESOLVED: direct cut (revised 2026-11-14)
 
-Events go to both providers; counts are compared (AC-2) and HOS-1878's pending
-smokes can still be signed in PostHog prod. Then T-6 removes PostHog.
+One release turns Umami on and removes PostHog. No fan-out client, no
+coexistence window. Reason (owner): Hospeda has almost no traffic yet, so a ±5%
+count comparison over weeks would measure noise, PostHog history is discarded
+anyway (OQ-3), and HOS-1878's smokes can be signed from Umami (AC-10).
+Correctness is proven on staging (AC-2) and watched for 48 h in prod (AC-11);
+the residual risk is R-7.
 
-*Rejected:* direct cut.
+*Rejected:* dual-write for 2–4 weeks. It was the first decision earlier the same
+day and was reversed by the owner before implementation started.
 
 ### OQ-3 · PostHog history — RESOLVED: discard
 
@@ -361,14 +377,20 @@ Phases (each its own PR to `staging`, title `[HOS-2119] …`):
   filters needed by §6.5 for all four entity types. Output: a short note in
   `docs/` with the relay path and the answer to R-1.
 - **T-1 Infra** — staging + prod instances, backups, env vars (AC-1).
-- **T-2 Adapter** — `providers/umami-*`, fan-out client, limits guard (AC-2–4).
+- **T-2 Adapter** — `providers/umami-*`, Umami-only client, limits guard (AC-2–4).
 - **T-3 Web/admin** — tracker, consent, CSP (AC-5).
 - **T-4 Dashboards** — `scripts/umami`, docs, close HOS-1887 (AC-6).
 - **T-5 Owner stats** — service, route, schema, cache, UI, i18n (AC-7, AC-8).
-- **T-6 Cut & removal** — after the coexistence window (AC-9, AC-10), ADR.
+- **T-6 Removal** — PostHog code, env vars, worker, scripts, docs, ADR (AC-9,
+  AC-10).
+
+The cut (OQ-2): T-2, T-3 and T-6 all land on `staging` before the next
+`staging` → `main` promotion, and T-1's prod instance is up before it, so prod
+switches from PostHog to Umami in one release with no mixed state. T-4 and T-5
+can follow in later releases.
 
 Smoke: `status-needs-smoke-staging` on T-1, T-3 and T-5; `status-needs-smoke-prod`
-on T-6.
+on the cut release (AC-11).
 
 ### File map
 
