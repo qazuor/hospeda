@@ -63,6 +63,23 @@ function isValidOthersCursor(cursor: string): boolean {
 }
 
 /**
+ * A calendar day as `YYYY-MM-DD` (UTC), validated to be a real date. Compares
+ * correctly as a string. Shared by the owner panel filter and the staff view.
+ */
+export const AiChatDateSchema = z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected a date as YYYY-MM-DD')
+    .refine(
+        (value) => {
+            const time = Date.parse(`${value}T00:00:00.000Z`);
+            return !Number.isNaN(time) && new Date(time).toISOString().startsWith(value);
+        },
+        {
+            message: 'Not a real calendar date'
+        }
+    );
+
+/**
  * Query of `GET /api/v1/protected/ai/listing-questions`.
  */
 export const AiListingQuestionsQuerySchema = z
@@ -76,7 +93,11 @@ export const AiListingQuestionsQuerySchema = z
             .string()
             .max(128)
             .refine(isValidOthersCursor, 'Invalid others cursor')
-            .optional()
+            .optional(),
+        /** First day to include (UTC, `YYYY-MM-DD`). HOS-2075. */
+        from: AiChatDateSchema.optional(),
+        /** Last day to include, inclusive (UTC, `YYYY-MM-DD`). HOS-2075. */
+        to: AiChatDateSchema.optional()
     })
     .strict();
 

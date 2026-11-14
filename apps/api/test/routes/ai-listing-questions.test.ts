@@ -236,6 +236,48 @@ describe('GET /protected/ai/listing-questions', () => {
         expect(mockIsOwned).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ['from after to', 'from=2026-11-05&to=2026-11-01'],
+        ['a from older than the 12 month horizon', 'from=2000-01-01'],
+        ['a malformed day', 'from=2026-13-45'],
+        ['a non-date from', 'from=yesterday']
+    ])('answers 400 for %s before the ownership check (HOS-2075)', async (_label, range) => {
+        const res = await app.request(`${BASE}?entityType=venue&entityId=${LISTING_ID}&${range}`, {
+            headers: AUTH_HEADERS
+        });
+
+        expect(res.status).toBe(400);
+        expect(mockIsOwned).not.toHaveBeenCalled();
+        expect(mockList).not.toHaveBeenCalled();
+    });
+
+    it('passes the resolved day range to the service (HOS-2075)', async () => {
+        const res = await app.request(
+            `${BASE}?entityType=venue&entityId=${LISTING_ID}&from=2026-11-01&to=2026-11-03`,
+            { headers: AUTH_HEADERS }
+        );
+
+        expect(res.status).toBe(200);
+        expect(mockList).toHaveBeenCalledWith(
+            expect.objectContaining({
+                range: {
+                    lowerBound: new Date('2026-11-01T00:00:00.000Z'),
+                    upperExclusive: new Date('2026-11-04T00:00:00.000Z')
+                }
+            })
+        );
+    });
+
+    it('answers 404 for a foreign listing even with a valid range (HOS-2075)', async () => {
+        mockIsOwned.mockResolvedValue({ owned: false });
+        const res = await app.request(
+            `${BASE}?entityType=venue&entityId=${LISTING_ID}&from=2026-11-01`,
+            { headers: AUTH_HEADERS }
+        );
+        expect(res.status).toBe(404);
+        expect(mockList).not.toHaveBeenCalled();
+    });
+
     it('answers 404, never 403, for a listing the actor does not own', async () => {
         // Arrange
         mockIsOwned.mockResolvedValue({ owned: false });
@@ -286,7 +328,8 @@ describe('GET /protected/ai/listing-questions', () => {
         expect(mockList).toHaveBeenCalledWith({
             entityType: 'experience',
             entityId: LISTING_ID,
-            othersCursor: undefined
+            othersCursor: undefined,
+            range: { lowerBound: undefined, upperExclusive: undefined }
         });
     });
 

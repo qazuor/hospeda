@@ -26,7 +26,6 @@ import { accommodations, aiConversations, aiMessages, experiences, getDb, venues
 import {
     AI_LISTING_QUESTIONS_DISMISSED_CAP,
     AI_LISTING_QUESTIONS_OTHERS_PAGE_SIZE,
-    AI_LISTING_QUESTIONS_RETENTION_MONTHS,
     type AiChatEntityType,
     type AiListingQuestion,
     type AiListingQuestionStatus,
@@ -34,6 +33,10 @@ import {
 } from '@repo/schemas';
 import { and, asc, desc, eq, gte, isNull, lt, or, sql } from 'drizzle-orm';
 import { type AnyPgColumn, alias } from 'drizzle-orm/pg-core';
+import { retentionCutoff } from './ai-chat-date-range.js';
+import { redactChatText } from './ai-chat-redaction.js';
+
+export { retentionCutoff };
 
 /**
  * Listing table per chat vertical — total over `AiChatEntityType`.
@@ -154,18 +157,6 @@ export async function setQuestionDismissed(input: {
 }
 
 /**
- * The start of the retention horizon relative to `now`.
- *
- * @param input - The reference instant.
- * @returns `{ cutoff }`, {@link AI_LISTING_QUESTIONS_RETENTION_MONTHS} months earlier.
- */
-export function retentionCutoff(input: { readonly now: Date }): { readonly cutoff: Date } {
-    const cutoff = new Date(input.now.getTime());
-    cutoff.setUTCMonth(cutoff.getUTCMonth() - AI_LISTING_QUESTIONS_RETENTION_MONTHS);
-    return { cutoff };
-}
-
-/**
  * At most this many unanswered questions are returned (HOS-2101 review): they
  * are fetched on their own so the «Sin responder» block always matches
  * `unansweredCount` up to this cap, however many answered questions are newer.
@@ -228,8 +219,8 @@ export function toListingQuestionsResponse(input: {
     const total = unansweredCount + blockTotal(input.otherRows);
     const items: AiListingQuestion[] = [...input.unansweredRows, ...input.otherRows].map((row) => ({
         id: row.id,
-        question: row.question,
-        answer: row.answer,
+        question: redactChatText({ text: row.question }).text,
+        answer: redactChatText({ text: row.answer }).text,
         askedAt: (row.askedAt instanceof Date ? row.askedAt : new Date(row.askedAt)).toISOString(),
         answerStatus: toQuestionStatus({ stored: row.answerStatus }).status
     }));
@@ -252,6 +243,11 @@ export interface ListListingQuestionsInput {
     readonly othersCursor?: string;
     /** Reference instant for the retention horizon (injectable for tests). */
     readonly now?: Date;
+    /** Optional day filter (HOS-2075), already validated by `resolveChatDateRange`. */
+    readonly range?: {
+        readonly lowerBound?: Date;
+        readonly upperExclusive?: Date;
+    };
     /** Block caps (injectable for tests); default to the exported constants. */
     readonly unansweredCap?: number;
     readonly othersCap?: number;
@@ -267,6 +263,8 @@ async function readQuestionBlock(input: {
     readonly entityType: AiChatEntityType;
     readonly entityId: string;
     readonly cutoff: Date;
+    /** Exclusive upper bound of the day filter (HOS-2075). */
+    readonly until?: Date;
     readonly unanswered: boolean;
     readonly limit: number;
     readonly dismissed?: boolean;
@@ -310,6 +308,7 @@ async function readQuestionBlock(input: {
                       ? sql`${question.ownerDismissedAt} is not null`
                       : isNull(question.ownerDismissedAt),
                 gte(question.createdAt, input.cutoff),
+                input.until ? lt(question.createdAt, input.until) : undefined,
                 input.after
                     ? or(
                           lt(question.createdAt, input.after.createdAt),
@@ -362,8 +361,15 @@ export async function readPairedQuestionAnswer(input: {
 export async function listListingQuestions(
     input: ListListingQuestionsInput
 ): Promise<AiListingQuestionsResponse> {
-    const { cutoff } = retentionCutoff({ now: input.now ?? new Date() });
-    const base = { entityType: input.entityType, entityId: input.entityId, cutoff };
+    const { cutoff: horizon } = retentionCutoff({ now: input.now ?? new Date() });
+    const lowerBound = input.range?.lowerBound;
+    const cutoff = lowerBound !== undefined && lowerBound > horizon ? lowerBound : horizon;
+    const base = {
+        entityType: input.entityType,
+        entityId: input.entityId,
+        cutoff,
+        until: input.range?.upperExclusive
+    };
     const after = input.othersCursor ? decodeOthersCursor(input.othersCursor) : undefined;
     const [unansweredRows, otherRows, otherCountRows, dismissedRows] = await Promise.all([
         readQuestionBlock({
@@ -417,8 +423,8 @@ export async function listListingQuestions(
 function mapQuestion(row: ListingQuestionRow): AiListingQuestion {
     return {
         id: row.id,
-        question: row.question,
-        answer: row.answer,
+        question: redactChatText({ text: row.question }).text,
+        answer: redactChatText({ text: row.answer }).text,
         askedAt: new Date(row.askedAt).toISOString(),
         answerStatus: toQuestionStatus({ stored: row.answerStatus }).status
     };
