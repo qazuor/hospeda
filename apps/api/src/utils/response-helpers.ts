@@ -320,6 +320,53 @@ export const createErrorResponse = (
 };
 
 /**
+ * Options for {@link createPaginatedResponse}.
+ */
+export interface PaginatedResponseOptions {
+    /**
+     * What to do with an item that fails the response schema.
+     * - `'throw'` (default): the whole response is a 500 (strict, SPEC-087).
+     * - `'drop'`: the item is omitted and a warning is logged (HOS-2177). Used by
+     *   PUBLIC listings, where one legacy/hand-loaded row must not blank the page
+     *   for everybody. The dropped row is never serialized, so nothing leaks.
+     */
+    readonly invalidItems?: 'throw' | 'drop';
+}
+
+/**
+ * Validates each item against `responseSchema`, omitting (and logging) the
+ * ones that fail. Never emits an unstripped payload.
+ */
+const dropInvalidItems = (items: unknown[], responseSchema: ZodTypeAny, c?: Context): unknown[] => {
+    const kept: unknown[] = [];
+    for (const item of items) {
+        const parsed = responseSchema.safeParse(item);
+        if (parsed.success) {
+            kept.push(parsed.data);
+            continue;
+        }
+        const id = (item as { id?: unknown } | null)?.id;
+        const summary = parsed.error.issues
+            .slice(0, 5)
+            .map((issue) => `${issue.path.map(String).join('.') || '<root>'}: ${issue.message}`)
+            .join('; ');
+        apiLogger.warn(
+            {
+                itemId: typeof id === 'string' ? id : undefined,
+                summary,
+                issuesCount: parsed.error.issues.length,
+                method: c?.req.method,
+                path: c?.req.path,
+                requestId: (c?.get('requestId') as string | undefined) ?? 'unknown'
+            },
+            'Dropped list item that does not match the declared response schema',
+            { expandObjectLevels: -1, truncateLongText: false }
+        );
+    }
+    return kept;
+};
+
+/**
  * Helper function to create paginated responses for list/search endpoints
  * Handles the specific structure required by paginatedListResponseSchema
  *
@@ -331,13 +378,18 @@ export const createErrorResponse = (
  *   {@link stripWithSchema} to enforce tier-appropriate field exposure at
  *   runtime (SPEC-062). Pagination metadata is never stripped.
  *   Throws ServiceError(INTERNAL_ERROR) when no responseSchema is provided (SPEC-210 PR5 fail-closed).
+ * @param options - See {@link PaginatedResponseOptions}. With `invalidItems: 'drop'`
+ *   a row that fails the schema is left out and logged instead of answering 500 (HOS-2177).
+ *   `pagination.total` is NOT adjusted: it counts rows in the database, and the
+ *   count of dropped rows is unknown to the caller.
  */
 export const createPaginatedResponse = (
     items: unknown[],
     pagination: PaginationMetadata,
     c: Context,
     statusCode = 200,
-    responseSchema?: ZodTypeAny
+    responseSchema?: ZodTypeAny,
+    options: PaginatedResponseOptions = {}
 ) => {
     if (!responseSchema) {
         throw new ServiceError(
@@ -345,7 +397,10 @@ export const createPaginatedResponse = (
             'createPaginatedResponse called without a responseSchema — every public list route must declare a concrete schema (SPEC-210 PR5)'
         );
     }
-    const strippedItems = items.map((item) => stripWithSchema(item, responseSchema, c));
+    const strippedItems =
+        options.invalidItems === 'drop'
+            ? dropInvalidItems(items, responseSchema, c)
+            : items.map((item) => stripWithSchema(item, responseSchema, c));
 
     const response: ApiResponse<{ items: unknown[]; pagination: PaginationMetadata }> = {
         success: true,

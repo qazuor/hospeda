@@ -300,3 +300,46 @@ describe('handleRouteError — RefinedBodyValidationError (HOS-607)', () => {
         expect(typeof body.error.userFriendlyMessage).toBe('string');
     });
 });
+
+describe('invalidItems: "drop" (HOS-2177)', () => {
+    const schema = z.object({ id: z.string(), required: z.string().min(3) });
+    const pagination = {
+        page: 1,
+        pageSize: 10,
+        total: 3,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+    };
+
+    it('answers a 200 listing without the invalid row and logs a warning', () => {
+        const { ctx, calls } = createMockContext();
+        const items = [
+            { id: '1', required: 'valid' },
+            { id: '2', required: 'x' },
+            { id: '3', required: 'also valid' }
+        ];
+
+        createPaginatedResponse(items, pagination, ctx, 200, schema, {
+            invalidItems: 'drop'
+        });
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.status).toBe(200);
+        const envelope = calls[0]?.body as {
+            success: boolean;
+            data: { items: { id: string }[] };
+        };
+        expect(envelope.success).toBe(true);
+        expect(envelope.data.items.map((i) => i.id)).toEqual(['1', '3']);
+        expect(apiLogger.warn).toHaveBeenCalledTimes(1);
+        expect(apiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('still throws by default when the option is omitted', () => {
+        const { ctx } = createMockContext();
+        expect(() =>
+            createPaginatedResponse([{ id: '2', required: 'x' }], pagination, ctx, 200, schema)
+        ).toThrow(/Response payload does not match/i);
+    });
+});
