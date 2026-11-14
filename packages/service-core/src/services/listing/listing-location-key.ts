@@ -10,9 +10,15 @@
  */
 
 import { type LocationKeyVertical, listingLocationModel } from '@repo/db';
-import { DUPLICATE_LOCATION_REASON, PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    DUPLICATE_LOCATION_REASON,
+    LOCATION_KEY_UNIQUE_INDEXES,
+    PublicationStatusEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { buildLocationKey } from '@repo/utils';
 import { type DrizzleClient, ServiceError } from '../../types';
+import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
 
 /** The slice of a stored listing the key depends on. */
 export interface LocationKeySource {
@@ -152,4 +158,33 @@ export async function applyLocationRuleOnUpdate(args: {
         });
     }
     return patch;
+}
+
+/**
+ * Maps the unique violation of the one-address index to the 409.
+ *
+ * The service pre-check cannot see a concurrent publish: two requests can both
+ * read "no occupant" and then both write `PUBLISHED`. The partial unique index
+ * lets exactly one through and raises `23505` (possibly several `cause` levels
+ * down) for the other; this turns that into the same error the pre-check throws.
+ *
+ * @param error - Whatever the write threw.
+ * @param existingListingId - The occupant, when the caller could look it up.
+ * @returns The `ServiceError`, or `null` when `error` is anything else.
+ */
+export function asDuplicateLocationError(
+    error: unknown,
+    existingListingId?: string | null
+): ServiceError | null {
+    const cause = extractPostgresErrorCause(error);
+    if (cause?.code !== '23505' || !cause.constraint) return null;
+    if (!LOCATION_KEY_UNIQUE_INDEXES.includes(cause.constraint)) return null;
+    return new ServiceError(
+        ServiceErrorCode.ALREADY_EXISTS,
+        'Another published listing of yours already occupies this address',
+        existingListingId
+            ? { reason: DUPLICATE_LOCATION_REASON, existingListingId }
+            : { reason: DUPLICATE_LOCATION_REASON },
+        DUPLICATE_LOCATION_REASON
+    );
 }

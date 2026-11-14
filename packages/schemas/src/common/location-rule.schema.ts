@@ -13,6 +13,17 @@ import { z } from 'zod';
  */
 export const DUPLICATE_LOCATION_REASON = 'DUPLICATE_LOCATION' as const;
 
+/**
+ * Names of the partial UNIQUE indexes that back the rule at the database
+ * (one PUBLISHED, live, non-excepted listing per owner and place key). A
+ * `23505` on either one is a concurrent publish that the service pre-check
+ * could not see, and is answered as `DUPLICATE_LOCATION`.
+ */
+export const LOCATION_KEY_UNIQUE_INDEXES: readonly string[] = [
+    'accommodations_ownerId_locationKey_published_uniq',
+    'venues_ownerId_locationKey_published_uniq'
+];
+
 /** Minimum length of an exception reason: it is an audit record, not a flag. */
 export const LOCATION_EXCEPTION_REASON_MIN = 10;
 

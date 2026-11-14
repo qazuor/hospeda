@@ -21,6 +21,7 @@ import {
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
@@ -267,6 +268,17 @@ export const venues = pgTable(
         venues_locationKey_idx: index('venues_locationKey_idx')
             .on(table.locationKey)
             .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+        // HOS-1810: the backstop of the one-address rule. The service check is a
+        // friendly pre-check and cannot see a concurrent publish; this index can.
+        // `uniqueIndex` keeps one PUBLISHED, live, non-excepted listing per
+        // (owner, place key). The violation is mapped to 409 DUPLICATE_LOCATION.
+        venues_ownerId_locationKey_published_uniq: uniqueIndex(
+            'venues_ownerId_locationKey_published_uniq'
+        )
+            .on(table.ownerId, table.locationKey)
+            .where(
+                sql`${table.publicationStatus} = 'PUBLISHED' AND ${table.deletedAt} IS NULL AND ${table.locationExceptionAt} IS NULL AND ${table.locationKey} IS NOT NULL`
+            ),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
         venues_publicationStatus_idx: index('venues_publicationStatus_idx').on(

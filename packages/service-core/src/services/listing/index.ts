@@ -48,6 +48,7 @@ export {
 } from './listing-business-lines-change';
 export {
     applyLocationRuleOnUpdate,
+    asDuplicateLocationError,
     assertNoOwnLocationConflict,
     type LocationKeySource,
     type LocationRuleCurrent,

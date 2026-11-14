@@ -6,6 +6,7 @@ vi.mock('@repo/db', () => ({ listingLocationModel: { findOwnOccupant } }));
 
 import {
     applyLocationRuleOnUpdate,
+    asDuplicateLocationError,
     assertNoOwnLocationConflict,
     resolveLocationKeyPatch
 } from '../../../src/services/listing/listing-location-key';
@@ -170,5 +171,40 @@ describe('applyLocationRuleOnUpdate', () => {
             current: published
         });
         expect(findOwnOccupant).not.toHaveBeenCalled();
+    });
+});
+
+describe('asDuplicateLocationError', () => {
+    const pgError = (constraint: string, code = '23505') => {
+        const driver = Object.assign(new Error('duplicate key'), { code, constraint });
+        return new Error('Failed query: insert ...', { cause: driver });
+    };
+
+    it.each([
+        'accommodations_ownerId_locationKey_published_uniq',
+        'venues_ownerId_locationKey_published_uniq'
+    ])('maps a 23505 on %s (found in error.cause) to the 409', (constraint) => {
+        const mapped = asDuplicateLocationError(pgError(constraint), 'own-id');
+        expect(mapped).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'DUPLICATE_LOCATION',
+            details: { reason: 'DUPLICATE_LOCATION', existingListingId: 'own-id' }
+        });
+    });
+
+    it('omits the id when the occupant is unknown', () => {
+        const mapped = asDuplicateLocationError(
+            pgError('venues_ownerId_locationKey_published_uniq')
+        );
+        expect(mapped?.details).toEqual({ reason: 'DUPLICATE_LOCATION' });
+    });
+
+    it('ignores other constraints, other SQLSTATEs and plain errors', () => {
+        expect(asDuplicateLocationError(pgError('venues_slug_unique'))).toBeNull();
+        expect(
+            asDuplicateLocationError(pgError('venues_ownerId_locationKey_published_uniq', '23503'))
+        ).toBeNull();
+        expect(asDuplicateLocationError(new Error('boom'))).toBeNull();
+        expect(asDuplicateLocationError(null)).toBeNull();
     });
 });

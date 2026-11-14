@@ -21,6 +21,7 @@ import {
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid
 } from 'drizzle-orm/pg-core';
 import { accommodationExternalListings } from '../accommodation-external/accommodation_external_listings.dbschema.ts';
@@ -213,7 +214,18 @@ export const accommodations = pgTable(
         // HOS-1810: non-unique on purpose (the policy is the application's).
         accommodations_locationKey_idx: index('accommodations_locationKey_idx')
             .on(table.locationKey)
-            .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`)
+            .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+        // HOS-1810: the backstop of the one-address rule. The service check is a
+        // friendly pre-check and cannot see a concurrent publish; this index can.
+        // `uniqueIndex` keeps one PUBLISHED, live, non-excepted listing per
+        // (owner, place key). The violation is mapped to 409 DUPLICATE_LOCATION.
+        accommodations_ownerId_locationKey_published_uniq: uniqueIndex(
+            'accommodations_ownerId_locationKey_published_uniq'
+        )
+            .on(table.ownerId, table.locationKey)
+            .where(
+                sql`${table.publicationStatus} = 'PUBLISHED' AND ${table.deletedAt} IS NULL AND ${table.locationExceptionAt} IS NULL AND ${table.locationKey} IS NOT NULL`
+            )
     })
 );
 

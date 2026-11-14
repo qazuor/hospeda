@@ -6,11 +6,13 @@
  * groups with `sameOwner`. A venue never sees an accommodation's key.
  */
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { listingLocationModel } from '../../src/models/listing/listing-location.model.ts';
+import { listingPublicationModel } from '../../src/models/listing/listing-publication.model.ts';
 import { accommodations, destinations, users, venues } from '../../src/schemas/index.ts';
 import type { DrizzleClient } from '../../src/types.ts';
-import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
+import { closeTestPool, getTestDb, testData, withTestTransaction } from './helpers.ts';
 
 afterAll(async () => {
     await closeTestPool();
@@ -163,7 +165,11 @@ describe('listingLocationModel (HOS-1810)', () => {
             const venue = await insertVenue(tx, { ownerId: owner.id, destinationId: dest.id });
             expect(await find(tx, VerticalEnum.VENUE, owner.id, venue.id)).toBeNull();
             expect(await find(tx, VerticalEnum.ACCOMMODATION, owner.id, acc.id)).toBeNull();
-            const venue2 = await insertVenue(tx, { ownerId: owner.id, destinationId: dest.id });
+            const venue2 = await insertVenue(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                status: PublicationStatusEnum.DRAFT
+            });
             expect(await find(tx, VerticalEnum.VENUE, owner.id, venue2.id)).toBe(venue.id);
         });
     });
@@ -205,24 +211,33 @@ describe('listingLocationModel (HOS-1810)', () => {
         });
     });
 
-    it('groups published listings by key with sameOwner and skips excepted ones', async () => {
+    it('groups published listings of DIFFERENT owners and skips excepted ones', async () => {
         await withTestTransaction(async (tx) => {
             const owner = await seedOwner(tx);
             const other = await seedOwner(tx);
             const dest = await seedDestination(tx, owner.id);
             // Unique keys so the shared test DB cannot add foreign groups to the assertion.
-            const k1 = `own-${crypto.randomUUID()}`;
-            const k2 = `cross-${crypto.randomUUID()}`;
-            const k3 = `excepted-${crypto.randomUUID()}`;
-            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id, key: k1 });
-            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id, key: k1 });
-            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id, key: k2 });
-            await insertAccommodation(tx, { ownerId: other.id, destinationId: dest.id, key: k2 });
-            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id, key: k3 });
+            const cross = `cross-${crypto.randomUUID()}`;
+            const excepted = `excepted-${crypto.randomUUID()}`;
             await insertAccommodation(tx, {
                 ownerId: owner.id,
                 destinationId: dest.id,
-                key: k3,
+                key: cross
+            });
+            await insertAccommodation(tx, {
+                ownerId: other.id,
+                destinationId: dest.id,
+                key: cross
+            });
+            await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                key: excepted
+            });
+            await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                key: excepted,
                 exception: true
             });
 
@@ -233,10 +248,136 @@ describe('listingLocationModel (HOS-1810)', () => {
                 tx
             });
             const byKey = new Map(items.map((g) => [g.locationKey, g]));
-            expect(byKey.get(k1)).toMatchObject({ ownerCount: 1, sameOwner: true });
-            expect(byKey.get(k1)?.listings).toHaveLength(2);
-            expect(byKey.get(k2)).toMatchObject({ ownerCount: 2, sameOwner: false });
-            expect(byKey.has(k3)).toBe(false);
+            expect(byKey.get(cross)).toMatchObject({ ownerCount: 2, sameOwner: false });
+            expect(byKey.get(cross)?.listings).toHaveLength(2);
+            expect(byKey.has(excepted)).toBe(false);
         });
+    });
+});
+
+describe('one-address unique index (HOS-1810)', () => {
+    it('refuses a second PUBLISHED listing of one owner on one key (accommodation and venue)', async () => {
+        await withTestTransaction(async (tx) => {
+            const owner = await seedOwner(tx);
+            const dest = await seedDestination(tx, owner.id);
+            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id });
+            await insertVenue(tx, { ownerId: owner.id, destinationId: dest.id });
+            // A savepoint per attempt: a failed statement aborts the whole transaction.
+            await expect(
+                tx.transaction((inner) =>
+                    insertAccommodation(inner, { ownerId: owner.id, destinationId: dest.id })
+                )
+            ).rejects.toThrow();
+            await expect(
+                tx.transaction((inner) =>
+                    insertVenue(inner, { ownerId: owner.id, destinationId: dest.id })
+                )
+            ).rejects.toThrow();
+        });
+    });
+
+    it('allows the same key for another owner, a draft, a deleted row or an excepted row', async () => {
+        await withTestTransaction(async (tx) => {
+            const owner = await seedOwner(tx);
+            const other = await seedOwner(tx);
+            const dest = await seedDestination(tx, owner.id);
+            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id });
+            await insertAccommodation(tx, { ownerId: other.id, destinationId: dest.id });
+            await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                status: PublicationStatusEnum.DRAFT
+            });
+            await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                deletedAt: new Date()
+            });
+            await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                exception: true
+            });
+            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id, key: null });
+            await insertAccommodation(tx, { ownerId: owner.id, destinationId: dest.id, key: null });
+        });
+    });
+
+    it('setPublicationStatus leaves a conflicting listing unmoved instead of raising', async () => {
+        await withTestTransaction(async (tx) => {
+            const owner = await seedOwner(tx);
+            const dest = await seedDestination(tx, owner.id);
+            await insertVenue(tx, { ownerId: owner.id, destinationId: dest.id });
+            const draft = await insertVenue(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                status: PublicationStatusEnum.DRAFT
+            });
+            const move = (listingId: string) =>
+                listingPublicationModel.setPublicationStatus({
+                    tx,
+                    vertical: VerticalEnum.VENUE,
+                    listingId,
+                    from: PublicationStatusEnum.DRAFT,
+                    to: PublicationStatusEnum.PUBLISHED
+                });
+            expect(await move(draft.id)).toBe(false);
+
+            await listingLocationModel.setException({
+                vertical: VerticalEnum.VENUE,
+                id: draft.id,
+                adminId: owner.id,
+                reason: 'Food court',
+                at: new Date(),
+                tx
+            });
+            expect(await move(draft.id)).toBe(true);
+        });
+    });
+
+    it('two concurrent publishes of one place: one succeeds, the other hits the unique index', async () => {
+        const db = getTestDb();
+        const [owner] = await db
+            .insert(users)
+            .values(testData.user({ role: 'HOST' }))
+            .returning();
+        if (!owner) throw new Error('owner');
+        const [dest] = await db
+            .insert(destinations)
+            .values(testData.destination({ ownerId: owner.id }))
+            .returning();
+        if (!dest) throw new Error('destination');
+        const key = `race-${crypto.randomUUID()}`;
+        const a = await insertAccommodation(db, {
+            ownerId: owner.id,
+            destinationId: dest.id,
+            key,
+            status: PublicationStatusEnum.DRAFT
+        });
+        const b = await insertAccommodation(db, {
+            ownerId: owner.id,
+            destinationId: dest.id,
+            key,
+            status: PublicationStatusEnum.DRAFT
+        });
+        try {
+            // Raw UPDATEs: they bypass the NOT EXISTS of setPublicationStatus, which is
+            // exactly what a concurrent writer that read "no occupant" does.
+            const publish = (id: string) =>
+                db.execute(
+                    sql`UPDATE accommodations SET publication_status = 'PUBLISHED' WHERE id = ${id}`
+                );
+            const results = await Promise.allSettled([publish(a.id), publish(b.id)]);
+            expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
+            const rejected = results.find((r) => r.status === 'rejected') as PromiseRejectedResult;
+            const cause = (rejected.reason as { cause?: { code?: string; constraint?: string } })
+                .cause;
+            expect(cause?.code).toBe('23505');
+            expect(cause?.constraint).toBe('accommodations_ownerId_locationKey_published_uniq');
+        } finally {
+            await db.delete(accommodations).where(eq(accommodations.ownerId, owner.id));
+            await db.delete(destinations).where(eq(destinations.id, dest.id));
+            await db.delete(users).where(eq(users.id, owner.id));
+        }
     });
 });
