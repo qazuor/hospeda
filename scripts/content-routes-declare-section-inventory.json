@@ -1,5 +1,8 @@
 {
-    "apps/api/src/routes/venue/protected/getMenu.ts": { "section": "menu", "intent": "read" },
+    "apps/api/src/routes/venue/protected/getMenu.ts": {
+        "section": "menu",
+        "intent": "read"
+    },
     "apps/api/src/routes/venue/protected/getDailySpecials.ts": {
         "section": "dailySpecials",
         "intent": "read"
@@ -32,6 +35,40 @@
         "section": "menu",
         "intent": "write"
     },
-    "apps/api/src/routes/venue/protected/menuQr.ts": { "section": "menu", "intent": "read" },
-    "apps/api/src/routes/venue/protected/menuQrScans.ts": { "section": "menu", "intent": "read" }
+    "apps/api/src/routes/venue/protected/menuQr.ts": {
+        "section": "menu",
+        "intent": "read"
+    },
+    "apps/api/src/routes/venue/protected/menuQrScans.ts": {
+        "section": "menu",
+        "intent": "read"
+    },
+    "apps/api/src/routes/accommodation/protected/addOccupancy.ts": {
+        "section": "calendar",
+        "intent": "write"
+    },
+    "apps/api/src/routes/accommodation/protected/removeOccupancy.ts": {
+        "section": "calendar",
+        "intent": "write"
+    },
+    "apps/api/src/routes/accommodation/protected/batchOccupancy.ts": {
+        "section": "calendar",
+        "intent": "write"
+    },
+    "apps/api/src/routes/accommodation/protected/updateOccupancyEvent.ts": {
+        "section": "calendar",
+        "intent": "write"
+    },
+    "apps/api/src/routes/accommodation/protected/calendarSync.ts": {
+        "section": "calendar",
+        "intent": "read"
+    },
+    "apps/api/src/routes/accommodation/protected/calendarConnectGoogle.ts": {
+        "section": "calendar",
+        "intent": "read"
+    },
+    "apps/api/src/routes/accommodation/protected/calendarConnectIcal.ts": {
+        "section": "calendar",
+        "intent": "read"
+    }
 }
