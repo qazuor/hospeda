@@ -104,8 +104,13 @@ function violations(
                 section.entitlementKey,
                 ...(section.traits ?? []).map((trait) => trait.entitlementKey)
             ].filter(Boolean)) {
+                // A `global` key resolves by user, so it is also readable through the
+                // vertical's effective set. Allowed since HOS-1809 (Q-1): the
+                // accommodation `verification` trait uses `has_verification_badge`.
                 if (
-                    !CATALOG_KEY_DEFINITIONS.some((d) => d.key === key && d.scope === 'vertical') ||
+                    !CATALOG_KEY_DEFINITIONS.some(
+                        (d) => d.key === key && (d.scope === 'vertical' || d.scope === 'global')
+                    ) ||
                     !prodKeys.has(key as string)
                 )
                     errors.push('r6');
