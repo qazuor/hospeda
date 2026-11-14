@@ -733,6 +733,7 @@ export class VenueService extends BaseListingService<
         const locationKey = await applyLocationRuleOnUpdate({
             vertical: VerticalEnum.VENUE,
             payload: data as Record<string, unknown>,
+            // TYPE-WORKAROUND: the model row type omits the location-rule columns the hook reads.
             current: current as unknown as LocationRuleCurrent | null,
             tx: ctx.tx
         });

@@ -1301,6 +1301,7 @@ export class AccommodationService extends BaseCrudService<
             await applyLocationRuleOnUpdate({
                 vertical: VerticalEnum.ACCOMMODATION,
                 payload,
+                // TYPE-WORKAROUND: the model row type omits the location-rule columns the hook reads.
                 current: current as unknown as LocationRuleCurrent | null,
                 tx: ctx.tx
             })
