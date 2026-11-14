@@ -13,6 +13,10 @@ const CONTENT_TABLE_REFERENCES =
  * and the external-sync connect/trigger routes. The read, disconnect and status
  * routes deliberately carry no entitlement gate (a downgraded host can still
  * read, disconnect and see status), so they are not discovered here.
+ *
+ * LIMITATION: discovery is by NAME (the service verbs and the sync paths above).
+ * A new calendar write route that uses other verbs or paths is NOT discovered
+ * and must be added to the inventory by hand; the guard cannot find it.
  */
 const ACCOMMODATION_CALENDAR_WRITES =
     /\b(?:addOccupancy|removeOccupancy|batchToggleOccupancy|updateOccupancyEvent)\s*\(|calendar-sync\/(?:sync|connect-google|connect-ical)/;
@@ -24,7 +28,7 @@ const SCANNED_AREAS = [
         pattern: ACCOMMODATION_CALENDAR_WRITES
     }
 ] as const;
-type Entry = { section: string; intent: string };
+type Entry = { section: string; intent: string; traits?: readonly string[] };
 
 /** Run GUARD:G-FAC-06 over a repository root.
  * @param args.root Repository root to scan; defaults to the repository containing this script.
@@ -110,6 +114,11 @@ export function run(args: { root?: string; minRoutes?: number } = {}) {
             !body.includes(`intent: "${expected.intent}"`)
         ) {
             problems.push(`${PREFIX} ${file} must declare intent ${expected.intent}`);
+        }
+        for (const trait of expected.traits ?? []) {
+            const declared = body.match(/sectionTraits\s*:\s*\[([^\]]*)\]/);
+            if (!declared || !new RegExp(`['"]${trait}['"]`).test(declared[1]))
+                problems.push(`${PREFIX} ${file} must declare sectionTraits including ${trait}`);
         }
         if (file.endsWith('/deleteMenuFile.ts') && !body.includes("intent: 'delete'"))
             problems.push(`${PREFIX} deleteMenuFile must declare delete intent`);

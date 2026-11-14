@@ -61,14 +61,17 @@
     },
     "apps/api/src/routes/accommodation/protected/calendarSync.ts": {
         "section": "calendar",
-        "intent": "read"
+        "intent": "read",
+        "traits": ["externalSync"]
     },
     "apps/api/src/routes/accommodation/protected/calendarConnectGoogle.ts": {
         "section": "calendar",
-        "intent": "read"
+        "intent": "read",
+        "traits": ["externalSync"]
     },
     "apps/api/src/routes/accommodation/protected/calendarConnectIcal.ts": {
         "section": "calendar",
-        "intent": "read"
+        "intent": "read",
+        "traits": ["externalSync"]
     }
 }

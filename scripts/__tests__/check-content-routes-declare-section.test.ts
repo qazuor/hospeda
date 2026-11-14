@@ -113,7 +113,7 @@ describe('TEST:3.4:3 — GUARD:G-FAC-06 content routes declare their section', (
             );
             expect(calendar).toHaveLength(7);
             for (const [file, entry] of calendar)
-                expect(entry).toEqual({
+                expect(entry).toMatchObject({
                     section: 'calendar',
                     // The three external-sync routes gate on the trait key alone.
                     intent: /calendar(?:Sync|Connect)/.test(file) ? 'read' : 'write'
@@ -130,6 +130,28 @@ describe('TEST:3.4:3 — GUARD:G-FAC-06 content routes declare their section', (
             expect(run({ root: r, minRoutes: 1 }).output).toContain(
                 `${OCCUPANCY} does not declare listingSection`
             );
+        });
+        it('fails when an external-sync route drops its externalSync trait', () => {
+            const r = tree();
+            mutate(r, SYNC, "sectionTraits: ['externalSync']", 'sectionTraits: []');
+            expect(run({ root: r, minRoutes: 1 }).output).toContain(
+                `${SYNC} must declare sectionTraits including externalSync`
+            );
+        });
+        it('fails when an external-sync route declares no sectionTraits at all', () => {
+            const r = tree();
+            mutate(r, SYNC, "sectionTraits: ['externalSync'],", '');
+            expect(run({ root: r, minRoutes: 1 }).output).toContain('must declare sectionTraits');
+        });
+        it('inventories the externalSync trait on exactly the three sync routes', () => {
+            const withTrait = Object.entries(INVENTORY)
+                .filter(([, entry]) => (entry as { traits?: string[] }).traits?.length)
+                .map(([file]) => file.split('/').pop());
+            expect(withTrait.sort()).toEqual([
+                'calendarConnectGoogle.ts',
+                'calendarConnectIcal.ts',
+                'calendarSync.ts'
+            ]);
         });
         it('fails when a route declares another section than the inventory expects', () => {
             const r = tree();
