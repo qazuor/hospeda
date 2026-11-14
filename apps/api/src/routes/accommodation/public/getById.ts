@@ -15,8 +15,12 @@ import type { Context } from 'hono';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
+import {
+    filterPublicPaidFields,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
+
 import { apiLogger } from '../../../utils/logger';
-import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -74,8 +78,16 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
             isFeatured: resolvePublicIsFeatured(result.data)
         };
 
-        const [gated] = await projectPublicAccommodations({ listings: [accommodation] });
-        return gated as typeof accommodation;
+        const grants = await resolvePublicFieldGrants([accommodation.ownerId]);
+        return filterPublicPaidFields(
+            accommodation,
+            grants.get(accommodation.ownerId ?? '') ?? {
+                richDescription: false,
+                video: false,
+                verification: false,
+                aiChat: false
+            }
+        );
     },
     options: {
         customRateLimit: { requests: 100, windowMs: 60000 }

@@ -52,8 +52,6 @@ function guardedRoutes(): Array<{ name: string; source: string }> {
 
 function appliesOwnerGrantFilter(source: string): boolean {
     return (
-        /\bprojectPublicAccommodations\s*\(/.test(source) ||
-        /\bprojectPublicAccommodationPage\s*\(/.test(source) ||
         /\bfilterPublicPaidFieldsForOwner\s*\(/.test(source) ||
         (/\bresolvePublicFieldGrants\s*\(/.test(source) &&
             /\bfilterPublicPaidFields\s*\(/.test(source))

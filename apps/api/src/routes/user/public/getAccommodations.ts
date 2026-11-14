@@ -22,9 +22,12 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { createGuestActor } from '../../../utils/actor';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
-import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicListRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -96,7 +99,8 @@ export const publicGetUserAccommodationsRoute = createPublicListRoute({
 
         // Apply the owner-effective paid-field grants to the returned page.
         const rawItems = result.data?.items ?? [];
-        const items = await projectPublicAccommodations({ listings: rawItems });
+        const grants = await resolvePublicFieldGrants(rawItems.map((item) => item.ownerId));
+        const items = rawItems.map((item) => filterPublicPaidFieldsForOwner(item, grants));
 
         return {
             items,

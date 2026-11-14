@@ -39,10 +39,13 @@ import {
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
+import {
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
+} from '../../../utils/entitlement-filter';
 import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
-import { projectPublicAccommodationPage } from '../../../utils/public-accommodation-projection';
 import { createPublicListRoute } from '../../../utils/route-factory';
 import { resolveQuickAmenityFlags } from './quick-amenity-resolver';
 
@@ -235,16 +238,14 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // Apply owner-effective paid-field grants before building the public page.
         const rawItems = result.data?.items || [];
 
-        const { items: gatedItems, aiChatByOwner } = await projectPublicAccommodationPage({
-            listings: rawItems
-        });
-        const items = rawItems.map((item, index) => ({
-            ...gatedItems[index],
+        const grants = await resolvePublicFieldGrants(rawItems.map((item) => item.ownerId));
+        const items = rawItems.map((item) => ({
+            ...filterPublicPaidFieldsForOwner(item, grants),
             // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
             // (the only featuring source since HOS-1419); the raw column itself is
             // stripped by the public schema (never in its pick).
             isFeatured: resolvePublicIsFeatured(item as { featuredByEntitlement?: boolean }),
-            hasAiChat: aiChatByOwner.get(item.ownerId ?? '') ?? false
+            hasAiChat: grants.get(item.ownerId ?? '')?.aiChat ?? false
         }));
 
         return {
