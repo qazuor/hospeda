@@ -10,7 +10,7 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 
 /** Required additive migration metadata. */
 export const meta = {
-    name: '0170-hos2075-ai-conversation-permission',
+    name: '0171-hos2075-ai-conversation-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

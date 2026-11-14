@@ -91,7 +91,68 @@ describe('FeatureService.search', () => {
         });
 
         // Assert
-        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 100 });
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            page: 2,
+            pageSize: 100
+        });
+    });
+
+    it('should forward sortBy and sortOrder to the model (HOS-2068 regression)', async () => {
+        // Arrange — the web catalogs ask for displayWeight desc; the model used to
+        // receive no ORDER BY at all.
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 100,
+            sortBy: 'displayWeight',
+            sortOrder: 'desc'
+        });
+
+        // Assert
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'displayWeight',
+            sortOrder: 'desc',
+            thenSortBy: 'slug'
+        });
+    });
+
+    it('should not honor a sortBy outside the public allow-list (HOS-2068)', async () => {
+        // Arrange — hidden columns would act as an ordering oracle on a public route.
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 100,
+            sortBy: 'createdById',
+            sortOrder: 'desc'
+        });
+
+        // Assert
+        const options = featureModelMock.findAll.mock.calls[0]?.[1];
+        expect(options).not.toHaveProperty('sortBy');
+        expect(options).not.toHaveProperty('thenSortBy');
+    });
+
+    it('should allow sorting by slug without a tie-break (HOS-2068)', async () => {
+        // Arrange
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 100,
+            sortBy: 'slug',
+            sortOrder: 'asc'
+        });
+
+        // Assert
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'slug',
+            sortOrder: 'asc'
+        });
     });
 
     it('should exclude soft-deleted (retired) features (regression)', async () => {

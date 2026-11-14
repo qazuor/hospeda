@@ -48,7 +48,7 @@ import {
 } from '@/lib/experience/experience-listing-filters';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -151,6 +151,11 @@ const [destinationsResult, amenitiesResult, featuresResult, filterOptionsResult,
             sortOrder: sortResolved.sortOrder
         })
     ]);
+
+// HOS-2009: a 2xx answer flagged `no-store` is the API's degraded state (the
+// owner's effective set failed to resolve, paid sections withheld). Veto the
+// edge cache so the failure is not frozen in as "this owner did not pay".
+markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
 const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
 const amenityCatalog = amenitiesResult.ok ? amenitiesResult.data.items : [];
