@@ -25,7 +25,6 @@ import {
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { PriceRangePgEnum, VenueEntryKindPgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
-import { listingLocationColumns } from '../listing/listing-location-columns.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { quotedList } from '../vertical/quoted-list.ts';
@@ -142,8 +141,17 @@ export const venues = pgTable(
          * `destination_id`. Nullable until the owner or an admin fills it.
          */
         location: jsonb('location').$type<PostalAddressType>(),
-        // HOS-1810: normalized place key + admin exception (see the columns helper).
-        ...listingLocationColumns(),
+        // HOS-1810 (one-address rule). `location_key` is the normalized place key
+        // derived from `location` + `destination_id` by `buildLocationKey`; it is
+        // written ONLY by the service hooks, never by a request body. NULL means the
+        // address is not comparable (no number, `s/n`). The `location_exception_*`
+        // trio is an admin-granted exception, in force when `..._at` is set.
+        locationKey: text('location_key'),
+        locationExceptionBy: uuid('location_exception_by').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        locationExceptionReason: text('location_exception_reason'),
+        locationExceptionAt: timestamp('location_exception_at', { withTimezone: true }),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         /** Weekly opening hours — keyed by day name with open/close time strings. */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),

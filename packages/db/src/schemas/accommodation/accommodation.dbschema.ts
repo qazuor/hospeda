@@ -26,7 +26,6 @@ import {
 import { accommodationExternalListings } from '../accommodation-external/accommodation_external_listings.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { AccommodationTypePgEnum } from '../enums.dbschema.ts';
-import { listingLocationColumns } from '../listing/listing-location-columns.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -76,8 +75,17 @@ export const accommodations = pgTable(
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<AccommodationLocationType>(),
-        // HOS-1810: normalized place key + admin exception (see the columns helper).
-        ...listingLocationColumns(),
+        // HOS-1810 (one-address rule). `location_key` is the normalized place key
+        // derived from `location` + `destination_id` by `buildLocationKey`; it is
+        // written ONLY by the service hooks, never by a request body. NULL means the
+        // address is not comparable (no number, `s/n`). The `location_exception_*`
+        // trio is an admin-granted exception, in force when `..._at` is set.
+        locationKey: text('location_key'),
+        locationExceptionBy: uuid('location_exception_by').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        locationExceptionReason: text('location_exception_reason'),
+        locationExceptionAt: timestamp('location_exception_at', { withTimezone: true }),
         /**
          * Embedded videos for the accommodation (HOS-372).
          *
