@@ -277,3 +277,39 @@ describe('isEdgeCacheableControl', () => {
         expect(isEdgeCacheableControl({ cacheControl: 'PUBLIC, S-MAXAGE=300' })).toBe(true);
     });
 });
+
+describe('markResponseDegradedFromApi (HOS-2009)', () => {
+    it('raises the degraded flag when any result carries degraded: true', async () => {
+        const { markResponseDegradedFromApi, isResponseDegraded } = await import(
+            '../../../src/lib/cache/response-cache'
+        );
+        const locals = { responseDegraded: false } as unknown as App.Locals;
+
+        markResponseDegradedFromApi({
+            locals,
+            results: [
+                { ok: true, data: 1 },
+                { ok: true, data: 2, degraded: true }
+            ]
+        });
+
+        expect(isResponseDegraded({ locals })).toBe(true);
+    });
+
+    it('leaves the flag down for healthy and for failed results', async () => {
+        const { markResponseDegradedFromApi, isResponseDegraded } = await import(
+            '../../../src/lib/cache/response-cache'
+        );
+        const locals = { responseDegraded: false } as unknown as App.Locals;
+
+        markResponseDegradedFromApi({
+            locals,
+            results: [
+                { ok: true, data: 1 },
+                { ok: false, error: { status: 500, message: 'x' } }
+            ]
+        });
+
+        expect(isResponseDegraded({ locals })).toBe(false);
+    });
+});
