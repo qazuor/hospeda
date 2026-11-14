@@ -83,7 +83,19 @@ export interface ApiError {
 
 /** Result type for API calls: either success data or error */
 export type ApiResult<T> =
-    | { readonly ok: true; readonly data: T }
+    | {
+          readonly ok: true;
+          readonly data: T;
+          /**
+           * Present (and `true`) only when the API answered successfully but
+           * marked the answer `Cache-Control: no-store` (HOS-2009). For the
+           * public venue and experience reads that is the degraded state: the
+           * owner's effective set could not be resolved, so paid sections were
+           * withheld. A page that renders such a payload must not let the edge
+           * cache it; see `markResponseDegradedFromApi`.
+           */
+          readonly degraded?: true;
+      }
     | { readonly ok: false; readonly error: ApiError };
 
 /** Common query parameters for list endpoints */

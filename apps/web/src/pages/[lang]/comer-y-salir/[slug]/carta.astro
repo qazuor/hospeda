@@ -61,7 +61,7 @@ import { buildUrl } from '@/lib/urls';
 import type { VenueOpeningHoursEntry } from '@/data/types';
 
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { applyCacheHeaders, markResponseDegradedFromApi } from '@/lib/cache/response-cache';
 import { decideCartaPage } from '@/lib/venue/carta-redirect';
 
 export const prerender = false;
@@ -123,6 +123,11 @@ applyCacheHeaders({
             ? [primaryVenueTag, ...extraVenueTags]
             : [CACHE_TAG_COLLECTIONS.venue]
 });
+
+// HOS-2009: a 2xx answer flagged `no-store` is the API's degraded state (the
+// owner's effective set failed to resolve, paid sections withheld). Veto the
+// edge cache so the failure is not frozen in as "this owner did not pay".
+markResponseDegradedFromApi({ locals: Astro.locals, results: [result] });
 
 // --- SEO ---
 const pageTitleWord = t('venue.detail.menuCarta.title', 'Carta');
