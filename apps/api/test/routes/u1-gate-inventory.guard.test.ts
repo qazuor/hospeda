@@ -471,7 +471,12 @@ const INVENTORY = [
         'not-a-gate',
         'U1 removed the billing middlewares from the app chain; not a gate'
     ],
-    ['apps/api/src/utils/entitlement-filter.ts', 'restored', 'readEffectiveKeys|paidFieldsFilter'],
+    [
+        'apps/api/src/utils/entitlement-filter.ts',
+        'not-a-gate',
+        'unconditional strips only; paid-field gating moved to public-accommodation-projection (HOS-1809)'
+    ],
+    ['apps/api/src/utils/public-accommodation-projection.ts', 'restored', 'paidFieldsFilter'],
     [
         'apps/api/src/utils/limit-check.ts',
         'retired',
