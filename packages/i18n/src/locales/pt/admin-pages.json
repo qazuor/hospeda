@@ -1775,5 +1775,35 @@
                 "suspendFailedTitle": "Não foi possível suspender"
             }
         }
+    },
+    "locationDuplicates": {
+        "title": "Endereços repetidos",
+        "description": "Anúncios publicados que compartilham endereço. Uma duplicata entre donos diferentes não bloqueia a publicação: é revisada aqui. Uma exceção permite que um anúncio compartilhe endereço (complexo de chalés, praça de alimentação, restaurante de hotel).",
+        "verticals": {
+            "accommodations": "Hospedagens",
+            "venues": "Comércios (Comer e sair)"
+        },
+        "columns": {
+            "address": "Endereço normalizado",
+            "listings": "Anúncios",
+            "owners": "Donos"
+        },
+        "sameOwner": "Mesmo dono",
+        "differentOwners": "Donos diferentes",
+        "grantException": "Conceder exceção",
+        "empty": "Não há endereços repetidos.",
+        "loading": "Carregando...",
+        "loadError": "Não foi possível carregar o relatório.",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "granted": "Exceção concedida.",
+        "grantError": "Não foi possível conceder a exceção.",
+        "dialog": {
+            "title": "Conceder exceção de endereço",
+            "description": "O anúncio poderá compartilhar endereço com outros. Fica registrado com seu usuário e a data.",
+            "reasonLabel": "Motivo (mínimo de 10 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Conceder"
+        }
     }
 }
