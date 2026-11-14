@@ -3,6 +3,7 @@ title: Migrate product analytics from PostHog to self-hosted Umami, and surface 
 linear: HOS-2119
 statusSource: linear
 created: 2026-11-14
+decisionsResolvedOn: 2026-11-14
 type: feature
 areas:
   - web
@@ -31,9 +32,8 @@ This spec covers three things, in order:
    statistics (traffic sources, countries, devices, contact funnel) to listing
    owners, next to the counts they already get from `entity_views`.
 
-Decisions already taken by the owner are marked **DECIDED**. Everything else is in
-§11 as an open question with a recommendation. Nothing in §11 is decided until the
-owner says so on the Linear issue.
+**All open questions in §11 were decided by the owner on 2026-11-14.** They are kept
+in place, each marked RESOLVED, as a decision record.
 
 ## 2. Problem
 
@@ -57,14 +57,15 @@ owner says so on the Linear issue.
   `scripts/posthog/data.ts`) exist as Umami boards/reports.
 - G-4 PostHog removed: no SDK, no env var, no CSP entry, no worker, no doc that
   presents it as live.
-- G-5 A listing owner sees, for each listing they own, enriched stats from Umami
-  (top referrers, countries, devices, contact funnel) for 7d / 30d / 90d.
+- G-5 An owner sees, for each listing they own — accommodation, venue,
+  experience and partner, all in the first release (OQ-7) — enriched stats from
+  Umami (top referrers, countries, devices, contact funnel) for 7d / 30d / 90d.
 - G-6 The owner stats panel never fails because Umami is down or slow: the Umami
   cards hide, the `entity_views` cards stay.
 
 ## 4. Non-goals
 
-- Migrating PostHog historical data into Umami (see OQ-3).
+- Keeping PostHog historical data in any form. It is discarded (OQ-3).
 - Session replay. It is already disabled on web and admin
   (`disable_session_recording: true`), so nothing is lost.
 - Feature flags. Admin's feature flags (`apps/admin/src/features/feature-flags`)
@@ -141,16 +142,18 @@ render means its outage takes the panel down.
 ### 6.1 Infra — **DECIDED: self-hosted**
 
 - Umami container in Coolify, one instance per environment (staging, prod).
-- Storage: a dedicated database (see OQ-6), never the Hospeda application schema.
-- Tracker and ingestion served first-party (OQ-4), replacing the PostHog proxy's
-  ad-block recovery.
+- Storage: **its own Postgres container** in Coolify (OQ-6), fully isolated from
+  the Hospeda database server.
+- Tracker and ingestion served from a **same-origin path behind Cloudflare** (OQ-4),
+  reusing the `/api/relay/*` pattern of the PostHog proxy so ad-block recovery is
+  kept. Exact path and script name settled in T-0.
 - One Umami website per surface: `hospeda-web`, `hospeda-admin`. Server events go
   to the website of the surface they describe (billing/onboarding facts →
   `hospeda-web`).
 - A dedicated read-only Umami user with an API key for Hospeda's API. The admin
   account is never used by code.
-- Backups: included in the existing VPS backup routine (`hops`), with a restore
-  check in the runbook.
+- Backups: the Umami Postgres container joins the VPS backup routine (`hops`),
+  with a restore check in the runbook.
 
 ### 6.2 Provider adapter in `@repo/analytics`
 
@@ -205,8 +208,10 @@ render means its outage takes the panel down.
 - `packages/service-core`: `ListingTrafficStatsService` with an injected
   `UmamiStatsClient` (`apps/api/src/lib/umami-stats-client.ts`, native fetch,
   API-key auth, 3 s timeout).
-- Route: `GET /api/v1/protected/views/accommodations/:accommodationId/traffic-stats?window=7d|30d|90d`,
-  next to the existing `routes/views/protected/*`.
+- Route: `GET /api/v1/protected/views/:entityType/:entityId/traffic-stats?window=7d|30d|90d`,
+  next to the existing `routes/views/protected/*`. `entityType` ∈ `ACCOMMODATION`,
+  `VENUE`, `EXPERIENCE`, `PARTNER` (the owner-facing subset of
+  `TRACKABLE_ENTITY_TYPES`).
   - Authorization through `resolveListingAccess` (`middlewares/listing-access.ts`, ownership). Someone else's
     listing → **404**.
   - Response: `{ window, available: boolean, referrers[], countries[], devices[],
@@ -217,11 +222,12 @@ render means its outage takes the panel down.
   the contact events), **not** by URL path — slugs change and every listing has
   `/es/`, `/en/` and `/pt/` paths.
 - Cache: Redis, key `traffic-stats:{entityType}:{entityId}:{window}`, TTL 1 h.
-- UI: new cards in `AnalyticsSection.client.tsx` below the existing `entity_views`
-  cards. Cards hide when `available: false`. Copy in es/en/pt.
-- Which vertical gets it first: accommodation. Venue/experience/partner follow
-  the same endpoint once their trackers send `entity_id` (they already do through
-  `EntityViewTracker`).
+- UI: one shared island (`TrafficStatsCards.client.tsx`) mounted below the
+  existing `entity_views` cards in every owner panel: accommodation
+  (`AnalyticsSection.client.tsx`), venue, experience, and the partner panel from
+  HOS-1063. Cards hide when `available: false`. Copy in es/en/pt.
+- All four verticals ship together (OQ-7). Their pages already send `entity_id`
+  through `EntityViewTracker`; T-0 confirms the property reaches Umami for each.
 
 ### 6.6 Removal
 
@@ -265,7 +271,7 @@ After the cut (OQ-2): delete PostHog clients, env vars (registry, `env.ts`,
 - AC-6 The six dashboards exist in Umami, created by `scripts/umami/setup.ts`
   idempotently (running it twice changes nothing).
 - AC-7 `GET …/traffic-stats` returns 404 for a listing the actor does not own,
-  and 200 with data for their own.
+  and 200 with data for their own, for each of the four entity types.
 - AC-8 With Umami down or slow (> 3 s), `…/traffic-stats` returns
   `available: false` within budget and the panel shows only the `entity_views`
   cards.
@@ -290,66 +296,61 @@ After the cut (OQ-2): delete PostHog clients, env vars (registry, `env.ts`,
   Mitigation: OQ-4.
 - R-4 **Owner-facing dependency on Umami.** Mitigated by §6.5 (fail-soft, cache)
   and by keeping `entity_views` as the source of the promised numbers.
-- R-5 **Operational load**: one more stateful service on the VPS (disk, upgrades,
-  backups).
+- R-5 **Operational load**: two more stateful containers on the VPS (Umami and its
+  own Postgres — disk, upgrades, backups).
 - R-6 **HOS-1878 verification gap** if PostHog is removed before its external
   events occur. Mitigated by coexistence (OQ-2) and AC-10.
 
-## 11. Open questions
+## 11. Open questions — all RESOLVED (owner, 2026-11-14)
 
-### OQ-1 · Source of truth for owner numbers
+### OQ-1 · Source of truth for owner numbers — RESOLVED: hybrid
 
-1. **Hybrid** — `entity_views` stays the source of view/click counts already
-   promised (HOS-734, HOS-1063); Umami adds referrers, countries, devices, funnel.
-2. **Umami only** — the panel reads everything from Umami; `entity_views` is
-   retired. Requires a new ADR superseding the HOS-734 precedent, and losing
-   ad-blocked views in owner numbers.
+`entity_views` stays the source of the view/click counts already promised
+(HOS-734, HOS-1063). Umami adds referrers, countries, devices and the contact
+funnel. The HOS-734 precedent stands; no new ADR for this point.
 
-**Recommendation: 1.** It keeps promised numbers independent of a second service
-and of ad-blockers, and costs nothing new.
+*Rejected:* Umami only — would retire `entity_views`, need an ADR superseding
+HOS-734, and lose ad-blocked views in owner numbers.
 
-### OQ-2 · Coexistence or direct cut
+### OQ-2 · Coexistence or direct cut — RESOLVED: dual-write 2–4 weeks
 
-1. **Dual-write 2–4 weeks**, then cut. Lets AC-2 be measured and HOS-1878's
-   pending smokes be signed.
-2. **Direct cut.**
+Events go to both providers; counts are compared (AC-2) and HOS-1878's pending
+smokes can still be signed in PostHog prod. Then T-6 removes PostHog.
 
-**Recommendation: 1.**
+*Rejected:* direct cut.
 
-### OQ-3 · PostHog history
+### OQ-3 · PostHog history — RESOLVED: discard
 
-1. Export key dashboard snapshots (CSV/PNG) to `docs/analytics/posthog-archive/`
-   and let the PostHog project expire.
-2. Keep PostHog read-only for N months.
-3. Discard.
+Nothing is exported or archived. When T-6 runs, the PostHog project is simply
+abandoned. Consequence: trends before the Umami start date are not available
+anywhere; billing questions about that period are answered from Hospeda's DB.
 
-**Recommendation: 1.**
+*Rejected:* exporting dashboard snapshots; keeping PostHog read-only for N months.
 
-### OQ-4 · First-party serving
+### OQ-4 · First-party serving — RESOLVED: same-origin path behind Cloudflare
 
-1. Subdomain (`stats.hospeda.com.ar`) with a renamed tracker script
-   (`TRACKER_SCRIPT_NAME`) and collect endpoint.
-2. Same-origin path behind Cloudflare (like today's `/api/relay/*`).
+Reuses the proven `/api/relay/*` pattern. Exact path and tracker script name are
+settled in the T-0 spike.
 
-**Recommendation: 2**, reusing the proven pattern; decide in the spike.
+*Rejected:* a `stats.` subdomain.
 
-### OQ-5 · Distinct ID scope
+### OQ-5 · Distinct ID scope — RESOLVED: as proposed
 
-Which surfaces call `identify`: web after consent (yes), admin staff (yes, staff
-id only), server events (user id when present). Confirm there is no case where
-an id should be withheld.
+Distinct ID is always Hospeda's internal user id, never an email. Web: only after
+cookie consent. Admin: the staff user id. Server events: the user id when there is
+one; `api-server` events carry none.
 
-### OQ-6 · Umami database
+### OQ-6 · Umami database — RESOLVED: its own Postgres container
 
-1. Separate database on the existing Postgres server.
-2. Separate Postgres container for Umami.
+Fully isolated from the Hospeda database server. Costs one more container to back
+up and upgrade (R-5).
 
-**Recommendation: 1** for now; revisit if analytics volume affects app queries.
+*Rejected:* a separate database on the existing Postgres server.
 
-### OQ-7 · v1 scope of owner stats
+### OQ-7 · v1 scope of owner stats — RESOLVED: all four cards, all four verticals
 
-Which cards ship first (§8 proposes four) and for which verticals
-(accommodation first).
+Cards: «De dónde vienen», «Países», «Dispositivos», «Contactos». Verticals:
+accommodation, venue, experience and partner, together in T-5.
 
 ## 12. Implementation notes
 
@@ -357,7 +358,8 @@ Phases (each its own PR to `staging`, title `[HOS-2119] …`):
 
 - **T-0 Spike** — Umami on local Docker + staging Coolify; validate R-1 (server
   attribution), OQ-4 (first-party path), API key auth and the per-`entity_id`
-  filters needed by §6.5. Output: a short note in `docs/` and answers to OQ-4/R-1.
+  filters needed by §6.5 for all four entity types. Output: a short note in
+  `docs/` with the relay path and the answer to R-1.
 - **T-1 Infra** — staging + prod instances, backups, env vars (AC-1).
 - **T-2 Adapter** — `providers/umami-*`, fan-out client, limits guard (AC-2–4).
 - **T-3 Web/admin** — tracker, consent, CSP (AC-5).
@@ -376,7 +378,7 @@ on T-6.
 | api | `apps/api/src/lib/analytics-client.ts` (replaces `posthog.ts`), `lib/umami-stats-client.ts`, `routes/views/protected/traffic-stats.ts`, `index.ts` (shutdown flush) |
 | service-core | `src/services/listing-traffic-stats/*` |
 | schemas | `src/entities/analytics/listing-traffic-stats.schema.ts` |
-| web | `components/analytics/UmamiScript.astro`, `lib/analytics/umami-client.ts`, `components/host/AnalyticsSection.client.tsx`, CSP files, layouts |
+| web | `components/analytics/UmamiScript.astro`, `components/analytics/TrafficStatsCards.client.tsx`, `lib/analytics/umami-client.ts`, the four owner panels (`components/host/AnalyticsSection.client.tsx`, venue, experience, partner), CSP files, layouts |
 | admin | `lib/analytics/umami-client.ts`, `contexts/auth-context.tsx`, `routes/__root.tsx`, `lib/csp-nonce.ts` |
 | config | env registry, app `env-schema.ts`, `.env.example` |
 | scripts | `scripts/umami/*` (replaces `scripts/posthog/*`) |
@@ -388,4 +390,4 @@ on T-6.
 
 Fits: the provider swap stays behind `@repo/analytics`; owner stats go through
 `service-core` + `resolveListingAccess`; the HOS-734 precedent is preserved under
-OQ-1 option 1. The only new moving part is the Umami service itself (R-5).
+OQ-1. The only new moving parts are the Umami service and its Postgres (R-5).
