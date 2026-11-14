@@ -452,3 +452,12 @@ minimumReleaseAgeExclude:
   # package declares them any more. The historical rationale for the old
   # entries lives in the comment block at the top of this file.
   - http-cache-semantics@4.3.0
+  - '@better-auth/core@1.7.25'
+  - '@better-auth/drizzle-adapter@1.7.25'
+  - '@better-auth/expo@1.7.25'
+  - '@better-auth/kysely-adapter@1.7.25'
+  - '@better-auth/memory-adapter@1.7.25'
+  - '@better-auth/mongo-adapter@1.7.25'
+  - '@better-auth/prisma-adapter@1.7.25'
+  - '@better-auth/telemetry@1.7.25'
+  - better-auth@1.7.25
