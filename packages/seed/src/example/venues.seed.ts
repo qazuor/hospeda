@@ -188,6 +188,8 @@ interface VenueSeedData {
     /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
     readonly publicationStatus: string;
     readonly contactInfo?: Record<string, unknown> | null;
+    /** Structured postal address (HOS-2189). */
+    readonly location?: Record<string, unknown> | null;
     readonly socialNetworks?: Record<string, unknown> | null;
     readonly openingHours?: Record<string, unknown> | null;
     readonly media?: Record<string, unknown> | null;
@@ -590,6 +592,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     deadlinesVersion: 1,
                     contactInfo: (item.contactInfo ??
                         null) as (typeof venues.$inferInsert)['contactInfo'],
+                    location: (item.location ?? null) as (typeof venues.$inferInsert)['location'],
                     socialNetworks: (item.socialNetworks ??
                         null) as (typeof venues.$inferInsert)['socialNetworks'],
                     openingHours: (item.openingHours ??
