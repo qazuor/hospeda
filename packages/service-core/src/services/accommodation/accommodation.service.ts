@@ -141,6 +141,11 @@ import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 import { resolveBusinessLinesOnCreate } from '../listing/base-listing.service';
 import {
+    applyLocationRuleOnUpdate,
+    type LocationRuleCurrent,
+    resolveLocationKeyPatch
+} from '../listing/listing-location-key';
+import {
     buildListingOwnerActChanges,
     recordListingOwnerAct,
     recordListingSubEntityEdit
@@ -885,15 +890,26 @@ export class AccommodationService extends BaseCrudService<
             payload: data as Record<string, unknown>
         }) as Partial<Accommodation>;
 
+        // HOS-1810: the place key follows `location` + `destinationId`.
+        const locationKey = resolveLocationKeyPatch({
+            payload: data as Record<string, unknown>,
+            current: null
+        });
+
         // Only generate a slug if one is not already provided
         if (!data.slug) {
             const slug = await generateSlug(data.type as string, data.name as string);
-            return { slug, businessLines, ...createPolicies } as Partial<Accommodation>;
+            return {
+                slug,
+                businessLines,
+                ...createPolicies,
+                ...locationKey
+            } as Partial<Accommodation>;
         }
         // If slug is provided, return only the catalog default when needed.
         return businessLines
-            ? ({ businessLines, ...createPolicies } as Partial<Accommodation>)
-            : createPolicies;
+            ? ({ businessLines, ...createPolicies, ...locationKey } as Partial<Accommodation>)
+            : ({ ...createPolicies, ...locationKey } as Partial<Accommodation>);
     }
 
     /**
@@ -1276,6 +1292,18 @@ export class AccommodationService extends BaseCrudService<
         Object.assign(
             cleanData,
             resolveUpdatePolicies({ vertical: 'accommodation', payload, current: storedPolicies })
+        );
+
+        // HOS-1810: keep the place key in step and block moving a PUBLISHED
+        // listing onto a place its owner already occupies (409 DUPLICATE_LOCATION).
+        Object.assign(
+            cleanData,
+            await applyLocationRuleOnUpdate({
+                vertical: VerticalEnum.ACCOMMODATION,
+                payload,
+                current: current as unknown as LocationRuleCurrent | null,
+                tx: ctx.tx
+            })
         );
 
         return cleanData as Partial<Accommodation>;
