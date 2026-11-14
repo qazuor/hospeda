@@ -108,7 +108,7 @@ Reglas:
 2. `GET /protected/ai/listing-questions?from=&to=` devuelve sólo lo del rango; `from` anterior al horizonte de 12 meses: 400 `VALIDATION_ERROR`; `from > to`: 400.
 3. Con el permiso nuevo, el staff lista conversaciones por ficha y fecha y abre una con sus turnos en orden; sin el permiso: 403 `FORBIDDEN`; sin sesión: 401.
 4. Ninguna respuesta (dueño ni staff) contiene `user_id`, email ni nombre del cliente (test de claves exactas).
-5. Un mensaje con `juan@mail.com` y `+54 9 3442 123456` sale con `[REDACTED_EMAIL]` / `[REDACTED_PHONE]` en el panel, en el mail y en la vista de staff; el texto guardado en la base no cambia.
+5. Un mensaje del cliente con `juan@mail.com` y `+54 9 3442 123456` sale con `[REDACTED_EMAIL]` / `[REDACTED_PHONE]` en el panel, en el mail y en la vista de staff; el texto guardado en la base no cambia. Un teléfono en un turno del asistente queda intacto.
 6. El widget de las tres verticales muestra el aviso en es, en y pt; la clave existe en los tres idiomas (guard de i18n).
 7. El permiso existe en `PermissionEnum`, está sembrado SÓLO a SUPER_ADMIN (baseline + data-migration) y `permission-naming-convention.guard.test.ts` sigue verde.
 8. La retención no cambia: 12 meses con borrado definitivo.
@@ -138,7 +138,7 @@ Label **`status-needs-smoke-staging`**. Pasos: (1) con un turista, preguntar en 
 Finales. Reemplazan a las opciones del borrador.
 
 - **Q-1 Aviso al cliente**: línea fija en el widget indicando que el comercio puede leer las preguntas. es/en/pt.
-- **Q-2 Datos personales**: redactar teléfonos y emails AL LEER con el `scrubPii` existente, en el panel del dueño, el mail semanal y la vista de staff. El almacenamiento queda textual.
+- **Q-2 Datos personales**: redactar teléfonos y emails AL LEER con el `scrubPii` existente, en el panel del dueño, el mail semanal y la vista de staff. El almacenamiento queda textual. **Aclaración (14/11/2026): se redactan SÓLO las preguntas del cliente (turnos `user`); las respuestas del bot (turnos `assistant`) NO se redactan**, en el panel del dueño, el mail semanal y la vista de staff.
 - **Q-3 Retención**: se mantienen los 12 meses con borrado.
 - **Q-4 Conversación completa para el dueño**: NO. Alcanza con el panel de preguntas actual. La idea queda como feature futura aparte en HOS-2188 (fuera de alcance acá).
 - **Q-5 Vista de staff**: detrás de un permiso NUEVO de `PermissionEnum`, sembrado sólo a SUPER_ADMIN (dual-write: baseline + data-migration de `role_permission`; respetando la guard de naming).
