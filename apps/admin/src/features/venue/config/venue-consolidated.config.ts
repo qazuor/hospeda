@@ -162,10 +162,13 @@ function createVenueSpecificSection(
 // Venue location section (HOS-2189)
 // ---------------------------------------------------------------------------
 
-const VENUE_LOCATION_PERMISSIONS = {
+const VENUE_LOCATION_PERMISSIONS: {
+    view: PermissionEnum[];
+    edit: PermissionEnum[];
+} = {
     view: [PermissionEnum.VENUE_VIEW_ALL],
     edit: [PermissionEnum.VENUE_EDIT_ALL]
-} as const;
+};
 
 /**
  * Builds the venue postal-address section: the same `location` shape and field
