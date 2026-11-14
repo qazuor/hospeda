@@ -743,6 +743,17 @@ describe('scrubPii', () => {
             expect(result.redactions.some((r) => r.kind === 'phone')).toBe(true);
         });
 
+        it('should consume the mobile "9" after the country code (HOS-2075)', () => {
+            // Arrange
+            const input = { text: 'mi cel es +54 9 3442 123456' };
+
+            // Act
+            const result = scrubPii(input);
+
+            // Assert: nothing of the number is left, not even the "+54 9" prefix.
+            expect(result.scrubbed).toBe('mi cel es [REDACTED_PHONE]');
+        });
+
         it('should redact "(011) 4123-4567" (local landline with area code)', () => {
             // Arrange
             const input = { text: 'Teléfono: (011) 4123-4567.' };
