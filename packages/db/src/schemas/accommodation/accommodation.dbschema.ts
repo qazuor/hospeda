@@ -26,6 +26,7 @@ import {
 import { accommodationExternalListings } from '../accommodation-external/accommodation_external_listings.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { AccommodationTypePgEnum } from '../enums.dbschema.ts';
+import { listingLocationColumns } from '../listing/listing-location-columns.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -75,6 +76,8 @@ export const accommodations = pgTable(
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<AccommodationLocationType>(),
+        // HOS-1810: normalized place key + admin exception (see the columns helper).
+        ...listingLocationColumns(),
         /**
          * Embedded videos for the accommodation (HOS-372).
          *
@@ -198,7 +201,11 @@ export const accommodations = pgTable(
         accommodations_ownerId_deletedAt_idx: index('accommodations_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt
-        )
+        ),
+        // HOS-1810: non-unique on purpose (the policy is the application's).
+        accommodations_locationKey_idx: index('accommodations_locationKey_idx')
+            .on(table.locationKey)
+            .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`)
     })
 );
 

@@ -25,6 +25,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { PriceRangePgEnum, VenueEntryKindPgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
+import { listingLocationColumns } from '../listing/listing-location-columns.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { quotedList } from '../vertical/quoted-list.ts';
@@ -141,6 +142,8 @@ export const venues = pgTable(
          * `destination_id`. Nullable until the owner or an admin fills it.
          */
         location: jsonb('location').$type<PostalAddressType>(),
+        // HOS-1810: normalized place key + admin exception (see the columns helper).
+        ...listingLocationColumns(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         /** Weekly opening hours — keyed by day name with open/close time strings. */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
@@ -252,6 +255,10 @@ export const venues = pgTable(
             table.businessLines
         ),
         venues_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
+        // HOS-1810: non-unique on purpose (the policy is the application's).
+        venues_locationKey_idx: index('venues_locationKey_idx')
+            .on(table.locationKey)
+            .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
         venues_publicationStatus_idx: index('venues_publicationStatus_idx').on(

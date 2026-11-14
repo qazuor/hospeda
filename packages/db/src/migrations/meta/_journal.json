@@ -1429,6 +1429,13 @@
       "when": 1794683236017,
       "tag": "0204_hos_2189_venue_location",
       "breakpoints": true
+    },
+    {
+      "idx": 205,
+      "version": "7",
+      "when": 1794686719235,
+      "tag": "0205_hos_1810_location_key",
+      "breakpoints": true
     }
   ]
 }
