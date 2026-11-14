@@ -67,6 +67,8 @@ Accommodation and venue follow "one listing = one physical place = one address".
 
 It is a business rule, so it sits at step 6 of the order: a malformed id is 400 first, and a listing the caller does not own is 404 first, never 409. A duplicate held by **another owner** never blocks and is never mentioned in any response; it only appears in the admin report (`GET /api/v1/admin/{accommodations,venues}/location-duplicates`). A listing with an admin exception (`POST|DELETE /api/v1/admin/{accommodations,venues}/:id/location-exception`, reason required, 400 without it) is never blocked and never counts as an occupant. An address without a number or written `s/n` has no key and is never a duplicate. Drafts are not blocked: the protected `GET` of a listing only carries `locationDuplicate: boolean` as a warning.
 
+**`DUPLICATE_LOCATION` wins over `LIMIT_REACHED`.** On publish the duplicate check runs in `ListingPublicationService.publish` before PB1, and the plan cap is enforced inside PB1 (the publish routes declare no `limit` for the listing-access middleware), so an owner at the cap who publishes onto an address already published gets 409 `DUPLICATE_LOCATION`, and only an owner publishing a free address gets 403 `LIMIT_REACHED`. A caller without coverage or capability still gets the listing-access 403 first, as before. Moving the address of a published listing consumes no quota slot, so no limit check applies to that PATCH.
+
 ### The coverage step (V5.3, HOS-1457)
 
 Listing access runs inside business rules (step 6 of the HTTP order), after

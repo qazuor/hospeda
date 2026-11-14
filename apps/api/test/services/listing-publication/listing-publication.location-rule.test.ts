@@ -175,3 +175,47 @@ describe('ListingPublicationService.publish: concurrent publish (HOS-1810)', () 
         ).rejects.toBe(boom);
     });
 });
+
+describe('ListingPublicationService.publish: DUPLICATE_LOCATION wins over LIMIT_REACHED (HOS-1810)', () => {
+    const service = new ListingPublicationService();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.venueGetById.mockResolvedValue({ data: { id: LISTING, ownerId: OWNER } });
+        mocks.getState.mockResolvedValue({ ...state, hasException: false });
+        mocks.getDb.mockReturnValue({
+            select: () => ({
+                from: () => ({
+                    where: () => ({
+                        limit: async () => [{ id: OWNER, email: 'owner@example.com' }]
+                    })
+                })
+            })
+        });
+        // The plan cap is full: PB1 would answer LIMIT_REACHED for this owner.
+        mocks.publishListing.mockResolvedValue({ published: false, reason: 'LIMIT_REACHED' });
+    });
+
+    it('an owner at the plan cap publishing a duplicate gets 409 DUPLICATE_LOCATION', async () => {
+        mocks.findOwnOccupant.mockResolvedValue(OTHER);
+
+        await expect(
+            service.publish({ actor, id: LISTING, vertical: VerticalEnum.VENUE })
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.ALREADY_EXISTS,
+            reason: 'DUPLICATE_LOCATION',
+            details: { existingListingId: OTHER }
+        });
+        // The cap was never consulted: the duplicate check runs first.
+        expect(mocks.publishListing).not.toHaveBeenCalled();
+    });
+
+    it('an owner at the plan cap publishing on a free address gets LIMIT_REACHED', async () => {
+        mocks.findOwnOccupant.mockResolvedValue(null);
+
+        await expect(
+            service.publish({ actor, id: LISTING, vertical: VerticalEnum.VENUE })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.LIMIT_REACHED });
+        expect(mocks.publishListing).toHaveBeenCalledTimes(1);
+    });
+});
