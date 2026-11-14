@@ -441,8 +441,8 @@ importers:
         specifier: ^1.5.2
         version: 1.5.2(hono@4.13.7)(zod@4.6.6)
       '@linear/sdk':
-        specifier: ^91.0.0
-        version: 91.0.0(graphql@16.14.2)
+        specifier: ^101.1.0
+        version: 101.1.0(graphql@16.14.2)
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -3794,9 +3794,9 @@ packages:
   '@lhci/utils@0.15.1':
     resolution: {integrity: sha512-WclJnUQJeOMY271JSuaOjCv/aA0pgvuHZS29NFNdIeI14id8eiFsjith85EGKYhljgoQhJ2SiW4PsVfFiakNNw==}
 
-  '@linear/sdk@91.0.0':
-    resolution: {integrity: sha512-H0pa8J6D4OSL89wZK7xtM7g/JcOjGWfZgeLyvl0RcUfY+arvWVimjMz+XVRxmu2yMLov0eeuRB1z0qIWIrCd9w==}
-    engines: {node: '>=18.x'}
+  '@linear/sdk@101.1.0':
+    resolution: {integrity: sha512-sDlYKMoTiOQU1C6+B2451qMbrR6zdKbBZfqIGp/dpZdVeOzYQSmp8e4uUHlCdMuFM7sRhQFMIl82AtwoaKYW5g==}
+    engines: {node: ^20.19.0 || >=22.12.0}
 
   '@marsidev/react-turnstile@1.5.5':
     resolution: {integrity: sha512-+EtXbmsJwlRuIUruLb3UBAakpW0wFGeA17QQp0uG8Mv+Zh8MXktZT68P5HS2g1ssfeRd2+BZGupOE/F4KGajFQ==}
@@ -10200,6 +10200,7 @@ packages:
 
   node-abort-controller@3.1.1:
     resolution: {integrity: sha512-AGK2yQKIjRuqnc6VkX2Xj5d+QW8xZ87pa1UK6yA6ouUyuxfHuMP6umE5QK7UmTeOAymo+Zx1Fxiuw9rVx8taHQ==}
+    deprecated: This package is no longer needed on supported Node.js versions. Node.js 16+ includes AbortController and AbortSignal as built-in globals. All Node.js versions requiring this polyfill are end-of-life. Use the built-in globals instead.
 
   node-cron@4.6.0:
     resolution: {integrity: sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==}
@@ -14939,7 +14940,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@linear/sdk@91.0.0(graphql@16.14.2)':
+  '@linear/sdk@101.1.0(graphql@16.14.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
     transitivePeerDependencies:
