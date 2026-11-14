@@ -323,6 +323,16 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .default('Too many webhook requests, please try again later.'),
 
+    // MCP server (HOS-2184)
+    /** Master switch for the MCP server; endpoints are not mounted when false */
+    HOSPEDA_MCP_ENABLED: boolEnv(false),
+    /** Canonical public MCP URL (token audience). Required when HOSPEDA_MCP_ENABLED is true */
+    HOSPEDA_MCP_RESOURCE_URL: z.string().url('Must be a valid MCP resource URL').optional(),
+    /** MCP rate-limit window in milliseconds */
+    HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+    /** Max MCP requests per rate-limit window */
+    HOSPEDA_MCP_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+
     // Security
     API_SECURITY_ENABLED: boolEnv(true),
     API_SECURITY_CSRF_ENABLED: boolEnv(true),

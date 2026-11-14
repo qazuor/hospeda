@@ -2037,6 +2037,69 @@
       "howToObtainEs": "Número entero de milisegundos. Por defecto 600000 (10 min). Subilo si tus actores de Apify tardan más; bajalo si querés que los runs trabados fallen rápido. Debe ser un entero positivo."
     },
     {
+      "name": "HOSPEDA_MCP_ENABLED",
+      "description": "Master switch for the Model Context Protocol (MCP) server and its OAuth surface. When false (default) the MCP endpoints are not mounted.",
+      "descriptionEs": "Interruptor general del servidor Model Context Protocol (MCP) y su superficie OAuth. En false (por defecto) los endpoints MCP no se montan.",
+      "type": "boolean",
+      "required": false,
+      "secret": false,
+      "defaultValue": "false",
+      "exampleValue": "false",
+      "apps": [
+        "api"
+      ],
+      "category": "features",
+      "howToObtain": "Set \"true\" to expose the MCP server. Requires HOSPEDA_MCP_RESOURCE_URL. Leave unset or \"false\" to keep the feature off.",
+      "howToObtainEs": "Poné \"true\" para exponer el servidor MCP. Requiere HOSPEDA_MCP_RESOURCE_URL. Dejalo sin setear o en \"false\" para mantener la feature apagada."
+    },
+    {
+      "name": "HOSPEDA_MCP_RESOURCE_URL",
+      "description": "Canonical public URL of the MCP server (the OAuth protected-resource identifier / token audience). Optional while HOSPEDA_MCP_ENABLED is false; required when it is true.",
+      "descriptionEs": "URL pública canónica del servidor MCP (el identificador del recurso protegido OAuth / audience del token). Opcional mientras HOSPEDA_MCP_ENABLED sea false; obligatoria cuando es true.",
+      "type": "url",
+      "required": false,
+      "secret": false,
+      "exampleValue": "https://api.hospeda.com.ar/mcp",
+      "apps": [
+        "api"
+      ],
+      "category": "features",
+      "howToObtain": "The externally reachable URL of the MCP endpoint, e.g. https://api.hospeda.com.ar/mcp. Must be a valid absolute URL.",
+      "howToObtainEs": "La URL accesible desde afuera del endpoint MCP, ej: https://api.hospeda.com.ar/mcp. Debe ser una URL absoluta válida."
+    },
+    {
+      "name": "HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS",
+      "description": "MCP endpoint rate-limit window duration in milliseconds",
+      "descriptionEs": "Duración de la ventana del rate-limit del endpoint MCP, en milisegundos",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "60000",
+      "exampleValue": "60000",
+      "apps": [
+        "api"
+      ],
+      "category": "features",
+      "howToObtain": "Window in ms over which MCP requests are counted. Default 60000 (1 min).",
+      "howToObtainEs": "Ventana en ms sobre la que se cuentan los requests MCP. Por defecto 60000 (1 min)."
+    },
+    {
+      "name": "HOSPEDA_MCP_RATE_LIMIT_MAX",
+      "description": "Maximum MCP requests allowed per rate-limit window",
+      "descriptionEs": "Máximo de requests MCP permitidos por ventana de rate-limit",
+      "type": "number",
+      "required": false,
+      "secret": false,
+      "defaultValue": "60",
+      "exampleValue": "60",
+      "apps": [
+        "api"
+      ],
+      "category": "features",
+      "howToObtain": "Requests allowed per window for the MCP endpoint. Default 60.",
+      "howToObtainEs": "Requests permitidos por ventana para el endpoint MCP. Por defecto 60."
+    },
+    {
       "name": "HOSPEDA_NOINDEX_HOSTS",
       "description": "Comma-separated hostnames that must receive a restrictive robots policy (Disallow: /) and X-Robots-Tag: noindex, nofollow header. Used to keep staging hostnames out of search engines.",
       "descriptionEs": "Lista de hostnames separados por coma que deben recibir una policy restrictiva de robots (Disallow: /) y el header X-Robots-Tag: noindex, nofollow. Sirve para mantener los hostnames de staging fuera de los buscadores.",
@@ -4618,6 +4681,18 @@
         "both",
         "none"
       ]
+    },
+    "HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS": {
+      "numeric": {
+        "min": 0,
+        "max": 9007199254740991
+      }
+    },
+    "HOSPEDA_MCP_RATE_LIMIT_MAX": {
+      "numeric": {
+        "min": 0,
+        "max": 9007199254740991
+      }
     },
     "HOSPEDA_CRON_ADAPTER": {
       "enumValues": [

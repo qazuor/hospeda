@@ -154,6 +154,15 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             message: 'HOSPEDA_INTERNAL_REQUEST_SECRET must be at least 32 characters when set'
         });
     }
+    // MCP server (HOS-2184): the resource URL is the OAuth token audience, so
+    // enabling the feature without it must fail fast at startup.
+    if (data.HOSPEDA_MCP_ENABLED === true && !data.HOSPEDA_MCP_RESOURCE_URL) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_MCP_RESOURCE_URL'],
+            message: 'HOSPEDA_MCP_RESOURCE_URL is required when HOSPEDA_MCP_ENABLED is true'
+        });
+    }
     // Production safety: reject test/debug flags that would weaken security if accidentally set.
     // These have use-site gates today, but a future refactor could drop them silently. The
     // schema-level guard ensures the deploy fails fast at startup.

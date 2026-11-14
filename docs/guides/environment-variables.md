@@ -96,6 +96,10 @@ pnpm env:check
 | Variable | Type | Required | Secret | Default | Description |
 |----------|------|----------|--------|---------|-------------|
 | `HOSPEDA_MAX_COLLECTIONS_PER_USER` | number | no | no | `10` | Maximum active collections per user. Soft-deleted excluded. Range 1–10000. |
+| `HOSPEDA_MCP_ENABLED` | boolean | no | no | `false` | Master switch for the MCP server and its OAuth surface (HOS-2184). Endpoints are not mounted when false |
+| `HOSPEDA_MCP_RESOURCE_URL` | url | no | no | - | Canonical public MCP URL (OAuth token audience). Optional while the server is disabled; **required** when `HOSPEDA_MCP_ENABLED=true` |
+| `HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS` | number | no | no | `60000` | MCP rate-limit window in milliseconds |
+| `HOSPEDA_MCP_RATE_LIMIT_MAX` | number | no | no | `60` | Maximum MCP requests per rate-limit window |
 
 ### Cron, Integrations, Monitoring (HOSPEDA_)
 
