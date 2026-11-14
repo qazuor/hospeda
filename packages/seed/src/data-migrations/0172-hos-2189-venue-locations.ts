@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0170-hos-2189-venue-locations
+ * Data migration: 0172-hos-2189-venue-locations
  *
  * Dual-write counterpart (HOS-25) for HOS-2189. `venues` gained a structured
  * postal address (`location` JSONB, the same shape as an accommodation's). The
@@ -31,7 +31,7 @@ import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0170-hos-2189-venue-locations',
+    name: '0172-hos-2189-venue-locations',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

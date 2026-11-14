@@ -63,7 +63,7 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
         expect(result.exitCode).toBe(0);
         expect(result.output).toMatch(/^OK GUARD:G-FAC-10: /);
         expect(result.output).toContain('accommodations 45 columns / 16 SET');
-        expect(result.output).toContain('venues 44 columns / 22 SET');
+        expect(result.output).toContain('venues 45 columns / 23 SET');
         expect(result.output).toContain('experiences 45 columns / 23 SET');
         expect(result.output).toContain('73 system rows and 6 action-15 exceptions');
     });
@@ -106,7 +106,7 @@ describe('TEST:4.3:4 GUARD:G-FAC-10 - the purge covers every content column', ()
             variableName: 'BLANK_CONTENT'
         });
         expect(scan.error).toBeNull();
-        expect(scan.assignments.venue).toHaveLength(22);
+        expect(scan.assignments.venue).toHaveLength(23);
         expect(scan.assignments.venue).toContain('entry_note_i18n');
         expect(scan.assignments.venue).toContain('entry_price_updated_at');
         expect(scan.assignments.venue).toContain('policies');

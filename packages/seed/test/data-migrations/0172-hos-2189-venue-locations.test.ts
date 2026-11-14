@@ -1,10 +1,10 @@
 /**
  * @fileoverview
- * Unit tests for `0170-hos-2189-venue-locations` with a mocked `ctx.db`
+ * Unit tests for `0172-hos-2189-venue-locations` with a mocked `ctx.db`
  * (no real database), the same style as the other data-migration tests.
  */
 import { describe, expect, it, vi } from 'vitest';
-import * as migration from '../../src/data-migrations/0170-hos-2189-venue-locations.js';
+import * as migration from '../../src/data-migrations/0172-hos-2189-venue-locations.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { deterministicFixtureId } from '../../src/utils/deterministicFixtureId.js';
 
@@ -32,7 +32,7 @@ describe('planVenueLocationUpdates', () => {
     });
 });
 
-describe('0170 up()', () => {
+describe('0172 up()', () => {
     it('writes one guarded UPDATE per real fixture and reports the rows it changed', async () => {
         const execute = vi.fn(async () => ({ rows: [{ id: 'x' }] }));
         const ctx = { db: { execute } } as unknown as SeedMigrationCtx;
