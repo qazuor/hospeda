@@ -44,12 +44,26 @@ const read = (file: string): string => readFileSync(file, 'utf-8');
  * red on a correct file and green on a broken one whose author deleted the
  * comment.
  */
-const readCode = (file: string): string =>
-    read(file)
+const stripCommentsOnce = (source: string): string =>
+    source
         .replace(/\/\*[\s\S]*?\*\//g, '')
         .replace(/^\s*\/\/.*$/gm, '')
         .replace(/<!--[\s\S]*?-->/g, '')
         .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+
+/**
+ * Repeats the strip until the text stops changing, so a comment that only
+ * appears once another one is removed (e.g. `<!<!---->--`) is stripped too.
+ */
+const readCode = (file: string): string => {
+    let previous: string;
+    let current = read(file);
+    do {
+        previous = current;
+        current = stripCommentsOnce(previous);
+    } while (current !== previous);
+    return current;
+};
 
 describe('HOS-1063 AC-16 — the home carousel gains no island', () => {
     it('contains no client: directive', () => {
