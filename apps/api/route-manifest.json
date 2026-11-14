@@ -74,6 +74,14 @@
             "path": "/api/v1/admin/accommodations/:id/faqs/reorder"
         },
         {
+            "method": "DELETE",
+            "path": "/api/v1/admin/accommodations/:id/location-exception"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/:id/location-exception"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/accommodations/:id/media"
         },
@@ -132,6 +140,10 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/accommodations/batch"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/accommodations/location-duplicates"
         },
         {
             "method": "GET",
@@ -2098,6 +2110,14 @@
             "path": "/api/v1/admin/venues/:id/faqs/reorder"
         },
         {
+            "method": "DELETE",
+            "path": "/api/v1/admin/venues/:id/location-exception"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/location-exception"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/venues/:id/media"
         },
@@ -2140,6 +2160,10 @@
         {
             "method": "POST",
             "path": "/api/v1/admin/venues/batch"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/location-duplicates"
         },
         {
             "method": "GET",

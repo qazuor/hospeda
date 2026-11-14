@@ -146,6 +146,26 @@ describe('handleRouteError — ServiceError.reason propagation', () => {
         expect(conflictBody.error.details).toBeUndefined();
     });
 
+    it('publishes the details of a DUPLICATE_LOCATION conflict (own listing id only)', () => {
+        const { ctx, calls } = createMockContext();
+        handleRouteError(
+            new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Another published listing of yours already occupies this address',
+                { reason: 'DUPLICATE_LOCATION', existingListingId: 'own-id' },
+                'DUPLICATE_LOCATION'
+            ),
+            ctx
+        );
+        expect(calls[0]?.status).toBe(409);
+        const body = calls[0]?.body as { error: Record<string, unknown> };
+        expect(body.error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'DUPLICATE_LOCATION',
+            details: { reason: 'DUPLICATE_LOCATION', existingListingId: 'own-id' }
+        });
+    });
+
     it('propagates reason when HOSPEDA_API_DEBUG_ERRORS is false (default mock)', () => {
         // Arrange — debug mode is false (see vi.mock above)
         const { ctx, calls } = createMockContext();

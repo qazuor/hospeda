@@ -651,7 +651,13 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     /** Features linked through r_accommodation_feature (protected tier). Same overlay rationale. */
     features: z.array(AccommodationFeatureReadSchema).optional(),
     /** SPEC-097 — Approximate location preview ("how a public visitor sees this"). */
-    approximateLocation: ApproximateLocationSchema.optional()
+    approximateLocation: ApproximateLocationSchema.optional(),
+    /**
+     * HOS-1810 — `true` when another PUBLISHED listing of the SAME owner occupies
+     * this listing's address (the draft warning). A flag only: it never carries
+     * the other listing's id, and a duplicate of another owner never sets it.
+     */
+    locationDuplicate: z.boolean().optional()
 });
 
 export type AccommodationProtected = z.infer<typeof AccommodationProtectedSchema>;

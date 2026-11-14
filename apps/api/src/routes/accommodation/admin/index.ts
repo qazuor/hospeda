@@ -3,6 +3,7 @@
  * Routes that require admin-level access
  */
 import { createRouter } from '../../../utils/create-app';
+import { adminAccommodationLocationRoutes } from '../../listing-location/index';
 import { adminAccommodationReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddFaqRoute } from './addFaq';
 import { adminAddFeaturedMediaRoute } from './addFeaturedMedia';
@@ -51,8 +52,16 @@ app.route('/reviews', adminAccommodationReviewRoutes);
 // Registered before /{id} so Hono does not resolve "options" as a UUID param
 app.route('/', adminAccommodationOptionsRoute);
 
+// GET /location-duplicates - one-address report (HOS-1810)
+// Registered before /{id} so "location-duplicates" is not resolved as a UUID param
+app.route('/', adminAccommodationLocationRoutes.listDuplicates);
+
 // GET /:id - Get by ID
 app.route('/', adminGetAccommodationByIdRoute);
+
+// POST|DELETE /:id/location-exception - one-address exception (HOS-1810)
+app.route('/', adminAccommodationLocationRoutes.setException);
+app.route('/', adminAccommodationLocationRoutes.clearException);
 
 // PUT /:id - Update accommodation
 app.route('/', adminUpdateAccommodationRoute);

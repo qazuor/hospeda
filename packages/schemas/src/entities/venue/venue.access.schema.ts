@@ -397,7 +397,13 @@ export const VenueProtectedSchema = VenueSchema.pick({
             }),
             { error: 'zodError.venue.businessLines.invalidType' }
         )
-        .optional()
+        .optional(),
+    /**
+     * HOS-1810 — `true` when another PUBLISHED listing of the SAME owner occupies
+     * this listing's address (the draft warning). A flag only: it never carries
+     * the other listing's id, and a duplicate of another owner never sets it.
+     */
+    locationDuplicate: z.boolean().optional()
 });
 
 /** TypeScript type for {@link VenueProtectedSchema}. */

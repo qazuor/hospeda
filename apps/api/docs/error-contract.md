@@ -61,6 +61,12 @@ cannot be used to probe permissions. The allowed operations are `VERIFY_EMAIL`,
 They are declared by `emailUnverifiedOperation` on `createProtectedRoute` and `createProtectedListRoute`. For `CHANGE_EMAIL`, the Partner link is read through `PartnerService.getOwn`; a failed lookup returns 503.
 For an unverified account, an operation on the list runs without the staff permissions in `UNVERIFIED_STAFF_BYPASS_PERMISSIONS` (`apps/api/src/middlewares/step2-staff-bypass.ts`), so a foreign resource answers exactly as it does for an account without that permission.
 
+### The one-address rule (HOS-1810)
+
+Accommodation and venue follow "one listing = one physical place = one address". When a publish (`POST /api/v1/protected/{accommodations,venues}/:id/publish`) or an edit that moves the address of a `PUBLISHED` listing (`PATCH /api/v1/protected/{accommodations,venues}/:id`) would put the listing on a place another `PUBLISHED`, live listing of the **same owner and the same vertical** already holds, the answer is 409 `ALREADY_EXISTS` with `details: { reason: 'DUPLICATE_LOCATION', existingListingId }`. The stored address does not change.
+
+It is a business rule, so it sits at step 6 of the order: a malformed id is 400 first, and a listing the caller does not own is 404 first, never 409. A duplicate held by **another owner** never blocks and is never mentioned in any response; it only appears in the admin report (`GET /api/v1/admin/{accommodations,venues}/location-duplicates`). A listing with an admin exception (`POST|DELETE /api/v1/admin/{accommodations,venues}/:id/location-exception`, reason required, 400 without it) is never blocked and never counts as an occupant. An address without a number or written `s/n` has no key and is never a duplicate. Drafts are not blocked: the protected `GET` of a listing only carries `locationDuplicate: boolean` as a warning.
+
 ### The coverage step (V5.3, HOS-1457)
 
 Listing access runs inside business rules (step 6 of the HTTP order), after
@@ -157,9 +163,10 @@ mounted their own hand-rolled `onError` instead of exercising
 
 Two codes carry `details` the client is meant to read, so their `details` is
 now emitted by `handleRouteError` too, with `HOSPEDA_API_DEBUG_ERRORS` off.
-There is also a narrow exception for `ALREADY_EXISTS` when
-`reason: 'SECTION_ABSENT'`: that response publishes its section details so the
-client can identify which section is unavailable. Other `ALREADY_EXISTS`
+There are also narrow exceptions for `ALREADY_EXISTS` when
+`reason: 'SECTION_ABSENT'` (the response publishes its section details so the
+client can identify which section is unavailable) and when
+`reason: 'DUPLICATE_LOCATION'` (it publishes the caller's own `existingListingId`). Other `ALREADY_EXISTS`
 errors keep the debug-only behavior.
 
 `VALIDATION_ERROR` gets the same narrow treatment for business-line
@@ -176,6 +183,7 @@ so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience, ... }` | `apps/web/src/lib/billing-limit-error.ts` reads `limitKey` to render the limit-specific toast (which limit, and the addon that unlocks it) instead of the generic fallback. |
 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
 | `ALREADY_EXISTS` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The client needs the absent section identifier to explain why the requested content cannot be saved. |
+| `ALREADY_EXISTS` with `reason: 'DUPLICATE_LOCATION'` | `{ reason: 'DUPLICATE_LOCATION', existingListingId }` | The owner editor links to the listing that already holds the address. The id is always one of the caller's own listings: a duplicate held by another owner never produces this error. |
 | `VALIDATION_ERROR` with `reason: 'BUSINESS_LINES_INVALID'` | `{ field: 'businessLines', reason }` | `apps/web/src/lib/forms/field-errors.ts` maps `details.reason` to the business-line selector's message; without it production falls back to the generic banner instead of naming the rejected rule. |
 | `VALIDATION_ERROR` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The admin create form needs the absent section identifier to explain which section the selected business lines do not offer. |
 
