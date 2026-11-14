@@ -31,7 +31,21 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-import { createCRUDRoute, createListRoute, createSimpleRoute } from '../../src/utils/route-factory';
+vi.mock('../../src/middlewares/authorization', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/middlewares/authorization')>();
+    return {
+        ...actual,
+        // The public tier's actor resolution is not what this suite measures.
+        publicAuthMiddleware: () => async (_c: unknown, next: () => Promise<void>) => next()
+    };
+});
+
+import {
+    createCRUDRoute,
+    createListRoute,
+    createPublicListRoute,
+    createSimpleRoute
+} from '../../src/utils/route-factory';
 
 const ItemSchema = z.object({
     id: z.string(),
@@ -230,6 +244,79 @@ describe('SPEC-087 AC-087-03 — factory-level response strip', () => {
             expect(res.status).toBe(500);
             const text = await res.text();
             expect(text).not.toContain('must-not-appear');
+        });
+    });
+
+    describe('HOS-2177 — one invalid row must not 500 a public listing', () => {
+        const Strict = z.object({ id: z.string(), description: z.string().min(20) });
+        const pagination = {
+            page: 1,
+            pageSize: 10,
+            total: 3,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPreviousPage: false
+        };
+        const items = [
+            { id: '1', description: 'a long enough description here' },
+            { id: '2', description: 'short' },
+            { id: '3', description: 'another long enough description' }
+        ];
+
+        it('createPublicListRoute answers 200 without the invalid row', async () => {
+            const app = createPublicListRoute({
+                method: 'get',
+                path: '/public-items',
+                summary: 'public items',
+                description: 'public items',
+                tags: ['Test'],
+                responseSchema: Strict,
+                handler: async () => ({ items, pagination }),
+                options: FACTORY_OPTS
+            });
+
+            const res = await app.request('/public-items');
+            expect(res.status).toBe(200);
+            const body = (await res.json()) as { data: { items: { id: string }[] } };
+            expect(body.data.items.map((i) => i.id)).toEqual(['1', '3']);
+        });
+
+        it('createPublicListRoute still answers 500 when every row is invalid', async () => {
+            const app = createPublicListRoute({
+                method: 'get',
+                path: '/public-all-bad',
+                summary: 'public all bad',
+                description: 'public all bad',
+                tags: ['Test'],
+                responseSchema: Strict,
+                handler: async () => ({
+                    items: [
+                        { id: '1', description: 'short' },
+                        { id: '2', description: 'tiny' }
+                    ],
+                    pagination
+                }),
+                options: FACTORY_OPTS
+            });
+
+            const res = await app.request('/public-all-bad');
+            expect(res.status).toBe(500);
+        });
+
+        it('a non-public list route keeps the strict 500', async () => {
+            const app = createListRoute({
+                method: 'get',
+                path: '/strict-items',
+                summary: 'strict items',
+                description: 'strict items',
+                tags: ['Test'],
+                responseSchema: Strict,
+                handler: async () => ({ items, pagination }),
+                options: FACTORY_OPTS
+            });
+
+            const res = await app.request('/strict-items');
+            expect(res.status).toBe(500);
         });
     });
 });
