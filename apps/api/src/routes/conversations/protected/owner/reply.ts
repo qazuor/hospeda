@@ -7,7 +7,6 @@
  * accommodations (anti-enumeration pattern).
  */
 
-import { accommodations, conversations, getDb } from '@repo/db';
 import {
     CreateMessageSchema,
     MessageSchema,
@@ -15,10 +14,10 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { MessageService } from '@repo/service-core';
-import { and, eq, inArray } from 'drizzle-orm';
+import { ConversationService, MessageService } from '@repo/service-core';
 import { getActorFromContext } from '../../../../utils/actor';
 import { createRouter } from '../../../../utils/create-app';
+import { env } from '../../../../utils/env';
 import { apiLogger } from '../../../../utils/logger';
 import {
     createErrorResponse,
@@ -28,6 +27,14 @@ import {
 import { SYSTEM_ACTOR } from './system-actor';
 
 const router = createRouter();
+
+const conversationSvc = new ConversationService(
+    { logger: apiLogger },
+    {
+        authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
+        siteUrl: env.HOSPEDA_SITE_URL
+    }
+);
 
 /**
  * POST /:id/messages
@@ -72,41 +79,11 @@ router.post('/:id/messages', async (c) => {
 
         const body = parseResult.data;
 
-        // Resolve owner accommodation IDs for ownership check
-        const db = getDb();
-        const accRows = await db
-            .select({ id: accommodations.id })
-            .from(accommodations)
-            .where(eq(accommodations.ownerId, actor.id));
-        const ownerAccommodationIds = accRows.map((r) => r.id);
+        // Lightweight ownership check (no getThread side effects): the
+        // conversation must exist AND belong to one of the owner's accommodations.
+        const ownership = await conversationSvc.findOwnedConversation(actor, { conversationId });
 
-        // Lightweight ownership check: verify conversation exists and belongs to
-        // one of the owner's accommodations WITHOUT triggering getThread side effects
-        // (lastReadAtByOwner update, notification cancellation).
-        if (ownerAccommodationIds.length === 0) {
-            return createErrorResponse(
-                {
-                    code: ServiceErrorCode.NOT_FOUND,
-                    message: 'Conversation not found',
-                    reason: 'CONVERSATION_NOT_FOUND'
-                },
-                c,
-                404
-            );
-        }
-
-        const convRows = await db
-            .select({ id: conversations.id })
-            .from(conversations)
-            .where(
-                and(
-                    eq(conversations.id, conversationId),
-                    inArray(conversations.accommodationId, ownerAccommodationIds)
-                )
-            )
-            .limit(1);
-
-        if (convRows.length === 0) {
+        if (ownership.error || !ownership.data) {
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.NOT_FOUND,

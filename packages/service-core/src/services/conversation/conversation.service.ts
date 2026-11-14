@@ -28,6 +28,7 @@ import type {
 } from '@repo/db';
 import {
     AccommodationModel,
+    accommodations,
     and,
     ConversationModel,
     conversations,
@@ -953,6 +954,61 @@ export class ConversationService extends BaseService {
                     page: validated.page,
                     pageSize: validated.pageSize
                 };
+            }
+        });
+    }
+
+    /**
+     * Lightweight ownership lookup: returns the conversation only when it
+     * exists AND belongs to one of the actor's own accommodations.
+     *
+     * Deliberately free of side effects (unlike `getThread` it does not touch
+     * `lastReadAtByOwner` nor cancel notifications), so routes can use it as a
+     * pure authorization gate. A foreign or missing conversation yields `null`
+     * so callers can answer 404 without revealing the id exists
+     * (anti-enumeration). No permission check is performed here: callers
+     * gate on their own permission first.
+     *
+     * @param actor - Actor whose accommodations define ownership (`actor.id`).
+     * @param input - `{ conversationId }`.
+     * @param ctx - Optional service context.
+     * @returns ServiceOutput wrapping the owned conversation, or `null`.
+     *
+     * @example
+     * ```ts
+     * const { data } = await svc.findOwnedConversation(actor, { conversationId });
+     * if (!data) return notFound();
+     * ```
+     */
+    public async findOwnedConversation(
+        actor: Actor,
+        input: { readonly conversationId: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<SelectConversation | null>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOwnedConversation',
+            input: { actor, ...input },
+            schema: z.object({ conversationId: z.string().min(1) }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                const db = (execCtx?.tx as DrizzleClient | undefined) ?? getDb();
+                const rows = await db
+                    .select()
+                    .from(conversations)
+                    .where(
+                        and(
+                            eq(conversations.id, validated.conversationId),
+                            inArray(
+                                conversations.accommodationId,
+                                db
+                                    .select({ id: accommodations.id })
+                                    .from(accommodations)
+                                    .where(eq(accommodations.ownerId, validatedActor.id))
+                            )
+                        )
+                    )
+                    .limit(1);
+                return rows[0] ?? null;
             }
         });
     }
