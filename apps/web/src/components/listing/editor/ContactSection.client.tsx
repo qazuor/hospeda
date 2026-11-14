@@ -51,6 +51,13 @@ export function ContactSection({
             <legend className={styles.label}>
                 {t('listing.owner.editor.sections.contactInfo', 'Información de contacto')}
             </legend>
+            {/* HOS-2042: these channels are published on the public listing. */}
+            <p className={styles.hint}>
+                {t(
+                    'listing.owner.editor.contactField.publicHint',
+                    'Estos datos de contacto se muestran públicamente en tu ficha.'
+                )}
+            </p>
             {/* HOS-371: searchable country-code combobox + local number,
                 replacing the bare `type="tel"` with a static "+54..."
                 placeholder. Recomposes into the same single `mobilePhone`

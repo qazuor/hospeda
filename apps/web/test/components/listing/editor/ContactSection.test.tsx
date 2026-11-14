@@ -214,4 +214,12 @@ describe('ContactSection', () => {
             expect(screen.getByText('Teléfono inválido')).toBeInTheDocument();
         });
     });
+
+    it('tells the owner these contact channels are shown publicly (HOS-2042)', () => {
+        renderSection();
+
+        expect(
+            screen.getByText('Estos datos de contacto se muestran públicamente en tu ficha.')
+        ).toBeInTheDocument();
+    });
 });

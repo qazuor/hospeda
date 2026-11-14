@@ -153,6 +153,7 @@
             "contactField": {
                 "mobilePhone": "Teléfono",
                 "landlinePhone": "Teléfono fijo",
+                "publicHint": "Estos datos de contacto se muestran públicamente en tu ficha.",
                 "workEmail": "Email"
             },
             "validation": {

@@ -141,6 +141,14 @@ export function ContactInfoSection({
                 {t('host.properties.editor.section.contact', 'Contacto')}
             </legend>
 
+            {/* HOS-2042: these channels are published on the public listing. */}
+            <p className={styles.contactHint}>
+                {t(
+                    'host.properties.editor.field.contactPublicHint',
+                    'Estos datos de contacto se muestran públicamente en tu ficha.'
+                )}
+            </p>
+
             <div className={styles.field}>
                 <fieldset className={styles.phoneFieldset}>
                     <legend className={styles.fieldLabel}>

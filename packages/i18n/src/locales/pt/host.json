@@ -318,6 +318,7 @@
                 "features": "Recursos",
                 "phone": "Telefone",
                 "landlinePhone": "Telefone fixo",
+                "contactPublicHint": "Estes dados de contato são exibidos publicamente na sua ficha.",
                 "phoneCountry": "País",
                 "phoneCountrySearchPlaceholder": "Buscar país...",
                 "phoneCountryNoResults": "Nenhum país encontrado",
