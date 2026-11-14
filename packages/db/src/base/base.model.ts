@@ -189,6 +189,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             pageSize?: number;
             sortBy?: string;
             sortOrder?: 'asc' | 'desc';
+            /**
+             * Deterministic tie-break column, always ascending. Applied after `sortBy`
+             * so rows with equal sort values keep a stable order across pages (HOS-2068).
+             * Ignored when `sortBy` is absent.
+             */
+            thenSortBy?: string;
             includeDeleted?: boolean;
         },
         additionalConditions?: SQL[],
@@ -230,10 +236,18 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                       this.nullsLastSortColumns.includes(options.sortBy)
                   )
                 : undefined;
+            const tieBreakClause =
+                orderClause && options?.thenSortBy
+                    ? buildOrderByClause(options.thenSortBy, this.table, 'asc')
+                    : undefined;
 
             // Build query - use $dynamic() to allow conditional chaining
             const baseQuery = db.select().from(this.table).where(finalWhereClause).$dynamic();
-            const sortedQuery = orderClause ? baseQuery.orderBy(orderClause) : baseQuery;
+            const sortedQuery = orderClause
+                ? baseQuery.orderBy(
+                      ...(tieBreakClause ? [orderClause, tieBreakClause] : [orderClause])
+                  )
+                : baseQuery;
 
             // Forward `includeDeleted` verbatim so subclasses whose `count()` override
             // applies a default soft-delete filter (HOS-274) make the SAME
