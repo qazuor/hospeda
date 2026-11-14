@@ -10,11 +10,8 @@ import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import {
-    filterPublicPaidFieldsForOwner,
-    resolvePublicFieldGrants
-} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 // Initialize service once
@@ -89,9 +86,11 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
 
     // Apply each listing owner's effective paid-field grants before serialization.
     const sourceAccommodations = result.data?.accommodations ?? [];
-    const grants = await resolvePublicFieldGrants(sourceAccommodations.map((item) => item.ownerId));
-    const rawAccommodations = sourceAccommodations.map((accommodation) => ({
-        ...filterPublicPaidFieldsForOwner(accommodation, grants),
+    const gatedAccommodations = await projectPublicAccommodations({
+        listings: sourceAccommodations
+    });
+    const rawAccommodations = sourceAccommodations.map((accommodation, index) => ({
+        ...gatedAccommodations[index],
         // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
         // (the only featuring source since HOS-1419); the raw column itself is
         // stripped by the public schema (never in its pick).
