@@ -157,6 +157,11 @@ const NO_SINGLE_CONTROL: Readonly<Record<string, string>> = {
     // (`ce-policies-minAge`, `ce-policies-smokingAllowed`, ...), several of
     // them checkbox groups with no single focus target.
     policies: 'JSONB block; leaf controls carry dotted ids',
+    // HOS-2189: the venue address is a JSONB block (street, number, floor,
+    // apartment, coordinates). Its leaves render under dotted ids
+    // (`ce-location-street`, `ce-location-coordinates-lat`, ...); the block
+    // itself has no single control to focus.
+    location: 'JSONB block; leaf controls carry dotted ids',
     // Not exposed in this owner surface.
     videos: 'not exposed by this editor',
     // Owned by the translation panel, which edits a parallel i18n structure.
