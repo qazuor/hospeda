@@ -159,6 +159,110 @@ function createVenueSpecificSection(
 }
 
 // ---------------------------------------------------------------------------
+// Venue location section (HOS-2189)
+// ---------------------------------------------------------------------------
+
+const VENUE_LOCATION_PERMISSIONS = {
+    view: [PermissionEnum.VENUE_VIEW_ALL],
+    edit: [PermissionEnum.VENUE_EDIT_ALL]
+} as const;
+
+/**
+ * Builds the venue postal-address section: the same `location` shape and field
+ * bounds as an accommodation (`@repo/schemas` `PostalAddressSchema`).
+ *
+ * The geographic context (city, department) is NOT a field: it comes from the
+ * destination chosen in the identity section, exactly as for accommodations.
+ *
+ * @returns A `ConsolidatedSectionConfig` for the address fields.
+ */
+function createVenueLocationSection(): ConsolidatedSectionConfig {
+    const textField = ({
+        key,
+        label,
+        description,
+        placeholder,
+        minLength,
+        maxLength
+    }: {
+        readonly key: 'street' | 'number' | 'floor' | 'apartment';
+        readonly label: string;
+        readonly description: string;
+        readonly placeholder: string;
+        readonly minLength: number;
+        readonly maxLength: number;
+    }): ConsolidatedFieldConfig => ({
+        id: `location.${key}`,
+        type: FieldTypeEnum.TEXT,
+        required: false,
+        modes: ['view', 'edit', 'create'],
+        label,
+        description,
+        placeholder,
+        permissions: VENUE_LOCATION_PERMISSIONS,
+        typeConfig: { minLength, maxLength }
+    });
+
+    return {
+        id: 'venue-location',
+        title: 'Ubicación',
+        description: 'Dirección del local. Se muestra en la ficha pública.',
+        layout: LayoutTypeEnum.GRID,
+        modes: ['view', 'edit', 'create'],
+        permissions: VENUE_LOCATION_PERMISSIONS,
+        fields: [
+            textField({
+                key: 'street',
+                label: 'Calle',
+                description: 'Nombre de la calle',
+                placeholder: 'Av. Costanera',
+                minLength: 2,
+                maxLength: 50
+            }),
+            textField({
+                key: 'number',
+                label: 'Número',
+                description: 'Altura. Dejalo vacío si es s/n',
+                placeholder: '1234',
+                minLength: 1,
+                maxLength: 10
+            }),
+            textField({
+                key: 'floor',
+                label: 'Piso',
+                description: 'Piso del edificio (opcional)',
+                placeholder: '3',
+                minLength: 1,
+                maxLength: 10
+            }),
+            textField({
+                key: 'apartment',
+                label: 'Departamento o local',
+                description: 'Unidad (opcional)',
+                placeholder: 'B',
+                minLength: 1,
+                maxLength: 10
+            }),
+            {
+                id: 'location.coordinates',
+                type: FieldTypeEnum.COORDINATES,
+                required: false,
+                modes: ['view', 'edit', 'create'],
+                label: 'Coordenadas',
+                description:
+                    'Punto en el mapa. Arrastrá el marcador o hacé click para ubicarlo. También podés ingresar latitud y longitud manualmente.',
+                permissions: VENUE_LOCATION_PERMISSIONS,
+                typeConfig: {
+                    type: 'COORDINATES',
+                    addressFields: { street: 'location.street', number: 'location.number' },
+                    geocodingCountryCodes: ['ar']
+                }
+            }
+        ]
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Public factory
 // ---------------------------------------------------------------------------
 
@@ -168,7 +272,8 @@ function createVenueSpecificSection(
  * Section order:
  *  1. Listing identity section (shared — name, slug, summary, description, …)
  *  2. Venue-specific section (type, businessLines, priceRange)
- *  3. Listing operational section (shared — contact, social, media, hours, …)
+ *  3. Venue location section (street, number, floor, apartment, coordinates)
+ *  4. Listing policies and operational sections (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
@@ -182,6 +287,7 @@ export const createVenueConsolidatedConfig = (
     sections: [
         createListingIdentitySection('venue'),
         createVenueSpecificSection(t),
+        createVenueLocationSection(),
         createListingPoliciesSection({ vertical: 'venue', t }).section,
         createListingOperationalSection('venue')
     ],
