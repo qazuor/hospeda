@@ -16,6 +16,7 @@ import {
 
 const EXPECTED_ORDER = [
     'basicInfo',
+    'location',
     'openingHours',
     'amenities',
     'contact',

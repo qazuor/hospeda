@@ -1224,12 +1224,29 @@ export interface VenueEvent {
 }
 
 /**
+ * The public postal address of a venue (HOS-2189), as the detail page reads it.
+ * Every member is a string; `''` means "not informed". Coordinates stay strings
+ * because that is how the API stores them. The city is NOT part of it: it is
+ * the destination's name.
+ */
+export interface VenueDetailLocation {
+    readonly street: string;
+    readonly number: string;
+    readonly floor: string;
+    readonly apartment: string;
+    readonly lat: string;
+    readonly long: string;
+}
+
+/**
  * Typed data shape for the venue detail page (SPEC-239).
  * Produced by `toVenueDetailPageProps()` in `transforms.ts`.
  *
  * Extends `VenueCardData` with fields only needed for the full detail view.
  */
 export interface VenueDetailData extends VenueCardData {
+    /** Structured postal address (HOS-2189). Null when the owner has not set one. */
+    readonly location: VenueDetailLocation | null;
     /** Full plain-text description of the establishment. */
     readonly description: string;
     /** Optional rich-text (markdown) description (entitlement-gated). */

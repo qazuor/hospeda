@@ -47,6 +47,12 @@
         "featured": "Featured"
     },
     "detail": {
+        "address": {
+            "title": "Find us",
+            "floor": "floor",
+            "apartment": "apt.",
+            "viewOnMap": "View on map"
+        },
         "openingHours": {
             "title": "Opening hours",
             "closed": "Closed",

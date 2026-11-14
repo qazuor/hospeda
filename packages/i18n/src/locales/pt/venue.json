@@ -47,6 +47,12 @@
         "featured": "Destaque"
     },
     "detail": {
+        "address": {
+            "title": "Onde nos encontrar",
+            "floor": "andar",
+            "apartment": "apto.",
+            "viewOnMap": "Ver no mapa"
+        },
         "openingHours": {
             "title": "Horário de funcionamento",
             "closed": "Fechado",
