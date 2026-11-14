@@ -317,6 +317,7 @@
                 "amenityDetailsHint": "Say whether it is private or shared and whether it is available all year.",
                 "features": "Features",
                 "phone": "Phone",
+                "landlinePhone": "Landline",
                 "phoneCountry": "Country",
                 "phoneCountrySearchPlaceholder": "Search country...",
                 "phoneCountryNoResults": "No countries found",

@@ -317,6 +317,7 @@
                 "amenityDetailsHint": "Informe se o uso é privativo ou compartilhado e se está disponível o ano todo.",
                 "features": "Recursos",
                 "phone": "Telefone",
+                "landlinePhone": "Telefone fixo",
                 "phoneCountry": "País",
                 "phoneCountrySearchPlaceholder": "Buscar país...",
                 "phoneCountryNoResults": "Nenhum país encontrado",

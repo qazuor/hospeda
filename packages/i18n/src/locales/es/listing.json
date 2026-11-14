@@ -152,6 +152,7 @@
             },
             "contactField": {
                 "mobilePhone": "Teléfono",
+                "landlinePhone": "Teléfono fijo",
                 "workEmail": "Email"
             },
             "validation": {
