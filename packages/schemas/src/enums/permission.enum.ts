@@ -174,6 +174,7 @@ export enum PermissionEnum {
     ACCOMMODATION_VISIBILITY_CHANGE = 'accommodation.visibility.change', // Allows changing accommodation visibility
     ACCOMMODATION_LIFECYCLE_CHANGE = 'accommodation.lifecycle.change', // Allows changing accommodation lifecycle state
     ACCOMMODATION_MODERATION_CHANGE = 'accommodation.moderation.change', // Allows changing accommodation moderation state
+    ACCOMMODATION_LOCATION_EXCEPTION_MANAGE = 'accommodation.locationException.manage', // Allows granting/removing the one-address-rule exception of an accommodation (HOS-1810) and reading the repeated-address report.
 
     // ACCOMMODATION_LISTING: Permissions related to accommodation listing management
     ACCOMMODATION_LISTING_CREATE = 'accommodationListing.create', // Allows creating a new accommodation listing.
@@ -968,6 +969,7 @@ export enum PermissionEnum {
     VENUE_DELETE = 'venue.delete', // Allows soft-deleting any venue listing.
     VENUE_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a venue listing.
     VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a venue listing.
+    VENUE_LOCATION_EXCEPTION_MANAGE = 'venue.locationException.manage', // Allows granting/removing the one-address-rule exception of a venue (HOS-1810) and reading the repeated-address report.
 
     EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
     EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.

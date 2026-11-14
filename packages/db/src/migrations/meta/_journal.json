@@ -1436,6 +1436,13 @@
       "when": 1794686719235,
       "tag": "0205_hos_1810_location_key",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1794686767970,
+      "tag": "0206_hos_1810_location_exception_permissions",
+      "breakpoints": true
     }
   ]
 }
