@@ -113,7 +113,45 @@ describe('FeatureService.search', () => {
         // Assert
         expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
             sortBy: 'displayWeight',
+            sortOrder: 'desc',
+            thenSortBy: 'slug'
+        });
+    });
+
+    it('should not honor a sortBy outside the public allow-list (HOS-2068)', async () => {
+        // Arrange — hidden columns would act as an ordering oracle on a public route.
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 100,
+            sortBy: 'createdById',
             sortOrder: 'desc'
+        });
+
+        // Assert
+        const options = featureModelMock.findAll.mock.calls[0]?.[1];
+        expect(options).not.toHaveProperty('sortBy');
+        expect(options).not.toHaveProperty('thenSortBy');
+    });
+
+    it('should allow sorting by slug without a tie-break (HOS-2068)', async () => {
+        // Arrange
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 100,
+            sortBy: 'slug',
+            sortOrder: 'asc'
+        });
+
+        // Assert
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'slug',
+            sortOrder: 'asc'
         });
     });
 

@@ -63,7 +63,48 @@ describe('AmenityService.search', () => {
 
         // Assert
         const options = asMock(amenityModelMock.findAll).mock.calls[0]?.[1];
-        expect(options).toMatchObject({ sortBy: 'displayWeight', sortOrder: 'desc' });
+        expect(options).toMatchObject({
+            sortBy: 'displayWeight',
+            sortOrder: 'desc',
+            thenSortBy: 'slug'
+        });
+    });
+
+    it('should not honor a sortBy outside the public allow-list (HOS-2068)', async () => {
+        // Arrange — hidden columns would act as an ordering oracle on a public route.
+        asMock(amenityModelMock.findAll).mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            ...searchParams,
+            pageSize: 100,
+            sortBy: 'createdById',
+            sortOrder: 'desc'
+        });
+
+        // Assert
+        const options = asMock(amenityModelMock.findAll).mock.calls[0]?.[1];
+        expect(options).not.toHaveProperty('sortBy');
+        expect(options).not.toHaveProperty('thenSortBy');
+    });
+
+    it('should allow sorting by slug without a tie-break (HOS-2068)', async () => {
+        // Arrange
+        asMock(amenityModelMock.findAll).mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            ...searchParams,
+            pageSize: 100,
+            sortBy: 'slug',
+            sortOrder: 'asc'
+        });
+
+        // Assert
+        expect(asMock(amenityModelMock.findAll).mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'slug',
+            sortOrder: 'asc'
+        });
     });
 
     it('should exclude soft-deleted (retired) amenities (regression)', async () => {

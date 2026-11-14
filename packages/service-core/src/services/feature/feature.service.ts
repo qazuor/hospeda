@@ -25,6 +25,7 @@ import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
+import { resolveCatalogSort } from '../../utils/catalog-sort';
 // generateFeatureSlug removed: JSONB name column dropped in SPEC-266 T-001.
 import { normalizeListInput, normalizeViewInput } from './feature.normalizers';
 import {
@@ -236,9 +237,8 @@ export class FeatureService extends BaseCrudRelatedService<
             {
                 page,
                 pageSize,
-                // HOS-2068: BaseCrudRead.search re-publishes sortBy/sortOrder on ctx.pagination.
-                sortBy: ctx.pagination?.sortBy,
-                sortOrder: ctx.pagination?.sortOrder
+                // HOS-2068: allow-listed sort only, with a deterministic tie-break.
+                ...resolveCatalogSort({ pagination: ctx.pagination })
             },
             additionalConditions
         );
