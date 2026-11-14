@@ -754,6 +754,27 @@ describe('scrubPii', () => {
             expect(result.scrubbed).toBe('mi cel es [REDACTED_PHONE]');
         });
 
+        it('should consume a bare country code 54 plus the mobile 9 (HOS-2075)', () => {
+            const result = scrubPii({ text: 'mi cel es 54 9 11 1234 5678 gracias' });
+
+            expect(result.scrubbed).toBe('mi cel es [REDACTED_PHONE] gracias');
+        });
+
+        it('should not touch "el 9 de julio" nor a price near a 54 (HOS-2075)', () => {
+            const input = { text: 'el 9 de julio, 54 personas, precio 54900' };
+
+            expect(scrubPii(input).scrubbed).toBe(input.text);
+        });
+
+        it('should stay fast on a 20k-character adversarial input (HOS-2075)', () => {
+            const text = `54 9 ${'1 '.repeat(10000)}`;
+            const start = Date.now();
+
+            scrubPii({ text });
+
+            expect(Date.now() - start).toBeLessThan(1000);
+        });
+
         it('should redact "(011) 4123-4567" (local landline with area code)', () => {
             // Arrange
             const input = { text: 'Teléfono: (011) 4123-4567.' };

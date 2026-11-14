@@ -109,6 +109,7 @@ const RE_CARD_CANDIDATE = /\b\d{4}(?:[ -]?\d{2,7}){2,5}\b/g;
  *   - `+54 9 11 1234-5678`   — international with `+` prefix
  *   - `(011) 4123-4567`      — local Argentine with parenthesised area code
  *   - `+54 9 3442 123456`    — Argentine mobile: the `9` after the country code is part of the number (HOS-2075)
+ *   - `54 9 11 1234 5678`   — Argentine mobile with a bare country code (no `+`)
  *   - `+1-202-555-0143`      — NANP international
  *   - `11 6123 4567`         — local Argentine without area code prefix
  *
@@ -121,7 +122,7 @@ const RE_CARD_CANDIDATE = /\b\d{4}(?:[ -]?\d{2,7}){2,5}\b/g;
  * leading `+`) to avoid partial matches inside longer tokens.
  */
 const RE_PHONE =
-    /(?<!\w)(?:(?:\+|00)\d{1,3}[\s\-.]?(?:9[\s\-.]?)?)?(?:\(\d{1,4}\)[\s\-.]?)?\d{2,4}(?:[\s\-.]?\d{2,5}){1,4}\b/g;
+    /(?<!\w)(?:(?:\+|00)\d{1,3}[\s\-.]?(?:9[\s\-.]?)?|54[\s\-.]?9[\s\-.]?)?(?:\(\d{1,4}\)[\s\-.]?)?\d{2,4}(?:[\s\-.]?\d{2,5}){1,4}\b/g;
 
 // ---------------------------------------------------------------------------
 // Luhn checksum helper
