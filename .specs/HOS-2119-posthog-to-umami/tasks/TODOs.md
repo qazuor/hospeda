@@ -26,7 +26,7 @@ Tracks (can run in parallel):
 
 ## Open items flagged for the coordinator
 
-- Spec 6.5 says view trackers and contact events already send `entity_id`. Planning found they do not: `accommodation_viewed` and `contact_owner_*` carry `accommodation_id`, venue/experience view trackers emit no analytics event, and no contact events were located for venue/experience/partner. T-005 verifies; T-016 and T-030/T-031 fix it; T-016 notes the contact funnel may be 0 for non-accommodation types.
+- Spec 6.5 says view trackers and contact events already send `entity_id`. Planning found they do not: `accommodation_viewed` and `contact_owner_*` carry `accommodation_id`, venue/experience view trackers emit no analytics event, and no contact events were located for venue/experience/partner. T-005 verifies; T-016 and T-030/T-031 fix it; Owner decision (2026-11-14): no contact events are added for venue/experience/partner; their «Contactos» card is hidden in v1 (`contactFunnel: null`, T-044/T-045/T-051).
 - Partner ownership may not fit `resolveListingAccess` (T-049).
 - `AnalyticsSection.client.tsx` is host-level, not per listing (T-052).
 - Task count exceeds the agent default of 15; the task-from-spec skill sets no maximum and the coordinator asked for complexity <= 3.

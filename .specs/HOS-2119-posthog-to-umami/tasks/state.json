@@ -732,7 +732,7 @@
     {
       "id": "T-016",
       "title": "T-2 Add entity_id/entity_type to view and contact events and a generic entity_viewed event in the catalog",
-      "description": "Closes the gap found in T-005 so the owner stats filter (by event data entity_id, spec 6.5) has data to read. Files: packages/analytics/src/catalog.ts, packages/analytics/src/index.ts (if events are re-exported), apps/web/src/lib/analytics/events.ts. Tests: packages/analytics/test/entity-id-catalog.test.ts (each affected schema accepts entity_id/entity_type and still rejects forbidden PII keys via FORBIDDEN_PROPERTY_KEY_REGEX; entity_viewed requires entity_id), apps/web/test/lib/analytics/events.test.ts updated. If T-005 concludes a contact funnel cannot be measured for VENUE/EXPERIENCE/PARTNER, record that in the task and keep contactStarted/contactCompleted as 0 for those types in T-045 (flag to the coordinator, do not invent events). The docs/analytics/event-catalog.md update happens in T-065.",
+      "description": "Closes the gap found in T-005 so the owner stats filter (by event data entity_id, spec 6.5) has data to read. Files: packages/analytics/src/catalog.ts, packages/analytics/src/index.ts (if events are re-exported), apps/web/src/lib/analytics/events.ts. Tests: packages/analytics/test/entity-id-catalog.test.ts (each affected schema accepts entity_id/entity_type and still rejects forbidden PII keys via FORBIDDEN_PROPERTY_KEY_REGEX; entity_viewed requires entity_id), apps/web/test/lib/analytics/events.test.ts updated. Owner decision (2026-11-14, OQ-7 addendum): contact events stay accommodation-only; do NOT add contact events for VENUE/EXPERIENCE/PARTNER. Their Contactos card is hidden in v1 (contactFunnel: null, see T-044/T-045/T-051). The docs/analytics/event-catalog.md update happens in T-065.",
       "status": "pending",
       "complexity": 3,
       "blockedBy": [
@@ -755,7 +755,7 @@
           "completed": false
         },
         {
-          "title": "Expose it in apps/web/src/lib/analytics/events.ts (WebEvents) and add contact events for non-accommodation verticals ONLY if T-005 found contact blocks that can emit them",
+          "title": "Expose it in apps/web/src/lib/analytics/events.ts (WebEvents). No contact events for non-accommodation verticals (owner decision: Contactos hidden for them in v1)",
           "completed": false
         },
         {
@@ -1988,7 +1988,7 @@
     {
       "id": "T-044",
       "title": "T-5 Add ListingTrafficStatsResponseSchema to @repo/schemas",
-      "description": "Zod is the source of truth for types. Tests: valid payload parses, available:false with empty arrays parses, window outside 7d/30d/90d rejected, entityType POST/EVENT rejected, negative counts rejected. Note: the existing EntityViewWindowSchema only knows 7d/30d, so do not reuse it; define the 90d-capable window here.",
+      "description": "Zod is the source of truth for types. Tests: valid payload parses, available:false with empty arrays parses, window outside 7d/30d/90d rejected, entityType POST/EVENT rejected, negative counts rejected. Note: the existing EntityViewWindowSchema only knows 7d/30d, so do not reuse it; define the 90d-capable window here. contactFunnel is nullable: an object for ACCOMMODATION, null for VENUE/EXPERIENCE/PARTNER (owner decision, OQ-7 addendum). Add tests: null contactFunnel parses; object still validates counts.",
       "status": "pending",
       "complexity": 2,
       "blockedBy": [],
@@ -1998,7 +1998,7 @@
       ],
       "subtasks": [
         {
-          "title": "Create packages/schemas/src/entities/analytics/listing-traffic-stats.schema.ts: window (7d|30d|90d), available boolean, referrers[], countries[], devices[], contactFunnel {views, contactStarted, contactCompleted}; entityType enum limited to ACCOMMODATION, VENUE, EXPERIENCE, PARTNER",
+          "title": "Create packages/schemas/src/entities/analytics/listing-traffic-stats.schema.ts: window (7d|30d|90d), available boolean, referrers[], countries[], devices[], contactFunnel {views, contactStarted, contactCompleted} | null; entityType enum limited to ACCOMMODATION, VENUE, EXPERIENCE, PARTNER",
           "completed": false
         },
         {
@@ -2029,7 +2029,7 @@
     {
       "id": "T-045",
       "title": "T-5 Implement ListingTrafficStatsService in service-core with injected stats-client and cache ports",
-      "description": "Files: packages/service-core/src/services/listing-traffic-stats/listing-traffic-stats.service.ts, ports.ts, index.ts; test packages/service-core/test/services/listing-traffic-stats/listing-traffic-stats.service.test.ts. Tests: cache hit skips the port; miss calls port then stores with TTL 3600s; port rejection/timeout returns available:false with empty arrays and does NOT cache the failure; funnel assembled from the port counts; top-5 referrer cap.",
+      "description": "Files: packages/service-core/src/services/listing-traffic-stats/listing-traffic-stats.service.ts, ports.ts, index.ts; test packages/service-core/test/services/listing-traffic-stats/listing-traffic-stats.service.test.ts. Tests: cache hit skips the port; miss calls port then stores with TTL 3600s; port rejection/timeout returns available:false with empty arrays and does NOT cache the failure; funnel assembled from the port counts; top-5 referrer cap. contactFunnel: assembled only for ACCOMMODATION; always null for VENUE/EXPERIENCE/PARTNER without querying the funnel (test: port funnel method not called for those types, response has contactFunnel null).",
       "status": "pending",
       "complexity": 3,
       "blockedBy": [
@@ -2055,6 +2055,10 @@
         },
         {
           "title": "Follow the actor-aware pattern of packages/service-core/src/services/entityView/entityView.service.ts; do not do ownership here (the route's listing access runs first)",
+          "completed": false
+        },
+        {
+          "title": "Return contactFunnel: null for VENUE/EXPERIENCE/PARTNER and skip the funnel query (owner decision, OQ-7 addendum)",
           "completed": false
         }
       ],
@@ -2301,7 +2305,7 @@
     {
       "id": "T-051",
       "title": "T-5 Create the web traffic-stats client and the shared TrafficStatsCards island",
-      "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.",
+      "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.",
       "status": "pending",
       "complexity": 3,
       "blockedBy": [
@@ -2319,7 +2323,7 @@
           "completed": false
         },
         {
-          "title": "Create apps/web/src/components/listing/TrafficStatsCards.client.tsx + TrafficStatsCards.module.css (vanilla CSS modules, no Tailwind): four cards, top 5 referrers, empty state, hides itself entirely when available:false, no error banner",
+          "title": "Create apps/web/src/components/listing/TrafficStatsCards.client.tsx + TrafficStatsCards.module.css (vanilla CSS modules, no Tailwind): four cards (Contactos absent, not zero, when contactFunnel is null), top 5 referrers, empty state, hides itself entirely when available:false, no error banner",
           "completed": false
         },
         {
