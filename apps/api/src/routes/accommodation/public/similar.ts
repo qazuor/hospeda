@@ -10,10 +10,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
-import {
-    filterPublicPaidFieldsForOwner,
-    resolvePublicFieldGrants
-} from '../../../utils/entitlement-filter';
+import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 /**
@@ -229,12 +226,13 @@ export const publicGetSimilarRoute = createPublicRoute({
         // (preferred) before falling back to legacy `destination`.
         //
         // Apply the owner-effective paid-field grants to each similar listing.
-        const grants = await resolvePublicFieldGrants(rows.map((row) => row.ownerId));
-        const mappedRows = rows.map((row) => {
-            const { destination, ...rest } = filterPublicPaidFieldsForOwner(
-                row as Record<string, unknown> & { destination?: unknown },
-                grants
-            );
+        const gatedRows = await projectPublicAccommodations({
+            listings: rows as readonly (Record<string, unknown> & { destination?: unknown })[]
+        });
+        const mappedRows = rows.map((row, index) => {
+            const { destination, ...rest } = gatedRows[index] as Record<string, unknown> & {
+                destination?: unknown;
+            };
             const media = composeAccommodationMedia({
                 rows: mediaByAccommodationId.get(row.id) ?? [],
                 videos: row.videos

@@ -7,12 +7,9 @@ import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
-import {
-    filterPublicPaidFieldsForOwner,
-    resolvePublicFieldGrants
-} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
+import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicListRoute } from '../../../utils/route-factory';
 
 const featureService = new FeatureService({ logger: apiLogger });
@@ -40,12 +37,9 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         // The service returns full accommodation entities; filter paid fields using
         // each row owner's effective capabilities before response serialization.
         const rawAccommodations = result.data.accommodations ?? [];
-        const grants = await resolvePublicFieldGrants(
-            rawAccommodations.map((item) => item.ownerId)
-        );
-        const strippedAccommodations = rawAccommodations.map((item) =>
-            filterPublicPaidFieldsForOwner(item, grants)
-        );
+        const strippedAccommodations = await projectPublicAccommodations({
+            listings: rawAccommodations
+        });
 
         const accommodations = strippedAccommodations;
 
