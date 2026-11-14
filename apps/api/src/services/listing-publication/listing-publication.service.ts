@@ -9,6 +9,7 @@ import {
 import type { Actor } from '@repo/service-core';
 import {
     AccommodationService,
+    asDuplicateLocationError,
     assertNoOwnLocationConflict,
     computeTrialEmailPseudonym,
     ExperienceService,
@@ -145,15 +146,24 @@ export class ListingPublicationService {
         const { publishListing } = await import(
             '../../../../../packages/verticals/src/publication/publish-listing'
         );
-        const result = await publishListing({
-            ...getListingPublicationPorts(),
-            userId: ownerId,
-            vertical,
-            listingId: args.id,
-            event: 'listing_published',
-            emailPseudonym: email.pseudonym,
-            correlationId: randomUUID()
-        });
+        let result: Awaited<ReturnType<typeof publishListing>>;
+        try {
+            result = await publishListing({
+                ...getListingPublicationPorts(),
+                userId: ownerId,
+                vertical,
+                listingId: args.id,
+                event: 'listing_published',
+                emailPseudonym: email.pseudonym,
+                correlationId: randomUUID()
+            });
+        } catch (error) {
+            // HOS-1810: a concurrent publish onto the same address got past the
+            // pre-check; the partial unique index refuses the second write.
+            const duplicate = asDuplicateLocationError(error);
+            if (duplicate) throw duplicate;
+            throw error;
+        }
         if (!result.published) {
             if (isTrialStartDeniedReason(result.reason)) {
                 const destination = await resolveSubscribeDestinationForUser({

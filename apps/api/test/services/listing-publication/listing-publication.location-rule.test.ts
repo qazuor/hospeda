@@ -11,7 +11,8 @@ const mocks = vi.hoisted(() => ({
     findOwnOccupant: vi.fn(),
     accommodationGetById: vi.fn(),
     venueGetById: vi.fn(),
-    getDb: vi.fn()
+    getDb: vi.fn(),
+    publishListing: vi.fn()
 }));
 
 vi.mock('@repo/db', async () => {
@@ -41,10 +42,17 @@ vi.mock('@repo/service-core', async () => {
         }),
         ExperienceService: vi.fn().mockImplementation(function () {
             return { getById: vi.fn() };
-        })
+        }),
+        computeTrialEmailPseudonym: () => ({ ok: true, pseudonym: 'pseudonym' })
     };
 });
 
+vi.mock('../../../../../packages/verticals/src/publication/publish-listing', () => ({
+    publishListing: mocks.publishListing
+}));
+vi.mock('../../../src/utils/listing-publication/ports', () => ({
+    getListingPublicationPorts: () => ({})
+}));
 vi.mock('../../../src/services/listing-media', () => ({ loadListingMedia: async () => ({}) }));
 vi.mock('../../../src/services/listing-publication/listing-publish-completeness', () => ({
     evaluateListingPublishCompleteness: async () => ({ complete: true, missing: [] })
@@ -120,5 +128,50 @@ describe('ListingPublicationService.publish: one-address rule', () => {
         expect(mocks.findOwnOccupant).toHaveBeenCalledWith(
             expect.objectContaining({ ownerId: OWNER })
         );
+    });
+});
+
+describe('ListingPublicationService.publish: concurrent publish (HOS-1810)', () => {
+    const service = new ListingPublicationService();
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.venueGetById.mockResolvedValue({ data: { id: LISTING, ownerId: OWNER } });
+        mocks.getState.mockResolvedValue({ ...state, hasException: false });
+        mocks.findOwnOccupant.mockResolvedValue(null);
+        mocks.getDb.mockReturnValue({
+            select: () => ({
+                from: () => ({
+                    where: () => ({
+                        limit: async () => [{ id: OWNER, email: 'owner@example.com' }]
+                    })
+                })
+            })
+        });
+    });
+
+    it('answers 409 DUPLICATE_LOCATION when the unique index refuses the write (23505 in error.cause)', async () => {
+        const driver = Object.assign(new Error('duplicate key'), {
+            code: '23505',
+            constraint: 'venues_ownerId_locationKey_published_uniq'
+        });
+        mocks.publishListing.mockRejectedValue(
+            new Error('Failed query: update', { cause: driver })
+        );
+
+        await expect(
+            service.publish({ actor, id: LISTING, vertical: VerticalEnum.VENUE })
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.ALREADY_EXISTS,
+            reason: 'DUPLICATE_LOCATION'
+        });
+    });
+
+    it('rethrows any other failure untouched', async () => {
+        const boom = new Error('boom');
+        mocks.publishListing.mockRejectedValue(boom);
+        await expect(
+            service.publish({ actor, id: LISTING, vertical: VerticalEnum.VENUE })
+        ).rejects.toBe(boom);
     });
 });
