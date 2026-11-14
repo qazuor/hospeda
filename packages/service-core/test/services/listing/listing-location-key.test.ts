@@ -18,7 +18,7 @@ describe('resolveLocationKeyPatch', () => {
             payload: { destinationId: DEST, location: { street: 'Av. San Martín', number: '123' } },
             current: null
         });
-        expect(patch).toEqual({ locationKey: 'san martin|123|dest-1' });
+        expect(patch).toEqual({ locationKey: 'av san martin|123|dest-1' });
     });
 
     it('does not touch the key when neither location nor destination change', () => {

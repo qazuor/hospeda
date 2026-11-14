@@ -4,25 +4,54 @@
  * @module utils/location-key
  */
 
-/** Street-type prefixes dropped from the start of a street name. */
-const STREET_PREFIXES: ReadonlySet<string> = new Set([
-    'calle',
-    'av',
-    'avda',
-    'avenida',
-    'bv',
-    'bvd',
-    'bulevar',
-    'boulevard',
-    'ruta',
-    'rn',
-    'rp',
-    'pasaje',
-    'psje',
-    'pje',
-    'diag',
-    'diagonal'
-]);
+/**
+ * Street-type spellings, each mapped to ONE canonical token. The type is part
+ * of the key: «Calle 9», «Ruta 9» and «Av. 9» are three different places.
+ */
+const STREET_TYPES: Readonly<Record<string, string>> = {
+    calle: 'calle',
+    c: 'calle',
+    av: 'av',
+    avda: 'av',
+    avd: 'av',
+    avenida: 'av',
+    bv: 'bv',
+    bvd: 'bv',
+    bvard: 'bv',
+    blvd: 'bv',
+    bulevar: 'bv',
+    boulevard: 'bv',
+    ruta: 'ruta',
+    rn: 'ruta',
+    rp: 'ruta',
+    pasaje: 'pje',
+    psje: 'pje',
+    pje: 'pje',
+    diag: 'diag',
+    diagonal: 'diag'
+};
+
+/** Words that follow «Ruta» and carry no identity («Ruta nacional 9»). */
+const ROUTE_QUALIFIERS: ReadonlySet<string> = new Set(['nacional', 'provincial']);
+
+/** Common title abbreviations expanded to the full word, anywhere in the street. */
+const TITLE_ABBREVIATIONS: Readonly<Record<string, string>> = {
+    gral: 'general',
+    cnel: 'coronel',
+    dr: 'doctor',
+    dra: 'doctora',
+    pte: 'presidente',
+    tte: 'teniente',
+    alte: 'almirante',
+    brig: 'brigadier',
+    sgto: 'sargento',
+    ing: 'ingeniero',
+    cap: 'capitan',
+    mtro: 'maestro',
+    pbro: 'presbitero',
+    mons: 'monsenor',
+    fray: 'fray'
+};
 
 /** Ground-floor spellings unified to one token. */
 const GROUND_FLOOR_TOKENS: ReadonlySet<string> = new Set(['pb', 'planta baja', 'p b']);
@@ -70,14 +99,26 @@ export interface BuildLocationKeyInput {
 }
 
 /**
- * Normalizes a street: drops accents, case, punctuation and the leading
- * street-type prefix («Av.», «Avenida», «Calle»...).
+ * Normalizes a street: drops accents, case and punctuation, canonicalizes the
+ * leading street type («Av.», «Avenida», «Avda» are all `av`) and expands
+ * common title abbreviations («Gral.» is `general`). The type stays in the key.
  */
 function normalizeStreet(street: string): string {
-    const words = normalizeText(street).split(' ').filter(Boolean);
-    while (words.length > 0 && STREET_PREFIXES.has(words[0] as string)) {
-        words.shift();
+    let words = normalizeText(street).split(' ').filter(Boolean);
+    // «R.N. 9» / «R.P. 9» normalize to «r n 9»: rejoin the two letters.
+    if (words[0] === 'r' && (words[1] === 'n' || words[1] === 'p')) {
+        words = ['ruta', ...words.slice(2)];
     }
+    const type = words.length > 0 ? STREET_TYPES[words[0] as string] : undefined;
+    if (type) {
+        words = [type, ...words.slice(1)];
+        if (type === 'ruta' && ROUTE_QUALIFIERS.has(words[1] as string)) words.splice(1, 1);
+    }
+    words = words.map((word, index) =>
+        index === 0 && type ? word : (TITLE_ABBREVIATIONS[word] ?? word)
+    );
+    // A street that is only a type («Av.») names nothing.
+    if (words.length === 1 && type) return '';
     return words.join(' ');
 }
 

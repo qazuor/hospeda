@@ -21,17 +21,93 @@ describe('buildLocationKey', () => {
         expect(a).toBe(b);
     });
 
-    it('ignores street-type prefixes (Av., Avenida, Calle, Bv.)', () => {
-        const bare = buildLocationKey({ street: 'san martin', number: '123', destinationId: DEST });
+    it('unifies the spellings of one street type to a canonical token', () => {
+        const canonical = buildLocationKey({
+            street: 'Avenida San Martin',
+            number: '123',
+            destinationId: DEST
+        });
         for (const street of [
             'Av. San Martín',
-            'Avenida San Martín',
-            'Calle San Martin',
             'Av San Martin',
-            'Bv. San Martin'
+            'AVDA. San Martin',
+            'avenida SAN MARTIN'
         ]) {
-            expect(buildLocationKey({ street, number: '123', destinationId: DEST })).toBe(bare);
+            expect(buildLocationKey({ street, number: '123', destinationId: DEST })).toBe(
+                canonical
+            );
         }
+        const calle = buildLocationKey({ street: 'Calle Mitre', number: '1', destinationId: DEST });
+        expect(buildLocationKey({ street: 'C. Mitre', number: '1', destinationId: DEST })).toBe(
+            calle
+        );
+        const ruta = buildLocationKey({ street: 'Ruta 9', number: '1', destinationId: DEST });
+        for (const street of ['RN 9', 'R.N. 9', 'rp 9', 'Ruta nacional 9']) {
+            expect(buildLocationKey({ street, number: '1', destinationId: DEST })).toBe(ruta);
+        }
+        const pje = buildLocationKey({ street: 'Pasaje Sur', number: '1', destinationId: DEST });
+        expect(buildLocationKey({ street: 'Pje. Sur', number: '1', destinationId: DEST })).toBe(
+            pje
+        );
+        const bv = buildLocationKey({
+            street: 'Boulevard Peron',
+            number: '1',
+            destinationId: DEST
+        });
+        for (const street of ['Bv. Peron', 'Bvard Peron', 'Bulevar Peron']) {
+            expect(buildLocationKey({ street, number: '1', destinationId: DEST })).toBe(bv);
+        }
+    });
+
+    it('keeps different street types apart: Calle 9, Ruta 9 and Av. 9 are three places', () => {
+        const keys = ['Calle 9', 'Ruta 9', 'Av. 9', 'Pasaje 9', 'Boulevard 9'].map((street) =>
+            buildLocationKey({ street, number: '1', destinationId: DEST })
+        );
+        expect(new Set(keys).size).toBe(5);
+    });
+
+    it('keeps a typed street apart from the bare name (documented false negative)', () => {
+        const bare = buildLocationKey({ street: 'San Martin', number: '123', destinationId: DEST });
+        const typed = buildLocationKey({
+            street: 'Av. San Martin',
+            number: '123',
+            destinationId: DEST
+        });
+        expect(bare).not.toBe(typed);
+    });
+
+    it('expands common title abbreviations', () => {
+        const full = buildLocationKey({
+            street: 'General San Martin',
+            number: '1',
+            destinationId: DEST
+        });
+        expect(
+            buildLocationKey({ street: 'Gral. San Martin', number: '1', destinationId: DEST })
+        ).toBe(full);
+        expect(
+            buildLocationKey({ street: 'Gral San Martin', number: '1', destinationId: DEST })
+        ).toBe(full);
+        const dr = buildLocationKey({ street: 'Doctor Haedo', number: '1', destinationId: DEST });
+        expect(buildLocationKey({ street: 'Dr. Haedo', number: '1', destinationId: DEST })).toBe(
+            dr
+        );
+        const cnel = buildLocationKey({
+            street: 'Coronel Suarez',
+            number: '1',
+            destinationId: DEST
+        });
+        expect(buildLocationKey({ street: 'Cnel. Suarez', number: '1', destinationId: DEST })).toBe(
+            cnel
+        );
+        const pte = buildLocationKey({
+            street: 'Presidente Peron',
+            number: '1',
+            destinationId: DEST
+        });
+        expect(buildLocationKey({ street: 'Pte. Peron', number: '1', destinationId: DEST })).toBe(
+            pte
+        );
     });
 
     it('strips punctuation', () => {
@@ -40,7 +116,7 @@ describe('buildLocationKey', () => {
             number: '12,',
             destinationId: DEST
         });
-        expect(key).toBe('gral j de san martin|12|dest-1');
+        expect(key).toBe('general j de san martin|12|dest-1');
     });
 
     it.each([
@@ -75,7 +151,7 @@ describe('buildLocationKey', () => {
         expect(buildLocationKey({ street: 'x street', number: '1', destinationId: '' })).toBeNull();
     });
 
-    it('returns null when the street is only a prefix', () => {
+    it('returns null when the street is only a street type', () => {
         expect(buildLocationKey({ street: 'Av.', number: '1', destinationId: DEST })).toBeNull();
     });
 
