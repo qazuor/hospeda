@@ -228,8 +228,15 @@ render means its outage takes the panel down.
   existing `entity_views` cards in every owner panel: accommodation
   (`AnalyticsSection.client.tsx`), venue, experience, and the partner panel from
   HOS-1063. Cards hide when `available: false`. Copy in es/en/pt.
-- All four verticals ship together (OQ-7). Their pages already send `entity_id`
-  through `EntityViewTracker`; T-0 confirms the property reaches Umami for each.
+- All four verticals ship together (OQ-7). **Correction (task planning,
+  2026-11-14):** the code does not send `entity_id` today. `accommodation_viewed`
+  and `contact_owner_*` carry `accommodation_id`; `EntityViewTracker` emits no
+  analytics event for VENUE or EXPERIENCE (owner decision, HOS-734: only the
+  `entity_views` beacon), and partner pages emit none either. So this phase must
+  add a view event with `entity_id` for all four types and normalize the
+  accommodation events. Venue, experience and partner have no contact events, so
+  their «Contactos» card has no source until one is defined (see tasks T-005,
+  T-016, T-030, T-031).
 
 ### 6.6 Removal
 
