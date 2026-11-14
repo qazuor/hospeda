@@ -30,7 +30,7 @@ export const protectedGetAccommodationSectionStatesRoute = createProtectedRoute(
         const listingAccess = ctx.get('listingAccess');
         if (!listingAccess?.subjectId)
             throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
-        const { subjectId, businessLines } = listingAccess;
+        const { subjectId } = listingAccess;
         const ports = getListingAccessPorts();
         let effective: Awaited<ReturnType<typeof ports.effectiveSet>>;
         try {
@@ -46,7 +46,10 @@ export const protectedGetAccommodationSectionStatesRoute = createProtectedRoute(
         }
         const resolved = resolveListingSections({
             vertical: 'accommodation',
-            businessLines,
+            // Every accommodation section is common to the one `standard` rubro, so
+            // the stored business lines change nothing here (and this route is not a
+            // business-lines reader for G-FAC-03).
+            businessLines: [],
             effective,
             userId: subjectId
         });
