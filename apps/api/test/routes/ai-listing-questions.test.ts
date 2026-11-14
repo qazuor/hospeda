@@ -240,7 +240,8 @@ describe('GET /protected/ai/listing-questions', () => {
         ['from after to', 'from=2026-11-05&to=2026-11-01'],
         ['a from older than the 12 month horizon', 'from=2000-01-01'],
         ['a malformed day', 'from=2026-13-45'],
-        ['a non-date from', 'from=yesterday']
+        ['a non-date from', 'from=yesterday'],
+        ['a to in the year 9999', 'to=9999-12-31']
     ])('answers 400 for %s before the ownership check (HOS-2075)', async (_label, range) => {
         const res = await app.request(`${BASE}?entityType=venue&entityId=${LISTING_ID}&${range}`, {
             headers: AUTH_HEADERS

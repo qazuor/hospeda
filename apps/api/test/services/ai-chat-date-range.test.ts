@@ -42,4 +42,13 @@ describe('resolveChatDateRange', () => {
     it('accepts a from on the first day of the horizon', () => {
         expect(resolveChatDateRange({ from: '2025-11-14', now: NOW }).ok).toBe(true);
     });
+
+    it('rejects a to far in the future instead of building a malformed timestamp', () => {
+        expect(resolveChatDateRange({ to: '9999-12-31', now: NOW }).ok).toBe(false);
+    });
+
+    it('accepts a to up to tomorrow', () => {
+        expect(resolveChatDateRange({ to: '2026-11-15', now: NOW }).ok).toBe(true);
+        expect(resolveChatDateRange({ to: '2026-11-16', now: NOW }).ok).toBe(false);
+    });
 });

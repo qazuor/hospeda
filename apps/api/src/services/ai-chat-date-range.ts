@@ -53,13 +53,19 @@ export function resolveChatDateRange(input: {
     if (input.from !== undefined && input.to !== undefined && input.from > input.to) {
         return { ok: false, message: 'from must be on or before to' };
     }
+    const now = input.now ?? new Date();
+    const latestTo = new Date(now.getTime() + DAY_MS).toISOString().slice(0, 10);
+    if (input.to !== undefined && input.to > latestTo) {
+        // Also keeps `to` + 1 day a well-formed timestamp (year 9999 overflows to a 6-digit year).
+        return { ok: false, message: 'to cannot be in the future' };
+    }
     const lowerBound =
         input.from === undefined ? undefined : new Date(`${input.from}T00:00:00.000Z`);
     const upperExclusive =
         input.to === undefined
             ? undefined
             : new Date(new Date(`${input.to}T00:00:00.000Z`).getTime() + DAY_MS);
-    const { cutoff } = retentionCutoff({ now: input.now ?? new Date() });
+    const { cutoff } = retentionCutoff({ now });
     if (lowerBound !== undefined && lowerBound < startOfDay({ date: cutoff })) {
         return { ok: false, message: 'from is older than the 12 month retention horizon' };
     }
