@@ -4,8 +4,11 @@
  */
 import type { AiChatEntityType } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import enAccommodations from '../../../../packages/i18n/src/locales/en/accommodations.json';
+import esAccommodations from '../../../../packages/i18n/src/locales/es/accommodations.json';
 import esExperience from '../../../../packages/i18n/src/locales/es/experience.json';
 import esVenue from '../../../../packages/i18n/src/locales/es/venue.json';
+import ptAccommodations from '../../../../packages/i18n/src/locales/pt/accommodations.json';
 import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '../../src/lib/ai-chat-copy';
 import { pickClientNamespaces } from '../../src/lib/i18n-client-namespaces';
 
@@ -128,5 +131,37 @@ describe('aiChatCopyKey', () => {
     it('should route vertical keys to the vertical namespace', () => {
         expect(aiChatCopyKey('venue', 'panelLabel')).toBe('venue.aiChat.panelLabel');
         expect(aiChatCopyKey('experience', 'fabLabel')).toBe('experience.aiChat.fabLabel');
+    });
+});
+
+describe('readNotice (HOS-2075: the business can read the chat)', () => {
+    const LOCALES = [
+        ['es', esAccommodations.aiChat.readNotice],
+        ['en', enAccommodations.aiChat.readNotice],
+        ['pt', ptAccommodations.aiChat.readNotice]
+    ] as const;
+
+    it.each([
+        'accommodation',
+        'venue',
+        'experience'
+    ] as const)('should resolve the notice for %s through the shared key', (entityType) => {
+        expect(aiChatCopyKey(entityType, 'readNotice')).toBe('accommodations.aiChat.readNotice');
+    });
+
+    it.each(LOCALES)('should have a non-empty %s translation', (_locale, text) => {
+        expect(typeof text).toBe('string');
+        expect(text.length).toBeGreaterThan(10);
+    });
+
+    it.each([
+        'accommodation',
+        'venue',
+        'experience'
+    ] as const)('should fall back to readable Spanish for %s when the key misses', (entityType) => {
+        const out = resolveAiChatCopy({ t: missingT, entityType, suffix: 'readNotice' });
+        expect(out).toBe(
+            'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.'
+        );
     });
 });

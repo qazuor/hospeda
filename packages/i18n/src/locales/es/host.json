@@ -726,6 +726,14 @@
             },
             "pageDescription": "Editar información de tu propiedad",
             "aiQuestions": {
+                "redactionNote": "Los datos de contacto (emails y teléfonos) se ocultan en las preguntas que ves acá.",
+                "emptyFiltered": "No hay preguntas en ese rango de fechas.",
+                "filter": {
+                    "from": "Desde",
+                    "to": "Hasta",
+                    "clear": "Limpiar fechas",
+                    "invalidRange": "El rango de fechas no es válido. Podés consultar hasta 12 meses atrás y la fecha \"Desde\" no puede ser posterior a \"Hasta\"."
+                },
                 "intro": "Lo que los visitantes le preguntaron al asistente de tu ficha. Las preguntas son anónimas y se guardan 12 meses.",
                 "loading": "Cargando preguntas…",
                 "error": "No pudimos cargar las preguntas. Probá de nuevo en un rato.",

@@ -1006,6 +1006,7 @@
         "fabLabel": "Perguntar à IA sobre esta acomodação",
         "panelLabel": "Chat com IA — Perguntas sobre a acomodação",
         "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Sempre verifique as informações com a acomodação.",
+        "readNotice": "O estabelecimento pode ler as perguntas feitas neste chat. Não compartilhe dados pessoais.",
         "priceDisclaimer": "Os preços e disponibilidade podem ter mudado. Entre em contato com a acomodação para confirmar.",
         "placeholder": "Digite sua pergunta aqui…",
         "send": "Enviar",

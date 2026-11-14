@@ -10,6 +10,7 @@
 
 export { adminAiPostGenerateRoute } from './admin/post-generate.js';
 export { adminAiTranslateRoute } from './admin/translate.js';
+export { adminAiConversationsRoutes } from './conversations/index.js';
 export { adminAiCredentialsRoutes } from './credentials/index.js';
 export { adminAiPromptsRoutes } from './prompts/index.js';
 export { adminAiSettingsRoutes } from './settings/index.js';
