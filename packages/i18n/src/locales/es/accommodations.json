@@ -1006,6 +1006,7 @@
         "fabLabel": "Preguntarle a la IA sobre este alojamiento",
         "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
         "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",
+        "readNotice": "El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.",
         "priceDisclaimer": "Los precios y disponibilidad pueden haber cambiado. Contactá al alojamiento para confirmar.",
         "placeholder": "Escribí tu pregunta aquí…",
         "send": "Enviar",
