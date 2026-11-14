@@ -74,6 +74,7 @@ export {
 } from './pagination.schema.js';
 export * from './params.schema.js';
 export * from './password.schema.js';
+export * from './postal-address.schema.js';
 export * from './price.schema.js';
 export { queryDateParam, queryNumberParam } from './query-helpers.js';
 export * from './relations.schema.js';
