@@ -86,6 +86,7 @@
         "editor": {
             "sectionNav": {
                 "basicInfo": "Basic information",
+                "location": "Location",
                 "contactInfo": "Contact",
                 "socialNetworks": "Social networks",
                 "openingHours": "Opening hours",
@@ -106,6 +107,15 @@
             "sections": {
                 "type": "Category",
                 "summary": "Summary",
+                "location": "Address",
+                "locationStreet": "Street",
+                "locationNumber": "Number",
+                "locationFloor": "Floor (optional)",
+                "locationApartment": "Apartment or unit (optional)",
+                "locationHint": "The city comes from the destination you chose in Basic information. This address is shown on your public listing.",
+                "locationLat": "Latitude (optional)",
+                "locationLong": "Longitude (optional)",
+                "locationCoordsHint": "If you enter both coordinates, we show the venue on a map. You can leave them empty.",
                 "openingHours": "Opening hours",
                 "openingHoursHint": "Every day starts as \"Closed\". Uncheck \"Closed\" on a day to enter its hours, and use \"Copy to every day\" to repeat them across the week.",
                 "openingHoursCopyToAll": "Copy to every day",

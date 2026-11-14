@@ -86,6 +86,7 @@
         "editor": {
             "sectionNav": {
                 "basicInfo": "Informações básicas",
+                "location": "Localização",
                 "contactInfo": "Contato",
                 "socialNetworks": "Redes sociais",
                 "openingHours": "Horários",
@@ -106,6 +107,15 @@
             "sections": {
                 "type": "Categoria",
                 "summary": "Resumo",
+                "location": "Endereço",
+                "locationStreet": "Rua",
+                "locationNumber": "Número",
+                "locationFloor": "Andar (opcional)",
+                "locationApartment": "Apartamento ou loja (opcional)",
+                "locationHint": "A cidade vem do destino que você escolheu em Informações básicas. Este endereço aparece na sua ficha pública.",
+                "locationLat": "Latitude (opcional)",
+                "locationLong": "Longitude (opcional)",
+                "locationCoordsHint": "Se você informar as duas coordenadas, mostramos o local em um mapa. Você pode deixá-las em branco.",
                 "openingHours": "Horário de atendimento",
                 "openingHoursHint": "Todos os dias começam como \"Fechado\". Desmarque \"Fechado\" em um dia para informar o horário e use \"Copiar para todos os dias\" para repeti-lo na semana.",
                 "openingHoursCopyToAll": "Copiar para todos os dias",
