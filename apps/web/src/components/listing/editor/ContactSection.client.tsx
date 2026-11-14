@@ -29,6 +29,7 @@ export interface ContactSectionProps {
     readonly contact: ContactValues;
     readonly errors: Readonly<{
         'contactInfo.mobilePhone'?: string;
+        'contactInfo.workPhone'?: string;
         'contactInfo.workEmail'?: string;
     }>;
     readonly onContactChange: (patch: Partial<ContactValues>) => void;
@@ -59,6 +60,16 @@ export function ContactSection({
                 value={contact.mobilePhone}
                 onChange={(value) => onContactChange({ mobilePhone: value })}
                 error={errors['contactInfo.mobilePhone']}
+            />
+            {/* HOS-2042: optional landline. Same pair and the same validation as
+                the main phone above; stored in `contactInfo.workPhone`, never
+                derived from or migrated into `mobilePhone`. */}
+            <ListingPhoneField
+                phoneKey="workPhone"
+                locale={locale}
+                value={contact.workPhone}
+                onChange={(value) => onContactChange({ workPhone: value })}
+                error={errors['contactInfo.workPhone']}
             />
             {/* Visible <label>, not just an aria-label: an empty input with no
                 visible text next to it reads as an anonymous box to a sighted

@@ -272,6 +272,8 @@ export interface AccommodationEditData {
     // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
     readonly phone: string;
     readonly whatsapp: string;
+    /** Optional landline (HOS-2042). Maps to `contactInfo.workPhone`. */
+    readonly landlinePhone: string;
     readonly email: string;
     readonly website: string;
     // Phase B: social networks (flat HTTP fields mapped to SocialNetworkSchema)

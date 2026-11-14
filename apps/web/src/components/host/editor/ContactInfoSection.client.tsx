@@ -39,6 +39,12 @@ const WHATSAPP_FIELD = {
     suffix: ACCOMMODATION_FIELD_ID_SUFFIXES.whatsapp
 } as const;
 
+const LANDLINE_FIELD = {
+    prefix: ACCOMMODATION_FIELD_PREFIX,
+    name: 'landlinePhone',
+    suffix: ACCOMMODATION_FIELD_ID_SUFFIXES.landlinePhone
+} as const;
+
 /** Props for ContactInfoSection. */
 export interface ContactInfoSectionProps {
     readonly locale: SupportedLocale;
@@ -46,6 +52,7 @@ export interface ContactInfoSectionProps {
     readonly errors: Readonly<{
         phone?: string;
         whatsapp?: string;
+        landlinePhone?: string;
         email?: string;
         website?: string;
     }>;
@@ -106,6 +113,28 @@ export function ContactInfoSection({
         onFieldChange('whatsapp', composePhoneValue({ country: whatsappCountry, number: value }));
     };
 
+    // Optional landline (HOS-2042): same country + number pair, recomposed into
+    // the single `data.landlinePhone` string; stored in `contactInfo.workPhone`.
+    const [landlineCountry, setLandlineCountry] = useState<PhoneCountry>(
+        () => parsePhoneValue(data.landlinePhone).country
+    );
+    const [landlineNumber, setLandlineNumber] = useState<string>(
+        () => parsePhoneValue(data.landlinePhone).number
+    );
+
+    const handleLandlineCountryChange = (country: PhoneCountry) => {
+        setLandlineCountry(country);
+        onFieldChange('landlinePhone', composePhoneValue({ country, number: landlineNumber }));
+    };
+
+    const handleLandlineNumberChange = (value: string) => {
+        setLandlineNumber(value);
+        onFieldChange(
+            'landlinePhone',
+            composePhoneValue({ country: landlineCountry, number: value })
+        );
+    };
+
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
@@ -158,6 +187,51 @@ export function ContactInfoSection({
                 <FieldError
                     id={buildFieldErrorId(PHONE_FIELD)}
                     message={errors.phone}
+                    className={styles.fieldErrorSpacing}
+                />
+            </div>
+
+            <div className={styles.field}>
+                <fieldset className={styles.phoneFieldset}>
+                    <legend className={styles.fieldLabel}>
+                        {t('host.properties.editor.field.landlinePhone', 'Teléfono fijo')}
+                    </legend>
+                    <div className={styles.phoneRow}>
+                        <div className={styles.phoneCountryField}>
+                            <label
+                                htmlFor={buildFieldId({ ...LANDLINE_FIELD, suffix: 'country' })}
+                                className={styles.fieldSubLabel}
+                            >
+                                {t('host.properties.editor.field.phoneCountry', 'País')}
+                            </label>
+                            <CountryCodeCombobox
+                                locale={locale}
+                                id={buildFieldId({ ...LANDLINE_FIELD, suffix: 'country' })}
+                                value={landlineCountry}
+                                onChange={handleLandlineCountryChange}
+                            />
+                        </div>
+                        <div className={styles.phoneNumberField}>
+                            {/* Mirrors the phone block above — see the note there. */}
+                            <TextField
+                                {...LANDLINE_FIELD}
+                                label={t('host.properties.editor.field.phoneNumber', 'Número')}
+                                labelClassName={styles.fieldSubLabel}
+                                className={`${styles.fieldInput} ${styles.phoneNumberInput}`}
+                                error={errors.landlinePhone}
+                                renderError={false}
+                                type="tel"
+                                inputMode="tel"
+                                value={landlineNumber}
+                                onChange={(e) => handleLandlineNumberChange(e.target.value)}
+                                placeholder="3442 45-2345"
+                            />
+                        </div>
+                    </div>
+                </fieldset>
+                <FieldError
+                    id={buildFieldErrorId(LANDLINE_FIELD)}
+                    message={errors.landlinePhone}
                     className={styles.fieldErrorSpacing}
                 />
             </div>

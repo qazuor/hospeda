@@ -27,6 +27,7 @@ import styles from './SectionForm.module.css';
 const OWN_FIELDS = [
     'phone',
     'whatsapp',
+    'landlinePhone',
     'email',
     'website',
     'facebookUrl',

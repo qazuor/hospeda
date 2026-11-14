@@ -38,22 +38,41 @@ import { LISTING_FIELD_ID_SUFFIXES, LISTING_FIELD_PREFIX } from './field-ids';
  * drift. Hard-coding `'number'` in either place would compile, render and
  * silently focus nothing.
  */
-const PHONE_FIELD = {
-    prefix: LISTING_FIELD_PREFIX,
-    name: 'contactInfo.mobilePhone',
-    suffix: LISTING_FIELD_ID_SUFFIXES['contactInfo.mobilePhone']
-} as const;
+/**
+ * The `contactInfo` phone keys this control can edit: the main (mobile) phone
+ * and the optional landline (HOS-2042).
+ */
+export type ListingPhoneKey = 'mobilePhone' | 'workPhone';
 
-const PHONE_COUNTRY_ID = buildFieldId({ ...PHONE_FIELD, suffix: 'country' });
+/** Default label text per key, used as the i18n fallback. */
+const PHONE_LABELS: Readonly<Record<ListingPhoneKey, { key: string; fallback: string }>> = {
+    mobilePhone: { key: 'listing.owner.editor.contactField.mobilePhone', fallback: 'Teléfono' },
+    workPhone: {
+        key: 'listing.owner.editor.contactField.landlinePhone',
+        fallback: 'Teléfono fijo'
+    }
+};
+
+/** Builds the id identity of one phone control from its `contactInfo` key. */
+function phoneFieldIdentity(phoneKey: ListingPhoneKey) {
+    const name = `contactInfo.${phoneKey}` as const;
+    return {
+        prefix: LISTING_FIELD_PREFIX,
+        name,
+        suffix: LISTING_FIELD_ID_SUFFIXES[name]
+    } as const;
+}
 
 export interface ListingPhoneFieldProps {
+    /** Which `contactInfo` key this control edits. Defaults to the main (mobile) phone. */
+    readonly phoneKey?: ListingPhoneKey;
     /** Active UI locale (drives the combobox's translated labels). */
     readonly locale: SupportedLocale;
     /** Current stored phone value (e.g. `"+54 9 343 1234567"`). */
     readonly value: string;
     /** Fired with the recomposed full phone string on any change. */
     readonly onChange: (value: string) => void;
-    /** Validation message for `contactInfo.mobilePhone`, when present. */
+    /** Validation message for the edited `contactInfo` phone key, when present. */
     readonly error?: string;
 }
 
@@ -63,12 +82,16 @@ export interface ListingPhoneFieldProps {
  * `mobilePhone` string and its existing dirty tracking is untouched.
  */
 export function ListingPhoneField({
+    phoneKey = 'mobilePhone',
     locale,
     value,
     onChange,
     error
 }: ListingPhoneFieldProps): JSX.Element {
     const { t } = createTranslations(locale);
+    const phoneField = phoneFieldIdentity(phoneKey);
+    const phoneCountryId = buildFieldId({ ...phoneField, suffix: 'country' });
+    const label = PHONE_LABELS[phoneKey];
 
     // Lazy initializers keep this robust to an empty/undefined initial value.
     const [country, setCountry] = useState<PhoneCountry>(() => parsePhoneValue(value).country);
@@ -87,9 +110,7 @@ export function ListingPhoneField({
     return (
         <div className={styles.phoneField}>
             <fieldset className={styles.phoneFieldset}>
-                <legend className={styles.fieldLabel}>
-                    {t('listing.owner.editor.contactField.mobilePhone', 'Teléfono')}
-                </legend>
+                <legend className={styles.fieldLabel}>{t(label.key, label.fallback)}</legend>
                 <div className={styles.phoneRow}>
                     <div className={styles.phoneCountryField}>
                         {/* Deliberately the `host.*` keys, not listing ones:
@@ -99,14 +120,14 @@ export function ListingPhoneField({
                             listing key would let the visible label and the
                             accessible name drift apart on the next edit. */}
                         <label
-                            htmlFor={PHONE_COUNTRY_ID}
+                            htmlFor={phoneCountryId}
                             className={styles.fieldSubLabel}
                         >
                             {t('host.properties.editor.field.phoneCountry', 'País')}
                         </label>
                         <CountryCodeCombobox
                             locale={locale}
-                            id={PHONE_COUNTRY_ID}
+                            id={phoneCountryId}
                             value={country}
                             onChange={handleCountryChange}
                         />
@@ -119,7 +140,7 @@ export function ListingPhoneField({
                          * aria wiring, only the placement is ours.
                          */}
                         <TextField
-                            {...PHONE_FIELD}
+                            {...phoneField}
                             label={t('host.properties.editor.field.phoneNumber', 'Número')}
                             labelClassName={styles.fieldSubLabel}
                             className={fieldStyles.input}
@@ -135,7 +156,7 @@ export function ListingPhoneField({
                 </div>
             </fieldset>
             <FieldError
-                id={buildFieldErrorId(PHONE_FIELD)}
+                id={buildFieldErrorId(phoneField)}
                 message={error}
             />
         </div>

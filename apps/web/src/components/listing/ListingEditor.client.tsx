@@ -369,6 +369,14 @@ function buildPatchPayload({
     if (!sameValue(current.contact, baseline.contact)) {
         payload.contactInfo = {
             mobilePhone: nullWhenEmpty(current.contact.mobilePhone),
+            // HOS-2042: the landline is optional and MERGED server-side, so a
+            // listing that never had one must not get an explicit `null` written
+            // just because another contact field changed (AC-3: stored data stays
+            // as it was). The key travels only when there is a value to save or a
+            // stored value to clear.
+            ...(current.contact.workPhone !== '' || baseline.contact.workPhone !== ''
+                ? { workPhone: nullWhenEmpty(current.contact.workPhone) }
+                : {}),
             workEmail: nullWhenEmpty(current.contact.workEmail)
         };
     }
@@ -677,9 +685,10 @@ export function ListingEditor({
         // `fieldErrors.summary`; no local ad hoc check.
         summary: strField(data, 'summary'),
         richDescription: strField(data, 'richDescription'),
-        // T-020: website removed from contact per AC-4; mobilePhone + workEmail only
+        // T-020: website removed from contact per AC-4; mobilePhone + workPhone (landline, HOS-2042) + workEmail only
         contact: {
             mobilePhone: strField(initialContact, 'mobilePhone'),
+            workPhone: strField(initialContact, 'workPhone'),
             workEmail: strField(initialContact, 'workEmail')
         },
         // T-020: added linkedIn to social per AC-4
