@@ -568,7 +568,13 @@ export class AmenityService extends BaseCrudRelatedService<
         // (data migration 0147) would otherwise reach the public filters.
         return this.model.findAll(
             { ...filterParams, deletedAt: null },
-            { page, pageSize },
+            {
+                page,
+                pageSize,
+                // HOS-2068: BaseCrudRead.search re-publishes sortBy/sortOrder on ctx.pagination.
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
             additionalConditions
         );
     }

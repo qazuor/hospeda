@@ -233,7 +233,13 @@ export class FeatureService extends BaseCrudRelatedService<
 
         const { items, total } = await this.model.findAll(
             where,
-            { page, pageSize },
+            {
+                page,
+                pageSize,
+                // HOS-2068: BaseCrudRead.search re-publishes sortBy/sortOrder on ctx.pagination.
+                sortBy: ctx.pagination?.sortBy,
+                sortOrder: ctx.pagination?.sortOrder
+            },
             additionalConditions
         );
         return { items, total };

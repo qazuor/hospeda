@@ -91,7 +91,30 @@ describe('FeatureService.search', () => {
         });
 
         // Assert
-        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 100 });
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            page: 2,
+            pageSize: 100
+        });
+    });
+
+    it('should forward sortBy and sortOrder to the model (HOS-2068 regression)', async () => {
+        // Arrange — the web catalogs ask for displayWeight desc; the model used to
+        // receive no ORDER BY at all.
+        featureModelMock.findAll.mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            page: 1,
+            pageSize: 100,
+            sortBy: 'displayWeight',
+            sortOrder: 'desc'
+        });
+
+        // Assert
+        expect(featureModelMock.findAll.mock.calls[0]?.[1]).toMatchObject({
+            sortBy: 'displayWeight',
+            sortOrder: 'desc'
+        });
     });
 
     it('should exclude soft-deleted (retired) features (regression)', async () => {

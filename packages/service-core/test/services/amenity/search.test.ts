@@ -49,6 +49,23 @@ describe('AmenityService.search', () => {
         expect(result.data?.items).toHaveLength(1);
     });
 
+    it('should forward sortBy and sortOrder to the model (HOS-2068 regression)', async () => {
+        // Arrange
+        asMock(amenityModelMock.findAll).mockResolvedValue(paginated);
+
+        // Act
+        await service.search(actor, {
+            ...searchParams,
+            pageSize: 100,
+            sortBy: 'displayWeight',
+            sortOrder: 'desc'
+        });
+
+        // Assert
+        const options = asMock(amenityModelMock.findAll).mock.calls[0]?.[1];
+        expect(options).toMatchObject({ sortBy: 'displayWeight', sortOrder: 'desc' });
+    });
+
     it('should exclude soft-deleted (retired) amenities (regression)', async () => {
         // Arrange — AmenityModel.findAll applies no soft-delete default, so before the
         // fix GET /public/amenities also returned the amenities retired by data
