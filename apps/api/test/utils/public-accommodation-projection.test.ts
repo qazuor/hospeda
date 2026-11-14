@@ -133,4 +133,27 @@ describe('projectPublicAccommodations', () => {
         expect(page.aiChatByOwner.get('none')).toBe(false);
         expect(mocks.effectiveSet).toHaveBeenCalledTimes(2);
     });
+
+    it('Q-2 (HOS-1809): a locked calendar section removes no public field', async () => {
+        // Holds every public-field key but NOT can_use_calendar, so `calendar`
+        // resolves `locked`. The calendar section owns no response field, so the
+        // public payload equals the one of an owner who also holds the calendar.
+        keysByOwner.withoutCalendar = ALL;
+        keysByOwner.withCalendar = [...ALL, 'can_use_calendar', 'can_sync_external_calendar'];
+        const [without, withCalendar] = await projectPublicAccommodations({
+            listings: [listing('withoutCalendar'), listing('withCalendar')]
+        });
+
+        const strip = (item: Record<string, unknown> | undefined) => ({
+            ...item,
+            id: undefined,
+            ownerId: undefined
+        });
+        expect(strip(without as Record<string, unknown>)).toEqual(
+            strip(withCalendar as Record<string, unknown>)
+        );
+        expect(without).toHaveProperty('richDescription');
+        expect(without).toHaveProperty('videos');
+        expect((without as Record<string, unknown>).isVerified).toBe(true);
+    });
 });
