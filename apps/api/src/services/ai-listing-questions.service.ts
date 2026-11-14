@@ -220,7 +220,7 @@ export function toListingQuestionsResponse(input: {
     const items: AiListingQuestion[] = [...input.unansweredRows, ...input.otherRows].map((row) => ({
         id: row.id,
         question: redactChatText({ text: row.question }).text,
-        answer: redactChatText({ text: row.answer }).text,
+        answer: row.answer,
         askedAt: (row.askedAt instanceof Date ? row.askedAt : new Date(row.askedAt)).toISOString(),
         answerStatus: toQuestionStatus({ stored: row.answerStatus }).status
     }));
@@ -424,7 +424,7 @@ function mapQuestion(row: ListingQuestionRow): AiListingQuestion {
     return {
         id: row.id,
         question: redactChatText({ text: row.question }).text,
-        answer: redactChatText({ text: row.answer }).text,
+        answer: row.answer,
         askedAt: new Date(row.askedAt).toISOString(),
         answerStatus: toQuestionStatus({ stored: row.answerStatus }).status
     };

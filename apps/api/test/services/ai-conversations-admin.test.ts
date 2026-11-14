@@ -66,7 +66,7 @@ describe('toConversationListItems', () => {
 });
 
 describe('toConversationDetail', () => {
-    it('keeps the incoming chronological order and redacts every turn', () => {
+    it('keeps the incoming chronological order, redacting user turns only', () => {
         const detail = toConversationDetail({
             id: ID,
             entityType: 'accommodation',
@@ -82,7 +82,7 @@ describe('toConversationDetail', () => {
                 {
                     id: 'b',
                     role: 'assistant',
-                    content: 'Te escribo a juan@mail.com',
+                    content: 'Te escribo a juan@mail.com o al +54 9 3442 123456',
                     createdAt: '2026-11-09T12:00:05.000Z'
                 }
             ]
@@ -90,7 +90,7 @@ describe('toConversationDetail', () => {
 
         expect(detail.turns.map((turn) => turn.id)).toEqual(['a', 'b']);
         expect(detail.turns[0]?.content).toBe('mi cel [REDACTED_PHONE]');
-        expect(detail.turns[1]?.content).toBe('Te escribo a [REDACTED_EMAIL]');
+        expect(detail.turns[1]?.content).toBe('Te escribo a juan@mail.com o al +54 9 3442 123456');
         expect(Object.keys(detail).sort()).toEqual(
             ['entityId', 'entityType', 'id', 'startedAt', 'turns'].sort()
         );

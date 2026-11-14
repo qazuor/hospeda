@@ -7,22 +7,21 @@ import { toListingQuestionsResponse } from '../../src/services/ai-listing-questi
 const ROW = {
     id: '22222222-2222-4222-8222-222222222222',
     question: 'Mi mail es juan@mail.com y mi cel +54 9 3442 123456, ¿hay lugar?',
-    answer: 'Anoté tu contacto juan@mail.com.',
+    answer: 'Anoté tu contacto juan@mail.com. Llamá al +54 9 3442 123456.',
     askedAt: new Date('2026-11-09T12:00:00.000Z'),
     answerStatus: 'unanswered',
     blockTotal: 1
 };
 
 describe('toListingQuestionsResponse redaction', () => {
-    it('redacts personal data in question and answer', () => {
+    it('redacts personal data in the question and leaves the bot answer intact', () => {
         const response = toListingQuestionsResponse({ unansweredRows: [ROW], otherRows: [] });
 
         const item = response.items[0];
         expect(item?.question).toBe(
             'Mi mail es [REDACTED_EMAIL] y mi cel [REDACTED_PHONE], ¿hay lugar?'
         );
-        expect(item?.answer).toBe('Anoté tu contacto [REDACTED_EMAIL].');
-        expect(JSON.stringify(response)).not.toContain('juan@mail.com');
+        expect(item?.answer).toBe('Anoté tu contacto juan@mail.com. Llamá al +54 9 3442 123456.');
     });
 
     it('leaves text without personal data untouched', () => {

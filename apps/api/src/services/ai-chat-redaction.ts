@@ -4,7 +4,8 @@
  * The chat stores what the customer typed verbatim (AC-11 of SPEC-173); a
  * customer may have written a phone number or an e-mail. Every surface that
  * shows that text to someone else (the owner panel, the weekly digest e-mail,
- * the staff view) passes it through {@link redactChatText}, so there is ONE
+ * the staff view) passes the CUSTOMER's text (user turns only, owner decision
+ * 14/11/2026; the bot's answers are left as is) through {@link redactChatText}, so there is ONE
  * implementation and the stored text never changes.
  *
  * It wraps `scrubPii`, which over-redacts on purpose: a phone-like run of digits

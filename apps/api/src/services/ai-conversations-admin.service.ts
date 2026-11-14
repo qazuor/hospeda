@@ -84,7 +84,11 @@ export function toConversationDetail(input: {
         turns: input.turns.map((turn) => ({
             id: turn.id,
             role: turn.role === 'assistant' ? 'assistant' : 'user',
-            content: redactChatText({ text: turn.content }).text,
+            // Owner decision (14/11/2026): only the customer's turns are redacted.
+            content:
+                turn.role === 'assistant'
+                    ? turn.content
+                    : redactChatText({ text: turn.content }).text,
             createdAt: iso(turn.createdAt)
         }))
     };
