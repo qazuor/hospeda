@@ -1,0 +1,45 @@
+---
+/**
+ * @file LocationDuplicateNotice.astro
+ * @description Draft warning of the one-address rule (HOS-1810).
+ *
+ * Shown on the location page of the owner editor while ANOTHER published listing
+ * of the same owner holds this address: the draft can be saved, but publishing it
+ * is refused with a 409 `DUPLICATE_LOCATION`. The flag never carries the other
+ * listing's id (it comes from the protected projection as a plain boolean).
+ *
+ * Owner-scoped SSR page content only; it renders nothing when `show` is false.
+ */
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly show: boolean;
+}
+
+const { locale, show } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+{
+	show && (
+		<p class="location-duplicate-notice" role="status">
+			{t(
+				'listing.owner.locationDuplicate.warning',
+				'Ya tenés otra ficha publicada en esta dirección. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra. Podés seguir editando este borrador, pero no vas a poder publicarlo.',
+			)}
+		</p>
+	)
+}
+
+<style>
+	.location-duplicate-notice {
+		margin: 0 0 var(--space-5, 1.5rem);
+		padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+		border: 1px solid var(--core-warning, #b45309);
+		border-radius: var(--radius-md, 0.5rem);
+		font-size: var(--text-body-sm, 0.9375rem);
+		color: var(--core-foreground);
+		background: var(--core-warning-subtle, transparent);
+	}
+</style>

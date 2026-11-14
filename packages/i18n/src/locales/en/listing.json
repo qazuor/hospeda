@@ -413,6 +413,10 @@
                 "experience": "Choose an experiences plan"
             },
             "missingRequirements": "The listing could not be published because information is missing."
+        },
+        "locationDuplicate": {
+            "warning": "You already have another published listing at this address. Each physical place goes in a single listing: add the missing category to it instead of creating another one. You can keep editing this draft, but you will not be able to publish it.",
+            "blocked": "You already have a published listing at this address. Each physical place goes in a single listing: add the missing category to it instead of creating another one."
         }
     },
     "notices": {

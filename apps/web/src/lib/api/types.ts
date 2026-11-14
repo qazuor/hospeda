@@ -238,6 +238,11 @@ export interface AccommodationEditData {
     readonly floor: string;
     /** Apartment / unit (G7 smoke, H-117). Maps to `location.apartment`. */
     readonly apartment: string;
+    /**
+     * HOS-1810 (read-only): another PUBLISHED listing of the same owner holds this
+     * address, so this draft cannot be published. Never part of the PATCH diff.
+     */
+    readonly locationDuplicate?: boolean;
     readonly maxGuests: number | null;
     readonly bedrooms: number | null;
     readonly bathrooms: number | null;
