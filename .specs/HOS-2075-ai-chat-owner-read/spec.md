@@ -65,7 +65,7 @@ Además, el **resumen semanal por mail** (HOS-2101 §6.5) cita hasta 5 preguntas
 
 ## 4. Modelo de datos
 
-**Estructural: ninguno.** Todo lo necesario ya existe (`ai_conversations.listing_entity_type/id`, índice `aiConversations_listing_idx`, `ai_messages.answer_status`).
+**Estructural: sólo el valor del enum.** Las tablas y columnas ya existen (`ai_conversations.listing_entity_type/id`, índice `aiConversations_listing_idx`, `ai_messages.answer_status`). Un valor nuevo de `PermissionEnum` exige una migración estructural `ALTER TYPE "public"."permission_enum" ADD VALUE ...` (`pnpm db:generate`, migración `0203`), que corre ANTES de la data-migration que lo siembra. El permiso NO entra en `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS` (eso impediría ampliarlo después a otro rol sin tocar código), y se registra como ubicación deliberada en `KNOWN_SYSTEM_FALLBACK_KEYS`.
 
 - **Permiso nuevo**: valor en `packages/schemas/src/enums/permission.enum.ts`, familia camelCase (p. ej. `aiConversation.viewAny`, como `userBookmark.viewAny`). **Leer antes** `packages/schemas/test/enums/permission-naming-convention.guard.test.ts`: congela los 13 valores con puntos y falla ante un 14.º; el valor nuevo no lleva punto en el nombre de entidad, así que cumple la convención camelCase.
 - **Seed dual-write** (regla de la raíz): (1) baseline del seed de roles/permisos para que una DB nueva lo tenga asignado a SUPER_ADMIN y (2) data-migration numerada (`pnpm db:seed:make <slug>`) que inserta la fila de `role_permission` para SUPER_ADMIN en DBs vivas. NO se asume el bypass de SUPER_ADMIN: la fila se siembra de verdad (R-4).
@@ -86,6 +86,7 @@ Reglas:
 - Rutas admin con `createAdminListRoute` / `createAdminRoute` (rechazan parámetros desconocidos).
 - La respuesta del staff NO incluye identidad del cliente. Se arma clave por clave, como `toListingQuestionsResponse` (`ai-listing-questions.service.ts:223-245`).
 - `from`/`to` se validan contra el horizonte con `retentionCutoff`; `from` anterior al corte o `from > to`: 400.
+- Bug de `scrubPii` hallado al implementar: `+54 9 3442 123456` dejaba el prefijo `+54 9` (el `\b` inicial no matchea antes de `+` y el `9` móvil no estaba contemplado). Se corrige en `packages/ai-core` con test de regresión; afecta también a la telemetría, a favor.
 - Redacción: función pura `redactChatText({ text })` (RO-RO) que envuelve `scrubPii`, en `apps/api/src/services/`. UNA sola implementación, usada por el panel, el digest semanal y la vista de staff. `scrubPii` sobre-redacta a propósito (puede tocar números de precio); documentarlo en el JSDoc.
 
 ## 6. UI
