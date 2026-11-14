@@ -9,11 +9,8 @@ import { z } from 'zod';
 
 import { createGuestActor } from '../../../utils/actor';
 import type { AccommodationData } from '../../../utils/entitlement-filter';
-import {
-    filterPublicPaidFieldsForOwner,
-    resolvePublicFieldGrants
-} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 const destinationService = new DestinationService({ logger: apiLogger });
@@ -43,12 +40,9 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
         // The service wraps the value as { accommodations: [...] }; resolve paid
         // fields from each row owner before returning the bare response array.
         const rawAccommodations = result.data?.accommodations ?? [];
-        const grants = await resolvePublicFieldGrants(
-            rawAccommodations.map((item) => item.ownerId)
-        );
-        const strippedAccommodations = rawAccommodations.map((a) =>
-            filterPublicPaidFieldsForOwner(a, grants)
-        );
+        const strippedAccommodations = await projectPublicAccommodations({
+            listings: rawAccommodations
+        });
 
         return strippedAccommodations as AccommodationData[];
     },

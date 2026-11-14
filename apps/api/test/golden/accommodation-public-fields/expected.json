@@ -1,0 +1,379 @@
+[
+    {
+        "id": "acc-owner-0",
+        "ownerId": "owner-0",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "isVerified": false,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-1",
+        "ownerId": "owner-1",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "richDescription": "<p>Premium</p>",
+        "richDescriptionI18n": {
+            "es": "<p>Premium</p>",
+            "en": "<p>Premium en</p>"
+        },
+        "isVerified": false,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-2",
+        "ownerId": "owner-2",
+        "name": "Casa del Rio",
+        "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "isVerified": false,
+        "videos": [
+            {
+                "url": "https://example.com/v.mp4"
+            }
+        ],
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": [
+                {
+                    "url": "https://example.com/v.mp4"
+                }
+            ]
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-3",
+        "ownerId": "owner-3",
+        "name": "Casa del Rio",
+        "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "richDescription": "<p>Premium</p>",
+        "richDescriptionI18n": {
+            "es": "<p>Premium</p>",
+            "en": "<p>Premium en</p>"
+        },
+        "isVerified": false,
+        "videos": [
+            {
+                "url": "https://example.com/v.mp4"
+            }
+        ],
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": [
+                {
+                    "url": "https://example.com/v.mp4"
+                }
+            ]
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-4",
+        "ownerId": "owner-4",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "isVerified": true,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-5",
+        "ownerId": "owner-5",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "richDescription": "<p>Premium</p>",
+        "richDescriptionI18n": {
+            "es": "<p>Premium</p>",
+            "en": "<p>Premium en</p>"
+        },
+        "isVerified": true,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-6",
+        "ownerId": "owner-6",
+        "name": "Casa del Rio",
+        "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "isVerified": true,
+        "videos": [
+            {
+                "url": "https://example.com/v.mp4"
+            }
+        ],
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": [
+                {
+                    "url": "https://example.com/v.mp4"
+                }
+            ]
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-7",
+        "ownerId": "owner-7",
+        "name": "Casa del Rio",
+        "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "richDescription": "<p>Premium</p>",
+        "richDescriptionI18n": {
+            "es": "<p>Premium</p>",
+            "en": "<p>Premium en</p>"
+        },
+        "isVerified": true,
+        "videos": [
+            {
+                "url": "https://example.com/v.mp4"
+            }
+        ],
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": [
+                {
+                    "url": "https://example.com/v.mp4"
+                }
+            ]
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-failing",
+        "ownerId": "owner-failing",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "isVerified": false,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-owner-unknown",
+        "ownerId": "owner-unknown",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "isVerified": false,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": null,
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": false
+    },
+    {
+        "id": "acc-without-owner",
+        "name": "Casa del Rio",
+        "description": "Mira el video y reserva",
+        "isVerified": false,
+        "media": {
+            "featuredImage": {
+                "url": "https://example.com/f.jpg"
+            },
+            "gallery": [
+                {
+                    "url": "https://example.com/g.jpg"
+                }
+            ],
+            "videos": []
+        },
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    },
+    {
+        "id": "acc-sparse-denied",
+        "ownerId": "owner-0",
+        "name": "Casa del Rio",
+        "isVerified": false,
+        "media": {
+            "gallery": []
+        },
+        "contactInfo": {},
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": false
+    },
+    {
+        "id": "acc-odd-shapes",
+        "ownerId": "owner-0",
+        "name": "Casa del Rio",
+        "description": 42,
+        "isVerified": false,
+        "media": [
+            {
+                "videos": ["x"]
+            }
+        ],
+        "contactInfo": [],
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": false
+    },
+    {
+        "id": "acc-sparse",
+        "ownerId": "owner-7",
+        "name": "Casa del Rio",
+        "description": "Plain text",
+        "videos": [
+            {
+                "url": "https://example.com/v.mp4"
+            }
+        ],
+        "contactInfo": {
+            "mobilePhone": "+5493442111111"
+        },
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": true
+    }
+]

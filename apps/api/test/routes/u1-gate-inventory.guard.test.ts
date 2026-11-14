@@ -495,7 +495,9 @@ const MECHANISM_ALIASES: Readonly<Record<string, readonly string[]>> = {
     paidFieldsFilter: [
         'paidFieldsFilter',
         'filterPublicPaidFields',
-        'filterPublicPaidFieldsForOwner'
+        'filterPublicPaidFieldsForOwner',
+        'projectPublicAccommodations',
+        'projectPublicAccommodationPage'
     ]
 };
 
