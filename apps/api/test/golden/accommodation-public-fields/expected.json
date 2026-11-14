@@ -328,6 +328,37 @@
         "hasWhatsapp": true
     },
     {
+        "id": "acc-sparse-denied",
+        "ownerId": "owner-0",
+        "name": "Casa del Rio",
+        "isVerified": false,
+        "media": {
+            "gallery": []
+        },
+        "contactInfo": {},
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": false
+    },
+    {
+        "id": "acc-odd-shapes",
+        "ownerId": "owner-0",
+        "name": "Casa del Rio",
+        "description": 42,
+        "isVerified": false,
+        "media": [
+            {
+                "videos": ["x"]
+            }
+        ],
+        "contactInfo": [],
+        "price": {
+            "price": 1000
+        },
+        "hasWhatsapp": false
+    },
+    {
         "id": "acc-sparse",
         "ownerId": "owner-7",
         "name": "Casa del Rio",

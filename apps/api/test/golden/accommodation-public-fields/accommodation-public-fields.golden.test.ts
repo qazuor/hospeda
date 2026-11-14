@@ -80,6 +80,21 @@ describe('accommodation public payload golden', () => {
             accommodationFor('owner-failing'),
             accommodationFor('owner-unknown', { contactInfo: null, videos: undefined }),
             accommodationFor(undefined),
+            accommodationFor('owner-0', {
+                id: 'acc-sparse-denied',
+                richDescription: undefined,
+                richDescriptionI18n: undefined,
+                isVerified: undefined,
+                media: { gallery: [] },
+                contactInfo: { whatsapp: '   ' },
+                description: undefined
+            }),
+            accommodationFor('owner-0', {
+                id: 'acc-odd-shapes',
+                media: [{ videos: ['x'] }],
+                contactInfo: [],
+                description: 42
+            }),
             accommodationFor('owner-7', {
                 id: 'acc-sparse',
                 richDescription: undefined,
