@@ -8,6 +8,7 @@ import {
     AccommodationPublicSchema,
     AccommodationUpdateHttpSchema,
     httpToDomainAccommodationUpdate,
+    VenuePublicListItemSchema,
     VenuePublicSchema
 } from '../../src/index.js';
 
@@ -98,5 +99,39 @@ describe('accommodation HTTP landlinePhone -> contactInfo.workPhone (HOS-2042)',
     it('rejects a malformed landline with the shared phone message', () => {
         const result = AccommodationUpdateHttpSchema.safeParse({ landlinePhone: 'abc' });
         expect(result.success).toBe(false);
+    });
+});
+
+describe('venue list vs detail contactInfo exposure (HOS-2042)', () => {
+    const baseRow = {
+        id: '11111111-1111-4111-8111-111111111111',
+        slug: 'la-parrilla',
+        name: 'La Parrilla',
+        type: 'RESTAURANT',
+        summary: 'Un resumen de prueba largo.',
+        description: 'Una descripción de prueba suficientemente larga para validar.',
+        destinationId: '22222222-2222-4222-8222-222222222222',
+        contactInfo: { mobilePhone: '+5493442452345', workPhone: '+543442452345' }
+    };
+
+    it('a LIST item carries no contactInfo even when the row has one', () => {
+        const parsed = VenuePublicListItemSchema.parse(baseRow) as Record<string, unknown>;
+
+        expect(parsed).not.toHaveProperty('contactInfo');
+        expect(parsed.slug).toBe('la-parrilla');
+    });
+
+    it('the DETAIL carries contactInfo', () => {
+        const parsed = VenuePublicSchema.parse(baseRow) as Record<string, unknown>;
+
+        expect(parsed.contactInfo).toStrictEqual({
+            mobilePhone: '+5493442452345',
+            workPhone: '+543442452345'
+        });
+    });
+
+    it('the list item schema declares no contactInfo key at all', () => {
+        expect(Object.keys(VenuePublicListItemSchema.shape)).not.toContain('contactInfo');
+        expect(Object.keys(VenuePublicSchema.shape)).toContain('contactInfo');
     });
 });

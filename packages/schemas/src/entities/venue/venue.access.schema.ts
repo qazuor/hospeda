@@ -288,6 +288,20 @@ export const VenuePublicSchema = VenueSchema.pick({
     venueEvents: z.array(VenueEventPublicSchema).optional()
 });
 
+/**
+ * PUBLIC LIST-ITEM schema for a venue (HOS-2042).
+ *
+ * The detail projection ({@link VenuePublicSchema}) publishes the narrowed
+ * business `contactInfo`; list responses (`GET /public/venues` and
+ * `GET /public/venues/destination/:id`) must NOT, per owner decision: contact
+ * channels are a detail-page concern and a list would bulk-expose them. Built
+ * by omission so every other public field stays identical between the two.
+ */
+export const VenuePublicListItemSchema = VenuePublicSchema.omit({ contactInfo: true });
+
+/** TypeScript type for {@link VenuePublicListItemSchema}. */
+export type VenuePublicListItem = z.infer<typeof VenuePublicListItemSchema>;
+
 /** TypeScript type for {@link VenuePublicSchema}. */
 export type VenuePublic = z.infer<typeof VenuePublicSchema>;
 

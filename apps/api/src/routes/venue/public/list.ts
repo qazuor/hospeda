@@ -8,7 +8,7 @@
  */
 import {
     httpToDomainVenueSearch,
-    VenuePublicSchema,
+    VenuePublicListItemSchema,
     type VenueSearchHttp,
     VenueSearchHttpSchema
 } from '@repo/schemas';
@@ -38,7 +38,7 @@ export const publicListVenuesRoute = createPublicListRoute({
     description: 'Returns a paginated list of public venue listings',
     tags: ['Venue'],
     requestQuery: VenueSearchHttpSchema.shape,
-    responseSchema: VenuePublicSchema,
+    responseSchema: VenuePublicListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
