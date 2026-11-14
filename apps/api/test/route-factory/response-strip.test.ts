@@ -281,6 +281,28 @@ describe('SPEC-087 AC-087-03 — factory-level response strip', () => {
             expect(body.data.items.map((i) => i.id)).toEqual(['1', '3']);
         });
 
+        it('createPublicListRoute still answers 500 when every row is invalid', async () => {
+            const app = createPublicListRoute({
+                method: 'get',
+                path: '/public-all-bad',
+                summary: 'public all bad',
+                description: 'public all bad',
+                tags: ['Test'],
+                responseSchema: Strict,
+                handler: async () => ({
+                    items: [
+                        { id: '1', description: 'short' },
+                        { id: '2', description: 'tiny' }
+                    ],
+                    pagination
+                }),
+                options: FACTORY_OPTS
+            });
+
+            const res = await app.request('/public-all-bad');
+            expect(res.status).toBe(500);
+        });
+
         it('a non-public list route keeps the strict 500', async () => {
             const app = createListRoute({
                 method: 'get',
