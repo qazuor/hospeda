@@ -8,6 +8,7 @@
 
 import { getListingTool } from './listing/get-listing';
 import { listMyListingsTool } from './listing/list-my-listings';
+import { setListingPublicationTool } from './listing/set-listing-publication';
 import { updateListingBasicTool } from './listing/update-listing-basic';
 import type { ToolDefinition } from './tool-definition';
 
@@ -15,5 +16,6 @@ import type { ToolDefinition } from './tool-definition';
 export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     listMyListingsTool,
     getListingTool,
-    updateListingBasicTool
+    updateListingBasicTool,
+    setListingPublicationTool
 ];

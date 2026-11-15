@@ -1,5 +1,5 @@
 /**
- * HOS-2184 T-013/T-014/T-016 — the listing tools served end to end through the REAL
+ * HOS-2184 T-013/T-014/T-016/T-018 — the listing tools served end to end through the REAL
  * `/mcp` route with the REAL registry (`initApp`, real `mcpAuthMiddleware`,
  * real SDK handler, real `registerMcpToolHandlers`). Outer-boundary mocks are
  * the ones `mcp-tools.test.ts` uses; the listing services are spied on their
@@ -41,7 +41,10 @@ vi.mock('../../../src/utils/listing-access/ports', () => ({
                 vertical: VerticalEnum.VENUE,
                 hasLiveNonTrialTitle: true,
                 inheritsTouristVip: false,
-                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
+                entries: [
+                    { key: 'edit_venue_info', value: 1, strategy: 'MAX' },
+                    { key: 'publish_venue', value: 1, strategy: 'MAX' }
+                ]
             }),
         preTrialDraftLimits: async () => new Map()
     })
@@ -97,6 +100,7 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 
 import { initApp } from '../../../src/app';
 import { TOOL_NOT_FOUND_MESSAGE } from '../../../src/mcp/tools/tool-errors';
+import { ListingPublicationService } from '../../../src/services/listing-publication/listing-publication.service';
 import { env, validateApiEnv } from '../../../src/utils/env';
 
 const PROTOCOL_VERSION = '2025-06-18';
@@ -407,5 +411,97 @@ describe('/mcp listing tools (end to end)', () => {
             /^Los datos enviados no son válidos: .*name/
         );
         expect(updateOwn).not.toHaveBeenCalled();
+    });
+    it('lists set_listing_publication as a destructive, non-idempotent write', async () => {
+        // Act
+        const message = await rpc('tools/list', {});
+
+        // Assert
+        const entry = message.result?.tools?.find((t) => t.name === 'set_listing_publication');
+        expect(entry).toMatchObject({
+            annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+            inputSchema: { type: 'object', required: ['vertical', 'id', 'action'] }
+        });
+    });
+
+    it('set_listing_publication resumes an own draft venue and answers its public URL', async () => {
+        // Arrange
+        loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: USER_ID,
+                publicationStatus: PublicationStatusEnum.DRAFT,
+                businessLines: ['food']
+            },
+            ownerId: USER_ID
+        });
+        const venueRow = (publicationStatus: PublicationStatusEnum) =>
+            ({
+                data: {
+                    id: VENUE_ID,
+                    ownerId: USER_ID,
+                    name: 'La Parrilla',
+                    slug: 'la-parrilla',
+                    publicationStatus
+                }
+            }) as unknown as Awaited<ReturnType<VenueService['getById']>>;
+        vi.spyOn(VenueService.prototype, 'getById')
+            .mockResolvedValueOnce(venueRow(PublicationStatusEnum.DRAFT))
+            .mockResolvedValueOnce(venueRow(PublicationStatusEnum.PUBLISHED));
+        const publish = vi
+            .spyOn(ListingPublicationService.prototype, 'publish')
+            .mockResolvedValue({ id: VENUE_ID } as never);
+
+        // Act
+        const message = await callTool('set_listing_publication', {
+            vertical: 'venue',
+            id: VENUE_ID,
+            action: 'resume'
+        });
+
+        // Assert
+        expect(message.result?.isError).toBeUndefined();
+        expect(publish).toHaveBeenCalledWith({
+            actor: expect.objectContaining({ id: USER_ID }),
+            id: VENUE_ID,
+            vertical: 'venue'
+        });
+        const data = JSON.parse(message.result?.content?.[0]?.text ?? 'null');
+        expect(data).toMatchObject({
+            id: VENUE_ID,
+            vertical: 'venue',
+            action: 'resume',
+            changed: true,
+            previousStatus: 'DRAFT',
+            publicationStatus: 'PUBLISHED'
+        });
+        expect(data.publicUrl).toContain('la-parrilla');
+    });
+
+    it("set_listing_publication answers another user's venue as not found", async () => {
+        // Arrange
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: VENUE_ID,
+                ownerId: 'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
+                name: 'Bar Ajeno',
+                slug: 'bar-ajeno',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            }
+        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
+        const unpublish = vi.spyOn(ListingPublicationService.prototype, 'unpublish');
+
+        // Act
+        const message = await callTool('set_listing_publication', {
+            vertical: 'venue',
+            id: VENUE_ID,
+            action: 'pause'
+        });
+
+        // Assert
+        expect(message.result).toMatchObject({
+            isError: true,
+            content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
+        });
+        expect(unpublish).not.toHaveBeenCalled();
     });
 });
