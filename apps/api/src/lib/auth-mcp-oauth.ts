@@ -34,7 +34,8 @@
  * `oauthClientAssertion`, `oauthResource`, `oauthClientResource`, `jwks`)
  * that the Drizzle adapter must map. Better Auth validates the schema at
  * runtime, so enabling the flag before those tables exist fails every auth
- * request. The tables are HOS-2184 T-005.
+ * request. The tables are migration `0225_hos2184_oauth_provider_tables`
+ * (HOS-2184 T-005); `auth-mcp-oauth-schema.ts` maps them for the adapter.
  */
 
 import { cimd } from '@better-auth/cimd';
