@@ -31,11 +31,14 @@ import {
  */
 export const AUTH_BASE_PATH = '/api/auth';
 
+/** Path of the MCP Streamable HTTP endpoint, at the API root (`routes/mcp`). */
+export const MCP_ENDPOINT_PATH = '/mcp';
+
 /** Path of the RFC 9728 protected-resource metadata document. */
 export const MCP_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
 
 /** Path-inserted alias of the protected-resource document for the `/mcp` resource. */
-export const MCP_PROTECTED_RESOURCE_ALIAS_PATH = `${MCP_PROTECTED_RESOURCE_PATH}/mcp`;
+export const MCP_PROTECTED_RESOURCE_ALIAS_PATH = `${MCP_PROTECTED_RESOURCE_PATH}${MCP_ENDPOINT_PATH}`;
 
 /** Path of the RFC 8414 authorization-server metadata document. */
 export const MCP_AUTH_SERVER_METADATA_PATH = '/.well-known/oauth-authorization-server';

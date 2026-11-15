@@ -34,8 +34,10 @@
  * (`buildActorForUser`), and the grant (client id/name, scopes) is set on the
  * context as `mcpAuth`.
  *
- * With `HOSPEDA_MCP_ENABLED` off the route is not mounted. If the middleware is
- * reached anyway it fails closed with the same 404 the route would answer.
+ * The middleware is also the flag gate of the `/mcp` route
+ * (`routes/mcp/index.ts`): with `HOSPEDA_MCP_ENABLED` off (or no
+ * `HOSPEDA_MCP_RESOURCE_URL`) it answers the app's normal 404 body, read per
+ * request like the discovery routes.
  *
  * The raw token is never logged.
  */
@@ -47,6 +49,7 @@ import type { Actor } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { z } from 'zod';
 import { getAuth } from '../lib/auth';
+import { readBearerToken } from '../lib/mcp/bearer-token';
 import { MCP_PROTECTED_RESOURCE_ALIAS_PATH } from '../lib/mcp-well-known';
 import { setRequestContextActor } from '../lib/request-context';
 import type { AppBindings, McpAuthContext } from '../types';
@@ -64,9 +67,6 @@ const ACCESS_TOKEN_TYPE = 'at+jwt';
 /** Same literal UUID shape `middlewares/ownership.ts` uses. */
 const UUID_PATTERN =
     /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
-
-/** `Authorization` header carrying a bearer token (RFC 6750 §2.1). */
-const BEARER_HEADER_PATTERN = /^Bearer[ ]+([^\s]+)[ ]*$/i;
 
 /**
  * Claims the middleware reads from a verified access token. `client_id` is
@@ -426,7 +426,7 @@ export interface CreateMcpAuthMiddlewareArgs {
  *
  * @example
  * ```typescript
- * app.use('/mcp', createMcpAuthMiddleware());
+ * routes.on(['GET', 'POST', 'DELETE'], '/mcp', createMcpAuthMiddleware(), handler);
  * ```
  */
 export function createMcpAuthMiddleware({
@@ -448,8 +448,7 @@ export function createMcpAuthMiddleware({
         }
         const { apiUrl, resourceUrl } = config;
 
-        const authorization = c.req.header('Authorization');
-        if (!authorization || !BEARER_HEADER_PATTERN.test(authorization)) {
+        if (!readBearerToken({ authorization: c.req.header('Authorization') })) {
             return unauthorized({ c, apiUrl, reason: 'missing_token' });
         }
 

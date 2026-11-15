@@ -116,6 +116,7 @@ import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
+import { mcpRoutes } from './mcp';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -244,6 +245,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
     // OAuth discovery for the MCP server (HOS-2184 T-006). Root-level; 404 unless
     // HOSPEDA_MCP_ENABLED is true.
     app.route('/', wellKnownRoutes);
+
+    // MCP Streamable HTTP endpoint (HOS-2184 T-010). Root-level, bearer-token
+    // auth; 404 unless HOSPEDA_MCP_ENABLED is true.
+    app.route('/', mcpRoutes);
 
     // ─── System routes ────────────────────────────────────────────────────────
     app.route('/health', healthRoutes);

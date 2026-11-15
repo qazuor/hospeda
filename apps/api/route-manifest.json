@@ -4030,6 +4030,18 @@
             "path": "/health/ready"
         },
         {
+            "method": "DELETE",
+            "path": "/mcp"
+        },
+        {
+            "method": "GET",
+            "path": "/mcp"
+        },
+        {
+            "method": "POST",
+            "path": "/mcp"
+        },
+        {
             "method": "GET",
             "path": "/robots.txt"
         }

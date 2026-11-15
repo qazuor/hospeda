@@ -57,7 +57,14 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                 '/.well-known/oauth-authorization-server/api/auth',
                 '/.well-known/openid-configuration',
                 '/.well-known/openid-configuration/api/auth',
-                '/api/auth/.well-known/openid-configuration'
+                '/api/auth/.well-known/openid-configuration',
+                // MCP Streamable HTTP endpoint (HOS-2184 T-010). Its clients are
+                // third-party agents: the SDK validates Accept (406) and
+                // Content-Type (415) per the transport spec, a missing
+                // User-Agent must not refuse them, and a malformed Authorization
+                // header must reach mcpAuthMiddleware so it answers 401 with the
+                // WWW-Authenticate challenge instead of a 400.
+                '/mcp'
             ];
             const isPublicPath =
                 publicPaths.some((publicPath) => path.startsWith(publicPath)) ||
