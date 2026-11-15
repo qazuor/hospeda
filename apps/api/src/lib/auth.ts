@@ -42,7 +42,7 @@ import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { buildMcpOAuthConfig } from './auth-mcp-oauth';
-import { MCP_OAUTH_ADAPTER_SCHEMA } from './auth-mcp-oauth-schema';
+import { getMcpOAuthAdapterSchema } from './auth-mcp-oauth-schema';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
@@ -207,7 +207,7 @@ function buildAuth() {
                 verification: verifications,
                 // HOS-2184: the jwt() + oauthProvider() tables, only when those
                 // plugins are registered (flag off → the four core tables only).
-                ...(mcpOAuth.enabled ? MCP_OAUTH_ADAPTER_SCHEMA : {})
+                ...(mcpOAuth.enabled ? getMcpOAuthAdapterSchema() : {})
             }
         }),
 

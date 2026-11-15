@@ -11,6 +11,12 @@
  * adapter receives exactly the four core tables it received before.
  *
  * Kept apart from `auth-mcp-oauth.ts` so that file stays free of `@repo/db`.
+ *
+ * The map is built by a function, not a module-level constant, so the
+ * `@repo/db` bindings are read when `getAuth()` builds the adapter — the same
+ * moment `auth.ts` reads `users`, `sessions`, `accounts` and `verifications`.
+ * A module-level object would dereference all eight tables the instant
+ * `lib/auth` is imported, which nothing else in that file does.
  */
 
 import {
@@ -28,14 +34,18 @@ import {
  * Plugin model name → Drizzle table, for the Better Auth Drizzle adapter.
  *
  * `jwks` comes from `jwt()`; the `oauth*` models from `oauthProvider()`.
+ *
+ * @returns The adapter schema entries for the eight MCP OAuth models.
  */
-export const MCP_OAUTH_ADAPTER_SCHEMA = {
-    jwks,
-    oauthClient: oauthClients,
-    oauthAccessToken: oauthAccessTokens,
-    oauthRefreshToken: oauthRefreshTokens,
-    oauthConsent: oauthConsents,
-    oauthClientAssertion: oauthClientAssertions,
-    oauthResource: oauthResources,
-    oauthClientResource: oauthClientResources
-} as const;
+export function getMcpOAuthAdapterSchema() {
+    return {
+        jwks,
+        oauthClient: oauthClients,
+        oauthAccessToken: oauthAccessTokens,
+        oauthRefreshToken: oauthRefreshTokens,
+        oauthConsent: oauthConsents,
+        oauthClientAssertion: oauthClientAssertions,
+        oauthResource: oauthResources,
+        oauthClientResource: oauthClientResources
+    } as const;
+}

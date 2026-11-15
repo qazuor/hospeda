@@ -19,7 +19,7 @@ import { getTableColumns } from 'drizzle-orm';
 import type { PgTable } from 'drizzle-orm/pg-core';
 import { describe, expect, it, vi } from 'vitest';
 import { buildMcpOAuthConfig } from '../../src/lib/auth-mcp-oauth';
-import { MCP_OAUTH_ADAPTER_SCHEMA } from '../../src/lib/auth-mcp-oauth-schema';
+import { getMcpOAuthAdapterSchema } from '../../src/lib/auth-mcp-oauth-schema';
 
 // The global mock has no OAuth tables; serve the real ones (imported by path,
 // so the mock does not intercept them).
@@ -61,7 +61,7 @@ function declaredModels(): Record<string, DeclaredModel> {
 
 describe('MCP OAuth adapter schema (HOS-2184 T-005)', () => {
     const models = declaredModels();
-    const mapped = MCP_OAUTH_ADAPTER_SCHEMA as Record<string, PgTable>;
+    const mapped = getMcpOAuthAdapterSchema() as Record<string, PgTable>;
 
     it('maps exactly the models the jwt() and oauthProvider() plugins declare', () => {
         // Arrange / Act
