@@ -8,6 +8,8 @@
  * - `GET /.well-known/oauth-protected-resource` and its `/mcp` alias
  * - `GET /.well-known/oauth-authorization-server`
  * - `GET /.well-known/openid-configuration`
+ * - path-inserted aliases for the issuer path (`/api/auth`) of the last two, and
+ *   `GET /api/auth/.well-known/openid-configuration`
  *
  * Every route answers the normal 404 while `HOSPEDA_MCP_ENABLED` is not
  * `true` (an unset flag counts as off). The flag is read per request.
@@ -18,8 +20,11 @@ import { getAuth } from '../../lib/auth';
 import {
     buildAuthServerMetadataHandler,
     buildOpenIdConfigHandler,
+    MCP_AUTH_SERVER_METADATA_ISSUER_PATH,
     MCP_AUTH_SERVER_METADATA_PATH,
+    MCP_OPENID_CONFIGURATION_ISSUER_PATH,
     MCP_OPENID_CONFIGURATION_PATH,
+    MCP_OPENID_CONFIGURATION_UNDER_ISSUER_PATH,
     MCP_PROTECTED_RESOURCE_ALIAS_PATH,
     MCP_PROTECTED_RESOURCE_PATH,
     protectedResourceMetadataResponse
@@ -49,18 +54,25 @@ const wellKnownRoutes = createRouter();
 wellKnownRoutes.get(MCP_PROTECTED_RESOURCE_PATH, protectedResourceHandler);
 wellKnownRoutes.get(MCP_PROTECTED_RESOURCE_ALIAS_PATH, protectedResourceHandler);
 
-wellKnownRoutes.get(MCP_AUTH_SERVER_METADATA_PATH, async (ctx) => {
+const authServerMetadataHandler = async (ctx: Context): Promise<Response> => {
     if (!isMcpEnabled()) {
         return ctx.notFound();
     }
     return buildAuthServerMetadataHandler({ api: getAuth().api })(ctx.req.raw);
-});
+};
 
-wellKnownRoutes.get(MCP_OPENID_CONFIGURATION_PATH, async (ctx) => {
+const openIdConfigHandler = async (ctx: Context): Promise<Response> => {
     if (!isMcpEnabled()) {
         return ctx.notFound();
     }
     return buildOpenIdConfigHandler({ api: getAuth().api })(ctx.req.raw);
-});
+};
+
+wellKnownRoutes.get(MCP_AUTH_SERVER_METADATA_PATH, authServerMetadataHandler);
+wellKnownRoutes.get(MCP_AUTH_SERVER_METADATA_ISSUER_PATH, authServerMetadataHandler);
+wellKnownRoutes.get(MCP_OPENID_CONFIGURATION_PATH, openIdConfigHandler);
+wellKnownRoutes.get(MCP_OPENID_CONFIGURATION_ISSUER_PATH, openIdConfigHandler);
+// Registered before the Better Auth catch-all at /api/auth, which would 404 it.
+wellKnownRoutes.get(MCP_OPENID_CONFIGURATION_UNDER_ISSUER_PATH, openIdConfigHandler);
 
 export { wellKnownRoutes };

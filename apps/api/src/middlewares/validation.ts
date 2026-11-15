@@ -54,7 +54,10 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                 '/.well-known/oauth-protected-resource',
                 '/.well-known/oauth-protected-resource/mcp',
                 '/.well-known/oauth-authorization-server',
-                '/.well-known/openid-configuration'
+                '/.well-known/oauth-authorization-server/api/auth',
+                '/.well-known/openid-configuration',
+                '/.well-known/openid-configuration/api/auth',
+                '/api/auth/.well-known/openid-configuration'
             ];
             const isPublicPath =
                 publicPaths.some((publicPath) => path.startsWith(publicPath)) ||

@@ -25,6 +25,12 @@ import {
     type ResourceServerMetadata
 } from '@better-auth/oauth-provider';
 
+/**
+ * Better Auth base path. `auth.ts` passes it as `basePath`, so the issuer's
+ * pathname is this value and the path-inserted discovery aliases derive from it.
+ */
+export const AUTH_BASE_PATH = '/api/auth';
+
 /** Path of the RFC 9728 protected-resource metadata document. */
 export const MCP_PROTECTED_RESOURCE_PATH = '/.well-known/oauth-protected-resource';
 
@@ -145,3 +151,15 @@ export function buildOpenIdConfigHandler(
     const api = requireOAuthProviderApi(args);
     return oauthProviderOpenIdConfigMetadata({ api });
 }
+
+/** RFC 8414 path-inserted authorization-server metadata (issuer has a path). */
+export const MCP_AUTH_SERVER_METADATA_ISSUER_PATH = `${MCP_AUTH_SERVER_METADATA_PATH}${AUTH_BASE_PATH}`;
+
+/** OIDC path-inserted discovery document. */
+export const MCP_OPENID_CONFIGURATION_ISSUER_PATH = `${MCP_OPENID_CONFIGURATION_PATH}${AUTH_BASE_PATH}`;
+
+/**
+ * OIDC Discovery 1.0 §4 form: issuer + `/.well-known/openid-configuration`.
+ * Better Auth does not serve it itself (the endpoint is server-only).
+ */
+export const MCP_OPENID_CONFIGURATION_UNDER_ISSUER_PATH = `${AUTH_BASE_PATH}${MCP_OPENID_CONFIGURATION_PATH}`;

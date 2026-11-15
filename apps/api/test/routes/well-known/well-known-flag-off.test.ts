@@ -12,7 +12,10 @@ const PATHS = [
     '/.well-known/oauth-protected-resource',
     '/.well-known/oauth-protected-resource/mcp',
     '/.well-known/oauth-authorization-server',
-    '/.well-known/openid-configuration'
+    '/.well-known/openid-configuration',
+    '/.well-known/oauth-authorization-server/api/auth',
+    '/.well-known/openid-configuration/api/auth',
+    '/api/auth/.well-known/openid-configuration'
 ] as const;
 
 describe('well-known routes with HOSPEDA_MCP_ENABLED off (AC-1)', () => {

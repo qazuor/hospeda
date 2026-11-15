@@ -44,6 +44,7 @@ import { buildMcpOAuthConfig } from './auth-mcp-oauth';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
+import { AUTH_BASE_PATH } from './mcp-well-known';
 import { captureServerAnalyticsEvent } from './posthog';
 import { resolveVerificationUrl } from './verification-callback';
 
@@ -191,7 +192,7 @@ function buildAuth() {
     return betterAuth({
         secret,
         baseURL,
-        basePath: '/api/auth',
+        basePath: AUTH_BASE_PATH,
         ...(mcpOAuth.enabled ? { disabledPaths: [...mcpOAuth.disabledPaths] } : {}),
 
         database: drizzleAdapter(getDb(), {
