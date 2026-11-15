@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 0/70 tasks (0%)
+## Progress: 3/74 tasks (4%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -8,12 +8,12 @@
 
 Tracks (can run in parallel):
 
-- A Adapter (analytics + api): T-016 -> T-017 | T-018 -> T-019 -> T-021 -> T-022/T-023/T-024 -> T-025 -> T-026
+- A Adapter (analytics + api): T-016 -> T-017 | T-018 -> T-019 -> T-071 | T-021 -> T-022/T-023/T-024 -> T-072 -> T-025 -> T-026 -> T-073 (AC-12)
 - B Web: T-027 -> T-030/T-031/T-032/T-033; T-028 -> T-029
 - C Admin: T-034 -> T-035
 - D Infra / ops (owner): T-003 -> T-004, T-008, T-010; T-007 -> T-009; env T-011 -> T-012 -> T-013 -> T-014/T-015
 - E Dashboards: T-037 -> T-038 -> T-039/T-040 -> T-041 -> T-042/T-043
-- F Owner stats: T-044/T-050 -> T-045 -> T-046/T-047 -> T-048 -> T-049 -> T-052..T-054 -> T-056
+- F Owner stats: T-044/T-050 -> T-045 -> T-046/T-047 -> T-048 -> T-049 -> T-052..T-054 -> T-056; T-028 -> T-074 -> T-056
 - G Removal: T-057/T-058/T-059 -> T-060 -> T-061/T-062; T-063; T-064; T-065 -> T-066 -> T-067
 - H Cut: T-068 -> T-069 -> T-070
 
@@ -27,7 +27,8 @@ Tracks (can run in parallel):
 ## Open items flagged for the coordinator
 
 - Spec 6.5 says view trackers and contact events already send `entity_id`. Planning found they do not: `accommodation_viewed` and `contact_owner_*` carry `accommodation_id`, venue/experience view trackers emit no analytics event, and no contact events were located for venue/experience/partner. T-005 verifies; T-016 and T-030/T-031 fix it; Owner decision (2026-11-14): no contact events are added for venue/experience/partner; their «Contactos» card is hidden in v1 (`contactFunnel: null`, T-044/T-045/T-051).
-- Partner ownership may not fit `resolveListingAccess` (T-049).
+- RESOLVED by T-005: partner ownership does not fit `resolveListingAccess`; T-048 uses enforceUserGate + view_basic_stats like the existing owner-stats routes, and T-049 uses partner.ownerUserId with no entitlement gate.
+- Replan 2026-11-15 (owner decision R-1 option 3): server events never send a Distinct ID; request-scoped events forward the visitor IP/UA (T-071, T-072, verified on staging by T-073 / AC-12). Per-listing referrers/countries/devices use pageview tags (T-074). Revised descriptions: T-016, T-017, T-018, T-019, T-045, T-046, T-048, T-049.
 - `AnalyticsSection.client.tsx` is host-level, not per listing (T-052).
 - Task count exceeds the agent default of 15; the task-from-spec skill sets no maximum and the coordinator asked for complexity <= 3.
 
@@ -35,13 +36,13 @@ Tracks (can run in parallel):
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 3) - T-0 Spike: run Umami locally in Docker and validate API-key auth, /api/batch ingestion and boards/reports API
+- [x] **T-001** (complexity: 3) - T-0 Spike: run Umami locally in Docker and validate API-key auth, /api/batch ingestion and boards/reports API
   - Tags: t0-spike, devops, api
   - Spike (no production code). Goal: remove the unknowns the adapter (T-2), dashboards (T-4) and owner ...
   - Blocked by: none
   - Blocks: T-002, T-003, T-005, T-037
 
-- [ ] **T-002** (complexity: 3) - T-0 Spike: validate server-event session attribution (R-1) and batch limits against local Umami
+- [x] **T-002** (complexity: 3) - T-0 Spike: validate server-event session attribution (R-1) and batch limits against local Umami
   - Tags: t0-spike, api
   - Spike answering R-1 from the spec: every server event comes from the api's IP, so without care all s...
   - Blocked by: T-001
@@ -49,7 +50,7 @@ Tracks (can run in parallel):
 
 - [ ] **T-003** (complexity: 3) - T-0/T-1 Bring up the staging Umami instance and its own Postgres container in Coolify (owner action)
   - Tags: t0-spike, t1-infra, devops, owner-action
-  - OWNER ACTION: Coolify is operated by the human owner (https://coolify.hospeda.com.ar). Agents prepar...
+  - OWNER ACTION: Coolify is operated by the human owner (<https://coolify.hospeda.com.ar>). Agents prepar...
   - Blocked by: T-001
   - Blocks: T-004, T-008, T-010
 
@@ -59,7 +60,7 @@ Tracks (can run in parallel):
   - Blocked by: T-003
   - Blocks: T-006, T-009, T-028, T-036
 
-- [ ] **T-005** (complexity: 3) - T-0 Spike: validate per-entity_id filtering for all four entity types and locate owner-access paths
+- [x] **T-005** (complexity: 3) - T-0 Spike: validate per-entity_id filtering for all four entity types and locate owner-access paths
   - Tags: t0-spike, api, web
   - Spike. KNOWN GAP found while planning (verify, do not assume): packages/analytics/src/catalog.ts eve...
   - Blocked by: T-001
@@ -124,7 +125,6 @@ Tracks (can run in parallel):
   - OWNER ACTION. Production counterpart of T-014; one of the preconditions in the cut-readiness checkpo...
   - Blocked by: T-009, T-011, T-012, T-013
   - Blocks: T-068
-
 
 ### Core Phase
 
@@ -230,6 +230,11 @@ Tracks (can run in parallel):
   - Blocked by: none
   - Blocks: T-051
 
+- [ ] **T-071** (complexity: 3) - T-2 Add optional visitor context to ServerAnalyticsClient.capture and a getVisitorContext helper in apps/api [NEW]
+  - Tags: t2-adapter, api, analytics
+  - Extend ServerAnalyticsClient.capture in packages/analytics with optional `visitor: { ip: string; use...
+  - Blocked by: T-018, T-019
+  - Blocks: T-072
 
 ### Integration Phase
 
@@ -341,6 +346,17 @@ Tracks (can run in parallel):
   - Blocked by: T-051, T-049
   - Blocks: T-056
 
+- [ ] **T-072** (complexity: 3) - T-2 Pass visitor context from request-scoped server call sites [NEW]
+  - Tags: t2-adapter, api
+  - After the call-site swaps (T-023, T-024) and the auth/signup swap (T-022), pass getVisitorContext(c)...
+  - Blocked by: T-022, T-023, T-024, T-071
+  - Blocks: T-025, T-073
+
+- [ ] **T-074** (complexity: 2) - T-5 Tag listing detail pageviews with the entity id (Umami data-tag) [NEW]
+  - Tags: t5-owner-stats, t3-web-admin, web
+  - On the public detail pages of accommodation, venue (comer-y-salir), experience and partner, render t...
+  - Blocked by: T-028
+  - Blocks: T-056
 
 ### Testing Phase
 
@@ -358,7 +374,7 @@ Tracks (can run in parallel):
 
 - [ ] **T-036** (complexity: 2) - T-3 Smoke web and admin tracking on staging (AC-5): pageviews, anonymous events, consent identify
   - Tags: t3-web-admin, smoke-staging, owner-action
-  - OWNER ACTION / smoke (status-needs-smoke-staging). Checklist-driven manual run on https://staging.ho...
+  - OWNER ACTION / smoke (status-needs-smoke-staging). Checklist-driven manual run on <https://staging.ho>...
   - Blocked by: T-004, T-014, T-028, T-029, T-030, T-031, T-032, T-033, T-035
   - Blocks: T-056, T-068
 
@@ -380,6 +396,11 @@ Tracks (can run in parallel):
   - Blocked by: T-068
   - Blocks: T-070
 
+- [ ] **T-073** (complexity: 2) - AC-12 Verify on staging that request-scoped server events join the browser session [NEW]
+  - Tags: t2-adapter, smoke-staging, cut-readiness, owner-action
+  - Smoke on Umami staging after the owner deploys staging (AC-12): with a real browser, open a listing ...
+  - Blocked by: T-026, T-030, T-072
+  - Blocks: T-068
 
 ### Docs Phase
 
@@ -406,7 +427,6 @@ Tracks (can run in parallel):
   - Docs only. The ADR records: owner decision 12/11/2026, direct cut (OQ-2), history discarded (OQ-3), ...
   - Blocked by: T-065
   - Blocks: T-067
-
 
 ### Cleanup Phase
 

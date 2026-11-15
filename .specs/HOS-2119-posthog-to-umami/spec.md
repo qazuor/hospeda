@@ -125,17 +125,33 @@ render means its outage takes the panel down.
 
 ### 5.5 Umami facts this design relies on
 
-- Custom events: `umami.track(name, data)`. Event names are truncated at 50
-  chars; event data: strings max 500 chars, max 50 properties, numbers max
-  precision 4. All current Hospeda event names fit.
+Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
+
+- Custom events: `umami.track(name, data)`. Over-limit values are truncated
+  silently with HTTP 200: event name 50 chars, string values and data keys 500,
+  url/title/referrer path 500, hostname 100, Distinct ID 50. There is NO
+  property-count limit. Numbers are `numeric(19,4)`: decimals round to 4 places,
+  and `|n| >= 1e15` returns 400 and loses the whole event. Arrays are stored as
+  one JSON string and nested objects are flattened with dots. All current
+  Hospeda event names fit.
 - Identity: `umami.identify(id, data)` sets a Distinct ID plus session data. No
-  person profiles comparable to PostHog's.
-- Server-side ingestion: `POST /api/send` and `POST /api/batch`, no auth token,
-  but a valid `User-Agent` header is required or the request is rejected.
-- Read API (self-hosted): API keys are the recommended auth; username/password
-  login still works. Endpoints used here: `/api/websites/:id/stats`,
-  `/metrics`, `/pageviews`, `/events/stats`, `/event-data/*`.
-- Reports: funnels, journeys, retention, goals.
+  person profiles comparable to PostHog's. The session id is a hash of IP,
+  User-Agent and Distinct ID, so a server event that carries a Distinct ID never
+  joins the browser session; one with the visitor's IP + User-Agent and no
+  Distinct ID does.
+- Server-side ingestion: `POST /api/send` and `POST /api/batch` (max 500 items,
+  ~10 MB), no auth token. A bot-like `User-Agent` (curl, node, anything with
+  "api") is answered 200 and silently dropped. `payload.ip` and
+  `payload.userAgent` override the request headers. A batch with invalid items
+  still returns 200 with `processed < size` and per-item `details[]`.
+- Read API (self-hosted): API keys (`POST /api/me/api-keys`, sent as
+  `Authorization: Bearer umami_…`). Endpoints used here: `/api/websites/:id/stats`,
+  `/metrics`, `/pageviews`, `/events/stats`, and for per-entity filtering only
+  `/event-data-pivot` and `/event-data-pivot/property-series`
+  (`pf_<prop>=eq.<value>`). The other endpoints silently ignore event-property
+  filters and return site totals.
+- Reports: funnels, journeys, retention, goals and boards, all creatable over the
+  API (no upsert).
 
 ## 6. Proposed design
 
@@ -162,8 +178,23 @@ render means its outage takes the panel down.
 - New `packages/analytics/src/providers/umami-server.ts`: implements
   `ServerAnalyticsClient` over `POST /api/batch` with native fetch, a small
   in-memory queue (flush at N events or T seconds, flush on shutdown — same
-  lifecycle as `lib/posthog.ts` today), a fixed server `User-Agent`, and a timeout.
-  Failures log via `@repo/logger` and never throw into the caller.
+  lifecycle as `lib/posthog.ts` today), and a timeout. Failures log via
+  `@repo/logger` and never throw into the caller. A batch answered with
+  `processed < size` or a non-empty `details[]` counts as a failure.
+- Visitor attribution (R-1, decided 2026-11-15): `capture` gains an optional
+  `visitor: { ip, userAgent }`.
+  - Request-scoped events (`conversations/*/initiate`, `accommodation/protected/publish`,
+    `accommodation/protected/import-from-url`, `host-onboarding/protected/start`,
+    `auth` signup, `ai/protected/chat*`) pass the visitor's IP
+    (`cf-connecting-ip`, then `x-forwarded-for`) and `User-Agent`, so the event
+    lands in the visitor's browser session and inherits its referrer, UTM and
+    path.
+  - Events with no visitor request (crons, webhooks, `api-server`) send a fixed
+    synthetic identity: IP `127.0.0.1` and a browser-like, non-bot `User-Agent`.
+    This counts as one synthetic visitor and stays out of `/stats` and path
+    metrics.
+  - A route reached through Astro SSR must forward the original visitor's IP and
+    User-Agent; otherwise the event falls back to the synthetic identity.
 - New `packages/analytics/src/providers/umami-browser.ts`: wraps `window.umami`
   behind the existing browser interface; no-op when the tracker is not loaded.
 - `apps/api/src/lib/posthog.ts` → `apps/api/src/lib/analytics-client.ts`, which
@@ -174,15 +205,21 @@ render means its outage takes the panel down.
   - `properties` (already sanitized by `prepareAnalyticsEvent`) → event `data`.
     Arrays become strings (Umami behavior); the only array today is `roles`, which
     is acceptable.
-  - `distinctId` → Umami Distinct ID, only for events that today carry a real user
-    id; `api-server` events send none.
+  - `distinctId` → never sent as Umami Distinct ID from the server (OQ-5, revised):
+    it would split the visitor into a separate session. A real user id goes in
+    `data.user_id`; `api-server` and `anon:*` ids are dropped.
+  - Every server event sends `hostname` (the surface's host) and a virtual `url`
+    `/_server/<event>` unless the visitor's page url is known.
   - `uuid` (`analytics-event-uuid.ts`) → kept as a `data.event_uuid` property for
     dedup audits.
   - Person properties (`AnalyticsPersonPropertiesSchema`) → `identify` session data,
     only after consent (§6.3).
 - New guard: every `AnalyticsEventSchemas` entry fits Umami's limits (name ≤ 50
-  chars, ≤ 50 properties, no string enum value > 500 chars). Unit test in
-  `packages/analytics/test/`.
+  chars, data keys ≤ 500, no string enum value > 500 chars, no number that can
+  reach `1e15`). Unit test in `packages/analytics/test/`. The adapter also
+  truncates and validates at runtime (name 50, strings and keys 500, url/title
+  500, hostname 100, `|n| < 1e15`, 4 decimals, batches ≤ 500) so nothing is cut
+  or dropped silently.
 
 ### 6.3 Web and admin
 
@@ -214,16 +251,33 @@ render means its outage takes the panel down.
   next to the existing `routes/views/protected/*`. `entityType` ∈ `ACCOMMODATION`,
   `VENUE`, `EXPERIENCE`, `PARTNER` (the owner-facing subset of
   `TRACKABLE_ENTITY_TYPES`).
-  - Authorization through `resolveListingAccess` (`middlewares/listing-access.ts`, ownership). Someone else's
-    listing → **404**.
+  - Authorization: someone else's listing → **404**. T-0 found that
+    `resolveListingAccess` only knows ACCOMMODATION, VENUE and EXPERIENCE, and
+    that today's owner-stats routes do not use it: they use `enforceUserGate`
+    with the `view_basic_stats` key plus `findIdsByOwnerId`. PARTNER stats
+    (`/protected/partners/mine/stats`) check `partner.ownerUserId` and have no
+    entitlement gate by design. The new route follows the same split.
   - Response: `{ window, available: boolean, referrers[], countries[], devices[],
     contactFunnel: { views, contactStarted, contactCompleted } | null }`.
     `contactFunnel` is `null` for VENUE, EXPERIENCE and PARTNER (OQ-7 addendum).
   - On Umami error or timeout: `200` with `available: false` and empty arrays.
     Never `5xx` for an Umami failure.
-- Filtering per listing: by event data `entity_id` (sent by the view trackers and
-  the contact events), **not** by URL path — slugs change and every listing has
-  `/es/`, `/en/` and `/pt/` paths.
+- Filtering per listing: by entity id, **not** by URL path — slugs change and
+  every listing has `/es/`, `/en/` and `/pt/` paths. Two mechanisms were measured
+  on Umami 3.5.0 (T-0):
+  - **Referrers, countries, devices:** Umami computes these from pageviews only,
+    and event-data filters do not apply to them. On a listing's detail page the
+    tracker sets `data-tag="<entityId>"` (a UUID, 36 chars, under the 50-char
+    `tag` limit). Then `metrics?type=referrer|country|device&tag=<entityId>`
+    returns that listing's breakdown, and an unknown tag returns `[]`, never the
+    site total.
+  - **Counts and the contact funnel:** the view and contact events carry
+    `data.entity_id` + `data.entity_type`, read through `event-data-pivot`
+    (`pf_entity_id=eq.<id>`). `event-data/values` and the plain stats endpoints
+    ignore `pf_` filters, and a missing filter returns the site total. The
+    service therefore asserts that every query carries its entity filter, and a
+    contract test with two entities guards against leaks. `property-series` has
+    no zero gap-fill, so the service fills empty days itself.
 - Cache: Redis, key `traffic-stats:{entityType}:{entityId}:{window}`, TTL 1 h.
 - UI: one shared island (`TrafficStatsCards.client.tsx`) mounted below the
   existing `entity_views` cards in every owner panel: accommodation
@@ -296,14 +350,22 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
 - AC-11 In the 48 h after the cut reaches prod, Umami prod shows pageviews and
   at least the server events that occurred in that window; any gap is filed
   before the prod smoke is signed.
+- AC-12 On staging, a real browser pageview followed by a request-scoped action
+  (e.g. publish or contact) produces a server event with the same `session_id`
+  as the pageview, and its referrer/country match. Events from crons and
+  webhooks carry the synthetic identity and no Distinct ID.
 
 ## 10. Risks
 
 - R-1 **Server-side event attribution.** Umami derives sessions from IP +
   User-Agent; every server event comes from the api's IP. Without care, all
-  server events land in one session and skew visitor counts. Mitigation: send the
-  Distinct ID when there is a user, and verify in the spike (T-0) whether server
-  events should forward the original client headers or be counted only as events.
+  server events land in one session and skew visitor counts. Measured in T-0: a
+  Distinct ID splits the session, while the visitor's IP + User-Agent joins it.
+  Mitigation (decided 2026-11-15): request-scoped events forward the visitor's
+  IP + User-Agent and carry no Distinct ID; the rest use one synthetic identity
+  (§6.2). Residual risk: the join depends on the tracker and the api seeing the
+  same client IP (both behind Cloudflare). A mismatch only loses the join, not
+  the event. AC-12 verifies it.
 - R-2 **Loss of person-level analysis.** PostHog person properties
   (`last_checkout_outcome`, `plan_status`, `converted_from_trial`…) power some
   insights. Umami session data is weaker. Mitigation: billing cohort questions
@@ -359,11 +421,16 @@ settled in the T-0 spike.
 
 *Rejected:* a `stats.` subdomain.
 
-### OQ-5 · Distinct ID scope — RESOLVED: as proposed
+### OQ-5 · Distinct ID scope — RESOLVED (revised 2026-11-15)
 
 Distinct ID is always Hospeda's internal user id, never an email. Web: only after
-cookie consent. Admin: the staff user id. Server events: the user id when there is
-one; `api-server` events carry none.
+cookie consent. Admin: the staff user id. Server events: **never** a Distinct ID.
+The user id goes in `data.user_id`, and request-scoped events forward the
+visitor's IP + User-Agent so they join the browser session (§6.2, R-1).
+
+*Revised because:* the T-0 spike measured that Umami hashes the Distinct ID into
+the session id. A server event carrying it opens a separate session per user,
+inflates visitors and breaks funnels that mix browser and server steps.
 
 ### OQ-6 · Umami database — RESOLVED: its own Postgres container
 
@@ -394,7 +461,8 @@ Phases (each its own PR to `staging`, title `[HOS-2119] …`):
   filters needed by §6.5 for all four entity types. Output: a short note in
   `docs/` with the relay path and the answer to R-1.
 - **T-1 Infra** — staging + prod instances, backups, env vars (AC-1).
-- **T-2 Adapter** — `providers/umami-*`, Umami-only client, limits guard (AC-2–4).
+- **T-2 Adapter** — `providers/umami-*`, Umami-only client, limits guard,
+  visitor attribution for request-scoped events (AC-2–4, AC-12).
 - **T-3 Web/admin** — tracker, consent, CSP (AC-5).
 - **T-4 Dashboards** — `scripts/umami`, docs, close HOS-1887 (AC-6).
 - **T-5 Owner stats** — service, route, schema, cache, UI, i18n (AC-7, AC-8).
