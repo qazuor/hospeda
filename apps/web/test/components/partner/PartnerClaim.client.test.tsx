@@ -203,6 +203,72 @@ describe('PartnerClaim', () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
+    it('tells an account with a different email to use the application account or contact Hospeda (HOS-2222)', async () => {
+        // Arrange
+        setAuthenticated(true);
+        setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+        mocks.claim.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 403,
+                reason: 'PARTNER_CLAIM_EMAIL_MISMATCH',
+                message: 'technical message'
+            }
+        });
+        renderClaim();
+
+        // Act
+        await userEvent.click(await screen.findByRole('button', { name: 'Reclamar el Partner' }));
+
+        // Assert
+        expect(
+            await screen.findByText(
+                'Este Partner solo se puede reclamar con la cuenta del correo con el que se hizo la solicitud. Cerrá sesión e iniciá sesión con esa cuenta. Si el Partner es tuyo pero querés administrarlo con otro correo, escribinos a Hospeda.'
+            )
+        ).toBeInTheDocument();
+        expect(screen.getByText('Iniciaste sesión como test@example.test.')).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'Escribir a soporte' })).toHaveAttribute(
+            'href',
+            expect.stringContaining('contacto')
+        );
+        expect(screen.queryByRole('button', { name: 'Reenviar verificación' })).toBeNull();
+        expect(screen.queryByRole('button', { name: 'Reclamar el Partner' })).toBeNull();
+        expect(mocks.refresh).not.toHaveBeenCalled();
+    });
+
+    it('renders the email mismatch copy in English and Portuguese', async () => {
+        for (const [locale, copy, signedInAs] of [
+            [
+                'en',
+                'This Partner can only be claimed with the account for the email address used in the application. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.',
+                'You are signed in as test@example.test.'
+            ],
+            [
+                'pt',
+                'Este Partner só pode ser reivindicado com a conta do e-mail usado na solicitação. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.',
+                'Você entrou como test@example.test.'
+            ]
+        ] as const) {
+            // Arrange
+            setAuthenticated(true);
+            setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+            mocks.claim.mockResolvedValue({
+                ok: false,
+                error: { status: 403, reason: 'PARTNER_CLAIM_EMAIL_MISMATCH', message: 'x' }
+            });
+            const view = render(<PartnerClaim locale={locale} />);
+            const confirmName = locale === 'en' ? 'Claim the Partner' : 'Reivindicar o Partner';
+
+            // Act
+            await userEvent.click(await screen.findByRole('button', { name: confirmName }));
+
+            // Assert
+            expect(await screen.findByText(copy)).toBeInTheDocument();
+            expect(screen.getByText(signedInAs)).toBeInTheDocument();
+            view.unmount();
+        }
+    });
+
     it('returns to sign-in and re-saves the pending action after a 401', async () => {
         setAuthenticated(true);
         setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);

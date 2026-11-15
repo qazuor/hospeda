@@ -48,10 +48,13 @@ test.describe('TEST:V8b:4 AC:V8b:4 an account that owns a Partner claims a secon
         partnerIds.push(partnerBId);
         const secret = randomBytes(32).toString('base64url');
         const secretHash = createHash('sha256').update(secret, 'utf8').digest('hex');
-        await execSQL('UPDATE partners SET claim_secret_hash = $2 WHERE id = $1', [
-            partnerBId,
-            secretHash
-        ]);
+        // HOS-2222: only the account of the claim mailbox may claim, and the mailbox check
+        // runs before the one-Partner check. Row 33 is reached by the owner of Partner A
+        // only while Partner B's claim mailbox is ownerA's own address.
+        await execSQL(
+            'UPDATE partners SET claim_secret_hash = $2, claim_email = $3 WHERE id = $1',
+            [partnerBId, secretHash, ownerA.email]
+        );
         const claimUrl = `${WEB_URL}/es/partners/reclamar/#partner=${partnerBId}&secret=${encodeURIComponent(secret)}`;
 
         await seedCookieConsent(page);
@@ -72,8 +75,13 @@ test.describe('TEST:V8b:4 AC:V8b:4 an account that owns a Partner claims a secon
         const partnerB = await execSQL<{
             owner_user_id: string | null;
             claim_secret_hash: string | null;
-        }>('SELECT owner_user_id, claim_secret_hash FROM partners WHERE id = $1', [partnerBId]);
-        expect(partnerB).toEqual([{ owner_user_id: null, claim_secret_hash: secretHash }]);
+            claim_email: string | null;
+        }>('SELECT owner_user_id, claim_secret_hash, claim_email FROM partners WHERE id = $1', [
+            partnerBId
+        ]);
+        expect(partnerB).toEqual([
+            { owner_user_id: null, claim_secret_hash: secretHash, claim_email: ownerA.email }
+        ]);
         const claimedEvents = await execSQL<{ count: number }>(
             "SELECT count(*)::int AS count FROM domain_event WHERE entity_id = $1 AND event_type = 'partner.claimed'",
             [partnerBId]
@@ -85,6 +93,12 @@ test.describe('TEST:V8b:4 AC:V8b:4 an account that owns a Partner claims a secon
         );
         expect(partnerA).toEqual([{ owner_user_id: ownerA.id }]);
 
+        // The same link, now addressed to claimant2's mailbox, still claims: row 33 spent
+        // nothing.
+        await execSQL('UPDATE partners SET claim_email = $2 WHERE id = $1', [
+            partnerBId,
+            claimant2.email
+        ]);
         const claimantContext = await browser.newContext();
         try {
             const claimantPage = await claimantContext.newPage();

@@ -31,9 +31,13 @@ export interface PartnerMailCopy {
 /** Resolves mail copy without coupling notifications to an i18n package. */
 export type PartnerMailCopyResolver = (input: PartnerMailCopyInput) => PartnerMailCopy;
 
-/** Issues a fresh secret and persists its hash for an unclaimed Partner. */
+/**
+ * Issues a fresh secret and persists its hash for an unclaimed Partner, together with
+ * the mailbox the link is sent to (the only account allowed to claim it, HOS-2222).
+ */
 export type PartnerClaimSecretIssuer = (input: {
     readonly partnerId: string;
+    readonly email: string;
 }) => Promise<{ readonly secret: string } | null>;
 
 /** Indicates that a claim notice cannot be issued for this Partner. */
@@ -122,7 +126,10 @@ export function createPartnerApplicationRenderers(input: {
     return {
         'verticals.partner-claim-notice': async ({ row }) => {
             const data = readClaimPayload(row);
-            const issued = await input.issueClaimSecret({ partnerId: data.partnerId });
+            const issued = await input.issueClaimSecret({
+                partnerId: data.partnerId,
+                email: row.recipientEmail
+            });
             if (!issued) throw new PartnerClaimNoticeNotIssuableError(data.partnerId);
             const claimUrl = `${siteUrl}/${data.locale}/partners/reclamar/#partner=${data.partnerId}&secret=${encodeURIComponent(issued.secret)}`;
             const copy = input.resolveCopy({

@@ -7,11 +7,25 @@ import { hashPartnerClaimSecret } from '../../utils/partner-application/partner-
 import { userCache } from '../../utils/user-cache';
 import {
     PARTNER_ALREADY_CLAIMED,
-    PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS
+    PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS,
+    PARTNER_CLAIM_EMAIL_MISMATCH
 } from './partner-application-errors';
 import { writePartnerClaim } from './partner-claim.service';
 
 const NOT_FOUND_MESSAGE = 'Partner not found';
+
+/**
+ * Compares the signed-in account email with the Partner's claim mailbox,
+ * trimmed and case-insensitively. A missing or blank claim email never matches.
+ */
+export function isSameClaimEmail(input: {
+    readonly accountEmail: string;
+    readonly claimEmail: string | null;
+}): { readonly matches: boolean } {
+    const claim = input.claimEmail?.trim().toLowerCase() ?? '';
+    if (claim === '') return { matches: false };
+    return { matches: input.accountEmail.trim().toLowerCase() === claim };
+}
 
 /** Claims a Partner through its single-use secret in one transaction. */
 export async function claimPartnerByLink(input: {
@@ -56,18 +70,25 @@ export async function claimPartnerByLink(input: {
                 userId: input.actorUserId
             });
             if (!account) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Account not found');
-            const shouldVerify =
-                !account.emailVerified &&
-                partner.applicationEmail !== null &&
-                account.email.toLowerCase() === partner.applicationEmail.toLowerCase();
-            if (!account.emailVerified && !shouldVerify) {
+            // HOS-2222: only the account of the claim mailbox (the address the link was sent
+            // to, or the approved application's email on older rows) may claim, verified or
+            // not. Without a claim mailbox there is nothing to compare against, so the claim
+            // is refused too. Runs before any write: the Partner stays
+            // unowned and its link stays usable by the right account.
+            if (
+                !isSameClaimEmail({
+                    accountEmail: account.email,
+                    claimEmail: partner.claimEmail
+                }).matches
+            ) {
                 throw new ServiceError(
                     ServiceErrorCode.FORBIDDEN,
-                    'Email verification required',
+                    'Claim requires the account of the application email',
                     undefined,
-                    'EMAIL_NOT_VERIFIED'
+                    PARTNER_CLAIM_EMAIL_MISMATCH
                 );
             }
+            const shouldVerify = !account.emailVerified;
             if (
                 await partnerApplicationModel.findOwnedPartnerId({ tx, userId: input.actorUserId })
             ) {

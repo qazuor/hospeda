@@ -92,7 +92,8 @@ export async function approvePartnerApplication(input: {
                 name: input.name,
                 slug: `${toSlug(input.name) || 'partner'}-${randomUUID().slice(0, 8)}`,
                 type: input.type,
-                actorId: input.actor.id
+                actorId: input.actor.id,
+                claimEmail: application.email
             });
             await partnerApplicationModel.markApproved({
                 tx,

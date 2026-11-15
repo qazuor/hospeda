@@ -13,13 +13,17 @@ export function hashPartnerClaimSecret(input: { readonly secret: string }): stri
     return createHash('sha256').update(input.secret, 'utf8').digest('hex');
 }
 
-/** Issues a claim secret and stores only its hash before the sender calls its transport. */
-export const issuePartnerClaimSecret: PartnerClaimSecretIssuer = async ({ partnerId }) => {
+/**
+ * Issues a claim secret and stores only its hash, plus the recipient mailbox as the
+ * Partner's claim email, before the sender calls its transport.
+ */
+export const issuePartnerClaimSecret: PartnerClaimSecretIssuer = async ({ partnerId, email }) => {
     const generated = generatePartnerClaimSecret();
     const stored = await partnerApplicationModel.setClaimSecretHashIfUnclaimed({
         tx: getDb(),
         partnerId,
-        hash: generated.hash
+        hash: generated.hash,
+        email
     });
     return stored ? { secret: generated.secret } : null;
 };

@@ -27,6 +27,8 @@
         "notFound": "Não encontramos este Partner. Confira se o link está completo.",
         "alreadyClaimed": "Este Partner já tem proprietário; se não foi você, fale com o suporte",
         "accountAlreadyOwns": "Sua conta já é proprietária de um Partner. Cada conta administra apenas um Partner: reivindique o segundo negócio com outra conta. Se precisar de ajuda, fale com o suporte.",
+        "emailMismatch": "Este Partner só pode ser reivindicado com a conta do e-mail usado na solicitação. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.",
+        "emailMismatchSignedInAs": "Você entrou como {{email}}.",
         "verifyEmailFirst": "Para reivindicar este Partner com esta conta, primeiro verifique seu e-mail.",
         "resendVerification": "Reenviar verificação",
         "resendingVerification": "Reenviando…",

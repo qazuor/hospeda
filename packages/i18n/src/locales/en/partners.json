@@ -27,6 +27,8 @@
         "notFound": "We couldn't find this Partner. Check that the link is complete.",
         "alreadyClaimed": "This Partner already has an owner; if it wasn't you, contact support",
         "accountAlreadyOwns": "Your account already owns a Partner. Each account can manage one Partner: claim a second business with another account. If you need help, contact support.",
+        "emailMismatch": "This Partner can only be claimed with the account for the email address used in the application. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.",
+        "emailMismatchSignedInAs": "You are signed in as {{email}}.",
         "verifyEmailFirst": "To claim this Partner with this account, verify your email first.",
         "resendVerification": "Resend verification",
         "resendingVerification": "Resending…",
