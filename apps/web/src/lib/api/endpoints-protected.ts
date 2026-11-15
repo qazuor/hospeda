@@ -2111,7 +2111,8 @@ export const partnersApi = {
      * @param params - Partner UUID and the secret from the URL fragment.
      * @returns The claim on success; errors distinguish an invalid link (404),
      * an already claimed Partner (409), an account that owns another Partner
-     * (409), an unverified account (403), or an unauthenticated request (401).
+     * (409), an account whose email differs from the application's (403
+     * `PARTNER_CLAIM_EMAIL_MISMATCH`), or an unauthenticated request (401).
      */
     claim({
         partnerId,
