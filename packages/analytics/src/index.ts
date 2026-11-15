@@ -5,7 +5,12 @@ export type {
 } from './browser.js';
 export { createBrowserAnalytics } from './browser.js';
 export type { AnalyticsEventName, AnalyticsEventProperties } from './catalog.js';
-export { AnalyticsEventSchemas, AnalyticsEvents } from './catalog.js';
+export {
+    ANALYTICS_ENTITY_TYPES,
+    ANALYTICS_ENTITY_VIEWED_TYPES,
+    AnalyticsEventSchemas,
+    AnalyticsEvents
+} from './catalog.js';
 export type { ServerAnalyticsClient } from './server.js';
 export { createServerAnalytics } from './server.js';
 export type {

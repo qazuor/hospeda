@@ -28,6 +28,7 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             ContributionEditorSubmitted: 'contribution_editor_submitted',
             PostViewed: 'post_viewed',
             EventViewed: 'event_viewed',
+            EntityViewed: 'entity_viewed',
             AiSearchSubmitted: 'ai_search_performed',
             AiSearchIntentApplied: 'ai_search_intent_applied',
             AiSearchFallbackKeyword: 'ai_search_fallback_keyword',

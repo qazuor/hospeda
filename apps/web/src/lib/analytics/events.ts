@@ -24,6 +24,7 @@ export const WebEvents = {
     ContributionEditorSubmitted: AnalyticsEvents.contributionEditorSubmitted,
     PostViewed: AnalyticsEvents.postViewed,
     EventViewed: AnalyticsEvents.eventViewed,
+    EntityViewed: AnalyticsEvents.entityViewed,
     AiSearchSubmitted: AnalyticsEvents.aiSearchPerformed,
     AiSearchIntentApplied: AnalyticsEvents.aiSearchIntentApplied,
     AiSearchFallbackKeyword: AnalyticsEvents.aiSearchFallbackKeyword,
