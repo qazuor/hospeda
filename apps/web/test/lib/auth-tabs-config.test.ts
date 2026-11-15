@@ -253,7 +253,11 @@ describe('resolveAuthTabsRedirectConfig', () => {
             );
         });
 
-        it('honours a validated cross-origin callbackUrl', () => {
+        it('never points the verification link at the admin panel', () => {
+            // A freshly registered account has no admin permissions, so a link
+            // landing on the admin panel dead-ends on "no access". The admin
+            // callbackUrl must degrade to the same-site fallback here, while the
+            // sign-in redirect (an EXISTING account) still goes back to admin.
             // Act
             const result = resolveAuthTabsRedirectConfig({
                 astroUrl: urlFor(
@@ -266,7 +270,11 @@ describe('resolveAuthTabsRedirectConfig', () => {
             });
 
             // Assert
-            expect(result.signUpConfig.verificationCallbackUrl).toBe(`${ADMIN_URL}/dashboard`);
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/'
+            );
+            expect(result.signInConfig.redirectTo).toBe(`${ADMIN_URL}/dashboard`);
+            expect(result.signInConfig.externalRedirect).toBe(true);
         });
 
         it('does NOT let an off-site returnUrl through', () => {
@@ -523,15 +531,17 @@ describe('resolveAuthTabsRedirectConfig', () => {
             expect(result.signUpConfig.oauthRedirectTo).toBe(OTHER_SUBDOMAIN);
         });
 
-        it('still carries the admin panel, which IS a configured trusted origin', () => {
-            // The designed SPEC-182 flow (admin guard bounces to web signin)
-            // must keep working end to end — this is the regression the
-            // narrowing could plausibly cause.
+        it('keeps the admin panel out of the verification callback too', () => {
+            // The API would accept it (configured trusted origin), but a new
+            // account cannot use the admin panel, so it falls back to the site.
             // Act
             const result = resultForCallbackUrl(`${ADMIN_URL}/dashboard`);
 
             // Assert
-            expect(result.signUpConfig.verificationCallbackUrl).toBe(`${ADMIN_URL}/dashboard`);
+            expect(result.signUpConfig.verificationCallbackUrl).toBe(
+                'https://hospeda.com.ar/es/mi-cuenta/'
+            );
+            expect(result.signInConfig.redirectTo).toBe(`${ADMIN_URL}/dashboard`);
         });
 
         it('still carries a callbackUrl pointing at the site itself', () => {
