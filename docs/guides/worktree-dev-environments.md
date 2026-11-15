@@ -93,7 +93,10 @@ prints the current URLs and exits without touching anything.
 
 ## Database per worktree
 
-- **One shared Postgres container** (`hospeda-postgres`, port 5436). Each worktree
+- **One shared Postgres container** (`hospeda2-postgres`, port 5436 — the name
+  comes from `${COMPOSE_PROJECT_NAME}-postgres` in `docker-compose.yml`, and the
+  tooling reads it from `database.container` in `.qz/project.json`; keep both in
+  sync if the compose project is ever renamed). Each worktree
   gets its own database `worktree_<slug>` inside it — no extra containers.
 - **Naming** derives from the worktree **path** (stable across branch switches): a
   spec number becomes `worktree_spec_197`; otherwise the sanitized directory name.
