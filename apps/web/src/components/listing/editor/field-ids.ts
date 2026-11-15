@@ -39,6 +39,8 @@ export const LISTING_FIELD_PREFIX = 'ce';
  */
 export const LISTING_FIELD_ID_SUFFIXES: Readonly<Record<string, string>> = {
     'contactInfo.mobilePhone': 'number',
+    // HOS-2042: the optional landline is the same country+number pair.
+    'contactInfo.workPhone': 'number',
     /**
      * `durationMinutes` is ONE Zod field rendered as TWO controls as well
      * (HOS-898): an hours box and a minutes box that `buildPatchPayload` joins

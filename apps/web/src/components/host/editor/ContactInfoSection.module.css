@@ -54,6 +54,12 @@
     border-color: oklch(0.55 0.22 25);
 }
 
+.contactHint {
+    margin: 0 0 var(--space-3, 1rem);
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-xs, 0.8125rem);
+}
+
 .phoneFieldset {
     border: none;
     padding: 0;

@@ -112,6 +112,7 @@ const MOCK_DATA: AccommodationEditData = {
     featureIds: [],
     phone: '',
     whatsapp: '',
+    landlinePhone: '',
     email: '',
     website: '',
     facebookUrl: '',
