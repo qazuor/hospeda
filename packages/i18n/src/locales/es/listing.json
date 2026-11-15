@@ -419,6 +419,38 @@
         "locationDuplicate": {
             "warning": "Ya tenés otra ficha publicada en esta dirección. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra. Podés seguir editando este borrador, pero no vas a poder publicarlo.",
             "blocked": "Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra."
+        },
+        "traffic": {
+            "title": "Tráfico de tus fichas",
+            "window": {
+                "label": "Período",
+                "7d": "7 días",
+                "30d": "30 días",
+                "90d": "90 días"
+            },
+            "referrers": {
+                "title": "De dónde vienen",
+                "direct": "Directo"
+            },
+            "countries": {
+                "title": "Países"
+            },
+            "devices": {
+                "title": "Dispositivos",
+                "desktop": "Computadora",
+                "mobile": "Celular",
+                "tablet": "Tablet",
+                "other": "Otros"
+            },
+            "contacts": {
+                "title": "Contactos",
+                "views": "Vistas",
+                "started": "Contacto iniciado",
+                "completed": "Contacto completado"
+            },
+            "empty": "Todavía no hay datos",
+            "visitors_one": "{{count}} visitante",
+            "visitors_other": "{{count}} visitantes"
         }
     },
     "notices": {

@@ -419,6 +419,38 @@
         "locationDuplicate": {
             "warning": "You already have another published listing at this address. Each physical place goes in a single listing: add the missing category to it instead of creating another one. You can keep editing this draft, but you will not be able to publish it.",
             "blocked": "You already have a published listing at this address. Each physical place goes in a single listing: add the missing category to it instead of creating another one."
+        },
+        "traffic": {
+            "title": "Traffic to your listings",
+            "window": {
+                "label": "Period",
+                "7d": "7 days",
+                "30d": "30 days",
+                "90d": "90 days"
+            },
+            "referrers": {
+                "title": "Where visitors come from",
+                "direct": "Direct"
+            },
+            "countries": {
+                "title": "Countries"
+            },
+            "devices": {
+                "title": "Devices",
+                "desktop": "Desktop",
+                "mobile": "Mobile",
+                "tablet": "Tablet",
+                "other": "Other"
+            },
+            "contacts": {
+                "title": "Contacts",
+                "views": "Views",
+                "started": "Contact started",
+                "completed": "Contact completed"
+            },
+            "empty": "No data yet",
+            "visitors_one": "{{count}} visitor",
+            "visitors_other": "{{count}} visitors"
         }
     },
     "notices": {
