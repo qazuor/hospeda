@@ -725,10 +725,7 @@ const plataformaSidebar: SidebarInput = {
             },
             icon: 'ShieldAlertIcon',
             route: '/platform/location-duplicates',
-            permissions: [
-                'ACCOMMODATION_LOCATION_EXCEPTION_MANAGE',
-                'VENUE_LOCATION_EXCEPTION_MANAGE'
-            ],
+            permissions: ['LISTING_LOCATION_EXCEPTION_MANAGE'],
             onMissing: 'hide'
         },
         { type: 'separator', id: 'sep-tags-sistema' },

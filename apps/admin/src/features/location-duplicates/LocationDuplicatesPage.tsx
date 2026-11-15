@@ -41,12 +41,12 @@ const VERTICALS: readonly {
 }[] = [
     {
         vertical: 'accommodations',
-        permission: PermissionEnum.ACCOMMODATION_LOCATION_EXCEPTION_MANAGE,
+        permission: PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE,
         editPath: '/accommodations'
     },
     {
         vertical: 'venues',
-        permission: PermissionEnum.VENUE_LOCATION_EXCEPTION_MANAGE,
+        permission: PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE,
         editPath: '/venues'
     }
 ];

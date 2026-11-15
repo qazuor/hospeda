@@ -14,7 +14,7 @@ const mocks = vi.hoisted(() => ({
         value: {
             id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
             roles: ['ADMIN'],
-            permissions: ['access.panelAdmin', 'venue.locationException.manage']
+            permissions: ['access.panelAdmin', 'listing.locationException.manage']
         } as { id: string; roles: string[]; permissions: string[] }
     }
 }));
@@ -58,7 +58,7 @@ const ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const ADMIN = {
     id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     roles: ['ADMIN'],
-    permissions: ['access.panelAdmin', 'venue.locationException.manage']
+    permissions: ['access.panelAdmin', 'listing.locationException.manage']
 };
 const post = (body: unknown) => ({
     method: 'POST',
