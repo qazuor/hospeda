@@ -38,7 +38,8 @@ const VERTICAL_SPECIFIC_KEYS = new Set([
     'panelLabel',
     'headerDisclaimer',
     'priceDisclaimer',
-    'unavailable'
+    'unavailable',
+    'readNotice'
 ]);
 
 /**
@@ -101,6 +102,10 @@ function verticalFallback(entityType: AiChatEntityType, suffix: string): string 
             return `Los precios y horarios pueden haber cambiado. Contactá ${entityType === 'experience' ? 'a la' : 'al'} ${noun} para confirmar.`;
         case 'unavailable':
             return `El chat de IA no está disponible para ${subject}.`;
+        case 'readNotice':
+            return entityType === 'accommodation'
+                ? 'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.'
+                : 'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.';
         default:
             return undefined;
     }
@@ -108,8 +113,6 @@ function verticalFallback(entityType: AiChatEntityType, suffix: string): string 
 
 /** Human Spanish copy for the vertical-agnostic strings. */
 const SHARED_FALLBACKS: Readonly<Record<string, string>> = Object.freeze({
-    readNotice:
-        'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.',
     placeholder: 'Escribí tu pregunta aquí…',
     send: 'Enviar',
     sending: 'Enviando…',

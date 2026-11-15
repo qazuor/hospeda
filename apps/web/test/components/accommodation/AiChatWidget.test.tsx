@@ -191,7 +191,7 @@ describe('AiChatWidget', () => {
         await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
 
         expect(screen.getByTestId('ai-chat-read-notice')).toHaveTextContent(
-            'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.'
+            'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.'
         );
     });
 

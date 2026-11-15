@@ -4,6 +4,7 @@
         "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el local.",
         "panelLabel": "Chat con IA — Preguntas sobre el local",
         "priceDisclaimer": "La carta, los precios y los horarios pueden haber cambiado. Contactá al local para confirmar.",
+        "readNotice": "El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.",
         "unavailable": "El chat de IA no está disponible para este local"
     },
     "listing": {
