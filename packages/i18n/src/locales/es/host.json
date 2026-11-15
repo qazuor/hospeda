@@ -502,6 +502,7 @@
             "entitlement": {
                 "premiumFeature": "Función premium",
                 "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
+                "calendarNudge": "Actualizá tu plan para usar el calendario de disponibilidad.",
                 "richDescriptionHint": "Texto con formato: negritas, listas y más. Disponible en planes superiores.",
                 "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
                 "genericNudge": "Esta función está disponible en un plan superior.",
