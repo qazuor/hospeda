@@ -20,9 +20,16 @@ vi.mock('../../../src/lib/i18n', () => {
 });
 
 const fetchMock = vi.fn();
+const getSessionMock = vi.fn();
+const signOutMock = vi.fn();
 vi.mock('../../../src/lib/auth-client', () => ({
-    authClient: { $fetch: (...args: unknown[]) => fetchMock(...args) }
+    authClient: {
+        $fetch: (...args: unknown[]) => fetchMock(...args),
+        getSession: (...args: unknown[]) => getSessionMock(...args),
+        signOut: (...args: unknown[]) => signOutMock(...args)
+    }
 }));
+vi.mock('../../../src/lib/auth-cache', () => ({ clearCachedAuthMe: vi.fn() }));
 
 const SEARCH =
     '?client_id=abc&scope=openid+email+calendar.write&redirect_uri=https%3A%2F%2Fclaude.ai%2Fcb' +
@@ -46,6 +53,13 @@ function clientResponse(data: Record<string, unknown>) {
 describe('OAuthConsent', () => {
     beforeEach(() => {
         fetchMock.mockReset();
+        getSessionMock.mockReset();
+        getSessionMock.mockResolvedValue({
+            data: { user: { name: 'Leandro Gomez', email: 'leandro@gmail.com' } },
+            error: null
+        });
+        signOutMock.mockReset();
+        signOutMock.mockResolvedValue({});
         replaceMock.mockReset();
         assignMock.mockReset();
         setLocation(SEARCH);
@@ -120,7 +134,7 @@ describe('OAuthConsent', () => {
         expect(container.querySelector('img')?.getAttribute('src')).toBe(
             'https://claude.ai/logo.png'
         );
-        expect(container.querySelector('a')).toBeNull();
+        expect(container.querySelector('a[target="_blank"]')).toBeNull();
     });
 
     it('drops an http logo', async () => {
@@ -252,5 +266,93 @@ describe('OAuthConsent', () => {
         // Assert
         expect(await screen.findByRole('alert')).toHaveTextContent('no es válido o venció');
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('lists the four capabilities', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+
+        // Act
+        render(<OAuthConsent locale="es" />);
+
+        // Assert
+        await screen.findByRole('heading', { level: 1 });
+        for (const text of [
+            'Ver tus publicaciones y sus estadísticas',
+            'Editar datos básicos (descripción, contacto, horarios, servicios)',
+            'Pausar o reanudar tus publicaciones',
+            'Responder consultas de tus alojamientos'
+        ]) {
+            expect(screen.getByText(text)).toBeInTheDocument();
+        }
+    });
+
+    it('links the disconnect notice to the AI assistants panel', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+
+        // Act
+        render(<OAuthConsent locale="es" />);
+
+        // Assert
+        const link = await screen.findByRole('link', { name: 'Asistentes de IA' });
+        expect(link).toHaveAttribute('href', '/es/mi-cuenta/asistentes-ia/');
+    });
+
+    it('shows the signed-in name and a masked email', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+
+        // Act
+        render(<OAuthConsent locale="es" />);
+
+        // Assert
+        expect(
+            await screen.findByText('Sesión iniciada como Leandro Gomez (lea***@gmail.com)')
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/leandro@gmail\.com/)).toBeNull();
+    });
+
+    it('signs out and goes to sign-in with the request preserved on "Cambiar de cuenta"', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+        render(<OAuthConsent locale="es" />);
+
+        // Act
+        fireEvent.click(await screen.findByRole('button', { name: 'Cambiar de cuenta' }));
+
+        // Assert
+        await waitFor(() => expect(assignMock).toHaveBeenCalledTimes(1));
+        expect(signOutMock).toHaveBeenCalledTimes(1);
+        const target = String(assignMock.mock.calls[0]?.[0]);
+        expect(target.startsWith('/es/auth/signin/?returnUrl=')).toBe(true);
+        const returnUrl = new URL(target, 'https://hospeda.test').searchParams.get('returnUrl');
+        expect(returnUrl).toBe(`/es/auth/consent/${SEARCH}`);
+    });
+
+    it('still goes to sign-in when sign-out throws', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+        signOutMock.mockRejectedValue(new Error('network'));
+        render(<OAuthConsent locale="es" />);
+
+        // Act
+        fireEvent.click(await screen.findByRole('button', { name: 'Cambiar de cuenta' }));
+
+        // Assert
+        await waitFor(() => expect(assignMock).toHaveBeenCalledTimes(1));
+    });
+
+    it('hides the account line but keeps the screen usable when the session cannot be read', async () => {
+        // Arrange
+        fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
+        getSessionMock.mockRejectedValue(new Error('boom'));
+
+        // Act
+        render(<OAuthConsent locale="es" />);
+
+        // Assert
+        expect(await screen.findByRole('button', { name: 'Permitir' })).toBeEnabled();
+        expect(screen.queryByRole('button', { name: 'Cambiar de cuenta' })).toBeNull();
     });
 });

@@ -169,3 +169,36 @@
         animation-duration: 2.4s;
     }
 }
+
+.noteLink {
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
+.noteLink:focus-visible,
+.linkButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.account {
+    margin: 0;
+    font-size: var(--text-body-sm);
+    color: var(--core-muted-foreground);
+    overflow-wrap: anywhere;
+}
+
+.linkButton {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: var(--brand-primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.linkButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

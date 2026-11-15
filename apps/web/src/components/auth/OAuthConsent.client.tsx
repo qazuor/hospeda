@@ -24,9 +24,11 @@
 
 import { ExternalLinkIcon, ShieldAlertIcon, ShieldIcon } from '@repo/icons';
 import { useEffect, useState } from 'react';
+import { clearCachedAuthMe } from '@/lib/auth-cache';
 import { authClient } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { maskEmail } from '@/lib/mask-email';
 import {
     buildConsentSigninUrl,
     type ConsentRequest,
@@ -35,6 +37,8 @@ import {
     toKnownOAuthScope,
     toSafeHttpsUrl
 } from '@/lib/oauth-consent';
+import { AI_ASSISTANTS_PATH } from '@/lib/routes';
+import { buildUrl } from '@/lib/urls';
 import styles from './OAuthConsent.module.css';
 
 /** Public client fields returned by `GET /oauth2/public-client`. */
@@ -65,6 +69,12 @@ type ViewState =
     | { readonly status: 'redirecting' }
     | { readonly status: 'error'; readonly kind: ErrorKind; readonly client?: PublicClient };
 
+/** The signed-in account as shown on the screen (display name + masked email). */
+interface AccountView {
+    readonly name: string | null;
+    readonly maskedEmail: string | null;
+}
+
 /** Props for {@link OAuthConsent}. */
 export interface OAuthConsentProps {
     /** Active locale, used for copy and for the sign-in round trip. */
@@ -72,7 +82,7 @@ export interface OAuthConsentProps {
 }
 
 /** Capabilities the MCP connection grants (spec HOS-2184 section 8). */
-const CAPABILITY_KEYS = ['read', 'edit', 'reply'] as const;
+const CAPABILITY_KEYS = ['read', 'edit', 'pause', 'reply'] as const;
 
 /**
  * Consent screen for an OAuth authorization request.
@@ -86,6 +96,8 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<ViewState>({ status: 'loading' });
     const [request, setRequest] = useState<ConsentRequest | null>(null);
+    const [account, setAccount] = useState<AccountView | null>(null);
+    const [switching, setSwitching] = useState(false);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: runs once on mount; `locale` never changes for a mounted island.
     useEffect(() => {
@@ -98,6 +110,23 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
         setRequest(parsed);
 
         let cancelled = false;
+        // The account line is informational: any failure just hides it.
+        async function loadAccount(): Promise<void> {
+            try {
+                const session = await authClient.getSession();
+                const user = session.data?.user;
+                if (cancelled || !user) {
+                    return;
+                }
+                const name = typeof user.name === 'string' ? user.name.trim() : '';
+                const maskedEmail = maskEmail({ email: user.email });
+                if (name || maskedEmail) {
+                    setAccount({ name: name || null, maskedEmail });
+                }
+            } catch {
+                // Session unreadable: keep the screen without the account line.
+            }
+        }
         async function loadClient(consentRequest: ConsentRequest): Promise<void> {
             try {
                 const result = await authClient.$fetch<PublicClient>('/oauth2/public-client', {
@@ -119,6 +148,7 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
                     return;
                 }
                 setState({ status: 'ready', client: result.data ?? {} });
+                void loadAccount();
             } catch {
                 if (!cancelled) {
                     setState({ status: 'error', kind: 'loadFailed' });
@@ -131,6 +161,23 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
             cancelled = true;
         };
     }, []);
+
+    async function switchAccount(): Promise<void> {
+        if (!request || switching) {
+            return;
+        }
+        setSwitching(true);
+        try {
+            clearCachedAuthMe();
+            await authClient.signOut();
+        } catch {
+            // Best effort: the sign-in page re-checks the session anyway.
+        } finally {
+            window.location.assign(
+                buildConsentSigninUrl({ locale, search: window.location.search })
+            );
+        }
+    }
 
     async function decide({
         accept,
@@ -343,10 +390,50 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
 
             <p className={styles.note}>
                 {t(
-                    'auth.consent.revokeNote',
-                    'Podés desconectarla cuando quieras desde Mi cuenta, en Asistentes de IA.'
-                )}
+                    'auth.consent.revokeNotePrefix',
+                    'Podés desconectarla cuando quieras desde Mi cuenta ›'
+                )}{' '}
+                <a
+                    className={styles.noteLink}
+                    href={buildUrl({ locale, path: AI_ASSISTANTS_PATH })}
+                >
+                    {t('auth.consent.revokeNoteLink', 'Asistentes de IA')}
+                </a>
+                .
             </p>
+
+            {account && (
+                <p className={styles.account}>
+                    <span>
+                        {account.name && account.maskedEmail
+                            ? t(
+                                  'auth.consent.account.signedInAsWithEmail',
+                                  'Sesión iniciada como {{name}} ({{email}})',
+                                  { name: account.name, email: account.maskedEmail }
+                              )
+                            : account.name
+                              ? t(
+                                    'auth.consent.account.signedInAs',
+                                    'Sesión iniciada como {{name}}',
+                                    { name: account.name }
+                                )
+                              : t(
+                                    'auth.consent.account.signedInAsEmailOnly',
+                                    'Sesión iniciada como {{email}}',
+                                    { email: account.maskedEmail ?? '' }
+                                )}
+                    </span>{' '}
+                    <span>{t('auth.consent.account.notYou', '¿No sos vos?')}</span>{' '}
+                    <button
+                        type="button"
+                        className={styles.linkButton}
+                        disabled={submitting || switching}
+                        onClick={() => void switchAccount()}
+                    >
+                        {t('auth.consent.account.switch', 'Cambiar de cuenta')}
+                    </button>
+                </p>
+            )}
 
             <div className={styles.actions}>
                 <button
@@ -377,8 +464,9 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
 /** Spanish fallbacks for the capability list (the locale files are the source). */
 const CAPABILITY_FALLBACKS: Readonly<Record<(typeof CAPABILITY_KEYS)[number], string>> = {
     read: 'Ver tus publicaciones y sus estadísticas',
-    edit: 'Editar los datos básicos de tus publicaciones',
-    reply: 'Responder las consultas que recibís'
+    edit: 'Editar datos básicos (descripción, contacto, horarios, servicios)',
+    pause: 'Pausar o reanudar tus publicaciones',
+    reply: 'Responder consultas de tus alojamientos'
 };
 
 /** Spanish fallbacks for the known scopes (the locale files are the source). */
