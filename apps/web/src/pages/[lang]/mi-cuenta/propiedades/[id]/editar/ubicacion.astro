@@ -8,6 +8,7 @@
  */
 
 import { LocationForm } from '@/components/host/editor/forms/LocationForm.client';
+import LocationDuplicateNotice from '@/components/listing/LocationDuplicateNotice.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -35,6 +36,7 @@ const { t } = createTranslations(locale);
 	hasTranslations={data.translations !== null}
 	title={t('host.properties.editor.section.location', 'Ubicación')}
 >
+	<LocationDuplicateNotice locale={locale} show={data.accommodation.locationDuplicate === true} />
 	<LocationForm
 		locale={locale}
 		accommodationId={accommodationId}

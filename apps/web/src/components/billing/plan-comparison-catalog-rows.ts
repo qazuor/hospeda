@@ -70,6 +70,7 @@ interface SectionCatalogPresentation {
  */
 const VENUE_CATALOG_PRESENTATION = {
     basicInfo: {},
+    location: {},
     openingHours: {},
     price: {},
     amenities: {},

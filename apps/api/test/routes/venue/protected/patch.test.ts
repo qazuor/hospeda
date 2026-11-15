@@ -184,6 +184,50 @@ describe('PATCH /api/v1/protected/venues/:id', () => {
         });
     });
 
+    describe('Postal address (HOS-2189)', () => {
+        const patchLocation = (location: unknown) =>
+            app.request(`${BASE}/${VALID_UUID}`, {
+                method: 'PATCH',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'vitest',
+                    'x-mock-actor-role': 'VENUE_OWNER',
+                    'x-mock-actor-id': OWNER_ID,
+                    'x-mock-actor-permissions': '["venue.editOwn"]',
+                    authorization: 'Bearer valid-test-token'
+                },
+                body: JSON.stringify({ location })
+            });
+
+        it('persists a valid address and returns it', async () => {
+            const location = {
+                street: 'Av. San Martín',
+                number: '123',
+                coordinates: { lat: '-32.48', long: '-58.23' }
+            };
+            const res = await patchLocation(location);
+            expect(res.status, await res.clone().text()).toBe(200);
+            expect(fakeModel.update).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ location }),
+                expect.anything()
+            );
+            const body = await res.json();
+            expect(body.data.location).toEqual(location);
+        });
+
+        it('rejects a one-character street with 400', async () => {
+            const res = await patchLocation({ street: 'A' });
+            expect(res.status).toBe(400);
+            expect(fakeModel.update).not.toHaveBeenCalled();
+        });
+
+        it('rejects out-of-range coordinates with 400', async () => {
+            const res = await patchLocation({ coordinates: { lat: '95', long: '-58' } });
+            expect(res.status).toBe(400);
+        });
+    });
+
     it('returns 400 when the real service receives invalid business lines', async () => {
         const res = await app.request(`${BASE}/${VALID_UUID}`, {
             method: 'PATCH',

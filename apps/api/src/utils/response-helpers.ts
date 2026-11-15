@@ -4,7 +4,11 @@
  */
 
 import { DbError } from '@repo/db/utils';
-import { BUSINESS_LINES_INVALID_REASON, ServiceErrorCode } from '@repo/schemas';
+import {
+    BUSINESS_LINES_INVALID_REASON,
+    DUPLICATE_LOCATION_REASON,
+    ServiceErrorCode
+} from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
@@ -516,7 +520,7 @@ const logRouteError = (
  *
  * Provides consistent error handling across all endpoints. `error.details` is
  * debug-only except for the narrow public contract cases: the codes in
- * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` reason, and the
+ * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` and `DUPLICATE_LOCATION` reasons, and the
  * business-lines invalid reason, whose `{ field, reason }` payload the owner
  * form needs to render the cause of the rejection in production. The
  * business-line case is gated on the propagated top-level `reason` alone; the
@@ -696,6 +700,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     env.HOSPEDA_API_DEBUG_ERRORS ||
                     PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
                     error.reason === 'SECTION_ABSENT' ||
+                    error.reason === DUPLICATE_LOCATION_REASON ||
                     error.reason === BUSINESS_LINES_INVALID_REASON
                         ? error.details
                         : undefined,

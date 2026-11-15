@@ -449,6 +449,7 @@
         "contact": {
             "title": "Contact",
             "phoneAriaLabel": "Call the accommodation",
+            "landlineAriaLabel": "Call the accommodation landline",
             "emailAriaLabel": "Email the accommodation",
             "websiteAriaLabel": "Visit the accommodation's website",
             "facebookAriaLabel": "Accommodation's Facebook",

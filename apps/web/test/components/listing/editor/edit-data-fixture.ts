@@ -30,6 +30,7 @@ export function buildEditData(overrides: Partial<ListingEditData> = {}): Listing
         summary: '',
         richDescription: '',
         contact: { mobilePhone: '', workEmail: '' },
+        location: { street: '', number: '', floor: '', apartment: '', lat: '', long: '' },
         social: {
             facebook: '',
             instagram: '',

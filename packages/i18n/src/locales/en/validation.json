@@ -5230,5 +5230,12 @@
             "required": "Enter the reason for cancelling the wait.",
             "max": "The reason cannot exceed 2000 characters."
         }
+    },
+    "locationException": {
+        "reason": {
+            "max": "The reason cannot exceed 500 characters",
+            "min": "The reason must be at least 10 characters",
+            "required": "The reason is required"
+        }
     }
 }

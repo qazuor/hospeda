@@ -1938,5 +1938,35 @@
                 "suspendFailedTitle": "Could not suspend"
             }
         }
+    },
+    "locationDuplicates": {
+        "title": "Repeated addresses",
+        "description": "Published listings that share an address. A duplicate between different owners does not block publishing: it is reviewed here. An exception lets a listing share an address (cabin complex, food court, hotel restaurant).",
+        "verticals": {
+            "accommodations": "Accommodations",
+            "venues": "Venues (Eat and go out)"
+        },
+        "columns": {
+            "address": "Normalized address",
+            "listings": "Listings",
+            "owners": "Owners"
+        },
+        "sameOwner": "Same owner",
+        "differentOwners": "Different owners",
+        "grantException": "Grant exception",
+        "empty": "There are no repeated addresses.",
+        "loading": "Loading...",
+        "loadError": "The report could not be loaded.",
+        "previous": "Previous",
+        "next": "Next",
+        "granted": "Exception granted.",
+        "grantError": "The exception could not be granted.",
+        "dialog": {
+            "title": "Grant an address exception",
+            "description": "The listing will be able to share its address with others. It is recorded with your user and the date.",
+            "reasonLabel": "Reason (at least 10 characters)",
+            "cancel": "Cancel",
+            "confirm": "Grant"
+        }
     }
 }

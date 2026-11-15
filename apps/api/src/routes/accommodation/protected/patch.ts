@@ -85,7 +85,14 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         const result = await accommodationService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message, result.error.details);
+            // The `reason` must travel too: it is what lets the editor tell a
+            // DUPLICATE_LOCATION 409 (HOS-1810) from any other conflict.
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                result.error.details,
+                result.error.reason
+            );
         }
 
         // BETA-199: `AccommodationProtectedSchema` declares the premium

@@ -2,6 +2,14 @@
     "id": "001-venue-uruguay-la-parrilla-del-puerto",
     "ownerId": "041-user-venue-owner-julieta",
     "destinationId": "011-destination-concepcion-del-uruguay",
+    "location": {
+        "street": "Av. Costanera",
+        "number": "150",
+        "coordinates": {
+            "lat": "-32.4851",
+            "long": "-58.2268"
+        }
+    },
     "slug": "la-parrilla-del-puerto",
     "name": "La Parrilla del Puerto",
     "summary": "La mejor parrilla de Concepción del Uruguay, con carnes premium y vistas al río.",

@@ -105,9 +105,11 @@ const websiteHref = resolveSafeExternalUrl(contactInfo?.website ?? undefined);
  */
 const toTelHref = (phone: string): string => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
+// The mobile phone is the main one and goes first; the optional landline
+// (`workPhone`, HOS-2042) follows it.
 const phones = [
-    { value: workPhone, key: 'work' },
-    { value: mobilePhone, key: 'mobile' }
+    { value: mobilePhone, key: 'mobile' },
+    { value: workPhone, key: 'work' }
 ].filter((entry): entry is { value: string; key: string } => entry.value !== undefined);
 
 // Render nothing rather than an empty card — the three seeded experience
@@ -129,14 +131,18 @@ const heading = t('experience.detail.contact', 'Contacto');
     <h3 class="exp-contact__title">{heading}</h3>
 
     <div class="exp-contact__channels">
-        {phones.map(({ value }) => (
+        {phones.map(({ value, key }) => (
             <a
                 href={toTelHref(value)}
                 class="exp-contact__link"
-                aria-label={t(
-                    'experience.detail.contactPhoneAriaLabel',
-                    'Llamar al prestador'
-                )}
+                aria-label={
+                    key === 'work'
+                        ? t(
+                              'experience.detail.contactLandlineAriaLabel',
+                              'Llamar al teléfono fijo del prestador'
+                          )
+                        : t('experience.detail.contactPhoneAriaLabel', 'Llamar al prestador')
+                }
             >
                 <PhoneIcon size={16} aria-hidden="true" />
                 <span>{value}</span>

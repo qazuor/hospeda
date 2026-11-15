@@ -150,6 +150,20 @@ const whatsappField = z
     .optional();
 
 /**
+ * HOS-2042: the optional landline (`contactInfo.workPhone` on the wire, the
+ * flat HTTP key is `landlinePhone`). Same strict rule and the same shared
+ * message as `whatsapp`; `''` stays valid so the owner can clear it.
+ */
+const landlinePhoneField = z
+    .union([
+        z.literal(''),
+        phoneNumberSchema('zodError.common.contact.phone.argentina').refine(isStrictEditorPhone, {
+            message: 'zodError.common.contact.phone.argentina'
+        })
+    ])
+    .optional();
+
+/**
  * Fields taken verbatim from the real HTTP schema — the exact one
  * `PATCH /api/v1/protected/accommodations/:id` validates against — so
  * email/URL/social validation matches the server 1:1.
@@ -246,6 +260,7 @@ export const AccommodationPoliciesSchema = z.object({
 export const AccommodationContactSchema = z.object({
     phone: phoneField,
     whatsapp: whatsappField,
+    landlinePhone: landlinePhoneField,
     email: emailField,
     website: inherited.website,
     facebook: inherited.facebook,

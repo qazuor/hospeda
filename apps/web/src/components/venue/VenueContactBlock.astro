@@ -4,12 +4,12 @@
  * @description Social networks + menu URL block for a venue listing
  * (SPEC-239 T-054).
  *
- * IMPORTANT: The public VenuePublicSchema does NOT expose phone or email
- * fields (contactInfo is not part of the public schema). Only `socialNetworks`
- * and `menuUrl` are available publicly and rendered here. Venue has no
- * public phone/WhatsApp channel of any kind — `whatsapp` was removed from
- * `VenueSocialNetworks` (HOS-1076) because it was never real. See
- * HOS-1088 for the open decision on whether venue ever gets one.
+ * HOS-2042: the public VenuePublicSchema now exposes a NARROWED `contactInfo`
+ * (business channels only: mobile phone, optional landline, email, website),
+ * mirroring the experience contact block. `homePhone`, personal fields and
+ * `whatsapp` are never published. `whatsapp` was removed from
+ * `VenueSocialNetworks` (HOS-1076) because it was never real, and it must not
+ * come back here: the number is gated per viewer on a separate endpoint.
  *
  * The root `<section>` below carries a stable `id` (HOS-1055): the "accepts
  * events" CTA on the detail page is an in-page anchor to THIS block rather
@@ -17,18 +17,21 @@
  * to pick — see `VenueEventsCta.astro`'s header.
  */
 
-import type { VenueSocialNetworks } from '@/data/types';
+import { EmailIcon, GlobeIcon, PhoneIcon } from '@repo/icons';
+import type { VenueContactInfo, VenueSocialNetworks } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { hasVenuePublicContact, VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
 
 interface Props {
+    readonly contactInfo?: VenueContactInfo | null;
     readonly socialNetworks: VenueSocialNetworks | null;
     readonly menuUrl?: string | null;
     readonly locale: SupportedLocale;
 }
 
-const { socialNetworks, menuUrl, locale } = Astro.props;
+const { contactInfo, socialNetworks, menuUrl, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 // Both the menu link and the social profiles are authored by the listing
@@ -42,10 +45,50 @@ const hasSocial =
     socialNetworks &&
     Object.values(socialNetworks).some((v) => Boolean(resolveSafeExternalUrl(v)));
 
-if (!hasSocial && !menuHref) {
+// The decision is shared with the page's section gate and the events CTA
+// (`@/lib/venue-contact`): they must all agree on whether this block exists.
+if (!hasVenuePublicContact({ contactInfo, socialNetworks, menuUrl })) {
     // Nothing to render — exit early
     return;
 }
+
+/**
+ * Normalizes a stored value to a non-empty trimmed string, or `undefined`.
+ * `contact_info` is an unbounded JSONB blob, so a key can hold `null`, `''` or
+ * whitespace.
+ */
+const clean = (value: string | null | undefined): string | undefined => {
+    if (typeof value !== 'string') return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+};
+
+/** `tel:` hrefs carry digits and `+` only; the displayed text keeps its spaces. */
+const toTelHref = (phone: string): string => `tel:${phone.replace(/[^\d+]/g, '')}`;
+
+const mobilePhone = clean(contactInfo?.mobilePhone);
+const landlinePhone = clean(contactInfo?.workPhone);
+const workEmail = clean(contactInfo?.workEmail);
+// Owner-authored URL: `z.string().url()` accepts `javascript:`, so this
+// allow-list is what keeps a payload out of the href (HOS-592 / F-02).
+const websiteHref = resolveSafeExternalUrl(contactInfo?.website ?? undefined);
+
+// The mobile phone is the main one and goes first; the landline follows it.
+const phones = [
+    {
+        value: mobilePhone,
+        ariaLabel: t('venue.detail.contactPhoneAriaLabel', 'Llamar al comercio')
+    },
+    {
+        value: landlinePhone,
+        ariaLabel: t(
+            'venue.detail.contactLandlineAriaLabel',
+            'Llamar al teléfono fijo del comercio'
+        )
+    }
+].filter((entry): entry is { value: string; ariaLabel: string } => entry.value !== undefined);
+const hasChannels = phones.length > 0 || Boolean(workEmail) || Boolean(websiteHref);
+const contactTitle = t('venue.detail.contactTitle', 'Contacto');
 
 interface SocialLink {
     readonly key: keyof VenueSocialNetworks;
@@ -71,7 +114,49 @@ const menuLabel = t('venue.detail.menu', 'Ver menú');
 const socialLabel = t('venue.detail.social', 'Redes sociales');
 ---
 
-<section class="venue-contact" id="venue-contact">
+<section class="venue-contact" id={VENUE_CONTACT_ANCHOR_ID}>
+    {hasChannels && (
+        <div class="venue-contact__channels-block">
+            <h3 class="venue-contact__social-title">{contactTitle}</h3>
+            <div class="venue-contact__channels">
+                {phones.map(({ value, ariaLabel }) => (
+                    <a href={toTelHref(value)} class="venue-contact__link" aria-label={ariaLabel}>
+                        <PhoneIcon size={16} aria-hidden="true" />
+                        <span>{value}</span>
+                    </a>
+                ))}
+                {workEmail && (
+                    <a
+                        href={`mailto:${workEmail}`}
+                        class="venue-contact__link"
+                        aria-label={t(
+                            'venue.detail.contactEmailAriaLabel',
+                            'Enviar email al comercio'
+                        )}
+                    >
+                        <EmailIcon size={16} aria-hidden="true" />
+                        <span>{workEmail}</span>
+                    </a>
+                )}
+                {websiteHref && (
+                    <a
+                        href={websiteHref}
+                        class="venue-contact__link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={t(
+                            'venue.detail.contactWebsiteAriaLabel',
+                            'Visitar el sitio web del comercio'
+                        )}
+                    >
+                        <GlobeIcon size={16} aria-hidden="true" />
+                        <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
+                    </a>
+                )}
+            </div>
+        </div>
+    )}
+
     {menuHref && (
         <div class="venue-contact__menu">
             <a
@@ -142,6 +227,32 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
     }
 
     .venue-contact__menu-btn:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    /* Business channels (HOS-2042) */
+    .venue-contact__channels {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .venue-contact__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        text-decoration: none;
+    }
+
+    .venue-contact__link:hover {
+        color: var(--brand-primary);
+    }
+
+    .venue-contact__link:focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
     }

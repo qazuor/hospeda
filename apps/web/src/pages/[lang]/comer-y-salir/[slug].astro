@@ -28,6 +28,9 @@ import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
+import VenueAddress from '@/components/venue/VenueAddress.astro';
+import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
+import { hasVenuePublicContact } from '@/lib/venue-contact';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
 // `features` catalog as accommodations, so it shares the i18n namespace
 // (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
@@ -216,22 +219,18 @@ const descriptionText = renderPlain({ raw: venue.description });
 // href-sanitization guard (HOS-592/F-02): there is nothing external to
 // sanitize.
 //
-// `hasVenueContact` mirrors the exact condition `VenueContactBlock`
-// uses to decide whether it renders anything at all (`hasSocial || menuHref`)
-// — duplicated rather than imported so this file never has to trust that the
-// component's internal gate stayed in sync silently; if that condition ever
-// changes, this one has to change with it on purpose. Without it, the CTA
+// `hasVenueContact` is the SAME predicate `VenueContactBlock` uses to decide
+// whether it renders anything at all (`hasVenuePublicContact`, shared through
+// `@/lib/venue-contact` since HOS-2042 added the business channels). Without it, the CTA
 // could point at an anchor with nothing behind it, which is worse than no CTA
 // (same principle as HOS-363/HOS-924: never promise a channel that isn't
 // there).
 const acceptsEvents = venue.policies?.eventsAllowed === true;
-const hasVenueContact =
-    Boolean(resolveSafeExternalUrl(venue.menuUrl)) ||
-    (venue.socialNetworks
-        ? Object.values(venue.socialNetworks).some((value) =>
-              Boolean(resolveSafeExternalUrl(value))
-          )
-        : false);
+const hasVenueContact = hasVenuePublicContact({
+    contactInfo: venue.contactInfo,
+    socialNetworks: venue.socialNetworks,
+    menuUrl: venue.menuUrl
+});
 const showEventsCta = acceptsEvents && hasVenueContact;
 // The events rule is left out of the house-rules list ONLY when the dedicated
 // CTA renders in its place — otherwise both would say "accepts events" two
@@ -272,7 +271,7 @@ interface VenueDetailBlock {
 
 const hasOpeningHours =
     venue.openingHours !== null && Object.keys(venue.openingHours).length > 0;
-const hasContactBlock = Boolean(venue.menuUrl || venue.socialNetworks);
+const hasContactBlock = hasVenueContact;
 
 const venueDetailSectionBlocks: Readonly<
     Record<VenueDetailBodySectionId, readonly VenueDetailBlock[]>
@@ -287,6 +286,14 @@ const venueDetailSectionBlocks: Readonly<
             }
         }
     ],
+    location: venue.location
+        ? [
+              {
+                  Component: VenueAddress,
+                  props: { location: venue.location, cityName: venue.destinationName, locale }
+              }
+          ]
+        : [],
     openingHours: hasOpeningHours
         ? [
               {
@@ -316,6 +323,7 @@ const venueDetailSectionBlocks: Readonly<
               {
                   Component: VenueContactBlock,
                   props: {
+                      contactInfo: venue.contactInfo,
                       menuUrl: venue.menuUrl,
                       socialNetworks: venue.socialNetworks,
                       locale
@@ -353,6 +361,11 @@ const venueDetailSectionBlocks: Readonly<
 // carry it; `petsAllowed` is not (schema.org scopes it to lodging), so it is
 // deliberately left out of the venue object.
 const jsonLdPolicyData = buildListingPolicyStructuredData({ policies: venue.policies ?? {}, t });
+
+const jsonLdPlace = buildVenueJsonLdPlace({
+    location: venue.location,
+    locality: venue.destinationName
+});
 
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
@@ -395,6 +408,8 @@ const breadcrumbItems = [
         image={venue.featuredImage.url}
         priceRange={jsonLdPriceRange}
         paymentAccepted={jsonLdPolicyData.paymentAccepted}
+        address={jsonLdPlace.address}
+        geo={jsonLdPlace.geo}
         aggregateRating={venue.averageRating > 0 ? {
             ratingValue: venue.averageRating,
             reviewCount: venue.reviewsCount,

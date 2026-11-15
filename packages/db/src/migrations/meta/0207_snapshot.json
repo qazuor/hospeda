@@ -1,6 +1,6 @@
 {
-  "id": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
-  "prevId": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "id": "6ae68212-c294-4af8-8bbd-a460e26c7731",
+  "prevId": "823b5c3f-64dd-4942-962e-6db72212b5d8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -289,6 +289,36 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "location_key": {
+          "name": "location_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_by": {
+          "name": "location_exception_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_reason": {
+          "name": "location_exception_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_at": {
+          "name": "location_exception_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_key": {
+          "name": "location_exception_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -453,6 +483,44 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "accommodations_locationKey_idx": {
+          "name": "accommodations_locationKey_idx",
+          "columns": [
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"accommodations\".\"location_key\" IS NOT NULL AND \"accommodations\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_ownerId_locationKey_published_uniq": {
+          "name": "accommodations_ownerId_locationKey_published_uniq",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"accommodations\".\"publication_status\" = 'PUBLISHED' AND \"accommodations\".\"deleted_at\" IS NULL AND \"accommodations\".\"location_key\" IS NOT NULL AND (\"accommodations\".\"location_exception_at\" IS NULL OR \"accommodations\".\"location_exception_key\" IS DISTINCT FROM \"accommodations\".\"location_key\")",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -527,6 +595,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "deleted_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "accommodations_location_exception_by_users_id_fk": {
+          "name": "accommodations_location_exception_by_users_id_fk",
+          "tableFrom": "accommodations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "location_exception_by"
           ],
           "columnsTo": [
             "id"
@@ -8223,7 +8304,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'partner_application.approved', 'partner_application.rejected', 'partner.claimed', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -23527,12 +23608,6 @@
           "type": "boolean",
           "primaryKey": false,
           "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {},
@@ -25448,6 +25523,42 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_key": {
+          "name": "location_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_by": {
+          "name": "location_exception_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_reason": {
+          "name": "location_exception_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_at": {
+          "name": "location_exception_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_key": {
+          "name": "location_exception_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -25597,6 +25708,44 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "venues_locationKey_idx": {
+          "name": "venues_locationKey_idx",
+          "columns": [
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"venues\".\"location_key\" IS NOT NULL AND \"venues\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "venues_ownerId_locationKey_published_uniq": {
+          "name": "venues_ownerId_locationKey_published_uniq",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"venues\".\"publication_status\" = 'PUBLISHED' AND \"venues\".\"deleted_at\" IS NULL AND \"venues\".\"location_key\" IS NOT NULL AND (\"venues\".\"location_exception_at\" IS NULL OR \"venues\".\"location_exception_key\" IS DISTINCT FROM \"venues\".\"location_key\")",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -25658,6 +25807,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "deleted_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "venues_location_exception_by_users_id_fk": {
+          "name": "venues_location_exception_by_users_id_fk",
+          "tableFrom": "venues",
+          "tableTo": "users",
+          "columnsFrom": [
+            "location_exception_by"
           ],
           "columnsTo": [
             "id"
@@ -33805,6 +33967,7 @@
         "billing.settings.write",
         "listing.foreignContent.edit",
         "listing.moderate",
+        "listing.locationException.manage",
         "listing.purgeOnRequest",
         "user.closeOnRequest",
         "billing.subscription.inspect",
@@ -33812,7 +33975,6 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
-        "billing.refund",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",

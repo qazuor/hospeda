@@ -47,6 +47,12 @@
         "featured": "Destacado"
     },
     "detail": {
+        "address": {
+            "title": "Dónde encontrarnos",
+            "floor": "piso",
+            "apartment": "depto.",
+            "viewOnMap": "Ver en el mapa"
+        },
         "openingHours": {
             "title": "Horarios de atención",
             "closed": "Cerrado",
@@ -61,6 +67,11 @@
             "wednesday": "Miércoles"
         },
         "menu": "Ver menú",
+        "contactTitle": "Contacto",
+        "contactPhoneAriaLabel": "Llamar al comercio",
+        "contactLandlineAriaLabel": "Llamar al teléfono fijo del comercio",
+        "contactEmailAriaLabel": "Enviar email al comercio",
+        "contactWebsiteAriaLabel": "Visitar el sitio web del comercio",
         "menuCarta": {
             "title": "Carta",
             "attachmentImage": "Carta en imagen",

@@ -51,6 +51,7 @@ const read = (relativePath: string): string =>
 const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EVENTS_CTA = read('components/venue/VenueEventsCta.astro');
 const CONTACT_BLOCK = read('components/venue/VenueContactBlock.astro');
+const VENUE_CONTACT_SRC = read('lib/venue-contact.ts');
 
 describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     it('imports the dedicated CTA component', () => {
@@ -64,7 +65,12 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         // `contactInfo` is not part of VenuePublicSchema (see
         // VenueContactBlock's header) — reaching for it would repeat the
         // HOS-363/HOS-924 bug.
-        expect(VENUE_PAGE).not.toContain('venue.contactInfo');
+        // HOS-2042 changed that: the public schema now exposes a NARROWED
+        // `contactInfo` (business channels only), which the page forwards to the
+        // contact block and to the shared predicate. It still never reads a
+        // WhatsApp or personal key off it.
+        expect(VENUE_PAGE).not.toContain('contactInfo.whatsapp');
+        expect(VENUE_PAGE).not.toContain('homePhone');
     });
 
     it('requires BOTH policies.eventsAllowed and an actual contact channel before showing the CTA', () => {
@@ -76,7 +82,10 @@ describe('comer-y-salir/[slug].astro — accepts-events CTA (HOS-1055)', () => {
         // Mirrors VenueContactBlock's own render gate, duplicated on
         // purpose rather than imported (see the frontmatter comment) — a CTA
         // anchored to an empty contact block would be worse than no CTA.
-        expect(VENUE_PAGE).toContain('resolveSafeExternalUrl(venue.menuUrl)');
+        // HOS-2042: the predicate is shared through `@/lib/venue-contact`, so the
+        // page, the block and the CTA cannot disagree about whether it exists.
+        expect(VENUE_PAGE).toContain('hasVenuePublicContact({');
+        expect(VENUE_PAGE).toContain('menuUrl: venue.menuUrl');
         expect(VENUE_PAGE).toContain('const showEventsCta = acceptsEvents && hasVenueContact;');
     });
 
@@ -133,6 +142,9 @@ describe('VenueEventsCta.astro (HOS-1055)', () => {
 
 describe('VenueContactBlock.astro — the CTA anchor target (HOS-1055)', () => {
     it('carries the stable id the events CTA anchors into', () => {
-        expect(CONTACT_BLOCK).toContain('id="venue-contact"');
+        // The id comes from the shared constant (HOS-2042) so the block, the page
+        // gate and the CTA anchor are written from one place.
+        expect(CONTACT_BLOCK).toContain('id={VENUE_CONTACT_ANCHOR_ID}');
+        expect(VENUE_CONTACT_SRC).toContain("VENUE_CONTACT_ANCHOR_ID = 'venue-contact'");
     });
 });

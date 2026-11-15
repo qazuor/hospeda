@@ -9,6 +9,7 @@ export * from './calendar-date';
 export * from './currency';
 export * from './date';
 export * from './local-day';
+export * from './location-key';
 export * from './markdown-helpers';
 export * from './object';
 export * from './sentry';

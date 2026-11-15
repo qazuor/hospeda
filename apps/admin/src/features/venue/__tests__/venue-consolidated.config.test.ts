@@ -96,6 +96,25 @@ describe('createVenueConsolidatedConfig', () => {
         }
     });
 
+    it('exposes the postal address in every mode with the accommodation bounds (HOS-2189)', () => {
+        const config = createVenueConsolidatedConfig(t);
+        const section = config.sections.find((s) => s.id === 'venue-location');
+        expect(section).toBeDefined();
+        expect(section?.modes).toEqual(['view', 'edit', 'create']);
+        expect(section?.fields.map((field) => field.id)).toEqual([
+            'location.street',
+            'location.number',
+            'location.floor',
+            'location.apartment',
+            'location.coordinates'
+        ]);
+        const street = section?.fields.find((field) => field.id === 'location.street');
+        expect(street?.typeConfig).toMatchObject({ minLength: 2, maxLength: 50 });
+        for (const field of section?.fields ?? []) {
+            expect(field.required).toBeFalsy();
+        }
+    });
+
     it('should include metadata with entityName and entityNamePlural', () => {
         const config = createVenueConsolidatedConfig(t);
         expect(config.metadata?.entityName).toBeTruthy();

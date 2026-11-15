@@ -2,6 +2,14 @@
     "id": "006-venue-uruguay-bar-el-rinconcito",
     "ownerId": "043-user-venue-owner-valentina",
     "destinationId": "011-destination-concepcion-del-uruguay",
+    "location": {
+        "street": "Calle Galarza",
+        "number": "1480",
+        "coordinates": {
+            "lat": "-32.4838",
+            "long": "-58.2331"
+        }
+    },
     "slug": "bar-el-rinconcito",
     "name": "Bar El Rinconcito",
     "summary": "Bar de barrio con ambiente bohemio, vinos naturales y picadas gourmet en Concepción del Uruguay.",

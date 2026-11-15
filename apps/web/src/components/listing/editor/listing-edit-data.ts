@@ -23,7 +23,7 @@ import type { ListingI18nValues } from '../ListingTranslationPanel.client';
  * the editor claims to render (HOS-385): the schema's `contactInfo` block is a
  * whole object, and only these members have a control to focus.
  */
-export const CONTACT_KEYS = ['mobilePhone', 'workEmail'] as const;
+export const CONTACT_KEYS = ['mobilePhone', 'workPhone', 'workEmail'] as const;
 
 /** Subset of the contact JSONB block the owner edits in this surface. */
 export type ContactValues = Record<(typeof CONTACT_KEYS)[number], string>;
@@ -46,6 +46,26 @@ export const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
     'youtube',
     'linkedIn'
 ];
+
+/**
+ * The venue's structured postal address as the form holds it (HOS-2189).
+ *
+ * Every member is a string, `''` meaning "not informed": the PATCH sends `''`
+ * to clear a member (the API merges `location` per key and the shared postal
+ * schema admits `''` for exactly that). Coordinates are strings too because
+ * that is how the API stores and validates them (`CoordinatesSchema`).
+ */
+export interface LocationValues {
+    street: string;
+    number: string;
+    floor: string;
+    apartment: string;
+    lat: string;
+    long: string;
+}
+
+/** The address members the owner edits, in render order. */
+export const LOCATION_ADDRESS_KEYS = ['street', 'number', 'floor', 'apartment'] as const;
 
 /**
  * All owner-editable form state, held as ONE object (HOS-258 PR 1).
@@ -74,6 +94,8 @@ export interface ListingEditData {
     readonly summary: string;
     readonly richDescription: string;
     readonly contact: ContactValues;
+    /** Venue postal address (HOS-2189); empty strings for a listing without one. */
+    readonly location: LocationValues;
     readonly social: SocialValues;
     readonly openingHours: OpeningHours | null;
     readonly priceRange: string;

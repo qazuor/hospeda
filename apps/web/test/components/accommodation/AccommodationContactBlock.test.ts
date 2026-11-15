@@ -31,9 +31,9 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
         expect(src).toContain('return;');
     });
 
-    it('derives hasContact from phone/email/website only — never from whatsapp', () => {
+    it('derives hasContact from phone/landline/email/website only — never from whatsapp', () => {
         expect(src).toContain(
-            'contactInfo && (contactInfo.phone || contactInfo.email || websiteHref)'
+            'contactInfo && (contactInfo.phone || contactInfo.landlinePhone || contactInfo.email || websiteHref)'
         );
         // Defense in depth: the component's own logic must never reference a
         // whatsapp field at all, even though the prop type doesn't carry one.

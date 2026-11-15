@@ -33,6 +33,7 @@ import { LISTING_SECTIONS, type ListingSectionId } from '@repo/schemas';
  */
 export const VENUE_DETAIL_SECTION_BODY = {
     basicInfo: true,
+    location: true,
     openingHours: true,
     price: false,
     amenities: true,

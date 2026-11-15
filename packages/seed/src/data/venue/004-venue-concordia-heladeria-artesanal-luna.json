@@ -2,6 +2,14 @@
     "id": "004-venue-concordia-heladeria-artesanal-luna",
     "ownerId": "042-user-venue-owner-rodrigo",
     "destinationId": "003-destination-concordia",
+    "location": {
+        "street": "Calle Pellegrini",
+        "number": "630",
+        "coordinates": {
+            "lat": "-31.3929",
+            "long": "-58.0209"
+        }
+    },
     "slug": "heladeria-artesanal-luna",
     "name": "Heladería Artesanal Luna",
     "summary": "Helados artesanales con recetas italianas y frutas frescas de temporada de Concordia.",

@@ -7,6 +7,7 @@ import {
     ListingFeaturePublicSchema
 } from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
+import { PostalAddressReadSchema } from '../../common/postal-address.schema.js';
 import { AmenityRelationAttributesSchema } from '../amenity/amenity.schema.js';
 import { VenueDailySpecialPublicSchema } from './subtypes/venue.daily-special.schema.js';
 import { VenueEventPublicSchema } from './subtypes/venue.event.schema.js';
@@ -27,12 +28,34 @@ import { VenueSchema } from './venue.schema.js';
 // ============================================================================
 
 /**
+ * PUBLIC contactInfo shape for a venue (HOS-2042).
+ *
+ * Mirrors `ExperiencePublicContactInfoSchema`: a deliberately NARROW
+ * allow-list of the business channels (`workEmail`, `workPhone` (the
+ * landline), `mobilePhone`, `website`). Zod object schemas strip unknown
+ * keys, so `homePhone`, `personalEmail`, `whatsapp` and the preference keys
+ * never leave the API, and the shape stays fail-closed if `contact_info`
+ * grows a key. `whatsapp` is excluded for the same viewer-gating reason as on
+ * the other verticals (HOS-19).
+ *
+ * Plain `.nullish()` strings with no format assertion: read is a superset of
+ * write (HOS-190), so a legacy phone must never 500 a public page.
+ */
+export const VenuePublicContactInfoSchema = z.object({
+    workEmail: z.string().nullish(),
+    workPhone: z.string().nullish(),
+    mobilePhone: z.string().nullish(),
+    website: z.string().nullish()
+});
+
+/**
  * PUBLIC ACCESS SCHEMA
  *
  * Contains only the minimum data safe to expose to unauthenticated users.
  * Used for public listing and detail pages.
  *
- * - Omits: adminInfo, ownerId, contactInfo (direct), audit internals.
+ * - Omits: adminInfo, ownerId, audit internals. `contactInfo` is re-added
+ *   through `.extend()` as the narrowed {@link VenuePublicContactInfoSchema}.
  * - The `richDescription` field is re-added via `.extend()` because it follows
  *   the same entitlement-by-omission gate as in the accommodation schema:
  *   the service strips it server-side for non-entitled owners before
@@ -74,6 +97,10 @@ export const VenuePublicSchema = VenueSchema.pick({
     // Destination reference
     destinationId: true,
 
+    // Structured postal address (HOS-2189). A venue is a business open to the
+    // public, so unlike an accommodation the full address is public data.
+    location: true,
+
     // Media (public safe)
     media: true,
     videos: true,
@@ -112,12 +139,20 @@ export const VenuePublicSchema = VenueSchema.pick({
     policies: true
 }).extend({
     /**
+     * Narrowed business contact channels (HOS-2042). Nullish: a venue that
+     * never filled the contact block, or a payload cached before this field
+     * existed, simply has none.
+     */
+    contactInfo: VenuePublicContactInfoSchema.nullish(),
+    /**
      * Public featured state. Not a column: since HOS-1419 dropped the
      * admin-curated `is_featured` it is derived in the public routes from
      * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
      * exposed here. Defaults to `false` for a read that did not derive it.
      */
     isFeatured: z.boolean().default(false),
+    /** HOS-2189 read overlay: stored address strings may predate today's write bounds. */
+    location: PostalAddressReadSchema.nullish(),
     /**
      * Server-resolved fact for the `nightInfo` heading (DEC-FAC-050, HOS-1849):
      * true when more than one of the listing's business lines owns a section
@@ -260,6 +295,20 @@ export const VenuePublicSchema = VenueSchema.pick({
     venueEvents: z.array(VenueEventPublicSchema).optional()
 });
 
+/**
+ * PUBLIC LIST-ITEM schema for a venue (HOS-2042).
+ *
+ * The detail projection ({@link VenuePublicSchema}) publishes the narrowed
+ * business `contactInfo`; list responses (`GET /public/venues` and
+ * `GET /public/venues/destination/:id`) must NOT, per owner decision: contact
+ * channels are a detail-page concern and a list would bulk-expose them. Built
+ * by omission so every other public field stays identical between the two.
+ */
+export const VenuePublicListItemSchema = VenuePublicSchema.omit({ contactInfo: true });
+
+/** TypeScript type for {@link VenuePublicListItemSchema}. */
+export type VenuePublicListItem = z.infer<typeof VenuePublicListItemSchema>;
+
 /** TypeScript type for {@link VenuePublicSchema}. */
 export type VenuePublic = z.infer<typeof VenuePublicSchema>;
 
@@ -293,6 +342,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
     // pick — public reads get it derived under `isFeatured` and nothing else.
     featuredByEntitlement: true,
     destinationId: true,
+    // HOS-2189: structured postal address, round-tripped to the owner editor.
+    location: true,
     media: true,
     videos: true,
     averageRating: true,
@@ -350,6 +401,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
      * mobilePhone) must never 500 the response. Format stays strict on write.
      */
     contactInfo: ContactInfoReadSchema.nullish(),
+    /** HOS-2189 read overlay: stored address strings may predate today's write bounds. */
+    location: PostalAddressReadSchema.nullish(),
     /** Override picked `media` to exclude server-managed internal fields. */
     media: BaseMediaObjectSchema.nullish(),
     /** Rich-text description (protected visibility follows the same entitlement gate). */
@@ -386,7 +439,13 @@ export const VenueProtectedSchema = VenueSchema.pick({
             }),
             { error: 'zodError.venue.businessLines.invalidType' }
         )
-        .optional()
+        .optional(),
+    /**
+     * HOS-1810 — `true` when another PUBLISHED listing of the SAME owner occupies
+     * this listing's address (the draft warning). A flag only: it never carries
+     * the other listing's id, and a duplicate of another owner never sets it.
+     */
+    locationDuplicate: z.boolean().optional()
 });
 
 /** TypeScript type for {@link VenueProtectedSchema}. */
@@ -417,6 +476,8 @@ export const VenueAdminSchema = VenueSchema.extend({
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish(),
+    /** HOS-2189 read overlay: stored address strings may predate today's write bounds. */
+    location: PostalAddressReadSchema.nullish(),
     /**
      * HOS-1787 leaf 7.1 — the business lines the venue is assigned to.
      *

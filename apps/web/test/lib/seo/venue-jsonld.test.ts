@@ -140,3 +140,28 @@ describe('buildVenueStructuredData (TEST:6.1:2 / AC:6:5)', () => {
         expect('hasMenu' in data).toBe(false);
     });
 });
+
+describe('buildVenueStructuredData — address and geo (HOS-2189)', () => {
+    const base = {
+        name: 'La Parrilla',
+        description: 'd',
+        url: `${SITE_ORIGIN}/es/comer-y-salir/la-parrilla/`,
+        type: 'RESTAURANT'
+    };
+
+    it('carries address and geo when supplied', () => {
+        const data = buildVenueStructuredData({
+            ...base,
+            address: { '@type': 'PostalAddress', streetAddress: 'Mitre 10' },
+            geo: { '@type': 'GeoCoordinates', latitude: -32.4, longitude: -58.2 }
+        });
+        expect(data.address).toEqual({ '@type': 'PostalAddress', streetAddress: 'Mitre 10' });
+        expect(data.geo).toEqual({ '@type': 'GeoCoordinates', latitude: -32.4, longitude: -58.2 });
+    });
+
+    it('omits both keys when absent', () => {
+        const data = buildVenueStructuredData(base);
+        expect('address' in data).toBe(false);
+        expect('geo' in data).toBe(false);
+    });
+});

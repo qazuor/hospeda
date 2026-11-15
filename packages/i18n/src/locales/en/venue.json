@@ -47,6 +47,12 @@
         "featured": "Featured"
     },
     "detail": {
+        "address": {
+            "title": "Find us",
+            "floor": "floor",
+            "apartment": "apt.",
+            "viewOnMap": "View on map"
+        },
         "openingHours": {
             "title": "Opening hours",
             "closed": "Closed",
@@ -61,6 +67,11 @@
             "wednesday": "Wednesday"
         },
         "menu": "View menu",
+        "contactTitle": "Contact",
+        "contactPhoneAriaLabel": "Call the business",
+        "contactLandlineAriaLabel": "Call the business landline",
+        "contactEmailAriaLabel": "Email the business",
+        "contactWebsiteAriaLabel": "Visit the business's website",
         "menuCarta": {
             "title": "Menu",
             "attachmentImage": "Menu photo",

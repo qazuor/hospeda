@@ -61,6 +61,7 @@ export * from './listing-policies.schema.js';
 export * from './listing-purge-on-request.schema.js';
 export * from './listing-support-edit.schema.js';
 export * from './location.schema.js';
+export * from './location-rule.schema.js';
 export * from './media.schema.js';
 export * from './media-upload.schema.js';
 export * from './moderation.schema.js';
@@ -75,6 +76,7 @@ export {
 } from './pagination.schema.js';
 export * from './params.schema.js';
 export * from './password.schema.js';
+export * from './postal-address.schema.js';
 export * from './price.schema.js';
 export { queryDateParam, queryNumberParam } from './query-helpers.js';
 export * from './relations.schema.js';

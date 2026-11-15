@@ -1,7 +1,8 @@
 /**
  * @file venue-public-reads-gate-menu-file.guard.test.ts
  * @description HOS-1792. Every public venue route that serializes a venue
- * listing (`VenuePublicSchema`) can carry `menuFileUrl`/`menuFileKind`, which
+ * listing (`VenuePublicSchema`, or `VenuePublicListItemSchema` for the list routes,
+ * HOS-2042) can carry `menuFileUrl`/`menuFileKind`, which
  * are plan-gated. It must therefore pass through the section-aware public
  * listing projector, which resolves the owner's menu state once per page.
  *
@@ -15,12 +16,14 @@ import { describe, expect, it } from 'vitest';
 
 const DIR = join(__dirname, '../../src/routes/venue/public');
 const GATE = /\bprojectPublicListings\b/;
+/** Anchored on the schema identifier, so a rename of either schema makes the guard go vacuous loudly. */
+const SERIALIZES_VENUE = /responseSchema:\s*VenuePublic(?:ListItem)?Schema\b/;
 const PUBLIC_READERS = ['getById.ts', 'getBySlug.ts', 'list.ts', 'getByDestination.ts'];
 
 describe('public venue reads gate the menu file (HOS-1792)', () => {
     const files = readdirSync(DIR).filter((f) => f.endsWith('.ts'));
     const serializers = files.filter((f) =>
-        readFileSync(join(DIR, f), 'utf8').includes('responseSchema: VenuePublicSchema')
+        SERIALIZES_VENUE.test(readFileSync(join(DIR, f), 'utf8'))
     );
 
     it('finds the venue-listing routes (guard is not vacuous)', () => {

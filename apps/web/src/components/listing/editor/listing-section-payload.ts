@@ -39,6 +39,7 @@ import { LISTING_SECTIONS } from '@repo/schemas';
 
 export type ListingEditorFormSectionId =
     | 'basicInfo'
+    | 'location'
     | 'meetingPoint'
     | 'practicalInfo'
     | 'openingHours'
@@ -58,6 +59,7 @@ export type ListingEditorFormSectionId =
  */
 const FORM_SECTION_IDS: readonly ListingEditorFormSectionId[] = [
     'basicInfo',
+    'location',
     'meetingPoint',
     'practicalInfo',
     'openingHours',
