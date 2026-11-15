@@ -28,6 +28,8 @@
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.41",
+        "@better-auth/cimd": "1.7.25",
+        "@better-auth/oauth-provider": "1.7.25",
         "@hono/node-server": "^2.1.0",
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.5.2",
