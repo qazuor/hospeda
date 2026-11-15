@@ -5230,5 +5230,12 @@
             "required": "Escreva o motivo do cancelamento da espera.",
             "max": "O motivo não pode exceder 2000 caracteres."
         }
+    },
+    "locationException": {
+        "reason": {
+            "max": "O motivo não pode ultrapassar 500 caracteres",
+            "min": "O motivo deve ter pelo menos 10 caracteres",
+            "required": "O motivo é obrigatório"
+        }
     }
 }

@@ -86,6 +86,7 @@
         "editor": {
             "sectionNav": {
                 "basicInfo": "Información básica",
+                "location": "Ubicación",
                 "contactInfo": "Contacto",
                 "socialNetworks": "Redes sociales",
                 "openingHours": "Horarios",
@@ -106,6 +107,15 @@
             "sections": {
                 "type": "Categoría",
                 "summary": "Resumen",
+                "location": "Dirección",
+                "locationStreet": "Calle",
+                "locationNumber": "Número",
+                "locationFloor": "Piso (opcional)",
+                "locationApartment": "Departamento o local (opcional)",
+                "locationHint": "La ciudad sale del destino que elegiste en Información básica. Esta dirección se muestra en tu ficha pública.",
+                "locationLat": "Latitud (opcional)",
+                "locationLong": "Longitud (opcional)",
+                "locationCoordsHint": "Si cargás las dos coordenadas, mostramos el local en un mapa. Podés dejarlas vacías.",
                 "openingHours": "Horarios de atención",
                 "openingHoursHint": "Todos los días arrancan en \"Cerrado\". Destildá \"Cerrado\" en un día para cargar sus horarios, y usá \"Copiar a todos los días\" para repetirlos en el resto de la semana.",
                 "openingHoursCopyToAll": "Copiar a todos los días",
@@ -152,6 +162,8 @@
             },
             "contactField": {
                 "mobilePhone": "Teléfono",
+                "landlinePhone": "Teléfono fijo",
+                "publicHint": "Estos datos de contacto se muestran públicamente en tu ficha.",
                 "workEmail": "Email"
             },
             "validation": {
@@ -403,6 +415,10 @@
                 "experience": "Elegir plan de experiencias"
             },
             "missingRequirements": "No se pudo publicar porque faltan datos."
+        },
+        "locationDuplicate": {
+            "warning": "Ya tenés otra ficha publicada en esta dirección. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra. Podés seguir editando este borrador, pero no vas a poder publicarlo.",
+            "blocked": "Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra."
         }
     },
     "notices": {

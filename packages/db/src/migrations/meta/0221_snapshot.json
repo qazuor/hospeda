@@ -1,6 +1,6 @@
 {
-  "id": "46281e4d-a87f-433a-b3c5-ad3dbe08f4bc",
-  "prevId": "30523827-45cf-4167-9739-5660d048eba7",
+  "id": "2ffcaf67-a51d-496a-8c79-8ff6534bc73d",
+  "prevId": "1aebded8-d6f5-462b-80a9-f867e10fe68d",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -289,6 +289,36 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
+        },
+        "location_key": {
+          "name": "location_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_by": {
+          "name": "location_exception_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_reason": {
+          "name": "location_exception_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_at": {
+          "name": "location_exception_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_key": {
+          "name": "location_exception_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -453,6 +483,44 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "accommodations_locationKey_idx": {
+          "name": "accommodations_locationKey_idx",
+          "columns": [
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"accommodations\".\"location_key\" IS NOT NULL AND \"accommodations\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_ownerId_locationKey_published_uniq": {
+          "name": "accommodations_ownerId_locationKey_published_uniq",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"accommodations\".\"publication_status\" = 'PUBLISHED' AND \"accommodations\".\"deleted_at\" IS NULL AND \"accommodations\".\"location_key\" IS NOT NULL AND (\"accommodations\".\"location_exception_at\" IS NULL OR \"accommodations\".\"location_exception_key\" IS DISTINCT FROM \"accommodations\".\"location_key\")",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -527,6 +595,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "deleted_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "accommodations_location_exception_by_users_id_fk": {
+          "name": "accommodations_location_exception_by_users_id_fk",
+          "tableFrom": "accommodations",
+          "tableTo": "users",
+          "columnsFrom": [
+            "location_exception_by"
           ],
           "columnsTo": [
             "id"
@@ -25448,6 +25529,42 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
+        },
+        "location": {
+          "name": "location",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_key": {
+          "name": "location_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_by": {
+          "name": "location_exception_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_reason": {
+          "name": "location_exception_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_at": {
+          "name": "location_exception_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "location_exception_key": {
+          "name": "location_exception_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
@@ -25597,6 +25714,44 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "venues_locationKey_idx": {
+          "name": "venues_locationKey_idx",
+          "columns": [
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"venues\".\"location_key\" IS NOT NULL AND \"venues\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "venues_ownerId_locationKey_published_uniq": {
+          "name": "venues_ownerId_locationKey_published_uniq",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"venues\".\"publication_status\" = 'PUBLISHED' AND \"venues\".\"deleted_at\" IS NULL AND \"venues\".\"location_key\" IS NOT NULL AND (\"venues\".\"location_exception_at\" IS NULL OR \"venues\".\"location_exception_key\" IS DISTINCT FROM \"venues\".\"location_key\")",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -25658,6 +25813,19 @@
           "tableTo": "users",
           "columnsFrom": [
             "deleted_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "venues_location_exception_by_users_id_fk": {
+          "name": "venues_location_exception_by_users_id_fk",
+          "tableFrom": "venues",
+          "tableTo": "users",
+          "columnsFrom": [
+            "location_exception_by"
           ],
           "columnsTo": [
             "id"
@@ -27803,12 +27971,6 @@
           "type": "varchar(32)[]",
           "primaryKey": false,
           "notNull": true
-        },
-        "retired_at": {
-          "name": "retired_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -31826,25 +31988,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "attempt_count": {
-          "name": "attempt_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "last_error_at": {
-          "name": "last_error_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_error": {
-          "name": "last_error",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         }
       },
       "indexes": {
@@ -31918,12 +32061,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "ck_subscription_scheduled_change_attempt_count_nonnegative": {
-          "name": "ck_subscription_scheduled_change_attempt_count_nonnegative",
-          "value": "\"subscription_scheduled_change\".\"attempt_count\" >= 0"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.subscription": {
@@ -33874,6 +34012,7 @@
         "billing.settings.write",
         "listing.foreignContent.edit",
         "listing.moderate",
+        "listing.locationException.manage",
         "listing.purgeOnRequest",
         "user.closeOnRequest",
         "billing.subscription.inspect",
@@ -33890,7 +34029,6 @@
         "billing.managePromoCodes",
         "billing.setCyclePrice",
         "billing.publishAddonVersion",
-        "billing.migratePlan",
         "billing.pauseSubscription",
         "billing.changeSubscriptionPlan",
         "user.update.self",

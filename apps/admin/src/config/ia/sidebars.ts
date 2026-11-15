@@ -802,6 +802,21 @@ const plataformaSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-location-duplicates' },
+        // ── Direcciones repetidas (HOS-1810) ──────────────────────────────
+        {
+            type: 'link',
+            id: 'location-duplicates',
+            label: {
+                es: 'Direcciones repetidas',
+                en: 'Repeated addresses',
+                pt: 'Endereços repetidos'
+            },
+            icon: 'ShieldAlertIcon',
+            route: '/platform/location-duplicates',
+            permissions: ['LISTING_LOCATION_EXCEPTION_MANAGE'],
+            onMissing: 'hide'
+        },
         { type: 'separator', id: 'sep-tags-sistema' },
         // ── Tags del sistema ──────────────────────────────────────────────
         {

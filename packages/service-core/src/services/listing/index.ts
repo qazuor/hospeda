@@ -46,6 +46,14 @@ export {
     type RecordListingBusinessLinesChangeInput,
     recordListingBusinessLinesChange
 } from './listing-business-lines-change';
+export {
+    applyLocationRuleOnUpdate,
+    asDuplicateLocationError,
+    assertNoOwnLocationConflict,
+    type LocationKeySource,
+    type LocationRuleCurrent,
+    resolveLocationKeyPatch
+} from './listing-location-key';
 // NOTE (HOS-166 R-5): `resolveListingCompleteness` and its types moved to
 // `@repo/schemas` (`packages/schemas/src/common/listing-completeness.ts`) —
 // it is a PURE function with no DB/service-core-specific imports, and the web

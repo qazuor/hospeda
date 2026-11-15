@@ -2,6 +2,14 @@
     "id": "002-venue-colon-cafe-del-palacio",
     "ownerId": "041-user-venue-owner-julieta",
     "destinationId": "002-destination-colon",
+    "location": {
+        "street": "Calle Urquiza",
+        "number": "320",
+        "coordinates": {
+            "lat": "-32.2231",
+            "long": "-58.1432"
+        }
+    },
     "slug": "cafe-del-palacio-colon",
     "name": "Café del Palacio",
     "summary": "Café boutique con vista al Palacio San José y los mejores pasteles artesanales de Colón.",

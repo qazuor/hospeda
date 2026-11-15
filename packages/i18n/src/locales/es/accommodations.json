@@ -787,6 +787,7 @@
         "contact": {
             "title": "Contacto",
             "phoneAriaLabel": "Llamar al alojamiento",
+            "landlineAriaLabel": "Llamar al teléfono fijo del alojamiento",
             "emailAriaLabel": "Enviar email al alojamiento",
             "websiteAriaLabel": "Visitar sitio web del alojamiento",
             "facebookAriaLabel": "Facebook del alojamiento",

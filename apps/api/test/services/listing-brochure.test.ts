@@ -120,11 +120,13 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
         });
     }
 
-    it('does not read contactInfo for venue, because the public ficha has none', () => {
-        // The single most tempting field to add to a printed restaurant sheet,
-        // and the one `VenuePublicSchema` deliberately does not pick.
+    it('does not read contactInfo for venue, even though the public ficha now has it (HOS-2042)', () => {
+        // HOS-2042 made the public ficha publish a NARROWED business contact
+        // block, so the brochure MAY follow it. It deliberately does not (yet):
+        // the printed sheet lagging the page is allowed, outrunning it is not,
+        // and adding a channel to the printed sheet is its own decision.
         expect(Object.keys(VenueBrochureSourceSchema.shape)).not.toContain('contactInfo');
-        expect(Object.keys(VenuePublicSchema.shape)).not.toContain('contactInfo');
+        expect(Object.keys(VenuePublicSchema.shape)).toContain('contactInfo');
     });
 
     it('strips a phone number the owner-tier row carried into the venue brochure', () => {

@@ -1938,5 +1938,35 @@
                 "suspendFailedTitle": "No se pudo suspender"
             }
         }
+    },
+    "locationDuplicates": {
+        "title": "Direcciones repetidas",
+        "description": "Fichas publicadas que comparten dirección. Un duplicado entre dueños distintos no bloquea la publicación: se revisa acá. Una excepción habilita a una ficha a compartir dirección (complejo de cabañas, patio gastronómico, restaurante de un hotel).",
+        "verticals": {
+            "accommodations": "Alojamientos",
+            "venues": "Comercios (Comer y salir)"
+        },
+        "columns": {
+            "address": "Dirección normalizada",
+            "listings": "Fichas",
+            "owners": "Dueños"
+        },
+        "sameOwner": "El mismo dueño",
+        "differentOwners": "Dueños distintos",
+        "grantException": "Conceder excepción",
+        "empty": "No hay direcciones repetidas.",
+        "loading": "Cargando...",
+        "loadError": "No se pudo cargar el informe.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "granted": "Excepción concedida.",
+        "grantError": "No se pudo conceder la excepción.",
+        "dialog": {
+            "title": "Conceder excepción de dirección",
+            "description": "La ficha podrá compartir dirección con otras. Queda registrado con tu usuario y la fecha.",
+            "reasonLabel": "Motivo (mínimo 10 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Conceder"
+        }
     }
 }

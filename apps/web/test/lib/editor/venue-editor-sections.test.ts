@@ -57,7 +57,7 @@ describe('buildVenueEditorSections: the vertical split', () => {
         // Asserted as an exact list rather than N `toContain`s so a FOURTH cannot
         // be added without this failing and someone deciding whether an
         // experience should have it.
-        expect(extra).toEqual(['menu', 'dailySpecials', 'venueEvents', 'nightInfo']);
+        expect(extra).toEqual(['location', 'menu', 'dailySpecials', 'venueEvents', 'nightInfo']);
     });
 
     it('should place the venue-only run in order, ending at the FAQ page', () => {

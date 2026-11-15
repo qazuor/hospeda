@@ -79,11 +79,19 @@ export class VenueModel extends BaseModelImpl<Venue> {
      * accept `null` per key for exactly that reason. `socialNetworks: null` (the
      * whole value) still clears the entire column.
      *
+     * `location` (HOS-2189) is merged too, exactly like the accommodation
+     * column: the editor sends a diff, so a PATCH that changed only the number
+     * must not drop the street. A field is cleared with `''`, as there.
+     *
      * `openingHours`, `videos`, `seo`, `rating` and `adminInfo` (also JSONB on
      * this table) are deliberately NOT added here — that is a separate decision
      * left to the table owner.
      */
-    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
+    protected override readonly mergeableJsonbColumns = [
+        'contactInfo',
+        'socialNetworks',
+        'location'
+    ] as const;
 
     protected getTableName(): string {
         return 'venues';
