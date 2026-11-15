@@ -2391,6 +2391,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/sections"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/accommodations/:id/support-edits"
         },
         {

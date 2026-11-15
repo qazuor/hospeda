@@ -25,8 +25,14 @@ import type { AppBindings } from '../../../../src/types';
 const ACCOMMODATION_ID = '33333333-3333-4333-8333-333333333333';
 const GUEST_ID = '00000000-0000-4000-8000-000000000000';
 
-const { mockGetPublicOccupancyForAccommodation } = vi.hoisted(() => ({
-    mockGetPublicOccupancyForAccommodation: vi.fn()
+const { mockGetPublicOccupancyForAccommodation, mockEffectiveSet } = vi.hoisted(() => ({
+    mockGetPublicOccupancyForAccommodation: vi.fn(),
+    mockEffectiveSet: vi.fn()
+}));
+
+// An owner who holds NO keys (so `can_use_calendar` is not granted).
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
 }));
 
 vi.mock('@repo/service-core', async (importActual) => {
@@ -108,6 +114,21 @@ describe('GET /:id/occupancy (public)', () => {
             from: undefined,
             to: undefined
         });
+    });
+
+    it('Q-2 (HOS-1809): still returns occupancy when the owner has no can_use_calendar', async () => {
+        // The `calendar` section governs the owner's writes and editor only. The
+        // public read is NOT projected by it: no entitlement is read, and the
+        // availability of an owner without the calendar stays visible.
+        mockEffectiveSet.mockResolvedValue({ entitlements: { get: () => undefined } });
+        const app = buildApp(publicGetOccupancyRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/occupancy`);
+
+        expect(res.status).toBe(200);
+        expect((await res.json()).data).toEqual({
+            occupancy: [{ date: '2026-07-10', isBlocked: true, source: 'MANUAL' }]
+        });
+        expect(mockEffectiveSet).not.toHaveBeenCalled();
     });
 
     it('forwards a valid from/to range to the service', async () => {
