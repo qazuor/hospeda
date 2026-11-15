@@ -24,7 +24,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '@repo/service-core';
 import { resolvePersonStateStep } from '@repo/verticals';
-import type { z } from 'zod';
+import { z } from 'zod';
 import { isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import type { ToolContext, ToolDefinition, ToolErrorPayload } from './tool-definition';
@@ -163,6 +163,13 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
     }
 }
 
+/**
+ * Spanish issue texts ("Valor inválido: …") for tool input. Passed per parse,
+ * never through `z.config`, so the rest of the API process keeps Zod's
+ * defaults. A message a schema sets itself still wins over this map.
+ */
+const SPANISH_PARSE_PARAMS = { error: z.locales.es().localeError } as const;
+
 /** Arguments for {@link parseToolInput}. RO-RO. */
 export interface ParseToolInputArgs<TSchema extends z.ZodObject> {
     /** The tool. */
@@ -184,7 +191,7 @@ export function parseToolInput<TSchema extends z.ZodObject>({
 }: ParseToolInputArgs<TSchema>):
     | { readonly ok: true; readonly input: z.output<TSchema> }
     | { readonly ok: false; readonly failure: ToolFailure } {
-    const parsed = definition.inputSchema.safeParse(input ?? {});
+    const parsed = definition.inputSchema.safeParse(input ?? {}, SPANISH_PARSE_PARAMS);
     if (parsed.success) {
         return { ok: true, input: parsed.data };
     }

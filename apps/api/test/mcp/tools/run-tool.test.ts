@@ -298,6 +298,28 @@ describe('parseToolInput / runTool', () => {
             expect(parsed.failure.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(parsed.failure.message).toMatch(/^Los datos enviados no son válidos: /);
             expect(parsed.failure.message).toContain('campo «listingId»');
+            expect(parsed.failure.message).not.toMatch(/Invalid|Unrecognized|Required/);
+        }
+    });
+
+    it('reports an invalid uuid and a missing field in Spanish', () => {
+        // Act
+        const invalid = parseToolInput({
+            definition: { inputSchema },
+            input: { listingId: 'nope' }
+        });
+        const missing = parseToolInput({ definition: { inputSchema }, input: {} });
+
+        // Assert
+        for (const parsed of [invalid, missing]) {
+            expect(parsed.ok).toBe(false);
+            if (!parsed.ok) {
+                expect(parsed.failure.message).toContain('campo «listingId»: ');
+                expect(parsed.failure.message).not.toMatch(/Invalid|Required|expected/);
+            }
+        }
+        if (!invalid.ok) {
+            expect(invalid.failure.message).toMatch(/inválid/i);
         }
     });
 
