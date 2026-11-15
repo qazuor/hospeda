@@ -80,6 +80,7 @@ export function PlanEntitlementGate({
         return (
             fallback ?? (
                 <DefaultFallback
+                    entitlementKey={entitlementKey}
                     upgradeUrl={upgradeUrl}
                     t={t}
                 />
@@ -94,6 +95,7 @@ export function PlanEntitlementGate({
     return (
         fallback ?? (
             <DefaultFallback
+                entitlementKey={entitlementKey}
                 upgradeUrl={upgradeUrl}
                 t={t}
             />
@@ -105,17 +107,36 @@ export function PlanEntitlementGate({
 // Internal helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Upgrade-copy key (under `host.properties.editor.entitlement`) per gated
+ * entitlement. Unmapped entitlements get the generic nudge (HOS-1809).
+ */
+const NUDGE_KEY_BY_ENTITLEMENT: Readonly<Record<string, { key: string; fallback: string }>> = {
+    can_use_rich_description: {
+        key: 'richDescriptionNudge',
+        fallback: 'Actualizá tu plan para usar descripciones enriquecidas con formato.'
+    },
+    can_use_calendar: {
+        key: 'calendarNudge',
+        fallback: 'Actualizá tu plan para usar el calendario de disponibilidad.'
+    }
+} as const;
+
+const GENERIC_NUDGE = {
+    key: 'genericNudge',
+    fallback: 'Esta función está disponible en un plan superior.'
+} as const;
+
 interface DefaultFallbackProps {
+    readonly entitlementKey: string;
     readonly upgradeUrl?: string;
     readonly t: (key: string, fallback?: string) => string;
 }
 
-function DefaultFallback({ upgradeUrl, t }: DefaultFallbackProps): React.ReactNode {
+function DefaultFallback({ entitlementKey, upgradeUrl, t }: DefaultFallbackProps): React.ReactNode {
     const title = t('host.properties.editor.entitlement.premiumFeature', 'Función premium');
-    const description = t(
-        'host.properties.editor.entitlement.richDescriptionNudge',
-        'Actualizá tu plan para usar descripciones enriquecidas con formato.'
-    );
+    const nudge = NUDGE_KEY_BY_ENTITLEMENT[entitlementKey] ?? GENERIC_NUDGE;
+    const description = t(`host.properties.editor.entitlement.${nudge.key}`, nudge.fallback);
     const upgradeLinkText = t('host.properties.editor.entitlement.upgradeLink', 'Mejorar plan');
 
     return (
