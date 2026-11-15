@@ -6,14 +6,22 @@ const item = {
     refundAmount: 1200,
     reason: 'REVOCATION',
     requestedAt: '2026-10-19T12:00:00.000Z',
-    payment: { source: 'PAYMENT', id: '9e8d7c6b-5a49-4382-9716-05f4e3d2c1b0' }
+    payment: { source: 'PAYMENT', id: '9e8d7c6b-5a49-4382-9716-05f4e3d2c1b0' },
+    providerRefundWindow: { open: true, closesAt: '2027-04-17T12:00:00.000Z' }
 } as const;
 
 describe('TEST:1711:8 AC:1711:10 SubscriptionOpenRefundsResponseSchema', () => {
     it('TEST:1711:8 AC:1711:10 accepts payment and manual payment requests and an empty list', () => {
         expect(
             SubscriptionOpenRefundsResponseSchema.safeParse({
-                items: [item, { ...item, payment: { ...item.payment, source: 'MANUAL_PAYMENT' } }]
+                items: [
+                    item,
+                    {
+                        ...item,
+                        payment: { ...item.payment, source: 'MANUAL_PAYMENT' },
+                        providerRefundWindow: null
+                    }
+                ]
             }).success
         ).toBe(true);
         expect(SubscriptionOpenRefundsResponseSchema.safeParse({ items: [] }).success).toBe(true);
@@ -24,7 +32,8 @@ describe('TEST:1711:8 AC:1711:10 SubscriptionOpenRefundsResponseSchema', () => {
             { ...item, refundAmount: 0 },
             { ...item, payment: { ...item.payment, source: 'ADDON' } },
             { ...item, requestedAt: 'not-a-date' },
-            { ...item, refundId: 'not-a-uuid' }
+            { ...item, refundId: 'not-a-uuid' },
+            { ...item, providerRefundWindow: { open: true, closesAt: 'invalid' } }
         ]) {
             expect(
                 SubscriptionOpenRefundsResponseSchema.safeParse({ items: [invalid] }).success

@@ -35,7 +35,7 @@ describe('TEST:1741:4 every S2 activation has the shared post-commit step', () =
         ).toHaveLength(callers.length);
         expect(callers.map(({ path }) => path)).toEqual(
             expect.arrayContaining([
-                'notice/process-provider-notice.service.ts',
+                'notice/complement-authorized.ts',
                 'subscription/activate-subscription.service.ts',
                 'subscription/expire-authorization-windows.service.ts'
             ])

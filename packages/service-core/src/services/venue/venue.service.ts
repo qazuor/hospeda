@@ -55,7 +55,8 @@ import {
     type VenueSearch,
     VenueSearchSchema,
     type VenueUpdateInput,
-    VenueUpdateInputSchema
+    VenueUpdateInputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -74,6 +75,11 @@ import { VENUE_ENTITY_NAME } from '../entity-names';
 import { resolveSiteUrlFromTargetUrl } from '../hostTrade/host-trade-qr';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
+import {
+    applyLocationRuleOnUpdate,
+    type LocationRuleCurrent,
+    resolveLocationKeyPatch
+} from '../listing/listing-location-key';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import { assertVenueCreateSectionsPresent } from './venue.create-sections';
 import { attachComposedVenueMedia, attachComposedVenueMediaList } from './venue.media-read';
@@ -475,6 +481,7 @@ export class VenueService extends BaseListingService<
             pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            featuredFirst,
             amenities,
             features,
             businessLine,
@@ -516,7 +523,8 @@ export class VenueService extends BaseListingService<
                 page: ctx?.pagination?.page,
                 pageSize: ctx?.pagination?.pageSize,
                 sortBy: ctx?.pagination?.sortBy,
-                sortOrder: ctx?.pagination?.sortOrder
+                sortOrder: ctx?.pagination?.sortOrder,
+                featuredFirst
             },
             // `undefined` rather than an empty array when no catalog filter is
             // active: the base query builder branches on presence, and handing it
@@ -545,6 +553,7 @@ export class VenueService extends BaseListingService<
             pageSize: _ps,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
+            featuredFirst: _featuredFirst,
             amenities,
             features,
             businessLine,
@@ -680,7 +689,12 @@ export class VenueService extends BaseListingService<
             body: data as Record<string, unknown>,
             now: new Date()
         });
-        return { ...base, ...nightInfo };
+        // HOS-1810: the place key follows `location` + `destinationId`.
+        const locationKey = resolveLocationKeyPatch({
+            payload: data as Record<string, unknown>,
+            current: null
+        });
+        return { ...base, ...nightInfo, ...locationKey } as Partial<Venue>;
     }
 
     /**
@@ -717,7 +731,16 @@ export class VenueService extends BaseListingService<
             current,
             now: new Date()
         });
-        return { ...base, ...nightInfo };
+        // HOS-1810: keep the place key in step and block moving a PUBLISHED
+        // listing onto a place its owner already occupies (409 DUPLICATE_LOCATION).
+        const locationKey = await applyLocationRuleOnUpdate({
+            vertical: VerticalEnum.VENUE,
+            payload: data as Record<string, unknown>,
+            // TYPE-WORKAROUND: the model row type omits the location-rule columns the hook reads.
+            current: current as unknown as LocationRuleCurrent | null,
+            tx: ctx.tx
+        });
+        return { ...base, ...nightInfo, ...locationKey } as Partial<Venue>;
     }
 
     // -----------------------------------------------------------------------

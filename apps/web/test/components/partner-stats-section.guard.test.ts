@@ -44,12 +44,49 @@ const read = (file: string): string => readFileSync(file, 'utf-8');
  * red on a correct file and green on a broken one whose author deleted the
  * comment.
  */
-const readCode = (file: string): string =>
-    read(file)
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/^\s*\/\/.*$/gm, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/\{\/\*[\s\S]*?\*\/\}/g, '');
+/**
+ * Removes HTML comments by scanning, not by regex: a single regex replace of
+ * `<!--…-->` can leave a new `<!--` behind (CodeQL js/incomplete-multi-character-sanitization).
+ * An unterminated comment swallows the rest of the text, as a browser would.
+ */
+const stripHtmlComments = (source: string): string => {
+    let output = '';
+    let cursor = 0;
+    while (cursor < source.length) {
+        const start = source.indexOf('<!--', cursor);
+        if (start === -1) {
+            output += source.slice(cursor);
+            break;
+        }
+        output += source.slice(cursor, start);
+        const end = source.indexOf('-->', start + 4);
+        if (end === -1) break;
+        cursor = end + 3;
+    }
+    return output;
+};
+
+const stripCommentsOnce = (source: string): string =>
+    stripHtmlComments(
+        source
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/^\s*\/\/.*$/gm, '')
+            .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
+    );
+
+/**
+ * Repeats the strip until the text stops changing, so a comment that only
+ * appears once another one is removed (e.g. `<!<!---->--`) is stripped too.
+ */
+const readCode = (file: string): string => {
+    let previous: string;
+    let current = read(file);
+    do {
+        previous = current;
+        current = stripCommentsOnce(previous);
+    } while (current !== previous);
+    return current;
+};
 
 describe('HOS-1063 AC-16 — the home carousel gains no island', () => {
     it('contains no client: directive', () => {
@@ -258,7 +295,7 @@ describe('HOS-1063 AC-9 — no numeral where the metric does not apply', () => {
     });
 });
 
-describe('partner statistics and carousel keep the internal page dark', () => {
+describe('partner statistics and carousel use the partner page when it is public', () => {
     it('stats section delegates visibility to the shared resolver', () => {
         expect(readCode(STATS_SECTION)).toContain('resolvePartnerStatsView');
         expect(readCode('src/lib/partner-stats-cards.ts')).toContain('resolvePartnerLogoLink');
@@ -268,9 +305,10 @@ describe('partner statistics and carousel keep the internal page dark', () => {
         expect(readCode(PARTNERS_SECTION)).toContain('resolvePartnerLogoLink');
     });
 
-    it('the resolver emits only outbound destinations', () => {
+    it('the resolver records the internal page destination for public pages', () => {
         const code = readCode('src/lib/partner-logo-link.ts');
         expect(code).toContain("destination: 'EXTERNAL'");
-        expect(code).not.toContain("destination: 'OWN_PAGE'");
+        // HOS-1488 Q-2, decisión del owner 2026-11-04
+        expect(code).toContain("destination: 'OWN_PAGE'");
     });
 });

@@ -1,3 +1,4 @@
+import { eq, subscriptions } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { runOrphanhood } from '../../../src/services/billing/addon/addon-instance-a5';
@@ -132,6 +133,61 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
                 const { cancelled } = await runOrphanhood(
                     { tx, subscriptionId, now },
+                    orphanPorts(tx).ports
+                );
+
+                expect(cancelled).toEqual([]);
+                await expectUntouched(tx, seeded);
+            });
+        });
+
+        it('(d2) an in-progress succession whose successor is ABANDONED does not protect a cancelled predecessor addon', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId } = await seedOrphanOwner(tx);
+                const { subscriptionId: successorId } = await seedPrincipal(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'ABANDONED'
+                });
+                const { subscriptionId: predecessorId } = await seedPrincipal(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'CANCELLED',
+                    succeededById: successorId
+                });
+                await tx
+                    .update(subscriptions)
+                    .set({ succeedsId: predecessorId })
+                    .where(eq(subscriptions.id, successorId));
+                const seeded = await seedVerticalAddon(tx, { userId, targetId: predecessorId });
+
+                await runOrphanhood(
+                    { tx, subscriptionId: predecessorId, now },
+                    orphanPorts(tx).ports
+                );
+
+                await expectOrphaned(tx, seeded);
+            });
+        });
+
+        it('(d3) a closed succession with a live successor whose predecessor link is clear does not orphan the addon', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId } = await seedOrphanOwner(tx);
+                const { subscriptionId: successorId } = await seedPrincipal(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'ACTIVE'
+                });
+                const { subscriptionId: predecessorId } = await seedPrincipal(tx, {
+                    userId,
+                    vertical: V,
+                    status: 'CANCELLED',
+                    succeededById: successorId
+                });
+                const seeded = await seedVerticalAddon(tx, { userId, targetId: predecessorId });
+
+                const { cancelled } = await runOrphanhood(
+                    { tx, subscriptionId: predecessorId, now },
                     orphanPorts(tx).ports
                 );
 

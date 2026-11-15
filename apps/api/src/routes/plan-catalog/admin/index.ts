@@ -1,4 +1,6 @@
 import {
+    AdminPlanCatalogQuerySchema,
+    AdminPlanCatalogResponseSchema,
     CreatePlanRequestSchema,
     PermissionEnum,
     PLAN_ROLES,
@@ -11,7 +13,8 @@ import {
     countAnchoredCustomersFromSubscriptions,
     createPlan,
     previewPlanVersion,
-    publishPlanVersion
+    publishPlanVersion,
+    readAdminPlanCatalog
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -89,6 +92,23 @@ export const adminCreatePlanRoute = createAdminRoute({
     }
 });
 
+/** Reads the complete catalog and current versions for a vertical's publisher. */
+export const adminReadPlanCatalogRoute = createAdminRoute({
+    method: 'get',
+    path: '/plans',
+    summary: 'Read admin plan catalog',
+    description: 'Reads all plans and their current versions for one vertical.',
+    tags: ['Plan catalog'],
+    requiredPermissions: [PermissionEnum.MAINTENANCE_MODE_WRITE],
+    requestQuery: AdminPlanCatalogQuerySchema.shape,
+    responseSchema: AdminPlanCatalogResponseSchema,
+    handler: async (ctx, _params, _body, query) =>
+        readAdminPlanCatalog({
+            actor: getActorFromContext(ctx),
+            vertical: AdminPlanCatalogQuerySchema.parse(query).vertical
+        })
+});
+
 /** Preview the key-by-key confirmation; writes nothing. */
 export const adminPreviewPlanVersionRoute = createAdminRoute({
     method: 'post',
@@ -156,5 +176,6 @@ const router = createRouter();
 router.route('/', adminCreatePlanRoute);
 router.route('/', adminPreviewPlanVersionRoute);
 router.route('/', adminPublishPlanVersionRoute);
+router.route('/', adminReadPlanCatalogRoute);
 
 export { router as adminPlanCatalogRoutes };

@@ -56,3 +56,23 @@ export function requireAiAccess(context: unknown): void {
         throw redirect({ to: '/auth/forbidden' });
     }
 }
+
+/**
+ * Assert that the given route context includes `AI_CONVERSATION_VIEW_ANY`
+ * (HOS-2075). Guards the staff read of listing AI chat conversations; a role
+ * holding only `AI_SETTINGS_MANAGE` does NOT pass.
+ *
+ * @param context - Raw TanStack Router `beforeLoad` context object.
+ * @throws {ReturnType<typeof redirect>} Redirects to `/auth/forbidden` when
+ *   `AI_CONVERSATION_VIEW_ANY` is absent.
+ */
+export function requireAiConversationsAccess(context: unknown): void {
+    // TYPE-WORKAROUND: see requireAiAccess.
+    const authState = context as unknown as AuthState;
+
+    const hasAccess = authState.permissions?.includes(PermissionEnum.AI_CONVERSATION_VIEW_ANY);
+
+    if (!hasAccess) {
+        throw redirect({ to: '/auth/forbidden' });
+    }
+}

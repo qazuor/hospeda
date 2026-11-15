@@ -137,6 +137,61 @@ export async function forgetPassword({
 }
 
 /**
+ * Resend the email verification link for the signed-in account.
+ *
+ * Better Auth requires `email` to match the current session. `callbackURL` is
+ * embedded in the verification link so the person returns to the intended page.
+ *
+ * @param params.email - The email address belonging to the current session
+ * @param params.callbackURL - The absolute URL embedded in the verification email
+ * @returns `AuthResult` with the response data or a structured error
+ */
+export async function resendVerificationEmail({
+    email,
+    callbackURL
+}: {
+    readonly email: string;
+    readonly callbackURL: string;
+}): Promise<AuthResult> {
+    const baseURL = getAuthBaseUrl();
+    try {
+        const response = await fetch(`${baseURL}/api/auth/send-verification-email`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, callbackURL })
+        });
+        const data = (await response.json()) as Record<string, unknown>;
+        if (!response.ok) {
+            const nestedError =
+                data.error && typeof data.error === 'object'
+                    ? (data.error as Record<string, unknown>)
+                    : undefined;
+            return {
+                error: {
+                    message:
+                        typeof data.message === 'string'
+                            ? data.message
+                            : typeof nestedError?.message === 'string'
+                              ? nestedError.message
+                              : 'No se pudo reenviar el correo de verificacion',
+                    code:
+                        typeof data.code === 'string'
+                            ? data.code
+                            : typeof nestedError?.code === 'string'
+                              ? nestedError.code
+                              : undefined,
+                    status: response.status
+                }
+            };
+        }
+        return { data };
+    } catch {
+        return { error: { message: 'Error de red. Por favor, intenta de nuevo.', status: 0 } };
+    }
+}
+
+/**
  * Reset password using a one-time token from the reset email.
  *
  * @param params.newPassword - The new password to set

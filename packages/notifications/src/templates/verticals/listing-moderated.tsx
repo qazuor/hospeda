@@ -7,10 +7,18 @@ export interface ListingModeratedProps {
     readonly listingName: string;
     readonly reason: string;
     readonly subscriptionUrl: string;
+    readonly recurringListingAddons?: readonly { readonly name: string }[];
+    readonly withdrawalUrl?: string;
 }
 
 /** `verticals.listing-moderated` (PB10; V/19 §4 row 24). */
-export function ListingModerated({ listingName, reason, subscriptionUrl }: ListingModeratedProps) {
+export function ListingModerated({
+    listingName,
+    reason,
+    subscriptionUrl,
+    recurringListingAddons,
+    withdrawalUrl
+}: ListingModeratedProps) {
     return (
         <EmailLayout previewText="Moderamos tu ficha">
             <Heading>Tu ficha está moderada</Heading>
@@ -18,6 +26,8 @@ export function ListingModerated({ listingName, reason, subscriptionUrl }: Listi
                 listingName={listingName}
                 reason={reason}
                 subscriptionUrl={subscriptionUrl}
+                recurringListingAddons={recurringListingAddons}
+                withdrawalUrl={withdrawalUrl}
             />
         </EmailLayout>
     );

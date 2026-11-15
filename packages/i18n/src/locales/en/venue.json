@@ -4,6 +4,7 @@
         "headerDisclaimer": "Answers are AI-generated and may contain errors. Always confirm the information with the venue.",
         "panelLabel": "AI chat — Questions about the venue",
         "priceDisclaimer": "The menu, prices and hours may have changed. Contact the venue to confirm.",
+        "readNotice": "The business can read the questions you ask in this chat. Do not share personal data.",
         "unavailable": "AI chat is not available for this venue"
     },
     "listing": {
@@ -47,6 +48,12 @@
         "featured": "Featured"
     },
     "detail": {
+        "address": {
+            "title": "Find us",
+            "floor": "floor",
+            "apartment": "apt.",
+            "viewOnMap": "View on map"
+        },
         "openingHours": {
             "title": "Opening hours",
             "closed": "Closed",
@@ -61,6 +68,11 @@
             "wednesday": "Wednesday"
         },
         "menu": "View menu",
+        "contactTitle": "Contact",
+        "contactPhoneAriaLabel": "Call the business",
+        "contactLandlineAriaLabel": "Call the business landline",
+        "contactEmailAriaLabel": "Email the business",
+        "contactWebsiteAriaLabel": "Visit the business's website",
         "menuCarta": {
             "title": "Menu",
             "attachmentImage": "Menu photo",

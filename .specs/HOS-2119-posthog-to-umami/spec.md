@@ -217,7 +217,8 @@ render means its outage takes the panel down.
   - Authorization through `resolveListingAccess` (`middlewares/listing-access.ts`, ownership). Someone else's
     listing → **404**.
   - Response: `{ window, available: boolean, referrers[], countries[], devices[],
-    contactFunnel: { views, contactStarted, contactCompleted } }`.
+    contactFunnel: { views, contactStarted, contactCompleted } | null }`.
+    `contactFunnel` is `null` for VENUE, EXPERIENCE and PARTNER (OQ-7 addendum).
   - On Umami error or timeout: `200` with `available: false` and empty arrays.
     Never `5xx` for an Umami failure.
 - Filtering per listing: by event data `entity_id` (sent by the view trackers and
@@ -228,8 +229,15 @@ render means its outage takes the panel down.
   existing `entity_views` cards in every owner panel: accommodation
   (`AnalyticsSection.client.tsx`), venue, experience, and the partner panel from
   HOS-1063. Cards hide when `available: false`. Copy in es/en/pt.
-- All four verticals ship together (OQ-7). Their pages already send `entity_id`
-  through `EntityViewTracker`; T-0 confirms the property reaches Umami for each.
+- All four verticals ship together (OQ-7). **Correction (task planning,
+  2026-11-14):** the code does not send `entity_id` today. `accommodation_viewed`
+  and `contact_owner_*` carry `accommodation_id`; `EntityViewTracker` emits no
+  analytics event for VENUE or EXPERIENCE (owner decision, HOS-734: only the
+  `entity_views` beacon), and partner pages emit none either. So this phase must
+  add a view event with `entity_id` for all four types and normalize the
+  accommodation events. Venue, experience and partner have no contact events:
+  their «Contactos» card is hidden in v1 and `contactFunnel` is `null` for them
+  (OQ-7 addendum). See tasks T-005, T-016, T-030, T-031, T-044, T-045, T-051.
 
 ### 6.6 Removal
 
@@ -254,7 +262,8 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
 
 - Owner panel: existing view-count cards unchanged. New cards: «De dónde vienen»
   (top 5 referrers), «Países», «Dispositivos», «Contactos» (views → started →
-  completed).
+  completed). «Contactos» is shown for accommodation only; for venue,
+  experience and partner it is absent, never a zero (OQ-7 addendum).
 - Window selector shared with the existing cards.
 - When Umami is unavailable, the new cards are not rendered; no error banner.
 - Empty state (listing with no traffic): the cards show «Todavía no hay datos».
@@ -367,6 +376,14 @@ up and upgrade (R-5).
 
 Cards: «De dónde vienen», «Países», «Dispositivos», «Contactos». Verticals:
 accommodation, venue, experience and partner, together in T-5.
+
+**Addendum (owner, 2026-11-14, during task planning):** venue, experience and
+partner have no contact events today, and none are invented in this spec. Their
+«Contactos» card is hidden in v1 (`contactFunnel: null`); the other three cards
+ship for all four verticals. Defining contact events for them is follow-up work.
+
+*Rejected:* defining new contact events for those three verticals inside this
+migration.
 
 ## 12. Implementation notes
 

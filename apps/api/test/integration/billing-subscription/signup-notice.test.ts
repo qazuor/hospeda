@@ -17,6 +17,7 @@ import { initApp } from '../../../src/app';
 import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
+import { ensureBillingDeadlineVersion1 } from '../helpers/billing-deadline-version.js';
 import {
     createTrial,
     ensurePublicationCatalog
@@ -123,6 +124,54 @@ afterAll(async () => {
 });
 
 describe('TEST:B13a:21a AC:B13a:5 and AC:1735:8 the checkout reads the trial of the option vertical', () => {
+    it('reads the live successor and its checkout deadline from subscription.succeeds_id', async () => {
+        await ensureBillingDeadlineVersion1();
+        const user = await createUser();
+        const option = await createOption(VerticalEnum.ACCOMMODATION);
+        const [principal] = await getDb()
+            .insert(subscriptions)
+            .values({
+                userId: user.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                planVersionId: option.versionId,
+                billingOptionId: option.id,
+                paymentMethod: 'CARD',
+                class: 'PRINCIPAL',
+                status: 'ACTIVE'
+            })
+            .returning({ id: subscriptions.id });
+        if (!principal) throw new Error('No principal');
+        const deadline = new Date('2026-10-13T12:00:00.000Z');
+        const [successor] = await getDb()
+            .insert(subscriptions)
+            .values({
+                userId: user.id,
+                vertical: VerticalEnum.ACCOMMODATION,
+                planVersionId: option.versionId,
+                billingOptionId: option.id,
+                paymentMethod: 'CARD',
+                class: 'PRINCIPAL',
+                status: 'PENDING_AUTHORIZATION',
+                succeedsId: principal.id,
+                authorizationWindowDeadlineVersion: 1,
+                authorizationWindowEndsAt: deadline
+            })
+            .returning({ id: subscriptions.id, succeedsId: subscriptions.succeedsId });
+        expect(successor?.succeedsId).toBe(principal.id);
+        if (!successor) throw new Error('No successor');
+        await getDb()
+            .update(subscriptions)
+            .set({ succeededById: successor.id })
+            .where(eq(subscriptions.id, principal.id));
+
+        const { response, body } = await readNotice(user.id, option.id);
+        expect(response.status).toBe(200);
+        expect(body.data.blockingCommitment).toEqual({
+            takenBy: 'SUCCESSOR_PENDING',
+            checkoutDeadline: deadline.toISOString()
+        });
+    });
+
     it('returns the ceil day count and only the selected vertical trial', async () => {
         const user = await createUser();
         const accommodationOption = await createOption(VerticalEnum.ACCOMMODATION, {

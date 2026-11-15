@@ -88,7 +88,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
     venue: sql`summary = '', description = '', rich_description = NULL,
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         menu_url = NULL, menu_file_url = NULL, menu_file_public_id = NULL,
-        menu_file_kind = NULL, contact_info = NULL, social_networks = NULL, opening_hours = NULL,
+        menu_file_kind = NULL, contact_info = NULL, social_networks = NULL, location = NULL, opening_hours = NULL,
         price_range = NULL, entry_kind = NULL, entry_note_i18n = NULL, entry_price_from = NULL,
         entry_price_updated_at = NULL, videos = NULL, seo = NULL, policies = NULL`,
     experience: sql`summary = '', description = '', rich_description = NULL,

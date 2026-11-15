@@ -52,9 +52,8 @@ function guardedRoutes(): Array<{ name: string; source: string }> {
 
 function appliesOwnerGrantFilter(source: string): boolean {
     return (
-        /\bfilterPublicPaidFieldsForOwner\s*\(/.test(source) ||
-        (/\bresolvePublicFieldGrants\s*\(/.test(source) &&
-            /\bfilterPublicPaidFields\s*\(/.test(source))
+        /\bprojectPublicAccommodations\s*\(/.test(source) ||
+        /\bprojectPublicAccommodationPage\s*\(/.test(source)
     );
 }
 
@@ -76,23 +75,26 @@ describe('public accommodation badge masking', () => {
     it('requires executable owner-grant filtering, not comments, strings or imports', () => {
         expect(
             appliesOwnerGrantFilter(
-                executableSource('// filterPublicPaidFieldsForOwner(row, grants)')
+                executableSource('// projectPublicAccommodations({ listings })')
             )
         ).toBe(false);
         expect(
             appliesOwnerGrantFilter(
-                executableSource("const text = 'filterPublicPaidFieldsForOwner(row, grants)';")
+                executableSource("const text = 'projectPublicAccommodationPage({ listings })';")
             )
         ).toBe(false);
+        expect(
+            appliesOwnerGrantFilter(
+                executableSource('await projectPublicAccommodations({ listings })')
+            )
+        ).toBe(true);
+        expect(
+            appliesOwnerGrantFilter(
+                executableSource('await projectPublicAccommodationPage({ listings })')
+            )
+        ).toBe(true);
         expect(
             appliesOwnerGrantFilter(executableSource('filterPublicPaidFieldsForOwner(row, grants)'))
-        ).toBe(true);
-        expect(
-            appliesOwnerGrantFilter(
-                executableSource(
-                    'resolvePublicFieldGrants(ids); filterPublicPaidFields(row, grants)'
-                )
-            )
-        ).toBe(true);
+        ).toBe(false);
     });
 });

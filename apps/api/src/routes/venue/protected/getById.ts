@@ -5,7 +5,8 @@
  * NOT_FOUND so that owner-private fields (contactInfo, ownerId,
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
-import { PermissionEnum, VenueProtectedSchema } from '@repo/schemas';
+import { listingLocationModel } from '@repo/db';
+import { PermissionEnum, VenueProtectedSchema, VerticalEnum } from '@repo/schemas';
 import { entityNotFoundError, ServiceError, VenueService } from '@repo/service-core';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
@@ -77,6 +78,16 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
         const { amenityIds, featureIds, amenityAttributes } = await venueService.loadJunctionIds(
             entity.id
         );
-        return { ...entity, amenityIds, featureIds, amenityAttributes };
+        return {
+            ...entity,
+            amenityIds,
+            featureIds,
+            amenityAttributes,
+            // HOS-1810: the draft warning. A flag, never an id.
+            locationDuplicate: await listingLocationModel.hasOwnDuplicate({
+                vertical: VerticalEnum.VENUE,
+                id: entity.id
+            })
+        };
     }
 });

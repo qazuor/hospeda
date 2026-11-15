@@ -90,7 +90,7 @@ const {
 const { t, tPlural } = createTranslations(locale);
 
 /** Rows 2 and 25: the unpublish confirmation lines, read from the notices read. */
-const unpublishNotes = buildUnpublishConfirmNotes({ t, tPlural, trialRunning, item: notices });
+const unpublishNotes = buildUnpublishConfirmNotes({ locale, t, tPlural, trialRunning, item: notices });
 
 /**
  * Resolve thumbnail: first gallery image url, or featured image url, or placeholder.
@@ -321,6 +321,9 @@ const publishCopy = actions.republish
                     errorText={t('host.properties.card.unpublishError', 'No se pudo despublicar. Intentá de nuevo.')}
                     trialNote={unpublishNotes.trialNote}
                     recurringNote={unpublishNotes.recurringNote}
+                    recurringAddonNames={unpublishNotes.recurringAddonNames}
+                    withdrawHref={unpublishNotes.withdrawHref}
+                    withdrawLabel={t('host.properties.card.recurringWithdrawLink')}
                 />
             )}
 

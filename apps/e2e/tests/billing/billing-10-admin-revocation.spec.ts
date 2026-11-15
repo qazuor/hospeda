@@ -407,12 +407,27 @@ async function assertNoticeBeforeProvider(args: {
         subject: REVOCATION_SUBJECT,
         timeoutMs: MAIL_TIMEOUT_MS
     });
-    expect(mail.receivedAt).toBeInstanceOf(Date);
+    // HOS-2112: compare real time with real time and request position with request position.
+    // `request.at` is the fake provider's clock, which runs ahead, so it is never compared.
+    const requestsBefore = args.world.fakeServer.requests().length;
+    const sweepStartedAt = new Date();
+    expect(
+        mail.receivedAt.getTime(),
+        'Expected our mail before the reconciliation sweep started.'
+    ).toBeLessThan(sweepStartedAt.getTime());
     await runCron({ jobName: 'billing-reconciliation-sweep', adminCookie: args.adminCookie });
-    const requests = cancellationRequestsFor({
-        requests: args.world.fakeServer.requests(),
-        authorizationId: args.authorizationId
-    });
-    expect(requests).toHaveLength(1);
-    expect(mail.receivedAt.getTime()).toBeLessThan(new Date(requests[0]!.at).getTime());
+    expect(
+        cancellationRequestsFor({
+            requests: args.world.fakeServer.requests().slice(requestsBefore),
+            authorizationId: args.authorizationId
+        }),
+        'Expected the provider cancellation after our mail, inside the sweep.'
+    ).toHaveLength(1);
+    expect(
+        cancellationRequestsFor({
+            requests: args.world.fakeServer.requests(),
+            authorizationId: args.authorizationId
+        }),
+        'Expected exactly one provider cancellation for this authorization.'
+    ).toHaveLength(1);
 }

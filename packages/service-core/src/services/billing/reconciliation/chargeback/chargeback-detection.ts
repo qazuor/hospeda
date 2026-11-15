@@ -1,5 +1,22 @@
-import { type ReconciliationMarkReason, reconciliationMarkModel } from '@repo/db';
+import type { Clock } from '@repo/billing-verticals-contract';
+import {
+    eq,
+    getDb,
+    type ReconciliationMarkReason,
+    reconciliationMarkModel,
+    subscriptions
+} from '@repo/db';
 import { ServiceError } from '../../../../types';
+import type {
+    S12ChargebackInput,
+    S12ChargebackResult
+} from '../../subscription/service-end-s12-chargeback';
+import {
+    type SuspendForChargebackInput,
+    type SuspendForChargebackPorts,
+    type SuspendForChargebackResult,
+    suspendForChargeback
+} from '../../subscription/suspend-for-chargeback.service';
 import { openReconciliationMark } from '../open-reconciliation-mark.service';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port';
 
@@ -28,6 +45,25 @@ export interface ChargebackDetectionResult {
     readonly outcome: 'MARKED' | 'ALREADY_MARKED' | 'NOT_APPLICABLE';
     /** The reason-17 mark the payment hangs on, when this call opened or accumulated it. */
     readonly markId?: string;
+    /** S6's result when the optional chargeback suspension port is wired. */
+    readonly suspension?: SuspendForChargebackResult;
+    /** S12's second-event result when the optional service-end port is wired. */
+    readonly serviceEnd?: S12ChargebackResult;
+}
+
+/** Optional S12 dispatcher for a scheduled principal's chargeback. */
+export interface ChargebackServiceEnd {
+    run(input: S12ChargebackInput): Promise<S12ChargebackResult>;
+}
+
+/** Optional S6 dispatcher; the default detection retains the mark-only behavior. */
+export interface ChargebackSuspension {
+    suspend(input: SuspendForChargebackInput): Promise<SuspendForChargebackResult>;
+}
+
+/** Builds the optional S6 dispatcher for composition roots. */
+export function createChargebackSuspension(ports: SuspendForChargebackPorts): ChargebackSuspension {
+    return { suspend: (input) => suspendForChargeback(input, ports) };
 }
 
 /**
@@ -39,21 +75,19 @@ export interface ChargebackDetection {
 }
 
 /**
- * The cut's implementation of {@link ChargebackDetection} (AC:B11:27, pattern BL,
- * owner decision CY): S14 opens reason 17 `CONTRACARGO` with the payment hung, or
- * hangs it on the open one, and nothing else. It does not move the payment or the
- * subscription, writes no `covered_period`, enqueues no mail, calls no provider
- * and runs no P6, S6 or S12. A payment that already hung on a reason-17 mark of
- * its subscription, open or lifted, is left alone (HOS-1605 H6).
- *
- * Phase 2 replaces the body of this factory (P6/P7, S6 by its third event, S12,
- * the mails and the dispute re-read) without touching its callers.
+ * S14 first opens reason 17 with the credited payment, or sees it already hung.
+ * With the optional suspension port, S6 then handles its third event on every
+ * read, including ALREADY_MARKED, so a deferred notice or cancellation retries.
+ * Without that port, the existing mark-only behavior remains (AC:B11:27).
  *
  * @param ports.markPayments - The port S14 hangs the payment with
  * @returns The cut's chargeback detection
  */
 export function createChargebackDetection(ports: {
     readonly markPayments?: ReconciliationMarkPayments;
+    readonly suspension?: ChargebackSuspension;
+    readonly serviceEnd?: ChargebackServiceEnd;
+    readonly clock?: Clock;
 }): ChargebackDetection {
     return {
         async detect(input) {
@@ -69,7 +103,39 @@ export function createChargebackDetection(ports: {
                 paymentId: payment.id,
                 reason: CHARGEBACK_REASON
             });
-            if (alreadyHung) return { outcome: 'ALREADY_MARKED' };
+            const suspend = () => {
+                if (!ports.suspension) throw new Error('Chargeback suspension port is not wired');
+                return ports.suspension.suspend({
+                    subscriptionId,
+                    paymentId: payment.id,
+                    occurrenceId: payment.id
+                });
+            };
+            const serviceEnd = async (alreadyMarked: boolean) => {
+                if (!ports.serviceEnd) return undefined;
+                const [row] = await getDb()
+                    .select({ status: subscriptions.status })
+                    .from(subscriptions)
+                    .where(eq(subscriptions.id, subscriptionId))
+                    .limit(1);
+                if (
+                    row?.status !== 'CANCEL_SCHEDULED' &&
+                    !(alreadyMarked && row?.status === 'CANCELLED')
+                )
+                    return undefined;
+                return ports.serviceEnd.run({
+                    subscriptionId,
+                    paymentId: payment.id,
+                    now: ports.clock?.now() ?? new Date()
+                });
+            };
+            // S12 by its second event belongs to HOS-1633 (AC:B8a:7).
+            if (alreadyHung)
+                return {
+                    outcome: 'ALREADY_MARKED',
+                    ...(ports.suspension ? { suspension: await suspend() } : {}),
+                    ...(ports.serviceEnd ? { serviceEnd: await serviceEnd(true) } : {})
+                };
             try {
                 const opened = await openReconciliationMark(
                     {
@@ -81,10 +147,19 @@ export function createChargebackDetection(ports: {
                     },
                     { markPayments: ports.markPayments }
                 );
-                return { outcome: 'MARKED', markId: opened.mark.id };
+                return {
+                    outcome: 'MARKED',
+                    markId: opened.mark.id,
+                    ...(ports.suspension ? { suspension: await suspend() } : {}),
+                    ...(ports.serviceEnd ? { serviceEnd: await serviceEnd(false) } : {})
+                };
             } catch (error) {
                 if (error instanceof ServiceError && error.reason === MARK_PAYMENT_ALREADY_HUNG)
-                    return { outcome: 'ALREADY_MARKED' };
+                    return {
+                        outcome: 'ALREADY_MARKED',
+                        ...(ports.suspension ? { suspension: await suspend() } : {}),
+                        ...(ports.serviceEnd ? { serviceEnd: await serviceEnd(true) } : {})
+                    };
                 throw error;
             }
         }

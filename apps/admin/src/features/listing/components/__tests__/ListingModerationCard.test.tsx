@@ -152,10 +152,8 @@ beforeEach(() => {
 
 describe('ListingModerationCard — the publication state badge', () => {
     it.each(Object.values(PublicationStatusEnum))('shows %s with its own label', (status) => {
-        // Arrange / Act
         renderCard({ publicationStatus: status });
 
-        // Assert
         const card = screen.getByTestId('listing-moderation');
         expect(card.textContent).toContain(
             `admin-filters.publicationStatus.${
@@ -172,10 +170,8 @@ describe('ListingModerationCard — the publication state badge', () => {
     });
 
     it('renders no badge and no button while the state is not loaded yet', () => {
-        // Arrange / Act
         renderCard({ publicationStatus: undefined });
 
-        // Assert
         expect(screen.getByTestId('listing-moderation').textContent).not.toContain(
             'admin-filters.publicationStatus'
         );
@@ -185,11 +181,9 @@ describe('ListingModerationCard — the publication state badge', () => {
 
 describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     it('shows a suggested calendar date on its intended day in Argentina', () => {
-        // Arrange
         const suggestedDate = '2026-11-05';
         expect(new Date(suggestedDate).getDate()).toBe(4);
 
-        // Act
         renderCard({
             publicationStatus: PublicationStatusEnum.PUBLISHED,
             fixRequest: {
@@ -200,7 +194,6 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
             }
         });
 
-        // Assert
         const cardText = screen.getByTestId('listing-moderation').textContent ?? '';
         expect(cardText).toMatch(/5.*nov/i);
         expect(cardText).not.toMatch(/4.*nov/i);
@@ -222,13 +215,10 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         expect(screen.getByRole('alert').textContent).toContain(es.stateError);
     });
     it('shows no button to an admin without LISTING_MODERATE, even with the retired permission', () => {
-        // Arrange
         permissions.mockReturnValue([PermissionEnum.ACCOMMODATION_MODERATION_CHANGE]);
 
-        // Act
         renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED });
 
-        // Assert
         expect(actionButtons()).toEqual([]);
         expect(screen.getByTestId('listing-moderation')).toBeInTheDocument();
         expect(moderationRead.calls).toBe(0);
@@ -247,10 +237,8 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         ],
         [PublicationStatusEnum.PURGED, [], []]
     ] as const)('%s shows exactly %j', (publicationStatus, expected, labels) => {
-        // Arrange / Act
         renderCard({ publicationStatus });
 
-        // Assert
         expect(actionButtons()).toEqual(expected.map((a) => `listing-moderation-action-${a}`));
         expect(
             screen.queryAllByTestId(/^listing-moderation-action-/).map((n) => n.textContent)
@@ -278,18 +266,15 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('TAKE_DOWN says what happens and keeps confirm disabled without a real reason', async () => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED });
         const { user, dialog } = await openAction('TAKE_DOWN');
         const confirm = screen.getByTestId('listing-moderation-confirm');
 
-        // Assert: the four lines of H10, with the listing's name
         expect(dialog).toHaveTextContent(LISTING_NAME);
         expect(dialog).toHaveTextContent(es.dialog.takeDown.ownerNotice);
-        expect(dialog).toHaveTextContent(es.dialog.takeDown.featured);
+        expect(screen.queryAllByTestId('moderation-recurring-addon')).toHaveLength(0);
         expect(confirm).toBeDisabled();
 
-        // Act + Assert: whitespace only
         await user.type(screen.getByTestId('listing-moderation-reason'), '    ');
         expect(confirm).toBeDisabled();
         await user.click(confirm);
@@ -297,15 +282,12 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('TAKE_DOWN sends exactly { action, reason } with the trimmed reason', async () => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED });
         const { user } = await openAction('TAKE_DOWN');
 
-        // Act
         await user.type(screen.getByTestId('listing-moderation-reason'), '  Fotos falsas  ');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical: 'venue',
@@ -315,15 +297,12 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('LIFT sends keepFixRequest: false by default', async () => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.MODERATED });
         const { user } = await openAction('LIFT');
 
-        // Act
         await user.type(screen.getByTestId('listing-moderation-reason'), 'Corregida');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical: 'venue',
@@ -333,16 +312,13 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('LIFT sends keepFixRequest: true with the switch on', async () => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.MODERATED });
         const { user } = await openAction('LIFT');
 
-        // Act
         await user.click(screen.getByTestId('listing-moderation-keep-fix-request'));
         await user.type(screen.getByTestId('listing-moderation-reason'), 'Falta un detalle');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical: 'venue',
@@ -352,15 +328,12 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('REQUEST_FIX sends suggestedDate: null without a date', async () => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.DRAFT });
         const { user } = await openAction('REQUEST_FIX');
 
-        // Act
         await user.type(screen.getByTestId('listing-moderation-reason'), 'Cambiar fotos');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical: 'venue',
@@ -370,18 +343,15 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('REQUEST_FIX sends the suggested date when one is set', async () => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.ARCHIVED });
         const { user } = await openAction('REQUEST_FIX');
 
-        // Act
         fireEvent.change(screen.getByTestId('listing-moderation-suggested-date'), {
             target: { value: '2026-11-01' }
         });
         await user.type(screen.getByTestId('listing-moderation-reason'), 'Cambiar fotos');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical: 'venue',
@@ -391,22 +361,18 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
     });
 
     it('CLOSE_FIX_REQUEST sends only action and reason, and offers no extra field', async () => {
-        // Arrange
         renderCard({
             publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
             fixRequest: openFixRequest
         });
         const { user } = await openAction('CLOSE_FIX_REQUEST');
 
-        // Assert: neither the date nor the switch belong to this action
         expect(screen.queryByTestId('listing-moderation-suggested-date')).toBeNull();
         expect(screen.queryByTestId('listing-moderation-keep-fix-request')).toBeNull();
 
-        // Act
         await user.type(screen.getByTestId('listing-moderation-reason'), 'Ya está');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical: 'venue',
@@ -420,15 +386,12 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         'venue',
         'experience'
     ] as const)('%s reaches the hook with its own vertical', async (vertical) => {
-        // Arrange
         renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED, vertical });
         const { user } = await openAction('TAKE_DOWN');
 
-        // Act
         await user.type(screen.getByTestId('listing-moderation-reason'), 'motivo');
         await user.click(screen.getByTestId('listing-moderation-confirm'));
 
-        // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
             vertical,
@@ -449,14 +412,11 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
         [true, es.fixRequestOpen],
         [false, es.fixRequestClosed]
     ])('on success shows the returned state (fixRequestOpen %s) and closes the dialog', async (fixRequestOpen, fixText) => {
-        // Arrange
         mutateAsync.mockResolvedValue({ publicationStatus: 'MODERATED', fixRequestOpen });
         renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED });
 
-        // Act
         await confirm('TAKE_DOWN');
 
-        // Assert
         await waitFor(() =>
             expect(addToast).toHaveBeenCalledWith({
                 title: es.successTitle,
@@ -477,7 +437,6 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
         ['REQUEST_FIX', PublicationStatusEnum.PUBLISHED, 404, es.errors.notFound, 'error'],
         ['CLOSE_FIX_REQUEST', PublicationStatusEnum.DRAFT, 400, es.errors.invalid, 'error']
     ] as const)('%s on %s answered %i reads as its own text and closes the dialog', async (action, publicationStatus, status, message, variant) => {
-        // Arrange
         mutateAsync.mockRejectedValue(new ApiError('Listing state changed', { status }));
         renderCard({
             publicationStatus,
@@ -488,10 +447,8 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
                 : {})
         });
 
-        // Act
         await confirm(action);
 
-        // Assert
         await waitFor(() =>
             expect(addToast).toHaveBeenCalledWith({
                 title: es.errors.title,
@@ -504,14 +461,11 @@ describe('TEST:1684:4 AC-1684:2 the API answer and its typed rejections', () => 
     });
 
     it('shows any other failure as an error with its message', async () => {
-        // Arrange
         mutateAsync.mockRejectedValue(new Error('network down'));
         renderCard({ publicationStatus: PublicationStatusEnum.PUBLISHED });
 
-        // Act
         await confirm('TAKE_DOWN');
 
-        // Assert
         await waitFor(() =>
             expect(addToast).toHaveBeenCalledWith({
                 title: es.errors.title,

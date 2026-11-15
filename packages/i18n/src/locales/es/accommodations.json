@@ -787,6 +787,7 @@
         "contact": {
             "title": "Contacto",
             "phoneAriaLabel": "Llamar al alojamiento",
+            "landlineAriaLabel": "Llamar al teléfono fijo del alojamiento",
             "emailAriaLabel": "Enviar email al alojamiento",
             "websiteAriaLabel": "Visitar sitio web del alojamiento",
             "facebookAriaLabel": "Facebook del alojamiento",
@@ -1006,6 +1007,7 @@
         "fabLabel": "Preguntarle a la IA sobre este alojamiento",
         "panelLabel": "Chat con IA — Preguntas sobre el alojamiento",
         "headerDisclaimer": "Las respuestas son generadas por IA y pueden contener errores. Verificá siempre la información con el alojamiento.",
+        "readNotice": "El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.",
         "priceDisclaimer": "Los precios y disponibilidad pueden haber cambiado. Contactá al alojamiento para confirmar.",
         "placeholder": "Escribí tu pregunta aquí…",
         "send": "Enviar",

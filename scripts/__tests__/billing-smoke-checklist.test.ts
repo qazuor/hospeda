@@ -111,6 +111,32 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
         }
     });
 
+    it('S21 and P12 close B10 with Q1 deferred and complete evidence lines', () => {
+        const covers = [
+            'AC:B10:9',
+            'AC:B10:10',
+            'AC:B10:14',
+            'TEST:B10:10',
+            'TEST:B10:11',
+            'TEST:B10:12',
+            'TEST:B10:16'
+        ];
+        for (const item of ['S21', 'P12']) {
+            const body =
+                source.match(new RegExp(`### ${item} — [^\\n]+\\n([\\s\\S]*?)(?=### |## )`))?.[1] ??
+                '';
+            expect(body, item).toContain('**Preconditions:**');
+            expect(body, item).toContain('**Steps:**');
+            expect(body, item).toContain('**Expected:**');
+            expect(body, item).toContain('**Evidence:**');
+            expect(body, item).toContain('**Covers:**');
+            expect(body, item).toContain('HOS-2094');
+            expect(body, item).toContain('Q1 option 3');
+            for (const id of covers) expect(body, `${item}: ${id}`).toContain(id);
+        }
+        expect(source).toContain('Phase 3 (B10, HOS-1373) closes with HOS-1596: S21 and P12.');
+    });
+
     it('every relative link ](…) resolves to an existing file', () => {
         const relativeLinks = [...source.matchAll(/\[([^\]]+)\]\(([^)]+)\)/g)];
         const nonFileLinks = relativeLinks

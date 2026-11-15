@@ -31,6 +31,12 @@ vi.mock('@repo/db', async (importActual) => {
     const actual = await importActual<typeof import('@repo/db')>();
     return {
         ...actual,
+        // HOS-1810: the route also reads the draft-warning flag through the location
+        // model; this file is about the inspection permission, not that read.
+        listingLocationModel: {
+            ...actual.listingLocationModel,
+            hasOwnDuplicate: async () => false
+        },
         eq: (left: unknown, right: unknown) => ({ op: 'eq', left, right }),
         amenities: { __table: 'amenities', id: 'amenities.id' },
         features: { __table: 'features', id: 'features.id' },

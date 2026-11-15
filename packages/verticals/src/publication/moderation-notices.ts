@@ -21,6 +21,7 @@ export interface ListingModerationNoticePayload {
     /** The listing was approved but not published because the owner's quota is full. */
     readonly quotaFull?: boolean;
     readonly fixRequestOpen: boolean;
+    readonly recurringListingAddons?: readonly { readonly name: string }[];
 }
 
 /** Builds the payload shared by listing moderation notices. */

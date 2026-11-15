@@ -12,6 +12,10 @@ import { getServiceTestDb } from '../helpers.js';
 export async function seedScheduledChange(input: {
     readonly subscriptionId: string;
     readonly effectiveAt: Date;
+    readonly targetPlanVersionId?: string;
+    readonly targetBillingOptionId?: string;
+    readonly planMigrationSubscriptionId?: string;
+    readonly keepSelection?: Record<string, string[]> | null;
 }) {
     const db = getServiceTestDb();
     const [own] = await db
@@ -27,9 +31,13 @@ export async function seedScheduledChange(input: {
         .insert(subscriptionScheduledChanges)
         .values({
             subscriptionId: input.subscriptionId,
-            targetPlanVersionId: own.planVersionId,
-            targetBillingOptionId: own.billingOptionId,
-            effectiveAt: input.effectiveAt
+            targetPlanVersionId: input.targetPlanVersionId ?? own.planVersionId,
+            targetBillingOptionId: input.targetBillingOptionId ?? own.billingOptionId,
+            effectiveAt: input.effectiveAt,
+            ...(input.planMigrationSubscriptionId
+                ? { planMigrationSubscriptionId: input.planMigrationSubscriptionId }
+                : {}),
+            ...(input.keepSelection ? { keepSelection: input.keepSelection } : {})
         })
         .returning();
     if (!change) throw new Error('Could not seed the scheduled change');

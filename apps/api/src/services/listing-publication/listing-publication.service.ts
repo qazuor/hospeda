@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { accommodations, getDb, users } from '@repo/db';
+import { accommodations, getDb, listingLocationModel, users } from '@repo/db';
 import {
     buildPublishRequirementsReason,
     NO_PLANS_AVAILABLE_MESSAGE,
@@ -9,8 +9,12 @@ import {
 import type { Actor } from '@repo/service-core';
 import {
     AccommodationService,
+    asDuplicateLocationError,
+    assertNoOwnLocationConflict,
     computeTrialEmailPseudonym,
     ExperienceService,
+    FIRST_PUBLISH_PAUSED_REASON,
+    platformPaidSignupsFreeze,
     ServiceError,
     VenueService
 } from '@repo/service-core';
@@ -27,6 +31,27 @@ import { resolveSubscribeDestinationForUser } from './subscribe-destination.serv
 const accommodationService = new AccommodationService({});
 const venueService = new VenueService({});
 const experienceService = new ExperienceService({});
+
+/**
+ * One-address rule (HOS-1810): 409 `DUPLICATE_LOCATION` when the listing's place
+ * is already occupied by another PUBLISHED listing of the SAME owner and the
+ * same vertical. A listing with an admin exception, or without a comparable
+ * address, always passes. Another owner's listing never blocks and is never
+ * mentioned.
+ */
+async function assertOwnLocationFree(args: {
+    readonly vertical: VerticalEnum.ACCOMMODATION | VerticalEnum.VENUE;
+    readonly id: string;
+}): Promise<void> {
+    const state = await listingLocationModel.getState(args);
+    if (!state || state.hasException) return;
+    await assertNoOwnLocationConflict({
+        vertical: args.vertical,
+        listingId: args.id,
+        ownerId: state.ownerId,
+        locationKey: state.locationKey
+    });
+}
 
 /** API composition shared by the three listing verticals for PB1 and PB6. */
 export class ListingPublicationService {
@@ -59,6 +84,7 @@ export class ListingPublicationService {
                         undefined,
                         buildPublishRequirementsReason({ missing: completeness.missing })
                     );
+                await assertOwnLocationFree({ vertical, id: args.id });
                 ownerId = existing.data.ownerId;
                 break;
             }
@@ -79,6 +105,7 @@ export class ListingPublicationService {
                         ServiceErrorCode.VALIDATION_ERROR,
                         `Listing incomplete: ${completeness.missing.join(', ')}`
                     );
+                await assertOwnLocationFree({ vertical, id: args.id });
                 ownerId = existing.data.ownerId;
                 break;
             }
@@ -121,15 +148,26 @@ export class ListingPublicationService {
         const { publishListing } = await import(
             '../../../../../packages/verticals/src/publication/publish-listing'
         );
-        const result = await publishListing({
-            ...getListingPublicationPorts(),
-            userId: ownerId,
-            vertical,
-            listingId: args.id,
-            event: 'listing_published',
-            emailPseudonym: email.pseudonym,
-            correlationId: randomUUID()
-        });
+        let result: Awaited<ReturnType<typeof publishListing>>;
+        try {
+            result = await publishListing({
+                ...getListingPublicationPorts(),
+                newSignupsFrozen: () => platformPaidSignupsFreeze.isFrozen(),
+                userId: ownerId,
+                actorId: args.actor.id,
+                vertical,
+                listingId: args.id,
+                event: 'listing_published',
+                emailPseudonym: email.pseudonym,
+                correlationId: randomUUID()
+            });
+        } catch (error) {
+            // HOS-1810: a concurrent publish onto the same address got past the
+            // pre-check; the partial unique index refuses the second write.
+            const duplicate = asDuplicateLocationError(error);
+            if (duplicate) throw duplicate;
+            throw error;
+        }
         if (!result.published) {
             if (isTrialStartDeniedReason(result.reason)) {
                 const destination = await resolveSubscribeDestinationForUser({
@@ -302,6 +340,13 @@ export function mapListingPublishDenial(
         return new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed');
     if (reason === 'LISTING_NOT_FOUND' || reason === 'NOT_OWNER')
         return new ServiceError(ServiceErrorCode.NOT_FOUND, 'Listing not found');
+    if (reason === 'NEW_PAID_SIGNUPS_FROZEN')
+        return new ServiceError(
+            ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN,
+            'New paid signups are paused',
+            undefined,
+            FIRST_PUBLISH_PAUSED_REASON
+        );
     return new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
 }
 

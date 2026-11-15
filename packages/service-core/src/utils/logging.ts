@@ -48,6 +48,7 @@ export const resolveErrorLogLevel = (code: ServiceErrorCode | undefined): ErrorL
         // An admin-paused signup is an expected refusal, not a fault: while the
         // freeze is on, every visitor who clicks "Contratar" produces one.
         case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
+        case ServiceErrorCode.ADDON_PURCHASES_FROZEN:
             return 'warn';
         default:
             return 'error';

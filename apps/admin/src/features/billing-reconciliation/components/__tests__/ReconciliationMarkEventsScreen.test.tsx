@@ -69,6 +69,15 @@ describe('TEST:1620:10 reconciliation mark events screen', () => {
         render(<ReconciliationMarkEventsScreen markId={markId} />);
         const events = screen.getAllByTestId('reconciliation-mark-event');
         expect(events).toHaveLength(3);
+        expect(screen.getByTestId('reconciliation-mark-reason')).toHaveTextContent(
+            '7 · Pago tardío rechazado'
+        );
+        expect(screen.getByTestId('reconciliation-mark-subject')).toHaveTextContent(
+            `Suscripción: ${markId}`
+        );
+        expect(events[0]).toHaveTextContent('Actor: Proveedor de pagos');
+        expect(events[0]).toHaveTextContent('Resultado: Marca abierta');
+        expect(screen.queryAllByRole('heading', { level: 1 })).toEqual([]);
         expect(
             within(events[0]!).getByTestId('reconciliation-mark-event-condition')
         ).toHaveTextContent(

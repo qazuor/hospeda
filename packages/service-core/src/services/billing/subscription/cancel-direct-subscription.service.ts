@@ -16,6 +16,7 @@ import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import {
     type CancelOurAuthorizationOutcome,
     cancelOurAuthorization
@@ -26,6 +27,8 @@ import {
     cancelActiveRejection
 } from './cancel-active-subscription.service.js';
 import { resolveCancellationAuthority } from './cancellation-authorization.js';
+import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close.js';
+import { discardScheduledChange } from './scheduled-change-discard.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -164,6 +167,14 @@ async function writeDirectCancellation(input: {
             and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, input.origin))
         )
         .returning({ id: subscriptions.id });
+    if (row) {
+        await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
+        await closeAwaitingManualInstallmentsInTx({
+            tx: input.tx,
+            subscriptionId: input.subscriptionId,
+            now: input.now
+        });
+    }
     return row !== undefined;
 }
 
@@ -224,6 +235,8 @@ export async function cancelDirectSubscription(
                 'Subscription state is not eligible for direct cancellation'
             );
         const origin = row.status;
+        if (authority.as === 'OWNER')
+            await exitPlanMigration({ tx, subscriptionId: row.id, reason: 'SE_DIO_DE_BAJA' });
         if (
             !(await writeDirectCancellation({
                 tx,

@@ -102,6 +102,7 @@ export type BillingFact =
               | 'SERVICE_END'
               | 'DIRECT_FROM_GRACE'
               | 'DIRECT_FROM_SUSPENDED'
+              | 'DIRECT_FROM_PAUSED'
               | 'REVOKED'
               | 'INHERITED_BY_PLAN';
           wasScheduled: boolean;

@@ -16,9 +16,11 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    AddonPurchasesFreezeValueSchema,
     AnnouncementItemSchema,
     AnnouncementsValueSchema,
     MaintenanceModeValueSchema,
+    PaidSignupsFreezeValueSchema,
     PlatformSettingsKeySchema,
     PlatformSettingsResponseSchema,
     SeoDefaultsValueSchema
@@ -29,14 +31,72 @@ const VALID_ACTOR_UUID = '22222222-2222-4222-8222-222222222222';
 const VALID_TIMESTAMP = '2026-05-28T12:34:56.000Z';
 
 describe('PlatformSettingsKeySchema', () => {
-    it('accepts each of the 3 supported keys', () => {
-        for (const key of ['seo.defaults', 'maintenance.mode', 'announcements.global']) {
+    it('accepts each of the 4 supported keys', () => {
+        for (const key of [
+            'seo.defaults',
+            'maintenance.mode',
+            'announcements.global',
+            'billing.paidSignupsFreeze',
+            'billing.addonPurchasesFreeze'
+        ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
     });
 
     it('rejects unknown keys', () => {
         const result = PlatformSettingsKeySchema.safeParse('seo.unknown');
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1749 AddonPurchasesFreezeValueSchema', () => {
+    it('accepts a boolean frozen value', () => {
+        expect(AddonPurchasesFreezeValueSchema.safeParse({ frozen: true }).success).toBe(true);
+    });
+});
+
+describe('HOS-1749 PaidSignupsFreezeValueSchema', () => {
+    it('accepts a boolean frozen value', () => {
+        // Arrange
+        const value = { frozen: true };
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts an explicitly open setting', () => {
+        // Arrange
+        const value = { frozen: false };
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects a missing frozen field', () => {
+        // Arrange
+        const value = {};
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it("rejects 'yes' instead of coercing it to a boolean", () => {
+        // Arrange
+        const value = { frozen: 'yes' };
+
+        // Act
+        const result = PaidSignupsFreezeValueSchema.safeParse(value);
+
+        // Assert
         expect(result.success).toBe(false);
     });
 });
@@ -267,6 +327,39 @@ describe('PlatformSettingsResponseSchema (discriminated union)', () => {
             expect(result.data.key).toBe('announcements.global');
             expect(Array.isArray(result.data.value)).toBe(true);
         }
+    });
+
+    it('routes billing.paidSignupsFreeze to the freeze branch', () => {
+        // Arrange
+        const value = { frozen: true };
+
+        // Act
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.paidSignupsFreeze',
+            value,
+            ...baseEnvelope
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success && result.data.key === 'billing.paidSignupsFreeze') {
+            expect(result.data.value.frozen).toBe(true);
+        }
+    });
+
+    it('rejects a maintenance value under billing.paidSignupsFreeze', () => {
+        // Arrange
+        const value = { enabled: true };
+
+        // Act
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.paidSignupsFreeze',
+            value,
+            ...baseEnvelope
+        });
+
+        // Assert
+        expect(result.success).toBe(false);
     });
 
     it('rejects a key/value mismatch (seo.defaults shape under maintenance.mode key)', () => {

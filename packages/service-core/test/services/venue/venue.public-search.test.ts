@@ -205,3 +205,19 @@ describe('VenueService public search: q filter (HOS-2055)', () => {
         );
     });
 });
+
+describe('HOS-1718 featuredFirst forwarding', () => {
+    it('forwards featuredFirst to the model options and never as a filter', async () => {
+        const mockModel = new MockVenueModel();
+        mockModel.findAllWithRelations.mockResolvedValue({ items: [], total: 0 });
+        mockModel.count.mockResolvedValue(0);
+        const service = new VenueService({});
+        Object.defineProperty(service, 'model', { value: mockModel });
+
+        await service.search(guestActor, { page: 1, pageSize: 10, featuredFirst: true });
+
+        const [call] = asMock(mockModel.findAllWithRelations).mock.calls;
+        expect(call?.[2]).toMatchObject({ featuredFirst: true });
+        expect(Object.hasOwn(searchWhere(call), 'featuredFirst')).toBe(false);
+    });
+});

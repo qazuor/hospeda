@@ -8,8 +8,13 @@
  * out twice, or the three surfaces drift and a route ends up reachable from one
  * of them but not the others.
  *
- * Ordering is meaningful: entries are declared in nav order, and the nav renders
- * them grouped by `group` in the order the groups first appear here.
+ * Since HOS-1809 the sections are DERIVED from the domain catalog
+ * (`LISTING_SECTIONS.accommodation`) and the web presentation
+ * (`listing-section-presentation.ts`), the same way venue and experience do. The
+ * hand-written list and its freezing guard (G-FAC-08) are gone.
+ *
+ * Ordering is the catalog's: the nav renders sections grouped by `group` in the
+ * order the groups first appear.
  */
 
 import {
@@ -21,6 +26,11 @@ import {
     findEditorSectionBySlug as findRegistrySectionBySlug,
     getVisibleEditorSections as getVisibleRegistrySections
 } from '@/lib/editor/editor-registry';
+import {
+    buildCatalogEditorSections,
+    type ListingSectionStates
+} from '@/lib/editor/listing-editor-registry';
+import { ACCOMMODATION_TRANSLATIONS_VISIBILITY_KEY } from '@/lib/editor/listing-section-presentation';
 import type { SupportedLocale } from '@/lib/i18n';
 
 // Re-exported so the many call sites that reason in accommodation terms keep
@@ -31,100 +41,30 @@ export type { EditorSection, EditorSectionGroup };
 /**
  * The visibility key of the one conditional accommodation section.
  *
- * Named rather than inlined so the registry entry and every caller that answers
- * it (`hasTranslations`) are spelled the same in one place.
+ * Re-exported: it lives with the presentation of the section that declares it.
  */
-export const ACCOMMODATION_TRANSLATIONS_VISIBILITY_KEY = 'translations';
+export { ACCOMMODATION_TRANSLATIONS_VISIBILITY_KEY };
 
 // ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
 
 /**
- * The ten editor sections, in nav order.
+ * The catalog sections of an accommodation, in nav order, with none hidden.
+ *
+ * Accommodation has one rubro (`standard`) that offers every section, so the
+ * resolver never marks one `absent`; this list therefore does not depend on the
+ * owner. `locked` sections stay in (their treatment belongs to the page).
  *
  * Deliberately absent: the featured-listing toggle. It self-hides for every
  * owner without a live `FEATURED_LISTING` entitlement, so a nav item would
  * dead-end for the majority — it renders at the foot of the hub instead
  * (HOS-318 D-10, preserving the rationale from the pre-split editor).
  */
-export const ACCOMMODATION_EDITOR_SECTIONS: readonly EditorSection[] = [
-    {
-        id: 'basicInfo',
-        slug: 'datos',
-        group: 'property',
-        labelKey: 'host.properties.editor.section.basicInfo'
-    },
-    {
-        id: 'capacityPricing',
-        slug: 'capacidad-precio',
-        group: 'property',
-        // Not `section.capacity` — that key reads just "Capacidad", while this
-        // page also owns the price fields.
-        labelKey: 'host.properties.editor.section.capacityPricing'
-    },
-    {
-        id: 'location',
-        slug: 'ubicacion',
-        group: 'property',
-        labelKey: 'host.properties.editor.section.location'
-    },
-    {
-        id: 'amenities',
-        slug: 'servicios',
-        group: 'property',
-        labelKey: 'host.properties.editor.section.amenities'
-    },
-    {
-        id: 'photos',
-        slug: 'fotos',
-        group: 'content',
-        labelKey: 'host.properties.editor.section.photos'
-    },
-    {
-        id: 'faqs',
-        slug: 'preguntas',
-        group: 'content',
-        labelKey: 'host.properties.editor.section.faqs'
-    },
-    {
-        id: 'contact',
-        slug: 'contacto',
-        group: 'content',
-        // Not `section.contact` — this page absorbs the former standalone
-        // "Redes sociales" section too, so the label has to cover both.
-        labelKey: 'host.properties.editor.section.contactSocial'
-    },
-    {
-        id: 'seo',
-        slug: 'seo',
-        group: 'content',
-        // G7 smoke (H-121): no prior home for this — SEO is a distinct concern
-        // from both the listing's own content (basicInfo/photos) and reaching
-        // the host (contact), so it gets its own page rather than being folded
-        // into either.
-        labelKey: 'host.properties.editor.section.seo'
-    },
-    {
-        id: 'calendar',
-        slug: 'calendario',
-        group: 'management',
-        labelKey: 'host.properties.editor.section.calendar'
-    },
-    {
-        id: 'translations',
-        slug: 'traducciones',
-        group: 'management',
-        labelKey: 'host.properties.editor.translation.sectionTitle',
-        visibilityKey: ACCOMMODATION_TRANSLATIONS_VISIBILITY_KEY
-    },
-    {
-        id: 'externalReputation',
-        slug: 'reputacion',
-        group: 'management',
-        labelKey: 'host.properties.editor.section.externalReputation'
-    }
-] as const;
+export const ACCOMMODATION_EDITOR_SECTIONS: readonly EditorSection[] = buildCatalogEditorSections({
+    vertical: 'accommodation',
+    sectionStates: {}
+});
 
 /** Group order for rendering, derived from first appearance in the registry. */
 export const EDITOR_SECTION_GROUPS: readonly EditorSectionGroup[] = [
@@ -144,8 +84,7 @@ export const EDITOR_SECTION_GROUP_LABEL_KEYS: Readonly<Record<EditorSectionGroup
  * The «Preguntas a la IA» page (HOS-2101).
  *
  * Deliberately NOT in {@link ACCOMMODATION_EDITOR_SECTIONS}: that list is the
- * frozen mirror of the domain catalog (G-FAC-08, DEC-FAC-033) — what a listing
- * CONTAINS. This page edits nothing; it only reads the chat log, so it joins
+ * domain catalog (DEC-FAC-033) — what a listing CONTAINS. This page edits nothing; it only reads the chat log, so it joins
  * the editor at the registry, right after the FAQs (its main action creates
  * one). The venue/experience editor does the same in `listing-editor-registry`.
  */
@@ -165,7 +104,7 @@ export const ACCOMMODATION_AI_QUESTIONS_SECTION: EditorSection = {
  *
  * Deliberately NOT in {@link ACCOMMODATION_EDITOR_SECTIONS}, for the same
  * reason as {@link ACCOMMODATION_AI_QUESTIONS_SECTION}: that list is the
- * frozen mirror of the catalog (G-FAC-08), and the catalog is unchanged — the
+ * catalog, and the catalog has no such section — the
  * `policies` field still belongs to its `amenities` section, so the backend's
  * section detection and entitlement gating see exactly what they saw before.
  * This is a second editor ROUTE for that section's data, not a new section.
@@ -197,24 +136,35 @@ function insertAfter({
 }
 
 /**
- * The editor's sections: the frozen catalog list plus the policies page (after
- * the services page) and the AI questions page (after the FAQs).
+ * The editor's sections for one resolved state map: the catalog sections plus
+ * the policies page (after the services page) and the AI questions page (after
+ * the FAQs).
+ *
+ * @param params - The resolved section states (`{}` when none is `absent`).
+ * @returns The ordered editor sections.
  */
-const ACCOMMODATION_EDITOR_REGISTRY_SECTIONS: readonly EditorSection[] = insertAfter({
-    sections: insertAfter({
-        sections: ACCOMMODATION_EDITOR_SECTIONS,
-        afterId: 'amenities',
-        extra: ACCOMMODATION_POLICIES_SECTION
-    }),
-    afterId: 'faqs',
-    extra: ACCOMMODATION_AI_QUESTIONS_SECTION
-});
+export function buildAccommodationEditorSections({
+    sectionStates
+}: {
+    readonly sectionStates: ListingSectionStates;
+}): readonly EditorSection[] {
+    return insertAfter({
+        sections: insertAfter({
+            sections: buildCatalogEditorSections({ vertical: 'accommodation', sectionStates }),
+            afterId: 'amenities',
+            extra: ACCOMMODATION_POLICIES_SECTION
+        }),
+        afterId: 'faqs',
+        extra: ACCOMMODATION_AI_QUESTIONS_SECTION
+    });
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 /**
- * The accommodation editor as an {@link EditorRegistry} (HOS-1080).
+ * Builds the accommodation editor as an {@link EditorRegistry} (HOS-1080,
+ * HOS-1809).
  *
  * This is what the shared nav / hub / breadcrumb machinery reads. The helpers
  * below keep their accommodation-flavoured signatures — thirty-odd call sites
@@ -222,15 +172,26 @@ const ACCOMMODATION_EDITOR_REGISTRY_SECTIONS: readonly EditorSection[] = insertA
  * behaviour behind it — but every one of them now resolves through this object,
  * so the paths are declared once.
  */
-export const ACCOMMODATION_EDITOR_REGISTRY: EditorRegistry = {
-    id: 'accommodation',
-    sections: ACCOMMODATION_EDITOR_REGISTRY_SECTIONS,
-    groups: EDITOR_SECTION_GROUPS,
-    groupLabelKeys: EDITOR_SECTION_GROUP_LABEL_KEYS,
-    indexPath: 'mi-cuenta/propiedades',
-    indexLabelKey: 'host.properties.editor.breadcrumb.properties',
-    buildHubPath: ({ entityId }) => `mi-cuenta/propiedades/${entityId}/editar`
-};
+export function buildAccommodationEditorRegistry({
+    sectionStates
+}: {
+    readonly sectionStates: ListingSectionStates;
+}): EditorRegistry {
+    return {
+        id: 'accommodation',
+        sections: buildAccommodationEditorSections({ sectionStates }),
+        groups: EDITOR_SECTION_GROUPS,
+        groupLabelKeys: EDITOR_SECTION_GROUP_LABEL_KEYS,
+        indexPath: 'mi-cuenta/propiedades',
+        indexLabelKey: 'host.properties.editor.breadcrumb.properties',
+        buildHubPath: ({ entityId }) => `mi-cuenta/propiedades/${entityId}/editar`
+    };
+}
+
+/** The registry every accommodation page reads; no section is ever `absent`. */
+export const ACCOMMODATION_EDITOR_REGISTRY: EditorRegistry = buildAccommodationEditorRegistry({
+    sectionStates: {}
+});
 
 /**
  * Translates the accommodation editor's one conditional flag into the

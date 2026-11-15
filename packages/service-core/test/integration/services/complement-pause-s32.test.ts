@@ -288,3 +288,49 @@ describe.skipIf(!isServiceTestDbAvailable())(
         });
     }
 );
+
+describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:1 S32 principal customer pause', () => {
+    it('uses the later compatible principal pause end for a USER complement', async () => {
+        const harness = providerHarness();
+        const seeded = await seedCommittedComplement({
+            fake: harness.fake,
+            principalStatus: 'PAUSED',
+            scopeType: 'USER',
+            otherStatus: 'PAUSED'
+        });
+        if (!seeded.otherPrincipalId) throw new Error('Other principal missing');
+        const principalEnd = new Date('2026-12-14T12:00:00.000Z');
+        const otherEnd = new Date('2027-01-14T12:00:00.000Z');
+        await getServiceTestDb()
+            .insert(subscriptionPauses)
+            .values([
+                {
+                    subscriptionId: seeded.principalId,
+                    reason: 'CUSTOMER_REQUEST',
+                    requestedMonths: 2,
+                    startsAt: complementNow,
+                    expectedEndAt: principalEnd
+                },
+                {
+                    subscriptionId: seeded.otherPrincipalId,
+                    reason: 'CUSTOMER_REQUEST',
+                    requestedMonths: 3,
+                    startsAt: complementNow,
+                    expectedEndAt: otherEnd
+                }
+            ]);
+
+        const result = await pauseComplementsS32(
+            { principalSubscriptionId: seeded.principalId, trigger: 'PRINCIPAL_PAUSED' },
+            { provider: harness.provider, clock, policy: seeded.policy }
+        );
+
+        expect(result.results).toMatchObject([{ outcome: 'PAUSED' }]);
+        const pauses = await getServiceTestDb()
+            .select()
+            .from(subscriptionPauses)
+            .where(eq(subscriptionPauses.subscriptionId, seeded.complementId));
+        expect(pauses).toHaveLength(1);
+        expect(pauses[0]?.expectedEndAt).toEqual(otherEnd);
+    });
+});

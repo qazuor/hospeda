@@ -133,7 +133,11 @@ describe('PhotoMetadataEditor', () => {
             'aria-expanded',
             'false'
         );
-        expect(screen.getByLabelText('Editar textos de la foto 1')).toHaveFocus();
+        // Focus returns in an effect that waits for both `isOpen` and `isSaving`
+        // to settle, which can land a render after the panel closes.
+        await waitFor(() => {
+            expect(screen.getByLabelText('Editar textos de la foto 1')).toHaveFocus();
+        });
     });
 
     it('keeps accommodation panel open when a save fails', async () => {

@@ -28,6 +28,9 @@ vi.mock('../../src/routes/billing-subscription/read-own-subscriptions', () => ({
     readOwnSubscriptions: cancellationRouteMocks.readOwnSubscriptions,
     readOwnDeferredCourtesies: cancellationRouteMocks.readOwnDeferredCourtesies
 }));
+vi.mock('../../src/routes/billing-subscription/read-own-declined-signups', () => ({
+    readOwnDeclinedSignups: vi.fn(async () => [])
+}));
 vi.mock('../../src/routes/billing-subscription/read-subscription', () => ({
     readSubscription: cancellationRouteMocks.readSubscription
 }));
@@ -187,6 +190,33 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
 });
 
 describe('TEST:V5:3 TEST:1692:2 outside the closed list step 2 answers the same with and without permission', () => {
+    it('HOS-1579 plan change rejects an unverified email before ownership', async () => {
+        cancellationRouteMocks.readSubscription.mockClear();
+        const path = `/api/v1/protected/billing-subscription/${OWNER_ID}/plan-change`;
+        const unverified = await probe({
+            target: app({ emailVerified: false }),
+            path,
+            method: 'POST'
+        });
+        expect(unverified.status).toBe(403);
+        expect(unverified.error.code).toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
+        expect(cancellationRouteMocks.readSubscription).not.toHaveBeenCalled();
+    });
+    it.each([
+        'pause',
+        'resume'
+    ])('HOS-1580 %s rejects an unverified email before ownership', async (act) => {
+        cancellationRouteMocks.readSubscription.mockClear();
+        const path = `/api/v1/protected/billing-subscription/${OWNER_ID}/${act}`;
+        const unverified = await probe({
+            target: app({ emailVerified: false }),
+            path,
+            method: 'POST'
+        });
+        expect(unverified.status).toBe(403);
+        expect(unverified.error.code).toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
+        expect(cancellationRouteMocks.readSubscription).not.toHaveBeenCalled();
+    });
     it.each([
         '/api/v1/protected/accommodations/22222222-2222-4222-8222-222222222222/publish',
         '/api/v1/protected/billing/subscriptions'

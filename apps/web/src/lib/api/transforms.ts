@@ -30,8 +30,10 @@ import type {
     PartnerDetailData,
     ReviewCardData,
     VenueCardData,
+    VenueContactInfo,
     VenueDailySpecial,
     VenueDetailData,
+    VenueDetailLocation,
     VenueEvent,
     VenueMenuSection,
     VenueOpeningHoursEntry,
@@ -939,9 +941,13 @@ export function toAccommodationDetailPageProps({
         socialNetworksRaw?.instagram == null ? undefined : String(socialNetworksRaw.instagram)
     );
     const phone = contactInfoRaw?.mobilePhone ? String(contactInfoRaw.mobilePhone) : undefined;
+    // HOS-2042: the optional landline, published next to the mobile phone.
+    const landlinePhone = contactInfoRaw?.workPhone ? String(contactInfoRaw.workPhone) : undefined;
     const email = contactInfoRaw?.personalEmail ? String(contactInfoRaw.personalEmail) : undefined;
     const contactInfo: AccommodationDetailData['contactInfo'] =
-        phone || email || safeWebsite ? { phone, email, website: safeWebsite } : undefined;
+        phone || landlinePhone || email || safeWebsite
+            ? { phone, landlinePhone, email, website: safeWebsite }
+            : undefined;
     const socialNetworks: AccommodationDetailData['socialNetworks'] =
         safeFacebook || safeInstagram
             ? { facebook: safeFacebook, instagram: safeInstagram }
@@ -1984,6 +1990,7 @@ export function transformAccommodationEdit({
         number: String(locationObj?.number ?? ''),
         floor: String(locationObj?.floor ?? ''),
         apartment: String(locationObj?.apartment ?? ''),
+        locationDuplicate: item.locationDuplicate === true,
         maxGuests: extraInfo?.capacity == null ? null : Number(extraInfo.capacity),
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
@@ -2036,6 +2043,13 @@ export function transformAccommodationEdit({
         whatsapp: String(
             (item.whatsapp as string) ??
                 ((item.contactInfo as Record<string, unknown> | undefined)?.whatsapp as string) ??
+                ''
+        ),
+        // HOS-2042: the landline lives in `contactInfo.workPhone`; the flat
+        // `landlinePhone` key is only what the editor form and PATCH body use.
+        landlinePhone: String(
+            (item.landlinePhone as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)?.workPhone as string) ??
                 ''
         ),
         email: String(
@@ -2981,6 +2995,35 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
 }
 
 /**
+ * Reads the public `location` of a venue payload (HOS-2189).
+ *
+ * @param raw - The payload's `location`, of unknown shape.
+ * @returns The address, or `null` when absent or when it carries no street, so
+ * the page never paints a block with nothing to say.
+ */
+function toVenueDetailLocation(raw: unknown): VenueDetailLocation | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const coordinates =
+        obj.coordinates && typeof obj.coordinates === 'object'
+            ? (obj.coordinates as Record<string, unknown>)
+            : {};
+    const read = (source: Record<string, unknown>, key: string): string =>
+        typeof source[key] === 'string' ? (source[key] as string).trim() : '';
+    const street = read(obj, 'street');
+    if (street === '') return null;
+
+    return {
+        street,
+        number: read(obj, 'number'),
+        floor: read(obj, 'floor'),
+        apartment: read(obj, 'apartment'),
+        lat: read(coordinates, 'lat'),
+        long: read(coordinates, 'long')
+    };
+}
+
+/**
  * Transforms a raw API venue item to VenueDetailData props.
  *
  * Used on the venue detail page where the full `VenuePublic` shape
@@ -3006,11 +3049,13 @@ export function toVenueDetailPageProps({
 
     return {
         ...cardProps,
+        location: toVenueDetailLocation(item.location),
         description: resolveI18nText(
             (item.descriptionI18n as I18nTextLike | string) ?? item.description ?? '',
             locale
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
+        contactInfo: normalizeVenueContactInfo(item.contactInfo),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
@@ -3107,6 +3152,34 @@ function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | n
 
     const hasAny = Object.values(contact).some((value) => value !== null);
     return hasAny ? contact : null;
+}
+
+/**
+ * Normalize the contact info a venue publishes (HOS-2042).
+ *
+ * Mirrors {@link normalizeExperienceContactInfo}: only `workEmail`,
+ * `workPhone` (the landline), `mobilePhone` and `website` are read; anything
+ * else the payload might carry is ignored. Returns `null` when no publishable
+ * channel is present, so the caller renders nothing.
+ */
+function normalizeVenueContactInfo(raw: unknown): VenueContactInfo | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const read = (key: string): string | null => {
+        const value = obj[key];
+        if (typeof value !== 'string') return null;
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+    };
+
+    const contact: VenueContactInfo = {
+        workEmail: read('workEmail'),
+        workPhone: read('workPhone'),
+        mobilePhone: read('mobilePhone'),
+        website: read('website')
+    };
+
+    return Object.values(contact).some((value) => value !== null) ? contact : null;
 }
 
 /**
@@ -3383,8 +3456,9 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
-        // Retained for the internal page link V7 restores on the public key.
+        // Public-page visibility comes from the carousel's effective entitlement set.
         slug: item.slug == null ? undefined : String(item.slug),
+        hasPublicPage: item.hasPublicPage === true,
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

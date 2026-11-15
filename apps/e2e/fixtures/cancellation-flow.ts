@@ -10,6 +10,7 @@ import {
     recordCreditedCycle,
     runCron
 } from './arrears-cycle.ts';
+import { seedCookieConsent } from './browser-helpers.ts';
 import { execSQL } from './db-helpers.ts';
 import { readPublicationStatus } from './listing-notices.ts';
 import {
@@ -36,6 +37,8 @@ export async function signUpCardSubscriber(args: {
     readonly user: CreatedUser;
     readonly slug: 'owner-basico';
 }): Promise<{ readonly subscriptionId: string; readonly authorizationId: string }> {
+    // The consent banner backdrop intercepts the checkout click (README pitfall #11).
+    await seedCookieConsent(args.page);
     await attachSession(args.page, args.user.sessionCookie);
     await openSignupCheckout({
         page: args.page,

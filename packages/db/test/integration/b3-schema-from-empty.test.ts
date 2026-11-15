@@ -1,5 +1,6 @@
 import type { PoolClient } from 'pg';
 import { afterAll, describe, expect, it } from 'vitest';
+import { MIGRATION_CATALOG_TABLES } from '../../src/schemas/vertical/reference-tables.ts';
 import { closeTestPool, getTestPool } from './helpers.ts';
 
 afterAll(async () => {
@@ -74,27 +75,45 @@ async function fixture(
 const insertInstance = `INSERT INTO addon_instance (product_id, addon_version_id, owner_id, target_id, status, complement_subscription_id)
 VALUES ($1, $2, $3, $4, $5, $6)`;
 
+const names = [
+    'subscription',
+    'subscription_scheduled_change',
+    'plan_migration',
+    'plan_migration_subscription',
+    'promo_code',
+    'promo_redemption',
+    'courtesy_grant',
+    'addon_product',
+    'addon_instance',
+    'manual_payment',
+    'idempotency_key'
+];
+
 describe('TEST:B3:31 — B3 schema from empty', () => {
+    it('HOS-2056 the B3 emptiness check only skips tables seeded by a migration', () => {
+        // Arrange
+        const catalogTables = names;
+
+        // Act
+        const migrationSeededTables = catalogTables.filter((table) =>
+            MIGRATION_CATALOG_TABLES.includes(table)
+        );
+
+        // Assert
+        expect(migrationSeededTables).toEqual(['addon_product']);
+    });
+
     it('creates every new table empty, succession columns and commitment indexes', async () => {
-        const names = [
-            'subscription',
-            'subscription_scheduled_change',
-            'plan_migration',
-            'plan_migration_subscription',
-            'promo_code',
-            'promo_redemption',
-            'courtesy_grant',
-            'addon_product',
-            'addon_instance',
-            'manual_payment',
-            'idempotency_key'
-        ];
         const tables = await getTestPool().query<{ tablename: string }>(
             "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = ANY($1)",
             [names]
         );
         expect(tables.rows.map((r) => r.tablename).sort()).toEqual([...names].sort());
-        for (const name of names) {
+        // Tables seeded by migration 0176 (MIGRATION_CATALOG_TABLES) are not empty after
+        // `db:migrate`, and `withCleanSlate` truncates them, so their row count depends on
+        // which files ran before this one in the shared integration database. Only the
+        // tables this migration creates without reference rows must be empty (HOS-2056).
+        for (const name of names.filter((table) => !MIGRATION_CATALOG_TABLES.includes(table))) {
             const count = await getTestPool().query<{ n: string }>(
                 `SELECT count(*)::text AS n FROM "${name}"`
             );

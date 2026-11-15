@@ -184,6 +184,17 @@ describe('AiChatWidget', () => {
         expect(dialog).toHaveAttribute('aria-label', 'AI Chat — Accommodation Questions');
     });
 
+    it('shows the read notice below the disclaimer when the panel is open', async () => {
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        expect(screen.getByTestId('ai-chat-read-notice')).toHaveTextContent(
+            'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.'
+        );
+    });
+
     it('displays the header disclaimer when panel is open', async () => {
         const user = userEvent.setup();
         render(<AiChatWidget {...defaultProps} />);

@@ -60,8 +60,9 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
     [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
     [ServiceErrorCode.PROVIDER_REVOKED]: 422,
-    // Admin-paused self-service signups (billing_settings.newPaidSignupsFrozen)
-    [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
+    // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
+    [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
+    [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409
 };
 
 /**
@@ -471,6 +472,7 @@ export const createErrorHandler = () => {
             errorMessage = constraintViolation.payload.message;
             statusCode = constraintViolation.status;
             errorDetails = constraintViolation.payload.details;
+            errorReason = constraintViolation.payload.reason;
         }
         // Priority 4: JSON parsing errors
         else if (

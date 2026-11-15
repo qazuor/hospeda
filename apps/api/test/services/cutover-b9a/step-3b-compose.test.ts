@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
     subscribeEffectiveSetInvalidation: vi.fn(),
     injectClock: vi.fn(),
     injectProvider: vi.fn(),
+    disconnectRedis: vi.fn(),
+    loggerError: vi.fn(),
     buildPorts: vi.fn(),
     defaultProvider: vi.fn(),
     getUserRoles: vi.fn(),
@@ -40,6 +42,8 @@ vi.mock('../../../src/middlewares/actor.js', () => ({
     resolveEffectivePermissions: mocks.resolvePermissions
 }));
 vi.mock('@repo/service-core', () => ({ getUserRoles: mocks.getUserRoles }));
+vi.mock('../../../src/utils/redis.js', () => ({ disconnectRedis: mocks.disconnectRedis }));
+vi.mock('../../../src/utils/logger.js', () => ({ apiLogger: { error: mocks.loggerError } }));
 
 import { composeStep3bProcess } from '../../../src/services/cutover-b9a/step-3b.compose.js';
 
@@ -63,6 +67,7 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
         mocks.subscribeEffectiveSetInvalidation.mockReturnValue(mocks.stopEffectiveSetInvalidation);
         mocks.buildPorts.mockReturnValue({});
         mocks.defaultProvider.mockReturnValue({});
+        mocks.disconnectRedis.mockResolvedValue(undefined);
     });
 
     it('TEST:1698:3 AC:1698:2 waits for listing recalculations when stopping', async () => {
@@ -98,5 +103,16 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
         expect(mocks.stopEffectiveSetInvalidation.mock.invocationCallOrder[0]!).toBeLessThan(
             mocks.drain.mock.invocationCallOrder[0]!
         );
+        expect(mocks.drain.mock.invocationCallOrder[0]!).toBeLessThan(
+            mocks.disconnectRedis.mock.invocationCallOrder[0]!
+        );
+    });
+
+    it('logs Redis disconnect failure without rejecting stop', async () => {
+        mocks.drain.mockResolvedValue(undefined);
+        mocks.disconnectRedis.mockRejectedValue(new Error('disconnect failed'));
+
+        await expect(composeStep3bProcess().stop()).resolves.toBeUndefined();
+        expect(mocks.loggerError).toHaveBeenCalledTimes(1);
     });
 });

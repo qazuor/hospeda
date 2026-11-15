@@ -4,6 +4,7 @@
         "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Confirme sempre as informações com o prestador.",
         "panelLabel": "Chat com IA — Perguntas sobre a experiência",
         "priceDisclaimer": "Horários, vagas e preços podem ter mudado. Entre em contato com o prestador para confirmar.",
+        "readNotice": "O estabelecimento pode ler as perguntas feitas neste chat. Não compartilhe dados pessoais.",
         "unavailable": "O chat de IA não está disponível para esta experiência"
     },
     "meta": {
@@ -46,6 +47,7 @@
         "contact": "Contato",
         "contactEmailAriaLabel": "Enviar um email ao prestador",
         "contactPhoneAriaLabel": "Ligar para o prestador",
+        "contactLandlineAriaLabel": "Ligar para o telefone fixo do prestador",
         "contactWebsiteAriaLabel": "Visitar o site do prestador",
         "duration": {
             "dayShort": "d",

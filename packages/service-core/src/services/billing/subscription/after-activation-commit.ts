@@ -22,6 +22,10 @@ export interface AfterSubscriptionActivatedPorts {
     readonly coverageNotices?: CoverageNotices;
     readonly billingFacts?: BillingFactSink;
     readonly changeDirection?: VerticalsForBilling['changeDirection'];
+    /** AC:B8b:8 (HOS-1579): settle a principal succession after activation commits. */
+    readonly successionSettler?: (input: {
+        readonly successorSubscriptionId: string;
+    }) => Promise<unknown>;
 }
 
 /** Runs the non-transactional S2 effects after activation has committed. */
@@ -29,6 +33,7 @@ export async function afterSubscriptionActivated(
     input: {
         readonly subscription: {
             readonly id: string;
+            readonly class?: string;
             readonly userId: string | null;
             readonly vertical: string | null;
             readonly succeedsId: string | null;
@@ -155,31 +160,58 @@ export async function afterSubscriptionActivated(
         );
     }
 
+    let touristVipCancelled = 0;
     if (!subscription.userId || !ports.touristVipInheritance) {
         logger.warn(
             { subscriptionId: subscription.id, userId: subscription.userId },
             'Tourist VIP clause not wired; the window-expiry sweep retries'
         );
-        return { touristVipCancelled: 0 };
+    } else {
+        try {
+            const result = await cancelInheritedTouristVips(
+                { userId: subscription.userId },
+                {
+                    provider: ports.provider,
+                    clock: ports.clock,
+                    beforeCancelNotice: ports.beforeCancelNotice,
+                    touristVipInheritance: ports.touristVipInheritance,
+                    coverageNotices: ports.coverageNotices,
+                    billingFacts: ports.billingFacts
+                }
+            );
+            touristVipCancelled = result.cancelled;
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Inherited Tourist VIP cancellation will be retried'
+            );
+        }
     }
-    try {
-        const result = await cancelInheritedTouristVips(
-            { userId: subscription.userId },
-            {
-                provider: ports.provider,
-                clock: ports.clock,
-                beforeCancelNotice: ports.beforeCancelNotice,
-                touristVipInheritance: ports.touristVipInheritance,
-                coverageNotices: ports.coverageNotices,
-                billingFacts: ports.billingFacts
-            }
-        );
-        return { touristVipCancelled: result.cancelled };
-    } catch (error) {
-        logger.error(
-            { subscriptionId: subscription.id, error },
-            'Inherited Tourist VIP cancellation will be retried'
-        );
-        return { touristVipCancelled: 0 };
+    let subscriptionClass = subscription.class;
+    if (!subscriptionClass && ports.successionSettler) {
+        try {
+            const [row] = await getDb()
+                .select({ class: subscriptions.class })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, subscription.id))
+                .limit(1);
+            subscriptionClass = row?.class;
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Subscription class lookup failed after commit'
+            );
+        }
     }
+    if (subscriptionClass === 'PRINCIPAL' && ports.successionSettler) {
+        try {
+            await ports.successionSettler({ successorSubscriptionId: subscription.id });
+        } catch (error) {
+            logger.error(
+                { subscriptionId: subscription.id, error },
+                'Succession settlement failed after commit'
+            );
+        }
+    }
+    return { touristVipCancelled };
 }

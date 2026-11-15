@@ -32,7 +32,8 @@ describe('self-cancel helpers', () => {
             ACTIVE: true,
             GRACE_PERIOD: true,
             SUSPENDED: true,
-            CANCEL_SCHEDULED: false
+            CANCEL_SCHEDULED: false,
+            PAUSED: false
         });
         expect(END_LINE_KEY).toEqual({
             ACTIVE: 'account.subscription.cancel.activeEnds',
@@ -59,7 +60,10 @@ describe('self-cancel helpers', () => {
                 addons: []
             }
         };
-        expect(parseOwnSubscriptions({ result: valid })).toEqual(valid.data);
+        expect(parseOwnSubscriptions({ result: valid })).toEqual({
+            ...valid.data,
+            declinedSignups: []
+        });
         expect(parseCancellationPreview({ result: validPreview })).toEqual(validPreview.data);
         expect(parseOwnSubscriptions({ result: { ok: false } })).toBeNull();
         expect(parseOwnSubscriptions({ result: { ok: true, data: {} } })).toBeNull();

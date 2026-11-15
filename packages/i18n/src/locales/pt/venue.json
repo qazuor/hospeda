@@ -4,6 +4,7 @@
         "headerDisclaimer": "As respostas são geradas por IA e podem conter erros. Confirme sempre as informações com o local.",
         "panelLabel": "Chat com IA — Perguntas sobre o local",
         "priceDisclaimer": "O cardápio, os preços e os horários podem ter mudado. Entre em contato com o local para confirmar.",
+        "readNotice": "O estabelecimento pode ler as perguntas feitas neste chat. Não compartilhe dados pessoais.",
         "unavailable": "O chat de IA não está disponível para este local"
     },
     "listing": {
@@ -47,6 +48,12 @@
         "featured": "Destaque"
     },
     "detail": {
+        "address": {
+            "title": "Onde nos encontrar",
+            "floor": "andar",
+            "apartment": "apto.",
+            "viewOnMap": "Ver no mapa"
+        },
         "openingHours": {
             "title": "Horário de funcionamento",
             "closed": "Fechado",
@@ -61,6 +68,11 @@
             "wednesday": "Quarta-feira"
         },
         "menu": "Ver cardápio",
+        "contactTitle": "Contato",
+        "contactPhoneAriaLabel": "Ligar para o estabelecimento",
+        "contactLandlineAriaLabel": "Ligar para o telefone fixo do estabelecimento",
+        "contactEmailAriaLabel": "Enviar e-mail ao estabelecimento",
+        "contactWebsiteAriaLabel": "Visitar o site do estabelecimento",
         "menuCarta": {
             "title": "Cardápio",
             "attachmentImage": "Cardápio em imagem",

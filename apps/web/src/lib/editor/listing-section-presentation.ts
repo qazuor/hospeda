@@ -1,7 +1,7 @@
 /**
  * @file listing-section-presentation.ts
  * @description The web-side presentation of every catalog section for the
- * venue and experience editors (HOS-1787 leaf 5.1, F-V1-048).
+ * venue, experience and accommodation editors (HOS-1787 leaf 5.1, F-V1-048; HOS-1809).
  *
  * The DOMAIN of a section (id, fields, traits, order, group, entitlement) lives
  * in `@repo/schemas`. What only the web knows — the URL slug below `…/editar/`
@@ -14,7 +14,7 @@
  * kept offering the old set.
  */
 
-import type { ListingSectionId } from '@repo/schemas';
+import type { ListingSectionId, ListingVertical } from '@repo/schemas';
 
 /** What the web adds to one catalog section. */
 export interface ListingSectionPresentation {
@@ -22,13 +22,28 @@ export interface ListingSectionPresentation {
     readonly slug: string;
     /** i18n key of the visible nav / hub / breadcrumb label. */
     readonly labelKey: string;
+    /**
+     * Key of a runtime visibility answer (see `EditorSection.visibilityKey`).
+     * Only a section that is shown conditionally declares one.
+     */
+    readonly visibilityKey?: string;
 }
+
+/**
+ * The visibility key of the one conditional accommodation section (its
+ * translations page, shown only when translation data exists).
+ */
+export const ACCOMMODATION_TRANSLATIONS_VISIBILITY_KEY = 'translations';
 
 /** Venue section presentation — one entry for every venue catalog section. */
 const VENUE_SECTION_PRESENTATION = {
     basicInfo: {
         slug: 'datos',
         labelKey: 'listing.owner.editor.sectionNav.basicInfo'
+    },
+    location: {
+        slug: 'ubicacion',
+        labelKey: 'listing.owner.editor.sectionNav.location'
     },
     openingHours: {
         slug: 'horarios',
@@ -122,6 +137,61 @@ const EXPERIENCE_SECTION_PRESENTATION = {
     }
 } satisfies Record<ListingSectionId<'experience'>, ListingSectionPresentation>;
 
+/** Accommodation section presentation — one entry for every accommodation catalog section. */
+const ACCOMMODATION_SECTION_PRESENTATION = {
+    basicInfo: {
+        slug: 'datos',
+        labelKey: 'host.properties.editor.section.basicInfo'
+    },
+    capacityPricing: {
+        slug: 'capacidad-precio',
+        // Not `section.capacity` — that key reads just "Capacidad", while this
+        // page also owns the price fields.
+        labelKey: 'host.properties.editor.section.capacityPricing'
+    },
+    location: {
+        slug: 'ubicacion',
+        labelKey: 'host.properties.editor.section.location'
+    },
+    amenities: {
+        slug: 'servicios',
+        labelKey: 'host.properties.editor.section.amenities'
+    },
+    photos: {
+        slug: 'fotos',
+        labelKey: 'host.properties.editor.section.photos'
+    },
+    faqs: {
+        slug: 'preguntas',
+        labelKey: 'host.properties.editor.section.faqs'
+    },
+    contact: {
+        slug: 'contacto',
+        // Not `section.contact` — this page absorbs the former standalone
+        // "Redes sociales" section too, so the label has to cover both.
+        labelKey: 'host.properties.editor.section.contactSocial'
+    },
+    seo: {
+        slug: 'seo',
+        // G7 smoke (H-121): SEO is a distinct concern from the listing's own
+        // content and from reaching the host, so it has its own page.
+        labelKey: 'host.properties.editor.section.seo'
+    },
+    calendar: {
+        slug: 'calendario',
+        labelKey: 'host.properties.editor.section.calendar'
+    },
+    translations: {
+        slug: 'traducciones',
+        labelKey: 'host.properties.editor.translation.sectionTitle',
+        visibilityKey: ACCOMMODATION_TRANSLATIONS_VISIBILITY_KEY
+    },
+    externalReputation: {
+        slug: 'reputacion',
+        labelKey: 'host.properties.editor.section.externalReputation'
+    }
+} satisfies Record<ListingSectionId<'accommodation'>, ListingSectionPresentation>;
+
 /**
  * Every section's web presentation, per vertical.
  *
@@ -130,8 +200,9 @@ const EXPERIENCE_SECTION_PRESENTATION = {
  * (G-FAC-05 arrives over these files in leaf 5.8).
  */
 export const LISTING_SECTION_PRESENTATION: Readonly<
-    Record<'venue' | 'experience', Readonly<Record<string, ListingSectionPresentation>>>
+    Record<ListingVertical, Readonly<Record<string, ListingSectionPresentation>>>
 > = {
     venue: VENUE_SECTION_PRESENTATION,
-    experience: EXPERIENCE_SECTION_PRESENTATION
+    experience: EXPERIENCE_SECTION_PRESENTATION,
+    accommodation: ACCOMMODATION_SECTION_PRESENTATION
 };

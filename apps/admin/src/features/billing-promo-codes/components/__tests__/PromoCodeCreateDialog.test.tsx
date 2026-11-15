@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import es from '@repo/i18n/locales/es/admin-billing.json';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors/api-error';
 import { PromoCodeCreateDialog } from '../PromoCodeCreateDialog';
@@ -53,6 +53,14 @@ async function fillFixedDraft() {
     fireEvent.change(screen.getByLabelText('Válido hasta'), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Revisar' }));
     await screen.findByTestId('promo-code-confirmation');
+}
+
+function layout() {
+    return {
+        dialog: screen.getByTestId('promo-code-create-dialog'),
+        body: screen.getByTestId('promo-code-dialog-body'),
+        footer: screen.getByTestId('promo-code-dialog-footer')
+    };
 }
 
 describe('AC:B9b:9 HOS-1591 PromoCodeCreateDialog TEST:B9b:9 (support)', () => {
@@ -113,5 +121,46 @@ describe('AC:B9b:9 HOS-1591 PromoCodeCreateDialog TEST:B9b:9 (support)', () => {
             'Ese código ya existe. Elegí otro código.'
         );
         expect(screen.getByTestId('promo-code-confirmation')).toBeInTheDocument();
+    });
+});
+
+describe('HOS-1761 the promo code dialog keeps its footer visible', () => {
+    it('form mode: only the body scrolls and the footer sits outside it', () => {
+        // Arrange
+        renderDialog();
+        const { dialog, body, footer } = layout();
+        // Act
+        const cancel = within(footer).getByRole('button', { name: 'Cancelar' });
+        const review = within(footer).getByRole('button', { name: 'Revisar' });
+        // Assert
+        expect(dialog.classList.contains('overflow-y-auto')).toBe(false);
+        expect(dialog.classList.contains('flex-col')).toBe(true);
+        expect(body.classList.contains('overflow-y-auto')).toBe(true);
+        expect(body.classList.contains('min-h-0')).toBe(true);
+        expect(body.classList.contains('flex-1')).toBe(true);
+        expect(body.contains(footer)).toBe(false);
+        expect(footer.closest('form')).not.toBeNull();
+        expect(cancel).toBeInTheDocument();
+        expect(review).toBeInTheDocument();
+    });
+
+    it('review mode: the same layout with back and create in the footer', async () => {
+        // Arrange
+        renderDialog();
+        await fillFixedDraft();
+        const { dialog, body, footer } = layout();
+        // Act
+        const back = within(footer).getByRole('button', { name: 'Volver a editar' });
+        const create = within(footer).getByRole('button', { name: 'Crear' });
+        // Assert
+        expect(dialog.classList.contains('overflow-y-auto')).toBe(false);
+        expect(dialog.classList.contains('flex-col')).toBe(true);
+        expect(body.classList.contains('overflow-y-auto')).toBe(true);
+        expect(body.classList.contains('min-h-0')).toBe(true);
+        expect(body.classList.contains('flex-1')).toBe(true);
+        expect(body.contains(footer)).toBe(false);
+        expect(within(body).getByTestId('promo-code-confirmation')).toBeInTheDocument();
+        expect(back).toBeInTheDocument();
+        expect(create).toBeInTheDocument();
     });
 });

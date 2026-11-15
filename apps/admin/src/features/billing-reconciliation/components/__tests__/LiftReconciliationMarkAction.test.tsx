@@ -120,7 +120,7 @@ describe('TEST:1697:13 AC:1697:5 lift action', () => {
         renderAction();
         fireEvent.click(screen.getByTestId('reconciliation-mark-lift'));
         const dialog = screen.getByTestId('reconciliation-mark-lift-dialog');
-        expect(within(dialog).getByText('7 · PAGO_TARDIO_RECHAZADO')).toBeInTheDocument();
+        expect(within(dialog).getByText('7 · Pago tardío rechazado')).toBeInTheDocument();
         expect(
             within(dialog).getByText(
                 `${tr('admin-billing.reconciliationMarks.proposal')}: ${tr('admin-billing.reconciliationMarks.proposals.refund')}`

@@ -4,8 +4,13 @@
  */
 import type { AiChatEntityType } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import enAccommodations from '../../../../packages/i18n/src/locales/en/accommodations.json';
+import enVenue from '../../../../packages/i18n/src/locales/en/venue.json';
+import esAccommodations from '../../../../packages/i18n/src/locales/es/accommodations.json';
 import esExperience from '../../../../packages/i18n/src/locales/es/experience.json';
 import esVenue from '../../../../packages/i18n/src/locales/es/venue.json';
+import ptAccommodations from '../../../../packages/i18n/src/locales/pt/accommodations.json';
+import ptVenue from '../../../../packages/i18n/src/locales/pt/venue.json';
 import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '../../src/lib/ai-chat-copy';
 import { pickClientNamespaces } from '../../src/lib/i18n-client-namespaces';
 
@@ -128,5 +133,53 @@ describe('aiChatCopyKey', () => {
     it('should route vertical keys to the vertical namespace', () => {
         expect(aiChatCopyKey('venue', 'panelLabel')).toBe('venue.aiChat.panelLabel');
         expect(aiChatCopyKey('experience', 'fabLabel')).toBe('experience.aiChat.fabLabel');
+    });
+});
+
+describe('readNotice (HOS-2075: the reader is named per vertical)', () => {
+    const BUSINESS =
+        'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.';
+    const HOST =
+        'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.';
+
+    it.each([
+        ['accommodation', 'accommodations.aiChat.readNotice'],
+        ['venue', 'venue.aiChat.readNotice'],
+        ['experience', 'experience.aiChat.readNotice']
+    ] as const)('should route %s to its own key', (entityType, key) => {
+        expect(aiChatCopyKey(entityType, 'readNotice')).toBe(key);
+    });
+
+    it('should use host wording for an accommodation, never the business one', () => {
+        const out = resolveAiChatCopy({
+            t: missingT,
+            entityType: 'accommodation',
+            suffix: 'readNotice'
+        });
+        expect(out).toBe(HOST);
+        expect(esAccommodations.aiChat.readNotice).toBe(HOST);
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('should keep the business wording for %s', (entityType) => {
+        const out = resolveAiChatCopy({ t: missingT, entityType, suffix: 'readNotice' });
+        expect(out).toBe(BUSINESS);
+    });
+
+    it('should ship the venue and experience keys in es', () => {
+        expect(esVenue.aiChat.readNotice).toBe(BUSINESS);
+        expect(esExperience.aiChat.readNotice).toBe(BUSINESS);
+    });
+
+    it.each([
+        ['es', esAccommodations.aiChat.readNotice, esVenue.aiChat.readNotice],
+        ['en', enAccommodations.aiChat.readNotice, enVenue.aiChat.readNotice],
+        ['pt', ptAccommodations.aiChat.readNotice, ptVenue.aiChat.readNotice]
+    ] as const)('should differ between accommodation and venue in %s', (_l, acc, venue) => {
+        expect(acc.length).toBeGreaterThan(10);
+        expect(venue.length).toBeGreaterThan(10);
+        expect(acc).not.toBe(venue);
     });
 });

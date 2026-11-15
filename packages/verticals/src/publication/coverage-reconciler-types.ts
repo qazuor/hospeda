@@ -1,3 +1,4 @@
+import type { ListingFeaturedPorts } from '../featured/listing-featured-types';
 import type {
     PublicationAfterCommit,
     PublicationBilling,
@@ -18,6 +19,8 @@ export type PartnerPresenceKey = 'partner_public_page' | 'partner_carousel_prese
 
 /** Ports used by the daily coverage reconciliation; all pages use keyset cursors. */
 export interface ReconcilerPorts {
+    /** HOS-1718: run listing featured sync for every pair so lost notices self-heal daily. Optional for existing test harnesses. */
+    readonly featured?: Pick<ListingFeaturedPorts, 'reader' | 'unitOfWork'>;
     readonly population: {
         listOwnerVerticals(args: {
             readonly after: {
@@ -70,6 +73,8 @@ export interface ReconcilerSummary {
     readonly ran: number;
     readonly lowered: number;
     readonly restored: number;
+    /** Present only when the optional featured port was provided. */
+    readonly featuredChanged?: number;
     readonly partnerChecked: number;
     readonly partnerInvalidated: number;
     readonly failures: readonly {

@@ -26,11 +26,22 @@ export const LISTING_SECTIONS = {
             group: 'property'
         },
         {
+            // HOS-2189: the venue's structured postal address (the same
+            // `location` JSONB an accommodation has). Common to every business
+            // line: a food or nightlife venue is a physical place either way.
+            id: 'location',
+            vertical: 'venue',
+            common: true,
+            fields: ['location'],
+            order: 2,
+            group: 'property'
+        },
+        {
             id: 'openingHours',
             vertical: 'venue',
             common: true,
             fields: ['openingHours'],
-            order: 2,
+            order: 3,
             group: 'property'
         },
         {
@@ -38,7 +49,7 @@ export const LISTING_SECTIONS = {
             vertical: 'venue',
             common: true,
             fields: ['priceRange'],
-            order: 3,
+            order: 4,
             group: 'property'
         },
         {
@@ -48,7 +59,7 @@ export const LISTING_SECTIONS = {
             // HOS-2060: the structured `policies` live with the catalog rows
             // they replaced; a section may claim keys inside it (`policyKeys`).
             fields: ['amenityIds', 'featureIds', 'amenityAttributes', 'policies'],
-            order: 4,
+            order: 5,
             group: 'property'
         },
         {
@@ -56,7 +67,7 @@ export const LISTING_SECTIONS = {
             vertical: 'venue',
             common: true,
             fields: ['videos'],
-            order: 5,
+            order: 6,
             group: 'content'
         },
         {
@@ -64,7 +75,7 @@ export const LISTING_SECTIONS = {
             vertical: 'venue',
             common: true,
             fields: ['contactInfo', 'socialNetworks'],
-            order: 6,
+            order: 7,
             group: 'content'
         },
         {
@@ -80,7 +91,7 @@ export const LISTING_SECTIONS = {
                 { id: 'qr', entitlementKey: K.MENU_QR_SCAN_METRICS },
                 { id: 'qrMetrics', entitlementKey: K.MENU_QR_SCAN_METRICS }
             ],
-            order: 7,
+            order: 8,
             group: 'content'
         },
         {
@@ -90,7 +101,7 @@ export const LISTING_SECTIONS = {
             entitlementKey: K.MANAGE_VENUE_DAILY_SPECIAL,
             fields: [],
             readOnlyFields: ['dailySpecials'],
-            order: 8,
+            order: 9,
             group: 'content'
         },
         {
@@ -100,7 +111,7 @@ export const LISTING_SECTIONS = {
             entitlementKey: K.MANAGE_VENUE_EVENTS,
             fields: [],
             readOnlyFields: ['venueEvents'],
-            order: 9,
+            order: 10,
             group: 'content'
         },
         {
@@ -108,7 +119,7 @@ export const LISTING_SECTIONS = {
             vertical: 'venue',
             common: true,
             fields: ['faqs'],
-            order: 10,
+            order: 11,
             group: 'content'
         },
         {
@@ -127,7 +138,7 @@ export const LISTING_SECTIONS = {
             // DEC-FAC-050 / DEC-FAC-068: an i18n key, never the Spanish text.
             // The component resolves it through `t()`.
             headingWhenMultiLineKey: 'venue.detail.nightInfo.headingMultiLine',
-            order: 11,
+            order: 12,
             group: 'property'
         },
         {
@@ -141,7 +152,7 @@ export const LISTING_SECTIONS = {
                 'richDescriptionI18n',
                 'translationMeta'
             ],
-            order: 12,
+            order: 13,
             group: 'management'
         }
     ] as const satisfies readonly ListingSectionDefinitionBase<'venue'>[],
@@ -284,6 +295,21 @@ export const LISTING_SECTIONS = {
                 'reviewsCount',
                 'averageRating'
             ],
+            // Field traits (HOS-1809): `richDescription` and its i18n sibling are one
+            // gate, never two. `isVerified` is read-only for the owner (an admin sets
+            // it) but its public exposure is still gated by the owner's key (Q-1).
+            traits: [
+                {
+                    id: 'richDescription',
+                    entitlementKey: K.CAN_USE_RICH_DESCRIPTION,
+                    fields: ['richDescription', 'richDescriptionI18n']
+                },
+                {
+                    id: 'verification',
+                    entitlementKey: K.HAS_VERIFICATION_BADGE,
+                    fields: ['isVerified']
+                }
+            ],
             order: 1,
             group: 'property'
         },
@@ -320,6 +346,9 @@ export const LISTING_SECTIONS = {
             vertical: 'accommodation',
             common: true,
             fields: ['videos'],
+            // `media.videos` and the video URLs inside `description` travel with this
+            // trait; they are nested, so the public projection handles them apart.
+            traits: [{ id: 'videos', entitlementKey: K.CAN_EMBED_VIDEO, fields: ['videos'] }],
             order: 5,
             group: 'content'
         },

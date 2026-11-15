@@ -10,11 +10,8 @@ import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import {
-    filterPublicPaidFieldsForOwner,
-    resolvePublicFieldGrants
-} from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 // Initialize service once
@@ -52,9 +49,9 @@ const getByDestinationHandler = async (c: Context) => {
     // Apply owner-effective paid-field grants before the public response is cached.
     const data = result.data ?? { accommodations: [] };
     const pageItems = Array.isArray(data.accommodations) ? data.accommodations : [];
-    const grants = await resolvePublicFieldGrants(pageItems.map((item) => item.ownerId));
-    const strippedAccommodations = pageItems.map((accommodation) => ({
-        ...filterPublicPaidFieldsForOwner(accommodation, grants),
+    const gatedItems = await projectPublicAccommodations({ listings: pageItems });
+    const strippedAccommodations = pageItems.map((accommodation, index) => ({
+        ...gatedItems[index],
         // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
         // (the only featuring source since HOS-1419); the raw column itself is
         // stripped by the public schema (never in its pick).

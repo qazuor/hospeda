@@ -6,6 +6,9 @@
  * (V6.9b, HOS-1641). The ExperienceService._executeSearch / _executeCount force these gates
  * AFTER the caller's scalar filters (mirroring the venue service), so no query
  * param can widen the result set to unpublished listings.
+ *
+ * Sorting: `featuredFirst` is FORCED to `true` server-side. The client cannot
+ * opt out; featured experiences stay ahead of non-featured experiences within any sort.
  */
 import {
     ExperiencePublicSchema,
@@ -50,7 +53,9 @@ export const publicListExperiencesRoute = createPublicListRoute({
         const result = await experienceService.search(actor, {
             ...domainParams,
             page,
-            pageSize
+            pageSize,
+            // Forced server-side: featured experiences always appear first on the public listing.
+            featuredFirst: true
         });
 
         if (result.error) {

@@ -48,6 +48,7 @@ export * from './listing-catalog.schema.js';
 // Listing publish-readiness ("complete") contract — single
 // canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
 export * from './listing-completeness.js';
+export * from './listing-fix-request-list.schema.js';
 // Listing common schemas (SPEC-239)
 export * from './listing-identity.schema.js';
 // Shared relational media row base (HOS-372) — venue/experience media extend this
@@ -60,6 +61,7 @@ export * from './listing-policies.schema.js';
 export * from './listing-purge-on-request.schema.js';
 export * from './listing-support-edit.schema.js';
 export * from './location.schema.js';
+export * from './location-rule.schema.js';
 export * from './media.schema.js';
 export * from './media-upload.schema.js';
 export * from './moderation.schema.js';
@@ -74,6 +76,7 @@ export {
 } from './pagination.schema.js';
 export * from './params.schema.js';
 export * from './password.schema.js';
+export * from './postal-address.schema.js';
 export * from './price.schema.js';
 export { queryDateParam, queryNumberParam } from './query-helpers.js';
 export * from './relations.schema.js';

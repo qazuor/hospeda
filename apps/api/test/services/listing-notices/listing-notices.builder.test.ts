@@ -46,7 +46,10 @@ function row(
 function addon(until: Date | 'NO_KNOWN_DATE', target: string = ID) {
     return {
         type: 'ADDON',
-        reference: { kind: 'ADDON_VERSION', id: '55555555-5555-4555-8555-555555555555' },
+        reference: {
+            kind: 'ADDON_VERSION',
+            addonVersionId: '55555555-5555-4555-8555-555555555555'
+        },
         scope: 'LISTING',
         target,
         since: daysAgo(10),

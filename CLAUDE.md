@@ -339,11 +339,13 @@ file there is named after its job. The billing and verticals jobs are:
   `listing-remote-deletion-retry`, `listing-retention-pass`.
 - **Trial:** `trial-machine-expiry`.
 - **Subscriptions:** `subscription-window-expiry`, `subscription-service-end`,
-  `subscription-grace-reminder`, `subscription-renewal-notice`.
+  `subscription-succession-reevaluation`, `subscription-grace-reminder`,
+  `subscription-renewal-notice`.
 - **Payments and reconciliation:** `payment-window-expiry`,
   `billing-creations-sweep`, `billing-reconciliation-sweep`,
   `billing-reconciliation-summary`.
 - **Promos:** `billing-promo-ending-notice`, `archive-expired-promotions`.
+- **Plan migration:** `plan-migration-notice`, `plan-migration-application`.
 - **Retention:** `provider-notification-retention`.
 
 None of the pre-HOS-1352 job names survive. Examples are `dunning`,

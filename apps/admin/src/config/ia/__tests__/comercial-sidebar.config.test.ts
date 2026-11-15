@@ -23,7 +23,9 @@
  * @see SPEC-164 T-005 / AC-6 / AC-7 / AC-18
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { isPermissionGateGranted } from '@/lib/nav/permission-visibility';
 import { rawConfig } from '../index';
 import { AdminIAConfigSchema } from '../schema';
 import { sidebars } from '../sidebars';
@@ -68,6 +70,50 @@ const comercialItems = sidebars.comercialSidebar?.items as RawItem[] | undefined
 // ============================================================================
 
 describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
+    it('gates action 17 plan migration on BILLING_MIGRATE_PLAN (AC:B12:2)', () => {
+        if (!comercialItems) throw new Error('comercialSidebar items not found');
+        const link = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'plan-migration'
+        );
+        expect(link).toMatchObject({
+            route: '/billing/plan-migration',
+            permissions: ['BILLING_MIGRATE_PLAN'],
+            onMissing: 'hide'
+        });
+        expect(
+            isPermissionGateGranted({ gate: link?.permissions ?? [], userPermissions: [] })
+        ).toBe(false);
+        expect(
+            isPermissionGateGranted({
+                gate: link?.permissions ?? [],
+                userPermissions: [PermissionEnum.BILLING_MIGRATE_PLAN]
+            })
+        ).toBe(true);
+    });
+
+    it('shows the permanent grant action only with its grant permission (AC:B13a:6)', () => {
+        if (!comercialItems) throw new Error('comercialSidebar items not found');
+        const link = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'permanent-grants'
+        );
+        expect(link).toMatchObject({
+            route: '/billing/permanent-grants',
+            permissions: ['BILLING_GRANT_COMPLIMENTARY'],
+            onMissing: 'hide'
+        });
+        expect(
+            isPermissionGateGranted({
+                gate: ['BILLING_GRANT_COMPLIMENTARY'],
+                userPermissions: []
+            })
+        ).toBe(false);
+        expect(
+            isPermissionGateGranted({
+                gate: ['BILLING_GRANT_COMPLIMENTARY'],
+                userPermissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY]
+            })
+        ).toBe(true);
+    });
     it('comercialSidebar is registered in the sidebars registry', () => {
         expect(sidebars).toHaveProperty('comercialSidebar');
         expect(comercialItems).toBeDefined();

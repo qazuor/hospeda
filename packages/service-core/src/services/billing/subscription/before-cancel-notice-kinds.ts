@@ -23,6 +23,10 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     ARREARS_SUSPENSION: 'billing.arrears-suspension',
     /** A5: an orphaned addon's complement subscription (AC:B5:27). */
     ADDON_CANCELLED: 'billing.addon-cancelled',
+    /** A3: the authorization window of a recurring addon expired. */
+    ADDON_AUTHORIZATION_EXPIRED: 'billing.addon-authorization-expired-cancel',
+    /** A6: the target listing reached PURGED; the addon is consumed. */
+    ADDON_LISTING_PURGED: 'billing.addon-listing-purged-cancel',
     /** S13: a permanent grant cut the subscription's charge (B9a, HOS-1582). */
     PERMANENT_GRANT: 'billing.permanent-grant-cancel',
     /** S20: a permanent grant converted an addon to $0 and cut its complement's charge (B9a, HOS-1583). */
@@ -32,7 +36,13 @@ export const BEFORE_CANCEL_TEMPLATE_BY_KIND = {
     /** S39: the person started the signup again (another payer email, or a creation that did not apply). */
     ATTEMPT_REPLACED: 'billing.attempt-replaced-cancel',
     /** S40: the person cancelled their pending signup attempt. */
-    ATTEMPT_CANCELLED: 'billing.attempt-cancelled-cancel'
+    ATTEMPT_CANCELLED: 'billing.attempt-cancelled-cancel',
+    /** S17: the successor authorized; the predecessor's authorization is cancelled (AC:B8b:9, DEC-SUB-006 implication 4). */
+    SUCCESSION_PREDECESSOR: 'billing.succession-predecessor-cancel',
+    /** S31: a chargeback cut the predecessor and the successor is cut with it; no authorization window expired (AC:B8b:13). */
+    SUCCESSOR_CUT: 'billing.successor-cut-cancel',
+    /** S6 by its third event: a chargeback suspended the row (AC:B7:10, `B/19` row 10-ter); S6 retries itself, never through the sweep. */
+    CHARGEBACK_SUSPENSION: 'billing.chargeback-suspension'
 } as const;
 
 /** A kind of before-cancel notice; each one has its own template and no kind is a default. */

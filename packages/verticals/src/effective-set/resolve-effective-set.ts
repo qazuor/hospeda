@@ -122,7 +122,7 @@ async function grantsOf(
     throw new UnresolvedCoverageSourceError(source.type);
 }
 
-/** Resolves only the user + vertical portion; LISTING deltas are separate. */
+/** Resolves only user + vertical coverage. LISTING deltas never enter the set: the listing featured sync (`featured/sync-listing-featured.ts`, HOS-1718) reads them. */
 export async function resolveEffectiveSet(
     args: ResolveEffectiveSetArgs
 ): Promise<ResolvedEffectiveSet> {

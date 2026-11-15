@@ -5,12 +5,11 @@ import {
     type DrizzleClient,
     eq,
     getDb,
-    gt,
-    inArray,
     isNotNull,
     permanentGrants,
     permanentGrantVerticals,
-    type ReconciliationMarkReason
+    type ReconciliationMarkReason,
+    reconciliationInventoryModel
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { isAddonInstanceOrphaned } from '../../addon/addon-orphanhood.js';
@@ -59,18 +58,10 @@ export async function runAddonWithoutShutdownCheck(
     const db = getDb();
     let cursor: string | undefined;
     for (;;) {
-        const query = db
-            .select({ id: addonInstances.id })
-            .from(addonInstances)
-            .where(
-                and(
-                    inArray(addonInstances.status, ['PENDING_AUTHORIZATION', 'ACTIVE']),
-                    ...(cursor ? [gt(addonInstances.id, cursor)] : [])
-                )
-            )
-            .orderBy(addonInstances.id)
-            .limit(pageSize);
-        const page = await query;
+        const page = await reconciliationInventoryModel.listLiveAddonInstanceIdsPage({
+            afterInstanceId: cursor,
+            limit: pageSize
+        });
         for (const { id } of page) {
             result.examined++;
             try {

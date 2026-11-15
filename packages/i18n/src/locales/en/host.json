@@ -262,7 +262,8 @@
             },
             "unpublishTrialNote": "The free trial keeps running: unpublishing does not stop the trial clock.",
             "unpublishRecurringNote_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged while unpublished, until you cancel it.",
-            "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them."
+            "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them.",
+            "recurringWithdrawLink": "Withdraw these featured add-ons"
         },
         "editor": {
             "section": {
@@ -317,6 +318,8 @@
                 "amenityDetailsHint": "Say whether it is private or shared and whether it is available all year.",
                 "features": "Features",
                 "phone": "Phone",
+                "landlinePhone": "Landline",
+                "contactPublicHint": "These contact details are shown publicly on your listing.",
                 "phoneCountry": "Country",
                 "phoneCountrySearchPlaceholder": "Search country...",
                 "phoneCountryNoResults": "No countries found",
@@ -499,6 +502,7 @@
             "entitlement": {
                 "premiumFeature": "Premium feature",
                 "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
+                "calendarNudge": "Upgrade your plan to use the availability calendar.",
                 "richDescriptionHint": "Formatted text: bold, lists and more. Available on higher plans.",
                 "videoNudge": "Upgrade your plan to embed videos in your property.",
                 "genericNudge": "This feature is available on a higher plan.",
@@ -726,6 +730,14 @@
             },
             "pageDescription": "Editar información de tu propiedad",
             "aiQuestions": {
+                "redactionNote": "Contact details (emails and phone numbers) are hidden in the questions shown here.",
+                "emptyFiltered": "There are no questions in that date range.",
+                "filter": {
+                    "from": "From",
+                    "to": "To",
+                    "clear": "Clear dates",
+                    "invalidRange": "The date range is not valid. You can look back up to 12 months and \"From\" cannot be after \"To\"."
+                },
                 "intro": "What visitors asked your listing's assistant. Questions are anonymous and kept for 12 months.",
                 "loading": "Loading questions…",
                 "error": "We could not load the questions. Please try again later.",
