@@ -1,0 +1,38 @@
+---
+/**
+ * @file consent.astro
+ * @description OAuth consent page for AI assistant connections (HOS-2184 T-027).
+ *
+ * The API's OAuth provider redirects here with a signed authorization request
+ * in the query string. The page is session-blind on purpose: it renders the
+ * same HTML for every visitor and the `OAuthConsent` island does the per-user
+ * work (client lookup, sign-in round trip, decision) in the browser.
+ *
+ * `AuthLayout` already marks the page `noindex`.
+ *
+ * @route    /[lang]/auth/consent/
+ * @rendering SSR (no per-request data is read)
+ */
+
+import { OAuthConsent } from '@/components/auth/OAuthConsent.client';
+import AuthLayout from '@/layouts/AuthLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+
+// Locale is injected by middleware — always a valid SupportedLocale.
+const locale = Astro.locals.locale as SupportedLocale;
+
+const t = createT(locale);
+
+const title = t('auth.consent.pageTitle', 'Autorizar asistente de IA');
+const description = t(
+    'auth.consent.pageDescription',
+    'Revisá qué podrá hacer el asistente antes de conectarlo a tu cuenta de Hospeda.'
+);
+---
+
+<AuthLayout locale={locale} title={title} description={description}>
+    <div class="auth-page-content">
+        <OAuthConsent client:load locale={locale} />
+    </div>
+</AuthLayout>

@@ -121,6 +121,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'auth-ui.signOut',
     'auth-ui.signUp',
     'auth-ui.userMenu',
+    // HOS-2184: OAuth consent island for AI assistant connections.
+    'auth.consent',
     'auth.forgotPassword',
     // HOS-959: the OAuth block moved out of both password forms into one
     // shared island above the tabs, so its labels left `auth.signIn`/
