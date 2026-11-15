@@ -34,23 +34,23 @@ const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, probe } = vi.hoiste
 
 vi.mock('../../../src/lib/mcp/server', async (importOriginal) => {
     const original = await importOriginal<typeof import('../../../src/lib/mcp/server')>();
-    const { getMcpCaller } = await import('../../../src/lib/mcp/caller');
+    const { z } = await import('zod');
+    const { defineTool } = await import('../../../src/mcp/tools/tool-definition');
+    const whoami = defineTool({
+        name: 'whoami',
+        title: 'Probe',
+        description: 'Probe',
+        inputSchema: z.object({}),
+        isWrite: false,
+        emailUnverifiedOperation: 'READ_OWN',
+        handler: async ({ actor }) => ({ data: { actorId: actor.id } })
+    });
     return {
         ...original,
-        createHospedaMcpServer: () => {
-            const server = original.createHospedaMcpServer();
-            if (probe.enabled) {
-                server.registerTool('whoami', { description: 'Probe' }, async (ctx) => {
-                    const { actor, mcpAuth } = getMcpCaller({ ctx });
-                    return {
-                        content: [
-                            { type: 'text', text: JSON.stringify({ actorId: actor.id, mcpAuth }) }
-                        ]
-                    };
-                });
-            }
-            return server;
-        }
+        createHospedaMcpServer: () =>
+            probe.enabled
+                ? original.createHospedaMcpServer({ tools: [whoami] })
+                : original.createHospedaMcpServer()
     };
 });
 
@@ -329,16 +329,11 @@ describe('/mcp endpoint', () => {
                 readonly result?: { readonly content?: readonly { readonly text: string }[] };
             };
 
-            // Assert
+            // Assert (the grant reaching the tool is asserted through the
+            // audit record in mcp-tools.test.ts)
             expect(res.status).toBe(200);
             expect(JSON.parse(message.result?.content?.[0]?.text ?? 'null')).toEqual({
-                actorId: USER_ID,
-                mcpAuth: {
-                    userId: USER_ID,
-                    clientId: CLIENT_ID,
-                    clientName: 'Claude',
-                    scopes: ['openid', 'offline_access']
-                }
+                actorId: USER_ID
             });
         });
 

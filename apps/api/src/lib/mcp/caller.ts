@@ -113,7 +113,7 @@ function isMcpCaller(value: unknown): value is McpCaller {
  *
  * @example
  * ```typescript
- * server.registerTool('list_my_listings', config, async (ctx) => {
+ * server.setRequestHandler('tools/call', async (request, ctx) => {
  *     const { actor, mcpAuth } = getMcpCaller({ ctx });
  *     // ...
  * });

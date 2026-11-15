@@ -1,7 +1,7 @@
 /**
  * HOS-2184 T-012 — tool definitions served end to end through the REAL `/mcp`
  * route (`initApp`, real `mcpAuthMiddleware`, real SDK handler, real
- * `bindMcpTool`). Same outer-boundary mocks as `mcp-endpoint.test.ts`; the
+ * `registerMcpToolHandlers`). Same outer-boundary mocks as `mcp-endpoint.test.ts`; the
  * tool registry is replaced by two dummy definitions (one read, one write),
  * and the audit writer by a spy.
  */
@@ -97,7 +97,10 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
-import { TOOL_NOT_FOUND_MESSAGE } from '../../../src/mcp/tools/tool-errors';
+import {
+    TOOL_NOT_FOUND_MESSAGE,
+    TOOL_VALIDATION_MESSAGE
+} from '../../../src/mcp/tools/tool-errors';
 import { env, validateApiEnv } from '../../../src/utils/env';
 
 const PROTOCOL_VERSION = '2025-06-18';
@@ -123,6 +126,7 @@ function givenLiveUser(): void {
 }
 
 interface RpcResult {
+    readonly error?: { readonly code: number; readonly message: string };
     readonly result?: {
         readonly tools?: readonly Record<string, unknown>[];
         readonly content?: readonly { readonly text: string }[];
@@ -291,5 +295,44 @@ describe('/mcp tools (T-012 binding, end to end)', () => {
         // Assert
         expect(message.result?.isError).toBe(true);
         expect(writeHandler).not.toHaveBeenCalled();
+    });
+
+    it('answers malformed write arguments in Spanish and audits the call', async () => {
+        // Act
+        const message = await callTool('dummy_write', { listingId: 42 });
+
+        // Assert
+        expect(message.result?.isError).toBe(true);
+        expect(message.result?.content?.[0]?.text).toMatch(
+            new RegExp(`^${TOOL_VALIDATION_MESSAGE}: campo «listingId»`)
+        );
+        expect(writeHandler).not.toHaveBeenCalled();
+        expect(recordMock).toHaveBeenCalledTimes(1);
+        expect(recordMock).toHaveBeenCalledWith({
+            actor: expect.objectContaining({ id: USER_ID }),
+            mcpAuth: expect.objectContaining({ clientId: CLIENT_ID }),
+            tool: 'dummy_write',
+            outcome: 'error',
+            errorCode: 'VALIDATION_ERROR'
+        });
+    });
+
+    it('answers malformed read arguments in Spanish without auditing', async () => {
+        // Act
+        const message = await callTool('dummy_read', {});
+
+        // Assert
+        expect(message.result?.isError).toBe(true);
+        expect(message.result?.content?.[0]?.text).toContain('campo «q»');
+        expect(recordMock).not.toHaveBeenCalled();
+    });
+
+    it('answers an unknown tool with a JSON-RPC error', async () => {
+        // Act
+        const message = await callTool('nope', {});
+
+        // Assert
+        expect(message.result).toBeUndefined();
+        expect(message.error).toEqual(expect.objectContaining({ code: -32602 }));
     });
 });

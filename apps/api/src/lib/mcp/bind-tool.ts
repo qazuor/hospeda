@@ -1,32 +1,39 @@
 /**
  * @file bind-tool.ts
  * @description Exposes a transport-agnostic tool definition
- * (`mcp/tools/tool-definition.ts`) on an `McpServer` (HOS-2184 T-012).
+ * (`mcp/tools/tool-definition.ts`) over MCP (HOS-2184 T-012): its
+ * `tools/list` entry ({@link buildToolListEntry}) and one `tools/call`
+ * ({@link handleMcpToolCall}). `tool-handlers.ts` wires both onto the server.
  *
- * The binding is deliberately thin. Per call it:
- * 1. lets the SDK validate the arguments against `inputSchema` (an invalid
- *    call never reaches the handler);
- * 2. takes the caller from the request with `getMcpCaller` (never from a
+ * Per call, {@link handleMcpToolCall}:
+ * 1. takes the caller from the request with `getMcpCaller` (never from a
  *    cookie session);
- * 3. rate limits the call per client and user (`tool-rate-limit.ts`); a call
+ * 2. rate limits the call per client and user (`tool-rate-limit.ts`); a call
  *    over the limit is answered with a `RATE_LIMIT_EXCEEDED` tool error, is
  *    not run and is not audited (a flood must not flood the audit log);
- *    then runs the tool with `executeTool` (person-state check, handler, Spanish
+ * 3. validates the raw arguments with `parseToolInput`, so a malformed call
+ *    is answered with the same Spanish `VALIDATION_ERROR` message (naming the
+ *    fields) every other channel gets. The SDK does NOT validate first: the
+ *    server answers `tools/call` itself instead of through
+ *    `McpServer.registerTool`, whose built-in English validation error
+ *    bypassed both this message and the audit;
+ * 4. runs the tool with `executeTool` (person-state check, handler, Spanish
  *    error mapping);
- * 4. audits write tools with `recordMcpToolCall` (success, denied or error);
- * 5. renders the outcome as an MCP result: text content on success,
+ * 5. audits write tools with `recordMcpToolCall` (success, denied or error),
+ *    malformed calls included (AC-12: every write call leaves a record);
+ * 6. renders the outcome as an MCP result: text content on success,
  *    `isError: true` with the Spanish message on failure, plus
  *    `_meta['mcp/www_authenticate']` when the user must reconnect (spec
  *    §6.3; ChatGPT shows its linking UI on it).
  *
- * The callback never throws. The SDK turns a thrown error into an `isError`
- * result carrying `error.message`, which would leak internals; everything is
- * caught here and answered with the generic message instead.
+ * It never throws. A thrown error would reach the client as a protocol error
+ * carrying internals; everything is caught here and answered with the
+ * generic message instead.
  */
 
-import type { CallToolResult, McpServer, ToolAnnotations } from '@modelcontextprotocol/server';
-import type { z } from 'zod';
-import { executeTool, type ToolRunOutcome } from '../../mcp/tools/run-tool';
+import type { CallToolResult, Tool, ToolAnnotations } from '@modelcontextprotocol/server';
+import { z } from 'zod';
+import { executeTool, parseToolInput, type ToolRunOutcome } from '../../mcp/tools/run-tool';
 import type { ToolDefinition, ToolTarget } from '../../mcp/tools/tool-definition';
 import {
     TOOL_UNEXPECTED_ERROR_MESSAGE,
@@ -89,6 +96,57 @@ export function buildToolAnnotations({
     };
 }
 
+/**
+ * Shape of a tool `inputSchema` on the wire. Zod types `z.toJSONSchema`
+ * output as its own `JSONSchema` interface, which the SDK's JSON-value typing
+ * does not accept; parsing it through this schema yields the wire type
+ * without a cast (and fails loudly if a converter ever emits non-JSON).
+ */
+const ToolInputJsonSchema = z
+    .object({
+        type: z.literal('object'),
+        properties: z.record(z.string(), z.json()).optional(),
+        required: z.array(z.string()).optional()
+    })
+    .catchall(z.json());
+
+/**
+ * The `inputSchema` a client sees for a definition: the input JSON Schema
+ * (draft 2020-12) of its Zod schema. This is the conversion
+ * `McpServer.registerTool` published before the server answered `tools/list`
+ * itself; `test/lib/mcp/tool-handlers.test.ts` pins the equality.
+ *
+ * @param args - The definition
+ * @returns The JSON Schema of the tool's arguments
+ */
+export function buildToolInputJsonSchema({
+    definition
+}: {
+    readonly definition: Pick<ToolDefinition, 'inputSchema'>;
+}): Tool['inputSchema'] {
+    const json = z.toJSONSchema(definition.inputSchema, {
+        io: 'input',
+        target: 'draft-2020-12'
+    });
+    return ToolInputJsonSchema.parse({ ...json, type: 'object' });
+}
+
+/**
+ * The `tools/list` entry of a definition.
+ *
+ * @param args - The definition
+ * @returns Name, title, description, JSON Schema and annotations
+ */
+export function buildToolListEntry({ definition }: { readonly definition: ToolDefinition }): Tool {
+    return {
+        name: definition.name,
+        title: definition.title,
+        description: definition.description,
+        inputSchema: buildToolInputJsonSchema({ definition }),
+        annotations: buildToolAnnotations({ definition })
+    };
+}
+
 /** Renders a successful payload: strings as is, anything else as JSON. */
 function renderSuccess(data: unknown): CallToolResult {
     const text = typeof data === 'string' ? data : JSON.stringify(data ?? null);
@@ -141,22 +199,21 @@ function readAuditField<T>(read: () => T | undefined): T | undefined {
 export interface HandleMcpToolCallArgs<TSchema extends z.ZodObject, TData> {
     /** The tool. */
     readonly definition: ToolDefinition<TSchema, TData>;
-    /** Arguments the SDK validated against `definition.inputSchema`. */
-    readonly input: z.output<TSchema>;
-    /** The SDK's tool context (carries the verified caller). */
+    /** The raw `tools/call` arguments, NOT yet validated. */
+    readonly input: unknown;
+    /** The SDK's request context (carries the verified caller). */
     readonly ctx: McpCallerSource;
 }
 
 /**
- * Serves one MCP call of a tool. Exported for tests; production code uses
- * {@link bindMcpTool}. Never throws.
+ * Serves one MCP call of a tool. Never throws.
  *
- * @param args - Definition, validated input and SDK context
+ * @param args - Definition, raw arguments and SDK context
  * @returns The MCP tool result
  */
 export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
     definition,
-    input,
+    input: rawInput,
     ctx
 }: HandleMcpToolCallArgs<TSchema, TData>): Promise<CallToolResult> {
     try {
@@ -170,18 +227,25 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
             return renderOutcome({ ok: false, failure: buildRateLimitFailure() });
         }
 
-        const outcome = await executeTool({
-            definition,
-            actor,
-            input,
-            context: { channel: 'mcp' }
-        });
+        const parsed = parseToolInput({ definition, input: rawInput });
+        const outcome: ToolRunOutcome<TData> = parsed.ok
+            ? await executeTool({
+                  definition,
+                  actor,
+                  input: parsed.input,
+                  context: { channel: 'mcp' }
+              })
+            : parsed;
 
         if (definition.isWrite) {
-            const target: ToolTarget | undefined = readAuditField(() =>
-                definition.auditTarget?.({ input })
-            );
-            const contentLength = readAuditField(() => definition.auditContentLength?.({ input }));
+            // The audit readers are typed on VALIDATED input; on a malformed
+            // call there is none, so the record carries no target or length.
+            const target: ToolTarget | undefined = parsed.ok
+                ? readAuditField(() => definition.auditTarget?.({ input: parsed.input }))
+                : undefined;
+            const contentLength = parsed.ok
+                ? readAuditField(() => definition.auditContentLength?.({ input: parsed.input }))
+                : undefined;
             recordMcpToolCall({
                 actor,
                 mcpAuth,
@@ -208,44 +272,4 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
         }
         return unexpectedResult();
     }
-}
-
-/** Arguments for {@link bindMcpTool}. RO-RO. */
-export interface BindMcpToolArgs<TSchema extends z.ZodObject, TData> {
-    /** The server to register on. */
-    readonly server: McpServer;
-    /** The tool. */
-    readonly definition: ToolDefinition<TSchema, TData>;
-}
-
-/**
- * Registers a tool definition on an MCP server.
- *
- * @param args - Server and definition
- *
- * @example
- * ```typescript
- * for (const definition of MCP_TOOL_DEFINITIONS) bindMcpTool({ server, definition });
- * ```
- */
-export function bindMcpTool<TSchema extends z.ZodObject, TData>({
-    server,
-    definition
-}: BindMcpToolArgs<TSchema, TData>): void {
-    // TYPE-WORKAROUND: the SDK picks its callback signature with a conditional
-    // type over the schema, which TypeScript cannot resolve for a generic
-    // TSchema. Registering the schema as the concrete `z.ZodObject` resolves
-    // it; `input` is then cast back, which is sound because the SDK has just
-    // parsed it with this very schema.
-    const inputSchema: z.ZodObject = definition.inputSchema;
-    server.registerTool(
-        definition.name,
-        {
-            title: definition.title,
-            description: definition.description,
-            inputSchema,
-            annotations: buildToolAnnotations({ definition })
-        },
-        (input, ctx) => handleMcpToolCall({ definition, input: input as z.output<TSchema>, ctx })
-    );
 }

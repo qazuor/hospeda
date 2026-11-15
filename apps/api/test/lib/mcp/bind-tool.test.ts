@@ -294,6 +294,54 @@ describe('handleMcpToolCall', () => {
         expect(mockLoggerError).toHaveBeenCalledTimes(1);
     });
 
+    it('validates raw input itself and audits a malformed write without running it', async () => {
+        // Arrange
+        const { actor, ctx } = ctxFor();
+        const handler = vi.fn(async () => ({ data: { done: true } }));
+        const definition = writeTool(handler);
+
+        // Act
+        const result = await handleMcpToolCall({ definition, input: { text: 7 }, ctx });
+
+        // Assert
+        expect(result.isError).toBe(true);
+        expect(result.content).toEqual([
+            {
+                type: 'text',
+                text: expect.stringMatching(/^Los datos enviados no son válidos: campo «listingId»/)
+            }
+        ]);
+        expect(handler).not.toHaveBeenCalled();
+        expect(mockRecord).toHaveBeenCalledWith({
+            actor,
+            mcpAuth,
+            tool: 'probe_write',
+            outcome: 'error',
+            errorCode: ServiceErrorCode.VALIDATION_ERROR
+        });
+    });
+
+    it('hands the handler the PARSED input, not the raw arguments', async () => {
+        // Arrange
+        const { ctx } = ctxFor();
+        const handler = vi.fn(async () => ({ data: { done: true } }));
+        const definition = defineTool({
+            ...writeTool(handler),
+            inputSchema: z.object({ listingId: z.string().trim() }),
+            auditTarget: undefined,
+            auditContentLength: undefined,
+            handler
+        });
+
+        // Act
+        await handleMcpToolCall({ definition, input: { listingId: `  ${LISTING_ID} ` }, ctx });
+
+        // Assert
+        expect(handler).toHaveBeenCalledWith(
+            expect.objectContaining({ input: { listingId: LISTING_ID } })
+        );
+    });
+
     it('still audits when the audit target reader throws', async () => {
         // Arrange
         const { ctx } = ctxFor();

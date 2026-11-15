@@ -8,10 +8,10 @@
  * outlive a request (pools, caches) may be created inside the factory.
  */
 
-import { McpServer } from '@modelcontextprotocol/server';
+import { Server } from '@modelcontextprotocol/server';
 import { MCP_TOOL_DEFINITIONS } from '../../mcp/tools/registry';
 import type { ToolDefinition } from '../../mcp/tools/tool-definition';
-import { bindMcpTool } from './bind-tool';
+import { registerMcpToolHandlers } from './tool-handlers';
 
 /**
  * `serverInfo` the MCP server reports in the `initialize` result.
@@ -33,8 +33,12 @@ export interface CreateHospedaMcpServerArgs {
 }
 
 /**
- * Builds a fresh MCP server for one request, with every tool bound through
- * `bindMcpTool`.
+ * Builds a fresh MCP server for one request, answering `tools/list` and
+ * `tools/call` from the tool definitions (`tool-handlers.ts`).
+ *
+ * It is the low-level `Server`, not `McpServer`: `McpServer` validates tool
+ * arguments itself, in English and before the audit (see
+ * `tool-handlers.ts`).
  *
  * The `tools` capability is declared even with no tools, and `tools/list`
  * then answers an empty list, so a client sees a valid, empty server instead
@@ -50,13 +54,11 @@ export interface CreateHospedaMcpServerArgs {
  */
 export function createHospedaMcpServer({
     tools = MCP_TOOL_DEFINITIONS
-}: CreateHospedaMcpServerArgs = {}): McpServer {
-    const server = new McpServer(
+}: CreateHospedaMcpServerArgs = {}): Server {
+    const server = new Server(
         { ...MCP_SERVER_INFO },
         { capabilities: { tools: { listChanged: false } } }
     );
-    for (const definition of tools) {
-        bindMcpTool({ server, definition });
-    }
+    registerMcpToolHandlers({ server, tools });
     return server;
 }

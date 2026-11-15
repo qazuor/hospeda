@@ -1,9 +1,11 @@
 /**
  * @file run-tool.ts
  * @description Runs a tool definition for an actor, independent of the
- * transport (HOS-2184 T-012). The MCP binding calls {@link executeTool} with
- * input the SDK already validated; a caller without that validation (the
- * HOS-2185 agent) calls {@link runTool}, which parses first.
+ * transport (HOS-2184 T-012). {@link parseToolInput} validates raw arguments
+ * (Spanish `VALIDATION_ERROR`); {@link executeTool} runs validated input.
+ * {@link runTool} chains both for callers that need nothing in between (the
+ * HOS-2185 agent); the MCP binding (`lib/mcp/bind-tool.ts`) calls the two
+ * separately because it audits a malformed write call too.
  *
  * Order, mirroring a protected route:
  * 1. **Authentication.** A guest actor is refused (`UNAUTHORIZED`). Never
