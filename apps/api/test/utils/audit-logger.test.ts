@@ -86,7 +86,8 @@ vi.mock('@repo/logger', () => {
         PERMISSION_CHANGE: 'permission.change',
         SESSION_SIGNOUT: 'session.signout',
         USER_ADMIN_MUTATION: 'user.admin.mutation',
-        ROUTE_MUTATION: 'route.mutation'
+        ROUTE_MUTATION: 'route.mutation',
+        MCP_TOOL_CALL: 'mcp.tool.call'
     } as const;
 
     return {
@@ -1106,7 +1107,8 @@ describe('audit-logger — queryable persistence (SPEC-162)', () => {
             AuditEventType.BILLING_READ,
             AuditEventType.PERMISSION_CHANGE,
             AuditEventType.USER_ADMIN_MUTATION,
-            AuditEventType.ROUTE_MUTATION
+            AuditEventType.ROUTE_MUTATION,
+            AuditEventType.MCP_TOOL_CALL
         ])('classifies %s as audit', (event) => {
             expect(classifyAuditLogType(event)).toBe('audit');
         });

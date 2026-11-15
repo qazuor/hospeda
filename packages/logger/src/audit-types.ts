@@ -39,7 +39,12 @@ export const AuditEventType = {
      * Emitted by the audit middleware for any state-changing route that is not
      * already covered by a more specific audit event type.
      */
-    ROUTE_MUTATION: 'route.mutation'
+    ROUTE_MUTATION: 'route.mutation',
+    /**
+     * One MCP tool call made by an AI client on behalf of a user (HOS-2184).
+     * Carries the OAuth client, the tool name, the target and the outcome.
+     */
+    MCP_TOOL_CALL: 'mcp.tool.call'
 } as const;
 
 /**

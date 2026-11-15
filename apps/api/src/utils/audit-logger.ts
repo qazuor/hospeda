@@ -142,6 +142,33 @@ interface RouteMutationEntry extends BaseAuditEntry {
     readonly requestBody?: unknown;
 }
 
+/**
+ * Audit entry for one MCP tool call (HOS-2184). Built by `recordMcpToolCall`.
+ * Top-level fields land in the persisted `data` payload; `resourceType` and
+ * `resourceId` feed the `targetId` column.
+ */
+interface McpToolCallEntry extends BaseAuditEntry {
+    readonly auditEvent: typeof AuditEventType.MCP_TOOL_CALL;
+    /** Hospeda user the AI client acted for. */
+    readonly actorId: string;
+    /** OAuth `client_id` of the AI client. */
+    readonly clientId: string;
+    /** Registered client name, or null when the client row has none. */
+    readonly clientName: string | null;
+    /** MCP tool name. */
+    readonly tool: string;
+    /** Entity type the call targeted, when it targets one. */
+    readonly resourceType?: string;
+    /** Entity id the call targeted, when it targets one. */
+    readonly resourceId?: string;
+    /** Result of the call. */
+    readonly outcome: 'success' | 'denied' | 'error';
+    /** Error code when the outcome is `denied` or `error`. */
+    readonly errorCode?: string;
+    /** Length of the user content the call carried; never the content itself. */
+    readonly contentLength?: number;
+}
+
 /** Discriminated union of all audit entry types */
 export type AuditEntry =
     | AuthLoginFailedEntry
@@ -154,7 +181,8 @@ export type AuditEntry =
     | PermissionChangeEntry
     | SessionSignoutEntry
     | UserAdminMutationEntry
-    | RouteMutationEntry;
+    | RouteMutationEntry
+    | McpToolCallEntry;
 
 /**
  * Audit event types that represent critical security events.
