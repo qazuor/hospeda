@@ -137,7 +137,7 @@ describe('aiChatCopyKey', () => {
 });
 
 describe('readNotice (HOS-2075: the reader is named per vertical)', () => {
-    const COMMERCE =
+    const BUSINESS =
         'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.';
     const HOST =
         'El anfitrión puede leer las preguntas que hagas en este chat. No compartas datos personales.';
@@ -150,7 +150,7 @@ describe('readNotice (HOS-2075: the reader is named per vertical)', () => {
         expect(aiChatCopyKey(entityType, 'readNotice')).toBe(key);
     });
 
-    it('should use host wording for an accommodation, never the commerce one', () => {
+    it('should use host wording for an accommodation, never the business one', () => {
         const out = resolveAiChatCopy({
             t: missingT,
             entityType: 'accommodation',
@@ -163,14 +163,14 @@ describe('readNotice (HOS-2075: the reader is named per vertical)', () => {
     it.each([
         'venue',
         'experience'
-    ] as const)('should keep the commerce wording for %s', (entityType) => {
+    ] as const)('should keep the business wording for %s', (entityType) => {
         const out = resolveAiChatCopy({ t: missingT, entityType, suffix: 'readNotice' });
-        expect(out).toBe(COMMERCE);
+        expect(out).toBe(BUSINESS);
     });
 
     it('should ship the venue and experience keys in es', () => {
-        expect(esVenue.aiChat.readNotice).toBe(COMMERCE);
-        expect(esExperience.aiChat.readNotice).toBe(COMMERCE);
+        expect(esVenue.aiChat.readNotice).toBe(BUSINESS);
+        expect(esExperience.aiChat.readNotice).toBe(BUSINESS);
     });
 
     it.each([
