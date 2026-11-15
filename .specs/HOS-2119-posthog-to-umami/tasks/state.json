@@ -390,43 +390,43 @@
             "id": "T-011",
             "title": "T-1 Register HOSPEDA_UMAMI_* server env vars (registry, api Zod schema, .env.example, docs)",
             "description": "Follow the repo rule for new env vars (registry + Zod + .env.example + docs + Coolify). Label release-env-var-change on the PR. Files: packages/config/src/env-registry.hospeda.ts, apps/api/src/utils/env-schema.ts (env.ts reads it), apps/api/.env.example, packages/config/generated/env-registry.json, packages/config/src/__tests__/env-registry.test.ts (+ snapshot), docs/guides/environment-variables.md. Tests: env-registry.test.ts and env-registry-json.guard.test.ts pass; add an api env test asserting the vars parse and that the key is flagged secret. NOTE: HOSPEDA_POSTHOG_* stay until T-060. Coolify values are set in T-014/T-015 (owner).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-012", "T-014", "T-015", "T-021", "T-046"],
             "subtasks": [
                 {
                     "title": "Add HOSPEDA_UMAMI_URL, HOSPEDA_UMAMI_WEBSITE_ID_WEB, HOSPEDA_UMAMI_WEBSITE_ID_ADMIN, HOSPEDA_UMAMI_API_KEY (secret) to packages/config/src/env-registry.hospeda.ts with full metadata",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add Zod validation in apps/api/src/utils/env-schema.ts (optional in dev/test; verify how HOSPEDA_POSTHOG_KEY is handled and mirror it)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add safe placeholders to apps/api/.env.example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Regenerate packages/config/generated/env-registry.json and update packages/config/src/__tests__/__snapshots__/env-registry.test.ts.snap",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mention the vars in docs/guides/environment-variables.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t1-infra", "config", "api", "release-env-var-change"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T06:32:46Z",
+                "completed": "2026-11-15T06:52:03Z"
             }
         },
         {
@@ -573,39 +573,39 @@
             "id": "T-016",
             "title": "T-2 Add entity_id/entity_type to view and contact events and a generic entity_viewed event in the catalog",
             "description": "Closes the gap found in T-005 so the owner stats filter (by event data entity_id, spec 6.5) has data to read. Files: packages/analytics/src/catalog.ts, packages/analytics/src/index.ts (if events are re-exported), apps/web/src/lib/analytics/events.ts. Tests: packages/analytics/test/entity-id-catalog.test.ts (each affected schema accepts entity_id/entity_type and still rejects forbidden PII keys via FORBIDDEN_PROPERTY_KEY_REGEX; entity_viewed requires entity_id), apps/web/test/lib/analytics/events.test.ts updated. Owner decision (2026-11-14, OQ-7 addendum): contact events stay accommodation-only; do NOT add contact events for VENUE/EXPERIENCE/PARTNER. Their Contactos card is hidden in v1 (contactFunnel: null, see T-044/T-045/T-051). The docs/analytics/event-catalog.md update happens in T-065.\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Correction: PARTNER pages DO mount EntityViewTracker (partners/[slug].astro:215); what is missing is an analytics event with entity_id for venue/experience/partner (default branch only calls sendViewBeacon).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-017", "T-030", "T-031", "T-039", "T-065"],
             "subtasks": [
                 {
                     "title": "Add entity_id + entity_type (additive, optional-safe) to accommodation_viewed and contact_owner_started/completed/failed in packages/analytics/src/catalog.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add a new entity_viewed event {entity_type, entity_id, locale} for VENUE/EXPERIENCE/PARTNER (the EntityViewTracker default branch emits nothing today)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Expose it in apps/web/src/lib/analytics/events.ts (WebEvents). No contact events for non-accommodation verticals (owner decision: Contactos hidden for them in v1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Check the name fits 50 chars",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "t5-owner-stats", "analytics"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T06:32:46Z",
+                "completed": "2026-11-15T06:52:03Z"
             }
         },
         {
@@ -1591,35 +1591,35 @@
             "id": "T-044",
             "title": "T-5 Add ListingTrafficStatsResponseSchema to @repo/schemas",
             "description": "Zod is the source of truth for types. Tests: valid payload parses, available:false with empty arrays parses, window outside 7d/30d/90d rejected, entityType POST/EVENT rejected, negative counts rejected. Note: the existing EntityViewWindowSchema only knows 7d/30d, so do not reuse it; define the 90d-capable window here. contactFunnel is nullable: an object for ACCOMMODATION, null for VENUE/EXPERIENCE/PARTNER (owner decision, OQ-7 addendum). Add tests: null contactFunnel parses; object still validates counts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-045", "T-051"],
             "subtasks": [
                 {
                     "title": "Create packages/schemas/src/entities/analytics/listing-traffic-stats.schema.ts: window (7d|30d|90d), available boolean, referrers[], countries[], devices[], contactFunnel {views, contactStarted, contactCompleted} | null; entityType enum limited to ACCOMMODATION, VENUE, EXPERIENCE, PARTNER",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from the entities barrel (packages/schemas/src/entities/index.ts)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests: packages/schemas/test/entities/analytics/listing-traffic-stats.schema.test.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "schemas"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T06:32:46Z",
+                "completed": "2026-11-15T06:52:03Z"
             }
         },
         {
@@ -1817,35 +1817,35 @@
             "id": "T-050",
             "title": "T-5 Add owner-stats card copy in es, en and pt",
             "description": "Files: packages/i18n/src/locales/es/listing.json, en/listing.json, pt/listing.json, apps/web/src/lib/i18n-client-namespaces.ts. i18n guards check structure, not translation quality: write real pt/en translations, not copies of es. Tests: the i18n package key-parity test (locate under packages/i18n/test) passes; web namespace test if one enumerates namespaces.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-051"],
             "subtasks": [
                 {
                     "title": "Add keys under listing.owner.traffic.* in packages/i18n/src/locales/{es,en,pt}/listing.json: titles 'De donde vienen', 'Paises', 'Dispositivos', 'Contactos', empty state 'Todavia no hay datos', window labels",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the namespace to apps/web/src/lib/i18n-client-namespaces.ts for the partner page if it does not already load listing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "No hardcoded strings in the component",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "i18n"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T06:32:46Z",
+                "completed": "2026-11-15T06:52:03Z"
             }
         },
         {
@@ -2162,7 +2162,7 @@
         {
             "id": "T-060",
             "title": "T-6 Remove PostHog env vars (registry, generated JSON, snapshots, app Zod schemas, .env.example)",
-            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).",
+            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-057", "T-058", "T-059"],
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 71,
+        "pending": 67,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.5
     }

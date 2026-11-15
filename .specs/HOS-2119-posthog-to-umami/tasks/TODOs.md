@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 3/74 tasks (4%)
+## Progress: 7/74 tasks (9%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -96,7 +96,7 @@ Tracks (can run in parallel):
   - Blocked by: T-003, T-007
   - Blocks: none
 
-- [ ] **T-011** (complexity: 3) - T-1 Register HOSPEDA_UMAMI_* server env vars (registry, api Zod schema, .env.example, docs)
+- [x] **T-011** (complexity: 3) - T-1 Register HOSPEDA_UMAMI_* server env vars (registry, api Zod schema, .env.example, docs)
   - Tags: t1-infra, config, api, release-env-var-change
   - Follow the repo rule for new env vars (registry + Zod + .env.example + docs + Coolify). Label releas...
   - Blocked by: none
@@ -128,7 +128,7 @@ Tracks (can run in parallel):
 
 ### Core Phase
 
-- [ ] **T-016** (complexity: 3) - T-2 Add entity_id/entity_type to view and contact events and a generic entity_viewed event in the catalog
+- [x] **T-016** (complexity: 3) - T-2 Add entity_id/entity_type to view and contact events and a generic entity_viewed event in the catalog
   - Tags: t2-adapter, t5-owner-stats, analytics
   - Closes the gap found in T-005 so the owner stats filter (by event data entity_id, spec 6.5) has data...
   - Blocked by: T-005
@@ -200,7 +200,7 @@ Tracks (can run in parallel):
   - Blocked by: T-038
   - Blocks: T-041, T-042
 
-- [ ] **T-044** (complexity: 2) - T-5 Add ListingTrafficStatsResponseSchema to @repo/schemas
+- [x] **T-044** (complexity: 2) - T-5 Add ListingTrafficStatsResponseSchema to @repo/schemas
   - Tags: t5-owner-stats, schemas
   - Zod is the source of truth for types. Tests: valid payload parses, available:false with empty arrays...
   - Blocked by: none
@@ -224,7 +224,7 @@ Tracks (can run in parallel):
   - Blocked by: T-045
   - Blocks: T-048
 
-- [ ] **T-050** (complexity: 2) - T-5 Add owner-stats card copy in es, en and pt
+- [x] **T-050** (complexity: 2) - T-5 Add owner-stats card copy in es, en and pt
   - Tags: t5-owner-stats, i18n
   - Files: packages/i18n/src/locales/es/listing.json, en/listing.json, pt/listing.json, apps/web/src/lib...
   - Blocked by: none
