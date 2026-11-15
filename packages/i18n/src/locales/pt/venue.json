@@ -67,6 +67,11 @@
             "wednesday": "Quarta-feira"
         },
         "menu": "Ver cardápio",
+        "contactTitle": "Contato",
+        "contactPhoneAriaLabel": "Ligar para o estabelecimento",
+        "contactLandlineAriaLabel": "Ligar para o telefone fixo do estabelecimento",
+        "contactEmailAriaLabel": "Enviar e-mail ao estabelecimento",
+        "contactWebsiteAriaLabel": "Visitar o site do estabelecimento",
         "menuCarta": {
             "title": "Cardápio",
             "attachmentImage": "Cardápio em imagem",

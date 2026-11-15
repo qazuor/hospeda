@@ -64,3 +64,34 @@ describe('editor strict Argentine phone rule', () => {
         expect(schema.safeParse({ contactInfo: { mobilePhone: null } }).success).toBe(true);
     });
 });
+
+describe('HOS-2042 optional landline (contactInfo.workPhone) uses the same rule', () => {
+    it('rejects a too-short landline in the accommodation form and accepts a real one', () => {
+        const bad = AccommodationContactSchema.safeParse({
+            landlinePhone: compose('344245')
+        });
+        expect(bad.success).toBe(false);
+        if (!bad.success) {
+            expect(bad.error.issues.map((i) => i.path.join('.'))).toContain('landlinePhone');
+        }
+        expect(
+            AccommodationContactSchema.safeParse({ landlinePhone: compose('3442 45-2345') }).success
+        ).toBe(true);
+        expect(AccommodationContactSchema.safeParse({ landlinePhone: '' }).success).toBe(true);
+    });
+
+    it('rejects a too-short landline in the venue/experience editor schema', () => {
+        const schema = VenueOwnerUpdateInputSchema.superRefine(refineStrictContactPhone);
+        const bad = schema.safeParse({ contactInfo: { workPhone: compose('344245') } });
+        expect(bad.success).toBe(false);
+        if (!bad.success) {
+            expect(bad.error.issues.map((i) => i.path.join('.'))).toContain(
+                'contactInfo.workPhone'
+            );
+        }
+        expect(
+            schema.safeParse({ contactInfo: { workPhone: compose('3442 45-2345') } }).success
+        ).toBe(true);
+        expect(schema.safeParse({ contactInfo: { workPhone: null } }).success).toBe(true);
+    });
+});

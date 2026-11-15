@@ -9,7 +9,8 @@
  * ever surfaced the WhatsApp button — every other channel was captured and
  * silently never shown. This block closes that gap for the three contact
  * fields plus two social networks the owner approved for public display
- * (16/08 decision): phone, email, website, Facebook, Instagram.
+ * (16/08 decision): phone, email, website, Facebook, Instagram. HOS-2042 adds
+ * the optional landline right after the phone.
  *
  * Deliberately does NOT touch the existing WhatsApp flow: `WhatsAppContact`
  * (rendered separately inside `OwnerCard`) stays the only path for the
@@ -48,7 +49,7 @@ const websiteHref = resolveSafeExternalUrl(contactInfo?.website);
 const facebookHref = resolveSafeExternalUrl(socialNetworks?.facebook);
 const instagramHref = resolveSafeExternalUrl(socialNetworks?.instagram);
 
-const hasContact = Boolean(contactInfo && (contactInfo.phone || contactInfo.email || websiteHref));
+const hasContact = Boolean(contactInfo && (contactInfo.phone || contactInfo.landlinePhone || contactInfo.email || websiteHref));
 const hasSocial = Boolean(facebookHref || instagramHref);
 
 // Nothing to show — render nothing rather than an empty card (H-118: 2 of 7
@@ -76,6 +77,19 @@ if (!hasContact && !hasSocial) {
                 >
                     <PhoneIcon size={16} aria-hidden="true" />
                     <span>{contactInfo.phone}</span>
+                </a>
+            )}
+            {contactInfo?.landlinePhone && (
+                <a
+                    href={`tel:${contactInfo.landlinePhone}`}
+                    class="acc-contact__link"
+                    aria-label={t(
+                        'accommodations.detail.contact.landlineAriaLabel',
+                        'Llamar al teléfono fijo del alojamiento'
+                    )}
+                >
+                    <PhoneIcon size={16} aria-hidden="true" />
+                    <span>{contactInfo.landlinePhone}</span>
                 </a>
             )}
             {contactInfo?.email && (

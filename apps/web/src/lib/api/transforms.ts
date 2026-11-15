@@ -30,6 +30,7 @@ import type {
     PartnerDetailData,
     ReviewCardData,
     VenueCardData,
+    VenueContactInfo,
     VenueDailySpecial,
     VenueDetailData,
     VenueDetailLocation,
@@ -940,9 +941,13 @@ export function toAccommodationDetailPageProps({
         socialNetworksRaw?.instagram == null ? undefined : String(socialNetworksRaw.instagram)
     );
     const phone = contactInfoRaw?.mobilePhone ? String(contactInfoRaw.mobilePhone) : undefined;
+    // HOS-2042: the optional landline, published next to the mobile phone.
+    const landlinePhone = contactInfoRaw?.workPhone ? String(contactInfoRaw.workPhone) : undefined;
     const email = contactInfoRaw?.personalEmail ? String(contactInfoRaw.personalEmail) : undefined;
     const contactInfo: AccommodationDetailData['contactInfo'] =
-        phone || email || safeWebsite ? { phone, email, website: safeWebsite } : undefined;
+        phone || landlinePhone || email || safeWebsite
+            ? { phone, landlinePhone, email, website: safeWebsite }
+            : undefined;
     const socialNetworks: AccommodationDetailData['socialNetworks'] =
         safeFacebook || safeInstagram
             ? { facebook: safeFacebook, instagram: safeInstagram }
@@ -2039,6 +2044,13 @@ export function transformAccommodationEdit({
                 ((item.contactInfo as Record<string, unknown> | undefined)?.whatsapp as string) ??
                 ''
         ),
+        // HOS-2042: the landline lives in `contactInfo.workPhone`; the flat
+        // `landlinePhone` key is only what the editor form and PATCH body use.
+        landlinePhone: String(
+            (item.landlinePhone as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)?.workPhone as string) ??
+                ''
+        ),
         email: String(
             (item.email as string) ??
                 ((item.contactInfo as Record<string, unknown> | undefined)
@@ -3042,6 +3054,7 @@ export function toVenueDetailPageProps({
             locale
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
+        contactInfo: normalizeVenueContactInfo(item.contactInfo),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
@@ -3138,6 +3151,34 @@ function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | n
 
     const hasAny = Object.values(contact).some((value) => value !== null);
     return hasAny ? contact : null;
+}
+
+/**
+ * Normalize the contact info a venue publishes (HOS-2042).
+ *
+ * Mirrors {@link normalizeExperienceContactInfo}: only `workEmail`,
+ * `workPhone` (the landline), `mobilePhone` and `website` are read; anything
+ * else the payload might carry is ignored. Returns `null` when no publishable
+ * channel is present, so the caller renders nothing.
+ */
+function normalizeVenueContactInfo(raw: unknown): VenueContactInfo | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const read = (key: string): string | null => {
+        const value = obj[key];
+        if (typeof value !== 'string') return null;
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+    };
+
+    const contact: VenueContactInfo = {
+        workEmail: read('workEmail'),
+        workPhone: read('workPhone'),
+        mobilePhone: read('mobilePhone'),
+        website: read('website')
+    };
+
+    return Object.values(contact).some((value) => value !== null) ? contact : null;
 }
 
 /**

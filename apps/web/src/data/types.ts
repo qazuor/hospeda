@@ -635,13 +635,15 @@ export type AccommodationFeatureItem = DetailFeature;
  * Contact channels exposed on the accommodation public detail page (H-118).
  *
  * Deliberately NARROWER than the API's domain `contactInfo` shape — only the
- * three fields the owner approved for public display (16/08). `whatsapp` is
+ * fields the owner approved for public display (16/08; the optional landline was added by HOS-2042). `whatsapp` is
  * NOT here: it already renders through its own dedicated, entitlement-gated
  * flow (`hasWhatsapp` + the `WhatsAppContact` island, HOS-19), and duplicating
  * it in this narrow public projection would bypass that gate.
  */
 export interface AccommodationContactInfo {
     readonly phone?: string;
+    /** Optional landline (HOS-2042), from `contactInfo.workPhone`. */
+    readonly landlinePhone?: string;
     readonly email?: string;
     readonly website?: string;
 }
@@ -1244,6 +1246,22 @@ export interface VenueDetailLocation {
  *
  * Extends `VenueCardData` with fields only needed for the full detail view.
  */
+/**
+ * Business contact channels a venue publishes (HOS-2042). Mirrors
+ * {@link ExperienceContactInfo}: never `homePhone`, personal fields or
+ * `whatsapp`.
+ */
+export interface VenueContactInfo {
+    /** Business email. */
+    readonly workEmail?: string | null;
+    /** Business landline. */
+    readonly workPhone?: string | null;
+    /** Main (mobile) phone. */
+    readonly mobilePhone?: string | null;
+    /** The business's own site. */
+    readonly website?: string | null;
+}
+
 export interface VenueDetailData extends VenueCardData {
     /** Structured postal address (HOS-2189). Null when the owner has not set one. */
     readonly location: VenueDetailLocation | null;
@@ -1251,6 +1269,12 @@ export interface VenueDetailData extends VenueCardData {
     readonly description: string;
     /** Optional rich-text (markdown) description (entitlement-gated). */
     readonly richDescription?: string | null;
+    /**
+     * Business contact channels the venue publishes (HOS-2042), narrowed by the
+     * API to `workEmail`/`workPhone` (landline)/`mobilePhone`/`website`. `null`
+     * when no usable channel is present.
+     */
+    readonly contactInfo?: VenueContactInfo | null;
     /** External URL for the establishment's menu. Null when not provided. */
     readonly menuUrl?: string | null;
     /**

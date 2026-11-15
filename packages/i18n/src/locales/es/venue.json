@@ -67,6 +67,11 @@
             "wednesday": "Miércoles"
         },
         "menu": "Ver menú",
+        "contactTitle": "Contacto",
+        "contactPhoneAriaLabel": "Llamar al comercio",
+        "contactLandlineAriaLabel": "Llamar al teléfono fijo del comercio",
+        "contactEmailAriaLabel": "Enviar email al comercio",
+        "contactWebsiteAriaLabel": "Visitar el sitio web del comercio",
         "menuCarta": {
             "title": "Carta",
             "attachmentImage": "Carta en imagen",

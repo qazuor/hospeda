@@ -46,6 +46,7 @@
         "contact": "Contact",
         "contactEmailAriaLabel": "Email the provider",
         "contactPhoneAriaLabel": "Call the provider",
+        "contactLandlineAriaLabel": "Call the provider landline",
         "contactWebsiteAriaLabel": "Visit the provider's website",
         "duration": {
             "dayShort": "d",
