@@ -96,6 +96,7 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
+import { MCP_TOOL_DEFINITIONS } from '../../../src/mcp/tools/registry';
 import { env, validateApiEnv } from '../../../src/utils/env';
 
 const RESOURCE_URL = 'https://api.test/mcp';
@@ -296,18 +297,24 @@ describe('/mcp endpoint', () => {
             });
         });
 
-        it('lists no tools yet', async () => {
+        it('lists exactly the registry tools', async () => {
             // Act
             const res = await postMcp({
                 body: { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
                 token: VALID_TOKEN,
                 headers: { 'mcp-protocol-version': LEGACY_PROTOCOL_VERSION }
             });
-            const message = await readJsonRpc(res);
+            const message = (await readJsonRpc(res)) as {
+                readonly id?: number;
+                readonly result?: { readonly tools?: readonly { readonly name: string }[] };
+            };
 
             // Assert
             expect(res.status).toBe(200);
-            expect(message).toMatchObject({ id: 2, result: { tools: [] } });
+            expect(message.id).toBe(2);
+            expect(message.result?.tools?.map((tool) => tool.name)).toEqual(
+                MCP_TOOL_DEFINITIONS.map((definition) => definition.name)
+            );
         });
 
         it('hands the verified caller to tool handlers', async () => {
