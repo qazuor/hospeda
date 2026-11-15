@@ -6,8 +6,9 @@
  * by default. T-013+ append their definitions here; nothing else changes.
  */
 
+import { getListingTool } from './listing/get-listing';
 import { listMyListingsTool } from './listing/list-my-listings';
 import type { ToolDefinition } from './tool-definition';
 
 /** Every v1 tool, in the order clients list them. */
-export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [listMyListingsTool];
+export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [listMyListingsTool, getListingTool];

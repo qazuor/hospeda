@@ -29,6 +29,15 @@ const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock } = vi.hoisted(() =>
 
 vi.mock('../../../src/lib/mcp/record-tool-call', () => ({ recordMcpToolCall: vi.fn() }));
 
+// The catalog-relation readers are the tools' only database access.
+vi.mock('../../../src/utils/listing-catalog-relations', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/utils/listing-catalog-relations')>()),
+    fetchVenueAmenities: vi.fn(async () => [
+        { amenityId: '44444444-4444-4444-8444-444444444444', slug: 'wifi' }
+    ]),
+    fetchVenueFeatures: vi.fn(async () => [])
+}));
+
 vi.mock('../../../src/lib/auth', () => {
     const instance = {
         api: { getSession: async () => null },
@@ -67,6 +76,7 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
+import { TOOL_NOT_FOUND_MESSAGE } from '../../../src/mcp/tools/tool-errors';
 import { env, validateApiEnv } from '../../../src/utils/env';
 
 const PROTOCOL_VERSION = '2025-06-18';
@@ -155,7 +165,7 @@ describe('/mcp listing tools (end to end)', () => {
         vi.restoreAllMocks();
     });
 
-    it('lists list_my_listings as a read-only tool', async () => {
+    it('lists list_my_listings and get_listing as read-only tools', async () => {
         // Act
         const message = await rpc('tools/list', {});
 
@@ -169,6 +179,15 @@ describe('/mcp listing tools (end to end)', () => {
                         readOnlyHint: true,
                         openWorldHint: false
                     }
+                }),
+                expect.objectContaining({
+                    name: 'get_listing',
+                    annotations: {
+                        title: 'Ver publicación',
+                        readOnlyHint: true,
+                        openWorldHint: false
+                    },
+                    inputSchema: expect.objectContaining({ required: ['vertical', 'id'] })
                 })
             ])
         );
@@ -228,5 +247,61 @@ describe('/mcp listing tools (end to end)', () => {
             expect.objectContaining({ id: USER_ID }),
             expect.objectContaining({ where: { ownerId: USER_ID } })
         );
+    });
+
+    it('get_listing returns an own venue', async () => {
+        // Arrange
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: VENUE_ID,
+                ownerId: USER_ID,
+                name: 'La Parrilla',
+                slug: 'la-parrilla',
+                publicationStatus: PublicationStatusEnum.DRAFT,
+                description: 'Parrilla de barrio.',
+                openingHours: null,
+                contactInfo: null
+            }
+        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
+
+        // Act
+        const message = await callTool('get_listing', { vertical: 'venue', id: VENUE_ID });
+
+        // Assert
+        expect(message.result?.isError).toBeUndefined();
+        expect(JSON.parse(message.result?.content?.[0]?.text ?? 'null')).toEqual({
+            id: VENUE_ID,
+            vertical: 'venue',
+            name: 'La Parrilla',
+            publicationStatus: 'DRAFT',
+            publicUrl: null,
+            description: 'Parrilla de barrio.',
+            openingHours: null,
+            contactInfo: null,
+            amenities: [{ id: '44444444-4444-4444-8444-444444444444', slug: 'wifi' }],
+            features: []
+        });
+    });
+
+    it("get_listing answers another user's venue as not found", async () => {
+        // Arrange
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: VENUE_ID,
+                ownerId: 'f0f0f0f0-f0f0-4f0f-8f0f-f0f0f0f0f0f0',
+                name: 'Bar Ajeno',
+                slug: 'bar-ajeno',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            }
+        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
+
+        // Act
+        const message = await callTool('get_listing', { vertical: 'venue', id: VENUE_ID });
+
+        // Assert
+        expect(message.result).toMatchObject({
+            isError: true,
+            content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
+        });
     });
 });
