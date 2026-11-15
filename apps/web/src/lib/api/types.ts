@@ -83,7 +83,19 @@ export interface ApiError {
 
 /** Result type for API calls: either success data or error */
 export type ApiResult<T> =
-    | { readonly ok: true; readonly data: T }
+    | {
+          readonly ok: true;
+          readonly data: T;
+          /**
+           * Present (and `true`) only when the API answered successfully but
+           * marked the answer `Cache-Control: no-store` (HOS-2009). For the
+           * public venue and experience reads that is the degraded state: the
+           * owner's effective set could not be resolved, so paid sections were
+           * withheld. A page that renders such a payload must not let the edge
+           * cache it; see `markResponseDegradedFromApi`.
+           */
+          readonly degraded?: true;
+      }
     | { readonly ok: false; readonly error: ApiError };
 
 /** Common query parameters for list endpoints */
@@ -238,6 +250,11 @@ export interface AccommodationEditData {
     readonly floor: string;
     /** Apartment / unit (G7 smoke, H-117). Maps to `location.apartment`. */
     readonly apartment: string;
+    /**
+     * HOS-1810 (read-only): another PUBLISHED listing of the same owner holds this
+     * address, so this draft cannot be published. Never part of the PATCH diff.
+     */
+    readonly locationDuplicate?: boolean;
     readonly maxGuests: number | null;
     readonly bedrooms: number | null;
     readonly bathrooms: number | null;
@@ -272,6 +289,8 @@ export interface AccommodationEditData {
     // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
     readonly phone: string;
     readonly whatsapp: string;
+    /** Optional landline (HOS-2042). Maps to `contactInfo.workPhone`. */
+    readonly landlinePhone: string;
     readonly email: string;
     readonly website: string;
     // Phase B: social networks (flat HTTP fields mapped to SocialNetworkSchema)

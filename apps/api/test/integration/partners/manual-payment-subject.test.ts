@@ -16,9 +16,11 @@ function headers(userId: string) {
         'content-type': 'application/json',
         'user-agent': 'vitest',
         'x-mock-actor-id': userId,
-        'x-mock-actor-role': 'ADMIN',
+        'x-mock-actor-role': 'SUPER_ADMIN',
         'x-mock-actor-permissions': JSON.stringify([
             PermissionEnum.ACCESS_PANEL_ADMIN,
+            // D-1b: the legacy ACC_3 route requires the dedicated manual payment permission.
+            PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT,
             PermissionEnum.PARTNER_MANAGE
         ])
     };

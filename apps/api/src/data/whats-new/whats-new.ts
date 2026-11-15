@@ -155,7 +155,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4308, #4329
     {
         id: '2026-11-12-gallery-lightbox-captions',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-13T05:26:56Z',
         highlight: false,
         title: {
             es: 'Las fotos de cada alojamiento muestran su epígrafe y su descripción',
@@ -172,7 +172,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4306, #4327
     {
         id: '2026-11-12-ai-faq-draft',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-13T04:26:56Z',
         highlight: false,
         roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
@@ -190,7 +190,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4321
     {
         id: '2026-11-12-listing-chat-knows-deposit-languages-events',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-13T03:26:56Z',
         highlight: false,
         title: {
             es: 'El chat de cada alojamiento sabe de seña, idiomas y eventos',
@@ -207,7 +207,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4322
     {
         id: '2026-11-12-amenities-editor-by-category',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-13T02:26:56Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -225,7 +225,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4312
     {
         id: '2026-11-12-policies-deposit-languages-event-details',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-13T01:26:56Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -243,7 +243,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4312
     {
         id: '2026-11-12-capacity-max-nights-and-clearable-fields',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-13T00:26:56Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -261,7 +261,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4311
     {
         id: '2026-11-12-reorder-photos-by-dragging',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T23:26:56Z',
         highlight: false,
         roles: ['HOST'],
         title: {
@@ -279,7 +279,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #4309
     {
         id: '2026-11-12-account-menu-collapsible-groups',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-11-12T22:26:56Z',
         highlight: false,
         title: {
             es: 'El menú de tu cuenta se pliega por secciones',

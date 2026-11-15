@@ -37,9 +37,14 @@ import type {
     ChargeRef,
     ChargeResult,
     ChargeSnapshot,
+    Money,
     MutationAcknowledgement,
     NoticeDelivery,
+    OneTimeChargeInput,
+    OneTimeChargeResult,
     OrderRef,
+    OrderRefundInput,
+    OrderRefundResult,
     OrderSearchInput,
     OrderSearchResult,
     OrderSnapshot,
@@ -58,6 +63,7 @@ import {
     ChargeRefSchema,
     NoticeDeliverySchema,
     OrderRefSchema,
+    OrderRefundInputSchema,
     OrderSearchInputSchema,
     parseProviderInput,
     RefundInputSchema
@@ -73,8 +79,11 @@ import {
     type FakePaymentProviderOptions,
     parseFakeOptions
 } from './fake-options';
+import { chargeFakeOrder } from './fake-order-charge';
 import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
+import * as pauseCycle from './fake-pause-cycle';
+import * as refundOutcome from './fake-refund-outcome';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
 import {
@@ -83,6 +92,7 @@ import {
     FAKE_CAPABILITY_SUPPORT,
     FAKE_HONEST_LINK_LIFETIME_MS,
     NOT_REFUNDABLE_MESSAGE,
+    notRefundable,
     rejected,
     throughNetwork
 } from './fake-support';
@@ -97,10 +107,11 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly ledger: FakeLedger;
     private readonly orders: FakeOrders;
     private readonly clock: Clock;
-    private readonly honest: ReadonlySet<string>;
+    private readonly honest: Set<string>;
     private readonly simulating: ReadonlySet<string>;
     private readonly without: ReadonlySet<string>;
     private readonly usedPaymentTokens = new Set<string>();
+    private readonly declinedOrderPaymentTokens = new Set<string>();
 
     /**
      * @param options.clock - The clock every read and every delay runs on
@@ -111,12 +122,15 @@ export class FakePaymentProvider implements PaymentProvider {
     constructor(options: FakePaymentProviderOptions) {
         const parsed = parseFakeOptions({ options });
         for (const behaviour of parsed.without) {
-            if (!(FAKE_SWITCHABLE_BEHAVIOURS as readonly string[]).includes(behaviour)) {
+            if (
+                behaviour !== 'RP10' &&
+                !(FAKE_SWITCHABLE_BEHAVIOURS as readonly string[]).includes(behaviour)
+            ) {
                 throw new Error(`${behaviour} is not switchable yet`);
             }
         }
         this.clock = parsed.clock;
-        this.honest = parsed.honest;
+        this.honest = new Set(parsed.honest);
         this.simulating = parsed.simulating;
         this.without = parsed.without;
         this.outbox = new FakeOutbox({
@@ -126,6 +140,11 @@ export class FakePaymentProvider implements PaymentProvider {
         });
         this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
         this.orders = new FakeOrders({ ledger: this.ledger, clock: this.clock });
+    }
+
+    /** Restore a measured lie after an honest fixture setup, without replacing its ledger. */
+    restoreLie(args: { readonly lie: FakeLieId }): void {
+        this.honest.delete(args.lie);
     }
 
     /**
@@ -281,7 +300,8 @@ export class FakePaymentProvider implements PaymentProvider {
                     amountMinor: 0,
                     currency: authorization.snapshot.amount.currency
                 },
-                chargedBack: false
+                chargedBack: false,
+                refunds: []
             },
             version: 1,
             settleAt: null,
@@ -370,7 +390,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         declineReason: null,
                         amount: { ...value.amount },
                         refundedAmount: { amountMinor: 0, currency: value.amount.currency },
-                        chargedBack: false
+                        chargedBack: false,
+                        refunds: []
                     },
                     version: 1,
                     settleAt: late ? nextChargeBatch({ at: this.now() }) : null,
@@ -385,6 +406,16 @@ export class FakePaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Creates one order under its stable key (AC:B6:12, MP:EX-41/EX-30). */
+    async chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult> {
+        return chargeFakeOrder({
+            input,
+            orders: this.orders,
+            simulating: this.simulating,
+            usedPaymentTokens: this.usedPaymentTokens,
+            declinedPaymentTokens: this.declinedOrderPaymentTokens
+        });
+    }
     /**
      * Capability 3 · change the amount of a live authorization. A paused one
      * refuses it (RP6); the new amount keeps the range (RP3, RP4). No notice
@@ -440,7 +471,8 @@ export class FakePaymentProvider implements PaymentProvider {
             input,
             capability: 'pauseAndResume',
             from: ['active'],
-            to: 'paused'
+            to: 'paused',
+            after: pauseCycle.markCapabilityPause
         });
     }
 
@@ -450,7 +482,13 @@ export class FakePaymentProvider implements PaymentProvider {
             input,
             capability: 'pauseAndResume',
             from: ['paused'],
-            to: 'active'
+            to: 'active',
+            after: (stored) =>
+                pauseCycle.applyExplicitResume(
+                    stored,
+                    this.now(),
+                    this.behaving({ behaviour: 'RP10' })
+                )
         });
     }
 
@@ -517,18 +555,34 @@ export class FakePaymentProvider implements PaymentProvider {
                 stored.refundAttempts += 1;
                 const partial = refunded < snapshot.amount.amountMinor;
                 if (stored.refundAttempts === 1 && partial && this.lying({ lie: 'M13' })) {
-                    throw rejected({ capability: 'refund', reason: NOT_REFUNDABLE_MESSAGE });
+                    throw notRefundable({ capability: 'refund' });
                 }
+                const refundId = this.ledger.nextId({ prefix: 'refund' });
+                const refund = { refundId, amount: value.amount, accredited: true };
                 stored.snapshot = {
                     ...snapshot,
-                    refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency }
+                    refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency },
+                    refunds: [...snapshot.refunds, refund]
                 };
                 stored.refundsByReference.set(value.reference, value.amount.amountMinor);
-                const refundId = this.ledger.nextId({ prefix: 'refund' });
                 this.ledger.bump({ stored, resourceKind: 'charge', resourceId: value.chargeId });
                 this.ledger.emit({ resourceKind: 'refund', resourceId: refundId, version: 1 });
                 return { refundId };
             }
+        });
+    }
+
+    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    async refundOrder(input: OrderRefundInput): Promise<OrderRefundResult> {
+        const { value } = parseProviderInput({
+            schema: OrderRefundInputSchema,
+            input,
+            capability: 'refund'
+        });
+        return throughNetwork({
+            simulating: this.simulating,
+            capability: 'refund',
+            run: () => this.orders.refund(value)
         });
     }
 
@@ -624,8 +678,20 @@ export class FakePaymentProvider implements PaymentProvider {
         readonly reference: string;
         readonly createdAt?: string;
         readonly paid: boolean;
+        readonly amount?: Money;
     }): { readonly orderId: string } {
         return this.orders.place(input);
+    }
+
+    /** Test handle for declined one-time payments (AC:B6:12, MP:EX-30). */
+    readonly declineOrderPayments = (input: { readonly paymentToken: string }): void => {
+        this.declinedOrderPaymentTokens.add(input.paymentToken);
+    };
+    /** Test handle counting orders and approved payments (AC:B6:12, MP:EX-41). */
+    readonly ordersFor = (input: { readonly reference: string }) => this.orders.countFor(input);
+    /** Test handle: holds a refund as pending (AC:B6:8, TRANS:B:RF3). */
+    holdOrderRefund(input: { readonly orderId: string; readonly refundId: string }): void {
+        this.orders.hold(input);
     }
 
     /** Capability 8 · decode one of the fake's own deliveries, in either format, into a notice. */
@@ -647,6 +713,13 @@ export class FakePaymentProvider implements PaymentProvider {
         return { accepted: true, resourceId: chargeId };
     }
 
+    /** Test handle: rejects one previously accepted refund of this charge. */
+    async rejectRefund(input: refundOutcome.RejectInput): Promise<MutationAcknowledgement> {
+        const { chargeId, refundId } = refundOutcome.parseFakeRefundRejectionInput(input);
+        this.catchUp();
+        refundOutcome.applyFakeRefundRejection({ ledger: this.ledger, chargeId, refundId });
+        return { accepted: true, resourceId: chargeId };
+    }
     /**
      * Test handle: hands over, and forgets, every delivery due by now.
      *
@@ -734,6 +807,7 @@ export class FakePaymentProvider implements PaymentProvider {
     /** Brings the time-driven state up to the clock: late charges land, open links expire. */
     private catchUp(): void {
         const now = this.now();
+        pauseCycle.applyHonestPauseReturn(this.ledger, now, this.lying({ lie: 'M12' }));
         applyFakeChargeCycles({
             charges: this.ledger.charges,
             authorizations: this.ledger.authorizations,
@@ -773,6 +847,7 @@ export class FakePaymentProvider implements PaymentProvider {
         readonly from: readonly AuthorizationSnapshot['status'][];
         readonly to: AuthorizationSnapshot['status'];
         readonly viaNetwork?: boolean;
+        readonly after?: (stored: import('./fake-support').StoredAuthorization) => void;
     }): Promise<MutationAcknowledgement> {
         const { value } = parseProviderInput({
             schema: AuthorizationRefSchema,
@@ -796,6 +871,7 @@ export class FakePaymentProvider implements PaymentProvider {
                 status: args.to,
                 lastModifiedAt: this.clock.now().toISOString()
             };
+            args.after?.(stored);
             this.ledger.bump({
                 stored,
                 resourceKind: 'authorization',

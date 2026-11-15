@@ -3,7 +3,7 @@
  * test turns a rule off: they are not lies).
  *
  * SCOPE (B1.4a, HOS-1510): rules with a surface in the interface: RP1, RP2,
- * RP3, RP4, RP5, RP6, RP7, RP8, RP9 and RP11. RP10 and RP12 keep their rows
+ * RP3, RP4, RP5, RP6, RP7, RP8, RP9, RP10 and RP11. RP12 keeps its row
  * until their surfaces arrive. The measured behaviours are exercised below and
  * in `fake-charge-cycle.test.ts`.
  */
@@ -73,9 +73,9 @@ async function approvedCharge(): Promise<string> {
 }
 
 describe('TEST:B1:14 the list of rules and measured behaviour', () => {
-    it('holds thirteen rows, RP1 to RP13: seven rules and six measured behaviours', () => {
+    it('holds sixteen rows, RP1 to RP16: ten rules and six measured behaviours', () => {
         expect(FAKE_RULES.map((row) => row.id)).toEqual(
-            Array.from({ length: 13 }, (_, i) => `RP${i + 1}`)
+            Array.from({ length: 16 }, (_, i) => `RP${i + 1}`)
         );
         expect(FAKE_RULES.filter((row) => row.kind === 'rule').map((row) => row.id)).toEqual([
             'RP1',
@@ -84,7 +84,10 @@ describe('TEST:B1:14 the list of rules and measured behaviour', () => {
             'RP4',
             'RP5',
             'RP6',
-            'RP13'
+            'RP13',
+            'RP14',
+            'RP15',
+            'RP16'
         ]);
         expect(
             FAKE_RULES.filter((row) => row.kind === 'measuredBehaviour').map((row) => row.id)

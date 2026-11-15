@@ -7,7 +7,7 @@
  * (that is AccommodationService-specific); the destinationId scalar filter in
  * _executeSearch provides equivalent behaviour.
  */
-import { VenuePublicSchema } from '@repo/schemas';
+import { VenuePublicListItemSchema } from '@repo/schemas';
 import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ export const publicGetVenuesByDestinationRoute = createPublicListRoute({
     requestParams: {
         destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: VenuePublicSchema,
+    responseSchema: VenuePublicListItemSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

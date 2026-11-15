@@ -88,7 +88,7 @@
     "db": {
         "mode": "template",
         "docker": true,
-        "container": "hospeda-postgres",
+        "container": "hospeda2-postgres",
         "user": "hospeda_user",
         "password": "hospeda_pass",
         "host": "localhost",

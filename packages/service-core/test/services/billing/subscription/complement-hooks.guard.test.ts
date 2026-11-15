@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 const ROOT = resolve(import.meta.dirname, '../../../../../..');
 const HOOK_SOURCES = [
     'packages/service-core/src/services/billing/subscription/suspend-for-arrears.service.ts',
+    'packages/service-core/src/services/billing/subscription/suspend-for-chargeback.service.ts',
     'packages/service-core/src/services/billing/subscription/reactivate-suspended.service.ts',
     'packages/service-core/src/services/billing/notice/mirror-our-cancellation-on-active.ts',
     'packages/service-core/src/services/billing/subscription/end-scheduled-services.service.ts',
@@ -30,6 +31,12 @@ function missingHooks(source: string): string[] {
         const pause = code.indexOf('pauseComplementsS32(');
         if (write < 0 || pause <= write)
             missing.push('S6 pause must follow writeArrearsSuspension');
+    }
+    if (code.includes('suspendForChargeback(')) {
+        const write = code.indexOf('writeChargebackSuspension(');
+        const pause = code.indexOf('pauseComplementsS32(');
+        if (write < 0 || pause <= write)
+            missing.push('Chargeback S6 complement pause must follow its transaction');
     }
     if (code.includes('cancelActiveSubscription(')) {
         const s11 = code.slice(code.indexOf('cancelActiveSubscription('));
@@ -68,7 +75,7 @@ describe('HOS-1562 complement composition hooks', () => {
                 .match(
                     /\b(?:pauseComplementsS32|resumeComplementsS33|cancelComplementsByS11Rule)\(/g
                 )
-        ).toHaveLength(6);
+        ).toHaveLength(7);
     });
 
     it('requires the real API composition helper at every S6/S7/mirror root', () => {

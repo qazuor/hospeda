@@ -279,10 +279,14 @@ describe('PropertyCard.astro — the listing notices and the unpublish lines (HO
 
     it('TEST:V8a:7 rows 2 and 25 reach the unpublish confirmation from the read, never derived here', () => {
         expect(propertyCardSource).toContain(
-            'const unpublishNotes = buildUnpublishConfirmNotes({ t, tPlural, trialRunning, item: notices });'
+            'const unpublishNotes = buildUnpublishConfirmNotes({ locale, t, tPlural, trialRunning, item: notices });'
         );
         expect(propertyCardSource).toContain('trialNote={unpublishNotes.trialNote}');
         expect(propertyCardSource).toContain('recurringNote={unpublishNotes.recurringNote}');
+        expect(propertyCardSource).toContain(
+            'recurringAddonNames={unpublishNotes.recurringAddonNames}'
+        );
+        expect(propertyCardSource).toContain('withdrawHref={unpublishNotes.withdrawHref}');
     });
 
     it('an unknown trial defaults to null (no trial line), not to a running trial', () => {

@@ -307,6 +307,11 @@ export const menuTree: readonly MenuItem[] = [
                 titleKey: 'admin-menu.ai.playground',
                 to: '/ai/playground',
                 permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.conversations',
+                to: '/ai/conversations',
+                permission: PermissionEnum.AI_CONVERSATION_VIEW_ANY
             }
         ]
     }

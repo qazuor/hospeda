@@ -29,7 +29,16 @@ const ReadChargeResponseSchema = z.object({
     transaction_amount: z.number().nonnegative(),
     currency_id: z.string().min(1),
     // null is read as absent, so an approved payment without it still fails closed below.
-    transaction_amount_refunded: nullAsAbsent({ schema: z.number().nonnegative() })
+    transaction_amount_refunded: nullAsAbsent({ schema: z.number().nonnegative() }),
+    refunds: nullAsAbsent({
+        schema: z.array(
+            z.object({
+                id: z.union([z.string(), z.number()]).transform(String),
+                amount: z.number().nonnegative(),
+                status: z.string().min(1)
+            })
+        )
+    })
 });
 
 /**
@@ -74,6 +83,16 @@ export async function readMercadoPagoCharge(args: {
         ['approved', 'refunded', 'charged_back'].includes(parsed.status)
     )
         throw providerError('UNAVAILABLE', 'read', 'Mercado Pago payment has no refunded amount');
+    const toMinor = (amount: number): number => {
+        const minor = Math.round(amount * 100);
+        if (!Number.isSafeInteger(minor))
+            throw providerError(
+                'UNAVAILABLE',
+                'read',
+                'Mercado Pago payment amount exceeds safe minor units'
+            );
+        return minor;
+    };
     return {
         chargeId: parsed.id,
         createdAt: parsed.date_created,
@@ -97,13 +116,18 @@ export async function readMercadoPagoCharge(args: {
         status,
         declineReason: status === 'rejected' ? (parsed.status_detail ?? null) : null,
         amount: {
-            amountMinor: Math.round(parsed.transaction_amount * 100),
+            amountMinor: toMinor(parsed.transaction_amount),
             currency: parsed.currency_id
         },
         refundedAmount: {
-            amountMinor: Math.round((refundedAmount ?? 0) * 100),
+            amountMinor: toMinor(refundedAmount ?? 0),
             currency: parsed.currency_id
         },
+        refunds: (parsed.refunds ?? []).map((r) => ({
+            refundId: r.id,
+            amount: { amountMinor: toMinor(r.amount), currency: parsed.currency_id },
+            accredited: r.status === 'approved'
+        })),
         chargedBack: parsed.status === 'charged_back'
     };
 }

@@ -58,6 +58,7 @@ const INITIAL = {
     currency: 'ARS',
     phone: '',
     whatsapp: '',
+    landlinePhone: '',
     email: '',
     website: '',
     facebookUrl: '',

@@ -1,4 +1,9 @@
-import { domainEventModel, type ReconciliationMarkReason, reconciliationMarkModel } from '@repo/db';
+import {
+    domainEventModel,
+    manualPaymentModel,
+    type ReconciliationMarkReason,
+    reconciliationMarkModel
+} from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger.js';
 import { liftReconciliationMark } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark.service.js';
@@ -134,6 +139,27 @@ describe('TEST:B5:19 — S14 hangs a payment on the open mark (AC:B5:37)', () =>
             ])
         );
         expect(await openMarksWithReason(subscriptionId)).toHaveLength(1);
+    });
+
+    it('keeps an awaiting installment hung by S14 as the first and latest installment', async () => {
+        const { subscriptionId, userId } = await markPaymentFixture();
+        const manual = await seedManualPayment({ subscriptionId });
+        const result = await hang({ subscriptionId, userId, payment: manual });
+        expect(result.outcome).toBe('OPENED');
+        const tx = getServiceTestDb();
+        expect((await manualPaymentModel.findFirstInstallment({ subscriptionId, tx }))?.id).toBe(
+            manual.id
+        );
+        expect((await manualPaymentModel.findLatestInstallment({ subscriptionId, tx }))?.id).toBe(
+            manual.id
+        );
+        expect(
+            await manualPaymentModel.isFirstInstallment({
+                subscriptionId,
+                manualPaymentId: manual.id,
+                tx
+            })
+        ).toBe(true);
     });
 
     it('(c) the same payment hung twice on the same mark is rejected and S14 rolls back whole', async () => {

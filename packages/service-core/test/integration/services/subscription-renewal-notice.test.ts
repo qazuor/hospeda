@@ -81,6 +81,7 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice at 5 and 1 days, w
                 planName: 'Coverage plan',
                 renewalDate: '2001-07-01',
                 daysBefore: 5,
+                paymentMethod: 'CARD',
                 deadlinesVersion: 1
             });
             today = renewalNow('2001-06-30');
@@ -143,6 +144,7 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice at 5 and 1 days, w
             expect(rows.some((row) => row.dedupKey.includes('renov:-5d:'))).toBe(true);
             expect(rows.find((row) => row.dedupKey.includes('renov:-5d:'))?.payload).toMatchObject({
                 daysBefore: 5,
+                paymentMethod: 'CARD',
                 deadlinesVersion: 1
             });
             const [clock] = await tx
@@ -220,17 +222,76 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice at 5 and 1 days, w
         });
     });
 
+    it('(manual) enqueues both milestones for an active principal without disturbing card eligibility', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            await ensureBillingDeadlineVersion1(tx);
+            const charge = renewalCharge('2001-07-01');
+            const manual = await seedRenewalSubscription(tx, {
+                nextChargeAt: charge,
+                paymentMethod: 'MANUAL'
+            });
+            const card = await seedRenewalSubscription(tx, {
+                nextChargeAt: charge,
+                paymentMethod: 'CARD'
+            });
+            const complement = await seedRenewalSubscription(tx, {
+                nextChargeAt: charge,
+                paymentMethod: 'MANUAL',
+                class: 'COMPLEMENTO'
+            });
+            const inactive = await seedRenewalSubscription(tx, {
+                nextChargeAt: charge,
+                paymentMethod: 'MANUAL',
+                status: 'SUSPENDED'
+            });
+            let today = renewalNow('2001-06-26');
+            const run = () =>
+                sendRenewalNotices(
+                    { limit: 50, db: tx },
+                    {
+                        clock: { now: () => today },
+                        readCurrentDeadlines: async () => currentVersion()
+                    }
+                );
+            await run();
+            for (const id of [manual.subscriptionId, card.subscriptionId]) {
+                const rows = await readOutboxRows(tx, id);
+                expect(
+                    rows.map((row) => (row.payload as { daysBefore: number }).daysBefore)
+                ).toEqual([5]);
+                expect((rows[0]?.payload as { paymentMethod: string }).paymentMethod).toBe(
+                    id === manual.subscriptionId ? 'MANUAL' : 'CARD'
+                );
+            }
+            today = renewalNow('2001-06-30');
+            await run();
+            for (const id of [manual.subscriptionId, card.subscriptionId]) {
+                const rows = await readOutboxRows(tx, id);
+                expect(
+                    rows.map((row) => (row.payload as { daysBefore: number }).daysBefore)
+                ).toEqual([1, 5]);
+            }
+            for (const id of [complement.subscriptionId, inactive.subscriptionId]) {
+                expect(await readOutboxRows(tx, id)).toHaveLength(0);
+            }
+        });
+    });
+
     it('(h) leaves every ineligible row unstamped and without an outbox row', async () => {
         await withServiceTestTransaction(async (tx) => {
             await ensureBillingDeadlineVersion1(tx);
             const charge = renewalCharge('2001-07-01');
-            const cases = [
+            const cases: {
+                status: string;
+                class?: 'PRINCIPAL' | 'COMPLEMENTO';
+                paymentMethod?: 'CARD' | 'MANUAL';
+                nextChargeAt?: Date | null;
+            }[] = [
                 { status: 'CANCEL_SCHEDULED' },
                 { status: 'GRACE_PERIOD' },
                 { status: 'SUSPENDED' },
                 { status: 'PAUSED' },
                 { status: 'PENDING_AUTHORIZATION' },
-                { status: 'ACTIVE', paymentMethod: 'MANUAL' as const },
                 { status: 'ACTIVE', class: 'COMPLEMENTO' as const },
                 { status: 'ACTIVE', nextChargeAt: null }
             ];

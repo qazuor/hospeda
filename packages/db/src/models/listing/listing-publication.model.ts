@@ -1,4 +1,4 @@
-import type { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { sql } from 'drizzle-orm';
 import type { DrizzleClient } from '../../types.ts';
 import { domainEventModel } from '../domain-event/domain-event.model.ts';
@@ -35,6 +35,12 @@ const TABLES: Record<ListingVertical, string> = {
     venue: 'venues',
     experience: 'experiences'
 };
+
+/** The verticals the one-address rule covers (HOS-1810); experiences have no key. */
+const LOCATION_RULE_VERTICALS: ReadonlySet<ListingVertical> = new Set([
+    VerticalEnum.ACCOMMODATION,
+    VerticalEnum.VENUE
+]);
 
 function table(vertical: ListingVertical) {
     return sql.identifier(TABLES[vertical]);
@@ -258,11 +264,36 @@ export const listingPublicationModel = {
         const deletion = args.deletionAnnouncedAt
             ? sql`, deletion_announced_at = ${args.deletionAnnouncedAt}`
             : sql``;
+        // HOS-1810: this is the ONLY writer of `publication_status`, so every way
+        // into PUBLISHED (PB1 publish, billing coverage restoration, a moderation
+        // lift) passes here. A listing that would land on a place its owner already
+        // publishes is not moved (the row count is 0, which callers already read as
+        // "state changed"), instead of raising the unique violation of the
+        // one-address index and aborting the whole transaction (the coverage job
+        // restores several listings in one). The index stays the backstop for a
+        // concurrent write this NOT EXISTS cannot see.
+        const t = table(args.vertical);
+        const conflict =
+            args.to === PublicationStatusEnum.PUBLISHED &&
+            LOCATION_RULE_VERTICALS.has(args.vertical)
+                ? sql`AND NOT EXISTS (
+                    SELECT 1 FROM ${t} AS other
+                    WHERE other.owner_id = ${t}.owner_id
+                      AND other.location_key = ${t}.location_key
+                      AND other.id <> ${t}.id
+                      AND other.publication_status = 'PUBLISHED'
+                      AND other.deleted_at IS NULL
+                      AND (other.location_exception_at IS NULL
+                           OR other.location_exception_key IS DISTINCT FROM other.location_key)
+                      AND (${t}.location_exception_at IS NULL
+                           OR ${t}.location_exception_key IS DISTINCT FROM ${t}.location_key)
+                  )`
+                : sql``;
         const result = await args.tx.execute(sql<{ id: string }>`
-            UPDATE ${table(args.vertical)}
+            UPDATE ${t}
             SET publication_status = ${args.to} ${clock} ${deletion}
             WHERE id = ${args.listingId} AND publication_status = ${args.from}
-              AND deleted_at IS NULL RETURNING id`);
+              AND deleted_at IS NULL ${conflict} RETURNING id`);
         return result.rows.length === 1;
     },
 

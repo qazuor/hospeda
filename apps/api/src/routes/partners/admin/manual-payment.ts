@@ -15,7 +15,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 /**
  * POST /api/v1/admin/partners/{id}/manual-payment
  * Register manual payment - Admin endpoint
- * Requires PARTNER_MANAGE permission
+ * Requires billing.registerManualPayment (ACC_3, HOS-1541)
  */
 export const adminManualPaymentRoute = createAdminRoute({
     method: 'post',
@@ -23,7 +23,7 @@ export const adminManualPaymentRoute = createAdminRoute({
     summary: 'Register manual payment for partner (admin)',
     description: 'Activates a partner subscription without a provider payment',
     tags: ['Partners'],
-    requiredPermissions: [PermissionEnum.PARTNER_MANAGE],
+    requiredPermissions: [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
     requestParams: { id: z.string().uuid() },
     requestBody: z.object({
         note: z.string().max(500).optional()

@@ -262,7 +262,8 @@
             },
             "unpublishTrialNote": "A avaliação gratuita continua correndo: despublicar não para o relógio da avaliação.",
             "unpublishRecurringNote_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo sem publicar, até você cancelá-lo.",
-            "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los."
+            "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los.",
+            "recurringWithdrawLink": "Cancelar estes destaques"
         },
         "editor": {
             "section": {
@@ -317,6 +318,8 @@
                 "amenityDetailsHint": "Informe se o uso é privativo ou compartilhado e se está disponível o ano todo.",
                 "features": "Recursos",
                 "phone": "Telefone",
+                "landlinePhone": "Telefone fixo",
+                "contactPublicHint": "Estes dados de contato são exibidos publicamente na sua ficha.",
                 "phoneCountry": "País",
                 "phoneCountrySearchPlaceholder": "Buscar país...",
                 "phoneCountryNoResults": "Nenhum país encontrado",
@@ -726,6 +729,14 @@
             },
             "pageDescription": "Editar información de tu propiedad",
             "aiQuestions": {
+                "redactionNote": "Os dados de contato (e-mails e telefones) ficam ocultos nas perguntas exibidas aqui.",
+                "emptyFiltered": "Não há perguntas nesse intervalo de datas.",
+                "filter": {
+                    "from": "De",
+                    "to": "Até",
+                    "clear": "Limpar datas",
+                    "invalidRange": "O intervalo de datas não é válido. Você pode consultar até 12 meses atrás e \"De\" não pode ser posterior a \"Até\"."
+                },
                 "intro": "O que os visitantes perguntaram ao assistente do seu anúncio. As perguntas são anônimas e ficam guardadas por 12 meses.",
                 "loading": "Carregando perguntas…",
                 "error": "Não conseguimos carregar as perguntas. Tente novamente mais tarde.",

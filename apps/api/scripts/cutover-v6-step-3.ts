@@ -3,10 +3,12 @@
  * Run during cutover step 3, after `hops db-migrate` and after the new image is up with crons off.
  * First run `pnpm --dir apps/api exec tsx scripts/cutover-v6-step-3.ts --dry-run`, check the five rows by hand, then run the same command with `--confirm-write-trials`. A rerun writes nothing and reports `already_done`.
  * Exit codes: 0 dry_run/completed/already_done, 1 nothing_planned or error, 2 refused arguments.
+ * It composes coverage listeners before writing and drains them before closing the pool (HOS-2091).
  */
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { parseStep3Args } from '../src/services/cutover-v6/step-3.args.js';
+import type { Step3ProcessComposition } from '../src/services/cutover-v6/step-3.compose.js';
 import { resolveStep3DatabaseUrl } from '../src/services/cutover-v6/step-3.env.js';
 
 /** Executes the explicitly confirmed V6 step 3 cutover operation. */
@@ -27,15 +29,22 @@ async function main(): Promise<void> {
     ]);
     const pool = new Pool({ connectionString: databaseUrl });
     let serviceErrorClass: typeof import('@repo/service-core').ServiceError | undefined;
+    let composition: Step3ProcessComposition | undefined;
     try {
         const serviceCore = await import('@repo/service-core');
         serviceErrorClass = serviceCore.ServiceError;
-        const [{ runStep3, STEP3_EXIT_CODE }, { injectClock, systemClock }] = await Promise.all([
+        const [
+            { runStep3, STEP3_EXIT_CODE },
+            { injectClock, systemClock },
+            { composeStep3Process }
+        ] = await Promise.all([
             import('../src/services/cutover-v6/step-3.service.js'),
-            import('../src/utils/clock.js')
+            import('../src/utils/clock.js'),
+            import('../src/services/cutover-v6/step-3.compose.js')
         ]);
         initializeDb(pool);
         injectClock({ clock: systemClock });
+        composition = composeStep3Process();
         const result = await runStep3({
             db: getDb(),
             clock: systemClock,
@@ -56,6 +65,7 @@ async function main(): Promise<void> {
         );
         process.exitCode = 1;
     } finally {
+        await composition?.stop();
         await pool.end();
     }
 }

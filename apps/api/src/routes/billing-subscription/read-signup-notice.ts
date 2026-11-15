@@ -16,6 +16,7 @@ import {
 import { readBillingChoice, readResumableCheckoutUrl, ServiceError } from '@repo/service-core';
 import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
 import { getClock } from '../../utils/clock';
+import { readOwnSubscriptions } from './read-own-subscriptions';
 import {
     touristVipCancelledOnActivation,
     touristVipCancelledOnReturn
@@ -46,6 +47,12 @@ export async function readSignupNotice(input: {
         userId: input.userId,
         vertical: vertical.data
     });
+    // Reuse the own-subscriptions read, which verifies successor.succeedsId and
+    // exposes the same deadline already shown in My Subscriptions.
+    const ownSubscriptions = await readOwnSubscriptions(input.userId);
+    const successor = ownSubscriptions.find(
+        (row) => row.vertical === vertical.data && row.succession?.checkoutOpen
+    );
     let pendingAttempt: SignupNoticeResponse['pendingAttempt'] = null;
     if (
         commitment &&
@@ -61,10 +68,17 @@ export async function readSignupNotice(input: {
             subscriptionId: commitment.subscription.id,
             plan: await readPlan({ billingOptionId: commitment.subscription.billingOptionId }),
             checkoutUrl: readResumableCheckoutUrl({ commitment }),
+            takenBy: 'LIVE_PRINCIPAL',
             authorizationWindowEndsAt:
                 commitment.subscription.authorizationWindowEndsAt.toISOString()
         };
     }
+    const blockingCommitment: SignupNoticeResponse['blockingCommitment'] = successor
+        ? {
+              takenBy: 'SUCCESSOR_PENDING',
+              checkoutDeadline: successor.succession?.checkoutDeadline ?? null
+          }
+        : undefined;
     let touristVip: SignupNoticeResponse['touristVip'];
     switch (vertical.data) {
         case 'tourist':
@@ -105,6 +119,7 @@ export async function readSignupNotice(input: {
         return {
             plan,
             pendingAttempt,
+            ...(blockingCommitment ? { blockingCommitment } : {}),
             vertical: vertical.data,
             touristVip,
             trial: { status: 'NOT_RUNNING' }
@@ -114,6 +129,7 @@ export async function readSignupNotice(input: {
     return {
         plan,
         pendingAttempt,
+        ...(blockingCommitment ? { blockingCommitment } : {}),
         vertical: vertical.data,
         touristVip,
         trial: {

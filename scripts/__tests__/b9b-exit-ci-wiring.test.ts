@@ -2,16 +2,15 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { apiIntegrationCollection } from './helpers/api-integration-collection';
+import {
+    apiIntegrationCollection,
+    integrationJobRunsBothSuites
+} from './helpers/api-integration-collection';
 
 /**
- * Exit evidence for the B9b slice that went to cut (owner letter DB, B9b.md:99-100):
- * AC:B9b:1-6, 9 and 12, from HOS-1588, HOS-1589 and HOS-1591. The B9b PIECE exit
- * (AC:B9b:11, LISTA:B9b) belongs to phase 2 (HOS-1592); this test does not claim it.
- * The spec assigns this exit test no TEST id of its own, so it carries none. It does
- * not run the tests (the exit run and CI do that); it proves their evidence IS in the
- * tree and wired. Every assertion is about PRESENCE, except the one retired guard
- * phrase this leaf removed, checked narrowly in that guard file.
+ * Exit evidence for the whole B9b piece (AC:B9b:11, LISTA:B9b), owned by
+ * HOS-1591 and HOS-1592. This file checks presence of the named evidence and
+ * its CI wiring; the exit run executes the actual tests.
  */
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const selfPath = fileURLToPath(import.meta.url);
@@ -36,31 +35,25 @@ interface SliceExtra {
     readonly acs: readonly string[];
     readonly tests: readonly string[];
 }
-interface DeferredEntry {
-    readonly acs: readonly string[];
-    readonly issue: string;
-    readonly phase: string;
-    readonly letter: string;
-}
 interface E2eContract {
     readonly file: string;
     readonly tests: readonly string[];
     readonly ac: string;
 }
 
-// LISTA:B9, B9a.md:1036-1060; clauses from the cut slice, excluding grants and phase 2.
+// LISTA:B9, B9a.md:1036-1060; all B9b clauses, excluding B9a grants.
 const SLICE_CLAUSES: readonly SliceClause[] = [
     { clause: 1, tests: ['TEST:B9b:1'] },
     { clause: 2, tests: ['TEST:B9b:2'] },
+    { clause: 3, tests: ['TEST:B9b:7', 'TEST:B9b:8'] },
     { clause: 5, tests: ['TEST:B9b:6'] },
+    { clause: 6, tests: ['TEST:B8b:12', 'LISTA:B9 clause 6'] },
     { clause: 8, tests: ['TEST:B9b:1'] },
     { clause: 9, tests: ['TEST:B9b:4'] }
 ];
-// LISTA:B9, B9a.md:1036-1060; grants and other owners' phase/cut clauses.
+// LISTA:B9, B9a.md:1036-1060; the two B9a grant clauses.
 const NOT_THIS_SLICE: readonly OtherClause[] = [
-    { clause: 3, owner: 'HOS-1590', phase: 'fase-2' },
     { clause: 4, owner: 'B9a', phase: 'corte' },
-    { clause: 6, owner: 'HOS-1592', phase: 'fase-2' },
     { clause: 7, owner: 'B9a', phase: 'corte' }
 ];
 // B9b.md:210-219 and :248-258; ACC:21 and row 7-bis added by this slice.
@@ -76,22 +69,16 @@ const SLICE_EXTRAS: readonly SliceExtra[] = [
         tests: ['TEST:B9b:12']
     }
 ];
-// B9b.md:100, owner letter DB; temporary courtesy and its crossings stay in phase 2.
-const DEFERRED: readonly DeferredEntry[] = [
-    {
-        acs: ['AC:B9b:7', 'AC:B9b:8', 'AC:B9b:13'],
-        issue: 'HOS-1590',
-        phase: 'fase-2',
-        letter: 'DB'
-    },
-    {
-        acs: ['AC:B9b:10', 'AC:B9b:11', 'AC:B9b:14'],
-        issue: 'HOS-1592',
-        phase: 'fase-2',
-        letter: 'DB'
-    }
-];
-// B9b.md:99 and testing map :429-446; cut IDs only.
+// B9b.md:429-446; the phase 2 AC → TEST map, including 1590 evidence.
+const PHASE_2_AC_TESTS: Readonly<Record<string, readonly string[]>> = {
+    'AC:B9b:7': ['TEST:B9b:7'],
+    'AC:B9b:8': ['TEST:B9b:8'],
+    'AC:B9b:10': ['TEST:B9b:10'],
+    'AC:B9b:11': ['TEST:B9b:11', 'TEST:B9b:14'],
+    'AC:B9b:13': ['TEST:B9b:14', 'TEST:B9b:15'],
+    'AC:B9b:14': ['TEST:B9b:13']
+};
+// B9b.md:99 and testing map :429-446; cut IDs carried into the piece.
 const CUT_TESTS = [
     'TEST:B9b:1',
     'TEST:B9b:2',
@@ -102,7 +89,7 @@ const CUT_TESTS = [
     'TEST:B9b:9',
     'TEST:B9b:12'
 ] as const;
-// B9b.md:547-557 and :583-594; e2e files as named in the tree.
+// B9b.md:547-608; e2e files named in the tree, including row 5.
 const E2E: readonly E2eContract[] = [
     {
         file: 'apps/e2e/tests/admin/adm-14-promo-code-editor.spec.ts',
@@ -113,6 +100,16 @@ const E2E: readonly E2eContract[] = [
         file: 'apps/e2e/tests/billing/billing-14-promo-redeem-notice.spec.ts',
         tests: ['TEST:B9b:12', 'TEST:B9b:2'],
         ac: 'AC:B9b:12'
+    },
+    {
+        file: 'apps/e2e/tests/admin/adm-21-temporary-courtesy-confirmations.spec.ts',
+        tests: ['TEST:B9b:13'],
+        ac: 'AC:B9b:14'
+    },
+    {
+        file: 'apps/e2e/tests/billing/billing-20-act-notices.spec.ts',
+        tests: ['TEST:B8b:25'],
+        ac: 'AC:B8b:25'
     }
 ];
 
@@ -211,7 +208,7 @@ function titlesInRoot({ root }: { readonly root: string }): readonly string[] {
         .flatMap((file) => testTitles({ source: readFileSync(file, 'utf8') }));
 }
 
-describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7-bis in the tree, phase 2 deferred (HOS-1591)', () => {
+describe('B9b piece exit: LISTA:B9 clauses and phase 2 evidence in the tree (HOS-1591, HOS-1592)', () => {
     const allTitles = collectSources().flatMap((source) => testTitles({ source }));
 
     describe('(a) the scanner is not blind', () => {
@@ -224,7 +221,7 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
         });
     });
 
-    describe('(b) slice clauses and extras have titles', () => {
+    describe('(b) piece clauses and extras have titles', () => {
         for (const entry of [...SLICE_CLAUSES, ...SLICE_EXTRAS]) {
             const title = 'clause' in entry ? `LISTA:B9 clause ${entry.clause}` : entry.what;
             it(`${title} names its TEST ids`, () => {
@@ -236,7 +233,7 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
         }
     });
 
-    describe('(c) cut tests, clauses and deferred AC coverage', () => {
+    describe('(c) cut and phase 2 tests cover the piece', () => {
         it('every cut TEST id appears in at least one title', () => {
             const missing = CUT_TESTS.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
@@ -253,27 +250,15 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
                 1, 2, 3, 4, 5, 6, 7, 8, 9
             ]);
         });
-        it('the DB deferrals identify both phase 2 owners and cover ACs 1 to 14 once', () => {
-            expect(DEFERRED).toHaveLength(2);
-            expect(DEFERRED.map(({ issue }) => issue)).toEqual(['HOS-1590', 'HOS-1592']);
-            expect(
-                DEFERRED.every(({ phase, letter }) => phase === 'fase-2' && letter === 'DB')
-            ).toBe(true);
-            const cutAcs = [
-                'AC:B9b:1',
-                'AC:B9b:2',
-                'AC:B9b:3',
-                'AC:B9b:4',
-                'AC:B9b:5',
-                'AC:B9b:6',
-                'AC:B9b:9',
-                'AC:B9b:12'
-            ];
-            const acs = [...cutAcs, ...DEFERRED.flatMap(({ acs: deferredAcs }) => deferredAcs)];
-            expect(new Set(acs).size).toBe(acs.length);
-            expect([...acs].sort()).toEqual(
-                Array.from({ length: 14 }, (_, index) => `AC:B9b:${index + 1}`).sort()
-            );
+        it('the phase 2 AC → TEST map names every TEST in a test title', () => {
+            for (const [ac, ids] of Object.entries(PHASE_2_AC_TESTS)) {
+                expect(ac).toMatch(/^AC:B9b:/);
+                for (const id of ids)
+                    expect(
+                        allTitles.some((title) => namesId({ text: title, id })),
+                        `${ac} → ${id}`
+                    ).toBe(true);
+            }
         });
     });
 
@@ -300,8 +285,12 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
     });
 
     describe('(e) integration and CI collect the evidence', () => {
-        it('integration configs include the promo suites', () => {
-            for (const dir of ['billing-promo']) {
+        it('integration configs collect promo and courtesy suites', () => {
+            for (const dir of [
+                'billing-promo',
+                'billing-subscription/admin-courtesy-grant-route.test.ts',
+                'billing-subscription/admin-courtesy-revoke-route.test.ts'
+            ]) {
                 const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
                 expect(api.collected.length, dir).toBeGreaterThan(0);
                 expect(api.excluded, dir).toEqual([]);
@@ -317,24 +306,25 @@ describe('B9b cut slice exit: LISTA:B9 clauses of the slice, action 21 and row 7
             const guards = jobBlock({ source: ciYml, job: 'guards' });
             const passNeeds = needsOf({ block: jobBlock({ source: ciYml, job: 'ci-pass' }) });
             expect(stepRuns({ block: guards })).toContain('pnpm test:scripts');
+            const integrationRuns = stepRuns({
+                block: jobBlock({ source: ciYml, job: 'test-integration' })
+            });
+            expect(integrationJobRunsBothSuites({ runs: integrationRuns })).toBe(true);
             for (const job of ['guards', 'test-unit', 'test-integration'])
                 expect(passNeeds).toContain(job);
         });
     });
 
-    describe('(f) action 21 owns its permission', () => {
+    describe('(f) actions and additive migrations are wired', () => {
         it('ACC_21 declares the promo permission and has no pending owner', () => {
             const source = read('packages/verticals/src/authorization/administrative-actions.ts');
             const action = source.match(/ACC_21\s*:\s*\{[^}]+\}/s)?.[0] ?? '';
             expect(action).toContain('PermissionEnum.BILLING_MANAGE_PROMO_CODES');
             expect(action).toContain('pendingOwnPermission: null');
         });
-        it('the route guard no longer carries the retired placeholder for this leaf', () => {
-            const guard = read(
-                'apps/api/test/routes/administrative-action-route-permissions.guard.test.ts'
-            );
-            // This is the sole narrow absence assertion: this leaf removed this exact placeholder.
-            expect(guard).not.toContain('B9b (HOS-1591) builds it');
+        it('CI runs the additive migrations guard as a step', () => {
+            const runs = stepRuns({ block: jobBlock({ source: ciYml, job: 'guards' }) });
+            expect(runs).toContain('pnpm check:additive-migrations');
         });
     });
 });

@@ -96,6 +96,32 @@ describe('PartnerForm — a refused save says so (H-161)', () => {
     });
 });
 
+describe('PartnerForm — direct creation claim email', () => {
+    it('requires a claim email and submits the entered address when enabled', async () => {
+        const { onSubmit } = renderForm({ withClaimEmail: true });
+        fireEvent.click(submitButton());
+        await waitFor(() =>
+            expect(
+                screen.getByText('El correo para el aviso de reclamo es requerido')
+            ).toBeInTheDocument()
+        );
+        expect(onSubmit).not.toHaveBeenCalled();
+
+        fireEvent.change(screen.getByLabelText(/Correo para el aviso de reclamo/), {
+            target: { value: 'partner@example.test' }
+        });
+        fireEvent.click(submitButton());
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        expect(onSubmit.mock.calls[0]?.[0]).toHaveProperty('claimEmail', 'partner@example.test');
+    });
+
+    it('keeps the claim email control out of forms without the prop', () => {
+        renderForm();
+        expect(screen.getByLabelText(/^Nombre/)).toBeInTheDocument();
+        expect(screen.queryByLabelText('Correo para el aviso de reclamo')).not.toBeInTheDocument();
+    });
+});
+
 describe('PartnerForm — a rejected save says so (HOS-1061)', () => {
     /**
      * Before this fix, a `PUT` that answered 409 (a slug already used by

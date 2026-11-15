@@ -38,6 +38,13 @@ export const anchorInputSchema = z.strictObject({
     ...anchorSchema.shape
 });
 
+/** Schema for revoking a permanent grant with a signed, nonempty reason. */
+export const revokeSchema = z.object({
+    permanentGrantId: z.uuid(),
+    reason: z.string().trim().min(1).max(2000),
+    revokedBy: z.uuid()
+});
+
 /** Creates the typed validation error for invalid permanent-grant input. */
 export function invalidPermanentGrantInput(error: unknown): ServiceError {
     return new ServiceError(

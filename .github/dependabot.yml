@@ -116,6 +116,12 @@ updates:
         update-types: ['version-update:semver-major']
       - dependency-name: 'expo-*'
         update-types: ['version-update:semver-major']
+      # The scoped @expo/* packages (metro-runtime, vector-icons, ...) are
+      # versioned per SDK too, but `expo-*` does not match them: #3924 bumped
+      # @expo/metro-runtime 57 -> 58 alone and broke `mobile#build` against
+      # expo@56. Same scope and owner as above. Owner: HOS-78.
+      - dependency-name: '@expo/*'
+        update-types: ['version-update:semver-major']
       # @ai-sdk/openai + @ai-sdk/anthropic + ai: the Vercel AI SDK v4/v7 line
       # ships a LanguageModelV4 provider that the installed `ai` core's
       # generateText/streamText don't accept, so these three MUST move together

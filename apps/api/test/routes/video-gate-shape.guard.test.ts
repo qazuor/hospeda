@@ -28,9 +28,10 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { LISTING_SECTIONS } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
-const FILTER_PATH = resolve(__dirname, '../../src/utils/entitlement-filter.ts');
+const FILTER_PATH = resolve(__dirname, '../../src/utils/public-accommodation-projection.ts');
 
 /**
  * Source with block comments, line comments and string literals removed.
@@ -64,7 +65,7 @@ describe('video gate — dead shapes cannot come back', () => {
         expect(stripped).not.toContain(COMMENT_ONLY_PROBE);
         // And the code itself survived — a stripper that ate everything would
         // satisfy every `not.toMatch` below.
-        expect(stripped).toContain('export function filterPublicPaidFields');
+        expect(stripped).toContain('export async function projectPublicAccommodationPage');
         expect(stripped.length).toBeGreaterThan(1000);
     });
 
@@ -112,21 +113,24 @@ describe('video gate — dead shapes cannot come back', () => {
         // schema picks both, so clearing one leaves the other serving the same
         // URLs — the failure mode `richDescription` + `richDescriptionI18n`
         // already document.
-        expect(src).toMatch(/delete\s+filtered\.videos/);
+        // The top-level column leaves through the catalog trait; the nested copy
+        // and the text are the explicit steps in this module.
         expect(src).toMatch(/videos:\s*\[\]/);
         expect(src).toMatch(/stripVideoEmbeds\s*\(/);
+        const sections: readonly {
+            readonly id: string;
+            readonly traits?: readonly {
+                readonly id: string;
+                readonly fields?: readonly string[];
+            }[];
+        }[] = LISTING_SECTIONS.accommodation;
+        const photos = sections.find(({ id }) => id === 'photos');
+        expect(photos?.traits?.find(({ id }) => id === 'videos')?.fields).toContain('videos');
     });
 
-    it('applies the video grant in the current owner-grant filter', () => {
+    it('applies the video grant through the resolved `videos` trait', () => {
         const src = executableSource();
-        const filterStart = src.indexOf('export function filterPublicPaidFields');
-        const filterEnd = src.indexOf(
-            'export function filterPublicPaidFieldsForOwner',
-            filterStart
-        );
-        const paidFilter = src.slice(filterStart, filterEnd);
-        expect(paidFilter).toMatch(/grants\.video/);
-        expect(paidFilter).toMatch(/delete\s+filtered\.videos/);
-        expect(paidFilter).not.toMatch(/hasEntitlement\s*\(/);
+        expect(src).toMatch(/traits\.get\(''\)\s*!==\s*''/);
+        expect(src).not.toMatch(/hasEntitlement\s*\(/);
     });
 });

@@ -52,7 +52,7 @@
     },
     "database": {
         "strategy": "postgres-template",
-        "container": "hospeda-postgres",
+        "container": "hospeda2-postgres",
         "templateDatabase": "hospeda_template",
         "databaseNamePattern": "worktree_{slug}",
         "connectionEnvFile": "apps/api/.env.local",

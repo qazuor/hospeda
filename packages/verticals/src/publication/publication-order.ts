@@ -49,8 +49,15 @@ export function orderRestorationCandidates(args: {
 export function selectSurplusToLower(args: {
     readonly published: readonly PublicationQueueEntry[];
     readonly limit: number;
+    readonly keep?: ReadonlySet<string>;
 }): readonly PublicationQueueEntry[] {
     const excess = args.published.length - args.limit;
     if (excess <= 0) return [];
-    return [...args.published].sort(comparePublicationOrder).slice(-excess).reverse();
+    const ordered = [...args.published].sort(comparePublicationOrder);
+    if (args.keep?.size) {
+        const selected = ordered.filter((entry) => args.keep?.has(entry.id));
+        const unselected = ordered.filter((entry) => !args.keep?.has(entry.id));
+        ordered.splice(0, ordered.length, ...selected, ...unselected);
+    }
+    return ordered.slice(-excess).reverse();
 }

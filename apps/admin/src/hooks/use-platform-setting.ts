@@ -22,8 +22,10 @@
  */
 
 import type {
+    AddonPurchasesFreezeValue,
     AnnouncementsValue,
     MaintenanceModeValue,
+    PaidSignupsFreezeValue,
     PlatformSettingsKey,
     SeoDefaultsValue
 } from '@repo/schemas';
@@ -46,7 +48,11 @@ export type PlatformSettingValue<K extends PlatformSettingsKey> = K extends 'seo
       ? MaintenanceModeValue
       : K extends 'announcements.global'
         ? AnnouncementsValue
-        : never;
+        : K extends 'billing.paidSignupsFreeze'
+          ? PaidSignupsFreezeValue
+          : K extends 'billing.addonPurchasesFreeze'
+            ? AddonPurchasesFreezeValue
+            : never;
 
 /**
  * Shape of a single row returned by `GET /api/v1/admin/platform-settings/{key}`.

@@ -1,20 +1,26 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
 import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situation';
 
 const pricingSituation = vi.hoisted(() => vi.fn());
 const listingNotices = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/api/endpoints-protected', () => ({
-    billingSubscriptionApi: { pricingSituation },
-    publishApi: { listingNotices }
-}));
+const listMine = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/api/endpoints-protected', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/lib/api/endpoints-protected')>();
+    return {
+        ...actual,
+        billingSubscriptionApi: { ...actual.billingSubscriptionApi, pricingSituation, listMine },
+        publishApi: { listingNotices }
+    };
+});
 beforeEach(() => {
     vi.clearAllMocks();
     resetPricingSituationCacheForTests();
 });
+afterEach(() => vi.unstubAllGlobals());
 
 const componentSource = readFileSync(
     resolve(__dirname, '../../../src/components/billing/PlanCardCta.client.tsx'),
@@ -26,6 +32,310 @@ const cssSource = readFileSync(
 );
 
 describe('PlanCardCta', () => {
+    it('TEST:B8b:25 explains an open checkout in pricing instead of rendering a plan-change action', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'accommodation',
+                        status: 'ACTIVE',
+                        promo: null,
+                        succession: { checkoutOpen: true },
+                        paymentMethod: 'CARD'
+                    }
+                ]
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: null }}
+            />
+        );
+        expect(await screen.findByTestId('pricing-plan-change-checkout')).toHaveTextContent(
+            'Terminá o cancelá el checkout que tenés abierto para cambiar de plan.'
+        );
+        expect(screen.getByTestId('pricing-card-cta').querySelectorAll('button')).toHaveLength(0);
+    });
+    it('TEST:B8b:25 shows promo loss in the pricing confirmation', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'accommodation',
+                        status: 'ACTIVE',
+                        promo: { endsAt: null },
+                        succession: null,
+                        paymentMethod: 'CARD'
+                    }
+                ]
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: null }}
+            />
+        );
+        fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
+        expect(screen.getByTestId('pricing-plan-change-promo-warning').textContent).toBe(
+            'Si cambiás de plan, perdés tu promo: el importe nuevo no lleva el descuento y el código no se puede volver a canjear.'
+        );
+    });
+    it('TEST:B8b:25 discloses deferred courtesy before a nonmonthly pricing change', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'accommodation',
+                        status: 'ACTIVE',
+                        promo: null,
+                        succession: null,
+                        paymentMethod: 'CARD'
+                    }
+                ],
+                deferredCourtesies: [{ vertical: 'accommodation', balanceMonths: 2 }]
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: 'a2' }}
+            />
+        );
+        fireEvent.click(
+            await screen.findByRole('button', { name: /Cambiar a este plan · por año/ })
+        );
+        expect(screen.getByTestId('pricing-plan-change-courtesy-warning').textContent).toBe(
+            'Perdés 2 meses de cortesía; podés seguir en mensual y conservarlos.'
+        );
+    });
+    it.each([
+        { liveCourtesyMonths: 3, deferredBalanceMonths: 0, total: 3 },
+        { liveCourtesyMonths: 3, deferredBalanceMonths: 2, total: 5 }
+    ])('TEST:B8b:25 includes $liveCourtesyMonths live and $deferredBalanceMonths deferred courtesy months once in pricing', async ({
+        liveCourtesyMonths,
+        deferredBalanceMonths,
+        total
+    }) => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'accommodation',
+                        status: 'ACTIVE',
+                        promo: null,
+                        succession: null,
+                        paymentMethod: 'CARD',
+                        liveCourtesyMonths
+                    }
+                ],
+                deferredCourtesies: deferredBalanceMonths
+                    ? [{ vertical: 'accommodation', balanceMonths: deferredBalanceMonths }]
+                    : []
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: 'a2' }}
+            />
+        );
+        fireEvent.click(
+            await screen.findByRole('button', { name: /Cambiar a este plan · por año/ })
+        );
+        expect(screen.getByTestId('pricing-plan-change-courtesy-warning').textContent).toBe(
+            `Perdés ${total} meses de cortesía; podés seguir en mensual y conservarlos.`
+        );
+    });
+    it('TEST:B8b:25 explains the paused pricing state', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'PAUSED',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [
+                    {
+                        vertical: 'accommodation',
+                        status: 'PAUSED',
+                        promo: null,
+                        succession: null,
+                        paymentMethod: 'CARD'
+                    }
+                ],
+                deferredCourtesies: []
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: null }}
+            />
+        );
+        expect(await screen.findByTestId('pricing-plan-change-paused')).toHaveTextContent(
+            'Reanudá tu suscripción para cambiar de plan.'
+        );
+    });
+    it('TEST:B8b:14 posts the selected ACTIVE pricing option to the protected route', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        const subscriptionId = '123e4567-e89b-42d3-a456-426614174000';
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [{ id: subscriptionId, vertical: 'accommodation', status: 'ACTIVE' }]
+            }
+        });
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            status: 409,
+            json: async () => ({
+                success: false,
+                error: {
+                    code: 'CONFLICT',
+                    message: 'Rejected',
+                    details: { reason: 'GRACE_PERIOD' }
+                }
+            })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: null }}
+            />
+        );
+        await waitFor(() =>
+            expect(screen.getByTestId('pricing-card-cta').textContent).toBe(
+                'Cambiar a este plan · por mes'
+            )
+        );
+        fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toContain(
+            `/api/v1/protected/billing-subscription/${subscriptionId}/plan-change`
+        );
+        expect(init.method).toBe('POST');
+        expect(JSON.parse(init.body as string)).toEqual({ billingOptionId: 'm2' });
+    });
+    it('TEST:B8b:14 follows the SUCCESSION checkout URL from the pricing card', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'ACTIVE',
+                planVersionId: 'v1',
+                billingOptionId: 'm1'
+            }
+        });
+        const subscriptionId = '123e4567-e89b-42d3-a456-426614174000';
+        listMine.mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptions: [{ id: subscriptionId, vertical: 'accommodation', status: 'ACTIVE' }]
+            }
+        });
+        const assigned = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { pathname: '/es/planes/anfitriones/precios/', assign: assigned }
+        });
+        const checkoutUrl = 'https://payments-fake.invalid/checkout/pricing-successor';
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                success: true,
+                data: {
+                    outcome: 'SUCCESSION',
+                    subscriptionId: '123e4567-e89b-42d3-a456-426614174099',
+                    checkoutUrl,
+                    firstChargeAt: '2026-12-05T03:00:00.000Z',
+                    creditDays: 10
+                }
+            })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v2"
+                billingOptions={{ monthly: 'm2', annual: null }}
+            />
+        );
+        fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await waitFor(() => expect(assigned).toHaveBeenCalledWith(checkoutUrl));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
     it('TEST:1758:4 renders checkout links with stacked button styles', () => {
         expect(componentSource).toContain(
             "className={cycle === 'monthly' ? styles.primary : styles.secondary}"
@@ -62,7 +372,6 @@ describe('PlanCardCta', () => {
             '/es/suscriptores/checkout/?opcion=a1'
         );
     });
-
     it('renders exact monthly and annual checkout links from the shared situation read', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(
@@ -91,7 +400,6 @@ describe('PlanCardCta', () => {
             screen.getByRole('link', { name: 'Suscribirme con pago anual' }).className
         ).toBeTruthy();
     });
-
     it('shares one request across two cards in the same vertical', async () => {
         pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
         render(

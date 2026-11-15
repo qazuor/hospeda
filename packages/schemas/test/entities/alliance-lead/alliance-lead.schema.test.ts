@@ -349,7 +349,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
 
     // ── partner (HOS-278 §6.3/§7, provisioning slice D) ─────────────────────
 
-    it('should accept a partner submission with partnerType supplied', () => {
+    it('rejects partner applications because they belong to PP1 (AC:V7:15)', () => {
         const data = {
             kind: 'partner' as const,
             contactName: 'Test Applicant',
@@ -358,10 +358,10 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
             partnerType: 'business'
         };
 
-        expect(() => AllianceLeadSubmissionSchema.parse(data)).not.toThrow();
+        expect(() => AllianceLeadSubmissionSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject a partner submission missing partnerType', () => {
+    it('rejects Partner regardless of partnerType (AC:V7:15)', () => {
         const data = {
             kind: 'partner' as const,
             contactName: 'Test Applicant',
@@ -372,10 +372,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
         const result = AllianceLeadSubmissionSchema.safeParse(data);
 
         expect(result.success).toBe(false);
-        if (!result.success) {
-            const paths = result.error.issues.map((issue) => issue.path.join('.'));
-            expect(paths).toContain('partnerType');
-        }
+        if (!result.success) expect(result.error.issues[0]?.path).toEqual(['kind']);
     });
 
     it('should reject a partner submission with an invalid partnerType value', () => {

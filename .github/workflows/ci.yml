@@ -335,10 +335,6 @@ jobs:
       # GUARD:G-FAC-03 (HOS-1844). Business lines are decided only by the resolver and read only by inventoried modules.
       - name: Check business line decisions and readers (GUARD:G-FAC-03)
         run: pnpm check:business-line-decisions
-      # GUARD:G-FAC-08 (HOS-1853, leaf 5.1). The accommodation editor's manual
-      # section list is frozen and equal to the catalog until child 8 migrates it.
-      - name: Check the accommodation editor section list is frozen (GUARD:G-FAC-08)
-        run: pnpm check:accommodation-editor-frozen
       # GUARD:G-FAC-05 (HOS-1860, leaf 5.8). The closed list of files the
       # catalog-derived editor replaces carries no dispatch by vertical, section
       # id, listing type or review dimension.
@@ -471,6 +467,10 @@ jobs:
       # live term must be queried completely and with the correct subject's status set.
       - name: Check live succession terms and subject sets (GUARD:G-R1-E)
         run: pnpm check:live-term-inventories
+      # GUARD:G-R1-C (HOS-1579, AC:B8b:21). Its own step, like every guard here.
+      # The two close links and the three retained effects must stay together.
+      - name: Check succession close completeness (GUARD:G-R1-C)
+        run: pnpm check:succession-close
       # GUARD:G-R2 (HOS-1439, AC:V3:2). Its own step, like every guard here. The
       # effective set's fold must discard complements when no live non-TRIAL title
       # exists; its message names which half of the condition is missing.
@@ -632,6 +632,10 @@ jobs:
         run: pnpm check:i18n-keys
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
+      # Its own step, like every guard here: being listed in `pnpm check:guards` is NOT what makes a guard run in this job.
+      # This is the additive-only migrations half of GATE:FP.3; the drift guard above is the separate other condition.
+      - name: Check a phase branch adds only additive migrations (GATE:FP.3, TEST:V8b:8)
+        run: pnpm check:additive-migrations
       - name: Check DROP COLUMN ships with a release-gap marker (HOS-601)
         # PR_BODY is passed via env (never inlined into `run:`) — same reason
         # as the seed dual-write step below: it is untrusted, attacker-
@@ -1016,12 +1020,22 @@ jobs:
       # keeps the workflow-level secrets (HOSPEDA_DATABASE_URL,
       # HOSPEDA_BETTER_AUTH_SECRET, ...) out of the suite. Without it they win
       # over .env.test and every file fails env validation (measured on #3831).
+      # The three app URLs are the exception: they sit in turbo's `globalEnv`, so
+      # they DO reach the suite, and dotenv never overrides a variable that is
+      # already set. The API builds Better Auth's trustedOrigins from them, while
+      # the auth tests send `origin: http://localhost:4321`. On Dependabot runs
+      # the secrets are absent and the workflow-level fallback
+      # `https://example.invalid` arrived instead, so every sign-in answered 403.
+      # Pin the values .env.test expects so the suite never depends on secrets.
       - name: Run API integration tests (shard ${{ matrix.shard }})
         if: startsWith(matrix.suite, 'api')
         run: pnpm turbo run test:integration --filter=hospeda-api -- --shard=${{ matrix.shard }}
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
           HOSPEDA_TEST_REDIS_URL: redis://localhost:6380
+          HOSPEDA_API_URL: http://localhost:3001
+          HOSPEDA_SITE_URL: http://localhost:4321
+          HOSPEDA_ADMIN_URL: http://localhost:3000
       # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
       # the pre-cutover `main` commit (PRE_CUTOVER_MAIN_SHA in
       # scripts/__tests__/cutover-db/scratch-db.ts; main moved past V6 on 2026-10-30,

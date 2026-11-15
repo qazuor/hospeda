@@ -5,7 +5,7 @@
  * brings the honest path back.
  *
  * SCOPE (B1.4a, HOS-1510): the lies whose surface the payment interface carries
- * today: M1, M3, M5, M6, M7, M8, M9, M10, M11 and M13. M2, M4 and M12 keep their
+ * today: M1, M3, M5, M6, M7, M8, M9, M10, M11, M12 and M13. M2 and M4 keep their
  * row in the closed list and arrive with the units that add their surface.
  *
  * Every assertion reads the state back by id or takes the deliveries, never a
@@ -158,6 +158,25 @@ describe('TEST:B3:44 M1: creation can discard what was sent', () => {
 
         expect(read.snapshot.cadence).toEqual(sent.cadence);
         expect(read.snapshot.firstChargeAt).toBe(sent.firstChargeAt);
+    });
+
+    it('restores M1 for a successor creation without changing the existing authorization', async () => {
+        const fake = new FakePaymentProvider({
+            clock,
+            honestAbout: [{ lie: 'M1', why: 'fixture signup' }]
+        });
+        const origin = await fake.authorize(sent);
+        fake.restoreLie({ lie: 'M1' });
+        const successor = await fake.authorize({ ...sent, reference: 'sub-2' });
+
+        expect(
+            (await fake.readAuthorization({ authorizationId: origin.authorizationId })).snapshot
+                .firstChargeAt
+        ).toBe(sent.firstChargeAt);
+        expect(
+            (await fake.readAuthorization({ authorizationId: successor.authorizationId })).snapshot
+                .firstChargeAt
+        ).toBeNull();
     });
 });
 

@@ -19,6 +19,7 @@
  *    coordinate update with no error surfaced anywhere.
  */
 
+import { DUPLICATE_LOCATION_REASON } from '@repo/schemas';
 import { useCallback, useMemo, useState } from 'react';
 import type { ZodTypeAny } from 'zod';
 import { buildEditorHubUrl } from '@/lib/editor/accommodation-editor-sections';
@@ -199,6 +200,18 @@ export function useAccommodationSectionForm<TValues extends object>({
                         type: 'success',
                         message: t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')
                     });
+                } else if (
+                    result.error?.status === 409 &&
+                    result.error.reason === DUPLICATE_LOCATION_REASON
+                ) {
+                    // HOS-1810: moving a published listing onto an address its owner
+                    // already publishes. Nothing was saved.
+                    setFormError(
+                        t(
+                            'listing.owner.locationDuplicate.blocked',
+                            'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
+                        )
+                    );
                 } else {
                     handleApiError(
                         result.error,

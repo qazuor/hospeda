@@ -1,4 +1,4 @@
-/** GUARD:G-FAC-06 — venue content routes declare and use their own listing section. */
+/** GUARD:G-FAC-06 — venue content routes and accommodation calendar writes declare and use their own listing section. */
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,27 @@ export const MIN_ROUTES = 10;
 const PREFIX = 'FAIL GUARD:G-FAC-06:';
 const CONTENT_TABLE_REFERENCES =
     /(?:get|replace|update|delete|upload)Venue(?:Menu|DailySpecials|Events)|venueMenu|venueDailySpecials|venueEvents|menuFilePublicId/;
-type Entry = { section: string; intent: string };
+/**
+ * Accommodation routes that write the calendar (HOS-1809): the occupancy writes
+ * and the external-sync connect/trigger routes. The read, disconnect and status
+ * routes deliberately carry no entitlement gate (a downgraded host can still
+ * read, disconnect and see status), so they are not discovered here.
+ *
+ * LIMITATION: discovery is by NAME (the service verbs and the sync paths above).
+ * A new calendar write route that uses other verbs or paths is NOT discovered
+ * and must be added to the inventory by hand; the guard cannot find it.
+ */
+const ACCOMMODATION_CALENDAR_WRITES =
+    /\b(?:addOccupancy|removeOccupancy|batchToggleOccupancy|updateOccupancyEvent)\s*\(|calendar-sync\/(?:sync|connect-google|connect-ical)/;
+const SCANNED_AREAS = [
+    { directory: 'apps/api/src/routes/venue/protected', pattern: CONTENT_TABLE_REFERENCES },
+    { directory: 'apps/api/src/routes/venue/admin', pattern: CONTENT_TABLE_REFERENCES },
+    {
+        directory: 'apps/api/src/routes/accommodation/protected',
+        pattern: ACCOMMODATION_CALENDAR_WRITES
+    }
+] as const;
+type Entry = { section: string; intent: string; traits?: readonly string[] };
 
 /** Run GUARD:G-FAC-06 over a repository root.
  * @param args.root Repository root to scan; defaults to the repository containing this script.
@@ -26,26 +46,25 @@ export function run(args: { root?: string; minRoutes?: number } = {}) {
     }
     const problems: string[] = [];
     const discovered = new Set<string>();
-    for (const area of ['protected', 'admin']) {
-        const directory = join(root, 'apps/api/src/routes/venue', area);
+    for (const { directory: area, pattern } of SCANNED_AREAS) {
+        const directory = join(root, area);
         let files: string[] = [];
         try {
             files = readdirSync(directory, { recursive: true, withFileTypes: true })
                 .filter((entry) => entry.isFile() && entry.name.endsWith('.ts'))
                 .map((entry) => join(entry.parentPath, entry.name));
         } catch {
-            problems.push(`${PREFIX} cannot scan apps/api/src/routes/venue/${area}`);
+            problems.push(`${PREFIX} cannot scan ${area}`);
         }
         for (const absolute of files) {
             const source = readFileSync(absolute, 'utf8');
-            if (CONTENT_TABLE_REFERENCES.test(source))
-                discovered.add(absolute.slice(root.length + 1));
+            if (pattern.test(source)) discovered.add(absolute.slice(root.length + 1));
         }
     }
     for (const file of discovered) {
         if (!inventory[file])
             problems.push(
-                `${PREFIX} route touches a venue content subresource but is missing from the closed inventory: ${file}`
+                `${PREFIX} route touches a content subresource but is missing from the closed inventory: ${file}`
             );
     }
     if (Object.keys(inventory).length < (args.minRoutes ?? MIN_ROUTES))
@@ -53,11 +72,8 @@ export function run(args: { root?: string; minRoutes?: number } = {}) {
             `${PREFIX} inventory has ${Object.keys(inventory).length} routes; expected at least ${args.minRoutes ?? MIN_ROUTES}`
         );
     for (const [file, expected] of Object.entries(inventory)) {
-        if (
-            !file.startsWith('apps/api/src/routes/venue/protected/') &&
-            !file.startsWith('apps/api/src/routes/venue/admin/')
-        ) {
-            problems.push(`${PREFIX} inventory route outside venue protected/admin: ${file}`);
+        if (!SCANNED_AREAS.some(({ directory }) => file.startsWith(`${directory}/`))) {
+            problems.push(`${PREFIX} inventory route outside the scanned route areas: ${file}`);
             continue;
         }
         let source: string;
@@ -99,13 +115,18 @@ export function run(args: { root?: string; minRoutes?: number } = {}) {
         ) {
             problems.push(`${PREFIX} ${file} must declare intent ${expected.intent}`);
         }
+        for (const trait of expected.traits ?? []) {
+            const declared = body.match(/sectionTraits\s*:\s*\[([^\]]*)\]/);
+            if (!declared || !new RegExp(`['"]${trait}['"]`).test(declared[1]))
+                problems.push(`${PREFIX} ${file} must declare sectionTraits including ${trait}`);
+        }
         if (file.endsWith('/deleteMenuFile.ts') && !body.includes("intent: 'delete'"))
             problems.push(`${PREFIX} deleteMenuFile must declare delete intent`);
     }
     if (problems.length) return fail(problems);
     return {
         exitCode: 0,
-        output: `OK GUARD:G-FAC-06: ${Object.keys(inventory).length} inventoried venue content routes declare their section, intent and listing access chain`
+        output: `OK GUARD:G-FAC-06: ${Object.keys(inventory).length} inventoried content routes declare their section, intent and listing access chain`
     };
 }
 

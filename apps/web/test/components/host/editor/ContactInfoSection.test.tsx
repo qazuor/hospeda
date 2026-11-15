@@ -81,6 +81,7 @@ const MOCK_DATA = {
     featureIds: [],
     phone: '+54 9 343 1111111',
     whatsapp: '',
+    landlinePhone: '',
     email: 'test@example.com',
     website: 'https://example.com',
     facebookUrl: '',
@@ -348,5 +349,68 @@ describe('ContactInfoSection', () => {
         );
 
         expect(screen.getByRole('alert')).toHaveTextContent('URL inválida');
+    });
+
+    describe('optional landline (HOS-2042)', () => {
+        function landlineGroup() {
+            return within(screen.getByRole('group', { name: /^teléfono fijo$/i }));
+        }
+
+        it('renders a separate "Teléfono fijo" group', () => {
+            render(<ContactInfoSection {...DEFAULT_PROPS} />);
+
+            expect(screen.getByRole('group', { name: /^teléfono fijo$/i })).toBeInTheDocument();
+            // The main phone group keeps its own, distinct legend.
+            expect(phoneGroup().getByLabelText(/número/i)).toBeInTheDocument();
+        });
+
+        it('parses a stored landline into country + number', () => {
+            render(
+                <ContactInfoSection
+                    {...DEFAULT_PROPS}
+                    data={{ ...MOCK_DATA, landlinePhone: '+54 3442 45-2345' }}
+                />
+            );
+
+            expect((landlineGroup().getByLabelText(/número/i) as HTMLInputElement).value).toBe(
+                '3442 45-2345'
+            );
+        });
+
+        it('reports a typed landline under landlinePhone, not phone', () => {
+            const onFieldChange = vi.fn();
+            render(
+                <ContactInfoSection
+                    {...DEFAULT_PROPS}
+                    onFieldChange={onFieldChange}
+                />
+            );
+
+            fireEvent.change(landlineGroup().getByLabelText(/número/i), {
+                target: { value: '3442 45-2345' }
+            });
+
+            expect(onFieldChange).toHaveBeenCalledWith('landlinePhone', '+54 3442 45-2345');
+            expect(onFieldChange).not.toHaveBeenCalledWith('phone', expect.anything());
+        });
+
+        it('shows the landline error under its own group', () => {
+            render(
+                <ContactInfoSection
+                    {...DEFAULT_PROPS}
+                    errors={{ landlinePhone: 'Fijo inválido' }}
+                />
+            );
+
+            expect(screen.getByText('Fijo inválido')).toBeInTheDocument();
+        });
+    });
+
+    it('tells the owner these contact channels are shown publicly (HOS-2042)', () => {
+        render(<ContactInfoSection {...DEFAULT_PROPS} />);
+
+        expect(
+            screen.getByText('Estos datos de contacto se muestran públicamente en tu ficha.')
+        ).toBeInTheDocument();
     });
 });

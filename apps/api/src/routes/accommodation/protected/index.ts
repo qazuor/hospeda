@@ -47,6 +47,7 @@ import { protectedRemoveOccupancyRoute } from './removeOccupancy';
 import { protectedReorderFaqsRoute } from './reorderFaqs';
 import { protectedReorderMediaRoute } from './reorderMedia';
 import { protectedAccommodationReportFixedRoute } from './reportFixed';
+import { protectedGetAccommodationSectionStatesRoute } from './sectionStates';
 import { protectedSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { protectedAccommodationSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
@@ -93,6 +94,9 @@ app.route('/', compareAccommodationsRoute);
 // defensive reason as the media routes below.
 app.route('/', protectedGetAccommodationQrSheetRoute);
 app.route('/', protectedGetAccommodationQrCodeRoute);
+
+// GET /:id/sections - Section and trait availability for the owner (HOS-1809)
+app.route('/', protectedGetAccommodationSectionStatesRoute);
 
 // GET /:id - Get own accommodation by ID (ownership check in handler)
 app.route('/', protectedGetOwnAccommodationByIdRoute);

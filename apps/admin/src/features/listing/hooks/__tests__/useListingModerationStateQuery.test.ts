@@ -12,7 +12,13 @@ describe('TEST:1760:3b moderation state query contract', () => {
     beforeEach(() => vi.clearAllMocks());
     it('uses the plural route and query key, then validates the response schema', async () => {
         vi.mocked(fetchApi).mockResolvedValue({
-            data: { data: { publicationStatus: 'PUBLISHED', fixRequest: null } }
+            data: {
+                data: {
+                    publicationStatus: 'PUBLISHED',
+                    recurringListingAddons: [],
+                    fixRequest: null
+                }
+            }
         } as never);
         const query = useListingModerationStateQuery({
             vertical: 'venue',
@@ -24,6 +30,7 @@ describe('TEST:1760:3b moderation state query contract', () => {
         expect(query.queryKey).toEqual(['venues', 'listing-id', 'moderation']);
         await expect(query.queryFn()).resolves.toEqual({
             publicationStatus: 'PUBLISHED',
+            recurringListingAddons: [],
             fixRequest: null
         });
         expect(fetchApi).toHaveBeenCalledWith({

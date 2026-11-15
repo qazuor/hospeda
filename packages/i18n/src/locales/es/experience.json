@@ -46,6 +46,7 @@
         "contact": "Contacto",
         "contactEmailAriaLabel": "Enviar un email al prestador",
         "contactPhoneAriaLabel": "Llamar al prestador",
+        "contactLandlineAriaLabel": "Llamar al teléfono fijo del prestador",
         "contactWebsiteAriaLabel": "Visitar el sitio web del prestador",
         "duration": {
             "dayShort": "d",

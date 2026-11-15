@@ -1,6 +1,6 @@
 import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
-import { and, count, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, getTableColumns, inArray, sql } from 'drizzle-orm';
 import { getDb, withTransaction } from '../client.ts';
 import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
@@ -150,6 +150,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     protected readonly nullsLastSortColumns: readonly string[] = [];
 
     /**
+     * Column a `featuredFirst` list pins first, descending (HOS-1718 c4). `null`
+     * (the default) ignores `featuredFirst`: only listing models opt in.
+     */
+    protected readonly featuredFirstColumn: string | null = null;
+
+    /**
      * Returns the provided tx if available, otherwise returns the default db connection from getDb().
      * Safe to call with undefined.
      */
@@ -189,6 +195,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             pageSize?: number;
             sortBy?: string;
             sortOrder?: 'asc' | 'desc';
+            /**
+             * Deterministic tie-break column, always ascending. Applied after `sortBy`
+             * so rows with equal sort values keep a stable order across pages (HOS-2068).
+             * Ignored when `sortBy` is absent.
+             */
+            thenSortBy?: string;
             includeDeleted?: boolean;
         },
         additionalConditions?: SQL[],
@@ -230,10 +242,18 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                       this.nullsLastSortColumns.includes(options.sortBy)
                   )
                 : undefined;
+            const tieBreakClause =
+                orderClause && options?.thenSortBy
+                    ? buildOrderByClause(options.thenSortBy, this.table, 'asc')
+                    : undefined;
 
             // Build query - use $dynamic() to allow conditional chaining
             const baseQuery = db.select().from(this.table).where(finalWhereClause).$dynamic();
-            const sortedQuery = orderClause ? baseQuery.orderBy(orderClause) : baseQuery;
+            const sortedQuery = orderClause
+                ? baseQuery.orderBy(
+                      ...(tieBreakClause ? [orderClause, tieBreakClause] : [orderClause])
+                  )
+                : baseQuery;
 
             // Forward `includeDeleted` verbatim so subclasses whose `count()` override
             // applies a default soft-delete filter (HOS-274) make the SAME
@@ -1019,7 +1039,10 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
-        options: Omit<PaginatedListOptions, 'relations'> & { includeDeleted?: boolean } = {},
+        options: Omit<PaginatedListOptions, 'relations'> & {
+            includeDeleted?: boolean;
+            featuredFirst?: boolean;
+        } = {},
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
@@ -1117,10 +1140,18 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                   )
                 : undefined;
 
+            const featuredColumn = this.featuredFirstColumn
+                ? getTableColumns(this.table)[this.featuredFirstColumn]
+                : undefined;
+            const orderBy =
+                options.featuredFirst && featuredColumn
+                    ? [desc(featuredColumn), ...(orderByClause ? [orderByClause] : [])]
+                    : orderByClause;
+
             const queryOptions = {
                 where: whereClause,
                 with: transformedRelations,
-                ...(orderByClause ? { orderBy: orderByClause } : {}),
+                ...(orderBy ? { orderBy } : {}),
                 limit: pageSize,
                 offset: offset
             };

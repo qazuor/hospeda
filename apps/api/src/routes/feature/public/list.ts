@@ -11,8 +11,9 @@ import {
     FeatureSearchHttpSchema,
     type HttpFeatureSearch
 } from '@repo/schemas';
-import { FeatureService, ServiceError } from '@repo/service-core';
+import { FeatureService, PUBLIC_CATALOG_SORT_COLUMNS, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -30,7 +31,11 @@ export const publicListFeaturesRoute = createPublicListRoute({
     summary: 'List features',
     description: 'Returns a paginated list of public features',
     tags: ['Features'],
-    requestQuery: FeatureSearchHttpSchema.shape,
+    // HOS-2068: only allow-listed columns may drive the order; anything else is a 400.
+    requestQuery: {
+        ...FeatureSearchHttpSchema.shape,
+        sortBy: z.enum(PUBLIC_CATALOG_SORT_COLUMNS).optional()
+    },
     responseSchema: FeaturePublicSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

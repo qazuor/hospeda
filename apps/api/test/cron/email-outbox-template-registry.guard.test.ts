@@ -89,6 +89,10 @@ const ENQUEUE_SITES: Readonly<
     'apps/api/src/services/listing-notices/fix-reported-notice.ts': [
         'verticals.listing-fix-reported'
     ],
+    'apps/api/src/services/partner-application/partner-application-notices.ts': [
+        'verticals.partner-application-rejected',
+        'verticals.partner-claim-notice'
+    ],
     'packages/verticals/src/publication/archive-inactive-listing.ts': [
         'verticals.listing-archived'
     ],
@@ -126,6 +130,12 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/reconciliation/escalation-notice.ts': [
         'billing.mark-escalated'
     ],
+    'packages/service-core/src/services/billing/subscription/manual-installment-unpaid-notice.ts': [
+        'billing.manual-installment-unpaid'
+    ],
+    'packages/service-core/src/services/billing/subscription/manual-installment-opened-notice.ts': [
+        'billing.manual-installment-opened'
+    ],
     'packages/service-core/src/services/billing/reconciliation/revocation-refund-failed-notice.ts':
         ['billing.revocation-refund-failed'],
     'packages/service-core/src/services/billing/subscription/signup-confirmed-notice.ts': [
@@ -143,6 +153,14 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/promo/promo-ending-notice.ts': [
         'billing.promo-ending'
     ],
+    'packages/service-core/src/services/billing/plan-migration/plan-migration-notice.ts': [
+        'billing.plan-migration-announced',
+        'billing.plan-migration-upcoming',
+        'billing.plan-migration-cancelled'
+    ],
+    'packages/service-core/src/services/billing/subscription/courtesy-revoked-notice.ts': [
+        'billing.courtesy-revoked'
+    ],
     'packages/service-core/src/services/billing/subscription/signup-declined-notice.ts': [
         'billing.signup-declined'
     ],
@@ -151,6 +169,9 @@ const ENQUEUE_SITES: Readonly<
     ],
     'packages/service-core/src/services/billing/subscription/paid-after-cancellation-notice.ts': [
         'billing.paid-after-cancellation'
+    ],
+    'packages/service-core/src/services/billing/subscription/service-end-s12-chargeback.ts': [
+        'billing.chargeback-suspension'
     ],
     'packages/service-core/src/services/billing/payment/credit-payment.service.ts': [
         'billing.payment-credited'

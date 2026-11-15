@@ -15,6 +15,8 @@ function objectPayload(row: EmailOutboxRow): Record<string, unknown> {
 
 function renewalUpcoming(row: EmailOutboxRow) {
     const data = objectPayload(row);
+    // Only an ABSENT field means a payload enqueued before the method existed; null is invalid.
+    const paymentMethod = 'paymentMethod' in data ? data.paymentMethod : 'CARD';
     if (
         typeof data.subscriptionId !== 'string' ||
         typeof data.planName !== 'string' ||
@@ -23,7 +25,8 @@ function renewalUpcoming(row: EmailOutboxRow) {
         !/^\d{4}-\d{2}-\d{2}$/.test(data.renewalDate) ||
         typeof data.daysBefore !== 'number' ||
         !Number.isInteger(data.daysBefore) ||
-        data.daysBefore <= 0
+        data.daysBefore <= 0 ||
+        (paymentMethod !== 'CARD' && paymentMethod !== 'MANUAL')
     )
         throw new TypeError('Faltan datos requeridos del aviso de renovación');
 
@@ -34,6 +37,7 @@ function renewalUpcoming(row: EmailOutboxRow) {
                 planName={data.planName}
                 renewalDate={data.renewalDate}
                 daysBefore={data.daysBefore}
+                paymentMethod={paymentMethod}
             />
         )
     };

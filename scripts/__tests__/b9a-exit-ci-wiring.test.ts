@@ -15,8 +15,7 @@ import { apiIntegrationCollection } from './helpers/api-integration-collection';
  *   each TEST named by a test title and each clause by its evidence files;
  * - the schema-from-empty half and every cut TEST id are in the tree;
  * - the BL clause (S13 over a succession with a retained payment,
- *   AC:B9a:17/TEST:B9a:17) left the cut by letter CU (HOS-1635, phase 2) and
- *   is recorded as deferred;
+ *   AC:B9a:17/TEST:B9a:17) is closed by HOS-1635 through the B7 interface;
  * - the integration configs collect the suite and CI Pass waits on it.
  *
  * Every assertion is about PRESENCE: other leaves edit these files in
@@ -30,7 +29,7 @@ const read = (file: string) => readFileSync(path.join(repoRoot, file), 'utf8');
 
 interface CorteEntry {
     readonly clause: number;
-    readonly b9Clause: number;
+    readonly b9Clause: number | null;
     readonly acs: readonly string[];
     readonly tests: readonly string[];
 }
@@ -48,20 +47,11 @@ interface DeferredEntry {
 const CORTE_MAP: readonly CorteEntry[] = [
     { clause: 1, b9Clause: 4, acs: ['AC:B9a:12'], tests: ['TEST:B9a:12'] },
     { clause: 2, b9Clause: 7, acs: ['AC:B9a:11'], tests: ['TEST:B9a:11'] },
-    { clause: 3, b9Clause: 4, acs: ['AC:B9a:12'], tests: ['TEST:B9a:12'] }
+    { clause: 3, b9Clause: 4, acs: ['AC:B9a:12'], tests: ['TEST:B9a:12'] },
+    // BL comes from B7's criterion, letter BL; HOS-1635 closed it.
+    { clause: 4, b9Clause: null, acs: ['AC:B9a:17'], tests: ['TEST:B9a:17'] }
 ];
-// B9a.md:803, :1032; letter CU, .hoja/contexto.md §2b: BL is phase 2 (HOS-1635).
-const DEFERRED: readonly DeferredEntry[] = [
-    {
-        clause: 4,
-        what: 'S13 over a succession with a retained payment turns the branch 4 flag off through the B7 interface',
-        acs: ['AC:B9a:17'],
-        tests: ['TEST:B9a:17'],
-        issue: 'HOS-1635',
-        phase: 'fase-2',
-        letter: 'CU'
-    }
-];
+const DEFERRED: readonly DeferredEntry[] = [];
 // AC:B9a:16 "sobre una base creada desde cero"; B9a.md:1296-1308.
 const FROM_EMPTY = {
     test: 'TEST:B9a:8',
@@ -78,7 +68,8 @@ const CLAUSE_FILES: Readonly<Record<number, readonly string[]>> = {
         'apps/api/test/integration/billing-permanent-grant/permanent-grant-route-floor.test.ts',
         'apps/api/test/integration/billing-permanent-grant/cutover-step-3b.test.ts'
     ],
-    3: ['packages/service-core/test/integration/services/coverage-courtesy-source.test.ts']
+    3: ['packages/service-core/test/integration/services/coverage-courtesy-source.test.ts'],
+    4: ['packages/service-core/test/integration/services/permanent-grant-branch4-retention.test.ts']
 };
 // The five files of B4 the composition guard protects, b9a-sources-composition.guard.test.ts:10-16.
 const B4_FILES = [
@@ -204,7 +195,7 @@ function titlesInRoot({ root }: { readonly root: string }): readonly string[] {
         .flatMap((file) => testTitles({ source: readFileSync(file, 'utf8') }));
 }
 
-describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, suite collected (HOS-1587)', () => {
+describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL closed by HOS-1635, suite collected (HOS-1587)', () => {
     const allTitles = collectSources().flatMap((source) => testTitles({ source }));
     const guards = jobBlock({ source: ciYml, job: 'guards' });
     const guardsRuns = stepRuns({ block: guards });
@@ -314,16 +305,21 @@ describe('AC:B9a:16 - B9a exit: LISTA:B9a evidence in the tree, BL deferred, sui
             expect(unique.size).toBe(clauses.length);
             expect(missing).toEqual([]);
         });
-        it('the BL clause is exactly one deferred entry pointing at HOS-1635 phase 2', () => {
+        it('no clause is deferred, and the BL clause is clause 4 of the cut map with TEST:B9a:17', () => {
             // Arrange
-            const entry = DEFERRED[0];
+            const entry = CORTE_MAP.find((item) => item.clause === 4);
             // Act
             // Assert
-            expect(DEFERRED).toHaveLength(1);
-            expect(entry?.issue).toBe('HOS-1635');
-            expect(entry?.phase).toBe('fase-2');
-            expect(entry?.letter).toBe('CU');
-            expect(entry?.tests).toEqual(['TEST:B9a:17']);
+            expect(DEFERRED).toHaveLength(0);
+            expect(entry).toEqual({
+                clause: 4,
+                b9Clause: null,
+                acs: ['AC:B9a:17'],
+                tests: ['TEST:B9a:17']
+            });
+            expect(CLAUSE_FILES[4]).toEqual([
+                'packages/service-core/test/integration/services/permanent-grant-branch4-retention.test.ts'
+            ]);
         });
     });
 

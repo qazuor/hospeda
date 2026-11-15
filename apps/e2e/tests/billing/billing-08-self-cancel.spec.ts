@@ -197,11 +197,20 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         expect(graceRows[0]?.status).toBe('GRACE_PERIOD');
         const graceDate = formatMarketDate(new Date(graceRows[0]!.grace_ends_at));
         await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
+        const subscriptionCard = page.locator(
+            `[data-testid="my-subscription"][data-subscription-id="${subscriptionId}"]`
+        );
         const notice = page.getByTestId('my-subscription-grace');
         await expect(notice).toContainText(graceDate);
         await expect(notice).toContainText('se vuelve a intentar en el momento');
         await expect(notice).toContainText('no podemos asegurarte que entre');
         await expect(notice).toContainText('volver a suscribirte');
+        const planChangeGrace = subscriptionCard.getByTestId('my-subscription-plan-change-grace');
+        await expect(planChangeGrace).toBeVisible();
+        await expect(planChangeGrace).toContainText('Mercado Pago');
+        await expect(
+            subscriptionCard.getByTestId('my-subscription-plan-change-unavailable')
+        ).toHaveCount(0);
         await page.getByTestId('self-cancel-open').click();
         const end = page.getByTestId('self-cancel-end');
         await expect(end).toContainText('termina hoy');

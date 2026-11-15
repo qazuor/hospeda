@@ -380,6 +380,10 @@ export const AccommodationCreateHttpSchema = z.object({
     whatsapp: phoneNumberSchema('zodError.common.contact.phone.argentina')
         .or(z.literal(''))
         .optional(),
+    /** Optional landline (HOS-2042). Maps to `contactInfo.workPhone`. */
+    landlinePhone: phoneNumberSchema('zodError.common.contact.phone.argentina')
+        .or(z.literal(''))
+        .optional(),
     email: z
         .string()
         .email({ message: 'zodError.common.contact.personalEmail.invalid' })
@@ -903,6 +907,7 @@ export const httpToDomainAccommodationCreate = (
     // even though the host never touched the phone field at all (HOS-190).
     ...(httpData.phone !== undefined ||
     httpData.whatsapp !== undefined ||
+    httpData.landlinePhone !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
@@ -911,6 +916,9 @@ export const httpToDomainAccommodationCreate = (
                   ...(httpData.whatsapp === undefined
                       ? {}
                       : { whatsapp: httpData.whatsapp || null }),
+                  ...(httpData.landlinePhone === undefined
+                      ? {}
+                      : { workPhone: httpData.landlinePhone || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }
@@ -1170,6 +1178,7 @@ export const httpToDomainAccommodationUpdate = (
     // empty-string default would clobber the stored phone via the JSONB merge.
     ...(httpData.phone !== undefined ||
     httpData.whatsapp !== undefined ||
+    httpData.landlinePhone !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
@@ -1178,6 +1187,9 @@ export const httpToDomainAccommodationUpdate = (
                   ...(httpData.whatsapp === undefined
                       ? {}
                       : { whatsapp: httpData.whatsapp || null }),
+                  ...(httpData.landlinePhone === undefined
+                      ? {}
+                      : { workPhone: httpData.landlinePhone || null }),
                   ...(httpData.email === undefined ? {} : { personalEmail: httpData.email }),
                   ...(httpData.website === undefined ? {} : { website: httpData.website })
               }

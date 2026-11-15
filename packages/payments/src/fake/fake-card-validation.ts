@@ -22,6 +22,7 @@ export function createFakeCardValidation(args: {
         declineReason: args.passes ? null : 'card validation rejected',
         amount: { ...ZERO_ARS },
         refundedAmount: { ...ZERO_ARS },
+        refunds: [],
         chargedBack: false
     };
     args.ledger.charges.set(chargeId, {

@@ -31,23 +31,35 @@ export function isStrictEditorPhone(value: string): boolean {
     return parsePhoneNumber(trimmed)?.kind === 'argentina';
 }
 
+/** The `contactInfo` phone keys the owner editors let the user type (HOS-2034, HOS-2042). */
+const EDITOR_PHONE_KEYS = ['mobilePhone', 'workPhone'] as const;
+
 /**
  * `superRefine` callback for an owner-update schema carrying `contactInfo`:
- * applies {@link isStrictEditorPhone} to `contactInfo.mobilePhone`.
+ * applies {@link isStrictEditorPhone} to `contactInfo.mobilePhone` and to the
+ * optional landline in `contactInfo.workPhone` (HOS-2042), so both fields get
+ * the same rule and the same localized message.
  *
  * @param data - The parsed payload
  * @param ctx - The Zod refinement context
  */
 export function refineStrictContactPhone(
-    data: { readonly contactInfo?: { readonly mobilePhone?: string | null } | null },
+    data: {
+        readonly contactInfo?: {
+            readonly mobilePhone?: string | null;
+            readonly workPhone?: string | null;
+        } | null;
+    },
     ctx: z.RefinementCtx
 ): void {
-    const phone = data.contactInfo?.mobilePhone;
-    if (typeof phone === 'string' && !isStrictEditorPhone(phone)) {
-        ctx.addIssue({
-            code: 'custom',
-            path: ['contactInfo', 'mobilePhone'],
-            message: EDITOR_PHONE_INVALID_MESSAGE
-        });
+    for (const key of EDITOR_PHONE_KEYS) {
+        const phone = data.contactInfo?.[key];
+        if (typeof phone === 'string' && !isStrictEditorPhone(phone)) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['contactInfo', key],
+                message: EDITOR_PHONE_INVALID_MESSAGE
+            });
+        }
     }
 }

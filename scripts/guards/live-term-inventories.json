@@ -1,6 +1,34 @@
 {
     "fila_viva": [
         {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
+            "row": 17,
+            "subject": "subscription",
+            "why": "AC:B9a:14: consumer 17 reads live principal and complement subscriptions under a live permanent grant."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/grant-fan-out-check.ts",
+            "symbol": "hasS20Candidate",
+            "row": 17,
+            "subject": "addon_instance",
+            "why": "AC:B9a:14: S20 half reads only pending or active addon instances before marking a live complement."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+            "symbol": "cutSuccessorWrites",
+            "row": null,
+            "why": "AC:B8b:13 S31 reads the live principal successor while holding its row lock before applying its declared cut state.",
+            "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/succession-closer.service.ts",
+            "symbol": "closeSuccessionWrites",
+            "row": null,
+            "why": "AC:B8b:10 (HOS-1575, S18): reads the live successor at succession-closer.service.ts:65-80 and checks the predecessor at :89-92; D-1 prevents writes while the predecessor is live.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
             "symbol": "selectComplementTargets",
             "row": null,
@@ -141,8 +169,22 @@
             "subject": "addon_instance"
         },
         {
-            "file": "packages/service-core/src/services/billing/reconciliation/sweep/addon-without-shutdown-check.ts",
-            "symbol": "runAddonWithoutShutdownCheck",
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a6.ts",
+            "symbol": "applyA6",
+            "row": 18,
+            "why": "AC:B10:6: A6 consume sólo instancias LISTING vivas, PENDING_AUTHORIZATION o ACTIVE; fuera de ese conjunto no escribe.",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/listing-purged-addons.service.ts",
+            "symbol": "cancelAddonsOfPurgedListing",
+            "row": 18,
+            "why": "AC:B10:6: the committed purge push reads live LISTING addon instances for the purged target before invoking A6 for each one.",
+            "subject": "addon_instance"
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-inventory.model.ts",
+            "symbol": "listLiveAddonInstanceIdsPage",
             "row": 25,
             "why": "AC:B5:31: la cuarta comprobación inspecciona las instancias vivas (fila 25) para abrir la marca 11 cuando A5 no corrió.",
             "subject": "addon_instance"
@@ -190,19 +232,93 @@
             "why": "AC:B9a:4 (HOS-1583): el alcance de S20, la instancia en uno de sus dos estados vivos."
         },
         {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-revoke.ts",
+            "symbol": "revokePermanentGrant",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:7 (HOS-1634): revocar lee las instancias vivas tituladas por sus anclas."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-preview.ts",
+            "symbol": "previewPermanentGrantRevocation",
+            "row": 19,
+            "subject": "addon_instance",
+            "why": "AC:B9a:7 (HOS-1634): la vista previa de revocación lee las instancias tituladas por las anclas y aplica el mismo filtro de estados vivos (PENDING_AUTHORIZATION, ACTIVE) que revokePermanentGrant."
+        },
+        {
             "file": "packages/seed/src/data-migrations/helpers/reanchorSubscriptionsToVersion.ts",
             "symbol": "reanchorSubscriptionsToVersion",
             "row": null,
             "why": "HOS-2037 re-anchor: moves every live principal subscription anchored to one plan version onto an additive, price-neutral twin; reads the live set via LIVE_SUBSCRIPTION_STATUSES, never writes status.",
             "subject": "subscription"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon-catalog/addon-version-publication.service.ts",
+            "symbol": "countLiveInstances",
+            "row": 20,
+            "subject": "addon_instance",
+            "why": "AC:B10:8 Q2: action 20 counts PENDING_AUTHORIZATION and ACTIVE addon instances before changing a live product price."
+        },
+        {
+            "file": "apps/api/src/services/billing-addon/owner-recurring-addons.service.ts",
+            "symbol": "readOwnerRecurringAddons",
+            "row": null,
+            "subject": "addon_instance",
+            "why": "AC:B13b:1 and AC:B13b:2: the owner's withdrawal screen lists only PENDING_AUTHORIZATION and ACTIVE recurring addon instances."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon-catalog/admin-addon-catalog.read.ts",
+            "symbol": "readAdminAddonCatalog",
+            "row": 20,
+            "subject": "addon_instance",
+            "why": "AC:B13b:3: the action 20 editor counts PENDING_AUTHORIZATION and ACTIVE purchases by immutable addon version."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/plan-migration/plan-migration-retired-versions.service.ts",
+            "symbol": "listRetiredPlanVersions",
+            "row": null,
+            "subject": "subscription",
+            "why": "AC:B12:10 (HOS-1615): the retired-version list counts the subscriptions still anchored to each version over LIVE_SUBSCRIPTION_STATUSES; it only reads, never writes status."
+        },
+        {
+            "file": "apps/api/src/routes/billing-subscription/read-own-declined-signups.ts",
+            "symbol": "selectDeclinedSignupNotices",
+            "row": null,
+            "subject": "subscription",
+            "why": "HOS-2064: hides the declined signup notice when the vertical already has a live principal subscription."
         }
     ],
     "grant_vivo_ancla_viva": [
+        {
+            "file": "packages/service-core/src/services/billing/subscription/temporary-courtesy-preview.ts",
+            "symbol": "previewTemporaryCourtesyGrant",
+            "row": 2,
+            "why": "AC:B9b:14 previews the same live permanent grant anchor refusal as S9 and S34."
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
+            "symbol": "listLiveRowsUnderLiveGrantAnchorsPage",
+            "row": 17,
+            "why": "AC:B9a:14: consumer 17 scans only unrevoked permanent grants with at least one vertical anchor."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-revoke.ts",
+            "symbol": "revokePermanentGrant",
+            "row": null,
+            "why": "Revocar exige un grant vivo: uno ya revocado se rechaza con PERMANENT_GRANT_NOT_LIVE (AC:B9a:7, HOS-1634)."
+        },
         {
             "file": "packages/service-core/src/services/billing/grant/permanent-grant-live-anchors.ts",
             "symbol": "hasLivePermanentGrantAnchor",
             "row": 2,
             "why": "Tercera mitad de la orfandad (B/16 §4.2): ¿hay un ancla viva en esa vertical?"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/includes-addons-anchor.ts",
+            "symbol": "findIncludesAddonsAnchor",
+            "row": 2,
+            "why": "AC:B10:12: A1-bis only accepts a live anchor whose grant includes addons, in the selected compatible vertical.",
+            "subject": "permanent_grant_vertical"
         },
         {
             "file": "packages/service-core/src/services/billing/coverage/grant-sources.ts",
@@ -227,6 +343,12 @@
             "symbol": "runStep3b",
             "row": null,
             "why": "La herramienta del 3b saltea al beneficiario que ya tiene un ancla viva de Alojamiento (AC:B9a:15)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+            "symbol": "grantTemporaryCourtesy",
+            "row": 2,
+            "why": "AC:B9b:7 rejects a temporary courtesy only when the beneficiary has a live permanent grant anchor in the same vertical."
         }
     ],
     "marca_abierta": [
@@ -259,6 +381,12 @@
             "symbol": "hasOpenUnresolvedPeriodChargeMark",
             "row": null,
             "why": "La comprobación del vencimiento del grace no corre S6 mientras la fila tenga abierta la marca COBRO_DEL_PERIODO_SIN_RESOLVER (B/09 §6.2; motivo 21); no tiene fila en el inventario del glosario."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/unconfirmed-pause-request.ts",
+            "symbol": "findOpenUnconfirmedPauseRequest",
+            "row": null,
+            "why": "HOS-2003 frena el segundo evento de S6 si sigue abierta una marca PAUSA_NO_APLICADA o REANUDACION_NO_APLICADA; la revisión humana ya corresponde a esa marca."
         },
         {
             "file": "packages/service-core/src/services/billing/reconciliation/sweep/succession-retention-ports.ts",
@@ -317,6 +445,47 @@
     ],
     "cortesia_diferida": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/admin-subscription-detail.service.ts",
+            "symbol": "getAdminSubscriptionDetail",
+            "row": null,
+            "why": "HOS-2081 detail selects only courtesy grants with an open balance and a future end under the injected clock, matching readBase.",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/temporary-courtesy-preview.ts",
+            "symbol": "readBase",
+            "row": null,
+            "why": "AC:B9b:14 preview selects balanceMonths null to show the live, non-deferred courtesy and its remaining months.",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy-support.ts",
+            "symbol": "computeReissueWindow",
+            "row": null,
+            "why": "S9 validates the deferred month balance as a positive integer before computing the reissued calendar window (AC:B8b:12, reissue-deferred-courtesy-support.ts:11).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/reissue-deferred-courtesy.service.ts",
+            "symbol": "reissueDeferredCourtesy",
+            "row": null,
+            "why": "S9 reads an open deferred balance and updates that same grant to the successor with balanceMonths null in one transaction (AC:B8b:12, reissue-deferred-courtesy.service.ts:51).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
+            "symbol": "cutSuccessorWrites",
+            "row": null,
+            "why": "AC:B8b:13 closes only open non-null courtesy balances whose subscription row has succeeded_by_id pointing to the successor.",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+            "symbol": "deferOrCloseCourtesy",
+            "row": null,
+            "why": "AC:B8b:10 (HOS-1575, S18): reads balanceMonths and balanceClosedAt at succession-close-writes.ts:152-153 to select an open courtesy balance before deferring or closing it."
+        },
+        {
             "file": "packages/service-core/src/services/billing/coverage/courtesy-sources.ts",
             "symbol": "resolveCourtesySources",
             "row": null,
@@ -327,6 +496,19 @@
             "symbol": "closeDeferredCourtesyBalances",
             "row": 9,
             "why": "S13 cierra el saldo diferido en las verticales que el acto ancla (DEC-GRANT-013)."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/grant/permanent-grant-preview-read.ts",
+            "symbol": "readPermanentGrantEffects",
+            "row": 4,
+            "subject": "courtesy_grant",
+            "why": "La vista previa lee balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
+        },
+        {
+            "file": "packages/schemas/src/api/billing/permanent-grant-preview.schema.ts",
+            "symbol": "closedDeferredBalances",
+            "row": 34,
+            "why": "El contrato de la vista previa expone balanceMonths de los saldos diferidos que cerrará el acto (DEC-GRANT-013)."
         },
         {
             "file": "packages/db/src/models/reconciliation-inventory/reconciliation-zero-call.model.ts",
@@ -357,6 +539,27 @@
             "symbol": "readOwnDeferredCourtesies",
             "row": 10,
             "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/grant-temporary-courtesy.service.ts",
+            "symbol": "grantTemporaryCourtesy",
+            "row": null,
+            "why": "S34 reads balanceMonths null to select the non-deferred live courtesy grant on this subscription (AC:B9b:8).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/forfeit-courtesy-pause.service.ts",
+            "symbol": "forfeitCourtesyAndPause",
+            "row": null,
+            "why": "S35 selects the live non-deferred courtesy grant before ending it when the customer confirms forfeiture (AC:B9b:8).",
+            "subject": "courtesy_grant"
+        },
+        {
+            "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+            "symbol": "resumeSubscription",
+            "row": null,
+            "why": "The third S10 event selects the live non-deferred courtesy grant before revocation (AC:B9b:13).",
+            "subject": "courtesy_grant"
         }
     ]
 }

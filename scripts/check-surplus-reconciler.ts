@@ -48,7 +48,7 @@ function writerSites(file: string, source: string) {
                   : '';
             const arg = n.arguments[0];
             if (
-                (method === 'update' || method === 'delete') &&
+                (method === 'update' || method === 'delete' || method === 'insert') &&
                 arg &&
                 ts.isIdentifier(arg) &&
                 TABLES.has(arg.text)

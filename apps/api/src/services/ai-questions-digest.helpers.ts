@@ -7,6 +7,7 @@
  */
 
 import type { AiChatEntityType } from '@repo/schemas';
+import { redactChatText } from './ai-chat-redaction.js';
 
 /** Questions quoted per listing in the email. */
 export const DIGEST_MAX_QUESTIONS_PER_LISTING = 5;
@@ -77,7 +78,7 @@ export function groupDigestRows(input: { readonly rows: readonly DigestRow[] }):
                 questions: [...rows]
                     .sort((a, b) => b.askedAt.getTime() - a.askedAt.getTime())
                     .slice(0, DIGEST_MAX_QUESTIONS_PER_LISTING)
-                    .map((row) => row.question)
+                    .map((row) => redactChatText({ text: row.question }).text)
             }))
             .sort((a, b) => b.unansweredCount - a.unansweredCount);
         digests.push({

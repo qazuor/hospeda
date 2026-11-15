@@ -160,7 +160,7 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'featureIds', // [TABLE] r_<vertical>_feature
     'faqs', // [TABLE] <vertical>_faqs + [§1.2] "FAQ"
     'price', // [BLANK] accommodation
-    'location', // [BLANK] accommodation
+    'location', // [BLANK] accommodation, venue (HOS-2189)
     'extraInfo', // [BLANK] accommodation
     'menuUrl', // [BLANK] venue
     'menuFileUrl', // [BLANK] venue

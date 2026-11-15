@@ -54,6 +54,7 @@ const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, string>> = {
 };
 
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
+const RECURRING_ADDONS_PATH = '/es/mi-cuenta/complementos/';
 const VERTICAL_LABELS: Readonly<Record<ListingNoticeVertical, string>> = {
     accommodation: 'alojamiento',
     venue: 'Comer y salir',
@@ -90,6 +91,27 @@ function readIds(data: Record<string, unknown>, key: string): readonly string[] 
         throw new TypeError(`Falta el dato requerido «${key}» del aviso de ficha`);
     }
     return value as string[];
+}
+
+function readRecurringListingAddons(
+    data: Record<string, unknown>
+): readonly { readonly name: string }[] | undefined {
+    const value = data.recurringListingAddons;
+    if (value === undefined) return undefined;
+    if (
+        !Array.isArray(value) ||
+        !value.every(
+            (item) =>
+                item !== null &&
+                typeof item === 'object' &&
+                !Array.isArray(item) &&
+                typeof item.name === 'string' &&
+                item.name.trim() !== ''
+        )
+    ) {
+        throw new TypeError('Los destaques recurrentes del aviso de ficha no son válidos');
+    }
+    return value as readonly { readonly name: string }[];
 }
 
 /**
@@ -160,6 +182,8 @@ export function createVerticalListingRenderers(input: {
     const accountUrl = (vertical: ListingNoticeVertical) =>
         `${site}${ACCOUNT_LISTINGS_PATH[vertical]}`;
     const subscriptionUrl = `${site}${SUBSCRIPTION_PATH}`;
+    const withdrawalUrl = (listingId: string) =>
+        `${site}${RECURRING_ADDONS_PATH}?listing=${encodeURIComponent(listingId)}#recurring-addons`;
 
     async function names(
         vertical: ListingNoticeVertical,
@@ -294,6 +318,7 @@ export function createVerticalListingRenderers(input: {
         'verticals.listing-moderated': async ({ row }) => {
             const data = objectPayload(row);
             const reason = readText(data, 'reason');
+            const listingId = readText(data, 'listingId');
             return {
                 subject: 'Tu ficha está moderada',
                 react: (
@@ -301,6 +326,8 @@ export function createVerticalListingRenderers(input: {
                         listingName={await listingName(data)}
                         reason={reason}
                         subscriptionUrl={subscriptionUrl}
+                        recurringListingAddons={readRecurringListingAddons(data)}
+                        withdrawalUrl={withdrawalUrl(listingId)}
                     />
                 )
             };
@@ -355,6 +382,7 @@ export function createVerticalListingRenderers(input: {
         'verticals.listing-moderation-level-changed': async ({ row }) => {
             const data = objectPayload(row);
             const reason = readText(data, 'reason');
+            const listingId = readText(data, 'listingId');
             const fixRequestOpen = readBoolean(data, 'fixRequestOpen');
             const returnedTo =
                 data.returnedTo === undefined || data.returnedTo === null
@@ -372,6 +400,8 @@ export function createVerticalListingRenderers(input: {
                         fixRequestOpen={fixRequestOpen}
                         accountUrl={accountUrl(vertical)}
                         subscriptionUrl={subscriptionUrl}
+                        recurringListingAddons={readRecurringListingAddons(data)}
+                        withdrawalUrl={withdrawalUrl(listingId)}
                     />
                 )
             };

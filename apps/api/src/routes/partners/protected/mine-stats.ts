@@ -40,6 +40,7 @@
 import { PartnerStatsSchema, PartnerStatsWindowSchema } from '@repo/schemas';
 import { PartnerStatsService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { readOwnerPartnerPresence } from '../../../services/partner-presence/partner-presence-read.service.js';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -62,7 +63,15 @@ export async function handleGetMyStats(ctx: Context) {
     );
     const windowDays = parsedWindow.success ? parsedWindow.data : 30;
 
-    const result = await statsService.getForOwner(actor, { windowDays });
+    const result = await statsService.getForOwner(actor, {
+        windowDays,
+        readPublicPage: async ({ partnerId, ownerUserId, presenceModerated }) => {
+            const presence = await readOwnerPartnerPresence({
+                partner: { id: partnerId, ownerUserId, presenceModerated }
+            });
+            return presence.publicPage === 'visible';
+        }
+    });
 
     if (result.error) {
         // `getForOwner` has no gated failure path — no permission check, and

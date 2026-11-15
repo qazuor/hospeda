@@ -1,11 +1,11 @@
 /**
  * @file PaidSignupsPausedNotice.tsx
- * @description The notice rendered INSTEAD of a checkout CTA while an admin has
- * paused new self-service paid signups (`billing_settings.newPaidSignupsFrozen`).
+ * @description The notice rendered while an admin has paused new self-service paid signups
+ * (`platform_settings['billing.paidSignupsFreeze']`, HOS-1749). Rendered reactively on the 409
+ * `NEW_PAID_SIGNUPS_FROZEN` by the signup checkout and the owner's first publish.
  *
- * One component and one pair of i18n keys for every surface the freeze covers
- * — the pricing plan cards, the owner listing publish CTA and the add-on
- * purchase cards — so the three never drift into three different promises.
+ * One component and one pair of i18n keys for the signup checkout and the
+ * owner's first publish so both surfaces share the same promise.
  * Rendered with `role="status"`: it is information, not an error.
  */
 

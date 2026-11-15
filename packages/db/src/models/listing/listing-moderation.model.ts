@@ -6,7 +6,8 @@ import type { DrizzleClient } from '../../types.ts';
 import { domainEventModel } from '../domain-event/domain-event.model.ts';
 import type { ListingVertical } from './listing-publication.model.ts';
 
-const TABLES: Record<ListingVertical, string> = {
+/** Listing table names keyed by the listing-owning vertical. */
+export const TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
     venue: 'venues',
     experience: 'experiences'

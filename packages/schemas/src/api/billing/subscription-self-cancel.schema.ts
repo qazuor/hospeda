@@ -32,13 +32,28 @@ export const OwnSubscriptionsResponseSchema = z.object({
         z.object({
             id: z.string().uuid(),
             vertical: z.string(),
-            status: z.enum(['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED']),
+            status: z.enum(['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED']),
             paymentMethod: z.enum(['CARD', 'MANUAL']),
             serviceEndsAt: z.string().datetime().nullable(),
             graceEndsAt: z.string().datetime().nullable(),
             createdAt: z.string().datetime(),
             /** A payment arrived after cancellation was already requested; addon billing outcome. */
             paidAfterCancellation: z.object({ recurringAddonsCut: z.boolean() }).nullable(),
+            pause: z
+                .object({
+                    reason: z.enum(['CUSTOMER_REQUEST', 'COURTESY']),
+                    expectedEndAt: z.string().datetime().nullable()
+                })
+                .nullable(),
+            promo: z.object({ endsAt: z.string().datetime().nullable() }).nullable(),
+            /** Remaining non-deferred courtesy months, using the billing calendar rule. */
+            liveCourtesyMonths: z.number().int().nonnegative().optional(),
+            succession: z
+                .object({
+                    checkoutOpen: z.literal(true),
+                    checkoutDeadline: z.iso.datetime().nullable().optional()
+                })
+                .nullable(),
             plan: OwnSubscriptionPlanSchema,
             nextCharge: OwnSubscriptionNextChargeSchema
         })
@@ -50,7 +65,20 @@ export const OwnSubscriptionsResponseSchema = z.object({
             vertical: z.string(),
             balanceMonths: z.number().int().nonnegative()
         })
-    )
+    ),
+    /** Recent declined signups with no live subscription in their vertical (HOS-2064). */
+    declinedSignups: z
+        .array(
+            z.object({
+                subscriptionId: z.string().uuid(),
+                vertical: z.string(),
+                billingOptionId: z.string().uuid(),
+                declaredPayerEmail: z.string().nullable(),
+                declinedAt: z.string().datetime(),
+                plan: z.object({ slug: z.string(), name: z.string() })
+            })
+        )
+        .default([])
 });
 
 /** Recurrent addon effects disclosed before confirming cancellation. */
@@ -86,6 +114,16 @@ export const SubscriptionCancellationPreviewResponseSchema = z.discriminatedUnio
         vertical: z.string(),
         paymentMethod: z.enum(['CARD', 'MANUAL']),
         origin: z.literal('SUSPENDED'),
+        addons: z.array(CancellationPreviewAddonSchema)
+    }),
+    z.object({
+        subscriptionId: z.string().uuid(),
+        vertical: z.string(),
+        paymentMethod: z.enum(['CARD', 'MANUAL']),
+        origin: z.literal('PAUSED'),
+        serviceEndsAt: z.string().datetime(),
+        basis: z.enum(['NOW', 'CREDIT']),
+        courtesyMonthsLost: z.number().int().nonnegative(),
         addons: z.array(CancellationPreviewAddonSchema)
     }),
     z.object({

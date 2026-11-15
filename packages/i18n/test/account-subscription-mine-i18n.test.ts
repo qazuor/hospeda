@@ -30,3 +30,14 @@ describe('account subscription mine translations — TEST:1755:10', () => {
         }
     });
 });
+
+describe('grace plan-change translations — AC:B8b:17', () => {
+    it('names the recovery action for each payment method in all supported languages', () => {
+        expect(spanishAccount.subscription.mine.graceChangePlan.CARD).toContain('tarjeta');
+        expect(spanishAccount.subscription.mine.graceChangePlan.MANUAL).toContain('cuota');
+        expect(englishAccount.subscription.mine.graceChangePlan.CARD).toContain('card');
+        expect(englishAccount.subscription.mine.graceChangePlan.MANUAL).toContain('installment');
+        expect(portugueseAccount.subscription.mine.graceChangePlan.CARD).toContain('cartão');
+        expect(portugueseAccount.subscription.mine.graceChangePlan.MANUAL).toContain('parcela');
+    });
+});

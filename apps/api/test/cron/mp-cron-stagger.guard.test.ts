@@ -15,10 +15,14 @@ const JOB_DIR = join(__dirname, '../../src/cron/jobs');
 /** Add jobs here when they reach MP indirectly and cannot be found by source scanning. */
 const MP_CALLING_JOBS_INDIRECT: readonly string[] = [];
 /**
- * HOS-1955 / PR #4048 and HOS-1573 / PR #4050 are on
- * epic/HOS-1352-post-mvp. When they land, add `exclusive: true`.
+ * MP jobs announced on another branch, whose minutes stay reserved until their
+ * manifest entry lands. Empty: HOS-1955 (`billing-deferred-cancellation-retry`)
+ * and HOS-1573 (`subscription-pause-end`) landed exclusive on
+ * epic/HOS-1352-post-mvp.
  */
-const PENDING_MP_CRON_SCHEDULES: readonly MpCronSchedule[] = [
+const PENDING_MP_CRON_SCHEDULES: readonly MpCronSchedule[] = [];
+/** Fixture for the pending-reservation semantics, independent of the live list. */
+const PENDING_FIXTURE: readonly MpCronSchedule[] = [
     { name: 'billing-deferred-cancellation-retry', schedule: '4-59/5 * * * *' },
     { name: 'subscription-pause-end', schedule: '47 * * * *' }
 ];
@@ -100,7 +104,7 @@ describe('Mercado Pago cron stagger guard (AC-17)', () => {
                     mpCalling: true
                 }
             ],
-            pending: PENDING_MP_CRON_SCHEDULES,
+            pending: PENDING_FIXTURE,
             expandMinutes
         });
         expect(violations.join(' ')).toContain('billing-deferred-cancellation-retry');
@@ -114,14 +118,14 @@ describe('Mercado Pago cron stagger guard (AC-17)', () => {
             mpCalling: true
         };
         expect(
-            findMpCronViolations({ jobs: [job], pending: PENDING_MP_CRON_SCHEDULES, expandMinutes })
+            findMpCronViolations({ jobs: [job], pending: PENDING_FIXTURE, expandMinutes })
         ).toEqual([]);
         const collision = findMpCronViolations({
             jobs: [
                 job,
                 { name: 'new-mp-job', schedule: '47 * * * *', exclusive: true, mpCalling: true }
             ],
-            pending: PENDING_MP_CRON_SCHEDULES,
+            pending: PENDING_FIXTURE,
             expandMinutes
         });
         expect(collision.join(' ')).toContain('new-mp-job');

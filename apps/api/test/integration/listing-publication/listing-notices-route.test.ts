@@ -7,7 +7,7 @@
  * overrides. Cleans its own rows in `afterEach`.
  */
 import { randomUUID } from 'node:crypto';
-import { domainEventModel, getDb, sql } from '@repo/db';
+import { addonInstances, domainEventModel, eq, getDb, sql } from '@repo/db';
 import {
     type ListingNoticesResponse,
     PermissionEnum,
@@ -26,8 +26,10 @@ import {
     createTrial,
     createVerticalDestination,
     createVerticalListing,
-    ensurePublicationCatalog
+    ensurePublicationCatalog,
+    MATRIX_NOW
 } from './publication-routes.helpers';
+import { deletePurgePreviewInstances, seedPurgePreviewAddon } from './purge-preview-fixtures';
 
 const { coverageOverrides } = vi.hoisted(() => ({
     coverageOverrides: new Map<string, unknown>()
@@ -52,7 +54,10 @@ vi.mock('../../../src/utils/listing-access/ports', async (importOriginal) => {
     };
 });
 
-const app = initApp();
+// The app reads the matrix clock, not the system one: `createTrial` anchors the
+// trial window on MATRIX_NOW (an active trial ends 25 days after it), so on the
+// system clock row 2 turned red for good once that instant passed (2026-11-04).
+const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const verticals = [
     VerticalEnum.ACCOMMODATION,
     VerticalEnum.VENUE,
@@ -70,6 +75,7 @@ const sqlTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createdOwners: string[] = [];
+const seededAddonInstanceIds: string[] = [];
 
 async function owner(): Promise<string> {
     const created = await createOwner();
@@ -143,6 +149,7 @@ beforeAll(async () => {
 });
 afterEach(async () => {
     coverageOverrides.clear();
+    await deletePurgePreviewInstances({ instanceIds: seededAddonInstanceIds.splice(0) });
     const ids = createdOwners.splice(0);
     if (ids.length === 0) return;
     const list = sql.param(ids);
@@ -182,6 +189,7 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
                 listingId: id,
                 publicationStatus: PublicationStatusEnum.PURGED,
                 recurringListingAddons: 0,
+                recurringListingAddonItems: [],
                 notices: [{ kind: 'PURGED_BY_INACTIVITY' }]
             }
         ]);
@@ -299,12 +307,27 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
             uncoveredOwner,
             PublicationStatusEnum.UNPUBLISHED_BY_BILLING
         );
+        // The catalog and acquired instance are seeded because this publication fixture has no purchase flow.
+        const seeded = await seedPurgePreviewAddon({
+            ownerId: coveredOwner,
+            targetId: surplus,
+            scopeType: 'LISTING',
+            vertical,
+            chargeKind: 'PERIODICO',
+            name: 'Destaque'
+        });
+        seededAddonInstanceIds.push(seeded.instanceId);
+        const [instance] = await getDb()
+            .select({ addonVersionId: addonInstances.addonVersionId })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, seeded.instanceId));
+        if (!instance) throw new Error('Seeded add-on instance missing');
         coverageOverrides.set(coveredOwner, {
             covered: true,
             sources: [
                 {
                     type: 'ADDON',
-                    reference: { kind: 'ADDON_VERSION', id: randomUUID() },
+                    reference: { kind: 'ADDON_VERSION', addonVersionId: instance.addonVersionId },
                     scope: 'LISTING',
                     target: surplus,
                     since: new Date('2026-09-01T00:00:00.000Z'),
@@ -326,6 +349,9 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
                 listingId: surplus,
                 publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
                 recurringListingAddons: 1,
+                recurringListingAddonItems: [
+                    { addonVersionId: instance.addonVersionId, name: 'Destaque' }
+                ],
                 notices: [{ kind: 'SURPLUS' }]
             }
         ]);
@@ -334,6 +360,7 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
                 listingId: lost,
                 publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
                 recurringListingAddons: 0,
+                recurringListingAddonItems: [],
                 notices: []
             }
         ]);

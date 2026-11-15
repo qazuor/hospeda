@@ -21,8 +21,10 @@ import {
 	ACCOMMODATION_EDITOR_REGISTRY,
 	buildAccommodationEditorVisibility,
 } from '@/lib/editor/accommodation-editor-sections';
+import { applyLockedSectionStatuses } from '@/lib/editor/accommodation-section-locks';
 import { resolveEditorSectionStatuses } from '@/lib/editor/editor-hub-status-model';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import { createTranslations } from '@/lib/i18n';
 import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
 import { loadSupportEdits } from '@/lib/listing/support-edits';
@@ -46,7 +48,7 @@ const accommodation = data.accommodation;
 // listing, read together. Neither blocks the hub: any failure degrades to
 // nothing.
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const [supportEdits, listingNotices] = await Promise.all([
+const [supportEdits, listingNotices, sectionStatesResult] = await Promise.all([
 	loadSupportEdits({
 		vertical: 'accommodation',
 		listingId: accommodationId,
@@ -57,12 +59,18 @@ const [supportEdits, listingNotices] = await Promise.all([
 		listingId: accommodationId,
 		cookieHeader,
 	}),
+	// HOS-1809: which sections the plan withholds. Not blocking either: a failed
+	// read just shows no locked line, and each page keeps its own entitlement gate.
+	listingAnalyticsApi.getAccommodationSectionStates({
+		accommodationId,
+		cookieHeader,
+	}),
 ]);
 
 const hasListingNotices =
 	listingNotices.item !== undefined && listingNotices.item.notices.length > 0;
 
-const statuses = resolveEditorSectionStatuses({
+const baseStatuses = resolveEditorSectionStatuses({
 	input: {
 		hasDescription: Boolean(accommodation.description),
 		maxGuests: accommodation.maxGuests ?? null,
@@ -88,6 +96,10 @@ const statuses = resolveEditorSectionStatuses({
 			hasMainImage: Boolean(data.featuredImage),
 		},
 	},
+});
+const statuses = applyLockedSectionStatuses({
+	statuses: baseStatuses,
+	sectionStates: sectionStatesResult.ok ? sectionStatesResult.data.sections : {},
 });
 ---
 

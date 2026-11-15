@@ -176,3 +176,13 @@ export async function retryCheckout({
         return { kind: 'rejected', rejection: resolveSignupRejection({}) };
     }
 }
+
+/** Declined signups to mount as notices: the one the return screen already shows is left out. */
+export function selectDeclinedNoticesToShow<T extends { readonly subscriptionId: string }>(input: {
+    readonly declinedSignups: readonly T[];
+    readonly returnSubscriptionId: string | null;
+}): readonly T[] {
+    return input.declinedSignups.filter(
+        (notice) => notice.subscriptionId !== input.returnSubscriptionId
+    );
+}

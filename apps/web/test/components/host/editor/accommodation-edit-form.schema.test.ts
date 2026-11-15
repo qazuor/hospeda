@@ -83,6 +83,8 @@ describe('slice composition', () => {
             'featureIds',
             'floor',
             'instagram',
+            // HOS-2042: optional landline, stored in contactInfo.workPhone.
+            'landlinePhone',
             'latitude',
             'linkedin',
             'longitude',

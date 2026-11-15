@@ -49,28 +49,44 @@ describe('resolvePartnerStatsCards — the panel is invisible without a partner'
     });
 });
 
-describe('resolvePartnerStatsCards — public page stays dark until V7', () => {
-    it('shows clicks only when the partner has a safe external site', () => {
+describe('resolvePartnerStatsCards — AC:V7:16 follows public-page presence', () => {
+    it('shows views and clicks when the public page exists', () => {
         const result = resolvePartnerStatsCards({
-            stats: statsFor({ slug: 'bodega', websiteUrl: 'https://bodega.test' }),
+            stats: statsFor({
+                slug: 'bodega',
+                websiteUrl: 'https://bodega.test',
+                hasPublicPage: true
+            }),
+            locale: 'es'
+        });
+
+        expect(result).toEqual({ visible: true, showViews: true, showClicks: true });
+    });
+
+    it('shows only clicks for an external site without a public page', () => {
+        const result = resolvePartnerStatsCards({
+            stats: statsFor({
+                slug: 'bodega',
+                websiteUrl: 'https://bodega.test',
+                hasPublicPage: false
+            }),
             locale: 'es'
         });
 
         expect(result).toEqual({ visible: true, showViews: false, showClicks: true });
     });
 
-    it('hides both cards when there is no external site', () => {
+    it('hides both cards without a public page or external site', () => {
         const result = resolvePartnerStatsCards({
-            stats: statsFor({ slug: 'bodega', websiteUrl: undefined }),
+            stats: statsFor({ slug: 'bodega', websiteUrl: undefined, hasPublicPage: false }),
             locale: 'es'
         });
-
         expect(result).toEqual({ visible: true, showViews: false, showClicks: false });
     });
 
     it('drops clicks when the resolver refuses an unsafe website', () => {
         const result = resolvePartnerStatsCards({
-            stats: statsFor({ websiteUrl: 'javascript:alert(1)' }),
+            stats: statsFor({ websiteUrl: 'javascript:alert(1)', hasPublicPage: false }),
             locale: 'es'
         });
 
@@ -78,8 +94,12 @@ describe('resolvePartnerStatsCards — public page stays dark until V7', () => {
         expect(result.showViews).toBe(false);
     });
 
-    it('is locale-independent while the internal destination is unavailable', () => {
-        const stats = statsFor({ slug: 'bodega', websiteUrl: 'https://bodega.test' });
+    it('is locale-independent while resolving the public page', () => {
+        const stats = statsFor({
+            slug: 'bodega',
+            websiteUrl: 'https://bodega.test',
+            hasPublicPage: true
+        });
         expect(resolvePartnerStatsCards({ stats, locale: 'en' })).toEqual(
             resolvePartnerStatsCards({ stats, locale: 'pt' })
         );

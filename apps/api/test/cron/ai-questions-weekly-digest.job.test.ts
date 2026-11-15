@@ -227,6 +227,15 @@ describe('selection helpers', () => {
         expect(mine?.listings[0]?.questions).toEqual(['q6', 'q5', 'q4', 'q3', 'q2']);
     });
 
+    it('quotes the questions with phones and emails redacted (HOS-2075)', () => {
+        const { digests } = groupDigestRows({
+            rows: [row({ question: 'Llamenme al +54 9 3442 123456 o a juan@mail.com' })]
+        });
+
+        const quoted = digests[0]?.listings[0]?.questions[0];
+        expect(quoted).toBe('Llamenme al [REDACTED_PHONE] o a [REDACTED_EMAIL]');
+    });
+
     it.each([
         [null, true],
         [{}, true],

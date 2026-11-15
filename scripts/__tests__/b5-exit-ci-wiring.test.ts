@@ -7,9 +7,9 @@ import { apiIntegrationCollection } from './helpers/api-integration-collection';
 /**
  * TEST:B5:17 (AC:B5:33, HOS-1550, B5.9), the evidence half of the B5 exit.
  * This static test does not run the tests; the suite exit run and CI do that.
- * The manual-payment half of clause 2 (AC:B5:19) and the MP5 → S38 call in
- * clause 12 (AC:B5:35) are deferred to HOS-1542, phase 4, letter CV. Every
- * assertion is about PRESENCE in the tree.
+ * The manual-payment half of clause 2 (AC:B5:19) and the MP5 to S38 call in
+ * clause 12 (AC:B5:35) have integration evidence. Every assertion is about
+ * presence in the tree.
  */
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const selfPath = fileURLToPath(import.meta.url);
@@ -52,7 +52,7 @@ interface E2eContract {
 // LISTA:B5, B5.md:679-718; clause map from .hoja/notas.md §4 H-15.
 const CORTE_MAP: readonly CorteEntry[] = [
     { clause: 1, acs: ['AC:B5:2'], tests: ['TEST:B5:2'] },
-    { clause: 2, acs: ['AC:B5:3'], tests: ['TEST:B5:3'] },
+    { clause: 2, acs: ['AC:B5:3', 'AC:B5:19'], tests: ['TEST:B5:3', 'TEST:B5:10'] },
     { clause: 3, acs: ['AC:B5:2'], tests: ['TEST:B5:2'] },
     { clause: 4, acs: ['AC:B5:6'], tests: ['TEST:B5:4'] },
     { clause: 5, acs: ['AC:B5:10'], tests: ['TEST:B5:6'] },
@@ -66,33 +66,18 @@ const CORTE_MAP: readonly CorteEntry[] = [
         acs: ['AC:B5:24', 'AC:B5:28'],
         tests: ['TEST:B5:12', 'TEST:B5:13', 'TEST:B5:14']
     },
-    { clause: 12, acs: ['AC:B5:34', 'AC:B5:36'], tests: ['TEST:B5:18'] },
+    { clause: 12, acs: ['AC:B5:34', 'AC:B5:35', 'AC:B5:36'], tests: ['TEST:B5:18'] },
     { clause: 13, acs: ['AC:B5:32', 'AC:B5:37'], tests: ['TEST:B5:16', 'TEST:B5:19'] },
     { clause: 14, acs: ['AC:B5:38'], tests: ['TEST:B5:20'] }
 ];
-// B5.md:138, :597-599; manual and MP5 halves deferred by letter CV.
-const DEFERRED: readonly DeferredEntry[] = [
-    {
-        clause: 2,
-        what: 'the manual payment registered second is settled by MP6 with reason 20',
-        acs: ['AC:B5:19'],
-        issue: 'HOS-1542',
-        phase: 'fase-4',
-        letter: 'CV'
-    },
-    {
-        clause: 12,
-        what: 'MP5 calls S38 through the B8b interface before opening the instalment',
-        acs: ['AC:B5:35'],
-        issue: 'HOS-1542',
-        phase: 'fase-4',
-        letter: 'CV'
-    }
-];
+const DEFERRED: readonly DeferredEntry[] = [];
 // Evidence file for each clause, copied from H-15; paths are repo-relative.
 const CLAUSE_FILES: Readonly<Record<number, readonly string[]>> = {
     1: ['packages/service-core/test/integration/services/provider-notice-payment-dedup.test.ts'],
-    2: ['packages/service-core/test/integration/services/payment-duplicate-period.test.ts'],
+    2: [
+        'packages/service-core/test/integration/services/payment-duplicate-period.test.ts',
+        'packages/service-core/test/integration/services/manual-payment-unallocated.test.ts'
+    ],
     3: ['packages/service-core/test/integration/services/provider-notice-payment-dedup.test.ts'],
     4: ['packages/service-core/test/integration/services/payment-refund-accumulation.test.ts'],
     5: [
@@ -117,7 +102,8 @@ const CLAUSE_FILES: Readonly<Record<number, readonly string[]>> = {
     ],
     12: [
         'packages/service-core/test/integration/services/subscription-revocation-succession.test.ts',
-        'packages/service-core/test/integration/services/reconciliation-addon-listing-purged.test.ts'
+        'packages/service-core/test/integration/services/reconciliation-addon-listing-purged.test.ts',
+        'packages/service-core/test/integration/services/manual-installment-open.test.ts'
     ],
     13: [
         'packages/db/test/integration/b5-schema-from-empty.test.ts',
@@ -265,7 +251,7 @@ function titlesInRoot({ root }: { readonly root: string }): readonly string[] {
         .flatMap((file) => testTitles({ source: readFileSync(file, 'utf8') }));
 }
 
-describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual halves deferred, suite collected (HOS-1550)', () => {
+describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree and CI (HOS-1550)', () => {
     const allTitles = collectSources().flatMap((source) => testTitles({ source }));
     const guardsBlock = jobBlock({ source: ciYml, job: 'guards' });
     const guardsRuns = stepRuns({ block: guardsBlock });
@@ -350,7 +336,7 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
         });
     });
 
-    describe('(d) cut ids, exit ids and deferred halves', () => {
+    describe('(d) cut ids, exit ids and completed clauses', () => {
         it('every cut TEST id has a title and SPEC_EXIT_TESTS is a subset', () => {
             const missing = CUT_TESTS.filter(
                 (id) => !allTitles.some((title) => namesId({ text: title, id }))
@@ -373,30 +359,10 @@ describe('TEST:B5:17 AC:B5:33 - B5 exit: LISTA:B5 evidence in the tree, manual h
                 Array.from({ length: 14 }, (_, i) => i + 1)
             );
         });
-        it('records exactly the two HOS-1542 phase 4 CV halves, both mapped to cut clauses', () => {
-            expect(DEFERRED).toEqual([
-                {
-                    clause: 2,
-                    what: 'the manual payment registered second is settled by MP6 with reason 20',
-                    acs: ['AC:B5:19'],
-                    issue: 'HOS-1542',
-                    phase: 'fase-4',
-                    letter: 'CV'
-                },
-                {
-                    clause: 12,
-                    what: 'MP5 calls S38 through the B8b interface before opening the instalment',
-                    acs: ['AC:B5:35'],
-                    issue: 'HOS-1542',
-                    phase: 'fase-4',
-                    letter: 'CV'
-                }
-            ]);
-            expect(
-                DEFERRED.every((entry) =>
-                    CORTE_MAP.some((mapped) => mapped.clause === entry.clause)
-                )
-            ).toBe(true);
+        it('has no deferred halves and records both completed ACs in their clauses', () => {
+            expect(DEFERRED).toEqual([]);
+            expect(CORTE_MAP.find((entry) => entry.clause === 2)?.acs).toContain('AC:B5:19');
+            expect(CORTE_MAP.find((entry) => entry.clause === 12)?.acs).toContain('AC:B5:35');
         });
     });
 

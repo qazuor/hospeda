@@ -208,14 +208,12 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
             expect(restoredListingIds).toEqual([listingId]);
         });
 
-        await test.step('Step 6: Mi Suscripción lists exactly the new active row with AU notice', async () => {
+        await test.step('Step 6: Mi Suscripción lists exactly the new active row with a plan-change offer', async () => {
             await page.goto(`${WEB_URL}/es/mi-cuenta/suscripcion/`);
             const island = page.locator('section[aria-label="Tus suscripciones"]');
             const current = subscriptionArticle({ page, subscriptionId: newSubscriptionId });
             await expect(current).toBeVisible();
-            await expect(
-                current.getByTestId('my-subscription-plan-change-unavailable')
-            ).toBeVisible();
+            await expect(current.getByRole('button', { name: /cambiar de plan/i })).toBeVisible();
             await expect(island.locator('article[data-testid="my-subscription"]')).toHaveCount(1);
         });
     });

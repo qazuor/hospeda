@@ -1454,7 +1454,6 @@ export function createDbMock() {
         BillingAddonPurchaseModel: GenericMockModel,
         BillingDunningAttemptModel: GenericMockModel,
         NotificationLogModel: GenericMockModel,
-        BillingSettingsModel: GenericMockModel,
         BillingSubscriptionEventModel: GenericMockModel,
         DestinationFaqModel: GenericMockModel,
         DestinationReviewModel: GenericMockModel,

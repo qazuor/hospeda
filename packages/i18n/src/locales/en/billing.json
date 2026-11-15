@@ -84,6 +84,20 @@
         "viewAvailable": "View available add-ons",
         "buyMore": "Buy more add-ons"
     },
+    "addonPurchaseApi": {
+        "oneTimePaymentRequired": "Payment details are required for one-time addons.",
+        "recurringPaymentNotAccepted": "Recurring addons are paid for at the provider checkout.",
+        "payerEmailRequired": "Enter the payer's email address.",
+        "purchaseNotFound": "We couldn't find that addon purchase.",
+        "freeProductNotFound": "We couldn't find that addon.",
+        "freeTargetNotFound": "We couldn't find that target.",
+        "freeNoTitle": "You don't have an active benefit for this free addon.",
+        "freeVersionChanged": "The addon version changed. Please try again.",
+        "freeAlreadyActive": "This addon is already active for you.",
+        "freePendingElsewhere": "Another purchase of this addon is in progress.",
+        "freeOrderRequestReused": "That request was already used for another choice.",
+        "freeUnderGrant": "This addon is included for free in your benefit. Choose it without paying."
+    },
     "payment": {
         "title": "Payment methods",
         "setDefault": "Set as default",
@@ -298,7 +312,8 @@
             "rejected": {
                 "title": "Mercado Pago did not approve the payment",
                 "body": "You were not charged and the previous attempt is closed. You can start a new one with the same plan.",
-                "retry": "Try again",
+                "retry": "Try another payment method",
+                "attemptPlan": "Plan you tried to subscribe to: {{plan}}",
                 "retrying": "Preparing the payment…"
             },
             "unknown": {
@@ -601,7 +616,6 @@
         "ai_support": "AI support assistant",
         "ai_translate": "AI content translation",
         "ai_accommodation_import": "AI accommodation import",
-        "ai_faq_draft": "AI FAQ answer drafts",
         "manage_venue_events": "Venue events, dated or weekly",
         "multilingual_venue_menu": "Menu in multiple languages",
         "menu_qr_scan_metrics": "Menu QR with scan analytics panel",
@@ -610,7 +624,8 @@
         "partner_carousel_presence": "Logo in the partner carousel",
         "recover_own_listing": "View, export, reactivate or delete your listings",
         "subscribe_to_plan": "Subscribe to a plan",
-        "activate_trial": "Start the trial period"
+        "activate_trial": "Start the trial period",
+        "ai_faq_draft": "AI FAQ answer drafts"
     },
     "entitlementByAudience": {
         "venue": {
@@ -801,5 +816,59 @@
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse.",
         "max_ai_faq_draft_per_month": "How many AI answer drafts you can generate each month for questions about your listings. The quota resets at the start of each month."
+    },
+    "addonPurchase": {
+        "title": "Buy add-ons",
+        "chooseOffer": "Choose an add-on",
+        "noOffers": "No add-ons are available.",
+        "chooseTarget": "Choose a listing",
+        "noTargets": "No listings are available for this add-on.",
+        "summary": "Confirm add-on",
+        "freeUnderGrant": "Free with your benefit",
+        "days_one": "{{count}} day",
+        "days_other": "{{count}} days",
+        "hiddenListingRecurring": "This listing is not published. The boost is still charged while the listing is hidden, until you cancel it.",
+        "chooseFree": "Choose for free",
+        "payerEmailLabel": "Payer email",
+        "payerEmailInvalid": "Enter a valid payer email.",
+        "payerEmailHint": "You declare this email; the provider has not confirmed it.",
+        "confirmPurchase": "Confirm purchase",
+        "loading": "Loading add-ons…",
+        "loadError": "We could not load the add-ons.",
+        "processing": "Your purchase is being processed.",
+        "active": "Active",
+        "closed": "The purchase ended without activation.",
+        "paused": {
+            "title": "Purchases paused",
+            "body": "Addon purchases are temporarily paused. Please try again later."
+        },
+        "status": {
+            "DRAFT": "Draft",
+            "PUBLISHED": "Published",
+            "UNPUBLISHED_BY_BILLING": "Unpublished under your plan",
+            "ARCHIVED": "Archived",
+            "MODERATED": "Moderated",
+            "PURGED": "Removed"
+        },
+        "cycle": {
+            "monthly": "Monthly",
+            "quarterly": "Quarterly",
+            "semiannual": "Every six months",
+            "annual": "Yearly"
+        },
+        "recurringAddons": {
+            "title": "Your recurring featured add-ons",
+            "loading": "Loading recurring featured add-ons…",
+            "empty": "You have no active recurring featured add-ons.",
+            "loadError": "We could not load your recurring featured add-ons.",
+            "invalidListing": "The listing is invalid.",
+            "noListing": "No associated listing",
+            "withdraw": "Withdraw",
+            "confirmText": "Confirming stops charges and turns off the featured add-on today. There is no refund. The provider may send a cancellation email.",
+            "confirm": "Confirm withdrawal",
+            "cancel": "Cancel",
+            "withdrawn": "The featured add-on was withdrawn.",
+            "withdrawError": "We could not withdraw the featured add-on."
+        }
     }
 }

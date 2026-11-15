@@ -3,6 +3,7 @@ import { type ReconciliationMarkReason, reconciliationZeroCallModel } from '@rep
 import { createLogger } from '@repo/logger';
 import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
 import { runAddonWithoutShutdownCheck } from './addon-without-shutdown-check.js';
+import { runGrantFanOutCheck } from './grant-fan-out-check.js';
 import { recordDivergence } from './reconciliation-divergence.js';
 import { SweepLeaseLostError, SweepTimedOutError } from './sweep-control.js';
 import {
@@ -39,11 +40,14 @@ export interface ZeroCallChecksPorts {
     readonly addonOrphanhood?: AddonWithoutShutdownPorts;
 }
 
-/** Counts and isolated failures for one run of the three checks. */
+/** Counts and isolated failures for one run of the zero-call checks. */
 export interface ZeroCallChecksSummary {
     /** Per-check examined and action counts. */
     readonly results: ReadonlyArray<{
-        readonly check: (typeof CHECKS)[keyof typeof CHECKS] | 'ADDON_LIVE_ON_DEAD_TARGET';
+        readonly check:
+            | (typeof CHECKS)[keyof typeof CHECKS]
+            | 'ADDON_LIVE_ON_DEAD_TARGET'
+            | 'GRANT_FAN_OUT_INCOMPLETE';
         readonly examined: number;
         readonly marksOpened: number;
         readonly marksAccumulated: number;
@@ -51,7 +55,10 @@ export interface ZeroCallChecksSummary {
     }>;
     /** A check-level or row-level failure; checks never reject the sweep. */
     readonly failures: ReadonlyArray<{
-        readonly check: (typeof CHECKS)[keyof typeof CHECKS] | 'ADDON_LIVE_ON_DEAD_TARGET';
+        readonly check:
+            | (typeof CHECKS)[keyof typeof CHECKS]
+            | 'ADDON_LIVE_ON_DEAD_TARGET'
+            | 'GRANT_FAN_OUT_INCOMPLETE';
         readonly subjectId: string | null;
         readonly message: string;
     }>;
@@ -69,7 +76,7 @@ function messageOf(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-/** Runs succession, retained-payment and deferred-courtesy checks without provider access. */
+/** Runs succession, retained-payment, deferred-courtesy, fourth addon, and third grant checks without provider access. */
 export async function runZeroCallChecks(
     input: ZeroCallChecksInput = {},
     ports: ZeroCallChecksPorts = {}
@@ -254,6 +261,27 @@ export async function runZeroCallChecks(
                 message: messageOf(error)
             });
         }
+    }
+
+    try {
+        const grantCheck = await runGrantFanOutCheck(
+            { correlationId, pageSize },
+            {
+                ...(ports.addonOrphanhood ? { orphanhood: ports.addonOrphanhood } : {}),
+                ...(ports.markPayments ? { markPayments: ports.markPayments } : {}),
+                ...(ports.heartbeat ? { heartbeat: ports.heartbeat } : {})
+            }
+        );
+        results.push(grantCheck.result);
+        failures.push(...grantCheck.failures);
+    } catch (error) {
+        if (error instanceof SweepLeaseLostError || error instanceof SweepTimedOutError)
+            throw error;
+        failures.push({
+            check: 'GRANT_FAN_OUT_INCOMPLETE',
+            subjectId: null,
+            message: messageOf(error)
+        });
     }
 
     if (failures.length) logger.error({ correlationId, failures }, 'Zero-call checks failed');

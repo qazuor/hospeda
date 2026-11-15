@@ -1,6 +1,7 @@
 import { OwnSubscriptionsResponseSchema, PermissionEnum } from '@repo/schemas';
 import { getActorFromContext } from '../../utils/actor';
 import { createProtectedRoute } from '../../utils/route-factory';
+import { readOwnDeclinedSignups } from './read-own-declined-signups';
 import { readOwnDeferredCourtesies, readOwnSubscriptions } from './read-own-subscriptions';
 
 /** List only the authenticated owner's cancellable principal subscriptions. */
@@ -15,9 +16,10 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
     responseSchema: OwnSubscriptionsResponseSchema,
     handler: async (ctx) => {
         const userId = getActorFromContext(ctx).id;
-        const [subscriptions, deferredCourtesies] = await Promise.all([
+        const [subscriptions, deferredCourtesies, declined] = await Promise.all([
             readOwnSubscriptions(userId),
-            readOwnDeferredCourtesies(userId)
+            readOwnDeferredCourtesies(userId),
+            readOwnDeclinedSignups(userId)
         ]);
         return {
             subscriptions: subscriptions.map((row) => ({
@@ -31,7 +33,11 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
                     : null,
                 paidAfterCancellation: row.paidAfterCancellation
             })),
-            deferredCourtesies
+            deferredCourtesies,
+            declinedSignups: declined.map((notice) => ({
+                ...notice,
+                declinedAt: notice.declinedAt.toISOString()
+            }))
         };
     }
 });

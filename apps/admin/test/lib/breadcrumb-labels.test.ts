@@ -40,6 +40,14 @@ const readBilling = (locale: Locale): Record<string, unknown> => {
 const NEW_KEYS = ['subscription', 'subscriptionCancellation', 'subscriptionRevocation'] as const;
 
 describe('subscription breadcrumb label maps', () => {
+    it('maps permanent grants to its translated billing key (AC:B13a:6)', () => {
+        expect(breadcrumbLabels['/billing/permanent-grants']).toBe(
+            'admin-menu.billing.permanentGrants'
+        );
+        for (const locale of LOCALES) {
+            expect(readBilling(locale).permanentGrants).toEqual(expect.any(String));
+        }
+    });
     it('maps /billing/subscriptions to the existing subscriptions key', () => {
         expect(breadcrumbLabels['/billing/subscriptions']).toBe('admin-menu.billing.subscriptions');
     });
@@ -86,6 +94,29 @@ describe('subscription breadcrumb i18n keys', () => {
             const billing = readBilling(locale);
             for (const key of NEW_KEYS) {
                 expect(billing[key], `${locale}.${key}`).not.toBe(es[key]);
+            }
+        }
+    });
+});
+
+describe('HOS-2081 CA-3 subscription action segment labels', () => {
+    it('maps pause, plan-change and courtesy to their billing keys', () => {
+        expect(breadcrumbSegmentLabels.pause).toBe('admin-menu.billing.subscriptionPause');
+        expect(breadcrumbSegmentLabels['plan-change']).toBe(
+            'admin-menu.billing.subscriptionPlanChange'
+        );
+        expect(breadcrumbSegmentLabels.courtesy).toBe('admin-menu.billing.subscriptionCourtesy');
+    });
+
+    it('defines the three new label keys in every locale', () => {
+        const keys = ['subscriptionPause', 'subscriptionPlanChange', 'subscriptionCourtesy'];
+        for (const locale of LOCALES) {
+            const billing = readBilling(locale);
+            for (const key of keys) {
+                expect(typeof billing[key], `${locale}.${key}`).toBe('string');
+                expect((billing[key] as string).trim().length, `${locale}.${key}`).toBeGreaterThan(
+                    0
+                );
             }
         }
     });

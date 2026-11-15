@@ -25,6 +25,8 @@ export interface SubscriptionReturnProps {
     readonly accountEmail: string;
     /** Email the payer declared on the rejected attempt (HOS-1890), when stored. */
     readonly declaredPayerEmail: string | null;
+    /** Localized plan name for a declined signup notice. */
+    readonly attemptPlanName?: string;
     /** Page refresh callback; defaults to reloading the current URL. */
     readonly refreshPage?: () => void;
 }
@@ -52,6 +54,7 @@ export function SubscriptionReturn({
     billingOptionId,
     accountEmail,
     declaredPayerEmail,
+    attemptPlanName,
     refreshPage = () => window.location.reload()
 }: SubscriptionReturnProps) {
     const { t } = useMemo(() => createTranslations(locale), [locale]);
@@ -188,11 +191,19 @@ export function SubscriptionReturn({
         <section
             className={`${styles.panel} ${view === 'confirmed' ? styles.confirmed : ''}`}
             data-testid="subscription-return"
+            data-subscription-id={subscriptionId}
             data-view={view}
             aria-live="polite"
         >
             <h2>{t(`billing.checkout.return.${view}.title`)}</h2>
             <p>{t(`billing.checkout.return.${view}.body`)}</p>
+            {view === 'rejected' && attemptPlanName && (
+                <p data-testid="subscription-return-attempt-plan">
+                    {t('billing.checkout.return.rejected.attemptPlan', undefined, {
+                        plan: attemptPlanName
+                    })}
+                </p>
+            )}
             {view === 'rejected' && billingOptionId && needsEmailField && (
                 <div className={styles.field}>
                     <label htmlFor={emailInputId}>

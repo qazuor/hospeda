@@ -158,6 +158,36 @@ describe('TEST:5.8:1 GUARD:G-FAC-05 no dispatch by vertical or section', () => {
         expect(result.output).toContain('review dimension literal "food"');
     });
 
+    it('TEST:8:1 routes the accommodation editor files through G-FAC-05 and rejects a section-id comparison (HOS-1809)', () => {
+        const accommodationFiles = [
+            'apps/web/src/lib/editor/accommodation-editor-sections.ts',
+            'apps/web/src/lib/editor/resolve-editor-page.ts',
+            'apps/web/src/components/host/editor/use-accommodation-section-form.ts',
+            'apps/web/src/layouts/EditorSectionLayout.astro',
+            'apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar/index.astro'
+        ];
+        const listed = (
+            JSON.parse(readFileSync(GUARD_LIST_PATH, 'utf8')) as {
+                readonly files: readonly Row[];
+            }
+        ).files.map((row) => row.file);
+        // Non-vacuity: removing a row turns this green guard red.
+        for (const file of accommodationFiles) expect(listed).toContain(file);
+
+        const target = accommodationFiles[0] as string;
+        const { root, filesPath } = fixture({
+            rows: [{ file: target, spec: SPEC }],
+            files: {
+                [target]: "declare const id: string;\nexport const hidden = id === 'location';\n"
+            }
+        });
+        const result = run({ root, filesPath });
+
+        expect(result.exitCode).not.toBe(0);
+        expect(result.output).toContain(`${target}:2`);
+        expect(result.output).toContain('section id literal "location"');
+    });
+
     it('rejects the section-id and vertical comparison of the listing editor', () => {
         const { root, filesPath } = fixture({
             rows: [{ file: LISTING_EDITOR_FILE, spec: SPEC }],

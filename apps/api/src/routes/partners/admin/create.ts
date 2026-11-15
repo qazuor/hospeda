@@ -2,10 +2,11 @@
  * Admin create partner endpoint
  * Creates a new partner
  */
-import { createPartnerSchema, PermissionEnum, partnerSchema } from '@repo/schemas';
-import { PartnerService, ServiceError } from '@repo/service-core';
+
+import type { AdminCreatePartner } from '@repo/schemas';
+import { adminCreatePartnerSchema, PermissionEnum, partnerSchema } from '@repo/schemas';
+import { createPartnerDirectly } from '../../../services/partner-application/partner-direct-create.service';
 import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
 /**
@@ -17,24 +18,14 @@ export const adminCreatePartnerRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create partner (admin)',
-    description: 'Creates a new partner',
+    description:
+        'Creates a new partner without an owner and sends a claim notice to the provided email.',
     tags: ['Partners'],
     requiredPermissions: [PermissionEnum.PARTNER_MANAGE],
-    requestBody: createPartnerSchema,
+    requestBody: adminCreatePartnerSchema,
     responseSchema: partnerSchema,
     handler: async (ctx, _params, body) => {
-        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
-
-        const result = await partnerService.create(
-            actor,
-            body as Parameters<typeof partnerService.create>[1]
-        );
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
-
-        return result.data;
+        return createPartnerDirectly({ actor, input: body as AdminCreatePartner });
     }
 });

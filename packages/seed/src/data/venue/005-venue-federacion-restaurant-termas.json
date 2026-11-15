@@ -2,6 +2,14 @@
     "id": "005-venue-federacion-restaurant-termas",
     "ownerId": "043-user-venue-owner-valentina",
     "destinationId": "004-destination-federacion",
+    "location": {
+        "street": "Calle Mitre",
+        "number": "45",
+        "coordinates": {
+            "lat": "-30.9863",
+            "long": "-57.9248"
+        }
+    },
     "slug": "restaurant-termas-federacion",
     "name": "Restaurant Termas",
     "summary": "Cocina regional entrerriana en el corazón del complejo termal de Federación, con los sabores auténticos del litoral.",

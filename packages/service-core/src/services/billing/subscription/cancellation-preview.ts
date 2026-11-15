@@ -8,6 +8,8 @@ import {
     eq,
     getDb,
     inArray,
+    isNull,
+    subscriptionPauses,
     subscriptions
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -15,6 +17,7 @@ import { z } from 'zod';
 import { type Actor, ServiceError } from '../../../types/index.js';
 import { findOrphanhoodCandidates } from '../addon/addon-orphanhood.js';
 import { cancelActiveRejection } from './cancel-active-subscription.service.js';
+import { resolvePausedCancellationEnd } from './cancel-paused-subscription-support.js';
 import { resolveCancellationAuthority } from './cancellation-authorization.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { selectComplementTargets } from './complement-selection.js';
@@ -32,9 +35,9 @@ const inputSchema = z.strictObject({
     subscriptionId: z.string()
 });
 const cycles = ['monthly', 'quarterly', 'semiannual', 'annual'] as const;
-type CancellationOrigin = 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED' | 'CANCEL_SCHEDULED';
+type CancellationOrigin = 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED' | 'CANCEL_SCHEDULED' | 'PAUSED';
 function isCancellationOrigin(status: string): status is CancellationOrigin {
-    return ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED'].includes(status);
+    return ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED'].includes(status);
 }
 
 /** Classifies the moment a recurrent addon stops being available or billed. */
@@ -89,6 +92,8 @@ export async function previewSubscriptionCancellation(
             );
         let serviceEndsAt: Date | undefined;
         let graceEndsAt: Date | undefined;
+        let pausedEnd: Awaited<ReturnType<typeof resolvePausedCancellationEnd>> | undefined;
+        let courtesyMonthsLost = 0;
         if (origin === 'ACTIVE')
             serviceEndsAt = computeS11ServiceEnd({
                 now: ports.clock.now(),
@@ -96,6 +101,44 @@ export async function previewSubscriptionCancellation(
             }).serviceEndsAt;
         else if (origin === 'GRACE_PERIOD') graceEndsAt = row.graceEndsAt ?? undefined;
         else if (origin === 'CANCEL_SCHEDULED') serviceEndsAt = row.serviceEndsAt ?? undefined;
+        else if (origin === 'PAUSED') {
+            const [pause] = await tx
+                .select({
+                    reason: subscriptionPauses.reason,
+                    expectedEndAt: subscriptionPauses.expectedEndAt,
+                    requestedMonths: subscriptionPauses.requestedMonths
+                })
+                .from(subscriptionPauses)
+                .where(
+                    and(
+                        eq(subscriptionPauses.subscriptionId, row.id),
+                        isNull(subscriptionPauses.actualEndAt)
+                    )
+                )
+                .limit(1);
+            if (!pause)
+                throw cancelActiveRejection(
+                    'CANCELLATION_STATE_NOT_ALLOWED',
+                    'Paused subscription has no open pause'
+                );
+            pausedEnd = await resolvePausedCancellationEnd({
+                tx,
+                subscription: row,
+                now: ports.clock.now()
+            });
+            if (pause.reason === 'COURTESY' && pause.expectedEndAt) {
+                const now = ports.clock.now();
+                const end = pause.expectedEndAt;
+                const calendarMonths =
+                    (end.getUTCFullYear() - now.getUTCFullYear()) * 12 +
+                    end.getUTCMonth() -
+                    now.getUTCMonth();
+                courtesyMonthsLost = Math.min(
+                    pause.requestedMonths ?? 0,
+                    Math.max(0, calendarMonths + (end.getUTCDate() > now.getUTCDate() ? 1 : 0))
+                );
+            }
+        }
         if ((origin === 'ACTIVE' || origin === 'CANCEL_SCHEDULED') && !serviceEndsAt)
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
@@ -140,6 +183,7 @@ export async function previewSubscriptionCancellation(
                         complementStatus = 'ACTIVE';
                         break;
                     case 'SUSPENDED':
+                    case 'PAUSED':
                         complementStatus = 'PAUSED';
                         break;
                 }
@@ -220,7 +264,7 @@ export async function previewSubscriptionCancellation(
                     currency: 'ARS',
                     cycle: addon.cycle as (typeof cycles)[number],
                     whenOff: classifyAddonWhenOff({
-                        origin,
+                        origin: origin === 'PAUSED' ? 'SUSPENDED' : origin,
                         cutToday: addon.status === 'ACTIVE' && targetIds.has(addon.addonInstanceId)
                     })
                 };
@@ -255,6 +299,15 @@ export async function previewSubscriptionCancellation(
             }
             case 'SUSPENDED':
                 return { ...common, origin };
+            case 'PAUSED':
+                if (!pausedEnd) throw new Error('Paused cancellation end missing');
+                return {
+                    ...common,
+                    origin,
+                    serviceEndsAt: pausedEnd.serviceEndsAt.toISOString(),
+                    basis: pausedEnd.credited ? ('CREDIT' as const) : ('NOW' as const),
+                    courtesyMonthsLost
+                };
             case 'CANCEL_SCHEDULED': {
                 if (!serviceEndsAt)
                     throw new ServiceError(

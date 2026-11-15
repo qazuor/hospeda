@@ -14,6 +14,9 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     get hostDashboardApi() {
         return { get: mockHostDashboardGet };
     },
+    publishApi: {
+        trialSummary: vi.fn().mockResolvedValue({ ok: true, data: { status: 'NONE' } })
+    },
     // AnalyticsSection also imports from endpoints-protected — stub the parts it uses
     get hostAnalyticsApi() {
         return {

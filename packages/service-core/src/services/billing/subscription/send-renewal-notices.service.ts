@@ -77,7 +77,15 @@ export async function sendRenewalNotices(
             'Current billing deadlines are invalid',
             current.error.issues
         );
-    const { and: dbAnd, asc: dbAsc, eq: dbEq, gt: dbGt, lte: dbLte, subscriptions } = dbPackage;
+    const {
+        and: dbAnd,
+        asc: dbAsc,
+        eq: dbEq,
+        gt: dbGt,
+        inArray: dbInArray,
+        lte: dbLte,
+        subscriptions
+    } = dbPackage;
     const horizon = new Date(now.getTime() + RENEWAL_NOTICE_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000);
     const selected = await db
         .select({ id: subscriptions.id })
@@ -86,7 +94,7 @@ export async function sendRenewalNotices(
             dbAnd(
                 dbEq(subscriptions.class, 'PRINCIPAL'),
                 dbEq(subscriptions.status, 'ACTIVE'),
-                dbEq(subscriptions.paymentMethod, 'CARD'),
+                dbInArray(subscriptions.paymentMethod, ['CARD', 'MANUAL']),
                 dbGt(subscriptions.nextChargeAt, now),
                 dbLte(subscriptions.nextChargeAt, horizon)
             )

@@ -31,8 +31,9 @@ vi.mock('../../../src/components/shared/feedback/SkeletonCard.module.css', () =>
     })
 }));
 
-vi.mock('../../../src/lib/i18n', () => {
-    const t = (key: string, fallback?: string): string => fallback ?? key;
+vi.mock('../../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../../helpers/i18n-catalog');
+    const t = (key: string, fallback?: string): string => fallback ?? tFromCatalog(key);
     // tPlural was added in commit b138f3cbb ("fix(web,i18n): show review title
     // and pluralise the totals line"). Returns a simple string with the count.
     const tPlural = (key: string, count: number, _params?: Record<string, unknown>): string =>
@@ -198,5 +199,76 @@ describe('UserReviewsList', () => {
         renderList();
         await waitFor(() => expect(screen.getByText('Casa del Litoral')).toBeInTheDocument());
         expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    });
+});
+
+describe('TEST:1706:3 AC:1706:2 AC:1706:3 a review of a deleted listing', () => {
+    it('shows the deleted listing as text with a notice, keeping the review visible and counted', async () => {
+        const deletedReview = {
+            ...ACCOMMODATION_REVIEW,
+            accommodationGone: true,
+            accommodationSlug: null
+        };
+        globalThis.fetch = vi.fn().mockResolvedValue(makeReviewsResponse([deletedReview], []));
+        renderList();
+
+        const name = await screen.findByText('Casa del Litoral');
+        expect(name.tagName).toBe('SPAN');
+        expect(screen.queryByRole('link', { name: 'Casa del Litoral' })).toBeNull();
+        expect(screen.getByText('La ficha ya no existe')).toBeInTheDocument();
+        expect(screen.getByText('Muy buen lugar, limpio y cómodo.')).toBeInTheDocument();
+        expect(screen.getByText('Excelente estadía')).toBeInTheDocument();
+        expect(screen.getByText('1 account.reviews.total')).toBeInTheDocument();
+    });
+
+    it('does not link a gone listing when an older API still sends its slug', async () => {
+        globalThis.fetch = vi
+            .fn()
+            .mockResolvedValue(
+                makeReviewsResponse([{ ...ACCOMMODATION_REVIEW, accommodationGone: true }], [])
+            );
+        renderList();
+
+        await screen.findByText('Casa del Litoral');
+        expect(screen.queryByRole('link', { name: 'Casa del Litoral' })).toBeNull();
+    });
+
+    it('keeps a live listing link and omits the notice', async () => {
+        globalThis.fetch = vi
+            .fn()
+            .mockResolvedValue(
+                makeReviewsResponse([{ ...ACCOMMODATION_REVIEW, accommodationGone: false }], [])
+            );
+        renderList();
+
+        const link = await screen.findByRole('link', { name: 'Casa del Litoral' });
+        expect(link).toHaveAttribute('href', '/es/alojamientos/casa-del-litoral/');
+        expect(screen.queryByText('La ficha ya no existe')).toBeNull();
+    });
+
+    it('never shows the notice for a destination review', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue(makeReviewsResponse([], [DESTINATION_REVIEW]));
+        renderList();
+
+        await screen.findByText('Concepción del Uruguay');
+        expect(screen.queryByText('La ficha ya no existe')).toBeNull();
+    });
+
+    it('shows a live link and a deleted-listing notice in a mixed list', async () => {
+        const deletedReview = {
+            ...ACCOMMODATION_REVIEW,
+            id: 'rev-acc-deleted',
+            accommodationGone: true,
+            accommodationSlug: null
+        };
+        globalThis.fetch = vi
+            .fn()
+            .mockResolvedValue(makeReviewsResponse([ACCOMMODATION_REVIEW, deletedReview], []));
+        renderList();
+
+        const links = await screen.findAllByRole('link', { name: 'Casa del Litoral' });
+        expect(links).toHaveLength(1);
+        expect(links[0]).toHaveAttribute('href', '/es/alojamientos/casa-del-litoral/');
+        expect(screen.getByText('La ficha ya no existe')).toBeInTheDocument();
     });
 });

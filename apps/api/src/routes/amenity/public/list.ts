@@ -7,7 +7,8 @@ import {
     AmenitySearchHttpSchema,
     type HttpAmenitySearch
 } from '@repo/schemas';
-import { AmenityService, ServiceError } from '@repo/service-core';
+import { AmenityService, PUBLIC_CATALOG_SORT_COLUMNS, ServiceError } from '@repo/service-core';
+import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination.js';
@@ -25,7 +26,11 @@ export const publicListAmenitiesRoute = createPublicListRoute({
     summary: 'List amenities',
     description: 'Returns a paginated list of public amenities',
     tags: ['Amenities'],
-    requestQuery: AmenitySearchHttpSchema.shape,
+    // HOS-2068: only allow-listed columns may drive the order; anything else is a 400.
+    requestQuery: {
+        ...AmenitySearchHttpSchema.shape,
+        sortBy: z.enum(PUBLIC_CATALOG_SORT_COLUMNS).optional()
+    },
     responseSchema: AmenityPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

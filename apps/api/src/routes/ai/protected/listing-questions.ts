@@ -8,6 +8,9 @@
  * read), missing / deleted / foreign listing → 404. Foreign is 404 and never
  * 403: a 403 would confirm the listing id exists to someone who does not own it.
  *
+ * `from` / `to` (YYYY-MM-DD, UTC, HOS-2075) narrow the window; an invalid range is a
+ * 400 raised before the ownership check. Question and answer text is redacted at read.
+ *
  * Available to every owner — there is no entitlement gate (owner decision): a
  * plan without chat simply has no questions to show.
  *
@@ -23,6 +26,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { resolveChatDateRange } from '../../../services/ai-chat-date-range.js';
 import {
     isListingOwnedBy,
     listListingQuestions
@@ -43,7 +47,13 @@ export const protectedAiListingQuestionsRoute = createProtectedRoute({
     responseSchema: AiListingQuestionsResponseSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { entityType, entityId } = query as AiListingQuestionsQuery;
+        const { entityType, entityId, from, to } = query as AiListingQuestionsQuery;
+
+        // Input shape (400) is refused before existence/ownership (404).
+        const resolved = resolveChatDateRange({ from, to });
+        if (!resolved.ok) {
+            throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, resolved.message);
+        }
 
         const { owned } = await isListingOwnedBy({ entityType, entityId, userId: actor.id });
         if (!owned) {
@@ -53,6 +63,7 @@ export const protectedAiListingQuestionsRoute = createProtectedRoute({
         return listListingQuestions({
             entityType,
             entityId,
+            range: resolved.range,
             othersCursor: query?.othersCursor as string | undefined
         });
     },
