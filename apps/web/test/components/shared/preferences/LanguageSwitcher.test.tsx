@@ -33,9 +33,32 @@ describe('LanguageSwitcher', () => {
                 currentPath="/es/"
             />
         );
-        expect(screen.getByRole('link', { name: 'Español' })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'English' })).toBeInTheDocument();
-        expect(screen.getByRole('link', { name: 'Português' })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'ES Español' })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'EN English' })).toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'PT Português' })).toBeInTheDocument();
+    });
+
+    it('keeps the visible label inside the accessible name (WCAG 2.5.3)', () => {
+        // Arrange
+        render(
+            <LanguageSwitcher
+                locale="es"
+                currentPath="/es/"
+            />
+        );
+
+        // Act
+        const links = screen.getAllByRole('link');
+
+        // Assert: an aria-label would override the visible "EN" with "English"
+        // and trip axe's label-content-name-mismatch rule.
+        expect(links).toHaveLength(3);
+        for (const link of links) {
+            expect(link).not.toHaveAttribute('aria-label');
+            const visible = link.firstChild?.textContent ?? '';
+            expect(visible).toMatch(/^(ES|EN|PT)$/);
+            expect(link).toHaveAccessibleName(new RegExp(`^${visible} `));
+        }
     });
 
     it('marks the active locale with aria-current="true"', () => {
@@ -45,8 +68,8 @@ describe('LanguageSwitcher', () => {
                 currentPath="/en/alojamientos/"
             />
         );
-        const en = screen.getByRole('link', { name: 'English' });
-        const es = screen.getByRole('link', { name: 'Español' });
+        const en = screen.getByRole('link', { name: 'EN English' });
+        const es = screen.getByRole('link', { name: 'ES Español' });
         expect(en).toHaveAttribute('aria-current', 'true');
         expect(es).not.toHaveAttribute('aria-current');
     });
@@ -58,11 +81,11 @@ describe('LanguageSwitcher', () => {
                 currentPath="/es/destinos/colon/"
             />
         );
-        expect(screen.getByRole('link', { name: 'English' })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: 'EN English' })).toHaveAttribute(
             'href',
             '/en/destinos/colon/'
         );
-        expect(screen.getByRole('link', { name: 'Português' })).toHaveAttribute(
+        expect(screen.getByRole('link', { name: 'PT Português' })).toHaveAttribute(
             'href',
             '/pt/destinos/colon/'
         );
@@ -76,7 +99,7 @@ describe('LanguageSwitcher', () => {
             />
         );
         // Prevent navigation
-        const link = screen.getByRole('link', { name: 'English' });
+        const link = screen.getByRole('link', { name: 'EN English' });
         // On document (bubble) so it runs after React's root listener; a listener on
         // the link itself would mark the event prevented before the component sees it.
         const preventNavigation = (event: Event): void => event.preventDefault();
@@ -96,7 +119,7 @@ describe('LanguageSwitcher', () => {
                 currentPath="/es/"
             />
         );
-        const link = screen.getByRole('link', { name: 'English' });
+        const link = screen.getByRole('link', { name: 'EN English' });
         const preventNavigation = (event: Event): void => event.preventDefault();
         document.addEventListener('click', preventNavigation);
         fireEvent.click(link);
@@ -119,7 +142,7 @@ describe('LanguageSwitcher', () => {
                 currentPath="/es/"
             />
         );
-        const link = screen.getByRole('link', { name: 'Español' });
+        const link = screen.getByRole('link', { name: 'ES Español' });
         link.addEventListener('click', (event) => event.preventDefault());
         fireEvent.click(link);
 
@@ -175,7 +198,7 @@ describe('LanguageSwitcher', () => {
                 />
             );
 
-            fireEvent.click(screen.getByRole('link', { name: 'English' }));
+            fireEvent.click(screen.getByRole('link', { name: 'EN English' }));
             await waitFor(() => expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1));
 
             expect(localStorage.getItem('preferredLocale')).toBeNull();
@@ -191,7 +214,7 @@ describe('LanguageSwitcher', () => {
                 />
             );
 
-            fireEvent.click(screen.getByRole('link', { name: 'English' }));
+            fireEvent.click(screen.getByRole('link', { name: 'EN English' }));
 
             await waitFor(() => expect(localStorage.getItem('preferredLocale')).toBe('en'));
             expect(showConfirmationDialogMock).toHaveBeenCalledTimes(1);

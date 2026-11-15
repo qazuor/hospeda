@@ -79,12 +79,12 @@ test.describe('GUEST-02: i18n locale switching @p0 @guest @i18n', () => {
         // Reading the live `aria-current` (rather than assuming) is what ties
         // the assertions below to the control's own idea of the active locale.
         await expect(
-            switcher.getByRole('link', { name: 'Español' }),
+            switcher.getByRole('link', { name: 'ES Español' }),
             'Español must be the active option on an /es/ page'
         ).toHaveAttribute('aria-current', 'true');
 
         // ── es → en: the SECTION must survive the switch ───────────────────
-        await switcher.getByRole('link', { name: 'English' }).click();
+        await switcher.getByRole('link', { name: 'EN English' }).click();
         await page.waitForURL(/\/en\//, { timeout: 15_000 });
         expect(
             new URL(page.url()).pathname,
@@ -92,12 +92,12 @@ test.describe('GUEST-02: i18n locale switching @p0 @guest @i18n', () => {
                 'not on the /en/ home page — preserving the section is the whole behaviour'
         ).toBe('/en/alojamientos/');
         await expect(
-            switcher.getByRole('link', { name: 'English' }),
+            switcher.getByRole('link', { name: 'EN English' }),
             'English must be the active option after the switch'
         ).toHaveAttribute('aria-current', 'true');
 
         // ── en → pt: same again, from a non-default locale ─────────────────
-        await switcher.getByRole('link', { name: 'Português' }).click();
+        await switcher.getByRole('link', { name: 'PT Português' }).click();
         await page.waitForURL(/\/pt\//, { timeout: 15_000 });
         expect(
             new URL(page.url()).pathname,
