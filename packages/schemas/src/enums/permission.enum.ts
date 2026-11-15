@@ -871,6 +871,7 @@ export enum PermissionEnum {
     // HOS-1457 AC:V5:8: action 15, subscription inspection, and own-billing access.
     LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
     LISTING_MODERATE = 'listing.moderate', // Allows moderating any listing in two levels (fix request or take-down) and lifting it; NUCLEO/08 §3 action 13 (AUT-113), the same permission that moderates a partner presence.
+    LISTING_LOCATION_EXCEPTION_MANAGE = 'listing.locationException.manage', // Allows granting/removing the one-address-rule exception of an accommodation or venue (HOS-1810) and reading the repeated-address report. Vertical-agnostic, like listing.moderate.
     LISTING_PURGE_ON_REQUEST = 'listing.purgeOnRequest', // Allows purging another owner's listing at the owner's request, with a reason (PB12); NUCLEO/08 §3 action 23.
     USER_CLOSE_ON_REQUEST = 'user.closeOnRequest', // Allows closing another person's account at their request, with a reason: pseudonymizes it and removes its credentials; NUCLEO/08 §3 action 24.
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.

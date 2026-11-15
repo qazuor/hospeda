@@ -29,6 +29,14 @@ describe('transformAccommodationEdit', () => {
         ).not.toHaveProperty('lifecycleState');
     });
 
+    it('reads the HOS-1810 draft warning flag and defaults it to false', () => {
+        expect(
+            transformAccommodationEdit({ item: { id: 'a', locationDuplicate: true } })
+                .locationDuplicate
+        ).toBe(true);
+        expect(transformAccommodationEdit({ item: { id: 'a' } }).locationDuplicate).toBe(false);
+    });
+
     it('should extract all editable fields from a raw API accommodation object', () => {
         const raw = {
             id: 'acc-123',

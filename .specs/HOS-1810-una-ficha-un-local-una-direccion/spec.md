@@ -147,14 +147,14 @@ Los 6 venues de `packages/seed/src/data/venue/` son contenido curado con id dete
 En **ambas** tablas, `accommodations` y `venues` (mismas columnas, simetría):
 
 - `location_key text NULL` + índice **no único** `…_location_key_idx` parcial `WHERE location_key IS NOT NULL AND deleted_at IS NULL`. No único a propósito: qué hacer con el choque es política de aplicación (mismo dueño / otro dueño / excepción), no de la base.
-- `location_exception_by uuid NULL` (FK `users.id` `ON DELETE SET NULL`), `location_exception_reason text NULL`, `location_exception_at timestamptz NULL`. La excepción vigente es «las tres no nulas».
+- `location_exception_by uuid NULL` (FK `users.id` `ON DELETE SET NULL`), `location_exception_reason text NULL`, `location_exception_at timestamptz NULL` y `location_exception_key text NULL` (la `location_key` vigente al conceder). **La excepción está vigente sólo mientras `location_key = location_exception_key`**: está atada a la dirección para la que se concedió, así que mover la ficha a otra dirección la termina (y volver a la original la reactiva), por cualquier camino de escritura. El mismo criterio vive en el predicado de los índices únicos parciales.
 - Expand-only, columnas nulas. Re-chequear el número de migración contra `origin/staging` y PRs abiertos.
 
 **Mantenimiento de la clave**: `AccommodationService` y `VenueService` recalculan `location_key` en `_beforeCreate`/`_beforeUpdate` cuando cambia `location` o `destinationId` (un solo lugar por servicio; ninguna ruta puede escribirla; ni el body de create/patch ni el admin la aceptan, y el registro de campos server-written la lista). No hay backfill de filas existentes (decisión 6): el owner confirmó que no hay violaciones, y una ficha sin clave simplemente no participa hasta que alguien edite su dirección. **Consecuencia aceptada y documentada**: una ficha preexistente cuya dirección no se editó no genera clave, de modo que no será detectada como ocupante hasta su próxima edición.
 
 ### 5.3 Permiso nuevo
 
-Se agregan a `PermissionEnum` **dos permisos, uno por entidad**, siguiendo el patrón del enum (`accommodation.locationException.manage`, `venue.locationException.manage`) con el valor en camelCase por entidad, y se asignan a los roles administradores (carril 3: data-migration, porque `role_permission` tiene filas vivas; más el baseline del seed de roles). `permission-naming-convention.guard.test.ts` debe quedar verde (el valor nuevo no usa la forma con puntos que el guard congela). Nunca se decide por rol.
+Se agrega a `PermissionEnum` **un único permiso, agnóstico de vertical**: `PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE = 'listing.locationException.manage'`, junto a `listing.moderate`. Gobierna las rutas de excepción y el informe de direcciones repetidas de **ambas** verticales (alojamiento y venue). Se asigna a `SUPER_ADMIN` y `ADMIN` (carril 3: data-migration `0173`, porque `role_permission` tiene filas vivas; más el baseline del seed de roles) y el valor del enum entra por la migración estructural. La familia `venue.*` queda intacta (está congelada en 7 miembros espejo de la familia retirada). `permission-naming-convention.guard.test.ts` debe quedar verde y la clave se declara en `KNOWN_SYSTEM_FALLBACK_KEYS` junto a sus hermanas `LISTING_*`. Nunca se decide por rol.
 
 ### 5.4 API
 
@@ -170,7 +170,7 @@ Reglas:
 
 - El chequeo compara contra fichas `PUBLISHED` y no borradas (`deleted_at IS NULL`); `DRAFT`, `ARCHIVED`, `PURGED`, `MODERATED` y demás no cuentan.
 - Se excluye a la propia ficha. Un duplicado de **otro dueño** no bloquea, no cambia la respuesta y no se menciona al que publica; sólo aparece en el listado admin.
-- Una ficha con excepción vigente publica sin bloqueo, y no cuenta como ocupante en el chequeo de otras fichas del mismo dueño (la excepción habilita al local compartido en ambos sentidos).
+- Una ficha con excepción vigente publica sin bloqueo, y no cuenta como ocupante en el chequeo de otras fichas del mismo dueño (la excepción habilita al local compartido en ambos sentidos). Conceder exige que la ficha tenga clave (dirección comparable): sobre una ficha sin clave responde 409 `LOCATION_EXCEPTION_NEEDS_KEY`. Retirar la excepción borra también la clave guardada.
 - 400 para un `id` que no es UUID, antes de tocar la base. Una ficha ajena → 404, nunca 403 ni 409. Un 4xx nunca es `INTERNAL_ERROR`.
 - Se registra en `apiLogger` cada bloqueo (`ownerId`, `listingId`, `vertical`, `reason`), sin la dirección completa.
 - Se mantiene el orden del contrato (§2.5). Se actualiza `apps/api/docs/error-contract.md` y `PUBLIC_DETAILS_ERROR_CODES`.
@@ -232,3 +232,8 @@ Claves nuevas en `@repo/i18n`, tres idiomas, sin literales en componentes: aviso
 - **R-6 Privacidad entre dueños**: un mensaje de error que filtre el id de otra ficha. Cubierta por el test de claves exactas; el único id que viaja es el propio.
 - **R-7 Solapamiento con HOS-2042** en el schema y la página pública del venue. Mitigación: merge frecuente de `staging` y resolución aditiva.
 - **R-8 Sección nueva en el catálogo** (`LISTING_SECTIONS.venue`): hay guards y conteos congelados que se rompen al agregarla; se actualizan en el mismo PR.
+
+## Historial de revisiones
+
+- **2026-11-14**: §5.3 pasa de dos permisos (uno por entidad: `accommodation.locationException.manage` y `venue.locationException.manage`) a uno solo, `listing.locationException.manage`. Motivo: un permiso `venue.*` nuevo hace crecer la familia `venue.*`, que está congelada en 7 miembros por `permission-venue-experience.test.ts` como espejo de la familia retirada; un valor `listing.*` evita eso y cubre ambas verticales con un solo valor, igual que `listing.moderate`. Aprobado por el coordinador.
+- **2026-11-14 (2)**: la excepción deja de ser «por ficha» y pasa a estar atada a la clave de dirección para la que se concedió (§5.2, §5.4). Motivo: revisión de seguridad: una excepción por ficha permitía mover la ficha a cualquier otra dirección, incluso una ya ocupada por otra ficha publicada del mismo dueño, y seguir exenta.

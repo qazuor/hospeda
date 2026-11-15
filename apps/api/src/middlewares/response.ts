@@ -471,6 +471,7 @@ export const createErrorHandler = () => {
             errorMessage = constraintViolation.payload.message;
             statusCode = constraintViolation.status;
             errorDetails = constraintViolation.payload.details;
+            errorReason = constraintViolation.payload.reason;
         }
         // Priority 4: JSON parsing errors
         else if (

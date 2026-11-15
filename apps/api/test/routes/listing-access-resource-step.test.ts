@@ -5,40 +5,55 @@ vi.mock(
     '@repo/service-core',
     async (importOriginal) => await importOriginal<Record<string, unknown>>()
 );
-vi.mock('@repo/db', async (importOriginal) => ({
-    ...(await importOriginal<Record<string, unknown>>()),
-    eq: (left: unknown, right: unknown) => ({ left, right }),
-    amenities: {
-        id: 'amenities.id',
-        slug: 'amenities.slug',
-        description: 'amenities.description',
-        icon: 'amenities.icon',
-        applicableVerticals: 'amenities.applicableVerticals',
-        type: 'amenities.type',
-        isFeatured: 'amenities.isFeatured',
-        displayWeight: 'amenities.displayWeight',
-        isBuiltin: 'amenities.isBuiltin',
-        lifecycleState: 'amenities.lifecycleState',
-        createdAt: 'amenities.createdAt',
-        updatedAt: 'amenities.updatedAt'
-    },
-    features: {
-        id: 'features.id',
-        slug: 'features.slug',
-        description: 'features.description',
-        icon: 'features.icon',
-        applicableVerticals: 'features.applicableVerticals',
-        isFeatured: 'features.isFeatured',
-        displayWeight: 'features.displayWeight',
-        isBuiltin: 'features.isBuiltin',
-        lifecycleState: 'features.lifecycleState',
-        createdAt: 'features.createdAt',
-        updatedAt: 'features.updatedAt'
-    },
-    rAccommodationAmenity: { amenityId: 'raa.amenityId', accommodationId: 'raa.accommodationId' },
-    rAccommodationFeature: { featureId: 'raf.featureId', accommodationId: 'raf.accommodationId' },
-    getDb: vi.fn()
-}));
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        // HOS-1810: the detail routes also read the draft-warning flag through the
+        // location model; this file is about the resource step, not that read.
+        listingLocationModel: {
+            ...(actual.listingLocationModel as Record<string, unknown>),
+            hasOwnDuplicate: async () => false
+        },
+        eq: (left: unknown, right: unknown) => ({ left, right }),
+        amenities: {
+            id: 'amenities.id',
+            slug: 'amenities.slug',
+            description: 'amenities.description',
+            icon: 'amenities.icon',
+            applicableVerticals: 'amenities.applicableVerticals',
+            type: 'amenities.type',
+            isFeatured: 'amenities.isFeatured',
+            displayWeight: 'amenities.displayWeight',
+            isBuiltin: 'amenities.isBuiltin',
+            lifecycleState: 'amenities.lifecycleState',
+            createdAt: 'amenities.createdAt',
+            updatedAt: 'amenities.updatedAt'
+        },
+        features: {
+            id: 'features.id',
+            slug: 'features.slug',
+            description: 'features.description',
+            icon: 'features.icon',
+            applicableVerticals: 'features.applicableVerticals',
+            isFeatured: 'features.isFeatured',
+            displayWeight: 'features.displayWeight',
+            isBuiltin: 'features.isBuiltin',
+            lifecycleState: 'features.lifecycleState',
+            createdAt: 'features.createdAt',
+            updatedAt: 'features.updatedAt'
+        },
+        rAccommodationAmenity: {
+            amenityId: 'raa.amenityId',
+            accommodationId: 'raa.accommodationId'
+        },
+        rAccommodationFeature: {
+            featureId: 'raf.featureId',
+            accommodationId: 'raf.accommodationId'
+        },
+        getDb: vi.fn()
+    };
+});
 
 import { getDb } from '@repo/db';
 import {

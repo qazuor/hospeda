@@ -5254,5 +5254,12 @@
             },
             "requiresEventsAllowed": "Event details only apply when events are allowed"
         }
+    },
+    "locationException": {
+        "reason": {
+            "max": "The reason cannot exceed 500 characters",
+            "min": "The reason must be at least 10 characters",
+            "required": "The reason is required"
+        }
     }
 }

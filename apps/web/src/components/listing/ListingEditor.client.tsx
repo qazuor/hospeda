@@ -43,6 +43,7 @@
  */
 
 import {
+    DUPLICATE_LOCATION_REASON,
     ExperienceOwnerUpdateInputSchema,
     type OpeningHours,
     VenueOwnerUpdateInputSchema
@@ -992,6 +993,21 @@ export function ListingEditor({
                         t(
                             'listing.owner.editor.errors.sectionAbsent',
                             'Esa sección ya no aplica a los rubros de tu local.'
+                        )
+                    );
+                    setStatus({ kind: 'error' });
+                    return;
+                }
+                // HOS-1810: moving a published listing onto an address its owner
+                // already publishes (409 DUPLICATE_LOCATION). Nothing was saved.
+                if (
+                    result.error?.status === 409 &&
+                    result.error.reason === DUPLICATE_LOCATION_REASON
+                ) {
+                    setFormError(
+                        t(
+                            'listing.owner.locationDuplicate.blocked',
+                            'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
                         )
                     );
                     setStatus({ kind: 'error' });

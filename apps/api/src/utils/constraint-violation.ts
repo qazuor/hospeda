@@ -32,6 +32,7 @@
  * @module utils/constraint-violation
  */
 
+import { DUPLICATE_LOCATION_REASON, LOCATION_KEY_UNIQUE_INDEXES } from '@repo/schemas';
 import { extractPostgresErrorCause } from '@repo/service-core';
 import { env } from './env';
 
@@ -196,6 +197,8 @@ export type ConstraintViolationResponse = {
         readonly code: 'ALREADY_EXISTS' | 'VALIDATION_ERROR';
         readonly message: string;
         readonly details: string | undefined;
+        /** Machine-readable reason, set only for constraints the client acts on. */
+        readonly reason?: string;
     };
     /** `409` for a state conflict, `400` for a bad reference. */
     readonly status: 409 | 400;
@@ -227,6 +230,25 @@ export const buildConstraintViolationResponse = (
 
     const rawMessage = error instanceof Error ? error.message : String(error);
     const details = env.HOSPEDA_API_DEBUG_ERRORS ? rawMessage : undefined;
+
+    if (
+        postgresCause.code === PG_UNIQUE_VIOLATION &&
+        postgresCause.constraint &&
+        LOCATION_KEY_UNIQUE_INDEXES.includes(postgresCause.constraint)
+    ) {
+        // HOS-1810: a concurrent publish/move onto an address the owner already
+        // publishes, caught by the partial unique index (the service pre-check
+        // cannot see it). Same answer as the pre-check.
+        return {
+            payload: {
+                code: 'ALREADY_EXISTS',
+                message: 'Another published listing of yours already occupies this address',
+                details,
+                reason: DUPLICATE_LOCATION_REASON
+            },
+            status: 409
+        };
+    }
 
     if (postgresCause.code === PG_UNIQUE_VIOLATION) {
         return {

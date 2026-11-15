@@ -17,6 +17,7 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
+import { buildLocationKey } from '@repo/utils';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
@@ -593,6 +594,15 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     contactInfo: (item.contactInfo ??
                         null) as (typeof venues.$inferInsert)['contactInfo'],
                     location: (item.location ?? null) as (typeof venues.$inferInsert)['location'],
+                    // HOS-1810: this direct insert skips `VenueService._beforeCreate`, which
+                    // derives the place key (dual-write with the backfill data-migration 0174).
+                    locationKey: buildLocationKey({
+                        street: item.location?.street as string | undefined,
+                        number: item.location?.number as string | undefined,
+                        floor: item.location?.floor as string | undefined,
+                        apartment: item.location?.apartment as string | undefined,
+                        destinationId: realDestinationId
+                    }),
                     socialNetworks: (item.socialNetworks ??
                         null) as (typeof venues.$inferInsert)['socialNetworks'],
                     openingHours: (item.openingHours ??

@@ -33,6 +33,7 @@
 import {
     ACCOMMODATION_PUBLISH_REQUIREMENTS,
     type AccommodationPublishRequirementId,
+    DUPLICATE_LOCATION_REASON,
     parsePublishRequirementsReason
 } from '@repo/schemas';
 import { type JSX, useState } from 'react';
@@ -252,6 +253,19 @@ export function PublishButton({
                     parsePublishRequirementsReason({ reason: result.error.reason })
                 );
                 setState('missingRequirements');
+                return;
+            }
+            // HOS-1810: another PUBLISHED listing of this owner already holds the
+            // address (409 `DUPLICATE_LOCATION`). Retrying cannot help: the owner
+            // adds the missing category to the existing listing instead.
+            if (result.error.status === 409 && result.error.reason === DUPLICATE_LOCATION_REASON) {
+                setApiError(
+                    t(
+                        'listing.owner.locationDuplicate.blocked',
+                        'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
+                    )
+                );
+                setState('error');
                 return;
             }
             setApiError(errorText);

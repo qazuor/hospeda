@@ -73,6 +73,13 @@ vi.mock('@repo/db', async (importActual) => {
     const actual = await importActual<typeof import('@repo/db')>();
     return {
         ...actual,
+        // HOS-1810: the route also reads the draft-warning flag through the location
+        // model. It is not what this file is about (the junction projections), and
+        // this file's query-builder stub has no shape for it, so it answers "no duplicate".
+        listingLocationModel: {
+            ...actual.listingLocationModel,
+            hasOwnDuplicate: async () => false
+        },
         eq: (left: unknown, right: unknown) => ({ op: 'eq', left, right }),
         // `and`, `isNull` and the `deletedAt` columns below are DELIBERATE
         // scaffolding, not leftovers: the route must NOT filter soft-deleted

@@ -1990,6 +1990,7 @@ export function transformAccommodationEdit({
         number: String(locationObj?.number ?? ''),
         floor: String(locationObj?.floor ?? ''),
         apartment: String(locationObj?.apartment ?? ''),
+        locationDuplicate: item.locationDuplicate === true,
         maxGuests: extraInfo?.capacity == null ? null : Number(extraInfo.capacity),
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),

@@ -415,6 +415,10 @@
                 "experience": "Elegir plan de experiencias"
             },
             "missingRequirements": "No se pudo publicar porque faltan datos."
+        },
+        "locationDuplicate": {
+            "warning": "Ya tenés otra ficha publicada en esta dirección. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra. Podés seguir editando este borrador, pero no vas a poder publicarlo.",
+            "blocked": "Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra."
         }
     },
     "notices": {

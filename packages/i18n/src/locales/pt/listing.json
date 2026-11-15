@@ -415,6 +415,10 @@
                 "experience": "Escolher plano de experiências"
             },
             "missingRequirements": "Não foi possível publicar porque faltam informações."
+        },
+        "locationDuplicate": {
+            "warning": "Você já tem outro anúncio publicado neste endereço. Cada local físico fica em um único anúncio: adicione a categoria que falta a ele em vez de criar outro. Você pode continuar editando este rascunho, mas não poderá publicá-lo.",
+            "blocked": "Este endereço já tem um anúncio publicado seu. Cada local físico fica em um único anúncio: adicione a categoria que falta a ele em vez de criar outro."
         }
     },
     "notices": {

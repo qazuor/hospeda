@@ -1,8 +1,8 @@
 {
     "systemColumns": {
         "counts": {
-            "accommodations": 29,
-            "venues": 22,
+            "accommodations": 34,
+            "venues": 27,
             "experiences": 22
         },
         "rows": [
@@ -297,6 +297,46 @@
             {
                 "key": "experiences.deleted_by_id",
                 "reason": "Soft-delete audit."
+            },
+            {
+                "key": "accommodations.location_key",
+                "reason": "Server-derived place key (HOS-1810); a purged listing is never PUBLISHED so it no longer counts as an occupant."
+            },
+            {
+                "key": "accommodations.location_exception_by",
+                "reason": "Admin who granted the one-address exception (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "accommodations.location_exception_reason",
+                "reason": "Admin-written reason of the one-address exception (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "accommodations.location_exception_at",
+                "reason": "When the one-address exception was granted (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "venues.location_key",
+                "reason": "Server-derived place key (HOS-1810); a purged listing is never PUBLISHED so it no longer counts as an occupant."
+            },
+            {
+                "key": "venues.location_exception_by",
+                "reason": "Admin who granted the one-address exception (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "venues.location_exception_reason",
+                "reason": "Admin-written reason of the one-address exception (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "venues.location_exception_at",
+                "reason": "When the one-address exception was granted (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "accommodations.location_exception_key",
+                "reason": "The location_key an exception was granted for (HOS-1810); audit/derived, not owner content."
+            },
+            {
+                "key": "venues.location_exception_key",
+                "reason": "The location_key an exception was granted for (HOS-1810); audit/derived, not owner content."
             }
         ]
     },
