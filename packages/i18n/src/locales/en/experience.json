@@ -4,6 +4,7 @@
         "headerDisclaimer": "Answers are AI-generated and may contain errors. Always confirm the information with the provider.",
         "panelLabel": "AI chat — Questions about the experience",
         "priceDisclaimer": "Schedules, availability and prices may have changed. Contact the provider to confirm.",
+        "readNotice": "The business can read the questions you ask in this chat. Do not share personal data.",
         "unavailable": "AI chat is not available for this experience"
     },
     "meta": {

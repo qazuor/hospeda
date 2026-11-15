@@ -1007,7 +1007,7 @@
         "fabLabel": "Ask AI about this accommodation",
         "panelLabel": "AI Chat — Accommodation Questions",
         "headerDisclaimer": "Responses are AI-generated and may contain errors. Always verify information with the accommodation.",
-        "readNotice": "The business can read the questions you ask in this chat. Do not share personal data.",
+        "readNotice": "The host can read the questions you ask in this chat. Do not share personal data.",
         "priceDisclaimer": "Prices and availability may have changed. Contact the accommodation to confirm.",
         "placeholder": "Type your question here…",
         "send": "Send",
