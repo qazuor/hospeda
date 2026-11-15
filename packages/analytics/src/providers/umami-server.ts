@@ -15,6 +15,7 @@
  */
 import { z } from 'zod';
 import type { ServerAnalyticsClient } from '../server.js';
+import { sanitizeAnalyticsVisitor } from '../shared.js';
 import {
     mapToUmamiBatchItem,
     UMAMI_SYNTHETIC_USER_AGENT,
@@ -269,6 +270,7 @@ export function createUmamiServerClient(
         capture(input): void {
             if (closed) return;
             try {
+                const visitor = sanitizeAnalyticsVisitor(input.visitor);
                 const { item, warnings } = mapToUmamiBatchItem({
                     event: input.event,
                     properties: input.properties ?? {},
@@ -276,8 +278,8 @@ export function createUmamiServerClient(
                     ...(input.uuid === undefined ? {} : { uuid: input.uuid }),
                     ...(input.timestamp === undefined ? {} : { timestamp: input.timestamp }),
                     websiteId,
-                    hostname: options.hostname
-                    // T-071: pass `visitor` here.
+                    hostname: options.hostname,
+                    ...(visitor === undefined ? {} : { visitor })
                 });
                 for (const warning of warnings) addNote(warning);
                 queue.push({ item, bytes: ENCODER.encode(JSON.stringify(item)).byteLength });

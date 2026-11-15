@@ -151,3 +151,46 @@ export function prepareAnalyticsEvent<TName extends AnalyticsEventName>(input: {
         ...eventProperties
     };
 }
+
+/**
+ * Network identity of the visitor a server event belongs to. Forwarded to the
+ * analytics provider for session attribution only; it is never part of the
+ * event properties.
+ */
+export const AnalyticsVisitorSchema = z.object({
+    /**
+     * Visitor IP (IPv4 or IPv6 text form). Strictly validated for clean
+     * session/geo attribution: measured on Umami 3.5.0 on 2026-11-15, an invalid
+     * ip is still accepted (`processed:1`), so this is not about event loss.
+     * An invalid value makes the whole visitor fall back to the synthetic identity.
+     */
+    ip: z
+        .string()
+        .trim()
+        .pipe(z.union([z.ipv4(), z.ipv6()])),
+    /** Visitor User-Agent header. */
+    userAgent: z.string().trim().min(1).max(500)
+});
+
+/** Validated visitor identity. */
+export type AnalyticsVisitor = z.infer<typeof AnalyticsVisitorSchema>;
+
+/**
+ * Validates a visitor identity without ever throwing. An invalid visitor is
+ * dropped (returns `undefined`) so the event falls back to the synthetic
+ * identity instead of being lost.
+ *
+ * @param input - Candidate visitor, possibly malformed
+ * @returns The trimmed visitor, or `undefined` when absent or invalid
+ *
+ * @example
+ * ```ts
+ * sanitizeAnalyticsVisitor({ ip: '1.1.1.1', userAgent: 'Mozilla/5.0' }); // { ip, userAgent }
+ * sanitizeAnalyticsVisitor({ ip: '', userAgent: 'x' }); // undefined
+ * ```
+ */
+export function sanitizeAnalyticsVisitor(input: unknown): AnalyticsVisitor | undefined {
+    if (input === undefined || input === null) return undefined;
+    const parsed = AnalyticsVisitorSchema.safeParse(input);
+    return parsed.success ? parsed.data : undefined;
+}

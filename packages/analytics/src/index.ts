@@ -23,15 +23,18 @@ export type {
     AnalyticsApp,
     AnalyticsEnvironment,
     AnalyticsGlobalProperties,
-    AnalyticsPersonProperties
+    AnalyticsPersonProperties,
+    AnalyticsVisitor
 } from './shared.js';
 export {
     AnalyticsAppSchema,
     AnalyticsEnvironmentSchema,
     AnalyticsGlobalPropertiesSchema,
     AnalyticsPersonPropertiesSchema,
+    AnalyticsVisitorSchema,
     buildAnalyticsGlobalProperties,
     buildAnalyticsPersonProperties,
     prepareAnalyticsEvent,
+    sanitizeAnalyticsVisitor,
     validateDistinctId
 } from './shared.js';

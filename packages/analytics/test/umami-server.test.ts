@@ -101,6 +101,55 @@ describe('createUmamiServerClient', () => {
         });
     });
 
+    describe('visitor attribution', () => {
+        const SYNTHETIC = { ip: '127.0.0.1', userAgent: UMAMI_SYNTHETIC_USER_AGENT };
+
+        async function sendOne(visitor?: unknown) {
+            const { client, fetchMock } = setup();
+            (client.capture as (i: unknown) => void)({
+                distinctId: 'user-1',
+                event: 'ai_feature_used',
+                properties: { feature: 'x' },
+                ...(visitor === undefined ? {} : { visitor })
+            });
+            await client.flush();
+            return sentBodies(fetchMock)[0]?.[0] as {
+                payload: { ip: string; userAgent: string; data: unknown };
+            };
+        }
+
+        it('should send the visitor ip and user agent and keep them out of data', async () => {
+            const item = await sendOne({ ip: '203.0.113.9', userAgent: 'Mozilla/5.0 Test' });
+            expect(item.payload.ip).toBe('203.0.113.9');
+            expect(item.payload.userAgent).toBe('Mozilla/5.0 Test');
+            expect(item.payload.data).toEqual({ feature: 'x', user_id: 'user-1' });
+        });
+
+        it('should forward a valid IPv6 visitor ip', async () => {
+            const item = await sendOne({ ip: '2001:db8::1', userAgent: 'Mozilla/5.0 Test' });
+            expect(item.payload.ip).toBe('2001:db8::1');
+            expect(item.payload.userAgent).toBe('Mozilla/5.0 Test');
+        });
+
+        it('should use the synthetic identity without a visitor', async () => {
+            const item = await sendOne();
+            expect({ ip: item.payload.ip, userAgent: item.payload.userAgent }).toEqual(SYNTHETIC);
+        });
+
+        it.each([
+            ['empty ip', { ip: '', userAgent: 'Mozilla/5.0' }],
+            ['600-char user agent', { ip: '1.1.1.1', userAgent: 'a'.repeat(600) }],
+            ['65-char ip', { ip: '1'.repeat(65), userAgent: 'Mozilla/5.0' }],
+            ['non-ip text "not-an-ip"', { ip: 'not-an-ip', userAgent: 'Mozilla/5.0' }],
+            ['non-ip text "unknown"', { ip: 'unknown', userAgent: 'Mozilla/5.0' }]
+        ])('should fall back to synthetic and still send when %s', async (_label, visitor) => {
+            const item = await sendOne(visitor);
+            expect(item).toBeDefined();
+            expect({ ip: item.payload.ip, userAgent: item.payload.userAgent }).toEqual(SYNTHETIC);
+            expect(item.payload.data).toEqual({ feature: 'x', user_id: 'user-1' });
+        });
+    });
+
     describe('flush triggers', () => {
         it('should flush when the queue reaches flushAt', async () => {
             const { client, fetchMock } = setup({ flushAt: 3 });

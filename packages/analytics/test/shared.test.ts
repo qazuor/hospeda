@@ -144,4 +144,43 @@ describe('analytics shared package', () => {
             timestamp
         });
     });
+
+    it('forwards a valid visitor outside properties and drops an invalid one', () => {
+        const capture = vi.fn();
+        const server = createServerAnalytics({ enabled: true, getClient: () => ({ capture }) });
+        const properties = {
+            vertical: 'accommodation',
+            subscription_class: 'PRINCIPAL',
+            actor_kind: 'USER',
+            subscription_id: 'sub-1',
+            reason: 'USER_CANCELLED'
+        } as const;
+        const name = AnalyticsEvents.billingCheckoutAbandoned;
+
+        server.capture({
+            distinctId: 'user-1',
+            name,
+            properties,
+            visitor: { ip: '1.1.1.1', userAgent: 'UA' }
+        });
+        server.capture({
+            distinctId: 'user-1',
+            name,
+            properties,
+            visitor: { ip: '', userAgent: 'UA' }
+        });
+
+        expect(capture).toHaveBeenCalledTimes(2);
+        expect(capture.mock.calls[0]?.[0]).toEqual({
+            distinctId: 'user-1',
+            event: name,
+            properties,
+            visitor: { ip: '1.1.1.1', userAgent: 'UA' }
+        });
+        expect(capture.mock.calls[1]?.[0]).toEqual({
+            distinctId: 'user-1',
+            event: name,
+            properties
+        });
+    });
 });
