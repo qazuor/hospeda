@@ -80,7 +80,7 @@ describe('venue one-address admin routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.actor.value = { ...ADMIN };
-        mocks.setException.mockResolvedValue(true);
+        mocks.setException.mockResolvedValue('granted');
         mocks.clearException.mockResolvedValue(true);
         mocks.listDuplicateGroups.mockResolvedValue({ items: [], total: 0 });
         app = buildApp();
@@ -121,8 +121,21 @@ describe('venue one-address admin routes', () => {
         expect(mocks.setException).not.toHaveBeenCalled();
     });
 
+    it('answers 409 LOCATION_EXCEPTION_NEEDS_KEY for a listing with no comparable address', async () => {
+        mocks.setException.mockResolvedValue('no_key');
+        const res = await app.request(
+            `/${ID}/location-exception`,
+            post({ reason: 'A long enough reason' })
+        );
+        expect(res.status).toBe(409);
+        expect((await res.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'LOCATION_EXCEPTION_NEEDS_KEY'
+        });
+    });
+
     it('answers 404 for a listing that does not exist', async () => {
-        mocks.setException.mockResolvedValue(false);
+        mocks.setException.mockResolvedValue('not_found');
         const res = await app.request(
             `/${ID}/location-exception`,
             post({ reason: 'A long enough reason' })

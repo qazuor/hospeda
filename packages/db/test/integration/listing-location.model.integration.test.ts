@@ -45,6 +45,8 @@ type Fixture = {
     status?: PublicationStatusEnum;
     deletedAt?: Date | null;
     exception?: boolean;
+    /** Key the exception was granted for; defaults to the row's own key. */
+    exceptionKey?: string | null;
 };
 
 async function insertAccommodation(tx: DrizzleClient, f: Fixture) {
@@ -64,7 +66,14 @@ async function insertAccommodation(tx: DrizzleClient, f: Fixture) {
             description: 'description of the fixture',
             locationKey: f.key === undefined ? KEY : f.key,
             deletedAt: f.deletedAt ?? null,
-            locationExceptionAt: f.exception ? new Date() : null
+            locationExceptionAt: f.exception ? new Date() : null,
+            locationExceptionKey: f.exception
+                ? f.exceptionKey === undefined
+                    ? f.key === undefined
+                        ? KEY
+                        : f.key
+                    : f.exceptionKey
+                : null
         })
         .returning();
     if (!row) throw new Error('accommodation');
@@ -89,7 +98,14 @@ async function insertVenue(tx: DrizzleClient, f: Fixture) {
             description: 'description of the fixture',
             locationKey: f.key === undefined ? KEY : f.key,
             deletedAt: f.deletedAt ?? null,
-            locationExceptionAt: f.exception ? new Date() : null
+            locationExceptionAt: f.exception ? new Date() : null,
+            locationExceptionKey: f.exception
+                ? f.exceptionKey === undefined
+                    ? f.key === undefined
+                        ? KEY
+                        : f.key
+                    : f.exceptionKey
+                : null
         })
         .returning();
     if (!row) throw new Error('venue');
@@ -193,7 +209,7 @@ describe('listingLocationModel (HOS-1810)', () => {
                 reason: 'Food court',
                 at: new Date()
             });
-            expect(ok).toBe(true);
+            expect(ok).toBe('granted');
             expect((await listingLocationModel.getState(args))?.hasException).toBe(true);
             expect(await listingLocationModel.hasOwnDuplicate(args)).toBe(false);
 
@@ -207,7 +223,7 @@ describe('listingLocationModel (HOS-1810)', () => {
                     reason: 'x',
                     at: new Date()
                 })
-            ).toBe(false);
+            ).toBe('not_found');
         });
     });
 
@@ -332,6 +348,120 @@ describe('one-address unique index (HOS-1810)', () => {
                 tx
             });
             expect(await move(draft.id)).toBe(true);
+        });
+    });
+
+    it('binds the exception to the key it was granted for', async () => {
+        await withTestTransaction(async (tx) => {
+            const owner = await seedOwner(tx);
+            const dest = await seedDestination(tx, owner.id);
+            const keyless = await insertVenue(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                key: null,
+                status: PublicationStatusEnum.DRAFT
+            });
+            const keyed = await insertVenue(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                status: PublicationStatusEnum.DRAFT
+            });
+            const grant = (id: string) =>
+                listingLocationModel.setException({
+                    vertical: VerticalEnum.VENUE,
+                    id,
+                    adminId: owner.id,
+                    reason: 'Food court',
+                    at: new Date(),
+                    tx
+                });
+            // A listing with no comparable address has nothing to be exempt for.
+            expect(await grant(keyless.id)).toBe('no_key');
+            expect(await grant(keyed.id)).toBe('granted');
+            const state = await listingLocationModel.getState({
+                vertical: VerticalEnum.VENUE,
+                id: keyed.id,
+                tx
+            });
+            expect(state?.hasException).toBe(true);
+
+            // Moving the listing elsewhere ends the exemption (the stored key no longer matches).
+            await tx.execute(
+                sql`UPDATE venues SET location_key = 'moved|1|d' WHERE id = ${keyed.id}`
+            );
+            const moved = await listingLocationModel.getState({
+                vertical: VerticalEnum.VENUE,
+                id: keyed.id,
+                tx
+            });
+            expect(moved?.hasException).toBe(false);
+            // ...and moving back makes it exempt again.
+            await tx.execute(sql`UPDATE venues SET location_key = ${KEY} WHERE id = ${keyed.id}`);
+            expect(
+                (
+                    await listingLocationModel.getState({
+                        vertical: VerticalEnum.VENUE,
+                        id: keyed.id,
+                        tx
+                    })
+                )?.hasException
+            ).toBe(true);
+
+            // Revoking clears the key too.
+            expect(
+                await listingLocationModel.clearException({
+                    vertical: VerticalEnum.VENUE,
+                    id: keyed.id,
+                    tx
+                })
+            ).toBe(true);
+            const rows = await tx.execute(
+                sql`SELECT location_exception_key FROM venues WHERE id = ${keyed.id}`
+            );
+            expect(
+                (rows.rows[0] as { location_exception_key: string | null }).location_exception_key
+            ).toBeNull();
+        });
+    });
+
+    it('a stale exception (granted for another key) neither exempts the row nor hides it as an occupant', async () => {
+        await withTestTransaction(async (tx) => {
+            const owner = await seedOwner(tx);
+            const dest = await seedDestination(tx, owner.id);
+            // Published on KEY with an exception that was granted for a DIFFERENT key.
+            const stale = await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                exception: true,
+                exceptionKey: 'granted-for-another-address'
+            });
+            const other = await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                status: PublicationStatusEnum.DRAFT
+            });
+            // The stale row still occupies the place.
+            expect(await find(tx, VerticalEnum.ACCOMMODATION, owner.id, other.id)).toBe(stale.id);
+            // The unique index refuses a second non-exempt published listing on KEY.
+            await expect(
+                tx.transaction((inner) =>
+                    insertAccommodation(inner, { ownerId: owner.id, destinationId: dest.id })
+                )
+            ).rejects.toThrow();
+            // A properly excepted one (granted for this key) is allowed next to it.
+            await insertAccommodation(tx, {
+                ownerId: owner.id,
+                destinationId: dest.id,
+                exception: true
+            });
+            // And the report lists the stale row's group.
+            const { items } = await listingLocationModel.listDuplicateGroups({
+                vertical: VerticalEnum.ACCOMMODATION,
+                page: 1,
+                pageSize: 100,
+                tx
+            });
+            expect(items.some((g) => g.locationKey === KEY)).toBe(false);
         });
     });
 

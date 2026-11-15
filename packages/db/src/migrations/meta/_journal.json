@@ -1443,6 +1443,13 @@
       "when": 1794702909714,
       "tag": "0205_hos_1810_one_address_rule",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1794703856041,
+      "tag": "0206_hos_1810_exception_bound_to_key",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,7 @@ export interface ListingLocationState {
     readonly ownerId: string;
     readonly locationKey: string | null;
     readonly publicationStatus: string;
-    /** `true` when an admin exception is in force. */
+    /** `true` when an admin exception is in force: granted for the key the row holds now. */
     readonly hasException: boolean;
 }
 
@@ -48,7 +48,10 @@ async function getState(args: {
     readonly tx?: DrizzleClient;
 }): Promise<ListingLocationState | null> {
     const result = await (args.tx ?? getDb()).execute(
-        sql`SELECT id, owner_id, location_key, publication_status, location_exception_at
+        sql`SELECT id, owner_id, location_key, publication_status,
+                   (location_exception_at IS NOT NULL
+                    AND location_key IS NOT NULL
+                    AND location_exception_key = location_key) AS has_exception
             FROM ${sql.identifier(TABLES[args.vertical])}
             WHERE id = ${args.id} AND deleted_at IS NULL LIMIT 1`
     );
@@ -57,7 +60,7 @@ async function getState(args: {
         owner_id: string;
         location_key: string | null;
         publication_status: string;
-        location_exception_at: Date | string | null;
+        has_exception: boolean;
     }>(result)[0];
     if (!row) return null;
     return {
@@ -65,7 +68,7 @@ async function getState(args: {
         ownerId: row.owner_id,
         locationKey: row.location_key,
         publicationStatus: row.publication_status,
-        hasException: row.location_exception_at !== null
+        hasException: row.has_exception === true
     };
 }
 
@@ -101,7 +104,8 @@ export const listingLocationModel = {
                   AND id <> ${args.excludeId}
                   AND publication_status = ${PublicationStatusEnum.PUBLISHED}
                   AND deleted_at IS NULL
-                  AND location_exception_at IS NULL
+                  AND (location_exception_at IS NULL
+                       OR location_exception_key IS DISTINCT FROM location_key)
                 ORDER BY created_at ASC LIMIT 1`
         );
         return rowsOf<{ id: string }>(result)[0]?.id ?? null;
@@ -130,7 +134,12 @@ export const listingLocationModel = {
     },
 
     /**
-     * Grants an exception. Returns `false` when the listing does not exist.
+     * Grants an exception, bound to the key the listing holds right now: it is in
+     * force only while `location_key` still equals the stored `location_exception_key`,
+     * so moving the listing to another address ends it.
+     *
+     * @returns `granted`; `not_found` when the listing does not exist; `no_key` when
+     *   it has no comparable address (there is nothing to be exempt for).
      */
     async setException(args: {
         readonly vertical: LocationKeyVertical;
@@ -139,15 +148,18 @@ export const listingLocationModel = {
         readonly reason: string;
         readonly at: Date;
         readonly tx?: DrizzleClient;
-    }): Promise<boolean> {
+    }): Promise<'granted' | 'not_found' | 'no_key'> {
         const result = await (args.tx ?? getDb()).execute(
             sql`UPDATE ${sql.identifier(TABLES[args.vertical])}
                 SET location_exception_by = ${args.adminId},
                     location_exception_reason = ${args.reason},
-                    location_exception_at = ${args.at}
-                WHERE id = ${args.id} AND deleted_at IS NULL RETURNING id`
+                    location_exception_at = ${args.at},
+                    location_exception_key = location_key
+                WHERE id = ${args.id} AND deleted_at IS NULL AND location_key IS NOT NULL
+                RETURNING id`
         );
-        return rowsOf(result).length > 0;
+        if (rowsOf(result).length > 0) return 'granted';
+        return (await getState(args)) ? 'no_key' : 'not_found';
     },
 
     /** Removes the exception. Returns `false` when the listing does not exist. */
@@ -160,7 +172,8 @@ export const listingLocationModel = {
             sql`UPDATE ${sql.identifier(TABLES[args.vertical])}
                 SET location_exception_by = NULL,
                     location_exception_reason = NULL,
-                    location_exception_at = NULL
+                    location_exception_at = NULL,
+                    location_exception_key = NULL
                 WHERE id = ${args.id} AND deleted_at IS NULL RETURNING id`
         );
         return rowsOf(result).length > 0;
@@ -187,7 +200,8 @@ export const listingLocationModel = {
                 FROM ${table}
                 WHERE location_key IS NOT NULL AND deleted_at IS NULL
                   AND publication_status = ${PublicationStatusEnum.PUBLISHED}
-                  AND location_exception_at IS NULL
+                  AND (location_exception_at IS NULL
+                       OR location_exception_key IS DISTINCT FROM location_key)
                 GROUP BY location_key
                 HAVING count(*) > 1
                 ORDER BY location_key

@@ -87,6 +87,10 @@ export const accommodations = pgTable(
         }),
         locationExceptionReason: text('location_exception_reason'),
         locationExceptionAt: timestamp('location_exception_at', { withTimezone: true }),
+        // The `location_key` the exception was granted for. The exception is in force only
+        // while `location_key` still equals it, so moving the listing to another address
+        // ends the exemption on any write path (HOS-1810).
+        locationExceptionKey: text('location_exception_key'),
         /**
          * Embedded videos for the accommodation (HOS-372).
          *
@@ -224,7 +228,7 @@ export const accommodations = pgTable(
         )
             .on(table.ownerId, table.locationKey)
             .where(
-                sql`${table.publicationStatus} = 'PUBLISHED' AND ${table.deletedAt} IS NULL AND ${table.locationExceptionAt} IS NULL AND ${table.locationKey} IS NOT NULL`
+                sql`${table.publicationStatus} = 'PUBLISHED' AND ${table.deletedAt} IS NULL AND ${table.locationKey} IS NOT NULL AND (${table.locationExceptionAt} IS NULL OR ${table.locationExceptionKey} IS DISTINCT FROM ${table.locationKey})`
             )
     })
 );

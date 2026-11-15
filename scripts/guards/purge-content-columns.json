@@ -1,8 +1,8 @@
 {
     "systemColumns": {
         "counts": {
-            "accommodations": 33,
-            "venues": 26,
+            "accommodations": 34,
+            "venues": 27,
             "experiences": 22
         },
         "rows": [
@@ -329,6 +329,14 @@
             {
                 "key": "venues.location_exception_at",
                 "reason": "When the one-address exception was granted (HOS-1810); audit, not owner content."
+            },
+            {
+                "key": "accommodations.location_exception_key",
+                "reason": "The location_key an exception was granted for (HOS-1810); audit/derived, not owner content."
+            },
+            {
+                "key": "venues.location_exception_key",
+                "reason": "The location_key an exception was granted for (HOS-1810); audit/derived, not owner content."
             }
         ]
     },

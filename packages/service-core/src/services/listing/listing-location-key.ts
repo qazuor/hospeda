@@ -115,6 +115,8 @@ export interface LocationRuleCurrent extends LocationKeySource {
     readonly publicationStatus?: string | null;
     readonly locationKey?: string | null;
     readonly locationExceptionAt?: Date | string | null;
+    /** The `location_key` the exception was granted for. */
+    readonly locationExceptionKey?: string | null;
 }
 
 /**
@@ -146,7 +148,9 @@ export async function applyLocationRuleOnUpdate(args: {
         current?.id &&
         current.ownerId &&
         current.publicationStatus === PublicationStatusEnum.PUBLISHED &&
-        !current.locationExceptionAt &&
+        // An exception exempts only the address it was granted for: moving to another
+        // one is checked like any other listing.
+        !(current.locationExceptionAt && current.locationExceptionKey === patch.locationKey) &&
         patch.locationKey !== current.locationKey
     ) {
         await assertNoOwnLocationConflict({

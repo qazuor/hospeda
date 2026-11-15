@@ -149,14 +149,34 @@ describe('applyLocationRuleOnUpdate', () => {
         expect(findOwnOccupant).not.toHaveBeenCalled();
     });
 
-    it('does not block a listing with an exception', async () => {
+    it('does not block moving to the address the exception was granted for', async () => {
         findOwnOccupant.mockResolvedValue('other');
         const patch = await applyLocationRuleOnUpdate({
             vertical: VerticalEnum.VENUE,
             payload,
-            current: { ...published, locationExceptionAt: new Date() }
+            current: {
+                ...published,
+                locationExceptionAt: new Date(),
+                locationExceptionKey: 'mitre|2|dest-1'
+            }
         });
         expect(patch.locationKey).toBe('mitre|2|dest-1');
+        expect(findOwnOccupant).not.toHaveBeenCalled();
+    });
+
+    it('blocks moving an excepted listing to ANOTHER address its owner already publishes', async () => {
+        findOwnOccupant.mockResolvedValue('other');
+        await expect(
+            applyLocationRuleOnUpdate({
+                vertical: VerticalEnum.VENUE,
+                payload,
+                current: {
+                    ...published,
+                    locationExceptionAt: new Date(),
+                    locationExceptionKey: 'mitre|1|dest-1'
+                }
+            })
+        ).rejects.toMatchObject({ reason: 'DUPLICATE_LOCATION' });
     });
 
     it('does not check when the key is unchanged or the body has no address', async () => {

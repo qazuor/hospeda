@@ -36,6 +36,9 @@ import { createAdminRoute } from '../../utils/route-factory';
  * @param args.tag - OpenAPI tag.
  * @returns The three routes, ready to mount.
  */
+/** Reason of the 409 answered when an exception is requested for a listing with no comparable address. */
+const LOCATION_EXCEPTION_NEEDS_KEY_REASON = 'LOCATION_EXCEPTION_NEEDS_KEY';
+
 export function createAdminLocationRoutes(args: {
     readonly vertical: LocationKeyVertical;
     readonly permission: PermissionEnum;
@@ -51,7 +54,7 @@ export function createAdminLocationRoutes(args: {
         path: '/{id}/location-exception',
         summary: 'Grant a location exception',
         description:
-            'Lets a listing share an address with another published listing of its owner (a cabin complex, a food court, a hotel restaurant). The reason is mandatory and recorded with the admin and the date.',
+            'Lets a listing share an address with another published listing of its owner (a cabin complex, a food court, a hotel restaurant). The reason is mandatory and recorded with the admin and the date. The exception is bound to the address the listing has when it is granted: moving the listing to another address ends it. A listing with no comparable address answers 409 (LOCATION_EXCEPTION_NEEDS_KEY).',
         tags: [tag],
         requiredPermissions: [permission],
         requestParams: idParam,
@@ -68,7 +71,17 @@ export function createAdminLocationRoutes(args: {
                 reason,
                 at: new Date()
             });
-            if (!done) throw notFound();
+            if (done === 'not_found') throw notFound();
+            // The exception is bound to the address key it is granted for; a listing
+            // with no comparable address (no number, `s/n`) has none, so there is
+            // nothing to exempt. A state conflict (409), not an input error.
+            if (done === 'no_key')
+                throw new ServiceError(
+                    ServiceErrorCode.ALREADY_EXISTS,
+                    'The listing has no comparable address to grant an exception for',
+                    undefined,
+                    LOCATION_EXCEPTION_NEEDS_KEY_REASON
+                );
             apiLogger.info(
                 { vertical, listingId: id, adminId: actor.id },
                 'location exception granted'

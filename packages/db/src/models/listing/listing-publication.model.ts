@@ -283,8 +283,10 @@ export const listingPublicationModel = {
                       AND other.id <> ${t}.id
                       AND other.publication_status = 'PUBLISHED'
                       AND other.deleted_at IS NULL
-                      AND other.location_exception_at IS NULL
-                      AND ${t}.location_exception_at IS NULL
+                      AND (other.location_exception_at IS NULL
+                           OR other.location_exception_key IS DISTINCT FROM other.location_key)
+                      AND (${t}.location_exception_at IS NULL
+                           OR ${t}.location_exception_key IS DISTINCT FROM ${t}.location_key)
                   )`
                 : sql``;
         const result = await args.tx.execute(sql<{ id: string }>`
