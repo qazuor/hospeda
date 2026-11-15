@@ -166,9 +166,11 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
 /**
  * Spanish issue texts ("Valor inválido: …") for tool input. Passed per parse,
  * never through `z.config`, so the rest of the API process keeps Zod's
- * defaults. A message a schema sets itself still wins over this map.
+ * defaults. A message a schema sets itself still wins over this map. Exported
+ * for schemas that validate a nested value themselves (a per-vertical
+ * refinement), so those issues read in Spanish too.
  */
-const SPANISH_PARSE_PARAMS = { error: z.locales.es().localeError } as const;
+export const SPANISH_PARSE_PARAMS = { error: z.locales.es().localeError } as const;
 
 /** Arguments for {@link parseToolInput}. RO-RO. */
 export interface ParseToolInputArgs<TSchema extends z.ZodObject> {

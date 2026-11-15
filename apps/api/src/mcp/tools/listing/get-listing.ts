@@ -265,6 +265,27 @@ async function getScheduledListing(input: {
 }
 
 /**
+ * Reads one of the actor's listings as `get_listing` returns it: the editable
+ * set plus name, publication status and public URL. A missing, foreign or
+ * refused row is the uniform not-found error. `update_listing_basic` answers
+ * with it too, so the model sees the same shape before and after an edit.
+ *
+ * @param args - Actor, vertical and listing id
+ * @returns The listing detail, or the error to answer with
+ */
+export async function readOwnListingDetail(args: {
+    readonly actor: Actor;
+    readonly vertical: ListingToolVertical;
+    readonly id: string;
+}): Promise<ToolHandlerResult<ListingDetail>> {
+    const { actor, vertical, id } = args;
+    if (vertical === VerticalEnum.ACCOMMODATION) {
+        return getAccommodation({ actor, id });
+    }
+    return getScheduledListing({ actor, id, vertical });
+}
+
+/**
  * `get_listing`: read-only, available to an unverified email exactly as the
  * HTTP get-own routes are (`READ_OWN`).
  */
@@ -276,10 +297,6 @@ export const getListingTool = defineTool({
     inputSchema: GetListingInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> => {
-        if (input.vertical === VerticalEnum.ACCOMMODATION) {
-            return getAccommodation({ actor, id: input.id });
-        }
-        return getScheduledListing({ actor, id: input.id, vertical: input.vertical });
-    }
+    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> =>
+        readOwnListingDetail({ actor, vertical: input.vertical, id: input.id })
 });

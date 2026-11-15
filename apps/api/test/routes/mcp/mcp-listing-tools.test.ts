@@ -1,31 +1,51 @@
 /**
- * HOS-2184 T-013/T-014 — the listing tools served end to end through the REAL
+ * HOS-2184 T-013/T-014/T-016 — the listing tools served end to end through the REAL
  * `/mcp` route with the REAL registry (`initApp`, real `mcpAuthMiddleware`,
  * real SDK handler, real `registerMcpToolHandlers`). Outer-boundary mocks are
  * the ones `mcp-tools.test.ts` uses; the listing services are spied on their
- * prototypes.
+ * prototypes; the listing-access ports `update_listing_basic` decides
+ * through are mocked like `test/middlewares/listing-access.test.ts` does.
  */
 
 import { getDb } from '@repo/db';
-import { PublicationStatusEnum } from '@repo/schemas';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import {
     AccommodationService,
     type Actor,
     ExperienceService,
     VenueService
 } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock } = vi.hoisted(() => {
+const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, loadFacts } = vi.hoisted(() => {
     const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
     return {
         USER_ID: userId,
         CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
         VALID_TOKEN: 'valid-access-token-0123456789',
         ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
-        findOneMock: vi.fn()
+        findOneMock: vi.fn(),
+        loadFacts: vi.fn()
     };
 });
+
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts,
+        billing: { coverage: async () => ({ covered: true, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { readonly userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.VENUE,
+                hasLiveNonTrialTitle: true,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
+            }),
+        preTrialDraftLimits: async () => new Map()
+    })
+}));
 
 vi.mock('../../../src/lib/mcp/record-tool-call', () => ({ recordMcpToolCall: vi.fn() }));
 
@@ -303,5 +323,89 @@ describe('/mcp listing tools (end to end)', () => {
             isError: true,
             content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
         });
+    });
+    it('lists update_listing_basic as a non-destructive idempotent write', async () => {
+        // Act
+        const message = await rpc('tools/list', {});
+
+        // Assert
+        const entry = message.result?.tools?.find((t) => t.name === 'update_listing_basic');
+        expect(entry).toMatchObject({
+            annotations: {
+                readOnlyHint: false,
+                destructiveHint: false,
+                idempotentHint: true
+            },
+            inputSchema: { type: 'object', required: ['vertical', 'id'] }
+        });
+    });
+
+    it('update_listing_basic changes an own venue and answers the stored listing', async () => {
+        // Arrange
+        loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: USER_ID,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                businessLines: ['food']
+            },
+            ownerId: USER_ID
+        });
+        const updateOwn = vi
+            .spyOn(VenueService.prototype, 'updateOwn')
+            .mockResolvedValue({ data: { id: VENUE_ID } } as unknown as Awaited<
+                ReturnType<VenueService['updateOwn']>
+            >);
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: VENUE_ID,
+                ownerId: USER_ID,
+                name: 'La Parrilla',
+                slug: 'la-parrilla',
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                description: 'Parrilla de barrio con patio y mesas afuera.',
+                openingHours: null,
+                contactInfo: null
+            }
+        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
+
+        // Act
+        const message = await callTool('update_listing_basic', {
+            vertical: 'venue',
+            id: VENUE_ID,
+            description: 'Parrilla de barrio con patio y mesas afuera.'
+        });
+
+        // Assert
+        expect(message.result?.isError).toBeUndefined();
+        expect(updateOwn).toHaveBeenCalledWith(
+            VENUE_ID,
+            { description: 'Parrilla de barrio con patio y mesas afuera.' },
+            expect.objectContaining({ id: USER_ID })
+        );
+        expect(JSON.parse(message.result?.content?.[0]?.text ?? 'null')).toMatchObject({
+            id: VENUE_ID,
+            vertical: 'venue',
+            description: 'Parrilla de barrio con patio y mesas afuera.'
+        });
+    });
+
+    it('update_listing_basic rejects a field outside the allowlist in Spanish', async () => {
+        // Arrange
+        const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
+
+        // Act
+        const message = await callTool('update_listing_basic', {
+            vertical: 'venue',
+            id: VENUE_ID,
+            description: 'Parrilla de barrio con patio y mesas afuera.',
+            name: 'Otro nombre'
+        });
+
+        // Assert
+        expect(message.result?.isError).toBe(true);
+        expect(message.result?.content?.[0]?.text).toMatch(
+            /^Los datos enviados no son válidos: .*name/
+        );
+        expect(updateOwn).not.toHaveBeenCalled();
     });
 });
