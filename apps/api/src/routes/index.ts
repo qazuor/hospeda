@@ -212,6 +212,7 @@ import { adminVerticalDeadlineRoutes } from './vertical-deadlines/admin/index.js
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
 import { brevoWebhookRoutes, mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
+import { wellKnownRoutes } from './well-known';
 import { protectedWhatsNewRoutes } from './whats-new';
 
 const rootRoute = createSimpleRoute({
@@ -239,6 +240,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
     // robots.txt — Disallow-all for the API domain (HOS-109 T-011).
     app.route('/', robotsRoute);
+
+    // OAuth discovery for the MCP server (HOS-2184 T-006). Root-level; 404 unless
+    // HOSPEDA_MCP_ENABLED is true.
+    app.route('/', wellKnownRoutes);
 
     // ─── System routes ────────────────────────────────────────────────────────
     app.route('/health', healthRoutes);

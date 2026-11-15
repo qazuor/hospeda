@@ -46,7 +46,16 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             // accidentally skip validation on the real getBySlug handler.
             // `routeOptions.skipValidation` is set inside the route handler, which
             // runs after this global middleware, so it cannot help here.
-            const exactPublicPaths = ['/robots.txt', '/api/v1/public/posts/slug/rss.xml'];
+            const exactPublicPaths = [
+                '/robots.txt',
+                '/api/v1/public/posts/slug/rss.xml',
+                // OAuth discovery documents (HOS-2184 T-006): fetched by third-party
+                // clients that send arbitrary Accept headers.
+                '/.well-known/oauth-protected-resource',
+                '/.well-known/oauth-protected-resource/mcp',
+                '/.well-known/oauth-authorization-server',
+                '/.well-known/openid-configuration'
+            ];
             const isPublicPath =
                 publicPaths.some((publicPath) => path.startsWith(publicPath)) ||
                 exactPublicPaths.includes(path);
