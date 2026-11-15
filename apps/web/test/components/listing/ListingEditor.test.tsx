@@ -339,7 +339,7 @@ describe('ListingEditor', () => {
         // HOS-371: the phone is a country-code combobox + local number pair now,
         // so the editable control is the "Número" input; the dial code comes
         // from the combobox and is recomposed into the stored string.
-        fireEvent.change(screen.getByLabelText('Número'), {
+        fireEvent.change(screen.getAllByLabelText('Número')[0], {
             target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
@@ -410,7 +410,7 @@ describe('ListingEditor', () => {
         // (defaulting to Argentina) into the single `mobilePhone` string the
         // backend stores — the same `<dialCode> <number>` shape the
         // accommodation editor writes and `InternationalPhoneRegex` validates.
-        fireEvent.change(screen.getByLabelText('Número'), {
+        fireEvent.change(screen.getAllByLabelText('Número')[0], {
             target: { value: '9 11 1234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
@@ -437,10 +437,12 @@ describe('ListingEditor', () => {
         renderEditor('venue', 'contact');
 
         // The combobox trigger leads with the field name, then the selection.
-        fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
+        fireEvent.click(
+            screen.getAllByRole('button', { name: /País: Argentina/ })[0] as HTMLElement
+        );
         fireEvent.mouseDown(screen.getByRole('option', { name: /Brasil|Brazil/ }));
 
-        fireEvent.change(screen.getByLabelText('Número'), {
+        fireEvent.change(screen.getAllByLabelText('Número')[0], {
             target: { value: '11 91234 5678' }
         });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));

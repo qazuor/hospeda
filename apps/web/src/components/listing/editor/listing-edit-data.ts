@@ -23,7 +23,7 @@ import type { ListingI18nValues } from '../ListingTranslationPanel.client';
  * the editor claims to render (HOS-385): the schema's `contactInfo` block is a
  * whole object, and only these members have a control to focus.
  */
-export const CONTACT_KEYS = ['mobilePhone', 'workEmail'] as const;
+export const CONTACT_KEYS = ['mobilePhone', 'workPhone', 'workEmail'] as const;
 
 /** Subset of the contact JSONB block the owner edits in this surface. */
 export type ContactValues = Record<(typeof CONTACT_KEYS)[number], string>;

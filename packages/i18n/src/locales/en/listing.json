@@ -162,6 +162,8 @@
             },
             "contactField": {
                 "mobilePhone": "Phone",
+                "landlinePhone": "Landline",
+                "publicHint": "These contact details are shown publicly on your listing.",
                 "workEmail": "Email"
             },
             "validation": {

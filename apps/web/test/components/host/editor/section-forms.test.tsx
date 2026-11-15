@@ -67,6 +67,7 @@ const INITIAL = {
     featureIds: [],
     phone: '+54 9 343 1234567',
     whatsapp: '',
+    landlinePhone: '',
     email: 'contacto@hotel.com',
     website: 'https://hotel.com',
     facebookUrl: '',

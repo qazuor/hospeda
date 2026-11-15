@@ -162,6 +162,8 @@
             },
             "contactField": {
                 "mobilePhone": "Telefone",
+                "landlinePhone": "Telefone fixo",
+                "publicHint": "Estes dados de contato são exibidos publicamente na sua ficha.",
                 "workEmail": "E-mail"
             },
             "validation": {

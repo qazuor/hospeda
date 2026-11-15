@@ -73,14 +73,15 @@ const AccommodationContactInfoReadSchema = z.object({
 });
 
 /**
- * PUBLIC contactInfo shape (H-118) — only `mobilePhone`/`personalEmail`/
- * `website`, the three fields the host contact form actually collects
+ * PUBLIC contactInfo shape (H-118) — only `mobilePhone`/`workPhone`/
+ * `personalEmail`/`website` (`workPhone` is the optional landline, HOS-2042),
+ * the fields the host contact form actually collects
  * (`ContactForm.client.tsx`'s `OWN_FIELDS`: phone/whatsapp/email/website +
  * socials) and that the owner approved for public display alongside the
  * existing WhatsApp button and social links (owner decision, H-118).
  *
  * Deliberately EXCLUDES the rest of {@link AccommodationContactInfoReadSchema}:
- * - `workEmail`/`workPhone`/`homePhone`: not collected by the current contact
+ * - `workEmail`/`homePhone`: not collected by the current contact
  *   form, so a value here can only come from another write path (admin edit,
  *   an import) the host never reviewed for public exposure. Stays
  *   protected/admin-only.
@@ -96,6 +97,8 @@ const AccommodationContactInfoReadSchema = z.object({
  */
 const AccommodationPublicContactInfoSchema = AccommodationContactInfoReadSchema.pick({
     mobilePhone: true,
+    // HOS-2042: the owner-declared landline, published next to the mobile phone.
+    workPhone: true,
     personalEmail: true,
     website: true
 });

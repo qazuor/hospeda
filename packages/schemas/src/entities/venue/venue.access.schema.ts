@@ -28,12 +28,34 @@ import { VenueSchema } from './venue.schema.js';
 // ============================================================================
 
 /**
+ * PUBLIC contactInfo shape for a venue (HOS-2042).
+ *
+ * Mirrors `ExperiencePublicContactInfoSchema`: a deliberately NARROW
+ * allow-list of the business channels (`workEmail`, `workPhone` (the
+ * landline), `mobilePhone`, `website`). Zod object schemas strip unknown
+ * keys, so `homePhone`, `personalEmail`, `whatsapp` and the preference keys
+ * never leave the API, and the shape stays fail-closed if `contact_info`
+ * grows a key. `whatsapp` is excluded for the same viewer-gating reason as on
+ * the other verticals (HOS-19).
+ *
+ * Plain `.nullish()` strings with no format assertion: read is a superset of
+ * write (HOS-190), so a legacy phone must never 500 a public page.
+ */
+export const VenuePublicContactInfoSchema = z.object({
+    workEmail: z.string().nullish(),
+    workPhone: z.string().nullish(),
+    mobilePhone: z.string().nullish(),
+    website: z.string().nullish()
+});
+
+/**
  * PUBLIC ACCESS SCHEMA
  *
  * Contains only the minimum data safe to expose to unauthenticated users.
  * Used for public listing and detail pages.
  *
- * - Omits: adminInfo, ownerId, contactInfo (direct), audit internals.
+ * - Omits: adminInfo, ownerId, audit internals. `contactInfo` is re-added
+ *   through `.extend()` as the narrowed {@link VenuePublicContactInfoSchema}.
  * - The `richDescription` field is re-added via `.extend()` because it follows
  *   the same entitlement-by-omission gate as in the accommodation schema:
  *   the service strips it server-side for non-entitled owners before
@@ -116,6 +138,12 @@ export const VenuePublicSchema = VenueSchema.pick({
     // `amenities` catalog section, so the public projector never removes it.
     policies: true
 }).extend({
+    /**
+     * Narrowed business contact channels (HOS-2042). Nullish: a venue that
+     * never filled the contact block, or a payload cached before this field
+     * existed, simply has none.
+     */
+    contactInfo: VenuePublicContactInfoSchema.nullish(),
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
      * admin-curated `is_featured` it is derived in the public routes from
@@ -266,6 +294,20 @@ export const VenuePublicSchema = VenueSchema.pick({
      */
     venueEvents: z.array(VenueEventPublicSchema).optional()
 });
+
+/**
+ * PUBLIC LIST-ITEM schema for a venue (HOS-2042).
+ *
+ * The detail projection ({@link VenuePublicSchema}) publishes the narrowed
+ * business `contactInfo`; list responses (`GET /public/venues` and
+ * `GET /public/venues/destination/:id`) must NOT, per owner decision: contact
+ * channels are a detail-page concern and a list would bulk-expose them. Built
+ * by omission so every other public field stays identical between the two.
+ */
+export const VenuePublicListItemSchema = VenuePublicSchema.omit({ contactInfo: true });
+
+/** TypeScript type for {@link VenuePublicListItemSchema}. */
+export type VenuePublicListItem = z.infer<typeof VenuePublicListItemSchema>;
 
 /** TypeScript type for {@link VenuePublicSchema}. */
 export type VenuePublic = z.infer<typeof VenuePublicSchema>;

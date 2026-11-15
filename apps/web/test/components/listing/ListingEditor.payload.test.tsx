@@ -489,7 +489,8 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             // combobox contributes the dial code, and the stored string is
             // recomposed as `"<dialCode> <number>"`. The seeded
             // `+5491100000000` parses back to (+54, "91100000000").
-            fireEvent.change(screen.getByLabelText('Número'), {
+            // HOS-2042: the landline pair follows, so take the FIRST number input.
+            fireEvent.change(screen.getAllByLabelText('Número')[0] as HTMLElement, {
                 target: { value: '91199999999' }
             });
             fireEvent.click(saveButton());
@@ -503,6 +504,59 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
                 mobilePhone: '+54 91199999999',
                 workEmail: 'dueno@test.com'
             });
+        });
+
+        it('HOS-2042: saves the typed landline in contactInfo.workPhone and leaves the main phone untouched', async () => {
+            renderEditor(
+                'venue',
+                buildListing({
+                    contactInfo: { mobilePhone: '+5491100000000', workEmail: 'dueno@test.com' }
+                }),
+                'contact'
+            );
+
+            // Two phone pairs now: the main phone first, the landline second.
+            const [, landlineNumber] = screen.getAllByLabelText('Número');
+            fireEvent.change(landlineNumber as HTMLElement, { target: { value: '3442 45-2345' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body.contactInfo).toStrictEqual({
+                mobilePhone: '+5491100000000',
+                workPhone: '+54 3442 45-2345',
+                workEmail: 'dueno@test.com'
+            });
+        });
+
+        it('HOS-2042: does not write an explicit null landline when none was ever stored (AC-3)', async () => {
+            renderEditor(
+                'experience',
+                buildListing({ contactInfo: { mobilePhone: '+5491100000000' } }),
+                'contact'
+            );
+
+            fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.com' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body.contactInfo).not.toHaveProperty('workPhone');
+        });
+
+        it('HOS-2042: clears a stored landline with an explicit null', async () => {
+            renderEditor(
+                'experience',
+                buildListing({
+                    contactInfo: { mobilePhone: '+5491100000000', workPhone: '+543442452345' }
+                }),
+                'contact'
+            );
+
+            const [, landlineNumber] = screen.getAllByLabelText('Número');
+            fireEvent.change(landlineNumber as HTMLElement, { target: { value: '' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect((body.contactInfo as Record<string, unknown>).workPhone).toBeNull();
         });
 
         it('sends an emptied contact field as an explicit null, never by omitting the key', async () => {
