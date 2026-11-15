@@ -1576,6 +1576,13 @@
       "when": 1794704936041,
       "tag": "0224_hos2104_scheduled_change_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 225,
+      "version": "7",
+      "when": 1794728441218,
+      "tag": "0225_hos2222_partner_claim_email",
+      "breakpoints": true
     }
   ]
 }
