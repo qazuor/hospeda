@@ -8,7 +8,10 @@
  *    call never reaches the handler);
  * 2. takes the caller from the request with `getMcpCaller` (never from a
  *    cookie session);
- * 3. runs the tool with `executeTool` (person-state check, handler, Spanish
+ * 3. rate limits the call per client and user (`tool-rate-limit.ts`); a call
+ *    over the limit is answered with a `RATE_LIMIT_EXCEEDED` tool error, is
+ *    not run and is not audited (a flood must not flood the audit log);
+ *    then runs the tool with `executeTool` (person-state check, handler, Spanish
  *    error mapping);
  * 4. audits write tools with `recordMcpToolCall` (success, denied or error);
  * 5. renders the outcome as an MCP result: text content on success,
@@ -25,12 +28,17 @@ import type { CallToolResult, McpServer, ToolAnnotations } from '@modelcontextpr
 import type { z } from 'zod';
 import { executeTool, type ToolRunOutcome } from '../../mcp/tools/run-tool';
 import type { ToolDefinition, ToolTarget } from '../../mcp/tools/tool-definition';
-import { TOOL_UNEXPECTED_ERROR_MESSAGE } from '../../mcp/tools/tool-errors';
+import {
+    TOOL_UNEXPECTED_ERROR_MESSAGE,
+    type ToolFailure,
+    toToolFailure
+} from '../../mcp/tools/tool-errors';
 import { buildMcpWwwAuthenticate } from '../../middlewares/mcp-auth';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { getMcpCaller, type McpCallerSource } from './caller';
 import { recordMcpToolCall } from './record-tool-call';
+import { consumeMcpToolCall } from './tool-rate-limit';
 
 /** `_meta` key ChatGPT reads to start the OAuth linking UI. */
 export const MCP_WWW_AUTHENTICATE_META_KEY = 'mcp/www_authenticate';
@@ -85,6 +93,13 @@ export function buildToolAnnotations({
 function renderSuccess(data: unknown): CallToolResult {
     const text = typeof data === 'string' ? data : JSON.stringify(data ?? null);
     return { content: [{ type: 'text', text }] };
+}
+
+/** The failure of a call refused by the MCP rate limiter. */
+function buildRateLimitFailure(): ToolFailure {
+    return toToolFailure({
+        error: { code: 'RATE_LIMIT_EXCEEDED', message: 'MCP rate limit exceeded' }
+    });
 }
 
 /** Renders a run outcome as an MCP tool result. */
@@ -146,6 +161,15 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
 }: HandleMcpToolCallArgs<TSchema, TData>): Promise<CallToolResult> {
     try {
         const { actor, mcpAuth } = getMcpCaller({ ctx });
+
+        const admitted = await consumeMcpToolCall({
+            clientId: mcpAuth.clientId,
+            userId: actor.id
+        });
+        if (!admitted) {
+            return renderOutcome({ ok: false, failure: buildRateLimitFailure() });
+        }
+
         const outcome = await executeTool({
             definition,
             actor,
