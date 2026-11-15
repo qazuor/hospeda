@@ -522,12 +522,18 @@ describe('update_listing_basic (venue, experience)', () => {
             expect(Object.keys(schema.properties as object)).toEqual([
                 'vertical',
                 'id',
+                'summary',
                 'description',
                 'openingHours',
                 'contactInfo',
+                'phone',
+                'website',
                 'amenityIds',
                 'featureIds'
             ]);
+            expect((schema.properties as Record<string, unknown>).vertical).toMatchObject({
+                enum: ['accommodation', 'venue', 'experience']
+            });
         });
 
         it('is a non-destructive, idempotent write', () => {

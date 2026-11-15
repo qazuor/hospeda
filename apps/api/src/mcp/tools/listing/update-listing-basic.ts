@@ -1,21 +1,30 @@
 /**
  * @file update-listing-basic.ts
- * @description Tool `update_listing_basic` (HOS-2184 T-016, spec §6.5, AC-5,
+ * @description Tool `update_listing_basic` (HOS-2184 T-016/T-017, spec §6.5, AC-5,
  * AC-6, AC-12): the owner changes the basic data of one of their listings —
  * description, opening hours, contact data, amenities and features.
  *
  * It is a thin adapter over the owner PATCH route of each vertical
- * (`routes/{venue,experience}/protected/patch.ts`) and runs the same steps:
- * 1. **Allowlist.** Per vertical, a `.pick()` of the route's own body schema
- *    (`VenueOwnerUpdateInputSchema` / `ExperienceOwnerUpdateInputSchema`),
+ * (`routes/{accommodation,venue,experience}/protected/patch.ts`) and runs the
+ * same steps:
+ * 1. **Allowlist.** Per vertical, a `.pick()` of the route's own body schema,
  *    `.strict()`: any other field is a `VALIDATION_ERROR` (AC-5).
+ *    - accommodation: `AccommodationUpdateHttpSchema` → `summary`,
+ *      `description`, `phone`, `website`, `amenityIds`, `featureIds`.
+ *      Accommodations have no opening hours.
+ *    - venue / experience: `VenueOwnerUpdateInputSchema` /
+ *      `ExperienceOwnerUpdateInputSchema` → `description`, `openingHours`,
+ *      `contactInfo`, `amenityIds`, `featureIds`.
  * 2. **Listing access.** `decideListingAccess` with the route's declaration
- *    (operation `EDIT`, the sections the patch writes — shared through
- *    `utils/listing-access/owner-edit-listing-access.ts`), owner-only: a
- *    foreign or missing listing is not found (AC-6), never a staff edit.
- * 3. **The service call** the route makes: `updateOwn`. Cache revalidation,
- *    junction sync of amenities/features and auto-translation live in the
- *    service's update hooks, so they run exactly as for the route.
+ *    (operation `EDIT`; venue/experience also the sections the patch writes,
+ *    shared through `utils/listing-access/owner-edit-listing-access.ts`),
+ *    owner-only: a foreign or missing listing is not found (AC-6), never a
+ *    staff edit.
+ * 3. **The service call** the route makes. Accommodation:
+ *    `httpToDomainAccommodationUpdate` then `AccommodationService.update`;
+ *    venue/experience: `updateOwn`. Cache revalidation, junction sync of
+ *    amenities/features and auto-translation live in the services' update
+ *    hooks, so they run exactly as for the route.
  *
  * The answer is the listing as `get_listing` returns it, re-read after the
  * write, so the model can confirm what was stored.
@@ -28,8 +37,11 @@
  */
 
 import {
+    type AccommodationUpdateHttp,
+    AccommodationUpdateHttpSchema,
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
+    httpToDomainAccommodationUpdate,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     VerticalEnum
@@ -49,7 +61,13 @@ import {
 import { SPANISH_PARSE_PARAMS } from '../run-tool';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { type ListingDetail, readOwnListingDetail } from './get-listing';
-import { listingToolExperienceService, listingToolVenueService } from './listing-services';
+import {
+    LISTING_TOOL_VERTICALS,
+    type ListingToolVertical,
+    listingToolAccommodationService,
+    listingToolExperienceService,
+    listingToolVenueService
+} from './listing-services';
 
 /** The fields venues and experiences accept, in the order they are documented. */
 const SCHEDULED_BASIC_FIELDS = {
@@ -68,16 +86,34 @@ export const VenueBasicPatchSchema =
 export const ExperienceBasicPatchSchema =
     ExperienceOwnerUpdateInputSchema.pick(SCHEDULED_BASIC_FIELDS).strict();
 
-/** The verticals this tool edits. */
-const UPDATE_LISTING_BASIC_VERTICALS = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
+/**
+ * Accommodation allowlist: a `.pick()` of the accommodation owner PATCH body,
+ * strict. `phone` is `contactInfo.mobilePhone` and `website`
+ * `contactInfo.website` once converted; there are no opening hours.
+ */
+export const AccommodationBasicPatchSchema = AccommodationUpdateHttpSchema.pick({
+    summary: true,
+    description: true,
+    phone: true,
+    website: true,
+    amenityIds: true,
+    featureIds: true
+}).strict();
+
+/** The verticals this tool edits: every vertical with owner listings. */
+const UPDATE_LISTING_BASIC_VERTICALS = LISTING_TOOL_VERTICALS;
 
 /** One of {@link UPDATE_LISTING_BASIC_VERTICALS}. */
-type UpdateListingBasicVertical = (typeof UPDATE_LISTING_BASIC_VERTICALS)[number];
+type UpdateListingBasicVertical = ListingToolVertical;
+
+/** A vertical whose listings have opening hours (venue, experience). */
+type ScheduledVertical = Exclude<UpdateListingBasicVertical, VerticalEnum.ACCOMMODATION>;
 
 /** Per vertical: its allowlist schema and the Spanish name used in messages. */
 const VERTICAL_PATCH: Readonly<
     Record<UpdateListingBasicVertical, { readonly schema: z.ZodObject; readonly label: string }>
 > = {
+    [VerticalEnum.ACCOMMODATION]: { schema: AccommodationBasicPatchSchema, label: 'alojamientos' },
     [VerticalEnum.VENUE]: { schema: VenueBasicPatchSchema, label: 'locales' },
     [VerticalEnum.EXPERIENCE]: { schema: ExperienceBasicPatchSchema, label: 'experiencias' }
 };
@@ -88,17 +124,26 @@ const VERTICAL_PATCH: Readonly<
  * vertical — the refinement checks them with the vertical's own schema.
  */
 const EDITABLE_FIELDS_SHAPE = {
+    summary: AccommodationBasicPatchSchema.shape.summary.describe(
+        'Accommodations only. New short summary, written by the user (10 to 300 characters).'
+    ),
     description: z
         .string()
         .optional()
         .describe(
-            'New long description, written by the user. Venues and experiences: 20 to 2000 characters.'
+            'New long description, written by the user. Accommodations: 30 to 5000 characters; venues and experiences: 20 to 2000.'
         ),
     openingHours: VenueBasicPatchSchema.shape.openingHours.describe(
         'Venues and experiences only. Weekly schedule; replaces the stored one.'
     ),
     contactInfo: VenueBasicPatchSchema.shape.contactInfo.describe(
         'Venues and experiences only. Contact details (phones, email, website).'
+    ),
+    phone: AccommodationBasicPatchSchema.shape.phone.describe(
+        'Accommodations only. Mobile phone shown on the listing (Argentine number); "" clears it.'
+    ),
+    website: AccommodationBasicPatchSchema.shape.website.describe(
+        'Accommodations only. Website URL shown on the listing.'
     ),
     amenityIds: VenueBasicPatchSchema.shape.amenityIds.describe(
         'Amenity ids the listing must end up with: the full set, not a delta ([] clears all). Current ids come from get_listing.'
@@ -113,9 +158,12 @@ type EditableField = keyof typeof EDITABLE_FIELDS_SHAPE;
 
 /** Every editable field name. */
 const EDITABLE_FIELDS: readonly EditableField[] = [
+    'summary',
     'description',
     'openingHours',
     'contactInfo',
+    'phone',
+    'website',
     'amenityIds',
     'featureIds'
 ];
@@ -212,6 +260,9 @@ function notFound(): ToolHandlerResult<never> {
 
 /** The owner PATCH route's listing-access declaration for a vertical. */
 function ownerEditDeclaration(vertical: UpdateListingBasicVertical): ListingAccessWithSections {
+    if (vertical === VerticalEnum.ACCOMMODATION) {
+        return { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' };
+    }
     if (vertical === VerticalEnum.VENUE) {
         return {
             vertical: VerticalEnum.VENUE,
@@ -263,10 +314,30 @@ async function authorizeOwnerEdit(input: {
     return throwListingAccessRefusal({ config, result, subjectId, ports });
 }
 
+/**
+ * Converts the flat patch and calls `AccommodationService.update`, as the
+ * accommodation owner PATCH route does.
+ */
+async function updateAccommodation(input: {
+    readonly actor: Actor;
+    readonly id: string;
+    readonly patch: AccommodationUpdateHttp;
+}): Promise<ToolHandlerResult<never> | undefined> {
+    const result = await listingToolAccommodationService.update(
+        input.actor,
+        input.id,
+        httpToDomainAccommodationUpdate(input.patch)
+    );
+    if (result.error) {
+        return { error: result.error };
+    }
+    return undefined;
+}
+
 /** Calls the vertical's `updateOwn`, as the owner PATCH route does. */
 async function updateScheduled(input: {
     readonly actor: Actor;
-    readonly vertical: UpdateListingBasicVertical;
+    readonly vertical: ScheduledVertical;
     readonly id: string;
     readonly patch: VenueOwnerUpdateInput & ExperienceOwnerUpdateInput;
 }): Promise<ToolHandlerResult<never> | undefined> {
@@ -295,7 +366,7 @@ export const updateListingBasicTool = defineTool({
     name: 'update_listing_basic',
     title: 'Editar datos básicos de una publicación',
     description:
-        'Changes the basic data of one listing the connected Hospeda user owns. Venues and experiences accept description, openingHours, contactInfo, amenityIds and featureIds. Send only the fields to change, with at least one; any other field is rejected. amenityIds and featureIds replace the whole set. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings, and read the current values with get_listing first. Answers with the listing as stored after the change.',
+        'Changes the basic data of one listing the connected Hospeda user owns. Accommodations accept summary, description, phone, website, amenityIds and featureIds (they have no opening hours). Venues and experiences accept description, openingHours, contactInfo, amenityIds and featureIds. Send only the fields to change, with at least one; any other field is rejected. amenityIds and featureIds replace the whole set. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings, and read the current values with get_listing first. Answers with the listing as stored after the change.',
     inputSchema: UpdateListingBasicInputSchema,
     isWrite: true,
     hints: { destructiveHint: false, idempotentHint: true },
@@ -304,6 +375,30 @@ export const updateListingBasicTool = defineTool({
     auditContentLength: ({ input }) => input.description?.length,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> => {
         const { vertical, id } = input;
+        // The refinement already refused any field outside the vertical's
+        // allowlist, so each patch carries only what its route accepts.
+        if (vertical === VerticalEnum.ACCOMMODATION) {
+            const patch: AccommodationUpdateHttp = {
+                ...(input.summary === undefined ? {} : { summary: input.summary }),
+                ...(input.description === undefined ? {} : { description: input.description }),
+                ...(input.phone === undefined ? {} : { phone: input.phone }),
+                ...(input.website === undefined ? {} : { website: input.website }),
+                ...(input.amenityIds === undefined ? {} : { amenityIds: input.amenityIds }),
+                ...(input.featureIds === undefined ? {} : { featureIds: input.featureIds })
+            };
+            const refused = await authorizeOwnerEdit({ actor, vertical, id, patch });
+            if (refused) {
+                return refused;
+            }
+            const failed = await updateAccommodation({ actor, id, patch });
+            if (failed) {
+                return failed;
+            }
+            return readOwnListingDetail({ actor, vertical, id });
+        }
+
+        // Absent, never "present but undefined": the section detection of the
+        // listing-access step reads the keys.
         const patch: VenueOwnerUpdateInput & ExperienceOwnerUpdateInput = {
             ...(input.description === undefined ? {} : { description: input.description }),
             ...(input.openingHours === undefined ? {} : { openingHours: input.openingHours }),
@@ -311,7 +406,6 @@ export const updateListingBasicTool = defineTool({
             ...(input.amenityIds === undefined ? {} : { amenityIds: input.amenityIds }),
             ...(input.featureIds === undefined ? {} : { featureIds: input.featureIds })
         };
-
         const refused = await authorizeOwnerEdit({ actor, vertical, id, patch });
         if (refused) {
             return refused;
