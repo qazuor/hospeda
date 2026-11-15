@@ -89,7 +89,7 @@
         {
             "id": "T-003",
             "title": "T-0/T-1 Bring up the staging Umami instance and its own Postgres container in Coolify (owner action)",
-            "description": "OWNER ACTION: Coolify is operated by the human owner (https://coolify.hospeda.com.ar). Agents prepare the exact settings (image tag, env var names, volume, healthcheck) in the task notes, the owner applies them. A redeploy of any Hospeda app is NOT part of this task and always needs explicit owner approval. Output: staging Umami URL + admin credentials stored in the owner's secret store. Acceptance: Umami UI reachable, own Postgres container, volume persisted. Tests: manual health check.",
+            "description": "OWNER ACTION: Coolify is operated by the human owner (https://coolify.hospeda.com.ar). Agents prepare the exact settings (image tag, env var names, volume, healthcheck) in the task notes, the owner applies them. A redeploy of any Hospeda app is NOT part of this task and always needs explicit owner approval. Output: staging Umami URL + admin credentials stored in the owner's secret store. Acceptance: Umami UI reachable, own Postgres container, volume persisted. Tests: manual health check.\n\nSIZING NOTE 2026-11-15: an external report measured ~270 MB RAM for Umami and ~100 MB for its Postgres; start with 512 MB (Umami) and 256 MB (Postgres) limits on staging and adjust from Coolify metrics.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-001"],
@@ -1008,7 +1008,7 @@
         {
             "id": "T-028",
             "title": "T-3 Create UmamiScript.astro and swap it into BaseLayout and StandaloneLayout",
-            "description": "Files: apps/web/src/components/analytics/UmamiScript.astro, apps/web/src/layouts/BaseLayout.astro, apps/web/src/layouts/StandaloneLayout.astro, new apps/web/test/components/analytics/umami-script.test.ts. The page must remain session-blind (apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts): no per-user data in the script tag. Tests: tag present with data-website-id/auto-track/defer when configured, absent when not, no inline script body (so no CSP hash is needed), only BaseLayout/StandaloneLayout render it. Old PostHogScript files are deleted in T-057.",
+            "description": "Files: apps/web/src/components/analytics/UmamiScript.astro, apps/web/src/layouts/BaseLayout.astro, apps/web/src/layouts/StandaloneLayout.astro, new apps/web/test/components/analytics/umami-script.test.ts. The page must remain session-blind (apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts): no per-user data in the script tag. Tests: tag present with data-website-id/auto-track/defer when configured, absent when not, no inline script body (so no CSP hash is needed), only BaseLayout/StandaloneLayout render it. Old PostHogScript files are deleted in T-057.\n\nADDED 2026-11-15: measure the page-load impact of the Umami script with Lighthouse on a staging listing page before and after the swap (an external comparison reported ~500 ms; verify). Record LCP/TBT deltas on the Linear issue; a regression over 100 ms TBT or 200 ms LCP blocks the task.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-004", "T-012"],
@@ -1028,6 +1028,10 @@
                 },
                 {
                     "title": "Replace apps/web/test/components/analytics/posthog-script.test.ts and posthog-script-deferred-load.test.ts with umami-script tests",
+                    "completed": false
+                },
+                {
+                    "title": "Lighthouse before/after on a staging listing page; record LCP/TBT deltas",
                     "completed": false
                 }
             ],
