@@ -1,6 +1,6 @@
 {
   "id": "0d4559d8-b2c6-4c1b-b544-f3d8702d6f19",
-  "prevId": "622cad7d-80ef-4338-ab72-3ab91118c55d",
+  "prevId": "43955864-a642-44f1-9495-ad6433d8d1c3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33818,6 +33818,7 @@
         "billing.managePromoCodes",
         "user.update.self",
         "ai.settings.manage",
+        "aiConversation.viewAny",
         "platform.featureFlag.manage",
         "platform.qrCode.view",
         "platform.qrCode.create",

@@ -374,6 +374,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
         PermissionEnum.AI_SETTINGS_MANAGE,
+        // HOS-2075: read the listing AI chat conversations (anonymised, redacted) — SUPER_ADMIN-only.
+        PermissionEnum.AI_CONVERSATION_VIEW_ANY,
 
         // MODERATION: Content auto-moderation management (SPEC-195)
         PermissionEnum.MODERATION_TERM_VIEW,

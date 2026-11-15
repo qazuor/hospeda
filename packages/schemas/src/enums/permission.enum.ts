@@ -885,6 +885,7 @@ export enum PermissionEnum {
     BILLING_MANAGE_PROMO_CODES = 'billing.managePromoCodes', // Allows creating or closing a promotional code (administrative action 21, NUCLEO/08 §3). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
+    AI_CONVERSATION_VIEW_ANY = 'aiConversation.viewAny', // Allows reading the listing AI chat conversations of any listing, anonymised and with personal data redacted (HOS-2075). SUPER_ADMIN-only.
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
 
     // REDIRECTABLE QR CODES (HOS-981): the Plataforma → Códigos QR manager.

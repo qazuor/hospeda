@@ -9,7 +9,7 @@ export const ListingSectionStateSchema: z.ZodType<ListingSectionState> = z.enum(
     'available'
 ]);
 
-function createSectionStatesSchema(vertical: 'venue' | 'experience') {
+function createSectionStatesSchema(vertical: 'venue' | 'experience' | 'accommodation') {
     const definitions: readonly {
         readonly id: string;
         readonly traits?: readonly { readonly id: string }[];
@@ -39,6 +39,9 @@ function createSectionStatesSchema(vertical: 'venue' | 'experience') {
 export const VenueListingSectionStatesSchema = createSectionStatesSchema('venue');
 /** Response schema for experience listing section and trait availability. */
 export const ExperienceListingSectionStatesSchema = createSectionStatesSchema('experience');
+
+/** Response schema for accommodation listing section and trait availability. */
+export const AccommodationListingSectionStatesSchema = createSectionStatesSchema('accommodation');
 
 /**
  * Optional `businessLines` query parameter of the section-state read

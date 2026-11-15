@@ -84,7 +84,12 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     listingAccess: {
         vertical: VerticalEnum.ACCOMMODATION,
         operation: 'EDIT',
-        capabilities: ['can_sync_external_calendar'],
+        // `read` on purpose (HOS-1809): the route's contract is the `externalSync`
+        // trait key ALONE, exactly what the literal capability asked before. A
+        // `write` intent would also demand the section key and change the
+        // entitlement answered to an owner who lacks both.
+        listingSection: { id: 'calendar', intent: 'read' },
+        sectionTraits: ['externalSync'],
         idParam: 'id'
     },
     summary: 'Connect an Airbnb/Booking/generic iCal feed (owner)',

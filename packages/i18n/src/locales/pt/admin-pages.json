@@ -410,6 +410,49 @@
         }
     },
     "ai": {
+        "conversations": {
+            "title": "Conversas do chat IA",
+            "subtitle": "Leitura anônima das conversas do chat de cada anúncio. Os dados pessoais do texto já estão ocultos.",
+            "filter": {
+                "vertical": "Vertical",
+                "allVerticals": "Todas as verticais",
+                "listingId": "Anúncio (UUID)",
+                "listingIdPlaceholder": "UUID do anúncio",
+                "from": "De",
+                "to": "Até",
+                "reset": "Redefinir"
+            },
+            "verticals": {
+                "accommodation": "Hospedagem",
+                "venue": "Espaço",
+                "experience": "Experiência"
+            },
+            "table": {
+                "title": "Conversas",
+                "total": "{{total}} no total",
+                "colLastMessage": "Última mensagem",
+                "colVertical": "Vertical",
+                "colListing": "Anúncio",
+                "colMessages": "Mensagens",
+                "colFirstQuestion": "Primeira pergunta",
+                "pageOf": "Página {{page}} de {{totalPages}}",
+                "prev": "Anterior",
+                "next": "Próxima"
+            },
+            "loading": "Carregando conversas...",
+            "loadError": "Não foi possível carregar as conversas.",
+            "empty": "Nenhuma conversa para estes filtros.",
+            "detail": {
+                "title": "Conversa",
+                "back": "Voltar à lista",
+                "loadError": "Não foi possível carregar a conversa.",
+                "noTurns": "Esta conversa não tem mensagens.",
+                "role": {
+                    "user": "Usuário",
+                    "assistant": "Assistente"
+                }
+            }
+        },
         "settings": {
             "reasoningEffortLabel": "Esforço de raciocínio",
             "providerDefault": "Padrão do provedor"

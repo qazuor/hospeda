@@ -16,8 +16,13 @@ type ListingRecord = Record<string, unknown> & {
     readonly type?: string;
 };
 
-const VERTICALS = { venue: VerticalEnum.VENUE, experience: VerticalEnum.EXPERIENCE } as const;
-type PublicVertical = keyof typeof VERTICALS;
+const VERTICALS = {
+    venue: VerticalEnum.VENUE,
+    experience: VerticalEnum.EXPERIENCE,
+    accommodation: VerticalEnum.ACCOMMODATION
+} as const;
+/** Verticals whose public payload the catalog projects. */
+export type PublicVertical = keyof typeof VERTICALS;
 
 /**
  * Projects nested menu-section and item shapes using the menu traits. These
@@ -134,7 +139,8 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
     return projected as T;
 }
 
-function deniedSet(userId: string, vertical: PublicVertical): RehydratedEffectiveSet {
+/** The effective set of an owner that holds nothing: every section keyed by an entitlement is `locked`. */
+export function deniedSet(userId: string, vertical: PublicVertical): RehydratedEffectiveSet {
     return rehydrateEffectiveSet({
         version: 1,
         userId,
@@ -145,13 +151,17 @@ function deniedSet(userId: string, vertical: PublicVertical): RehydratedEffectiv
     });
 }
 
-/** Resolve and project one public page, reading one effective set per distinct owner. */
-export async function projectPublicListings<T extends ListingRecord>(args: {
+/**
+ * Reads one effective set per distinct owner (the N+1 guard of every public page).
+ * A lookup that fails is logged and answered with {@link deniedSet}, so a failure
+ * hides paid content instead of leaking it.
+ */
+export async function readOwnerEffectiveSets(args: {
     readonly vertical: PublicVertical;
-    readonly listings: readonly T[];
+    readonly ownerIds: readonly string[];
     readonly onEffectiveSetFailure?: () => void;
-}): Promise<T[]> {
-    const owners = [...new Set(args.listings.map((listing) => listing.ownerId))];
+}): Promise<Map<string, RehydratedEffectiveSet>> {
+    const owners = [...new Set(args.ownerIds)];
     const effectiveByOwner = new Map<string, RehydratedEffectiveSet>();
     await Promise.all(
         owners.map(async (userId) => {
@@ -173,6 +183,20 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
             }
         })
     );
+    return effectiveByOwner;
+}
+
+/** Resolve and project one public page, reading one effective set per distinct owner. */
+export async function projectPublicListings<T extends ListingRecord>(args: {
+    readonly vertical: Exclude<PublicVertical, 'accommodation'>;
+    readonly listings: readonly T[];
+    readonly onEffectiveSetFailure?: () => void;
+}): Promise<T[]> {
+    const effectiveByOwner = await readOwnerEffectiveSets({
+        vertical: args.vertical,
+        ownerIds: args.listings.map((listing) => listing.ownerId),
+        onEffectiveSetFailure: args.onEffectiveSetFailure
+    });
     return args.listings.map((listing) => {
         const businessLines = resolvePublicBusinessLines({
             vertical: args.vertical,

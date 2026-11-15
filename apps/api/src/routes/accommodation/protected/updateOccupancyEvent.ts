@@ -45,7 +45,7 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
     listingAccess: {
         vertical: VerticalEnum.ACCOMMODATION,
         operation: 'EDIT',
-        capabilities: ['can_use_calendar'],
+        listingSection: { id: 'calendar', intent: 'write' },
         idParam: 'id'
     },
     summary: 'Edit a manual occupancy event (owner)',
