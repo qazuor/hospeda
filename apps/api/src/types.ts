@@ -60,6 +60,22 @@ export interface AuthUser {
     mustChangePassword?: boolean | null;
 }
 
+/**
+ * OAuth grant behind an MCP request, set by `mcpAuthMiddleware`
+ * (`middlewares/mcp-auth.ts`, HOS-2184) after the bearer access token is
+ * verified. Only present on `/mcp` requests.
+ */
+export interface McpAuthContext {
+    /** Token subject: the Hospeda user the AI client acts for. */
+    readonly userId: string;
+    /** OAuth `client_id` of the AI client (a CIMD URL or a DCR id). */
+    readonly clientId: string;
+    /** Registered client name, when the client row carries one. */
+    readonly clientName: string | null;
+    /** Scopes granted to the access token (`scope` claim, split on spaces). */
+    readonly scopes: readonly string[];
+}
+
 export interface AppBindings {
     // Plan capabilities and limits are read from the effective set by utils/listing-access/user-gate.ts, not from context.
     Variables: {
@@ -96,6 +112,8 @@ export interface AppBindings {
          * `NODE_ENV=test` + `HOSPEDA_DISABLE_AUTH=true` + `CI!=='true'`.
          */
         mockUserRoles?: readonly RoleEnum[];
+        /** OAuth grant of an MCP request. Set only by `mcpAuthMiddleware`. */
+        mcpAuth?: McpAuthContext;
     };
 }
 
