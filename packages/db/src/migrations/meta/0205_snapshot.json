@@ -1,5 +1,5 @@
 {
-  "id": "a20ab942-2d4d-4ba6-8b22-0c9341670ec5",
+  "id": "55e71754-c1ae-49b4-af95-9dd3c60963df",
   "prevId": "0d4559d8-b2c6-4c1b-b544-f3d8702d6f19",
   "version": "7",
   "dialect": "postgresql",
@@ -490,6 +490,28 @@
           ],
           "isUnique": false,
           "where": "\"accommodations\".\"location_key\" IS NOT NULL AND \"accommodations\".\"deleted_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "accommodations_ownerId_locationKey_published_uniq": {
+          "name": "accommodations_ownerId_locationKey_published_uniq",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"accommodations\".\"publication_status\" = 'PUBLISHED' AND \"accommodations\".\"deleted_at\" IS NULL AND \"accommodations\".\"location_exception_at\" IS NULL AND \"accommodations\".\"location_key\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}
@@ -25574,6 +25596,28 @@
           "method": "btree",
           "with": {}
         },
+        "venues_ownerId_locationKey_published_uniq": {
+          "name": "venues_ownerId_locationKey_published_uniq",
+          "columns": [
+            {
+              "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "location_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"venues\".\"publication_status\" = 'PUBLISHED' AND \"venues\".\"deleted_at\" IS NULL AND \"venues\".\"location_exception_at\" IS NULL AND \"venues\".\"location_key\" IS NOT NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "venues_publicationStatus_idx": {
           "name": "venues_publicationStatus_idx",
           "columns": [
@@ -33911,6 +33955,7 @@
         "billing.settings.write",
         "listing.foreignContent.edit",
         "listing.moderate",
+        "listing.locationException.manage",
         "listing.purgeOnRequest",
         "user.closeOnRequest",
         "billing.subscription.inspect",
@@ -33924,6 +33969,7 @@
         "billing.managePromoCodes",
         "user.update.self",
         "ai.settings.manage",
+        "aiConversation.viewAny",
         "platform.featureFlag.manage",
         "platform.qrCode.view",
         "platform.qrCode.create",

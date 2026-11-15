@@ -27,13 +27,10 @@ describe('HOS-1810 location exception permissions seed migration', () => {
     it('is required, additive, and mirrors the baseline for both staff roles', () => {
         expect(migration.meta.group).toBe('required');
         expect(migration.meta.destructive).toBe(false);
-        expect(migration.GRANTS).toHaveLength(4);
+        expect(migration.GRANTS).toHaveLength(2);
         for (const role of [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]) {
             expect(ROLE_PERMISSIONS[role]).toContain(
-                PermissionEnum.ACCOMMODATION_LOCATION_EXCEPTION_MANAGE
-            );
-            expect(ROLE_PERMISSIONS[role]).toContain(
-                PermissionEnum.VENUE_LOCATION_EXCEPTION_MANAGE
+                PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE
             );
         }
         for (const grant of migration.GRANTS)
@@ -42,9 +39,9 @@ describe('HOS-1810 location exception permissions seed migration', () => {
 
     it('writes only the declared grants and supports already-present rows', async () => {
         const { ctx, values } = buildCtx(migration.GRANTS);
-        expect((await migration.up(ctx)).counts?.granted).toBe(4);
+        expect((await migration.up(ctx)).counts?.granted).toBe(2);
         expect(values()).toEqual(migration.GRANTS);
         const repeated = await migration.up(buildCtx([]).ctx);
-        expect(repeated.counts).toEqual({ granted: 0, alreadyPresent: 4 });
+        expect(repeated.counts).toEqual({ granted: 0, alreadyPresent: 2 });
     });
 });

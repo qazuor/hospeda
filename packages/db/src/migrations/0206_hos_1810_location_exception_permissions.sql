@@ -1,2 +1,0 @@
-ALTER TYPE "public"."permission_enum" ADD VALUE 'accommodation.locationException.manage' BEFORE 'accommodationListing.create';--> statement-breakpoint
-ALTER TYPE "public"."permission_enum" ADD VALUE 'venue.locationException.manage' BEFORE 'experience.editOwn';

@@ -174,7 +174,6 @@ export enum PermissionEnum {
     ACCOMMODATION_VISIBILITY_CHANGE = 'accommodation.visibility.change', // Allows changing accommodation visibility
     ACCOMMODATION_LIFECYCLE_CHANGE = 'accommodation.lifecycle.change', // Allows changing accommodation lifecycle state
     ACCOMMODATION_MODERATION_CHANGE = 'accommodation.moderation.change', // Allows changing accommodation moderation state
-    ACCOMMODATION_LOCATION_EXCEPTION_MANAGE = 'accommodation.locationException.manage', // Allows granting/removing the one-address-rule exception of an accommodation (HOS-1810) and reading the repeated-address report.
 
     // ACCOMMODATION_LISTING: Permissions related to accommodation listing management
     ACCOMMODATION_LISTING_CREATE = 'accommodationListing.create', // Allows creating a new accommodation listing.
@@ -872,6 +871,7 @@ export enum PermissionEnum {
     // HOS-1457 AC:V5:8: action 15, subscription inspection, and own-billing access.
     LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
     LISTING_MODERATE = 'listing.moderate', // Allows moderating any listing in two levels (fix request or take-down) and lifting it; NUCLEO/08 §3 action 13 (AUT-113), the same permission that moderates a partner presence.
+    LISTING_LOCATION_EXCEPTION_MANAGE = 'listing.locationException.manage', // Allows granting/removing the one-address-rule exception of an accommodation or venue (HOS-1810) and reading the repeated-address report. Vertical-agnostic, like listing.moderate.
     LISTING_PURGE_ON_REQUEST = 'listing.purgeOnRequest', // Allows purging another owner's listing at the owner's request, with a reason (PB12); NUCLEO/08 §3 action 23.
     USER_CLOSE_ON_REQUEST = 'user.closeOnRequest', // Allows closing another person's account at their request, with a reason: pseudonymizes it and removes its credentials; NUCLEO/08 §3 action 24.
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
@@ -970,7 +970,6 @@ export enum PermissionEnum {
     VENUE_DELETE = 'venue.delete', // Allows soft-deleting any venue listing.
     VENUE_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a venue listing.
     VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a venue listing.
-    VENUE_LOCATION_EXCEPTION_MANAGE = 'venue.locationException.manage', // Allows granting/removing the one-address-rule exception of a venue (HOS-1810) and reading the repeated-address report.
 
     EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
     EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.

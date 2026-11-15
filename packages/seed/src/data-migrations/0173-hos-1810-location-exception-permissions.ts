@@ -1,6 +1,6 @@
 /**
- * @fileoverview HOS-1810 grant of the location-exception permissions.
- * Run `db:migrate` (0206) before this migration or the new enum values fail
+ * @fileoverview HOS-1810 grant of the location-exception permission.
+ * Run `db:migrate` (0205) before this migration or the new enum values fail
  * with `invalid input value for enum permission_enum`.
  *
  * Dual-write counterpart (HOS-25) of the baseline edit in
@@ -20,13 +20,12 @@ export const meta = {
 /** Roles that manage location exceptions. */
 export const STAFF_ROLES: readonly RoleEnum[] = [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN];
 
-/** Permissions introduced by HOS-1810. */
+/** Permission introduced by HOS-1810. */
 export const PERMISSIONS: readonly PermissionEnum[] = [
-    PermissionEnum.ACCOMMODATION_LOCATION_EXCEPTION_MANAGE,
-    PermissionEnum.VENUE_LOCATION_EXCEPTION_MANAGE
+    PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE
 ];
 
-/** Exact role grants added after structural migration 0206. */
+/** Exact role grants added after structural migration 0205. */
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = STAFF_ROLES.flatMap(
     (role) => PERMISSIONS.map((permission) => ({ role, permission }))
 );
