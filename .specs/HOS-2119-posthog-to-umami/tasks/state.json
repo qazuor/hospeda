@@ -764,39 +764,39 @@
             "id": "T-021",
             "title": "T-2 Create apps/api analytics-client.ts (Umami-only, replaces lib/posthog.ts API)",
             "description": "Files: apps/api/src/lib/analytics-client.ts, apps/api/test/lib/analytics-client.test.ts. Tests: no-op without env; singleton lazy init; shutdown flushes with the 3s budget; environment property resolved for staging/production/test; website id selection. No fan-out, no PostHog import (OQ-2 direct cut).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-011"],
             "blocks": ["T-022", "T-023", "T-024"],
             "subtasks": [
                 {
                     "title": "Create apps/api/src/lib/analytics-client.ts exposing the same call surface callers use today from lib/posthog.ts (read it first, keep names analogous: getAnalyticsClient, shutdownAnalytics)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Resolve website id by surface (web by default for billing/onboarding facts, admin when the event describes admin)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "No-op when HOSPEDA_UMAMI_URL unset; keep resolveServerEnvironment tagging",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Do not touch posthog.ts yet (removed in T-059)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T07:41:28Z",
+                "completed": "2026-11-15T07:56:26Z"
             }
         },
         {
@@ -2560,39 +2560,39 @@
             "id": "T-071",
             "title": "T-2 Add optional visitor context to ServerAnalyticsClient.capture and a getVisitorContext helper in apps/api",
             "description": "Extend ServerAnalyticsClient.capture in packages/analytics with optional `visitor: { ip: string; userAgent: string }` (Zod-validated, optional). Add apps/api helper getVisitorContext(c) that reads the client IP from cf-connecting-ip, then the first x-forwarded-for entry, plus the User-Agent header, and returns undefined when either is missing. The Umami provider maps visitor to payload.ip/payload.userAgent; without it the synthetic identity applies (T-018). Tests: unit tests for header precedence, missing headers, XFF with several IPs, and the provider mapping with and without visitor.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-019"],
             "blocks": ["T-072"],
             "subtasks": [
                 {
                     "title": "Add optional visitor to the capture input schema and type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Map visitor to payload.ip/payload.userAgent in the Umami provider",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create getVisitorContext(c) in apps/api with header precedence",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests for helper and mapping",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "api", "analytics"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-15T06:02:25Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T07:41:28Z",
+                "completed": "2026-11-15T07:56:26Z"
             }
         },
         {
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 64,
+        "pending": 62,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.5
     }
