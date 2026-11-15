@@ -11,6 +11,12 @@ export {
     AnalyticsEventSchemas,
     AnalyticsEvents
 } from './catalog.js';
+export type {
+    CreateUmamiServerClientOptions,
+    UmamiServerClient,
+    UmamiServerLogger
+} from './providers/umami-server.js';
+export { createUmamiServerClient } from './providers/umami-server.js';
 export type { ServerAnalyticsClient } from './server.js';
 export { createServerAnalytics } from './server.js';
 export type {
