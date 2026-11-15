@@ -24,6 +24,11 @@
  *    consent, so the very next call answers 401.
  * 4. **User usable.** The token subject is a live account: present, not
  *    soft-deleted (H-163) and not banned.
+ * 5. **Account state (403).** A bearer request never reaches
+ *    `mustChangePasswordGate`, so its predicate and body are applied here:
+ *    `mustChangePassword` → `403 PASSWORD_CHANGE_REQUIRED`. Email verification
+ *    depends on the operation (`resolvePersonStateStep`), so it is not a
+ *    request gate; it rides on `actor.emailVerified` for per-tool checks.
  *
  * Then the actor is built with the same function the session middleware uses
  * (`buildActorForUser`), and the grant (client id/name, scopes) is set on the
@@ -48,6 +53,10 @@ import type { AppBindings, McpAuthContext } from '../types';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { type ActorSourceUser, buildActorForUser } from './actor';
+import {
+    isPasswordChangeRequired,
+    PASSWORD_CHANGE_REQUIRED_RESPONSE
+} from './must-change-password';
 
 /** JOSE `typ` header of an RFC 9068 access token, as the provider signs it. */
 const ACCESS_TOKEN_TYPE = 'at+jwt';
@@ -467,6 +476,10 @@ export function createMcpAuthMiddleware({
         }
         if (!user) {
             return unauthorized({ c, apiUrl, reason: 'user_unavailable' });
+        }
+        if (isPasswordChangeRequired({ user })) {
+            apiLogger.debug('MCP request refused: password_change_required');
+            return c.json(PASSWORD_CHANGE_REQUIRED_RESPONSE, 403);
         }
 
         const actor = await resolved.buildActor({ user });

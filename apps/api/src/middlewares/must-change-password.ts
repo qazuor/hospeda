@@ -35,10 +35,14 @@ import { apiLogger } from '../utils/logger';
 const EXEMPT_PATH_SUFFIXES = ['/auth/change-password', '/auth/change-password-required'] as const;
 
 /**
- * Response body returned when the gate blocks a request.
+ * Response body returned (with a 403) when the gate blocks a request.
  * Clients should redirect to the change-password screen on this code.
+ *
+ * Exported so every credential path that builds an actor refuses the same
+ * way: the MCP bearer middleware (`middlewares/mcp-auth.ts`, HOS-2184) never
+ * passes through this gate, so it answers with this exact body itself.
  */
-const BLOCKED_RESPONSE = {
+export const PASSWORD_CHANGE_REQUIRED_RESPONSE = {
     error: {
         code: 'PASSWORD_CHANGE_REQUIRED',
         message:
@@ -46,6 +50,24 @@ const BLOCKED_RESPONSE = {
             'Please use the change-password endpoint to set a new password.'
     }
 } as const;
+
+/**
+ * Whether an authenticated user must change their password before using any
+ * protected feature. Only an explicit `true` blocks: the column is nullable
+ * and the mock-auth user omits it.
+ *
+ * Shared by {@link mustChangePasswordGate} (session requests) and the MCP
+ * bearer middleware, so the two credential paths cannot drift apart.
+ *
+ * @param input - RO-RO: the user object (session user or MCP token user)
+ * @returns `true` when the request must be refused with
+ *   {@link PASSWORD_CHANGE_REQUIRED_RESPONSE}
+ */
+export function isPasswordChangeRequired(input: {
+    readonly user: { readonly mustChangePassword?: unknown } | null | undefined;
+}): boolean {
+    return input.user?.mustChangePassword === true;
+}
 
 /**
  * Middleware factory: blocks any protected route for users whose
@@ -86,7 +108,7 @@ export function mustChangePasswordGate(): AppMiddleware {
                     { path: requestPath },
                     '[must-change-password] Gate triggered via mock header'
                 );
-                return c.json(BLOCKED_RESPONSE, 403);
+                return c.json(PASSWORD_CHANGE_REQUIRED_RESPONSE, 403);
             }
             // explicit 'false' or absent → fall through to normal flow
         }
@@ -102,7 +124,7 @@ export function mustChangePasswordGate(): AppMiddleware {
             | undefined
             | null;
 
-        const mustChange = sessionUser?.mustChangePassword === true;
+        const mustChange = isPasswordChangeRequired({ user: sessionUser });
 
         if (mustChange) {
             const actorId = sessionUser && 'id' in sessionUser ? String(sessionUser.id) : 'unknown';
@@ -111,7 +133,7 @@ export function mustChangePasswordGate(): AppMiddleware {
                 { actorId, path: requestPath },
                 '[must-change-password] Blocking request: mustChangePassword flag is set'
             );
-            return c.json(BLOCKED_RESPONSE, 403);
+            return c.json(PASSWORD_CHANGE_REQUIRED_RESPONSE, 403);
         }
 
         await next();

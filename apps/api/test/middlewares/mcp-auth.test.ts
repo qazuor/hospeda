@@ -24,6 +24,7 @@ import {
     type McpAuthConfig,
     type McpAuthDeps
 } from '../../src/middlewares/mcp-auth';
+import { PASSWORD_CHANGE_REQUIRED_RESPONSE } from '../../src/middlewares/must-change-password';
 import type { AppBindings } from '../../src/types';
 
 const API_URL = 'https://api.test';
@@ -322,6 +323,37 @@ describe('createMcpAuthMiddleware — revocation and account state', () => {
         // Assert
         await expectRefused(res, INVALID_CHALLENGE);
         expect(deps.buildActor).not.toHaveBeenCalled();
+    });
+
+    it('refuses a user who must change their password, like the session gate', async () => {
+        // Arrange
+        const findUser = vi.fn(async () => ({ id: USER_ID, mustChangePassword: true }));
+        const { app, deps } = buildApp({ deps: { findUser } });
+        const token = await signToken();
+
+        // Act
+        const res = await call(app, `Bearer ${token}`);
+
+        // Assert — same status, code and body as mustChangePasswordGate; no challenge.
+        expect(res.status).toBe(403);
+        const body = await res.json();
+        expect(body).toEqual(PASSWORD_CHANGE_REQUIRED_RESPONSE);
+        expect(body.error.code).toBe('PASSWORD_CHANGE_REQUIRED');
+        expect(res.headers.get('WWW-Authenticate')).toBeNull();
+        expect(deps.buildActor).not.toHaveBeenCalled();
+    });
+
+    it('accepts a user whose mustChangePassword flag is false', async () => {
+        // Arrange — positive control for the test above.
+        const findUser = vi.fn(async () => ({ id: USER_ID, mustChangePassword: false }));
+        const { app } = buildApp({ deps: { findUser } });
+        const token = await signToken();
+
+        // Act
+        const res = await call(app, `Bearer ${token}`);
+
+        // Assert
+        expect(res.status).toBe(200);
     });
 });
 
