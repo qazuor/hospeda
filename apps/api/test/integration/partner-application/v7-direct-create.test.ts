@@ -227,7 +227,7 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         expect(await rowsForEmail(address).then(({ rows }) => rows)).toEqual([]);
     });
 
-    it('(e) grants the role to the account that claims the mailed link', async () => {
+    it('(e) HOS-2222 refuses a different-email account and grants the role to the mailbox account that claims the mailed link', async () => {
         const address = email();
         const accountA = await createOwner({ email: address });
         const accountB = await createOwner();
@@ -242,6 +242,9 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         expect(body.data.id).toBeTruthy();
         const partnerId = String(body.data.id);
         partnerIds.push(partnerId);
+        const provisioned = await getDb().execute(sql`
+            SELECT claim_email, claim_secret_hash FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(provisioned.rows).toEqual([{ claim_email: address, claim_secret_hash: null }]);
         let renderedHtml = '';
         await sendBatch(async (mail) => {
             renderedHtml = renderToStaticMarkup(mail.react);
@@ -256,21 +259,38 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         const outbox = await rowsForEmail(address);
         expect(outbox.rows).toHaveLength(1);
         expect((outbox.rows[0] as Record<string, unknown>).status).toBe('sent');
-        const responseClaim = await app.request('/api/v1/protected/partner-claims', {
-            method: 'POST',
-            headers: actorHeaders({ id: accountB.id, role: RoleEnum.HOST }),
-            body: JSON.stringify({ partnerId, secret })
-        });
+        const stored = await getDb().execute(sql`
+            SELECT claim_email, owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(stored.rows).toEqual([{ claim_email: address, owner_user_id: null }]);
+        const claimAs = (actorId: string) =>
+            app.request('/api/v1/protected/partner-claims', {
+                method: 'POST',
+                headers: actorHeaders({ id: actorId, role: RoleEnum.HOST }),
+                body: JSON.stringify({ partnerId, secret })
+            });
+        const refused = await claimAs(accountB.id);
+        expect(refused.status).toBe(403);
+        const refusedBody = await refused.json();
+        expect(refusedBody.error.code).toBe('FORBIDDEN');
+        expect(refusedBody.error.reason).toBe('PARTNER_CLAIM_EMAIL_MISMATCH');
+        expect(JSON.stringify(refusedBody)).not.toContain(address);
+        const unowned = await getDb().execute(sql`
+            SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(unowned.rows).toEqual([{ owner_user_id: null }]);
+        const refusedRoleB = await getDb().execute(sql`
+            SELECT role FROM user_role WHERE user_id = ${accountB.id}::uuid AND role = 'PARTNER_OWNER'`);
+        expect(refusedRoleB.rows).toEqual([]);
+        const responseClaim = await claimAs(accountA.id);
         expect(responseClaim.status).toBe(200);
         const owner = await getDb().execute(sql`
             SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
-        expect(owner.rows).toEqual([{ owner_user_id: accountB.id }]);
-        const roleB = await getDb().execute(sql`
-            SELECT role, grant_reason FROM user_role WHERE user_id = ${accountB.id}::uuid AND role = 'PARTNER_OWNER'`);
-        expect(roleB.rows).toEqual([{ role: 'PARTNER_OWNER', grant_reason: 'partner_claimed' }]);
+        expect(owner.rows).toEqual([{ owner_user_id: accountA.id }]);
         const roleA = await getDb().execute(sql`
-            SELECT role FROM user_role WHERE user_id = ${accountA.id}::uuid AND role = 'PARTNER_OWNER'`);
-        expect(roleA.rows).toEqual([]);
+            SELECT role, grant_reason FROM user_role WHERE user_id = ${accountA.id}::uuid AND role = 'PARTNER_OWNER'`);
+        expect(roleA.rows).toEqual([{ role: 'PARTNER_OWNER', grant_reason: 'partner_claimed' }]);
+        const roleB = await getDb().execute(sql`
+            SELECT role FROM user_role WHERE user_id = ${accountB.id}::uuid AND role = 'PARTNER_OWNER'`);
+        expect(roleB.rows).toEqual([]);
         expect(createHash('sha256').update(secret, 'utf8').digest('hex')).toBeTruthy();
         expect(JSON.stringify(body)).not.toContain(address);
     });

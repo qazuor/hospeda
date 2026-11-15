@@ -176,6 +176,34 @@ describe('Partner link claim route', () => {
         });
     });
 
+    it('(a4) HOS-2222 compares against the stored claim email before the application email', async () => {
+        const applicant = await createOwner();
+        const mailbox = await createOwner();
+        users.push(applicant.id, mailbox.id);
+        const fixture = await insertClaimablePartner({
+            email: applicant.email,
+            hash,
+            actorId: applicant.id
+        });
+        partnerIds.push(fixture.partnerId);
+        applicationIds.push(fixture.applicationId);
+        await getDb().execute(
+            sql`UPDATE partners SET claim_email = ${mailbox.email} WHERE id = ${fixture.partnerId}::uuid`
+        );
+
+        const refused = await claim(applicant.id, fixture.partnerId, secret);
+        expect(refused.status).toBe(403);
+        expect((await refused.json()).error.reason).toBe('PARTNER_CLAIM_EMAIL_MISMATCH');
+        expect(await readClaimState(fixture.partnerId, applicant.id)).toEqual({
+            partner: [{ owner_user_id: null, claim_secret_hash: hash }],
+            events: [{ count: 0 }],
+            ownerRole: []
+        });
+
+        const claimed = await claim(mailbox.id, fixture.partnerId, secret);
+        expect(claimed.status).toBe(200);
+    });
+
     it('(b, f) TEST:V7:9 makes missing id, missing secret, wrong secret, and deleted Partner identical 404s', async () => {
         const owner = await createOwner();
         users.push(owner.id);

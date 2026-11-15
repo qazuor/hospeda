@@ -13,7 +13,7 @@ describe('isSameClaimEmail', () => {
         }
     ])('matches $name', ({ account, application }) => {
         // Act
-        const result = isSameClaimEmail({ accountEmail: account, applicationEmail: application });
+        const result = isSameClaimEmail({ accountEmail: account, claimEmail: application });
 
         // Assert
         expect(result).toEqual({ matches: true });
@@ -30,7 +30,7 @@ describe('isSameClaimEmail', () => {
         { name: 'a blank account and a null application', account: '', application: null }
     ])('does not match $name', ({ account, application }) => {
         // Act
-        const result = isSameClaimEmail({ accountEmail: account, applicationEmail: application });
+        const result = isSameClaimEmail({ accountEmail: account, claimEmail: application });
 
         // Assert
         expect(result).toEqual({ matches: false });

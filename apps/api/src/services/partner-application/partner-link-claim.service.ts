@@ -15,16 +15,16 @@ import { writePartnerClaim } from './partner-claim.service';
 const NOT_FOUND_MESSAGE = 'Partner not found';
 
 /**
- * Compares the signed-in account email with the approved application email,
- * trimmed and case-insensitively. A missing or blank application email never matches.
+ * Compares the signed-in account email with the Partner's claim mailbox,
+ * trimmed and case-insensitively. A missing or blank claim email never matches.
  */
 export function isSameClaimEmail(input: {
     readonly accountEmail: string;
-    readonly applicationEmail: string | null;
+    readonly claimEmail: string | null;
 }): { readonly matches: boolean } {
-    const application = input.applicationEmail?.trim().toLowerCase() ?? '';
-    if (application === '') return { matches: false };
-    return { matches: input.accountEmail.trim().toLowerCase() === application };
+    const claim = input.claimEmail?.trim().toLowerCase() ?? '';
+    if (claim === '') return { matches: false };
+    return { matches: input.accountEmail.trim().toLowerCase() === claim };
 }
 
 /** Claims a Partner through its single-use secret in one transaction. */
@@ -70,14 +70,15 @@ export async function claimPartnerByLink(input: {
                 userId: input.actorUserId
             });
             if (!account) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Account not found');
-            // HOS-2222: only the account of the approved application's mailbox may claim,
-            // verified or not. Without an approved application there is nothing to compare
-            // against, so the claim is refused too. Runs before any write: the Partner stays
+            // HOS-2222: only the account of the claim mailbox (the address the link was sent
+            // to, or the approved application's email on older rows) may claim, verified or
+            // not. Without a claim mailbox there is nothing to compare against, so the claim
+            // is refused too. Runs before any write: the Partner stays
             // unowned and its link stays usable by the right account.
             if (
                 !isSameClaimEmail({
                     accountEmail: account.email,
-                    applicationEmail: partner.applicationEmail
+                    claimEmail: partner.claimEmail
                 }).matches
             ) {
                 throw new ServiceError(

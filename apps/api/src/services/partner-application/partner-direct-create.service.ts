@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { getDb } from '@repo/db';
+import { getDb, partnerApplicationModel } from '@repo/db';
 import type { AdminCreatePartner, Partner } from '@repo/schemas';
 import { type Actor, PartnerService, ServiceError } from '@repo/service-core';
 import { getRequestCorrelationId } from '../../lib/request-context';
@@ -26,6 +26,12 @@ export async function createPartnerDirectly(input: {
             throw new ServiceError(result.error.code, result.error.message);
         }
 
+        // HOS-2222: only the account of this mailbox may claim the Partner by link.
+        await partnerApplicationModel.setClaimEmailIfUnclaimed({
+            tx,
+            partnerId: result.data.id,
+            email: claimEmail
+        });
         await enqueuePartnerClaimNotice({
             tx,
             email: claimEmail,

@@ -3,7 +3,11 @@ import type { DrizzleClient } from '../../types.ts';
 
 /** Transaction-bound persistence operations for Partner applications. */
 export const partnerApplicationModel = {
-    /** Locks a live Partner and reads its approved application mailbox and claim hash. */
+    /**
+     * Locks a live Partner and reads its claim hash and claim mailbox. The mailbox is
+     * `partners.claim_email`, falling back to the approved application's email for rows
+     * minted before HOS-2222; null when neither exists.
+     */
     async lockPartnerForLinkClaim(args: {
         readonly tx: DrizzleClient;
         readonly partnerId: string;
@@ -11,10 +15,11 @@ export const partnerApplicationModel = {
         readonly partnerId: string;
         readonly ownerUserId: string | null;
         readonly claimSecretHash: string | null;
-        readonly applicationEmail: string | null;
+        readonly claimEmail: string | null;
     } | null> {
         const result = await args.tx.execute(sql`
-            SELECT p.id AS partner_id, p.owner_user_id, p.claim_secret_hash, pa.email AS application_email
+            SELECT p.id AS partner_id, p.owner_user_id, p.claim_secret_hash,
+                   coalesce(p.claim_email, pa.email) AS claim_email
             FROM partners p
             LEFT JOIN partner_application pa ON pa.partner_id = p.id AND pa.status = 'APPROVED'
             WHERE p.id = ${args.partnerId} AND p.deleted_at IS NULL
@@ -26,8 +31,7 @@ export const partnerApplicationModel = {
                   ownerUserId: row.owner_user_id == null ? null : String(row.owner_user_id),
                   claimSecretHash:
                       row.claim_secret_hash == null ? null : String(row.claim_secret_hash),
-                  applicationEmail:
-                      row.application_email == null ? null : String(row.application_email)
+                  claimEmail: row.claim_email == null ? null : String(row.claim_email)
               }
             : null;
     },
@@ -174,16 +178,18 @@ export const partnerApplicationModel = {
     /**
      * The only writer of claim_secret_hash; overwrites a previous hash on purpose (a re-render
      * invalidates the previous link, D-2); never writes once the Partner has an owner, because
-     * the claim keeps the hash (V7 §2.4 rule 4).
+     * the claim keeps the hash (V7 §2.4 rule 4). Writes `claim_email` in the same statement:
+     * the mailbox the link is sent to is the only account allowed to claim (HOS-2222).
      */
     async setClaimSecretHashIfUnclaimed(args: {
         readonly tx: DrizzleClient;
         readonly partnerId: string;
         readonly hash: string;
+        readonly email: string;
     }): Promise<boolean> {
         const result = await args.tx.execute(sql`
             UPDATE partners
-            SET claim_secret_hash = ${args.hash}
+            SET claim_secret_hash = ${args.hash}, claim_email = ${args.email}
             WHERE id = ${args.partnerId}
               AND owner_user_id IS NULL
               AND deleted_at IS NULL
@@ -247,14 +253,31 @@ export const partnerApplicationModel = {
         readonly slug: string;
         readonly type: string;
         readonly actorId: string;
+        readonly claimEmail: string;
     }): Promise<{ readonly id: string }> {
         const result = await args.tx.execute(sql`
-            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id)
-            VALUES (${args.slug}, ${args.name}, ${args.type}, 'DRAFT', ${args.actorId}, ${args.actorId})
+            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id, claim_email)
+            VALUES (${args.slug}, ${args.name}, ${args.type}, 'DRAFT', ${args.actorId}, ${args.actorId}, ${args.claimEmail})
             RETURNING id`);
         const row = result.rows[0];
         if (!row) throw new Error('Partner insert did not return an id');
         return { id: String(row.id) };
+    },
+
+    /** Records the claim mailbox of an unclaimed Partner created directly by an admin (HOS-2222). */
+    async setClaimEmailIfUnclaimed(args: {
+        readonly tx: DrizzleClient;
+        readonly partnerId: string;
+        readonly email: string;
+    }): Promise<boolean> {
+        const result = await args.tx.execute(sql`
+            UPDATE partners
+            SET claim_email = ${args.email}
+            WHERE id = ${args.partnerId}
+              AND owner_user_id IS NULL
+              AND deleted_at IS NULL
+            RETURNING id`);
+        return result.rows.length > 0;
     },
 
     /** Marks a pending application approved and links its unclaimed Partner. */
