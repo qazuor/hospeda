@@ -612,74 +612,74 @@
             "id": "T-017",
             "title": "T-2 Add the Umami limits guard test for every catalog event (AC-4)",
             "description": "Test-first guard. File: packages/analytics/test/umami-limits.test.ts. Uses real limits confirmed in T-002. Must fail if a future event violates a limit (verify by temporarily adding a 51-char event name locally, do not commit). Tests: the file itself; run with `pnpm --filter @repo/analytics test` (no full-suite runs).\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Limits to assert: event name <= 50 chars, data keys <= 500, string enum values <= 500, numeric values that can reach 1e15 are forbidden. There is NO 50-property limit in Umami (drop that assertion, or keep it only as our own documented cap).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Iterate AnalyticsEventSchemas (catalog.ts + catalog-billing.ts)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert name <= 50 chars, property count (event shape + global props added by prepareAnalyticsEvent) <= 50, no enum/literal string value > 500 chars",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Failing messages name the offending event",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "analytics", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T06:58:58Z",
+                "completed": "2026-11-15T07:10:54Z"
             }
         },
         {
             "id": "T-018",
             "title": "T-2 Implement the Umami payload mapper (event to batch item) with a per-catalog-event parity test",
             "description": "Pure function, RO-RO, JSDoc, no network. Files: packages/analytics/src/providers/umami-payload.ts, packages/analytics/test/umami-payload.test.ts. Tests: one generated sample per AnalyticsEventSchemas entry maps to the same event name and the same properties it sent to PostHog (AC-2 adapter unit test), array roles becomes a string, event_uuid preserved, api-server distinctId omitted, number precision/length edge cases from T-002. Depends on the spike contract, not on T-017.\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Never send payload.id (it is hashed into the session id and splits sessions). A real user id goes to data.user_id; drop api-server and anon:* ids. Always send hostname (surface host) and a virtual url /_server/<event> unless the page url is known. When no visitor context is passed, use the synthetic identity: ip 127.0.0.1 + a browser-like, non-bot User-Agent. With visitor context (T-071) send payload.ip/payload.userAgent. Runtime truncation: name 50, string values and keys 500, url/title 500, hostname 100; reject |n| >= 1e15 (Umami returns 400 and drops the whole event), round to 4 decimals, flatten arrays/objects with dot keys, coerce booleans. Tests cover each rule.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-019", "T-071"],
             "subtasks": [
                 {
                     "title": "Create packages/analytics/src/providers/umami-payload.ts exporting a pure mapper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "event -> name; sanitized properties -> data; arrays -> string; uuid -> data.event_uuid; distinctId -> id only when a real user id exists (api-server sends none)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply the R-1 decision from the spike note",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Zod-validate the output shape",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "analytics"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T06:58:58Z",
+                "completed": "2026-11-15T07:10:54Z"
             }
         },
         {
@@ -868,7 +868,7 @@
         {
             "id": "T-024",
             "title": "T-2 Swap api conversation and AI chat call sites to analytics-client",
-            "description": "Mechanical swap, no behavior change; contact_owner_* events keep their properties (plus entity_id once T-031 lands). Tests: the three AI integration tests assert the same events; add/adjust a conversations initiate route test (locate under apps/api/test/routes) to assert contact_owner_completed is captured through the new client.",
+            "description": "Mechanical swap, no behavior change; contact_owner_* events keep their properties (plus entity_id once T-031 lands). Tests: the three AI integration tests assert the same events; add/adjust a conversations initiate route test (locate under apps/api/test/routes) to assert contact_owner_completed is captured through the new client.\n\nBLOCKER FOUND 2026-11-15 (T-018): the catalog defines ai_chat_opened / ai_chat_cap_reached / ai_chat_message_sent with `message_count`, which FORBIDDEN_PROPERTY_KEY_REGEX (packages/analytics/src/shared.ts:8, `(^|_)message(_|$)`) rejects, so once these call sites go through prepareAnalyticsEvent the three events are dropped silently (onError only). Today they bypass the catalog: captureChatEvent (apps/api/src/routes/ai/protected/chat.helpers.ts:63) calls the PostHog client directly with camelCase `messageCount`. Fix in this task: rename the catalog field to `messages_count` (not matched by the regex), map messageCount → messages_count at the call site, and remove the KNOWN_PREPARE_REJECTS pin in packages/analytics/test/umami-payload.test.ts. Also check search-chat.ts:553.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-021"],
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 67,
+        "pending": 65,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     }

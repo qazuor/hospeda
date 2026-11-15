@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 7/74 tasks (9%)
+## Progress: 9/74 tasks (12%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -134,13 +134,13 @@ Tracks (can run in parallel):
   - Blocked by: T-005
   - Blocks: T-017, T-030, T-031, T-039, T-065
 
-- [ ] **T-017** (complexity: 2) - T-2 Add the Umami limits guard test for every catalog event (AC-4)
+- [x] **T-017** (complexity: 2) - T-2 Add the Umami limits guard test for every catalog event (AC-4)
   - Tags: t2-adapter, analytics, testing
   - Test-first guard. File: packages/analytics/test/umami-limits.test.ts. Uses real limits confirmed in ...
   - Blocked by: T-016
   - Blocks: none
 
-- [ ] **T-018** (complexity: 3) - T-2 Implement the Umami payload mapper (event to batch item) with a per-catalog-event parity test
+- [x] **T-018** (complexity: 3) - T-2 Implement the Umami payload mapper (event to batch item) with a per-catalog-event parity test
   - Tags: t2-adapter, analytics
   - Pure function, RO-RO, JSDoc, no network. Files: packages/analytics/src/providers/umami-payload.ts, p...
   - Blocked by: T-002
