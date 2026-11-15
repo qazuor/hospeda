@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { buildOutboxSenderRender } from '../../../src/cron/jobs/email-outbox-sender.job';
+import { claimPartnerByLink } from '../../../src/services/partner-application/partner-link-claim.service';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
@@ -293,5 +294,86 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         expect(roleB.rows).toEqual([]);
         expect(createHash('sha256').update(secret, 'utf8').digest('hex')).toBeTruthy();
         expect(JSON.stringify(body)).not.toContain(address);
+    });
+
+    it('(f) HOS-2222 lets an unverified mailbox account claim a directly created Partner, verifying it and revoking its other sessions', async () => {
+        // Arrange
+        const address = email();
+        const account = await createOwner({ email: address });
+        userIds.push(account.id);
+        await getDb().execute(
+            sql`UPDATE users SET email_verified = false WHERE id = ${account.id}::uuid`
+        );
+        const sessionId = `claim-session-${randomUUID()}`;
+        const otherSessionId = `other-session-${randomUUID()}`;
+        await getDb().execute(sql`
+            INSERT INTO session (id, token, user_id, expires_at, auth_method) VALUES
+                (${sessionId}, ${`token-${randomUUID()}`}, ${account.id}::uuid, now() + interval '1 day', 'credential'),
+                (${otherSessionId}, ${`token-${randomUUID()}`}, ${account.id}::uuid, now() + interval '1 day', 'google')`);
+        const credentialId = `credential-${randomUUID()}`;
+        const googleId = `google-${randomUUID()}`;
+        await getDb().execute(sql`
+            INSERT INTO account (id, account_id, provider_id, user_id) VALUES
+                (${credentialId}, ${account.id}, 'credential', ${account.id}::uuid),
+                (${googleId}, 'google-account', 'google', ${account.id}::uuid)`);
+        const name = `HOS2222 Unverified ${randomUUID()}`;
+        partnerNames.push(name);
+        const { response, body } = await createDirect({ name, claimEmail: address });
+        expect(response.status).toBe(201);
+        const partnerId = String(body.data.id);
+        partnerIds.push(partnerId);
+        expect(
+            (
+                await getDb().execute(sql`
+                    SELECT count(*)::integer AS count FROM partner_application WHERE partner_id = ${partnerId}::uuid`)
+            ).rows
+        ).toEqual([{ count: 0 }]);
+        let renderedHtml = '';
+        await sendBatch(async (mail) => {
+            renderedHtml = renderToStaticMarkup(mail.react);
+            return { messageId: `message-${randomUUID()}` };
+        });
+        const match = renderedHtml.match(/#partner=[^&]+&amp;secret=([^"&]+)/);
+        const secret = decodeURIComponent(match?.[1] ?? '');
+        expect(secret).not.toBe('');
+
+        // Act
+        const claimed = await claimPartnerByLink({
+            actorUserId: account.id,
+            currentSessionId: sessionId,
+            partnerId,
+            secret
+        });
+
+        // Assert
+        expect(claimed).toEqual({ claimed: true, partnerId, emailVerified: true });
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT email_verified FROM users WHERE id = ${account.id}::uuid`
+                )
+            ).rows
+        ).toEqual([{ email_verified: true }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT id FROM session WHERE user_id = ${account.id}::uuid ORDER BY id`
+                )
+            ).rows
+        ).toEqual([{ id: sessionId }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT id FROM account WHERE user_id = ${account.id}::uuid ORDER BY id`
+                )
+            ).rows
+        ).toEqual([{ id: credentialId }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+                )
+            ).rows
+        ).toEqual([{ owner_user_id: account.id }]);
     });
 });

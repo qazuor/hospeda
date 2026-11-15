@@ -131,7 +131,11 @@ export const partnerApplicationModel = {
         };
     },
 
-    /** Locks the approved Partner created for this account, using the approval event marker. */
+    /**
+     * Locks the approved Partner created for this account, using the approval event marker.
+     * The account email must match the Partner's claim mailbox: the stored `claim_email`,
+     * falling back to the application email on rows minted before HOS-2222.
+     */
     async lockPartnerClaimableByCreatedAccount(args: {
         readonly tx: DrizzleClient;
         readonly userId: string;
@@ -142,7 +146,7 @@ export const partnerApplicationModel = {
             FROM partner_application pa
             JOIN partners p ON p.id = pa.partner_id
             WHERE pa.status = 'APPROVED'
-              AND lower(pa.email) = lower(${args.email})
+              AND lower(coalesce(p.claim_email, pa.email)) = lower(${args.email})
               AND p.owner_user_id IS NULL
               AND p.deleted_at IS NULL
               AND EXISTS (
