@@ -154,7 +154,7 @@ En **ambas** tablas, `accommodations` y `venues` (mismas columnas, simetría):
 
 ### 5.3 Permiso nuevo
 
-Se agregan a `PermissionEnum` **dos permisos, uno por entidad**, siguiendo el patrón del enum (`accommodation.locationException.manage`, `venue.locationException.manage`) con el valor en camelCase por entidad, y se asignan a los roles administradores (carril 3: data-migration, porque `role_permission` tiene filas vivas; más el baseline del seed de roles). `permission-naming-convention.guard.test.ts` debe quedar verde (el valor nuevo no usa la forma con puntos que el guard congela). Nunca se decide por rol.
+Se agrega a `PermissionEnum` **un único permiso, agnóstico de vertical**: `PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE = 'listing.locationException.manage'`, junto a `listing.moderate`. Gobierna las rutas de excepción y el informe de direcciones repetidas de **ambas** verticales (alojamiento y venue). Se asigna a `SUPER_ADMIN` y `ADMIN` (carril 3: data-migration `0173`, porque `role_permission` tiene filas vivas; más el baseline del seed de roles) y el valor del enum entra por la migración estructural. La familia `venue.*` queda intacta (está congelada en 7 miembros espejo de la familia retirada). `permission-naming-convention.guard.test.ts` debe quedar verde y la clave se declara en `KNOWN_SYSTEM_FALLBACK_KEYS` junto a sus hermanas `LISTING_*`. Nunca se decide por rol.
 
 ### 5.4 API
 
@@ -232,3 +232,7 @@ Claves nuevas en `@repo/i18n`, tres idiomas, sin literales en componentes: aviso
 - **R-6 Privacidad entre dueños**: un mensaje de error que filtre el id de otra ficha. Cubierta por el test de claves exactas; el único id que viaja es el propio.
 - **R-7 Solapamiento con HOS-2042** en el schema y la página pública del venue. Mitigación: merge frecuente de `staging` y resolución aditiva.
 - **R-8 Sección nueva en el catálogo** (`LISTING_SECTIONS.venue`): hay guards y conteos congelados que se rompen al agregarla; se actualizan en el mismo PR.
+
+## Historial de revisiones
+
+- **2026-11-14**: §5.3 pasa de dos permisos (uno por entidad: `accommodation.locationException.manage` y `venue.locationException.manage`) a uno solo, `listing.locationException.manage`. Motivo: un permiso `venue.*` nuevo hace crecer la familia `venue.*`, que está congelada en 7 miembros por `permission-venue-experience.test.ts` como espejo de la familia retirada; un valor `listing.*` evita eso y cubre ambas verticales con un solo valor, igual que `listing.moderate`. Aprobado por el coordinador.
