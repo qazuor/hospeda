@@ -9,6 +9,9 @@
  */
 
 import { McpServer } from '@modelcontextprotocol/server';
+import { MCP_TOOL_DEFINITIONS } from '../../mcp/tools/registry';
+import type { ToolDefinition } from '../../mcp/tools/tool-definition';
+import { bindMcpTool } from './bind-tool';
 
 /**
  * `serverInfo` the MCP server reports in the `initialize` result.
@@ -23,14 +26,21 @@ export const MCP_SERVER_INFO = {
     version: '1.0.0'
 } as const;
 
+/** Arguments for {@link createHospedaMcpServer}. RO-RO. */
+export interface CreateHospedaMcpServerArgs {
+    /** Tools to register. Defaults to the registry (`mcp/tools/registry.ts`). */
+    readonly tools?: readonly ToolDefinition[];
+}
+
 /**
- * Builds a fresh MCP server for one request.
+ * Builds a fresh MCP server for one request, with every tool bound through
+ * `bindMcpTool`.
  *
- * The tool registry is empty for now. The `tools` capability is declared
- * anyway, and `tools/list` answers an empty list, so clients that connect
- * before the first tool ships see a valid, empty server instead of a
- * `Method not found`.
+ * The `tools` capability is declared even with no tools, and `tools/list`
+ * then answers an empty list, so a client sees a valid, empty server instead
+ * of a `Method not found`.
  *
+ * @param args - Optional tool list (tests)
  * @returns A new, unconnected server instance
  *
  * @example
@@ -38,10 +48,15 @@ export const MCP_SERVER_INFO = {
  * const handler = createMcpHandler(() => createHospedaMcpServer());
  * ```
  */
-export function createHospedaMcpServer(): McpServer {
+export function createHospedaMcpServer({
+    tools = MCP_TOOL_DEFINITIONS
+}: CreateHospedaMcpServerArgs = {}): McpServer {
     const server = new McpServer(
         { ...MCP_SERVER_INFO },
         { capabilities: { tools: { listChanged: false } } }
     );
+    for (const definition of tools) {
+        bindMcpTool({ server, definition });
+    }
     return server;
 }
