@@ -152,6 +152,78 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4316
+    {
+        id: '2026-11-12-grace-emails-mention-scheduled-plan-change',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Los avisos de gracia te recuerdan tu cambio de plan programado',
+            en: 'Grace-period emails remind you of your scheduled plan change',
+            pt: 'Os avisos de carência lembram a sua mudança de plano agendada'
+        },
+        body: {
+            es: 'Si tenés un cambio de plan programado y tu suscripción entra en período de gracia, el mail de inicio y los recordatorios te dicen a qué plan vas a pasar y desde qué fecha, para que no creas que el cambio se perdió. Sin cambio programado, los mails salen igual que siempre.',
+            en: 'If you have a scheduled plan change and your subscription enters its grace period, the start email and the reminders tell you which plan you will move to and from which date, so you do not think the change was lost. With no scheduled change, the emails are the same as always.',
+            pt: 'Se você tem uma mudança de plano agendada e a sua assinatura entra em período de carência, o e-mail de início e os lembretes dizem para qual plano você vai passar e a partir de que data, para você não achar que a mudança se perdeu. Sem mudança agendada, os e-mails saem iguais aos de sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4303
+    {
+        id: '2026-11-12-admin-billing-screens-visual-fixes',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Las pantallas de billing del admin se leen y se usan mejor',
+            en: 'The admin billing screens are easier to read and use',
+            pt: 'As telas de billing do admin ficam mais fáceis de ler e usar'
+        },
+        body: {
+            es: 'La conciliación de pagos y sus eventos ahora muestran todo con etiquetas en español, sin valores internos a la vista. En el diálogo «Nuevo código» los botones Cancelar y Revisar quedan siempre visibles aunque la ventana sea baja, y el botón de dar de baja una suscripción ya no se sale de la tarjeta en el celular.',
+            en: 'Payment reconciliation and its events now show everything with readable labels, with no internal values on screen. In the "New code" dialog the Cancel and Review buttons always stay visible even in a short window, and the button to cancel a subscription no longer spills out of its card on a phone.',
+            pt: 'A conciliação de pagamentos e seus eventos agora mostram tudo com rótulos legíveis, sem valores internos na tela. No diálogo «Novo código» os botões Cancelar e Revisar ficam sempre visíveis mesmo com a janela baixa, e o botão de cancelar uma assinatura não sai mais do cartão no celular.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4318
+    {
+        id: '2026-11-12-only-the-owner-publishes-a-listing',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Sólo el dueño publica su ficha, y queda registrado quién lo hizo',
+            en: 'Only the owner publishes a listing, and who did it is recorded',
+            pt: 'Só o dono publica a sua página, e fica registrado quem o fez'
+        },
+        body: {
+            es: 'Un administrador ya no puede publicar la ficha de otra persona: la publicación la hace el dueño. Cada cambio de estado de una ficha guarda quién lo hizo, y sólo la publicación del propio dueño cuenta como publicación manual.',
+            en: "An administrator can no longer publish somebody else's listing: the owner does it. Every status change of a listing records who made it, and only the owner's own publication counts as a manual publication.",
+            pt: 'Um administrador não pode mais publicar a página de outra pessoa: a publicação é feita pelo dono. Cada mudança de estado de uma página guarda quem a fez, e só a publicação do próprio dono conta como publicação manual.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4280
+    {
+        id: '2026-11-11-scheduled-changes-failures-visible',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los cambios de plan programados que fallan ya no frenan al resto',
+            en: 'Scheduled plan changes that fail no longer hold back the rest',
+            pt: 'As mudanças de plano agendadas que falham não seguram mais as demais'
+        },
+        body: {
+            es: 'Si un cambio de plan programado falla una y otra vez, ya no bloquea la cola de los demás: se registra cuántas veces falló y el último error, y cada corrida informa cuántos quedaron agotados.',
+            en: 'If a scheduled plan change keeps failing, it no longer blocks the queue for the others: how many times it failed and the last error are recorded, and each run reports how many were exhausted.',
+            pt: 'Se uma mudança de plano agendada falha repetidamente, ela não bloqueia mais a fila das demais: fica registrado quantas vezes falhou e o último erro, e cada execução informa quantas ficaram esgotadas.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4308, #4329
     {
         id: '2026-11-12-gallery-lightbox-captions',
