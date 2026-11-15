@@ -120,6 +120,26 @@
         {
             "file": "apps/admin/src/features/venue/components/VenueReviewDimensions.tsx",
             "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/docs/06-guards.md#g-fac-05"
+        },
+        {
+            "file": "apps/web/src/lib/editor/accommodation-editor-sections.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/8-editor-alojamiento.md"
+        },
+        {
+            "file": "apps/web/src/lib/editor/resolve-editor-page.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/8-editor-alojamiento.md"
+        },
+        {
+            "file": "apps/web/src/components/host/editor/use-accommodation-section-form.ts",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/8-editor-alojamiento.md"
+        },
+        {
+            "file": "apps/web/src/layouts/EditorSectionLayout.astro",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/8-editor-alojamiento.md"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar/index.astro",
+            "spec": ".specs/HOS-1787-rubros-y-comer-y-salir/sub-specs/8-editor-alojamiento.md"
         }
     ]
 }

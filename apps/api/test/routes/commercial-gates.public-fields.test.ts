@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PRODUCTION_PLAN_NEXT_VERSION_ENTITLEMENTS } from '../../../../scripts/production-catalog/catalog.js';
 import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
-import { filterPublicPaidFields } from '../../src/utils/entitlement-filter';
+import { projectPublicAccommodations } from '../../src/utils/public-accommodation-projection';
 
 const mocks = vi.hoisted(() => ({
     effectiveSet: vi.fn(),
@@ -236,52 +236,27 @@ beforeEach(() => {
 });
 
 describe('TEST:V5:32 public paid fields', () => {
-    it('filters the pure projection from owner grants and keeps the rich pair atomic', () => {
-        const premium = filterPublicPaidFields(accommodation(OWNER.premium), {
-            richDescription: true,
-            video: true,
-            verification: true,
-            aiChat: true
-        });
-        const pro = filterPublicPaidFields(accommodation(OWNER.pro), {
-            richDescription: true,
-            video: true,
-            verification: false,
-            aiChat: false
-        });
-        const basic = filterPublicPaidFields(accommodation(OWNER.basic), {
-            richDescription: false,
-            video: false,
-            verification: false,
-            aiChat: true
-        });
-        const trial = filterPublicPaidFields(accommodation(OWNER.trial), {
-            richDescription: false,
-            video: false,
-            verification: false,
-            aiChat: false
+    it('filters the pure projection from owner grants and keeps the rich pair atomic', async () => {
+        const [premium, pro, basic, trial, whatsappOnly] = await projectPublicAccommodations<
+            Record<string, unknown>
+        >({
+            listings: [
+                accommodation(OWNER.premium),
+                accommodation(OWNER.pro),
+                accommodation(OWNER.basic),
+                accommodation(OWNER.trial),
+                { ownerId: OWNER.trial, contactInfo: { whatsapp: '  123  ' } }
+            ]
         });
 
-        expect(premium.isVerified).toBe(true);
-        expect(pro.isVerified).toBe(false);
-        expect(pro.richDescription).toBe('<p>Paid description</p>');
-        expect('richDescription' in basic).toBe(false);
-        expect('richDescriptionI18n' in basic).toBe(false);
-        expect('richDescription' in trial).toBe(false);
+        expect(premium?.isVerified).toBe(true);
+        expect(pro?.isVerified).toBe(false);
+        expect(pro?.richDescription).toBe('<p>Paid description</p>');
+        expect(basic && 'richDescription' in basic).toBe(false);
+        expect(basic && 'richDescriptionI18n' in basic).toBe(false);
+        expect(trial && 'richDescription' in trial).toBe(false);
         expect((trial as typeof trial & { hasWhatsapp: boolean }).hasWhatsapp).toBe(false);
-        expect(
-            (
-                filterPublicPaidFields(
-                    { contactInfo: { whatsapp: '  123  ' } },
-                    {
-                        richDescription: false,
-                        video: false,
-                        verification: false,
-                        aiChat: false
-                    }
-                ) as unknown as { hasWhatsapp: boolean }
-            ).hasWhatsapp
-        ).toBe(true);
+        expect((whatsappOnly as unknown as { hasWhatsapp: boolean }).hasWhatsapp).toBe(true);
     });
 
     it('uses the owner effective set for slug details, independent of the visitor', async () => {

@@ -44,7 +44,7 @@ export const protectedBatchOccupancyRoute = createProtectedRoute({
     listingAccess: {
         vertical: VerticalEnum.ACCOMMODATION,
         operation: 'EDIT',
-        capabilities: ['can_use_calendar'],
+        listingSection: { id: 'calendar', intent: 'write' },
         idParam: 'id'
     },
     summary: 'Batch block/unblock days on the occupancy calendar (owner)',

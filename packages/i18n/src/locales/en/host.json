@@ -727,6 +727,14 @@
             },
             "pageDescription": "Editar información de tu propiedad",
             "aiQuestions": {
+                "redactionNote": "Contact details (emails and phone numbers) are hidden in the questions shown here.",
+                "emptyFiltered": "There are no questions in that date range.",
+                "filter": {
+                    "from": "From",
+                    "to": "To",
+                    "clear": "Clear dates",
+                    "invalidRange": "The date range is not valid. You can look back up to 12 months and \"From\" cannot be after \"To\"."
+                },
                 "intro": "What visitors asked your listing's assistant. Questions are anonymous and kept for 12 months.",
                 "loading": "Loading questions…",
                 "error": "We could not load the questions. Please try again later.",

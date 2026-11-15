@@ -111,6 +111,7 @@
         "settings": "Settings",
         "credentials": "Credentials",
         "prompts": "Prompts",
-        "playground": "Playground"
+        "playground": "Playground",
+        "conversations": "Conversations"
     }
 }

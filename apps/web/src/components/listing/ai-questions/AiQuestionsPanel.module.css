@@ -138,3 +138,23 @@
 .addFaq:focus-visible {
     background: oklch(0.96 0.02 240 / 0.15);
 }
+
+.redactionNote {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground, #6b7280);
+}
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.filterField {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8125rem;
+}

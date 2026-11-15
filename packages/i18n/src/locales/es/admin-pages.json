@@ -410,6 +410,49 @@
         }
     },
     "ai": {
+        "conversations": {
+            "title": "Conversaciones del chat IA",
+            "subtitle": "Lectura anónima de las conversaciones del chat de cada alojamiento. Los datos personales del texto ya están ocultos.",
+            "filter": {
+                "vertical": "Vertical",
+                "allVerticals": "Todas las verticales",
+                "listingId": "Alojamiento / ficha (UUID)",
+                "listingIdPlaceholder": "UUID de la ficha",
+                "from": "Desde",
+                "to": "Hasta",
+                "reset": "Restablecer"
+            },
+            "verticals": {
+                "accommodation": "Alojamiento",
+                "venue": "Espacio",
+                "experience": "Experiencia"
+            },
+            "table": {
+                "title": "Conversaciones",
+                "total": "{{total}} en total",
+                "colLastMessage": "Último mensaje",
+                "colVertical": "Vertical",
+                "colListing": "Ficha",
+                "colMessages": "Mensajes",
+                "colFirstQuestion": "Primera pregunta",
+                "pageOf": "Página {{page}} de {{totalPages}}",
+                "prev": "Anterior",
+                "next": "Siguiente"
+            },
+            "loading": "Cargando conversaciones...",
+            "loadError": "No se pudieron cargar las conversaciones.",
+            "empty": "No hay conversaciones para estos filtros.",
+            "detail": {
+                "title": "Conversación",
+                "back": "Volver al listado",
+                "loadError": "No se pudo cargar la conversación.",
+                "noTurns": "Esta conversación no tiene mensajes.",
+                "role": {
+                    "user": "Usuario",
+                    "assistant": "Asistente"
+                }
+            }
+        },
         "settings": {
             "reasoningEffortLabel": "Esfuerzo de razonamiento",
             "providerDefault": "Predeterminado del proveedor"

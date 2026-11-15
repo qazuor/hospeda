@@ -108,6 +108,8 @@ function verticalFallback(entityType: AiChatEntityType, suffix: string): string 
 
 /** Human Spanish copy for the vertical-agnostic strings. */
 const SHARED_FALLBACKS: Readonly<Record<string, string>> = Object.freeze({
+    readNotice:
+        'El comercio puede leer las preguntas que hagas en este chat. No compartas datos personales.',
     placeholder: 'Escribí tu pregunta aquí…',
     send: 'Enviar',
     sending: 'Enviando…',
