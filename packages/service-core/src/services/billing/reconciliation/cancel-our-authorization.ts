@@ -24,11 +24,11 @@ export type CancelOurAuthorizationOutcome =
 
 /**
  * The notice kinds a cancellation through this helper can ask for (its template is part of the
- * dedupe key). S6's `ARREARS_SUSPENSION` never goes through it: S6 retries itself.
+ * dedupe key). Both S6 notice kinds retry through S6 itself, never this helper.
  */
 export type CancelOurAuthorizationNoticeKind = Exclude<
     BeforeCancelNoticeKind,
-    'ARREARS_SUSPENSION'
+    'ARREARS_SUSPENSION' | 'CHARGEBACK_SUSPENSION'
 >;
 
 /** Input of {@link cancelOurAuthorization}. */

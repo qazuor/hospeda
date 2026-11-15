@@ -52,6 +52,11 @@ export function PendingAttemptPanel({
                     date
                 })}
             </p>
+            {attempt.takenBy === 'LIVE_PRINCIPAL' && (
+                <p data-testid="signup-checkout-taken-by">
+                    {t('account.subscription.signupTakenBy.livePrincipal')}
+                </p>
+            )}
             {resumeHref && (
                 <a
                     data-testid="signup-checkout-pending-attempt-resume"

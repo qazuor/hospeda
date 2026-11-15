@@ -19,6 +19,7 @@ export type PublishDeniedReason =
     | 'INVALID_FROM'
     | 'LIMIT_REACHED'
     | 'TRIAL_LIMIT_REACHED'
+    | 'NEW_PAID_SIGNUPS_FROZEN'
     | 'STATE_CHANGED'
     | TrialStartDeniedReason;
 
@@ -39,7 +40,7 @@ export type PublishListingResult =
  * way back up (HOS-1997, owner decision 2026-11-02): allowed only while covered
  * and while the quota has a free slot, otherwise `LIMIT_REACHED`. The status
  * event is written by the owner, so it counts as a manual publish for the
- * restoration order.
+ * restoration order. PB1 only allows the owner to publish (HOS-2001).
  */
 export async function publishListing(args: {
     readonly unitOfWork: PublicationUnitOfWork;
@@ -47,11 +48,15 @@ export async function publishListing(args: {
     readonly clock: Clock;
     readonly afterCommit: PublicationAfterCommit;
     readonly userId: string;
+    /** Account that requested publication; defaults to `userId` for owner callers. */
+    readonly actorId?: string;
     readonly vertical: PublicationVertical;
     readonly listingId: string;
     readonly event: VerticalActivationEvent;
     readonly emailPseudonym: string;
     readonly correlationId: string;
+    /** Optional global signup freeze check, consulted only when PB1 would start T1. */
+    readonly newSignupsFrozen?: () => Promise<boolean>;
 }): Promise<PublishListingResult> {
     const decision = await withPublicationLock({
         unitOfWork: args.unitOfWork,
@@ -63,7 +68,7 @@ export async function publishListing(args: {
                 listingId: args.listingId
             });
             if (!listing) return { published: false, reason: 'LISTING_NOT_FOUND' } as const;
-            if (listing.ownerId !== args.userId)
+            if (listing.ownerId !== args.userId || (args.actorId ?? args.userId) !== args.userId)
                 return { published: false, reason: 'NOT_OWNER' } as const;
             if (
                 listing.publicationStatus !== PublicationStatusEnum.DRAFT &&
@@ -122,6 +127,9 @@ export async function publishListing(args: {
                 });
                 if (!preflight.starts)
                     return { published: false, reason: preflight.reason } as const;
+                if (await args.newSignupsFrozen?.()) {
+                    return { published: false, reason: 'NEW_PAID_SIGNUPS_FROZEN' } as const;
+                }
                 const trial = await startTrialInTransaction({
                     tx,
                     billing: args.billing,

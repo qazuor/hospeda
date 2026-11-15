@@ -112,7 +112,13 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
 
     const handleConfirm = async () => {
         const current = preview.data;
-        if (!current || current.origin === 'CANCEL_SCHEDULED' || mutation.isPending) return;
+        if (
+            !current ||
+            current.origin === 'CANCEL_SCHEDULED' ||
+            current.origin === 'PAUSED' ||
+            mutation.isPending
+        )
+            return;
         setNotice(false);
         const trimmedNote = note.trim();
         try {
@@ -194,7 +200,8 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
                     data-testid="subscription-cancellation-ready"
                 >
                     <CancellationPreviewDetails preview={preview.data} />
-                    {preview.data.origin === 'CANCEL_SCHEDULED' ? null : (
+                    {preview.data.origin === 'CANCEL_SCHEDULED' ||
+                    preview.data.origin === 'PAUSED' ? null : (
                         <>
                             <div className="space-y-2">
                                 <Label htmlFor={noteId}>
@@ -259,6 +266,7 @@ function CancellationBody({ subscriptionId }: SubscriptionCancellationScreenProp
                                 </Select>
                             </div>
                             <Button
+                                className="h-auto min-h-10 w-full whitespace-normal py-2 text-center sm:w-auto"
                                 type="button"
                                 variant="destructive"
                                 disabled={mutation.isPending}

@@ -21,6 +21,7 @@ import {
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid
 } from 'drizzle-orm/pg-core';
 import { accommodationExternalListings } from '../accommodation-external/accommodation_external_listings.dbschema.ts';
@@ -75,6 +76,21 @@ export const accommodations = pgTable(
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),
         location: jsonb('location').$type<AccommodationLocationType>(),
+        // HOS-1810 (one-address rule). `location_key` is the normalized place key
+        // derived from `location` + `destination_id` by `buildLocationKey`; it is
+        // written ONLY by the service hooks, never by a request body. NULL means the
+        // address is not comparable (no number, `s/n`). The `location_exception_*`
+        // trio is an admin-granted exception, in force when `..._at` is set.
+        locationKey: text('location_key'),
+        locationExceptionBy: uuid('location_exception_by').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        locationExceptionReason: text('location_exception_reason'),
+        locationExceptionAt: timestamp('location_exception_at', { withTimezone: true }),
+        // The `location_key` the exception was granted for. The exception is in force only
+        // while `location_key` still equals it, so moving the listing to another address
+        // ends the exemption on any write path (HOS-1810).
+        locationExceptionKey: text('location_exception_key'),
         /**
          * Embedded videos for the accommodation (HOS-372).
          *
@@ -198,7 +214,22 @@ export const accommodations = pgTable(
         accommodations_ownerId_deletedAt_idx: index('accommodations_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt
+        ),
+        // HOS-1810: non-unique on purpose (the policy is the application's).
+        accommodations_locationKey_idx: index('accommodations_locationKey_idx')
+            .on(table.locationKey)
+            .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+        // HOS-1810: the backstop of the one-address rule. The service check is a
+        // friendly pre-check and cannot see a concurrent publish; this index can.
+        // `uniqueIndex` keeps one PUBLISHED, live, non-excepted listing per
+        // (owner, place key). The violation is mapped to 409 DUPLICATE_LOCATION.
+        accommodations_ownerId_locationKey_published_uniq: uniqueIndex(
+            'accommodations_ownerId_locationKey_published_uniq'
         )
+            .on(table.ownerId, table.locationKey)
+            .where(
+                sql`${table.publicationStatus} = 'PUBLISHED' AND ${table.deletedAt} IS NULL AND ${table.locationKey} IS NOT NULL AND (${table.locationExceptionAt} IS NULL OR ${table.locationExceptionKey} IS DISTINCT FROM ${table.locationKey})`
+            )
     })
 );
 

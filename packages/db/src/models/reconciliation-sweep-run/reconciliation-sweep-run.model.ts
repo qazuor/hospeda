@@ -8,7 +8,12 @@ import {
 } from '../../schemas/vertical/reconciliation-sweep-run.dbschema.ts';
 import { subscriptions } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { closeRunIfOpen, extendRunLease, getRunLiveness } from '../../utils/run-lease.ts';
+import {
+    closeRunIfOpen,
+    extendRunLease,
+    getRunLiveness,
+    liveRunPredicate
+} from '../../utils/run-lease.ts';
 
 export type { ReconciliationSweepOutcome };
 /** Terminal outcomes permitted for a reconciliation slice. */
@@ -124,6 +129,19 @@ export class ReconciliationSweepRunModel {
                 )
             )
             .returning();
+        return row ?? null;
+    }
+
+    /** Finds any sweep run with an open outcome and a lease live on the database clock. */
+    async findLiveRun(
+        input: { readonly tx?: DrizzleClient } = {}
+    ): Promise<SelectReconciliationSweepRun | null> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select()
+            .from(reconciliationSweepRuns)
+            .where(liveRunPredicate(runLease))
+            .limit(1);
         return row ?? null;
     }
 

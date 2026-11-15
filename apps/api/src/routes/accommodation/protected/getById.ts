@@ -8,6 +8,7 @@ import {
     eq,
     features,
     getDb,
+    listingLocationModel,
     rAccommodationAmenity,
     rAccommodationFeature
 } from '@repo/db';
@@ -267,7 +268,12 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
             // `undefined` (not `[]`) when empty, mirroring the admin/public
             // routes: the field is `.optional()` on the response schema.
             amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
-            features: featuresData.length > 0 ? featuresData : undefined
+            features: featuresData.length > 0 ? featuresData : undefined,
+            // HOS-1810: the draft warning. A flag, never an id.
+            locationDuplicate: await listingLocationModel.hasOwnDuplicate({
+                vertical: VerticalEnum.ACCOMMODATION,
+                id: accommodation.id
+            })
         };
     }
 });

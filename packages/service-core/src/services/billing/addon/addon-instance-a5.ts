@@ -1,18 +1,21 @@
 /**
  * A5 (TRANS:B:A5; AC:B5:25), its LOCAL half: an addon instance in `PENDING_AUTHORIZATION` or
- * `ACTIVE` goes to `CANCELLED` because it is withdrawn or became orphaned (notas I-8; the third
- * clause, the grant revocation, is Phase 2). In the SAME transaction `S21` closes its complement
+ * `ACTIVE` goes to `CANCELLED` because it is withdrawn, became orphaned (notas I-8), or the grant
+ * whose anchor titled it was revoked (third clause, `GRANT_REVOKED`, called by
+ * `revokePermanentGrant`; DEC-ADDON-006; HOS-1634, HOS-1630). In the SAME transaction `S21` closes its complement
  * subscription and, when `S21` wrote it now and it has a card provider link, the decision to
  * cancel its preapproval is recorded as `A5` (notas I-5): that one preapproval is the only call.
  * Order: `closeSuccessionIfPredecessor` → {@link runOrphanhood} (in the act's `tx`) → commit →
  * {@link emitAddonCoverageRemoved} → {@link cancelAddonComplementsAtProvider} (AC:B5:27), the only
  * half that calls the provider or enqueues mail; it holds no transaction.
  */
+import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
     addonInstances,
     and,
     type DrizzleClient,
+    domainEventModel,
     eq,
     inArray,
     LIVE_SUBSCRIPTION_STATUSES,
@@ -45,8 +48,8 @@ import type { AddonOrphanhoodPorts } from './addon-orphanhood-ports';
 
 const logger = createLogger('addon-instance-a5');
 
-/** The clauses of A5 this cut implements (notas I-8): `GRANT_REVOKED` is Phase 2 (AC:B5:26). */
-export type A5Clause = 'ORPHANED' | 'WITHDRAWN';
+/** Grant revocation triggers the third A5 clause (TRANS:B:A5, `grant_anchor_revoked`, DEC-ADDON-006; HOS-1634). TEST:B5:13 covers its scope matrix in `permanent-grant-revoke-scopes.test.ts` (real path) and `addon-instance-a5-grant-revoked.test.ts` (seeded rows). */
+export type A5Clause = 'ORPHANED' | 'WITHDRAWN' | 'GRANT_REVOKED';
 
 /** The `desde` of A5 (glossary row 18): the two instance states with an authorization that can charge. */
 type A5Origin = 'PENDING_AUTHORIZATION' | 'ACTIVE';
@@ -83,7 +86,7 @@ export type A5Ports = Pick<AddonOrphanhoodPorts, 'addonPolicy' | 'listing'>;
 
 const applySchema = z.object({
     instanceId: z.uuid(),
-    clause: z.enum(['ORPHANED', 'WITHDRAWN']),
+    clause: z.enum(['ORPHANED', 'WITHDRAWN', 'GRANT_REVOKED']),
     s21Cause: z.enum(S21_CAUSES).optional(),
     now: z.date(),
     tx: z.custom<DrizzleClient>((value) => value !== undefined && value !== null)
@@ -118,12 +121,14 @@ function isA5Origin(status: string): status is A5Origin {
  *
  * @param input.tx - The caller's transaction
  * @param input.instanceId - The addon instance
- * @param input.clause - `ORPHANED` or `WITHDRAWN`
+ * @param input.clause - `ORPHANED`, `WITHDRAWN`, or `GRANT_REVOKED`
  * @param input.now - The instant of the act
  * @param ports - `políticaDeAddon` and `ficha`, for the coverage verticals (notas I-7). Part of
  *   the contract (Coord-377): every caller (`runOrphanhood`; `S12` with `WITHDRAWN`, HOS-1569;
- *   HOS-1546, HOS-1547, HOS-1570) passes them; with the production `ficha` a `LISTING`
- *   instance throws and the caller's act rolls back (notas I-12)
+ *   HOS-1546, HOS-1547, HOS-1570) passes them. The production `ficha` answers for
+ *   an existing listing, including `PURGED`. A missing or soft-deleted listing throws
+ *   `ListingNotFoundError` and rolls back the caller's act. `revokePermanentGrant` turns it into
+ *   the typed 409 `PERMANENT_GRANT_LISTING_SOFT_DELETED` (HOS-2069).
  * @returns The cancelled addon, or `NOT_APPLICABLE`
  * @throws ServiceError when the instance does not exist or left its state under the lock
  */
@@ -174,6 +179,17 @@ export async function applyA5(
             undefined,
             'A5_STATE_CHANGED'
         );
+    await domainEventModel.insert({
+        eventType: 'addon_instance.status_changed',
+        entityType: 'addon_instance',
+        entityId: instance.id,
+        actorType: 'job',
+        actorId: null,
+        correlationId: randomUUID(),
+        changes: [{ field: 'status', old: from, new: 'CANCELLED' }],
+        occurredAt: now,
+        tx
+    });
 
     const providerCancellation = instance.complementSubscriptionId
         ? await closeComplement({

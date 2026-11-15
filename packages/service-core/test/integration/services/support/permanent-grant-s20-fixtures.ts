@@ -3,6 +3,7 @@ import {
     type DrizzleClient,
     inArray,
     providerLinks,
+    reconciliationMarks,
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
@@ -100,5 +101,8 @@ export async function retireS20Rows(): Promise<void> {
             rows.map(({ instanceId }) => instanceId)
         )
     );
+    await db
+        .delete(reconciliationMarks)
+        .where(inArray(reconciliationMarks.subscriptionId, complementIds));
     await db.delete(subscriptions).where(inArray(subscriptions.id, complementIds));
 }

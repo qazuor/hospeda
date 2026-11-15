@@ -1,7 +1,7 @@
 /**
  * @file sumate-partner-index.test.ts
  * @description Source-read tests for the public "Convertite en partner"
- * alliance-lead landing (HOS-277).
+ * Partner application landing (AC:V7:15).
  */
 
 import { readFileSync } from 'node:fs';
@@ -21,15 +21,22 @@ describe('sumate/partner/index.astro', () => {
     it('uses createTranslations for i18n', () => {
         expect(src).toContain('createTranslations(locale)');
     });
-    it('mounts the AllianceLead island with kind="partner"', () => {
-        expect(src).toContain("from '@/components/alliance/AllianceLead.client'");
-        expect(src).toMatch(/<AllianceLead[^>]*kind="partner"/s);
+    it('mounts the PP1 island without the legacy Partner alliance lead (AC:V7:15)', () => {
+        expect(src).toContain("from '@/components/partner/PartnerApplication.client'");
+        expect(src).toMatch(
+            /<PartnerApplication[\s\S]*client:load[\s\S]*locale=\{locale\}[\s\S]*turnstileSiteKey=\{turnstileSiteKey\}/
+        );
+        expect(src).not.toContain('<AllianceLead');
     });
     it('hydrates the form with client:load', () => {
         expect(src).toContain('client:load');
     });
     it('passes locale to the island', () => {
         expect(src).toContain('locale={locale}');
+    });
+    it('passes the public Turnstile site key to the guest form (AC:V7:15)', () => {
+        expect(src).toContain('getTurnstileSiteKey()');
+        expect(src).toContain('turnstileSiteKey={turnstileSiteKey}');
     });
     it('does NOT redirect unauthenticated visitors (public page)', () => {
         expect(src).not.toContain('if (!user)');

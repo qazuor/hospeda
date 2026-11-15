@@ -1,4 +1,4 @@
-import type { CreatePartner, Partner, UpdatePartner } from '@repo/schemas';
+import type { AdminCreatePartner, Partner, UpdatePartner } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
@@ -16,7 +16,7 @@ async function fetchPartner(id: string) {
     return result.data.data;
 }
 
-async function createPartner(data: CreatePartner) {
+async function createPartner(data: AdminCreatePartner) {
     const result = await fetchApi<{ success: boolean; data: Partner }>({
         path: '/api/v1/admin/partners',
         method: 'POST',
@@ -55,7 +55,7 @@ export function usePartnerQuery(id: string, options?: { enabled?: boolean }) {
 export function useCreatePartnerMutation() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (data: CreatePartner) => createPartner(data),
+        mutationFn: (data: AdminCreatePartner) => createPartner(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });
         }

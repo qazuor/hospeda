@@ -55,6 +55,8 @@ const RICH_DESCRIPTION_SELECTOR = '.ProseMirror';
 export type ListingEditorSection =
     | 'hub'
     | 'datos'
+    // HOS-2189 — venue only: the postal address, right after the basic info.
+    | 'ubicacion'
     | 'punto-de-encuentro'
     | 'datos-practicos'
     | 'horarios'

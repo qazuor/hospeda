@@ -250,7 +250,7 @@ describe('socialNetworks in access schemas', () => {
 // ---------------------------------------------------------------------------
 // contactInfo public exposure (H-118) — the anfitrión's phone/email/website
 // are approved for public display, but the OTHER contactInfo sub-fields
-// (workEmail/homePhone/workPhone/preferredEmail/preferredPhone, and
+// (workEmail/homePhone/preferredEmail/preferredPhone, and
 // especially whatsapp — HOS-19's separately entitlement-gated channel) must
 // never reach the public schema.
 // ---------------------------------------------------------------------------
@@ -271,12 +271,13 @@ const entityWithFullContactInfo = {
 };
 
 describe('contactInfo public exposure (H-118)', () => {
-    it('AccommodationPublicSchema exposes only mobilePhone/personalEmail/website', () => {
+    it('AccommodationPublicSchema exposes only mobilePhone/workPhone/personalEmail/website', () => {
         const result = AccommodationPublicSchema.safeParse(entityWithFullContactInfo);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.contactInfo).toEqual({
                 mobilePhone: '+5493431234567',
+                workPhone: '+5433424445566',
                 personalEmail: 'contacto@hospeda-test.com.ar',
                 website: 'https://hospeda-test.com.ar'
             });
@@ -291,13 +292,12 @@ describe('contactInfo public exposure (H-118)', () => {
         }
     });
 
-    it('AccommodationPublicSchema strips workEmail/homePhone/workPhone/preferredEmail/preferredPhone', () => {
+    it('AccommodationPublicSchema strips workEmail/homePhone/preferredEmail/preferredPhone', () => {
         const result = AccommodationPublicSchema.safeParse(entityWithFullContactInfo);
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.contactInfo).not.toHaveProperty('workEmail');
             expect(result.data.contactInfo).not.toHaveProperty('homePhone');
-            expect(result.data.contactInfo).not.toHaveProperty('workPhone');
             expect(result.data.contactInfo).not.toHaveProperty('preferredEmail');
             expect(result.data.contactInfo).not.toHaveProperty('preferredPhone');
         }

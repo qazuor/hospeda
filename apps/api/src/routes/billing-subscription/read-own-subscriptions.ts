@@ -13,13 +13,17 @@ import {
     planVersions,
     SUBSCRIPTION_STATUSES,
     sql,
+    subscriptionPauses,
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import {
+    computeCourtesyBalanceMonths,
     createCutExpectedAmountPolicy,
+    isSuccessionCheckoutOpen,
     PAID_AFTER_CANCELLATION_TEMPLATE,
+    readLivePromos,
     ServiceError
 } from '@repo/service-core';
 import { z } from 'zod';
@@ -37,7 +41,7 @@ const paidAfterCancellationPayloadSchema = z
 /** Read the owner's principal subscriptions that have a self-service cancellation surface. */
 export async function readOwnSubscriptions(userId: string) {
     const statuses = SUBSCRIPTION_STATUSES.filter((status) =>
-        ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED'].includes(status)
+        ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED'].includes(status)
     );
     const rows = await getDb()
         .select({
@@ -74,6 +78,39 @@ export async function readOwnSubscriptions(userId: string) {
         )
         .orderBy(asc(subscriptions.createdAt), asc(subscriptions.id));
     const ids = rows.map(({ id }) => id);
+    const openPauses =
+        ids.length === 0
+            ? []
+            : await getDb()
+                  .select({
+                      subscriptionId: subscriptionPauses.subscriptionId,
+                      reason: subscriptionPauses.reason,
+                      expectedEndAt: subscriptionPauses.expectedEndAt
+                  })
+                  .from(subscriptionPauses)
+                  .where(
+                      and(
+                          inArray(subscriptionPauses.subscriptionId, ids),
+                          isNull(subscriptionPauses.actualEndAt)
+                      )
+                  );
+    const pausesById = new Map(openPauses.map((pause) => [pause.subscriptionId, pause]));
+    const successorIds = rows.flatMap((row) =>
+        row.subscription.succeededById ? [row.subscription.succeededById] : []
+    );
+    const successors =
+        successorIds.length === 0
+            ? []
+            : await getDb()
+                  .select({
+                      id: subscriptions.id,
+                      status: subscriptions.status,
+                      succeedsId: subscriptions.succeedsId,
+                      authorizationWindowEndsAt: subscriptions.authorizationWindowEndsAt
+                  })
+                  .from(subscriptions)
+                  .where(inArray(subscriptions.id, successorIds));
+    const successorsById = new Map(successors.map((successor) => [successor.id, successor]));
     const marks =
         ids.length === 0
             ? []
@@ -105,7 +142,37 @@ export async function readOwnSubscriptions(userId: string) {
             recurringAddonsCut: parsed.data.recurringAddonsCut
         });
     }
+    const liveCourtesy =
+        ids.length === 0
+            ? []
+            : await getDb()
+                  .select({
+                      subscriptionId: courtesyGrants.subscriptionId,
+                      startsAt: courtesyGrants.startsAt,
+                      endsAt: courtesyGrants.endsAt
+                  })
+                  .from(courtesyGrants)
+                  .where(
+                      and(
+                          inArray(courtesyGrants.subscriptionId, ids),
+                          isNull(courtesyGrants.balanceMonths),
+                          isNull(courtesyGrants.balanceClosedAt)
+                      )
+                  );
     const now = getClock().clock.now();
+    const liveCourtesyBySubscription = new Map<string, number>();
+    for (const grant of liveCourtesy) {
+        if (grant.startsAt > now || grant.endsAt <= now) continue;
+        const { months } = computeCourtesyBalanceMonths({
+            startsAt: grant.startsAt,
+            endsAt: grant.endsAt,
+            now
+        });
+        liveCourtesyBySubscription.set(
+            grant.subscriptionId,
+            (liveCourtesyBySubscription.get(grant.subscriptionId) ?? 0) + months
+        );
+    }
     const expectedAmountPolicy = createCutExpectedAmountPolicy();
     return Promise.all(
         rows.map(async (row) => {
@@ -122,6 +189,11 @@ export async function readOwnSubscriptions(userId: string) {
                     'Unknown billing option currency'
                 );
             let nextCharge: { at: Date; amount: number; currency: 'ARS' } | null = null;
+            const openPause = pausesById.get(row.id);
+            const livePromos = await readLivePromos({ subscriptionId: row.id, at: now });
+            const successor = row.subscription.succeededById
+                ? successorsById.get(row.subscription.succeededById)
+                : undefined;
             if (
                 row.subscription.nextChargeAt !== null &&
                 isNextChargeShown({
@@ -171,7 +243,25 @@ export async function readOwnSubscriptions(userId: string) {
                 },
                 nextCharge,
                 paidAfterCancellation:
-                    row.status === 'CANCEL_SCHEDULED' ? (marksById.get(row.id) ?? null) : null
+                    row.status === 'CANCEL_SCHEDULED' ? (marksById.get(row.id) ?? null) : null,
+                pause:
+                    openPause &&
+                    (openPause.reason === 'CUSTOMER_REQUEST' || openPause.reason === 'COURTESY')
+                        ? {
+                              reason: openPause.reason,
+                              expectedEndAt: openPause.expectedEndAt?.toISOString() ?? null
+                          }
+                        : null,
+                promo: livePromos.length > 0 ? { endsAt: null } : null,
+                liveCourtesyMonths: liveCourtesyBySubscription.get(row.id) ?? 0,
+                succession:
+                    successor?.succeedsId === row.id && isSuccessionCheckoutOpen(successor.status)
+                        ? {
+                              checkoutOpen: true as const,
+                              checkoutDeadline:
+                                  successor.authorizationWindowEndsAt?.toISOString() ?? null
+                          }
+                        : null
             };
         })
     );

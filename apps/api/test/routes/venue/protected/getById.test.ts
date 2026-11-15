@@ -14,6 +14,20 @@
  */
 import { AmenityScopeEnum, PermissionEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-1810: the route also reads the draft-warning flag through the location model;
+// this file is about ownership, not that read, so it answers "no duplicate".
+vi.mock('@repo/db', async (importActual) => {
+    const actual = await importActual<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        listingLocationModel: {
+            ...actual.listingLocationModel,
+            hasOwnDuplicate: async () => false
+        }
+    };
+});
+
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 

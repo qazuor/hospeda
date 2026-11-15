@@ -6,10 +6,10 @@
  * PATCH /api/v1/protected/partners/mine
  * ```
  *
- * Both are gated on authentication ONLY — no `PARTNER_*` permission. That is
- * AC-7 and it is deliberate: an approved partner is an ordinary account, so
- * requiring `PARTNER_VIEW_ALL` (an admin perk) would lock them out of their own
- * ficha. The service scopes every read and write to `ownerUserId = actor.id`.
+ * GET is gated on authentication only because the web app uses it as an ownership
+ * probe. PATCH requires the partner owner family (`partner.editOwn`) at step 3
+ * (V/17 §1.2, DEC-ENT-006📌1). The service scopes every read and write to
+ * `ownerUserId = actor.id`.
  *
  * Note the path carries no id. There is nothing to address but your own
  * listing, which is what makes "a partner cannot read or edit another's"
@@ -21,10 +21,16 @@
  * @module routes/partners/protected/mine
  */
 
-import { PartnerOwnerUpdateSchema, PartnerOwnerViewSchema } from '@repo/schemas';
+import {
+    PartnerOwnerPresenceSchema,
+    PartnerOwnerUpdateSchema,
+    PartnerOwnerViewSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { readOwnerPartnerPresence } from '../../../services/partner-presence/partner-presence-read.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -42,6 +48,10 @@ const partnerService = new PartnerService({ logger: apiLogger });
  */
 const MyPartnerResponseSchema = z.object({
     partner: PartnerOwnerViewSchema.nullable()
+});
+const MyPartnerWithPresenceResponseSchema = z.object({
+    partner: PartnerOwnerViewSchema.nullable(),
+    presence: PartnerOwnerPresenceSchema.nullable()
 });
 
 /**
@@ -61,7 +71,19 @@ export async function handleGetMyPartner(ctx: Context) {
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    return { partner: result.data?.partner ?? null };
+    const partner = result.data?.partner ?? null;
+    return {
+        partner,
+        presence: partner
+            ? await readOwnerPartnerPresence({
+                  partner: {
+                      id: partner.id,
+                      ownerUserId: partner.ownerUserId ?? null,
+                      presenceModerated: partner.presenceModerated
+                  }
+              })
+            : null
+    };
 }
 
 /** Handler for the edit. Exported standalone for the same reason. */
@@ -83,17 +105,17 @@ export async function handleUpdateMyPartner(ctx: Context, body: unknown) {
 /**
  * GET /api/v1/protected/partners/mine
  *
- * The caller's own partner listing, or `null`. Auth-only — see module
- * docstring for why no `PARTNER_*` permission is required.
+ * The caller's own partner listing, or `null`. Auth-only so the web ownership
+ * probe also works for accounts without a partner listing.
  */
 export const protectedGetMyPartnerRoute = createProtectedRoute({
     method: 'get',
     path: '/mine',
     summary: "Get the caller's own partner listing",
     description:
-        'Returns the partner listing owned by the authenticated caller, or null when they own none — never 404, never 403. Auth-only; no PARTNER_* permission required, because an approved partner is an ordinary account (HOS-278 AC-7). Includes the pending content and its review state so the page can show what is still awaiting approval.',
+        'Returns the authenticated caller’s own partner listing and owner-only public presence explanation, or null when they own none. Auth-only; no PARTNER_* permission required. Includes pending content and review state.',
     tags: ['Partners'],
-    responseSchema: MyPartnerResponseSchema,
+    responseSchema: MyPartnerWithPresenceResponseSchema,
     handler: async (ctx: Context) => handleGetMyPartner(ctx),
     options: {
         customRateLimit: { requests: 60, windowMs: 60_000 }
@@ -113,12 +135,13 @@ export const protectedUpdateMyPartnerRoute = createProtectedRoute({
     path: '/mine',
     summary: "Update the caller's own partner listing",
     description:
-        'Updates the partner listing owned by the authenticated caller. Contact details and social links apply immediately and are merged with the stored values, so omitted keys are preserved. A logo, description or website change is stored as a pending edit and awaits admin review before the public sees it. Identity and commercial fields are not accepted and are silently discarded.',
+        'Requires the partner owner family (partner.editOwn) at step 3. Updates the partner listing owned by the authenticated caller. Contact details and social links apply immediately and are merged with the stored values, so omitted keys are preserved. A logo, description or website change is stored as a pending edit and awaits admin review before the public sees it. Identity and commercial fields are not accepted and are silently discarded.',
     tags: ['Partners'],
     requestBody: PartnerOwnerUpdateSchema,
     responseSchema: MyPartnerResponseSchema,
     handler: async (ctx: Context, _params: unknown, body: unknown) =>
         handleUpdateMyPartner(ctx, body),
+    requiredPermissions: [PermissionEnum.PARTNER_EDIT_OWN],
     options: {
         customRateLimit: { requests: 20, windowMs: 60_000 }
     }

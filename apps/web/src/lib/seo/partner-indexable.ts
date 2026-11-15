@@ -1,15 +1,16 @@
 /**
  * @file partner-indexable.ts
- * @description Keeps partner pages out of the index and sitemap until V7
- * restores the public page on the partner's public key.
+ * @description Single source of truth for partner page and sitemap indexability.
  */
 
 /** Why a partner page is not indexable, or `null` when it is. */
-export type PartnerNotIndexableReason = 'not-visible';
+export type PartnerNotIndexableReason = 'not-visible' | 'missing-description';
 
-/** Input retained for the page and sitemap call sites. */
+/** Optional public partner fields needed to decide indexability. */
 export interface PartnerIndexabilityInput {
-    readonly lifecycleState?: string | null;
+    /** Whether the owner currently holds the public-page entitlement. */
+    readonly hasPublicPage?: boolean | null;
+    /** The live description. Blank means the page would be thin content. */
     readonly description?: string | null;
 }
 
@@ -20,14 +21,21 @@ export interface PartnerIndexabilityResult {
 }
 
 /**
- * Partner detail pages remain dark until V7 restores them on the public key.
+ * Decide whether a partner page may be indexed and listed in the sitemap.
  *
- * @param input - The caller's public partner data.
- * @returns A non-indexable verdict while the page is unavailable.
+ * @param input - Public partner data from the page or carousel.
+ * @returns The verdict and the failing condition.
  */
 export function evaluatePartnerIndexability(
     input: PartnerIndexabilityInput
 ): PartnerIndexabilityResult {
-    void input;
-    return { isIndexable: false, reason: 'not-visible' };
+    if (input.hasPublicPage !== true) {
+        return { isIndexable: false, reason: 'not-visible' };
+    }
+
+    if (!input.description || input.description.trim().length === 0) {
+        return { isIndexable: false, reason: 'missing-description' };
+    }
+
+    return { isIndexable: true, reason: null };
 }

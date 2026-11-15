@@ -20,6 +20,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
+import { getSuccessionCloser } from '../../../utils/billing-succession-ports';
 import { getClock } from '../../../utils/clock';
 import { buildBillingCoveragePorts } from '../../../utils/listing-access/billing-coverage';
 import { createBootstrapCoverageReader } from '../../../utils/listing-access/bootstrap-coverage-reader';
@@ -194,7 +195,8 @@ export const adminRevokeSubscriptionRoute = createAdminRoute({
                     beforeCancelNotice,
                     coverageNotices: getCoverageNotices(),
                     orphanhood: { addonPolicy, listing },
-                    cancellationSeen: providerLinkCancellationSeen
+                    cancellationSeen: providerLinkCancellationSeen,
+                    successionCloser: getSuccessionCloser()
                 }
             );
             auditLog({

@@ -22,6 +22,7 @@ vi.mock('../../../../src/components/listing/ai-questions/AiQuestionsPanel.module
 import {
     AI_LISTING_QUESTIONS_PATH,
     AiQuestionsPanel,
+    buildAiQuestionsParams,
     splitAiQuestions
 } from '../../../../src/components/listing/ai-questions/AiQuestionsPanel.client';
 
@@ -325,5 +326,98 @@ describe('splitAiQuestions', () => {
 
         expect(unanswered.map((entry) => entry.id)).toEqual(['1', '3']);
         expect(others.map((entry) => entry.id)).toEqual(['2']);
+    });
+});
+
+const EMPTY_RESPONSE = {
+    ok: true,
+    data: {
+        items: [],
+        total: 0,
+        unansweredCount: 0,
+        truncated: false,
+        dismissed: [],
+        dismissedCount: 0,
+        othersNextCursor: null
+    }
+};
+
+describe('AiQuestionsPanel date filter (HOS-2075)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('builds params without from/to when unset and with them when set', () => {
+        expect(buildAiQuestionsParams({ entityType: 'venue', entityId: LISTING_ID })).toEqual({
+            entityType: 'venue',
+            entityId: LISTING_ID
+        });
+        expect(
+            buildAiQuestionsParams({
+                entityType: 'venue',
+                entityId: LISTING_ID,
+                from: '2026-10-01',
+                to: '2026-10-31',
+                othersCursor: 'c1'
+            })
+        ).toEqual({
+            entityType: 'venue',
+            entityId: LISTING_ID,
+            from: '2026-10-01',
+            to: '2026-10-31',
+            othersCursor: 'c1'
+        });
+    });
+
+    it('refetches from the first page with from/to when the range changes, and clears', async () => {
+        mockGetProtected.mockResolvedValue(EMPTY_RESPONSE);
+        renderPanel();
+        await waitFor(() => expect(mockGetProtected).toHaveBeenCalledTimes(1));
+        await screen.findByText('Todavía nadie le hizo preguntas al asistente de esta ficha.');
+
+        fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2026-10-01' } });
+        await waitFor(() => expect(mockGetProtected).toHaveBeenCalledTimes(2));
+        fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-10-31' } });
+        await waitFor(() => expect(mockGetProtected).toHaveBeenCalledTimes(3));
+
+        const last = mockGetProtected.mock.calls[2]?.[0];
+        expect(last.params).toEqual({
+            entityType: 'venue',
+            entityId: LISTING_ID,
+            from: '2026-10-01',
+            to: '2026-10-31'
+        });
+        expect(last.params.othersCursor).toBeUndefined();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Limpiar fechas' }));
+        await waitFor(() => expect(mockGetProtected).toHaveBeenCalledTimes(4));
+        expect(mockGetProtected.mock.calls[3]?.[0].params).toEqual({
+            entityType: 'venue',
+            entityId: LISTING_ID
+        });
+    });
+
+    it('shows a polite message on a 400 and keeps the filters usable', async () => {
+        mockGetProtected.mockResolvedValueOnce(EMPTY_RESPONSE);
+        renderPanel();
+        await screen.findByLabelText('Desde');
+
+        mockGetProtected.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 400, code: 'VALIDATION_ERROR' }
+        });
+        fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '2020-01-01' } });
+
+        const alert = await screen.findByRole('alert');
+        expect(alert).toHaveTextContent('El rango de fechas no es válido');
+        expect(screen.getByLabelText('Desde')).toBeInTheDocument();
+    });
+
+    it('tells the owner that contact data is hidden', async () => {
+        mockGetProtected.mockResolvedValue(EMPTY_RESPONSE);
+        renderPanel();
+        expect(
+            await screen.findByText(/datos de contacto \(emails y teléfonos\) se ocultan/i)
+        ).toBeInTheDocument();
     });
 });

@@ -2,6 +2,7 @@ import type {
     AdminInfoType,
     ContactInfo,
     I18nText,
+    PostalAddressType,
     Seo,
     SocialNetwork,
     VenuePolicies,
@@ -20,6 +21,7 @@ import {
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
@@ -133,6 +135,28 @@ export const venues = pgTable(
         menuFileKind: VenueMenuFileKindPgEnum('menu_file_kind'),
         // Jsonb grouped columns (matching accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        /**
+         * Structured postal address (HOS-2189): street, number, floor, apartment
+         * and coordinates, the same shape as `accommodations.location`. City,
+         * neighborhood and department are NOT stored: they come from
+         * `destination_id`. Nullable until the owner or an admin fills it.
+         */
+        location: jsonb('location').$type<PostalAddressType>(),
+        // HOS-1810 (one-address rule). `location_key` is the normalized place key
+        // derived from `location` + `destination_id` by `buildLocationKey`; it is
+        // written ONLY by the service hooks, never by a request body. NULL means the
+        // address is not comparable (no number, `s/n`). The `location_exception_*`
+        // trio is an admin-granted exception, in force when `..._at` is set.
+        locationKey: text('location_key'),
+        locationExceptionBy: uuid('location_exception_by').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        locationExceptionReason: text('location_exception_reason'),
+        locationExceptionAt: timestamp('location_exception_at', { withTimezone: true }),
+        // The `location_key` the exception was granted for. The exception is in force only
+        // while `location_key` still equals it, so moving the listing to another address
+        // ends the exemption on any write path (HOS-1810).
+        locationExceptionKey: text('location_exception_key'),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         /** Weekly opening hours — keyed by day name with open/close time strings. */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
@@ -244,6 +268,21 @@ export const venues = pgTable(
             table.businessLines
         ),
         venues_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
+        // HOS-1810: non-unique on purpose (the policy is the application's).
+        venues_locationKey_idx: index('venues_locationKey_idx')
+            .on(table.locationKey)
+            .where(sql`${table.locationKey} IS NOT NULL AND ${table.deletedAt} IS NULL`),
+        // HOS-1810: the backstop of the one-address rule. The service check is a
+        // friendly pre-check and cannot see a concurrent publish; this index can.
+        // `uniqueIndex` keeps one PUBLISHED, live, non-excepted listing per
+        // (owner, place key). The violation is mapped to 409 DUPLICATE_LOCATION.
+        venues_ownerId_locationKey_published_uniq: uniqueIndex(
+            'venues_ownerId_locationKey_published_uniq'
+        )
+            .on(table.ownerId, table.locationKey)
+            .where(
+                sql`${table.publicationStatus} = 'PUBLISHED' AND ${table.deletedAt} IS NULL AND ${table.locationKey} IS NOT NULL AND (${table.locationExceptionAt} IS NULL OR ${table.locationExceptionKey} IS DISTINCT FROM ${table.locationKey})`
+            ),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
         venues_publicationStatus_idx: index('venues_publicationStatus_idx').on(

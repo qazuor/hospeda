@@ -1,0 +1,92 @@
+.card {
+    display: grid;
+    gap: var(--space-5, 1.25rem);
+    padding: var(--space-6, 1.5rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg, 1rem);
+    background: var(--core-background);
+}
+
+.heading {
+    margin: 0;
+    color: var(--core-foreground);
+    font-family: var(--font-heading);
+    font-size: var(--text-body-lg, 1.5rem);
+}
+
+.form,
+.field {
+    display: grid;
+    gap: var(--space-3, 0.75rem);
+}
+
+.label {
+    color: var(--core-foreground);
+    font-weight: 600;
+}
+
+.input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding-inline: var(--space-3, 0.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    color: var(--core-foreground);
+    background: var(--core-background);
+    font: inherit;
+}
+
+.input:focus-visible,
+.button:focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.help,
+.message {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    line-height: 1.6;
+}
+
+.turnstile {
+    min-height: 65px;
+}
+
+.button {
+    justify-self: start;
+    min-height: 2.75rem;
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    border: 0;
+    border-radius: var(--radius-md, 0.5rem);
+    color: var(--primary-foreground);
+    background: var(--brand-primary);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.error {
+    margin: 0;
+    color: var(--destructive);
+}
+
+.honeypot {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+@media (max-width: 40rem) {
+    .card {
+        padding: var(--space-4, 1rem);
+    }
+}

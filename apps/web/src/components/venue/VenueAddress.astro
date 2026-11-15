@@ -1,0 +1,92 @@
+---
+/**
+ * @file VenueAddress.astro
+ * @description Postal address block of the public venue page (HOS-2189).
+ *
+ * Shows the street line, the city (the destination's name, never stored on the
+ * address) and, when the owner pinned coordinates, a plain link to the map.
+ * Everything here is public data of the listing, so the page stays
+ * session-blind. A venue with no address renders nothing.
+ */
+
+import type { VenueDetailLocation } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildVenueMapUrl, formatVenueStreetLine } from '@/lib/venue/venue-address';
+
+interface Props {
+    readonly location: VenueDetailLocation | null;
+    /** Name of the venue's destination: the address's city. */
+    readonly cityName: string;
+    readonly locale: SupportedLocale;
+}
+
+const { location, cityName, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const streetLine = formatVenueStreetLine({
+    location,
+    floorLabel: t('venue.detail.address.floor', 'piso'),
+    apartmentLabel: t('venue.detail.address.apartment', 'depto.')
+});
+const mapUrl = buildVenueMapUrl({ location });
+
+if (streetLine === '') {
+    return;
+}
+---
+
+<section class="venue-address" id="venue-address">
+    <h2 class="venue-address__title">{t('venue.detail.address.title', 'Dónde encontrarnos')}</h2>
+    <address class="venue-address__text">
+        <span class="venue-address__street">{streetLine}</span>
+        {cityName && <span class="venue-address__city">{cityName}</span>}
+    </address>
+    {mapUrl && (
+        <a
+            class="venue-address__map"
+            href={mapUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            {t('venue.detail.address.viewOnMap', 'Ver en el mapa')}
+        </a>
+    )}
+</section>
+
+<style>
+    .venue-address {
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .venue-address__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .venue-address__text {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 4px);
+        font-family: var(--font-sans);
+        font-style: normal;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+    }
+
+    .venue-address__city {
+        color: var(--core-muted-foreground);
+    }
+
+    .venue-address__map {
+        display: inline-block;
+        margin-top: var(--space-3, 12px);
+        font-family: var(--font-sans);
+        color: var(--brand-accent);
+        text-decoration: underline;
+    }
+</style>

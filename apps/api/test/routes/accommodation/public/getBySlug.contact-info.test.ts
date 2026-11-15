@@ -9,11 +9,11 @@
  * faqs) are mocked, mirroring `getBySlug.rich-description.test.ts`.
  *
  * What this pins:
- * - `contactInfo.mobilePhone` / `.personalEmail` / `.website` survive the
- *   public strip — these are the three fields the owner decided to publish
- *   (H-118, 16/08).
+ * - `contactInfo.mobilePhone` / `.workPhone` / `.personalEmail` / `.website`
+ *   survive the public strip — the fields the owner decided to publish
+ *   (H-118, 16/08; `workPhone` is the optional landline, HOS-2042).
  * - Every OTHER `contactInfo` sub-field is stripped, even when populated on
- *   the stored row: `workEmail`, `homePhone`, `workPhone`,
+ *   the stored row: `workEmail`, `homePhone`,
  *   `preferredEmail`, `preferredPhone` (never collected by the public
  *   contact form) and, most importantly, `whatsapp` — which has its own
  *   dedicated, per-viewer-entitlement-gated channel (`hasWhatsapp` +
@@ -214,7 +214,7 @@ describe('publicGetAccommodationBySlugRoute — contactInfo public exposure (H-1
         queueSelectResults([], [], [], []);
     });
 
-    it('exposes only mobilePhone/personalEmail/website out of a fully-populated contactInfo', async () => {
+    it('exposes only mobilePhone/workPhone/personalEmail/website out of a fully-populated contactInfo', async () => {
         mockGetBySlug.mockResolvedValue({ data: ACCOMMODATION_WITH_FULL_CONTACT_INFO });
 
         const app = await buildApp();
@@ -224,6 +224,7 @@ describe('publicGetAccommodationBySlugRoute — contactInfo public exposure (H-1
         const body = (await res.json()) as { data: { contactInfo?: Record<string, unknown> } };
         expect(body.data.contactInfo).toEqual({
             mobilePhone: '+5493431234567',
+            workPhone: '+5433424445566',
             personalEmail: 'contacto@hospeda-test.com.ar',
             website: 'https://hospeda-test.com.ar'
         });
@@ -239,7 +240,7 @@ describe('publicGetAccommodationBySlugRoute — contactInfo public exposure (H-1
         expect(body.data.contactInfo).not.toHaveProperty('whatsapp');
     });
 
-    it('strips workEmail/homePhone/workPhone/preferredEmail/preferredPhone', async () => {
+    it('strips workEmail/homePhone/preferredEmail/preferredPhone', async () => {
         mockGetBySlug.mockResolvedValue({ data: ACCOMMODATION_WITH_FULL_CONTACT_INFO });
 
         const app = await buildApp();
@@ -248,7 +249,6 @@ describe('publicGetAccommodationBySlugRoute — contactInfo public exposure (H-1
 
         expect(body.data.contactInfo).not.toHaveProperty('workEmail');
         expect(body.data.contactInfo).not.toHaveProperty('homePhone');
-        expect(body.data.contactInfo).not.toHaveProperty('workPhone');
         expect(body.data.contactInfo).not.toHaveProperty('preferredEmail');
         expect(body.data.contactInfo).not.toHaveProperty('preferredPhone');
     });

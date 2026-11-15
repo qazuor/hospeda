@@ -1,4 +1,16 @@
-import { foreignKey, index, jsonb, pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import {
+    check,
+    foreignKey,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    unique,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { billingOptions } from './billing-option.dbschema.ts';
 import { planMigrationSubscriptions } from './plan-migration.dbschema.ts';
 import { subscriptions } from './subscription.dbschema.ts';
@@ -31,11 +43,25 @@ export const subscriptionScheduledChanges = pgTable(
         /** elección de qué conservar */
         keepSelection: jsonb('keep_selection').$type<Record<string, string[]>>(),
         /** solicitado_en */
-        requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow()
+        requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
+        /**
+         * Number of failed S38 attempts recorded for this queue row. The scheduler
+         * increments it outside the failed transaction, so a rollback never hides it.
+         * Defaults to 0 when the row is seeded or replaced.
+         */
+        attemptCount: integer('attempt_count').notNull().default(0),
+        /** When the most recent failed attempt was recorded. NULL before the first failure. */
+        lastErrorAt: timestamp('last_error_at', { withTimezone: true }),
+        /** Message of the most recent failed attempt (no stack, at most 500 chars). */
+        lastError: text('last_error')
     },
     (t) => ({
         subscriptionUnique: unique('uq_subscription_scheduled_change_subscription').on(
             t.subscriptionId
+        ),
+        attemptCountCheck: check(
+            'ck_subscription_scheduled_change_attempt_count_nonnegative',
+            sql`${t.attemptCount} >= 0`
         ),
         targetOptionFk: foreignKey({
             name: 'fk_scheduled_change_target_option',

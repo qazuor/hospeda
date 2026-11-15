@@ -9,6 +9,7 @@ import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { ListingIdentityFields } from '../../common/listing-identity.schema.js';
 import { BaseMediaFields, BaseVideosFields } from '../../common/media.schema.js';
 import { OpeningHoursFields } from '../../common/opening-hours.schema.js';
+import { PostalAddressSchema } from '../../common/postal-address.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { BaseSeoFields } from '../../common/seo.schema.js';
 import { SocialNetworkFields } from '../../common/social.schema.js';
@@ -162,6 +163,15 @@ export const VenueSchema = z.object({
      * every access projection — it is operational, not content.
      */
     menuFilePublicId: z.string().nullish(),
+
+    /**
+     * Structured postal address of the venue (HOS-2189): street, number,
+     * floor, apartment and coordinates, the same shape as an accommodation's
+     * `location`. City, neighborhood and department are derived from
+     * `destinationId`, never stored here. Nullish: a fresh listing has no
+     * address until the owner or an admin fills it.
+     */
+    location: PostalAddressSchema.nullish(),
 
     // Linked destination and owner
     destinationId: DestinationIdSchema,

@@ -28,5 +28,7 @@ export const ACCOMMODATION_FIELD_PREFIX = 'acc';
  */
 export const ACCOMMODATION_FIELD_ID_SUFFIXES: Readonly<Record<string, string>> = {
     phone: 'number',
-    whatsapp: 'number'
+    whatsapp: 'number',
+    // HOS-2042: the optional landline, same country+number pair.
+    landlinePhone: 'number'
 } as const;

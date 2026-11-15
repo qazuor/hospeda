@@ -5,18 +5,12 @@ import { fileURLToPath } from 'node:url';
 
 export const EXEMPTIONS = 'scripts/section-key-literal-inventory.json';
 const PREFIX = 'FAIL GUARD:G-FAC-04:';
-const ALLOWED_EXEMPTIONS = [
-    'apps/api/src/routes/accommodation/protected/addOccupancy.ts',
-    'apps/api/src/routes/accommodation/protected/removeOccupancy.ts',
-    'apps/api/src/routes/accommodation/protected/batchOccupancy.ts',
-    'apps/api/src/routes/accommodation/protected/updateOccupancyEvent.ts',
-    'apps/api/src/routes/accommodation/protected/calendarSync.ts',
-    'apps/api/src/routes/accommodation/protected/calendarConnectGoogle.ts',
-    'apps/api/src/routes/accommodation/protected/calendarConnectIcal.ts',
-    'apps/api/src/utils/entitlement-filter.ts',
-    'apps/api/src/routes/accommodation/public/list.ts',
-    'apps/api/src/routes/accommodation/protected/getWhatsApp.ts'
-];
+/**
+ * Closed list of files allowed to write a section or trait key as a literal.
+ * Empty since HOS-1809 migrated the accommodation calendar routes, the public
+ * field gating and the editor to the catalog: nothing is exempt any more.
+ */
+const ALLOWED_EXEMPTIONS: readonly string[] = [];
 const MIN_FILES = 10;
 export function inventoryIsExact(inventory: { count: number; files: readonly string[] }): boolean {
     return (

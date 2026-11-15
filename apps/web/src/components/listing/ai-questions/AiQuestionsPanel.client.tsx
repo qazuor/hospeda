@@ -32,6 +32,31 @@ import styles from './AiQuestionsPanel.module.css';
 /** Endpoint behind the panel. */
 export const AI_LISTING_QUESTIONS_PATH = '/api/v1/protected/ai/listing-questions';
 
+/**
+ * Builds the query params of the list endpoint. `from` / `to` (YYYY-MM-DD, UTC)
+ * are sent only when set, so an unfiltered request is identical to the
+ * pre-filter one.
+ *
+ * @param input - Listing identity, optional date range and optional cursor.
+ * @returns The params object for `apiClient.getProtected`.
+ */
+export function buildAiQuestionsParams(input: {
+    readonly entityType: AiChatEntityType;
+    readonly entityId: string;
+    readonly from?: string;
+    readonly to?: string;
+    readonly othersCursor?: string;
+}): Record<string, string> {
+    const params: Record<string, string> = {
+        entityType: input.entityType,
+        entityId: input.entityId
+    };
+    if (input.from) params.from = input.from;
+    if (input.to) params.to = input.to;
+    if (input.othersCursor) params.othersCursor = input.othersCursor;
+    return params;
+}
+
 /** Props of {@link AiQuestionsPanel}. */
 export interface AiQuestionsPanelProps {
     /** UI locale. */
@@ -87,20 +112,40 @@ export function AiQuestionsPanel({
     const [state, setState] = useState<LoadState>({ kind: 'loading' });
     const [mutationError, setMutationError] = useState<string | null>(null);
     const [hasLoadedMore, setHasLoadedMore] = useState(false);
+    const [from, setFrom] = useState('');
+    const [to, setTo] = useState('');
+    const [filterError, setFilterError] = useState<string | null>(null);
 
+    // Changing the range refetches from the first page: the effect always asks
+    // without a cursor, which is what resets the pagination.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: `t` is rebuilt every render and only used for the error copy
     useEffect(() => {
         let cancelled = false;
         setHasLoadedMore(false);
         const load = async (): Promise<void> => {
             const result = await apiClient.getProtected<AiListingQuestionsResponse>({
                 path: AI_LISTING_QUESTIONS_PATH,
-                params: { entityType, entityId }
+                params: buildAiQuestionsParams({ entityType, entityId, from, to })
             });
             if (cancelled) return;
             if (result.ok) {
+                setFilterError(null);
                 setState({ kind: 'ready', data: result.data });
                 return;
             }
+            // 400 is a rejected range (older than 12 months, or from > to):
+            // keep what is on screen and say so, instead of a dead panel.
+            if (result.error.status === 400) {
+                setFilterError(
+                    t(
+                        'host.properties.editor.aiQuestions.filter.invalidRange',
+                        'El rango de fechas no es válido. Podés consultar hasta 12 meses atrás y la fecha "Desde" no puede ser posterior a "Hasta".'
+                    )
+                );
+                setState((prev) => (prev.kind === 'loading' ? { kind: 'error' } : prev));
+                return;
+            }
+            setFilterError(null);
             // 404 is the API's answer for a listing the viewer does not own
             // (e.g. staff opening another owner's editor): not a failure.
             setState(result.error.status === 404 ? { kind: 'notOwner' } : { kind: 'error' });
@@ -109,15 +154,65 @@ export function AiQuestionsPanel({
         return () => {
             cancelled = true;
         };
-    }, [entityType, entityId]);
+    }, [entityType, entityId, from, to]);
 
+    const hasFilter = from !== '' || to !== '';
     const intro = (
-        <p className={styles.intro}>
-            {t(
-                'host.properties.editor.aiQuestions.intro',
-                'Lo que los visitantes le preguntaron al asistente de tu ficha. Las preguntas son anónimas y se guardan 12 meses.'
+        <>
+            <p className={styles.intro}>
+                {t(
+                    'host.properties.editor.aiQuestions.intro',
+                    'Lo que los visitantes le preguntaron al asistente de tu ficha. Las preguntas son anónimas y se guardan 12 meses.'
+                )}
+            </p>
+            <p className={styles.redactionNote}>
+                {t(
+                    'host.properties.editor.aiQuestions.redactionNote',
+                    'Los datos de contacto (emails y teléfonos) se ocultan en las preguntas que ves acá.'
+                )}
+            </p>
+        </>
+    );
+    const filters = (
+        <div className={styles.filters}>
+            <label className={styles.filterField}>
+                <span>{t('host.properties.editor.aiQuestions.filter.from', 'Desde')}</span>
+                <input
+                    type="date"
+                    value={from}
+                    max={to || undefined}
+                    onChange={(event) => setFrom(event.target.value)}
+                />
+            </label>
+            <label className={styles.filterField}>
+                <span>{t('host.properties.editor.aiQuestions.filter.to', 'Hasta')}</span>
+                <input
+                    type="date"
+                    value={to}
+                    min={from || undefined}
+                    onChange={(event) => setTo(event.target.value)}
+                />
+            </label>
+            {hasFilter && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFrom('');
+                        setTo('');
+                    }}
+                >
+                    {t('host.properties.editor.aiQuestions.filter.clear', 'Limpiar fechas')}
+                </button>
             )}
-        </p>
+            {filterError && (
+                <p
+                    role="alert"
+                    className={styles.error}
+                >
+                    {filterError}
+                </p>
+            )}
+        </div>
     );
 
     if (state.kind === 'loading') {
@@ -152,6 +247,7 @@ export function AiQuestionsPanel({
         return (
             <div className={styles.panel}>
                 {intro}
+                {filters}
                 <p
                     className={styles.error}
                     role="alert"
@@ -170,10 +266,15 @@ export function AiQuestionsPanel({
         return (
             <div className={styles.panel}>
                 {intro}
+                {filters}
                 <p className={styles.status}>
                     {t(
-                        'host.properties.editor.aiQuestions.empty',
-                        'Todavía nadie le hizo preguntas al asistente de esta ficha.'
+                        hasFilter
+                            ? 'host.properties.editor.aiQuestions.emptyFiltered'
+                            : 'host.properties.editor.aiQuestions.empty',
+                        hasFilter
+                            ? 'No hay preguntas en ese rango de fechas.'
+                            : 'Todavía nadie le hizo preguntas al asistente de esta ficha.'
                     )}
                 </p>
             </div>
@@ -223,7 +324,7 @@ export function AiQuestionsPanel({
         }
         const refreshed = await apiClient.getProtected<AiListingQuestionsResponse>({
             path: AI_LISTING_QUESTIONS_PATH,
-            params: { entityType, entityId }
+            params: buildAiQuestionsParams({ entityType, entityId, from, to })
         });
         if (refreshed.ok) setState({ kind: 'ready', data: refreshed.data });
     };
@@ -231,7 +332,13 @@ export function AiQuestionsPanel({
         if (!data.othersNextCursor) return;
         const result = await apiClient.getProtected<AiListingQuestionsResponse>({
             path: AI_LISTING_QUESTIONS_PATH,
-            params: { entityType, entityId, othersCursor: data.othersNextCursor }
+            params: buildAiQuestionsParams({
+                entityType,
+                entityId,
+                from,
+                to,
+                othersCursor: data.othersNextCursor
+            })
         });
         if (result.ok) {
             setHasLoadedMore(true);
@@ -314,6 +421,7 @@ export function AiQuestionsPanel({
     return (
         <div className={styles.panel}>
             {intro}
+            {filters}
             {mutationError && (
                 <p
                     role="alert"

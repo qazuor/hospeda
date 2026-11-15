@@ -4,7 +4,11 @@
  */
 
 import { DbError } from '@repo/db/utils';
-import { BUSINESS_LINES_INVALID_REASON, ServiceErrorCode } from '@repo/schemas';
+import {
+    BUSINESS_LINES_INVALID_REASON,
+    DUPLICATE_LOCATION_REASON,
+    ServiceErrorCode
+} from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
@@ -516,7 +520,7 @@ const logRouteError = (
  *
  * Provides consistent error handling across all endpoints. `error.details` is
  * debug-only except for the narrow public contract cases: the codes in
- * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` reason, and the
+ * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` and `DUPLICATE_LOCATION` reasons, and the
  * business-lines invalid reason, whose `{ field, reason }` payload the owner
  * form needs to render the cause of the rejection in production. The
  * business-line case is gated on the propagated top-level `reason` alone; the
@@ -641,8 +645,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 break;
             case ServiceErrorCode.USAGE_PENDING_EXISTS:
             case ServiceErrorCode.REVIEW_ALREADY_EXISTS:
-            // Admin-paused self-service signups (newPaidSignupsFrozen)
+            // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
             case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
+            case ServiceErrorCode.ADDON_PURCHASES_FROZEN:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.DECLARATION_BLOCKED:
@@ -695,6 +700,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     env.HOSPEDA_API_DEBUG_ERRORS ||
                     PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
                     error.reason === 'SECTION_ABSENT' ||
+                    error.reason === DUPLICATE_LOCATION_REASON ||
                     error.reason === BUSINESS_LINES_INVALID_REASON
                         ? error.details
                         : undefined,
@@ -875,8 +881,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422,
                 [ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE]: 409,
-                // Admin-paused self-service signups (newPaidSignupsFrozen)
-                [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409
+                // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
+                [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
+                [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

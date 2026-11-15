@@ -1,51 +1,41 @@
 /**
  * Public partners list endpoint
- * Returns active partners for public display
+ * Returns partners whose owners hold the carousel key and whose presence is unmoderated.
  */
-import {
-    type HttpPartnerSearch,
-    PartnerPublicSchema,
-    PartnerSearchHttpSchema
-} from '@repo/schemas';
-import { PartnerService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { PartnerCarouselItemSchema, PartnerSearchHttpSchema } from '@repo/schemas';
+import { listCarouselPartners } from '../../../services/partner-presence/partner-presence-read.service.js';
 import { createRouter } from '../../../utils/create-app';
-import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
 import { publicGetPartnerBySlugRoute } from './get-by-slug.js';
 
 /**
  * GET /api/v1/public/partners
- * List active partners for public display
+ * List partners with carousel presence.
+ * AC:V7:13; V7 §1.6 (V/18 §1.6).
  * No authentication required
  */
 const publicListPartnersRoute = createPublicListRoute({
     method: 'get',
     path: '/',
-    summary: 'List active partners',
-    description: 'Returns a paginated list of active partners for public display',
+    summary: 'List partners with carousel presence',
+    description: 'Returns owners with the carousel presence key and an unmoderated presence.',
     tags: ['Partners'],
     requestQuery: PartnerSearchHttpSchema.shape,
-    responseSchema: PartnerPublicSchema,
-    handler: async (ctx, _params, _body, query) => {
-        const partnerService = new PartnerService({ logger: apiLogger });
-        const actor = getActorFromContext(ctx);
+    responseSchema: PartnerCarouselItemSchema,
+    handler: async (_ctx, _params, _body, query) => {
         const { page, pageSize } = extractPaginationParams(query || {});
-
-        const result = await partnerService.search(actor, {
-            ...(query as HttpPartnerSearch),
+        const result = await listCarouselPartners({
+            filters: {
+                q: query?.q as string | undefined,
+                type: query?.type as string | undefined
+            },
             page,
             pageSize
         });
-
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
-        }
-
         return {
-            items: result.data?.items || [],
-            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
+            items: result.items,
+            pagination: getPaginationResponse(result.total, { page, pageSize })
         };
     },
     options: {

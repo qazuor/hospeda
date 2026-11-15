@@ -75,6 +75,10 @@ const ownerActor = createHostActor({ id: OWNER_ID });
 const foreignHostActor = createHostActor({ id: FOREIGN_OWNER_ID });
 const staffActor = createAdminActor({
     id: 'admin-001',
+    permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
+});
+const updateOnlyStaffActor = createAdminActor({
+    id: 'admin-write-only',
     permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
 });
 const viewerActor = createAdminActor({
@@ -157,24 +161,54 @@ describe('getOwnerOccupancyForAccommodation', () => {
         );
     });
 
-    it('throws FORBIDDEN for a non-owner without ACCOMMODATION_UPDATE_ANY', async () => {
+    it('returns identical NOT_FOUND for a foreign actor and a missing accommodation', async () => {
+        const foreign = await getOwnerOccupancyForAccommodation({
+            actor: foreignHostActor,
+            accommodationId: ACCOMMODATION_ID
+        }).catch((error) => error);
+        mockFindById.mockResolvedValue(null);
+        const missing = await getOwnerOccupancyForAccommodation({
+            actor: foreignHostActor,
+            accommodationId: ACCOMMODATION_ID
+        }).catch((error) => error);
+        expect({ code: foreign.code, message: foreign.message }).toEqual({
+            code: missing.code,
+            message: missing.message
+        });
+        expect(mockFindByAccommodation).not.toHaveBeenCalled();
+    });
+
+    it('does not let UPDATE_ANY alone read a foreign accommodation', async () => {
         await expectServiceError(
             () =>
                 getOwnerOccupancyForAccommodation({
-                    actor: foreignHostActor,
+                    actor: updateOnlyStaffActor,
                     accommodationId: ACCOMMODATION_ID
                 }),
-            ServiceErrorCode.FORBIDDEN
+            ServiceErrorCode.NOT_FOUND
         );
         expect(mockFindByAccommodation).not.toHaveBeenCalled();
     });
 
-    it('allows a staff actor with ACCOMMODATION_UPDATE_ANY to read a listing they do not own', async () => {
+    it('allows a staff actor with ACCOMMODATION_VIEW_ALL to read a listing they do not own', async () => {
         const result = await getOwnerOccupancyForAccommodation({
             actor: staffActor,
             accommodationId: ACCOMMODATION_ID
         });
         expect(result).toHaveLength(1);
+    });
+
+    it('allows staff with VIEW_ALL and UPDATE_ANY to read', async () => {
+        const actor = createAdminActor({
+            id: 'both',
+            permissions: [
+                PermissionEnum.ACCOMMODATION_VIEW_ALL,
+                PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            ]
+        });
+        await expect(
+            getOwnerOccupancyForAccommodation({ actor, accommodationId: ACCOMMODATION_ID })
+        ).resolves.toHaveLength(1);
     });
 
     it('fetches the full row set (all fields, no stripping) when no range is given', async () => {
@@ -201,6 +235,58 @@ describe('getOwnerOccupancyForAccommodation', () => {
             to: '2026-08-01'
         });
         expect(mockFindByAccommodation).not.toHaveBeenCalled();
+    });
+});
+
+describe('assertOccupancyReadAccess inspection gate', () => {
+    it('rejects UPDATE_ANY alone and accepts VIEW_ALL with UPDATE_ANY', async () => {
+        const { assertOccupancyReadAccess } = await import(
+            '../../../src/services/accommodation/accommodation.occupancy.js'
+        );
+        await expectServiceError(
+            () =>
+                assertOccupancyReadAccess({
+                    actor: updateOnlyStaffActor,
+                    accommodationId: ACCOMMODATION_ID
+                }),
+            ServiceErrorCode.NOT_FOUND
+        );
+        expect(mockFindByAccommodation).not.toHaveBeenCalled();
+        const actor = createAdminActor({
+            id: 'both-assert',
+            permissions: [
+                PermissionEnum.ACCOMMODATION_VIEW_ALL,
+                PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            ]
+        });
+        await expect(
+            assertOccupancyReadAccess({ actor, accommodationId: ACCOMMODATION_ID })
+        ).resolves.toEqual(ownedAccommodation);
+    });
+
+    it('returns matching NOT_FOUND for a foreign and missing accommodation', async () => {
+        const { assertOccupancyReadAccess } = await import(
+            '../../../src/services/accommodation/accommodation.occupancy.js'
+        );
+        const captureError = async () => {
+            try {
+                await assertOccupancyReadAccess({
+                    actor: foreignHostActor,
+                    accommodationId: ACCOMMODATION_ID
+                });
+            } catch (error) {
+                if (error instanceof ServiceError) return error;
+                throw error;
+            }
+            throw new Error('Expected inaccessible accommodation to throw');
+        };
+        const foreignError = await captureError();
+        mockFindById.mockResolvedValue(null);
+        const missingError = await captureError();
+        expect({ code: foreignError.code, message: foreignError.message }).toEqual({
+            code: missingError.code,
+            message: missingError.message
+        });
     });
 });
 

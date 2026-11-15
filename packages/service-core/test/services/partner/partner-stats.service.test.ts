@@ -81,7 +81,10 @@ describe('PartnerStatsService.getForOwner — ownership fails closed (AC-6)', ()
         const { service, findOne } = makeService({ partner: goldPartner });
 
         // Act
-        const result = await service.getForOwner(guestActor, { windowDays: 30 });
+        const result = await service.getForOwner(guestActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         // Assert — the payload, AND that the query was never attempted. A guest
         // carries a REAL uuid, so reaching `findOne` at all would mean an
@@ -94,7 +97,10 @@ describe('PartnerStatsService.getForOwner — ownership fails closed (AC-6)', ()
     it('answers { available: false } for an actor holding no roles at all', async () => {
         const { service, findOne } = makeService({ partner: goldPartner });
 
-        const result = await service.getForOwner(rolelessActor, { windowDays: 30 });
+        const result = await service.getForOwner(rolelessActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         expect(result.data).toEqual({ available: false });
         expect(findOne).not.toHaveBeenCalled();
@@ -105,7 +111,10 @@ describe('PartnerStatsService.getForOwner — ownership fails closed (AC-6)', ()
         const { service, findOne } = makeService({ partner: null });
 
         // Act
-        const result = await service.getForOwner(ownerActor, { windowDays: 30 });
+        const result = await service.getForOwner(ownerActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         // Assert — a 403 here would confirm that some partner exists.
         expect(result.data).toEqual({ available: false });
@@ -124,7 +133,10 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
         });
 
         // Act
-        const result = await service.getForOwner(ownerActor, { windowDays: 7 });
+        const result = await service.getForOwner(ownerActor, {
+            windowDays: 7,
+            readPublicPage: async () => true
+        });
 
         // Assert
         expect(getStatsForEntities).toHaveBeenCalledWith(
@@ -153,7 +165,10 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
             clickStats: { unique: 0, total: 0 }
         });
 
-        const result = await service.getForOwner(ownerActor, { windowDays: 30 });
+        const result = await service.getForOwner(ownerActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         expect(result.data?.views).toEqual({ unique: 0, total: 0 });
     });
@@ -166,13 +181,17 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
     it('ships slug and websiteUrl so the web can resolve the logo link itself', async () => {
         const { service } = makeService({ partner: goldPartner });
 
-        const result = await service.getForOwner(ownerActor, { windowDays: 30 });
+        const result = await service.getForOwner(ownerActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         expect(result.data?.partner).toEqual({
             id: PARTNER_ID,
             name: 'Bodega Ejemplo',
             slug: 'bodega-ejemplo',
-            websiteUrl: 'https://bodega.example'
+            websiteUrl: 'https://bodega.example',
+            hasPublicPage: true
         });
     });
 
@@ -194,7 +213,10 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
             clickStats: { unique: 0, total: 0 }
         });
 
-        const result = await service.getForOwner(ownerActor, { windowDays: 30 });
+        const result = await service.getForOwner(ownerActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         expect(result.data?.available).toBe(true);
         expect(result.data?.views).toEqual({ unique: 0, total: 0 });
@@ -206,7 +228,10 @@ describe('PartnerStatsService.getForOwner — the numbers', () => {
         const { service, findOne } = makeService({ partner: goldPartner });
         findOne.mockRejectedValueOnce(new Error('connection reset'));
 
-        const result = await service.getForOwner(ownerActor, { windowDays: 30 });
+        const result = await service.getForOwner(ownerActor, {
+            windowDays: 30,
+            readPublicPage: async () => true
+        });
 
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         expect(result.data).toBeUndefined();

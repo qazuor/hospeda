@@ -5,6 +5,8 @@ import { quotedList } from './quoted-list.ts';
 import { subscriptions } from './subscription.dbschema.ts';
 
 export const MANUAL_PAYMENT_STATUSES = ['AWAITING', 'REGISTERED', 'DECLARED_UNPAID'] as const;
+/** MP6 rows are UNALLOCATED; every other row is an INSTALLMENT. */
+export const MANUAL_PAYMENT_ENTRIES = ['INSTALLMENT', 'UNALLOCATED'] as const;
 
 /**
  * Manual payment for a subscription period, created here for S1 (AC:B3:38;
@@ -25,6 +27,7 @@ export const manualPayments = pgTable(
         periodStart: timestamp('period_start', { withTimezone: true }).notNull(),
         /** estado */
         status: varchar('status', { length: 16 }).notNull(),
+        entry: text('entry', { enum: MANUAL_PAYMENT_ENTRIES }).notNull().default('INSTALLMENT'),
         /** quién lo registró */
         registeredBy: uuid('registered_by').references(() => users.id),
         /** cuándo */
@@ -38,6 +41,10 @@ export const manualPayments = pgTable(
         statusCheck: check(
             'ck_manual_payment_status',
             sql`${t.status} IN (${quotedList(MANUAL_PAYMENT_STATUSES)})`
+        ),
+        entryCheck: check(
+            'ck_manual_payment_entry',
+            sql`${t.entry} IN (${quotedList(MANUAL_PAYMENT_ENTRIES)})`
         ),
         registrationCheck: check(
             'ck_manual_payment_registration',

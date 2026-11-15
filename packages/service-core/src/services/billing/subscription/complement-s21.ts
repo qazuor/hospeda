@@ -31,6 +31,7 @@ import {
     type S21Cause,
     settleComplementLastCharge
 } from './complement-s21-charge';
+import { closeAwaitingManualInstallmentsInTx } from './manual-installment-close';
 
 const logger = createLogger('complement-s21');
 
@@ -161,6 +162,11 @@ export async function applyS21(input: {
             undefined,
             'S21_STATE_CHANGED'
         );
+    await closeAwaitingManualInstallmentsInTx({
+        tx,
+        subscriptionId: complementSubscriptionId,
+        now
+    });
     if (CLOSES_OPEN_PAUSE[from]) {
         const closed = await tx
             .update(subscriptionPauses)

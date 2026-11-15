@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { type Actor, ServiceError } from '../../../types/index.js';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
+import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import {
     type CancelOurAuthorizationOutcome,
     cancelOurAuthorization
@@ -26,6 +27,7 @@ import {
     type DecidedComplementCancellationCall
 } from './complement-s11-rule.js';
 import { computeS11ServiceEnd, readS11ServiceEndFacts } from './s11-service-end.js';
+import { discardScheduledChange } from './scheduled-change-discard.js';
 import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -160,6 +162,7 @@ async function writeS11Cancellation(input: {
         })
         .where(and(eq(subscriptions.id, input.subscriptionId), eq(subscriptions.status, 'ACTIVE')))
         .returning({ id: subscriptions.id });
+    if (row) await discardScheduledChange({ subscriptionId: input.subscriptionId, tx: input.tx });
     return row !== undefined;
 }
 
@@ -228,6 +231,12 @@ export async function cancelActiveSubscription(
             );
         const facts = await readS11ServiceEndFacts({ tx, subscription });
         const end = computeS11ServiceEnd({ now, ...facts });
+        if (authority.as === 'OWNER')
+            await exitPlanMigration({
+                tx,
+                subscriptionId: subscription.id,
+                reason: 'SE_DIO_DE_BAJA'
+            });
         if (
             !(await writeS11Cancellation({
                 tx,

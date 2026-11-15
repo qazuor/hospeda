@@ -167,6 +167,73 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it('B12 (HOS-1612) assigns ACC_17 only its own migrate-plan permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_17).toEqual({
+            permissions: [PermissionEnum.BILLING_MIGRATE_PLAN],
+            pendingOwnPermission: null
+        });
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.BILLING_MIGRATE_PLAN)).toBe(
+            true
+        );
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.BILLING_MIGRATE_PLAN)).toBe(
+            true
+        );
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_17',
+                actorPermissions: [
+                    PermissionEnum.BILLING_SET_CYCLE_PRICE,
+                    PermissionEnum.MAINTENANCE_MODE_WRITE,
+                    PermissionEnum.BILLING_PUBLISH_ADDON_VERSION
+                ]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_17',
+                actorPermissions: [PermissionEnum.BILLING_MIGRATE_PLAN]
+            })
+        ).toBe(true);
+    });
+
+    it('TEST:HOS-1551:5 assigns ACC_13 only its own refund confirmation permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_13).toEqual({
+            permissions: [PermissionEnum.BILLING_REFUND],
+            pendingOwnPermission: null
+        });
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.BILLING_REFUND)).toBe(true);
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.BILLING_REFUND)).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_13',
+                actorPermissions: [PermissionEnum.BILLING_SETTLE_EXTERNAL]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_13',
+                actorPermissions: [PermissionEnum.BILLING_REFUND]
+            })
+        ).toBe(true);
+    });
+
+    it.each([
+        ['TEST:HOS-1541:1 ACC_3', 'ACC_3', PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
+        ['TEST:HOS-1541:2 ACC_4', 'ACC_4', PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID]
+    ] as const)('%s has only its own permission', (_name, action, own) => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS[action]).toEqual({
+            permissions: [own],
+            pendingOwnPermission: null
+        });
+        expect([
+            isAdministrativeActionPermitted({
+                action,
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            }),
+            isAdministrativeActionPermitted({ action, actorPermissions: [own] })
+        ]).toEqual([false, true]);
+    });
+
     it('TEST:1697:4 AC:1697:1 assigns ACC_7 only its own lift-reconciliation-mark permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_7).toEqual({
             permissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK],
@@ -293,6 +360,56 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(false);
     });
 
+    it('HOS-1484 assigns ACC_5 only its own partner-application permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_5).toEqual({
+            permissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_RESOLVE_APPLICATION)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_RESOLVE_APPLICATION)
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_5',
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_5',
+                actorPermissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION]
+            })
+        ).toBe(true);
+    });
+
+    it('AC:V7:17 ACC:6 assigns billing configuration only its own permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_6).toEqual({
+            permissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_CONFIGURE_BILLING)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_CONFIGURE_BILLING)
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_6',
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_6',
+                actorPermissions: [PermissionEnum.PARTNER_CONFIGURE_BILLING]
+            })
+        ).toBe(true);
+    });
+
     it('TEST:V8a:15 assigns ACC_24 only its own close-on-request permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_24).toEqual({
             permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],
@@ -301,6 +418,44 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.USER_CLOSE_ON_REQUEST)).toBe(
             true
         );
+    });
+
+    it('AC:V8b:6 assigns ACC_25 only its own empty-presence permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_25).toEqual({
+            permissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_EMPTY_PRESENCE)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_EMPTY_PRESENCE)
+        ).toBe(true);
+        expect(ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_MANAGE)).toBe(false);
+        expect(SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_MANAGE)).toBe(true);
+    });
+
+    it('AC:V8b:6 opens only ACC_25 with its own permission', () => {
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_25',
+                actorPermissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE]
+            })
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_25',
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            })
+        ).toBe(false);
+        for (const action of ['ACC_6', 'ACC_12', 'ACC_24'] as const) {
+            expect(
+                isAdministrativeActionPermitted({
+                    action,
+                    actorPermissions: [PermissionEnum.PARTNER_EMPTY_PRESENCE]
+                })
+            ).toBe(false);
+        }
     });
 
     it('TEST:V8a:15 opens ACC_24 only with its own permission, and never another action', () => {
@@ -324,7 +479,7 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(false);
     });
 
-    it('TEST:V8a:10 TEST:V8a:15 keeps the seven retiring administrative permissions forbidden to a system actor', () => {
+    it('TEST:V8a:10 TEST:V8a:15 keeps the eight retiring administrative permissions forbidden to a system actor', () => {
         const retiring = [
             { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
             { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
@@ -332,7 +487,8 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
             { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
             { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },
-            { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' }
+            { permission: PermissionEnum.USER_UPDATE_ROLES, formerAction: 'ACC_26' },
+            { permission: PermissionEnum.PARTNER_MANAGE, formerAction: 'ACC_25' }
         ];
         expect(RETIRING_ADMINISTRATIVE_PERMISSIONS).toEqual(retiring);
         for (const { permission } of retiring) {

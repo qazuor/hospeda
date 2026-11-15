@@ -100,7 +100,7 @@ type TestimonialItem = z.infer<typeof TestimonialItemSchema>;
 type AccommodationReviewWithUser = {
     id: string;
     accommodationId: string;
-    averageRating: number;
+    averageRating?: number;
     content?: string;
     title?: string;
     createdAt: Date | string;
@@ -130,7 +130,7 @@ type DestinationReviewWithUser = {
 
 /**
  * GET /api/v1/public/testimonials
- * List recent testimonials from both accommodations and destinations
+ * Lists recent testimonials from both accommodations and destinations. `total` is the real number of approved testimonials, not the page length.
  */
 export const publicListTestimonialsRoute = createPublicListRoute({
     method: 'get',
@@ -157,10 +157,7 @@ export const publicListTestimonialsRoute = createPublicListRoute({
             })
         ]);
 
-        // TYPE-WORKAROUND: listWithUser returns a Result<T> whose data shape is generic; cast picks the entity-specific `accommodationReviews` array key for downstream transformation.
-        const accommodationReviewsRaw =
-            (accommodationResult.data as unknown as { accommodationReviews?: unknown[] })
-                ?.accommodationReviews ?? [];
+        const accommodationReviewsRaw = accommodationResult.data?.accommodationReviews ?? [];
         const accommodationReviews: AccommodationReviewWithUser[] =
             accommodationReviewsRaw as AccommodationReviewWithUser[];
 
@@ -175,9 +172,19 @@ export const publicListTestimonialsRoute = createPublicListRoute({
             ...destinationReviews.map(transformDestinationReview)
         ];
 
-        testimonials.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        // Both models return each half ordered by createdAt desc, id desc (HOS-1705); this tie-breaker preserves that order when the arrays are merged.
+        testimonials.sort(
+            (a, b) =>
+                new Date(b.date).getTime() - new Date(a.date).getTime() || b.id.localeCompare(a.id)
+        );
 
-        const total = testimonials.length;
+        const accommodationTotal = accommodationResult.error
+            ? 0
+            : (accommodationResult.data?.total ?? 0);
+        const destinationTotal = destinationResult.error
+            ? 0
+            : (destinationResult.data?.pagination?.total ?? 0);
+        const total = accommodationTotal + destinationTotal;
 
         return {
             items: testimonials.slice(0, pageSize),

@@ -31,12 +31,14 @@ const firstItem = {
     listingId: LISTING_ID,
     publicationStatus: 'PUBLISHED',
     recurringListingAddons: 0,
+    recurringListingAddonItems: [],
     notices: [{ kind: 'FIX_REQUESTED' }]
 };
 const secondItem = {
     listingId: OTHER_LISTING_ID,
     publicationStatus: 'PUBLISHED',
     recurringListingAddons: 1,
+    recurringListingAddonItems: [],
     notices: [{ kind: 'SURPLUS' }]
 };
 

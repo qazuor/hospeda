@@ -38,13 +38,15 @@ export async function configureGraceReminderSubscription(input: {
     readonly startedAt: Date;
     readonly endsAt: Date;
     readonly status?: 'ACTIVE' | 'GRACE_PERIOD' | 'SUSPENDED';
+    readonly paymentMethod?: 'CARD' | 'MANUAL';
 }): Promise<void> {
     await getServiceTestDb()
         .update(subscriptions)
         .set({
             status: input.status ?? 'GRACE_PERIOD',
             graceStartedAt: input.startedAt,
-            graceEndsAt: input.endsAt
+            graceEndsAt: input.endsAt,
+            ...(input.paymentMethod ? { paymentMethod: input.paymentMethod } : {})
         })
         .where(eq(subscriptions.id, input.subscriptionId));
 }

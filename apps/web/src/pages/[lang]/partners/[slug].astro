@@ -1,7 +1,7 @@
 ---
 /**
  * @file partners/[slug].astro
- * @description Partner detail stays dark until V7 restores it on the public key.
+ * @description Partner detail rendered when the public API confirms its page entitlement.
  *
  * @route /{lang}/partners/{slug}/
  * @rendering SSR (on-demand), edge-cacheable
@@ -13,7 +13,7 @@
  * ## Indexability
  *
  * `noindex` is derived from `evaluatePartnerIndexability`, shared with the
- * sitemap so the page and sitemap keep the same unavailable state.
+ * sitemap so the page and sitemap use the same public-page rule.
  *
  * ## Actor-blindness
  *
@@ -45,9 +45,6 @@ const slug = Astro.params.slug as string;
 // --- Primary fetch ---
 const result = await partnerApi.getBySlug(slug);
 
-// 410 for a deliberately revoked partner; 404 for every other reason it is not
-// visible. `ApiError.status` already carries the distinction — the decision is
-// the service's (HOS-562), this only forwards it.
 if (!result.ok) return new Response(null, { status: 404 });
 if (!result.data) {
     return new Response(null, { status: 404 });
@@ -58,7 +55,7 @@ const partner = toPartnerDetailProps({ item: raw, locale });
 
 // --- Indexability (shared with the sitemap) ---
 const { isIndexable } = evaluatePartnerIndexability({
-    lifecycleState: raw.lifecycleState as string | null,
+    hasPublicPage: true,
     description: partner.description
 });
 

@@ -72,6 +72,10 @@ export interface BuildVenueStructuredDataInput {
     /** Accepted payment methods as human labels (HOS-2060, `policies.paymentMethods`). */
     readonly paymentAccepted?: string;
     readonly aggregateRating?: VenueAggregateRating;
+    /** schema.org `PostalAddress` (HOS-2189), from `buildVenueJsonLdPlace`. */
+    readonly address?: Readonly<Record<string, string>>;
+    /** schema.org `GeoCoordinates` (HOS-2189), from `buildVenueJsonLdPlace`. */
+    readonly geo?: Readonly<Record<string, string | number>>;
 }
 
 /**
@@ -110,7 +114,9 @@ export function buildVenueStructuredData({
     telephone,
     hasMenu,
     paymentAccepted,
-    aggregateRating
+    aggregateRating,
+    address,
+    geo
 }: BuildVenueStructuredDataInput): Record<string, unknown> {
     const structuredData: Record<string, unknown> = {
         '@context': 'https://schema.org',
@@ -152,6 +158,14 @@ export function buildVenueStructuredData({
             bestRating: aggregateRating.bestRating ?? 5,
             worstRating: aggregateRating.worstRating ?? 1
         };
+    }
+
+    if (address) {
+        structuredData.address = address;
+    }
+
+    if (geo) {
+        structuredData.geo = geo;
     }
 
     return structuredData;

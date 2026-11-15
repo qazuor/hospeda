@@ -13,6 +13,7 @@
  *   - /{id}/media/{mediaId}/featured  registered before /{id}/media/{mediaId}
  */
 import { createRouter } from '../../../utils/create-app';
+import { adminVenueLocationRoutes } from '../../listing-location/index';
 import { adminVenueReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddVenueFaqRoute } from './addFaq';
 import { adminAddVenueFeaturedMediaRoute } from './addFeaturedMedia';
@@ -59,8 +60,16 @@ app.route('/reviews', adminVenueReviewRoutes);
 // Registered before /{id} so Hono does not resolve "options" as a UUID param
 app.route('/', adminVenueOptionsRoute);
 
+// GET /location-duplicates - one-address report (HOS-1810)
+// Registered before /{id} so "location-duplicates" is not resolved as a UUID param
+app.route('/', adminVenueLocationRoutes.listDuplicates);
+
 // GET /:id - Get by ID
 app.route('/', adminGetVenueByIdRoute);
+
+// POST|DELETE /:id/location-exception - one-address exception (HOS-1810)
+app.route('/', adminVenueLocationRoutes.setException);
+app.route('/', adminVenueLocationRoutes.clearException);
 
 // PUT /:id - Full update
 app.route('/', adminUpdateVenueRoute);

@@ -1,6 +1,7 @@
 import { AccommodationFaqModel, AccommodationMediaModel, AccommodationModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
+import { buildLocationKey } from '@repo/utils';
 import exampleManifest from '../manifest-example.json';
 import {
     buildAccommodationMediaRows,
@@ -94,6 +95,17 @@ const preProcessAccommodation = async (item: unknown, context: SeedContext) => {
             throw new Error(`No mapping found for destination ID: ${seedDestinationId}`);
         }
         accommodationData.destinationId = realDestinationId;
+        // HOS-1810: this model-direct path skips `AccommodationService._beforeCreate`,
+        // which derives the place key, so the key is derived here (dual-write with
+        // the backfill data-migration 0174). `null` for an `s/n` or numberless address.
+        const location = (accommodationData.location ?? {}) as Record<string, string | undefined>;
+        accommodationData.locationKey = buildLocationKey({
+            street: location.street,
+            number: location.number,
+            floor: location.floor,
+            apartment: location.apartment,
+            destinationId: realDestinationId
+        });
     }
 
     // Set the actor to be the owner of the accommodation

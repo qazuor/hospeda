@@ -326,7 +326,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: VenueAdminCreateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    adminInfo averageRating contactInfo description descriptionI18n destinationId faqs
+                    location adminInfo averageRating contactInfo description descriptionI18n destinationId faqs
                     media menuUrl name nameI18n openingHours ownerId priceRange rating reviewsCount
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos
@@ -339,7 +339,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: VenueUpdateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
-                    adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
+                    location adminInfo contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange rating richDescription richDescriptionI18n seo slug
                     socialNetworks summary summaryI18n tags translationMeta type videos
                     entryKind entryNoteI18n entryPriceFrom
@@ -351,7 +351,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: VenueOwnerCreateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`
-                    contactInfo description descriptionI18n destinationId faqs menuUrl name
+                    location contactInfo description descriptionI18n destinationId faqs menuUrl name
                     nameI18n openingHours priceRange richDescription richDescriptionI18n seo
                     socialNetworks summary summaryI18n tags type videos
                     entryKind entryNoteI18n entryPriceFrom
@@ -363,7 +363,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`
-                    contactInfo description descriptionI18n destinationId menuUrl name nameI18n
+                    location contactInfo description descriptionI18n destinationId menuUrl name nameI18n
                     openingHours priceRange richDescription richDescriptionI18n socialNetworks
                     summary summaryI18n type videos
                     entryKind entryNoteI18n entryPriceFrom

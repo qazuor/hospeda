@@ -1,14 +1,11 @@
 ---
 /**
  * @file sumate/partner/index.astro
- * @description Public "Convertite en partner" alliance-lead landing (HOS-277).
+ * @description Public Partner application landing (AC:V7:15).
  *
- * A prospective business/tourism-agency partner submits their interest via
- * the alliance-lead form (`kind: 'partner'`), which posts to
- * `POST /api/v1/public/alliance/leads`. An admin reviews the lead by hand and
- * decides whether to move forward — there is NO automatic role/entity
- * provisioning on submission (HOS-277 NG-1). Structure cloned from the
- * retired venue lead-page molde: hero + benefits + form.
+ * A prospective Partner submits an email through PP1 at
+ * `POST /api/v1/public/partner-applications` (AC:V7:15). The page remains
+ * session-blind and server rendered.
  *
  * @route     /[lang]/sumate/partner/
  * @rendering SSR (on-demand, no prerender)
@@ -21,11 +18,13 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
-import { AllianceLead } from '@/components/alliance/AllianceLead.client';
+import { PartnerApplication } from '@/components/partner/PartnerApplication.client';
 import { CheckCircleIcon } from '@repo/icons';
+import { getTurnstileSiteKey } from '@/lib/env';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const turnstileSiteKey = getTurnstileSiteKey();
 
 const title = t('alliance-leads.partner.title', 'Convertite en partner de Hospeda');
 const subtitle = t(
@@ -104,7 +103,11 @@ const breadcrumbItems = [
 
     <section class="sumate__form section section--warm">
         <div class="sumate__form-container section__container">
-            <AllianceLead client:load locale={locale} kind="partner" />
+            <PartnerApplication
+                client:load
+                locale={locale}
+                turnstileSiteKey={turnstileSiteKey}
+            />
         </div>
     </section>
 </BaseLayout>

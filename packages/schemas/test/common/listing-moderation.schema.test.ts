@@ -52,6 +52,7 @@ describe('TEST:1760:1b listing moderation state schema', () => {
         expect(
             ListingModerationStateSchema.safeParse({
                 publicationStatus: 'PUBLISHED',
+                recurringListingAddons: [],
                 fixRequest: null
             }).success
         ).toBe(true);
@@ -60,11 +61,20 @@ describe('TEST:1760:1b listing moderation state schema', () => {
         expect(
             ListingModerationStateSchema.safeParse({
                 publicationStatus: 'PUBLISHED',
+                recurringListingAddons: [],
                 fixRequest: {
                     suggestedDate: null,
                     openedAt: '2026-10-24T00:00:00.000Z',
                     ownerReportedFixedAt: null
                 }
+            }).success
+        ).toBe(false);
+    });
+    it('requires named recurring add-ons even when the list is empty', () => {
+        expect(
+            ListingModerationStateSchema.safeParse({
+                publicationStatus: 'PUBLISHED',
+                fixRequest: null
             }).success
         ).toBe(false);
     });

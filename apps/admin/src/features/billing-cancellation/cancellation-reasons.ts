@@ -47,10 +47,14 @@ export const CANCELLATION_ORIGIN_KEYS: Readonly<Record<CancellationOrigin, Trans
     ACTIVE: 'admin-billing.subscriptionCancellation.origin.ACTIVE',
     GRACE_PERIOD: 'admin-billing.subscriptionCancellation.origin.GRACE_PERIOD',
     SUSPENDED: 'admin-billing.subscriptionCancellation.origin.SUSPENDED',
+    PAUSED: 'admin-billing.subscriptionCancellation.origin.PAUSED',
     CANCEL_SCHEDULED: 'admin-billing.subscriptionCancellation.origin.CANCEL_SCHEDULED'
 };
 /** Origins from which an admin can confirm a new cancellation. */
-export type ConfirmableCancellationOrigin = Exclude<CancellationOrigin, 'CANCEL_SCHEDULED'>;
+export type ConfirmableCancellationOrigin = Exclude<
+    CancellationOrigin,
+    'CANCEL_SCHEDULED' | 'PAUSED'
+>;
 /** Confirmation copy keys for origins where cancellation is still actionable. */
 export const CANCELLATION_CONFIRM_KEYS: Readonly<
     Record<ConfirmableCancellationOrigin, TranslationKey>

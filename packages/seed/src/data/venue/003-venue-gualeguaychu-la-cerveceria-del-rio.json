@@ -2,6 +2,14 @@
     "id": "003-venue-gualeguaychu-la-cerveceria-del-rio",
     "ownerId": "042-user-venue-owner-rodrigo",
     "destinationId": "005-destination-gualeguaychu",
+    "location": {
+        "street": "Av. Costanera",
+        "number": "1200",
+        "coordinates": {
+            "lat": "-33.0093",
+            "long": "-58.5172"
+        }
+    },
     "slug": "la-cerveceria-del-rio",
     "name": "La Cervecería del Río",
     "summary": "Cervecería artesanal con producción propia y maridaje de tapas gourmet frente al Río Gualeguaychú.",

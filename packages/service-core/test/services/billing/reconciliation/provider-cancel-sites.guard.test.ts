@@ -13,6 +13,10 @@ const BILLING_DIR = join(REPO_ROOT, 'packages/service-core/src/services/billing'
 
 /** Files allowed to cancel without recording, each with its reason. */
 const EXEMPT: Readonly<Record<string, string>> = {
+    'addon/addon-instance-a6-provider.ts':
+        'A6 records its decision in addon-instance-a6.ts, inside the A6 transaction; this file only performs the call after the commit (AC:B10:6)',
+    'subscription/successor-cut-after-commit.ts':
+        'S31 records its decision in successor-cutter, inside the S6/S12 transaction; this file only performs the call after the commit (AC:B8b:13)',
     'reconciliation/cancel-our-authorization.ts': 'the helper itself; its callers register',
     'reconciliation/sweep/our-cancellation-retry.ts': 'retries a decision already registered',
     'reconciliation/creations/creations-sweep.service.ts':
@@ -20,7 +24,11 @@ const EXEMPT: Readonly<Record<string, string>> = {
     'subscription/start-subscription.service.ts':
         'S1 re-cancels the preapproval of a CHARGE_DECLINED row whose S16 already registered',
     'subscription/suspend-for-arrears.service.ts':
-        'S6 leaves the row SUSPENDED, live: not one of the eleven rows of salvedad 4, B11.md:372'
+        'S6 leaves the row SUSPENDED, live: not one of the eleven rows of salvedad 4, B11.md:372',
+    'subscription/suspend-for-chargeback.service.ts':
+        'S6 by its third event leaves the row SUSPENDED, live, like the other S6 events',
+    'subscription/cancel-succession-predecessor.service.ts':
+        'S17 writes CANCELLED only after the re-read confirms the cancellation; its retry is the state re-evaluation, not the sweep (AC:B8b:9)'
 };
 
 const CANCEL_CALL = /\b(?:provider\.cancel|cancelOurAuthorization)\(/;

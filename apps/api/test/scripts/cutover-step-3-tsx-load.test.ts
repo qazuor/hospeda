@@ -29,6 +29,7 @@ function moduleUrls(): readonly string[] {
         join(REPO_ROOT, 'packages/db/src/index.ts'),
         join(REPO_ROOT, 'packages/service-core/src/index.ts'),
         join(API_ROOT, 'src/services/cutover-v6/step-3.service.ts'),
+        join(API_ROOT, 'src/services/cutover-v6/step-3.compose.ts'),
         join(API_ROOT, 'src/utils/clock.ts')
     ].map((path) => pathToFileURL(path).href);
 }

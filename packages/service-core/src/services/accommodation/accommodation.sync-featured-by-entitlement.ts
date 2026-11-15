@@ -1,4 +1,4 @@
-// HOS-1352: transitional until V3 (HOS-1357), see PR — no caller now synchronizes featuredByEntitlement; the cron and featured-listing-sync were removed.
+// HOS-1718: superseded for listing add-ons by `syncListingFeatured` (`@repo/verticals`), which writes all three listing tables. These accommodation-only primitives still have no production caller.
 /**
  * Featured-by-entitlement sync primitives (SPEC-292 T-004, renamed + hardened
  * SPEC-309 T-005; billing-source guards removed with the legacy billing

@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
     PermanentGrantAnchorResponseSchema,
     PermanentGrantCreateRequestSchema,
-    PermanentGrantCreateResponseSchema
+    PermanentGrantCreateResponseSchema,
+    PermanentGrantRevocationParamsSchema,
+    PermanentGrantRevocationRequestSchema,
+    PermanentGrantRevocationResponseSchema
 } from '../../../src/api/billing/permanent-grant.schema.js';
 
 const BENEFICIARY = '7a1f4c2e-3b5d-4e6f-8a9b-0c1d2e3f4a5b';
@@ -105,6 +108,52 @@ describe('TEST:B9a:9 permanent grant contract', () => {
                 providerCalls: [],
                 anchoredAddonInstanceIds: [],
                 addonProviderCalls: []
+            }).success
+        ).toBe(true);
+    });
+});
+
+describe('TEST:B9a:7 permanent grant revocation contract (AC:B9a:7)', () => {
+    it('trims the required reason and rejects blank or whitespace-only motives', () => {
+        const parsed = PermanentGrantRevocationRequestSchema.safeParse({
+            reason: '  Revoked after review  '
+        });
+        expect(parsed.success).toBe(true);
+        if (parsed.success) expect(parsed.data.reason).toBe('Revoked after review');
+        expect(PermanentGrantRevocationRequestSchema.safeParse({ reason: '' }).success).toBe(false);
+        expect(PermanentGrantRevocationRequestSchema.safeParse({ reason: '   ' }).success).toBe(
+            false
+        );
+    });
+
+    it('rejects extra body keys through the strict object', () => {
+        expect(
+            PermanentGrantRevocationRequestSchema.safeParse({
+                reason: 'Valid reason',
+                revokedBy: BENEFICIARY
+            }).success
+        ).toBe(false);
+    });
+
+    it('rejects a non-UUID grant id in the path params', () => {
+        expect(
+            PermanentGrantRevocationParamsSchema.safeParse({ permanentGrantId: 'not-a-uuid' })
+                .success
+        ).toBe(false);
+        expect(
+            PermanentGrantRevocationParamsSchema.safeParse({ permanentGrantId: GRANT }).success
+        ).toBe(true);
+    });
+
+    it('accepts a valid revocation response with addon provider calls', () => {
+        expect(
+            PermanentGrantRevocationResponseSchema.safeParse({
+                permanentGrantId: GRANT,
+                revokedAt: '2026-10-14T12:00:00.000Z',
+                anchorIds: [PLAN],
+                revokedVerticals: ['accommodation', 'venue'],
+                cancelledAddonInstanceIds: [BENEFICIARY],
+                addonProviderCalls: [outcome]
             }).success
         ).toBe(true);
     });

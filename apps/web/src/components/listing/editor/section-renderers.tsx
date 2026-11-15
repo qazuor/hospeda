@@ -31,6 +31,7 @@ import {
 import { PracticalInfoSection } from '@/components/listing/editor/PracticalInfoSection.client';
 import { PriceSection } from '@/components/listing/editor/PriceSection.client';
 import { SocialNetworksSection } from '@/components/listing/editor/SocialNetworksSection.client';
+import { VenueLocationSection } from '@/components/listing/editor/VenueLocationSection.client';
 import {
     type ListingI18nValues,
     ListingTranslationPanel
@@ -93,6 +94,18 @@ const RENDERS_EXPERIENCE_ONLY_FORM: Readonly<Record<VenueOrExperience, boolean>>
 };
 
 /**
+ * Whether the postal-address form renders for each vertical (HOS-2189).
+ *
+ * `location` is a venue section: the experience update schema has no such key
+ * (an experience carries a `meetingPoint`), so the form stays out of an
+ * experience's way even if its route were ever reached.
+ */
+const RENDERS_LOCATION_FORM: Readonly<Record<VenueOrExperience, boolean>> = {
+    venue: true,
+    experience: false
+};
+
+/**
  * The house-rule keys the amenities page's Policies panel edits per vertical
  * (HOS-2060): the shared base plus the vertical's own. The venue night keys
  * (`minAge`, `dressCode`, `dressCodeNote`) are absent on purpose — the catalog
@@ -125,6 +138,17 @@ export const LISTING_SECTION_RENDERERS: Readonly<
             listingId={context.listingId}
         />
     ),
+    location: (context) =>
+        RENDERS_LOCATION_FORM[context.vertical] ? (
+            <VenueLocationSection
+                locale={context.locale}
+                data={context.data}
+                errors={context.errors}
+                onFieldChange={context.onFieldChange}
+            />
+        ) : (
+            <></>
+        ),
     meetingPoint: (context) =>
         RENDERS_EXPERIENCE_ONLY_FORM[context.vertical] ? (
             <MeetingPointSection
