@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 9/74 tasks (12%)
+## Progress: 10/74 tasks (14%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -146,7 +146,7 @@ Tracks (can run in parallel):
   - Blocked by: T-002
   - Blocks: T-019
 
-- [ ] **T-019** (complexity: 3) - T-2 Implement the Umami server client (queue, batch flush, timeout, User-Agent, never throws)
+- [x] **T-019** (complexity: 3) - T-2 Implement the Umami server client (queue, batch flush, timeout, User-Agent, never throws)
   - Tags: t2-adapter, analytics, api
   - Files: packages/analytics/src/providers/umami-server.ts, packages/analytics/src/index.ts, packages/a...
   - Blocked by: T-018

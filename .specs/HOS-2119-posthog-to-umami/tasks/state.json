@@ -686,43 +686,43 @@
             "id": "T-019",
             "title": "T-2 Implement the Umami server client (queue, batch flush, timeout, User-Agent, never throws)",
             "description": "Files: packages/analytics/src/providers/umami-server.ts, packages/analytics/src/index.ts, packages/analytics/test/umami-server.test.ts. Tests with a fake fetch and fake timers: batch flushes at N, flushes on interval, flush on shutdown, timeout aborts and does not throw, 5xx/network error logs once per flush and keeps the app path non-throwing and non-blocking (AC-3), User-Agent header always present, nothing sent when URL/website id are unset (no-op client).\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Batch at most 500 items and stay under ~10 MB per request. Treat processed < size or a non-empty details[] as a failure (Umami returns HTTP 200 on partial failure). Never use a bot-like User-Agent: anything containing \"api\", curl, node or undici is dropped silently with 200 {\"beep\":\"boop\"}.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018"],
             "blocks": ["T-021", "T-071"],
             "subtasks": [
                 {
                     "title": "Create packages/analytics/src/providers/umami-server.ts implementing ServerAnalyticsClient (capture({distinctId,event,properties,uuid,timestamp}))",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "POST /api/batch with native fetch, fixed server User-Agent, AbortSignal timeout",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "In-memory queue: flush at N events or T seconds, flush on shutdown (same lifecycle as lib/posthog.ts: FLUSH_AT=20, 10s, 3s shutdown)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Failures logged once per flush via a logger passed in (no @repo/logger import if the package stays dependency-light; inject it) and never thrown",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from packages/analytics/src/index.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "analytics", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-15T07:15:03Z",
+                "completed": "2026-11-15T07:40:49Z"
             }
         },
         {
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 65,
+        "pending": 64,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.5
     }
