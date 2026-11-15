@@ -410,6 +410,49 @@
         }
     },
     "ai": {
+        "conversations": {
+            "title": "AI chat conversations",
+            "subtitle": "Anonymous read of each listing chat conversation. Personal data in the text is already redacted.",
+            "filter": {
+                "vertical": "Vertical",
+                "allVerticals": "All verticals",
+                "listingId": "Listing id (UUID)",
+                "listingIdPlaceholder": "Listing UUID",
+                "from": "From",
+                "to": "To",
+                "reset": "Reset"
+            },
+            "verticals": {
+                "accommodation": "Accommodation",
+                "venue": "Venue",
+                "experience": "Experience"
+            },
+            "table": {
+                "title": "Conversations",
+                "total": "{{total}} in total",
+                "colLastMessage": "Last message",
+                "colVertical": "Vertical",
+                "colListing": "Listing",
+                "colMessages": "Messages",
+                "colFirstQuestion": "First question",
+                "pageOf": "Page {{page}} of {{totalPages}}",
+                "prev": "Previous",
+                "next": "Next"
+            },
+            "loading": "Loading conversations...",
+            "loadError": "Could not load the conversations.",
+            "empty": "No conversations match these filters.",
+            "detail": {
+                "title": "Conversation",
+                "back": "Back to the list",
+                "loadError": "Could not load the conversation.",
+                "noTurns": "This conversation has no messages.",
+                "role": {
+                    "user": "User",
+                    "assistant": "Assistant"
+                }
+            }
+        },
         "settings": {
             "reasoningEffortLabel": "Reasoning effort",
             "providerDefault": "Provider default"

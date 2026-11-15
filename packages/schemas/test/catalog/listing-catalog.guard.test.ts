@@ -15,6 +15,8 @@ import { ExperienceTypeEnum } from '../../src/enums/experience-type.enum.js';
 import { VenueTypeEnum } from '../../src/enums/venue-type.enum.js';
 
 const verticals = ['venue', 'accommodation', 'experience'] as const;
+/** Global-scope keys a section or trait may name. HOS-1809 (Q-1): the accommodation `verification` trait. */
+const GLOBAL_KEYS_ALLOWED_IN_CATALOG: readonly string[] = ['has_verification_badge'];
 type Catalog = typeof LISTING_SECTIONS;
 type Section = {
     id: string;
@@ -104,8 +106,16 @@ function violations(
                 section.entitlementKey,
                 ...(section.traits ?? []).map((trait) => trait.entitlementKey)
             ].filter(Boolean)) {
+                // A `global` key resolves by user, so it is also readable through the
+                // vertical's effective set, but only the keys listed here may be used.
                 if (
-                    !CATALOG_KEY_DEFINITIONS.some((d) => d.key === key && d.scope === 'vertical') ||
+                    !CATALOG_KEY_DEFINITIONS.some(
+                        (d) =>
+                            d.key === key &&
+                            (d.scope === 'vertical' ||
+                                (d.scope === 'global' &&
+                                    GLOBAL_KEYS_ALLOWED_IN_CATALOG.includes(d.key)))
+                    ) ||
                     !prodKeys.has(key as string)
                 )
                     errors.push('r6');

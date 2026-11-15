@@ -215,6 +215,12 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
                     </div>
 
                     <div className={styles.disclaimer}>{copy('headerDisclaimer')}</div>
+                    <div
+                        className={styles.disclaimer}
+                        data-testid="ai-chat-read-notice"
+                    >
+                        {copy('readNotice')}
+                    </div>
 
                     <div
                         className={styles.messages}

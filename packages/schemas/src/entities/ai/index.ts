@@ -4,12 +4,13 @@
 export * from './ai-capability.schema.js';
 // HTTP request/response schemas for the AI accommodation chat child spec (SPEC-200)
 export * from './ai-chat.schema.js';
+// Host-facing AI questions panel: listing-scoped, anonymous (HOS-2101)
+export * from './ai-conversations-admin.schema.js';
 // Admin credential vault schemas (masked view + create/rotate inputs)
 export * from './ai-credential.schema.js';
 export * from './ai-faq-draft.schema.js';
 // Generic intent envelope for extractIntent (§5.11)
 export * from './ai-intent.schema.js';
-// Host-facing AI questions panel: listing-scoped, anonymous (HOS-2101)
 export * from './ai-listing-questions.schema.js';
 // Request body and draft schemas for the AI post-generation feature (SPEC-223)
 export * from './ai-post-generate.schema.js';

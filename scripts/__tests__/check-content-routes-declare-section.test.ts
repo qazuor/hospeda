@@ -103,4 +103,73 @@ describe('TEST:3.4:3 — GUARD:G-FAC-06 content routes declare their section', (
             'must distinguish write and delete intent'
         );
     });
+
+    describe('accommodation calendar writes (HOS-1809)', () => {
+        const OCCUPANCY = 'apps/api/src/routes/accommodation/protected/addOccupancy.ts';
+        const SYNC = 'apps/api/src/routes/accommodation/protected/calendarSync.ts';
+        it('inventories the seven calendar write routes under the calendar section', () => {
+            const calendar = Object.entries(INVENTORY).filter(([file]) =>
+                file.startsWith('apps/api/src/routes/accommodation/protected/')
+            );
+            expect(calendar).toHaveLength(7);
+            for (const [file, entry] of calendar)
+                expect(entry).toMatchObject({
+                    section: 'calendar',
+                    // The three external-sync routes gate on the trait key alone.
+                    intent: /calendar(?:Sync|Connect)/.test(file) ? 'read' : 'write'
+                });
+        });
+        it('fails when an occupancy route goes back to a literal capability instead of its section', () => {
+            const r = tree();
+            mutate(
+                r,
+                OCCUPANCY,
+                "listingSection: { id: 'calendar', intent: 'write' },",
+                "capabilities: ['can_use_calendar'],"
+            );
+            expect(run({ root: r, minRoutes: 1 }).output).toContain(
+                `${OCCUPANCY} does not declare listingSection`
+            );
+        });
+        it('fails when an external-sync route drops its externalSync trait', () => {
+            const r = tree();
+            mutate(r, SYNC, "sectionTraits: ['externalSync']", 'sectionTraits: []');
+            expect(run({ root: r, minRoutes: 1 }).output).toContain(
+                `${SYNC} must declare sectionTraits including externalSync`
+            );
+        });
+        it('fails when an external-sync route declares no sectionTraits at all', () => {
+            const r = tree();
+            mutate(r, SYNC, "sectionTraits: ['externalSync'],", '');
+            expect(run({ root: r, minRoutes: 1 }).output).toContain('must declare sectionTraits');
+        });
+        it('inventories the externalSync trait on exactly the three sync routes', () => {
+            const withTrait = Object.entries(INVENTORY)
+                .filter(([, entry]) => (entry as { traits?: string[] }).traits?.length)
+                .map(([file]) => file.split('/').pop());
+            expect(withTrait.sort()).toEqual([
+                'calendarConnectGoogle.ts',
+                'calendarConnectIcal.ts',
+                'calendarSync.ts'
+            ]);
+        });
+        it('fails when a route declares another section than the inventory expects', () => {
+            const r = tree();
+            mutate(r, SYNC, "id: 'calendar'", "id: 'seo'");
+            expect(run({ root: r, minRoutes: 1 }).output).toContain(
+                'must declare section calendar'
+            );
+        });
+        it('fails when a new calendar write route is missing from the closed inventory', () => {
+            const r = tree();
+            write(
+                r,
+                'apps/api/src/routes/accommodation/protected/newCalendarWrite.ts',
+                'export const route = addOccupancy({});'
+            );
+            expect(run({ root: r, minRoutes: 1 }).output).toContain(
+                'missing from the closed inventory: apps/api/src/routes/accommodation/protected/newCalendarWrite.ts'
+            );
+        });
+    });
 });

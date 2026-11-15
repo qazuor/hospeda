@@ -880,6 +880,19 @@ const plataformaSidebar: SidebarInput = {
             permissions: ['AI_SETTINGS_MANAGE'],
             onMissing: 'hide'
         },
+        {
+            type: 'link',
+            id: 'ai-conversations',
+            label: {
+                es: 'Conversaciones IA',
+                en: 'AI Conversations',
+                pt: 'Conversas IA'
+            },
+            icon: 'ChatIcon',
+            route: '/ai/conversations',
+            permissions: ['AI_CONVERSATION_VIEW_ANY'],
+            onMissing: 'hide'
+        },
         { type: 'separator', id: 'sep-audit' },
         // ── Auditoría — SUPER_ADMIN only (onMissing: 'hide') ─────────────
         {

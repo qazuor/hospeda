@@ -1424,9 +1424,16 @@
       "breakpoints": true
     },
     {
+      "idx": 203,
+      "version": "7",
+      "when": 1794683382749,
+      "tag": "0203_hos_2075_ai_conversation_permission",
+      "breakpoints": true
+    },
+    {
       "idx": 204,
       "version": "7",
-      "when": 1794683236017,
+      "when": 1794683383749,
       "tag": "0204_hos_2189_venue_location",
       "breakpoints": true
     }

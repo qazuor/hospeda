@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
 // HOS-2101: +1 (ai/protected/listing-questions.ts, owner-scoped, no write permission).
-const EXPECTED_GET_PROTECTED_COUNT = 101;
+// HOS-1809: +1 (accommodation/protected/sectionStates.ts, owner-scoped READ_OWN, no permission).
+const EXPECTED_GET_PROTECTED_COUNT = 102;
 const PENDING_OWNER_DECISION = [
     // HOS-1693 D-1: pending owner decision; remove when it moves to the inspection permission
     'accommodation-external-reputation/protected/listListings.ts'

@@ -295,6 +295,21 @@ export const LISTING_SECTIONS = {
                 'reviewsCount',
                 'averageRating'
             ],
+            // Field traits (HOS-1809): `richDescription` and its i18n sibling are one
+            // gate, never two. `isVerified` is read-only for the owner (an admin sets
+            // it) but its public exposure is still gated by the owner's key (Q-1).
+            traits: [
+                {
+                    id: 'richDescription',
+                    entitlementKey: K.CAN_USE_RICH_DESCRIPTION,
+                    fields: ['richDescription', 'richDescriptionI18n']
+                },
+                {
+                    id: 'verification',
+                    entitlementKey: K.HAS_VERIFICATION_BADGE,
+                    fields: ['isVerified']
+                }
+            ],
             order: 1,
             group: 'property'
         },
@@ -331,6 +346,9 @@ export const LISTING_SECTIONS = {
             vertical: 'accommodation',
             common: true,
             fields: ['videos'],
+            // `media.videos` and the video URLs inside `description` travel with this
+            // trait; they are nested, so the public projection handles them apart.
+            traits: [{ id: 'videos', entitlementKey: K.CAN_EMBED_VIDEO, fields: ['videos'] }],
             order: 5,
             group: 'content'
         },
