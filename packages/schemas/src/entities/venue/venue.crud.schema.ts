@@ -191,6 +191,8 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     name: true,
     description: true,
     destinationId: true,
+    // HOS-2189: structured postal address (the `location` section).
+    location: true,
     // Previously owner-editable (SPEC-253 §3 / operational sections).
     type: true,
     summary: true,

@@ -1,0 +1,55 @@
+---
+/**
+ * @file ubicacion.astro
+ * @description Postal address section of the venue editor (HOS-2189).
+ *
+ * VENUE ONLY, and the gate is the registry: the `location` section exists in
+ * the venue catalog and not in the experience one (an experience has a meeting
+ * point instead), so `buildListingEditorSections` leaves it out of an
+ * experience registry and the shared resolver's unknown-slug branch sends that
+ * route straight back to its hub.
+ *
+ * City, neighborhood and department are not edited here: they come from the
+ * destination chosen on the basic-info page.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/ubicacion/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveListingEditorPage({
+	astro: Astro,
+	sectionSlug: 'ubicacion',
+});
+
+if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
+
+const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<ListingEditorSectionLayout
+	locale={locale}
+	registry={registry}
+	listingId={listingId}
+	listingName={detail.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="ubicacion"
+	title={t('listing.owner.editor.sectionNav.location', 'Ubicación')}
+>
+	<ListingEditor
+		client:load
+		sectionId="location"
+		vertical={vertical}
+		listingId={listingId}
+		locale={locale}
+		initialData={detail}
+	/>
+</ListingEditorSectionLayout>

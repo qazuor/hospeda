@@ -2,6 +2,7 @@ import type {
     AdminInfoType,
     ContactInfo,
     I18nText,
+    PostalAddressType,
     Seo,
     SocialNetwork,
     VenuePolicies,
@@ -133,6 +134,13 @@ export const venues = pgTable(
         menuFileKind: VenueMenuFileKindPgEnum('menu_file_kind'),
         // Jsonb grouped columns (matching accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        /**
+         * Structured postal address (HOS-2189): street, number, floor, apartment
+         * and coordinates, the same shape as `accommodations.location`. City,
+         * neighborhood and department are NOT stored: they come from
+         * `destination_id`. Nullable until the owner or an admin fills it.
+         */
+        location: jsonb('location').$type<PostalAddressType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         /** Weekly opening hours — keyed by day name with open/close time strings. */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),

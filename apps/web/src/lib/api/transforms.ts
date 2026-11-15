@@ -33,6 +33,7 @@ import type {
     VenueContactInfo,
     VenueDailySpecial,
     VenueDetailData,
+    VenueDetailLocation,
     VenueEvent,
     VenueMenuSection,
     VenueOpeningHoursEntry,
@@ -2993,6 +2994,35 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
 }
 
 /**
+ * Reads the public `location` of a venue payload (HOS-2189).
+ *
+ * @param raw - The payload's `location`, of unknown shape.
+ * @returns The address, or `null` when absent or when it carries no street, so
+ * the page never paints a block with nothing to say.
+ */
+function toVenueDetailLocation(raw: unknown): VenueDetailLocation | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const coordinates =
+        obj.coordinates && typeof obj.coordinates === 'object'
+            ? (obj.coordinates as Record<string, unknown>)
+            : {};
+    const read = (source: Record<string, unknown>, key: string): string =>
+        typeof source[key] === 'string' ? (source[key] as string).trim() : '';
+    const street = read(obj, 'street');
+    if (street === '') return null;
+
+    return {
+        street,
+        number: read(obj, 'number'),
+        floor: read(obj, 'floor'),
+        apartment: read(obj, 'apartment'),
+        lat: read(coordinates, 'lat'),
+        long: read(coordinates, 'long')
+    };
+}
+
+/**
  * Transforms a raw API venue item to VenueDetailData props.
  *
  * Used on the venue detail page where the full `VenuePublic` shape
@@ -3018,6 +3048,7 @@ export function toVenueDetailPageProps({
 
     return {
         ...cardProps,
+        location: toVenueDetailLocation(item.location),
         description: resolveI18nText(
             (item.descriptionI18n as I18nTextLike | string) ?? item.description ?? '',
             locale

@@ -41,6 +41,10 @@ const VENUE_SECTION_PRESENTATION = {
         slug: 'datos',
         labelKey: 'listing.owner.editor.sectionNav.basicInfo'
     },
+    location: {
+        slug: 'ubicacion',
+        labelKey: 'listing.owner.editor.sectionNav.location'
+    },
     openingHours: {
         slug: 'horarios',
         labelKey: 'listing.owner.editor.sectionNav.openingHours'

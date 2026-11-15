@@ -28,6 +28,8 @@ import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
+import VenueAddress from '@/components/venue/VenueAddress.astro';
+import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
 // Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
 // `features` catalog as accommodations, so it shares the i18n namespace
@@ -284,6 +286,14 @@ const venueDetailSectionBlocks: Readonly<
             }
         }
     ],
+    location: venue.location
+        ? [
+              {
+                  Component: VenueAddress,
+                  props: { location: venue.location, cityName: venue.destinationName, locale }
+              }
+          ]
+        : [],
     openingHours: hasOpeningHours
         ? [
               {
@@ -352,6 +362,11 @@ const venueDetailSectionBlocks: Readonly<
 // deliberately left out of the venue object.
 const jsonLdPolicyData = buildListingPolicyStructuredData({ policies: venue.policies ?? {}, t });
 
+const jsonLdPlace = buildVenueJsonLdPlace({
+    location: venue.location,
+    locality: venue.destinationName
+});
+
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
@@ -393,6 +408,8 @@ const breadcrumbItems = [
         image={venue.featuredImage.url}
         priceRange={jsonLdPriceRange}
         paymentAccepted={jsonLdPolicyData.paymentAccepted}
+        address={jsonLdPlace.address}
+        geo={jsonLdPlace.geo}
         aggregateRating={venue.averageRating > 0 ? {
             ratingValue: venue.averageRating,
             reviewCount: venue.reviewsCount,

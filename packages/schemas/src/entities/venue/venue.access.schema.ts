@@ -7,6 +7,7 @@ import {
     ListingFeaturePublicSchema
 } from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
+import { PostalAddressReadSchema } from '../../common/postal-address.schema.js';
 import { AmenityRelationAttributesSchema } from '../amenity/amenity.schema.js';
 import { VenueDailySpecialPublicSchema } from './subtypes/venue.daily-special.schema.js';
 import { VenueEventPublicSchema } from './subtypes/venue.event.schema.js';
@@ -96,6 +97,10 @@ export const VenuePublicSchema = VenueSchema.pick({
     // Destination reference
     destinationId: true,
 
+    // Structured postal address (HOS-2189). A venue is a business open to the
+    // public, so unlike an accommodation the full address is public data.
+    location: true,
+
     // Media (public safe)
     media: true,
     videos: true,
@@ -146,6 +151,8 @@ export const VenuePublicSchema = VenueSchema.pick({
      * exposed here. Defaults to `false` for a read that did not derive it.
      */
     isFeatured: z.boolean().default(false),
+    /** HOS-2189 read overlay: stored address strings may predate today's write bounds. */
+    location: PostalAddressReadSchema.nullish(),
     /**
      * Server-resolved fact for the `nightInfo` heading (DEC-FAC-050, HOS-1849):
      * true when more than one of the listing's business lines owns a section
@@ -335,6 +342,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
     // pick — public reads get it derived under `isFeatured` and nothing else.
     featuredByEntitlement: true,
     destinationId: true,
+    // HOS-2189: structured postal address, round-tripped to the owner editor.
+    location: true,
     media: true,
     videos: true,
     averageRating: true,
@@ -392,6 +401,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
      * mobilePhone) must never 500 the response. Format stays strict on write.
      */
     contactInfo: ContactInfoReadSchema.nullish(),
+    /** HOS-2189 read overlay: stored address strings may predate today's write bounds. */
+    location: PostalAddressReadSchema.nullish(),
     /** Override picked `media` to exclude server-managed internal fields. */
     media: BaseMediaObjectSchema.nullish(),
     /** Rich-text description (protected visibility follows the same entitlement gate). */
@@ -459,6 +470,8 @@ export const VenueAdminSchema = VenueSchema.extend({
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish(),
+    /** HOS-2189 read overlay: stored address strings may predate today's write bounds. */
+    location: PostalAddressReadSchema.nullish(),
     /**
      * HOS-1787 leaf 7.1 — the business lines the venue is assigned to.
      *

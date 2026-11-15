@@ -92,6 +92,7 @@ import {
     type ListingEditorFormSectionId,
     restrictPayloadToSection
 } from './editor/listing-section-payload';
+import { buildLocationPatch, parseLocationValues } from './editor/location-values';
 import type { ListingPolicyChange } from './editor/PoliciesPanel.client';
 import { joinDuration, splitDuration } from './editor/PracticalInfoSection.client';
 import { LISTING_SECTION_RENDERERS } from './editor/section-renderers';
@@ -482,6 +483,10 @@ function buildVenuePatchFields({
     if (current.priceRange !== baseline.priceRange) {
         payload.priceRange = current.priceRange || null;
     }
+    const location = buildLocationPatch({ current: current.location, baseline: baseline.location });
+    if (location) {
+        payload.location = location;
+    }
     if (current.entryKind !== baseline.entryKind) {
         payload.entryKind = current.entryKind || null;
     }
@@ -691,6 +696,9 @@ export function ListingEditor({
             workPhone: strField(initialContact, 'workPhone'),
             workEmail: strField(initialContact, 'workEmail')
         },
+        // HOS-2189: venue postal address; an experience reads it as empty and
+        // `buildPatchPayload` never emits it for that vertical.
+        location: parseLocationValues({ raw: data.location }),
         // T-020: added linkedIn to social per AC-4
         social: {
             facebook: strField(initialSocial, 'facebook'),
