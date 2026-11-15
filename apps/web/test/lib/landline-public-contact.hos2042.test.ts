@@ -23,12 +23,32 @@ import { hasVenueContactInfoChannel, hasVenuePublicContact } from '@/lib/venue-c
 
 const read = (rel: string): string => readFileSync(resolve(__dirname, '../../', rel), 'utf8');
 
+/**
+ * Removes every `<!-- ... -->` block by scanning with `indexOf` instead of a
+ * regex, so no partial `<!--` can survive a single replace pass (CodeQL
+ * js/incomplete-multi-character-sanitization). An unterminated comment
+ * swallows the rest of the text, as a browser would.
+ */
+const stripHtmlComments = (source: string): string => {
+    let output = '';
+    let cursor = 0;
+    while (cursor < source.length) {
+        const start = source.indexOf('<!--', cursor);
+        if (start === -1) {
+            output += source.slice(cursor);
+            break;
+        }
+        output += source.slice(cursor, start);
+        const end = source.indexOf('-->', start + 4);
+        if (end === -1) break;
+        cursor = end + 3;
+    }
+    return output;
+};
+
 /** Strips comments so wiring assertions read CODE, not the prose about it. */
 const code = (source: string): string =>
-    source
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/^\s*\/\/.*$/gm, '');
+    stripHtmlComments(source.replace(/\/\*[\s\S]*?\*\//g, '')).replace(/^\s*\/\/.*$/gm, '');
 
 const ACCOMMODATION_ITEM = {
     id: 'acc-001',
