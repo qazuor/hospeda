@@ -1,0 +1,2 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.pauseSubscription' BEFORE 'user.update.self';--> statement-breakpoint
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.changeSubscriptionPlan' BEFORE 'user.update.self';

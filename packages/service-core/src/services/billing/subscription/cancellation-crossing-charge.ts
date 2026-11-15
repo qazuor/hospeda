@@ -1,4 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
+import type { ReconciliationMarkReason } from '@repo/db';
 import {
     addonInstances,
     addonProducts,
@@ -22,10 +23,12 @@ import type { CoverageNotices } from '../payment/payment-ports';
 import { unwiredCoverageNotices } from '../payment/payment-ports';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
+import type { CrossingMarkTransition } from './cancellation-crossing-rule';
 import {
     classifyCancellationCrossing,
     crossingExtensionEnd,
-    crossingMarkDetail
+    crossingMarkDetail,
+    crossingMarkReason
 } from './cancellation-crossing-rule';
 import { complementChargePeriodEnd } from './complement-s21-charge';
 import { isLiveSuccessionPredecessor } from './late-payment-conditions';
@@ -56,7 +59,7 @@ export type CancellationCrossingResult =
           readonly subscriptionId: string;
           readonly markId: string;
           readonly markOutcome: 'OPENED' | 'ACCUMULATED';
-          readonly transition: 'S11' | 'S23' | 'S24';
+          readonly transition: CrossingMarkTransition;
       }
     | { readonly outcome: 'ALREADY_MARKED'; readonly subscriptionId: string }
     | {
@@ -73,10 +76,11 @@ const inputSchema = z.strictObject({ paymentId: z.uuid() });
 const MARK_PAYMENT_ALREADY_HUNG = 'MARK_PAYMENT_ALREADY_HUNG';
 
 /**
- * C2 settles charges that cross cancellation. The fact date decides the two rows:
+ * C2/C3 settles charges that cross cancellation. The fact date decides the two rows:
  * an earlier S11 payment extends service with max; a later payment, or any S23/S24
- * payment, is hung on a human reconciliation mark. B5.9 and Coord-8 also call this
- * exported rule for action 14. No automatic refund is requested.
+ * payment, is hung on a human reconciliation mark. A charge credited after S13/S20
+ * cancelled the row is hung on COBRO_POSTERIOR_AL_GRANT; the grant never waits for it,
+ * and no refund is requested. B5.9 and Coord-8 also call this exported rule for action 14.
  */
 export async function settleChargeAcrossCancellation(
     input: { readonly paymentId: string },
@@ -216,7 +220,8 @@ export async function settleChargeAcrossCancellation(
             };
         }
         if (!decision) return { outcome: 'NOT_APPLICABLE', reason: 'OUT_OF_SCOPE' };
-        const transition = decision.transition as 'S11' | 'S23' | 'S24';
+        const transition = decision.transition as CrossingMarkTransition;
+        const reason: ReconciliationMarkReason = crossingMarkReason({ transition });
         const alreadyHung = await tx
             .select({ id: reconciliationMarkPayments.id })
             .from(reconciliationMarkPayments)
@@ -228,7 +233,7 @@ export async function settleChargeAcrossCancellation(
                 and(
                     eq(reconciliationMarkPayments.paymentId, payment.id),
                     eq(reconciliationMarks.subscriptionId, subscription.id),
-                    eq(reconciliationMarks.reason, 'COBRO_POSTERIOR_A_LA_BAJA')
+                    eq(reconciliationMarks.reason, reason)
                 )
             )
             .limit(1);
@@ -238,7 +243,7 @@ export async function settleChargeAcrossCancellation(
             const opened = await openReconciliationMark(
                 {
                     subject: { kind: 'SUBSCRIPTION', subscriptionId: subscription.id },
-                    reason: 'COBRO_POSTERIOR_A_LA_BAJA',
+                    reason,
                     payment: { source: 'PAYMENT', id: payment.id },
                     actor: { type: ports.actorType ?? 'provider' },
                     correlationId: crypto.randomUUID(),

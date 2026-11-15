@@ -32,6 +32,12 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   replaced by the administrative action 24 (`entity_type =
  *   'partner_application'`). The email is personal data, so `changes` carries
  *   only field names (NUCLEO/08 §3 action 24; HOS-1494).
+ * - `partner_application.wait_cancelled`: administrative action 5 (ACC:5)
+ *   cancelled a rejected Partner application's wait (HOS-1484).
+ * - `partner_application.approved` / `partner_application.rejected` (PP2/PP3, ACC:5) and `partner.claimed` record the HOS-1485 resolution and claim.
+ * - `partner.presence_moderation_changed`: ACC:12 (sources: action 13) moderated or lifted moderation of a Partner presence (`entity_type = 'partner'`, `entity_id` = its id, mandatory `reason`, `changes = [{ field: 'presence_moderated', old, new }]`; HOS-1488, AC:V7:14; V7 §1.6).
+ * - `partner.billing_configured`: ACC:6 configured a Partner's manual plan for its owner; the event records the Partner subject, admin actor, reason, and reference-only changes (AC:V7:17).
+ * - `partner.presence_emptied`: ACC:25 emptied a Partner presence at its owner's request (`entity_type = 'partner'`, `entity_id` = the Partner id, mandatory `reason`, and `changes` contains field names only, never values: a delta of a text field IS a copy of the content; HOS-1498, AC:V8b:6, ACC:25).
  * - `subscription.provider_cancellation_decided`: one of our transitions
  *   decided to cancel the preapproval of this subscription (`entity_type =
  *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
@@ -43,6 +49,9 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   (S30 in B9b; S37 in B12 and S10 in B8b later) decided to change the
  *   authorization amount; the sweep retries the mutation for 3 days from it
  *   (MOT:5, AC:B9b:5).
+ * - `subscription.scheduled_change_applied`: S38 applied a queued plan version
+ *   and billing option (`entity_type = 'subscription'`, `entity_id` = its id,
+ *   `reason = 'S38'`, and `changes` records both old/new pairs; actor `job`).
  * - `subscription.provider_cancelled_after_rejection`: the `B/03` §10.1 mirror
  *   moved a `GRACE_PERIOD` row to `CANCELLED` because the provider cancelled
  *   its preapproval after a rejected charge (mirror pair `CANCELLED_ON_GRACE`).
@@ -53,6 +62,8 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   one: `canCharge` keeps counting it until the 16th deadline's window ends,
  *   and the `LIVE_PREAPPROVAL_ON_CLOSED_ROW` pair re-sends the cancellation on
  *   it (B11 §3; HOS-1676 H-2).
+ * - `manual_payment.reimputed`: MP4 moved a late installment to the period
+ *   beginning at reactivation (AC:B5:18); changes record both period starts.
  */
 export const DOMAIN_EVENT_TYPES = [
     'email.undeliverable',
@@ -65,15 +76,30 @@ export const DOMAIN_EVENT_TYPES = [
     'reconciliation.mark_opened',
     'account.closed_on_request',
     'partner_application.email_replaced',
+    'partner_application.wait_cancelled',
+    'partner_application.approved',
+    'partner_application.rejected',
+    'partner.claimed',
+    'partner.presence_moderation_changed',
+    'partner.billing_configured',
+    'partner.presence_emptied',
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',
+    'subscription.scheduled_change_applied',
+    'manual_payment.reimputed',
     /** An open reconciliation mark passed deadline 17; written by the sweep. */
     'reconciliation.mark_escalated',
     /** An accredited payment was charged below the expected amount (corrida 2). */
     'reconciliation.undercharge_detected',
     /** A completed pause gave net days (corrida 2). */
-    'reconciliation.pause_gift_detected'
+    'reconciliation.pause_gift_detected',
+    /** The previous and new amount of one billing option set by admin action 19 (HOS-1515). */
+    'billing_option.price_set',
+    /** An addon instance changed status, including its initial pending state. */
+    'addon_instance.status_changed',
+    /** Admin action 20 published an addon product version and price (HOS-1595). */
+    'addon_product.version_published'
 ] as const;
 
 /** One type of the closed domain event catalog. */

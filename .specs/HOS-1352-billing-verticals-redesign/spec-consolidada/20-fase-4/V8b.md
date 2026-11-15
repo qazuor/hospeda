@@ -11,12 +11,12 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.m
 **Objetivo.** Las superficies de Partner que la partición de `V8` dejó fuera del corte: lo que ve el
 dueño de un Partner cuando su presencia deja de verse, el panel de postulaciones, las tres pantallas
 del reclamo y la postulación, y la acción 25. **Es una pieza posterior, aditiva**: no reescribe filas
-ni código del corte y no trae migración estructural ([GATE:FP](../30-el-corte.md#gate-fp)); la fila no tiene esquema propio
+ni código del corte y sus migraciones, si las hubiera, son sólo aditivas ([GATE:FP](../30-el-corte.md#gate-fp); [decisión del owner 2026-11-05](../01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)); la fila no tiene esquema propio
 (`16-fase-7-del-paraguas.md` §4.6, nota bajo la tabla del esquema).
 
 **Fase y gate.** Fase 4, con `V7`: `V8b` espera a `V7` ([GATE:FP.F4](../30-el-corte.md#gate-fp-f4)). Momento 1 por pieza
 ([GATE:M1](../30-el-corte.md#gate-m1)) y el gate propio de la fase: momento 2 sobre la rama de la fase ([GATE:FP.1](../30-el-corte.md#gate-fp-1)),
-checklist de smoke extendido ([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y drift guard en verde ([GATE:FP.3](../30-el-corte.md#gate-fp-3)).
+checklist de smoke extendido ([GATE:FP.2](../30-el-corte.md#gate-fp-2)) y drift guard en verde, con sólo migraciones aditivas ([GATE:FP.3](../30-el-corte.md#gate-fp-3)).
 
 <a id="fila-v8b"></a>
 **FILA:V8b — Superficies de Partner** *(después)*. Qué deja funcionando:
@@ -161,7 +161,7 @@ Fuente: [ACC:25](../02-nucleo.md#acc-25), [LISTA:V8b](#lista-v8b)
 - **Dado** la rama de la Fase 4 con `V7` y `V8b` mergeadas
 - **Cuando** se corren los casos de [AC:V8b:1](#ac-v8b-1) a [AC:V8b:6](#ac-v8b-6)
 - **Entonces** las seis cláusulas de su *«Lista cuando»* se cumplen y el drift guard de la rama de la
-  fase sigue en verde.
+  fase sigue en verde y la rama no trae ninguna migración destructiva.
 Fuente: [LISTA:V8b](#lista-v8b), [FILA:V8b](#fila-v8b)
 
 ## Reglas
@@ -177,7 +177,8 @@ Fuente: [LISTA:V8b](#lista-v8b), [FILA:V8b](#fila-v8b)
 
 N/A — sin esquema propio (`16-fase-7-del-paraguas.md` §4.6, nota bajo la tabla del esquema) ni
 migración: la acción 25 borra contenido de la tabla `partners` que ya existe, y los datos del panel
-son los de `postulacion` y `partner`, que crea `V6` ([ESQ:2](../10-corte/V6.md#esq-2)).
+son los de `postulacion` y `partner`, que crea `V6` ([ESQ:2](../10-corte/V6.md#esq-2)). Si la pieza llegara a
+traer una migración, sólo puede ser aditiva ([GATE:FP.3](../30-el-corte.md#gate-fp-3); [decisión del owner 2026-11-05](../01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)).
 
 ## API
 
@@ -264,11 +265,11 @@ Cubre: [AC:V8b:6](#ac-v8b-6)
 Fuente: [ACC:25](../02-nucleo.md#acc-25)
 
 <a id="test-v8b-8"></a>
-**TEST:V8b:8** — Drift guard sobre la rama de la Fase 4: ninguna migración estructural.
+**TEST:V8b:8** — Guard estático sobre la rama de la Fase 4: rechaza las sentencias destructivas (`DROP` o `RENAME` de tabla o columna, cambio de tipo) en las migraciones que la rama de la fase agrega ([decisión del owner 2026-11-05](../01-decisiones-vigentes.md#own-hos-1361-solo-migraciones-aditivas)). El drift guard (schema TS contra migraciones) sigue siendo una condición aparte, en verde (`AC:V8b:7`).
 Tipo: guard estático
 Cubre: [AC:V8b:7](#ac-v8b-7)
 Fuente: [LISTA:V8b](#lista-v8b)
-Mutación: agregar en la rama de la fase una migración estructural; el drift guard falla.
+Mutación: agregar en la rama de la fase una migración con `ALTER TABLE … DROP COLUMN …`; el guard falla.
 
 ## Smoke y etiquetas
 
@@ -281,7 +282,7 @@ extendido de la Fase 4 ([GATE:FP.2](../30-el-corte.md#gate-fp-2)), condición de
 - **Fase**: 4 ([GATE:FP.F4](../30-el-corte.md#gate-fp-f4)), rama épica nueva que entra a `staging` entera ([GATE:FP](../30-el-corte.md#gate-fp)).
 - **Despliegue**: momento 1 ([GATE:M1](../30-el-corte.md#gate-m1)) y el gate de la fase ([GATE:FP.1](../30-el-corte.md#gate-fp-1), [GATE:FP.2](../30-el-corte.md#gate-fp-2),
   [GATE:FP.3](../30-el-corte.md#gate-fp-3)).
-- **Rollback**: aditiva y sin esquema; revertir la rama de la fase no toca nada del corte.
+- **Rollback**: aditiva y sin esquema propio; revertir la rama de la fase no toca nada del corte, pero no deshace las migraciones aditivas de la propia fase (un `ADD VALUE` de enum no se quita, y el `CHECK` ensanchado y las columnas agregadas quedan; inertes sin el código).
 
 ## Labels de Linear
 

@@ -262,7 +262,8 @@
             },
             "unpublishTrialNote": "A avaliação gratuita continua correndo: despublicar não para o relógio da avaliação.",
             "unpublishRecurringNote_one": "Você tem {{count}} destaque recorrente neste anúncio: ele continua sendo cobrado mesmo sem publicar, até você cancelá-lo.",
-            "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los."
+            "unpublishRecurringNote_other": "Você tem {{count}} destaques recorrentes neste anúncio: eles continuam sendo cobrados mesmo sem publicar, até você cancelá-los.",
+            "recurringWithdrawLink": "Cancelar estes destaques"
         },
         "editor": {
             "section": {

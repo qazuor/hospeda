@@ -222,6 +222,8 @@ export interface PartnerData {
      * Absent for a decorative/static entry.
      */
     readonly slug?: string;
+    /** Whether the owner currently holds the public-page entitlement. */
+    readonly hasPublicPage?: boolean;
     /**
      * Intrinsic aspect ratio of the logo image (width / height). Used by the
      * marquee to reserve correct horizontal space and set `aspect-ratio` on

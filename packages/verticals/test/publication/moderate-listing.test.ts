@@ -18,6 +18,48 @@ const base = (harness: ReturnType<typeof makeHarness>) => ({
 });
 
 describe('listing moderation gestures', () => {
+    describe('TEST:B13b:1 AC:B13b:1 the moderation notice names recurring features', () => {
+        it.each([
+            false,
+            true
+        ])('copies the list into the queued payload with an open fix request: %s', async (openFixRequest) => {
+            const harness = makeHarness({ status: Status.PUBLISHED });
+            if (openFixRequest) await requestListingFix({ ...base(harness), suggestedDate: null });
+            harness.listingNotices.length = 0;
+            await takeDownListing({
+                ...base(harness),
+                recurringListingAddons: [{ name: 'Destaque Alfa' }, { name: 'Destaque Beta' }]
+            });
+            expect(
+                harness.listingNotices.map(({ template, payload }) => ({ template, payload }))
+            ).toEqual([
+                {
+                    template: openFixRequest
+                        ? 'verticals.listing-moderation-level-changed'
+                        : 'verticals.listing-moderated',
+                    payload: {
+                        vertical,
+                        listingId,
+                        reason: 'corregir datos',
+                        fixRequestOpen: openFixRequest,
+                        recurringListingAddons: [
+                            { name: 'Destaque Alfa' },
+                            { name: 'Destaque Beta' }
+                        ]
+                    }
+                }
+            ]);
+        });
+
+        it('omits the optional list from a legacy payload', async () => {
+            const harness = makeHarness({ status: Status.PUBLISHED });
+            await takeDownListing(base(harness));
+            expect(harness.listingNotices.map(({ payload }) => payload)).toEqual([
+                { vertical, listingId, reason: 'corregir datos', fixRequestOpen: false }
+            ]);
+        });
+    });
+
     it('TEST:V6:11 takes down with lock, reread, write, event and notice and no inactivity write', async () => {
         const harness = makeHarness({ status: Status.PUBLISHED });
         const result = await takeDownListing(base(harness));

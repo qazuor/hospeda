@@ -170,7 +170,17 @@ export type AllianceLeadCreateInput = z.infer<typeof AllianceLeadCreateInputSche
  * error message, never for the guarantee.
  */
 export const AllianceLeadSubmissionSchema = AllianceLeadCreateInputSchema.superRefine(
-    refineAllianceLeadKindFields
+    (value, ctx) => {
+        if (value.kind === PARTNER_KIND) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['kind'],
+                message: 'zodError.allianceLead.kind.partnerMovedToApplication'
+            });
+            return;
+        }
+        refineAllianceLeadKindFields(value, ctx);
+    }
 );
 
 /** TypeScript type for {@link AllianceLeadSubmissionSchema}. */

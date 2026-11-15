@@ -10,11 +10,34 @@ import {
     adminCancelSubscriptionRoute,
     adminSubscriptionCancellationPreviewRoute
 } from './cancellation';
+import { adminRevokeCourtesyRoute } from './courtesy';
+import { adminCourtesyGrantPreviewRoute, adminGrantCourtesyRoute } from './courtesy-grant';
+import { adminCourtesyRevokePreviewRoute } from './courtesy-revoke-preview';
+import {
+    adminDeclareManualUnpaidRoute,
+    adminListManualPaymentsRoute,
+    adminManualPaymentRegistrationPreviewRoute,
+    adminManualUnpaidPreviewRoute,
+    adminRegisterManualPaymentRoute
+} from './manual-payment';
+import {
+    adminLateManualPaymentPreviewRoute,
+    adminRegisterLateManualPaymentRoute,
+    adminRegisterUnallocatedManualPaymentRoute,
+    adminUnallocatedManualPaymentPreviewRoute
+} from './manual-payment-late';
 import { adminSubscriptionOpenRefundsRoute } from './open-refunds';
+import {
+    adminPauseSubscriptionRoute,
+    adminResumeSubscriptionRoute,
+    adminSubscriptionPausePreviewRoute
+} from './pause';
+import { adminPlanChangeOptionsRoute, adminPlanChangeRoute } from './plan-change';
 import {
     adminRevokeSubscriptionRoute,
     adminSubscriptionRevocationPreviewRoute
 } from './revocation';
+import { adminListSubscriptionsRoute, adminSubscriptionOverviewRoute } from './subscription-browse';
 
 /** Inspect one subscription with the entity-specific permission. */
 export const adminInspectSubscriptionRoute = createAdminRoute({
@@ -39,16 +62,40 @@ export const adminInspectSubscriptionRoute = createAdminRoute({
             resourceId: found.row.id,
             metadata: { subjectId: found.subjectId }
         });
-        return found.row;
+        return {
+            ...found.row,
+            ...(found.subject ? { subject: found.subject } : {}),
+            ...(found.currentPlan ? { currentPlan: found.currentPlan } : {})
+        };
     }
 });
 
 const router = createRouter();
+router.route('/', adminListSubscriptionsRoute);
+router.route('/', adminSubscriptionOverviewRoute);
 router.route('/', adminInspectSubscriptionRoute);
 router.route('/', adminSubscriptionOpenRefundsRoute);
 router.route('/', adminSubscriptionRevocationPreviewRoute);
 router.route('/', adminRevokeSubscriptionRoute);
 router.route('/', adminSubscriptionCancellationPreviewRoute);
 router.route('/', adminCancelSubscriptionRoute);
+router.route('/', adminRevokeCourtesyRoute);
+router.route('/', adminCourtesyGrantPreviewRoute);
+router.route('/', adminGrantCourtesyRoute);
+router.route('/', adminCourtesyRevokePreviewRoute);
+router.route('/', adminSubscriptionPausePreviewRoute);
+router.route('/', adminPauseSubscriptionRoute);
+router.route('/', adminResumeSubscriptionRoute);
+router.route('/', adminPlanChangeRoute);
+router.route('/', adminPlanChangeOptionsRoute);
+router.route('/', adminListManualPaymentsRoute);
+router.route('/', adminManualPaymentRegistrationPreviewRoute);
+router.route('/', adminRegisterManualPaymentRoute);
+router.route('/', adminManualUnpaidPreviewRoute);
+router.route('/', adminDeclareManualUnpaidRoute);
+router.route('/', adminLateManualPaymentPreviewRoute);
+router.route('/', adminRegisterLateManualPaymentRoute);
+router.route('/', adminUnallocatedManualPaymentPreviewRoute);
+router.route('/', adminRegisterUnallocatedManualPaymentRoute);
 
 export { router as adminBillingSubscriptionRoutes };

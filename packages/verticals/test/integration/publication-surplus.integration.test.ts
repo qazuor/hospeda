@@ -25,6 +25,59 @@ const afterCommit = {
 afterAll(async () => pool.end());
 
 describe('publication surplus in both directions', () => {
+    it('TEST:B8b:15 applies the selected keep ids through the V6 coverage recalculation', async () => {
+        const { userId, destinationId } = await seedPublicationOwner({ db });
+        const listings = [];
+        for (let index = 1; index <= 3; index += 1) {
+            const listing = await seedPublicationListing({
+                db,
+                vertical,
+                userId,
+                destinationId,
+                status: PublicationStatusEnum.PUBLISHED
+            });
+            listings.push(listing);
+            await listingPublicationModel.insertStatusChangedEvent({
+                tx: db,
+                vertical,
+                listingId: listing.id,
+                from: PublicationStatusEnum.DRAFT,
+                to: PublicationStatusEnum.PUBLISHED,
+                actorType: 'owner',
+                actorId: userId,
+                correlationId: randomUUID(),
+                occurredAt: eventAt(index)
+            });
+        }
+        const adapter = createPublicationTestAdapter({
+            db,
+            covered: { value: true },
+            limit: { value: 2 }
+        });
+        const result = await recalculateCoverage({
+            ...adapter,
+            afterCommit,
+            clock,
+            userId,
+            vertical,
+            correlationId: randomUUID(),
+            keepListingIds: new Set([listings[2]!.id])
+        });
+        expect(result.loweredBySurplus).toEqual([listings[1]!.id]);
+        const statuses = await Promise.all(
+            listings.map(
+                async ({ id }) =>
+                    (await listingPublicationModel.readListing({ tx: db, vertical, listingId: id }))
+                        ?.publicationStatus
+            )
+        );
+        expect(statuses).toEqual([
+            PublicationStatusEnum.PUBLISHED,
+            PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            PublicationStatusEnum.PUBLISHED
+        ]);
+    });
+
     it('TEST:V6:5 lowers newest first and restores in reverse while preserving PB1 instants', async () => {
         const { userId, destinationId } = await seedPublicationOwner({ db });
         const listings = [];

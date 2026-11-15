@@ -74,6 +74,31 @@ export const PermanentGrantAnchorResponseSchema = z.object({
     addonProviderCalls: z.array(addonProviderCallSchema)
 });
 
+/**
+ * Path parameters identifying the permanent grant to revoke. Identical to the
+ * anchor params, so it reuses that schema instead of duplicating it.
+ */
+export const PermanentGrantRevocationParamsSchema = PermanentGrantAnchorParamsSchema;
+
+/** Request to revoke a permanent grant: the free-text reason is required. */
+export const PermanentGrantRevocationRequestSchema = z.strictObject({
+    reason: z.string().trim().min(1).max(2000)
+});
+
+/**
+ * Result of revoking a permanent grant. It carries what the confirmation reads:
+ * the revocation instant, the retained anchors, the verticals whose GRANT source
+ * is gone and the addons/complements A5 turned off.
+ */
+export const PermanentGrantRevocationResponseSchema = z.object({
+    permanentGrantId: z.uuid(),
+    revokedAt: z.string().datetime(),
+    anchorIds: z.array(z.uuid()),
+    revokedVerticals: z.array(VerticalEnumSchema),
+    cancelledAddonInstanceIds: z.array(z.uuid()),
+    addonProviderCalls: z.array(addonProviderCallSchema)
+});
+
 /** Parsed request to create a permanent grant. */
 export type PermanentGrantCreateRequest = z.infer<typeof PermanentGrantCreateRequestSchema>;
 
@@ -88,3 +113,14 @@ export type PermanentGrantCreateResponse = z.infer<typeof PermanentGrantCreateRe
 
 /** Response after anchoring a vertical to a permanent grant. */
 export type PermanentGrantAnchorResponse = z.infer<typeof PermanentGrantAnchorResponseSchema>;
+
+/** Parsed permanent-grant revocation route parameters. */
+export type PermanentGrantRevocationParams = z.infer<typeof PermanentGrantRevocationParamsSchema>;
+
+/** Parsed request to revoke a permanent grant. */
+export type PermanentGrantRevocationRequest = z.infer<typeof PermanentGrantRevocationRequestSchema>;
+
+/** Response after revoking a permanent grant. */
+export type PermanentGrantRevocationResponse = z.infer<
+    typeof PermanentGrantRevocationResponseSchema
+>;

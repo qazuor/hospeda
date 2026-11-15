@@ -1,0 +1,1 @@
+ALTER TABLE "addon_product" ADD COLUMN "retired_at" timestamp with time zone;

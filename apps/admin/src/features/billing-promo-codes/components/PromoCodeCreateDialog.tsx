@@ -119,8 +119,11 @@ export function PromoCodeCreateDialog({
             open={open}
             onOpenChange={close}
         >
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
+            <DialogContent
+                className="flex max-h-[90dvh] flex-col gap-0 p-0"
+                data-testid="promo-code-create-dialog"
+            >
+                <DialogHeader className="border-b px-6 py-4">
                     <DialogTitle>
                         {key(
                             candidate
@@ -133,36 +136,54 @@ export function PromoCodeCreateDialog({
                     </DialogDescription>
                 </DialogHeader>
                 {candidate && summary ? (
-                    <div
-                        data-testid="promo-code-confirmation"
-                        className="space-y-3"
-                    >
-                        <p>
-                            <strong>
-                                {key('admin-billing.promoCodes.editor.columns.effect')}:
-                            </strong>{' '}
-                            <span data-testid="promo-code-confirmation-effect">
-                                {summary.effect}
-                            </span>
-                        </p>
-                        <p>
-                            <strong>{key('admin-billing.promoCodes.editor.columns.reach')}:</strong>{' '}
-                            <span data-testid="promo-code-confirmation-reach">{summary.reach}</span>
-                        </p>
-                        <p>
-                            <strong>{key('admin-billing.promoCodes.editor.columns.uses')}:</strong>{' '}
-                            <span data-testid="promo-code-confirmation-uses">{summary.uses}</span>
-                        </p>
-                        <p>
-                            <strong>
-                                {key('admin-billing.promoCodes.editor.columns.validity')}:
-                            </strong>{' '}
-                            <span data-testid="promo-code-confirmation-validity">
-                                {summary.validity}
-                            </span>
-                        </p>
-                        {apiError ? <p role="alert">{apiError}</p> : null}
-                        <DialogFooter>
+                    <>
+                        <div
+                            data-testid="promo-code-dialog-body"
+                            className="min-h-0 flex-1 overflow-y-auto px-6 py-4"
+                        >
+                            <div
+                                data-testid="promo-code-confirmation"
+                                className="space-y-3"
+                            >
+                                <p>
+                                    <strong>
+                                        {key('admin-billing.promoCodes.editor.columns.effect')}:
+                                    </strong>{' '}
+                                    <span data-testid="promo-code-confirmation-effect">
+                                        {summary.effect}
+                                    </span>
+                                </p>
+                                <p>
+                                    <strong>
+                                        {key('admin-billing.promoCodes.editor.columns.reach')}:
+                                    </strong>{' '}
+                                    <span data-testid="promo-code-confirmation-reach">
+                                        {summary.reach}
+                                    </span>
+                                </p>
+                                <p>
+                                    <strong>
+                                        {key('admin-billing.promoCodes.editor.columns.uses')}:
+                                    </strong>{' '}
+                                    <span data-testid="promo-code-confirmation-uses">
+                                        {summary.uses}
+                                    </span>
+                                </p>
+                                <p>
+                                    <strong>
+                                        {key('admin-billing.promoCodes.editor.columns.validity')}:
+                                    </strong>{' '}
+                                    <span data-testid="promo-code-confirmation-validity">
+                                        {summary.validity}
+                                    </span>
+                                </p>
+                                {apiError ? <p role="alert">{apiError}</p> : null}
+                            </div>
+                        </div>
+                        <DialogFooter
+                            data-testid="promo-code-dialog-footer"
+                            className="border-t px-6 py-4"
+                        >
                             <Button
                                 variant="outline"
                                 onClick={() => {
@@ -179,25 +200,33 @@ export function PromoCodeCreateDialog({
                                 {key('admin-billing.promoCodes.editor.create')}
                             </Button>
                         </DialogFooter>
-                    </div>
+                    </>
                 ) : (
                     <form
                         onSubmit={(event) => {
                             event.preventDefault();
                             void form.handleSubmit();
                         }}
-                        className="space-y-4"
+                        className="flex min-h-0 flex-1 flex-col"
                     >
-                        <PromoCodeEffectFields
-                            form={form}
-                            t={key}
-                        />
-                        <PromoCodeScopeFields
-                            form={form}
-                            t={key}
-                        />
-                        {validationError ? <p role="alert">{validationError}</p> : null}
-                        <DialogFooter>
+                        <div
+                            data-testid="promo-code-dialog-body"
+                            className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4"
+                        >
+                            <PromoCodeEffectFields
+                                form={form}
+                                t={key}
+                            />
+                            <PromoCodeScopeFields
+                                form={form}
+                                t={key}
+                            />
+                            {validationError ? <p role="alert">{validationError}</p> : null}
+                        </div>
+                        <DialogFooter
+                            data-testid="promo-code-dialog-footer"
+                            className="border-t px-6 py-4"
+                        >
                             <Button
                                 variant="outline"
                                 type="button"

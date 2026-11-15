@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
 
 const source = readFileSync(
@@ -13,6 +14,11 @@ describe('MySubscriptions SSR block', () => {
         );
         expect(source).toContain('data-testid="my-subscription-grace"');
         expect(source).toContain('date: date(row.graceEndsAt)');
+        expect(source).toContain('data-testid="my-subscription-plan-change-grace"');
+        expect(source).toMatch(
+            /\{row\.status === 'GRACE_PERIOD' && <p[^>]*data-testid="my-subscription-plan-change-grace"/u
+        );
+        expect(source).toContain('GRACE_PLAN_CHANGE_KEY[row.paymentMethod]');
     });
     it('offers cancellation only for allowed states and handles empty and failed reads', () => {
         expect(source).toContain('CANCELLATION_OFFERED[row.status]');
@@ -29,14 +35,71 @@ describe('MySubscriptions SSR block', () => {
         );
     });
 
-    it('shows the unavailable plan-change notice through its status record', () => {
-        expect(source).toContain('PLAN_CHANGE_UNAVAILABLE[row.status]');
-        expect(source).toContain('data-testid="my-subscription-plan-change-unavailable"');
+    it('TEST:B8b:14 mounts the plan-change offer only for ACTIVE rows', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        expect(article).toContain("row.status === 'ACTIVE' && <PlanChangeOffer client:visible");
+        expect(article).toContain('subscriptionId={row.id}');
+        expect(article).toContain('vertical={row.vertical as PricingSituationVertical}');
+        expect([...article.matchAll(/<PlanChangeOffer client:visible/gu)]).toHaveLength(1);
+        expect(
+            [...article.matchAll(/data-testid="my-subscription-plan-change-[^"]+"/gu)].map(
+                ([attribute]) => attribute
+            )
+        ).toEqual([
+            'data-testid="my-subscription-plan-change-checkout"',
+            'data-testid="my-subscription-plan-change-deadline"',
+            'data-testid="my-subscription-plan-change-coverage"',
+            'data-testid="my-subscription-plan-change-paused"',
+            'data-testid="my-subscription-plan-change-grace"'
+        ]);
+    });
+    it('passes current and deferred courtesy months to the plan offer and shows the successor deadline', () => {
+        expect(source).toContain(
+            'totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })'
+        );
+        expect(source).toContain('row.succession?.checkoutDeadline');
+        expect(source).toContain('date: date(row.succession.checkoutDeadline)');
+    });
+    it('TEST:B9b:8 mounts pause for ACTIVE and PAUSED courtesy, but not other PAUSED reasons', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const pauseOffer = article.match(/\{\(([^{}]+)\) && <PauseOffer client:visible/u);
+        expect(pauseOffer).not.toBeNull();
+        expect([...article.matchAll(/<PauseOffer client:visible/gu)]).toHaveLength(1);
+        expect(pauseOffer?.[1]).toBe(
+            "row.status === 'ACTIVE' || (row.status === 'PAUSED' && row.pause?.reason === 'COURTESY')"
+        );
+        const mountsPauseOffer = (row: { status: string; pause?: { reason: string } }) =>
+            runInNewContext(pauseOffer?.[1] ?? 'false', { row }) as boolean;
+        expect(mountsPauseOffer({ status: 'ACTIVE' })).toBe(true);
+        expect(mountsPauseOffer({ status: 'PAUSED', pause: { reason: 'COURTESY' } })).toBe(true);
+        expect(mountsPauseOffer({ status: 'PAUSED', pause: { reason: 'CUSTOMER_REQUEST' } })).toBe(
+            false
+        );
+        expect(mountsPauseOffer({ status: 'PAUSED', pause: { reason: 'ADMIN' } })).toBe(false);
+        expect(article).toContain(
+            "row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible"
+        );
     });
     it('renders deferred courtesy balances with plural wording and the payment condition', () => {
         expect(source).toContain('result?.deferredCourtesies.map((c) =>');
         expect(source).toContain('tPlural(DEFERRED_COURTESY_KEY, c.balanceMonths');
         expect(source).toContain('data-testid="my-subscription-deferred-courtesy"');
+    });
+    it('TEST:B8b:25 mounts resume only for customer pauses and keeps the paused change-plan refusal', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        expect(article).toContain(
+            "row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible"
+        );
+        expect([...article.matchAll(/<ResumeOffer client:visible/gu)]).toHaveLength(1);
+        expect(article).toContain(
+            'row.status === \'PAUSED\' && <p class={styles.line} data-testid="my-subscription-plan-change-paused"'
+        );
+        expect(article).toContain("row.status === 'PAUSED' && <PausedCancel client:visible");
+        expect(article).toContain("row.status === 'PAUSED' && row.pause?.expectedEndAt");
+        expect(source).toContain("PAUSED: 'account.subscription.mine.status.PAUSED'");
+        expect(article).toContain(
+            'row.status === \'SUSPENDED\' && row.succession?.checkoutOpen && <p class={styles.line} data-testid="my-subscription-plan-change-coverage"'
+        );
     });
     it('shows empty only when subscriptions and deferred courtesies are both empty', () => {
         expect(source).toContain(

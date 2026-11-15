@@ -265,6 +265,8 @@ export const RoleGrantReason = {
      * parts"), so the repo-wide word guard does not match this file.
      */
     LISTING_CREATED: `comm${'erce'}_listing_created` as const,
+    /** A Partner claim fixed the account as the Partner's owner (V7): the only act that grants PARTNER_OWNER. */
+    PARTNER_CLAIMED: 'partner_claimed',
     /** Written by database seeds so fixture accounts are distinguishable. */
     SEED: 'seed'
 } as const;

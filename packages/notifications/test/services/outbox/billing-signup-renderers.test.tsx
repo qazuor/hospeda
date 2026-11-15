@@ -7,7 +7,8 @@ import {
     FIRST_CHARGE_DECLINED_CANCEL_SUBJECT,
     PERMANENT_GRANT_CANCEL_SUBJECT,
     REVOCATION_CANCEL_SUBJECT,
-    SCHEDULED_CANCELLATION_SUBJECT
+    SCHEDULED_CANCELLATION_SUBJECT,
+    SUCCESSION_PREDECESSOR_CANCEL_SUBJECT
 } from '../../../src/templates/billing/index.js';
 import { row } from './outbox-batch.harness.js';
 
@@ -15,6 +16,19 @@ const renderers = createBillingSignupRenderers({ siteUrl: 'https://hospeda.test'
 const subscriptionId = '8b17fa49-59f3-4a13-a0d5-fd42e6bac482';
 
 describe('billing signup outbox renderers', () => {
+    it('renders the A3 authorization expiry notice with its own copy', async () => {
+        const template = 'billing.addon-authorization-expired-cancel';
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe('Venció la autorización de tu addon');
+        expect(html).toContain('Venció el plazo para autorizar tu addon');
+        expect(html).toContain('No se te cobró nada');
+        expect(() => renderers[template]!({ row: row({ template, payload: {} }) })).toThrow(
+            TypeError
+        );
+    });
     it('TEST:1735:7a AC:1735:7 renders the person-cancelled attempt notice and requires subscriptionId', async () => {
         const result = await renderers['billing.attempt-cancelled-cancel']!({
             row: row({ template: 'billing.attempt-cancelled-cancel', payload: { subscriptionId } })
@@ -380,6 +394,17 @@ describe('billing signup outbox renderers', () => {
         expect(html).not.toContain(subscriptionId);
     });
 
+    it('TEST:B8b:9 renders the predecessor cancellation notice', async () => {
+        const template = 'billing.succession-predecessor-cancel';
+        const result = await renderers[template]!({
+            row: row({ template, payload: { subscriptionId } })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(SUCCESSION_PREDECESSOR_CANCEL_SUBJECT);
+        expect(html).toContain('Tu nuevo plan ya está activo');
+        expect(html).toContain('parte del cambio que pediste');
+    });
+
     it.each([
         ['billing.signup-confirmed', { subscriptionId }],
         ['billing.before-cancel', {}],
@@ -398,6 +423,8 @@ describe('billing signup outbox renderers', () => {
         ['billing.permanent-grant-addon-cancel', { subscriptionId: 42 }],
         ['billing.direct-cancellation', {}],
         ['billing.direct-cancellation', { subscriptionId: 42 }],
+        ['billing.succession-predecessor-cancel', {}],
+        ['billing.succession-predecessor-cancel', { subscriptionId: 42 }],
         ['billing.closed-subscription-authorization-cancel', {}],
         ['billing.closed-subscription-authorization-cancel', { subscriptionId: 42 }],
         ['billing.scheduled-cancellation', {}],

@@ -24,6 +24,7 @@ describe('GUARD: the permanent grant acts authorize and every rejection is typed
         for (const name of [
             'grantPermanentGrant',
             'anchorPermanentGrantVertical',
+            'revokePermanentGrant',
             'resumePermanentGrant'
         ]) {
             const source = [...sources.values()].join('\n');

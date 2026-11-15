@@ -114,6 +114,13 @@
     color: var(--core-muted-foreground);
 }
 
+.planTrialEnds {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
 /* ── Messages widget ── */
 
 .messageCount {

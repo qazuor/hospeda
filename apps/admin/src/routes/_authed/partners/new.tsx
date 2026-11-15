@@ -1,3 +1,4 @@
+import type { AdminCreatePartner } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
@@ -20,14 +21,20 @@ function PartnerCreatePage() {
             <div className="space-y-6 p-6">
                 <div>
                     <h1 className="font-semibold text-2xl">Nuevo partner</h1>
-                    <p className="text-muted-foreground">Creá un partner.</p>
+                    <p className="text-muted-foreground">
+                        Creá un partner. Queda sin dueño hasta que alguien lo reclame con el link
+                        del aviso.
+                    </p>
                 </div>
 
                 <PartnerForm
+                    withClaimEmail
                     isSubmitting={createMutation.isPending}
                     submitLabel="Crear partner"
                     onSubmit={async (data) => {
-                        const created = await createMutation.mutateAsync(data as never);
+                        const created = await createMutation.mutateAsync(
+                            data as AdminCreatePartner
+                        );
                         navigate({ to: `/partners/${created.id}` });
                     }}
                 />

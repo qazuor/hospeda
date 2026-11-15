@@ -24,6 +24,7 @@ import {
     cancelOurAuthorization
 } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
+import { closeAwaitingManualInstallmentsInTx } from '../subscription/manual-installment-close.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
     noCancellationSeenAnnotation,
@@ -245,6 +246,11 @@ async function writeS20ComplementCancellation(input: {
         )
         .returning({ id: subscriptions.id });
     if (!changed) throw changedRowError();
+    await closeAwaitingManualInstallmentsInTx({
+        tx: input.tx,
+        subscriptionId: input.row.subscriptionId,
+        now: input.now
+    });
     if (CLOSES_OPEN_PAUSE[input.row.origin])
         await input.tx
             .update(subscriptionPauses)

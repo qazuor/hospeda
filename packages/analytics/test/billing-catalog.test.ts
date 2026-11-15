@@ -148,6 +148,14 @@ describe('billing analytics event schemas (TEST:1878:16)', () => {
         });
         expect(parsed.success).toBe(true);
     });
+    it('accepts the S22 direct-from-paused cancellation path (TEST:B8b:25)', () => {
+        const parsed = AnalyticsEventSchemas.billing_subscription_cancelled.safeParse({
+            ...examples.billing_subscription_cancelled,
+            path: 'DIRECT_FROM_PAUSED',
+            was_scheduled: false
+        });
+        expect(parsed.success).toBe(true);
+    });
     it('rejects invalid closed enum values and forbidden property keys', () => {
         expect(
             AnalyticsEventSchemas.billing_checkout_started.safeParse({

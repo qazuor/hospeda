@@ -179,6 +179,14 @@ describe('isRegisteredPath', () => {
 });
 
 describe('getRoutePaths', () => {
+    it('recognizes the permanent grants page when registered', () => {
+        expect(
+            isRegisteredPath({
+                path: '/billing/permanent-grants',
+                routePaths: ['/billing/permanent-grants']
+            })
+        ).toBe(true);
+    });
     it('returns the keys of routesByPath', () => {
         expect(
             getRoutePaths({

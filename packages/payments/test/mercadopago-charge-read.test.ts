@@ -78,7 +78,28 @@ describe('TEST:1710:1 AC:1710:1 AC:1710:2 captured payment read', () => {
             declineReason: null,
             amount: { amountMinor: 200000, currency: 'ARS' },
             refundedAmount: { amountMinor: 0, currency: 'ARS' },
-            chargedBack: false
+            chargedBack: false,
+            refunds: []
+        });
+    });
+});
+
+describe('HOS-1553 charge read safe minor amounts', () => {
+    it.each([
+        'transaction_amount',
+        'transaction_amount_refunded',
+        'refunds'
+    ] as const)('fails closed when %s exceeds safe minor units', async (field) => {
+        const payment = clonePayment();
+        if (field === 'refunds')
+            Object.assign(payment, {
+                refunds: [{ id: 'overflow', amount: 1e308, status: 'approved' }]
+            });
+        else payment[field] = 1e308;
+        await expect(
+            adapterFor(payment).adapter.readCharge({ chargeId: 'x' })
+        ).rejects.toMatchObject({
+            code: 'UNAVAILABLE'
         });
     });
 });

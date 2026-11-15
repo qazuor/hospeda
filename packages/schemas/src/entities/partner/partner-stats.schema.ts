@@ -88,7 +88,8 @@ export const PartnerStatsSubjectSchema = z.object({
     /** Slug, when the partner has one. Half of the "has a public page" test. */
     slug: z.string().optional(),
     /** The partner's own website, when they filled one in. */
-    websiteUrl: z.string().optional()
+    websiteUrl: z.string().optional(),
+    hasPublicPage: z.boolean()
 });
 
 /** Inferred type of the partner descriptor. */

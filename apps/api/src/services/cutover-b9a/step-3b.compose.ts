@@ -9,7 +9,9 @@ import {
     drainListingCoverageRecalculations,
     subscribeListingCoverageRecalculation
 } from '../../utils/listing-publication/coverage-listener.js';
+import { apiLogger } from '../../utils/logger.js';
 import { defaultPaymentProvider, injectPaymentProvider } from '../../utils/payment-provider.js';
+import { disconnectRedis } from '../../utils/redis.js';
 import { subscribeTrialCoverageConversion } from '../../utils/trial/trial-coverage-listener.js';
 
 /**
@@ -59,6 +61,11 @@ export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
             stopListing();
             stopEffectiveSetInvalidation();
             await drainListingCoverageRecalculations();
+            try {
+                await disconnectRedis();
+            } catch (error) {
+                apiLogger.error({ error }, 'Failed to disconnect Redis after cutover step 3b');
+            }
         }
     };
 }

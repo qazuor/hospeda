@@ -1,7 +1,13 @@
-import type { Clock } from '@repo/billing-verticals-contract';
+import type { Clock, CoverageChangedEvent } from '@repo/billing-verticals-contract';
 import { type DrizzleClient, getDb } from '@repo/db';
 import type { Vertical } from '@repo/schemas';
-import { type CutoverTrialListing, writeCutoverTrials } from '@repo/service-core';
+import {
+    type CoverageNoticeRegistry,
+    type CutoverTrialListing,
+    writeCutoverTrials
+} from '@repo/service-core';
+import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
+import { apiLogger } from '../../utils/logger.js';
 import {
     buildTrialCampaignOutbox,
     type TrialCampaignOutboxDependencies
@@ -30,6 +36,13 @@ export interface Step3Result {
     readonly planned: readonly Step3PlannedRow[];
     readonly written: readonly CutoverTrialListing[];
     readonly skipped: readonly CutoverTrialListing[];
+    /**
+     * Written trials whose coverage event was invalid and failed emitter validation (HOS-2091).
+     * Listener failures (including Redis invalidation and listing recalculation) are caught by
+     * the registry's Promise.allSettled and logged, not listed here. An empty array does not prove
+     * that invalidation succeeded.
+     */
+    readonly coverageNoticeFailed: readonly CutoverTrialListing[];
 }
 
 /** Exit codes for the step 3 CLI. */
@@ -49,15 +62,18 @@ export interface RunStep3Input {
     readonly ownerIds?: readonly string[];
     /** Tests only: overrides for the real campaign adapter. */
     readonly campaignDeps?: Partial<TrialCampaignOutboxDependencies>;
+    /** Tests only: the process registry (`getCoverageNotices()`) is the default. */
+    readonly coverageNotices?: Pick<CoverageNoticeRegistry, 'emitCoverageChanged'>;
 }
 
-/** Runs the V6 step 3 trial write with the transaction-bound campaign adapter. */
+/** Runs the V6 step 3 trial write with the transaction-bound campaign adapter. After the commit it emits one TRIAL coverage notice per written trial (HOS-2091); the process must have its listeners composed (`composeStep3Process`). */
 export async function runStep3({
     db = getDb(),
     clock,
     dryRun,
     ownerIds,
-    campaignDeps
+    campaignDeps,
+    coverageNotices
 }: RunStep3Input): Promise<Step3Result> {
     const result = await db.transaction(async (tx) =>
         writeCutoverTrials({
@@ -68,6 +84,13 @@ export async function runStep3({
                 .scheduleExpiryCampaign
         })
     );
+    // HOS-2091: the notice leaves after the commit above, never inside the transaction.
+    const { failed: coverageNoticeFailed } = dryRun
+        ? { failed: [] as CutoverTrialListing[] }
+        : await emitCutoverTrialCoverage({
+              written: result.written,
+              coverageNotices: coverageNotices ?? getCoverageNotices()
+          });
     const planned: Step3PlannedRow[] = result.planned.map((row) => ({
         userId: row.userId,
         vertical: row.vertical,
@@ -85,5 +108,41 @@ export async function runStep3({
     else if (dryRun) status = 'dry_run';
     else if (result.written.length === 0) status = 'already_done';
     else status = 'completed';
-    return { status, planned, written: result.written, skipped: result.skipped };
+    return {
+        status,
+        planned,
+        written: result.written,
+        skipped: result.skipped,
+        coverageNoticeFailed
+    };
+}
+
+/**
+ * Emits one TRIAL coverage notice per written cutover trial, after the step 3
+ * transaction committed (HOS-2091). A skipped trial changed nothing and gets no
+ * notice. A failure is logged and reported; it never undoes the written trials.
+ */
+async function emitCutoverTrialCoverage(input: {
+    readonly written: readonly CutoverTrialListing[];
+    readonly coverageNotices: Pick<CoverageNoticeRegistry, 'emitCoverageChanged'>;
+}): Promise<{ readonly failed: readonly CutoverTrialListing[] }> {
+    const failed: CutoverTrialListing[] = [];
+    for (const listing of input.written) {
+        const event: CoverageChangedEvent = {
+            userId: listing.userId,
+            vertical: listing.vertical,
+            sourceType: 'TRIAL',
+            change: 'CHANGED'
+        };
+        try {
+            await input.coverageNotices.emitCoverageChanged(event);
+        } catch (error) {
+            apiLogger.error(
+                { userId: listing.userId, vertical: listing.vertical, error },
+                'Cutover trial coverage notice failed after the step 3 commit'
+            );
+            failed.push(listing);
+        }
+    }
+    return { failed };
 }

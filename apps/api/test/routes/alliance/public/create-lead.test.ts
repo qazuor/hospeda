@@ -16,15 +16,14 @@ const BASE = '/api/v1/public/alliance/leads';
 
 /**
  * Minimal valid lead payload matching AllianceLeadSubmissionSchema.
- * `partnerType` is required for `kind: 'partner'` since HOS-278 provisioning
- * slice D (refineAllianceLeadKindFields).
+ * Uses `sponsor`: since AC:V7:15 (HOS-1489) a Partner applies through PP1
+ * and the alliance intake rejects `kind: 'partner'`.
  */
 const VALID_LEAD_PAYLOAD = {
-    kind: 'partner',
+    kind: 'sponsor',
     contactName: 'Juan Pérez',
     email: 'juan@example.com',
-    message: 'Quiero sumar mi negocio como partner de la plataforma.',
-    partnerType: 'business'
+    message: 'Quiero patrocinar contenido de la plataforma.'
 };
 
 describe('POST /api/v1/public/alliance/leads (HOS-277)', () => {
@@ -124,6 +123,23 @@ describe('POST /api/v1/public/alliance/leads (HOS-277)', () => {
     // -------------------------------------------------------------------------
 
     describe('Input Validation', () => {
+        it('rejects kind partner with 400 (AC:V7:15: Partner applies through PP1)', async () => {
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'user-agent': 'vitest'
+                },
+                body: JSON.stringify({
+                    ...VALID_LEAD_PAYLOAD,
+                    kind: 'partner',
+                    partnerType: 'business'
+                })
+            });
+
+            expect(res.status).toBe(400);
+        });
+
         it('rejects missing required fields with 400/422', async () => {
             const res = await app.request(BASE, {
                 method: 'POST',

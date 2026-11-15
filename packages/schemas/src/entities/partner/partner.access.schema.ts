@@ -1,4 +1,5 @@
-import type { z } from 'zod';
+import type { z as Zod } from 'zod';
+import { z } from 'zod';
 import { partnerSchema } from './partner.schema.js';
 
 /**
@@ -29,4 +30,14 @@ export const PartnerPublicSchema = partnerSchema.pick({
     socialNetworks: true
 });
 
-export type PartnerPublic = z.infer<typeof PartnerPublicSchema>;
+export type PartnerPublic = Zod.infer<typeof PartnerPublicSchema>;
+
+/**
+ * Carousel payload with the owner's current page entitlement.
+ * AC:V7:13; V7 §1.2: Gold grants the page and the carousel, Silver only the carousel.
+ */
+export const PartnerCarouselItemSchema = PartnerPublicSchema.extend({
+    hasPublicPage: z.boolean()
+});
+
+export type PartnerCarouselItem = Zod.infer<typeof PartnerCarouselItemSchema>;

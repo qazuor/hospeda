@@ -1,4 +1,5 @@
 import { Text } from '@react-email/components';
+import { Button } from '../components/button.js';
 
 /**
  * Where a listing ended up after a moderation was lowered back to a fix
@@ -53,19 +54,23 @@ export interface ModeratedListingBodyProps {
     readonly listingName: string;
     readonly reason: string;
     readonly subscriptionUrl: string;
+    readonly recurringListingAddons?: readonly { readonly name: string }[];
+    readonly withdrawalUrl?: string;
 }
 
 /**
  * What a moderated listing notice has to say (V/19 §4 row 24): the reason,
  * that the listing is hidden until an admin lifts the moderation, what the
  * owner can still do, and the recurring featured add-ons that keep being
- * charged. The payload does not carry the add-ons, so that line is
- * conditional (H7 of HOS-1492).
+ * charged. A named list offers withdrawal; an empty list omits that section.
+ * Legacy payloads without the list retain the conditional H7 copy.
  */
 export function ModeratedListingBody({
     listingName,
     reason,
-    subscriptionUrl
+    subscriptionUrl,
+    recurringListingAddons,
+    withdrawalUrl
 }: ModeratedListingBodyProps) {
     return (
         <>
@@ -78,10 +83,24 @@ export function ModeratedListingBody({
                 Mientras tanto podés verla, exportarla, editarla para arreglar lo que se te pide y
                 borrarla. Lo que no podés es publicarla.
             </Text>
-            <Text>
-                Si tenés destaques recurrentes sobre esta ficha, se siguen cobrando hasta que los
-                des de baja. Los das de baja desde Mi Suscripción: {subscriptionUrl}
-            </Text>
+            {recurringListingAddons === undefined ? (
+                <Text>
+                    Si tenés destaques recurrentes sobre esta ficha, se siguen cobrando hasta que
+                    los des de baja. Los das de baja desde Mi Suscripción: {subscriptionUrl}
+                </Text>
+            ) : recurringListingAddons.length > 0 ? (
+                <>
+                    <Text>
+                        Estos destaques recurrentes se siguen cobrando hasta que los des de baja:
+                    </Text>
+                    {recurringListingAddons.map(({ name }) => (
+                        <Text key={name}>{name}</Text>
+                    ))}
+                    {withdrawalUrl ? (
+                        <Button href={withdrawalUrl}>Dar de baja destaques</Button>
+                    ) : null}
+                </>
+            ) : null}
         </>
     );
 }

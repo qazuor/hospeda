@@ -1,0 +1,28 @@
+---
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
+import { RecurringAddonWithdrawal } from '@/components/billing/recurring-addons/RecurringAddonWithdrawal.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { parseReturnOrderRequestId } from '@/lib/billing/addon-purchase-return';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+const { t } = createTranslations(locale);
+const title = t('billing.addonPurchase.title');
+const returnOrderRequestId = parseReturnOrderRequestId({ search: Astro.url.search });
+const listingId = Astro.url.searchParams.get('listing');
+---
+
+<AccountLayout locale={locale} title={title} activeSection="suscripcion">
+    <AccountPageHeader title={title} />
+    <AddonPurchase client:load locale={locale} returnOrderRequestId={returnOrderRequestId} accountEmail={user.email} />
+    <section id="recurring-addons">
+        <h2>{t('billing.addonPurchase.recurringAddons.title')}</h2>
+        <RecurringAddonWithdrawal client:visible locale={locale} listingId={listingId} />
+    </section>
+</AccountLayout>

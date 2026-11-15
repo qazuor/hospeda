@@ -48,6 +48,7 @@ export * from './listing-catalog.schema.js';
 // Listing publish-readiness ("complete") contract — single
 // canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
 export * from './listing-completeness.js';
+export * from './listing-fix-request-list.schema.js';
 // Listing common schemas (SPEC-239)
 export * from './listing-identity.schema.js';
 // Shared relational media row base (HOS-372) — venue/experience media extend this

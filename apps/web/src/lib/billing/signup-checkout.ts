@@ -72,6 +72,7 @@ export type SignupPendingAttempt = {
     readonly plan: SignupPlanSummary;
     readonly checkoutUrl: string | null;
     readonly authorizationWindowEndsAt: string;
+    readonly takenBy?: 'SUCCESSOR_PENDING' | 'LIVE_PRINCIPAL';
 };
 
 /** Resolve only the optional pending attempt, tolerating legacy and unreadable notices. */

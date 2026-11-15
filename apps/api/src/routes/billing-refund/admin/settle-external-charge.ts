@@ -14,6 +14,7 @@ import {
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
+import { createScheduledChangeCollector } from '../../../utils/billing-succession-ports';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
 import { buildMercadoPagoNoticePorts } from '../../webhooks/mercadopago-ports';
@@ -66,11 +67,13 @@ export const adminSettleExternalChargeRoute = createAdminRoute({
     ) => {
         const input = ExternalChargeSettlementRequestSchema.parse(body);
         const actor = getActorFromContext(ctx);
+        const collector = createScheduledChangeCollector();
         try {
             const result = await settleExternalCharge(
                 { actor, chargeId: input.chargeId },
-                buildMercadoPagoNoticePorts()
+                buildMercadoPagoNoticePorts({ scheduledChangeApplier: collector.applier })
             );
+            await collector.finish();
             auditLog({
                 auditEvent: AuditEventType.BILLING_MUTATION,
                 actorId: actor.id,
@@ -99,6 +102,7 @@ export const adminSettleExternalChargeRoute = createAdminRoute({
             };
             return response;
         } catch (error) {
+            collector.discard();
             if (error instanceof ServiceError && isSettlementRejection(error.reason)) {
                 const answer = REJECTION_ANSWERS[error.reason];
                 return createErrorResponse(

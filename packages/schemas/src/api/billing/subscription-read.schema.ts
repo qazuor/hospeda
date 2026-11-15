@@ -13,7 +13,21 @@ export const SubscriptionReadSchema = z.object({
     paymentMethod: z.string().nullable(),
     nextChargeAt: z.date().nullable(),
     serviceEndsAt: z.date().nullable(),
-    createdAt: z.date()
+    createdAt: z.date(),
+    subject: z
+        .object({
+            id: z.string().uuid(),
+            displayName: z.string().optional(),
+            email: z.email().optional()
+        })
+        .optional(),
+    currentPlan: z
+        .object({
+            planName: z.string(),
+            versionLabel: z.string().optional(),
+            cycle: z.string()
+        })
+        .optional()
 });
 
 /** One subscription response without amounts or provider details. */

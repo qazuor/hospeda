@@ -26,9 +26,12 @@ import {
     protectedCancellationPreviewRoute,
     protectedCancelSubscriptionRoute
 } from './cancellation';
+import { protectedPausePreviewRoute, protectedPauseRoute, protectedResumeRoute } from './pause';
 import { protectedPendingAttemptCancellationRoute } from './pending-attempt-cancellation';
+import { protectedPlanChangeRoute } from './plan-change';
 import { protectedPricingSituationRoute } from './pricing-situation';
 import { protectedReadSubscriptionRoute } from './read';
+import { protectedReadManualInstallmentsRoute } from './read-manual-installments';
 import { protectedReadOwnSubscriptionsRoute } from './read-mine';
 import { readSignupNotice } from './read-signup-notice';
 import { readSignupWindow } from './read-signup-window';
@@ -217,8 +220,13 @@ export const protectedBillingSubscriptionRoutes = router;
 const readRouter = createRouter();
 readRouter.route('/', protectedPricingSituationRoute);
 readRouter.route('/', protectedReadOwnSubscriptionsRoute);
+readRouter.route('/', protectedReadManualInstallmentsRoute);
 readRouter.route('/', protectedReadSubscriptionRoute);
 readRouter.route('/', protectedCancellationPreviewRoute);
 readRouter.route('/', protectedCancelSubscriptionRoute);
+readRouter.route('/', protectedPlanChangeRoute);
+readRouter.route('/', protectedPausePreviewRoute);
+readRouter.route('/', protectedPauseRoute);
+readRouter.route('/', protectedResumeRoute);
 
 export { readRouter as protectedBillingSubscriptionReadRoutes };

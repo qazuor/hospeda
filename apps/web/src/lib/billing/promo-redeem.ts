@@ -13,13 +13,14 @@ export type RedeemNoticeLine = {
 };
 
 export const PROMO_REDEEM_OFFERED: Record<
-    OwnSubscriptionStatus,
+    OwnSubscriptionStatus | 'PAUSED',
     Record<PromoPaymentMethod, boolean>
 > = {
     ACTIVE: { CARD: true, MANUAL: false },
     GRACE_PERIOD: { CARD: false, MANUAL: false },
     SUSPENDED: { CARD: false, MANUAL: false },
-    CANCEL_SCHEDULED: { CARD: false, MANUAL: false }
+    CANCEL_SCHEDULED: { CARD: false, MANUAL: false },
+    PAUSED: { CARD: false, MANUAL: false }
 };
 
 const PROMO_REDEMPTION_REASONS = [

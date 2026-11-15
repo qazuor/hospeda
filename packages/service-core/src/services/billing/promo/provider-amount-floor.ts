@@ -8,6 +8,12 @@ const RP3_FLOOR = 1_500;
 /** The minimum composed amount (minor units) Mercado Pago will accept for a promo mutation. */
 export const PROVIDER_AMOUNT_FLOOR_MINOR = RP3_FLOOR;
 
+/** RP:RP3: Mercado Pago's measured ARS 2.000.000 ceiling. */
+const RP3_CEILING = 200_000_000;
+
+/** The maximum amount (minor units) Mercado Pago will accept for a charge (RP3). */
+export const PROVIDER_AMOUNT_CEILING_MINOR = RP3_CEILING;
+
 /**
  * Asserts that the composed promo amount meets Mercado Pago's minimum threshold.
  * @param input - The amount in minor units.

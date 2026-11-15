@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     classifyCancellationCrossing,
     crossingExtensionEnd,
-    crossingMarkDetail
+    crossingMarkDetail,
+    crossingMarkReason
 } from '../../../../src/services/billing/subscription/cancellation-crossing-rule';
 
 const t0 = new Date('2026-10-01T00:00:00Z');
@@ -23,11 +24,16 @@ const cases: Case[] = [
     { status: 'CANCEL_SCHEDULED', decision: null, factAt: t0, expected: 'NONE' },
     { status: 'CANCEL_SCHEDULED', decision: decision('S12'), factAt: t0, expected: 'NONE' },
     { status: 'CANCEL_SCHEDULED', decision: decision('S36'), factAt: t2, expected: 'NONE' },
+    { status: 'CANCEL_SCHEDULED', decision: decision('S13'), factAt: t2, expected: 'NONE' },
     ...(['S11', 'S23', 'S24'] as const).flatMap((transition) => [
         { status: 'CANCELLED', decision: decision(transition), factAt: t0, expected: 'MARK' },
         { status: 'CANCELLED', decision: decision(transition), factAt: t2, expected: 'MARK' }
     ]),
-    ...(['S13', 'S20', 'S36', 'S3', 'S16', 'S22', 'S31'] as const).map((transition) => ({
+    ...(['S13', 'S20'] as const).flatMap((transition) => [
+        { status: 'CANCELLED', decision: decision(transition), factAt: t0, expected: 'MARK' },
+        { status: 'CANCELLED', decision: decision(transition), factAt: t2, expected: 'MARK' }
+    ]),
+    ...(['S36', 'S3', 'S16', 'S22', 'S31'] as const).map((transition) => ({
         status: 'CANCELLED',
         decision: decision(transition),
         factAt: t2,
@@ -89,9 +95,21 @@ describe('crossingMarkDetail', () => {
             'subscription.grace_started_at'
         ]);
         expect(s24[5]?.new).toBe(t0.toISOString());
-        for (const transition of ['S11', 'S23'] as const)
+        for (const transition of ['S11', 'S23', 'S13', 'S20'] as const)
             expect(
                 crossingMarkDetail({ ...base, transition }).map(({ field }) => field)
             ).not.toContain('subscription.grace_started_at');
+    });
+});
+
+describe('crossingMarkReason', () => {
+    it.each([
+        ['S11', 'COBRO_POSTERIOR_A_LA_BAJA'],
+        ['S23', 'COBRO_POSTERIOR_A_LA_BAJA'],
+        ['S24', 'COBRO_POSTERIOR_A_LA_BAJA'],
+        ['S13', 'COBRO_POSTERIOR_AL_GRANT'],
+        ['S20', 'COBRO_POSTERIOR_AL_GRANT']
+    ] as const)('%s selects %s', (transition, reason) => {
+        expect(crossingMarkReason({ transition })).toBe(reason);
     });
 });

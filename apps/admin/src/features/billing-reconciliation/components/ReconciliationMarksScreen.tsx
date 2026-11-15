@@ -10,6 +10,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatDateWithTime } from '@/lib/format-helpers';
 import { useReconciliationMarks } from '../hooks/useReconciliationMarks';
+import {
+    RECONCILIATION_REASON_KEYS,
+    reconciliationLabel,
+    reconciliationPaymentStatusLabel,
+    reconciliationSubjectStatusLabel
+} from '../reconciliation-labels';
 import { LiftReconciliationMarkAction } from './LiftReconciliationMarkAction';
 import { ReconciliationMarkAction14 } from './ReconciliationMarkAction14';
 
@@ -107,8 +113,12 @@ function MarkArticle({
             data-reason={mark.reason}
             className="space-y-2 rounded-md border p-4"
         >
-            <h2 className="font-semibold">
-                {mark.reasonNumber} · {mark.reason}
+            <h2
+                className="font-semibold"
+                data-testid="reconciliation-mark-reason"
+            >
+                {mark.reasonNumber} ·{' '}
+                {reconciliationLabel({ map: RECONCILIATION_REASON_KEYS, value: mark.reason, t })}
             </h2>
             <p>
                 {t('admin-billing.reconciliationMarks.openedAt')}:{' '}
@@ -116,7 +126,11 @@ function MarkArticle({
             </p>
             <p data-testid="reconciliation-mark-subject-status">
                 {t('admin-billing.reconciliationMarks.subjectStatus')}:{' '}
-                {mark.subject.status ?? t('admin-billing.reconciliationMarks.subjectUnresolved')}
+                {reconciliationSubjectStatusLabel({
+                    kind: mark.subject.kind,
+                    status: mark.subject.status,
+                    t
+                })}
             </p>
             <p data-testid="reconciliation-mark-proposal">
                 {t('admin-billing.reconciliationMarks.proposal')}:{' '}
@@ -142,7 +156,13 @@ function MarkArticle({
                               currency: payment.currency,
                               locale
                           })}{' '}
-                    · {payment.status} · {formatDateWithTime({ date: payment.hungAt, locale })}
+                    ·{' '}
+                    {reconciliationPaymentStatusLabel({
+                        source: payment.source,
+                        status: payment.status,
+                        t
+                    })}{' '}
+                    · {formatDateWithTime({ date: payment.hungAt, locale })}
                 </div>
             ))}
             <p data-testid="reconciliation-mark-payment-count">

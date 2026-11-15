@@ -1,0 +1,2 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.registerManualPayment' BEFORE 'trial.extend';--> statement-breakpoint
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.declareManualUnpaid' BEFORE 'trial.extend';

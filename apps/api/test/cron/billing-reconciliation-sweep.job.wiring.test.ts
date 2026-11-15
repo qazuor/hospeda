@@ -208,7 +208,10 @@ describe('billing reconciliation sweep cron', () => {
                     addonOrphanhood: {
                         addonPolicy: expect.any(Function),
                         listing: expect.any(Function),
-                        listingPurged: expect.any(Function)
+                        listingPurged: expect.any(Function),
+                        listingPurgedAddons: {
+                            cancelPurgedListingAddon: expect.any(Function)
+                        }
                     }
                 },
                 livenessPing: expect.any(Object)

@@ -28,6 +28,7 @@ export {
     type ComposeAccommodationMediaInput,
     composeAccommodationMedia
 } from './accommodation/accommodation.media-compose';
+export * from './accommodation/accommodation.media-reader';
 export * from './accommodation/accommodation.occupancy';
 export * from './accommodation/accommodation.poi-proximity.helper';
 export * from './accommodation/accommodation.service';
@@ -61,9 +62,43 @@ export * from './appLog/index.js';
 export * from './attraction/attraction.service';
 export * from './auditLog/index.js';
 export * from './billing/addon/addon-coverage-verticals.js';
+export * from './billing/addon/addon-instance-a2.js';
+export * from './billing/addon/addon-instance-a2-one-time.js';
 export * from './billing/addon/addon-instance-a5.js';
+export * from './billing/addon/addon-instance-a6.js';
+export * from './billing/addon/addon-instance-a6-provider.js';
+export * from './billing/addon/addon-instance-a7.js';
 export * from './billing/addon/addon-orphanhood.js';
 export * from './billing/addon/addon-orphanhood-ports.js';
+export * from './billing/addon/choose-free-addon.service.js';
+export * from './billing/addon/choose-free-addon-types.js';
+export * from './billing/addon/expire-addon-authorization-windows.service.js';
+export * from './billing/addon/expire-addon-instances.service.js';
+export * from './billing/addon/includes-addons-anchor.js';
+export * from './billing/addon/listing-purged-addon-canceller.js';
+export * from './billing/addon/listing-purged-addons.service.js';
+export * from './billing/addon/purchase-addon.service.js';
+export * from './billing/addon/purchase-addon-complement.js';
+export * from './billing/addon/purchase-addon-eligibility.js';
+export * from './billing/addon/purchase-addon-ports.js';
+export * from './billing/addon/purchase-addon-types.js';
+export * from './billing/addon/read-addon-purchase.js';
+export * from './billing/addon/scheduled-downgrade-addon-notice.js';
+export * from './billing/addon/send-one-time-order.service.js';
+export * from './billing/addon/send-one-time-order-types.js';
+export * from './billing/addon/withdraw-addon.service.js';
+export * from './billing/addon-catalog/addon-product-creation.service.js';
+export * from './billing/addon-catalog/addon-product-retirement.service.js';
+export * from './billing/addon-catalog/addon-version-publication.service.js';
+export type { AddonVersionPublicationRejection } from './billing/addon-catalog/addon-version-publication-authorization.js';
+export {
+    ADDON_VERSION_PUBLICATION_ACTION,
+    ADDON_VERSION_PUBLICATION_REJECTIONS,
+    addonVersionPublicationRejection,
+    assertAddonVersionPublicationPermitted,
+    mapAddonVersionPublicationWriteError
+} from './billing/addon-catalog/addon-version-publication-authorization.js';
+export * from './billing/addon-catalog/admin-addon-catalog.read.js';
 export * from './billing/coverage/addon-sources.js';
 export * from './billing/coverage/billing-coverage.js';
 export * from './billing/coverage/can-charge.js';
@@ -80,8 +115,11 @@ export * from './billing/grant/permanent-grant.service.js';
 export * from './billing/grant/permanent-grant-authorization.js';
 export * from './billing/grant/permanent-grant-floor.js';
 export * from './billing/grant/permanent-grant-live-anchors.js';
+export * from './billing/grant/permanent-grant-preview.js';
+export * from './billing/grant/permanent-grant-revoke.js';
 export * from './billing/grant/permanent-grant-s13.js';
 export * from './billing/grant/permanent-grant-s20.js';
+export * from './billing/notice/complement-authorized.js';
 export * from './billing/notice/live-preapproval-on-closed-row.js';
 export * from './billing/notice/mirror-cancelled-on-grace.js';
 export * from './billing/notice/process-provider-notice.service.js';
@@ -92,6 +130,7 @@ export * from './billing/notice/provider-notice-ports.js';
 export * from './billing/notice/provider-pause-arrears.js';
 export * from './billing/notice/purge-provider-notifications.service.js';
 export * from './billing/notice/receive-provider-delivery.service.js';
+export { confirmedRefundsForNotice } from './billing/notice/refund-execution-on-notice.js';
 export {
     NotificationRetentionService,
     type RetentionSummary
@@ -105,6 +144,10 @@ export * from './billing/payment/payment-ledger.js';
 export * from './billing/payment/payment-ports.js';
 export * from './billing/payment/record-charge-fact.service.js';
 export * from './billing/payment/settle-external-charge.service.js';
+export * from './billing/plan-migration/index.js';
+export * from './billing/pricing/cycle-price.service.js';
+export * from './billing/pricing/cycle-price-authorization.js';
+export * from './billing/pricing/cycle-price-customers.js';
 export * from './billing/promo/live-promos.js';
 export * from './billing/promo/promo-availability.js';
 export * from './billing/promo/promo-charge-policy.js';
@@ -144,6 +187,11 @@ export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
 export * from './billing/reconciliation/revocation-refund-failed-notice.js';
 export * from './billing/reconciliation/summary/index.js';
 export * from './billing/reconciliation/sweep/addon-without-shutdown-check.js';
+export type {
+    BeforeCancelNoticeState,
+    BeforeCancelNoticeStatus as DeferredBeforeCancelNoticeStatus,
+    BeforeCancelNoticeStatusReader
+} from './billing/reconciliation/sweep/before-cancel-notice-status.port.js';
 export * from './billing/reconciliation/sweep/cancellation-observation.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
@@ -161,6 +209,7 @@ export * from './billing/reconciliation/sweep/last-cycle-record.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/mark-escalation.js';
 export * from './billing/reconciliation/sweep/next-charge-sync.js';
+export * from './billing/reconciliation/sweep/notice-deferred-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/pause-gift.js';
@@ -178,23 +227,41 @@ export * from './billing/reconciliation/sweep/terminal-return.js';
 export * from './billing/reconciliation/sweep/unresolved-period-charge.port.js';
 export * from './billing/reconciliation/sweep/zero-call-checks.service.js';
 export * from './billing/reconciliation/sweep/zero-call-ports.js';
+export * from './billing/refund/confirm-refund.service.js';
+export * from './billing/refund/decline-refund.service.js';
+export * from './billing/refund/execute-refund.service.js';
 export * from './billing/refund/refund-machine.js';
+export * from './billing/refund/refund-window.js';
 export * from './billing/refund/request-refund.service.js';
+export * from './billing/refund/resend-refund-call.service.js';
+export * from './billing/refund/send-held-order-refund.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';
 export * from './billing/subscription/activate-subscription.service.js';
+export * from './billing/subscription/admin-subscription-detail.service.js';
+export * from './billing/subscription/admin-subscription-list.service.js';
 export * from './billing/subscription/admit-succession-predecessor.js';
+export * from './billing/subscription/after-activation-commit.js';
+export * from './billing/subscription/apply-due-scheduled-changes.service.js';
+export * from './billing/subscription/apply-scheduled-change.service.js';
 export * from './billing/subscription/arrears-suspension-notice.js';
 export * from './billing/subscription/before-cancel-notice-kinds.js';
 export * from './billing/subscription/billing-period-end.js';
 export * from './billing/subscription/cancel-active-subscription.service.js';
 export * from './billing/subscription/cancel-direct-subscription.service.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
+export * from './billing/subscription/cancel-paused-subscription.service.js';
+export type {
+    CancelPausedSubscriptionPorts,
+    CancelPausedSubscriptionResult
+} from './billing/subscription/cancel-paused-subscription-support.js';
 export * from './billing/subscription/cancel-pending-attempt.service.js';
+export * from './billing/subscription/cancel-succession-predecessor.service.js';
 export * from './billing/subscription/cancellation-authorization.js';
 export * from './billing/subscription/cancellation-crossing-charge.js';
 export * from './billing/subscription/cancellation-crossing-rule.js';
 export * from './billing/subscription/cancellation-preview.js';
+export * from './billing/subscription/chargeback-suspension-notice.js';
 export * from './billing/subscription/complement-pause-s32.js';
 export * from './billing/subscription/complement-ports.js';
 export * from './billing/subscription/complement-resume-s33.js';
@@ -202,40 +269,89 @@ export * from './billing/subscription/complement-s11-rule.js';
 export * from './billing/subscription/complement-s21.js';
 export * from './billing/subscription/complement-s21-charge.js';
 export * from './billing/subscription/complement-selection.js';
+export * from './billing/subscription/courtesy-balance.js';
+export * from './billing/subscription/declare-manual-unpaid.service.js';
 export * from './billing/subscription/decline-first-charge.service.js';
+export * from './billing/subscription/downgrade-surplus-preview.js';
+export * from './billing/subscription/end-due-pauses.service.js';
 export * from './billing/subscription/end-scheduled-services.service.js';
 export * from './billing/subscription/enter-grace.service.js';
 export * from './billing/subscription/exit-grace.service.js';
 export * from './billing/subscription/expire-authorization-windows.service.js';
+export { reevaluateRetainedPayments } from './billing/subscription/expire-authorization-windows.service.js';
+export * from './billing/subscription/expire-manual-grace.service.js';
+export * from './billing/subscription/forfeit-courtesy-pause.service.js';
 export * from './billing/subscription/grace-reminder-notice.js';
 export * from './billing/subscription/grace-started-notice.js';
+export * from './billing/subscription/grant-temporary-courtesy.service.js';
 export * from './billing/subscription/late-payment-conditions.js';
+export * from './billing/subscription/manual-grace-entry.js';
+export * from './billing/subscription/manual-installment-opened-notice.js';
+export * from './billing/subscription/manual-installment-opening.js';
+export * from './billing/subscription/manual-installment-unpaid-notice.js';
+export * from './billing/subscription/open-manual-installment.service.js';
 export * from './billing/subscription/paid-after-cancellation-notice.js';
+export * from './billing/subscription/paid-signups-freeze.js';
+export * from './billing/subscription/pause-policy.js';
+export * from './billing/subscription/pause-preview.js';
+export * from './billing/subscription/pause-quota.js';
+export * from './billing/subscription/pause-subscription.service.js';
 export * from './billing/subscription/paying-predecessor-successor.js';
+export * from './billing/subscription/price-increase-after-pause.js';
 export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
+export * from './billing/subscription/reevaluate-succession-predecessors.service.js';
 export * from './billing/subscription/refuse-undeclared-transition.js';
+export * from './billing/subscription/register-late-manual-payment.service.js';
+export * from './billing/subscription/register-manual-payment.service.js';
+export * from './billing/subscription/register-unallocated-manual-payment.service.js';
+export * from './billing/subscription/reissue-deferred-courtesy.service.js';
+export * from './billing/subscription/reissue-deferred-courtesy-support.js';
 export * from './billing/subscription/renewal-notice.js';
+export * from './billing/subscription/request-plan-change.service.js';
 export { readResumableCheckoutUrl } from './billing/subscription/resolve-live-commitment.js';
+export * from './billing/subscription/resume-subscription.service.js';
 export * from './billing/subscription/revocation-payment.js';
 export * from './billing/subscription/revoke-subscription.service.js';
+export * from './billing/subscription/revoke-temporary-courtesy.service.js';
 export * from './billing/subscription/s11-service-end.js';
+export * from './billing/subscription/scheduled-change-discard.js';
 export * from './billing/subscription/scheduled-change-on-return.js';
+export * from './billing/subscription/scheduled-change-surplus-step.js';
 export * from './billing/subscription/send-grace-reminders.service.js';
 export * from './billing/subscription/send-renewal-notices.service.js';
 export * from './billing/subscription/service-end-s12.js';
+export * from './billing/subscription/service-end-s12-chargeback.js';
 export * from './billing/subscription/signup-confirmed-notice.js';
 export * from './billing/subscription/signup-declined-notice.js';
+export * from './billing/subscription/start-manual-subscription.service.js';
 export * from './billing/subscription/start-subscription.service.js';
 export * from './billing/subscription/start-succession.service.js';
 export * from './billing/subscription/subscription-billing-ports.js';
 export * from './billing/subscription/subscription-prohibited-transitions.js';
+export * from './billing/subscription/succession-closer.service.js';
 export * from './billing/subscription/succession-end.js';
+export * from './billing/subscription/succession-in-progress.js';
 export * from './billing/subscription/succession-permanent-grant.js';
 export * from './billing/subscription/succession-retained-payment.js';
 export * from './billing/subscription/succession-target-guard.js';
+export * from './billing/subscription/successor-credit.js';
+export {
+    completeSuccessorCut,
+    runWithSuccessorCut
+} from './billing/subscription/successor-cut-after-commit.js';
+export type {
+    SuccessorCutResult,
+    SuccessorCutter
+} from './billing/subscription/successor-cutter.js';
+export {
+    createSuccessorCutter,
+    unimplementedSuccessorCutter
+} from './billing/subscription/successor-cutter.js';
 export * from './billing/subscription/suspend-for-arrears.service.js';
+export * from './billing/subscription/suspend-for-chargeback.service.js';
+export * from './billing/subscription/temporary-courtesy-preview.js';
 export * from './contentModeration';
 export * from './conversation/index.js';
 export * from './cronRun/index.js';
@@ -293,6 +409,8 @@ export * from './partner/partner-mention.service';
 export * from './partner/partner-stats.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
+export * from './plan-catalog/addon-version-creation.service.js';
+export * from './plan-catalog/plan-catalog.admin-reader.js';
 export { buildPublicationContext } from './plan-catalog/plan-publication.reader.js';
 // HOS-1436 (V2.3, AC:V2:6/7): the action 18 — publish a plan version.
 export * from './plan-catalog/plan-publication.service.js';

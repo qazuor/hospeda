@@ -19,7 +19,11 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
-import { type ListingModerationAction, ListingModerationActionSchema } from '@repo/schemas';
+import {
+    type ListingModerationAction,
+    ListingModerationActionSchema,
+    type ListingModerationState
+} from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import { useEffect, useId, useState } from 'react';
 import {
@@ -70,8 +74,7 @@ const DIALOG_COPY: Readonly<Record<ListingModerationActionKind, ActionDialogCopy
         title: 'admin-entities.listingModeration.dialog.takeDown.title',
         description: [
             'admin-entities.listingModeration.dialog.takeDown.description',
-            'admin-entities.listingModeration.dialog.takeDown.ownerNotice',
-            'admin-entities.listingModeration.dialog.takeDown.featured'
+            'admin-entities.listingModeration.dialog.takeDown.ownerNotice'
         ],
         confirm: 'admin-entities.listingModeration.confirm.takeDown',
         confirmVariant: 'destructive',
@@ -138,6 +141,8 @@ export interface ListingModerationActionDialogProps {
     readonly action: ListingModerationActionKind;
     /** Listing name shown in the description; falls back to the id upstream. */
     readonly entityName: string;
+    /** Recurring featured placements read from the listing moderation state. */
+    readonly recurringListingAddons: ListingModerationState['recurringListingAddons'];
     /** Whether the dialog is open. */
     readonly open: boolean;
     /** Called when the dialog asks to open or close. */
@@ -157,6 +162,7 @@ export interface ListingModerationActionDialogProps {
 export function ListingModerationActionDialog({
     action,
     entityName,
+    recurringListingAddons,
     open,
     onOpenChange,
     isPending,
@@ -214,6 +220,26 @@ export function ListingModerationActionDialog({
                                 {copy.description.map((key) => (
                                     <p key={key}>{t(key, { name: entityName })}</p>
                                 ))}
+                                {action === 'TAKE_DOWN' && recurringListingAddons.length > 0 ? (
+                                    <p>
+                                        {t(
+                                            'admin-entities.listingModeration.dialog.takeDown.recurringIntro'
+                                        )}{' '}
+                                        {recurringListingAddons.map((addon, index) => (
+                                            <span key={addon.addonVersionId}>
+                                                <span data-testid="moderation-recurring-addon">
+                                                    {addon.name}
+                                                </span>
+                                                {index < recurringListingAddons.length - 1
+                                                    ? ', '
+                                                    : '. '}
+                                            </span>
+                                        ))}
+                                        {t(
+                                            'admin-entities.listingModeration.dialog.takeDown.recurringChargeNotice'
+                                        )}
+                                    </p>
+                                ) : null}
                             </div>
                         </AlertDialogDescription>
                     </AlertDialogHeader>

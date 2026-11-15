@@ -262,7 +262,8 @@
             },
             "unpublishTrialNote": "The free trial keeps running: unpublishing does not stop the trial clock.",
             "unpublishRecurringNote_one": "You have {{count}} recurring featured placement on this listing: it keeps being charged while unpublished, until you cancel it.",
-            "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them."
+            "unpublishRecurringNote_other": "You have {{count}} recurring featured placements on this listing: they keep being charged while unpublished, until you cancel them.",
+            "recurringWithdrawLink": "Withdraw these featured add-ons"
         },
         "editor": {
             "section": {

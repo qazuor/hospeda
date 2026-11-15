@@ -36,6 +36,7 @@ interface VenueModelSearchInput {
 export class VenueModel extends BaseModelImpl<Venue> {
     protected table = venues;
     public entityName = 'venues';
+    protected override readonly featuredFirstColumn = 'featuredByEntitlement';
 
     /** Creates a venue with its initial publication clock. */
     override async create(data: Partial<Venue>, tx?: DrizzleClient): Promise<Venue> {

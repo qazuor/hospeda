@@ -16,7 +16,9 @@ import type {
     ChargeRef,
     Money,
     NoticeDelivery,
+    OneTimeChargeInput,
     OrderRef,
+    OrderRefundInput,
     OrderSearchInput,
     RefundInput
 } from './payment-provider';
@@ -60,6 +62,17 @@ export const ChargeInputSchema: z.ZodType<ChargeInput> = z.strictObject({
     reference: NonEmptyId
 });
 
+/** Validates a one-time order before any provider call (AC:B6:12, MP:EX-41/EX-30). */
+export const OneTimeChargeInputSchema: z.ZodType<OneTimeChargeInput> = z.strictObject({
+    reference: NonEmptyId,
+    idempotencyKey: NonEmptyId,
+    amount: PositiveMoneySchema,
+    payerEmail: z.email(),
+    paymentToken: NonEmptyId,
+    paymentBrand: NonEmptyId,
+    paymentKind: z.enum(['credit', 'debit'])
+});
+
 /** Input of capability 3. */
 export const ChangeAmountInputSchema: z.ZodType<ChangeAmountInput> = z.strictObject({
     authorizationId: NonEmptyId,
@@ -93,6 +106,20 @@ export const RefundInputSchema: z.ZodType<RefundInput> = z.strictObject({
     chargeId: NonEmptyId,
     amount: PositiveMoneySchema,
     reference: NonEmptyId
+});
+
+/** Capability 6 order refund input (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export const OrderRefundInputSchema: z.ZodType<OrderRefundInput> = z.strictObject({
+    orderId: NonEmptyId,
+    reference: NonEmptyId,
+    scope: z.discriminatedUnion('kind', [
+        z.strictObject({ kind: z.literal('total') }),
+        z.strictObject({
+            kind: z.literal('partial'),
+            transactionId: NonEmptyId,
+            amount: PositiveMoneySchema
+        })
+    ])
 });
 
 /** Input of capability 8. */

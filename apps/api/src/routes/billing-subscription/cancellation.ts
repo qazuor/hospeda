@@ -11,8 +11,10 @@ import {
     CANCEL_ACTIVE_REJECTIONS,
     type CancelActiveSubscriptionResult,
     type CancelDirectSubscriptionResult,
+    type CancelPausedSubscriptionResult,
     cancelActiveSubscription,
     cancelDirectSubscription,
+    cancelPausedSubscription,
     entityNotFoundError,
     previewSubscriptionCancellation,
     ServiceError
@@ -125,7 +127,11 @@ export const protectedCancelSubscriptionRoute = createProtectedRoute({
             };
             const byStatus: Record<
                 (typeof SUBSCRIPTION_STATUSES)[number],
-                () => Promise<CancelActiveSubscriptionResult | CancelDirectSubscriptionResult>
+                () => Promise<
+                    | CancelActiveSubscriptionResult
+                    | CancelDirectSubscriptionResult
+                    | CancelPausedSubscriptionResult
+                >
             > = {
                 PENDING_AUTHORIZATION: rejectState,
                 ABANDONED: rejectState,
@@ -139,7 +145,8 @@ export const protectedCancelSubscriptionRoute = createProtectedRoute({
                     cancelDirectSubscription({ actor, subscriptionId: id, reason }, ports),
                 CANCELLED: () =>
                     cancelDirectSubscription({ actor, subscriptionId: id, reason }, ports),
-                PAUSED: rejectState,
+                PAUSED: () =>
+                    cancelPausedSubscription({ actor, subscriptionId: id, reason }, ports),
                 CHARGE_DECLINED: rejectState
             };
             if (!isSubscriptionStatus(current.status)) {
@@ -151,6 +158,16 @@ export const protectedCancelSubscriptionRoute = createProtectedRoute({
                 );
             }
             const result = await byStatus[current.status]();
+            if (result.outcome === 'REJECTED' || result.outcome === 'LOST_RACE')
+                return createErrorResponse(
+                    {
+                        code: ServiceErrorCode.ALREADY_EXISTS,
+                        message: 'Paused cancellation could not be applied',
+                        reason: result.outcome === 'REJECTED' ? result.reason : 'LOST_RACE'
+                    },
+                    ctx,
+                    409
+                );
             const serviceEndsAt =
                 'serviceEndsAt' in result ? result.serviceEndsAt : result.serviceEndedAt;
             auditLog({

@@ -4,7 +4,8 @@
         "title": "Contenido",
         "destinationAttractions": "Atracciones de Destinos",
         "accommodationAmenities": "Comodidades de Alojamientos",
-        "accommodationFeatures": "Características de Alojamientos"
+        "accommodationFeatures": "Características de Alojamientos",
+        "fixRequests": "Arreglos pendientes"
     },
     "accommodations": {
         "title": "Alojamientos",
@@ -53,6 +54,8 @@
         "userTagModeration": "Moderación de etiquetas"
     },
     "billing": {
+        "planCatalog": "Planes y claves",
+        "planMigration": "Migrar plan retirado",
         "title": "Facturación",
         "plans": "Planes",
         "subscriptions": "Suscripciones",
@@ -61,6 +64,7 @@
         "reconciliation": "Conciliación",
         "invoices": "Facturas",
         "promoCodes": "Códigos Promocionales",
+        "deadlines": "Plazos",
         "sponsorships": "Patrocinios",
         "ownerPromotions": "Promociones de Propietarios",
         "exchangeRates": "Tasas de Cambio",
@@ -72,7 +76,11 @@
         "webhookEvents": "Eventos de Webhook",
         "subscription": "Suscripción",
         "subscriptionCancellation": "Baja",
-        "subscriptionRevocation": "Revocación"
+        "subscriptionRevocation": "Revocación",
+        "permanentGrants": "Grants permanentes",
+        "subscriptionPause": "Pausa",
+        "subscriptionPlanChange": "Cambio de plan",
+        "subscriptionCourtesy": "Cortesía"
     },
     "notifications": "Notificaciones",
     "access": {
@@ -86,7 +94,8 @@
     "platform": {
         "title": "Plataforma",
         "hostTrades": "Directorio de Oficios",
-        "featureFlags": "Feature Flags"
+        "featureFlags": "Feature Flags",
+        "partnerApplications": "Postulaciones de aliados"
     },
     "sponsors": "Patrocinadores",
     "analytics": {

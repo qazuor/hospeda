@@ -258,6 +258,19 @@ const catalogoSidebar: SidebarInput = {
             route: '/platform/alliance-leads',
             permissions: ['ALLIANCE_LEAD_VIEW_ALL']
         },
+        {
+            type: 'link',
+            id: 'partner-applications',
+            label: {
+                es: 'Postulaciones de aliados',
+                en: 'Partner applications',
+                pt: 'Candidaturas de parceiros'
+            },
+            icon: 'MailIcon',
+            route: '/platform/partner-applications',
+            permissions: ['PARTNER_RESOLVE_APPLICATION'],
+            onMissing: 'hide'
+        },
         { type: 'separator', id: 'sep-content-moderation' },
         // ── Content Moderation (SPEC-195) ─────────────────────────────────
         {
@@ -290,6 +303,15 @@ const catalogoSidebar: SidebarInput = {
                     permissions: ['MODERATION_THRESHOLD_VIEW']
                 }
             ]
+        },
+        {
+            type: 'link',
+            id: 'fix-requests',
+            label: { es: 'Arreglos pendientes', en: 'Pending fixes', pt: 'Correções pendentes' },
+            icon: 'ListIcon',
+            route: '/content/fix-requests',
+            permissions: ['LISTING_MODERATE'],
+            onMissing: 'hide'
         }
     ]
 };
@@ -596,6 +618,15 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'subscriptions',
+            label: { es: 'Suscripciones', en: 'Subscriptions', pt: 'Assinaturas' },
+            icon: 'ListIcon',
+            route: '/billing/subscriptions',
+            permissions: ['BILLING_SUBSCRIPTION_INSPECT'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'reconciliation-marks',
             label: { es: 'Conciliación', en: 'Reconciliation', pt: 'Conciliação' },
             icon: 'DollarSignIcon',
@@ -610,6 +641,64 @@ const comercialSidebar: SidebarInput = {
             icon: 'CouponsIcon',
             route: '/billing/promo-codes',
             permissions: ['BILLING_MANAGE_PROMO_CODES'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'deadlines',
+            label: { es: 'Plazos', en: 'Deadlines', pt: 'Prazos' },
+            icon: 'ClockIcon',
+            route: '/billing/deadlines',
+            permissions: ['MAINTENANCE_MODE_WRITE'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'billing-settings',
+            label: { es: 'Configuración', en: 'Settings', pt: 'Configuração' },
+            icon: 'SettingsIcon',
+            route: '/billing/settings',
+            permissions: ['BILLING_SETTINGS_VIEW'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'plan-catalog',
+            label: { es: 'Planes y claves', en: 'Plans and keys', pt: 'Planos e chaves' },
+            icon: 'SettingsIcon',
+            route: '/billing/plan-catalog',
+            permissions: ['MAINTENANCE_MODE_WRITE'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'plan-migration',
+            label: {
+                es: 'Migrar plan retirado',
+                en: 'Migrate retired plan',
+                pt: 'Migrar plano retirado'
+            },
+            icon: 'SettingsIcon',
+            route: '/billing/plan-migration',
+            permissions: ['BILLING_MIGRATE_PLAN'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'addon-catalog',
+            label: { es: 'Complementos', en: 'Add-ons', pt: 'Complementos' },
+            icon: 'SettingsIcon',
+            route: '/billing/addon-catalog',
+            permissions: ['BILLING_PUBLISH_ADDON_VERSION'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'permanent-grants',
+            label: { es: 'Grants permanentes', en: 'Permanent grants', pt: 'Grants permanentes' },
+            icon: 'DollarSignIcon',
+            route: '/billing/permanent-grants',
+            permissions: ['BILLING_GRANT_COMPLIMENTARY'],
             onMissing: 'hide'
         }
     ]

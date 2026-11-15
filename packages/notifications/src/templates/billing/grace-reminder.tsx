@@ -11,12 +11,18 @@ export function GraceReminder({
     vertical,
     graceEndDate,
     daysBefore,
-    subscriptionUrl
+    subscriptionUrl,
+    paymentMethod,
+    planChangePending,
+    scheduledChange
 }: {
     readonly vertical: string;
     readonly graceEndDate: string;
     readonly daysBefore: number;
     readonly subscriptionUrl: string;
+    readonly paymentMethod: 'CARD' | 'MANUAL';
+    readonly planChangePending?: boolean;
+    readonly scheduledChange?: { readonly planName: string; readonly effectiveDate: string };
 }) {
     const verticalName = formatTrialVerticals({ verticals: [vertical] });
     const remaining = daysBefore === 1 ? '1 día' : `${daysBefore} días`;
@@ -27,14 +33,28 @@ export function GraceReminder({
                 Tu suscripción de {verticalName} sigue en período de gracia. Faltan {remaining} para
                 el {formatDate({ dateString: graceEndDate })}, cuando termina este período.
             </Text>
-            <Text>
-                Si cambiás la tarjeta en Mercado Pago, el cobro se reintenta en el momento. No
-                podemos garantizar que se apruebe.
-            </Text>
+            {paymentMethod === 'CARD' ? (
+                <Text>
+                    Si cambiás la tarjeta en Mercado Pago, el cobro se reintenta en el momento. No
+                    podemos garantizar que se apruebe.
+                </Text>
+            ) : (
+                <Text>
+                    Si realizás la transferencia antes de esa fecha, evitás la suspensión de tu
+                    suscripción.
+                </Text>
+            )}
             <Text>
                 Si el cobro no entra antes de esa fecha, tu suscripción se suspende y vas a tener
                 que volver a suscribirte. Mi Suscripción: {subscriptionUrl}
             </Text>
+            {scheduledChange ? (
+                <Text>
+                    Tu cambio al plan {scheduledChange.planName}, programado para el{' '}
+                    {scheduledChange.effectiveDate}, sigue en pie.
+                </Text>
+            ) : null}
+            {planChangePending ? <Text>Tu cambio de plan sigue pendiente.</Text> : null}
         </EmailLayout>
     );
 }
