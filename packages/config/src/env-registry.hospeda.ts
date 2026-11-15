@@ -1531,6 +1531,75 @@ export const HOSPEDA_ENV_VARS = [
             'Solo necesitás configurarlo si usás una instancia self-hosted de PostHog o el cloud EU (https://eu.i.posthog.com). Si no lo configurás, se usa el endpoint por defecto del cloud US.'
     },
     {
+        name: 'HOSPEDA_UMAMI_URL',
+        description:
+            'Base URL of the self-hosted Umami instance (server-side event ingestion via POST /api/batch and the read API)',
+        descriptionEs:
+            'URL base de la instancia self-hosted de Umami (ingesta server-side de eventos vía POST /api/batch y API de lectura)',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://umami.example.com',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain:
+            'Base URL where the self-hosted Umami is deployed, without a trailing slash. Leave unset or empty to disable server-side Umami events and stats reads.',
+        howToObtainEs:
+            'URL base donde está deployado el Umami self-hosted, sin barra final. Dejala sin setear o vacía para deshabilitar los eventos server-side y las lecturas de stats de Umami.'
+    },
+    {
+        name: 'HOSPEDA_UMAMI_WEBSITE_ID_WEB',
+        description:
+            'Umami website id (UUID) of the hospeda-web website; server events that describe the public web surface are sent to it',
+        descriptionEs:
+            'Id de website de Umami (UUID) de hospeda-web; los eventos server-side que describen la superficie web pública se envían ahí',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '00000000-0000-0000-0000-000000000000',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain: 'Umami → Settings → Websites → hospeda-web → copy the Website ID (a UUID).',
+        howToObtainEs: 'Umami → Settings → Websites → hospeda-web → copiá el Website ID (un UUID).'
+    },
+    {
+        name: 'HOSPEDA_UMAMI_WEBSITE_ID_ADMIN',
+        description:
+            'Umami website id (UUID) of the hospeda-admin website; server events that describe the admin surface are sent to it',
+        descriptionEs:
+            'Id de website de Umami (UUID) de hospeda-admin; los eventos server-side que describen la superficie admin se envían ahí',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '00000000-0000-0000-0000-000000000000',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain: 'Umami → Settings → Websites → hospeda-admin → copy the Website ID (a UUID).',
+        howToObtainEs:
+            'Umami → Settings → Websites → hospeda-admin → copiá el Website ID (un UUID).'
+    },
+    {
+        name: 'HOSPEDA_UMAMI_API_KEY',
+        description:
+            'Umami API key of a view-only user, sent as `Authorization: Bearer`; used only for reading stats',
+        descriptionEs:
+            'API key de Umami de un usuario view-only, enviada como `Authorization: Bearer`; se usa solo para leer stats',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'umami_xxx',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain:
+            'Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads stats.',
+        howToObtainEs:
+            'Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee stats.'
+    },
+    {
         name: 'SENTRY_AUTH_TOKEN',
         description: 'Sentry auth token used at build time to upload source maps (web, admin, api)',
         descriptionEs:
