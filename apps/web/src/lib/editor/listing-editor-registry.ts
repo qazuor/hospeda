@@ -14,7 +14,7 @@
  * `listing-section-presentation.ts`, which is exhaustive per vertical.
  */
 
-import { LISTING_SECTIONS, type ListingSectionState } from '@repo/schemas';
+import { LISTING_SECTIONS, type ListingSectionState, type ListingVertical } from '@repo/schemas';
 import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
 import { createListingEditorRegistry } from '@/lib/editor/listing-editor-sections';
 import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
@@ -39,6 +39,38 @@ export interface ListingSectionStateEntry {
 export type ListingSectionStates = Readonly<Record<string, ListingSectionStateEntry>>;
 
 /**
+ * Maps one vertical's catalog sections to editor sections, in catalog order,
+ * without the web-only pages.
+ *
+ * @param params - The vertical and the resolved state map.
+ * @returns The non-absent catalog sections, in the order and group the catalog
+ * declares. A missing state reads as "not absent".
+ */
+export function buildCatalogEditorSections({
+    vertical,
+    sectionStates
+}: {
+    readonly vertical: ListingVertical;
+    readonly sectionStates: ListingSectionStates;
+}): readonly EditorSection[] {
+    return LISTING_SECTIONS[vertical]
+        .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
+        .slice()
+        .sort((a, b) => a.order - b.order)
+        .map((definition): EditorSection => {
+            const presentation = LISTING_SECTION_PRESENTATION[vertical][definition.id];
+
+            return {
+                id: definition.id,
+                slug: presentation.slug,
+                group: definition.group,
+                labelKey: presentation.labelKey,
+                ...(presentation.visibilityKey ? { visibilityKey: presentation.visibilityKey } : {})
+            };
+        });
+}
+
+/**
  * Builds the section list for one vertical, in catalog order.
  *
  * @param params - The vertical and the resolved state map.
@@ -52,24 +84,13 @@ export function buildListingEditorSections({
     readonly vertical: VenueOrExperience;
     readonly sectionStates: ListingSectionStates;
 }): readonly EditorSection[] {
-    const sections = LISTING_SECTIONS[vertical]
-        .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map((definition): EditorSection => {
-            const presentation = LISTING_SECTION_PRESENTATION[vertical][definition.id];
-
-            return {
-                id: definition.id,
-                slug: presentation.slug,
-                group: definition.group,
-                labelKey: presentation.labelKey
-            };
-        });
     // Appended, not placed by section id: this file is under G-FAC-05 (no
     // dispatch by section id). The nav groups by `group`, so it renders as the
     // last «content» page.
-    return [...sections, LISTING_AI_QUESTIONS_SECTION];
+    return [
+        ...buildCatalogEditorSections({ vertical, sectionStates }),
+        LISTING_AI_QUESTIONS_SECTION
+    ];
 }
 
 /**

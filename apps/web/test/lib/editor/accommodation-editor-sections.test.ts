@@ -9,12 +9,15 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { LISTING_SECTIONS } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     ACCOMMODATION_AI_QUESTIONS_SECTION,
     ACCOMMODATION_EDITOR_REGISTRY,
     ACCOMMODATION_EDITOR_SECTIONS,
     ACCOMMODATION_POLICIES_SECTION,
+    buildAccommodationEditorRegistry,
+    buildAccommodationEditorSections,
     buildEditorHubUrl,
     buildEditorSectionUrl,
     EDITOR_SECTION_GROUP_LABEL_KEYS,
@@ -313,5 +316,72 @@ describe('HOS-2123 — the policies section', () => {
 
     it('should resolve its label against the real es dictionary', () => {
         expect(resolveHostKey(ACCOMMODATION_POLICIES_SECTION.labelKey)).toBe('Políticas');
+    });
+});
+
+describe('catalog derivation (HOS-1809)', () => {
+    it('derives the sections, their order and groups from the domain catalog', () => {
+        const fromCatalog = [...LISTING_SECTIONS.accommodation]
+            .sort((a, b) => a.order - b.order)
+            .map(({ id, group }) => ({ id, group }));
+
+        expect(ACCOMMODATION_EDITOR_SECTIONS.map(({ id, group }) => ({ id, group }))).toEqual(
+            fromCatalog
+        );
+    });
+
+    it('keeps the order, slugs and groups the hand-written list had before the migration', () => {
+        // Frozen on purpose: the editor of an accommodation must not change shape.
+        expect(
+            ACCOMMODATION_EDITOR_SECTIONS.map(({ id, slug, group }) => [id, slug, group])
+        ).toEqual([
+            ['basicInfo', 'datos', 'property'],
+            ['capacityPricing', 'capacidad-precio', 'property'],
+            ['location', 'ubicacion', 'property'],
+            ['amenities', 'servicios', 'property'],
+            ['photos', 'fotos', 'content'],
+            ['faqs', 'preguntas', 'content'],
+            ['contact', 'contacto', 'content'],
+            ['seo', 'seo', 'content'],
+            ['calendar', 'calendario', 'management'],
+            ['translations', 'traducciones', 'management'],
+            ['externalReputation', 'reputacion', 'management']
+        ]);
+    });
+
+    it('adds the policies page after services and the AI questions page after the FAQs', () => {
+        const ids = buildAccommodationEditorSections({ sectionStates: {} }).map(({ id }) => id);
+
+        expect(ids).toEqual([
+            'basicInfo',
+            'capacityPricing',
+            'location',
+            'amenities',
+            'policies',
+            'photos',
+            'faqs',
+            'aiQuestions',
+            'contact',
+            'seo',
+            'calendar',
+            'translations',
+            'externalReputation'
+        ]);
+    });
+
+    it('drops a section the resolver reports as absent and keeps a locked one', () => {
+        const ids = buildAccommodationEditorSections({
+            sectionStates: { seo: { state: 'absent' }, calendar: { state: 'locked' } }
+        }).map(({ id }) => id);
+
+        expect(ids).not.toContain('seo');
+        expect(ids).toContain('calendar');
+    });
+
+    it('builds the registry from the same derived sections', () => {
+        const registry = buildAccommodationEditorRegistry({ sectionStates: {} });
+
+        expect(registry.sections).toEqual(ACCOMMODATION_EDITOR_REGISTRY.sections);
+        expect(registry.id).toBe('accommodation');
     });
 });
