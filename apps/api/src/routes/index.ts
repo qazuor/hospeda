@@ -26,6 +26,7 @@ import { protectedExternalReputationRoutes } from './accommodation-external-repu
 import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
 import { adminAddonCatalogRoutes } from './addon-catalog/admin/index.js';
 import {
+    adminAiConversationsRoutes,
     adminAiCredentialsRoutes,
     adminAiPostGenerateRoute,
     adminAiPromptsRoutes,
@@ -703,6 +704,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
         app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
+        // HOS-2075: staff read of listing chat conversations (AI_CONVERSATION_VIEW_ANY, SUPER_ADMIN-only)
+        app.route('/api/v1/admin/ai/conversations', adminAiConversationsRoutes);
         app.route('/api/v1/admin/ai/settings', adminAiSettingsRoutes);
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
         app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);

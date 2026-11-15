@@ -49,6 +49,7 @@ import type {
     VerticalEnum
 } from '@repo/schemas';
 import {
+    type AccommodationListingSectionStatesSchema,
     type ExperienceListingSectionStatesSchema,
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnManualInstallmentsResponse,
@@ -2504,6 +2505,24 @@ export const listingAnalyticsApi = {
         return apiClient.getProtected<ListingSectionStatesResponse<V>>({
             path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/${listingId}/sections`,
             ...(businessLines ? { params: { businessLines: businessLines.join(',') } } : {}),
+            cookieHeader
+        });
+    },
+
+    /**
+     * Read the owner's resolved accommodation section and trait availability
+     * (HOS-1809). The editor hub shows a `locked` line for a withheld section.
+     */
+    getAccommodationSectionStates({
+        accommodationId,
+        cookieHeader
+    }: {
+        readonly accommodationId: string;
+        /** Forwarded when called from SSR. */
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<z.infer<typeof AccommodationListingSectionStatesSchema>>> {
+        return apiClient.getProtected<z.infer<typeof AccommodationListingSectionStatesSchema>>({
+            path: `${PROTECTED}/accommodations/${accommodationId}/sections`,
             cookieHeader
         });
     },

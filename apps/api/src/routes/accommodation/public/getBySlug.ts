@@ -19,12 +19,8 @@ import { z } from 'zod';
 
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import {
-    filterPublicPaidFields,
-    resolvePublicFieldGrants
-} from '../../../utils/entitlement-filter';
-
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicAccommodations } from '../../../utils/public-accommodation-projection';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -216,16 +212,8 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             ...result.data,
             isFeatured: resolvePublicIsFeatured(result.data)
         };
-        const grants = await resolvePublicFieldGrants([accommodation.ownerId]);
-        const filteredAccommodation = filterPublicPaidFields(
-            accommodation,
-            grants.get(accommodation.ownerId ?? '') ?? {
-                richDescription: false,
-                video: false,
-                verification: false,
-                aiChat: false
-            }
-        );
+        const [gated] = await projectPublicAccommodations({ listings: [accommodation] });
+        const filteredAccommodation = gated as typeof accommodation;
 
         // Fetch related data in parallel
         const [owner, amenitiesData, featuresData, faqsData] = await Promise.all([

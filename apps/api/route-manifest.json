@@ -179,6 +179,14 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/ai/conversations"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/ai/conversations/:id"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/ai/credentials"
         },
         {
@@ -2596,6 +2604,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/reactivate"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/accommodations/:id/sections"
         },
         {
             "method": "GET",

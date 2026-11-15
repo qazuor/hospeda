@@ -1,6 +1,6 @@
 {
-  "id": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
-  "prevId": "6ae68212-c294-4af8-8bbd-a460e26c7731",
+  "id": "6ae68212-c294-4af8-8bbd-a460e26c7731",
+  "prevId": "43955864-a642-44f1-9495-ad6433d8d1c3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -33806,13 +33806,13 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
-        "billing.refund",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
         "billing.managePromoCodes",
         "user.update.self",
         "ai.settings.manage",
+        "aiConversation.viewAny",
         "platform.featureFlag.manage",
         "platform.qrCode.view",
         "platform.qrCode.create",

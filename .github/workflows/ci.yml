@@ -335,10 +335,6 @@ jobs:
       # GUARD:G-FAC-03 (HOS-1844). Business lines are decided only by the resolver and read only by inventoried modules.
       - name: Check business line decisions and readers (GUARD:G-FAC-03)
         run: pnpm check:business-line-decisions
-      # GUARD:G-FAC-08 (HOS-1853, leaf 5.1). The accommodation editor's manual
-      # section list is frozen and equal to the catalog until child 8 migrates it.
-      - name: Check the accommodation editor section list is frozen (GUARD:G-FAC-08)
-        run: pnpm check:accommodation-editor-frozen
       # GUARD:G-FAC-05 (HOS-1860, leaf 5.8). The closed list of files the
       # catalog-derived editor replaces carries no dispatch by vertical, section
       # id, listing type or review dimension.
