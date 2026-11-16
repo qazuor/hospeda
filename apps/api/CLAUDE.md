@@ -757,6 +757,13 @@ type you must (1) add a variant to the enum in `@repo/schemas`, (2) widen
 the exact enum option set and fails if it grows). That guard exists precisely to
 turn silent scope creep into a deliberate, reviewed change.
 
+## AI model-migration sweep coverage (HOS-2217)
+
+Every AI feature (each `AiFeatureSchema` value plus each exported `*_USAGE_FEATURE`, e.g. `chat_answer_classifier`)
+must have cases in the model-migration sweep (`packages/ai-core/scripts/ai-sweep/`, see its README "Policy"). The
+guard `cd apps/api && CI=true pnpm exec vitest run test/scripts/ai-sweep-feature-coverage.guard.test.ts` fails CI
+otherwise.
+
 ## AI credential model-sync (HOS-94)
 
 The admin AI-credentials router (`ai/credentials/index.ts`) can auto-detect

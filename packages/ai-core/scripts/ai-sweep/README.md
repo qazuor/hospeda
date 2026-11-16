@@ -220,7 +220,7 @@ overall but fails one feature (say `accommodation_import` schema validity) is no
 | `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`, `generateObject` (non-strict JSON schema) | field values, values grounded in the page text, no invented coordinates/contacts, reviews never copied |
 | `faq_draft` | chat context + `buildFaqDraftRequest`, `generateObject`, `maxTokens` 1024 / temperature 0 fixed | `hasData` right (false on missing data), draft grounded and plain text, language |
 | `support` | none: no production route calls it today; engine defaults only | decline off-topic/injection, escalation, no invented policy, language |
-| `chat_answer_classifier` | `buildChatAnswerClassifierRequest`: fixed instruction, `maxTokens` 16 / temperature 0, on the vertical's chat feature (its configured model); metered under its own key | the one-word output parsed like production (`parseAnswerVerdict` = `parseClassifierVerdict`) equals the expected verdict |
+| `chat_answer_classifier` | `buildChatAnswerClassifierRequest`: fixed instruction, `maxTokens` 16 / temperature 0 / `reasoningEffort` `none` (wins over the variant effort), on the vertical's chat feature (its configured model); metered under its own key | the one-word output parsed like production (`parseAnswerVerdict` = `parseClassifierVerdict`) equals the expected verdict |
 
 Trap cases per feature: prompt injection, missing data and language mismatch. All data is synthetic: phones are
 zero-filled, URLs use `example.com`.
@@ -241,6 +241,17 @@ kind without the generator; `test/ai-sweep-provider-parity.test.ts` (ai-core) ru
 `createAiEngine` and `OpenAiAdapter` and compares what reaches the provider and the SDK with what the sweep sends;
 `test/ai-sweep-tasks.test.ts` refuses a fixture edited after generation.
 
+### Policy: every AI feature must be covered
+
+Owner rule (2026-11-16): an AI feature does not ship without sweep cases, so the next model change measures it
+instead of guessing. It is enforced, not remembered: `apps/api/test/scripts/ai-sweep-feature-coverage.guard.test.ts`
+(runs in CI's unit tests) fails when a feature production knows has no cases here or no entry in
+`sweep.config.migration.json`. "Known to production" is every value of `AiFeatureSchema` (`@repo/schemas`, the keys
+of `ai_settings.features`) plus every exported `*_USAGE_FEATURE` constant (a feature metered in `ai_usage` under its
+own key, today `CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE`). Run it with
+`cd apps/api && CI=true pnpm exec vitest run test/scripts/ai-sweep-feature-coverage.guard.test.ts`; to satisfy it,
+follow "Adding a feature or a case" below.
+
 ### Adding a feature or a case
 
 - **A case**: add it to `task-fixtures/<feature>.json` (`id` prefixed with the feature, raw route `input`, `checks`,
@@ -249,6 +260,35 @@ kind without the generator; `test/ai-sweep-provider-parity.test.ts` (ai-core) ru
   add the call kind to `TASK_CALLS`/`FEATURE_OF_CALL` (`tasks.ts`) and its input schema and `renderTask` branch
   (`apps/api/scripts/ai-sweep/render-sweep-tasks.ts`), plus its output schema to `OUTPUT_SCHEMA_IDS` and
   `OUTPUT_ZOD_SCHEMAS` if structured, then add it to `sweep.config.migration.json` with its monthly volume.
+
+### Results 2026-11-16 (decision: `gpt-6-luna`)
+
+5 variants x 141 cases = 705 calls, about US$0.46. Blind grades 1-5 (`gpt-5.4-nano` / `gpt-6-luna|none` /
+`gpt-6-luna|low`):
+
+| feature | nano | luna none | luna low |
+| --- | --- | --- | --- |
+| chat | 4.66 | 4.53 | 4.71 |
+| chat_venue | 4.08 | 4.73 | 4.81 |
+| post_generate | 2.86 | 4.71 | 4.71 |
+| text_improve | 3.56 | 4.78 | 4.67 |
+| support | 3.29 | 4.29 | 4.57 |
+| faq_draft | 4.50 | 4.70 | 4.90 |
+| translate | 4.70 | 4.80 | 4.80 |
+| search reply (n=4) | 4.75 | 4.25 | 4.50 |
+
+`accommodation_import` all-pass: nano 25%, luna none 13%, luna low 100%. `chat_answer_classifier`: luna none 100%,
+luna low 44% (5 of 9 empty: reasoning ate the 16-token cap).
+
+Decision: every feature on `gpt-6-luna`; `none` for chat, chat_experience, search, translate and post_generate; `low`
+for text_improve, accommodation_import, faq_draft and support. chat_venue stays `none` until the classifier fix
+below is deployed, then can move to `low`. Applied by seed data-migration `0177-hos-2217-ai-features-gpt-6-luna`.
+
+**Classifier effort (prod fix).** The engine merges the feature config's `reasoningEffort` under the caller params,
+and the classifier runs under the vertical's chat feature, so it inherited that effort (venue chats ran it on
+`gpt-5.4-mini|low`). `buildChatAnswerClassifierRequest` now sends `reasoningEffort: 'none'` explicitly; the sweep's
+classifier cases send the same `none` whatever the variant effort. Before moving a chat feature to a model WITHOUT
+reasoning support, revisit that parameter.
 
 ### Caveats (migration)
 
