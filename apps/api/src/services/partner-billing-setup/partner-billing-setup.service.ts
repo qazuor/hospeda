@@ -11,7 +11,7 @@ import {
     planCatalogModel,
     plans,
     planVersions,
-    users
+    UserModel
 } from '@repo/db';
 import { PartnerBillingSetupOptionSchema, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import type {
@@ -24,6 +24,7 @@ import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from
 import { getRequestCorrelationId } from '../../lib/request-context';
 
 const partnerModel = new PartnerModel();
+const userModel = new UserModel();
 const ACTION = 'ACC_6' as const;
 const EFFECT = 'Creates a subscription pending authorization and opens its first installment.';
 
@@ -61,16 +62,7 @@ export async function previewPartnerBillingSetup(input: {
             'Partner has no owner'
         );
 
-    const [ownerUser] = await getDb()
-        .select({
-            email: users.email,
-            displayName: users.displayName,
-            firstName: users.firstName,
-            lastName: users.lastName
-        })
-        .from(users)
-        .where(eq(users.id, partner.ownerUserId))
-        .limit(1);
+    const ownerUser = await userModel.findOne({ id: partner.ownerUserId });
     if (!ownerUser)
         throw rejection(
             'PARTNER_WITHOUT_OWNER',
