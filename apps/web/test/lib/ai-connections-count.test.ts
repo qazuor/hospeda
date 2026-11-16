@@ -4,7 +4,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAiConnectionCount, resetAiConnectionCount } from '../../src/lib/ai-connections-count';
+import {
+    getAiConnectionCount,
+    getAiConnectionsSnapshot,
+    resetAiConnectionCount
+} from '../../src/lib/ai-connections-count';
 
 vi.mock('../../src/lib/env', () => ({ getApiUrl: () => 'https://api.x' }));
 
@@ -53,5 +57,48 @@ describe('getAiConnectionCount', () => {
         ]
     ])('is 0 on %s', async (_label, make) => {
         expect(await getAiConnectionCount({ fetchImpl: make() })).toBe(0);
+    });
+});
+
+describe('getAiConnectionsSnapshot', () => {
+    beforeEach(() => {
+        resetAiConnectionCount();
+    });
+
+    it('shares one request between the count and the pending review', async () => {
+        const review = { resetAt: '2026-11-10T12:00:00.000Z', connectionsBeforeReset: [item] };
+        const fetchImpl = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                success: true,
+                data: { items: [item, item], pendingResetReview: review }
+            })
+        } as Response);
+
+        const [snapshot, count] = await Promise.all([
+            getAiConnectionsSnapshot({ fetchImpl }),
+            getAiConnectionCount({ fetchImpl })
+        ]);
+
+        expect(fetchImpl).toHaveBeenCalledTimes(1);
+        expect(count).toBe(2);
+        expect(snapshot.pendingResetReview?.connectionsBeforeReset).toHaveLength(1);
+    });
+
+    it('has no pending review when the API says null', async () => {
+        const fetchImpl = vi.fn().mockResolvedValue(ok([item]));
+        expect((await getAiConnectionsSnapshot({ fetchImpl })).pendingResetReview).toBeNull();
+    });
+
+    it('is empty on failure and forgets it after a reset', async () => {
+        const failing = vi.fn().mockRejectedValue(new Error('down'));
+        expect(await getAiConnectionsSnapshot({ fetchImpl: failing })).toEqual({
+            count: 0,
+            pendingResetReview: null
+        });
+
+        resetAiConnectionCount();
+        const fetchImpl = vi.fn().mockResolvedValue(ok([item]));
+        expect((await getAiConnectionsSnapshot({ fetchImpl })).count).toBe(1);
     });
 });

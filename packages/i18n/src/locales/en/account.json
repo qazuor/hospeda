@@ -398,7 +398,18 @@
             "disconnectFailed": "We could not disconnect the assistant. Please try again."
         },
         "paused": "Connecting new assistants is paused for now. You can still disconnect the ones you have.",
-        "unavailable": "Connecting AI assistants is not available yet."
+        "unavailable": "Connecting AI assistants is not available yet.",
+        "resetReview": {
+            "title": "AI assistants connected",
+            "body": "You changed your password. You have {{count}} AI assistants connected from before. Do you want to disconnect them too?",
+            "body_one": "You changed your password. You have {{count}} AI assistant connected from before. Do you want to disconnect it too?",
+            "body_other": "You changed your password. You have {{count}} AI assistants connected from before. Do you want to disconnect them too?",
+            "revoke": "Disconnect assistants",
+            "keep": "Keep them",
+            "link": "See my AI assistants",
+            "revoked": "We disconnected your AI assistants.",
+            "failed": "We could not save your answer. Please try again."
+        }
     },
     "subscription": {
         "signupTakenBy": {

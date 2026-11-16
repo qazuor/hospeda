@@ -8,8 +8,8 @@
  * untrusted: the helpers here only ever yield plain text or an https URL.
  */
 
-import type { AiConnection } from '@repo/schemas';
-import { AiConnectionListSchema } from '@repo/schemas';
+import type { AiConnection, AiConnectionPendingResetReview } from '@repo/schemas';
+import { AiConnectionListSchema, AiConnectionPendingResetReviewSchema } from '@repo/schemas';
 
 /** Path of the protected AI connections collection. */
 export const AI_CONNECTIONS_API_PATH = '/api/v1/protected/ai-connections';
@@ -26,6 +26,28 @@ export const AI_CAPABILITY_FALLBACKS: Readonly<
     pause: 'Pausar o reanudar tus publicaciones',
     reply: 'Responder consultas de tus alojamientos'
 };
+
+/**
+ * The list schema with `pendingResetReview` tolerated as absent: the web and the
+ * API deploy separately, and a web that is ahead of the API must still render
+ * the list instead of an error.
+ */
+const AiConnectionListResponseSchema = AiConnectionListSchema.extend({
+    pendingResetReview: AiConnectionPendingResetReviewSchema.nullish()
+});
+
+/** Path of the post-password-reset question (HOS-2184). */
+export const AI_CONNECTIONS_RESET_REVIEW_API_PATH = `${AI_CONNECTIONS_API_PATH}/reset-review`;
+
+/**
+ * Builds the URL that answers the post-password-reset question.
+ *
+ * @param params.apiUrl - API base URL (trailing slash tolerated).
+ * @returns The absolute URL.
+ */
+export function buildAiConnectionsResetReviewUrl({ apiUrl }: { readonly apiUrl: string }): string {
+    return `${apiUrl.replace(/\/$/, '')}${AI_CONNECTIONS_RESET_REVIEW_API_PATH}`;
+}
 
 /** Input of {@link buildAiConnectionsUrl}. */
 export interface BuildAiConnectionsUrlParams {
@@ -54,14 +76,20 @@ export function buildAiConnectionsUrl({ apiUrl, clientId }: BuildAiConnectionsUr
 
 /** Result of {@link parseAiConnections}. */
 export type ParseAiConnectionsResult =
-    | { readonly ok: true; readonly items: readonly AiConnection[] }
+    | {
+          readonly ok: true;
+          readonly items: readonly AiConnection[];
+          /** The unanswered "also disconnect the assistants from before your password reset?" question. */
+          readonly pendingResetReview: AiConnectionPendingResetReview | null;
+      }
     | { readonly ok: false };
 
 /**
  * Validates the body of `GET /protected/ai-connections`.
  *
  * @param params.body - Parsed JSON body (unknown shape).
- * @returns The connections, or `{ ok: false }` when the envelope is not the expected one.
+ * @returns The connections and the pending reset review, or `{ ok: false }` when the
+ *   envelope is not the expected one.
  */
 export function parseAiConnections({ body }: { readonly body: unknown }): ParseAiConnectionsResult {
     if (
@@ -73,8 +101,14 @@ export function parseAiConnections({ body }: { readonly body: unknown }): ParseA
         return { ok: false };
     }
     const data = 'data' in body ? body.data : undefined;
-    const parsed = AiConnectionListSchema.safeParse(data);
-    return parsed.success ? { ok: true, items: parsed.data.items } : { ok: false };
+    const parsed = AiConnectionListResponseSchema.safeParse(data);
+    return parsed.success
+        ? {
+              ok: true,
+              items: parsed.data.items,
+              pendingResetReview: parsed.data.pendingResetReview ?? null
+          }
+        : { ok: false };
 }
 
 /**

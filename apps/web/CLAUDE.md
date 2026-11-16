@@ -1260,6 +1260,13 @@ over the [MCP server](../api/docs/mcp-server.md) and disconnect the ones they co
   (https only) and the logo is never fetched.
 - **Client ids are URLs for CIMD clients.** Always build the disconnect URL with
   `buildAiConnectionsUrl`, which percent-encodes the id.
+- **Post-password-reset prompt.** `AiResetReviewPrompt` (`src/components/shared/ai-assistants/`)
+  is mounted once in `BaseLayout` (`client:idle`). It checks the session in the browser
+  (cached `/auth/me`), reads `pendingResetReview` from the same shared lookup, and, when
+  present, shows a card that has no close button: only "Desconectar asistentes"
+  (`revoke_previous`) or "Mantenerlos" (`keep`) dismiss it, and both call
+  `POST /api/v1/protected/ai-connections/reset-review`. A 409 counts as answered. It does
+  not depend on the MCP flag, and the pages stay session-blind.
 - **Consent page.** `/{lang}/auth/consent/` (`OAuthConsent.client.tsx`) is where the
   OAuth provider sends the user to approve a client. It shows the account and the
   full capabilities, and sanitizes the client link.

@@ -1,0 +1,88 @@
+/* AiResetReviewPrompt.module.css */
+/* Scoped styles for the post-password-reset AI assistants prompt (HOS-2184). */
+/* ALL values use CSS custom properties from global.css. */
+
+.prompt {
+    position: fixed;
+    right: var(--space-4, 16px);
+    /* Above the measured mobile dock, like the toasts. */
+    bottom: calc(
+        var(--space-4, 16px) +
+        var(--bottom-safe-inset, 0px) +
+        var(--mobile-dock-height, 0px)
+    );
+    left: var(--space-4, 16px);
+    /* Just under the toasts: the confirmation toast must stay visible. */
+    z-index: calc(var(--z-toast) - 1);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    max-width: 32rem;
+    margin-inline: auto;
+    padding: var(--space-5, 20px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    background-color: var(--core-card);
+    box-shadow:
+        0 8px 32px oklch(0 0 0 / 0.18),
+        0 2px 8px oklch(0 0 0 / 0.06);
+    font-family: var(--font-sans);
+}
+
+@media (min-width: 768px) {
+    /* Desktop: bottom-left, so it never sits under the bottom-right toast column. */
+    .prompt {
+        right: auto;
+        bottom: var(--space-6, 24px);
+        left: var(--space-6, 24px);
+        width: 28rem;
+        margin-inline: 0;
+    }
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    color: var(--brand-primary);
+}
+
+.title {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.body {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+}
+
+.revokeBtn {
+    composes: primary from "../../account/AccountButton.module.css";
+}
+
+.keepBtn {
+    composes: secondary from "../../account/AccountButton.module.css";
+}
+
+.link {
+    align-self: flex-start;
+    font-size: 0.875rem;
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
+.error {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-destructive, var(--core-foreground));
+}

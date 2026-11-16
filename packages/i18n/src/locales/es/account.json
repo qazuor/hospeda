@@ -398,7 +398,18 @@
             "disconnectFailed": "No pudimos desconectar el asistente. Probá de nuevo."
         },
         "paused": "La conexión de nuevos asistentes está pausada por ahora. Podés desconectar los que ya tenés.",
-        "unavailable": "La conexión de asistentes de IA todavía no está disponible."
+        "unavailable": "La conexión de asistentes de IA todavía no está disponible.",
+        "resetReview": {
+            "title": "Asistentes de IA conectados",
+            "body": "Cambiaste tu contraseña. Tenés {{count}} asistentes de IA conectados desde antes. ¿Querés desconectarlos también?",
+            "body_one": "Cambiaste tu contraseña. Tenés {{count}} asistente de IA conectado desde antes. ¿Querés desconectarlo también?",
+            "body_other": "Cambiaste tu contraseña. Tenés {{count}} asistentes de IA conectados desde antes. ¿Querés desconectarlos también?",
+            "revoke": "Desconectar asistentes",
+            "keep": "Mantenerlos",
+            "link": "Ver mis asistentes de IA",
+            "revoked": "Desconectamos tus asistentes de IA.",
+            "failed": "No pudimos guardar tu respuesta. Probá de nuevo."
+        }
     },
     "subscription": {
         "signupTakenBy": {

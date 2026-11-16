@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    buildAiConnectionsResetReviewUrl,
     buildAiConnectionsUrl,
     parseAiConnections,
     resolveAiAssistantsVisibility
@@ -43,7 +44,41 @@ describe('parseAiConnections', () => {
         if (result.ok) {
             expect(result.items[0]?.connectedAt).toBeInstanceOf(Date);
             expect(result.items[0]?.lastUsedAt).toBeNull();
+            expect(result.pendingResetReview).toBeNull();
         }
+    });
+
+    it('tolerates an API that does not send pendingResetReview yet', () => {
+        const result = parseAiConnections({ body: { success: true, data: { items: [item] } } });
+        expect(result.ok && result.pendingResetReview).toBeNull();
+    });
+
+    it('carries the pending post-reset review', () => {
+        const result = parseAiConnections({
+            body: {
+                success: true,
+                data: {
+                    items: [item],
+                    pendingResetReview: {
+                        resetAt: '2026-11-10T12:00:00.000Z',
+                        connectionsBeforeReset: [item]
+                    }
+                }
+            }
+        });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.pendingResetReview?.resetAt).toBeInstanceOf(Date);
+            expect(result.pendingResetReview?.connectionsBeforeReset).toHaveLength(1);
+        }
+    });
+
+    it('rejects a malformed pendingResetReview', () => {
+        const body = {
+            success: true,
+            data: { items: [item], pendingResetReview: { resetAt: 'nope' } }
+        };
+        expect(parseAiConnections({ body }).ok).toBe(false);
     });
 
     it.each([
@@ -53,6 +88,14 @@ describe('parseAiConnections', () => {
         ['bad item', { success: true, data: { items: [{ clientId: '' }] } }]
     ])('rejects %s', (_label, body) => {
         expect(parseAiConnections({ body }).ok).toBe(false);
+    });
+});
+
+describe('buildAiConnectionsResetReviewUrl', () => {
+    it('targets the reset-review sub-resource and tolerates a trailing slash', () => {
+        expect(buildAiConnectionsResetReviewUrl({ apiUrl: 'https://api.x/' })).toBe(
+            'https://api.x/api/v1/protected/ai-connections/reset-review'
+        );
     });
 });
 
