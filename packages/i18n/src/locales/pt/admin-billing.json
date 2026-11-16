@@ -2294,6 +2294,7 @@
         "invalidId": "Assinatura não encontrada.",
         "loading": "Carregando opções…",
         "error": "Não foi possível concluir a alteração. Confira o status e tente novamente.",
+        "payerEmailUndeclared": "Esta assinatura não tem um e-mail de pagador declarado, então o Mercado Pago não pode abrir o checkout. Peça ao cliente que mude de plano em “Minha assinatura”, onde ele declara o e-mail.",
         "unavailable": "A assinatura não está ativa.",
         "customer": "Cliente: {customer}",
         "current": "Plano atual: {plan}",

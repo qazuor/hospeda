@@ -2294,6 +2294,7 @@
         "invalidId": "La suscripción no existe.",
         "loading": "Cargando opciones…",
         "error": "No se pudo completar el cambio. Revisá el estado y volvé a intentar.",
+        "payerEmailUndeclared": "Esta suscripción no tiene un correo de pagador declarado, así que Mercado Pago no puede abrir el checkout. Pedile al cliente que cambie de plan desde «Mi suscripción», donde declara el correo.",
         "unavailable": "La suscripción no está activa.",
         "customer": "Cliente: {customer}",
         "current": "Plan actual: {plan}",

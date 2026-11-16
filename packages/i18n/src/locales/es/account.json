@@ -543,6 +543,9 @@
                 "confirmHeading": "Así funciona el cambio",
                 "confirmCheckout": "Si el cambio requiere autorización, vas a ir al checkout de Mercado Pago; tu plan actual sigue hasta que autorices.",
                 "confirmScheduled": "Si el cambio se programa, vas a ver la fecha exacta desde la que rige el plan nuevo.",
+                "payerEmailLabel": "Correo del pagador en Mercado Pago",
+                "payerEmailHint": "Lo declarás vos: es la cuenta de Mercado Pago que va a autorizar el cambio. No está confirmado por el proveedor.",
+                "payerEmailInvalid": "Ingresá un correo válido del pagador.",
                 "confirm": "Confirmar cambio",
                 "back": "Volver",
                 "pending": "Procesando el cambio...",
@@ -563,6 +566,7 @@
                     "same": "Ya tenés esa opción de facturación.",
                     "scheduled": "Ya tenés un cambio de plan programado.",
                     "providerNotApplied": "Mercado Pago no pudo aplicar el cambio. Tu plan actual sigue vigente. Intentá de nuevo más tarde.",
+                    "payerEmail": "Falta el correo del pagador. Ingresalo y volvé a intentar.",
                     "other": "No se puede hacer este cambio ahora. Revisá tu suscripción e intentá de nuevo."
                 }
             },
