@@ -285,11 +285,16 @@ root.
     has `inherits_tourist_vip`.
   - It is wired through `apps/api/src/routes/billing-subscription/tourist-vip-inheritance.ts`.
   - `sweepInheritedTouristVips` (in the `subscription-window-expiry` cron) sweeps it.
-- **`featuredByEntitlement` currently has NO writer.**
-  - The cron and the add-on grant table are gone.
-  - `syncFeaturedByEntitlementFor{Owner,Accommodation}`
+- **`featuredByEntitlement` is written by `syncListingFeatured` (HOS-1718).**
+  - The writer is `packages/verticals/src/featured/sync-listing-featured.ts`. It runs from the
+    coverage-notice listener (`apps/api/src/utils/listing-featured/featured-sync-listener.ts`,
+    wired in `apps/api/src/index.ts`) and from the `listing-coverage-reconciler` cron
+    (`reconciler-ports.ts`).
+  - The legacy `syncFeaturedByEntitlementFor{Owner,Accommodation}`
     (`packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts`)
-    have no production caller. Their line 1 says "transitional until V3 (HOS-1357)".
+    still has no production caller and is dead code.
+  - One-time (`UNA_VEZ`) visibility add-ons are hidden from the web purchase page
+    (`apps/web/src/lib/billing/addon-purchase.ts`) until HOS-2094.
   - Public reads serialize `isFeatured` from that flag alone, through
     `resolvePublicIsFeatured` (`apps/api/src/utils/accommodation-featured.ts`).
   - There is still no owner-facing toggle (HOS-929).
