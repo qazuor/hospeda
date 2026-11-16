@@ -311,6 +311,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * Mercado Pago traffic governor's kill switch and rollout mode (HOS-1999).
  * 276 + 1 = 277.
  *
+ * +4 = HOSPEDA_MCP_ENABLED, HOSPEDA_MCP_RESOURCE_URL,
+ * HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS and HOSPEDA_MCP_RATE_LIMIT_MAX (features
+ * category, api only) — the MCP server's switch, audience URL and rate limit
+ * (HOS-2184). 277 + 4 = 281.
+ *
  * +4 = HOSPEDA_UMAMI_URL, HOSPEDA_UMAMI_WEBSITE_ID_WEB,
  * HOSPEDA_UMAMI_WEBSITE_ID_ADMIN, HOSPEDA_UMAMI_API_KEY (monitoring category,
  * api only) — server-side Umami ingestion and stats reads (HOS-2119 T-011).
@@ -327,8 +332,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * -6 = HOSPEDA_POSTHOG_KEY/HOST (api-config), PUBLIC_POSTHOG_KEY/HOST
  * (client-web), VITE_POSTHOG_KEY/HOST (client-admin) - PostHog removed
  * (HOS-2119 T-060). 285 - 6 = 279.
+ *
+ * Merge of HOS-2184 (+4 MCP and the rest of staging, 287 with PostHog) and
+ * HOS-2119 (+8 Umami, -6 PostHog): 287 - 6 + 8 = 289.
  */
-const EXPECTED_VAR_COUNT = 279;
+const EXPECTED_VAR_COUNT = 289;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

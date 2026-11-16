@@ -1,5 +1,18 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, notInArray, or } from 'drizzle-orm';
+import {
+    and,
+    desc,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    lt,
+    lte,
+    ne,
+    notInArray,
+    or,
+    sql
+} from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type COURTESY_CLOSE_REASONS,
@@ -118,6 +131,12 @@ export interface PendingAuthorizationTransitionInput {
     readonly subscriptionId: string;
     readonly now: Date;
     readonly tx?: DrizzleClient;
+    /**
+     * HOS-2223: the provider's next payment date from the re-read that authorized S2.
+     * Written only forward (`GREATEST`), so it never undoes a later date P1 already wrote.
+     * Omitted or null leaves the column untouched.
+     */
+    readonly nextChargeAt?: Date | null;
 }
 
 /** Input for S39/S40's conditional close of a pending card signup attempt. */
@@ -303,14 +322,23 @@ export class SubscriptionModel {
             .limit(input.limit);
     }
 
-    /** S2 persistence: activates only a still-pending row, returning false when another actor moved it. */
+    /** S2 persistence: activates only a still-pending row, returning false when another actor moved it; copies the provider's next charge date forward when given (HOS-2223). */
     async activatePendingAuthorization(
         input: PendingAuthorizationTransitionInput
     ): Promise<boolean> {
         const db = input.tx ?? getDb();
         const rows = await db
             .update(subscriptions)
-            .set({ status: 'ACTIVE', updatedAt: input.now })
+            .set({
+                status: 'ACTIVE',
+                updatedAt: input.now,
+                ...(input.nextChargeAt
+                    ? {
+                          // GREATEST ignores NULL: a missing date takes the provider's.
+                          nextChargeAt: sql`greatest(${subscriptions.nextChargeAt}, ${input.nextChargeAt.toISOString()}::timestamptz)`
+                      }
+                    : {})
+            })
             .where(
                 and(
                     eq(subscriptions.id, input.subscriptionId),
@@ -324,9 +352,16 @@ export class SubscriptionModel {
     /**
      * HOS-1685: the sweep's copy of the provider's next payment date; a conditional write that
      * never moves a row out of `ACTIVE` and never rewrites an equal value (B11.md:250).
+     *
+     * HOS-2223: it never writes a stale read either, meaning a provider date that is EARLIER
+     * than the stored one AND already elapsed (`<= now`). Right after the first charge the
+     * provider can still report the first-charge instant (PA-3), and copying it would undo the
+     * date P1 advanced. A later date, or an earlier one still in the future (the provider
+     * correcting its own anchor), keeps winning: the sweep still aligns the row with MP.
      */
     async syncNextChargeAt(input: SyncNextChargeAtInput): Promise<boolean> {
         const db = input.tx ?? getDb();
+        const providerDateIsFuture = input.nextChargeAt.getTime() > input.now.getTime();
         const rows = await db
             .update(subscriptions)
             // Same shape as the other writers here; the global updated_at trigger
@@ -338,7 +373,9 @@ export class SubscriptionModel {
                     eq(subscriptions.status, 'ACTIVE'),
                     or(
                         isNull(subscriptions.nextChargeAt),
-                        ne(subscriptions.nextChargeAt, input.nextChargeAt)
+                        providerDateIsFuture
+                            ? ne(subscriptions.nextChargeAt, input.nextChargeAt)
+                            : lt(subscriptions.nextChargeAt, input.nextChargeAt)
                     )
                 )
             )

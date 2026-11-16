@@ -240,10 +240,50 @@ describe('HOS-2217 structured answer checks', () => {
         expect(result.hallucinatedFields).toEqual(['draft']);
     });
 
+    /** A strict-mode answer: every model-facing key present, `null` unless given (HOS-2250). */
+    const strictImportAnswer = (
+        task: TaskCase,
+        values: Record<string, unknown>
+    ): Record<string, unknown> => {
+        const props = (task.outputSchema?.properties ?? {}) as Record<string, unknown>;
+        return { ...Object.fromEntries(Object.keys(props).map((k) => [k, null])), ...values };
+    };
+
+    it('accommodation_import: the stored schema is strict (all keys required, closed)', () => {
+        // Arrange
+        const schema = taskCase('accommodation_import-full-listing').outputSchema as {
+            properties: Record<string, unknown>;
+            required: string[];
+            additionalProperties: unknown;
+        };
+
+        // Assert
+        expect([...schema.required].sort()).toEqual(Object.keys(schema.properties).sort());
+        expect(schema.additionalProperties).toBe(false);
+    });
+
+    it('accommodation_import: a renamed-key answer fails schema validity and production (HOS-2250)', () => {
+        // Arrange: the measured lenient-mode failure (maxGuests/amenities/pricePerNight).
+        const task = taskCase('accommodation_import-full-listing');
+        const object = {
+            name: 'Cabañas El Ceibo',
+            maxGuests: 4,
+            amenities: ['Pileta'],
+            pricePerNight: 60000
+        };
+
+        // Act
+        const result = checkTaskAnswer({ task, text: JSON.stringify(object), object });
+
+        // Assert
+        expect(result.schemaValid).toBe(false);
+        expect(result.productionAccepts).toBe(false);
+    });
+
     it('accommodation_import: invented coordinates and an ungrounded phone fail', () => {
         // Arrange
         const task = taskCase('accommodation_import-full-listing');
-        const object = {
+        const object = strictImportAnswer(task, {
             name: 'Cabañas El Ceibo',
             type: 'cabin',
             capacity: 4,
@@ -255,12 +295,13 @@ describe('HOS-2217 structured answer checks', () => {
             amenityNames: ['Pileta', 'Parrilla', 'WiFi'],
             phone: '+54 9 111 222-3333',
             latitude: -32.48
-        };
+        });
 
         // Act
         const result = checkTaskAnswer({ task, text: JSON.stringify(object), object });
 
         // Assert
+        expect(result.schemaValid).toBe(true);
         expect(result.checks['field: no invented coordinates']).toBe(false);
         expect(result.checks['grounded: phone']).toBe(false);
         expect(result.checks['grounded: name']).toBe(true);

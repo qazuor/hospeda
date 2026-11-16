@@ -12,13 +12,13 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { countCreatedSinceQuery } from './conversation-counts.query.ts';
 
 /**
  * ConversationModel provides data-access methods for the `conversations` table.
  *
- * Conversations represent a 1:1 messaging thread between a guest and an
- * accommodation owner. This model encapsulates all query logic and ensures
- * soft-delete semantics are applied consistently.
+ * Conversations are 1:1 messaging threads between a guest and an accommodation owner. This
+ * model encapsulates all query logic and applies soft-delete semantics consistently.
  *
  * @example
  * ```ts
@@ -486,6 +486,11 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
             logError(this.entityName, 'getMonthlyInquiriesByOwnerId', ctx, err);
             throw new DbError(this.entityName, 'getMonthlyInquiriesByOwnerId', ctx, err.message);
         }
+    }
+
+    /** Counts non-deleted conversations on the given accommodations created at or after `since`. */
+    countCreatedSince(ids: readonly string[], since: Date, tx?: DrizzleClient): Promise<number> {
+        return countCreatedSinceQuery({ db: this.getClient(tx), ids, since });
     }
 }
 

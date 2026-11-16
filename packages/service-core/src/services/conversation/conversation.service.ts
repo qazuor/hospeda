@@ -32,6 +32,7 @@ import {
     ConversationModel,
     conversations,
     eq,
+    findOwnedConversationById,
     getDb,
     isNotNull,
     isNull,
@@ -47,6 +48,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { getLocalDayWindow } from '@repo/utils';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { inArray } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
@@ -54,6 +56,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { entityNotFoundError } from '../../utils/not-found.js';
 import { createSystemActor } from '../../utils/system-actor.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { AccessTokenService } from './access-token.service.js';
@@ -139,7 +142,8 @@ const GetThreadInputSchema = z.object({
     conversationId: z.string().uuid(),
     actorSide: z.enum(['GUEST', 'OWNER']),
     cursor: z.date().optional(),
-    limit: z.number().int().min(1).max(MAX_THREAD_LIMIT).optional()
+    limit: z.number().int().min(1).max(MAX_THREAD_LIMIT).optional(),
+    markAsRead: z.boolean().optional()
 });
 
 const ListForGuestInputSchema = z.object({
@@ -156,7 +160,8 @@ const ListForOwnerInputSchema = z.object({
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(DEFAULT_INBOX_PAGE_SIZE),
     status: z.string().optional(),
-    search: z.string().optional()
+    search: z.string().optional(),
+    accommodationId: z.string().uuid().optional()
 });
 
 const UpdateStatusInputSchema = z.object({
@@ -737,12 +742,14 @@ export class ConversationService extends BaseService {
     /**
      * Loads a conversation thread with cursor-based pagination.
      *
-     * Fetches `limit + 1` messages to determine `hasMore`. Updates the
-     * actor-side `lastReadAt` timestamp and cancels the pending notification
-     * schedule for the actor's recipient side.
+     * Fetches `limit + 1` messages to determine `hasMore`. Unless
+     * `markAsRead` is `false`, updates the actor-side `lastReadAt` timestamp and
+     * cancels the pending notification schedule for the actor's recipient side.
      *
      * @param actor - Actor requesting the thread.
-     * @param input - `{ conversationId, actorSide, cursor?, limit? }`.
+     * @param input - `{ conversationId, actorSide, cursor?, limit?, markAsRead? }`.
+     *   `markAsRead` defaults to `true`; pass `false` for a pure read (no
+     *   read receipt, no notification cancel).
      * @param ownerAccommodationIds - IDs of accommodations owned by the actor (permission check).
      * @param ctx - Optional service context.
      * @returns ServiceOutput wrapping `{ conversation, messages, hasMore }`.
@@ -759,6 +766,7 @@ export class ConversationService extends BaseService {
             actorSide: 'GUEST' | 'OWNER';
             cursor?: Date;
             limit?: number;
+            markAsRead?: boolean;
         },
         ownerAccommodationIds: readonly string[],
         ctx?: ServiceContext
@@ -802,35 +810,95 @@ export class ConversationService extends BaseService {
                     : loadedMessages;
                 const pageMessages = [...recentMessages].reverse();
 
-                // Update read receipt and cancel notification schedule
-                await withServiceTransaction(async (txCtx) => {
-                    const now = new Date();
-                    const readPatch =
-                        validated.actorSide === 'GUEST'
-                            ? ({ lastReadAtByGuest: now } as Partial<SelectConversation>)
-                            : ({ lastReadAtByOwner: now } as Partial<SelectConversation>);
-
-                    // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                    await txCtx
-                        .tx!.update(conversations)
-                        .set(readPatch)
-                        .where(eq(conversations.id, validated.conversationId));
-
-                    const recipientSide =
-                        validated.actorSide === 'OWNER'
-                            ? NotificationRecipientSideEnum.OWNER
-                            : NotificationRecipientSideEnum.GUEST;
-
-                    await this.notificationScheduleService.cancelForRecipient(
-                        this._buildSystemActor(),
-                        { conversationId: validated.conversationId, recipientSide },
-                        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                        txCtx.tx!
-                    );
-                });
+                // Update read receipt and cancel notification schedule, unless the
+                // caller asked for a pure read (`markAsRead: false`).
+                if (validated.markAsRead !== false) {
+                    await this._markRead({
+                        conversationId: validated.conversationId,
+                        side: validated.actorSide === 'GUEST' ? 'GUEST' : 'OWNER'
+                    });
+                }
 
                 return { conversation, messages: pageMessages, hasMore };
             }
+        });
+    }
+
+    /**
+     * Marks a conversation as read by its owner: stamps `lastReadAtByOwner`
+     * and cancels the owner's pending notification schedule, exactly what
+     * `getThread` does for the OWNER side when it is not a pure read.
+     *
+     * Used by channels that read a thread without marking it (`markAsRead:
+     * false`) and mark it explicitly after a deliberate action, such as a
+     * reply sent through the assistant (HOS-2184).
+     *
+     * No ownership check is performed here (same contract as
+     * `findOwnedConversation`): callers must gate ownership first.
+     *
+     * @param actor - Actor performing the request.
+     * @param input - `{ conversationId }`.
+     * @param ctx - Optional service context.
+     * @returns ServiceOutput wrapping `{ conversationId }`.
+     *
+     * @example
+     * ```ts
+     * await svc.markReadByOwner(actor, { conversationId });
+     * ```
+     */
+    public async markReadByOwner(
+        actor: Actor,
+        input: { readonly conversationId: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ readonly conversationId: string }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markReadByOwner',
+            input: { actor, ...input },
+            schema: z.object({ conversationId: z.string().min(1) }),
+            ctx,
+            execute: async (validated) => {
+                await this._markRead({ conversationId: validated.conversationId, side: 'OWNER' });
+                return { conversationId: validated.conversationId };
+            }
+        });
+    }
+
+    /**
+     * Stamps the side's `lastReadAt*` column and cancels that side's pending
+     * notification schedule, in one transaction. Shared by `getThread` and
+     * `markReadByOwner`.
+     */
+    private async _markRead({
+        conversationId,
+        side
+    }: {
+        readonly conversationId: string;
+        readonly side: 'GUEST' | 'OWNER';
+    }): Promise<void> {
+        await withServiceTransaction(async (txCtx) => {
+            const now = new Date();
+            const readPatch =
+                side === 'GUEST'
+                    ? ({ lastReadAtByGuest: now } as Partial<SelectConversation>)
+                    : ({ lastReadAtByOwner: now } as Partial<SelectConversation>);
+
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            await txCtx
+                .tx!.update(conversations)
+                .set(readPatch)
+                .where(eq(conversations.id, conversationId));
+
+            const recipientSide =
+                side === 'OWNER'
+                    ? NotificationRecipientSideEnum.OWNER
+                    : NotificationRecipientSideEnum.GUEST;
+
+            await this.notificationScheduleService.cancelForRecipient(
+                this._buildSystemActor(),
+                { conversationId, recipientSide },
+                // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                txCtx.tx!
+            );
         });
     }
 
@@ -902,7 +970,11 @@ export class ConversationService extends BaseService {
      * scope) before calling this method.
      *
      * @param actor - Actor performing the request (owner or admin).
-     * @param input - `{ userId, accommodationIds, page, pageSize, status?, search? }`.
+     * `accommodationId` narrows the scope to one accommodation. It is
+     * INTERSECTED with `accommodationIds`, never added to it: an id outside
+     * the caller's scope yields an empty page, not another owner's data.
+     *
+     * @param input - `{ userId, accommodationIds, page, pageSize, status?, search?, accommodationId? }`.
      * @param ctx - Optional service context.
      * @returns ServiceOutput wrapping `ConversationListResult`.
      *
@@ -920,6 +992,7 @@ export class ConversationService extends BaseService {
             pageSize?: number;
             status?: string;
             search?: string;
+            accommodationId?: string;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<ConversationListResult>> {
@@ -929,7 +1002,13 @@ export class ConversationService extends BaseService {
             schema: ListForOwnerInputSchema,
             ctx,
             execute: async (validated) => {
-                if (validated.accommodationIds.length === 0) {
+                const scopedIds =
+                    validated.accommodationId === undefined
+                        ? validated.accommodationIds
+                        : validated.accommodationIds.filter(
+                              (id) => id === validated.accommodationId
+                          );
+                if (scopedIds.length === 0) {
                     return {
                         items: [],
                         total: 0,
@@ -939,7 +1018,7 @@ export class ConversationService extends BaseService {
                 }
 
                 const { items, total } = await this.conversationModel.listByAccommodationIds(
-                    validated.accommodationIds,
+                    scopedIds,
                     {
                         page: validated.page,
                         pageSize: validated.pageSize,
@@ -953,6 +1032,49 @@ export class ConversationService extends BaseService {
                     page: validated.page,
                     pageSize: validated.pageSize
                 };
+            }
+        });
+    }
+
+    /**
+     * Lightweight ownership lookup: returns the conversation only when it
+     * exists AND belongs to one of the actor's own accommodations.
+     *
+     * Deliberately free of side effects (unlike `getThread` it does not touch
+     * `lastReadAtByOwner` nor cancel notifications), so routes can use it as a
+     * pure authorization gate. A foreign or missing conversation yields `null`
+     * so callers can answer 404 without revealing the id exists
+     * (anti-enumeration). No permission check is performed here: callers
+     * gate on their own permission first.
+     *
+     * @param actor - Actor whose accommodations define ownership (`actor.id`).
+     * @param input - `{ conversationId }`.
+     * @param ctx - Optional service context.
+     * @returns ServiceOutput wrapping the owned conversation, or `null`.
+     *
+     * @example
+     * ```ts
+     * const { data } = await svc.findOwnedConversation(actor, { conversationId });
+     * if (!data) return notFound();
+     * ```
+     */
+    public async findOwnedConversation(
+        actor: Actor,
+        input: { readonly conversationId: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<SelectConversation | null>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'findOwnedConversation',
+            input: { actor, ...input },
+            schema: z.object({ conversationId: z.string().min(1) }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                const db = (execCtx?.tx as DrizzleClient | undefined) ?? getDb();
+                return findOwnedConversationById({
+                    db,
+                    conversationId: validated.conversationId,
+                    ownerId: validatedActor.id
+                });
             }
         });
     }
@@ -1729,6 +1851,60 @@ export class ConversationService extends BaseService {
                     ownerAccommodationIds,
                     execCtx?.tx
                 );
+            }
+        });
+    }
+
+    /**
+     * Number of inquiries ONE accommodation of the authenticated host received
+     * in the last `windowDays` local calendar days, today included (HOS-2184
+     * `get_listing_stats`). The window starts at local midnight of the first
+     * day, like the entity-view daily series, so the figure lines up with the
+     * views of the same period. Soft-deleted conversations are excluded.
+     *
+     * Requires `CONVERSATION_VIEW_OWN`. The accommodation must be among the
+     * actor's own non-deleted ones, otherwise NOT_FOUND (a foreign and a missing
+     * id answer the same).
+     *
+     * @param actor - Authenticated host.
+     * @param input - The accommodation and the window length in days (1 to 90).
+     * @param ctx - Optional service context.
+     * @returns `{ count }`.
+     */
+    public async countInquiriesForOwnAccommodation(
+        actor: Actor,
+        input: { readonly accommodationId: string; readonly windowDays: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ readonly count: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'countInquiriesForOwnAccommodation',
+            input: { actor, ...input },
+            schema: z.object({
+                accommodationId: z.string().uuid(),
+                windowDays: z.number().int().min(1).max(90)
+            }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                if (!validatedActor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: CONVERSATION_VIEW_OWN required to count inquiries'
+                    );
+                }
+                const ownedIds = await this.accommodationModel.findIdsByOwnerId(
+                    validatedActor.id,
+                    execCtx?.tx
+                );
+                if (!ownedIds.includes(validated.accommodationId)) {
+                    throw entityNotFoundError({ entityName: 'accommodation' });
+                }
+                const { windowStart } = getLocalDayWindow({ windowDays: validated.windowDays });
+                const count = await this.conversationModel.countCreatedSince(
+                    [validated.accommodationId],
+                    windowStart,
+                    execCtx?.tx
+                );
+                return { count };
             }
         });
     }

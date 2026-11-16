@@ -142,6 +142,63 @@ interface RouteMutationEntry extends BaseAuditEntry {
     readonly requestBody?: unknown;
 }
 
+/**
+ * Audit entry for one MCP tool call (HOS-2184). Built by `recordMcpToolCall`.
+ * Top-level fields land in the persisted `data` payload; `resourceType` and
+ * `resourceId` feed the `targetId` column.
+ */
+interface McpToolCallEntry extends BaseAuditEntry {
+    readonly auditEvent: typeof AuditEventType.MCP_TOOL_CALL;
+    /** Hospeda user the AI client acted for. */
+    readonly actorId: string;
+    /** OAuth `client_id` of the AI client. */
+    readonly clientId: string;
+    /** MCP tool name. */
+    readonly tool: string;
+    /** Entity type the call targeted, when it targets one. */
+    readonly resourceType?: string;
+    /** Entity id the call targeted, when it targets one. */
+    readonly resourceId?: string;
+    /** Result of the call. */
+    readonly outcome: 'success' | 'denied' | 'error';
+    /** Error code when the outcome is `denied` or `error`. */
+    readonly errorCode?: string;
+    /** Length of the user content the call carried; never the content itself. */
+    readonly contentLength?: number;
+    /** Scalar extras the tool contributed (e.g. which step of a two-step tool). */
+    readonly details?: Readonly<Record<string, string | number | boolean>>;
+}
+
+/**
+ * Audit entry for a user disconnecting an AI client (HOS-2184 T-026).
+ * `resourceType` + `resourceId` feed the `targetId` column as
+ * `oauth_client:<clientId>`.
+ */
+interface McpConnectionRevokedEntry extends BaseAuditEntry {
+    readonly auditEvent: typeof AuditEventType.MCP_CONNECTION_REVOKED;
+    /** Hospeda user who revoked, always the owner of the connection. */
+    readonly actorId: string;
+    /** Always `oauth_client`. */
+    readonly resourceType: 'oauth_client';
+    /** OAuth `client_id` that was disconnected. */
+    readonly resourceId: string;
+    /**
+     * Rows removed. The client name is deliberately not recorded: it is
+     * client-supplied, untrusted text.
+     */
+    readonly removed: {
+        readonly consents: number;
+        readonly refreshTokens: number;
+        readonly accessTokens: number;
+    };
+    /**
+     * Why the connection was removed when it was not a direct disconnect.
+     * `PASSWORD_RESET_REVIEW`: the user chose to disconnect the assistants that
+     * predate their password reset.
+     */
+    readonly reason?: 'PASSWORD_RESET_REVIEW';
+}
+
 /** Discriminated union of all audit entry types */
 export type AuditEntry =
     | AuthLoginFailedEntry
@@ -154,7 +211,9 @@ export type AuditEntry =
     | PermissionChangeEntry
     | SessionSignoutEntry
     | UserAdminMutationEntry
-    | RouteMutationEntry;
+    | RouteMutationEntry
+    | McpToolCallEntry
+    | McpConnectionRevokedEntry;
 
 /**
  * Audit event types that represent critical security events.

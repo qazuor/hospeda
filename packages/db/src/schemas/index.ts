@@ -23,6 +23,7 @@ export * from './integration/index.ts';
 export * from './listing/index.ts';
 export * from './newsletter/index.ts';
 export * from './notification-log/index.ts';
+export * from './oauth-provider/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './partner/index.ts';
 export * from './platform/index.ts';

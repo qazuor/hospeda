@@ -155,6 +155,13 @@ export const SET_PASSWORD_SEGMENT = 'agregar-contrasena' as const;
 export const CHANGE_PASSWORD_SEGMENT = 'cambiar-contrasena' as const;
 
 /**
+ * Path (under /{locale}/) of the "AI assistants" panel inside "Mi cuenta",
+ * where a user reviews and disconnects MCP connections (HOS-2184 T-028).
+ * The OAuth consent page links here before the page exists.
+ */
+export const AI_ASSISTANTS_PATH = 'mi-cuenta/asistentes-ia' as const;
+
+/**
  * Role values that skip the profile completion + set-password checks.
  * Admins and super-admins bypass the flow per spec §3.5.
  */

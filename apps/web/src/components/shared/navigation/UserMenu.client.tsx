@@ -36,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitcher.client';
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
 import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/umami-client';
 import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
@@ -60,6 +61,12 @@ export type UserMenuUser = AuthMeUser;
 export type UserMenuVariant = 'hero' | 'scrolled';
 
 export interface UserMenuProps {
+    /**
+     * Whether the MCP feature is on, known by the server that mounts the menu.
+     * Omit when unknown: the "Asistentes de IA" entry then follows the
+     * connection-count rule (HOS-2184 T-028).
+     */
+    readonly mcpEnabled?: boolean;
     /**
      * Initial user data from server. Pass `null` for guest visitors.
      * The component still hits `/auth/me` on mount to refine permissions
@@ -173,7 +180,8 @@ export function UserMenu({
     locale,
     currentPath,
     variant = 'scrolled',
-    adminPanelUrl
+    adminPanelUrl,
+    mcpEnabled
 }: UserMenuProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
@@ -300,9 +308,14 @@ export function UserMenu({
     // the gated business shortcut until the real list resolves. `dashboard`,
     // `favorites`, and `subscription` have no `requiredPermission`, so they
     // stay visible for any authenticated user regardless of loading state.
+    const showAiAssistants = useAiAssistantsEntry({ mcpEnabled, enabled: user !== null });
     const avatarNav = useMemo(
-        () => getCuratedAccountNav({ permissions: permissions ?? [] }),
-        [permissions]
+        () =>
+            getCuratedAccountNav({
+                permissions: permissions ?? [],
+                includeAiAssistants: showAiAssistants
+            }),
+        [permissions, showAiAssistants]
     );
 
     // ── Admin panel session item ──────────────────────────────────────────

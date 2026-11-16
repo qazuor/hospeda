@@ -104,6 +104,19 @@ export const UserSettingsSchema = z.object({
      */
     languageAdmin: LanguageEnumSchema.default('es').optional(),
 
+    /**
+     * When the user last reset their password through the forgot-password flow
+     * while they had AI assistants connected (HOS-2184), as an ISO-8601
+     * string. It is the "ask on next login" marker: the web asks once whether
+     * to also disconnect the assistants connected before this instant, and the
+     * answer sets it back to `null`.
+     *
+     * Written only by the server (the reset hook and the ai-connections
+     * routes). It is deliberately absent from the web and admin PATCH schemas,
+     * which are `.strict()`, so a client cannot forge or clear it.
+     */
+    aiConnectionsPasswordResetAt: z.string().datetime().nullable().optional(),
+
     /** Notification channel preferences. Optional so that legacy stored JSONB without this key still parses (BETA-36). */
     notifications: UserNotificationsSchema.optional(),
 

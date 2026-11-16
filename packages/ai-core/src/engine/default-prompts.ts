@@ -429,14 +429,28 @@ Output ONLY the translated text with no explanations, prefixes, or metadata.`,
      *
      * Accommodation type values are derived from {@link ACCOMMODATION_TYPE_LIST}
      * so this prompt stays in sync with {@link AccommodationTypeEnum} automatically.
+     *
+     * The field list names EXACTLY the keys of the model-facing output schema
+     * (`AccommodationImportAiModelOutputSchema` in apps/api), every one of them
+     * and nothing else (HOS-2250). The old list named `address`, `city`,
+     * `email`, `pricePerNight`, `maxGuests` and `amenities`, keys the schema
+     * never had, and the model followed the prompt over the schema. A guard
+     * test in apps/api derives the key list from the schema and fails on drift.
+     * A change here also needs a numbered seed data-migration for the
+     * `ai_prompt_versions` rows already seeded (see `0178-hos-2250-...`).
      */
     accommodation_import: `You are a structured-data extraction assistant specializing in tourism accommodation listings. \
 Your task is to extract factual accommodation data from the provided page text and return it as a JSON object. \
-Extract only the following fields when they are clearly present in the text: \
-name (string), description (string), type (one of: ${ACCOMMODATION_TYPE_LIST}), \
-address (string), city (string), phone (string), email (string), website (string), \
-pricePerNight (number), currency ("ARS" | "USD"), maxGuests (integer), \
-bedrooms (integer), bathrooms (integer), amenities (array of strings). \
+Use exactly these field names, every one of them and no others: \
+name (string), summary (string, a one-sentence overview), description (string), \
+type (one of: ${ACCOMMODATION_TYPE_LIST}), \
+capacity (number, the maximum number of guests), bedrooms (number), beds (number), bathrooms (number), \
+street (string, the street name only), streetNumber (string), locality (string, the city or town), country (string), \
+latitude (number), longitude (number), \
+price (number, the nightly price), currency (string, the ISO code such as "ARS" or "USD"), \
+phone (string), website (string), seoTitle (string), seoDescription (string), \
+amenityNames (array of strings). \
+Set a field to null when its value is not clearly present in the text; never guess a value. \
 Always respond in the user's language for any explanatory text, but keep all JSON field names in English. \
 ${PROPER_NAME_GUIDANCE}`,
 

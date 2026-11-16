@@ -217,7 +217,7 @@ overall but fails one feature (say `accommodation_import` schema validity) is no
 | `translate` | `translateField`: URL placeholders + `buildTranslationPrompt` | proper names verbatim, placeholders intact once, no preamble, language, preserved literals |
 | `text_improve` | `buildTextImprovePrompt`, streamed | facts kept, nothing invented, no preamble, voseo, length |
 | `post_generate` | `buildPostGeneratePrompt`, `generateObject` | schema + production strict parse, HTML content, requested language, no invented figures |
-| `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`, `generateObject` (non-strict JSON schema) | field values, values grounded in the page text, no invented coordinates/contacts, reviews never copied |
+| `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`, `generateObject` (strict JSON schema since HOS-2250: every field required and nullable) | schema validity against that strict schema, production acceptance (`accommodationImportProductionAccepts`, equal to the SDK check plus the route's null-stripping parse), field values, values grounded in the page text, no invented coordinates/contacts, reviews never copied |
 | `faq_draft` | chat context + `buildFaqDraftRequest`, `generateObject`, `maxTokens` 1024 / temperature 0 fixed | `hasData` right (false on missing data), draft grounded and plain text, language |
 | `support` | none: no production route calls it today; engine defaults only | decline off-topic/injection, escalation, no invented policy, language |
 | `chat_answer_classifier` | `buildChatAnswerClassifierRequest`: fixed instruction, `maxTokens` 16 / temperature 0 / `reasoningEffort` `none` (wins over the variant effort), on the vertical's chat feature (its configured model); metered under its own key | the one-word output parsed like production (`parseAnswerVerdict` = `parseClassifierVerdict`) equals the expected verdict |
@@ -277,7 +277,13 @@ follow "Adding a feature or a case" below.
 | translate | 4.70 | 4.80 | 4.80 |
 | search reply (n=4) | 4.75 | 4.25 | 4.50 |
 
-`accommodation_import` all-pass: nano 25%, luna none 13%, luna low 100%. `chat_answer_classifier`: luna none 100%,
+`accommodation_import` all-pass: nano 25%, luna none 13%, luna low 100%. Those runs predate strict mode: the misses
+were renamed keys (`maxGuests`, `amenities`, `pricePerNight`, `address`) that the lenient parse dropped, which is why
+HOS-2250 moved the feature to strict structured outputs and rewrote both prompts to name exactly the schema keys
+and answer `null` for a missing field. Re-run 2026-11-16 after HOS-2250 (8 cases x 2 variants = 16 calls,
+US$0.0028): all-pass, schema validity and production acceptance 100% for both `gpt-6-luna|none` and
+`gpt-6-luna|low`. Only `none` left out a value the page implied (capacity from "para 2 a 6 personas"); `type`
+stays null on the English "Entire loft" page for both. `chat_answer_classifier`: luna none 100%,
 luna low 44% (5 of 9 empty: reasoning ate the 16-token cap).
 
 Decision: every feature on `gpt-6-luna`; `none` for chat, chat_experience, search, translate and post_generate; `low`

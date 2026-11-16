@@ -39,6 +39,7 @@ import type { AfterSubscriptionActivatedPorts } from '../subscription/after-acti
 import type { TouristVipInheritancePort } from '../subscription/cancel-inherited-tourist-vip.service.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
 import { declineFirstCharge } from '../subscription/decline-first-charge.service.js';
+import { providerNextChargeDate } from '../subscription/provider-next-charge-date.js';
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service.js';
 import {
     type CancellationSeenAnnotator,
@@ -345,7 +346,13 @@ export async function processProviderNotice(
             if (action.kind === 'NOOP') finalOutcome = 'NOOP';
             if (action.kind === 'S2') {
                 const changed = await activateAuthorizedPending(
-                    { row, now: ports.clock.now() },
+                    {
+                        row,
+                        now: ports.clock.now(),
+                        nextChargeAt: providerNextChargeDate({
+                            nextChargeAt: snapshot.nextChargeAt
+                        }).nextChargeAt
+                    },
                     { ...ports, successionCloser: closer }
                 );
                 if (!changed) continue;

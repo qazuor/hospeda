@@ -47,8 +47,15 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Error: ['en'],
     Partner: ['en'],
     Slug: ['en', 'pt'],
-    // Same word in Brazilian Portuguese (HOS-2192 location-exception screens).
+    // Spelled the same in Brazilian Portuguese (HOS-2184 AI assistants / consent).
+    Copiar: ['pt'],
+    Desconectar: ['pt'],
+    'Desconectar {{name}}': ['pt'],
     Cancelar: ['pt'],
+    Permitir: ['pt'],
+    'Conectando...': ['pt'],
+    'Cancelando...': ['pt'],
+    // Same word in Brazilian Portuguese (HOS-2192 location-exception screens).
     Conceder: ['pt'],
     Concedida: ['pt'],
     Motivo: ['pt'],

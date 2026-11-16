@@ -46,7 +46,39 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             // accidentally skip validation on the real getBySlug handler.
             // `routeOptions.skipValidation` is set inside the route handler, which
             // runs after this global middleware, so it cannot help here.
-            const exactPublicPaths = ['/robots.txt', '/api/v1/public/posts/slug/rss.xml'];
+            const exactPublicPaths = [
+                '/robots.txt',
+                '/api/v1/public/posts/slug/rss.xml',
+                // OAuth discovery documents (HOS-2184 T-006): fetched by third-party
+                // clients that send arbitrary Accept headers.
+                '/.well-known/oauth-protected-resource',
+                '/.well-known/oauth-protected-resource/mcp',
+                '/.well-known/oauth-authorization-server',
+                '/.well-known/oauth-authorization-server/api/auth',
+                '/.well-known/openid-configuration',
+                '/.well-known/openid-configuration/api/auth',
+                '/api/auth/.well-known/openid-configuration',
+                // OAuth machine endpoints (HOS-2184 T-029). Called server to server
+                // by the AI client's backend, not by a browser: RFC 6749 section 3.2
+                // makes the token endpoint (and RFC 7009 / 7662 the revoke and
+                // introspect ones) `application/x-www-form-urlencoded`, which the
+                // generic content-type check refuses, and such backends do not
+                // always send a User-Agent. Without this every code exchange
+                // answered 400 before Better Auth saw it. Matched exactly, so
+                // the rest of `/api/auth` keeps the generic validation; with the
+                // MCP flag off these paths do not exist and answer 404.
+                '/api/auth/oauth2/token',
+                '/api/auth/oauth2/revoke',
+                '/api/auth/oauth2/introspect',
+                '/api/auth/oauth2/register',
+                // MCP Streamable HTTP endpoint (HOS-2184 T-010). Its clients are
+                // third-party agents: the SDK validates Accept (406) and
+                // Content-Type (415) per the transport spec, a missing
+                // User-Agent must not refuse them, and a malformed Authorization
+                // header must reach mcpAuthMiddleware so it answers 401 with the
+                // WWW-Authenticate challenge instead of a 400.
+                '/mcp'
+            ];
             const isPublicPath =
                 publicPaths.some((publicPath) => path.startsWith(publicPath)) ||
                 exactPublicPaths.includes(path);

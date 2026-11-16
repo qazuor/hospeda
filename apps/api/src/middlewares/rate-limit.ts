@@ -567,6 +567,9 @@ export const createPerRouteRateLimitMiddleware = ({
 export type RateLimitEndpointType =
     | 'auth'
     | 'auth-session-read'
+    | 'mcp'
+    | 'oauth'
+    | 'oauth-register'
     | 'public'
     | 'admin'
     | 'protected'
@@ -630,6 +633,47 @@ export const isSessionReadRequest = ({
     readonly method: string;
 }): boolean => method.toUpperCase() === 'GET' && SESSION_READ_PATHS.has(stripTrailingSlash(path));
 
+/** Better Auth OAuth endpoints that machine clients (the AI assistants) call. */
+const OAUTH_TOKEN_PATHS: ReadonlySet<string> = new Set([
+    '/api/auth/oauth2/token',
+    '/api/auth/oauth2/revoke',
+    '/api/auth/oauth2/introspect'
+]);
+
+/** Dynamic Client Registration endpoint. */
+const OAUTH_REGISTER_PATH = '/api/auth/oauth2/register';
+
+/**
+ * True for the MCP endpoint (`/mcp`, `/mcp/...`) and the root-level
+ * `/.well-known/*` discovery documents (HOS-2184).
+ *
+ * @param path - The raw request path.
+ */
+const isMcpPath = (path: string): boolean =>
+    path === '/mcp' || path.startsWith('/mcp/') || path.startsWith('/.well-known/');
+
+/**
+ * Classifies the OAuth machine endpoints into their own tiers (HOS-2184).
+ * Only a POST counts: the paths are POST-only, and any other method must keep
+ * the strict `auth` tier it has today.
+ *
+ * @param params - RO: `{ path, method }` straight off the request.
+ * @returns The tier, or `null` when the path is not one of these endpoints.
+ */
+const classifyOauthPath = ({
+    path,
+    method
+}: {
+    readonly path: string;
+    readonly method: string;
+}): 'oauth' | 'oauth-register' | null => {
+    if (method.toUpperCase() !== 'POST') return null;
+    const normalized = stripTrailingSlash(path);
+    if (normalized === OAUTH_REGISTER_PATH) return 'oauth-register';
+    if (OAUTH_TOKEN_PATHS.has(normalized)) return 'oauth';
+    return null;
+};
+
 /**
  * Determines the endpoint type based on the request path and method.
  *
@@ -641,12 +685,15 @@ export const isSessionReadRequest = ({
  *   1. `webhook`      — paths containing `/webhooks/` or `/webhook/`
  *   2. `ai-inbound`   — `/api/v1/ai/*` (Custom GPT inbound calls)
  *   3. `make-callback` — `/api/v1/integrations/make/*` (Make.com callbacks)
- *   4. `auth-session-read` — GET on an exact session-read path
- *   5. `auth`         — auth paths
- *   6. `admin`        — `/api/v1/admin/*`
- *   7. `public`       — `/api/v1/public/*`
- *   8. `protected`    — `/api/v1/protected/*`
- *  9. `general`      — everything else
+ *   4. `mcp`          — `/mcp` and the `/.well-known/*` discovery documents (HOS-2184)
+ *   5. `oauth-register` — `POST /api/auth/oauth2/register` (open DCR)
+ *   6. `oauth`        — `/api/auth/oauth2/{token,revoke,introspect}`
+ *   7. `auth-session-read` — GET on an exact session-read path
+ *   8. `auth`         — auth paths
+ *   9. `admin`        — `/api/v1/admin/*`
+ *  10. `public`       — `/api/v1/public/*`
+ *  11. `protected`    — `/api/v1/protected/*`
+ *  12. `general`      — everything else
  *
  * @param path - The request path
  * @param method - The HTTP method (uppercase)
@@ -666,6 +713,23 @@ export const getEndpointType = (path: string, method: string): RateLimitEndpoint
     // Paths are /api/v1/integrations/make/* — no "/webhook" segment, no collision above.
     if (path.startsWith('/api/v1/integrations/make/')) {
         return 'make-callback';
+    }
+    // HOS-2184: MCP traffic. Claude and ChatGPT call from a handful of shared
+    // server IPs, so a per-IP budget on `/mcp` would be one budget for every
+    // Hospeda user of that assistant. The real governor is the per-(client,
+    // user) limiter `rl:mcp:<clientId>:<userId>`; this tier is only a high
+    // safety ceiling. The discovery documents ride along because every
+    // connection attempt fetches several of them from the same shared IPs.
+    if (isMcpPath(path)) {
+        return 'mcp';
+    }
+    // HOS-2184: the OAuth machine endpoints. Same shared-IP reasoning as above,
+    // so they must not spend the 50/5min credential-attempt budget of `auth`.
+    // Registration is carved out first because it is open (no login) and each
+    // call writes a row.
+    const oauthTier = classifyOauthPath({ path, method });
+    if (oauthTier) {
+        return oauthTier;
     }
     // HOS-1153: session READS leave the anti-brute-force bucket. They must be
     // checked BEFORE the `auth` prefix match below, which is what used to claim
@@ -717,6 +781,31 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 windowMs: baseConfig.authWindowMs,
                 maxRequests: baseConfig.authMaxRequests,
                 message: baseConfig.authMessage,
+                headers: baseConfig.headers
+            };
+        case 'mcp':
+            // HOS-2184. High per-IP safety ceiling only; see getEndpointType.
+            return {
+                enabled: true,
+                windowMs: baseConfig.mcpWindowMs,
+                maxRequests: baseConfig.mcpMaxRequests,
+                message: baseConfig.mcpMessage,
+                headers: baseConfig.headers
+            };
+        case 'oauth':
+            return {
+                enabled: true,
+                windowMs: baseConfig.oauthWindowMs,
+                maxRequests: baseConfig.oauthMaxRequests,
+                message: baseConfig.oauthMessage,
+                headers: baseConfig.headers
+            };
+        case 'oauth-register':
+            return {
+                enabled: true,
+                windowMs: baseConfig.oauthRegisterWindowMs,
+                maxRequests: baseConfig.oauthRegisterMaxRequests,
+                message: baseConfig.oauthRegisterMessage,
                 headers: baseConfig.headers
             };
         case 'auth-session-read':

@@ -140,6 +140,7 @@
         "preferences": "Preferences",
         "newsletter": "Newsletter",
         "whatsNew": "What's new",
+        "aiAssistants": "AI assistants",
         "favorites": "Favorites",
         "searchHistory": "Search history",
         "alerts": "Price alerts",
@@ -362,6 +363,54 @@
             "description": "An email on Mondays with the questions your listings' assistant could not answer. If there were none, we do not write."
         }
     },
+    "aiAssistants": {
+        "title": "AI assistants",
+        "description": "Connect AI assistants to your Hospeda account and manage the ones you already connected.",
+        "connect": {
+            "title": "How to connect an assistant",
+            "intro": "In Claude, ChatGPT, Gemini or any other MCP-compatible assistant, add a custom connector and paste this address. Then sign in to Hospeda and approve the access.",
+            "urlLabel": "MCP server address",
+            "copy": "Copy",
+            "copied": "Copied",
+            "copyFailed": "We could not copy it. Select it and copy it by hand."
+        },
+        "capabilitiesTitle": "A connected assistant can",
+        "list": {
+            "title": "Connected assistants",
+            "loading": "Loading your assistants...",
+            "empty": "You have not connected any assistant yet.",
+            "unnamed": "Unnamed assistant",
+            "connectedAt": "Connected on {{date}}",
+            "lastUsed": "Last used approx.: {{date}}",
+            "neverUsed": "No recorded use"
+        },
+        "disconnect": {
+            "action": "Disconnect",
+            "ariaLabel": "Disconnect {{name}}",
+            "confirmTitle": "Disconnect {{name}}?",
+            "confirmBody": "It loses access to your account right away. You can connect it again whenever you want.",
+            "confirm": "Yes, disconnect",
+            "cancel": "Cancel"
+        },
+        "errors": {
+            "loadFailed": "We could not load your assistants. Please try again.",
+            "retry": "Try again",
+            "disconnectFailed": "We could not disconnect the assistant. Please try again."
+        },
+        "paused": "Connecting new assistants is paused for now. You can still disconnect the ones you have.",
+        "unavailable": "Connecting AI assistants is not available yet.",
+        "resetReview": {
+            "title": "AI assistants connected",
+            "body": "You changed your password. You have {{count}} AI assistants connected from before. Do you want to disconnect them too?",
+            "body_one": "You changed your password. You have {{count}} AI assistant connected from before. Do you want to disconnect it too?",
+            "body_other": "You changed your password. You have {{count}} AI assistants connected from before. Do you want to disconnect them too?",
+            "revoke": "Disconnect assistants",
+            "keep": "Keep them",
+            "link": "See my AI assistants",
+            "revoked": "We disconnected your AI assistants.",
+            "failed": "We could not save your answer. Please try again."
+        }
+    },
     "subscription": {
         "signupTakenBy": {
             "livePrincipal": "You already have a subscription signup in progress for this category.",
@@ -481,6 +530,7 @@
         },
         "mine": {
             "title": "Your subscriptions",
+            "replacedBy": "Replaced by {{plan}}; it will be canceled within the next hour.",
             "empty": "You have no current subscriptions.",
             "pause": {
                 "open": "Pause subscription",

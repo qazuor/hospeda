@@ -35,6 +35,7 @@ import UmamiScript from '@/components/analytics/UmamiScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
+import { AiResetReviewPrompt } from '@/components/shared/ai-assistants/AiResetReviewPrompt.client';
 import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
 import CriticalStyles from '@/components/shared/CriticalStyles.astro';
@@ -266,6 +267,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<ToastViewport client:idle locale={locale} />
 		<GuestPreferenceNudge client:idle />
 		<AuthedPreferenceSync client:idle />
+		<AiResetReviewPrompt client:idle locale={locale} apiUrl={apiUrl} />
 		<PaginationLoading client:idle />
 
 		{feedbackEnabled && (

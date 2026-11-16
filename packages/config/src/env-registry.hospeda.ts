@@ -2298,6 +2298,174 @@ export const HOSPEDA_ENV_VARS = [
     },
 
     {
+        name: 'HOSPEDA_MCP_ENABLED',
+        description:
+            'Master switch for the Model Context Protocol (MCP) server and its OAuth surface. When false (default) the MCP endpoints are not mounted.',
+        descriptionEs:
+            'Interruptor general del servidor Model Context Protocol (MCP) y su superficie OAuth. En false (por defecto) los endpoints MCP no se montan.',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'false',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Set "true" to expose the MCP server. Requires HOSPEDA_MCP_RESOURCE_URL. Leave unset or "false" to keep the feature off.',
+        howToObtainEs:
+            'Poné "true" para exponer el servidor MCP. Requiere HOSPEDA_MCP_RESOURCE_URL. Dejalo sin setear o en "false" para mantener la feature apagada.'
+    },
+    {
+        name: 'HOSPEDA_MCP_RESOURCE_URL',
+        description:
+            'Canonical public URL of the MCP server (the OAuth protected-resource identifier / token audience). Optional while HOSPEDA_MCP_ENABLED is false; required when it is true.',
+        descriptionEs:
+            'URL pública canónica del servidor MCP (el identificador del recurso protegido OAuth / audience del token). Opcional mientras HOSPEDA_MCP_ENABLED sea false; obligatoria cuando es true.',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://api.hospeda.com.ar/mcp',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'The externally reachable URL of the MCP endpoint, e.g. https://api.hospeda.com.ar/mcp. Must be a valid absolute URL.',
+        howToObtainEs:
+            'La URL accesible desde afuera del endpoint MCP, ej: https://api.hospeda.com.ar/mcp. Debe ser una URL absoluta válida.'
+    },
+    {
+        name: 'HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS',
+        description: 'MCP endpoint rate-limit window duration in milliseconds',
+        descriptionEs: 'Duración de la ventana del rate-limit del endpoint MCP, en milisegundos',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '60000',
+        exampleValue: '60000',
+        apps: ['api'],
+        category: 'features',
+        howToObtain: 'Window in ms over which MCP requests are counted. Default 60000 (1 min).',
+        howToObtainEs:
+            'Ventana en ms sobre la que se cuentan los requests MCP. Por defecto 60000 (1 min).'
+    },
+    {
+        name: 'HOSPEDA_MCP_RATE_LIMIT_MAX',
+        description: 'Maximum MCP requests allowed per rate-limit window',
+        descriptionEs: 'Máximo de requests MCP permitidos por ventana de rate-limit',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '60',
+        exampleValue: '60',
+        apps: ['api'],
+        category: 'features',
+        howToObtain: 'Requests allowed per window for the MCP endpoint. Default 60.',
+        howToObtainEs: 'Requests permitidos por ventana para el endpoint MCP. Por defecto 60.'
+    },
+    {
+        name: 'HOSPEDA_MCP_IP_RATE_LIMIT_WINDOW_MS',
+        description:
+            'Per-IP safety-ceiling window for the MCP endpoint (and the /.well-known discovery documents), in milliseconds. Claude and ChatGPT call from a few shared server IPs, so this is a ceiling, not the governor: the per-client, per-user limiter is HOSPEDA_MCP_RATE_LIMIT_*.',
+        descriptionEs:
+            'Ventana, en milisegundos, del techo de seguridad por IP del endpoint MCP (y de los documentos de discovery /.well-known). Claude y ChatGPT llaman desde pocas IPs de servidor compartidas, así que es un techo y no el regulador: el limiter por cliente y por usuario es HOSPEDA_MCP_RATE_LIMIT_*.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '900000',
+        exampleValue: '900000',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Window in ms over which requests per IP are counted. Default 900000 (15 min). Must be a positive integer.',
+        howToObtainEs:
+            'Ventana en ms sobre la que se cuentan los requests por IP. Por defecto 900000 (15 min). Debe ser un entero positivo.'
+    },
+    {
+        name: 'HOSPEDA_MCP_IP_RATE_LIMIT_MAX',
+        description:
+            'Maximum requests per IP and window to the MCP endpoint (and the /.well-known discovery documents). A high safety ceiling shared by every user of an AI assistant behind the same egress IP.',
+        descriptionEs:
+            'Máximo de requests por IP y ventana al endpoint MCP (y a los documentos de discovery /.well-known). Un techo de seguridad alto compartido por todos los usuarios de un asistente de IA detrás de la misma IP de salida.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '10000',
+        exampleValue: '10000',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Requests allowed per IP per window. Default 10000. Raise it only if a legitimate assistant fleet hits 429 on /mcp. Must be a positive integer.',
+        howToObtainEs:
+            'Requests permitidos por IP por ventana. Por defecto 10000. Subilo solo si una flota legítima de asistentes recibe 429 en /mcp. Debe ser un entero positivo.'
+    },
+    {
+        name: 'HOSPEDA_MCP_OAUTH_RATE_LIMIT_WINDOW_MS',
+        description:
+            'Per-IP window of the OAuth token, revoke and introspect endpoints, in milliseconds. These are machine calls from the AI assistants, kept out of the stricter login (auth) tier.',
+        descriptionEs:
+            'Ventana por IP, en milisegundos, de los endpoints OAuth token, revoke e introspect. Son llamadas de máquina de los asistentes de IA, separadas del tier más estricto de login (auth).',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '300000',
+        exampleValue: '300000',
+        apps: ['api'],
+        category: 'features',
+        howToObtain: 'Window in ms. Default 300000 (5 min). Must be a positive integer.',
+        howToObtainEs: 'Ventana en ms. Por defecto 300000 (5 min). Debe ser un entero positivo.'
+    },
+    {
+        name: 'HOSPEDA_MCP_OAUTH_RATE_LIMIT_MAX',
+        description:
+            'Maximum requests per IP and window to the OAuth token, revoke and introspect endpoints. Deliberately far above the login tier (50 per 5 minutes) because assistants share a few server IPs.',
+        descriptionEs:
+            'Máximo de requests por IP y ventana a los endpoints OAuth token, revoke e introspect. Deliberadamente muy por encima del tier de login (50 cada 5 minutos) porque los asistentes comparten pocas IPs de servidor.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '1000',
+        exampleValue: '1000',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Requests allowed per IP per window. Default 1000. Must be a positive integer.',
+        howToObtainEs:
+            'Requests permitidos por IP por ventana. Por defecto 1000. Debe ser un entero positivo.'
+    },
+    {
+        name: 'HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_WINDOW_MS',
+        description:
+            'Per-IP window of the OAuth dynamic client registration endpoint, in milliseconds. Registration is open (no login) and writes a row per call, so it has its own strict tier.',
+        descriptionEs:
+            'Ventana por IP, en milisegundos, del endpoint OAuth de registro dinámico de clientes. El registro es abierto (sin login) y escribe una fila por llamada, por eso tiene su propio tier estricto.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '3600000',
+        exampleValue: '3600000',
+        apps: ['api'],
+        category: 'features',
+        howToObtain: 'Window in ms. Default 3600000 (60 min). Must be a positive integer.',
+        howToObtainEs: 'Ventana en ms. Por defecto 3600000 (60 min). Debe ser un entero positivo.'
+    },
+    {
+        name: 'HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_MAX',
+        description:
+            'Maximum dynamic client registrations per IP and window. Open registration is an abuse vector (one database row per call), so it stays strict.',
+        descriptionEs:
+            'Máximo de registros dinámicos de clientes por IP y ventana. El registro abierto es un vector de abuso (una fila de base de datos por llamada), por eso se mantiene estricto.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '100',
+        exampleValue: '100',
+        apps: ['api'],
+        category: 'features',
+        howToObtain:
+            'Registrations allowed per IP per window. Default 100. Must be a positive integer.',
+        howToObtainEs:
+            'Registros permitidos por IP por ventana. Por defecto 100. Debe ser un entero positivo.'
+    },
+    {
         name: 'HOSPEDA_NOINDEX_HOSTS',
         description:
             'Comma-separated hostnames that must receive a restrictive robots policy (Disallow: /) and X-Robots-Tag: noindex, nofollow header. Used to keep staging hostnames out of search engines.',

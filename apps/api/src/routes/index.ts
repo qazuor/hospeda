@@ -40,6 +40,7 @@ import {
     aiSocialDraftsRoute,
     aiSocialPublicDataRoute
 } from './ai/social/index.js';
+import { protectedAiConnectionRoutes } from './ai-connection';
 import {
     adminAllianceRoutes,
     protectedAllianceRoutes,
@@ -123,6 +124,7 @@ import {
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
 import { adminListingFixRequestRoutes } from './listing-fix-requests/admin/index.js';
+import { mcpRoutes } from './mcp';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -225,6 +227,7 @@ import { adminVerticalDeadlineRoutes } from './vertical-deadlines/admin/index.js
 import { adminViewsRoutes, protectedViewsRoutes, viewsRoutes } from './views';
 import { brevoWebhookRoutes, mercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
 import { adminWebhookRouter } from './webhooks/admin';
+import { wellKnownRoutes } from './well-known';
 import { protectedWhatsNewRoutes } from './whats-new';
 
 const rootRoute = createSimpleRoute({
@@ -252,6 +255,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
     // robots.txt — Disallow-all for the API domain (HOS-109 T-011).
     app.route('/', robotsRoute);
+
+    // OAuth discovery for the MCP server (HOS-2184 T-006). Root-level; 404 unless
+    // HOSPEDA_MCP_ENABLED is true.
+    app.route('/', wellKnownRoutes);
+
+    // MCP Streamable HTTP endpoint (HOS-2184 T-010). Root-level, bearer-token
+    // auth; 404 unless HOSPEDA_MCP_ENABLED is true.
+    app.route('/', mcpRoutes);
 
     // ─── System routes ────────────────────────────────────────────────────────
     app.route('/health', healthRoutes);
@@ -469,6 +480,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
             '/api/v1/protected/user-bookmark-collections',
             protectedUserBookmarkCollectionRoutes
         );
+        // Connected AI assistants: list and revoke (HOS-2184 T-026). Not behind the
+        // MCP flag: a user can still disconnect while the feature is off.
+        app.route('/api/v1/protected/ai-connections', protectedAiConnectionRoutes);
         // Search history (SPEC-289 — entitlement-gated, plan-limited)
         app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
         // Price alerts (SPEC-286 — entitlement-gated, plan-limited)

@@ -29,6 +29,7 @@ import {
 import { type StartSuccessionPorts, startSuccession } from './start-succession.service.js';
 import { scheduleSuccessorFirstChargeWithCredit } from './successor-credit.js';
 import { resolveSuccessorWindow } from './successor-window.js';
+import { readHasCreditedCharge } from './successor-window-credit.js';
 
 const inputSchema = z.strictObject({
     actor: z.strictObject({ id: z.uuid() }),
@@ -272,6 +273,7 @@ export async function requestPlanChange(
     const targetCycle = BillingCycleSchema.parse(target.cycle);
     const window = await getDb().transaction(async (tx) => {
         const deadlines = await readCycleDeadlines({ tx, subscriptionId: value.subscriptionId });
+        const credit = await readHasCreditedCharge({ tx, subscriptionId: value.subscriptionId });
         return resolveSuccessorWindow({
             now: ports.clock.now(),
             cardHours: deadlines.values['10'].cardHours,
@@ -279,7 +281,8 @@ export async function requestPlanChange(
             predecessor: {
                 status: origin.subscription.status,
                 paymentMethod: origin.subscription.paymentMethod,
-                nextChargeAt: origin.subscription.nextChargeAt
+                nextChargeAt: origin.subscription.nextChargeAt,
+                hasCreditedCharge: credit.hasCreditedCharge
             }
         });
     });

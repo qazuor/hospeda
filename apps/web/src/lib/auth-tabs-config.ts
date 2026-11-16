@@ -34,6 +34,7 @@ import type { AuthTabsSignInConfig, AuthTabsSignUpConfig } from '@/components/au
 import { validateCallbackUrl } from '@/lib/auth-callback';
 import { resolveSafeReturnPath } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildConsentResumePath, isSignedOAuthRequest } from '@/lib/oauth-consent';
 import { buildUrl } from '@/lib/urls';
 
 /** Arguments for {@link resolveAuthTabsRedirectConfig}. */
@@ -157,8 +158,19 @@ export function resolveAuthTabsRedirectConfig({
 }: ResolveAuthTabsRedirectConfigArgs): AuthTabsRedirectConfigResult {
     // `returnUrl` (canonical) / `redirect` (legacy alias) — a same-app
     // RELATIVE path. `returnUrl` wins when both are present.
+    //
+    // HOS-2184: when the API's OAuth provider sends an AI assistant's
+    // authorization request here (signed `client_id`/`sig` query, no
+    // `returnUrl`), the post-sign-in destination is the consent page carrying
+    // that same request. The path is built here, never read from the query, so
+    // it cannot point anywhere else.
+    const oauthResumePath = isSignedOAuthRequest({ search: astroUrl.search })
+        ? buildConsentResumePath({ locale, search: astroUrl.search })
+        : '';
     const rawReturn =
-        astroUrl.searchParams.get('returnUrl') ?? astroUrl.searchParams.get('redirect') ?? '';
+        astroUrl.searchParams.get('returnUrl') ??
+        astroUrl.searchParams.get('redirect') ??
+        oauthResumePath;
     const returnPath = resolveSafeReturnPath({ rawReturn, locale });
 
     // SPEC-182: `callbackUrl` — an ABSOLUTE cross-origin URL (e.g. the admin

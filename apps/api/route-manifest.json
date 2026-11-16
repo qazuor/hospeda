@@ -7,6 +7,34 @@
         },
         {
             "method": "GET",
+            "path": "/.well-known/oauth-authorization-server"
+        },
+        {
+            "method": "GET",
+            "path": "/.well-known/oauth-authorization-server/api/auth"
+        },
+        {
+            "method": "GET",
+            "path": "/.well-known/oauth-protected-resource"
+        },
+        {
+            "method": "GET",
+            "path": "/.well-known/oauth-protected-resource/mcp"
+        },
+        {
+            "method": "GET",
+            "path": "/.well-known/openid-configuration"
+        },
+        {
+            "method": "GET",
+            "path": "/.well-known/openid-configuration/api/auth"
+        },
+        {
+            "method": "GET",
+            "path": "/api/auth/.well-known/openid-configuration"
+        },
+        {
+            "method": "GET",
             "path": "/api/auth/*"
         },
         {
@@ -2710,6 +2738,18 @@
             "path": "/api/v1/protected/accommodations/my/market-comparison"
         },
         {
+            "method": "DELETE",
+            "path": "/api/v1/protected/ai-connections"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/ai-connections"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/ai-connections/reset-review"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/ai/chat"
         },
@@ -4344,6 +4384,18 @@
         {
             "method": "GET",
             "path": "/health/ready"
+        },
+        {
+            "method": "DELETE",
+            "path": "/mcp"
+        },
+        {
+            "method": "GET",
+            "path": "/mcp"
+        },
+        {
+            "method": "POST",
+            "path": "/mcp"
         },
         {
             "method": "GET",

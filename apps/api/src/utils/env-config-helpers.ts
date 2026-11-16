@@ -218,6 +218,33 @@ export const getRateLimitConfig = () => ({
         'API_RATE_LIMIT_AUTH_SESSION_READ_MESSAGE',
         'Too many session checks, please try again later.'
     ),
+    // HOS-2184: MCP traffic and the OAuth machine endpoints. Claude and ChatGPT
+    // call from a few shared server IPs, so every Hospeda user of an assistant
+    // shares one IP bucket. These tiers are therefore CEILINGS, not governors:
+    // `/mcp` is governed per (client, user) by `rl:mcp:<clientId>:<userId>`
+    // (HOSPEDA_MCP_RATE_LIMIT_*), and each token exchange is already bound to a
+    // single-use authorization code or refresh token.
+    //   - mcp:            10000 / 15 min (about 11 req/s per IP) - safety net.
+    //   - oauth:          1000 / 5 min. Login keeps 50/5min; token calls are
+    //                     machine traffic (a refresh per user per hour, plus
+    //                     connect bursts), 20x the credential-attempt budget.
+    //   - oauth-register: 100 / 60 min. Open DCR with no login and one DB row
+    //                     per call, so it stays strict. 100/h is above any real
+    //                     rollout (one registration per assistant setup) and
+    //                     still caps a scripted flood to 2400 rows/day per IP.
+    // Keep these defaults in sync with the Zod defaults in `env-schema.ts`.
+    mcpWindowMs: _safe.getNumber('HOSPEDA_MCP_IP_RATE_LIMIT_WINDOW_MS', 900000),
+    mcpMaxRequests: _safe.getNumber('HOSPEDA_MCP_IP_RATE_LIMIT_MAX', 10000),
+    mcpMessage: 'Too many MCP requests, please try again later.',
+    oauthWindowMs: _safe.getNumber('HOSPEDA_MCP_OAUTH_RATE_LIMIT_WINDOW_MS', 300000),
+    oauthMaxRequests: _safe.getNumber('HOSPEDA_MCP_OAUTH_RATE_LIMIT_MAX', 1000),
+    oauthMessage: 'Too many OAuth requests, please try again later.',
+    oauthRegisterWindowMs: _safe.getNumber(
+        'HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_WINDOW_MS',
+        3600000
+    ),
+    oauthRegisterMaxRequests: _safe.getNumber('HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_MAX', 100),
+    oauthRegisterMessage: 'Too many client registrations, please try again later.',
     publicEnabled: _safe.getBoolean('API_RATE_LIMIT_PUBLIC_ENABLED', true),
     publicWindowMs: _safe.getNumber('API_RATE_LIMIT_PUBLIC_WINDOW_MS', 3600000),
     publicMaxRequests: _safe.getNumber('API_RATE_LIMIT_PUBLIC_MAX_REQUESTS', 1000),

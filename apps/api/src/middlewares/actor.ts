@@ -203,6 +203,128 @@ export async function resolveEffectivePermissions(input: {
 }
 
 /**
+ * The shape of an authenticated user that {@link buildActorForUser} reads.
+ *
+ * Structural on purpose: it is satisfied by the Better Auth session user that
+ * the session middleware places on the Hono context, and by any other
+ * credential path (for example a bearer-token middleware) that can supply the
+ * same few fields.
+ */
+export interface ActorSourceUser {
+    readonly id?: string | null;
+    readonly name?: unknown;
+    readonly email?: unknown;
+    readonly image?: unknown;
+    readonly emailVerified?: unknown;
+    readonly mustChangePassword?: unknown;
+}
+
+/**
+ * Builds the {@link Actor} for an authenticated user: the held role set read
+ * from `user_role`, the effective permissions ({@link resolveEffectivePermissions})
+ * and the profile fields forwarded from the user object.
+ *
+ * A user without an id resolves to the guest actor. Failure policy for the
+ * role and permission reads is unchanged and lives in {@link resolveHeldRoles}:
+ * an unresolvable or empty role set throws a 503 `HTTPException`; any other
+ * read error propagates to the caller.
+ *
+ * @param input - Options object (RO-RO).
+ * @param input.user - The authenticated user, or `null`/`undefined` for none.
+ * @param input.mockRoles - TEST-ONLY roles that replace the `user_role` read
+ *   (set by the mock-auth middleware, whose fabricated user has no rows).
+ * @returns The resolved actor; the guest actor when there is no user id.
+ * @throws {HTTPException} 503 when the role set cannot be resolved.
+ */
+export async function buildActorForUser(input: {
+    readonly user: ActorSourceUser | null | undefined;
+    readonly mockRoles?: readonly RoleEnum[] | undefined;
+}): Promise<Actor> {
+    const { user } = input;
+    if (!user?.id) {
+        return createGuestActor();
+    }
+    // HOS-296: the role set is NOT on the session user any more.
+    //
+    // `users.role` was dropped, so Better Auth's `additionalFields`
+    // — a plain column mapping — has no source for it and the
+    // session object carries no role at all. The hats live in
+    // `user_role`, one row each, and are read here per request.
+    //
+    // A per-request value the plain-column session cannot express.
+    // Resolving them here is what makes them travel for free on
+    // `GET /api/v1/public/auth/me`, which is the one contract every
+    // downstream consumer reads (HOS-296 OQ-4, actor-only).
+    //
+    // The read is UNCACHED and runs once per authenticated
+    // request. A 60s process-local cache was tried and removed —
+    // see `getUserRoles`' JSDoc for why (pre-commit invalidation).
+    //
+    // An account with zero rows is a data bug, not a legitimate
+    // state, and is treated as an outage rather than degraded to
+    // `[USER]`. Failure policy, including the empty-set case and
+    // its public-route trade-off: see `resolveHeldRoles`.
+    //
+    // TEST-ONLY short-circuit: when the mock-auth middleware
+    // fabricated the session user it also fabricated its hats,
+    // because that user has no `user_role` rows to read.
+    const userRoles: readonly RoleEnum[] =
+        input.mockRoles ?? (await resolveHeldRoles({ userId: user.id }));
+
+    // Better Auth maps its virtual `name` field to `display_name`
+    // (see apps/api/src/lib/auth.ts: user.fields.name = 'displayName')
+    // and exposes it on the session user object as `.name`. The
+    // `image` field is auto-populated by Better Auth on OAuth
+    // signin (Google `picture` claim, Facebook profile photo) and
+    // mirrors `users.image`. We forward name, email, and image
+    // onto the actor so /auth/me can surface them to the web
+    // UserMenu without a separate fetch (SPEC-113 — keeps the
+    // navbar name + avatar in sync after profile mutations).
+    const userName = typeof user.name === 'string' ? user.name : undefined;
+    const userEmail = typeof user.email === 'string' ? user.email : undefined;
+    const userImage = typeof user.image === 'string' ? user.image : undefined;
+    // Better Auth's session.user mirrors `users.email_verified` here.
+    // We forward the flag onto Actor so NewsletterSubscriberService.subscribe
+    // can branch between direct-to-active (verified) and the
+    // NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED block (unverified) without a
+    // second DB read on every call.
+    const userEmailVerified =
+        typeof user.emailVerified === 'boolean' ? user.emailVerified : undefined;
+    // HOS-296: `users.must_change_password` rides on the actor.
+    //
+    // It is a Better Auth `additionalField`, so it only ever
+    // existed on the native `get-session` response. Once `apps/web`
+    // stopped reading that endpoint (it no longer carries the role
+    // set), the venue/experience owner password gate would either have died
+    // silently or cost a second round-trip on every protected
+    // route. Forwarding it here makes `/auth/me` the single source
+    // for everything the middleware needs.
+    //
+    // Normalised to a strict boolean: the column is nullable, and
+    // the gate's semantics are "block only on an explicit true".
+    const userMustChangePassword = user.mustChangePassword === true;
+
+    // The effective set comes from the ONE resolver every reader
+    // shares (`resolveEffectivePermissions`, Coord-240): the
+    // SUPER_ADMIN short-circuit, the role union and the
+    // grant/deny overrides, in that order.
+    const { permissions } = await resolveEffectivePermissions({
+        userId: user.id,
+        roles: userRoles
+    });
+    return {
+        id: user.id,
+        roles: userRoles,
+        permissions: [...permissions],
+        name: userName,
+        email: userEmail,
+        emailVerified: userEmailVerified,
+        image: userImage,
+        mustChangePassword: userMustChangePassword
+    };
+}
+
+/**
  * Routes on which a FAILED actor resolution degrades to the guest actor
  * instead of answering 503 (HOS-1141).
  *
@@ -376,85 +498,10 @@ export const actorMiddleware = (): MiddlewareHandler => {
 
         if (user?.id) {
             try {
-                // HOS-296: the role set is NOT on the session user any more.
-                //
-                // `users.role` was dropped, so Better Auth's `additionalFields`
-                // — a plain column mapping — has no source for it and the
-                // session object carries no role at all. The hats live in
-                // `user_role`, one row each, and are read here per request.
-                //
-                // A per-request value the plain-column session cannot express.
-                // Resolving them here is what makes them travel for free on
-                // `GET /api/v1/public/auth/me`, which is the one contract every
-                // downstream consumer reads (HOS-296 OQ-4, actor-only).
-                //
-                // The read is UNCACHED and runs once per authenticated
-                // request. A 60s process-local cache was tried and removed —
-                // see `getUserRoles`' JSDoc for why (pre-commit invalidation).
-                //
-                // An account with zero rows is a data bug, not a legitimate
-                // state, and is treated as an outage rather than degraded to
-                // `[USER]`. Failure policy, including the empty-set case and
-                // its public-route trade-off: see `resolveHeldRoles`.
-                //
-                // TEST-ONLY short-circuit: when the mock-auth middleware
-                // fabricated the session user it also fabricated its hats,
-                // because that user has no `user_role` rows to read.
-                const mockRoles = c.get('mockUserRoles');
-                const userRoles: readonly RoleEnum[] =
-                    mockRoles ?? (await resolveHeldRoles({ userId: user.id }));
-
-                // Better Auth maps its virtual `name` field to `display_name`
-                // (see apps/api/src/lib/auth.ts: user.fields.name = 'displayName')
-                // and exposes it on the session user object as `.name`. The
-                // `image` field is auto-populated by Better Auth on OAuth
-                // signin (Google `picture` claim, Facebook profile photo) and
-                // mirrors `users.image`. We forward name, email, and image
-                // onto the actor so /auth/me can surface them to the web
-                // UserMenu without a separate fetch (SPEC-113 — keeps the
-                // navbar name + avatar in sync after profile mutations).
-                const userName = typeof user.name === 'string' ? user.name : undefined;
-                const userEmail = typeof user.email === 'string' ? user.email : undefined;
-                const userImage = typeof user.image === 'string' ? user.image : undefined;
-                // Better Auth's session.user mirrors `users.email_verified` here.
-                // We forward the flag onto Actor so NewsletterSubscriberService.subscribe
-                // can branch between direct-to-active (verified) and the
-                // NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED block (unverified) without a
-                // second DB read on every call.
-                const userEmailVerified =
-                    typeof user.emailVerified === 'boolean' ? user.emailVerified : undefined;
-                // HOS-296: `users.must_change_password` rides on the actor.
-                //
-                // It is a Better Auth `additionalField`, so it only ever
-                // existed on the native `get-session` response. Once `apps/web`
-                // stopped reading that endpoint (it no longer carries the role
-                // set), the venue/experience owner password gate would either have died
-                // silently or cost a second round-trip on every protected
-                // route. Forwarding it here makes `/auth/me` the single source
-                // for everything the middleware needs.
-                //
-                // Normalised to a strict boolean: the column is nullable, and
-                // the gate's semantics are "block only on an explicit true".
-                const userMustChangePassword = user.mustChangePassword === true;
-
-                // The effective set comes from the ONE resolver every reader
-                // shares (`resolveEffectivePermissions`, Coord-240): the
-                // SUPER_ADMIN short-circuit, the role union and the
-                // grant/deny overrides, in that order.
-                const { permissions } = await resolveEffectivePermissions({
-                    userId: user.id,
-                    roles: userRoles
+                actor = await buildActorForUser({
+                    user,
+                    mockRoles: c.get('mockUserRoles')
                 });
-                actor = {
-                    id: user.id,
-                    roles: userRoles,
-                    permissions: [...permissions],
-                    name: userName,
-                    email: userEmail,
-                    emailVerified: userEmailVerified,
-                    image: userImage,
-                    mustChangePassword: userMustChangePassword
-                };
             } catch (error) {
                 const detail = error instanceof Error ? error.message : String(error);
 

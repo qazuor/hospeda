@@ -31,6 +31,8 @@ export const OwnSubscriptionsResponseSchema = z.object({
     subscriptions: z.array(
         z.object({
             id: z.string().uuid(),
+            /** Successor link for identifying a subscription replaced by an active successor. */
+            predecessorId: z.string().uuid().nullable().optional(),
             vertical: z.string(),
             status: z.enum(['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED']),
             paymentMethod: z.enum(['CARD', 'MANUAL']),

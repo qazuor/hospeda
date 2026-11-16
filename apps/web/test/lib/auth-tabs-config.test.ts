@@ -25,6 +25,40 @@ function urlFor(pathAndQuery: string): URL {
 }
 
 describe('resolveAuthTabsRedirectConfig', () => {
+    describe('signed OAuth request from the MCP authorization server (HOS-2184)', () => {
+        const OAUTH_QUERY =
+            '?client_id=abc&scope=openid&sig=s&exp=1900000000&ba_param=client_id&ba_param=sig';
+
+        it('resumes on the consent page with the same signed query', () => {
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor(`/es/auth/signin/${OAUTH_QUERY}`),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            expect(result.returnPath).toBe(`/es/auth/consent/${OAUTH_QUERY}`);
+            expect(result.signInConfig.redirectTo).toBe(
+                `https://hospeda.com.ar/es/auth/consent/${OAUTH_QUERY}`
+            );
+        });
+
+        it('lets an explicit returnUrl win over the OAuth resume path', () => {
+            const result = resolveAuthTabsRedirectConfig({
+                astroUrl: urlFor(
+                    `/es/auth/signin/${OAUTH_QUERY}&returnUrl=/es/mi-cuenta/favoritos/`
+                ),
+                locale: 'es',
+                siteUrl: SITE_URL,
+                adminUrl: ADMIN_URL,
+                isProduction: true
+            });
+
+            expect(result.returnPath).toBe('/es/mi-cuenta/favoritos/');
+        });
+    });
+
     describe('plain returnUrl / redirect (no callbackUrl)', () => {
         it('anchors a safe returnUrl on the request origin for both tabs redirectTo/oauthRedirectTo', () => {
             const result = resolveAuthTabsRedirectConfig({

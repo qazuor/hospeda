@@ -348,6 +348,32 @@ export const ApiEnvBaseSchema = z.object({
         .string()
         .default('Too many webhook requests, please try again later.'),
 
+    // MCP server (HOS-2184)
+    /** Master switch for the MCP server; endpoints are not mounted when false */
+    HOSPEDA_MCP_ENABLED: boolEnv(false),
+    /** Canonical public MCP URL (token audience). Required when HOSPEDA_MCP_ENABLED is true */
+    HOSPEDA_MCP_RESOURCE_URL: z.string().url('Must be a valid MCP resource URL').optional(),
+    /** MCP rate-limit window in milliseconds */
+    HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+    /** Max MCP requests per rate-limit window */
+    HOSPEDA_MCP_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+    /** Per-IP safety-ceiling window for `/mcp` (shared assistant IPs), in ms */
+    HOSPEDA_MCP_IP_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
+    /** Per-IP safety ceiling for `/mcp` per window */
+    HOSPEDA_MCP_IP_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10000),
+    /** Per-IP window of the OAuth token/revoke/introspect tier, in ms */
+    HOSPEDA_MCP_OAUTH_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(300000),
+    /** Per-IP ceiling of the OAuth token/revoke/introspect tier per window */
+    HOSPEDA_MCP_OAUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(1000),
+    /** Per-IP window of the OAuth dynamic client registration tier, in ms */
+    HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_WINDOW_MS: z.coerce
+        .number()
+        .int()
+        .positive()
+        .default(3600000),
+    /** Per-IP ceiling of the OAuth dynamic client registration tier per window */
+    HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+
     // Security
     API_SECURITY_ENABLED: boolEnv(true),
     API_SECURITY_CSRF_ENABLED: boolEnv(true),

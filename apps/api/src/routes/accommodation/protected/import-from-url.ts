@@ -85,12 +85,14 @@ import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { getVisitorContext } from '../../../utils/visitor-context';
 import {
+    AccommodationImportAiModelOutputSchema,
     type AccommodationImportAiOutput,
     AccommodationImportAiOutputSchema,
     type AiGateState,
     applyAiGateNotice,
     buildImportAiPrompt,
-    mapAiOutputToRawExtraction
+    mapAiOutputToRawExtraction,
+    nullFieldsToUndefined
 } from './import-from-url.ai';
 
 // ---------------------------------------------------------------------------
@@ -167,12 +169,13 @@ export function buildImportAiExtract(deps: {
         const startedAt = Date.now();
         try {
             const aiService = await createConfiguredAiService();
+            // The model gets the strict schema (every field required + nullable, HOS-2250).
             // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to
             // different Zod patch versions, producing a nominal ZodType mismatch; the
             // runtime schema is identical and the safeParse below enforces the contract
             // (mirrors search-chat.ts).
             const outputSchema =
-                AccommodationImportAiOutputSchema as unknown as GenerateObjectSchema;
+                AccommodationImportAiModelOutputSchema as unknown as GenerateObjectSchema;
             const result = await aiService.generateObject(
                 {
                     feature: FEATURE,
@@ -182,7 +185,11 @@ export function buildImportAiExtract(deps: {
                 outputSchema
             );
 
-            const parsed = AccommodationImportAiOutputSchema.safeParse(result.object);
+            // `null` means "not on the page": drop it so the pipeline sees an absent
+            // field, exactly as before strict mode.
+            const parsed = AccommodationImportAiOutputSchema.safeParse(
+                nullFieldsToUndefined({ value: result.object }).value
+            );
             if (!parsed.success) {
                 return null;
             }

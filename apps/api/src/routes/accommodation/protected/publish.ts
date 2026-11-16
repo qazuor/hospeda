@@ -2,7 +2,6 @@
  * Protected publish accommodation endpoint
  * Requires authentication and ownership
  */
-import { AnalyticsEvents } from '@repo/analytics';
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
@@ -10,7 +9,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import type { Context } from 'hono';
-import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
+import { captureAccommodationPublished } from '../../../services/listing-publication/accommodation-published-analytics';
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
@@ -48,16 +47,9 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
         const visitor = getVisitorContext(ctx);
         const data = await listingPublicationService.publish({ actor, id: params.id as string });
 
-        captureServerAnalyticsEvent({
-            distinctId: actor.id,
-            name: AnalyticsEvents.accommodationPublished,
-            properties: {
-                accommodation_id: data.id,
-                accommodation_type: typeof data.type === 'string' ? data.type : undefined,
-                destination_id:
-                    typeof data.destinationId === 'string' ? data.destinationId : undefined,
-                owner_id: typeof data.ownerId === 'string' ? data.ownerId : undefined
-            },
+        captureAccommodationPublished({
+            actorId: actor.id,
+            accommodation: data,
             ...(visitor ? { visitor } : {})
         });
 

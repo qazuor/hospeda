@@ -462,7 +462,7 @@
             "guard": {},
             "reads": ["subscription.status", "subscription.payment_method"],
             "inputs": ["provider:read_by_id", "contract:subscription_period"],
-            "writes": ["subscription.status", "domain_event.changes"]
+            "writes": ["subscription.status", "domain_event.changes", "subscription.next_charge_at"]
         },
         {
             "id": "TRANS:B:S3",
@@ -1054,7 +1054,8 @@
                 "covered_period.period_start",
                 "covered_period.payment_id",
                 "covered_period.credited_at",
-                "domain_event.changes"
+                "domain_event.changes",
+                "subscription.next_charge_at"
             ]
         },
         {

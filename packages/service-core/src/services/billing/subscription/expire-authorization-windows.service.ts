@@ -21,6 +21,7 @@ import {
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { exitGraceOnCreditedPayment } from './exit-grace.service';
+import { providerNextChargeDate } from './provider-next-charge-date.js';
 import { reactivateSuspendedOnCreditedPayment } from './reactivate-suspended.service';
 import { enqueueSignupIncompleteNotice } from './signup-incomplete-notice.ts';
 import type { BeforeCancelNotice } from './start-subscription.service';
@@ -73,14 +74,20 @@ export interface ActivateCreditedPendingSummary {
 
 async function activatePendingRow(
     subscription: (typeof subscriptions)['$inferSelect'],
-    ports: ExpireAuthorizationWindowsPorts
+    ports: ExpireAuthorizationWindowsPorts,
+    providerNextChargeAt: string | null
 ): Promise<{
     readonly activated: boolean;
     readonly skipped: boolean;
     readonly touristVipCancelled: number;
 }> {
     const wrote = await activatePendingWithSignupNotice(
-        { subscriptionId: subscription.id, now: ports.clock.now() },
+        {
+            subscriptionId: subscription.id,
+            now: ports.clock.now(),
+            nextChargeAt: providerNextChargeDate({ nextChargeAt: providerNextChargeAt })
+                .nextChargeAt
+        },
         { successionCloser: ports.successionCloser }
     );
     if (!wrote) return { activated: false, skipped: true, touristVipCancelled: 0 };
@@ -120,7 +127,7 @@ export async function activateCreditedPendingAuthorizations(
                 notActive++;
                 continue;
             }
-            const result = await activatePendingRow(row.subscription, ports);
+            const result = await activatePendingRow(row.subscription, ports, snapshot.nextChargeAt);
             if (result.activated) activated++;
             if (result.skipped) skipped++;
             touristVipCancelled += result.touristVipCancelled;
@@ -272,7 +279,11 @@ export async function expireAuthorizationWindows(
                 const { snapshot } = assertFreshForAct({ read, act });
 
                 if (snapshot.status === 'active') {
-                    const result = await activatePendingRow(subscription, ports);
+                    const result = await activatePendingRow(
+                        subscription,
+                        ports,
+                        snapshot.nextChargeAt
+                    );
                     if (result.activated) activated++;
                     if (result.skipped) skipped++;
                     touristVipCancelled += result.touristVipCancelled;
