@@ -304,7 +304,9 @@ describe('/mcp listing tools (end to end)', () => {
                     name: 'La Parrilla',
                     publicationStatus: 'DRAFT'
                 }
-            ]
+            ],
+            total: 2,
+            hasMore: false
         });
         expect(accList).toHaveBeenCalledWith(
             expect.objectContaining({ id: USER_ID }),

@@ -639,7 +639,9 @@ describe('OAuth + MCP, end to end', () => {
                         name: 'Cabañas del Río',
                         publicationStatus: 'PUBLISHED'
                     }
-                ]
+                ],
+                total: 1,
+                hasMore: false
             });
             expect(list).toHaveBeenCalledWith(
                 expect.objectContaining({ id: journey.userId }),
@@ -694,7 +696,7 @@ describe('OAuth + MCP, end to end', () => {
             expect(listed.data.items.map((item) => item.clientId)).toEqual([journey.clientId]);
 
             const revoke = await app().request(
-                `${API}/api/v1/protected/ai-connections/${encodeURIComponent(journey.clientId)}`,
+                `${API}/api/v1/protected/ai-connections?clientId=${encodeURIComponent(journey.clientId)}`,
                 {
                     method: 'DELETE',
                     headers: {
@@ -744,7 +746,7 @@ describe('OAuth + MCP, end to end', () => {
             expect(listed.data.items).toEqual([]);
 
             const again = await app().request(
-                `${API}/api/v1/protected/ai-connections/${encodeURIComponent(journey.clientId)}`,
+                `${API}/api/v1/protected/ai-connections?clientId=${encodeURIComponent(journey.clientId)}`,
                 {
                     method: 'DELETE',
                     headers: {
