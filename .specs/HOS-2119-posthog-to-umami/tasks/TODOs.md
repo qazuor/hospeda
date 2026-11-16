@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 24/76 tasks (32%)
+## Progress: 25/76 tasks (33%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -316,7 +316,7 @@ Tracks (can run in parallel):
   - Blocked by: T-045, T-046, T-047, T-005
   - Blocks: T-049, T-052, T-053
 
-- [ ] **T-049** (complexity: 3) - T-5 Add PARTNER ownership to the traffic-stats route
+- [x] **T-049** (complexity: 3) - T-5 Add PARTNER ownership to the traffic-stats route
   - Tags: t5-owner-stats, api
   - The spec lists PARTNER among the four owner-facing types, but resolveListingAccess covers listing ve...
   - Blocked by: T-048

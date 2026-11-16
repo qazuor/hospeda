@@ -1782,35 +1782,35 @@
             "id": "T-049",
             "title": "T-5 Add PARTNER ownership to the traffic-stats route",
             "description": "The spec lists PARTNER among the four owner-facing types, but resolveListingAccess covers listing verticals; partner ownership may need its own check (locate in T-005, do not guess). Tests (AC-7): own partner 200 with data, someone else's partner 404, non-partner actor 404. Partner stays a vertical with no trial; do not touch billing.\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): PARTNER ownership via partner.ownerUserId with NO entitlement gate, matching /protected/partners/mine/stats (mine-stats.ts) by design.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-048"],
             "blocks": ["T-054", "T-055"],
             "subtasks": [
                 {
                     "title": "Resolve partner ownership for the actor (locate how the partner account panel at apps/web/src/pages/[lang]/mi-cuenta/aliados/index.astro identifies 'my partner' on the api side, see apps/api/src/routes/partners/)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Foreign or non-existent partner answers 404; own partner returns data",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests in traffic-stats.test.ts (PARTNER cases) plus a service-level ownership test if a new port is needed",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:04:34Z",
+                "completed": "2026-11-16T04:08:05Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 52,
+        "pending": 51,
         "inProgress": 0,
-        "completed": 24,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.5
     }
