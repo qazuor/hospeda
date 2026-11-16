@@ -71,13 +71,6 @@
             "reason": "The amenity and feature junction rows project their own lifecycleState."
         },
         {
-            "file": "apps/api/src/routes/accommodation/protected/getById.ts",
-            "name": "lifecycleState",
-            "count": 4,
-            "table": "amenities, features",
-            "reason": "The amenity and feature junction rows project their own lifecycleState."
-        },
-        {
             "file": "apps/api/src/routes/accommodation/public/getBySlug.ts",
             "name": "lifecycleState",
             "count": 1,
@@ -482,6 +475,34 @@
             "count": 3,
             "table": "listing media",
             "reason": "Media fixtures keep their own moderationState."
+        },
+        {
+            "file": "apps/api/src/mcp/tools/listing/listing-stats-readers.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation_reviews, venue_reviews, experience_reviews",
+            "reason": "get_listing_stats lists the latest reviews of a listing filtered by the review's own lifecycleState."
+        },
+        {
+            "file": "apps/api/src/mcp/tools/listing/listing-stats-readers.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_reviews, venue_reviews, experience_reviews",
+            "reason": "get_listing_stats lists the latest reviews of a listing filtered by the review's own moderationState."
+        },
+        {
+            "file": "apps/api/test/mcp/tools/listing/listing-stats-readers.test.ts",
+            "name": "lifecycleState",
+            "count": 1,
+            "table": "accommodation_reviews, venue_reviews, experience_reviews",
+            "reason": "Asserts the review filter of get_listing_stats, which uses the review's own lifecycleState."
+        },
+        {
+            "file": "apps/api/test/mcp/tools/listing/listing-stats-readers.test.ts",
+            "name": "moderationState",
+            "count": 1,
+            "table": "accommodation_reviews, venue_reviews, experience_reviews",
+            "reason": "Asserts the review filter of get_listing_stats, which uses the review's own moderationState."
         }
     ],
     "files": [
