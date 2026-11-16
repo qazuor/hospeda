@@ -51,7 +51,16 @@ Dentro: informe, corrección de docs vencidos, SQL de verificación en producci�
 y los arreglos chicos que el informe justifique (sección 9).
 
 Fuera: habilitar el pago único en la web (HOS-2094), el destacado de evento
-(HOS-2279, HOS-2288), cualquier cambio de catálogo.
+(HOS-2279, HOS-2288), cualquier cambio de catálogo, y el borrado del código muerto
+`syncFeaturedByEntitlementFor*`, que maneja la sesión epica-billing (decidido por el owner,
+16/11/2026; no es parte de este programa).
+
+Alcance de los add-ons: este informe cubre solo los 6 `visibility-boost-*`, que destacan
+**fichas** con la clave `featured_listing`. Los packs nuevos de Comer y salir (HOS-2285,
+2286, 2287, 2289) son mensuales y otorgan límites o la carta en idiomas: **no** destacan nada.
+El destacado de evento (HOS-2288) usa otra clave (`featured_event`), se aplica al local con
+alcance `LISTING` guardando el `event_id`, y su lectura es propia, sin pasar por
+`syncListingFeatured`.
 
 ## 4. Estado actual del código (con citas)
 
@@ -73,7 +82,8 @@ Hay **un solo escritor** por todo el repo: `setFeatured` de los puertos de produ
 - `syncFeaturedByEntitlementFor{Owner,Accommodation}`
   (`packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts`)
   **sigue sin llamador de producción**: es el vestigio al que se refiere el `CLAUDE.md`.
-  El camino vigente es `syncListingFeatured`.
+  El camino vigente es `syncListingFeatured`. Su borrado lo maneja la sesión epica-billing
+  (no este programa); acá solo se lo documenta como código muerto.
 
 ### 4.2 Quién dispara la sincronización
 
@@ -186,7 +196,9 @@ solo `owner-pro` y `owner-premium` (`scripts/production-catalog/catalog.ts:272` 
   - `/presentacion/comer-y-salir/` (L297-302) lista «Destacar tu local por 7 o 30 días» como
     complemento vigente y dice «desde Mi cuenta > Complementos... sin llamar a nadie» (L304).
   - `plan-comparison-rows.ts:262-272` dice que cualquier plan puede comprar el boost.
-  - Se trata en HOS-2284 y HOS-2094. Mientras HOS-2094 siga abierta es **copy falso**.
+  - Decidido (owner, 16/11/2026): «Destacar 7 o 30 días» queda como está en la página; se
+    vuelve verdadero cuando salga HOS-2094. Las otras tres afirmaciones falsas se corrigen en
+    HOS-2284. Mientras HOS-2094 siga abierta, esa frase promete algo no comprable (aceptado).
 - **R-2. Al habilitar el pago único, comprar para una ficha oculta quema días.** La alerta de
   ficha oculta solo existe para `PERIODICO` (`addon-purchase.ts:17-32`,
   `hiddenListingNoticeKind` devuelve `null` si `chargeKind !== 'PERIODICO'`). Un boost de
@@ -270,7 +282,7 @@ Para el tamaño del catálogo en la tabla: los nombres exactos de tabla/columna 
   «sin instancias» en la issue.
 - AC-3. El bloque de `CLAUDE.md` sobre `featuredByEntitlement` describe el escritor vigente
   (`syncListingFeatured`, listener, reconciliador diario) y que `syncFeaturedByEntitlementFor*`
-  es código muerto.
+  es código muerto (su borrado lo maneja la sesión epica-billing, fuera de este programa).
 - AC-4. El comentario de `plan-comparison-rows.ts` ya no habla de «per-accommodation» ni de SPEC-309.
 - AC-5. HOS-2094 lleva como criterio explícito: alerta de ficha oculta también para `UNA_VEZ`
   (R-2) y selector por nombre de ficha (R-3), y un e2e con los productos reales de 0176.
@@ -281,24 +293,22 @@ Para el tamaño del catálogo en la tabla: los nombres exactos de tabla/columna 
 2. Actualizar `CLAUDE.md` (bloque de `featuredByEntitlement`) y el comentario de
    `plan-comparison-rows.ts`. Commit aparte de docs. (1 h)
 3. Comentar en HOS-2094 los criterios nuevos de AC-5. (30 min)
-4. Decidir qué hacer con `syncFeaturedByEntitlementFor*` (borrar el vestigio) en una issue chica
-   aparte si el dueño aprueba (ver pregunta 2).
+4. (Fuera de este programa) El borrado de `syncFeaturedByEntitlementFor*` lo maneja la sesión
+   epica-billing, ya avisada; acá no se crea issue.
 5. Cerrar HOS-2290 con el informe.
 
-## 10. Preguntas abiertas para el owner
+## 10. Preguntas abiertas y decisiones
 
-1. **¿Se deja el copy actual de la presentación y de `/funcionalidades` que ofrece el boost
-   como comprable hoy?**
-   - A) Sacarlo hasta que HOS-2094 lo habilite. Pro: honesto. Contra: la presentación ya está
-     entregada a prospectos y se «despromete».
-   - B) Dejarlo con una marca «próximamente». Pro: sigue visible. Contra: contradice la
-     decisión del 31/10 de presentarlo en presente.
-   - C) Dejarlo y priorizar HOS-2094 antes del corte. Pro: el copy pasa a ser verdad.
-     Contra: depende de medir Checkout Pro.
-   - **Recomiendo C**, y A solo si HOS-2094 no entra antes del corte. Se aplica en HOS-2284.
-2. **¿Se borra `syncFeaturedByEntitlementFor{Owner,Accommodation}` (vestigio sin llamador)?**
-   - A) Borrar con su test. Pro: menos confusión (ya engañó al CLAUDE.md). Contra: es un cambio extra.
-   - B) Dejar. **Recomiendo A**, en una issue chica.
+Decidido (owner, 16/11/2026):
+
+1. **Copy actual de la presentación y de `/funcionalidades` sobre el boost.** «Destacar 7 o
+   30 días» queda como está y se vuelve verdadero cuando salga HOS-2094. Las otras tres
+   afirmaciones falsas sí se corrigen en HOS-2284. Es la opción C del informe original
+   (priorizar HOS-2094), sin retirar el copy.
+2. **`syncFeaturedByEntitlementFor{Owner,Accommodation}` (vestigio sin llamador).** Lo maneja
+   la sesión epica-billing; no se crea issue en este programa.
+
+Sin preguntas abiertas.
 
 ## 11. Dependencias
 
@@ -306,6 +316,9 @@ Para el tamaño del catálogo en la tabla: los nombres exactos de tabla/columna 
 - HOS-929 y HOS-1357 están **Done**: no bloquean nada. La issue HOS-2279 los marca como
   bloqueantes y esa marca está vencida (ver spec de HOS-2279).
 - HOS-1352 (pase final del catálogo): este informe no toca catálogo.
+- Sesión epica-billing: dueña del borrado del código muerto `syncFeaturedByEntitlementFor*`.
+- HOS-2288 (destacado de evento) y HOS-2292 (elegibilidad de add-ons): no bloquean este
+  informe; HOS-2288 queda fuera de su alcance y usa otra clave y otra lectura.
 
 ## 12. Smoke y Novedades
 

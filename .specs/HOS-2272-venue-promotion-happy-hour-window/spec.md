@@ -32,7 +32,7 @@ Una promo de local puede valer solo ciertos días y horas: «2x1 en tragos, de j
 
 ## 4. Fuera de alcance
 
-- Más de una franja por promo (ver OQ-2).
+- Más de una franja por promo (decidido: una sola, ver OQ-2).
 - Recurrencias distintas de la semanal, excepciones y feriados.
 - Zona horaria propia por local (ver OQ-1).
 - Refresco automático del badge sin navegar (ver OQ-4).
@@ -64,9 +64,9 @@ Restricciones en el carril de extras (archivo idempotente en `packages/db/src/mi
 - Todo o nada: `(window_weekdays IS NULL) = (window_start IS NULL) AND (window_start IS NULL) = (window_end IS NULL)`.
 - `cardinality(window_weekdays) BETWEEN 1 AND 7` y todos los valores entre 0 y 6.
 - `window_start <> window_end`. Si `window_end < window_start`, la franja cruza la medianoche. (Un cierre igual a la apertura queda prohibido: en horarios significa «24 horas», acá sería ambiguo.)
-- La franja solo vale en promos de local: `window_weekdays IS NULL OR venue_id IS NOT NULL`.
+- La franja solo vale en promos de local: `window_weekdays IS NULL OR entity_type = 'venue'` (HOS-2270 reemplazó `venue_id` por `entity_type` + `entity_id`).
 
-No hay data-migration de seed: es una columna nueva sin dato previo. Orden en vivo: `db:migrate`, luego `db:apply-extras`.
+Las tres columnas son aditivas y nulas, sin dato previo: no hay data-migration ni expand/contract propio (el de HOS-2270 ya cubre el cambio de modelo). Esta migración va después de la de HOS-2270 (release N) y no depende de borrar `accommodation_id`. Orden en vivo: `db:migrate`, luego `db:apply-extras`.
 
 ### 6.2 Schemas y API
 
@@ -153,9 +153,9 @@ Riesgos:
 - R-3. El conteo de franjas en la tarjeta infla el HTML de listados largos. Mitigación: tope de 10 y deduplicado.
 - R-4. Esta spec y HOS-2271 tocan la misma isla de tarjeta: coordinar el orden de merge.
 
-Preguntas:
+Preguntas (OQ-2 decidida abajo, el resto abiertas y menores):
 - OQ-1. Zona horaria. Opciones: (a) fija de Buenos Aires, como `VENUE_OPEN_NOW_TIME_ZONE`; (b) una zona por local (columna nueva). **Recomiendo (a)**: todos los locales están en Argentina y el propio código lo declara como único lugar a revisar.
-- OQ-2. Varias franjas por promo («lun a mié 18 a 20» y «jue a sáb 23 a 00:30»). Opciones: (a) una franja por promo, el dueño carga dos promos (cada una cuenta contra el tope de 5); (b) lista de franjas por promo. **Recomiendo (a)**: es el pedido literal del issue; (b) suma tabla o JSON y más reglas. Dejar dicho que dos promos son dos cupos.
+- Decidido (owner, 16/11/2026): una franja por promo. Una franja es un conjunto de días con un único rango de horas. Quien necesite «lun a mié 18 a 20» y «jue a sáb 23 a 00:30» carga dos promos, y cada una cuenta contra `max_active_promotions` (dos promos son dos cupos). No hay tabla ni lista de franjas. Esto deja el modelo de 6.1 tal cual y fija el tope de 10 franjas de la tarjeta como un máximo de promos con franja, no de franjas por promo.
 - OQ-3. Una promo sin franja, ¿muestra «Ahora» todo el tiempo? Opciones: (a) no, solo «Promo»; (b) sí. **Recomiendo (a)**: «Ahora» solo tiene sentido si hay una franja.
 - OQ-4. Refresco del badge con la página abierta. Opciones: (a) sin intervalo (precedente de «Abierto ahora»); (b) recalcular cada minuto. **Recomiendo (a)**.
 - OQ-5. Solapamiento con la agenda (`venue_events` ya admite un happy hour semanal). Opciones: (a) solo una ayuda en el formulario; (b) impedirlo. **Recomiendo (a)**: son cosas distintas (agenda vs beneficio) y el dueño puede querer ambas.

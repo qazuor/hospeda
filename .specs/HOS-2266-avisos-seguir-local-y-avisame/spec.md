@@ -16,7 +16,7 @@ areas:
 
 ## 1. Resumen
 
-El turista logueado puede **seguir un local** (recibe avisos de eventos nuevos) y tocar **"Avisame"** en un evento puntual (recibe el recordatorio y los avisos de cambio de ese evento). Quien paga es el dueño del local: el botón solo existe si el plan del local incluye la clave nueva `venue_event_notifications` (pro y premium). Si el local baja de plan, las suscripciones se conservan pero no sale ningún aviso. El dueño ve cuántos seguidores tiene, sin datos personales.
+El turista logueado puede **seguir un local** (recibe avisos de eventos nuevos) y tocar **"Avisame"** en un evento puntual (recibe el recordatorio y los avisos de cambio de ese evento). Quien paga es el dueño del local: el botón solo existe si el plan del local incluye la clave nueva `venue_event_notifications` (pro y premium). El botón aparece según un dato público `notificationsEnabled` ("avisos habilitados: sí/no") en la ficha, calculado con el mismo mecanismo que ya oculta la carta, sin revelar el plan. Si el local baja de plan, las suscripciones se conservan pero no sale ningún aviso. El dueño ve cuántos seguidores tiene, sin datos personales.
 
 ## 2. Problema
 
@@ -30,7 +30,8 @@ Hoy un turista no tiene forma de enterarse de lo que pasa en un local de noche. 
 - G-4: gate por `venue_event_notifications` del plan del dueño, evaluado también al enviar.
 - G-5: gestión desde "Mi cuenta" (listar y dejar de seguir).
 - G-6: contador de seguidores para el dueño, sin datos personales.
-- G-7: ids estables de los eventos del local (prerequisito técnico, ver 6.1).
+- G-7: consumir los ids estables de los eventos del local (prerequisito técnico: HOS-2291, ver 6.3).
+- G-8: "Avisame" en un evento semanal es de un solo uso: manda un único recordatorio (próxima fecha) y después el botón vuelve a "Avisame" (ver 6.2 y 6.5).
 
 ## 4. Fuera de alcance
 
@@ -52,11 +53,13 @@ Hoy un turista no tiene forma de enterarse de lo que pasa en un local de noche. 
 
 `tourist_price_alerts` (`packages/db/src/schemas/alert/tourist_price_alerts.dbschema.ts`): tabla propia, FK con CASCADE, `deleted_at`, índice único parcial `WHERE deleted_at IS NULL`. Rutas en `apps/api/src/routes/price-alert/protected/` (create con `enforceUserGate`, list, remove), servicio `AlertSubscriptionService` (`packages/service-core/src/services/alert/alert-subscription.service.ts`) y página `apps/web/src/pages/[lang]/mi-cuenta/alertas/index.astro` con el island `AlertsList`. Ese es el molde.
 
-### 5.3 Los eventos del local no tienen id estable
+### 5.3 Los eventos del local no tienen id estable (lo resuelve HOS-2291)
 
 - `replaceVenueEvents` borra y reinserta toda la agenda (`packages/service-core/src/services/venue/venue.events.ts:250-278`, cabecera 1-45: "Entry ids are not stable across a save ... a diff would be machinery with no consequence").
 - El payload no lleva ids (`VenueEventInputSchema`, `packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts:260-285`) y el draft del editor tampoco (`apps/web/src/lib/venue/venue-event-draft.ts:11-24`).
 - `venue_events.venue_id` es `ON DELETE CASCADE` (`venue_event.dbschema.ts:100-102`).
+
+> Los ids estables (antes "HOS-2255 T-1") se extrajeron al issue **HOS-2291**, que es prerequisito de este spec.
 
 **Consecuencia**: cualquier suscripción a un `venue_event.id` desaparecería en el primer guardado de la agenda. El propio comentario del servicio ya dice que el día que algo referencie un evento "this function grows a diff".
 
@@ -98,8 +101,8 @@ Tablas nuevas en singular (regla del repo), en `packages/db/src/schemas/venue/`:
 - Único parcial `(user_id, venue_id) WHERE deleted_at IS NULL`. Índice por `venue_id` (conteo y digest) y por `user_id` (Mi cuenta).
 
 `venue_event_subscription`
-- `id uuid pk`, `user_id`, `venue_id` (desnormalizado para gate y conteo, FK CASCADE), `venue_event_id uuid not null -> venue_events ON DELETE CASCADE`, `created_at`, `updated_at`, `deleted_at`.
-- `remind_for_date date null` y `reminded_at timestamptz null` (los usa HOS-2267; se crean acá para una sola migración).
+- `id uuid pk`, `user_id`, `venue_id` (desnormalizado para gate y conteo, FK CASCADE), `venue_event_id uuid not null -> venue_events ON DELETE CASCADE` (a propósito CASCADE y no SET NULL: sin evento no hay a quién avisar; la semántica SET NULL de HOS-2256/2265 es solo para los clics de métricas), `created_at`, `updated_at`, `deleted_at`.
+- `remind_for_date date null` y `reminded_at timestamptz null` (los usa HOS-2267; se crean acá para una sola migración). **Un solo uso por fecha**: tras enviar el recordatorio (`reminded_at` no nulo) la suscripción de un evento semanal queda "consumida": `notification-state` ya no la lista y el botón vuelve a "Avisame". Un nuevo `PUT` sobre una fila consumida la **rearma** (nuevo `remind_for_date`, `reminded_at = NULL`) sin crear otra fila, por el índice único parcial.
 - Único parcial `(user_id, venue_event_id) WHERE deleted_at IS NULL`. Índices por `venue_event_id`, `user_id`, y `(remind_for_date) WHERE reminded_at IS NULL AND deleted_at IS NULL`.
 
 Sin `locale` ni email en las filas: el idioma y el correo se leen del usuario en el momento de encolar.
@@ -108,16 +111,15 @@ Cambio en `venue_events` (id estable, ver 6.3): ninguna columna nueva en este sp
 
 Constraint-violation: registrar los dos índices únicos en `apps/api/src/utils/constraint-violation.ts` (ver línea ~118 para el formato).
 
-### 6.3 Prerequisito: ids estables en la agenda (tarea T-1, bloquea todo)
+### 6.3 Prerequisito: ids estables en la agenda (HOS-2291, bloquea todo)
 
-- `VenueEventInputSchema` suma `id: z.string().uuid().optional()`.
-- `replaceVenueEvents` pasa de "borrar y reinsertar" a **diff dentro de la misma transacción**: ids presentes -> `UPDATE`; sin id -> `INSERT`; ids del local que no vienen -> `DELETE`. Un id que no pertenece a ese local es `VALIDATION_ERROR` (nunca se confía en un id ajeno).
-- `displayOrder` sigue saliendo de la posición del array.
-- `EventDraft` (`venue-event-draft.ts`) y los componentes del editor (`VenueEventsManager.client.tsx`, `VenueEventEntryCard.client.tsx`, equivalentes `ListingVenueEvents*`) llevan y reenvían el `id`.
-- La lectura (`projectEvent`) ya devuelve `id`.
-- Riesgo: un cliente que no mande ids borraría y recrearía todo, y las suscripciones caerían por CASCADE. Mitigación: el editor es el único cliente (verificar que admin no escribe agenda) y se publica en el mismo PR; test de regresión "guardar sin cambios conserva ids".
+Los ids estables de `venue_events` (`VenueEventInputSchema` con `id` opcional, `replaceVenueEvents` con diff transaccional, `EventDraft` y editor que reenvían el `id`, test "guardar sin cambios conserva ids") se extrajeron al issue **HOS-2291** (antes tarea T-1 de HOS-2255). Este spec **no los reimplementa**: depende de HOS-2291 y solo verifica que se cumplen.
+
+Lo que sí queda acá:
+
+- Test de integración de regresión propio: guardar la agenda sin cambios conserva las suscripciones (AC-8).
 - Borrar un evento del editor **no avisa** a los suscriptos (el issue distingue "borrar" de "suspender", HOS-2269). El editor debe advertirlo con texto: "Si lo borrás, quienes se anotaron no reciben aviso. Para avisar, usá Suspender."
-- Si HOS-2254/2263/2264 ya reescribieron `replaceVenueEvents` con diff, este punto se reduce a verificar que preserva ids.
+- Riesgo si HOS-2291 no está: un cliente que no mande ids borraría y recrearía todo y las suscripciones caerían por CASCADE (R-1).
 
 ### 6.4 Gate: `venue_event_notifications` del plan del dueño
 
@@ -142,9 +144,9 @@ Todas con `createProtectedRoute`, `customRateLimit` 60/min, sin `listingAccess` 
 |---|---|---|
 | `PUT /api/v1/protected/venues/:id/follow` | Idempotente. Crea o reactiva el seguimiento. 200 con `{ following: true }` | 404 local inexistente/no publicado; 422 `VALIDATION_ERROR` con `details.reason = 'NOTIFICATIONS_NOT_AVAILABLE'` si el gate da `false`; 403 `LIMIT_REACHED` al pasar el tope por usuario |
 | `DELETE /api/v1/protected/venues/:id/follow` | Idempotente, no exige gate (siempre se puede dejar de seguir). 200 | 404 solo si el id no existe |
-| `PUT /api/v1/protected/venues/:id/events/:eventId/subscription` | Idempotente "Avisame". Calcula `remind_for_date` (HOS-2267). 200 `{ subscribed: true }` | 404 si el evento no es de ese local o ya pasó; 422 `NOTIFICATIONS_NOT_AVAILABLE`; `LIMIT_REACHED` |
+| `PUT /api/v1/protected/venues/:id/events/:eventId/subscription` | Idempotente "Avisame". Calcula `remind_for_date` (HOS-2267); sobre una fila consumida de un evento semanal la rearma. 200 `{ subscribed: true }` | 404 si el evento no es de ese local o ya pasó; 422 `NOTIFICATIONS_NOT_AVAILABLE`; `LIMIT_REACHED` |
 | `DELETE /api/v1/protected/venues/:id/events/:eventId/subscription` | Idempotente. 200 | 404 si no existe el evento |
-| `GET /api/v1/protected/venues/:id/notification-state` | `{ following: boolean, subscribedEventIds: string[] }` del usuario. **Una sola llamada por ficha** | 404 |
+| `GET /api/v1/protected/venues/:id/notification-state` | `{ following: boolean, subscribedEventIds: string[] }` del usuario (de los eventos semanales solo los pendientes, es decir con `reminded_at IS NULL`; los consumidos vuelven a "Avisame"). **Una sola llamada por ficha** | 404 |
 | `GET /api/v1/protected/me/venue-notifications` | Para Mi cuenta: seguimientos y suscripciones propios con nombre del local, `eventTitle`, `date/weekday`, y `paused: boolean` (el local hoy no envía) | - |
 | `GET /api/v1/protected/venues/:id/followers/summary` | Solo dueño del local. `{ followers: number, eventSubscribers: number }`, sin ids ni emails | 404 si no es suyo (nunca 403); 403 `ENTITLEMENT_REQUIRED` si su plan no tiene la clave |
 
@@ -163,8 +165,8 @@ Limpieza:
 
 ### 6.7 Web
 
-- Payload público: `getBySlug` suma `notificationsEnabled: boolean` (resultado del gate) a `VenuePublicSchema` (`venue.access.schema.ts`). Los eventos ya vienen con `id`.
-- Island `VenueFollowButton.client.tsx` en la cabecera de la ficha y `VenueEventNotifyButton.client.tsx` por evento dentro de `VenueEvents.astro`. Ambos solo se montan si `notificationsEnabled`. Al montar llaman **una vez** a `notification-state` (si no hay sesión, el botón muestra "Seguir" y al tocarlo lleva al login con retorno). Cache cliente de la respuesta compartida entre ambos islands (molde `user-collections-cache.ts`).
+- Payload público: `getBySlug` suma `notificationsEnabled: boolean` ("avisos habilitados", resultado del gate) a `VenuePublicSchema` (`venue.access.schema.ts`), calculado donde ya se calcula el "withheld" de la carta y la agenda y con el mismo mecanismo. Es **solo un booleano**: nunca el nombre del plan ni la clave (DEC-FAC-072). Los eventos ya vienen con `id`.
+- Island `VenueFollowButton.client.tsx` en la cabecera de la ficha y `VenueEventNotifyButton.client.tsx` por evento dentro de `VenueEvents.astro`. Ambos solo se montan si `notificationsEnabled`. `VenueEventNotifyButton` muestra "Avisame" y, tras tocarlo, "Te avisamos"; cuando el recordatorio de un evento semanal ya salió, vuelve a "Avisame". Al montar llaman **una vez** a `notification-state` (si no hay sesión, el botón muestra "Seguir" y al tocarlo lleva al login con retorno). Cache cliente de la respuesta compartida entre ambos islands (molde `user-collections-cache.ts`).
 - `VenueEvents.astro` hoy es 100% presentacional; se le suma el slot del botón por entrada sin leer sesión (la página sigue pasando `cacheable-pages-are-session-blind`).
 - Mi cuenta: nueva sección `mi-cuenta/avisos-de-locales/index.astro` + island (molde `alertas/index.astro` + `AlertsList`), registrada en `AccountLayout` (`activeSection`). Lista seguimientos y "Avisame", botón de dejar de seguir, y chip "En pausa" si `paused`.
 - Dueño: tarjeta "Seguidores" en el editor del local (`mi-cuenta/comercio/[vertical]/[id]/editar/...`), con el número, y estado bloqueado (candado + CTA al plan, sin nombres de plan, ver `venue-editor-upsell-no-plan-names.guard.test.ts`) si su plan no tiene la clave.
@@ -187,11 +189,13 @@ G1: el helper de gate recibe `VerticalEnum.VENUE` por parámetro y las rutas viv
 - AC-5: El turista puede dejar de seguir / cancelar "Avisame" desde la ficha y desde Mi cuenta, y el gate no interviene (se puede aunque el local haya bajado de plan).
 - AC-6: Si el local baja de plan, las filas se conservan, el botón desaparece de la ficha, Mi cuenta muestra "En pausa" y `GET /me/venue-notifications` devuelve `paused: true`. Si sube de nuevo, todo vuelve sin acción del turista.
 - AC-7: El dueño ve `followers` y `eventSubscribers` como números; la respuesta no contiene ids de usuario ni emails. Otro usuario recibe 404.
-- AC-8: Guardar la agenda sin cambios conserva los ids de los eventos y por lo tanto las suscripciones; borrar un evento elimina sus suscripciones (CASCADE).
+- AC-8: (depende de HOS-2291) Guardar la agenda sin cambios conserva los ids de los eventos y por lo tanto las suscripciones; borrar un evento elimina sus suscripciones (CASCADE).
 - AC-9: Un usuario con email sin verificar recibe `EMAIL_NOT_VERIFIED` en las rutas de seguir.
 - AC-10: El dueño no puede seguir su propio local.
 - AC-11: Al purgar la ficha, las suscripciones de ese local quedan cerradas.
 - AC-12: La página `/comer-y-salir/[slug]` sigue pasando `cacheable-pages-are-session-blind`.
+- AC-13: El payload público trae `notificationsEnabled` como único dato de los avisos (ni plan ni clave); coincide con el gate.
+- AC-14: Dado un evento semanal con el recordatorio ya enviado, `notification-state` no lo lista en `subscribedEventIds` y el botón vuelve a "Avisame"; tocarlo de nuevo rearma la misma fila sin duplicado.
 
 ## 8. Plan de pruebas
 
@@ -205,15 +209,17 @@ G1: el helper de gate recibe `VerticalEnum.VENUE` por parámetro y las rutas viv
 
 ## 9. Riesgos
 
-- R-1: perder suscripciones por un cliente que no mande ids (6.3). Mitigado con test y único cliente.
-- R-2: la ficha pública revela, vía `notificationsEnabled`, que el dueño tiene un plan pro o superior. Ya pasa hoy con `venueEvents`/`menuSections` ("withheld"), pero choca con DEC-FAC-072. Ver OQ-1.
+- R-1: perder suscripciones por un cliente que no mande ids (6.3). Lo mitiga HOS-2291 y el test de regresión de este spec.
+- R-2: la ficha pública revela, vía `notificationsEnabled`, que el dueño tiene un plan pro o superior. Aceptado por el owner (16/11/2026): es el mismo grado de exposición que ya existe con `venueEvents`/`menuSections` ("withheld"); no se expone el nombre del plan.
 - R-3: cache de la ficha tras un cambio de plan: el botón puede quedar hasta el TTL. Mismo trade-off aceptado en `getBySlug.ts` (comentario del TTL). El gate de servidor lo corrige al tocar.
 - R-4: conflicto de migraciones/`replaceVenueEvents` con los specs de eventos (HOS-2254/2263/2264). Coordinar orden.
 - R-5: la clave y el grant no existen hasta HOS-2259/2281 (bloqueados por el cierre de HOS-1352). Todo el código puede escribirse y probarse con el catálogo en tests, pero **no mergea** antes.
 
-## 10. Preguntas abiertas para el owner
+## 10. Preguntas abiertas y decisiones
 
-- OQ-1: ¿Cómo mostramos el botón sin revelar el plan? Opciones: (1) `notificationsEnabled` booleano en el payload público, coherente con cómo ya se ocultan carta y agenda (recomendada: es el mismo grado de exposición que ya existe y no agrega ruta nueva); (2) el botón siempre se renderiza y el servidor responde `NOTIFICATIONS_NOT_AVAILABLE` (no revela plan pero muestra un botón que falla, mala UX); (3) leer el flag recién en el island vía `notification-state` (no toca el payload cacheable, pero el botón aparece tarde). Recomiendo 1.
+Decidido (owner, 16/11/2026): "Avisame" en un evento semanal manda un solo recordatorio, para la próxima fecha; después el botón vuelve a "Avisame" (ver 6.2, G-8, AC-14).
+
+- OQ-1 (resuelta): Decidido (owner, 16/11/2026): el botón sale según un dato público booleano "avisos habilitados: sí/no" en la ficha (`notificationsEnabled`), con el mismo mecanismo que la carta. No revela el plan.
 - OQ-2: ¿"Seguir" y "Avisame" son independientes? Recomiendo sí: "Avisame" no implica seguir al local (evita que alguien que solo quiere un recordatorio reciba el digest de eventos nuevos).
 - OQ-3: Topes por usuario (100 locales, 200 eventos): ¿los dejamos como constantes técnicas? Recomiendo sí, sin exponerlos como límite de plan.
 - OQ-4: ¿El contador del dueño debe mostrarse con un piso (por ejemplo, "menos de 5" cuando hay pocos) para no permitir deducir quién sigue? Con una sola persona el dueño igual no ve datos personales. Recomiendo número exacto.
@@ -221,7 +227,7 @@ G1: el helper de gate recibe `VerticalEnum.VENUE` por parámetro y las rutas viv
 ## 11. Dependencias
 
 - Bloquea: HOS-2267, HOS-2268, HOS-2269.
-- Depende de: HOS-2259 (clave `venue_event_notifications`), HOS-2281 (grant en planes pro/premium), cierre de HOS-1352 para mergear lo que toque catálogo.
+- Depende de: HOS-2291 (ids estables de eventos), HOS-2259 (clave `venue_event_notifications`), HOS-2281 (grant en planes pro/premium), cierre de HOS-1352 para mergear lo que toque catálogo.
 - Coordinar con: HOS-2254, 2263, 2264, 2265 (mismas tablas/servicio de eventos), HOS-2284 (presentación y Novedades).
 
 ## 12. Smoke y Novedades
@@ -232,14 +238,14 @@ G1: el helper de gate recibe `VerticalEnum.VENUE` por parámetro y las rutas viv
 
 ## 13. Desglose de tareas (cada una <= 1 día)
 
-1. T-1 Ids estables: schema `id?`, diff en `replaceVenueEvents`, tests de regresión.
-2. T-2 Editor web lleva y reenvía `id` + aviso de "borrar no avisa".
+1. T-1 Verificar HOS-2291 (ids estables) y test de regresión "guardar sin cambios conserva suscripciones" (si HOS-2291 no está mergeado, este spec no avanza).
+2. T-2 Editor web: aviso "borrar no avisa" (el reenvío de `id` lo hace HOS-2291).
 3. T-3 Migración de `venue_follow` y `venue_event_subscription` + modelos Drizzle + registro de constraints.
-4. T-4 Servicio(s) de seguimiento/suscripción + tests.
+4. T-4 Servicio(s) de seguimiento/suscripción + tests (incluye rearmado de suscripción consumida).
 5. T-5 Helper `readVenueNotificationGate` + tests.
 6. T-6 Rutas protegidas (follow, subscription, notification-state, me/venue-notifications, followers/summary) + tests de integración.
-7. T-7 Payload público `notificationsEnabled` + schema.
-8. T-8 Islands de la ficha (Seguir, Avisame) + i18n es/en/pt.
+7. T-7 Payload público `notificationsEnabled` (avisos habilitados, solo booleano) + schema.
+8. T-8 Islands de la ficha (Seguir, Avisame; "Avisame" vuelve tras el recordatorio semanal) + i18n es/en/pt.
 9. T-9 Página Mi cuenta + tarjeta de seguidores del dueño.
 10. T-10 Limpieza en purga de ficha y cierre de cuenta + tests.
 11. T-11 Guards (G1/G2) y revisión de `check-content-routes-declare-section`; e2e.

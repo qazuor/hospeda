@@ -20,11 +20,17 @@ Un add-on de venue que suma **100 lugares por evento** a la lista de invitados, 
 local pro con una fecha fuerte. Otorga `max_venue_guest_list_size = 100`, que se suma
 al cupo del plan (`SUM`). Se compra desde la lista cuando llega al cupo y desde la
 página de complementos. Solo se ofrece a locales con el rubro «noche» (HOS-2253,
-decisión 4). Precio y ciclo los define el owner.
+decisión 4).
 
-Comparte el mecanismo de creación, venta y elegibilidad descrito en
-`.specs/HOS-2285-comer-y-salir-addon-pack-eventos/spec.md` (secciones 5.1 a 5.3 y 6.1 a
-6.6). Acá solo lo propio.
+Decidido (owner, 16/11/2026): pack **mensual** y **no apilable** (si hace falta más, se crea
+un pack más grande; la variante por temporada se evalúa cuando se resuelva HOS-2094). Precio
+**provisorio** $7.000/mes, a revisar con el owner antes de crear el producto en producción.
+Se crea desde el admin existente, con runbook.
+
+Comparte el mecanismo de venta con
+`.specs/HOS-2285-comer-y-salir-addon-pack-eventos/spec.md` (secciones 5.1 a 5.3, 6.1 a 6.3 y
+6.5 a 6.6). La **elegibilidad** (capacidad base, rubro, ya-otorgado, `ADDON_NOT_ELIGIBLE`)
+la define **HOS-2292**, de la que este add-on depende (6.2).
 
 Bloqueado: toca el catálogo de add-ons; no se mergea antes de la pasada final de HOS-1352.
 Va después de HOS-2283 (grants de listas y reservas).
@@ -39,13 +45,17 @@ cambiar de plan.
 
 - Un add-on `max_venue_guest_list_size = +100`.
 - Compra desde la lista cuando se alcanza el cupo y desde complementos.
-- Elegibilidad por rubro noche y por capacidad base (`venue_guest_list`).
+- Declaración de lo que necesita de la elegibilidad: rubro noche y capacidad base
+  (`venue_guest_list`); el mecanismo es de HOS-2292.
+- Creación desde el admin con runbook.
 - Textos es/en/pt.
 
 ## 4. Fuera de alcance
 
 - La lista de invitados (HOS-2274) y el cupo base (HOS-2283).
-- Precio y ciclo.
+- El mecanismo de elegibilidad (HOS-2292) y cualquier código o migración para crear el
+  add-on (se crea desde el admin).
+- Variante por fecha (`UNA_VEZ`): se evalúa cuando se resuelva HOS-2094.
 - Cupo por noche específica o por ficha (el límite es por evento y por usuario+vertical).
 
 ## 5. Estado actual verificado (`origin/staging`)
@@ -65,35 +75,34 @@ cambiar de plan.
   `common:false` y la posee `nightlife` en `BUSINESS_LINES.venue[].sections`
   (`business-lines.ts:26-39`). `resolveListingSections` la marca `absent` en una ficha sin
   ese rubro (`resolve-listing-sections.ts:134-200`). Esa es la regla de la ficha; el add-on
-  necesita su par a nivel de oferta (HOS-2285 sección 6.4, regla 3).
-- No hay elegibilidad de add-ons hoy (HOS-2285 sección 5.2).
-- Una instancia por `(owner, producto, destino)` activa o pendiente: no se apila dos veces
-  el mismo pack.
+  necesita su par a nivel de oferta (HOS-2292, regla de rubro).
+- No hay elegibilidad de add-ons hoy (HOS-2292).
+- Una instancia por `(owner, producto, destino)` activa o pendiente: el pack no se apila
+  (decidido, 16/11/2026); el máximo para pro es 200 por evento.
 
 ## 6. Diseño propuesto
 
 ### 6.1 Add-on
 
-| Campo | Valor propuesto |
+| Campo | Valor |
 |---|---|
 | slug | `extra-guest-list-100` |
 | versión | `WHILE_SUBSCRIPTION_ALIVE`, `VERTICAL_SUBSCRIPTION`, `entitlements: []`, `limits: [{ key: 'max_venue_guest_list_size', value: 100 }]` |
-| producto | ciclo y precio: owner. `compatibleVerticals: ['venue']` |
+| producto | `PERIODICO` mensual, precio provisorio $7.000/mes (a revisar con el owner antes de producción), `compatibleVerticals: ['venue']` |
 
-Pensado para una fecha fuerte: una oferta natural es `UNA_VEZ` con `FIXED_DAYS` corto
-(30 días), pero esa combinación con `VERTICAL_SUBSCRIPTION` no tiene precedente en
-producción (los `UNA_VEZ` son `LISTING`); verificar antes (pregunta 2).
+Se crea desde el admin existente siguiendo el runbook de HOS-2285 (6.2), sin migración.
+Una oferta por fecha (`UNA_VEZ` + `FIXED_DAYS` con `VERTICAL_SUBSCRIPTION`, sin precedente en
+producción) se evalúa cuando se resuelva HOS-2094.
 
-### 6.2 Elegibilidad
+### 6.2 Elegibilidad (HOS-2292)
 
-Se aplica el mecanismo de HOS-2285 sección 6.4:
+El mecanismo lo define y lo implementa HOS-2292. Este add-on necesita:
 
 - Capacidad base: el plan debe otorgar `venue_guest_list` (excluye básico).
 - No se ofrece si el cupo efectivo ya es «sin tope» (excluye premium).
 - Rubro: la clave gobernante `venue_guest_list` es la entitlement de la sección `guestList`,
-  poseída por `nightlife`; el dueño debe tener al menos una ficha de venue con ese rubro.
-  Cálculo derivado del catálogo; sin literales de rubro fuera de `@repo/schemas` (G1,
-  G-FAC-03).
+  poseída por `nightlife`; el dueño debe tener al menos una ficha de venue con ese rubro,
+  derivado del catálogo y sin literales de rubro fuera de `@repo/schemas` (G1, G-FAC-03).
 - Rechazo de compra: 409 `ADDON_NOT_ELIGIBLE`.
 
 Matiz honesto: el rubro es por ficha y el add-on es por suscripción. Un dueño con una ficha
@@ -116,8 +125,8 @@ cupo en vivo.
 
 ## 7. Modelo de datos / contratos
 
-Las mismas piezas que HOS-2285 (sección 7). Sin cambios propios de esquema. Filas:
-1 `addon`, 1 `addon_version`, 1 `addon_version_limit`, 1 `addon_product`.
+Sin esquema ni migración. Filas creadas desde el admin: 1 `addon`, 1 `addon_version`,
+1 `addon_version_limit`, 1 `addon_product`. Contratos de elegibilidad: HOS-2292.
 
 ## 8. UX / UI
 
@@ -130,17 +139,20 @@ Las mismas piezas que HOS-2285 (sección 7). Sin cambios propios de esquema. Fil
 1. Dado un dueño pro con ficha de rubro noche, cuando compra el pack, entonces su cupo
    efectivo por evento pasa a 200 dentro de los 15 minutos.
 2. Dado un dueño pro solo con fichas gastronomía, entonces no ve la oferta y la compra se
-   rechaza con 409 `ADDON_NOT_ELIGIBLE`.
-3. Dado un dueño premium o básico, entonces no se ofrece y se rechaza.
+   rechaza con 409 `ADDON_NOT_ELIGIBLE` (regla de HOS-2292).
+3. Dado un dueño premium o básico, entonces no se ofrece y se rechaza (HOS-2292).
 4. Dado el vencimiento del add-on, el cupo baja a 100 y las anotaciones existentes se
    respetan; no se aceptan nuevas por encima del cupo.
 5. Dado un dueño con plan de alojamiento, entonces su set efectivo de alojamiento no cambia.
-6. G1, G2, G14, G7 pasan; ningún rol decide la elegibilidad.
+6. Dado un dueño con el pack activo, cuando intenta comprarlo otra vez, entonces recibe
+   `ADDON_ALREADY_ACTIVE` (no apilable).
+7. G1, G2, G14, G7 pasan; ningún rol decide la elegibilidad; no hay precio en el código.
+8. El producto de producción se crea solo tras la revisión del precio con el owner.
 
 ## 10. Plan de tests
 
-- Los de HOS-2285 sección 10 (derivación, contrato, ofertas, rechazo), con el caso de rubro
-  `food` vs `nightlife`.
+- Los tests de elegibilidad (derivación, contrato, ofertas, rechazo, caso de rubro `food` vs
+  `nightlife`) viven en HOS-2292.
 - `packages/verticals/test/listing-sections/resolve-listing-sections.test.ts`: `guestList`
   `absent` sin rubro.
 - Test de integración de compra con el producto de venue y ficha noche.
@@ -148,27 +160,30 @@ Las mismas piezas que HOS-2285 (sección 7). Sin cambios propios de esquema. Fil
 
 ## 11. Riesgos
 
-- R-1. Mismo riesgo grande del mecanismo de elegibilidad (HOS-2285 R-1).
-- R-2. Un solo pack por suscripción: +200 máximo para pro (+100 una vez).
+- R-1. Depende de la elegibilidad de HOS-2292 (pieza grande, aislada allá).
+- R-2. No apilable: máximo +200 para pro; si hace falta más, otro pack más grande.
 - R-3. Cupo «por evento» calculado en vivo contra un límite plegado: cualquier cambio de
   cobertura hay que reflejarlo (invalidación de caché ≤ 15 minutos).
-- R-4. Add-on creado desde admin no es reproducible en bases nuevas.
+- R-4. Add-on creado desde admin no es reproducible en bases nuevas; mitigación: runbook.
+- R-5. Precio provisorio: no crear el producto en producción sin revisión del owner.
 
-## 12. Preguntas abiertas para el owner
+## 12. Preguntas abiertas y decisiones
 
-1. **Precio y ciclo.** Opciones: (a) mensual periódico; (b) por fecha (`UNA_VEZ` 30 días).
-   Recomendación: (b) si el flujo se verifica, porque el caso de uso es una fecha fuerte;
-   si no, (a).
-2. **Combinación `UNA_VEZ` + `FIXED_DAYS` + `VERTICAL_SUBSCRIPTION`.** Opciones: (a)
-   verificarla de punta a punta en staging antes de elegir (b); (b) quedarse con mensual.
-   Recomendación: (a).
-3. **Rubro por ficha vs. por suscripción** (matiz de 6.2). Opciones: (a) aceptarlo;
-   (b) limitarlo a `LISTING` (no sirve: el set se pliega por vertical). Recomendación: (a).
+Decidido (owner, 16/11/2026):
+
+1. **Precio y ciclo.** Mensual periódico, no apilable, $7.000/mes provisorio a revisar con el
+   owner antes de producción. La oferta por fecha (`UNA_VEZ` 30 días) se evalúa cuando se
+   resuelva HOS-2094.
+2. **Combinación `UNA_VEZ` + `FIXED_DAYS` + `VERTICAL_SUBSCRIPTION`.** Queda fuera de este
+   spec por lo anterior; se verifica si se retoma la oferta por fecha.
+
+Abierta (menor): **rubro por ficha vs. por suscripción** (matiz de 6.2). Recomendación:
+aceptarlo (limitarlo a `LISTING` no sirve: el set se pliega por vertical).
 
 ## 13. Dependencias
 
-- HOS-2259, HOS-2283 (cupo base y sección), HOS-2274 (lista), HOS-2262 (marca de rubro),
-  mecanismo de elegibilidad de HOS-2285.
+- **HOS-2292** (elegibilidad de add-ons): prerrequisito.
+- HOS-2259, HOS-2283 (cupo base y sección), HOS-2274 (lista), HOS-2262 (marca de rubro).
 - Pasada final de HOS-1352 y HOS-2066.
 
 ## 14. Labels de smoke y Novedades
@@ -179,13 +194,14 @@ Las mismas piezas que HOS-2285 (sección 7). Sin cambios propios de esquema. Fil
 
 ## 15. Desglose de tareas
 
-1. Crear el add-on en admin de staging y runbook (0,25 día).
+1. Crear el add-on en el admin de staging siguiendo el runbook de HOS-2285 (0,25 día).
 2. Panel de tope en el editor de la lista y enlace de compra (0,5 día).
 3. Textos es/en/pt (0,25 día).
-4. Tests de elegibilidad por rubro y compra (0,5 día).
+4. Tests de compra y no apilado (0,25 día); los de elegibilidad por rubro van en HOS-2292.
 5. Smoke de staging y firma (0,75 día).
+6. Revisión del precio provisorio con el owner y creación en producción (0,25 día).
 
-(La elegibilidad común se estima una sola vez en HOS-2285.)
+(La elegibilidad común se estima en HOS-2292.)
 
 ## 16. Linear
 

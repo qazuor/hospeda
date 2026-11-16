@@ -92,7 +92,7 @@ Ningún otro mecanismo propaga claves entre verticales (la herencia de VIP del t
 
 ### 6.1 Ventana de 90 días
 
-Se crea `VenueStatsWindowSchema = z.enum(['7d','30d','90d'])` propio de esta ruta. **No** se amplía `EntityViewWindowSchema`: lo usan las rutas básicas de alojamiento y experiencia, y ampliarlo les daría 90 días sin decisión de producto. La retención actual es 95 días: ver spec de HOS-2256 (OQ-2) y R-1 abajo.
+Se crea `VenueStatsWindowSchema = z.enum(['7d','30d','90d'])` propio de esta ruta. **No** se amplía `EntityViewWindowSchema`: lo usan las rutas básicas de alojamiento y experiencia, y ampliarlo les daría 90 días sin decisión de producto. Decidido (owner, 16/11/2026): las métricas se guardan 120 días (HOS-2256, OQ-2), lo que deja 30 días de margen sobre la ventana de 90. Además HOS-2256 escribe un resumen mensual (rollup) desde el primer día, así que la historia más vieja que 120 días no se pierde; este panel sigue leyendo las filas crudas de hasta 90 días y el rollup queda disponible para una ventana más larga futura.
 
 ### 6.2 API
 
@@ -144,12 +144,12 @@ Claves nuevas es/en/pt en el namespace de comercio (verificar el namespace exist
 
 ## 7. Datos y migraciones
 
-Ninguna de esta spec. La tabla y su migración son de HOS-2256. Aquí sólo consultas y rutas. No hay seed ni catálogo.
+Ninguna de esta spec. La tabla, su migración, la retención de 120 días y el rollup mensual son de HOS-2256. Aquí sólo consultas y rutas. No hay seed ni catálogo.
 
 ## 8. Criterios de aceptación
 
 - AC-1. Dado un dueño con `view_advanced_stats` en `VENUE`, cuando abre su panel, ve vistas por día, clics por canal y tasa de clics del local elegido.
-- AC-2. Dadas las ventanas 7, 30 y 90, la serie diaria tiene exactamente N días rellenados con ceros, con días locales de `MARKET_TIMEZONE`.
+- AC-2. Dadas las ventanas 7, 30 y 90, la serie diaria tiene exactamente N días rellenados con ceros, con días locales de `MARKET_TIMEZONE`. La ventana de 90 días se sirve completa porque la retención cruda es de 120.
 - AC-3. Todos los canales vienen en la respuesta, con ceros si no hubo clics.
 - AC-4. `clickRate` está entre 0 y 1; es `null` si el local no tuvo vistas; un visitante que toca teléfono y mapa en la misma visita cuenta una vez.
 - AC-5. Un dueño sin la clave recibe 403 `ENTITLEMENT_REQUIRED` en `/venues/{id}/stats`.
@@ -171,7 +171,7 @@ Unit
 - `apps/web/test/components/venue/venue-stats-panel-mount.test.ts` (lectura de fuente): se monta sólo con `venueListings`.
 
 Integración (base real)
-- `packages/db/test/integration/entity-interaction-stats.model.integration.test.ts`: dedup por bucket de 30 min, agrupado por `kind`, ventana de 90 días.
+- `packages/db/test/integration/entity-interaction-stats.model.integration.test.ts`: dedup por bucket de 30 min, agrupado por `kind`, ventana de 90 días con datos de hasta 120 días presentes.
 
 API
 - `apps/api/test/routes/venue/protected/stats.test.ts`: AC-1, 5, 6. Seguir en los tests de handler lo que dice `apps/api/CLAUDE.md` (bypass de SUPER_ADMIN, mock global de `@repo/db`, `CI=true`).
@@ -183,7 +183,7 @@ Guards: `check:guards`, `check-catalog-key-usage` (la clave ya está en el catá
 
 ## 10. Riesgos
 
-- R-1. **Retención vs ventana.** Con 95 días y ventana 90, un cron caído más de 5 días recorta el panel en silencio. Ver HOS-2256 OQ-2 (subir a 120).
+- R-1. **Retención vs ventana.** Resuelto (owner, 16/11/2026): con retención de 120 días y ventana de 90, un cron caído hasta 30 días no recorta el panel. El resumen mensual existe desde el primer día (HOS-2256, T-7). Riesgo residual: si el cron de purga se adelanta o se acorta el horizonte, hay que revisar esta ventana.
 - R-2. **Dueño con varios locales.** El panel muestra uno por vez; el total de la cuenta no existe. Es una decisión (OQ-2).
 - R-3. **Las vistas cuentan al dueño, los clics no** (HOS-2256 OQ-5). La tasa de clics queda ligeramente por debajo. Aceptable, documentado.
 - R-4. **Tasa de clics sobrestimada por bloqueadores.** Un visitante con bloqueador puede registrar clic sin vista (el beacon de vistas cae) y la tasa pasa de 100% antes del recorte. Se recorta.
@@ -212,7 +212,7 @@ Guards: `check:guards`, `check-catalog-key-usage` (la clave ya está en el catá
 
 ## 13. Dependencias
 
-- Depende de HOS-2256 (tabla y datos de clics).
+- Depende de HOS-2256 (tabla y datos de clics, retención de 120 días y rollup mensual desde el primer día).
 - Habilitada por HOS-2280 (asignación de la clave). Sin ella el panel queda oculto, por diseño.
 - Relacionada con HOS-2265 (comparte `EntityInteractionModel`) y HOS-2262 (textos de la tabla de planes).
 - No toca el catálogo.

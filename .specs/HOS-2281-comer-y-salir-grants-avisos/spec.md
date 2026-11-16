@@ -54,7 +54,11 @@ Filas en v1: 2 de `plan_version_entitlement`. Ninguna de límite.
 - Trial: toma entitlements de la versión de mayor rank (`trial-ratchet.ts`, cabecera), o sea
   que un venue en trial recibirá `venue_event_notifications` apenas se otorgue a premium.
   Para esta clave no hay límite asociado, así que el efecto es coherente (probarla es
-  gratis para quien está en trial). Confirmar en pregunta 2.
+  gratis para quien está en trial).
+  **Decidido (owner, 16/11/2026):** se acepta, y no lleva fila propia en la versión
+  `trial` (solo hay límites ahí). Durante el trial, el panel de avisos muestra el aviso
+  «Incluido en Pro y Premium. El plan Básico no lo tiene» (mecanismo y texto en HOS-2262,
+  sección 6.6).
 - El lector real de la clave es nuevo (HOS-2266 a HOS-2269): `rg venue_event_notifications`
   no tiene usos en `staging`.
 - Las notificaciones salen por `packages/notifications` (no hay tabla de seguidores
@@ -88,7 +92,8 @@ Sin tablas ni columnas nuevas. 2 filas por conjunto de versiones en
 ## 8. UX / UI
 
 Sin UI propia. La fila «Avisos al turista» de la tabla de planes la define HOS-2262 y
-aparece sola cuando el plan la otorga.
+está **oculta** mientras ningún plan la otorga (decisión 28 del owner: no se muestra
+«Próximamente»); aparece sola al aplicar este grant, sin deploy de web.
 
 ## 9. Criterios de aceptación
 
@@ -102,6 +107,10 @@ aparece sola cuando el plan la otorga.
 6. Tras aplicar, un owner pro de venue ve la clave en su set efectivo dentro de los
    15 minutos (caché de Redis, `effective-set-cache/cache.ts:4`).
 7. Un owner de alojamiento no cambia su set efectivo (scope `vertical`).
+8. Antes del grant, la tabla pública de planes de venue no muestra la fila de avisos;
+   después, sí, sin cambio de código web.
+9. Un venue en trial tiene la clave (por mayor rank) y ve el aviso «Incluido en Pro y
+   Premium. El plan Básico no lo tiene» en el panel de avisos.
 
 ## 10. Plan de tests
 
@@ -125,8 +134,9 @@ aparece sola cuando el plan la otorga.
 1. **Tope de avisos.** Opciones: (a) sin tope, solo la clave (la decisión actual);
    (b) un límite mensual de avisos para pro. Recomendación: (a) y medir; si aparece abuso,
    se agrega un límite con el mismo patrón (clave nueva más grant).
-2. **Trial.** Recibe la clave por la regla de mayor rank. Opciones: (a) aceptarlo;
-   (b) bloquearlo. Recomendación: (a), hace de demostración y no cuesta.
+2. **Decidido (owner, 16/11/2026): trial.** Recibe la clave por la regla de mayor rank y
+   muestra el aviso «Incluido en Pro y Premium. El plan Básico no lo tiene». No se
+   bloquea.
 
 Consultas de solo lectura: C-1 a C-5 de HOS-2280, cambiando `in (...)` de C-3 por
 `venue_event_notifications`.

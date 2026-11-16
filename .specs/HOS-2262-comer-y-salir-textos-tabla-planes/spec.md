@@ -35,7 +35,9 @@ plan, se ve como «No incluido» en todas las columnas: una promesa vacía.
 - Marca «solo para locales de noche» (lista de invitados) reusando el mecanismo de rubros.
 - Valor de los topes leído del catálogo, incluido «Ilimitado».
 - Textos de upsell y de tope alcanzado de los límites nuevos.
-- Mostrar una fila recién cuando algún plan la otorga (ver 6.3).
+- Ocultar una fila hasta que algún plan la otorga (ver 6.3), incluida la fila de video de
+  HOS-2258: **no** se muestra como «Próximamente» (decisión 28 del owner, 16/11/2026).
+- Aviso del trial «Incluido en Pro y Premium. El plan Básico no lo tiene» (ver 6.6).
 
 ## 4. Fuera de alcance
 
@@ -132,13 +134,27 @@ porque el `satisfies` obliga. Ver pregunta 1.
 
 ### 6.3 No mostrar una fila hasta que algún plan la otorga
 
-Se agrega a `RowConfig` el campo opcional `hideUntilGranted?: boolean`. La tabla (o su
-helper `plan-comparison-table.helpers.ts`) omite una fila con ese flag cuando ninguna de
-las columnas activas la otorga (entitlement presente o límite > 0). Todas las filas
-nuevas de este issue llevan el flag. Así, mientras HOS-2259 está mergeado y los grants
-(HOS-2280 a HOS-2283) no, la tabla pública no cambia; al aplicarse cada grant, la fila
-aparece sola, **sin deploy de web**. Es coherente con HOS-1967 (la UI lee el catálogo).
-Las filas existentes no llevan el flag y no cambian.
+**Decidido (owner, 16/11/2026, decisión 28):** las filas sin grant se ocultan en la tabla
+de planes hasta que algún plan las tiene. No se usa «Próximamente» para estas filas.
+Incluye la fila de videos (HOS-2258). Nota de coordinación: el comentario de
+coordinación con la sesión de billing hablaba de la fila de videos como «Próximamente»;
+esa redacción quedó superada por esta decisión posterior.
+
+Diseño: `RowConfig` y `CatalogRowPresentation` (filas generadas desde secciones y traits)
+suman el campo opcional `hideUntilGranted?: boolean`. La tabla (o su helper
+`plan-comparison-table.helpers.ts`) omite una fila con ese flag cuando ninguna de las
+columnas activas la otorga (entitlement presente o límite > 0). Todas las filas nuevas de
+la épica llevan el flag: las curadas de este issue y las generadas por trait (la fila
+`venueVideos` de HOS-2258). Así, con HOS-2259 mergeado y sin grants (HOS-2280 a HOS-2283),
+la tabla pública no cambia; al aplicarse cada grant, la fila aparece sola, **sin deploy de
+web**. Es coherente con HOS-1967 (la UI lee el catálogo). Las filas existentes no llevan
+el flag y no cambian; el estado `upcoming` («Próximamente») sigue disponible para las
+filas que ya lo usan.
+
+Orden de merge: HOS-2258 sale primero (entra en la ventana de redeploy de billing) y
+necesita el flag en `CatalogRowPresentation`. Quien llegue primero introduce el campo en
+el tipo compartido y el otro lo reusa; HOS-2258 lo declara en su tarea T-6, y este issue
+lo extiende a las filas curadas.
 
 ### 6.4 Textos (es/en/pt)
 
@@ -174,6 +190,24 @@ módulo de filas y falla si encuentra un literal numérico de tope.
 `LIMIT_DISPLAY_ORDER` (`plan-card-delta.ts:65`) suma los dos límites nuevos en un orden
 razonable (después de `MAX_VENUES`).
 
+### 6.6 Aviso del trial: «Incluido en Pro y Premium. El plan Básico no lo tiene»
+
+**Decidido (owner, 16/11/2026, decisión 27):** durante el trial las funciones nuevas
+funcionan con valores mínimos (1 promo activa, 10 lugares de lista, 1 evento activo,
+filas de límite en la versión `trial`; HOS-2280 a HOS-2283) y muestran este aviso, porque
+el plan Básico de venue no las tiene.
+
+- Texto único en es/en/pt: `billing.trial.notInBasicNotice`, sin nombrar precios; el guard
+  de upsell de editores de venue (que prohíbe nombrar planes en textos de upsell) se revisa
+  contra este texto, porque nombra «Pro y Premium». Si el guard lo rechaza, se agrega una
+  excepción explícita y acotada para esta clave, no se esquiva el guard.
+- Condición: la suscripción está en trial **y** la clave de la función no está en el set de
+  la versión Básico. Se resuelve con el catálogo (`resolveUnlockingPlanName` y el set de
+  Básico), sin lista fija de funciones en la web (HOS-1967).
+- Un componente compartido de aviso lo monta cada editor (promos, lista, avisos, eventos
+  con recurrencia, métricas, video). Cada spec de función solo lo monta; este issue lo
+  define y escribe los textos.
+
 ## 7. Modelo de datos / contratos
 
 Sin tablas ni migraciones. Contratos tocados: `RowConfig` (campos opcionales
@@ -194,7 +228,8 @@ ownership de `guestList`, según 6.2).
 1. Dado cada una de las 9 claves, cuando se carga la tabla de planes de venue en es, en
    y pt, entonces existe etiqueta y descripción (ningún `humanizeKey` de fallback).
 2. Dado que ningún plan otorga una clave nueva, cuando se renderiza la tabla, entonces
-   su fila no aparece; cuando algún plan la otorga, aparece sin cambiar código.
+   su fila no aparece (tampoco como «Próximamente»); cuando algún plan la otorga, aparece
+   sin cambiar código. Vale también para la fila de videos de HOS-2258.
 3. Dada la fila de lista de invitados, cuando se renderiza, entonces muestra la marca de
    rubro Noche; las filas de carta siguen mostrando la de rubro Gastronomía.
 4. Dados los planes con `max_venue_active_events` = 1 / 10 / 2147483647, cuando se
@@ -205,6 +240,9 @@ ownership de `guestList`, según 6.2).
    y guard nuevo).
 7. El upsell de los editores no nombra planes (guard existente verde con los textos nuevos).
 8. La tabla de alojamiento, de experiencia y las filas existentes de venue no cambian.
+9. Dado un venue en trial, cuando abre una función que Básico no tiene (promos, lista,
+   avisos), entonces ve «Incluido en Pro y Premium. El plan Básico no lo tiene» en es, y su
+   equivalente en en/pt; un venue con plan pago no lo ve.
 
 ## 10. Plan de tests
 
@@ -212,6 +250,8 @@ ownership de `guestList`, según 6.2).
   (filas, `hideUntilGranted`, marcas de rubro, límites con ilimitado).
 - Actualizar: `plan-comparison-catalog-rows.test.ts` (presentación exhaustiva con
   `guestList`), `plan-comparison-rows.test.ts`.
+- Test del aviso del trial: visible en trial para claves ausentes en Básico, oculto fuera
+  de trial; guard de upsell sin nombres de plan contemplado (6.6).
 - Nuevo guard: sin literales de tope en `plan-comparison-venue-night-rows.ts`.
 - Existentes que deben seguir verdes: `entitlement-label-coverage.test.ts`,
   `billing-limit-key-i18n-coverage.guard.test.ts`, `i18n-plural-shape.guard.test.ts`,
@@ -226,6 +266,7 @@ ownership de `guestList`, según 6.2).
   una sola PR dueña (pregunta 1).
 - R-3. Ocultar filas sin grant (6.3) cambia una regla de la tabla. Mitigación: flag
   opcional, solo en filas nuevas.
+- R-4. El aviso del trial nombra planes y puede chocar con el guard de upsell (6.6).
 
 ## 12. Preguntas abiertas para el owner
 
@@ -233,18 +274,23 @@ ownership de `guestList`, según 6.2).
    issue de la lista (HOS-2274), y este issue solo agrega presentación y textos;
    (b) este issue, que la deja lista sin comportamiento. Recomendación: (a), una sola
    fuente por sección y este issue después.
-2. **Mostrar filas sin grant.** Opciones: (a) ocultarlas hasta que algún plan las otorga
-   (6.3); (b) mostrarlas con «Próximamente». Recomendación: (a), no promete nada antes de
-   tiempo y no obliga a redeployar la web al habilitar.
+2. **Decidido (owner, 16/11/2026): filas sin grant.** Se ocultan hasta que algún plan las
+   otorga (6.3); no se muestran como «Próximamente». Incluye la fila de videos.
 3. **Nombre del grupo de filas** («Para la noche», «Eventos y reservas», otro).
    Recomendación: «Eventos y reservas», sirve también para gastronomía.
+4. **Texto del aviso del trial para funciones solo de Premium** (`venue_event_stats`,
+   `venue_vip_promotions`, reservas). «Incluido en Pro y Premium» sería falso ahí.
+   Recomendación: variante «Incluido en Premium. Los planes Básico y Pro no lo tienen»,
+   elegida por el catálogo según qué planes tienen la clave.
 
 ## 13. Dependencias
 
 - HOS-2259 (claves y textos mínimos) antes.
 - HOS-1787 (rubros y mecanismo de marca) ya mergeado; HOS-1967 (tabla desde el catálogo).
 - HOS-2274 / HOS-2275 / HOS-2277 (declaración de secciones o traits).
-- HOS-2280 a HOS-2283: sin ellos las filas no aparecen (por diseño).
+- HOS-2280 a HOS-2283: sin ellos las filas no aparecen (por diseño); además cargan los
+  límites mínimos del trial (6.6).
+- HOS-2258: su fila de videos usa el mismo mecanismo de ocultar (6.3).
 - Orden: no se mergea antes de la pasada final de HOS-1352 si toca el catálogo de
   secciones compartido con billing; los textos solos no están bloqueados.
 
@@ -261,6 +307,7 @@ ownership de `guestList`, según 6.2).
 4. Textos es/en/pt de etiquetas y descripciones (1 día, con revisión de copy).
 5. Textos de ayuda, tope alcanzado y audiencia venue (0,5 día).
 6. `LIMIT_DISPLAY_ORDER` y guard de literales (0,25 día).
+6b. Componente y textos del aviso del trial (6.6) con tests (0,5 día).
 7. Captura visual y revisión (0,25 día).
 
 ## 16. Linear

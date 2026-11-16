@@ -76,6 +76,11 @@ promos; el happy hour cuenta como una promo más. Filas en v1: 3 de entitlement
 - Trial: entitlements de premium (incluido `venue_vip_promotions`) y límites de básico
   (sin `max_active_promotions`) producen **tope 0** (HOS-2280 sección 5.4). Un venue en
   trial vería «Promos» habilitadas y no podría crear ninguna.
+  **Decidido (owner, 16/11/2026):** el trial recibe una fila propia
+  `max_active_promotions = 1` (1 promo activa, mínimo para probar) en la versión del plan
+  `trial` de venue, por additive grant (HOS-2280, pieza D). Durante el trial el editor de
+  promos muestra el aviso «Incluido en Pro y Premium. El plan Básico no lo tiene»
+  (HOS-2262, sección 6.6): el plan Básico de venue no tiene promos.
 - Decisión 6 (baja de plan): las promos confirmadas se respetan «como en alojamiento».
   La clave `max_active_promotions` declara enforcement `ARCHIVE`, pero ningún proceso lo
   ejecuta hoy para promos (verificado: el atributo solo se lee en el generador de SQL);
@@ -98,7 +103,11 @@ Idéntico a HOS-2280 secciones 6.1 a 6.4. Datos propios:
   alojamiento (HOS-2280 sección 6.2).
 - **Pieza C.** Data-migration de seed con `INSERT ... SELECT` sobre todas las versiones de
   `venue-pro` y `venue-premium`, `NOT EXISTS`, reset en éxito, y `conflicts` si ya
-  hay un `max_active_promotions` con otro valor.
+  hay un `max_active_promotions` con otro valor. Suma también la fila de límite del
+  `trial` de venue (`max_active_promotions = 1`, valor desde la tabla de grants).
+- **Pieza D (trial).** La fila `max_active_promotions = 1` de la versión `trial` entra en
+  la misma migración SQL (por `catalogId` del plan `trial` de venue) y en la
+  data-migration (ver HOS-2280, sección 6.5). Solo límite, nunca entitlement.
 - **Verificación de no-leak** como test (sección 10): el set efectivo de un usuario con
   solo plan de venue no contiene `create_promotions` en el vertical de alojamiento.
 
@@ -109,7 +118,9 @@ Sin tablas nuevas. Filas: 3 + 2 por conjunto de versiones v1. Carriles: versiona
 ## 8. UX / UI
 
 Sin UI propia. Las filas de la tabla de planes (promos activas, promos VIP) las define
-HOS-2262; la de tope de promos es una celda `limit` que lee `max_active_promotions`.
+HOS-2262; la de tope de promos es una celda `limit` que lee `max_active_promotions`. Una
+fila sin ningún plan que la otorgue se oculta (no «Próximamente»); aparece sola al aplicar
+este grant.
 
 ## 9. Criterios de aceptación
 
@@ -127,6 +138,9 @@ HOS-2262; la de tope de promos es una celda `limit` que lee `max_active_promotio
 7. Un owner pro de venue ve `create_promotions` y `max_active_promotions = 5` en
    `/api/v1/protected/me/effective-set?vertical=venue` dentro de los 15 minutos.
 8. El panel de promos de alojamiento de un owner con ambos planes no cambia.
+9. Dada la versión del plan `trial` de venue, tiene `max_active_promotions = 1`; un venue en
+   trial crea una promo y la segunda falla con el mensaje de tope, y ve el aviso «Incluido
+   en Pro y Premium. El plan Básico no lo tiene».
 
 ## 10. Plan de tests
 
@@ -143,7 +157,8 @@ HOS-2262; la de tope de promos es una celda `limit` que lee `max_active_promotio
 
 - R-1. Filtro por nombre de clave en `as-of-0144.ts` borraría promos de alojamiento
   (mitigado: filtro por par plan-clave).
-- R-2. Trial con tope 0 (sección 5) → experiencia mala para quien prueba.
+- R-2. Trial con tope 0 (sección 5): resuelto con la fila mínima del trial (decisión del
+  owner, 1 promo activa).
 - R-3. Una ruta de venue que pida el vertical equivocado leería alojamiento. Mitigado por G2
   y por el test de no-leak.
 - R-4. Las promos de alojamiento de un usuario con dos verticales: independientes por scope.
@@ -154,9 +169,10 @@ HOS-2262; la de tope de promos es una celda `limit` que lee `max_active_promotio
    con alojamiento pero se resuelven por vertical. Opciones: (a) mantener los mismos nombres
    (decisión actual del issue); (b) claves propias de venue (`create_venue_promotions`).
    Recomendación: (a), menos claves; el scope por vertical ya los separa.
-2. **Trial.** Opciones: (a) dejarlo con tope 0 en promos; (b) límite de promos en la versión
-   `trial` de venue con valor de pro (5), por additive grant. Recomendación: (b) (misma
-   pregunta que HOS-2280, decidir una vez para todos los bloques).
+2. **Decidido (owner, 16/11/2026): trial.** 1 promo activa en la versión `trial` de venue,
+   por additive grant, con el aviso «Incluido en Pro y Premium. El plan Básico no lo
+   tiene». Abierto menor: el texto del aviso para `venue_vip_promotions` (solo Premium),
+   ver HOS-2262, pregunta 4.
 3. **Premium «sin tope»** (decisión 5). Confirmado en HOS-2253; sin pregunta nueva.
 
 Consultas de solo lectura: C-1 a C-5 de HOS-2280, con las claves `create_promotions`,
@@ -174,14 +190,15 @@ hace falta.
 
 - `status-needs-smoke-staging`. Smoke: venue pro crea hasta 5 promos y el sexto falla con el
   mensaje de tope; premium crea sin tope y una promo VIP; básico no ve el editor de promos;
-  un usuario con alojamiento y venue no ve cruces. Checklist de billing, staging.
+  un usuario con alojamiento y venue no ve cruces; un venue en trial crea 1 promo y ve el
+  aviso del plan Básico. Checklist de billing, staging.
 - What's New: sí (HOS-2284).
 
 ## 15. Desglose de tareas
 
 1. Consultas de solo lectura y confirmación de filas (0,25 día).
 2. `catalog.ts` + tabla de grants post-0144 (0,25 día).
-3. Migración SQL + data-migration + tests (0,75 día).
+3. Migración SQL + data-migration + tests, incluida la fila de límite del trial (0,75 día).
 4. Test de no-leak entre verticales (0,25 día).
 5. Smoke de staging y firma (0,5 día).
 

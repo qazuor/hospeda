@@ -40,7 +40,7 @@ Un local premium puede marcar una promo como «solo para turistas VIP». Esa pro
 
 - Crear la clave y asignarla a los planes: HOS-2259 (catálogo, migración, G3 y G18) y HOS-2282 (additive grant a premium).
 - Gate de VIP en alojamiento. Hoy es libre; cambiarlo rompe lo existente (ver OQ-4).
-- Cerrar la fuga de promos VIP en la ficha de alojamiento (ver HOS-2270 OQ-5).
+- Cerrar la fuga de promos VIP en la ficha de alojamiento: es el bug aparte HOS-2293 (accommodation VIP promo leak), relacionado pero separado de esta spec. Esta spec no lo arregla; en local la fuga se evita desde el diseño (la ruta pública de HOS-2271 filtra `tourist_audience = 'plus'`).
 - Mostrar el nombre del alojamiento en «Beneficios exclusivos» (solo se agrega el del local, ver OQ-3).
 
 ## 5. Estado actual del código
@@ -93,8 +93,9 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 ### 6.4 «Beneficios exclusivos»
 
 - `exclusive-deals.ts` suma el filtro opcional `venueId` (uuid) junto a `accommodationId`. `OwnerPromotionService.findExclusiveDeals` lo recibe en `params` (el alcance sigue siendo un argumento aparte, nunca de la request).
-- `buildAccommodationVisibilityCondition` (HOS-2270 lo deja como `venue_id IS NULL`) pasa a una condición de visibilidad por target, que se renombra `buildPromotionVisibilityCondition`:
-  `(accommodation_id IS NULL AND venue_id IS NULL) OR (accommodation_id IS NOT NULL AND EXISTS alojamiento PUBLISHED) OR (venue_id IS NOT NULL AND EXISTS local PUBLISHED)`.
+- `buildAccommodationVisibilityCondition` (HOS-2270 la deja como `entity_type = 'accommodation' AND (entity_id IS NULL OR …)`) pasa a una condición de visibilidad por tipo, que se renombra `buildPromotionVisibilityCondition`:
+  `(entity_type = 'accommodation' AND entity_id IS NULL) OR (entity_type = 'accommodation' AND EXISTS alojamiento PUBLISHED con id = entity_id) OR (entity_type = 'venue' AND EXISTS local PUBLISHED con id = entity_id)`.
+  Como `entity_id` no tiene FK, la existencia del listado se resuelve con `EXISTS` por tipo (no con una relación Drizzle).
   El predicado de «local publicado» es el mismo que usa el modelo de venue para lecturas públicas (`publicationStatus = 'PUBLISHED'`, `venue.model.ts:218`), reusado y no reescrito. Se compara por columna, no por vertical (G1).
 - El ítem de la lista suma `venueId`, `venueName` y `venueSlug` (nulos para alojamiento), resueltos con una sola consulta por página, no N. `ExclusiveDealsList.client.tsx` muestra el nombre del local y un enlace a `/comer-y-salir/{slug}/` cuando existe, y una marca «VIP» cuando `touristAudience === 'vip'` (el campo ya viene en el ítem).
 - Orden y paginación: una sola tabla, una sola consulta. No hay unión de dos fuentes.
@@ -116,7 +117,7 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 
 ### 6.7 Evaluador de alertas
 
-`promo-offer-evaluator.service.ts` no se extiende. Sus mails son «promo en un alojamiento que seguís» y se arman con alojamientos. HOS-2270 deja afuera las filas con `venue_id`. Un aviso de «promo nueva en un local que seguís» es parte de la épica de avisos (HOS-2266 a HOS-2269), no de esta spec.
+`promo-offer-evaluator.service.ts` no se extiende. Sus mails son «promo en un alojamiento que seguís» y se arman con alojamientos. HOS-2270 deja afuera las filas con `entity_type = 'venue'`. Un aviso de «promo nueva en un local que seguís» es parte de la épica de avisos (HOS-2266 a HOS-2269), no de esta spec.
 
 ### 6.8 i18n (es, en, pt)
 
@@ -130,7 +131,7 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 - Público: `GET /api/v1/public/venues/{id}/promotions` → `{ items: VenuePromotionPublic[], vipPromotionsCount: number }`.
 - Protegido (turista): `GET /api/v1/protected/owner-promotions/exclusive-deals?venueId=&accommodationId=&page=&pageSize=`. Errores: 401 sin sesión; 403 `ENTITLEMENT_REQUIRED` sin `exclusive_deals` (como hoy); 400 si `venueId` no es uuid.
 - Protegido (dueño): `touristAudience` en el body de las rutas de HOS-2270; 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_vip_promotions'`.
-- Item de lista: `+ venueId, venueName, venueSlug` (nulos).
+- Item de lista: `+ venueId, venueName, venueSlug` (nulos para alojamiento; `venueId` se deriva de `entity_id` cuando `entity_type = 'venue'`).
 
 ## 8. UX
 

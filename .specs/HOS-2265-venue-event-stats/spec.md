@@ -13,7 +13,7 @@ areas:
 
 # Eventos de local: estadísticas por evento para premium
 
-Hija de la épica HOS-2252. **Fase 3**: depende de la clave nueva `venue_event_stats` (HOS-2259), del registro de clics (HOS-2256) y de los ids de evento estables (HOS-2255 T-1).
+Hija de la épica HOS-2252. **Fase 3**: depende de la clave nueva `venue_event_stats` (HOS-2259), del registro de clics (HOS-2256) y de los ids de evento estables (**HOS-2291**, extraído de la antigua T-1 de HOS-2255).
 
 ## 1. Summary
 
@@ -55,7 +55,7 @@ El local premium ve cómo le fue a cada evento y los compara en una tabla ordena
 ### 5.2 Eventos
 
 - `venue_events` (`venue_event.dbschema.ts`): `id` uuid PK, FK `venueId` con `ON DELETE CASCADE`.
-- **Los ids no sobreviven a un guardado** (`venue.events.ts:243-275`, delete-and-reinsert) -> HOS-2255 T-1 los hace estables. Sin eso, toda métrica por evento se pierde en cada guardado. Prerrequisito duro.
+- **Los ids no sobreviven a un guardado** (`venue.events.ts:243-275`, delete-and-reinsert) -> HOS-2291 los hace estables. Sin eso, toda métrica por evento se pierde en cada guardado. Prerrequisito duro.
 - Los eventos viajan en el payload público de la ficha (`getBySlug.ts:122-144`) con su `id`.
 
 ### 5.3 Gates
@@ -84,10 +84,10 @@ index (entityType, entityId, kind, at), index (eventId, kind, at) WHERE eventId 
 
 Lo que esta spec le pide a HOS-2256 (coordinar al escribir su spec):
 
-1. `eventId` nullable con FK a `venue_events`, `ON DELETE CASCADE` (un evento borrado se lleva su telemetría; ver OQ-3).
-2. El `kind` **`EVENT_IMPRESSION`** (no está en su lista: wishes `whatsapp, phone, map, web, instagram, TICKET_CLICK`), con `eventId` obligatorio para ese kind.
+1. `eventId` nullable con FK a `venue_events`, `ON DELETE SET NULL`. Decidido (owner, 16/11/2026): al borrar un evento sus clics se conservan sin el evento (OQ-3).
+2. El `kind` **`EVENT_IMPRESSION`** (ya incluido en el enum de HOS-2256), con `eventId` obligatorio para ese kind.
 3. Registro anónimo con `visitorHash`, sin datos personales, igual que `entity_views`.
-4. Misma retención que `entity_views` (95 días) y su job de purga; ver 6.5.
+4. Retención de 120 días con rollup mensual desde el primer día (decidido por el owner, 16/11/2026) y el job de purga de `entity_views`; ver 6.5.
 5. Si HOS-2256 decide en cambio una **columna `kind` en `entity_views`**, esta spec cambia sólo la capa de consulta (6.3), no el modelo de producto.
 
 ### 6.2 Cómo se mide la «vista de un evento» (decisión pendiente, OQ-1)
@@ -140,7 +140,7 @@ listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: '
 
 ### 6.5 Retención y rollups
 
-La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interactions` se purga a 95 días como `entity_views` (lo define HOS-2256). **No** se agrega rollup mensual en esta spec: la comparación es sobre 7/30 días. Si el owner quiere histórico anual por evento, es una spec aparte (ver OQ-2).
+La ventana máxima expuesta es 30 días, igual que las vistas. Decidido (owner, 16/11/2026): `entity_interactions` se guarda 120 días y HOS-2256 escribe un resumen mensual (rollup) desde el primer día, por canal y por evento, así que el histórico no se pierde al purgar. Esta spec **consume** ese rollup y no agrega tablas ni jobs propios. Si se quiere exponer una ventana más larga que 30 días en el panel, es decisión aparte (OQ-2).
 
 ### 6.6 Catálogo (declarado acá, ejecutado por HOS-2259/2280)
 
@@ -162,15 +162,15 @@ La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interacti
 1. Premium: en «Eventos» hay una pestaña «Estadísticas» con la tabla: evento, cuándo, vistas, clics en entradas (y las columnas futuras cuando existan). Clic en un encabezado ordena asc/desc. Selector 7/30 días.
 2. Pro: la pestaña muestra el panel bloqueado con el upsell («Las estadísticas por evento están disponibles desde el plan {{plan}}»).
 3. Sin eventos o sin datos: «Todavía no hay datos de tus eventos en este período».
-4. Un evento recién creado aparece con ceros; uno pasado se ve hasta el final de la ventana de retención.
+4. Un evento recién creado aparece con ceros; uno pasado se ve mientras exista (los borra un cron a los 60 días, HOS-2254) y sus clics sobreviven sin el evento (SET NULL).
 
 ## 9. Acceptance criteria
 
 - AC-1. Dado premium con 3 eventos y tráfico registrado, `GET .../events/stats?window=30d` devuelve 3 items con `views` y `ticketClicks` (`total` y `unique`) correctos.
 - AC-2. Dado pro (sin `venue_event_stats`), la ruta devuelve 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_event_stats'`; la pestaña muestra el upsell.
 - AC-3. Dado un local ajeno, la ruta devuelve 404 (no 403).
-- AC-4. **Continuidad**: dado un evento con métricas, cuando el dueño guarda la agenda cambiando otro evento, las métricas del primero no cambian (mismo `eventId`, HOS-2255 T-1).
-- AC-5. Dado un evento borrado, sus métricas dejan de listarse y las filas de telemetría se eliminan (cascade) sin errores.
+- AC-4. **Continuidad**: dado un evento con métricas, cuando el dueño guarda la agenda cambiando otro evento, las métricas del primero no cambian (mismo `eventId`, HOS-2291).
+- AC-5. Dado un evento borrado, deja de listarse como item y sus filas de telemetría quedan con `event_id = NULL` (no se borran, FK `ON DELETE SET NULL`); los totales del local no bajan y no hay errores.
 - AC-6. Las métricas de HOS-2266/2274/2276 devuelven `null` y la columna correspondiente no se muestra si todas son `null`.
 - AC-7. La vista de evento se registra **una vez por visitante, evento y día**; un bot (UA de bot) no suma; el beacon no bloquea la navegación ni la carga.
 - AC-8. La ficha pública sigue pasando `cacheable-pages-are-session-blind`.
@@ -182,7 +182,7 @@ La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interacti
 ## 10. Test plan
 
 - Unit servicio (`packages/service-core/test/services/venue/venue.event-stats.test.ts`, nuevo): agregación con `total`/`unique`, proveedores `null`, filtro por local, ventana.
-- Integración BD real (`packages/db/test/integration/`): inserta interacciones, guarda la agenda dos veces con distinto contenido y comprueba que los conteos por `eventId` se conservan (AC-4, el test de regresión más importante) y el cascade (AC-5).
+- Integración BD real (`packages/db/test/integration/`): inserta interacciones, guarda la agenda dos veces con distinto contenido y comprueba que los conteos por `eventId` se conservan (AC-4, el test de regresión más importante) y que borrar el evento deja `event_id` en `NULL` sin borrar filas (AC-5).
 - Route (`apps/api/test/routes/venue/protected/venue-event-stats.test.ts`, nuevo, patrón de `content-gates.venue-experience.test.ts`): AC-1 a AC-3, AC-11, orden de errores.
 - Beacon `EVENT_IMPRESSION`: test de dedupe y filtro de bots (en la suite de HOS-2256, con un caso propio de esta spec).
 - Web: `VenueEventStatsTable.test.tsx` (ordenamiento, `null`, accesibilidad), `VenueEventsStatsTab.locked.test.tsx` (upsell leído del catálogo), guard `venue-editor-upsell-no-plan-names`.
@@ -191,8 +191,8 @@ La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interacti
 
 ## 11. Risks and open questions for the owner
 
-- R-1. **Dependencia triple** (HOS-2255 T-1, HOS-2256, HOS-2259). Sin ids estables toda la spec es inválida; está marcado como prerrequisito.
-- R-2. Volumen: una fila por evento por visitante y día, sobre la ficha más vista. Mitigación: un beacon por página con lista de ids, dedupe diario, retención de 95 días, índice parcial por `eventId`.
+- R-1. **Dependencia triple** (HOS-2291, HOS-2256, HOS-2259). Sin ids estables toda la spec es inválida; está marcado como prerrequisito.
+- R-2. Volumen: una fila por evento por visitante y día, sobre la ficha más vista. Mitigación: un beacon por página con lista de ids, dedupe diario, retención de 120 días con rollup mensual, índice parcial por `eventId`.
 - R-3. Privacidad: igual que `entity_views` (hash anónimo, sin PII). Revisar con HOS-2256 que el hash de usuarios autenticados no incluya IP (precedente `computeVisitorHash`).
 - R-4. "Vista" como impresión sobrestima el interés (la sección entra en pantalla, no se leyó). Se rotula «Veces que se mostró» o «Vistas», no «Interesados».
 - R-5. Las columnas futuras pueden cambiar de nombre cuando las specs de reservas/avisos se escriban. Se reservan como `null`.
@@ -203,15 +203,9 @@ La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interacti
 2. Página propia del evento (`/comer-y-salir/<local>/eventos/<id>` + `EntityViewTracker` con un nuevo `entityType`). Pro: vista real, URL compartible, sirve para los avisos (HOS-2266..2269) y el SEO. Contra: ruta, plantilla, cache, `sitemap`, i18n y moderación nuevos; mucho más alcance; sumar un valor a `entity_type_enum` rompe 5+ guards congelados (patrón ya medido: "un valor nuevo de enum rompe guards").
 3. Ambas: impresión ahora, página propia cuando se haga la épica de avisos. Pro: no bloquea hoy y deja la puerta abierta. Contra: dos definiciones de "vista" conviviendo, hay que rotular bien cuál es cuál.
 
-**OQ-2. ¿Histórico más allá de 30 días?**
+**OQ-2. ¿Histórico más allá de 30 días?** Parcialmente decidido (owner, 16/11/2026): retención de 120 días y rollup mensual desde el primer día (HOS-2256), así que el dato existe. Sigue abierta una cosa menor: si el panel de eventos expone ventanas mayores a 30 días (hoy 7d/30d, como las vistas) o se deja el rollup sin pantalla hasta que haya evidencia de uso.
 
-1. No (recomendada): ventanas 7d/30d como las vistas actuales; retención 95 días. Pro: cero infraestructura nueva. Contra: el dueño no compara una temporada contra otra.
-2. Rollup mensual por evento (como `entity_view_monthly_rollups`). Pro: histórico anual. Contra: otra tabla y otro job; sólo tiene sentido con evidencia de uso.
-
-**OQ-3. ¿Qué pasa con las métricas de un evento que el dueño borra?**
-
-1. Se borran con él (cascade, recomendada). Pro: simple, minimiza datos. Contra: el dueño pierde el histórico de eventos que quitó.
-2. Se conservan huérfanos con un snapshot del título. Pro: histórico. Contra: complica el modelo y la purga; se contrapone a `ON DELETE CASCADE` de `venue_events`.
+**OQ-3. ¿Qué pasa con las métricas de un evento que el dueño borra?** Decidido (owner, 16/11/2026): los clics se conservan sin el evento (FK `event_id` `ON DELETE SET NULL`). El evento deja de listarse en la tabla y los totales del local se conservan. No hay snapshot del título ni cascade.
 
 ## 12. Implementation notes
 
@@ -221,8 +215,8 @@ La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interacti
 
 ### Task breakdown
 
-1. T-1. Coordinar con HOS-2256: `eventId` + kind `EVENT_IMPRESSION` + retención (0,25 día, es una conversación y un comentario en su spec).
-2. T-2. Island de impresiones + beacon batch + dedupe en el endpoint de HOS-2256 (1 día; depende de HOS-2256 y de HOS-2255 T-1).
+1. T-1. Confirmar con HOS-2256: `eventId` con `SET NULL`, kind `EVENT_IMPRESSION`, retención de 120 días y rollup (0,25 día; ya alineado, queda como chequeo).
+2. T-2. Island de impresiones + beacon batch + dedupe en el endpoint de HOS-2256 (1 día; depende de HOS-2256 y de HOS-2291).
 3. T-3. Servicio `getVenueEventStats` con proveedores + tests unit e integración (1 día).
 4. T-4. Ruta `GET .../events/stats` con `capabilities: ['venue_event_stats']` + tests (0,5 día; **bloqueada por HOS-2259**).
 5. T-5. Pestaña/tabla ordenable + gate de UI + upsell desde catálogo (1 día).
@@ -232,10 +226,10 @@ La ventana máxima expuesta es 30 días, igual que las vistas. `entity_interacti
 
 Canonical tracking: HOS-2265. Padre: HOS-2252. Decisiones: HOS-2253 (6: baja de plan).
 
-- Dependencias: HOS-2255 T-1 (ids estables), **HOS-2256** (registro de clics, kind `EVENT_IMPRESSION`), **HOS-2259** (clave), HOS-2262 (texto), HOS-2280 (grant a premium). Métricas futuras: HOS-2266, HOS-2274, HOS-2276.
+- Dependencias: **HOS-2291** (ids estables de eventos), **HOS-2256** (registro de clics, kind `EVENT_IMPRESSION`), **HOS-2259** (clave), HOS-2262 (texto), HOS-2280 (grant a premium). Métricas futuras: HOS-2266, HOS-2274, HOS-2276.
 - Smoke: `status-needs-smoke-staging` (entitlements + tráfico real de beacons). Sin `smoke-prod`.
 - What's New: sí, en la entrega conjunta de HOS-2284.
 
 ## Nota de coordinación (16/11/2026)
 
-Alineado con la spec de HOS-2256: el kind de la impresión de un evento es `EVENT_IMPRESSION` (ya incluido allá) y la FK `event_id` va con `ON DELETE SET NULL` por defecto (OQ-3 de HOS-2256). Con `SET NULL`, al borrar un evento sus métricas por evento dejan de mostrarse, pero los totales del local se conservan. Los ids estables (T-1 de HOS-2255) son ahora **HOS-2291**.
+Alineado con la spec de HOS-2256: el kind de la impresión de un evento es `EVENT_IMPRESSION` (ya incluido allá) y la FK `event_id` va con `ON DELETE SET NULL`, ahora decidido por el owner (16/11/2026). Al borrar un evento sus métricas por evento dejan de mostrarse, pero los clics y los totales del local se conservan. Los ids estables (antes T-1 de HOS-2255) son **HOS-2291**.

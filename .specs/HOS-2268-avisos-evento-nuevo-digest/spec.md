@@ -11,7 +11,7 @@ areas:
 
 # Avisos al turista: aviso de evento nuevo a quienes siguen el local
 
-> Depende de HOS-2266 (tabla `venue_follow`, gate, ids estables de evento) y reusa las convenciones de HOS-2267 (tipos de notificación, copy es/en/pt, link de baja).
+> Depende de HOS-2266 (tabla `venue_follow`, gate de "avisos habilitados") y de HOS-2291 (ids estables de evento) y reusa las convenciones de HOS-2267 (tipos de notificación, copy es/en/pt, link de baja).
 
 ## 1. Resumen
 
@@ -19,7 +19,7 @@ Cuando un local publica un evento nuevo, sus seguidores reciben un correo. Se ag
 
 ## 2. Problema
 
-Un local que carga tres eventos en una tarde no puede disparar tres mails por seguidor, y un turista que sigue diez locales no puede recibir diez mails por día. Además hay que definir qué es "nuevo": hoy los eventos se reescriben enteros en cada guardado, así que sin ids estables todo el contenido parecería nuevo en cada edición.
+Un local que carga tres eventos en una tarde no puede disparar tres mails por seguidor, y un turista que sigue diez locales no puede recibir diez mails por día. Además hay que definir qué es "nuevo": hoy los eventos se reescriben enteros en cada guardado, así que sin ids estables (HOS-2291) todo el contenido parecería nuevo en cada edición.
 
 ## 3. Objetivos
 
@@ -55,11 +55,11 @@ Ver HOS-2267 5.1 y 5.2: `email_outbox` con `dedup_key` único, lease, supresión
 
 ### 5.3 Datos de eventos
 
-`venue_events` (`packages/db/src/schemas/venue/venue_event.dbschema.ts:92-153`): `id`, `venue_id`, `title`, `recurrence` (`once`/`weekly`), `date`, `weekday`, `start_time`, `is_active`, `created_at`. Hoy `created_at` se **reinicia en cada guardado** porque la agenda se borra y reinserta (`venue.events.ts:250-278`); con los ids estables de HOS-2266 (T-1) `created_at` pasa a significar "cuándo nació el evento". Sin esa tarea este spec no se puede implementar.
+`venue_events` (`packages/db/src/schemas/venue/venue_event.dbschema.ts:92-153`): `id`, `venue_id`, `title`, `recurrence` (`once`/`weekly`), `date`, `weekday`, `start_time`, `is_active`, `created_at`. Hoy `created_at` se **reinicia en cada guardado** porque la agenda se borra y reinserta (`venue.events.ts:250-278`); con los ids estables de HOS-2291 (antes T-1 de HOS-2255) `created_at` pasa a significar "cuándo nació el evento". Sin HOS-2291 este spec no se puede implementar.
 
 ### 5.4 Gate y seguidores
 
-`venue_follow` y `readVenueNotificationGate` salen de HOS-2266 (6.2 y 6.4). El gate lee el effective set del dueño y exige local `PUBLISHED` y no borrado.
+`venue_follow` y `readVenueNotificationGate` salen de HOS-2266 (6.2 y 6.4). El mismo gate es el que publica el booleano `notificationsEnabled` ("avisos habilitados") en la ficha: un local con avisos deshabilitados no muestra "Seguir" y este job tampoco le envía nada. El gate lee el effective set del dueño y exige local `PUBLISHED` y no borrado.
 
 ### 5.5 Cron y zona horaria
 
@@ -161,13 +161,15 @@ El gate se evalúa en cada corrida. Sin la clave, el local queda fuera y sus eve
 
 ## 9. Riesgos
 
-- R-1: depende de ids estables (HOS-2266 T-1); sin eso `created_at` no significa "nuevo".
+- R-1: depende de ids estables (HOS-2291); sin eso `created_at` no significa "nuevo".
 - R-2: el tope diario terminal puede descartar el digest si ese día hubo otro correo comercial. Hoy casi no hay otros para turistas.
 - R-3: la transacción única escala mal con miles de seguidores. Hoy el mercado es una ciudad; el job loguea una advertencia por encima de 2000 destinatarios y habría que pasar a lotes por usuario con un estampado por (usuario, evento).
 - R-4: "dos digests el mismo día" (precios 8:00 y eventos 10:00). Por eso se separa por horario; unificar queda como mejora futura.
 - R-5: depende de la clave y el grant (HOS-2259, HOS-2281), no mergeables antes de la pasada final de HOS-1352.
 
-## 10. Preguntas abiertas para el owner
+## 10. Preguntas abiertas y decisiones
+
+Decidido (owner, 16/11/2026), en la parte que toca a este spec: la visibilidad del botón "Seguir" sigue al dato público "avisos habilitados" de HOS-2266 (mismo mecanismo que la carta), y el digest se corta con el mismo gate al enviar. No cambia el resto del diseño.
 
 - OQ-1: ¿Job propio o sumar a `alerts-digest`? Ver 6.1. Recomiendo job propio (B).
 - OQ-2: ¿El digest es `commercial` (respeta el opt-out del outbox y el tope de 1 por día, pero se puede perder si ese día ya salió otro comercial) o `transactional` (nunca se pierde, pero el turista que quiera frenar los avisos solo puede dejar de seguir)? Recomiendo `commercial`: es contenido promocional del local y el opt-out global tiene que funcionar.
@@ -176,7 +178,7 @@ El gate se evalúa en cada corrida. Sin la clave, el local queda fuera y sus eve
 
 ## 11. Dependencias
 
-- HOS-2266 (tablas, gate, ids estables), HOS-2267 (tipos de notificación, copy, token de baja y ruta pública, que se crean ahí), HOS-2259/2281, HOS-2269 (`suspended_for_date`, opcional).
+- HOS-2266 (tablas, gate), HOS-2291 (ids estables de eventos), HOS-2267 (tipos de notificación, copy, token de baja y ruta pública, que se crean ahí), HOS-2259/2281, HOS-2269 (`suspended_for_date`, opcional).
 
 ## 12. Smoke y Novedades
 

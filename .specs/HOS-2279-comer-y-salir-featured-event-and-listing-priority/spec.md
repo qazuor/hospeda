@@ -50,7 +50,10 @@ Dentro:
 - Tests, i18n es/en/pt, verificación en staging.
 
 Fuera:
-- El add-on de destacar un evento por 7 días (HOS-2288).
+- El add-on de destacar un evento por 7 días (HOS-2288). Modelo decidido por el owner
+  (16/11/2026): se aplica **al local** (alcance `listing`, no hay alcance nuevo «evento») y
+  guarda el `event_id` en la compra; no se ofrece a Premium (HOS-2288, elegibilidad en
+  HOS-2292).
 - Experiencias (su plan premium no entra acá; ver pregunta 3).
 - Reordenar el listado con otra regla que no sea «destacados primero» (ya existe).
 - Habilitar la compra web del add-on de visibilidad (HOS-2094).
@@ -132,7 +135,11 @@ El evento no tiene identidad de destacado propia en este issue: **hereda del loc
   pública. El valor es `resolvePublicIsFeatured(venue)` (la misma regla que la ficha). El
   esquema público del evento (`packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts`,
   `VenueEventPublicSchema` o equivalente) gana `isFeatured: z.boolean()`. HOS-2288 reutiliza el
-  campo y lo calcula como `local destacado OR evento potenciado` (ver spec de HOS-2288).
+  campo y lo calcula como `local destacado por plan OR evento con compra vigente` (el
+  `event_id` guardado en la compra del add-on; ver spec de HOS-2288). Como el add-on no se
+  ofrece a Premium (el plan ya destaca todos los eventos del local), la segunda rama solo
+  se da en planes sin esta marca. Que un evento se identifique por `event_id` exige ids
+  estables: HOS-2291.
   **Un solo campo, dos fuentes, una sola función**: `resolvePublicEventIsFeatured`
   en `apps/api/src/utils/venue-event-featured.ts` (nuevo, junto a `accommodation-featured.ts`).
 - Web: `VenueEvents.astro` recibe `isFeatured` por evento y pinta una insignia con
@@ -147,7 +154,8 @@ El evento no tiene identidad de destacado propia en este issue: **hereda del loc
 ### 5.4 Qué NO hace este issue
 
 - No agrega toggle (decisión del owner 2026-08-29, HOS-929: «el destacado no lleva interruptor»).
-- No crea un campo por evento en la base (eso es de HOS-2288).
+- No crea un campo por evento en la base: el destacado por add-on vive en la compra, con su
+  `event_id` (HOS-2288), no en `venue_events`.
 
 ## 6. Contratos
 
@@ -219,7 +227,9 @@ El evento no tiene identidad de destacado propia en este issue: **hereda del loc
    - B) Solo hereda del plan Premium. Pro: el add-on de evento (HOS-2288) conserva su valor.
      Contra: hace falta distinguir el origen (plan vs add-on) en la API, más código.
    - **Recomiendo A.** Simple, coherente con «destacado = destacado», y el add-on de evento
-     sigue sirviendo a los planes que no tienen la marca.
+     sigue sirviendo a los planes que no tienen la marca (decisión del owner del
+     16/11/2026: no se ofrece a Premium, que ya destaca todos sus eventos). Sigue abierta
+     esta pregunta menor: la herencia desde un boost de visibilidad por add-on.
 2. **¿Cómo llega «inmediato» a los premium existentes?** Opciones A/B/C de §5.2.
    **Recomiendo C.**
 3. **¿Experiencia Premium también recibe `featured_listing`?** La issue habla solo de Comer y
@@ -236,7 +246,9 @@ El evento no tiene identidad de destacado propia en este issue: **hereda del loc
 - Pase final de HOS-1352 (bloquea el merge de la migración de catálogo).
 - HOS-2290 (informe: el mecanismo funciona).
 - HOS-2280 (habilita eventos, métricas y video): coordinar migración única (R-3).
-- HOS-2288 depende de esta (campo `isFeatured` por evento y orden de agenda).
+- HOS-2288 depende de esta (campo `isFeatured` por evento y orden de agenda). El add-on
+  guarda el `event_id` de la compra, así que depende también de los ids estables de eventos
+  (HOS-2291, extraído de HOS-2255 T-1) y de la elegibilidad de HOS-2292.
 - HOS-2263 (tope de eventos activos) y HOS-2264 (recurrencia por plan): leen las mismas versiones.
 
 ## 12. Smoke y Novedades

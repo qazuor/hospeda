@@ -14,7 +14,7 @@ areas:
 
 ## 1. Resumen
 
-Hoy de un local sólo se cuentan las **vistas** de la ficha (`entity_views`). Para las métricas de pro y premium (HOS-2261) y para las estadísticas por evento (HOS-2265) hace falta medir también **qué hace el visitante**: a qué canal toca. Esta spec define el mecanismo de registro: tabla nueva `entity_interactions`, endpoint público de captura, beacon del lado cliente y limpieza por retención.
+Hoy de un local sólo se cuentan las **vistas** de la ficha (`entity_views`). Para las métricas de pro y premium (HOS-2261) y para las estadísticas por evento (HOS-2265) hace falta medir también **qué hace el visitante**: a qué canal toca. Esta spec define el mecanismo de registro: tabla nueva `entity_interactions`, endpoint público de captura, beacon del lado cliente y limpieza por retención a 120 días con resumen mensual (rollup) desde el primer día.
 
 Hija de la épica HOS-2252. Fase 1: no toca el catálogo, se puede hacer ya. Es la base de HOS-2261 (lectura y panel) y HOS-2265 (por evento). HOS-2255 (botón «Comprar entrada») es el primer consumidor de `TICKET_CLICK`.
 
@@ -33,7 +33,7 @@ Esta spec **sólo escribe** datos. Las consultas de agregación, las rutas del d
 - G-3. Mecanismo que no bloquea la navegación (`navigator.sendBeacon`).
 - G-4. Modelo que soporta objetivos a nivel evento (columna `event_id`) para HOS-2265, sin otra migración.
 - G-5. La ficha sigue "session-blind": todo el tracking es del lado del cliente.
-- G-6. Misma retención y mismo filtro de bots que las vistas.
+- G-6. Mismo filtro de bots que las vistas. Retención de 120 días y rollup mensual desde el primer día (decidido por el owner, 16/11/2026).
 
 ## 4. No-objetivos
 
@@ -76,7 +76,7 @@ Conclusión: la opción B del issue (columna de tipo en `entity_views`) ya fue e
 
 ### 5.4 Los eventos del local no tienen id estable
 
-`replaceVenueEvents` borra y reinserta toda la agenda en cada guardado (`packages/service-core/src/services/venue/venue.events.ts:20-27`, `:243-275`). El propio archivo dice que cuando algo referencie un evento "this function grows a diff". Ese día es éste. Guardar `event_id` en cada clic sin ids estables deja los clics huérfanos en cada guardado de la agenda. HOS-2255 ya lo identificó y lo planifica como su tarea T-1 ("ids estables"). **HOS-2256 depende de eso sólo para `event_id`**; la tabla, el endpoint y los demás canales no.
+`replaceVenueEvents` borra y reinserta toda la agenda en cada guardado (`packages/service-core/src/services/venue/venue.events.ts:20-27`, `:243-275`). El propio archivo dice que cuando algo referencie un evento "this function grows a diff". Ese día es éste. Guardar `event_id` en cada clic sin ids estables deja los clics huérfanos en cada guardado de la agenda. Eso se extrajo a **HOS-2291** (ids estables de eventos, antes la tarea T-1 de HOS-2255). **HOS-2256 depende de HOS-2291 sólo para `event_id`**; la tabla, el endpoint y los demás canales no.
 
 ### 5.5 Reglas de página sin sesión
 
@@ -116,7 +116,7 @@ Nota para HOS-2255: ellos asumieron `kind = 'ticket_click'` en minúsculas. El r
 | `visitor_hash` | text NOT NULL | Ver 7.5. |
 | `occurred_at` | timestamptz NOT NULL default now() | |
 
-Nota sobre el borrado del evento. HOS-2255 supuso `ON DELETE CASCADE`. Se recomienda `SET NULL`: con CASCADE, borrar un evento resta retroactivamente clics de «Comprar entrada» del total del local, y el total por canal deja de ser una medición del pasado. Con `SET NULL` el total del local se conserva y sólo se pierde el detalle por evento, que ya no tiene evento al que mostrarse. Se deja como OQ-3 porque cambia lo que ve el dueño.
+Nota sobre el borrado del evento. Decidido (owner, 16/11/2026): `ON DELETE SET NULL`, no `CASCADE` (OQ-3). Con CASCADE, borrar un evento resta retroactivamente clics de «Comprar entrada» del total del local, y el total por canal deja de ser una medición del pasado. Con `SET NULL` el total del local se conserva y sólo se pierde el detalle por evento, que ya no tiene evento al que mostrarse.
 
 Índices (en el schema Drizzle, que genera la migración estructural):
 
@@ -185,8 +185,8 @@ Consecuencia: el hash de clic y el de vista de un mismo usuario logueado no coin
 ### 7.7 Retención y limpieza
 
 - `entity-views-purge.job.ts`: agregar `entityInteractionModel.purgeOlderThan` junto al de `partnerLogoClickModel`. Mismo cron, misma horizonte; el comentario del job ya explica por qué no va un cron aparte.
-- Hoy la retención es 95 días y la ventana más ancha que se muestra es 30. HOS-2261 pide **90**, lo que deja 5 días de margen para un cron caído. Ver OQ-2.
-- Rollup mensual: ver OQ-6.
+- Decidido (owner, 16/11/2026): las interacciones se guardan **120 días** (el horizonte común de este cron sube de 95 a 120 para vistas, clics de aliados y esta tabla; ver OQ-2). HOS-2261 muestra hasta 90, lo que deja 30 días de margen para un cron caído.
+- Rollup mensual `entity_interaction_monthly_rollups` desde el primer día, en esta misma spec: tarea T-7 (ver OQ-6). La purga destruye lo que el rollup resume, así que el rollup no puede llegar después.
 - Documentación a actualizar: `docs/guides/view-tracking-privacy.md` (sección nueva de interacciones; "la ventana más ancha es 30 días" deja de ser cierto), `apps/api/docs/route-architecture.md` (View Tracking Routes), `packages/db/CLAUDE.md` (lista de tablas append-only lean).
 
 ## 8. Criterios de aceptación
@@ -202,7 +202,8 @@ Consecuencia: el hash de clic y el de vista de un mismo usuario logueado no coin
 - AC-9. Un fallo de DB responde 202 y queda registrado en el log del servidor.
 - AC-10. Al borrar el evento, sus filas quedan con `event_id = NULL` (no se borran).
 - AC-11. Un solo listener de clic existe por isla montada, y desmontar la isla lo quita.
-- AC-12. El cron de purga borra filas de `entity_interactions` más viejas que el horizonte y no toca las nuevas.
+- AC-12. El cron de purga borra filas de `entity_interactions` más viejas que 120 días y no toca las nuevas.
+- AC-15. Antes de purgar, el rollup mensual ya resumió esas filas por local, canal y mes (y por evento cuando corresponde); el resumen sobrevive a la purga.
 - AC-13. `cacheable-pages-are-session-blind.guard.test.ts` sigue verde: ningún `.astro` lee sesión.
 - AC-14. La tabla no agrega filas a `entity_views`: un clic inserta 0 filas ahí (misma aserción que AC-13 de HOS-1063).
 
@@ -229,7 +230,7 @@ E2E: no hace falta en Playwright; el beacon se cubre con el test de la isla. Se 
 - R-1. Falsos positivos de bot: la regex es la misma de las vistas; si deja pasar un crawler, infla clics igual que infla vistas. Mitigado por usar la **misma** función y por la verificación de existencia.
 - R-2. CGNAT: muchos visitantes móviles comparten IP; el límite de 30/min por IP podría descartar clics legítimos en un pico. Igual que las vistas; no se cambia.
 - R-3. El paso de verificación agrega una lectura de DB por beacon. Tasa baja; indexado por PK.
-- R-4. Dependencia con HOS-2255 T-1 (ids estables) para `event_id`. Sin eso, los clics por evento se pierden en cada guardado. No bloquea el resto.
+- R-4. Dependencia con HOS-2291 (ids estables de eventos) para `event_id`. Sin eso, los clics por evento se pierden en cada guardado. No bloquea el resto.
 - R-5. Hash distinto entre vista y clic para el usuario logueado (7.5). Efecto acotado a "únicos".
 - R-6. `postBeacon` pasa de privada a exportada: tocar `view-capture.ts` afecta a vistas y a aliados. Cubierto por los tests existentes de ambos.
 
@@ -239,21 +240,13 @@ E2E: no hace falta en Playwright; el beacon se cubre con el test de la isla. Se 
   1. Reservar el valor `WHATSAPP_CLICK` en el enum y no emitirlo hasta que exista el botón. Pro: no cambia nada de lo publicado. Contra: el panel de HOS-2261 no puede mostrar esa fila. Recomendada.
   2. Agregar ya un botón de WhatsApp en la ficha, con su gate por visitante. Pro: cumple el criterio literal. Contra: es una feature de producto con riesgo de privacidad, fuera de esta épica.
   3. Sacar WhatsApp del criterio. Pro: lo más simple. Contra: si luego se agrega, hay que migrar el enum.
-- OQ-2. **Retención y ventana de 90 días.** Hoy se purga a los 95 días; mostrar 90 deja 5 días de margen.
-  1. Subir el horizonte común a 120 días (vistas, clics de aliados y esta tabla). Pro: 30 días de margen para un cron caído. Contra: los hashes pseudonimizados viven 25 días más. Recomendada.
-  2. Dejar 95. Pro: sin cambios de política. Contra: margen mínimo, una semana sin cron deja huecos en la ventana de 90.
-  3. Limitar el panel a 60 días. Pro: sin tocar la retención. Contra: contradice el criterio de HOS-2261.
-- OQ-3. **Borrar un evento y sus clics.**
-  1. `SET NULL`: el total del local se conserva, se pierde el detalle por evento. Recomendada.
-  2. `CASCADE`: se borran los clics del evento. Pro: lo que HOS-2255 asumió. Contra: los totales por canal bajan retroactivamente.
+- OQ-2. **Retención y ventana de 90 días.** Decidido (owner, 16/11/2026): las métricas se guardan 120 días; el horizonte común sube de 95 a 120 (vistas, clics de aliados y esta tabla). Da 30 días de margen para un cron caído frente a la ventana de 90 de HOS-2261. Costo asumido: los hashes pseudonimizados viven 25 días más.
+- OQ-3. **Borrar un evento y sus clics.** Decidido (owner, 16/11/2026): FK `event_id` con `ON DELETE SET NULL`. El total del local se conserva y sólo se pierde el detalle por evento. No hay CASCADE.
 - OQ-4. **PostHog.** No hay Umami en el repo; PostHog está pero el local no le manda eventos (decisión HOS-734).
   1. No mandar nada a PostHog; la tabla propia es la fuente. Recomendada (menos superficie, sin cookies).
   2. Duplicar cada clic como evento PostHog. Pro: embudos de marketing. Contra: consentimiento y un segundo número que puede no coincidir con el del panel.
 - OQ-5. **Clics del propio dueño y de staff.** Se propone no contar al dueño. Las vistas **sí** cuentan al dueño hoy; no se cambia (afectaría las cifras ya publicadas de alojamientos). Recomendada: descartar sólo al dueño. Alternativa: contarlo todo, más simple pero el dueño que prueba su teléfono infla su propia tasa.
-- OQ-6. **Rollup mensual de interacciones.** HOS-1063 dejó escrita la lección: el rollup "existe desde la primera migración o nunca", porque la purga destruye lo que resume.
-  1. Incluir `entity_interaction_monthly_rollups` y extender `view-monthly-rollup.job.ts` en esta misma spec (tarea T-7). Pro: la historia empieza el día uno. Contra: una tabla y un job más, y una clave única con `event_id` nulo que necesita índice por expresión.
-  2. Diferir. Pro: menos alcance. Contra: la decisión de "sin historia" la toma la purga.
-  Recomendada: opción 1, como último PR de esta spec.
+- OQ-6. **Rollup mensual de interacciones.** Decidido (owner, 16/11/2026): se incluye desde el primer día (`entity_interaction_monthly_rollups`, extensión de `view-monthly-rollup.job.ts`, tarea T-7, último PR de esta spec). Lección de HOS-1063: el rollup "existe desde la primera migración o nunca", porque la purga destruye lo que resume. Costo asumido: una tabla y un job más, y una clave única con `event_id` nulo que necesita índice por expresión.
 
 ## 12. Etiquetas de smoke y Novedades
 
@@ -263,7 +256,7 @@ E2E: no hace falta en Playwright; el beacon se cubre con el test de la isla. Se 
 ## 13. Dependencias
 
 - Bloquea a: HOS-2261 (lectura y panel), HOS-2265 (por evento), HOS-2255 (el botón consume el atributo común).
-- Depende de: HOS-2255 T-1 (ids estables) sólo para `event_id`.
+- Depende de: HOS-2291 (ids estables de eventos) sólo para `event_id`.
 - No toca el catálogo ni nada que espere a la pasada final de HOS-1352.
 
 ## 14. Desglose en tareas
@@ -273,8 +266,8 @@ E2E: no hace falta en Playwright; el beacon se cubre con el test de la isla. Se 
 3. T-3. `EntityInteractionModel` (insert, purga) + test de integración (0,5 día).
 4. T-4. `EntityInteractionService.capture` + tests (0,75 día).
 5. T-5. Endpoint `POST /public/interactions`, registro, manifest, tests de ruta (0,75 día).
-6. T-6. Cron de purga + docs de privacidad y de rutas (0,5 día).
-7. T-7. (Según OQ-6) rollup mensual de interacciones (0,75 día).
+6. T-6. Cron de purga con horizonte de 120 días + docs de privacidad y de rutas (0,5 día).
+7. T-7. Rollup mensual de interacciones, `entity_interaction_monthly_rollups` + extensión de `view-monthly-rollup.job.ts` (0,75 día; decidido, va como último PR de esta spec).
 8. T-8. Web: exportar `postBeacon`, `interaction-capture.ts`, isla `VenueInteractionTracker`, montaje en la ficha, atributos en `VenueContactBlock` y `VenueAddress`, tests (1 día).
 9. T-9. Smoke en staging y sign-off (0,5 día).
 

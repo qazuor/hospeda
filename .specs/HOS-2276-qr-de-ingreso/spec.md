@@ -15,14 +15,15 @@ areas:
 ## 1. Resumen
 
 Cada anotado en una lista (HOS-2274) y cada reserva confirmada (HOS-2275) tiene un
-**pase** con QR propio. En la puerta, alguien del local lo escanea con el celular y
+**pase** con QR propio. En la puerta, el **dueño** lo escanea con el celular (con su sesión) y
 ve: válido, ya usado, de otro día o cancelado. Al validar queda registrada la hora de
 ingreso y el pase no se puede usar dos veces. El QR no lleva datos personales: es un
 token opaco que solo resuelve quien está autorizado del lado del local.
 
-Asume las opciones recomendadas de HOS-2260, en especial **OQ-6**: el que valida usa
-la cuenta del dueño o un **link de puerta** revocable, sin crear roles ni cuentas de
-personal.
+Aplica las decisiones del owner del 16/11/2026 (HOS-2260), en especial **OQ-6**: el QR lo
+valida **solo la cuenta del dueño**. No hay link de puerta, ni `capabilitiesAnyOf`, ni
+cuentas de empleados: el personal de puerta pasa a **HOS-2295** (etapa 2). Esto difiere de
+la recomendación original de la spec (link de puerta).
 
 ## 2. Problema
 
@@ -34,13 +35,13 @@ repetidos y no hay registro de quién entró.
 
 - G-1: un pase por anotación o reserva, visible en el correo y en Mi cuenta.
 - G-2: validación en una sola acción, atómica: un pase no se usa dos veces.
-- G-3: el escaneo registra hora y quién validó, y alimenta las estadísticas por evento.
+- G-3: el escaneo registra hora y la cuenta que validó, y alimenta las estadísticas por evento.
 - G-4: el QR no contiene datos personales.
 - G-5: validar no depende del plan, para que lo ya confirmado funcione siempre.
 
 ## 4. Non-goals
 
-- NG-1: cuentas con varios usuarios o roles de puerta (idea 32, OQ-6 opción 3).
+- NG-1: link de puerta, cuentas con varios usuarios, cuentas de empleados o roles de puerta. Todo eso es HOS-2295.
 - NG-2: escáner de cámara dentro de la página (exigiría una librería nueva, ver 6.6).
 - NG-3: pase rotativo, anti-captura o wallet (Apple/Google).
 - NG-4: cobro de entrada.
@@ -96,7 +97,7 @@ Sí se reusa: `renderQrPng/renderQrSvg`, la corrección de errores Q y `generate
 | `admits` | smallint | cuántas personas ingresan con este pase |
 | `state` | enum `venue_entry_pass_state` | `ACTIVE`, `USED`, `VOID` |
 | `used_at` | timestamptz null | |
-| `used_by_kind` / `used_by_id` | enum / uuid null | `OWNER` (user) o `DOOR_LINK` (link) |
+| `used_by_id` | uuid null fk `users` | la cuenta del dueño que validó |
 | `void_reason` | varchar(40) null | `CANCELLED`, `EVENT_SUSPENDED` |
 | auditoría | | |
 
@@ -105,24 +106,12 @@ Sí se reusa: `renderQrPng/renderQrSvg`, la corrección de errores Q y `generate
 
 `venue_entry_scan` (solo inserción, sin auditoría ni soft delete, como `qr_code_scans`):
 `id`, `venue_id`, `pass_id` null (token desconocido), `result` enum (`VALID`, `USED`,
-`WRONG_DAY`, `CANCELLED`, `UNKNOWN`, `UNDONE`), `scanned_at`, `by_kind`, `by_id`. **No
+`WRONG_DAY`, `CANCELLED`, `UNKNOWN`, `UNDONE`), `scanned_at`, `by_user_id`. **No
 guarda user-agent ni IP.** Retención: 12 meses (cron compartida).
 
-`venue_door_link`:
-
-| Columna | Tipo | Nota |
-|---|---|---|
-| `id`, `venue_id` | | |
-| `token_hash` | char(64) único | SHA-256; el token se muestra **una sola vez** al crearlo |
-| `label` | varchar(60) | "Puerta principal" |
-| `expires_at` | timestamptz | por defecto 6 h tras terminar el evento (OQ-F) |
-| `revoked_at` | timestamptz null | |
-| `last_used_at` | timestamptz null | |
-| auditoría | | |
-
-Las tres cuelgan de `venues` o de sus filas: sumar a `purged-closed-list.json` y al test
-congelado. `venue_door_link` y los pases de un listing purgado se **borran** (no tienen
-PII propia).
+Las dos cuelgan de `venues` o de sus filas: sumar a `purged-closed-list.json` y al test
+congelado. Los pases de un listing purgado se **borran** (no tienen PII propia). No existe
+tabla de links de puerta (HOS-2295).
 
 ### 6.3 Emisión del pase (bajo demanda, sin backfill)
 
@@ -142,7 +131,7 @@ texto. La URL codificada es `https://<sitio>/pase/<token>`.
 `validatePass({ token, scope, by, now })` en un servicio de `@repo/service-core`:
 
 1. Forma del token (largo y alfabeto); si no cumple, 400.
-2. Un único `UPDATE venue_entry_pass SET state='USED', used_at=now, used_by_* WHERE token
+2. Un único `UPDATE venue_entry_pass SET state='USED', used_at=now, used_by_id WHERE token
    = $1 AND state='ACTIVE' AND venue_id = $scope AND valid_date = <hoy de servicio>
    RETURNING *`. Si devuelve fila: resultado `VALID`; en la misma transacción el sujeto
    pasa a `CHECKED_IN` y se inserta el escaneo.
@@ -161,50 +150,46 @@ texto. La URL codificada es `https://<sitio>/pase/<token>`.
 
 ### 6.5 Quién valida y cómo se autoriza
 
-Rutas (ambas llaman al mismo servicio):
+**Solo la cuenta del dueño del local** (OQ-6). Una sola ruta, con sesión:
 
 | Ruta | Tier | Autoriza |
 |---|---|---|
 | `POST /protected/venues/:id/entry-passes/:token/validate` | protected | sesión del dueño: `listingAccess` `{ vertical: VENUE, operation: 'READ_OWN_COMMERCIAL' }` **sin** `capabilities` (no se gatea validar) |
-| `POST /public/venue-door/passes/:token/validate` | public con credencial propia | cabecera `Authorization: Door <token>`; el link se resuelve por su hash, debe estar vigente y no revocado |
-| `POST .../undo` (ambos tiers) | | igual que el anterior |
-| `GET/POST/DELETE /protected/venues/:id/door-links` | protected | dueño; **gate** (ver abajo) |
+| `POST /protected/venues/:id/entry-passes/:token/undo` | protected | igual que el anterior |
 
 Reglas:
 
-- El **link de puerta no es un rol** (G6): no decide quién es nadie, es una capacidad
-  atada a un local y a una fecha de vencimiento. La ruta pública declara su credencial
-  explícita y se documenta como excepción en `apps/api/docs/route-architecture.md`.
-- Por local, el link solo valida pases de **ese** local.
-- Error: token de puerta ausente o vencido: 401 `UNAUTHORIZED`; revocado: 401 igual
-  (misma respuesta, sin pistas).
-- Rate limit: 120 por minuto por credencial (link o usuario) y 600 por hora por IP.
-  Además, 10 resultados `UNKNOWN` seguidos bloquean el link 1 minuto (anti-fuerza bruta).
-- **Gate de crear links**: lo ideal es "tiene `venue_guest_list` **o** `venue_reservations`".
-  El pipeline hoy solo admite **todas** las claves en `capabilities`
-  (`listing-access.ts:208-214`). Dos caminos: (a) sumar `capabilitiesAnyOf` al
-  middleware y al resolvedor (cambio chico, con tests); (b) gatear por
-  `venue_guest_list`, que todo plan con reservas ya trae. (a) es la recomendada, porque
-  (b) depende de cómo se armen los planes. Ver OQ-G.
-- Tras una baja de plan: no se pueden crear links nuevos, pero **los existentes siguen
-  vigentes hasta vencer** y el dueño siempre puede validar con su sesión.
+- No hay credencial de puerta, ni ruta pública, ni `capabilitiesAnyOf` en `listing-access`,
+  ni excepción de tier en `route-architecture.md`. La propiedad la resuelve el pipeline
+  (paso 4); un rol nunca decide (G6).
+- Por local, la cuenta solo valida pases de **ese** local.
+- Errores: sin sesión, 401 `UNAUTHORIZED`; un local ajeno responde 404 (no se distingue de
+  "no existe").
+- Rate limit: 120 por minuto por cuenta. Además, 10 resultados `UNKNOWN` seguidos bloquean
+  la validación de esa cuenta 1 minuto (anti-fuerza bruta).
+- Tras una baja de plan: el dueño **sigue validando** con su sesión lo ya emitido (no se
+  gatea).
+- **Riesgo: contraseña compartida.** Como solo valida el dueño y no está siempre en la
+  puerta, puede prestar su sesión o su contraseña al personal. El panel muestra un texto que
+  lo desalienta ("No compartas tu contraseña. Abrí la validación en tu propio celular o
+  acercate a la puerta"). Mitigaciones técnicas: `undo` de 2 minutos y registro de cada
+  escaneo con la cuenta. La solución real (cuentas de personal con permisos propios) es
+  HOS-2295.
 
 ### 6.6 Web
 
 - `/pase/[token]` (ruta neutral al idioma, SSR, `cacheable: false`, `noindex`): una isla
-  que lee el token de la URL. Con credencial de puerta guardada en `localStorage` o
-  sesión del dueño, valida y muestra una tarjeta grande: verde válido, rojo ya usado o
-  cancelado, ámbar otro día. Sin credencial: "Este es un pase de ingreso. Solo el local
-  puede validarlo". La página no lleva sesión (guard de páginas sin sesión).
-- `/puerta/[linkToken]`: el personal abre el link una vez; guarda el token en
-  `localStorage` del navegador y muestra instrucciones: "Escaneá los QR con la cámara del
-  celular". Entrada manual por **código corto** como alternativa.
+  que lee el token de la URL. Con la sesión del dueño, valida y muestra una tarjeta grande:
+  verde válido, rojo ya usado o cancelado, ámbar otro día. Sin sesión del dueño: "Este es un
+  pase de ingreso. Solo el local puede validarlo". La página no lleva sesión en el HTML (guard
+  de páginas sin sesión); la isla consulta la sesión en el cliente.
+- Entrada manual por **código corto** como alternativa, dentro del panel del dueño.
 - **No** hay escáner dentro de la página en esta etapa: la cámara del sistema abre
-  `/pase/<token>`. Un escáner propio (BarcodeDetector no existe en iOS Safari) exigiría
-  una librería nueva (p. ej. `jsQR`), y agregar dependencias se consulta (OQ-F).
+  `/pase/<token>`. Un escáner propio (BarcodeDetector no existe en iOS Safari) exigiría una
+  librería nueva (p. ej. `jsQR`), y agregar dependencias se consulta (OQ-F).
 - Mi cuenta: tarjeta del sujeto con el QR (SVG) y el código corto.
-- Panel del local: crear y revocar links de puerta (se muestra el link una sola vez),
-  y "Ingresos" por evento: conteo de pases usados, por hora.
+- Panel del local: pantalla "Validar ingresos" con el **texto que desalienta compartir la
+  contraseña**, y "Ingresos" por evento: conteo de pases usados, por hora.
 
 ### 6.7 Estadísticas
 
@@ -229,58 +214,56 @@ Textos de estado del escaneo: "Válido", "Ya usado a las {{hora}}", "Es de otro 
 - AC-5: dos validaciones simultáneas del mismo pase: exactamente una responde `VALID`.
 - AC-6: un pase de otro día responde `WRONG_DAY`; uno cancelado, `CANCELLED`.
 - AC-7: un token de otro local o inexistente responde `UNKNOWN` (misma forma).
-- AC-8: el link de puerta valida solo pases de su local; vencido o revocado responde 401.
+- AC-8: la cuenta del dueño valida solo pases de su local; sin sesión responde 401 y un local ajeno 404. No existe ruta de puerta con credencial propia.
 - AC-9: la respuesta nunca incluye teléfono, nota ni email.
 - AC-10: `undo` dentro de 2 minutos revierte; después responde 409 `INVALID_TRANSITION`.
 - AC-11: cancelar la anotación o reserva deja el pase `VOID` en la misma transacción.
-- AC-12: tras bajar de plan, el dueño sigue validando con su sesión y los links ya
-  creados siguen sirviendo hasta vencer; no se pueden crear links nuevos.
+- AC-12: tras bajar de plan, el dueño sigue validando con su sesión.
 - AC-13: validar a las 02:00 del sábado acepta un pase del viernes.
 - AC-14: el escaneo no guarda user-agent ni IP.
-- AC-15: 10 `UNKNOWN` seguidos bloquean el link 1 minuto.
+- AC-15: 10 `UNKNOWN` seguidos bloquean la validación de esa cuenta 1 minuto.
+- AC-16: la pantalla de validación del panel muestra el texto que desalienta compartir la
+  contraseña.
 
 ## 9. Plan de pruebas
 
 - Unit: clasificación de resultados, hoy de servicio con corte 06:00, generación de token
-  (longitud, alfabeto), hash del link (`packages/service-core/test/...`).
+  (longitud, alfabeto) (`packages/service-core/test/...`).
 - Integración con base: atomicidad (AC-5), CHECK de "exactamente un sujeto", pase `VOID`
   con cancelación, `undo`.
-- Rutas (`apps/api/test/routes/...`): ambos caminos de autorización, contrato de errores,
+- Rutas (`apps/api/test/routes/...`): autorización del dueño, contrato de errores,
   rate limit, que `display` no filtre datos.
 - Guards: `check-purged-closed-list`, páginas sin sesión, `entity-qr-purpose` (no debe
   cambiar: se verifica que NO se tocó el enum).
 - Web: isla de validación y estados.
-- E2E: confirmar reserva, abrir correo, escanear (URL directa), validar con link de puerta.
+- E2E: confirmar reserva, abrir correo, escanear (URL directa), validar con la sesión del dueño.
 
 ## 10. Riesgos
 
-- R-1: link de puerta filtrado. Vence, se revoca, hay `undo`, límite y registro (OQ-6).
-- R-2: dos navegadores. La cámara del celular puede abrir otro navegador que el que guardó
-  el link (por ejemplo, un navegador dentro de otra app). Mitigación: instrucciones, y
-  código corto de reemplazo.
+- R-1: **contraseña compartida** (OQ-6). Solo el dueño valida, así que puede prestar su
+  cuenta. Se desalienta con un texto en el panel; `undo` y registro por cuenta. Solución real
+  en HOS-2295.
+- R-2: el dueño no está en la puerta y debe prestar el celular con su sesión abierta. Es
+  inherente a la decisión; HOS-2295.
 - R-3: capturas de pantalla compartidas. El primero en usarlo entra; es inherente al
   modelo sin pase rotativo. Se registra la hora para reclamos.
-- R-4: se debe extender `listing-access` (OQ-G) o aceptar el gate por `venue_guest_list`.
-- R-5: una excepción de tier nueva (`public` con credencial). Documentar.
 
 ## 11. Preguntas abiertas para el owner
 
-Generales: HOS-2260, OQ-6 (quién valida). Específicas:
+OQ-6 (quién valida) está **decidida** en HOS-2260 (16/11/2026): solo la cuenta del dueño.
+Las preguntas OQ-G (gate con `capabilitiesAnyOf`) y OQ-H (vencimiento del link de puerta)
+**desaparecen** con el link de puerta y pasan a HOS-2295. Queda abierta:
 
 - OQ-F: **¿validar al escanear o ver y confirmar?** (1) **Validar y marcar al escanear,
   con deshacer 2 minutos (recomendada)**: rápido en una fila larga. Contra: un escaneo
   accidental marca un pase. (2) Mostrar y pedir "Dejar pasar": más lento, más seguro. Y
   **¿escáner propio dentro de la página?** Recomendada: no ahora (la cámara del sistema
   + código corto); implica una dependencia nueva, que se consulta antes.
-- OQ-G: **gate de los links de puerta.** (a) Extender `listing-access` con
-  `capabilitiesAnyOf` (recomendada). (b) Gatear por `venue_guest_list`. Impacto de (a):
-  un cambio chico en `apps/api/src/middlewares/listing-access.ts` y su resolvedor.
-- OQ-H: **vencimiento del link de puerta.** Recomendada: 6 h tras terminar el evento.
-  Alternativa: manual (hasta revocarlo). Contra: se olvidan activos.
 
 ## 12. Dependencias
 
-- Bloqueado por: HOS-2260 (OQ-6), HOS-2274 y HOS-2275 (sujetos del pase), HOS-2259 (claves).
+- Bloqueado por: HOS-2274 y HOS-2275 (sujetos del pase), HOS-2259 (claves).
+- Etapa 2 (personal de puerta): HOS-2295.
 - Habilita: HOS-2277 (pase por persona), HOS-2278 (beneficio en la puerta), HOS-2265
   (estadísticas por evento).
 
@@ -291,17 +274,16 @@ escaneando). What's New: sí, junto a las listas y reservas.
 
 ## 14. Desglose de tareas
 
-1. T-1: enums, tablas `venue_entry_pass`, `venue_entry_scan`, `venue_door_link`,
-   migración, extras y filas PURGED (1 día).
+1. T-1: enums, tablas `venue_entry_pass` y `venue_entry_scan`, migración, extras y filas
+   PURGED (1 día).
 2. T-2: servicio `mintOrGet` y `validatePass` con transacciones y `undo` (1 día).
-3. T-3: rutas del dueño (validar, links de puerta) con gate (1 día).
-4. T-4: ruta pública de puerta con credencial, rate limit y bloqueo (1 día).
-5. T-5: `capabilitiesAnyOf` en `listing-access` (si se elige OQ-G a) (0,5 día).
-6. T-6: PNG adjunto en correos y plantilla de pase (0,5 día).
-7. T-7: páginas `/pase/[token]` y `/puerta/[linkToken]` e isla (1 día).
-8. T-8: Mi cuenta (QR) y panel de links e ingresos (1 día).
-9. T-9: consulta de estadísticas y cron de retención de escaneos (0,5 día).
-10. T-10: pruebas de integración, E2E y guards (1 día).
+3. T-3: rutas del dueño (validar, undo) con sesión, rate limit y bloqueo (1 día).
+4. T-4: PNG adjunto en correos y plantilla de pase (0,5 día).
+5. T-5: página `/pase/[token]` e isla de validación (1 día).
+6. T-6: Mi cuenta (QR), pantalla de validación con el texto contra compartir contraseña e
+   ingresos (1 día).
+7. T-7: consulta de estadísticas y cron de retención de escaneos (0,5 día).
+8. T-8: pruebas de integración, E2E y guards (1 día).
 
 ## 15. Linear
 

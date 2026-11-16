@@ -19,7 +19,10 @@ texto, condiciones ("grupo de 6 o más") y si pide DNI en la puerta. El turista 
 mi cumpleaños" al reservar, y el local ve la reserva destacada. La ficha pública muestra
 "Festejá tu cumple acá". Mismo gate que los grupos: `venue_group_reservations`.
 
-Es una **extensión** del modelo de reservas (HOS-2275), no un modelo aparte.
+Es una **extensión** del modelo de reservas (HOS-2275), no un modelo aparte. Aplica las
+decisiones del owner del 16/11/2026 (HOS-2260): reserva por solicitud con vencimiento de 24
+h o 1 h antes de la fecha, y capacidad = aforo total en personas por noche. Una reserva de
+cumpleaños retiene sus personas del aforo como cualquier otra.
 
 ## 2. Problema
 
@@ -54,7 +57,7 @@ ofrecen por Instagram. Falta un lugar donde publicarlo, pedirlo y verlo destacad
   (`packages/db/src/schemas/venue/venue.dbschema.ts:88`, tipo `I18nText`,
   `packages/schemas/src/common/i18n.schema.ts`). Se reusa el formato.
 - Modelo de reservas y grupos: HOS-2275 y HOS-2277.
-- Pase y puerta: HOS-2276 (la tarjeta de puerta lleva un campo `display`).
+- Pase y validación: HOS-2276 (solo la cuenta del dueño valida; la tarjeta lleva un campo `display`).
 - Rubros: `business-lines.ts:26-39`; la sección va en ambos rubros.
 
 ## 6. Diseño propuesto
@@ -101,7 +104,7 @@ nombre de la reserva. Si el que cumple es otra persona, el local lo coordina por
   El formulario ya filtra, y el servidor valida igual.
 - Se puede combinar con grupo (HOS-2277): un cumpleaños de 10 es un grupo con el
   beneficio.
-- El tipo de reserva debe ser el que el local ofrece: no hay tipo especial de cumpleaños.
+- La reserva de cumpleaños es una reserva común (mesa o VIP según el rubro, `kind`) que descuenta `party_size` del aforo (HOS-2275, 6.1): no hay tipo especial de cumpleaños ni tipos de reserva.
 - **Condiciones y consecuencias.** Si el turista cancela o no se presenta, no hay costo.
   Si el local cambia o apaga el beneficio, las reservas ya confirmadas **conservan el
   snapshot**; las nuevas ven el vigente.
@@ -144,7 +147,7 @@ de la ficha (`by-slug`, `by-id`, `list`, `by-destination`): misma disciplina que
 - **Panel del local:** la fila de la reserva lleva una insignia con un ícono de
   `@repo/icons` (no emojis ni SVG sueltos). Filtro "Solo cumpleaños". Detalle: texto
   del beneficio y "Pedir DNI".
-- **Puerta (HOS-2276):** la tarjeta muestra "Cumpleaños: <título>" y "Pedir DNI" si aplica,
+- **Validación del dueño (HOS-2276):** la tarjeta muestra "Cumpleaños: <título>" y "Pedir DNI" si aplica,
   para que quien está en la puerta no tenga que abrir el panel.
 - **Editor del local:** sección "Cumpleaños" con los campos del beneficio, con el
   candado de upsell (`VenueSectionLockedPanel`) si el plan no lo incluye.
@@ -170,7 +173,7 @@ descripción del beneficio son del local, en el mismo formato multilang que
 - AC-6: la reserva guarda un snapshot del beneficio; si el local lo edita después, la
   reserva conserva el texto original.
 - AC-7: el panel destaca la reserva de cumpleaños y permite filtrar por ellas.
-- AC-8: con `requires_id`, la tarjeta de puerta muestra "Pedir DNI".
+- AC-8: con `requires_id`, la tarjeta de validación del dueño muestra "Pedir DNI".
 - AC-9: un cumpleaños puede ser también un grupo; los dos flujos conviven.
 - AC-10: tras bajar de plan, el beneficio deja de ofrecerse y las reservas ya hechas lo
   conservan y se pueden validar.
@@ -199,7 +202,7 @@ descripción del beneficio son del local, en el mismo formato multilang que
 
 ## 12. Preguntas abiertas para el owner
 
-Generales: HOS-2260 (OQ-1, OQ-3, OQ-4, OQ-8). Específicas:
+Decididas en HOS-2260 (16/11/2026): OQ-1, OQ-3, OQ-4, OQ-8. Específicas, todas abiertas (menores):
 
 - OQ-L: **¿un beneficio por local o varios?** Recomendada: uno (KISS y alcanza para el
   caso de "cumple free"). Alternativa: una lista de beneficios por local (champagne,
@@ -211,7 +214,7 @@ Generales: HOS-2260 (OQ-1, OQ-3, OQ-4, OQ-8). Específicas:
 
 ## 13. Dependencias
 
-- Bloqueado por: HOS-2275 (modelo de reservas), HOS-2276 (puerta), HOS-2277 (se combina),
+- Bloqueado por: HOS-2275 (modelo de reservas y aforo), HOS-2276 (validación), HOS-2277 (se combina),
   HOS-2259 (clave).
 - Habilita: HOS-2283 (asignar a planes).
 
@@ -229,7 +232,7 @@ Generales: HOS-2260 (OQ-1, OQ-3, OQ-4, OQ-8). Específicas:
 5. T-5: sección `birthday` en el catálogo de secciones y rubros (0,5 día).
 6. T-6: editor del beneficio y upsell (1 día).
 7. T-7: bloque público y casilla en el formulario (1 día).
-8. T-8: panel (insignia y filtro) y tarjeta de puerta (0,5 día).
+8. T-8: panel (insignia y filtro) y tarjeta de validación (0,5 día).
 9. T-9: i18n es/en/pt, integración, E2E y guards (1 día).
 
 ## 16. Linear

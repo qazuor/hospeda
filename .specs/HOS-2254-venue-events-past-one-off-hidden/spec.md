@@ -29,12 +29,13 @@ Un evento de fecha única (`once`) hoy sigue en la ficha pública para siempre. 
 - G-1. La API pública no devuelve eventos `once` pasados. Una sola implementación de "pasado", reusada por API, servicio y web.
 - G-2. En el editor, los pasados salen agrupados aparte («Pasados»), con acciones borrar y duplicar.
 - G-3. Los pasados no cuentan contra el tope de 30 de la agenda viva.
+- G-5. Un cron borra solo los eventos pasados hace más de 60 días (el dueño no tiene que limpiar a mano).
 - G-4. Exponer `isPast` / `isLive` calculados en la lectura protegida, así el editor no recalcula con su propio reloj.
 
 ## 4. Non-goals
 
 - NG-1. Tope por plan (HOS-2263), recurrencia por plan (HOS-2264), link de entradas (HOS-2255).
-- NG-2. Borrado automático de pasados (cron). Queda como pregunta abierta, ver OQ-2.
+- NG-2. Techo propio para los pasados: no existe. Decidido (owner, 16/11/2026): los pasados no cuentan para el tope y los limpia un cron a los 60 días (ver 6.8).
 - NG-3. Los eventos `weekly` nunca están "pasados": no tienen fecha de fin (el schema no tiene fecha de fin, a propósito).
 - NG-4. Zona horaria por local. Hoy no existe (ver 5.4).
 
@@ -61,7 +62,7 @@ Un evento de fecha única (`once`) hoy sigue en la ficha pública para siempre. 
 
 - `VenueEventsManager.client.tsx` (482 líneas): carga con `GET /protected/venues/:id/events` (devuelve TODO, incluidos `isActive:false`, `getEvents.ts`), mantiene un `EventDraft[]` plano, `addEntry` frena en `VENUE_EVENTS_MAX_ENTRIES` (línea ~199), guarda con `PUT` la agenda completa. Sin agrupación, sin "duplicar".
 - `EventDraft` no lleva `id` (`apps/web/src/lib/venue/venue-event-draft.ts`).
-- El PUT hace delete-and-reinsert: los ids no son estables (`venue.events.ts:243-275`). No afecta esta spec, pero sí a HOS-2255 (ver ahí).
+- El PUT hace delete-and-reinsert: los ids no son estables (`venue.events.ts:243-275`). No afecta esta spec; lo resuelve HOS-2291 (ids estables de eventos).
 
 ## 6. Proposed design
 
@@ -103,7 +104,7 @@ Cache: igual que el menú del día, la cola es el TTL del cache global. Aceptabl
 
 ### 6.4 Tope de 30
 
-`VENUE_EVENTS_MAX_ENTRIES = 30` pasa a aplicarse a los eventos **no pasados** (vivos + apagados). Los pasados tienen su propio techo, `VENUE_EVENTS_MAX_PAST_ENTRIES = 60`, así que el techo del array completo es 90. Se valida en el servicio (`replaceVenueEvents`) con `partitionVenueEvents`, no en el schema del array (el schema no conoce la hora). El schema del payload sube a `.max(VENUE_EVENTS_MAX_ENTRIES + VENUE_EVENTS_MAX_PAST_ENTRIES)`. Error: `VALIDATION_ERROR` 400 con el mensaje `zodError.venue.events.max` (existente) y uno nuevo `zodError.venue.events.pastMax`. Ver OQ-2.
+`VENUE_EVENTS_MAX_ENTRIES = 30` pasa a aplicarse a los eventos **no pasados** (vivos + apagados). Los pasados no cuentan y no tienen techo propio: los limpia el cron de 6.8. El techo de 30 sigue siendo el del array (`VENUE_EVENTS_MAX_ENTRIES`, sin constante nueva). Como el PUT reenvía el documento entero (pasados incluidos, hasta que el cron los borre), el `.max` del array se quita del schema del payload y la regla vive en el servicio (`replaceVenueEvents`), que valida con `partitionVenueEvents` que los no pasados sean <= 30 (el schema no conoce la hora). Error: `VALIDATION_ERROR` 400 con el mensaje existente `zodError.venue.events.max`. Decidido (owner, 16/11/2026): ver 6.8 y OQ-2.
 
 ### 6.5 Web
 
@@ -118,7 +119,17 @@ Cache: igual que el menú del día, la cola es el TTL del cache global. Aceptabl
 
 ### 6.6 i18n (es / en / pt)
 
-Claves nuevas bajo `venue.owner.editor.venueEventsManager.*` en `packages/i18n/src/locales/{es,en,pt}/venue.json`: `pastTitle` («Pasados»), `pastCount_one/_other`, `pastEmpty`, `duplicate`, `removeAllPast`, `removeAllPastConfirm`, `pastMaxReached_one/_other`. En `zodError` (misma carpeta que las existentes `zodError.venue.events.max`): `zodError.venue.events.pastMax`. Reusar las claves existentes `removeEntry`.
+Claves nuevas bajo `venue.owner.editor.venueEventsManager.*` en `packages/i18n/src/locales/{es,en,pt}/venue.json`: `pastTitle` («Pasados»), `pastCount_one/_other`, `pastEmpty`, `duplicate`, `removeAllPast`, `removeAllPastConfirm`, `pastRetentionHint` («Los eventos pasados se borran solos a los 60 días»). Reusar las claves existentes `removeEntry`.
+
+### 6.8 Cron de limpieza de pasados
+
+Decidido (owner, 16/11/2026): un cron nuevo borra los eventos pasados hace más de 60 días. No lo hace el dueño y no hay techo de pasados.
+
+- Job nuevo `venue-events-past-cleanup` (archivo con el nombre del job en `apps/api/src/cron/`, registrado en `schedules.manifest.ts`; patrón de `listing-retention-pass`). Corre una vez al día de madrugada (hora AR).
+- Borra (hard delete) las filas `once` cuyo fin (calculado con la misma regla de `isVenueEventPast`) quedó más de 60 días atrás. Constante `VENUE_EVENT_PAST_RETENTION_DAYS = 60` junto a `VENUE_EVENT_TIME_ZONE`. Reusa la definición única de "pasado" (AC-11), no una comparación propia.
+- Los `weekly` nunca se borran por este job.
+- Las métricas no se pierden: `venue_interaction.event_id` es FK `ON DELETE SET NULL` (HOS-2256, HOS-2265), así que los clics quedan sin el evento.
+- Idempotente, por lotes, con una línea de log con el conteo borrado. Un fallo no afecta la lectura pública.
 
 ### 6.7 Catálogo
 
@@ -126,9 +137,9 @@ Ninguno. No hay claves nuevas ni migración de catálogo (por eso es Fase 1).
 
 ## 7. Data model / contracts
 
-- Sin migración. Sin columnas nuevas.
-- Contrato: `GET /api/v1/protected/venues/:id/events` agrega `isPast` por evento. `PUT` sin cambios de forma; cambia sólo el techo del array.
-- Error contract (`apps/api/docs/error-contract.md`): sin códigos nuevos. 400 `VALIDATION_ERROR` por techo.
+- Sin migración. Sin columnas nuevas. El cron de 6.8 sólo borra filas.
+- Contrato: `GET /api/v1/protected/venues/:id/events` agrega `isPast` por evento. `PUT` sin cambios de forma; el techo de 30 se evalúa sobre los no pasados.
+- Error contract (`apps/api/docs/error-contract.md`): sin códigos nuevos. 400 `VALIDATION_ERROR` por techo. El cron no expone endpoint.
 
 ## 8. UX / UI behavior
 
@@ -147,6 +158,7 @@ Ninguno. No hay claves nuevas ni migración de catálogo (por eso es Fase 1).
 - AC-6. El cálculo es por zona `America/Argentina/Buenos_Aires`, no por UTC ni por el reloj del proceso: a las 21:30 AR (00:30 UTC del día siguiente) un evento de hoy 22:00 sigue publicado.
 - AC-7. `GET /protected/venues/:id/events` devuelve los pasados con `isPast: true` y los apagados con `isActive: false`.
 - AC-8. Con 30 eventos no pasados, agregar uno más falla con 400 `VALIDATION_ERROR`; con 30 no pasados y 25 pasados, guardar funciona.
+- AC-12. El cron borra un `once` cuyo fin fue hace 61 días y no toca uno de hace 59 días ni ningún `weekly`; los clics asociados (HOS-2256) quedan con `event_id` nulo.
 - AC-9. En el editor, los pasados aparecen en «Pasados», se pueden duplicar y borrar (uno o todos).
 - AC-10. Textos en es, en y pt; el guard de i18n pasa.
 - AC-11. `isVenueEventPast` es la única implementación: no hay otra comparación de fechas de eventos en API ni web (grep en el PR).
@@ -154,7 +166,8 @@ Ninguno. No hay claves nuevas ni migración de catálogo (por eso es Fase 1).
 ## 10. Test plan
 
 - Unit (`packages/schemas/test/entities/venue/venue.event.lifecycle.test.ts`, nuevo): tabla de casos con `now` inyectado. Casos trampa: cruce de medianoche, sin `endTime`, fin de mes (`2026-11-30` + 1 día), domingo `weekday 0`, 21:30 AR = 00:30 UTC.
-- Unit (`packages/service-core/test/services/venue/venue.events.test.ts`): techo de no pasados y de pasados.
+- Unit (`packages/service-core/test/services/venue/venue.events.test.ts`): techo de no pasados; los pasados no cuentan.
+- Cron `venue-events-past-cleanup`: tabla de casos con `now` inyectado (59/60/61 días, `weekly`, cruce de medianoche, fin de mes) y el test del manifest.
 - Route (`apps/api/test/routes/venue/public/`): nuevo `venue-events-past.test.ts` con `getBySlug`. Reusar el patrón de `night-info.test.ts` y `menu-file-gate.test.ts`.
 - Route protegida (`apps/api/test/routes/venue/protected/content-routes-chain.test.ts`): `isPast` presente.
 - Web: `apps/web/test/components/venue/VenueEventsManager.past.test.tsx` (nuevo; agrupa, duplica, borra). Mutación a mano del filtro (cambiar `!` por nada) para comprobar que el test del público falla.
@@ -166,17 +179,9 @@ Ninguno. No hay claves nuevas ni migración de catálogo (por eso es Fase 1).
 - R-2. Un dueño con un local en otra zona (hoy no existe) vería mal el corte. La constante es el lugar único a revisar; ya está declarado así en `open-now-in-zone.ts`.
 - R-3. El editor hoy recibe `isPast` sólo al cargar. Un evento que pasa mientras el dueño tiene el editor abierto se reagrupa al recargar. Aceptable.
 
-**OQ-1. Evento sin hora de fin: ¿cuándo se considera pasado?**
+**OQ-1. Evento sin hora de fin: ¿cuándo se considera pasado?** Decidido (owner, 16/11/2026): hasta las 06:00 del día siguiente. Cubre la noche entera del boliche; el costo es que un evento de tarde sin hora de fin queda visible hasta la madrugada.
 
-1. Hasta las 06:00 del día siguiente (recomendada). Pro: cubre la noche entera del boliche. Contra: un evento de tarde sin hora de fin queda visible hasta la madrugada siguiente.
-2. Hasta las 00:00 del día siguiente. Pro: simple. Contra: corta una fiesta en curso.
-3. Obligar a cargar hora de fin. Pro: sin ambigüedad. Contra: rompe el contrato actual (`endTime` es opcional) y suma fricción.
-
-**OQ-2. Tope de entradas pasadas y retención.**
-
-1. Los pasados no cuentan para los 30; techo propio de 60 pasados; el dueño los borra a mano (recomendada). Pro: nada se borra solo, alinea con "no borrar nada" de la decisión 6. Contra: puede quedar basura de hasta 60 filas por local.
-2. Cron que borra pasados con más de 90 días. Pro: tabla limpia. Contra: pierde datos que las estadísticas de HOS-2265 podrían querer comparar; sumar un job a `schedules.manifest.ts`.
-3. Mantener 30 en total, pasados incluidos. Pro: cero cambios de tope. Contra: el dueño tiene que borrar pasados para poder cargar nuevos, el problema que esta spec quiere evitar.
+**OQ-2. Tope de entradas pasadas y retención.** Decidido (owner, 16/11/2026): los pasados no cuentan para el tope y un cron los borra a los 60 días. No hay techo de 60 ni `VENUE_EVENTS_MAX_PAST_ENTRIES`; el borrado es automático, no del dueño. Contexto: se descartaron el techo propio con borrado manual y el tope total de 30.
 
 ## 12. Implementation notes
 
@@ -189,9 +194,10 @@ Ninguno. No hay claves nuevas ni migración de catálogo (por eso es Fase 1).
 
 1. T-1. `venue.event.lifecycle.ts` + tests de tabla (0,5 día).
 2. T-2. Filtro en `getBySlug` + test de ruta pública (0,5 día).
-3. T-3. `isPast` en la salida protegida + techo de no pasados/pasados en `replaceVenueEvents` (0,5 día).
+3. T-3. `isPast` en la salida protegida + techo de no pasados en `replaceVenueEvents` (0,5 día).
 4. T-4. Editor: agrupación, duplicar, borrar pasados (1 día).
 5. T-5. i18n es/en/pt (0,25 día).
+6. T-6. Cron `venue-events-past-cleanup` + manifest + tests (0,5 día). Depende de T-1.
 
 ## 13. Linear
 

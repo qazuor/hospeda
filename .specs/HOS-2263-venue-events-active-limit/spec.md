@@ -16,7 +16,7 @@ Hija de la épica HOS-2252. **Fase 3**: depende de las claves nuevas del catálo
 
 ## 1. Summary
 
-Se aplica el límite `max_venue_active_events` al guardar la agenda del local. Valores acordados (HOS-2253, decisión 1): básico 1, pro 10, premium sin tope. Se cuentan los eventos **activos a la vez**: un semanal cuenta 1; un único pasado no cuenta; uno apagado por el dueño no cuenta. Si se supera, la API responde 403 `LIMIT_REACHED`. El techo técnico de 30 sigue como seguro.
+Se aplica el límite `max_venue_active_events` al guardar la agenda del local. Valores acordados (HOS-2253, decisión 1): básico 1, pro 10, premium sin tope. El tope es **por local** (no por dueño). Se cuentan los eventos **activos a la vez**: un semanal cuenta 1; un único pasado no cuenta (los borra un cron a los 60 días, HOS-2254); uno apagado por el dueño no cuenta, y al volver a prenderlo se vuelve a controlar el tope. Si se supera, la API responde 403 `LIMIT_REACHED`. El techo técnico de 30 sigue como seguro.
 
 ## 2. Problem
 
@@ -36,7 +36,7 @@ Se aplica el límite `max_venue_active_events` al guardar la agenda del local. V
 
 - NG-1. Crear las claves y asignarlas a planes: son HOS-2259 (claves) y HOS-2280 (additive grant a los planes). Esta spec escribe el gate, no el catálogo.
 - NG-2. Recurrencia (HOS-2264) y estadísticas (HOS-2265).
-- NG-3. Un job que apague o archive eventos al bajar de plan (ver 6.4: todo se evalúa en vivo).
+- NG-3. Un job que apague o archive eventos al bajar de plan (ver 6.4: todo se evalúa en vivo; el enforcement de la clave es `NONE`, decidido por el owner, ver OQ-3).
 
 ## 5. Current baseline (verificado en `origin/staging`)
 
@@ -77,7 +77,7 @@ Fila nueva en `packages/schemas/src/catalog/limit-keys.ts`:
 ```
 
 - `SUM`: decisión 7 (add-ons suman).
-- Enforcement **`NONE`**, no `ARCHIVE`: `ARCHIVE` dice "se archivan los excedentes más nuevos" (`key-attributes.ts:42`), exactamente lo contrario de la decisión 6 (respetar lo cargado). `NONE` = "nada persistido para reconciliar; el gate se evalúa en vivo" (`key-attributes.ts:45`), que es lo que hace esta spec. Se confirma con el equipo de HOS-2259 antes de mergear (ver OQ-3).
+- Decidido (owner, 16/11/2026): enforcement **`NONE`**, no `ARCHIVE`: `ARCHIVE` dice "se archivan los excedentes más nuevos" (`key-attributes.ts:42`), exactamente lo contrario de la decisión 6 (respetar lo cargado). `NONE` = "nada persistido para reconciliar; el gate se evalúa en vivo" (`key-attributes.ts:45`), que es lo que hace esta spec.
 - Valores por plan los fija HOS-2280 (básico 1, pro 10, premium 2147483647). Esta spec no toca el catálogo (regla de las versiones inmutables: sólo se **agregan** claves con additive grant, precedente `0202_hos_2105_faq_draft_catalog.sql` + data-migration de seed `0168-hos-2105-faq-draft-plan-version-grant.ts`).
 - Guards: G3 (`check-catalog-key-usage`): la clave debe existir en el catálogo antes de usarse en código, por eso esta spec va **después** de HOS-2259. G18 (`check-catalog-sql`) valida el SQL generado; G7: ningún precio ni valor comercial en código (los 1/10/∞ NO se escriben en TS).
 
@@ -94,7 +94,7 @@ export function countActiveVenueEvents(input: {
 }): number;
 ```
 
-Cuenta un evento si: `isActive` **y** (`weekly` y `recurrenceAllowed`, o `once` y no pasado). Un `weekly` cuenta 1. Un `once` pasado no cuenta (HOS-2254). Un evento apagado (`isActive:false`) no cuenta: es la forma de "guardar" un evento sin gastar un lugar. Un `weekly` en borrador por plan (ver 6.4) no cuenta.
+Cuenta un evento si: `isActive` **y** (`weekly` y `recurrenceAllowed`, o `once` y no pasado). Un `weekly` cuenta 1. Un `once` pasado no cuenta (HOS-2254). Un evento apagado (`isActive:false`) no cuenta: es la forma de "guardar" un evento sin gastar un lugar. Al **prenderlo** (`isActive` pasa a `true`) vuelve a contar y el tope se re-controla: eso lo resuelve la regla "sin aumento neto" de 6.3, porque la agenda resultante tiene un activo más que la actual y, si supera el máximo, el PUT devuelve `LIMIT_REACHED`. El conteo es siempre sobre los eventos de **un** local (el del `:id` de la ruta), nunca sumando los demás locales del dueño (OQ-1). Un `weekly` en borrador por plan (ver 6.4) no cuenta.
 
 ### 6.3 Gate en la ruta
 
@@ -109,10 +109,10 @@ listingAccess: {
 ```
 
 1. `ListingAccessConfig.limit` hoy no recibe el body. Se amplía la firma a `{ ctx, listingId, subjectId, body }` (cambio chico y aditivo en `apps/api/src/types/authorization.ts:67` y en `listing-access.ts:207`; los callbacks existentes lo ignoran).
-2. `venueActiveEventsLimit` calcula `resulting = countActiveVenueEvents(body.events)` (la agenda **resultante**, porque el PUT reemplaza todo) y `previous = countActiveVenueEvents(filas actuales)`.
+2. `venueActiveEventsLimit` calcula `resulting = countActiveVenueEvents(body.events)` (la agenda **resultante** de ese local, porque el PUT reemplaza todo) y `previous = countActiveVenueEvents(filas actuales)`.
 3. Devuelve `{ key: 'max_venue_active_events', requested: resulting <= previous ? 0 : resulting }`. Es la **regla "sin aumento neto"** de la baja de plan (6.4): un dueño que ya está por encima del tope puede seguir editando mientras **no suba** su cantidad de activos. Un `requested` de 0 nunca supera ningún máximo (ni el 0 de "sin clave"; si la clave falta del todo, `resulting <= previous` igual pasa, y la sección ya la gatea `manage_venue_events`).
 4. Si `resulting > previous` y `resulting > max` => 403 `LIMIT_REACHED` `{ limitKey, currentCount: resulting - 1, maxAllowed }`. Por la fórmula del middleware (`requested - 1`), `currentCount` es "resultante menos uno". Para un alta de a un evento coincide con el conteo real. Si se agregan varios de una vez el número es mayor al real: el editor muestra sus **propios** números (6.5), no los del error. Se deja asentado en el contrato.
-5. El techo `VENUE_EVENTS_MAX_ENTRIES` (HOS-2254: 30 no pasados) sigue aplicándose en el servicio y en el schema, como seguro. Si el plan da `2147483647`, manda el techo de 30.
+5. El techo `VENUE_EVENTS_MAX_ENTRIES` (HOS-2254: 30 no pasados, los pasados no cuentan) sigue aplicándose en el servicio, como seguro. Si el plan da `2147483647`, manda el techo de 30.
 6. Orden del pipeline sin cambios: sección y entitlement (paso 6) antes que límite (paso 7). Un plan sin `manage_venue_events` recibe 403 `ENTITLEMENT_REQUIRED`, no `LIMIT_REACHED`.
 
 Guards y contrato: G2 (`VerticalEnum.VENUE` en la ruta, ya está), G6 (el rol no decide: la ruta sigue por `listingAccess`), G1 (sin `vertical === 'venue'` en código compartido: el helper vive en un archivo de venue). `check-step5-declared` y `OPERATION_STEP6_KEY` no aplican: no se agrega una operación nueva al pipeline, se usa `EDIT` con la sección que ya existe.
@@ -168,7 +168,8 @@ Consecuencia sobre guardados: un dueño de básico con 6 únicos cargados (vení
 ## 9. Acceptance criteria
 
 - AC-1. Dado básico (límite 1) con 1 evento único vivo, `PUT` con 2 únicos vivos devuelve 403 `LIMIT_REACHED` `{ limitKey: 'max_venue_active_events', maxAllowed: 1 }`.
-- AC-2. Dado básico con 1 vivo y 1 `isActive:false`, `PUT` con ambos y un tercero apagado se acepta (no cuentan los apagados).
+- AC-2. Dado básico con 1 vivo y 1 `isActive:false`, `PUT` con ambos y un tercero apagado se acepta (no cuentan los apagados). Prender uno de los apagados deja 2 activos y devuelve `LIMIT_REACHED`.
+- AC-2b. El conteo es por local: un dueño de básico con 1 evento activo en el local A puede cargar 1 activo en el local B.
 - AC-3. Dado un único con fecha pasada, no cuenta: básico con 1 vivo + 5 pasados guarda bien.
 - AC-4. Un semanal cuenta 1, sin importar cuántas semanas pasaron.
 - AC-5. Dado pro (10), 10 activos se aceptan y 11 devuelven `LIMIT_REACHED` con `maxAllowed: 10`.
@@ -185,7 +186,7 @@ Consecuencia sobre guardados: un dueño de básico con 6 únicos cargados (vení
 
 ## 10. Test plan
 
-- Unit (`packages/schemas/test/entities/venue/venue.event.lifecycle.test.ts`): `countActiveVenueEvents` (semanal 1, pasado 0, apagado 0, borrador por plan 0).
+- Unit (`packages/schemas/test/entities/venue/venue.event.lifecycle.test.ts`): `countActiveVenueEvents` (semanal 1, pasado 0, apagado 0, borrador por plan 0; prender un apagado lo cuenta).
 - Unit del helper del límite (`apps/api/test/utils/listing-access/venue-events-limit.test.ts`, nuevo): regla "sin aumento neto", `resulting <= previous` devuelve 0.
 - Route (`apps/api/test/routes/venue/protected/content-routes-chain.test.ts`, existente, y un nuevo `venue-events-limit.test.ts`): AC-1 a AC-10 con effective set simulado (patrón de `apps/api/test/routes/content-gates.venue-experience.test.ts`, que ya simula `manage_venue_events`).
 - Integración (BD real, `packages/db/test/integration/`): un set de dos guardados con baja de plan simulada, AC-11 por conteo de filas.
@@ -202,22 +203,11 @@ Consecuencia sobre guardados: un dueño de básico con 6 únicos cargados (vení
 - R-4. `UNLIMITED_LIMIT_VALUE` con `SUM` y add-ons puede superar int4 al sumar. Está en HOS-2259; acá nunca se persiste la suma.
 - R-5. El cambio de firma de `limit` toca un middleware compartido; es aditivo, pero hay que correr los tests de todas las rutas con `listingAccess.limit`.
 
-**OQ-1. ¿El límite es por local o por dueño (suma de todos sus locales)?**
+**OQ-1. ¿El límite es por local o por dueño?** Decidido (owner, 16/11/2026): por local. "Eventos activos a la vez" se entiende por ficha y un dueño con 3 locales de pro no comparte 10 entre todos. Costo asumido: el dueño con muchos locales multiplica sus eventos.
 
-1. Por local (recomendada). Pro: "eventos activos a la vez" se entiende por ficha; un dueño con 3 locales de pro no comparte 10 entre todos. Contra: el cobro es por vertical y un dueño con muchos locales multiplica sus eventos.
-2. Por dueño en el vertical, sumando todos sus locales. Pro: consistente con el modelo comercial (límite por sujeto+vertical, como `max_active_promotions` de alojamiento, que cuenta por `ownerId`). Contra: hay que sumar filas de varios locales y el editor de un local muestra un tope compartido que confunde.
+**OQ-2. ¿Un evento apagado (`isActive:false`) cuenta como activo?** Decidido (owner, 16/11/2026): no cuenta, y al prenderlo se vuelve a controlar el tope. Es la forma de guardar un evento sin gastar lugar. Los eventos pasados tampoco cuentan.
 
-**OQ-2. ¿Un evento apagado (`isActive:false`) cuenta como activo?**
-
-1. No cuenta (recomendada). Pro: es la forma de guardar un evento sin gastar lugar, y es lo que "activo" dice. Contra: el dueño de básico puede rotar un evento por vez tantas veces como quiera.
-2. Sí cuenta. Pro: más difícil de "bypassear". Contra: contradice la decisión 1 ("activos a la vez") y obliga a borrar en lugar de apagar.
-
-**OQ-3. Enforcement declarado de la clave.**
-
-1. `NONE` (recomendada): se evalúa en vivo, coherente con la decisión 6. Contra: si más adelante el modelo de enforcement dispara reconcile para `ARCHIVE`, esta clave no participa (es lo buscado).
-2. `ARCHIVE`: igual que `max_active_promotions`. Contra: indica que los excedentes más nuevos se archivan, no es lo decidido; habría que confirmar que ningún reconciliador actúe sobre eventos.
-
-Preguntar a HOS-2259 cuál es el contrato real del campo antes de fijar.
+**OQ-3. Enforcement declarado de la clave.** Decidido (owner, 16/11/2026): `NONE`. Se evalúa en vivo y no se archiva nada; coherente con la decisión 6. La clave no participa de ningún reconciliador de `ARCHIVE`.
 
 ## 12. Implementation notes
 
@@ -228,7 +218,7 @@ Preguntar a HOS-2259 cuál es el contrato real del campo antes de fijar.
 
 ### Task breakdown
 
-1. T-1. `countActiveVenueEvents` + tests de tabla (0,5 día; depende de HOS-2254).
+1. T-1. `countActiveVenueEvents` + tests de tabla (0,5 día; depende de HOS-2254 y de la regla de los apagados: re-control al prender).
 2. T-2. Ampliar `limit` con `body` y helper `venueActiveEventsLimit` + regla sin aumento neto (1 día).
 3. T-3. Declarar `limit` en `putEvents.ts` + tests de ruta AC-1 a AC-10 (1 día; **bloqueada por HOS-2259**).
 4. T-4. `GET` con bloque `limits` (0,5 día).
@@ -237,8 +227,8 @@ Preguntar a HOS-2259 cuál es el contrato real del campo antes de fijar.
 
 ## 13. Linear
 
-Canonical tracking: HOS-2263. Padre: HOS-2252. Decisiones: HOS-2253 (1, 2, 6, 7).
+Canonical tracking: HOS-2263. Padre: HOS-2252. Decisiones: HOS-2253 (1, 2, 6, 7) y del 16/11/2026 (tope por local, apagados no cuentan, pasados no cuentan, enforcement `NONE`).
 
-- Dependencias: HOS-2254 (pasado = no cuenta), HOS-2255 T-1 (ids estables, necesario para distinguir lo existente), **HOS-2259** (clave), HOS-2262 (textos del cuadro de planes), HOS-2280 (valores por plan, additive grant), HOS-2285 (add-on +5).
+- Dependencias: HOS-2254 (pasado = no cuenta), HOS-2291 (ids estables de eventos, necesario para distinguir lo existente), **HOS-2259** (clave), HOS-2262 (textos del cuadro de planes), HOS-2280 (valores por plan, additive grant), HOS-2285 (add-on +5).
 - Smoke: `status-needs-smoke-staging` (toca billing, entitlements y límites: el checklist de `docs/billing/smoke-checklist.md`, sección staging, es obligatorio). No toca el núcleo de billing, así que no pide `smoke-prod`.
 - What's New: sí, en la entrega conjunta de HOS-2284 (presentación y novedades), no por separado.

@@ -36,7 +36,7 @@ solo en código: cada asignación apunta a `catalog_key` por FK.
 
 ## 4. Fuera de alcance
 
-- Asignar claves a planes o add-ons (HOS-2280 a HOS-2283, HOS-2285 a HOS-2289).
+- Asignar claves a planes o add-ons (HOS-2280 a HOS-2283, HOS-2285 a HOS-2289). Eso incluye los **valores del trial** (decidido por el owner, 16/11/2026: 1 promo activa, 10 lugares en la lista, 1 evento activo; HOS-2280 a HOS-2283 y HOS-2262). Esta spec declara las claves, no ningún valor.
 - Textos ricos de la tabla de planes (HOS-2262). Aquí solo el mínimo que evita CI rojo.
 - Las funciones que usan las claves (Fase 3 de la épica).
 
@@ -105,19 +105,19 @@ Entitlements (`MAX`, enforcement `NONE`, igual que todos los entitlements actual
 | `venue_group_reservations` | Reservas de grupo y cumpleaños |
 | `venue_vip_promotions` | Promos para turistas VIP (no reusar `vip_promotions_access`, que es del turista) |
 
-Límites (`SUM`, decisión 7):
+Límites (`SUM`, decisión 7). Decidido (owner, 16/11/2026): ambos con enforcement `NONE`, es decir, se evalúan en vivo y no se archiva nada.
 
-| Clave | Aggregation | Enforcement propuesto |
+| Clave | Aggregation | Enforcement (decidido) |
 |---|---|---|
 | `max_venue_active_events` | `SUM` | `NONE` |
 | `max_venue_guest_list_size` | `SUM` | `NONE` |
 
-Enforcement `NONE` y no `ARCHIVE`: `ARCHIVE` declara que «el excedente más nuevo se
+Enforcement `NONE` y no `ARCHIVE` (decidido por el owner, 16/11/2026, pregunta 1): `ARCHIVE` declara que «el excedente más nuevo se
 archiva» (`key-attributes.ts`), pero la decisión 6 dice que los eventos únicos siguen
 visibles hasta su fecha y los semanales pasan a borrador. Además hoy ningún proceso
 ejecuta `ARCHIVE` para claves que no son de listado: `enforcementStrategy` solo se lee
 en el generador de SQL y se declara en `catalog-key.dbschema.ts` (verificado con `rg`
-en `apps/`, `packages/` y `scripts/`, sin contar snapshots de migración). Ver pregunta 1.
+en `apps/`, `packages/` y `scripts/`, sin contar snapshots de migración). Como `NONE` no archiva ni reconcilia nada, la regla de baja de plan la implementa el código de cada función (HOS-2263 para eventos, HOS-2274 para la lista).
 
 ### 6.2 Archivos
 
@@ -195,7 +195,7 @@ alguien lo persiste (snapshot en tabla, reporte), no revienta. Ver pregunta 2.
 ## 8. UX / UI
 
 Ninguna visible. Con las claves sin asignar a ningún plan, la tabla de planes **no**
-muestra filas nuevas (las filas de venue se generan desde `LISTING_SECTIONS`, no desde
+muestra filas nuevas (decidido por el owner, 16/11/2026: las filas sin grant se ocultan hasta que algún plan las tenga, ver HOS-2262) (las filas de venue se generan desde `LISTING_SECTIONS`, no desde
 el catálogo de claves; ver HOS-2262).
 
 ## 9. Criterios de aceptación
@@ -231,19 +231,15 @@ el catálogo de claves; ver HOS-2262).
   epica-billing. Mitigación: la rama espera; el PR no lleva `Closes`.
 - R-2. Un número de migración que choque con otra rama. Mitigación: tomar el número
   recién al implementar, después de mergear `staging`.
-- R-3. Aceptar `enforcement: NONE` y que luego se pida archivado automático. Mitigación:
+- R-3. Aceptar `enforcement: NONE` (decidido) y que luego se pida archivado automático. Mitigación:
   el enforcement es un atributo de catálogo y cambiarlo es una migración nueva solo si
   hay filas que cambiar; pero **no se puede editar una fila de `catalog_key` ya
-  insertada sin migración de UPDATE**, y G18 falla ante `UPDATE`. Por eso conviene
-  decidir bien ahora (pregunta 1).
+  insertada sin migración de UPDATE**, y G18 falla ante `UPDATE`. Por eso el owner lo
+  fijó ahora, en `NONE` (pregunta 1).
 
 ## 12. Preguntas abiertas para el owner
 
-1. **Enforcement de los dos límites nuevos.** Opciones: (a) `NONE`, la regla de baja de
-   plan la implementa el código de cada función (HOS-2263 y HOS-2274); (b) `ARCHIVE`,
-   consistente con `max_active_promotions`, aunque nadie lo ejecuta. Recomendación: (a),
-   porque la decisión 6 (únicos visibles, semanales a borrador) no es «archivar el más
-   nuevo» y declarar `ARCHIVE` promete algo que no ocurre.
+1. **Enforcement de los dos límites nuevos.** Decidido (owner, 16/11/2026): `NONE`. Se evalúan en vivo y no se archiva nada; la regla de baja de plan la implementa el código de cada función (HOS-2263 y HOS-2274). `ARCHIVE` prometía algo que no ocurre.
 2. **Clamp del `SUM` a 2147483647.** Opciones: (a) sí, en `foldKey`; (b) no, dejar crecer
    el número porque nada lo persiste. Recomendación: (a), es barato y blinda el futuro.
 3. **Fuente única de `UNLIMITED_LIMIT_VALUE`.** Opciones: (a) moverla a `@repo/schemas`

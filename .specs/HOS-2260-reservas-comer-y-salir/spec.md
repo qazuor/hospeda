@@ -24,10 +24,11 @@ Hace dos cosas:
 1. Fija el **modelo común** que los cinco comparten (tablas, estados, errores,
    permisos, gates, notificaciones, retención), para que no se diseñen cinco
    modelos paralelos.
-2. Lista **todas las decisiones de producto** que faltan, cada una con opciones y
-   una recomendación. Mientras el owner no las cierre, los issues hijos quedan
-   bloqueados. Las specs hijas ya asumen la opción **recomendada** y dicen
-   dónde cambiaría el diseño si el owner elige otra.
+2. Registra las **decisiones de producto** de las reservas. El owner cerró OQ-1 a OQ-8
+   y OQ-C el 16/11/2026 (sección 11). Dos difieren de la recomendación original: OQ-6
+   (QR validado solo por la cuenta del dueño) y OQ-C (capacidad = aforo total en
+   personas por noche). Las specs hijas ya aplican esas decisiones. OQ-9 a OQ-12
+   siguen abiertas, con su recomendación como supuesto.
 
 Nada de esto existe hoy en ninguna vertical. No hay que migrar nada: es código nuevo.
 
@@ -51,10 +52,10 @@ grande y el único sin diseño: no hay flujo, ni datos, ni reglas de retención.
 
 - NG-1: seña, pago, garantía de tarjeta o devolución. El adaptador de MercadoPago no
   soporta `charge` (ver CLAUDE.md raíz, "Measured MercadoPago behaviour").
-- NG-2: cuentas con varios usuarios (personal de puerta con login propio). Es la
-  "idea 32", sin decidir. Ver OQ-6.
+- NG-2: cuentas con varios usuarios, link de puerta y cuentas de empleados. Pasan a
+  HOS-2295 (etapa 2). Ver OQ-6.
 - NG-3: lista de espera automática, canje de beneficios en caja, integración con
-  ticketeras (eso es HOS-2255) y plano de mesas.
+  ticketeras (eso es HOS-2255), plano de mesas y tipos de mesa con horario (HOS-2295).
 - NG-4: reservas para alojamiento y experiencias. `centralized_booking` es de
   alojamiento y no se toca (ver sección 5).
 - NG-5: motor de disponibilidad general (calendarios, turnos, solapes).
@@ -82,7 +83,7 @@ grande y el único sin diseño: no hay flujo, ni datos, ni reglas de retención.
 
 ## 6. Diseño propuesto (modelo común)
 
-Todo lo que sigue asume las opciones recomendadas de la sección 11.
+Todo lo que sigue aplica las decisiones del owner de la sección 11.
 
 ### 6.1 Tablas (todas nuevas, nombres en singular, regla del repo para tablas nuevas)
 
@@ -90,17 +91,16 @@ Todo lo que sigue asume las opciones recomendadas de la sección 11.
 |---|---|---|
 | `venue_event_guest_list` | HOS-2274 | Configuración de la lista de un evento (1 a 1): abierta, cupo, cierre. |
 | `venue_guest_list_entry` | HOS-2274 | Un anotado a una fecha de un evento. |
-| `venue_reservation_type` | HOS-2275 | Qué se reserva: mesa o VIP, personas máx., ventanas, cantidad. |
-| `venue_reservation` | HOS-2275 (+2277, +2278) | Una reserva. Grupo y cumpleaños son columnas opcionales. |
+| `venue_reservation_setting` | HOS-2275 | Configuración de reservas del local (1 a 1): **aforo total en personas por noche**, un solo entero (OQ-C). |
+| `venue_reservation` | HOS-2275 (+2277, +2278) | Una reserva: mesa o VIP, personas, fecha. Grupo y cumpleaños son columnas opcionales. |
 | `venue_reservation_member` | HOS-2277 | Quién confirmó que va a un grupo. |
 | `venue_birthday_benefit` | HOS-2278 | El beneficio de cumpleaños del local (1 a 1 con el listing). |
 | `venue_entry_pass` | HOS-2276 | El QR: un pase por persona, del anotado o de la reserva. |
-| `venue_door_link` | HOS-2276 | El link de puerta revocable (si el owner elige la opción recomendada en OQ-6). |
 
 Todas llevan bloque de auditoría y soft delete como el resto del repo, salvo
 `venue_entry_scan` si se hace (evento de solo inserción, como `qr_code_scans`).
-Las que cuelgan de `venues` (`venue_reservation_type`, `venue_birthday_benefit`,
-`venue_door_link`, y por `venue_events` las de lista) **suman fila en
+Las que cuelgan de `venues` (`venue_reservation_setting`, `venue_birthday_benefit`,
+y por `venue_events` las de lista) **suman fila en
 `scripts/guards/purged-closed-list.json`** y en el test congelado del guard
 (`packages/db/test/integration/purged-closed-list-from-empty.test.ts`).
 Tratamiento propuesto en PURGED: se borran con el contenido, igual que
@@ -125,8 +125,22 @@ solicitud (reserva)             anotación (lista)
   `CANCELLED_BY_VENUE`, `CHECKED_IN`, `NO_SHOW`.
 - La lista nace en `CONFIRMED` (o se rechaza con 409 si cierra/llena). La reserva nace
   en `REQUESTED` y espera al local. `EXPIRED` no tiene consecuencia, como en HOST_TRADE.
+- `NO_SHOW` lo marca **a mano el local** (OQ-8). Nunca se deduce de un QR sin validar.
 - Las transiciones viven en el servicio (`@repo/service-core`), una función por
   transición, y se prueban con una tabla de transiciones. Un estado terminal no vuelve.
+
+### 6.2 bis Capacidad (decisión OQ-C)
+
+La capacidad es **un único entero por noche y por local**: el aforo total en personas
+(`venue_reservation_setting.total_capacity`). No hay tipos de mesa, ni cantidad de
+unidades por horario, ni plano de mesas (eso es HOS-2295).
+
+- Disponible = `total_capacity - SUM(party_size)` de las reservas `REQUESTED`,
+  `CONFIRMED` y `CHECKED_IN` de ese local y esa **fecha de servicio**.
+- Una solicitud pendiente **retiene** las personas que pidió hasta que se acepta,
+  vence o se rechaza.
+- Mesa, VIP, grupo y cumpleaños consumen el mismo aforo. La lista de invitados tiene su
+  propio cupo por evento (HOS-2274) y no descuenta de este aforo (ver OQ-13).
 
 ### 6.3 Gates (claves nuevas, patrón `venue_*`)
 
@@ -144,8 +158,8 @@ toca el catálogo.
 Regla de **qué se gatea y qué no** (cumple la decisión 6 del owner):
 
 - Se gatea con plan: **configurar** y **operar el panel** del local.
-- **Nunca** se gatea con plan: que el turista cancele, vea su pase, y que el local
-  **valide en la puerta** un pase ya emitido. Si el local baja de plan, lo ya
+- **Nunca** se gatea con plan: que el turista cancele, vea su pase, y que el dueño
+  **valide en la puerta** (con su propia sesión) un pase ya emitido. Si el local baja de plan, lo ya
   confirmado funciona hasta que pase su fecha.
 
 ### 6.4 Permisos y autorización (G6: un rol nunca decide)
@@ -200,7 +214,7 @@ pasadas el plazo y conserva los conteos para estadísticas.
 - Anotarse: 10 por hora por usuario. Pedir reserva: 5 por hora por usuario.
 - Reservas pendientes por usuario y local: máximo 3.
 - Un usuario, una anotación activa por evento y fecha (índice único parcial).
-- Validar pase: 120 por minuto por link de puerta o cuenta.
+- Validar pase: 120 por minuto por cuenta del dueño.
 
 Constantes en código, sin precios (G7 no aplica, no son valores comerciales).
 
@@ -225,115 +239,99 @@ Cada spec hija trae sus tablas, rutas y esquemas Zod. Lo común:
   estado, cancelar y pase.
 - Panel del local (web, dentro de la edición del comercio, junto a
   `VenueEventsManager`): lista por evento, reservas por día, configuración.
-- Validación en puerta: página mobile-first, sin login si se elige el link de puerta.
+- Validación en puerta: página mobile-first que usa la **sesión del dueño** (no hay link
+  de puerta). El panel muestra un texto que desalienta compartir la contraseña.
 
 ## 9. Criterios de aceptación de la spec paraguas
 
-- AC-1: el owner respondió todas las preguntas de la sección 11 (o aceptó la recomendada).
+- AC-1: OQ-1 a OQ-8 y OQ-C están decididas (16/11/2026); OQ-9 a OQ-13 siguen con su
+  recomendación como supuesto.
 - AC-2: los cinco issues hijos tienen su `spec.md` en `.specs/` con las decisiones aplicadas.
 - AC-3: ninguna tabla nueva queda sin fila en `purged-closed-list.json`.
 - AC-4: ningún gate de plan bloquea validar o cancelar lo ya confirmado.
 - AC-5: no hay código de pago ni referencia a `charge` en el módulo.
+- AC-6: la capacidad es un solo entero por local y noche; ninguna tabla de tipos de
+  mesa ni de links de puerta existe en esta etapa.
 
 ## 10. Riesgos
 
 - R-1: **`replaceVenueEvents` borra y reinserta eventos.** Con listas colgando de
   `venue_events.id`, cada guardado del editor dejaría huérfanos o borraría a todos
   los anotados. Es el riesgo técnico más alto y obliga a un diff estable antes de la
-  lista (HOS-2274, tarea 1). Conviene que lo haga **HOS-2254/2255** o un issue
-  previo común, porque también lo necesitan imagen, entrada y métricas por evento.
+  lista. Lo resuelve **HOS-2291** (ids estables de eventos, extraído de HOS-2255 T-1),
+  porque también lo necesitan imagen, entrada y métricas por evento.
 - R-2: sobreventa por concurrencia. Cupo y disponibilidad se validan dentro de una
   transacción con bloqueo de fila.
-- R-3: un link de puerta filtrado permite quemar pases. Mitigación: vence, se revoca,
-  hay deshacer y registro de escaneos.
+- R-3: **el dueño puede compartir su contraseña** con el personal de puerta, ya que solo
+  su cuenta valida el QR (OQ-6). Mitigación: texto en el panel que lo desalienta, deshacer
+  de 2 minutos y registro de escaneos por cuenta. La solución real (cuentas de personal) es
+  HOS-2295.
 - R-4: datos personales de terceros (nombre y teléfono de menores en cumpleaños).
   Se pide el mínimo y se anonimiza.
 - R-5: el catálogo no se puede tocar hasta la pasada final de HOS-1352. Las specs hijas
   se pueden implementar solo con el código y el gate detrás de una clave que aún no
   existe si se coordina con HOS-2259; si no, esperan.
 
-## 11. Preguntas abiertas para el owner
+## 11. Decisiones del owner y preguntas abiertas
 
-Cada una con opciones y mi recomendación. Las hijas asumen la recomendada.
+OQ-1 a OQ-8 y OQ-C quedaron **decididas el 16/11/2026**. OQ-9 a OQ-13 siguen abiertas;
+las hijas asumen la recomendación.
 
 ### OQ-1 Confirmación: ¿al pedirla o la acepta el local? ¿Con qué plazo?
 
-1. **Todo instantáneo.** Pros: cero fricción. Contras: el local no controla la sala; un
-   grupo de 12 entra sin avisar. Impacto: sin estado `REQUESTED`.
-2. **Todo por solicitud.** Pros: control total. Contras: la lista de un boliche se
-   vuelve inmanejable (cientos de solicitudes).
-3. **Mixto (recomendada).** Lista de invitados: instantánea hasta cupo y cierre. Mesa,
-   VIP, grupo y cumpleaños: por solicitud, el local acepta o rechaza, y vence a las
-   **24 horas** (o 2 horas antes de la fecha, lo que ocurra primero) sin consecuencia.
-   Pros: cada caso usa el modelo que tiene sentido. Contras: dos flujos.
-4. **Mixto con aceptación automática opcional por local** (post-etapa 1).
+**Decidido (owner, 16/11/2026): confirmación mixta.** La lista de invitados se confirma
+en el acto hasta llenar el cupo o llegar la hora de cierre. Mesa, VIP, grupo y
+cumpleaños son por solicitud: el local acepta o rechaza, y vence a las **24 horas o 1
+hora antes de la fecha** (lo que ocurra primero), sin consecuencia.
 
 ### OQ-2 Cancelación: ¿puede el cliente? ¿Hasta cuándo? ¿Se avisa?
 
-1. Sin cancelación. Contras: castiga al turista y llena el panel de fantasmas.
-2. **Hasta 2 horas antes de la hora de la reserva o del cierre de la lista (recomendada).**
-   Después, solo contactando al local. Se avisa por correo al local (solo reservas) y el
-   panel lo refleja. El local también puede cancelar con motivo y se avisa al turista.
-3. Hasta el momento de entrar. Contras: cupos vacíos sin reaprovechar.
+**Decidido (owner, 16/11/2026):** el turista cancela hasta **2 horas antes**. El local
+también puede cancelar. En ambos casos la otra parte recibe un correo.
 
 ### OQ-3 Datos del cliente: qué se pide, qué ve el local, cuánto se guardan
 
-- **Lista:** nombre (tomado del perfil) y cantidad de acompañantes. El local ve eso.
-- **Mesa, VIP, grupo, cumpleaños:** nombre, cantidad de personas, **teléfono** (el local
-  necesita poder avisar un cambio), nota opcional. El local ve los cuatro. Nunca ve el
-  email.
-- **Retención, opciones:** 30 días, **90 días (recomendada)** o 12 meses (precedente de
-  HOS-2101). Pasado el plazo desde la fecha del evento se anonimiza nombre, teléfono y
-  nota; se conserva el conteo para estadísticas. 90 días alcanza para reclamos y
-  contrapagos; 12 meses guarda datos de terceros sin necesidad.
+**Decidido (owner, 16/11/2026):** lista = nombre y acompañantes; reserva = nombre,
+teléfono y una nota. El local **nunca ve el email**. Se anonimiza a los **90 días** de la
+fecha del evento (nombre, teléfono y nota); se conserva el conteo para estadísticas.
 
 ### OQ-4 Cuenta: ¿hace falta estar logueado?
 
-1. **Sí, con email verificado (recomendada).** Pros: freno al abuso, el pase vive en
-   "Mi cuenta", el idioma del correo sale del perfil. Contras: fricción para quien no
-   tiene cuenta (el alta es corta).
-2. Invitado con email, sin cuenta. Contras: sin anti-abuso real; el pase queda solo en el
-   correo; hay que verificar el email por token en cada reserva.
+**Decidido (owner, 16/11/2026):** cuenta con email verificado, obligatoria. No hay
+invitado sin cuenta.
 
 ### OQ-5 Pagos
 
-**Recomendación: confirmar que no hay seña ni pago en la etapa 1.** Contras: no hay
-garantía contra el no-show. Alternativa futura: seña por preferencia de pago
-(`createPreference`), que requiere una spec propia y un smoke de billing completo,
-porque el adaptador no soporta `charge`.
+**Decidido (owner, 16/11/2026):** sin seña ni pago en la etapa 1. Una seña futura
+(`createPreference`) requiere spec propia y un smoke de billing completo, porque el
+adaptador no soporta `charge`.
 
 ### OQ-6 QR de ingreso: ¿quién valida?
 
-1. **Solo la cuenta dueña del local.** Pros: simplísimo, sin superficie nueva. Contras:
-   el dueño no está en la puerta; obliga a prestar el celular con su sesión.
-2. **Link de puerta (recomendada para la etapa 1).** El dueño genera, desde el panel, un
-   link con token revocable, atado al local, que vence a las 6 horas de terminado el
-   evento. Quien lo abre valida sin login. Pros: sirve para el personal real; no rompe
-   G6 (no es un rol: es una capacidad atada al recurso). Contras: si se filtra, cualquiera
-   con el link valida. Mitigación: vence, se revoca, límite por minuto, deshacer, registro.
-3. **Cuenta con varios usuarios** (idea 32, la que quedó sin decidir). Pros: auditoría por
-   persona. Contras: es una épica propia (`staff_management` y `max_staff_accounts`
-   son claves sin código). No entra en esta etapa.
-
-El QR **no** reusa `qr_codes` (ver HOS-2276): un pase es de una persona, no un sticker.
+**Decidido (owner, 16/11/2026): solo la cuenta del dueño** (distinto de la recomendación
+original, que era un link de puerta). No hay link de puerta ni cuentas de empleados: eso
+pasa a **HOS-2295**. Consecuencias de diseño: sin tabla `venue_door_link`, sin
+`capabilitiesAnyOf` en `listing-access`, sin ruta pública de puerta. **Riesgo anotado
+(R-3):** el dueño puede compartir su contraseña; el panel lo desalienta con un texto.
+El QR sigue sin reusar `qr_codes` (ver HOS-2276).
 
 ### OQ-7 Lista de invitados: ¿cierra por hora, por cupo o las dos?
 
-**Las dos, lo que ocurra primero (recomendada).** El cupo cuenta **personas** (anotado
-más acompañantes), no filas. Cierre por defecto: la hora de inicio del evento; el local
-puede adelantarlo. Para un evento semanal el cupo es **por fecha**, no total. Pro tiene
-tope 100 por evento (decisión del owner); premium sin tope. Alternativa: solo cupo, sin
-hora de cierre. Contra: una lista que sigue abierta con el boliche ya lleno.
+**Decidido (owner, 16/11/2026):** cierra por **cupo en personas** (anotado más
+acompañantes, no filas) o por **hora de cierre**, lo que pase primero. En un evento
+semanal el cupo es **por fecha**. Pro tiene tope 100 por evento; premium sin tope.
 
 ### OQ-8 No-show: ¿se marca? ¿Tiene consecuencia?
 
-1. No se marca. Contras: el local no distingue a los que faltan.
-2. **Se marca a mano, sin consecuencia automática (recomendada).** El local lo marca
-   desde el panel. Si nunca usó la puerta, **no** se deduce solo (todos figurarían como
-   ausentes y sería falso). Consecuencia: solo un contador interno visible para ese local.
-   Un no-show es una acusación; por eso se parece a "rechazar" en HOST_TRADE.
-3. Bloqueo automático tras N ausencias. Contras: riesgo de castigar con datos mal
-   cargados. Post-etapa 1, si hace falta.
+**Decidido (owner, 16/11/2026):** lo marca **a mano el local**, con un contador interno
+de ese local y **sin consecuencia automática**. No se deduce del QR sin validar.
+
+### OQ-C Modelo de capacidad de las reservas
+
+**Decidido (owner, 16/11/2026): aforo total en personas por noche, un solo número**
+(distinto de la recomendación original, que eran tipos con cantidad por horario). Una
+solicitud pendiente retiene las personas que pidió. Tipos de mesa con horario (opción
+A) o plano de mesas (opción C) se eligen más adelante, en **HOS-2295**. Ver 6.2 bis.
 
 ### OQ-9 Qué pasa al purgar un listing o dar de baja un evento con anotados
 
@@ -351,6 +349,12 @@ solo lectura, detrás de `venueReservation.viewAll`, en una segunda etapa.
 ¿Recordatorio por correo antes de la fecha? Recomendación: **no en la etapa 1**; lo
 cubre HOS-2267 (recordatorio de evento, plan pro) y no hay que duplicarlo.
 
+### OQ-13 ¿La lista de invitados descuenta del aforo de reservas?
+
+Recomendación: **no**. La lista tiene su cupo por evento (HOS-2274) y el aforo de reservas
+(HOS-2275) es para mesa, VIP, grupo y cumpleaños. Contra: un local lleno por lista puede
+seguir aceptando reservas. Se revisa cuando exista HOS-2295.
+
 ### OQ-12 Ventana de reserva
 
 Antelación mínima 2 horas, máxima 60 días, no configurable por el local en la etapa 1
@@ -358,7 +362,7 @@ Antelación mínima 2 horas, máxima 60 días, no configurable por el local en l
 
 ## 12. Notas de implementación
 
-- Orden: R-1 (diff de eventos) → HOS-2274 → HOS-2275 → HOS-2276 → HOS-2277 → HOS-2278.
+- Orden: HOS-2291 (ids estables de eventos) → HOS-2274 → HOS-2275 → HOS-2276 → HOS-2277 → HOS-2278.
   El pase (HOS-2276) se emite **bajo demanda** (al pedirlo), así que 2274 y 2275 no
   dependen de él y no hace falta backfill.
 - Fase 2 del catálogo: HOS-2259 declara las cuatro claves; HOS-2283 las asigna con
@@ -379,12 +383,15 @@ Antelación mínima 2 horas, máxima 60 días, no configurable por el local en l
 
 ## 14. Desglose de tareas de esta spec
 
-1. T-1: el owner responde OQ-1 a OQ-12 (una tanda).
-2. T-2: aplicar respuestas a las cuatro specs hijas que cambien.
-3. T-3: issue previo "diff estable de `replaceVenueEvents`" (si no lo cubre HOS-2254).
+1. T-1: hecho. El owner respondió OQ-1 a OQ-8 y OQ-C (16/11/2026). Quedan OQ-9 a OQ-13.
+2. T-2: hecho. Respuestas aplicadas a las cinco specs hijas.
+3. T-3: dependencia **HOS-2291** (ids estables de eventos, antes HOS-2255 T-1).
 4. T-4: fila en `purged-closed-list.json` y su test, en cada PR de tabla.
+5. T-5: etapa 2 en **HOS-2295**: personal de puerta (link de puerta, cuentas de empleados)
+   y capacidad por mesas.
 
 ## 15. Linear
 
 Canonical tracking:
-HOS-2260 (hijos: HOS-2274, HOS-2275, HOS-2276, HOS-2277, HOS-2278; épica HOS-2252)
+HOS-2260 (hijos: HOS-2274, HOS-2275, HOS-2276, HOS-2277, HOS-2278; épica HOS-2252;
+dependencia HOS-2291; etapa 2 HOS-2295)

@@ -47,6 +47,15 @@ Grants de este bloque (decisiones HOS-2253 aplicadas):
 
 Total en las versiones v1: 8 filas de entitlement y 3 de límite.
 
+Además (decisión del owner, 16/11/2026), la versión del plan `trial` de venue recibe un
+límite propio, mínimo, para probar: `max_venue_active_events = 1` (1 evento activo). Es
+una fila de límite más (4 en total) y va por el mismo camino de additive grant
+(pieza D, sección 6.5).
+
+Los límites nuevos de este bloque (`max_venue_active_events`) van con enforcement
+`NONE` (decisión 26, HOS-2259): se evalúan en vivo y nunca se archiva ni se borra nada
+al bajar de plan o al volver a evaluar.
+
 ## 4. Fuera de alcance
 
 - Otorgar a otras verticales o planes de alojamiento/experiencia.
@@ -125,7 +134,15 @@ entitlement ahí se rechaza). Efecto con estos grants:
 - Con HOS-2282 y HOS-2283 es peor: el trial recibe `create_promotions`/`venue_guest_list`
   (entitlements de premium) pero **no tiene fila** de `max_active_promotions` ni de
   `max_venue_guest_list_size` en básico, así que el límite vale 0 y el primer intento
-  falla con `LIMIT_REACHED`. Ver pregunta 2.
+  falla con `LIMIT_REACHED`.
+
+**Decidido (owner, 16/11/2026):** el trial tiene valores especiales y mínimos, solo
+para probar: 1 promo activa, 10 lugares en la lista de invitados y 1 evento activo. Se
+declaran como filas de límite en la versión del plan `trial` de venue (override de
+límites, la única vía que admite `trial-ratchet.ts`), cada una en el issue de su bloque.
+Este issue pone el patrón (pieza D) y la de eventos. Durante el trial, las funciones que
+el plan Básico no tiene muestran el aviso «Incluido en Pro y Premium. El plan Básico no
+lo tiene» (mecanismo y texto en HOS-2262, sección 6.6).
 
 ### 5.5 Los lectores de las claves reusadas
 
@@ -136,8 +153,10 @@ entitlement ahí se rechaza). Efecto con estos grants:
   Como la clave tiene scope `vertical`, otorgarla a venue **no habilita nada de
   alojamiento** (el set efectivo se resuelve por `user + vertical`).
 - `can_embed_video`: filtrado de listados de alojamiento
-  (`entitlement-filter.ts:162`, `content-detection.ts:179`); no hay gate de venue
-  todavía (la columna `venues.videos` existe sin UI ni gate: lo construye HOS-2258).
+  (`entitlement-filter.ts:162`, `content-detection.ts:179`); el gate de venue
+  lo construye HOS-2258 (trait `videos` en `LISTING_SECTIONS`, gateado por esta clave). Ese
+  PR llega antes que este grant y deja el video oculto, y la fila «Videos» de la tabla
+  de planes oculta (`hideUntilGranted`), hasta que esta migración se aplica.
 - `manage_venue_events`: gatea la sección `venueEvents`
   (`listing-sections.ts:108-117`).
 
@@ -217,6 +236,18 @@ grants; C no encuentra nada para insertar. En vivo: A otorga v1 (si existe) y C 
 v2 y superiores. Regla de seed dual-write del repo (CLAUDE.md): al ser cambio de dato de
 catálogo vivo, van **las dos** piezas en el mismo PR.
 
+### 6.5 Pieza D. Límites del trial (decisión del owner, 16/11/2026)
+
+El plan `trial` de venue (`catalog.ts`, `role: 'trial'`) recibe por additive grant una
+fila de límite por cada límite nuevo del bloque. En este issue:
+`max_venue_active_events = 1`. Se suman a la pieza A (insert por `catalogId` a la versión
+v1 del plan `trial` de venue) y a la pieza C (todas las versiones del `slug` `trial` con
+`p.vertical = 'venue'`). Un entitlement ahí se rechazaría, así que van solo límites. El
+valor sale de una constante exportada de la tabla de grants, sin literal suelto.
+HOS-2282 (`max_active_promotions = 1`) y HOS-2283 (`max_venue_guest_list_size = 10`)
+suman sus filas con el mismo patrón. Los valores son mínimos a propósito: alcanzan para
+probar la función, no para operar.
+
 ## 7. Modelo de datos / contratos
 
 Sin tablas ni columnas nuevas. Filas nuevas: 8 en `plan_version_entitlement` y 3 en
@@ -226,7 +257,9 @@ Carriles: estructural/versionada (A) + seed data-migration (C). Nada en extras.
 ## 8. UX / UI
 
 Sin UI propia. La tabla de planes muestra las filas nuevas leyendo el catálogo
-(HOS-2262: filas con `hideUntilGranted` aparecen solas). Revisión visual en staging.
+(HOS-2262: las filas sin ningún plan que las otorgue se ocultan y aparecen solas al
+aplicar el grant; incluye la fila «Videos» de HOS-2258, que no sale como
+«Próximamente»). Revisión visual en staging.
 
 ## 9. Criterios de aceptación
 
@@ -247,7 +280,13 @@ Sin UI propia. La tabla de planes muestra las filas nuevas leyendo el catálogo
    entre verticales).
 9. Después de aplicar, un owner pro de venue lee `view_advanced_stats > 0` en
    `/api/v1/protected/me/effective-set?vertical=venue` dentro de los 15 minutos.
-10. `GET /api/v1/public/plans` expone las filas nuevas sin cambio de código web.
+10. `GET /api/v1/public/plans` expone las filas nuevas sin cambio de código web, y la
+    fila «Videos» pasa de oculta a visible al aplicar el grant (sin deploy de web).
+11. Dada la versión del plan `trial` de venue, entonces tiene `max_venue_active_events = 1`
+    y ningún entitlement nuevo; un venue en trial resuelve ese tope (no el de básico por
+    omisión) y la data-migration es idempotente sobre sus versiones.
+12. Los límites nuevos declaran enforcement `NONE`: ningún proceso archiva eventos al
+    bajar de plan.
 
 ## 10. Plan de tests
 
@@ -272,6 +311,7 @@ Sin UI propia. La tabla de planes muestra las filas nuevas leyendo el catálogo
 - R-3. Que otro issue de la épica (HOS-2281 a HOS-2283) use el mismo número de
   migración: numerar al implementar, después de mergear `staging`.
 - R-4. Efecto en el trial (sección 5.4): premium tiene entitlements con tope de básico.
+  Resuelto por decisión del owner con la pieza D (límites mínimos propios del trial).
 - R-5. Una versión que tenga la clave con valor 0 queda sin función aun después del grant.
 
 ## 12. Preguntas abiertas para el owner
@@ -281,12 +321,12 @@ Sin UI propia. La tabla de planes muestra las filas nuevas leyendo el catálogo
    (b) publicar una versión nueva de ese plan con el valor correcto y re-anclar (camino
    0133/0156, más pesado). Recomendación: (a) salvo que las consultas muestren ≥ 1
    suscripción viva afectada; en ese caso (b) solo para esas versiones.
-2. **Valores del trial para los límites nuevos.** El trial toma límites de básico: eventos 1,
-   promos y cupo de lista inexistentes (= 0). Opciones: (a) dejarlo (el trial muestra
-   funciones que no puede usar); (b) filas de límite en la versión del plan `trial` de
-   venue con valores de pro (10 / 5 / 100), también por additive grant (la clave está
-   ausente ahí, así que entra); (c) valores propios del trial. Recomendación: (b), para
-   que quien prueba pueda probar de verdad.
+2. **Decidido (owner, 16/11/2026): valores del trial.** Valores especiales y mínimos:
+   1 evento activo, 1 promo activa y 10 lugares de lista, por additive grant sobre la
+   versión `trial` (pieza D). Se descartaron los valores de pro (10 / 5 / 100) y dejarlo
+   inutilizable. Sigue abierto un detalle menor: el aviso del trial dice «Incluido en Pro
+   y Premium», falso para funciones solo de Premium (`venue_event_stats`); falta decidir
+   el texto para esas (HOS-2262, pregunta 4).
 3. **«Sin tope»** se resuelve como fila con 2147483647. Confirmar que premium no deba
    tener, en cambio, un tope muy alto razonable (p. ej. 1000). Recomendación: mantener
    2147483647 (decisión 1), con el clamp de HOS-2259 contra overflow.
@@ -335,7 +375,8 @@ C-5. `select max(id) from drizzle.__drizzle_migrations;` (o el último nombre de
 - `status-needs-smoke-staging` (checklist `docs/billing/smoke-checklist.md`, parte staging).
   Smoke: venue pro con suscripción real, aplicar la migración, esperar ≤ 15 minutos y ver
   eventos recurrentes, video y métricas habilitados; venue básico con un solo evento y sin
-  recurrencia; premium con eventos sin tope. No toca checkout ni webhooks, así que no
+  recurrencia; premium con eventos sin tope; un venue en trial con 1 evento activo y el
+  aviso «Incluido en Pro y Premium. El plan Básico no lo tiene» en lo que Básico no tiene. No toca checkout ni webhooks, así que no
   exige parte de producción.
 - What's New: sí, lo escribe el flujo de smoke; el cambio visible es «eventos, métricas y
   video». Lo agrupa HOS-2284.
@@ -344,8 +385,8 @@ C-5. `select max(id) from drizzle.__drizzle_migrations;` (o el último nombre de
 
 1. Consultas C-1 a C-5 y definición de filas finales (coordinador, 0,25 día).
 2. `catalog.ts` + `ADDITIVE_GRANTS_AFTER_0144` + ajuste de los 2 tests de 0144 (0,5 día).
-3. Migración SQL con ids del generador (0,5 día).
-4. Data-migration de seed + test (0,75 día).
+3. Migración SQL con ids del generador, incluida la fila de límite del trial (0,5 día).
+4. Data-migration de seed (también versiones del plan `trial`) + test (0,75 día).
 5. Test de integración de la migración y del set efectivo (0,5 día).
 6. Smoke de staging y firma (0,5 día).
 
