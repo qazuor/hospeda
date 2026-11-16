@@ -1583,6 +1583,13 @@
       "when": 1794728441218,
       "tag": "0225_hos2222_partner_claim_email",
       "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1794796993481,
+      "tag": "0226_hos2192_location_exception_requests",
+      "breakpoints": true
     }
   ]
 }

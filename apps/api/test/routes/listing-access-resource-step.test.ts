@@ -1,10 +1,11 @@
 /** TEST:V5:1 — the protected listing routes share one resource-step decision. */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock(
-    '@repo/service-core',
-    async (importOriginal) => await importOriginal<Record<string, unknown>>()
-);
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<Record<string, unknown>>()),
+    // HOS-2192: the detail routes also read the owner's exception request status; not what this file tests.
+    getOwnerLocationExceptionView: async () => ({ hasException: false, request: null })
+}));
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {

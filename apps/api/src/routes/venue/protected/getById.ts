@@ -7,7 +7,12 @@
  */
 import { listingLocationModel } from '@repo/db';
 import { PermissionEnum, VenueProtectedSchema, VerticalEnum } from '@repo/schemas';
-import { entityNotFoundError, ServiceError, VenueService } from '@repo/service-core';
+import {
+    entityNotFoundError,
+    getOwnerLocationExceptionView,
+    ServiceError,
+    VenueService
+} from '@repo/service-core';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -87,6 +92,11 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
             locationDuplicate: await listingLocationModel.hasOwnDuplicate({
                 vertical: VerticalEnum.VENUE,
                 id: entity.id
+            }),
+            // HOS-2192: the owner's exception request status. No ids of other listings.
+            locationException: await getOwnerLocationExceptionView({
+                vertical: VerticalEnum.VENUE,
+                listingId: entity.id
             })
         };
     }
