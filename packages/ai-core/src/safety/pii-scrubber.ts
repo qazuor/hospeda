@@ -2,7 +2,7 @@
  * PII (Personally Identifiable Information) scrubber (SPEC-173 T-019).
  *
  * Redacts emails, phone numbers, and payment card numbers from text payloads
- * BEFORE they are forwarded to external telemetry services (Sentry, PostHog).
+ * BEFORE they are forwarded to external telemetry services (Sentry, Umami).
  *
  * **AC-11 contract**: the database always stores the verbatim, unmodified user
  * text. This module operates exclusively on the copy that goes to third-party

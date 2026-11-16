@@ -639,7 +639,7 @@ describe('analytics call sites parity (AC-2): helper -> catalog -> umami client 
             });
             await settle();
             // This sink calls the Umami client directly (it does not go through the catalog
-            // validator, same as it bypassed it with posthog-node), so no globals are added and
+            // validator, same as the previous server client), so no globals are added and
             // the nested `categories` object is flattened to dot keys.
             const items = await drain(fetchMock, {
                 validated: false

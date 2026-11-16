@@ -1,7 +1,7 @@
 /**
  * Analytics server client backed by self-hosted Umami (HOS-2119, T-021).
  *
- * Replaces `lib/posthog.ts` (removed in T-059). Same shape: a lazily-initialised
+ * Server-side analytics client (the PostHog client it replaced was removed in HOS-2119). A lazily-initialised
  * singleton, a typed capture wrapper that runs catalog validation + PII filtering
  * (`createServerAnalytics`), and an idempotent shutdown that flushes within a 3 s
  * budget. Direct cut, no fan-out (spec OQ-2).
@@ -15,7 +15,7 @@
  *   When no admin website id is configured the event falls back to the web surface.
  *
  * Each effective surface owns one lazy client; the client is `null` (analytics
- * disabled, same as posthog.ts) when `HOSPEDA_UMAMI_URL` or the website id is unset.
+ * disabled) when `HOSPEDA_UMAMI_URL` or the website id is unset.
  *
  * @module lib/analytics-client
  */

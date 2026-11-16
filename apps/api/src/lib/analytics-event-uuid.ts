@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 
 /**
  * Stable UUIDv5 namespace for analytics event deduplication. Changing this
- * namespace breaks deduplication against events already sent to PostHog.
+ * namespace breaks deduplication against previously sent events.
  */
 const ANALYTICS_EVENT_NAMESPACE = '9b2a56d8-3357-5f6f-9e32-95d4fcdfd2e9';
 
