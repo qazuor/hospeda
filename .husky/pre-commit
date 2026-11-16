@@ -7,8 +7,11 @@ if [ -n "$STAGED_FILES" ]; then
   echo "🔐 Scanning for secrets in staged files..."
   SECRET_PATTERNS='(PRIVATE.KEY|aws_secret_access_key|password\s*=\s*["\x27][^\s]{8,}|sk_live_|sk_test_|ghp_[a-zA-Z0-9]{36}|-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----|AKIA[0-9A-Z]{16})'
 
-  # Only scan content of staged files (not filenames)
-  SECRETS_FOUND=$(git diff --cached --diff-filter=ACMR -U0 | grep -iP "$SECRET_PATTERNS" | grep '^\+' | head -5 || true)
+  # Only scan content of staged files (not filenames).
+  # Drizzle-generated migration meta (snapshots, journal) is excluded: it holds
+  # column NAMES, never values. HOS-2184: the jwks table has a column whose
+  # name trips the key pattern below, and it appears in every drizzle snapshot.
+  SECRETS_FOUND=$(git diff --cached --diff-filter=ACMR -U0 -- . ':(exclude)packages/db/src/migrations/meta/*.json' | grep -iP "$SECRET_PATTERNS" | grep '^\+' | head -5 || true)
 
   if [ -n "$SECRETS_FOUND" ]; then
     echo "❌ Potential secrets detected in staged changes:"
