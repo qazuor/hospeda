@@ -1,0 +1,222 @@
+/* AiAssistantsPanel.module.css */
+/* Scoped styles for the AiAssistantsPanel React island (HOS-2184 T-028). */
+/* ALL values use CSS custom properties from global.css. */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+.section {
+    composes: card from "./AccountSection.module.css";
+}
+
+.sectionTitle {
+    composes: cardTitle from "./AccountSection.module.css";
+}
+
+.text {
+    margin: 0 0 var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+}
+
+.notice {
+    margin: 0;
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── MCP URL ───────────────────────────────────────────────────────────── */
+
+.urlLabel {
+    display: block;
+    margin-bottom: var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.urlRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+    align-items: center;
+}
+
+.urlValue {
+    flex: 1 1 16rem;
+    min-width: 0;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-button);
+    background-color: var(--core-background);
+    font-family: var(--font-mono, monospace);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.copyBtn {
+    composes: secondary from "./AccountButton.module.css";
+}
+
+.copyFeedback {
+    margin: var(--space-2, 8px) 0 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Capabilities ──────────────────────────────────────────────────────── */
+
+.capabilitiesTitle {
+    margin: var(--space-5, 20px) 0 var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.capabilities {
+    margin: 0;
+    padding-left: var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Connections list ──────────────────────────────────────────────────── */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card);
+}
+
+.itemMain {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    min-width: 0;
+    color: var(--brand-primary);
+}
+
+.itemText {
+    min-width: 0;
+    font-family: var(--font-sans);
+}
+
+.itemName {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.itemMeta {
+    margin: var(--space-1, 4px) 0 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    overflow-wrap: anywhere;
+}
+
+.itemLink {
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
+.disconnectBtn {
+    composes: danger from "./AccountButton.module.css";
+}
+
+/* ── Inline confirmation ───────────────────────────────────────────────── */
+
+.confirm {
+    flex-basis: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    background-color: var(--destructive-a10);
+    font-family: var(--font-sans);
+}
+
+.confirmTitle {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.confirmBody {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.confirmActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+}
+
+.confirmBtn {
+    composes: dangerSolid from "./AccountButton.module.css";
+}
+
+.cancelBtn {
+    composes: ghost from "./AccountButton.module.css";
+}
+
+/* ── Loading / error ───────────────────────────────────────────────────── */
+
+.loadingWrap {
+    padding: var(--space-6, 24px);
+    text-align: center;
+    font-family: var(--font-sans);
+    color: var(--core-muted-foreground);
+}
+
+.errorWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-card);
+    background-color: var(--destructive-a10);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--destructive, oklch(0.6 0.2 25));
+}
+
+.retryBtn {
+    composes: secondary from "./AccountButton.module.css";
+}
