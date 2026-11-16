@@ -25,6 +25,8 @@ import type {
 } from '../../../../../packages/verticals/src/publication/publication-types';
 import { PUBLICATION_LIMIT_KEYS } from '../../../../../packages/verticals/src/publication/publication-types';
 import { trialMachineLockKey } from '../../../../../packages/verticals/src/trial/trial-lock-key';
+import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../middlewares/accommodation-cache-invalidation';
+import { invalidateCacheByPathPrefix } from '../../middlewares/cache';
 import { readIncompleteListingIds } from '../../services/listing-publication/listing-publish-completeness';
 import { getClock } from '../clock';
 import { invalidateEffectiveSetsForUser } from '../effective-set-cache';
@@ -37,6 +39,12 @@ const LISTING_TABLE_BY_VERTICAL: Readonly<Record<PublicationVertical, string>> =
     accommodation: 'accommodations',
     venue: 'venues',
     experience: 'experiences'
+};
+
+const PUBLIC_LISTING_PATHS_BY_VERTICAL: Readonly<Record<PublicationVertical, readonly string[]>> = {
+    accommodation: ACCOMMODATION_CACHE_INVALIDATION_PREFIXES,
+    venue: ['/api/v1/public/venues'],
+    experience: ['/api/v1/public/experiences']
 };
 
 /** Transaction-bound adapter shared by owner transitions and coverage reconciliation. */
@@ -302,6 +310,12 @@ export function getListingPublicationPorts(options?: {
             await invalidateEffectiveSetsForUser(userId);
         },
         async revalidate({ vertical, listingIds }) {
+            // Evict stale API responses before scheduling the edge purge. Otherwise
+            // the first request after Cloudflare's purge can repopulate it from
+            // this process's memory cache with the pre-transition listing.
+            for (const pathPrefix of PUBLIC_LISTING_PATHS_BY_VERTICAL[vertical]) {
+                invalidateCacheByPathPrefix({ pathPrefix });
+            }
             for (const id of listingIds) {
                 try {
                     const result = await getDb().execute(sql<{

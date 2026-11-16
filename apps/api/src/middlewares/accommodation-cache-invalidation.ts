@@ -7,12 +7,13 @@ import { createPublicCacheInvalidationMiddleware } from './public-cache-invalida
  * Public cached surfaces that embed accommodation data (HOS-2063).
  *
  * `/public/accommodations` holds the detail (by slug and id), lists, similar and
- * external-reputation reads. `/public/destinations` is included because
- * `GET /public/destinations/:id/accommodations` returns accommodation rows.
+ * external-reputation reads. `/public/destinations` and `/public/users`
+ * return accommodation rows through their public endpoints too.
  */
 export const ACCOMMODATION_CACHE_INVALIDATION_PREFIXES = [
     '/api/v1/public/accommodations',
-    '/api/v1/public/destinations'
+    '/api/v1/public/destinations',
+    '/api/v1/public/users'
 ] as const;
 
 /**
