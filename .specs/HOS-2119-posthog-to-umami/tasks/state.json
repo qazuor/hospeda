@@ -2415,36 +2415,36 @@
         {
             "id": "T-067",
             "title": "T-6 Verify AC-9: no PostHog left outside historical docs and check:guards is green",
-            "description": "Final cleanup gate for T-6 (AC-9). Also reconcile specs-prioritization.csv if it mentions PostHog only as legacy (leave it). Tests: the grep returns nothing and check:guards passes.",
-            "status": "pending",
+            "description": "Final cleanup gate for T-6 (AC-9). Also reconcile specs-prioritization.csv if it mentions PostHog only as legacy (leave it). Tests: the grep returns nothing and check:guards passes.\n\nDONE NOTE: grep clean (only historical/negative-assertion hits), check:guards exit 0 after fixing type-cast marker + route-manifest. astro check could not run locally (Node 22.21.1 < 22.23.4 required by astro 7.4.7 after staging merge); tsc --noEmit clean. Review round fixed soft-nav tag (manual pageviews per astro:page-load), identify ordering after pageview ack, admin identify before load, requiredScope production + guard.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-060", "T-061", "T-062", "T-063", "T-064", "T-065", "T-066"],
             "blocks": ["T-068"],
             "subtasks": [
                 {
                     "title": "Run grep -ri posthog apps packages infra scripts .github (excluding historical docs/ADRs, openspec/specs/ai-accommodation-chat/spec.md if it is historical)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm check:guards and fix residuals",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Also check packages/config/generated and snapshot files",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "testing"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:58:31Z",
+                "completed": "2026-11-16T21:26:34Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 63,
+        "completed": 64,
         "blocked": 0,
         "averageComplexity": 2.5
     }

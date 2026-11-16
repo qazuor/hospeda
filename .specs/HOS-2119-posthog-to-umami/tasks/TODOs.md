@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 63/76 tasks (83%)
+## Progress: 64/76 tasks (84%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -488,7 +488,7 @@ Tracks (can run in parallel):
   - Blocked by: T-041
   - Blocks: T-067
 
-- [ ] **T-067** (complexity: 2) - T-6 Verify AC-9: no PostHog left outside historical docs and check:guards is green
+- [x] **T-067** (complexity: 2) - T-6 Verify AC-9: no PostHog left outside historical docs and check:guards is green
   - Tags: t6-removal, testing
   - Final cleanup gate for T-6 (AC-9). Also reconcile specs-prioritization.csv if it mentions PostHog on...
   - Blocked by: T-060, T-061, T-062, T-063, T-064, T-065, T-066
