@@ -16,6 +16,7 @@ import {
     AI_ASSISTANTS_NAV_ITEM_ID,
     getNavForSurface
 } from '../../src/config/navigation';
+import { getCuratedAccountNav } from '../../src/lib/nav-avatar';
 import { AI_ASSISTANTS_PATH } from '../../src/lib/routes';
 
 const layout = readFileSync(resolve(__dirname, '../../src/layouts/AccountLayout.astro'), 'utf8');
@@ -29,7 +30,7 @@ describe('AI assistants nav entry', () => {
         expect(item?.i18nKey).toBe('account.nav.aiAssistants');
     });
 
-    it('is sidebar-only, because the client menus cannot know the feature flag', () => {
+    it('is a sidebar item; the menus append it explicitly and the avatar surface stays fixed', () => {
         const alwaysVisible = () => true;
         const ids = (surface: 'sidebar' | 'mobile' | 'avatar') =>
             getNavForSurface({ surface, visibility: alwaysVisible }).groups.flatMap((group) =>
@@ -40,11 +41,28 @@ describe('AI assistants nav entry', () => {
         expect(ids('mobile')).not.toContain(AI_ASSISTANTS_NAV_ITEM_ID);
         expect(ids('avatar')).not.toContain(AI_ASSISTANTS_NAV_ITEM_ID);
     });
+
+    it('is appended to the curated menu selection only when asked', () => {
+        const without = getCuratedAccountNav({ permissions: [] });
+        const withIt = getCuratedAccountNav({ permissions: [], includeAiAssistants: true });
+
+        expect(without.shortcutItems.map((item) => item.id)).not.toContain(
+            AI_ASSISTANTS_NAV_ITEM_ID
+        );
+        expect(withIt.shortcutItems.at(-1)?.id).toBe(AI_ASSISTANTS_NAV_ITEM_ID);
+    });
 });
 
 describe('AccountLayout gating of the AI assistants entry', () => {
-    it('filters the entry out unless the MCP URL is published', () => {
+    it('renders the entry hidden while the feature is off and reveals it from an idle island', () => {
         expect(layout).toContain('getConfiguredMcpUrl');
-        expect(layout).toMatch(/mcpEnabled \|\| item\.id !== AI_ASSISTANTS_NAV_ITEM_ID/);
+        expect(layout).toContain("'data-ai-assistants-entry': ''");
+        expect(layout).toMatch(/item\.id === AI_ASSISTANTS_NAV_ITEM_ID && !mcpEnabled/);
+        expect(layout).toMatch(/<AiAssistantsNavReveal client:idle \/>/);
+    });
+
+    it('passes the flag to both menus mounted by the header', () => {
+        const header = readFileSync(resolve(__dirname, '../../src/layouts/Header.astro'), 'utf8');
+        expect(header.match(/mcpEnabled=\{mcpEnabled\}/g)).toHaveLength(2);
     });
 });
