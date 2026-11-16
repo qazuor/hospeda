@@ -1890,8 +1890,8 @@
         {
             "id": "T-052",
             "title": "T-5 Mount TrafficStatsCards in the accommodation owner panel",
-            "description": "Which accommodation id to pass depends on how AnalyticsSection aggregates owned accommodations today (it is host-level, not per listing): locate in the file and, if it is aggregate-only, mount per selected accommodation or flag it to the coordinator rather than inventing aggregation. Tests: cards mounted beneath existing cards; existing view cards unchanged; window change propagates.\n\nNOTES 2026-11-16 (T-051 review): the island lives at apps/web/src/components/listing/TrafficStatsCards.client.tsx (props entityType, entityId, window; parent owns the window selector) and renders h3 cards with NO h2 — the mounting page must add an h2 with listing.owner.traffic.title. Mount with client:visible.",
-            "status": "pending",
+            "description": "Which accommodation id to pass depends on how AnalyticsSection aggregates owned accommodations today (it is host-level, not per listing): locate in the file and, if it is aggregate-only, mount per selected accommodation or flag it to the coordinator rather than inventing aggregation. Tests: cards mounted beneath existing cards; existing view cards unchanged; window change propagates.\n\nNOTES 2026-11-16 (T-051 review): the island lives at apps/web/src/components/listing/TrafficStatsCards.client.tsx (props entityType, entityId, window; parent owns the window selector) and renders h3 cards with NO h2 — the mounting page must add an h2 with listing.owner.traffic.title. Mount with client:visible.\n\nBLOCKED 2026-11-16 on owner decision: AnalyticsSection is aggregate-only (no per-property selector, no per-property analytics page). Options asked: one card per property vs a property selector + one card vs the property editor hub.",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-051", "T-048"],
             "blocks": ["T-056"],
@@ -1914,7 +1914,7 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
+                "started": "2026-11-16T04:20:04Z",
                 "completed": null
             }
         },
@@ -1922,66 +1922,66 @@
             "id": "T-053",
             "title": "T-5 Mount TrafficStatsCards in the venue and experience owner panel (mi-cuenta/comercio)",
             "description": "Same hide-on-unavailable rule. Tests: venue and experience rows each request traffic-stats with the right entityType; locked-views state (no VIEW_BASIC_STATS) does not render the Umami cards; existing rows unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-051", "T-048"],
             "blocks": ["T-056"],
             "subtasks": [
                 {
                     "title": "Render per listing row in apps/web/src/components/listing/ListingViewsWidget.client.tsx (listings carry vertical VENUE or EXPERIENCE); used by apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Extend apps/web/test/components/listing/ListingViewsWidget.test.tsx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:20:04Z",
+                "completed": "2026-11-16T04:35:56Z"
             }
         },
         {
             "id": "T-054",
             "title": "T-5 Mount TrafficStatsCards in the partner panel (mi-cuenta/aliados)",
             "description": "Partner stats semantics are sensitive (HOS-1063: 'medicion' vs 'constancia'). Only render when the partner has an OWN_PAGE link (same resolvePartnerLogoLink-derived condition used by the views card); silver partners with no page see nothing. Tests: gold partner with page shows cards; no-page partner shows none; unavailable shows none.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-051", "T-049"],
             "blocks": ["T-056"],
             "subtasks": [
                 {
                     "title": "Mount the island below PartnerStatsSection (apps/web/src/components/account/PartnerStatsSection.astro, used in apps/web/src/pages/[lang]/mi-cuenta/aliados/index.astro) in its OWN section: PartnerStatsSection's header says its copy must stay under account.partnerStats.*, so the new copy keeps the listing.owner.traffic.* subtree",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Respect 'a card that does not apply is ABSENT, never zero' (partner with no page)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add a test under apps/web/test/components/account/ (locate existing PartnerStatsSection tests)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:20:04Z",
+                "completed": "2026-11-16T04:35:56Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 49,
-        "inProgress": 0,
-        "completed": 27,
+        "pending": 46,
+        "inProgress": 1,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.5
     }

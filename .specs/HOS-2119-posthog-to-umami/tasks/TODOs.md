@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 27/76 tasks (36%)
+## Progress: 29/76 tasks (38%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -334,13 +334,13 @@ Tracks (can run in parallel):
   - Blocked by: T-051, T-048
   - Blocks: T-056
 
-- [ ] **T-053** (complexity: 2) - T-5 Mount TrafficStatsCards in the venue and experience owner panel (mi-cuenta/comercio)
+- [x] **T-053** (complexity: 2) - T-5 Mount TrafficStatsCards in the venue and experience owner panel (mi-cuenta/comercio)
   - Tags: t5-owner-stats, web
   - Same hide-on-unavailable rule. Tests: venue and experience rows each request traffic-stats with the ...
   - Blocked by: T-051, T-048
   - Blocks: T-056
 
-- [ ] **T-054** (complexity: 3) - T-5 Mount TrafficStatsCards in the partner panel (mi-cuenta/aliados)
+- [x] **T-054** (complexity: 3) - T-5 Mount TrafficStatsCards in the partner panel (mi-cuenta/aliados)
   - Tags: t5-owner-stats, web
   - Partner stats semantics are sensitive (HOS-1063: 'medicion' vs 'constancia'). Only render when the p...
   - Blocked by: T-051, T-049
