@@ -823,6 +823,8 @@
         "noOffers": "No add-ons are available.",
         "chooseTarget": "Choose a listing",
         "noTargets": "No listings are available for this add-on.",
+        "chooseSubscription": "Choose a subscription",
+        "noSubscriptions": "No subscriptions are available for this add-on.",
         "summary": "Confirm add-on",
         "freeUnderGrant": "Free with your benefit",
         "days_one": "{{count}} day",
