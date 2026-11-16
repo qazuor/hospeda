@@ -61,6 +61,7 @@ export function isSameOriginReferrer({
 }
 
 function isTrackerReady(): boolean {
+    // TYPE-WORKAROUND: the Umami script attaches window.umami at runtime and no global typing is declared for it.
     return typeof (window as unknown as { umami?: unknown }).umami !== 'undefined';
 }
 
