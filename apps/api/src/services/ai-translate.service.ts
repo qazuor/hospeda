@@ -244,8 +244,18 @@ const PROPER_NAME_FIELDS: ReadonlySet<string> = new Set(['name']);
  * `fieldType` is what lets the model tell a proper name from prose — the system
  * prompt forbids translating proper nouns, but only this turn says whether the
  * text in front of it IS one.
+ *
+ * Exported so the AI model sweep (HOS-2217,
+ * `scripts/ai-sweep/render-sweep-tasks.ts`) renders the exact user turn
+ * production sends instead of re-implementing it.
+ *
+ * @param fieldValue - Source text, already passed through {@link protectUrls}.
+ * @param sourceLocale - Locale the source text is written in.
+ * @param targetLocale - Locale to translate into.
+ * @param fieldType - Field name (`name` is treated as a proper name).
+ * @returns The user turn sent to the `translate` feature.
  */
-function buildTranslationPrompt(
+export function buildTranslationPrompt(
     fieldValue: string,
     sourceLocale: ContentLocale,
     targetLocale: ContentLocale,
@@ -407,8 +417,14 @@ function protectBareUrls(text: string, urls: string[]): string {
  * Replaces every URL in `text` — inside a markdown link or standalone —
  * with an opaque placeholder, returning the placeholder-substituted text and
  * the list of URLs it removed, indexed to match {@link urlPlaceholder}.
+ *
+ * Exported for the AI model sweep (HOS-2217), which must shield URLs exactly
+ * as {@link translateField} does before rendering the user turn.
+ *
+ * @param text - Source field text.
+ * @returns `{ protectedText, urls }`.
  */
-function protectUrls(text: string): { protectedText: string; urls: string[] } {
+export function protectUrls(text: string): { protectedText: string; urls: string[] } {
     const urls: string[] = [];
     const withMarkdownProtected = protectMarkdownLinkUrls(text, urls);
     const protectedText = protectBareUrls(withMarkdownProtected, urls);

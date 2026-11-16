@@ -97,6 +97,51 @@ export async function readFaqDraftQuestion(input: {
     };
 }
 
+/** The `generateObject` request a FAQ draft sends (everything except the output schema). */
+export interface FaqDraftRequest {
+    readonly feature: 'faq_draft';
+    readonly locale: LanguageEnum;
+    readonly systemPrompt: string;
+    readonly prompt: string;
+    readonly params: { readonly maxTokens: number; readonly temperature: number };
+}
+
+/**
+ * Builds the provider request for one FAQ draft from the listing's chat system
+ * message (the context assembler's `systemMessage`, rendered with an empty
+ * resolved prompt) and the visitor question.
+ *
+ * Pure. Exported so the AI model sweep (HOS-2217,
+ * `scripts/ai-sweep/render-sweep-tasks.ts`) sends exactly what production sends.
+ *
+ * @param input.systemMessage - `buildChatSystemMessage(context, '', locale)`.
+ * @param input.question - The visitor question as stored.
+ * @param input.locale - Request locale.
+ * @returns `{ request: null }` when the injection guard blocks the question
+ *   (high severity: no provider call), else `{ request }`.
+ */
+export function buildFaqDraftRequest(input: {
+    readonly systemMessage: string;
+    readonly question: string;
+    readonly locale: LanguageEnum;
+}): { readonly request: FaqDraftRequest | null } {
+    const injection = guardPromptInjection({ text: input.question });
+    if (injection.severity === 'high') return { request: null };
+    const language = appendReplyLanguageInstruction({
+        system: input.systemMessage,
+        latestUserMessage: input.question
+    });
+    return {
+        request: {
+            feature: 'faq_draft',
+            locale: input.locale,
+            systemPrompt: `${language.system}\n\nCreate an editable answer using only the listing context above. If it lacks the requested fact, return hasData=false and an empty draft. Return plain text without markdown, no more than 2000 characters, and include contact details only when verbatim in the context.`,
+            prompt: `Visitor question: ${injection.sanitizedText}`,
+            params: { maxTokens: 1024, temperature: 0 }
+        }
+    };
+}
+
 /** Generates a grounded FAQ answer; a high-confidence injection returns no draft. */
 export async function generateFaqDraft(input: {
     readonly context: FaqDraftContextInput;
@@ -116,8 +161,7 @@ export async function generateFaqDraft(input: {
     };
 }> {
     const { context } = input;
-    const injection = guardPromptInjection({ text: context.question });
-    if (injection.severity === 'high')
+    if (guardPromptInjection({ text: context.question }).severity === 'high')
         return { response: { messageId: context.messageId, hasData: false, draft: null } };
     const assembled = await CHAT_CONTEXT_ASSEMBLERS[context.entityType]({
         actor: input.actor,
@@ -126,11 +170,13 @@ export async function generateFaqDraft(input: {
         locale: input.locale,
         listingSections: input.listingSections
     });
-    const language = appendReplyLanguageInstruction({
-        system: assembled.systemMessage,
-        latestUserMessage: context.question
+    const { request } = buildFaqDraftRequest({
+        systemMessage: assembled.systemMessage,
+        question: context.question,
+        locale: input.locale
     });
-    const systemPrompt = `${language.system}\n\nCreate an editable answer using only the listing context above. If it lacks the requested fact, return hasData=false and an empty draft. Return plain text without markdown, no more than 2000 characters, and include contact details only when verbatim in the context.`;
+    if (request === null)
+        return { response: { messageId: context.messageId, hasData: false, draft: null } };
     const startedAt = Date.now();
     const service = await createConfiguredAiService();
     let result: Awaited<ReturnType<typeof service.generateObject>>;
@@ -138,11 +184,11 @@ export async function generateFaqDraft(input: {
     try {
         result = await service.generateObject(
             {
-                feature: 'faq_draft',
-                locale: input.locale,
-                systemPrompt,
-                prompt: `Visitor question: ${injection.sanitizedText}`,
-                params: { maxTokens: 1024, temperature: 0 }
+                feature: request.feature,
+                locale: request.locale,
+                systemPrompt: request.systemPrompt,
+                prompt: request.prompt,
+                params: { ...request.params }
             },
             AiFaqDraftOutputSchema
         );
