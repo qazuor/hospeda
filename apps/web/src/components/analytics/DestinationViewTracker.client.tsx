@@ -5,7 +5,7 @@
 
 import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface DestinationViewTrackerProps {

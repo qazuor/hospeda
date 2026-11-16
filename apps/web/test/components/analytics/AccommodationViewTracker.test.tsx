@@ -4,7 +4,7 @@
  *
  * Covers:
  *  - Fires `sendViewBeacon` once per mount with correct entityId.
- *  - Continues firing the PostHog `trackEvent` (additive — pre-existing
+ *  - Continues firing the Umami `trackEvent` (additive — pre-existing
  *    SPEC-140 behaviour is unchanged).
  *  - Does not double-fire on prop identity (stable deps, re-render without
  *    unmount does not re-run effect).
@@ -17,12 +17,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ─── Module mocks (must precede the import under test) ────────────────────────
 
 const trackEventMock = vi.fn();
-const associateGroupMock = vi.fn();
-const resetGroupsMock = vi.fn();
-vi.mock('@/lib/analytics/posthog-client', () => ({
-    trackEvent: (...args: unknown[]) => trackEventMock(...args),
-    associateGroup: (...args: unknown[]) => associateGroupMock(...args),
-    resetGroups: (...args: unknown[]) => resetGroupsMock(...args)
+vi.mock('@/lib/analytics/umami-client', () => ({
+    trackEvent: (...args: unknown[]) => trackEventMock(...args)
 }));
 
 const sendViewBeaconMock = vi.fn();
@@ -54,8 +50,6 @@ const DEFAULT_PROPS = {
 describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
     beforeEach(() => {
         trackEventMock.mockClear();
-        associateGroupMock.mockClear();
-        resetGroupsMock.mockClear();
         sendViewBeaconMock.mockClear();
     });
 
@@ -87,7 +81,7 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
         });
     });
 
-    // ── PostHog event still fires (additive) ───────────────────────────────
+    // ── Umami event still fires (additive) ───────────────────────────────
 
     it('still calls trackEvent with accommodation_viewed and correct props', () => {
         // Arrange / Act
@@ -95,8 +89,11 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
 
         // Assert
         expect(trackEventMock).toHaveBeenCalledTimes(1);
-        expect(trackEventMock).toHaveBeenCalledWith('accommodation_viewed', {
+        expect(trackEventMock.mock.calls[0]?.[0]).toBe('accommodation_viewed');
+        expect(trackEventMock.mock.calls[0]?.[1]).toEqual({
             accommodation_id: DEFAULT_PROPS.accommodationId,
+            entity_id: DEFAULT_PROPS.accommodationId,
+            entity_type: 'ACCOMMODATION',
             accommodation_slug: DEFAULT_PROPS.slug,
             locale: DEFAULT_PROPS.locale,
             accommodation_type: 'CABIN',
@@ -104,24 +101,6 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
             destination_id: 'dest-colon',
             source_page: 'accommodation_detail'
         });
-    });
-
-    it('associates the accommodation group on mount', () => {
-        render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
-
-        expect(associateGroupMock).toHaveBeenCalledWith(
-            'accommodation',
-            DEFAULT_PROPS.accommodationId
-        );
-    });
-
-    it('clears the group association on unmount (no leak onto later pages)', () => {
-        const { unmount } = render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
-        expect(resetGroupsMock).not.toHaveBeenCalled();
-
-        unmount();
-
-        expect(resetGroupsMock).toHaveBeenCalledTimes(1);
     });
 
     // ── No double-fire on stable props re-render ───────────────────────────
@@ -172,7 +151,7 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
 
     // ── Both beacon and PostHog fire together ──────────────────────────────
 
-    it('fires both beacon and PostHog event on the same mount', () => {
+    it('fires both beacon and Umami event on the same mount', () => {
         // Arrange / Act
         render(<AccommodationViewTracker {...DEFAULT_PROPS} />);
 
