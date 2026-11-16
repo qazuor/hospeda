@@ -16,7 +16,6 @@
  * back where they were after authenticating — matching the pattern in
  * `apps/web/src/lib/middleware-helpers.ts`.
  */
-import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { ArrowRightIcon, BellIcon, StarIcon } from '@repo/icons';
@@ -49,20 +48,17 @@ const {
     ctaLabel,
     icon = 'star'
 } = Astro.props;
-const { t } = createTranslations(locale);
 
 const returnUrl = encodeURIComponent(`/${locale}/${returnPath.replace(/^\//, '')}/`);
 const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${returnUrl}`;
 
 const BadgeIcon = icon === 'bell' ? BellIcon : StarIcon;
-const linkAriaLabel = t('auth.signInCta.ariaLabel', 'Iniciar sesión');
 ---
 
 {variant === 'inline' ? (
     <a
         href={signInHref}
         class="signin-cta__link signin-cta__link--inline"
-        aria-label={linkAriaLabel}
     >
         {ctaLabel}
         <ArrowRightIcon size={16} weight="bold" aria-hidden="true" />
@@ -78,7 +74,7 @@ const linkAriaLabel = t('auth.signInCta.ariaLabel', 'Iniciar sesión');
 
     {hint && <p class="signin-cta__hint">{hint}</p>}
 
-    <a href={signInHref} class="signin-cta__link" aria-label={linkAriaLabel}>
+    <a href={signInHref} class="signin-cta__link">
         {ctaLabel}
         <ArrowRightIcon size={16} weight="bold" aria-hidden="true" />
     </a>

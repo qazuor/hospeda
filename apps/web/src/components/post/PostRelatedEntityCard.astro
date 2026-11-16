@@ -46,7 +46,7 @@ const typeLabel = labelByType[entity.type];
 const shouldProxyImage = entity.image ? isCloudinaryDeliveryUrl(entity.image) : false;
 ---
 
-<a href={href} class="post-related-entity" aria-label={`${typeLabel}: ${entity.name}`}>
+<a href={href} class="post-related-entity">
 	{entity.image && (
 		<div class="post-related-entity__image-wrapper">
 			{shouldProxyImage ? (

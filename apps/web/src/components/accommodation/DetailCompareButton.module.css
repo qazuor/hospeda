@@ -102,14 +102,11 @@
  * (2.5rem, see FavoriteButton.module.css `.button`) so the two controls read
  * as a tidy pair.
  *
- * The `.label` text is hidden with `display: none`, not removed from the
- * DOM. This is safe for accessibility because the button's accessible name
- * is driven entirely by the `aria-label` attribute set unconditionally in
- * DetailCompareButton.client.tsx ("Agregar {{name}} a la comparación" /
- * "Quitar {{name}} de la comparación") — per the Accessible Name and
- * Description Computation spec, an explicit `aria-label` always wins over
- * the element's text content, so hiding `.label` does not change what
- * screen readers announce.
+ * The `.label` text is visually hidden (sr-only technique), NOT `display: none`
+ * and NOT replaced by an `aria-label`: the button's accessible name is built
+ * from the label text plus the sr-only accommodation name in
+ * DetailCompareButton.client.tsx, so it stays equal to what sighted users see
+ * on desktop (WCAG 2.5.3 label in name) and is never empty on mobile.
  */
 @media (max-width: 767px) {
     .button {
@@ -119,7 +116,15 @@
     }
 
     .label {
-        display: none;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
     }
 
     /* Keep the same circular treatment when the sticky-scroll compact header
