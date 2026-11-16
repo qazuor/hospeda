@@ -428,8 +428,8 @@
                 "reasonLabel": "Motivo",
                 "reasonHint": "Conte por que você precisa publicar este anúncio em um endereço onde você já tem outro anúncio publicado.",
                 "counter": "{{count}} de {{max}} caracteres",
-                "submit": "Enviar pedido",
-                "submitting": "Enviando...",
+                "submit": "Enviar solicitação",
+                "submitting": "Enviando…",
                 "cancel": "Cancelar"
             },
             "validation": {
