@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 44/76 tasks (58%)
+## Progress: 45/76 tasks (59%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -256,7 +256,7 @@ Tracks (can run in parallel):
   - Blocked by: T-021
   - Blocks: T-025, T-059
 
-- [ ] **T-028** (complexity: 3) - T-3 Create UmamiScript.astro and swap it into BaseLayout and StandaloneLayout
+- [x] **T-028** (complexity: 3) - T-3 Create UmamiScript.astro and swap it into BaseLayout and StandaloneLayout
   - Tags: t3-web-admin, web
   - Files: apps/web/src/components/analytics/UmamiScript.astro, apps/web/src/layouts/BaseLayout.astro, a...
   - Blocked by: T-004, T-012
