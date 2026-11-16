@@ -30,6 +30,10 @@ import { z } from 'zod';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { type OwnListingRow, readOwnListingRow } from './get-listing';
+import {
+    type AccommodationStatsExtras,
+    readAccommodationStatsExtras
+} from './get-listing-stats.accommodation';
 import { type ListingToolVertical, ListingToolVerticalSchema } from './listing-services';
 import { readLatestListingReviews } from './listing-stats-readers';
 
@@ -113,6 +117,8 @@ export interface ListingStats {
     readonly views: ListingViewsStats;
     /** Reviews, all time. */
     readonly reviews: ListingReviewsStats;
+    /** Accommodation-only metrics. Absent for venues and experiences. */
+    readonly accommodation?: AccommodationStatsExtras;
 }
 
 /** Entity type the view telemetry is keyed by, per vertical. */
@@ -188,7 +194,7 @@ async function readReviews(input: {
 export const getListingStatsTool = defineTool({
     name: 'get_listing_stats',
     title: 'Estadísticas de la publicación',
-    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7 or 30 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (null when the previous period had no views). Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Works for accommodations, venues and experiences. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7 or 30 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (null when the previous period had no views). Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period), "inquiries" (guest inquiries per calendar month, this month and the previous one) and "responseTime" (reply rate in percent and average minutes to the first reply, all time). Inquiries and responseTime cover ALL the owner's accommodations, not just this one (their scope says so), and are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: GetListingStatsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
@@ -200,17 +206,22 @@ export const getListingStatsTool = defineTool({
         }
         const { row } = admitted;
 
-        const [viewsResult, reviews] = await Promise.all([
+        const isAccommodation = vertical === VerticalEnum.ACCOMMODATION;
+        const [viewsResult, reviews, extras] = await Promise.all([
             entityViewService.getDailySeriesComparisonForOwnListing({
                 actor,
                 entityType: ENTITY_TYPE_FOR[vertical],
                 listingId: row.id,
                 window: period
             }),
-            readReviews({ vertical, row })
+            readReviews({ vertical, row }),
+            isAccommodation ? readAccommodationStatsExtras({ actor, listingId: row.id }) : undefined
         ]);
         if (viewsResult.error) {
             return { error: viewsResult.error };
+        }
+        if (extras?.error) {
+            return { error: extras.error };
         }
 
         return {
@@ -220,7 +231,8 @@ export const getListingStatsTool = defineTool({
                 name: row.name,
                 period,
                 views: toViewsStats(viewsResult.data),
-                reviews
+                reviews,
+                ...(extras?.extras ? { accommodation: extras.extras } : {})
             }
         };
     }

@@ -34,6 +34,11 @@ vi.mock('../../../../src/mcp/tools/listing/listing-stats-readers', () => ({
     readLatestListingReviews: latestReviews
 }));
 
+// The accommodation extras have their own suite (get-listing-stats.accommodation.test.ts).
+vi.mock('../../../../src/mcp/tools/listing/get-listing-stats.accommodation', () => ({
+    readAccommodationStatsExtras: vi.fn(async () => ({ extras: { favorites: 0 } }))
+}));
+
 import {
     GetListingStatsInputSchema,
     getListingStatsTool,

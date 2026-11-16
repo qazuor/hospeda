@@ -13,6 +13,7 @@ import {
     AmenityService,
     ExperienceService,
     FeatureService,
+    UserBookmarkService,
     VenueService
 } from '@repo/service-core';
 import { z } from 'zod';
@@ -32,6 +33,12 @@ export const listingToolAmenityService = new AmenityService({ logger: apiLogger 
 
 /** Feature catalog service, as `routes/feature/public/list.ts` uses it. */
 export const listingToolFeatureService = new FeatureService({ logger: apiLogger });
+
+/**
+ * Bookmark service, as `routes/accommodation/protected/hostFavoritesBreakdown.ts`
+ * uses it, for the favorites count of `get_listing_stats`.
+ */
+export const listingToolBookmarkService = new UserBookmarkService({ logger: apiLogger });
 
 /**
  * The verticals an owner manages listings in through the assistant tools.
