@@ -397,6 +397,11 @@ avanzaba un período.
   fecha que `P1` avanzó, y la fila volvería a quedar con una fecha vencida. Las demás
   correcciones del proveedor siguen ganando: una fecha posterior, o una anterior que todavía es
   futura (el proveedor corrigiendo su propio ancla).
+
+  **El corte de la ventana de sucesión (`B/12` §5.4) ya no lee la copia de `S2` sola.** Como esa
+  copia es el instante del primer cobro hasta que `P1` lo acredita, el corte se aplica sólo cuando
+  la predecesora tiene un `covered_period` abierto; sin él la ventana es la completa (`B/12` §5.4,
+  punto 3; owner 2026-11-16).
 - **Sin débito** —el pagador manual del §17.2, que *«no tiene nada que pausar porque no hay débito
   que detener»* (`B/06` §7)— **es la única copia que existe**, y sus escrituras están declaradas
   en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
