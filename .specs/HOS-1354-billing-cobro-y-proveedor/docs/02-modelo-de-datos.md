@@ -361,6 +361,35 @@ avanzaba un período.
   período de `covered_period` ya no sale de esta copia sino del registro de cobro (§2.3,
   `F-8CB3-005`), y la fecha de fin de servicio de `S11` tampoco (`B/03` §3.2); **`B/12` §5.4 la
   sigue leyendo** para cortar la ventana de una sucesión, y eso no se tocó acá.)*
+
+  **El barrido ya no es el único que la escribe: son tres escritores, y el barrido manda**
+  (HOS-2223, owner 2026-11-16). Con el barrido solo, que corre de madrugada, toda suscripción con
+  tarjeta activada durante el día quedaba con la fecha en NULL hasta la noche siguiente. Ese día
+  la leían el downgrade (que rechazaba con `CYCLE_END_PENDING`), la fecha de aplicación de una
+  migración de plan, la vista previa de la cortesía y el «próximo cobro» de las pantallas. Los dos
+  escritores nuevos son éstos:
+
+  1. **`S2` copia la fecha de la relectura por id que autorizó la activación** (`B/03` §7.2).
+     Escribe sólo hacia adelante (`GREATEST`), así que nunca deshace una fecha posterior que `P1`
+     ya haya escrito, por ejemplo cuando el cobro se acreditó antes de que llegara el aviso de la
+     autorización (HOS-1740).
+  2. **`P1`, al acreditar un cobro con tarjeta de una `PRINCIPAL` o un `COMPLEMENTO`, la avanza a
+     *«instante del cobro + un ciclo»*** (`billingPeriodEnd`, con el ciclo de la opción de
+     facturación o del producto del addon). También escribe sólo hacia adelante, y sólo sobre
+     una fila con débito vivo (`PENDING_AUTHORIZATION`, `ACTIVE` o `GRACE_PERIOD`).
+
+  **Por qué hace falta `P1` y no alcanza con `S2`: `PA-3`.** En producción, autorizar deja una
+  validación de ARS 0 y el primer cobro llega unos 26 minutos después. Mientras tanto,
+  `next_payment_date` es el instante de ese primer cobro, o sea hoy. La copia de `S2` dice
+  entonces «hoy» en un alta con cobro inmediato, y es correcta mientras ese cobro no entra. `P1`
+  la reemplaza en cuanto entra. En un alta con primera fecha de cobro futura, la copia de `S2` ya
+  es la definitiva.
+
+  **El barrido sigue siendo el que alinea con el proveedor.** El valor de `P1` es una derivación
+  local. Puede quedar corrido unos minutos de la fecha de MP, porque el proveedor cobra en lotes
+  (`RN-1`), y cada madrugada el barrido lo reemplaza por el `next_payment_date` del proveedor.
+  Ninguno de los dos escritores nuevos decide un cobro: la decisión de cobrar sigue siendo del
+  proveedor.
 - **Sin débito** —el pagador manual del §17.2, que *«no tiene nada que pausar porque no hay débito
   que detener»* (`B/06` §7)— **es la única copia que existe**, y sus escrituras están declaradas
   en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
