@@ -6,29 +6,19 @@ ad-blockers and privacy extensions cannot intercept error reporting. uBlock
 Origin blocks Sentry directly with the filter `||sentry.io^$3p`; routing the
 envelopes through a same-origin path defeats that.
 
-This is the Sentry sibling of the PostHog reverse proxy
-(`infra/cloudflare/posthog-proxy/`). **They are NOT the same and must not be
-merged** — see the reserved-paths table below.
+## ⚠️ Reserved first-party proxy path — do not reuse or repurpose
 
-## ⚠️ Reserved first-party proxy paths — do not reuse or repurpose
-
-Two distinct origin paths are reserved for ad-blocker-evading reverse proxies.
-Each is bound to its OWN Cloudflare Worker and forwards to a DIFFERENT upstream.
-**Never point application/API routes at these paths, and never route one
-service's traffic through the other's path.**
+The origin path below is reserved for an ad-blocker-evading reverse proxy bound
+to this Cloudflare Worker. **Never point application/API routes at it.** The
+former PostHog proxy (`/api/relay/*`) was retired by HOS-2119; analytics now
+runs on its own first-party subdomain and needs no Worker.
 
 | Path         | Worker                  | Upstream                                  | Mechanism                                            | SDK wiring                          |
 | ------------ | ----------------------- | ----------------------------------------- | ---------------------------------------------------- | ----------------------------------- |
-| `/api/relay/*` | `posthog-proxy`         | PostHog Cloud (fixed host)                | Blind passthrough; path rewrite `/api/relay`→PostHog | `PUBLIC_POSTHOG_HOST` = `…/api/relay` |
 | `/api/event`   | `sentry-tunnel` (this)  | Sentry (host derived per-request from DSN) | Reads envelope, parses DSN, SSRF-guards, forwards    | `PUBLIC_SENTRY_TUNNEL` = `/api/event` |
 
-Key differences (why one Worker can't serve both):
-
-- **PostHog** is a passthrough to a *constant* host. **Sentry's** upstream host
-  is *inside each envelope* (the DSN in the first line), so this Worker parses
-  it per request.
-- The paths bind to *separate* Cloudflare routes; a single route pattern can
-  only map to one Worker.
+Note: **Sentry's** upstream host is *inside each envelope* (the DSN in the
+first line), not a constant host, so this Worker parses it per request.
 
 ## What it does
 
