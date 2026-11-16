@@ -817,6 +817,7 @@ for the full design record (OQ-1..OQ-5 resolutions, AC-1..AC-7).
 ## Related Documentation
 
 - [Adding API Routes](docs/development/creating-endpoints.md)
+- [MCP Server](docs/mcp-server.md) - OAuth flow, tool catalog, how to add a tool (HOS-2184)
 - [Authentication Guide](../../docs/security/authentication.md)
 - [Dependency Policy](../../docs/guides/dependency-policy.md)
 - [API Design Standards](../../.claude/docs/api-design-standards.md)

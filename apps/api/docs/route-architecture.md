@@ -975,6 +975,25 @@ this branch — only the free structured pass runs. See the module doc on
 | `GET` | `/api/v1/admin/billing-subscription` | `BILLING_SUBSCRIPTION_INSPECT` | Searches by owner email/name or subscription/user id; filters by vertical and status; `page`/`pageSize` only. Audits `BILLING_READ`. |
 | `GET` | `/api/v1/admin/billing-subscription/{subscriptionId}/overview` | `BILLING_SUBSCRIPTION_INSPECT` | One subscription detail: plan and version, next charge, open pause and current courtesy. Audits `BILLING_READ`. |
 
+## AI connection routes (HOS-2184)
+
+Protected routes that let a user see and disconnect the AI assistants (OAuth clients)
+connected to the [MCP server](mcp-server.md). They act only on the caller's own
+connections and are **not** behind `HOSPEDA_MCP_ENABLED`: a user must be able to
+remove a connection while the feature is switched off.
+
+| Method | Path | Auth | Notes |
+|---|---|---|---|
+| `GET` | `/api/v1/protected/ai-connections` | Session | Lists the caller's connections, oldest first, with connection date and an approximate last use. `name`, `uri` and `logoUri` are client-declared and untrusted. |
+| `DELETE` | `/api/v1/protected/ai-connections/{clientId}` | Session | Deletes the caller's consent, refresh tokens and stored access tokens for that client. 204 on success. Audits `mcp.connection.revoked`. |
+
+- **404, never 403.** A client the caller has not connected answers 404, whether it
+  is unknown or connected only by someone else. The response never confirms that
+  the id exists.
+- **Percent-encode `clientId`.** A CIMD client id is a URL, so it must go through
+  `encodeURIComponent` in the path.
+- Disconnecting never deletes the shared `oauth_client` row. Other users may use it.
+
 ## Anti-Patterns
 
 **Never PUT/POST/DELETE in the public tier.**
