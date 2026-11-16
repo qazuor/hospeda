@@ -12,24 +12,33 @@ import { ConversationStatusEnum, PermissionEnum } from '@repo/schemas';
 import { type Actor, ConversationService } from '@repo/service-core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, ownerAccommodationIds, listContext } =
-    vi.hoisted(() => {
-        const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
-        return {
-            USER_ID: userId,
-            CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
-            VALID_TOKEN: 'valid-access-token-0123456789',
-            ACTOR: { id: userId, roles: ['HOST'], emailVerified: true },
-            findOneMock: vi.fn(),
-            ownerAccommodationIds: vi.fn(),
-            listContext: vi.fn()
-        };
-    });
+const {
+    USER_ID,
+    CLIENT_ID,
+    VALID_TOKEN,
+    ACTOR,
+    findOneMock,
+    ownerAccommodationIds,
+    listContext,
+    threadContext
+} = vi.hoisted(() => {
+    const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
+    return {
+        USER_ID: userId,
+        CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
+        VALID_TOKEN: 'valid-access-token-0123456789',
+        ACTOR: { id: userId, roles: ['HOST'], emailVerified: true },
+        findOneMock: vi.fn(),
+        ownerAccommodationIds: vi.fn(),
+        listContext: vi.fn(),
+        threadContext: vi.fn()
+    };
+});
 
 vi.mock('../../../src/mcp/tools/inquiry/inquiry-readers', () => ({
     readOwnerAccommodationIds: ownerAccommodationIds,
     readInquiryListContext: listContext,
-    readInquiryThreadContext: vi.fn()
+    readInquiryThreadContext: threadContext
 }));
 
 vi.mock('../../../src/lib/mcp/record-tool-call', () => ({ recordMcpToolCall: vi.fn() }));
@@ -78,6 +87,7 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
+import { TOOL_NOT_FOUND_MESSAGE } from '../../../src/mcp/tools/tool-errors';
 import { env, validateApiEnv } from '../../../src/utils/env';
 
 const PROTOCOL_VERSION = '2025-06-18';
@@ -165,6 +175,7 @@ describe('/mcp inquiry tools (end to end)', () => {
         findOneMock.mockReset();
         ownerAccommodationIds.mockReset();
         listContext.mockReset();
+        threadContext.mockReset();
         vi.restoreAllMocks();
     });
 
@@ -241,5 +252,90 @@ describe('/mcp inquiry tools (end to end)', () => {
             ],
             pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
         });
+    });
+
+    it('lists get_inquiry as a read-only tool that requires the id', async () => {
+        // Act
+        const message = await rpc('tools/list', {});
+
+        // Assert
+        const entry = message.result?.tools?.find((t) => t.name === 'get_inquiry');
+        expect(entry).toMatchObject({
+            annotations: { title: 'Ver consulta', readOnlyHint: true, openWorldHint: false },
+            inputSchema: { type: 'object', required: ['id'] }
+        });
+        expect(String(entry?.description)).toContain('untrusted_data');
+    });
+
+    it('get_inquiry returns an own thread with guest text wrapped and does not mark it read', async () => {
+        // Arrange
+        threadContext.mockResolvedValue({ accommodationName: 'Cabañas del Río', guestName: null });
+        const conversation = {
+            id: CONV_ID,
+            accommodationId: ACC_ID,
+            userId: null,
+            anonymousName: 'Lucía',
+            status: ConversationStatusEnum.PENDING_OWNER,
+            createdAt: new Date('2026-11-09T08:00:00Z')
+        };
+        vi.spyOn(ConversationService.prototype, 'findOwnedConversation').mockResolvedValue({
+            data: conversation
+        } as unknown as Awaited<ReturnType<ConversationService['findOwnedConversation']>>);
+        const getThread = vi.spyOn(ConversationService.prototype, 'getThread').mockResolvedValue({
+            data: {
+                conversation,
+                messages: [
+                    {
+                        id: 'm1',
+                        senderType: 'GUEST',
+                        body: '¿Tienen cochera?',
+                        createdAt: new Date('2026-11-09T08:00:00Z')
+                    }
+                ],
+                hasMore: false
+            }
+        } as unknown as Awaited<ReturnType<ConversationService['getThread']>>);
+
+        // Act
+        const message = await callTool('get_inquiry', { id: CONV_ID });
+
+        // Assert
+        expect(message.result?.isError).toBeUndefined();
+        expect(getThread).toHaveBeenCalledWith(
+            expect.objectContaining({ id: USER_ID }),
+            expect.objectContaining({ conversationId: CONV_ID, markAsRead: false }),
+            [ACC_ID]
+        );
+        expect(JSON.parse(message.result?.content?.[0]?.text ?? 'null')).toMatchObject({
+            id: CONV_ID,
+            accommodationName: 'Cabañas del Río',
+            guestName: '<untrusted_data source="guest_name">\nLucía\n</untrusted_data>',
+            messages: [
+                {
+                    id: 'm1',
+                    sender: 'guest',
+                    guestMessage:
+                        '<untrusted_data source="guest_message">\n¿Tienen cochera?\n</untrusted_data>'
+                }
+            ]
+        });
+    });
+
+    it("get_inquiry answers another user's conversation as not found", async () => {
+        // Arrange
+        vi.spyOn(ConversationService.prototype, 'findOwnedConversation').mockResolvedValue({
+            data: null
+        } as unknown as Awaited<ReturnType<ConversationService['findOwnedConversation']>>);
+        const getThread = vi.spyOn(ConversationService.prototype, 'getThread');
+
+        // Act
+        const message = await callTool('get_inquiry', { id: CONV_ID });
+
+        // Assert
+        expect(message.result).toMatchObject({
+            isError: true,
+            content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
+        });
+        expect(getThread).not.toHaveBeenCalled();
     });
 });

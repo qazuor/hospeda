@@ -6,6 +6,7 @@
  * by default. T-013+ append their definitions here; nothing else changes.
  */
 
+import { getInquiryTool } from './inquiry/get-inquiry';
 import { listInquiriesTool } from './inquiry/list-inquiries';
 import { getListingTool } from './listing/get-listing';
 import { listAmenitiesAndFeaturesTool } from './listing/list-amenities-and-features';
@@ -21,5 +22,6 @@ export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     updateListingBasicTool,
     setListingPublicationTool,
     listAmenitiesAndFeaturesTool,
-    listInquiriesTool
+    listInquiriesTool,
+    getInquiryTool
 ];
