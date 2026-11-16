@@ -423,6 +423,7 @@
         "traffic": {
             "title": "Tráfico de tus fichas",
             "partnerTitle": "Tráfico de tu página",
+            "propertySelectLabel": "Propiedad",
             "verticalTitle": "Tráfico: {{vertical}}",
             "window": {
                 "label": "Período"

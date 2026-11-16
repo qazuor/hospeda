@@ -45,6 +45,7 @@ import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AnalyticsSection.module.css';
+import { AnalyticsTrafficBlock } from './AnalyticsTrafficBlock.client';
 import { FavoritesWidget } from './FavoritesWidget.client';
 import { InquiryTrendWidget } from './InquiryTrendWidget.client';
 import { MarketComparisonWidget } from './MarketComparisonWidget.client';
@@ -445,6 +446,8 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
 
     // ── Render: ready ────────────────────────────────────────────────
     const { data } = state;
+    // HOS-2119: owned accommodations in the order the API listed them (newest first).
+    const trafficProperties = Array.from(data.accommodationNames, ([id, name]) => ({ id, name }));
 
     return (
         <section className={styles.section}>
@@ -489,6 +492,11 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                     />
                 ) : null}
             </div>
+            <AnalyticsTrafficBlock
+                locale={locale}
+                properties={trafficProperties}
+                window={viewsWindow}
+            />
         </section>
     );
 }

@@ -423,6 +423,7 @@
         "traffic": {
             "title": "Traffic to your listings",
             "partnerTitle": "Traffic to your page",
+            "propertySelectLabel": "Property",
             "verticalTitle": "Traffic: {{vertical}}",
             "window": {
                 "label": "Period"
