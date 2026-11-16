@@ -10,7 +10,7 @@
  *  - Does NOT render when no highlight entries are unseen (no open prop).
  *
  * `useWhatsNew` is mocked directly so tests are isolated from TanStack Query
- * and the API layer. `trackEvent` is mocked to avoid PostHog calls in tests.
+ * and the API layer. `trackEvent` is mocked to avoid Umami calls in tests.
  *
  * Note: TipTap's headless Editor requires a full DOM (jsdom provides this).
  * The `renderMarkdownToHtml` function is exercised indirectly via rendered
@@ -58,12 +58,12 @@ vi.mock('@/hooks/use-whats-new', () => ({
     }))
 }));
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 
 import { useWhatsNew } from '@/hooks/use-whats-new';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 
 const mockUseWhatsNew = vi.mocked(useWhatsNew);
 const mockTrackEvent = vi.mocked(trackEvent);
@@ -349,7 +349,7 @@ describe('WhatsNewModal', () => {
     });
 
     // -------------------------------------------------------------------------
-    // PostHog tracking
+    // Umami tracking
     // -------------------------------------------------------------------------
 
     describe('analytics', () => {

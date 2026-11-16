@@ -9,7 +9,7 @@
  */
 
 import { createContext, type ReactNode, useCallback, useEffect, useState } from 'react';
-import { identifyUser, resetUser } from '@/lib/analytics/posthog-client';
+import { identifyUser, resetUser } from '@/lib/analytics/umami-client';
 import { fetchApi } from '@/lib/api/client';
 import { signOut as authSignOut, useSession } from '@/lib/auth-client';
 import type { AuthState as ServerAuthState } from '@/lib/auth-session';
@@ -421,19 +421,15 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
     }, [authState.isAuthenticated, refreshSession]);
 
     /**
-     * resolved (roles + email already enriched by the sync effect above).
-     * Only non-sensitive traits are sent: `roles` (the full set the account
-     * holds, HOS-296 — never a single "primary" role), and the email's domain
-     * (never the full address). The counterpart `resetUser()` call lives in
+     * Identify the staff user in Umami once the session has
+     * resolved. Only the staff user id is sent (OQ-5): never an email, email
+     * domain or roles. The counterpart `resetUser()` call lives in
      * `handleSignOut`, not here, so this effect never needs to distinguish
      * "not yet loaded" from "signed out".
      */
     useEffect(() => {
         if (authState.isAuthenticated && authState.user) {
-            identifyUser(authState.user.id, {
-                roles: [...authState.user.roles],
-                emailDomain: authState.user.email?.split('@')[1]
-            });
+            identifyUser(authState.user.id);
         }
     }, [authState.isAuthenticated, authState.user]);
 

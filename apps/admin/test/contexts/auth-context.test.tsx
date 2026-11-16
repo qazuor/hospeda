@@ -6,7 +6,7 @@
  *   must be attached to Sentry, and cleared when the user is no longer
  *   authenticated (logout). Anonymization itself happens inside
  *   `setSentryUser` (covered by sentry.config.test.ts), not here.
- * - PostHog identify/reset wiring: identifying the staff user once the
+ * - Umami identify/reset wiring: identifying the staff user once the
  *   session resolves, and clearing the identity on sign-out.
  *
  * Scope: only these two effects. The rest of AuthProvider's session-sync
@@ -45,7 +45,7 @@ vi.mock('@/lib/sentry', () => ({
     setSentryUser: (user: unknown) => setSentryUserMock(user)
 }));
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     identifyUser: (...args: unknown[]) => mockIdentifyUser(...args),
     resetUser: () => mockResetUser()
 }));
@@ -174,7 +174,7 @@ describe('AuthProvider — Sentry user context wiring', () => {
     });
 });
 
-describe('AuthProvider — PostHog identify/reset wiring', () => {
+describe('AuthProvider — Umami identify/reset wiring', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // AuthProvider persists to sessionStorage (SESSION_KEYS.USER) so a
@@ -201,7 +201,7 @@ describe('AuthProvider — PostHog identify/reset wiring', () => {
         vi.restoreAllMocks();
     });
 
-    it('calls identifyUser with the staff id, roles, and email domain once resolved', async () => {
+    it('calls identifyUser with the staff id only (never email or roles) once resolved', async () => {
         render(
             <AuthProvider initialAuthState={AUTHENTICATED_SERVER_STATE}>
                 <div />
@@ -209,11 +209,9 @@ describe('AuthProvider — PostHog identify/reset wiring', () => {
         );
 
         await waitFor(() => {
-            expect(mockIdentifyUser).toHaveBeenCalledWith('staff-1', {
-                roles: ['ADMIN'],
-                emailDomain: 'hospeda.com.ar'
-            });
+            expect(mockIdentifyUser).toHaveBeenCalled();
         });
+        expect(mockIdentifyUser.mock.calls).toEqual([['staff-1']]);
     });
 
     it('does NOT call identifyUser when there is no authenticated user', () => {

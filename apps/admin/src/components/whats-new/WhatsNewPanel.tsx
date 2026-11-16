@@ -7,7 +7,7 @@
  *   Unseen entries: bold title + accent dot. Seen entries: muted styling.
  * - Row click: opens WhatsNewModal for that specific entry (entryId mode).
  * - Empty state: i18n key `admin-whats-new.panel.empty`.
- * - PostHog: `admin_whats_new_panel_opened` on open ({ unseen_count, roles }).
+ * - Umami: `admin_whats_new_panel_opened` on open ({ unseen_count, roles }).
  *
  * Open state decision: WhatsNewPanel owns the modal state for the entry it opens.
  * The panel itself is controlled via `open` / `onOpenChange` props supplied by
@@ -29,7 +29,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useWhatsNew } from '@/hooks/use-whats-new';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { WhatsNewModal } from './WhatsNewModal';
 
 // ---------------------------------------------------------------------------
@@ -70,7 +70,7 @@ export function WhatsNewPanel({ open, onOpenChange }: WhatsNewPanelProps) {
     // every render while the panel stayed open. Derive a stable string key.
     const rolesKey = (user?.roles ?? []).join('|');
 
-    // Fire PostHog event when panel opens.
+    // Fire Umami event when panel opens.
     useEffect(() => {
         if (open) {
             trackEvent(AnalyticsEvents.adminWhatsNewPanelOpened, {

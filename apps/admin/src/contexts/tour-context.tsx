@@ -9,7 +9,7 @@
  *   runtime is NEVER statically imported; only its CSS lives in styles.css.
  * - Show `TourWelcomeModal` (Radix Dialog) when `tour.showWelcomeModal === true`.
  * - Build driver.js steps via `buildDriverSteps` (already pure, no React).
- * - Fire PostHog events: shown, completed, skipped.
+ * - Fire Umami events: shown, completed, skipped.
  * - Persist `markSeen` on finish/skip via `useAdminTourState`.
  * - Destroy the driver instance on unmount and on `stopTour()`.
  * - Respect `prefers-reduced-motion` → `animate: false` + no Dialog animation.
@@ -44,7 +44,7 @@ import { useAdminTourState } from '@/hooks/use-admin-tour-state';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { buildDriverSteps } from '@/lib/tour/build-driver-steps';
 import { adminLogger } from '@/utils/logger';
 
@@ -297,7 +297,7 @@ export function TourProvider({ children }: TourProviderProps) {
     // -------------------------------------------------------------------------
 
     /**
-     * Start a tour. Resolves the tour config, fires PostHog shown event,
+     * Start a tour. Resolves the tour config, fires Umami shown event,
      * and either shows the welcome modal (when applicable) or starts driver.js.
      */
     const startTour = useCallback(

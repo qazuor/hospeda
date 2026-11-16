@@ -26,7 +26,7 @@
  * - **Card F** (`host.profile.health`): same — client-side profile completeness
  *   checklist over the loaded user object.
  * - **Card G — views** (`host.stats.views`): 🔴 PHASE 2. Cross-entity view
- *   tracking not yet built (PostHog client-side only, no DB persistence).
+ *   tracking not yet built (Umami client-side only, no DB persistence).
  *   DeferredWidget handles these slots via `onMissing: 'hide'` in T-029.
  *
  * @module dashboard-sources/host
