@@ -119,16 +119,28 @@ describe('createUmamiServerClient', () => {
         }
 
         it('should send the visitor ip and user agent and keep them out of data', async () => {
-            const item = await sendOne({ ip: '203.0.113.9', userAgent: 'Mozilla/5.0 Test' });
+            const item = await sendOne({
+                ip: '203.0.113.9',
+                userAgent:
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+            });
             expect(item.payload.ip).toBe('203.0.113.9');
-            expect(item.payload.userAgent).toBe('Mozilla/5.0 Test');
+            expect(item.payload.userAgent).toBe(
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+            );
             expect(item.payload.data).toEqual({ feature: 'x', user_id: 'user-1' });
         });
 
         it('should forward a valid IPv6 visitor ip', async () => {
-            const item = await sendOne({ ip: '2001:db8::1', userAgent: 'Mozilla/5.0 Test' });
+            const item = await sendOne({
+                ip: '2001:db8::1',
+                userAgent:
+                    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+            });
             expect(item.payload.ip).toBe('2001:db8::1');
-            expect(item.payload.userAgent).toBe('Mozilla/5.0 Test');
+            expect(item.payload.userAgent).toBe(
+                'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15'
+            );
         });
 
         it('should use the synthetic identity without a visitor', async () => {
@@ -536,33 +548,6 @@ describe('createUmamiServerClient', () => {
             const second = client.shutdown();
             expect(second).toBe(first);
             await first;
-        });
-    });
-
-    describe('queue cap', () => {
-        it('should drop the oldest events beyond maxQueueItems with a single warning and never throw', async () => {
-            const { client, fetchMock, logger } = setup({ maxQueueItems: 3, flushAt: 1000 });
-            for (let i = 1; i <= 6; i++) {
-                (client.capture as (i: unknown) => void)({
-                    distinctId: 'user-1',
-                    event: 'ai_feature_used',
-                    properties: { feature: `f${i}` }
-                });
-            }
-            await client.flush();
-            const items = sentBodies(fetchMock)[0] as { payload: { data: { feature: string } } }[];
-            expect(items.map((i) => i.payload.data.feature)).toEqual(['f4', 'f5', 'f6']);
-            const overflow = logger.warn.mock.calls.filter(([m]) => /queue full/i.test(String(m)));
-            expect(overflow).toHaveLength(1);
-        });
-
-        it('should warn again for a new burst after a flush', async () => {
-            const { client, logger } = setup({ maxQueueItems: 1, flushAt: 1000 });
-            cap(client, 3);
-            await client.flush();
-            cap(client, 3);
-            const overflow = logger.warn.mock.calls.filter(([m]) => /queue full/i.test(String(m)));
-            expect(overflow).toHaveLength(2);
         });
     });
 

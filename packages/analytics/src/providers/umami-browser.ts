@@ -41,6 +41,44 @@ export interface UmamiBrowserClient extends BrowserAnalyticsClient {
     identify(distinctId: string, properties?: Record<string, unknown>): void;
 }
 
+/** Input of {@link hasUmamiCacheToken}. */
+export interface HasUmamiCacheTokenInput {
+    /** The tracker to probe (`window.umami`), of any shape. */
+    readonly tracker: unknown;
+}
+
+/**
+ * Whether the tracker holds Umami's `x-umami-cache` token, read through its
+ * `getSession()` (Umami 3.5.0: `{ cache, ... }`).
+ *
+ * The tracker stores the token from the answer of each request it sends and
+ * keeps it in memory for the life of the document. An `identify` sent while it
+ * holds the token claims the anonymous session the pageview opened; one sent
+ * without it opens a separate `uuid(…, id)` session (OQ-5,
+ * `docs/analytics/umami-spike.md` §2). A tracker without `getSession`, or one
+ * that throws, cannot prove the token and counts as not holding it, so the
+ * caller never sends an identify that would split the session. Never throws.
+ *
+ * Re-check this contract (`getSession()` and its `cache` field) on every
+ * Umami upgrade.
+ *
+ * @param input - The tracker to probe.
+ * @returns `true` only for a non-empty string token.
+ */
+export function hasUmamiCacheToken({ tracker }: HasUmamiCacheTokenInput): boolean {
+    try {
+        if (typeof tracker !== 'object' || tracker === null) return false;
+        const getSession: unknown = Reflect.get(tracker, 'getSession');
+        if (typeof getSession !== 'function') return false;
+        const session: unknown = Reflect.apply(getSession, tracker, []);
+        if (typeof session !== 'object' || session === null) return false;
+        const cache: unknown = Reflect.get(session, 'cache');
+        return typeof cache === 'string' && cache.length > 0;
+    } catch {
+        return false;
+    }
+}
+
 function resolveTracker(): UmamiTracker | undefined {
     const win = (globalThis as { window?: { umami?: UmamiTracker } }).window;
     return win?.umami;

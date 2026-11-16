@@ -14,10 +14,11 @@ export {
 } from './catalog.js';
 export type {
     CaptureTaggedInput,
+    HasUmamiCacheTokenInput,
     UmamiBrowserClient,
     UmamiTracker
 } from './providers/umami-browser.js';
-export { createUmamiBrowserClient } from './providers/umami-browser.js';
+export { createUmamiBrowserClient, hasUmamiCacheToken } from './providers/umami-browser.js';
 export type {
     CreateUmamiServerClientOptions,
     UmamiServerClient,

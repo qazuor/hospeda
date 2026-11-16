@@ -42,7 +42,11 @@ export interface CreateUmamiServerClientOptions {
     readonly fetch?: typeof fetch;
     /** Injected logger; defaults to silent. */
     readonly logger?: UmamiServerLogger;
-    /** Queue size that triggers a flush. Default 20. */
+    /**
+     * Queue size that triggers a flush. Default 20. Clamped to
+     * `maxQueueItems` (with a warning), since a larger value could never be
+     * reached and the queue would only drain on the interval.
+     */
     readonly flushAt?: number;
     /** Interval between automatic flushes in ms. Default 10_000. */
     readonly flushIntervalMs?: number;
@@ -57,7 +61,9 @@ export interface CreateUmamiServerClientOptions {
     readonly maxBatchBytes?: number;
     /**
      * Max events held in memory between flushes. When full, the oldest event is
-     * dropped (one warning per overflow burst). Default 1_000.
+     * dropped. One warning per overflow burst, logged when the burst ends (the
+     * next flush takes the queue, or shutdown) with how many events it dropped.
+     * Default 1_000.
      */
     readonly maxQueueItems?: number;
 }
@@ -142,13 +148,20 @@ export function createUmamiServerClient(
     const websiteId = (options.websiteId as string).trim();
     const doFetch = options.fetch ?? fetch;
     const logger = options.logger ?? SILENT_LOGGER;
-    const flushAt = options.flushAt ?? 20;
     const timeoutMs = options.timeoutMs ?? 2_500;
     const maxItems = options.maxBatchItems ?? 500;
     const maxBytes = options.maxBatchBytes ?? 9 * 1024 * 1024;
     const maxQueue = Math.max(1, options.maxQueueItems ?? 1_000);
-    /** True after the first overflow warning; reset when a flush takes the queue. */
-    let overflowWarned = false;
+    const requestedFlushAt = options.flushAt ?? 20;
+    const flushAt = Math.min(requestedFlushAt, maxQueue);
+    if (flushAt < requestedFlushAt) {
+        logger.warn('Umami flushAt exceeds maxQueueItems, clamped', {
+            flushAt: requestedFlushAt,
+            maxQueueItems: maxQueue
+        });
+    }
+    /** Events dropped by the current overflow burst; reported and reset when it ends. */
+    let overflowDropped = 0;
 
     let queue: QueueEntry[] = [];
     let notes: string[] = [];
@@ -163,6 +176,16 @@ export function createUmamiServerClient(
     function addNote(note: string): void {
         if (notes.length < MAX_NOTES) notes.push(note);
         else droppedNotes++;
+    }
+
+    /** Logs the overflow burst that just ended (one warning, with its drop count). */
+    function reportOverflow(): void {
+        if (overflowDropped === 0) return;
+        logger.warn('Umami queue full, dropped oldest events', {
+            maxQueueItems: maxQueue,
+            dropped: overflowDropped
+        });
+        overflowDropped = 0;
     }
 
     function abortLiveRequests(): void {
@@ -246,7 +269,7 @@ export function createUmamiServerClient(
         queue = [];
         notes = [];
         droppedNotes = 0;
-        overflowWarned = false;
+        reportOverflow();
         const sendable: QueueEntry[] = [];
         let oversized = 0;
         for (const entry of taken) {
@@ -317,12 +340,7 @@ export function createUmamiServerClient(
                 queue.push({ item, bytes: ENCODER.encode(JSON.stringify(item)).byteLength });
                 if (queue.length > maxQueue) {
                     queue.shift();
-                    if (!overflowWarned) {
-                        overflowWarned = true;
-                        logger.warn('Umami queue full, dropping oldest events', {
-                            maxQueueItems: maxQueue
-                        });
-                    }
+                    overflowDropped++;
                 }
             } catch (error) {
                 addNote(
@@ -351,6 +369,8 @@ export function createUmamiServerClient(
                     await Promise.race([flush(), deadline]);
                 } finally {
                     clearTimeout(timer);
+                    // A burst the deadline cut short is still reported.
+                    reportOverflow();
                 }
             })();
             return shutdownPromise;

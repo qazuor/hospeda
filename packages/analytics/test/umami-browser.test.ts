@@ -3,7 +3,11 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createBrowserAnalytics } from '../src/browser.js';
-import { createUmamiBrowserClient, type UmamiTracker } from '../src/providers/umami-browser.js';
+import {
+    createUmamiBrowserClient,
+    hasUmamiCacheToken,
+    type UmamiTracker
+} from '../src/providers/umami-browser.js';
 
 type FakeWindow = { umami?: UmamiTracker };
 
@@ -110,5 +114,38 @@ describe('createUmamiBrowserClient', () => {
             analytics.reset();
             expect(tracker.track).not.toHaveBeenCalled();
         });
+    });
+});
+
+describe('hasUmamiCacheToken (identify order, OQ-5)', () => {
+    it('should be true when getSession() holds a non-empty cache token', () => {
+        const tracker = { ...makeTracker(), getSession: () => ({ cache: 'token', website: 'w' }) };
+        expect(hasUmamiCacheToken({ tracker })).toBe(true);
+    });
+
+    it.each([
+        ['an unanswered pageview (no cache)', { getSession: () => ({ website: 'w' }) }],
+        ['an empty cache', { getSession: () => ({ cache: '' }) }],
+        ['a non-string cache', { getSession: () => ({ cache: 42 }) }],
+        ['a null session', { getSession: () => null }],
+        ['a tracker without getSession', {}],
+        [
+            'a getSession that throws',
+            {
+                getSession: () => {
+                    throw new Error('boom');
+                }
+            }
+        ]
+    ])('should be false for %s', (_label, extra) => {
+        expect(hasUmamiCacheToken({ tracker: { ...makeTracker(), ...extra } })).toBe(false);
+    });
+
+    it.each([
+        ['undefined', undefined],
+        ['null', null],
+        ['a string', 'umami']
+    ])('should be false, never throw, for a %s tracker', (_label, tracker) => {
+        expect(hasUmamiCacheToken({ tracker })).toBe(false);
     });
 });
