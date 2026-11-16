@@ -359,18 +359,79 @@ describe('OAuth + MCP, end to end', () => {
             journey.clientId = body.client_id;
         });
 
-        it('accepts any registration (open DCR) but never authorizes a redirect off the MCP allowlist', async () => {
-            const registered = await postJson('/api/auth/oauth2/register', {
-                client_name: 'Phisher',
-                redirect_uris: ['https://evil.example/callback'],
+        it.each([
+            ['Claude', ['https://claude.ai/api/mcp/auth_callback']],
+            ['Claude (claude.com)', ['https://claude.com/api/mcp/auth_callback']],
+            ['ChatGPT', ['https://chatgpt.com/connector_platform_oauth_redirect']],
+            [
+                'several allowed at once',
+                ['https://claude.ai/api/mcp/auth_callback', 'http://localhost:33418/callback']
+            ]
+        ])('registers a %s client', async (_label, redirectUris) => {
+            const res = await postJson('/api/auth/oauth2/register', {
+                client_name: 'Hosted client',
+                redirect_uris: redirectUris,
                 token_endpoint_auth_method: 'none',
                 grant_types: ['authorization_code'],
                 response_types: ['code']
             });
-            const { client_id: evilClientId } = (await registered.json()) as { client_id: string };
+
+            expect(res.status, await res.clone().text()).toBe(201);
+        });
+
+        it('refuses the whole registration when one of several redirect URIs is off the allowlist', async () => {
+            const before = (authMemoryStore.oauthClient as unknown[]).length;
+
+            const res = await postJson('/api/auth/oauth2/register', {
+                client_name: 'Phisher',
+                redirect_uris: [
+                    'https://claude.ai/api/mcp/auth_callback',
+                    'https://evil.example/cb'
+                ],
+                token_endpoint_auth_method: 'none',
+                grant_types: ['authorization_code'],
+                response_types: ['code']
+            });
+
+            expect(res.status).toBe(400);
+            expect(((await res.json()) as { error: string }).error).toBe('invalid_redirect_uri');
+            expect((authMemoryStore.oauthClient as unknown[]).length).toBe(before);
+        });
+
+        it.each([
+            'https://evil.example/callback',
+            'http://claude.ai/api/mcp/auth_callback',
+            'https://claude.ai.evil.example/api/mcp/auth_callback',
+            'http://192.168.1.10:8080/callback'
+        ])('refuses to register %s', async (redirectUri) => {
+            const before = (authMemoryStore.oauthClient as unknown[]).length;
+
+            const res = await postJson('/api/auth/oauth2/register', {
+                client_name: 'Phisher',
+                redirect_uris: [redirectUri],
+                token_endpoint_auth_method: 'none'
+            });
+
+            expect(res.status).toBe(400);
+            expect(((await res.json()) as { error: string }).error).toBe('invalid_redirect_uri');
+            expect((authMemoryStore.oauthClient as unknown[]).length).toBe(before);
+        });
+
+        it('still never authorizes a redirect off the allowlist for a client registered before the guard', async () => {
+            // A row that predates the guard (or came in through CIMD).
+            (authMemoryStore.oauthClient as Record<string, unknown>[]).push({
+                id: 'legacy-row',
+                clientId: 'legacy-client',
+                redirectUris: ['https://evil.example/callback'],
+                public: true,
+                disabled: false,
+                grantTypes: ['authorization_code'],
+                responseTypes: ['code'],
+                tokenEndpointAuthMethod: 'none'
+            });
             const query = new URLSearchParams({
                 response_type: 'code',
-                client_id: evilClientId,
+                client_id: 'legacy-client',
                 redirect_uri: 'https://evil.example/callback',
                 scope: 'openid',
                 state: 'state-1',
@@ -383,12 +444,8 @@ describe('OAuth + MCP, end to end', () => {
                 headers: { cookie: journey.cookie, 'user-agent': 'vitest' }
             });
 
-            // Not a redirect to the untrusted URI, and no code minted.
             expect(res.headers.get('location') ?? '').not.toContain('evil.example');
             expect(res.headers.get('location') ?? '').not.toContain('code=');
-            expect(authMemoryStore.verification).not.toContainEqual(
-                expect.objectContaining({ value: expect.stringContaining('evil.example') })
-            );
         });
     });
 

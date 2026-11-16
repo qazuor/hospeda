@@ -3,7 +3,7 @@
  * @description Better Auth plugins that turn the API into the OAuth 2.1
  * authorization server for the Hospeda MCP server (HOS-2184 T-004).
  *
- * Three plugins, registered together or not at all:
+ * Four plugins, registered together or not at all:
  *
  * - `jwt({ disableSettingJwtHeader: true })` signs RFC 9068 access tokens and
  *   serves `/api/auth/jwks`. The header flag stops it from adding a
@@ -16,6 +16,8 @@
  * - `cimd(...)` from `@better-auth/cimd` — Client ID Metadata Documents, the
  *   registration path the MCP 2026-07-28 revision recommends (Claude and
  *   ChatGPT send a metadata-document URL as their `client_id`).
+ *
+ * - `mcpRegistrationRedirectGuard` — the redirect allowlist at DCR.
  *
  * Everything is gated by `HOSPEDA_MCP_ENABLED`. With the flag off
  * {@link buildMcpOAuthConfig} constructs nothing and returns empty lists, so
@@ -47,6 +49,7 @@ import {
     type Scope
 } from '@better-auth/oauth-provider';
 import type { BetterAuthPlugin } from 'better-auth';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { jwt } from 'better-auth/plugins';
 
 /**
@@ -171,6 +174,49 @@ export const MCP_DISABLED_AUTH_PATHS: readonly string[] = [
     '/oauth2/client/rotate-keys'
 ];
 
+/** Path of Dynamic Client Registration. */
+const REGISTER_PATH = '/oauth2/register';
+
+/**
+ * Better Auth plugin that applies the MCP redirect allowlist at Dynamic Client
+ * Registration, which `oauthProvider`'s `validateRedirectUri` does not cover
+ * ("Client registration is unchanged"). A request naming any redirect URI off
+ * the allowlist ({@link isAllowedMcpRedirectUri}) is refused with the RFC 7591
+ * error `invalid_redirect_uri` before anything is stored.
+ *
+ * CIMD has no equivalent pre-persist hook; its redirect URIs are checked at
+ * `/oauth2/authorize` by `validateRedirectUri`.
+ */
+export const mcpRegistrationRedirectGuard: BetterAuthPlugin = {
+    id: 'hospeda-mcp-registration-redirect-guard',
+    hooks: {
+        before: [
+            {
+                matcher: (context) => context.path === REGISTER_PATH,
+                handler: createAuthMiddleware(async (ctx) => {
+                    const body = ctx.body as { redirect_uris?: unknown } | undefined;
+                    const uris = body?.redirect_uris;
+                    if (!Array.isArray(uris)) {
+                        return; // the provider answers its own validation error
+                    }
+                    const refused = uris.find(
+                        (uri) =>
+                            typeof uri !== 'string' ||
+                            !isAllowedMcpRedirectUri({ redirectUri: uri })
+                    );
+                    if (refused !== undefined) {
+                        throw new APIError('BAD_REQUEST', {
+                            error: 'invalid_redirect_uri',
+                            error_description:
+                                'redirect_uris must be on the Hospeda MCP allowlist (Claude, ChatGPT or loopback)'
+                        });
+                    }
+                })
+            }
+        ]
+    }
+};
+
 /**
  * Arguments for {@link buildMcpOAuthProviderOptions}. RO-RO.
  */
@@ -289,7 +335,8 @@ export function buildMcpOAuthConfig({
         plugins: [
             jwt({ disableSettingJwtHeader: true }),
             oauthProvider(oauthProviderOptions),
-            cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' })
+            cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' }),
+            mcpRegistrationRedirectGuard
         ],
         disabledPaths: [...MCP_DISABLED_AUTH_PATHS],
         oauthProviderOptions

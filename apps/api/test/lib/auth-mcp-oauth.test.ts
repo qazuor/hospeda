@@ -205,7 +205,7 @@ describe('buildMcpOAuthConfig', () => {
         expect(build).not.toThrow();
     });
 
-    it('registers jwt, oauth-provider and cimd, in that order, when on', () => {
+    it('registers jwt, oauth-provider, cimd and the registration guard, in that order, when on', () => {
         // Arrange / Act
         const config = buildMcpOAuthConfig({
             enabled: true,
@@ -218,7 +218,8 @@ describe('buildMcpOAuthConfig', () => {
         expect(config.plugins.map((plugin) => plugin.id)).toEqual([
             'jwt',
             'oauth-provider',
-            'cimd'
+            'cimd',
+            'hospeda-mcp-registration-redirect-guard'
         ]);
         expect(config.oauthProviderOptions?.resources).toEqual([RESOURCE_URL]);
     });
