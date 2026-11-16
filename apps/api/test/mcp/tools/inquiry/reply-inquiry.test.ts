@@ -115,6 +115,7 @@ describe('reply_inquiry', () => {
     let findOwned: ReturnType<typeof vi.spyOn>;
     let assertBody: ReturnType<typeof vi.spyOn>;
     let createMessage: ReturnType<typeof vi.spyOn>;
+    let markRead: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         fake = makeFakeRedis();
@@ -134,6 +135,9 @@ describe('reply_inquiry', () => {
         assertBody = vi
             .spyOn(MessageService.prototype, 'assertMessageBodyAllowed')
             .mockResolvedValue(undefined);
+        markRead = vi
+            .spyOn(ConversationService.prototype, 'markReadByOwner')
+            .mockResolvedValue({ data: { conversationId: CONV_OWN } });
         createMessage = vi.spyOn(MessageService.prototype, 'createMessage').mockImplementation(
             async (_actor, input) =>
                 ({
@@ -218,6 +222,7 @@ describe('reply_inquiry', () => {
             expect(data.instructions).toContain('NO se envió nada');
             expect(data.instructions).toContain('confirmationToken');
             expect(createMessage).not.toHaveBeenCalled();
+            expect(markRead).not.toHaveBeenCalled();
             expect(assertBody).toHaveBeenCalledWith({ body: TEXT });
             expect(fake.data.size).toBe(1);
         });
@@ -288,6 +293,54 @@ describe('reply_inquiry', () => {
     });
 
     describe('step 2: send', () => {
+        it('marks the conversation read by the owner after the message is sent', async () => {
+            const confirmationToken = await preview();
+
+            await run({ inquiryId: CONV_OWN, text: TEXT, confirmationToken });
+
+            expect(markRead).toHaveBeenCalledTimes(1);
+            expect(markRead).toHaveBeenCalledWith(expect.objectContaining({ id: OWNER_ID }), {
+                conversationId: CONV_OWN
+            });
+            expect(createMessage.mock.invocationCallOrder[0]).toBeLessThan(
+                markRead.mock.invocationCallOrder[0] as number
+            );
+        });
+
+        it.each([
+            [
+                'returns an error',
+                () =>
+                    markRead.mockResolvedValue({
+                        error: { code: 'INTERNAL_ERROR', message: 'db down' }
+                    } as never)
+            ],
+            ['throws', () => markRead.mockRejectedValue(new Error('db down'))]
+        ])('still reports the reply as sent when marking it read %s', async (_label, arrange) => {
+            const confirmationToken = await preview();
+            arrange();
+
+            const outcome = await run({ inquiryId: CONV_OWN, text: TEXT, confirmationToken });
+
+            expect(outcome).toMatchObject({
+                ok: true,
+                data: { status: 'sent', messageId: 'msg-1' }
+            });
+            expect(markRead).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not mark it read when the message could not be created', async () => {
+            const confirmationToken = await preview();
+            createMessage.mockResolvedValue({
+                error: { code: ServiceErrorCode.FORBIDDEN, message: 'blocked' }
+            } as never);
+
+            const outcome = await run({ inquiryId: CONV_OWN, text: TEXT, confirmationToken });
+
+            expect(outcome.ok).toBe(false);
+            expect(markRead).not.toHaveBeenCalled();
+        });
+
         it('sends exactly the previewed text as the owner and returns the message id', async () => {
             const confirmationToken = await preview();
 

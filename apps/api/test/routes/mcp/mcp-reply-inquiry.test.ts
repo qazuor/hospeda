@@ -216,6 +216,9 @@ describe('/mcp reply_inquiry (end to end)', () => {
                 }) as unknown as OwnedResult
         );
         vi.spyOn(MessageService.prototype, 'assertMessageBodyAllowed').mockResolvedValue(undefined);
+        vi.spyOn(ConversationService.prototype, 'markReadByOwner').mockResolvedValue({
+            data: { conversationId: CONV_ID }
+        });
         createMessage = vi.spyOn(MessageService.prototype, 'createMessage').mockResolvedValue({
             data: { id: 'msg-1', createdAt: new Date('2026-11-16T12:00:00Z') }
         } as unknown as CreatedResult);

@@ -24,6 +24,11 @@
  * missing id (or a staff actor's) answers the uniform not-found and never
  * touches the token store (AC-6).
  *
+ * After a successful send the conversation is marked read by the owner
+ * (`ConversationService.markReadByOwner`), as opening it in the panel does.
+ * Reading through `get_inquiry` never does. A failure to mark it read is
+ * logged and does not turn the already-sent reply into an error.
+ *
  * Fail closed: when the token store is unavailable nothing is previewed and
  * nothing is sent.
  */
@@ -35,9 +40,10 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { entityNotFoundError } from '@repo/service-core';
+import { type Actor, entityNotFoundError } from '@repo/service-core';
 import { z } from 'zod';
 import { SYSTEM_ACTOR } from '../../../routes/conversations/protected/owner/system-actor';
+import { apiLogger } from '../../../utils/logger';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { consumeConfirmationToken, issueConfirmationToken } from './confirmation-token-store';
@@ -113,6 +119,35 @@ export interface ReplyInquirySent {
 
 /** What `reply_inquiry` answers. */
 export type ReplyInquiryResult = ReplyInquiryPreview | ReplyInquirySent;
+
+/**
+ * Marks the conversation read by its owner after a reply went out. The message
+ * is already sent, so any failure (returned or thrown) is logged and swallowed.
+ */
+async function markReadAfterReply({
+    actor,
+    conversationId
+}: {
+    readonly actor: Actor;
+    readonly conversationId: string;
+}): Promise<void> {
+    try {
+        const marked = await getInquiryConversationService().markReadByOwner(actor, {
+            conversationId
+        });
+        if (marked.error) {
+            apiLogger.warn(
+                { conversationId, code: marked.error.code },
+                'reply_inquiry sent the reply but could not mark the inquiry read'
+            );
+        }
+    } catch (error) {
+        apiLogger.warn(
+            { conversationId, error: error instanceof Error ? error.message : String(error) },
+            'reply_inquiry sent the reply but could not mark the inquiry read'
+        );
+    }
+}
 
 /** The uniform not-found error: a missing, foreign or staff-only id looks the same. */
 function notFound(): ToolHandlerResult<never> {
@@ -259,6 +294,7 @@ export const replyInquiryTool = defineTool({
         if (created.error) {
             return { error: created.error };
         }
+        await markReadAfterReply({ actor, conversationId: conversation.id });
         return {
             data: {
                 status: 'sent',
