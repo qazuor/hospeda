@@ -327,5 +327,21 @@
         "inPurged": "untouched (audit)",
         "spec": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:806; .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:756",
         "addedBy": "HOS-1476 H1"
+    },
+    {
+        "table": "location_exception_request",
+        "specTable": "location_exception_request",
+        "hangsBy": "entity_type",
+        "owner": "moderation",
+        "inPurged": "kept as the record; a purged listing's pending request is no longer listed in the admin queue",
+        "spec": ".specs/HOS-2192-location-exception-requests/spec.md"
+    },
+    {
+        "table": "location_exception_event",
+        "specTable": "location_exception_event",
+        "hangsBy": "entity_type",
+        "owner": "moderation",
+        "inPurged": "kept; append-only audit trail",
+        "spec": ".specs/HOS-2192-location-exception-requests/spec.md"
     }
 ]

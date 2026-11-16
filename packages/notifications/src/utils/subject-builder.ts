@@ -130,7 +130,10 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.PLAN_PRICE_CHANGE_NOTICE]:
         'Aviso previo: el precio de tu plan {planName} aumentará desde el {effectiveDate}',
     // HOS-2101: the only localised email; the payload carries the built subject.
-    [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: '{digestSubject}'
+    [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: '{digestSubject}',
+    // HOS-2192: localised in the template; the payload carries the built subject.
+    [NotificationType.LISTING_LOCATION_EXCEPTION_APPROVED]: '{decisionSubject}',
+    [NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED]: '{decisionSubject}'
 };
 
 /**
