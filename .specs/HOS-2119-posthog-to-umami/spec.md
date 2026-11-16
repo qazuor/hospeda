@@ -102,7 +102,7 @@ The PostHog coupling lives outside it.
 | infra | `infra/cloudflare/posthog-proxy/` (first-party `/api/relay/*`, recovers ad-blocked traffic, BETA-77) |
 | config | `HOSPEDA_POSTHOG_KEY/HOST`, `PUBLIC_POSTHOG_KEY/HOST`, `VITE_POSTHOG_KEY/HOST` in `packages/config/src/env-registry*.ts` + app `env-schema.ts`, Dockerfile build args test |
 | CI | `.github/workflows/ci.yml`, `e2e-pr.yml`, `e2e-nightly.yml`, `a11y-sweep.yml` |
-| dashboards | `scripts/posthog/{client,data,definitions,setup}.ts` — six dashboards, 9 funnels |
+| dashboards | `scripts/posthog/{client,data,definitions,setup}.ts` — six dashboards, 8 funnel insights (5 distinct; the earlier "9" was a miscount, corrected 2026-11-16) |
 | docs | `docs/analytics/*.md` (README, event-catalog, event-migrations, posthog-audit, posthog-dashboards, session-replay-privacy), `docs/guides/*`, two ADRs |
 
 ### 5.3 Consent model (web)
@@ -236,7 +236,7 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
 
 - `scripts/posthog/` → `scripts/umami/`: same idea (definitions as code, idempotent
   `setup.ts`), targeting Umami's boards/reports API.
-- The six dashboards and nine funnels are rebuilt. Where PostHog relied on person
+- The six dashboards and the five distinct funnels are rebuilt (PostHog had 8 funnel insights, 5 distinct; the earlier "nine" was a miscount, corrected 2026-11-16). Where PostHog relied on person
   properties or SQL insights Umami cannot express, the gap is listed in
   `docs/analytics/umami-dashboards.md` with what replaces it (an `event-data`
   breakdown, or an admin page reading Hospeda's own DB).

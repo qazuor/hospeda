@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 32/76 tasks (42%)
+## Progress: 34/76 tasks (45%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -188,13 +188,13 @@ Tracks (can run in parallel):
   - Blocked by: T-037
   - Blocks: T-039, T-040
 
-- [ ] **T-039** (complexity: 3) - T-4 Define dashboards 00 Resumen, 01 Adquisicion and 02 Descubrimiento for Umami
+- [x] **T-039** (complexity: 3) - T-4 Define dashboards 00 Resumen, 01 Adquisicion and 02 Descubrimiento for Umami
   - Tags: t4-dashboards, scripts
   - File: scripts/umami/data-a.ts (part 1; part 2 is data-b.ts from T-040). Tests: scripts/umami/data-a....
   - Blocked by: T-038, T-016
   - Blocks: T-041, T-042
 
-- [ ] **T-040** (complexity: 3) - T-4 Define dashboards 03 Owners, 04 Suscripciones and 05 Calidad plus the nine funnels for Umami
+- [x] **T-040** (complexity: 3) - T-4 Define dashboards 03 Owners, 04 Suscripciones and 05 Calidad plus the nine funnels for Umami
   - Tags: t4-dashboards, scripts
   - Files: scripts/umami/data-b.ts and scripts/umami/data-b.test.ts. Tests: all 9 funnels present with v...
   - Blocked by: T-038

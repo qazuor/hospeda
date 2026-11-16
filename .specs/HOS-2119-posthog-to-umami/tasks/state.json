@@ -1420,70 +1420,70 @@
             "id": "T-039",
             "title": "T-4 Define dashboards 00 Resumen, 01 Adquisicion and 02 Descubrimiento for Umami",
             "description": "File: scripts/umami/data-a.ts (part 1; part 2 is data-b.ts from T-040). Tests: scripts/umami/data-a.test.ts asserts every referenced event exists in the catalog and each dashboard name is unique and starts with its 00/01/02 prefix.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-038", "T-016"],
             "blocks": ["T-041", "T-042"],
             "subtasks": [
                 {
                     "title": "Port the matching sections of scripts/posthog/data.ts (466 lines; dashboards defined from line ~6)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Use the new event names/properties (entity_id, entity_viewed)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "List anything Umami cannot express for the docs gap list (T-042)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t4-dashboards", "scripts"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:09:29Z",
+                "completed": "2026-11-16T05:12:53Z"
             }
         },
         {
             "id": "T-040",
             "title": "T-4 Define dashboards 03 Owners, 04 Suscripciones and 05 Calidad plus the nine funnels for Umami",
-            "description": "Files: scripts/umami/data-b.ts and scripts/umami/data-b.test.ts. Tests: all 9 funnels present with valid step events; dashboard names 03/04/05 unique; every gap is listed in an exported GAPS constant consumed by T-042 docs.",
-            "status": "pending",
+            "description": "Files: scripts/umami/data-b.ts and scripts/umami/data-b.test.ts. Tests: all 9 funnels present with valid step events; dashboard names 03/04/05 unique; every gap is listed in an exported GAPS constant consumed by T-042 docs.\n\nDONE NOTE: spec \"nine funnels\" was a miscount — PostHog data.ts has 8 funnel insights, 5 distinct; all 5 are built (spec corrected 2026-11-16). 17 dropped tiles in DROPPED_TILES (boards.ts) and the findings doc.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-038"],
             "blocks": ["T-041", "T-042"],
             "subtasks": [
                 {
                     "title": "Port the remaining dashboards and the 9 funnels (funnelInsight calls in scripts/posthog/data.ts around lines 130, 141, 152, 295, 345, 406, 445, 458)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Where PostHog used person properties or SQL insights (R-2: last_checkout_outcome, plan_status, converted_from_trial), record the gap and the replacement (event-data breakdown or an admin page on Hospeda DB)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Use scripts/umami/data-b.ts (data-a.ts is T-039)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t4-dashboards", "scripts"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:09:29Z",
+                "completed": "2026-11-16T05:12:53Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 44,
+        "pending": 42,
         "inProgress": 0,
-        "completed": 32,
+        "completed": 34,
         "blocked": 0,
         "averageComplexity": 2.5
     }
