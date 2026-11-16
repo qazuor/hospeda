@@ -12,7 +12,9 @@ import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import {
     AccommodationService,
     type Actor,
+    AmenityService,
     ExperienceService,
+    FeatureService,
     VenueService
 } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
@@ -215,6 +217,43 @@ describe('/mcp listing tools (end to end)', () => {
                 })
             ])
         );
+    });
+
+    it('lists list_amenities_and_features as read-only and serves the catalog', async () => {
+        // Arrange
+        vi.spyOn(AmenityService.prototype, 'search').mockResolvedValue({
+            data: {
+                items: [{ id: '44444444-4444-4444-8444-444444444444', slug: 'wifi' }],
+                total: 1
+            }
+        } as unknown as Awaited<ReturnType<AmenityService['search']>>);
+        vi.spyOn(FeatureService.prototype, 'search').mockResolvedValue({
+            data: { items: [], total: 0 }
+        } as unknown as Awaited<ReturnType<FeatureService['search']>>);
+
+        // Act
+        const list = await rpc('tools/list', {});
+        const call = await callTool('list_amenities_and_features', { vertical: 'venue' });
+
+        // Assert
+        expect(list.result?.tools).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    name: 'list_amenities_and_features',
+                    annotations: expect.objectContaining({ readOnlyHint: true }),
+                    inputSchema: expect.objectContaining({ required: ['vertical'] })
+                })
+            ])
+        );
+        expect(call.result?.isError).toBeUndefined();
+        const body = JSON.parse(call.result?.content?.[0]?.text ?? 'null');
+        expect(body.features).toEqual([]);
+        expect(body.amenities).toHaveLength(1);
+        expect(body.amenities[0]).toMatchObject({
+            id: '44444444-4444-4444-8444-444444444444',
+            slug: 'wifi'
+        });
+        expect(body.amenities[0].name).not.toBe('wifi');
     });
 
     it("list_my_listings returns the token subject's listings", async () => {

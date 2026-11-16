@@ -8,7 +8,13 @@
  */
 
 import { VerticalEnum } from '@repo/schemas';
-import { AccommodationService, ExperienceService, VenueService } from '@repo/service-core';
+import {
+    AccommodationService,
+    AmenityService,
+    ExperienceService,
+    FeatureService,
+    VenueService
+} from '@repo/service-core';
 import { z } from 'zod';
 import { apiLogger } from '../../../utils/logger';
 
@@ -20,6 +26,12 @@ export const listingToolVenueService = new VenueService({ logger: apiLogger });
 
 /** Experience service, as `routes/experience/protected/*` uses it. */
 export const listingToolExperienceService = new ExperienceService({ logger: apiLogger });
+
+/** Amenity catalog service, as `routes/amenity/public/list.ts` uses it. */
+export const listingToolAmenityService = new AmenityService({ logger: apiLogger });
+
+/** Feature catalog service, as `routes/feature/public/list.ts` uses it. */
+export const listingToolFeatureService = new FeatureService({ logger: apiLogger });
 
 /**
  * The verticals an owner manages listings in through the assistant tools.
