@@ -42,7 +42,7 @@ import { stripHtmlToText } from '@repo/service-core';
 import { z } from 'zod';
 import { toSdkJsonSchema } from '../../../../packages/ai-core/scripts/ai-sweep/sdk-json-schema.js';
 import {
-    AccommodationImportAiOutputSchema,
+    AccommodationImportAiModelOutputSchema,
     buildImportAiPrompt
 } from '../../src/routes/accommodation/protected/import-from-url.ai.js';
 import { buildPostGeneratePrompt } from '../../src/routes/ai/admin/post-generate.prompt.js';
@@ -112,10 +112,15 @@ export const TASK_INPUT_SCHEMAS = {
 /** A call kind the renderer knows. */
 export type RenderableCall = keyof typeof TASK_INPUT_SCHEMAS;
 
-/** Production Zod schema of each serialized output schema id. */
+/**
+ * Production Zod schema of each serialized output schema id: the schema the
+ * route hands `generateObject`, i.e. what the provider is constrained with.
+ * For `accommodation_import` that is the strict model-facing schema (HOS-2250),
+ * not the downstream parse.
+ */
 export const OUTPUT_ZOD_SCHEMAS = {
     search_intent: SearchIntentOutputSchema,
-    accommodation_import: AccommodationImportAiOutputSchema,
+    accommodation_import: AccommodationImportAiModelOutputSchema,
     post_generate: AiPostGenerateDraftGenerationSchema,
     faq_draft: AiFaqDraftOutputSchema
 } as const;

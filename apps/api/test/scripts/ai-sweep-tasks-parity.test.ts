@@ -23,12 +23,17 @@ import {
 import { stripHtmlToText } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
 import { toSdkJsonSchema } from '../../../../packages/ai-core/scripts/ai-sweep/sdk-json-schema.js';
-import { parseAnswerVerdict } from '../../../../packages/ai-core/scripts/ai-sweep/task-checks.js';
+import {
+    accommodationImportProductionAccepts,
+    parseAnswerVerdict
+} from '../../../../packages/ai-core/scripts/ai-sweep/task-checks.js';
 import { SWEEP_DIR } from '../../scripts/ai-sweep/generate-sweep-contexts.js';
 import { buildGeneratedTasksFile } from '../../scripts/ai-sweep/generate-sweep-tasks.js';
 import {
+    AccommodationImportAiModelOutputSchema,
     AccommodationImportAiOutputSchema,
-    buildImportAiPrompt
+    buildImportAiPrompt,
+    nullFieldsToUndefined
 } from '../../src/routes/accommodation/protected/import-from-url.ai.js';
 import { buildPostGeneratePrompt } from '../../src/routes/ai/admin/post-generate.js';
 import { buildConversationalSearchPrompt } from '../../src/routes/ai/protected/search-chat.prompt.js';
@@ -94,7 +99,7 @@ describe('HOS-2217 sweep task requests are the production requests', () => {
         // Arrange
         const live = {
             search_intent: SearchIntentOutputSchema,
-            accommodation_import: AccommodationImportAiOutputSchema,
+            accommodation_import: AccommodationImportAiModelOutputSchema,
             post_generate: AiPostGenerateDraftGenerationSchema,
             faq_draft: AiFaqDraftOutputSchema
         };
@@ -270,6 +275,43 @@ describe('HOS-2217 sweep task requests are the production requests', () => {
 
         // Assert
         expect(sweep).toEqual(production);
+    });
+
+    it('accommodation_import: the sweep production-acceptance check equals the production chain (HOS-2250)', () => {
+        // Arrange: production = the AI SDK validating the strict model schema (Zod
+        // strips unknown keys), then the route's lenient parse over the
+        // null-stripped answer.
+        const allNull = Object.fromEntries(
+            Object.keys(AccommodationImportAiModelOutputSchema.shape).map((key) => [key, null])
+        );
+        const objects: unknown[] = [
+            allNull,
+            { ...allNull, name: 'Cabaña', capacity: 4, amenityNames: ['Wifi'] },
+            { ...allNull, extra: 'ignored' },
+            { ...allNull, capacity: '4' },
+            { ...allNull, amenityNames: [null] },
+            { name: 'Cabaña' },
+            { name: 'Cabaña', maxGuests: 4, amenities: ['Wifi'] },
+            {},
+            'not an object'
+        ];
+        const schema = generated.schemas.accommodation_import as Record<string, unknown>;
+
+        // Act
+        const sweep = objects.map(
+            (object) => accommodationImportProductionAccepts({ schema, object }).accepted
+        );
+        const production = objects.map(
+            (object) =>
+                AccommodationImportAiModelOutputSchema.safeParse(object).success &&
+                AccommodationImportAiOutputSchema.safeParse(
+                    nullFieldsToUndefined({ value: object }).value
+                ).success
+        );
+
+        // Assert
+        expect(sweep).toEqual(production);
+        expect(production.filter(Boolean).length).toBe(3);
     });
 
     it('support: engine defaults only (no caller system), since no route calls it', () => {

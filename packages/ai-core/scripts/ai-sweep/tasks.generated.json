@@ -172,72 +172,102 @@
             "type": "object",
             "properties": {
                 "name": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "summary": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "description": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "type": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "capacity": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "bedrooms": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "beds": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "bathrooms": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "latitude": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "longitude": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "street": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "streetNumber": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "price": {
-                    "type": "number"
+                    "type": ["number", "null"]
                 },
                 "currency": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "phone": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "website": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "seoTitle": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "seoDescription": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "amenityNames": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                    "anyOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "locality": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 },
                 "country": {
-                    "type": "string"
+                    "type": ["string", "null"]
                 }
             },
+            "required": [
+                "name",
+                "summary",
+                "description",
+                "type",
+                "capacity",
+                "bedrooms",
+                "beds",
+                "bathrooms",
+                "latitude",
+                "longitude",
+                "street",
+                "streetNumber",
+                "price",
+                "currency",
+                "phone",
+                "website",
+                "seoTitle",
+                "seoDescription",
+                "amenityNames",
+                "locality",
+                "country"
+            ],
             "additionalProperties": false
         },
         "post_generate": {
