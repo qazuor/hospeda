@@ -47,6 +47,16 @@ export const MODEL_RATES: Readonly<Record<string, AiModelRate>> = {
         inputMicroUsdPerMillionTokens: 750_000,
         outputMicroUsdPerMillionTokens: 4_500_000
     },
+    // HOS-2217 migration candidates (OpenAI pricing checked 2026-11-15), so
+    // metering has rates the day production switches to one of them.
+    'gpt-6-luna': {
+        inputMicroUsdPerMillionTokens: 100_000,
+        outputMicroUsdPerMillionTokens: 500_000
+    },
+    'gpt-5.6-luna': {
+        inputMicroUsdPerMillionTokens: 200_000,
+        outputMicroUsdPerMillionTokens: 1_200_000
+    },
     'claude-3-5-sonnet-20241022': {
         inputMicroUsdPerMillionTokens: 3_000_000,
         outputMicroUsdPerMillionTokens: 15_000_000
