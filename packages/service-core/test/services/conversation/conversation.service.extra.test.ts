@@ -432,6 +432,60 @@ describe('ConversationService (extra coverage)', () => {
         });
     });
 
+    describe('listForOwner accommodationId filter', () => {
+        const OTHER_ACCOMMODATION_ID = crypto.randomUUID();
+
+        it('narrows the scope to the requested accommodation the owner holds', async () => {
+            // Arrange
+            asMock(conversationModelMock.listByAccommodationIds).mockResolvedValue({
+                items: [],
+                total: 0
+            });
+
+            // Act
+            const result = await service.listForOwner(ADMIN_ACTOR, {
+                userId: ADMIN_ACTOR.id,
+                accommodationIds: [ACCOMMODATION_ID, OTHER_ACCOMMODATION_ID],
+                accommodationId: OTHER_ACCOMMODATION_ID
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(conversationModelMock.listByAccommodationIds).toHaveBeenCalledWith(
+                [OTHER_ACCOMMODATION_ID],
+                expect.anything()
+            );
+        });
+
+        it('returns an empty page, without querying, for an accommodation outside the scope', async () => {
+            // Act
+            const result = await service.listForOwner(ADMIN_ACTOR, {
+                userId: ADMIN_ACTOR.id,
+                accommodationIds: [ACCOMMODATION_ID],
+                accommodationId: OTHER_ACCOMMODATION_ID
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(result.data?.items).toHaveLength(0);
+            expect(result.data?.total).toBe(0);
+            expect(conversationModelMock.listByAccommodationIds).not.toHaveBeenCalled();
+        });
+
+        it('rejects a non-uuid accommodationId', async () => {
+            // Act
+            const result = await service.listForOwner(ADMIN_ACTOR, {
+                userId: ADMIN_ACTOR.id,
+                accommodationIds: [ACCOMMODATION_ID],
+                accommodationId: 'nope'
+            });
+
+            // Assert
+            expect(result.error).toBeDefined();
+            expect(conversationModelMock.listByAccommodationIds).not.toHaveBeenCalled();
+        });
+    });
+
     // =========================================================================
     // archive
     // =========================================================================

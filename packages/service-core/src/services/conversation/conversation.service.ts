@@ -158,7 +158,8 @@ const ListForOwnerInputSchema = z.object({
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(DEFAULT_INBOX_PAGE_SIZE),
     status: z.string().optional(),
-    search: z.string().optional()
+    search: z.string().optional(),
+    accommodationId: z.string().uuid().optional()
 });
 
 const UpdateStatusInputSchema = z.object({
@@ -967,7 +968,11 @@ export class ConversationService extends BaseService {
      * scope) before calling this method.
      *
      * @param actor - Actor performing the request (owner or admin).
-     * @param input - `{ userId, accommodationIds, page, pageSize, status?, search? }`.
+     * `accommodationId` narrows the scope to one accommodation. It is
+     * INTERSECTED with `accommodationIds`, never added to it: an id outside
+     * the caller's scope yields an empty page, not another owner's data.
+     *
+     * @param input - `{ userId, accommodationIds, page, pageSize, status?, search?, accommodationId? }`.
      * @param ctx - Optional service context.
      * @returns ServiceOutput wrapping `ConversationListResult`.
      *
@@ -985,6 +990,7 @@ export class ConversationService extends BaseService {
             pageSize?: number;
             status?: string;
             search?: string;
+            accommodationId?: string;
         },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<ConversationListResult>> {
@@ -994,7 +1000,13 @@ export class ConversationService extends BaseService {
             schema: ListForOwnerInputSchema,
             ctx,
             execute: async (validated) => {
-                if (validated.accommodationIds.length === 0) {
+                const scopedIds =
+                    validated.accommodationId === undefined
+                        ? validated.accommodationIds
+                        : validated.accommodationIds.filter(
+                              (id) => id === validated.accommodationId
+                          );
+                if (scopedIds.length === 0) {
                     return {
                         items: [],
                         total: 0,
@@ -1004,7 +1016,7 @@ export class ConversationService extends BaseService {
                 }
 
                 const { items, total } = await this.conversationModel.listByAccommodationIds(
-                    validated.accommodationIds,
+                    scopedIds,
                     {
                         page: validated.page,
                         pageSize: validated.pageSize,
