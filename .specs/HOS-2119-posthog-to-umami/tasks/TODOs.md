@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 16/74 tasks (22%)
+## Progress: 18/74 tasks (24%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -102,7 +102,7 @@ Tracks (can run in parallel):
   - Blocked by: none
   - Blocks: T-012, T-014, T-015, T-021, T-046
 
-- [ ] **T-012** (complexity: 3) - T-1 Register PUBLIC_UMAMI_* web client env vars (registry, web Zod schema, .env.example, Dockerfile build args, turbo)
+- [x] **T-012** (complexity: 3) - T-1 Register PUBLIC_UMAMI_* web client env vars (registry, web Zod schema, .env.example, Dockerfile build args, turbo)
   - Tags: t1-infra, config, web, release-env-var-change
   - Same env-var rule as T-011 for the web client. Blocked by T-011 only to avoid conflicting edits to t...
   - Blocked by: T-011
@@ -360,7 +360,7 @@ Tracks (can run in parallel):
 
 ### Testing Phase
 
-- [ ] **T-025** (complexity: 3) - T-2 Add an api-level parity test: every server call site emits the same event name and properties via the Umami client
+- [x] **T-025** (complexity: 3) - T-2 Add an api-level parity test: every server call site emits the same event name and properties via the Umami client
   - Tags: t2-adapter, testing, api
   - AC-2 unit/integration part: payload per catalog event reaching the Umami batch endpoint, with the re...
   - Blocked by: T-022, T-023, T-024
