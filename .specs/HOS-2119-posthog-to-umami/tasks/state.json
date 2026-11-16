@@ -1739,43 +1739,43 @@
             "id": "T-048",
             "title": "T-5 Add GET /api/v1/protected/views/:entityType/:entityId/traffic-stats for accommodation, venue and experience",
             "description": "Files: apps/api/src/routes/views/protected/traffic-stats.ts, index.ts, apps/api/test/routes/views/protected/traffic-stats.test.ts. Follow apps/api/docs/error-contract.md (auth 401, permission 403, input 400, ownership 404, no 4xx as INTERNAL_ERROR). Permission/entitlement per the T-005 finding. Tests (AC-7, AC-8): own listing 200 with data for ACCOMMODATION, VENUE, EXPERIENCE; foreign listing 404; unauthenticated 401; bad window 400; Umami client rejecting or exceeding 3s returns 200 available:false within budget. PARTNER is added in T-049.\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Authorization follows the existing owner-stats routes, not resolveListingAccess (which does not know PARTNER and is not used by current stats routes): enforceUserGate with the view_basic_stats key plus ownership via findIdsByOwnerId; a foreign listing answers 404.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-045", "T-046", "T-047", "T-005"],
             "blocks": ["T-049", "T-052", "T-053"],
             "subtasks": [
                 {
                     "title": "Create apps/api/src/routes/views/protected/traffic-stats.ts with createProtectedRoute; register it in apps/api/src/routes/views/protected/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Authorize via resolveListingAccess / enforceListingAccess (apps/api/src/middlewares/listing-access.ts); someone else's listing answers 404 (never 403), the permission gate runs before the row lookup",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Query ?window=7d|30d|90d validated with the T-044 schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Umami failure answers 200 with available:false",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire the service with the real UmamiStatsClient and cache",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T02:57:09Z",
+                "completed": "2026-11-16T03:18:17Z"
             }
         },
         {
@@ -1851,7 +1851,7 @@
         {
             "id": "T-051",
             "title": "T-5 Create the web traffic-stats client and the shared TrafficStatsCards island",
-            "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.\n\nNOTES 2026-11-15 (T-046 review): (1) Umami never returns direct traffic in the referrer breakdown, so the i18n string traffic.referrers.direct can never render as-is — owner decision pending: compute direct = total visitors - sum(referrers) (recommended) or drop the string. (2) Umami device values include `laptop` (desktop|laptop|tablet|mobile); the copy has no laptop label. (3) Breakdown counts are distinct visitors; views are pageviews.",
+            "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.\n\nNOTES 2026-11-15 (T-046 review): (1) Umami never returns direct traffic in the referrer breakdown, so the i18n string traffic.referrers.direct can never render as-is — owner decision pending: compute direct = total visitors - sum(referrers) (recommended) or drop the string. (2) Umami device values include `laptop` (desktop|laptop|tablet|mobile); the copy has no laptop label. (3) Breakdown counts are distinct visitors; views are pageviews.\n\nOWNER DECISION 2026-11-15: direct traffic IS shown, computed server-side as max(0, total distinct visitors - sum(referrer visitors)) and rendered with traffic.referrers.direct (implemented in ListingTrafficStatsService + UmamiStatsClient, see follow-up commit).\n\nMEASURED 2026-11-16: Umami hides same-site referrers (tracker rewrites same-origin referrer to a path; metrics omit it), so the derived (direct) row ALSO includes internal navigation within Hospeda. Label pending owner decision.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-044", "T-050"],
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 52,
+        "pending": 51,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.5
     }

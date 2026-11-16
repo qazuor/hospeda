@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 22/74 tasks (30%)
+## Progress: 23/74 tasks (31%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -310,7 +310,7 @@ Tracks (can run in parallel):
   - Blocked by: T-041, T-008, T-009
   - Blocks: none
 
-- [ ] **T-048** (complexity: 3) - T-5 Add GET /api/v1/protected/views/:entityType/:entityId/traffic-stats for accommodation, venue and experience
+- [x] **T-048** (complexity: 3) - T-5 Add GET /api/v1/protected/views/:entityType/:entityId/traffic-stats for accommodation, venue and experience
   - Tags: t5-owner-stats, api
   - Files: apps/api/src/routes/views/protected/traffic-stats.ts, index.ts, apps/api/test/routes/views/pr...
   - Blocked by: T-045, T-046, T-047, T-005
