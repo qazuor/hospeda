@@ -7,7 +7,6 @@
  * accommodations (anti-enumeration pattern).
  */
 
-import { accommodations, conversations, getDb } from '@repo/db';
 import {
     CreateMessageSchema,
     MessageSchema,
@@ -15,10 +14,11 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import { MessageService } from '@repo/service-core';
-import { and, eq, inArray } from 'drizzle-orm';
+import { ConversationService, MessageService } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core/types';
 import { getActorFromContext } from '../../../../utils/actor';
 import { createRouter } from '../../../../utils/create-app';
+import { env } from '../../../../utils/env';
 import { apiLogger } from '../../../../utils/logger';
 import {
     createErrorResponse,
@@ -28,6 +28,36 @@ import {
 import { SYSTEM_ACTOR } from './system-actor';
 
 const router = createRouter();
+
+/**
+ * Service error codes that are 4xx-class: their message is written for the
+ * caller and safe to show. Every other code (INTERNAL_ERROR,
+ * CONFIGURATION_ERROR, SERVICE_UNAVAILABLE, anything unknown) is 5xx-class and
+ * its message may carry internals (SQL, hostnames, config keys), so it is
+ * replaced by a generic text.
+ */
+const CLIENT_SAFE_ERROR_CODES: ReadonlySet<string> = new Set([
+    ServiceErrorCode.VALIDATION_ERROR,
+    ServiceErrorCode.INVALID_PAGINATION_PARAMS,
+    ServiceErrorCode.UNAUTHORIZED,
+    ServiceErrorCode.FORBIDDEN,
+    ServiceErrorCode.EMAIL_NOT_VERIFIED,
+    ServiceErrorCode.ALREADY_EXISTS,
+    ServiceErrorCode.QUOTA_EXCEEDED,
+    ServiceErrorCode.LIMIT_REACHED,
+    ServiceErrorCode.ENTITLEMENT_REQUIRED
+]);
+
+/** Generic text for a 5xx-class failure, the same one the API's fallback uses. */
+const GENERIC_ERROR_MESSAGE = 'An unexpected error occurred';
+
+const conversationSvc = new ConversationService(
+    { logger: apiLogger },
+    {
+        authSecret: env.HOSPEDA_BETTER_AUTH_SECRET,
+        siteUrl: env.HOSPEDA_SITE_URL
+    }
+);
 
 /**
  * POST /:id/messages
@@ -72,41 +102,27 @@ router.post('/:id/messages', async (c) => {
 
         const body = parseResult.data;
 
-        // Resolve owner accommodation IDs for ownership check
-        const db = getDb();
-        const accRows = await db
-            .select({ id: accommodations.id })
-            .from(accommodations)
-            .where(eq(accommodations.ownerId, actor.id));
-        const ownerAccommodationIds = accRows.map((r) => r.id);
+        // Lightweight ownership check (no getThread side effects): the
+        // conversation must exist AND belong to one of the owner's accommodations.
+        const ownership = await conversationSvc.findOwnedConversation(actor, { conversationId });
 
-        // Lightweight ownership check: verify conversation exists and belongs to
-        // one of the owner's accommodations WITHOUT triggering getThread side effects
-        // (lastReadAtByOwner update, notification cancellation).
-        if (ownerAccommodationIds.length === 0) {
-            return createErrorResponse(
-                {
-                    code: ServiceErrorCode.NOT_FOUND,
-                    message: 'Conversation not found',
-                    reason: 'CONVERSATION_NOT_FOUND'
-                },
-                c,
-                404
+        // Only "not yours / not there" answers 404. Any other service failure keeps
+        // its own status (error-contract.md: a 5xx is never masked as 404).
+        if (
+            ownership.error &&
+            ownership.error.code !== ServiceErrorCode.NOT_FOUND &&
+            ownership.error.code !== ServiceErrorCode.FORBIDDEN
+        ) {
+            // Keep the status, but never echo a 5xx-class message: it can carry internals.
+            throw new ServiceError(
+                ownership.error.code,
+                CLIENT_SAFE_ERROR_CODES.has(ownership.error.code)
+                    ? ownership.error.message
+                    : GENERIC_ERROR_MESSAGE
             );
         }
 
-        const convRows = await db
-            .select({ id: conversations.id })
-            .from(conversations)
-            .where(
-                and(
-                    eq(conversations.id, conversationId),
-                    inArray(conversations.accommodationId, ownerAccommodationIds)
-                )
-            )
-            .limit(1);
-
-        if (convRows.length === 0) {
+        if (ownership.error || !ownership.data) {
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.NOT_FOUND,

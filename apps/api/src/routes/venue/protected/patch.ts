@@ -18,7 +18,6 @@
  */
 
 import {
-    sectionsTouchedByBody,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     VenueProtectedSchema,
@@ -29,6 +28,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
+import { venueOwnerEditSections } from '../../../utils/listing-access/owner-edit-listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -50,11 +50,8 @@ export const protectedPatchVenueRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        listingSection: ({ body }) =>
-            sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
-                id,
-                intent: 'write' as const
-            }))
+        // Shared with the `update_listing_basic` MCP tool (HOS-2184).
+        listingSection: venueOwnerEditSections
     },
     summary: 'Update venue listing (owner)',
     description: 'Partially updates operational fields of a venue listing. Requires ownership.',

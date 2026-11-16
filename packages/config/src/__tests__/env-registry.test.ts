@@ -310,8 +310,13 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE (billing category, api only) — the
  * Mercado Pago traffic governor's kill switch and rollout mode (HOS-1999).
  * 276 + 1 = 277.
+ *
+ * +4 = HOSPEDA_MCP_ENABLED, HOSPEDA_MCP_RESOURCE_URL,
+ * HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS and HOSPEDA_MCP_RATE_LIMIT_MAX (features
+ * category, api only) — the MCP server's switch, audience URL and rate limit
+ * (HOS-2184). 277 + 4 = 281.
  */
-const EXPECTED_VAR_COUNT = 277;
+const EXPECTED_VAR_COUNT = 287;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

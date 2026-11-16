@@ -96,6 +96,16 @@ pnpm env:check
 | Variable | Type | Required | Secret | Default | Description |
 |----------|------|----------|--------|---------|-------------|
 | `HOSPEDA_MAX_COLLECTIONS_PER_USER` | number | no | no | `10` | Maximum active collections per user. Soft-deleted excluded. Range 1–10000. |
+| `HOSPEDA_MCP_ENABLED` | boolean | no | no | `false` | Master switch for the MCP server and its OAuth surface (HOS-2184). Endpoints are not mounted when false |
+| `HOSPEDA_MCP_RESOURCE_URL` | url | no | no | - | Canonical public MCP URL (OAuth token audience). Optional while the server is disabled; **required** when `HOSPEDA_MCP_ENABLED=true` |
+| `HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS` | number | no | no | `60000` | MCP rate-limit window in milliseconds |
+| `HOSPEDA_MCP_RATE_LIMIT_MAX` | number | no | no | `60` | Maximum MCP requests per rate-limit window |
+| `HOSPEDA_MCP_IP_RATE_LIMIT_WINDOW_MS` | number | no | no | `900000` | Per-IP safety-ceiling window for `/mcp` and `/.well-known/*` (HOS-2184) |
+| `HOSPEDA_MCP_IP_RATE_LIMIT_MAX` | number | no | no | `10000` | Per-IP safety ceiling for `/mcp` and `/.well-known/*` per window. The governor is the per-(client, user) limiter above |
+| `HOSPEDA_MCP_OAUTH_RATE_LIMIT_WINDOW_MS` | number | no | no | `300000` | Per-IP window of the OAuth `token`, `revoke` and `introspect` tier |
+| `HOSPEDA_MCP_OAUTH_RATE_LIMIT_MAX` | number | no | no | `1000` | Per-IP ceiling of the OAuth `token`, `revoke` and `introspect` tier per window (login keeps 50 per 5 min) |
+| `HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_WINDOW_MS` | number | no | no | `3600000` | Per-IP window of the OAuth dynamic client registration tier |
+| `HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_MAX` | number | no | no | `100` | Per-IP ceiling of dynamic client registration per window (open endpoint, one row per call) |
 
 ### Cron, Integrations, Monitoring (HOSPEDA_)
 

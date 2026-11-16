@@ -41,9 +41,13 @@ import { env } from '../utils/env';
 import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
+import { buildMcpOAuthConfig } from './auth-mcp-oauth';
+import { getMcpOAuthAdapterSchema } from './auth-mcp-oauth-schema';
+import { recordPasswordResetForAiConnections } from './auth-password-reset-ai-review';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
+import { AUTH_BASE_PATH } from './mcp-well-known';
 import { captureServerAnalyticsEvent } from './posthog';
 import { resolveSessionAuthMethod } from './session-auth-method';
 import { resolveVerificationUrl } from './verification-callback';
@@ -180,10 +184,20 @@ function buildAuth() {
         );
     }
 
+    // HOS-2184: OAuth 2.1 authorization server for the MCP server. With
+    // HOSPEDA_MCP_ENABLED off this is empty and the options below are exactly
+    // what they were before (no extra plugin, no `disabledPaths` key).
+    const mcpOAuth = buildMcpOAuthConfig({
+        enabled: env.HOSPEDA_MCP_ENABLED,
+        resourceUrl: env.HOSPEDA_MCP_RESOURCE_URL,
+        siteUrl: env.HOSPEDA_SITE_URL
+    });
+
     return betterAuth({
         secret,
         baseURL,
-        basePath: '/api/auth',
+        basePath: AUTH_BASE_PATH,
+        ...(mcpOAuth.enabled ? { disabledPaths: [...mcpOAuth.disabledPaths] } : {}),
 
         database: drizzleAdapter(getDb(), {
             provider: 'pg',
@@ -191,7 +205,10 @@ function buildAuth() {
                 user: users,
                 session: sessions,
                 account: accounts,
-                verification: verifications
+                verification: verifications,
+                // HOS-2184: the jwt() + oauthProvider() tables, only when those
+                // plugins are registered (flag off → the four core tables only).
+                ...(mcpOAuth.enabled ? getMcpOAuthAdapterSchema() : {})
             }
         }),
 
@@ -277,6 +294,13 @@ function buildAuth() {
                     hash: string;
                     password: string;
                 }) => compare(password, storedHash)
+            },
+            // HOS-2184: fires only for the forgot-password reset (never for a
+            // change-password while signed in). When the user has AI assistants
+            // connected it records the reset so the web can OFFER, on the next
+            // login, to disconnect them. Never throws and never disconnects.
+            onPasswordReset: async ({ user }) => {
+                await recordPasswordResetForAiConnections({ userId: user.id });
             },
             sendResetPassword: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
@@ -576,7 +600,12 @@ function buildAuth() {
              *
              * @see apps/mobile/docs/auth-spike.md — SPEC-243 T-003 auth spike doc
              */
-            expo()
+            expo(),
+            /**
+             * HOS-2184: `jwt`, `oauthProvider` and `cimd`, only when
+             * HOSPEDA_MCP_ENABLED is on. See `./auth-mcp-oauth.ts`.
+             */
+            ...mcpOAuth.plugins
         ],
 
         advanced: {

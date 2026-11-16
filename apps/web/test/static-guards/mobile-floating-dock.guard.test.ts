@@ -49,6 +49,7 @@ const FIXED_POSITION_FILES: Readonly<Record<string, FixedPositionCategory>> = Ob
     'components/accommodation/AiChatWidget.module.css': 'overlay',
     'components/legal/CookieConsentBanner.module.css': 'bottom-bar',
     'components/ui/ToastViewport.module.css': 'bottom-bar',
+    'components/shared/ai-assistants/AiResetReviewPrompt.module.css': 'bottom-bar',
     'components/auth/AuthRequiredPopover.module.css': 'overlay',
     'components/presentacion/PresentationThemeToggle.astro': 'top',
     'components/shared/dock/MobileDock.astro': 'dock',

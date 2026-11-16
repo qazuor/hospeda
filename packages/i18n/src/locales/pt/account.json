@@ -140,6 +140,7 @@
         "preferences": "Preferências",
         "newsletter": "Newsletter",
         "whatsNew": "O que há de novo",
+        "aiAssistants": "Assistentes de IA",
         "favorites": "Favoritos",
         "searchHistory": "Histórico de buscas",
         "alerts": "Alertas de preço",
@@ -360,6 +361,54 @@
             "title": "Resumo semanal de perguntas à IA",
             "label": "Receber o resumo semanal",
             "description": "Um e-mail às segundas com as perguntas que o assistente dos seus anúncios não conseguiu responder. Se não houver nenhuma, não enviamos."
+        }
+    },
+    "aiAssistants": {
+        "title": "Assistentes de IA",
+        "description": "Conecte assistentes de IA à sua conta da Hospeda e gerencie os que você já conectou.",
+        "connect": {
+            "title": "Como conectar um assistente",
+            "intro": "No Claude, ChatGPT, Gemini ou outro assistente compatível com MCP, adicione um conector personalizado e cole este endereço. Depois entre na Hospeda e aprove o acesso.",
+            "urlLabel": "Endereço do servidor MCP",
+            "copy": "Copiar",
+            "copied": "Copiado",
+            "copyFailed": "Não conseguimos copiar. Selecione e copie manualmente."
+        },
+        "capabilitiesTitle": "Um assistente conectado pode",
+        "list": {
+            "title": "Assistentes conectados",
+            "loading": "Carregando seus assistentes...",
+            "empty": "Você ainda não conectou nenhum assistente.",
+            "unnamed": "Assistente sem nome",
+            "connectedAt": "Conectado em {{date}}",
+            "lastUsed": "Último uso aproximado: {{date}}",
+            "neverUsed": "Sem uso registrado"
+        },
+        "disconnect": {
+            "action": "Desconectar",
+            "ariaLabel": "Desconectar {{name}}",
+            "confirmTitle": "Desconectar {{name}}?",
+            "confirmBody": "Ele perde o acesso à sua conta imediatamente. Você pode conectá-lo de novo quando quiser.",
+            "confirm": "Sim, desconectar",
+            "cancel": "Cancelar"
+        },
+        "errors": {
+            "loadFailed": "Não conseguimos carregar seus assistentes. Tente novamente.",
+            "retry": "Tentar novamente",
+            "disconnectFailed": "Não conseguimos desconectar o assistente. Tente novamente."
+        },
+        "paused": "A conexão de novos assistentes está pausada por enquanto. Você ainda pode desconectar os que já tem.",
+        "unavailable": "A conexão de assistentes de IA ainda não está disponível.",
+        "resetReview": {
+            "title": "Assistentes de IA conectados",
+            "body": "Você alterou sua senha. Você tem {{count}} assistentes de IA conectados de antes. Quer desconectá-los também?",
+            "body_one": "Você alterou sua senha. Você tem {{count}} assistente de IA conectado de antes. Quer desconectá-lo também?",
+            "body_other": "Você alterou sua senha. Você tem {{count}} assistentes de IA conectados de antes. Quer desconectá-los também?",
+            "revoke": "Desconectar assistentes",
+            "keep": "Manter",
+            "link": "Ver meus assistentes de IA",
+            "revoked": "Desconectamos seus assistentes de IA.",
+            "failed": "Não foi possível salvar sua resposta. Tente novamente."
         }
     },
     "subscription": {

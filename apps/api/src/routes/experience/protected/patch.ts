@@ -21,8 +21,6 @@ import {
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
     ExperienceProtectedSchema,
-    sectionsTouchedByBody,
-    sectionTraitsTouchedByBody,
     VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService } from '@repo/service-core';
@@ -35,6 +33,10 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import {
+    experienceOwnerEditSections,
+    experienceOwnerEditSectionTraits
+} from '../../../utils/listing-access/owner-edit-listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -65,12 +67,9 @@ export const protectedPatchExperienceRoute = createProtectedRoute({
         vertical: VerticalEnum.EXPERIENCE,
         operation: 'EDIT',
         idParam: 'id',
-        listingSection: ({ body }) =>
-            sectionsTouchedByBody({ vertical: 'experience', body }).map((id) => ({
-                id,
-                intent: 'write' as const
-            })),
-        sectionTraits: ({ body }) => sectionTraitsTouchedByBody({ vertical: 'experience', body })
+        // Shared with the `update_listing_basic` MCP tool (HOS-2184).
+        listingSection: experienceOwnerEditSections,
+        sectionTraits: experienceOwnerEditSectionTraits
     },
     summary: 'Update experience listing (owner)',
     description:

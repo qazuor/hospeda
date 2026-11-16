@@ -55,6 +55,7 @@ export * from './accommodation-import/index.js';
 export { computeAccommodationReviewAverage } from './accommodationReview/accommodationReview.helpers';
 export * from './accommodationReview/accommodationReview.service';
 export type { AccommodationReviewHookState } from './accommodationReview/accommodationReview.types';
+export * from './aiConnection/index.js';
 export * from './alert';
 export * from './alliance-lead';
 export * from './amenity/amenity.service';

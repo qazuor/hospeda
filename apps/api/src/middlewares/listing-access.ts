@@ -2,6 +2,7 @@ import { UserModel } from '@repo/db';
 import type { BusinessLine } from '@repo/schemas';
 import { NO_PLANS_AVAILABLE_MESSAGE, ServiceErrorCode } from '@repo/schemas';
 import {
+    type Actor,
     isSystemActor,
     runWithAdministrativeAuthorization,
     ServiceError
@@ -18,7 +19,7 @@ import { setRequestContextActionReason } from '../lib/request-context';
 import { resolveSubscribeDestinationForUser } from '../services/listing-publication/subscribe-destination.service';
 import type { ListingAccessConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
-import { getListingAccessPorts } from '../utils/listing-access/ports';
+import { getListingAccessPorts, type ListingAccessPorts } from '../utils/listing-access/ports';
 import { apiLogger } from '../utils/logger';
 import { incrementDomainCounter } from './metrics';
 
@@ -50,7 +51,8 @@ type ListingSectionDeclaration = {
     readonly id: string;
     readonly intent: 'read' | 'write' | 'delete';
 };
-type ListingAccessWithSections = ListingAccessConfig & {
+/** A route's listing-access declaration, sections and body-derived traits included. */
+export type ListingAccessWithSections = ListingAccessConfig & {
     readonly listingSection?:
         | ListingSectionDeclaration
         | ((args: {
@@ -138,20 +140,69 @@ export function runListingContentCall<T>(input: {
     });
 }
 
-/** Enforce a listing decision inside a validated route handler. */
-export async function enforceListingAccess(args: {
-    ctx: Context;
-    params: Record<string, unknown>;
-    config: ListingAccessWithSections;
-    tier: 'protected' | 'admin';
-    body?: Record<string, unknown>;
-}): Promise<void> {
-    const { ctx, params, config, tier, body } = args;
-    const actor = getActorFromContext(ctx);
+/** The verdict of {@link resolveListingAccess}, as this module consumes it. */
+export type ListingAccessVerdict = Awaited<ReturnType<typeof resolveListingAccess>>;
+
+/** Arguments for {@link decideListingAccess}. RO-RO. */
+export interface DecideListingAccessArgs {
+    /** The caller. A guest is handed to the resolver as `actorId: null`. */
+    readonly actor: Actor;
+    /** The listing the call targets; ignored (and may be `''`) for CREATE. */
+    readonly listingId: string;
+    /** The route's listing-access declaration. */
+    readonly config: ListingAccessWithSections;
+    /** Route tier; decides whether a foreign actor without the action's permission reaches step 3. */
+    readonly tier: 'protected' | 'admin';
+    /** The validated body, for body-dependent sections, traits, keys and business lines. */
+    readonly body?: Record<string, unknown>;
+    /**
+     * Never evaluate an administrative action: a listing the actor does not own
+     * is decided by step 4 alone, i.e. NOT_FOUND, even for staff holding the
+     * action's permission. The owner's assistant tools (HOS-2184) pass `true`;
+     * HTTP routes never do.
+     */
+    readonly ownerOnly?: boolean;
+    /** Request context; only read by a route-declared `limit` (Hono-bound by its type). */
+    readonly ctx?: Context;
+}
+
+/** The outcome of {@link decideListingAccess} when the resolver ran. */
+export interface ListingAccessDecision {
+    /** The resolver's verdict. */
+    readonly result: ListingAccessVerdict;
+    /** Listing facts read for the decision (`null` for CREATE or a missing row). */
+    readonly facts: Awaited<ReturnType<ListingAccessPorts['loadFacts']>>['facts'];
+    /** The administrative action evaluated at step 3, when any. */
+    readonly adminAction: { readonly permitted: boolean } | undefined;
+    /** The route's administrative action (`ACC_15` by default). */
+    readonly action: NonNullable<ListingAccessConfig['administrativeAction']>;
+    /** The user steps 5 to 7 ran on. */
+    readonly subjectId: string | null;
+    /** The ports the decision read through. */
+    readonly ports: ListingAccessPorts;
+}
+
+/**
+ * Runs the listing authorization pipeline (`resolveListingAccess`) for one
+ * call, without touching a request context: loads the listing facts, resolves
+ * the administrative action, sections, traits, business lines and limit, and
+ * returns the verdict. {@link enforceListingAccess} is its HTTP wrapper; the
+ * owner's MCP tools call it directly so an edit through the assistant is
+ * authorized exactly like the route it mirrors (HOS-2184).
+ *
+ * @param args - Actor, listing id, route declaration, tier and body
+ * @returns The decision, or `null` when an own create declares nothing to check
+ * @throws {HTTPException} 404 when a foreign CREATE names an owner that does not exist
+ * @throws {Error} when the declaration has a `limit` and no `ctx` was given
+ */
+export async function decideListingAccess(
+    args: DecideListingAccessArgs
+): Promise<ListingAccessDecision | null> {
+    const { actor, listingId: rawListingId, config, tier, body, ownerOnly = false, ctx } = args;
     // The API guest carries a real UUID; the resolver's step 1 recognises a
     // guest only as `actorId: null` (V5.7).
     const actorId = isGuestActor(actor) ? null : actor.id;
-    const listingId = config.operation === 'CREATE' ? '' : String(params[config.idParam ?? 'id']);
+    const listingId = config.operation === 'CREATE' ? '' : rawListingId;
     // A route that declares its administrative action (ACC_23) is that action
     // even on the actor's own listing, so step 3 refuses actor = subject
     // instead of letting the owner path run it (AC:V8a:13 edge).
@@ -170,8 +221,12 @@ export async function enforceListingAccess(args: {
     if (config.createSubjectFromBody && createSubjectId === null) {
         if (config.ownCreatePermission && !actor.permissions.includes(config.ownCreatePermission))
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
-        if (requestedSections.length === 0) return;
+        if (requestedSections.length === 0) return null;
     }
+    // `ownerOnly` drops step 3; a route whose action IS administrative (ACC_23,
+    // ACC_27) would then be decided as a plain owner call, which it is not.
+    if (ownerOnly && config.administrativeAction !== undefined)
+        throw new Error('ownerOnly cannot decide a route that declares an administrative action');
     // Resolved only past the own-create exit: an own create never reads the
     // ports, so building them (and the real coverage reader) is not its cost.
     const ports = getListingAccessPorts();
@@ -191,20 +246,25 @@ export async function enforceListingAccess(args: {
         action,
         actorPermissions: actor.permissions
     });
-    const adminAction = isForeign
-        ? hasActionPermission
-            ? { action, permitted: true, isSystemActor: isSystemActor(actor) }
-            : tier === 'admin'
-              ? { action, permitted: false, isSystemActor: isSystemActor(actor) }
-              : undefined
-        : undefined;
+    const adminAction =
+        isForeign && !ownerOnly
+            ? hasActionPermission
+                ? { action, permitted: true, isSystemActor: isSystemActor(actor) }
+                : tier === 'admin'
+                  ? { action, permitted: false, isSystemActor: isSystemActor(actor) }
+                  : undefined
+            : undefined;
     if (adminAction?.permitted && createSubjectId !== null) {
         const owner = await new UserModel().findById(createSubjectId);
         if (!owner || owner.deletedAt) throw new HTTPException(404, { message: 'Owner not found' });
     }
     const subjectId = adminAction?.permitted ? (createSubjectId ?? ownerId) : actorId;
+    if (config.limit && !ctx)
+        throw new Error('A listing-access limit needs the request context to be evaluated');
     const limit =
-        config.limit && subjectId ? await config.limit({ ctx, listingId, subjectId }) : undefined;
+        config.limit && subjectId && ctx
+            ? await config.limit({ ctx, listingId, subjectId })
+            : undefined;
     // Resolve route-level capabilities (HOS-1643): array as-is, function with body.
     const requiredKeys =
         typeof config.capabilities === 'function'
@@ -285,6 +345,28 @@ export async function enforceListingAccess(args: {
         effectiveSet: ports.effectiveSet,
         preTrialDraftLimits: ports.preTrialDraftLimits
     });
+    return { result, facts, adminAction, action, subjectId, ports };
+}
+
+/** Enforce a listing decision inside a validated route handler. */
+export async function enforceListingAccess(args: {
+    ctx: Context;
+    params: Record<string, unknown>;
+    config: ListingAccessWithSections;
+    tier: 'protected' | 'admin';
+    body?: Record<string, unknown>;
+}): Promise<void> {
+    const { ctx, params, config, tier, body } = args;
+    const decision = await decideListingAccess({
+        actor: getActorFromContext(ctx),
+        listingId: config.operation === 'CREATE' ? '' : String(params[config.idParam ?? 'id']),
+        config,
+        tier,
+        body,
+        ctx
+    });
+    if (decision === null) return;
+    const { result, facts, adminAction, action, subjectId, ports } = decision;
     if (result.allowed) {
         // H6: the reason is recorded only once the administrative action is permitted.
         if (adminAction?.permitted) {
@@ -303,6 +385,24 @@ export async function enforceListingAccess(args: {
         });
         return;
     }
+    await throwListingAccessRefusal({ config, result, subjectId, ports });
+}
+
+/**
+ * Throws the HTTP error of a refused listing-access verdict: the status and
+ * code each refusal maps to (`docs/error-contract.md`). NOT_FOUND is an
+ * `HTTPException(404)`; every other refusal is a `ServiceError`.
+ *
+ * @param args - Route declaration, the refused verdict, the decision's subject and ports
+ * @throws Always
+ */
+export async function throwListingAccessRefusal(args: {
+    readonly config: ListingAccessConfig;
+    readonly result: Extract<ListingAccessVerdict, { readonly allowed: false }>;
+    readonly subjectId: string | null;
+    readonly ports: ListingAccessPorts;
+}): Promise<never> {
+    const { config, result, subjectId, ports } = args;
     const reason = result.reason;
     switch (reason) {
         case 'UNAUTHENTICATED':

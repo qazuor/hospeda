@@ -17,7 +17,12 @@
  * that surface membership alone can't express.
  */
 
-import { ACCOUNT_NAV_GROUPS, getNavForSurface, type NavItem } from '@/config/navigation';
+import {
+    ACCOUNT_NAV_GROUPS,
+    AI_ASSISTANTS_NAV_ITEM_ID,
+    getNavForSurface,
+    type NavItem
+} from '@/config/navigation';
 import { isVisibleByPermissions } from '@/lib/nav-gating';
 
 /**
@@ -96,6 +101,11 @@ export function pickBusinessShortcut({
 export interface GetCuratedAccountNavParams {
     /** The user's effective permission strings (pass `[]` while loading — fail-closed). */
     readonly permissions: readonly string[];
+    /**
+     * Append the "Asistentes de IA" entry (HOS-2184 T-028). The caller decides
+     * with `useAiAssistantsEntry`; it is not permission-gated.
+     */
+    readonly includeAiAssistants?: boolean;
 }
 
 /** Output of `getCuratedAccountNav`. */
@@ -116,7 +126,8 @@ export interface CuratedAccountNav {
  * @returns `{ dashboardItem, shortcutItems }`.
  */
 export function getCuratedAccountNav({
-    permissions
+    permissions,
+    includeAiAssistants = false
 }: GetCuratedAccountNavParams): CuratedAccountNav {
     const { groups } = getNavForSurface({
         surface: 'avatar',
@@ -131,9 +142,16 @@ export function getCuratedAccountNav({
     const subscriptionItem = findItem('subscription');
     const { item: businessShortcut } = pickBusinessShortcut({ permissions });
 
-    const shortcutItems = [favoritesItem, businessShortcut, subscriptionItem].filter(
-        (item): item is NavItem => item !== null
-    );
+    const aiAssistantsItem = includeAiAssistants
+        ? (findAccountNavItemById(AI_ASSISTANTS_NAV_ITEM_ID) ?? null)
+        : null;
+
+    const shortcutItems = [
+        favoritesItem,
+        businessShortcut,
+        subscriptionItem,
+        aiAssistantsItem
+    ].filter((item): item is NavItem => item !== null);
 
     return { dashboardItem, shortcutItems };
 }
