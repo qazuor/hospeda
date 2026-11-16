@@ -45,6 +45,9 @@ import { readLatestListingReviews } from './listing-stats-readers';
 /** Periods the panel offers for views. */
 export const LISTING_STATS_PERIODS = ['7d', '30d'] as const;
 
+/** Days in each period. */
+export const LISTING_STATS_PERIOD_DAYS = { '7d': 7, '30d': 30 } as const;
+
 /** Latest reviews returned with the stats. */
 export const LISTING_STATS_LATEST_REVIEWS = 3;
 
@@ -208,7 +211,7 @@ async function readReviews(input: {
 export const getListingStatsTool = defineTool({
     name: 'get_listing_stats',
     title: 'Estadísticas de la publicación',
-    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7 or 30 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (null when the previous period had no views). Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Requires the plan's basic stats; without it the call is refused with "Tu plan no incluye estadísticas". Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period; only with the plan's advanced stats, otherwise left out and "omitted": {"favorites": "not_in_plan"} says why), "inquiries" (guest inquiries per calendar month, this month and the previous one) and "responseTime" (reply rate in percent and average minutes to the first reply, all time). Inquiries and responseTime cover ALL the owner's accommodations, not just this one (their scope says so), and are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7 or 30 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (null when the previous period had no views). Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Requires the plan's basic stats; without it the call is refused with "Tu plan no incluye estadísticas". Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period; only with the plan's advanced stats, otherwise left out and "omitted": {"favorites": "not_in_plan"} says why), "inquiriesThisListing" (inquiries THIS accommodation received in the selected period) and "allMyAccommodations" (scope all_my_accommodations: inquiries per calendar month, this month and the previous one, plus reply rate in percent and average minutes to the first reply, all time; these cover ALL the owner's accommodations, never present them as this listing's). Inquiries figures are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: GetListingStatsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
@@ -260,7 +263,13 @@ export const getListingStatsTool = defineTool({
             }),
             readReviews({ vertical, row }),
             isAccommodation
-                ? readAccommodationStatsExtras({ actor, listingId: row.id, includeFavorites })
+                ? readAccommodationStatsExtras({
+                      actor,
+                      listingId: row.id,
+                      period,
+                      windowDays: LISTING_STATS_PERIOD_DAYS[period],
+                      includeFavorites
+                  })
                 : undefined
         ]);
         if (viewsResult.error) {

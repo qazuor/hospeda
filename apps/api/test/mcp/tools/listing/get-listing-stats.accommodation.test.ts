@@ -95,6 +95,7 @@ function givenOwnListing(vertical: keyof typeof SERVICES): void {
 
 const monthly = vi.fn();
 const responseRate = vi.fn();
+const listingInquiries = vi.fn();
 
 const run = (vertical: string) =>
     runTool({
@@ -117,6 +118,11 @@ describe('get_listing_stats accommodation extras', () => {
         responseRate.mockResolvedValue({
             data: { responseRatePct: 83.3, avgResponseTimeMinutes: 47 }
         });
+        listingInquiries.mockResolvedValue({ data: { count: 3 } });
+        vi.spyOn(
+            ConversationService.prototype,
+            'countInquiriesForOwnAccommodation'
+        ).mockImplementation(listingInquiries);
         vi.spyOn(ConversationService.prototype, 'getHostMonthlyInquiries').mockImplementation(
             monthly
         );
@@ -127,7 +133,7 @@ describe('get_listing_stats accommodation extras', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
-        for (const fn of [countBookmarks, monthly, responseRate, effectiveKeys]) {
+        for (const fn of [countBookmarks, monthly, responseRate, listingInquiries, effectiveKeys]) {
             fn.mockReset();
         }
     });
@@ -146,22 +152,24 @@ describe('get_listing_stats accommodation extras', () => {
         });
         expect(monthly).toHaveBeenCalledWith(actor, { months: LISTING_STATS_INQUIRY_MONTHS });
         expect(responseRate).toHaveBeenCalledWith(actor);
+        expect(listingInquiries).toHaveBeenCalledWith(actor, {
+            accommodationId: LISTING_ID,
+            windowDays: 30
+        });
         expect(outcome).toMatchObject({
             ok: true,
             data: {
                 accommodation: {
                     favorites: 7,
-                    inquiries: {
+                    inquiriesThisListing: { period: '30d', count: 3 },
+                    allMyAccommodations: {
                         scope: 'all_my_accommodations',
-                        byMonth: [
+                        inquiriesByMonth: [
                             { month: '2026-05', count: 4 },
                             { month: '2026-06', count: 0 }
-                        ]
-                    },
-                    responseTime: {
-                        scope: 'all_my_accommodations',
+                        ],
                         responseRatePercent: 83.3,
-                        averageMinutes: 47
+                        averageResponseMinutes: 47
                     }
                 }
             }
@@ -197,7 +205,7 @@ describe('get_listing_stats accommodation extras', () => {
         expect(extras).not.toHaveProperty('favorites');
         expect(extras).toMatchObject({
             omitted: { favorites: 'not_in_plan' },
-            inquiries: { scope: 'all_my_accommodations' }
+            inquiriesThisListing: { count: 3 }
         });
     });
 
@@ -226,7 +234,9 @@ describe('get_listing_stats accommodation extras', () => {
         expect(outcome).toMatchObject({
             ok: true,
             data: {
-                accommodation: { responseTime: { responseRatePercent: 0, averageMinutes: null } }
+                accommodation: {
+                    allMyAccommodations: { responseRatePercent: 0, averageResponseMinutes: null }
+                }
             }
         });
     });
@@ -245,7 +255,7 @@ describe('get_listing_stats accommodation extras', () => {
         expect(outcome.ok).toBe(true);
         expect(outcome.ok && outcome.data).not.toHaveProperty('accommodation');
         expect(outcome.ok && JSON.stringify(outcome.data)).not.toMatch(
-            /favorites|inquiries|responseTime/
+            /favorites|inquiries|Inquiries|responseRate/
         );
         expect(countBookmarks).not.toHaveBeenCalled();
         expect(monthly).not.toHaveBeenCalled();
@@ -258,6 +268,7 @@ describe('get_listing_stats accommodation extras', () => {
         const forbidden = { error: new ServiceError(ServiceErrorCode.FORBIDDEN, 'no') };
         monthly.mockResolvedValue(forbidden);
         responseRate.mockResolvedValue(forbidden);
+        listingInquiries.mockResolvedValue(forbidden);
 
         // Act
         const outcome = await run('accommodation');
@@ -265,14 +276,45 @@ describe('get_listing_stats accommodation extras', () => {
         // Assert
         expect(outcome).toMatchObject({ ok: true, data: { accommodation: { favorites: 7 } } });
         const extras = outcome.ok ? outcome.data.accommodation : undefined;
-        expect(extras).not.toHaveProperty('inquiries');
-        expect(extras).not.toHaveProperty('responseTime');
+        expect(extras).not.toHaveProperty('inquiriesThisListing');
+        expect(extras).not.toHaveProperty('allMyAccommodations');
     });
 
     it('reports a failing conversation read as unexpected, not as zero', async () => {
         // Arrange
         givenOwnListing(VerticalEnum.ACCOMMODATION);
         responseRate.mockResolvedValue({
+            error: new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'db down')
+        });
+
+        // Act
+        const outcome = await run('accommodation');
+
+        // Assert
+        expect(outcome.ok ? undefined : outcome.failure.message).toBe(
+            TOOL_UNEXPECTED_ERROR_MESSAGE
+        );
+    });
+
+    it('keeps the per-listing count apart from the account-wide figures', async () => {
+        // Arrange
+        givenOwnListing(VerticalEnum.ACCOMMODATION);
+
+        // Act
+        const outcome = await run('accommodation');
+
+        // Assert
+        const extras = outcome.ok ? outcome.data.accommodation : undefined;
+        expect(extras?.inquiriesThisListing).toEqual({ period: '30d', count: 3 });
+        expect(extras?.allMyAccommodations?.scope).toBe('all_my_accommodations');
+        expect(extras?.allMyAccommodations).not.toHaveProperty('count');
+        expect(extras?.inquiriesThisListing).not.toHaveProperty('scope');
+    });
+
+    it('reports a failing per-listing count as unexpected, not as zero', async () => {
+        // Arrange
+        givenOwnListing(VerticalEnum.ACCOMMODATION);
+        listingInquiries.mockResolvedValue({
             error: new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'db down')
         });
 

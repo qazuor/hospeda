@@ -9,11 +9,15 @@
  * - favorites: `UserBookmarkService.countBookmarksForEntity` for this one
  *   accommodation (`routes/accommodation/protected/hostFavoritesBreakdown.ts`);
  *   soft-deleted bookmarks are excluded by the service;
+ * - inquiries of THIS accommodation in the period:
+ *   `ConversationService.countInquiriesForOwnAccommodation` (soft-deleted
+ *   conversations excluded), reported as `inquiriesThisListing`;
  * - inquiries per month and response rate / time:
  *   `ConversationService.getHostMonthlyInquiries` and `getHostResponseRate`
  *   (`routes/conversations/protected/{monthly-inquiries,response-rate}.ts`).
- *   Those two are computed over ALL the owner's accommodations, not this one,
- *   and the result says so in `scope`.
+ *   Those two are computed over ALL the owner's accommodations, not this one;
+ *   they live under `allMyAccommodations` with `scope`, apart from the
+ *   per-listing figure, so the two cannot be mixed up.
  *
  * Favorites need the `view_advanced_stats` entitlement, exactly as
  * `hostFavoritesBreakdown` requires; without it they are omitted and `omitted`
@@ -50,23 +54,26 @@ export interface AccommodationStatsExtras {
     /** Metrics left out of this block and why. Absent when nothing was left out. */
     readonly omitted?: { readonly favorites: 'not_in_plan' };
     /**
-     * Inquiries per calendar month over ALL the owner's accommodations (not only
-     * this one). Omitted when the owner may not read inquiries.
+     * Inquiries received by THIS accommodation alone in the selected period
+     * (same days as `views.current`). Omitted when the owner may not read inquiries.
      */
-    readonly inquiries?: {
-        readonly scope: 'all_my_accommodations';
-        readonly byMonth: readonly MonthlyInquiries[];
+    readonly inquiriesThisListing?: {
+        readonly period: string;
+        readonly count: number;
     };
     /**
-     * Reply speed over ALL the owner's accommodations, all time. Omitted when
-     * the owner may not read inquiries.
+     * Figures computed over ALL of the owner's accommodations, never over this
+     * one alone. Do not present them as this listing's. Omitted when the owner
+     * may not read inquiries.
      */
-    readonly responseTime?: {
+    readonly allMyAccommodations?: {
         readonly scope: 'all_my_accommodations';
-        /** Share of inquiries that got at least one owner reply, in percent (0 to 100). */
+        /** Inquiries per calendar month, the current one (so far) and the previous one. */
+        readonly inquiriesByMonth: readonly MonthlyInquiries[];
+        /** Reply rate in percent (0 to 100), all time. */
         readonly responseRatePercent: number;
-        /** Average minutes from the first guest message to the first reply; `null` while none was answered. */
-        readonly averageMinutes: number | null;
+        /** Average minutes from the first guest message to the first reply, all time; `null` while none was answered. */
+        readonly averageResponseMinutes: number | null;
     };
 }
 
@@ -84,15 +91,21 @@ export type AccommodationExtrasResult =
 export async function readAccommodationStatsExtras({
     actor,
     listingId,
+    period,
+    windowDays,
     includeFavorites
 }: {
     readonly actor: Actor;
     readonly listingId: string;
+    /** The selected period label (`7d`, `30d`, `90d`). */
+    readonly period: string;
+    /** Its length in days, the same window the views use. */
+    readonly windowDays: number;
     /** Whether the plan includes `view_advanced_stats`; favorites are read only then. */
     readonly includeFavorites: boolean;
 }): Promise<AccommodationExtrasResult> {
     const conversations = getInquiryConversationService();
-    const [favorites, monthly, responseRate] = await Promise.all([
+    const [favorites, monthly, responseRate, listingInquiries] = await Promise.all([
         includeFavorites
             ? listingToolBookmarkService.countBookmarksForEntity(actor, {
                   entityId: listingId,
@@ -100,14 +113,18 @@ export async function readAccommodationStatsExtras({
               })
             : undefined,
         conversations.getHostMonthlyInquiries(actor, { months: LISTING_STATS_INQUIRY_MONTHS }),
-        conversations.getHostResponseRate(actor)
+        conversations.getHostResponseRate(actor),
+        conversations.countInquiriesForOwnAccommodation(actor, {
+            accommodationId: listingId,
+            windowDays
+        })
     ]);
 
     if (favorites?.error) {
         return { error: favorites.error };
     }
     // Missing permission means "not available to this owner", not a failure.
-    for (const result of [monthly, responseRate]) {
+    for (const result of [monthly, responseRate, listingInquiries]) {
         if (result.error && result.error.code !== ServiceErrorCode.FORBIDDEN) {
             return { error: result.error };
         }
@@ -117,20 +134,19 @@ export async function readAccommodationStatsExtras({
         extras: {
             ...(favorites ? { favorites: favorites.data?.count ?? 0 } : {}),
             ...(includeFavorites ? {} : { omitted: { favorites: 'not_in_plan' as const } }),
-            ...(monthly.data
-                ? {
-                      inquiries: {
-                          scope: 'all_my_accommodations' as const,
-                          byMonth: monthly.data.map(({ month, count }) => ({ month, count }))
-                      }
-                  }
+            ...(listingInquiries.data
+                ? { inquiriesThisListing: { period, count: listingInquiries.data.count } }
                 : {}),
-            ...(responseRate.data
+            ...(monthly.data && responseRate.data
                 ? {
-                      responseTime: {
+                      allMyAccommodations: {
                           scope: 'all_my_accommodations' as const,
+                          inquiriesByMonth: monthly.data.map(({ month, count }) => ({
+                              month,
+                              count
+                          })),
                           responseRatePercent: responseRate.data.responseRatePct,
-                          averageMinutes: responseRate.data.avgResponseTimeMinutes
+                          averageResponseMinutes: responseRate.data.avgResponseTimeMinutes
                       }
                   }
                 : {})
