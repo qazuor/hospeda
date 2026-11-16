@@ -113,6 +113,29 @@ describe('createUmamiStatsClient', () => {
         });
     });
 
+    describe('getVisitorCount', () => {
+        it('should return stats visitors with ONE entity-filtered stats call and no contact events', async () => {
+            const f = makeFetch({ stats: { pageviews: 9, visitors: 3 } });
+            const result = await make(f as unknown as typeof fetch).getVisitorCount(
+                scopeFor(ENTITY_A)
+            );
+
+            expect(result).toBe(3);
+            const urls = calls(f);
+            expect(urls).toHaveLength(1);
+            expect(urls[0]?.pathname.endsWith('/stats')).toBe(true);
+            expect(urls[0]?.searchParams.get('tag')).toBe(ENTITY_A);
+        });
+
+        it('should reject an invalid entity id before any fetch', async () => {
+            const f = makeFetch({ stats: { pageviews: 0, visitors: 0 } });
+            await expect(
+                make(f as unknown as typeof fetch).getVisitorCount(scopeFor('nope'))
+            ).rejects.toMatchObject({ kind: 'schema' });
+            expect(f).not.toHaveBeenCalled();
+        });
+    });
+
     describe('getFunnelCounts', () => {
         it('should map stats pageviews and pivot counts, filtering EVERY request by entity', async () => {
             const f = vi.fn(async (url: string | URL | Request) => {
@@ -128,7 +151,12 @@ describe('createUmamiStatsClient', () => {
                 scopeFor(ENTITY_A)
             );
 
-            expect(result).toEqual({ views: 9, contactStarted: 4, contactCompleted: 2 });
+            expect(result).toEqual({
+                views: 9,
+                visitors: 3,
+                contactStarted: 4,
+                contactCompleted: 2
+            });
             const urls = f.mock.calls.map(([u]) => new URL(String(u)));
             expect(urls).toHaveLength(3);
             for (const u of urls) {
@@ -147,10 +175,17 @@ describe('createUmamiStatsClient', () => {
             ]);
         });
 
+        it('should reject when the stats response has no visitors', async () => {
+            const f = makeFetch({ stats: { pageviews: 1 }, 'event-data-pivot': { count: 0 } });
+            await expect(
+                make(f as unknown as typeof fetch).getFunnelCounts(scopeFor(ENTITY_A))
+            ).rejects.toMatchObject({ kind: 'schema' });
+        });
+
         it('should warn when the pivot count is capped but still return it', async () => {
             vi.mocked(apiLogger.warn).mockClear();
             const f = makeFetch({
-                stats: { pageviews: 1 },
+                stats: { pageviews: 1, visitors: 1 },
                 'event-data-pivot': { count: 7, isCapped: true }
             });
             const result = await make(f as unknown as typeof fetch).getFunnelCounts(
@@ -163,7 +198,7 @@ describe('createUmamiStatsClient', () => {
 
         it('should never mix entities: two entities produce disjoint filters', async () => {
             const f = makeFetch({
-                stats: { pageviews: 0 },
+                stats: { pageviews: 0, visitors: 0 },
                 'event-data-pivot': { count: 0 },
                 metrics: []
             });
@@ -310,7 +345,10 @@ describe('createUmamiStatsClient', () => {
             "x' OR 1=1 --",
             '../../etc/passwd'
         ])('should reject invalid entity id %j before any fetch', async (bad) => {
-            const f = makeFetch({ stats: { pageviews: 0 }, 'event-data-pivot': { count: 0 } });
+            const f = makeFetch({
+                stats: { pageviews: 0, visitors: 0 },
+                'event-data-pivot': { count: 0 }
+            });
             const client = make(f as unknown as typeof fetch);
             await expect(client.getFunnelCounts(scopeFor(bad))).rejects.toMatchObject({
                 kind: 'schema'

@@ -44,6 +44,8 @@ export interface GetBreakdownInput extends TrafficStatsScope {
 export interface FunnelCounts {
     /** Detail-page views. */
     readonly views: number;
+    /** Distinct visitors of the window (the same `stats` call that yields `views`). */
+    readonly visitors: number;
     /** Contact started events. */
     readonly contactStarted: number;
     /** Contact completed events. */
@@ -67,6 +69,12 @@ export interface TrafficStatsClientPort {
      * Gap-fill is not needed because the response carries no time series.
      */
     getFunnelCounts(input: TrafficStatsScope): Promise<FunnelCounts>;
+    /**
+     * Total DISTINCT visitors of the listing over `[startAt, endAt]`, for every
+     * listing type. One cheap `stats` call: it MUST NOT query contact events,
+     * which are ACCOMMODATION-only. Used to derive direct traffic.
+     */
+    getVisitorCount(input: TrafficStatsScope): Promise<number>;
 }
 
 /** Input of {@link TrafficStatsCachePort.set}. */

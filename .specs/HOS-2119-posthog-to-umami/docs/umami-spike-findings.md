@@ -82,3 +82,15 @@ Checked with two entities (A: 2 pageviews, 2 `contact_owner_started`, 1
   it is not reproducible with small data and is assumed to flag a truncated (lower
   bound) count. The adapter parses it and logs a warning when `true`.
 - `tag` is set by sending `payload.tag` on a pageview (`/api/send`, type `event`, no `name`).
+- **Same-site referrers are hidden from the referrer breakdown** (measured 2026-11-16,
+  Umami 3.5.0, fresh tag, website domain `spike.local`, 4 distinct visitors via
+  `/api/send`): referrer `https://spike.local/busqueda` (visitor 1), `https://www.google.com/`
+  (visitor 2), none (visitor 3) and the bare path `/busqueda` (visitor 4).
+  `metrics?type=referrer&tag=<id>` returned only `[{"x":"google.com","y":1}]`, while
+  `stats?tag=<id>` answered `visitors: 4`. So neither a same-site full URL nor a path
+  referrer is a row, and `visitors - sum(referrers)` = 3 counts internal navigation
+  as "direct". The browser tracker also rewrites a same-origin `document.referrer` to a
+  bare path (`referrer.startsWith(origin + '/') ? referrer.slice(origin.length)`), which the
+  server then drops. Consequence: the derived `(direct)` row is an approximation that
+  includes internal-only navigation (and, conversely, a visitor with several referrers is
+  counted in each row, understating direct).

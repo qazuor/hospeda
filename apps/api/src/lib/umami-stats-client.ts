@@ -64,7 +64,7 @@ export interface CreateUmamiStatsClientInput {
 }
 
 const MetricsSchema = z.array(z.object({ x: z.string().nullable(), y: z.number() }));
-const StatsSchema = z.object({ pageviews: z.number() });
+const StatsSchema = z.object({ pageviews: z.number(), visitors: z.number() });
 /** `count` is the EVENT count (measured on Umami 3.5.0); `isCapped` flags a truncated count. */
 const PivotSchema = z.object({ count: z.number(), isCapped: z.boolean().optional() });
 const EntityIdSchema = z.string().uuid();
@@ -163,6 +163,14 @@ export function createUmamiStatsClient(input: CreateUmamiStatsClientInput): Traf
         return { startAt: scope.startAt, endAt: scope.endAt, timezone: scope.timeZone };
     }
 
+    function readStats(scope: TrafficStatsScope) {
+        return request({
+            path: 'stats',
+            params: { ...range(scope), tag: scope.entityId },
+            schema: StatsSchema
+        });
+    }
+
     async function countEvent(scope: TrafficStatsScope, eventName: string): Promise<number> {
         const result = await request({
             path: 'event-data-pivot',
@@ -194,7 +202,8 @@ export function createUmamiStatsClient(input: CreateUmamiStatsClientInput): Traf
                 params: { ...range(args), type: args.dimension, tag: args.entityId },
                 schema: MetricsSchema
             });
-            // Direct traffic arrives as null/empty `x`: drop it, a breakdown row always has a label.
+            // Defensive: drop a null/empty `x` (a row always needs a label). Umami itself omits
+            // direct traffic from `metrics` (measured on 3.5.0), the service derives it.
             return rows.flatMap((row) =>
                 row.x !== null && row.x.trim() !== '' ? [{ value: row.x, count: row.y }] : []
             );
@@ -203,15 +212,22 @@ export function createUmamiStatsClient(input: CreateUmamiStatsClientInput): Traf
         async getFunnelCounts(scope: TrafficStatsScope): Promise<FunnelCounts> {
             assertEntityId(scope.entityId);
             const [stats, contactStarted, contactCompleted] = await Promise.all([
-                request({
-                    path: 'stats',
-                    params: { ...range(scope), tag: scope.entityId },
-                    schema: StatsSchema
-                }),
+                readStats(scope),
                 countEvent(scope, CONTACT_STARTED_EVENT),
                 countEvent(scope, CONTACT_COMPLETED_EVENT)
             ]);
-            return { views: stats.pageviews, contactStarted, contactCompleted };
+            return {
+                views: stats.pageviews,
+                visitors: stats.visitors,
+                contactStarted,
+                contactCompleted
+            };
+        },
+
+        async getVisitorCount(scope: TrafficStatsScope): Promise<number> {
+            assertEntityId(scope.entityId);
+            const stats = await readStats(scope);
+            return stats.visitors;
         }
     };
 }

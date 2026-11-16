@@ -1,5 +1,6 @@
 import {
     EntityTypeEnum,
+    LISTING_TRAFFIC_DIRECT_REFERRER,
     type ListingContactFunnel,
     type ListingTrafficBreakdownItem,
     ListingTrafficBreakdownItemSchema,
@@ -209,26 +210,63 @@ export class ListingTrafficStatsService {
                 scope,
                 rows: await this.statsClient.getBreakdown({ ...scope, dimension })
             });
-        const funnelPromise: Promise<ListingContactFunnel | null> =
+        // Visitors are needed for EVERY type (direct traffic). ACCOMMODATION gets them
+        // together with the funnel (same `stats` call, no extra request); the other
+        // types use the cheap visitors-only method so contact events are never queried.
+        const statsPromise: Promise<{
+            visitors: number;
+            contactFunnel: ListingContactFunnel | null;
+        }> =
             scope.entityType === EntityTypeEnum.ACCOMMODATION
                 ? this.statsClient.getFunnelCounts(scope).then((counts) => ({
-                      views: counts.views,
-                      contactStarted: counts.contactStarted,
-                      contactCompleted: counts.contactCompleted
+                      visitors: counts.visitors,
+                      contactFunnel: {
+                          views: counts.views,
+                          contactStarted: counts.contactStarted,
+                          contactCompleted: counts.contactCompleted
+                      }
                   }))
-                : Promise.resolve(null);
+                : this.statsClient
+                      .getVisitorCount(scope)
+                      .then((visitors) => ({ visitors, contactFunnel: null }));
 
-        const [referrers, countries, devices, contactFunnel] = await Promise.all([
+        const [rawReferrers, countries, devices, { visitors, contactFunnel }] = await Promise.all([
             breakdown('referrer'),
             breakdown('country'),
             breakdown('device'),
-            funnelPromise
+            statsPromise
         ]);
+
+        // A forged referrer host `(direct)` is a valid WHATWG host, so a raw row can carry
+        // the reserved sentinel: drop it before summing so it can neither impersonate nor
+        // inflate the computed direct row.
+        const referrers = rawReferrers.filter(
+            (row) => row.value !== LISTING_TRAFFIC_DIRECT_REFERRER
+        );
+
+        // APPROXIMATION: Umami counts a visitor once per referrer row, so a visitor with
+        // several referrers in the window is counted in each and the sum can exceed the
+        // total (direct is then understated, clamped at 0). Same-site navigation is not
+        // a referrer row either (the tracker rewrites it to a path and Umami drops it),
+        // so internal-only visitors land in direct.
+        // Umami never reports direct visits in the referrer metrics, so derive them from
+        // the FULL referrer list (before the top-N cut, otherwise the dropped tail would
+        // be miscounted as direct). The two reads are not atomic, so the difference can be
+        // negative: the `direct > 0` check below is the clamp (a row is never negative).
+        // The direct row then competes in the top-N like any other row.
+        const referrerVisitors = referrers.reduce((sum, row) => sum + row.count, 0);
+        const direct = visitors - referrerVisitors;
+        const withDirect =
+            direct > 0
+                ? [...referrers, { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: direct }].sort(
+                      (a, b) => b.count - a.count
+                  )
+                : referrers;
 
         return {
             window: scope.window,
             available: true,
-            referrers: referrers.slice(0, LISTING_TRAFFIC_STATS_TOP_REFERRERS),
+            referrers: withDirect.slice(0, LISTING_TRAFFIC_STATS_TOP_REFERRERS),
             countries,
             devices,
             contactFunnel

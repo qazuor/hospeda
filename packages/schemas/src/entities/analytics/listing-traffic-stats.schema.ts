@@ -74,6 +74,27 @@ export const ListingTrafficStatsQuerySchema = z.object({
 export type ListingTrafficStatsQuery = z.infer<typeof ListingTrafficStatsQuerySchema>;
 
 /**
+ * Reserved referrer `value` for DIRECT traffic (visits with no referrer).
+ * Umami's referrer metrics never include direct visits, so the service
+ * computes them (`max(0, totalVisitors - sum(referrer visitors))`) and appends
+ * a row with this value. The UI must render it with the i18n key
+ * `traffic.referrers.direct` instead of showing the raw value.
+ *
+ * **It is an approximation.** Umami counts a visitor once per referrer row, so a
+ * visitor who arrived through several referrers in the window is counted in each
+ * row and the sum can exceed the total (which understates direct traffic, clamped
+ * at 0). Same-site navigation is not a referrer row either: the Umami tracker
+ * rewrites a same-origin referrer to a bare path and the server drops it from the
+ * referrer metrics (measured on Umami 3.5.0), so a visitor who only navigated
+ * internally is counted as direct.
+ *
+ * The service never trusts a raw referrer row equal to this sentinel: a forged
+ * referrer host `(direct)` is a valid URL host, so such rows are dropped before
+ * the direct row is computed.
+ */
+export const LISTING_TRAFFIC_DIRECT_REFERRER = '(direct)' as const;
+
+/**
  * One breakdown row (referrer host, country code or device type) with its
  * non-negative integer count.
  *
