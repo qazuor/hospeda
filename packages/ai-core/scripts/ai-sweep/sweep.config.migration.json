@@ -1,0 +1,55 @@
+{
+    "_note": "HOS-2217 model migration. The FIRST model is the baseline (production today). monthlyCalls are PLACEHOLDERS, not production numbers: replace them with the last 30 days from ai_usage before trusting the projected monthly cost (README, 'Model migration').",
+    "providers": [{ "id": "openai", "apiKeyEnv": "OPENAI_API_KEY" }],
+    "models": [
+        {
+            "id": "gpt-5.4-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "reasoningEfforts": ["none"],
+            "rates": { "inputUsdPerMillion": 0.2, "outputUsdPerMillion": 1.25 }
+        },
+        {
+            "id": "gpt-5.4-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "reasoningEfforts": ["none"],
+            "rates": { "inputUsdPerMillion": 0.75, "outputUsdPerMillion": 4.5 }
+        },
+        {
+            "id": "gpt-5-nano",
+            "provider": "openai",
+            "reasoning": true,
+            "reasoningEfforts": ["minimal"],
+            "rates": { "inputUsdPerMillion": 0.05, "outputUsdPerMillion": 0.4 }
+        },
+        {
+            "id": "gpt-5-mini",
+            "provider": "openai",
+            "reasoning": true,
+            "reasoningEfforts": ["minimal"],
+            "rates": { "inputUsdPerMillion": 0.25, "outputUsdPerMillion": 2.0 }
+        }
+    ],
+    "maxOutputTokens": 1024,
+    "featureMaxOutputTokens": {
+        "text_improve": 2048,
+        "accommodation_import": 2048,
+        "post_generate": 4096
+    },
+    "repetitions": 1,
+    "concurrency": 3,
+    "maxCalls": 600,
+    "features": {
+        "chat": { "monthlyCalls": 3000 },
+        "chat_venue": { "monthlyCalls": 1000 },
+        "chat_experience": { "monthlyCalls": 300 },
+        "search": { "monthlyCalls": 4000 },
+        "translate": { "monthlyCalls": 2000 },
+        "text_improve": { "monthlyCalls": 500 },
+        "post_generate": { "monthlyCalls": 50 },
+        "accommodation_import": { "monthlyCalls": 100 },
+        "faq_draft": { "monthlyCalls": 300 },
+        "support": { "monthlyCalls": 0 }
+    }
+}
