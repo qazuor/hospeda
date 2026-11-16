@@ -1182,6 +1182,55 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         }
     });
 
+    it('attaches the visitor (cf-connecting-ip + user-agent) to every emitted event, including the post-response one (HOS-2119 T-072)', async () => {
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: {
+                ...makeMockActorHeaders({ actorId: UNIQUE_USER_ID }),
+                'cf-connecting-ip': '203.0.113.7',
+                'user-agent': 'VisitorBrowser/9.0'
+            },
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: makeMessages(20),
+                locale: 'es'
+            })
+        });
+        expect(res.status).toBe(200);
+        await readSseFrames(res);
+
+        const payloads = mockAnalyticsCapture.mock.calls.map((call) => call[0]);
+        const names = payloads.map((payload) => payload?.name);
+        expect(names).toContain('ai_chat_message_sent');
+        expect(names).toContain('ai_chat_response_completed');
+        expect(names).toContain('ai_chat_cap_reached');
+        for (const payload of payloads) {
+            expect(payload?.visitor).toEqual({
+                ip: '203.0.113.7',
+                userAgent: 'VisitorBrowser/9.0'
+            });
+        }
+    });
+
+    it('omits the visitor property when the request has no visitor IP header (HOS-2119 T-072)', async () => {
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders({ actorId: UNIQUE_USER_ID }),
+            body: JSON.stringify({
+                accommodationId: ACCOMMODATION_ID,
+                messages: makeMessages(20),
+                locale: 'es'
+            })
+        });
+        expect(res.status).toBe(200);
+        await readSseFrames(res);
+
+        expect(mockAnalyticsCapture.mock.calls.length).toBeGreaterThan(0);
+        for (const [payload] of mockAnalyticsCapture.mock.calls) {
+            expect(payload).not.toHaveProperty('visitor');
+        }
+    });
+
     it('captures ai_chat_opened on the first-turn request only', async () => {
         await app.request(STREAM_PATH, {
             method: 'POST',

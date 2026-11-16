@@ -11,6 +11,7 @@ import { appendReplyLanguageInstruction, resolveFeatureConfig } from '@repo/ai-c
 import type { AiChatMessage, AiFeature, AiMessage, LanguageEnum } from '@repo/schemas';
 import { captureServerAnalyticsEvent } from '../../../lib/analytics-client.js';
 import { apiLogger } from '../../../utils/logger.js';
+import type { VisitorContext } from '../../../utils/visitor-context.js';
 
 /**
  * Default per-call output token cap for the chat feature.
@@ -72,18 +73,35 @@ export type ChatAnalyticsEvent =
     | 'ai_chat_moderation_blocked'
     | 'ai_chat_response_completed';
 
+/** Optional trailing options of {@link captureChatEvent}. */
+export interface CaptureChatEventOptions {
+    /**
+     * IP + User-Agent of the visitor, read from the request headers at request
+     * time (never from the Hono context afterwards). Omit for non-request events.
+     */
+    readonly visitor?: VisitorContext | undefined;
+}
+
 /**
  * Captures one server-side chat analytics event through the Umami analytics
  * client (catalog-validated, PII-filtered). A no-op when analytics are not
  * configured. Maps the route's camelCase properties to the catalog's snake_case
  * keys (`messageCount` becomes `messages_count`, because the catalog rejects any
  * key matching `message`).
+ *
+ * @param actorId - Distinct id of the acting user
+ * @param event - Catalog event name to emit
+ * @param properties - Route-level (camelCase) event properties
+ * @param options - Optional extras; `options.visitor` carries the visitor's IP +
+ *   User-Agent for Umami session attribution (omit for non-request events)
  */
 export function captureChatEvent(
     actorId: string,
     event: ChatAnalyticsEvent,
-    properties: ChatAnalyticsProperties
+    properties: ChatAnalyticsProperties,
+    options: CaptureChatEventOptions = {}
 ): void {
+    const visitorField = options.visitor ? { visitor: options.visitor } : {};
     const base = {
         accommodation_id: properties.entityId,
         locale: properties.locale
@@ -97,7 +115,8 @@ export function captureChatEvent(
             captureServerAnalyticsEvent({
                 distinctId: actorId,
                 name: event,
-                properties: { ...base, ...messagesCount }
+                properties: { ...base, ...messagesCount },
+                ...visitorField
             });
             return;
         case 'ai_chat_message_sent':
@@ -110,7 +129,8 @@ export function captureChatEvent(
                     ...(properties.conversationId === undefined
                         ? {}
                         : { conversation_id: properties.conversationId })
-                }
+                },
+                ...visitorField
             });
             return;
         case 'ai_chat_moderation_blocked':
@@ -122,7 +142,8 @@ export function captureChatEvent(
                     ...(properties.conversationId === undefined
                         ? {}
                         : { conversation_id: properties.conversationId })
-                }
+                },
+                ...visitorField
             });
             return;
         case 'ai_chat_response_completed':
@@ -139,7 +160,8 @@ export function captureChatEvent(
                     ...(properties.completionTokens === undefined
                         ? {}
                         : { completion_tokens: properties.completionTokens })
-                }
+                },
+                ...visitorField
             });
             return;
         default: {

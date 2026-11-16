@@ -75,6 +75,7 @@ import {
     createProtectedStreamingRoute,
     type StreamTextChunk
 } from '../../../utils/streaming-route-factory.js';
+import { getVisitorContext } from '../../../utils/visitor-context.js';
 import { finalizeChatTurn } from './chat.finalize.js';
 import {
     captureChatEvent,
@@ -132,6 +133,10 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const actor = getActorFromContext(c);
         const locale = body.locale ?? DEFAULT_LOCALE;
         const handlerStartMs = Date.now();
+        // Captured at request time: finalization runs after the response, when the
+        // Hono context must no longer be read.
+        const visitor = getVisitorContext(c);
+        const captureOptions = { visitor };
 
         // -----------------------------------------------------------------------
         // Step 0 (HOS-400): resolve the target through the shared helper.
@@ -238,17 +243,27 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         })();
 
         if (body.messages.length === 1) {
-            captureChatEvent(actor.id, 'ai_chat_opened', {
-                entityId,
-                locale
-            });
+            captureChatEvent(
+                actor.id,
+                'ai_chat_opened',
+                {
+                    entityId,
+                    locale
+                },
+                captureOptions
+            );
         }
 
         if (body.messages.length === AI_CHAT_MAX_MESSAGES) {
-            captureChatEvent(actor.id, 'ai_chat_cap_reached', {
-                entityId,
-                locale
-            });
+            captureChatEvent(
+                actor.id,
+                'ai_chat_cap_reached',
+                {
+                    entityId,
+                    locale
+                },
+                captureOptions
+            );
         }
 
         const { content, rules } = await resolveSystemPrompt({ feature: FEATURE });
@@ -271,12 +286,17 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         );
         const maxTokens = await resolveChatMaxOutputTokens(FEATURE);
 
-        captureChatEvent(actor.id, 'ai_chat_message_sent', {
-            entityId,
-            messageCount: body.messages.length,
-            locale,
-            ...(body.conversationId ? { conversationId: body.conversationId } : {})
-        });
+        captureChatEvent(
+            actor.id,
+            'ai_chat_message_sent',
+            {
+                entityId,
+                messageCount: body.messages.length,
+                locale,
+                ...(body.conversationId ? { conversationId: body.conversationId } : {})
+            },
+            captureOptions
+        );
 
         const { stream: rawStream, meta } = await aiService.streamText({
             feature: FEATURE,
@@ -312,10 +332,15 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             } catch (error) {
                 const aiMapping = mapAiEngineErrorToHttpStatus(error);
                 if (aiMapping?.code === 'MODERATION_BLOCKED') {
-                    captureChatEvent(actor.id, 'ai_chat_moderation_blocked', {
-                        entityId,
-                        locale
-                    });
+                    captureChatEvent(
+                        actor.id,
+                        'ai_chat_moderation_blocked',
+                        {
+                            entityId,
+                            locale
+                        },
+                        captureOptions
+                    );
                 }
                 throw error;
             }
@@ -333,7 +358,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
                 locale,
                 conversationId: body.conversationId ?? null,
                 userMessage: getLastUserTurn(body.messages),
-                handlerStartMs
+                handlerStartMs,
+                visitor
             });
             return {
                 ...resolvedMeta,

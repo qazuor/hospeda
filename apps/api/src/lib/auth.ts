@@ -42,7 +42,7 @@ import { captureServerAnalyticsEvent } from './analytics-client';
 import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
-import { captureSignupCompleted } from './auth-signup-analytics';
+import { captureSignupCompleted, resolveSignInVisitor } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 import { resolveSessionAuthMethod } from './session-auth-method';
@@ -701,8 +701,9 @@ function buildAuth() {
                             }
                         };
                     },
-                    after: async (session) => {
+                    after: async (session, context) => {
                         try {
+                            const visitor = resolveSignInVisitor({ session, context });
                             const db = getDb();
                             const rows = await db
                                 .select({ role: userRole.role })
@@ -719,7 +720,8 @@ function buildAuth() {
                                     role:
                                         effectiveRoles.length === 1 ? effectiveRoles[0] : undefined,
                                     user_type: resolveAnalyticsUserType(effectiveRoles)
-                                }
+                                },
+                                ...(visitor ? { visitor } : {})
                             });
                         } catch (error) {
                             logger.warn(

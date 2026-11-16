@@ -27,6 +27,7 @@ import {
     createResponse,
     handleRouteError
 } from '../../../utils/response-helpers';
+import { getVisitorContext } from '../../../utils/visitor-context';
 
 /** Minimal system actor for public endpoints that invoke services. */
 const PUBLIC_SYSTEM_ACTOR = createSystemActor({
@@ -167,6 +168,7 @@ async function handler(c: Context): Promise<Response> {
         };
 
         const analyticsContext = await resolveAccommodationAnalyticsContext(body.accommodationId);
+        const visitor = getVisitorContext(c);
 
         const conversationSvc = buildConversationService();
 
@@ -192,7 +194,8 @@ async function handler(c: Context): Promise<Response> {
                         failure_reason: result.error.reason ?? 'conversation_duplicate',
                         is_authenticated: false,
                         locale: body.locale
-                    }
+                    },
+                    ...(visitor ? { visitor } : {})
                 });
 
                 return createErrorResponse(
@@ -217,7 +220,8 @@ async function handler(c: Context): Promise<Response> {
                         failure_reason: result.error.reason ?? 'accommodation_deleted',
                         is_authenticated: false,
                         locale: body.locale
-                    }
+                    },
+                    ...(visitor ? { visitor } : {})
                 });
 
                 return createErrorResponse(
@@ -242,7 +246,8 @@ async function handler(c: Context): Promise<Response> {
                     failure_reason: result.error.reason ?? result.error.code.toLowerCase(),
                     is_authenticated: false,
                     locale: body.locale
-                }
+                },
+                ...(visitor ? { visitor } : {})
             });
 
             return createErrorResponse(
@@ -267,7 +272,8 @@ async function handler(c: Context): Promise<Response> {
                 conversation_flow: 'anonymous',
                 is_authenticated: false,
                 locale: body.locale
-            }
+            },
+            ...(visitor ? { visitor } : {})
         });
 
         return createResponse(

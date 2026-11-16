@@ -68,7 +68,6 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
-
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
 import { getValidMercadoLibreToken } from '../../../services/mercadolibre-oauth/ml-token.service';
@@ -84,6 +83,7 @@ import {
 import { type AiQuotaDecision, evaluateAiQuota } from '../../../utils/listing-access/ai-quota-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { getVisitorContext } from '../../../utils/visitor-context';
 import {
     type AccommodationImportAiOutput,
     AccommodationImportAiOutputSchema,
@@ -314,6 +314,7 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+        const visitor = getVisitorContext(ctx);
 
         // Authorization: authenticated-user only (BETA-153). No accommodation
         // permission is required — this endpoint persists nothing (pure scrape +
@@ -385,7 +386,8 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             properties: {
                 import_mode: 'request',
                 import_source: sourceHost
-            }
+            },
+            ...(visitor ? { visitor } : {})
         });
 
         // Exchange-rate dependencies (BETA-181): a scraped USD price is
@@ -436,7 +438,8 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
                 properties: {
                     import_source: sourceHost,
                     failure_reason: gate.blockedReason ?? 'no_source_detected'
-                }
+                },
+                ...(visitor ? { visitor } : {})
             });
         } else {
             captureServerAnalyticsEvent({
@@ -446,7 +449,8 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
                     import_source: final.source,
                     partial: final.partial,
                     prefilled_field_count: final.methodsUsed.length
-                }
+                },
+                ...(visitor ? { visitor } : {})
             });
         }
 

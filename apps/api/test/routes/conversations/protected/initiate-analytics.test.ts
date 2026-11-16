@@ -80,10 +80,13 @@ function buildApp(): Hono<AppBindings> {
     return app;
 }
 
-async function post(app: Hono<AppBindings>): Promise<Response> {
+async function post(
+    app: Hono<AppBindings>,
+    extraHeaders: Record<string, string> = {}
+): Promise<Response> {
     return app.request('/initiate/', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...extraHeaders },
         body: JSON.stringify({ accommodationId: ACCOMMODATION_ID, message: 'Hello there!' })
     });
 }
@@ -156,5 +159,68 @@ describe('POST /api/v1/protected/conversations/initiate analytics', () => {
                 properties: expect.objectContaining({ failure_reason: 'conversation_duplicate' })
             })
         );
+    });
+
+    describe('visitor context', () => {
+        const VISITOR_HEADERS = { 'cf-connecting-ip': '203.0.113.7', 'user-agent': 'UA/1' };
+
+        it('passes the visitor from request headers on completed (new conversation)', async () => {
+            mocks.initiateAuthenticated.mockResolvedValueOnce({
+                data: { conversationId: CONVERSATION_ID, isNew: true }
+            });
+            mocks.getMessages.mockResolvedValueOnce({ data: { messages: [] } });
+
+            await post(buildApp(), VISITOR_HEADERS);
+
+            expect(mocks.capture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'contact_owner_completed',
+                    visitor: { ip: '203.0.113.7', userAgent: 'UA/1' }
+                })
+            );
+        });
+
+        it('passes the visitor on completed (existing conversation)', async () => {
+            mocks.initiateAuthenticated.mockResolvedValueOnce({
+                data: { conversationId: CONVERSATION_ID, isNew: false }
+            });
+            mocks.createMessage.mockResolvedValueOnce({ data: { id: 'm-1' } });
+
+            await post(buildApp(), VISITOR_HEADERS);
+
+            expect(mocks.capture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'contact_owner_completed',
+                    visitor: { ip: '203.0.113.7', userAgent: 'UA/1' }
+                })
+            );
+        });
+
+        it('passes the visitor on failed', async () => {
+            mocks.initiateAuthenticated.mockResolvedValueOnce({
+                error: { code: 'ALREADY_EXISTS', message: 'dup' }
+            });
+
+            await post(buildApp(), VISITOR_HEADERS);
+
+            expect(mocks.capture).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'contact_owner_failed',
+                    visitor: { ip: '203.0.113.7', userAgent: 'UA/1' }
+                })
+            );
+        });
+
+        it('omits the visitor when the headers are absent', async () => {
+            mocks.initiateAuthenticated.mockResolvedValueOnce({
+                data: { conversationId: CONVERSATION_ID, isNew: true }
+            });
+            mocks.getMessages.mockResolvedValueOnce({ data: { messages: [] } });
+
+            await post(buildApp());
+
+            expect(mocks.capture).toHaveBeenCalledTimes(1);
+            expect(mocks.capture.mock.calls[0]?.[0]).not.toHaveProperty('visitor');
+        });
     });
 });

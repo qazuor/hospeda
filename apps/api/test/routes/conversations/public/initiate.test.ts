@@ -197,6 +197,67 @@ describe('POST /api/v1/public/conversations/initiate', () => {
         );
     });
 
+    describe('visitor context (HOS-2119 T-072)', () => {
+        const VISITOR_HEADERS = { 'cf-connecting-ip': '203.0.113.7', 'user-agent': 'UA/1' };
+        const post = (extra: Record<string, string>) =>
+            app.request('/initiate/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...extra },
+                body: JSON.stringify(VALID_BODY)
+            });
+
+        it('passes the visitor from request headers on completed', async () => {
+            mockInitiateAnonymous.mockResolvedValueOnce({
+                data: { status: 'pending_verification', conversationId: 'c-1' },
+                error: undefined
+            });
+            mockCaptureServerAnalyticsEvent.mockClear();
+
+            await post(VISITOR_HEADERS);
+
+            expect(mockCaptureServerAnalyticsEvent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    name: 'contact_owner_completed',
+                    visitor: { ip: '203.0.113.7', userAgent: 'UA/1' }
+                })
+            );
+        });
+
+        it('passes the visitor on failed (duplicate, not found and generic error)', async () => {
+            for (const code of ['ALREADY_EXISTS', 'NOT_FOUND', 'VALIDATION_ERROR']) {
+                mockCaptureServerAnalyticsEvent.mockClear();
+                mockInitiateAnonymous.mockResolvedValueOnce({
+                    data: undefined,
+                    error: { code, message: 'x' }
+                });
+
+                await post(VISITOR_HEADERS);
+
+                expect(mockCaptureServerAnalyticsEvent).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        name: 'contact_owner_failed',
+                        visitor: { ip: '203.0.113.7', userAgent: 'UA/1' }
+                    })
+                );
+            }
+        });
+
+        it('omits the visitor when the headers are absent', async () => {
+            mockInitiateAnonymous.mockResolvedValueOnce({
+                data: { status: 'pending_verification', conversationId: 'c-1' },
+                error: undefined
+            });
+            mockCaptureServerAnalyticsEvent.mockClear();
+
+            await post({});
+
+            expect(mockCaptureServerAnalyticsEvent).toHaveBeenCalledTimes(1);
+            expect(mockCaptureServerAnalyticsEvent.mock.calls[0]?.[0]).not.toHaveProperty(
+                'visitor'
+            );
+        });
+    });
+
     // ── Duplicate (verified) ──────────────────────────────────────────────────
 
     it('returns 409 with reason CONVERSATION_DUPLICATE on verified duplicate', async () => {

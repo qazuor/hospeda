@@ -15,6 +15,7 @@ import { ListingPublicationService } from '../../../services/listing-publication
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { getVisitorContext } from '../../../utils/visitor-context';
 
 const listingPublicationService = new ListingPublicationService();
 
@@ -44,6 +45,7 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
     },
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
+        const visitor = getVisitorContext(ctx);
         const data = await listingPublicationService.publish({ actor, id: params.id as string });
 
         captureServerAnalyticsEvent({
@@ -55,7 +57,8 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
                 destination_id:
                     typeof data.destinationId === 'string' ? data.destinationId : undefined,
                 owner_id: typeof data.ownerId === 'string' ? data.ownerId : undefined
-            }
+            },
+            ...(visitor ? { visitor } : {})
         });
 
         // BETA-199: `AccommodationProtectedSchema` declares the premium
