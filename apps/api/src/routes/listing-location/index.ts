@@ -14,3 +14,8 @@ export const adminVenueLocationRoutes = createAdminLocationRoutes({
     permission: PermissionEnum.LISTING_LOCATION_EXCEPTION_MANAGE,
     tag: 'Venue'
 });
+
+export {
+    ownerAccommodationLocationRoutes,
+    ownerVenueLocationRoutes
+} from './owner-location-routes';

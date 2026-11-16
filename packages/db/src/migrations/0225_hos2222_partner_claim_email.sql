@@ -1,0 +1,1 @@
+ALTER TABLE "partners" ADD COLUMN "claim_email" text;

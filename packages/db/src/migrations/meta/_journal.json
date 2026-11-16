@@ -1580,8 +1580,22 @@
     {
       "idx": 225,
       "version": "7",
-      "when": 1794728864626,
-      "tag": "0225_hos2184_oauth_provider_tables",
+      "when": 1794728441218,
+      "tag": "0225_hos2222_partner_claim_email",
+      "breakpoints": true
+    },
+    {
+      "idx": 226,
+      "version": "7",
+      "when": 1794796993481,
+      "tag": "0226_hos2192_location_exception_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 227,
+      "version": "7",
+      "when": 1794810969242,
+      "tag": "0227_hos2184_oauth_provider_tables",
       "breakpoints": true
     }
   ]

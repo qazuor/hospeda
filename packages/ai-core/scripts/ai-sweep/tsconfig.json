@@ -1,6 +1,6 @@
 {
     "extends": "../../tsconfig.json",
     "compilerOptions": { "noEmit": true },
-    "include": ["./*.ts"],
+    "include": ["./*.ts", "../../test/ai-sweep*.test.ts"],
     "exclude": []
 }

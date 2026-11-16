@@ -76,6 +76,15 @@ export const partners = pgTable(
         /** Spec «secreto_de_reclamo»: hash del secreto de un solo uso, escrito por V7 al emitirlo. */
         claimSecretHash: text('claim_secret_hash'),
         /**
+         * Mailbox the claim link is sent to (HOS-2222). Only an account with this
+         * email may claim the Partner through the link. Written in the same
+         * statement as {@link claimSecretHash}, and at provisioning: the approved
+         * application's email, or the claim email of an admin direct creation.
+         * Null on rows minted before HOS-2222; the claim then falls back to the
+         * approved application's email.
+         */
+        claimEmail: text('claim_email'),
+        /**
          * Logo the partner submitted, awaiting an admin's verdict (HOS-278 AC-11).
          *
          * This trio is deliberately SEPARATE from the live

@@ -153,7 +153,8 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
             type: BODY.type,
             lifecycle_state: 'DRAFT',
             owner_user_id: null,
-            claim_secret_hash: null
+            claim_secret_hash: null,
+            claim_email: applicantEmail
         });
         expect(String(partner?.slug)).toMatch(/^hos1485-example-partner-/);
         const users = await getDb().execute(sql`
@@ -198,7 +199,8 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
             id: partnerId,
             lifecycle_state: 'DRAFT',
             owner_user_id: null,
-            claim_secret_hash: null
+            claim_secret_hash: null,
+            claim_email: accountEmail
         });
         const role = await getDb().execute(sql`
             SELECT user_id FROM user_role WHERE user_id = ${user.id}::uuid AND role = 'PARTNER_OWNER'`);

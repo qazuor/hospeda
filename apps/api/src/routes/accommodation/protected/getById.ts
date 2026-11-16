@@ -10,7 +10,12 @@ import {
     PermissionEnum,
     VerticalEnum
 } from '@repo/schemas';
-import { AccommodationService, entityNotFoundError, ServiceError } from '@repo/service-core';
+import {
+    AccommodationService,
+    entityNotFoundError,
+    getOwnerLocationExceptionView,
+    ServiceError
+} from '@repo/service-core';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import type { Context } from 'hono';
 
@@ -137,6 +142,11 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
             locationDuplicate: await listingLocationModel.hasOwnDuplicate({
                 vertical: VerticalEnum.ACCOMMODATION,
                 id: accommodation.id
+            }),
+            // HOS-2192: the owner's exception request status. No ids of other listings.
+            locationException: await getOwnerLocationExceptionView({
+                vertical: VerticalEnum.ACCOMMODATION,
+                listingId: accommodation.id
             })
         };
     }

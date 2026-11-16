@@ -86,62 +86,45 @@ function resolveSiteOrigin({
 }
 
 /**
- * Decides whether an already-allowlisted `callbackUrl` may also be SENT TO THE
- * API, as opposed to merely being redirected to by this browser.
+ * Decides whether an already-allowlisted `callbackUrl` may be stamped into the
+ * VERIFICATION EMAIL, as opposed to merely being redirected to by this browser.
  *
- * The two questions have different answers, which is the whole reason this
- * predicate exists next to {@link validateCallbackUrl} instead of inside it
- * (HOS-1207):
+ * The two questions have different answers (HOS-1207, then NOSPEC
+ * verify-email-admin-callback):
  *
  * - **Redirecting the browser** to any Hospeda-owned subdomain is safe, and
  *   `validateCallbackUrl` accepts every one of them on purpose — its rule 2 is
- *   explicitly not gated by environment.
- * - **Handing a URL to Better Auth** is not a redirect but an origin check
- *   against `trustedOrigins`, which the API builds from `HOSPEDA_SITE_URL` +
- *   `HOSPEDA_ADMIN_URL` + `HOSPEDA_EXTRA_TRUSTED_ORIGINS`
- *   (`parseTrustedOriginsFromConfig`). A Hospeda subdomain that is not one of
- *   those is rejected — and Better Auth rejects the ENTIRE sign-up request
- *   with a 403, so the account is never created. Same failure as the scheme
- *   mismatch this file's other fix is about, reached from a crafted link.
+ *   explicitly not gated by environment. An EXISTING account bounced here by
+ *   the admin guard must still go back to the admin panel after signing in.
+ * - **Handing a URL to Better Auth** is an origin check against
+ *   `trustedOrigins` (`HOSPEDA_SITE_URL` + `HOSPEDA_ADMIN_URL` +
+ *   `HOSPEDA_EXTRA_TRUSTED_ORIGINS`). An origin outside that set makes Better
+ *   Auth reject the ENTIRE sign-up with a 403, so no account is created.
+ * - **Sending a NEW account to the admin panel** is useless: a fresh account
+ *   has no admin permissions and lands on "no access". The verification link
+ *   is only ever followed by a freshly registered account, so it must stay on
+ *   the web site. That also satisfies the `trustedOrigins` check by
+ *   construction, because the site origin is the same configured value the
+ *   API reads.
  *
- * So the answer is narrowed to the two origins the web app can name with
- * certainty, because they are the same configured values the API reads.
- * `HOSPEDA_EXTRA_TRUSTED_ORIGINS` is deliberately NOT modelled here: the web
- * app never sees it, and being narrower than the API only costs a caller its
- * requested destination (it falls back to `returnPath`) — the person still
- * registers. Being wider would cost them the account.
+ * So the answer is narrowed to the site origin alone. Anything else (the admin
+ * panel, other Hospeda subdomains, extra trusted origins the web app never
+ * sees) only costs the caller its requested destination: it falls back to
+ * `returnPath` and the person still registers.
  *
  * @param params.candidate - A URL that already passed `validateCallbackUrl`.
  * @param params.siteOrigin - The configured site origin.
- * @param params.adminUrl - The configured admin base URL, if any.
- * @returns True when the API's Better Auth will accept this origin.
+ * @returns True when the candidate lives on the web site origin.
  */
-function isApiTrustedCallbackUrl({
+function isVerificationCallbackUrl({
     candidate,
-    siteOrigin,
-    adminUrl
+    siteOrigin
 }: {
     readonly candidate: string;
     readonly siteOrigin: string;
-    readonly adminUrl: string | undefined;
 }): boolean {
-    let candidateOrigin: string;
     try {
-        candidateOrigin = new URL(candidate).origin;
-    } catch {
-        return false;
-    }
-
-    if (candidateOrigin === siteOrigin) {
-        return true;
-    }
-
-    if (!adminUrl) {
-        return false;
-    }
-
-    try {
-        return candidateOrigin === new URL(adminUrl).origin;
+        return new URL(candidate).origin === siteOrigin;
     } catch {
         return false;
     }
@@ -225,13 +208,14 @@ export function resolveAuthTabsRedirectConfig({
 
     // The one value in this result that leaves the browser and is CHECKED by
     // another service, so it answers a stricter question than the redirects
-    // above — see `isApiTrustedCallbackUrl` (HOS-1207). A callbackUrl this app
-    // would happily redirect to but Better Auth would refuse degrades to the
-    // same-site returnPath: the person loses the destination they asked for,
-    // instead of losing the account.
+    // above — see `isVerificationCallbackUrl` (HOS-1207). A callbackUrl this
+    // app would happily redirect to but that is off the site origin (the admin
+    // panel, which a brand-new account cannot use, or an origin Better Auth
+    // would refuse) degrades to the same-site returnPath: the person loses the
+    // destination they asked for, instead of the account or a dead-end link.
     const verificationCallbackUrl =
         validatedCallbackUrl &&
-        isApiTrustedCallbackUrl({ candidate: validatedCallbackUrl, siteOrigin, adminUrl })
+        isVerificationCallbackUrl({ candidate: validatedCallbackUrl, siteOrigin })
             ? validatedCallbackUrl
             : new URL(returnPath, siteOrigin).href;
 
@@ -250,8 +234,10 @@ export function resolveAuthTabsRedirectConfig({
         // purpose: Better Auth resolves a relative callback against the API
         // origin, which serves no pages. The API forwards this verbatim after
         // Better Auth has validated it against `trustedOrigins` — which is
-        // why it is the one value narrowed to an origin that check accepts,
-        // rather than `authenticatedTargetHref` (HOS-1207).
+        // why it is the one value narrowed to the site origin, rather than
+        // `authenticatedTargetHref` (HOS-1207). Never the admin origin: the
+        // person following this link is a brand-new account with no admin
+        // access.
         verificationCallbackUrl,
         // OAuth registration DOES authenticate immediately, so — as of
         // HOS-959 — it shares the exact same destination as sign-in,

@@ -1,4 +1,7 @@
-# AI chat model and parameter sweep (HOS-2095)
+# AI model and parameter sweep (HOS-2095, HOS-2217)
+
+> Changing the production model? Jump to [Model migration (every AI feature)](#model-migration-every-ai-feature-hos-2217):
+> one command compares the candidates across all ten AI features.
 
 Compares models x reasoning effort x `maxOutputTokens` for the AI chat feature:
 visible-answer rate, `finishReason`, input/output/reasoning tokens, time to first
@@ -68,9 +71,11 @@ CI=true pnpm exec tsx scripts/ai-sweep/sweep.ts --config scripts/ai-sweep/sweep.
 
 Flags: `--config <path>`, `--execute`, `--dry-run`, `--max-calls <n>` (default from
 config, 150), `--concurrency <n>` (default 2), `--out <dir>` (default `scripts/ai-sweep/out/`, git-ignored),
-`--api-key-file <path>` (reads and trims the file; used for every provider instead of its `apiKeyEnv`; the key is never logged),
+`--api-key-file <path>` (reads and trims the file; used instead of `apiKeyEnv` only for providers WITHOUT a custom `baseURL`, so a first-party key never reaches a third-party gateway; the key is never logged),
 `--blind-export <path>`, `--grades <path>`, `--key <path>`, `--results <path>`.
-The script aborts if the matrix exceeds the call cap, and aborts `--execute` if a needed key env var is unset.
+The script aborts if the matrix exceeds the call cap, and aborts `--execute` if a needed key is missing. Numeric
+flags must be positive integers and every value flag needs a value that is not another flag: anything else
+(`--max-calls abc`, `--concurrency 0`, `--max-calls --execute`) exits 2 before doing anything (`cli-args.ts`).
 
 Output per run: `sweep-<timestamp>.jsonl` (one raw result per call) and `sweep-<timestamp>.md`
 (summary table per model x effort x cap with visible %, p50/p95 latency, TTFT, avg output and
@@ -157,3 +162,143 @@ rules, or when a case's entity/feature/locale changed since generation.
 - Worst-case input tokens use ~4 chars/token; real counts differ.
 - Results are small-sample and non-deterministic; raise `repetitions` within the call cap.
 - A reasoning model's reasoning tokens count against `maxOutputTokens`, which is the point of the sweep.
+
+## Model migration (every AI feature, HOS-2217)
+
+`migration.ts` is the single entry point for a model change. It runs the chat cases above plus 6-12 cases for each
+of the eight other features, against every model of `sweep.config.migration.json`, and reports quality, error rate,
+cost per answer, projected monthly cost and latency per feature, plus an overall summary.
+
+| model | role | efforts | USD / 1M in / out |
+| --- | --- | --- | --- |
+| `gpt-5.4-nano` | baseline (production today) | `none` | 0.20 / 1.25 |
+| `gpt-6-luna` | candidate: OpenAI's most efficient model for focused, high-volume tasks | `none`, `low` | 0.10 / 0.50 |
+| `gpt-5.6-luna` | candidate | `none` | 0.20 / 1.20 |
+| `gpt-5.4-mini` | candidate; chat_venue and faq_draft already run on it | `none` | 0.75 / 4.50 |
+
+All four are reasoning models; the luna models accept none/low/medium/high/xhigh/max (no `minimal`). Both luna
+models are in `MODEL_RATES` (`src/usage/model-rates.ts`), so production metering is rated the day one is chosen.
+`gpt-5-nano` and `gpt-5-mini` were dropped as candidates: OpenAI marks them DEPRECATED (checked 2026-11-15).
+**Check OpenAI's deprecations page (<https://platform.openai.com/docs/deprecations>) before choosing candidates.**
+
+### End-to-end run (from `packages/ai-core`)
+
+```bash
+# 0. monthlyCalls in sweep.config.migration.json are production 30-day counts measured 2026-11-15
+#    (chat 15, chat_answer_classifier 12, search 4, faq_draft 1, the rest 0). Re-measure them, read-only:
+#    select feature, count(*) from ai_usage where created_at > now() - interval '30 days' group by 1;
+
+# 1. Dry run (default, no network): calls and worst-case USD per feature and in total.
+CI=true pnpm exec tsx scripts/ai-sweep/migration.ts
+CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --features translate,faq_draft   # a subset
+
+# 2. Execute (spends money: get the budget approved first). Aborts above maxCalls (or --max-calls).
+OPENAI_API_KEY=... CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --execute --blind-export out/blind.jsonl
+#    -> out/migration-<stamp>.jsonl (raw), out/migration-<stamp>.md (report), blind.jsonl + blind.jsonl.key.json
+
+# 3. Grade blind.jsonl 1-5 (human or LLM; it carries the input, grounding text, notes and answer, never the model)
+#    into grades.json, then merge offline. --results alone re-checks old answers with the current checks.
+CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --results out/migration-<stamp>.jsonl \
+  --grades grades.json --key out/blind.jsonl.key.json
+```
+
+Flags: `--config`, `--features a,b`, `--max-calls`, `--concurrency`, `--out`, `--api-key-file`, `--blind-export`,
+`--results`, `--grades`, `--key` (same fail-closed parsing and `--api-key-file` rule as `sweep.ts`). The report also
+prints a quota projection, cost per answer x `monthlyQuotas` (default 20/50/100/250/1250, as in the chat sweep),
+because the measured volumes are too small to project from. Read the overall table first, then each feature: a candidate that is cheaper
+overall but fails one feature (say `accommodation_import` schema validity) is not a drop-in replacement.
+
+### What each feature measures
+
+| feature | production call reproduced | automatic checks |
+| --- | --- | --- |
+| `chat`, `chat_venue`, `chat_experience` | streamed chat over the real listing context (see above) | rubric facts, unknown handling, decline, language, raw codes, owner voice |
+| `search` | two calls: filter extraction (`generateObject`, `SearchIntentOutputSchema`) and the streamed reply (fixed ideal filters, so it is measured alone) | expected field values, no hallucinated filters, schema validity and production parse; reply rubric |
+| `translate` | `translateField`: URL placeholders + `buildTranslationPrompt` | proper names verbatim, placeholders intact once, no preamble, language, preserved literals |
+| `text_improve` | `buildTextImprovePrompt`, streamed | facts kept, nothing invented, no preamble, voseo, length |
+| `post_generate` | `buildPostGeneratePrompt`, `generateObject` | schema + production strict parse, HTML content, requested language, no invented figures |
+| `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`, `generateObject` (non-strict JSON schema) | field values, values grounded in the page text, no invented coordinates/contacts, reviews never copied |
+| `faq_draft` | chat context + `buildFaqDraftRequest`, `generateObject`, `maxTokens` 1024 / temperature 0 fixed | `hasData` right (false on missing data), draft grounded and plain text, language |
+| `support` | none: no production route calls it today; engine defaults only | decline off-topic/injection, escalation, no invented policy, language |
+| `chat_answer_classifier` | `buildChatAnswerClassifierRequest`: fixed instruction, `maxTokens` 16 / temperature 0 / `reasoningEffort` `none` (wins over the variant effort), on the vertical's chat feature (its configured model); metered under its own key | the one-word output parsed like production (`parseAnswerVerdict` = `parseClassifierVerdict`) equals the expected verdict |
+
+Trap cases per feature: prompt injection, missing data and language mismatch. All data is synthetic: phones are
+zero-filled, URLs use `example.com`.
+
+### Production parity
+
+Like the chat contexts, the non-chat requests are never rebuilt in ai-core. `apps/api` renders each stored input
+(`task-fixtures/<feature>.json`) with the real route builders into `tasks.generated.json`, together with the output
+schemas converted by the AI SDK itself (`zodSchema`, via `sdk-json-schema.ts`):
+
+```bash
+# from the repo root, after changing a fixture input, a builder, an output schema or inputs/*.json
+CI=true pnpm --filter hospeda-api exec tsx scripts/ai-sweep/generate-sweep-tasks.ts
+```
+
+Guards: `apps/api/test/scripts/ai-sweep-tasks-parity.test.ts` fails on a stale file and rebuilds one case per call
+kind without the generator; `test/ai-sweep-provider-parity.test.ts` (ai-core) runs every case through the real
+`createAiEngine` and `OpenAiAdapter` and compares what reaches the provider and the SDK with what the sweep sends;
+`test/ai-sweep-tasks.test.ts` refuses a fixture edited after generation.
+
+### Policy: every AI feature must be covered
+
+Owner rule (2026-11-16): an AI feature does not ship without sweep cases, so the next model change measures it
+instead of guessing. It is enforced, not remembered: `apps/api/test/scripts/ai-sweep-feature-coverage.guard.test.ts`
+(runs in CI's unit tests) fails when a feature production knows has no cases here or no entry in
+`sweep.config.migration.json`. "Known to production" is every value of `AiFeatureSchema` (`@repo/schemas`, the keys
+of `ai_settings.features`) plus every exported `*_USAGE_FEATURE` constant (a feature metered in `ai_usage` under its
+own key, today `CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE`). Run it with
+`cd apps/api && CI=true pnpm exec vitest run test/scripts/ai-sweep-feature-coverage.guard.test.ts`; to satisfy it,
+follow "Adding a feature or a case" below.
+
+### Adding a feature or a case
+
+- **A case**: add it to `task-fixtures/<feature>.json` (`id` prefixed with the feature, raw route `input`, `checks`,
+  grader `notes`), regenerate `tasks.generated.json`, and run the three tests above.
+- **A feature**: export its pure prompt builder from apps/api (a `*.prompt.ts` module if the route file loads env),
+  add the call kind to `TASK_CALLS`/`FEATURE_OF_CALL` (`tasks.ts`) and its input schema and `renderTask` branch
+  (`apps/api/scripts/ai-sweep/render-sweep-tasks.ts`), plus its output schema to `OUTPUT_SCHEMA_IDS` and
+  `OUTPUT_ZOD_SCHEMAS` if structured, then add it to `sweep.config.migration.json` with its monthly volume.
+
+### Results 2026-11-16 (decision: `gpt-6-luna`)
+
+5 variants x 141 cases = 705 calls, about US$0.46. Blind grades 1-5 (`gpt-5.4-nano` / `gpt-6-luna|none` /
+`gpt-6-luna|low`):
+
+| feature | nano | luna none | luna low |
+| --- | --- | --- | --- |
+| chat | 4.66 | 4.53 | 4.71 |
+| chat_venue | 4.08 | 4.73 | 4.81 |
+| post_generate | 2.86 | 4.71 | 4.71 |
+| text_improve | 3.56 | 4.78 | 4.67 |
+| support | 3.29 | 4.29 | 4.57 |
+| faq_draft | 4.50 | 4.70 | 4.90 |
+| translate | 4.70 | 4.80 | 4.80 |
+| search reply (n=4) | 4.75 | 4.25 | 4.50 |
+
+`accommodation_import` all-pass: nano 25%, luna none 13%, luna low 100%. `chat_answer_classifier`: luna none 100%,
+luna low 44% (5 of 9 empty: reasoning ate the 16-token cap).
+
+Decision: every feature on `gpt-6-luna`; `none` for chat, chat_experience, search, translate and post_generate; `low`
+for text_improve, accommodation_import, faq_draft and support. chat_venue stays `none` until the classifier fix
+below is deployed, then can move to `low`. Applied by seed data-migration `0177-hos-2217-ai-features-gpt-6-luna`.
+
+**Classifier effort (prod fix).** The engine merges the feature config's `reasoningEffort` under the caller params,
+and the classifier runs under the vertical's chat feature, so it inherited that effort (venue chats ran it on
+`gpt-5.4-mini|low`). `buildChatAnswerClassifierRequest` now sends `reasoningEffort: 'none'` explicitly; the sweep's
+classifier cases send the same `none` whatever the variant effort. Before moving a chat feature to a model WITHOUT
+reasoning support, revisit that parameter.
+
+### Caveats (migration)
+
+- `monthlyCalls` are a single 30-day measurement (2026-11-15) of a young production; use the quota projection for
+  sizing and re-measure before deciding on the monthly figure.
+- `chat_answer_classifier` is billed under its own sweep feature but routed as `chat`/`chat_venue`/`chat_experience`
+  (production runs it on that feature's model); its 16-token cap is fixed by production, so the config cap never applies.
+- Prompts are the in-code defaults, not DB overrides, and feature configs are not read: the effort is the config's.
+- When production sends no `maxTokens`, the sweep caps the call (`maxOutputTokens` / `featureMaxOutputTokens`) so the
+  worst case is bounded; a capped answer shows up as finishReason `length` in the "truncated" column.
+- `support` has no production caller, so its parity is with the engine defaults only.
+- `faq_draft` contexts use every listing section; production may hide sections the owner's plan does not grant.
+- The JSON Schema validator supports only the keywords the stored schemas use and throws on any other one.

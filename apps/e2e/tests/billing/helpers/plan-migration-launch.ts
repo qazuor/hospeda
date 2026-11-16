@@ -1,6 +1,7 @@
 import type { Browser, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 import { computeApplicationDate } from '@repo/service-core';
+import { getLocalDateString } from '@repo/utils';
 import { z } from 'zod';
 import type { CreatedUser } from '../../../fixtures/api-helpers.ts';
 import { type FakeWorld, runCron } from '../../../fixtures/arrears-cycle.ts';
@@ -161,6 +162,21 @@ export async function buildMigrationCohort(args: {
         [card.subscriptionId]
     );
     if (!anchor?.next_charge_at) throw new Error('Expected the card next charge after the sweep.');
+    // HOS-2240: one application day for the cohort needs one local charge day.
+    const anchorDay = getLocalDateString({ instant: new Date(anchor.next_charge_at) });
+    const siblings = await execSQL<{ id: string; next_charge_at: Date | null }>(
+        'SELECT id, next_charge_at FROM subscription WHERE id = ANY($1::uuid[])',
+        [[planChanger.subscriptionId, canceller.subscriptionId, grace.subscriptionId]]
+    );
+    for (const sibling of siblings) {
+        const day = sibling.next_charge_at
+            ? getLocalDateString({ instant: new Date(sibling.next_charge_at) })
+            : null;
+        if (day !== anchorDay)
+            throw new Error(
+                `Cohort charge days diverged: card ${anchorDay}, ${sibling.id} ${day}. The build crossed local midnight.`
+            );
+    }
     const [deadlines] = await execSQL<{ version: number; values: unknown }>(
         'SELECT version, "values" FROM billing_deadline_version ORDER BY version DESC LIMIT 1'
     );

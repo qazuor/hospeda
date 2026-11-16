@@ -117,6 +117,23 @@ let listenersAttached = false;
 let previousWasRaw = false;
 
 /**
+ * Id of the entry whose routed claim is running `navigate()` right now, else
+ * `null`. Set and cleared by {@link claim}, so it also covers the first-open
+ * claim that runs inside the deferred import's `.then`.
+ *
+ * Astro 7.3.1's `moveToLocation()` (`astro/dist/transitions/router.js`, the
+ * `if (to.hash)` branch) runs synchronously for a same-page hash:
+ * `history.pushState(...)`, then `location.href = to.href`, then — when
+ * `history.state` came back null — `history.replaceState(savedState, '')` and
+ * a synthetic `popstate`. Firefox 160 fires a TRUSTED `popstate` with
+ * `state: null` during that `location.href` assignment, while `history.state`
+ * is null, so the claimed entry looked dismissed and the dialog closed the
+ * instant it opened. Firefox 159 fires nothing; Chromium fires it but keeps the
+ * pushed state. Any `popstate` while this is set is caused by our own claim.
+ */
+let claimingEntryId: number | null = null;
+
+/**
  * Entries released but not yet unwound. Coalesced into a single `history.go()`
  * so that closing nested modals in one action does not queue two independent
  * traversals — the second would race the first and land somewhere unintended.
@@ -243,6 +260,10 @@ function processPopState(): boolean {
 
     const top = stack[stack.length - 1];
     if (!top) return swallow;
+    // Our own claim's `popstate` (see `claimingEntryId`), not a back press. The
+    // raw bookkeeping above still runs, exactly as for the Chromium event, and
+    // the router ignores it anyway (`onPopState` returns on `state === null`).
+    if (claimingEntryId === top.id) return swallow;
 
     const currentId = currentEntryId();
     // Still sitting on the innermost modal's own entry: nothing was dismissed.
@@ -487,11 +508,18 @@ function claim(navigateFn: NavigateFn, entry: DialogHistoryEntry): boolean {
     // shapes are absorbed: an unhandled rejection would surface as noise in
     // Sentry for something this module is designed to shrug off.
     try {
-        Promise.resolve(
-            navigateFn(href, {
+        // The hash fast path pushes synchronously, so the marker spans every
+        // `popstate` the claim itself causes (Firefox 160, see `claimingEntryId`).
+        claimingEntryId = entry.id;
+        let navigation: Promise<void>;
+        try {
+            navigation = navigateFn(href, {
                 state: { [DIALOG_STATE_KEY]: entry.id, [DIALOG_SESSION_KEY]: SESSION_STAMP }
-            })
-        ).catch(() => {
+            });
+        } finally {
+            claimingEntryId = null;
+        }
+        Promise.resolve(navigation).catch(() => {
             // Only disown an entry that never landed. A rejection arriving
             // after a successful push (scroll bookkeeping, a future stage)
             // would otherwise drop a live entry out of the stack, leaving
@@ -635,6 +663,7 @@ export function resetDialogHistoryForTests(): void {
     // async path that production never takes.
     resetRouterSyncForTests();
     previousWasRaw = false;
+    claimingEntryId = null;
     if (listenersAttached) {
         window.removeEventListener('popstate', handleCapturedPopState, true);
         const guard = (window as PopGuardWindow)[POP_GUARD_KEY];

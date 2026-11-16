@@ -4,6 +4,9 @@
  * History is derived from tests that apply migrations through a journal tag or
  * import/read a seed data-migration. The five edited SQL files have a separate
  * value-only check because their schema identifiers describe historical state.
+ * Only history files that CONTAIN the retired word are counted (`historyWordFiles`):
+ * a history file without it has nothing to hide, so an unrelated new data-migration
+ * test never touches a frozen number (HOS-2190).
  *
  * ## Lo que NO verifica
  * - No ve la palabra en binarios ni imágenes.
@@ -38,7 +41,6 @@ type Exemption = {
 };
 type GuardConfig = {
     readonly exemptions: Readonly<Record<string, Exemption>>;
-    readonly historyCount: number;
     readonly historyWordFiles: number;
     readonly ledgerFingerprint: string;
 };
@@ -397,13 +399,6 @@ export function run({
             line: 1,
             rule: 0,
             text: 'closed exemption path/key ledger changed'
-        });
-    if (history.length !== config.historyCount)
-        violations.push({
-            file: CONFIG,
-            line: 1,
-            rule: 0,
-            text: `derived history count expected ${config.historyCount}, found ${history.length}`
         });
     if (historyWordFiles.length !== config.historyWordFiles)
         violations.push({

@@ -15,6 +15,14 @@ export const PARTNER_ALREADY_CLAIMED = 'PARTNER_ALREADY_CLAIMED' as const;
 /** Conflict reason when the claimant already owns a different Partner. */
 export const PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS = 'PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS' as const;
 
+/**
+ * Forbidden reason when the claimant's email differs from the Partner's claim mailbox
+ * (HOS-2222). The source is the stored `partners.claim_email`, written with every claim
+ * secret; the approved application's email is only a legacy fallback for rows minted
+ * before that column existed. A Partner with neither is refused too.
+ */
+export const PARTNER_CLAIM_EMAIL_MISMATCH = 'PARTNER_CLAIM_EMAIL_MISMATCH' as const;
+
 const MAX_CAUSE_DEPTH = 10;
 
 /** Classifies only the database constraints that prevent a Partner application submission. */

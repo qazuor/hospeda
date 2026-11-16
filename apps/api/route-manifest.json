@@ -106,6 +106,10 @@
             "path": "/api/v1/admin/accommodations/:id/location-exception"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/accommodations/:id/location-exception"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/accommodations/:id/location-exception"
         },
@@ -172,6 +176,18 @@
         {
             "method": "GET",
             "path": "/api/v1/admin/accommodations/location-duplicates"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/accommodations/location-exception-requests"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/location-exception-requests/:requestId/approve"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/location-exception-requests/:requestId/reject"
         },
         {
             "method": "GET",
@@ -2366,6 +2382,10 @@
             "path": "/api/v1/admin/venues/:id/location-exception"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/:id/location-exception"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/venues/:id/location-exception"
         },
@@ -2416,6 +2436,18 @@
         {
             "method": "GET",
             "path": "/api/v1/admin/venues/location-duplicates"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/venues/location-exception-requests"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/location-exception-requests/:requestId/approve"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/venues/location-exception-requests/:requestId/reject"
         },
         {
             "method": "GET",
@@ -2584,6 +2616,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/accommodations/:id/fix-request/report-fixed"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:id/location-exception-request"
         },
         {
             "method": "GET",
@@ -3676,6 +3712,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/venues/:id/fix-request/report-fixed"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/location-exception-request"
         },
         {
             "method": "GET",
