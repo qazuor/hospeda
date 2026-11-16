@@ -81,8 +81,27 @@ import { createHash } from 'node:crypto';
  * So only this constant moved. The digests below were NOT touched, which is the
  * point: had any of them needed to change, the payloads would have had to be
  * re-captured too.
+ * ## 7.3.1 → 7.4.7 (2026-11-16): ALL FIVE payloads changed
+ *
+ * The guard fired on the security-advisory bump (Dependabot #4354). Method as
+ * above: payloads read from the installed astro 7.4.7 package and hashed with
+ * `node:crypto`, independently of this module.
+ *
+ * - The four hydration IIFEs changed shape. Astro now prebuilds them as
+ *   `(function(){let e=…})();` with `,` sequencing and backtick string literals,
+ *   instead of the earlier `(()=>{var e=…;…})();` arrow wrapper with `"` quotes.
+ *   Taken verbatim from `runtime/client/{load,only,idle,visible}.prebuilt.js`.
+ * - `replaceServerIsland` changed too: the template in
+ *   `runtime/server/render/server-islands.js` now tolerates a missing response
+ *   (`!r`) and wraps `r.text()` in try/catch. Rebuilt from that template with
+ *   astro's own transform and `SERVER_ISLAND_START` imported from astro.
+ * - Independent confirmation: the CSP Headers CI job, which hashes the inline
+ *   scripts of the real built site, reported exactly the digests derived here
+ *   for Astro.load, Astro.only and Astro.visible. idle and replaceServerIsland
+ *   do not appear on the pages that job crawls, so they rest on the derivation.
+ *
  */
-export const VERIFIED_ASTRO_VERSION = '7.3.1';
+export const VERIFIED_ASTRO_VERSION = '7.4.7';
 
 /**
  * One entry per inline script Astro's client runtime emits, keyed by the global
@@ -100,27 +119,27 @@ export const ASTRO_RUNTIME_INLINE_SCRIPTS: readonly {
     {
         name: 'Astro.load',
         directive: 'client:load',
-        source: '(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();'
+        source: '(function(){let e=async e=>{await(await e())()};(self.Astro||(self.Astro={})).load=e,window.dispatchEvent(new Event(`astro:load`))})();'
     },
     {
         name: 'Astro.only',
         directive: 'client:only',
-        source: '(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).only=e;window.dispatchEvent(new Event("astro:only"));})();'
+        source: '(function(){let e=async e=>{await(await e())()};(self.Astro||(self.Astro={})).only=e,window.dispatchEvent(new Event(`astro:only`))})();'
     },
     {
         name: 'Astro.idle',
         directive: 'client:idle',
-        source: '(()=>{var l=(n,t)=>{let i=async()=>{await(await n())()},e=typeof t.value=="object"?t.value:void 0,s={timeout:e==null?void 0:e.timeout};"requestIdleCallback"in window?window.requestIdleCallback(i,s):setTimeout(i,s.timeout||200)};(self.Astro||(self.Astro={})).idle=l;window.dispatchEvent(new Event("astro:idle"));})();'
+        source: '(function(){let e=(e,t)=>{let n=async()=>{await(await e())()},r=typeof t.value==`object`?t.value:void 0,i={timeout:r==null?void 0:r.timeout};`requestIdleCallback`in window?window.requestIdleCallback(n,i):setTimeout(n,i.timeout||200)};(self.Astro||(self.Astro={})).idle=e,window.dispatchEvent(new Event(`astro:idle`))})();'
     },
     {
         name: 'Astro.visible',
         directive: 'client:visible',
-        source: '(()=>{var a=(s,i,o)=>{let r=async()=>{await(await s())()},t=typeof i.value=="object"?i.value:void 0,c={rootMargin:t==null?void 0:t.rootMargin},n=new IntersectionObserver(e=>{for(let l of e)if(l.isIntersecting){n.disconnect(),r();break}},c);for(let e of o.children)n.observe(e)};(self.Astro||(self.Astro={})).visible=a;window.dispatchEvent(new Event("astro:visible"));})();'
+        source: '(function(){let e=(e,t,n)=>{let r=async()=>{await(await e())()},i=typeof t.value==`object`?t.value:void 0,a={rootMargin:i==null?void 0:i.rootMargin},o=new IntersectionObserver(e=>{for(let t of e)if(t.isIntersecting){o.disconnect(),r();break}},a);for(let e of n.children)o.observe(e)};(self.Astro||(self.Astro={})).visible=e,window.dispatchEvent(new Event(`astro:visible`))})();'
     },
     {
         name: 'replaceServerIsland',
         directive: 'server:defer',
-        source: "async function replaceServerIsland(id, r) { let s = document.querySelector(`script[data-island-id=\"${id}\"]`); if (!s || r.status !== 200 || r.headers.get('content-type')?.split(';')[0].trim() !== 'text/html') return; let html = await r.text(); while (s.previousSibling && s.previousSibling.nodeType !== 8 && s.previousSibling.data !== '[if astro]>server-island-start<![endif]') s.previousSibling.remove(); s.previousSibling?.remove(); s.before(document.createRange().createContextualFragment(html)); s.remove(); }"
+        source: "async function replaceServerIsland(id, r) { let s = document.querySelector(`script[data-island-id=\"${id}\"]`); if (!s || !r || r.status !== 200 || r.headers.get('content-type')?.split(';')[0].trim() !== 'text/html') return; let html; try { html = await r.text(); } catch { return; } while (s.previousSibling && s.previousSibling.nodeType !== 8 && s.previousSibling.data !== '[if astro]>server-island-start<![endif]') s.previousSibling.remove(); s.previousSibling?.remove(); s.before(document.createRange().createContextualFragment(html)); s.remove(); }"
     }
 ] as const;
 

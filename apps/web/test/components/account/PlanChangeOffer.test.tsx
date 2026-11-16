@@ -70,7 +70,7 @@ beforeEach(() => {
                 data: {
                     status: 'ACTIVE',
                     billingOptionId: currentId,
-                    declaredPayerEmail: null
+                    declaredPayerEmail: 'declared@example.test'
                 }
             });
         return response({
@@ -109,6 +109,9 @@ async function choose(id: string) {
             'button'
         )
     );
+    // HOS-2218: a row without a declared email leaves the field empty; the payer declares one.
+    const email = screen.getByTestId('plan-change-payer-email') as HTMLInputElement;
+    if (!email.value) fireEvent.change(email, { target: { value: 'typed@example.test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
     return list;
 }
@@ -235,7 +238,10 @@ describe('TEST:B8b:14 PlanChangeOffer', () => {
         expect(post?.[0]).toContain(
             `/api/v1/protected/billing-subscription/${subscriptionId}/plan-change`
         );
-        expect(JSON.parse(post?.[1]?.body as string)).toEqual({ billingOptionId: lowerId });
+        expect(JSON.parse(post?.[1]?.body as string)).toEqual({
+            billingOptionId: lowerId,
+            payerEmail: 'declared@example.test'
+        });
     });
     it('redirects a succession to the checkout returned by the route', async () => {
         fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
@@ -402,5 +408,46 @@ describe('TEST:B8b:14 PlanChangeOffer', () => {
                 '5 de diciembre de 2026'
             )
         );
+    });
+});
+
+describe('HOS-2218 PlanChangeOffer payer email', () => {
+    async function openConfirm() {
+        render(
+            <PlanChangeOffer
+                subscriptionId={subscriptionId}
+                vertical="accommodation"
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Cambiar de plan' }));
+        const list = await screen.findByTestId('plan-change-options');
+        fireEvent.click(within(list).getAllByRole('button')[0]!);
+        return screen.getByTestId('plan-change-payer-email') as HTMLInputElement;
+    }
+
+    it('prefills the declared payer email and sends the edited one', async () => {
+        const email = await openConfirm();
+        expect(email.value).toBe('declared@example.test');
+        fireEvent.change(email, { target: { value: ' edited@example.test ' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await waitFor(() =>
+            expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(true)
+        );
+        const post = fetchMock.mock.calls.find(([, init]) => init?.method === 'POST');
+        expect(JSON.parse(post?.[1]?.body as string)).toEqual({
+            billingOptionId: higherId,
+            payerEmail: 'edited@example.test'
+        });
+    });
+
+    it('does not post without a valid payer email', async () => {
+        const email = await openConfirm();
+        fireEvent.change(email, { target: { value: 'not-an-email' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        expect(await screen.findByTestId('plan-change-payer-email-error')).toHaveTextContent(
+            'Ingresá un correo válido del pagador.'
+        );
+        expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false);
     });
 });

@@ -200,6 +200,17 @@ describe('calculateCostMicroUsd', () => {
             );
         });
 
+        it('should contain the HOS-2217 candidates gpt-6-luna and gpt-5.6-luna', () => {
+            expect(MODEL_RATES['gpt-6-luna']).toEqual({
+                inputMicroUsdPerMillionTokens: 100_000,
+                outputMicroUsdPerMillionTokens: 500_000
+            });
+            expect(MODEL_RATES['gpt-5.6-luna']).toEqual({
+                inputMicroUsdPerMillionTokens: 200_000,
+                outputMicroUsdPerMillionTokens: 1_200_000
+            });
+        });
+
         it('should contain claude-3-5-haiku-20241022', () => {
             expect(MODEL_RATES['claude-3-5-haiku-20241022']).toBeDefined();
             expect(MODEL_RATES['claude-3-5-haiku-20241022']?.outputMicroUsdPerMillionTokens).toBe(

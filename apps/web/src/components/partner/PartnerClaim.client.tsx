@@ -29,6 +29,7 @@ type ClaimState =
     | 'not-found'
     | 'already-claimed'
     | 'account-already-owns'
+    | 'email-mismatch'
     | 'verify-email-first'
     | 'error';
 type ResendState = 'idle' | 'sending' | 'sent' | 'error';
@@ -125,6 +126,8 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
             setState('already-claimed');
         else if (status === 409 && reason === 'PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS')
             setState('account-already-owns');
+        else if (status === 403 && reason === 'PARTNER_CLAIM_EMAIL_MISMATCH')
+            setState('email-mismatch');
         else if (status === 403 && reason === 'EMAIL_NOT_VERIFIED') setState('verify-email-first');
         else if (status === 401) {
             saveClaimAction();
@@ -160,12 +163,14 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
         'not-found': t('partners.claim.notFound'),
         'already-claimed': t('partners.claim.alreadyClaimed'),
         'account-already-owns': t('partners.claim.accountAlreadyOwns'),
+        'email-mismatch': t('partners.claim.emailMismatch'),
         'verify-email-first': t('partners.claim.verifyEmailFirst'),
         error: t('partners.claim.genericError')
     };
     const supportState =
         state === 'already-claimed' ||
         state === 'account-already-owns' ||
+        state === 'email-mismatch' ||
         state === 'verify-email-first';
 
     return (
@@ -231,6 +236,13 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                 >
                     {t('partners.claim.successCta')}
                 </a>
+            )}
+            {state === 'email-mismatch' && accountEmail !== null && (
+                <p className={styles.message}>
+                    {t('partners.claim.emailMismatchSignedInAs', undefined, {
+                        email: accountEmail
+                    })}
+                </p>
             )}
             {state === 'verify-email-first' && (
                 <>

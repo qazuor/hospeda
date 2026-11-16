@@ -41,7 +41,10 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
 import { billingSubscriptionApi, partnersApi } from '@/lib/api/endpoints-protected';
-import { resolveManualInstallmentView } from '@/lib/billing/manual-installment';
+import {
+    hasActivePartnerSubscription as resolveHasActivePartnerSubscription,
+    resolveManualInstallmentView
+} from '@/lib/billing/manual-installment';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -82,6 +85,16 @@ const showPresenceNotice = presence !== null && (presence.moderated || (isConten
 const isRevoked = partner !== null && partner.revokedAt != null;
 const hasSubmitted = partner !== null && partner.contentReviewState != null;
 const isUnderReview = partner !== null && partner.contentReviewState === 'pending';
+let hasActivePartnerSubscription = false;
+try {
+    hasActivePartnerSubscription = resolveHasActivePartnerSubscription(
+        await billingSubscriptionApi.listMine({
+            cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+        })
+    );
+} catch {
+    hasActivePartnerSubscription = false;
+}
 let installmentView = null;
 try {
     installmentView = resolveManualInstallmentView({
@@ -157,12 +170,21 @@ try {
                                 </p>
                             </>
                         ) : isContentApproved ? (
-                            <p>
-                                {t(
-                                    'account.partner.status.approved',
-                                    'Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.'
-                                )}
-                            </p>
+                            hasActivePartnerSubscription ? (
+                                <p>
+                                    {t(
+                                        'account.partner.status.activeSubscription',
+                                        'Tu suscripción de Partner está activa y al día.'
+                                    )}
+                                </p>
+                            ) : (
+                                <p>
+                                    {t(
+                                        'account.partner.status.approved',
+                                        'Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.'
+                                    )}
+                                </p>
+                            )
                         ) : isUnderReview ? (
                             <p>
                                 {t(

@@ -195,7 +195,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     predecessorSubscriptionId: fixture.started.subscriptionId,
                     userId: fixture.user.id,
                     billingOptionId: predecessor.billingOptionId,
-                    returnUrl: successionReturnUrl
+                    returnUrl: successionReturnUrl,
+                    payerEmail: 'payer@example.test'
                 },
                 { ...successionPorts(fixture.provider), clock: fixture.clock }
             );

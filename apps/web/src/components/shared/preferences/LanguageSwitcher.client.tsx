@@ -114,11 +114,21 @@ export function LanguageSwitcher({
                     }}
                     className={cn(styles.option, loc === locale && styles.optionActive)}
                     aria-current={loc === locale ? 'true' : undefined}
-                    aria-label={LOCALE_NAMES[loc]}
                     data-astro-prefetch
                     data-astro-reload
                 >
+                    {/* No aria-label: it would replace the visible "EN" with "English",
+                        which breaks WCAG 2.5.3 (label in name) for voice-control users
+                        who say what they see. The full name is appended as
+                        screen-reader-only text instead, so the accessible name is
+                        "EN English" and still starts with the visible label. */}
                     {LOCALE_LABELS[loc]}
+                    <span
+                        className="sr-only"
+                        lang={loc}
+                    >
+                        {` ${LOCALE_NAMES[loc]}`}
+                    </span>
                 </a>
             ))}
         </div>

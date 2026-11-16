@@ -1,7 +1,19 @@
 import { extractPostgresErrorCause, ServiceError } from '@repo/service-core';
 
-/** Shared opaque reason for Partner applications rejected by database guards. */
+/** Fallback reason for a database-guard rejection whose cause cannot be told to the applicant. */
 export const PARTNER_APPLICATION_UNAVAILABLE = 'PARTNER_APPLICATION_UNAVAILABLE' as const;
+
+/**
+ * Conflict reason when the email already has a PENDING application. Published to the public
+ * form on purpose (HOS-2242, owner decision): the person must know it is not a technical failure.
+ */
+export const PARTNER_APPLICATION_PENDING = 'PARTNER_APPLICATION_PENDING' as const;
+
+/**
+ * Conflict reason when the email is inside the wait that follows a rejection. Its `details`
+ * carry `reapplyAfter`, the ISO instant the wait ends (HOS-2242, owner decision).
+ */
+export const PARTNER_APPLICATION_WAIT_ACTIVE = 'PARTNER_APPLICATION_WAIT_ACTIVE' as const;
 
 /** Conflict reason when a Partner application has no active rejection wait to cancel. */
 export const PARTNER_APPLICATION_WAIT_NOT_ACTIVE = 'PARTNER_APPLICATION_WAIT_NOT_ACTIVE' as const;
@@ -14,6 +26,14 @@ export const PARTNER_ALREADY_CLAIMED = 'PARTNER_ALREADY_CLAIMED' as const;
 
 /** Conflict reason when the claimant already owns a different Partner. */
 export const PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS = 'PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS' as const;
+
+/**
+ * Forbidden reason when the claimant's email differs from the Partner's claim mailbox
+ * (HOS-2222). The source is the stored `partners.claim_email`, written with every claim
+ * secret; the approved application's email is only a legacy fallback for rows minted
+ * before that column existed. A Partner with neither is refused too.
+ */
+export const PARTNER_CLAIM_EMAIL_MISMATCH = 'PARTNER_CLAIM_EMAIL_MISMATCH' as const;
 
 const MAX_CAUSE_DEPTH = 10;
 

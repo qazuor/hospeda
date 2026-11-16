@@ -27,6 +27,7 @@ import {
     type StartSubscriptionResult
 } from './start-subscription.service.js';
 import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
+import { claimRecreatableSuccessor } from './succession-recreate.js';
 import { resolveSuccessorWindow } from './successor-window.js';
 
 const logger = createLogger('subscription-succession');
@@ -92,6 +93,55 @@ export async function startSuccession(
         );
     }
 
+    // HOS-2218: the provider requires a payer email. What the payer declares on this
+    // request wins; otherwise the predecessor's declared one is reused. Neither is a
+    // confirmed identity (CLAUDE.md), only what the payer said.
+    const declaredPayerEmail = input.payerEmail ?? admitted.predecessor.declaredPayerEmail;
+    if (!declaredPayerEmail)
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'No declared payer email for this plan change',
+            undefined,
+            'PAYER_EMAIL_UNDECLARED'
+        );
+
+    const recreatable = await claimRecreatableSuccessor({
+        predecessorId: admitted.predecessorId,
+        billingOptionId: choice.id,
+        declaredPayerEmail,
+        clock: ports.clock
+    });
+    if (recreatable) {
+        const exceptional = admitted.basis === 'CARD_SUSPENDED_CONFIRMED_CANCELLED';
+        const storedFirstChargeAt = recreatable.subscription.firstChargeAt;
+        const storedWindowEndsAt = recreatable.subscription.authorizationWindowEndsAt;
+        if (!exceptional && ports.firstChargeSchedule && storedWindowEndsAt) {
+            // Re-run the caller's schedule over the stored birth so its credit read
+            // (AC:B8b:7, Q2) matches the row; the stored first charge stays authoritative.
+            await ports.firstChargeSchedule({
+                authorizationWindowEndsAt: storedWindowEndsAt,
+                bornAt: recreatable.subscription.createdAt,
+                predecessorId: admitted.predecessorId
+            });
+        }
+        const recreated = await authorizePendingSubscription({
+            pending: {
+                subscription: recreatable.subscription,
+                idempotencyKey: recreatable.idempotencyKey
+            },
+            provider: ports.provider,
+            clock: ports.clock,
+            reason: choice.providerReason,
+            returnUrl: input.returnUrl,
+            payerEmail: declaredPayerEmail,
+            paymentToken: input.paymentToken,
+            ...(!exceptional && storedFirstChargeAt
+                ? { firstChargeAt: storedFirstChargeAt.toISOString() }
+                : {})
+        });
+        return { ...recreated, predecessorId: admitted.predecessorId, basis: admitted.basis };
+    }
+
     const deadlines = await getCurrentBillingDeadlines();
     const cycleDeadlines = await getDb().transaction((tx) =>
         readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId })
@@ -129,6 +179,7 @@ export async function startSuccession(
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt,
             succeedsId: admitted.predecessorId,
+            declaredPayerEmail,
             firstChargeAt: bornAt
         };
     } else {
@@ -157,6 +208,7 @@ export async function startSuccession(
             authorizationWindowDeadlineVersion: deadlines.version,
             authorizationWindowEndsAt,
             succeedsId: admitted.predecessorId,
+            declaredPayerEmail,
             firstChargeAt: schedule.firstChargeAt
         };
     }
@@ -228,7 +280,7 @@ export async function startSuccession(
         clock: ports.clock,
         reason: choice.providerReason,
         returnUrl: input.returnUrl,
-        payerEmail: input.payerEmail,
+        payerEmail: declaredPayerEmail,
         paymentToken: input.paymentToken,
         ...(providerFirstChargeAt ? { firstChargeAt: providerFirstChargeAt } : {})
     });

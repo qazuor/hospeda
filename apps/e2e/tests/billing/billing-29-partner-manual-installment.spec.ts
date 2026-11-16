@@ -28,6 +28,7 @@ const HOW_TO_PAY =
     'Se paga por transferencia bancaria. El equipo de Hospeda te manda por correo los datos para transferir. Cuando registremos el pago, tu suscripción queda al día.';
 const APPROVED =
     'Tu contenido está aprobado. El equipo de Hospeda arma tu suscripción y te escribe para coordinar el pago por transferencia.';
+const ACTIVE = 'Tu suscripción de Partner está activa y al día.';
 
 const Action6PreviewSchema = z.object({
     data: z.object({
@@ -289,7 +290,8 @@ test.describe('TEST:HOS-2137 partner manual installment: card, mail and renewal 
 
             const card = await readCard(page);
             await expect(card).toHaveCount(0);
-            await expect(page.getByText(APPROVED, { exact: true })).toHaveCount(1);
+            await expect(page.getByText(ACTIVE, { exact: true })).toHaveCount(1);
+            await expect(page.getByText(APPROVED, { exact: true })).toHaveCount(0);
         });
 
         await test.step('Point 3: renewal opens one installment and sends one email', async () => {

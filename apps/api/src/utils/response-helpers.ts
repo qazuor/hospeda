@@ -7,6 +7,7 @@ import { DbError } from '@repo/db/utils';
 import {
     BUSINESS_LINES_INVALID_REASON,
     DUPLICATE_LOCATION_REASON,
+    LOCATION_EXCEPTION_REASONS,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
@@ -15,6 +16,7 @@ import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ZodIssue, ZodTypeAny } from 'zod';
+import { PARTNER_APPLICATION_WAIT_ACTIVE } from '../services/partner-application/partner-application-errors';
 import {
     buildConstraintViolationResponse,
     buildUniqueViolationErrorPayload
@@ -520,7 +522,8 @@ const logRouteError = (
  *
  * Provides consistent error handling across all endpoints. `error.details` is
  * debug-only except for the narrow public contract cases: the codes in
- * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT` and `DUPLICATE_LOCATION` reasons, and the
+ * {@link PUBLIC_DETAILS_ERROR_CODES}, the `SECTION_ABSENT`, `DUPLICATE_LOCATION` and
+ * `PARTNER_APPLICATION_WAIT_ACTIVE` (the public form shows its `reapplyAfter` date) reasons, and the
  * business-lines invalid reason, whose `{ field, reason }` payload the owner
  * form needs to render the cause of the rejection in production. The
  * business-line case is gated on the propagated top-level `reason` alone; the
@@ -701,7 +704,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
                     error.reason === 'SECTION_ABSENT' ||
                     error.reason === DUPLICATE_LOCATION_REASON ||
-                    error.reason === BUSINESS_LINES_INVALID_REASON
+                    error.reason === LOCATION_EXCEPTION_REASONS.REVOKE_CONFLICT ||
+                    error.reason === BUSINESS_LINES_INVALID_REASON ||
+                    error.reason === PARTNER_APPLICATION_WAIT_ACTIVE
                         ? error.details
                         : undefined,
                 reason: error.reason

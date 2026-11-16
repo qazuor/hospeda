@@ -43,6 +43,7 @@ const serviceAnswer: Readonly<Record<string, { status: 404 | 409 | 422; code: st
     SUCCESSION_PREDECESSOR_MOVED: { status: 409, code: 'CONFLICT' },
     PREDECESSOR_STATUS_NOT_ADMITTED: { status: 409, code: 'CONFLICT' },
     SUCCESSION_VERTICAL_MISMATCH: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
+    PAYER_EMAIL_UNDECLARED: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
     PREDECESSOR_IS_A_SUCCESSOR: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
     MANUAL_PAYER_SUCCESSION_NOT_AVAILABLE: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },
     PREDECESSOR_NO_PROVIDER_LINK: { status: 422, code: ServiceErrorCode.VALIDATION_ERROR },

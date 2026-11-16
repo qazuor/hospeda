@@ -1093,6 +1093,12 @@
         "cancel": "Cancelar",
         "previewError": "Não foi possível carregar as opções de plano.",
         "loading": "Carregando opções de plano…",
+        "readError": "Não foi possível carregar a assinatura manual do Partner.",
+        "registerError": "Não foi possível registrar o pagamento. Confira a parcela e tente novamente.",
+        "configured": "Assinatura manual",
+        "noOpenInstallments": "Não há parcelas abertas para registrar.",
+        "registerPayment": "Registrar pagamento",
+        "paymentNote": "Observação interna opcional",
         "cycle": {
             "monthly": "mensal",
             "quarterly": "trimestral",
@@ -1284,7 +1290,7 @@
             "cancel": "Voltar"
         },
         "errors": {
-            "action": "Não foi possível concluir a ação. Revise o motivo e tente novamente."
+            "action": "Não foi possível concluir a ação. Tente novamente."
         },
         "empty": "Não há candidaturas nesta visualização.",
         "loading": "Carregando candidaturas…",
@@ -1322,5 +1328,54 @@
             "storage": "Não foi possível apagar os arquivos do armazenamento externo. Nada foi esvaziado: tente de novo em alguns minutos.",
             "forbidden": "Você não pode esvaziar a presença de um Partner que é seu: outra conta da equipe com a permissão faz isso."
         }
+    },
+    "locationException": {
+        "title": "Exceção de localização",
+        "none": "Este anúncio não tem exceção de localização.",
+        "inForce": "Exceção em vigor",
+        "by": "Exceção concedida por {name}",
+        "byUnknown": "Concedida por um usuário não identificado",
+        "at": "em {date}",
+        "reasonLabel": "Motivo",
+        "revoke": "Remover exceção",
+        "grant": "Conceder exceção",
+        "historyTitle": "Histórico",
+        "historyEmpty": "Sem eventos ainda.",
+        "loading": "Carregando...",
+        "loadError": "Não foi possível carregar a exceção.",
+        "actions": {
+            "REQUESTED": "Solicitada",
+            "APPROVED": "Aprovada",
+            "REJECTED": "Rejeitada",
+            "GRANTED": "Concedida",
+            "REVOKED": "Removida",
+            "SUPERSEDED": "Substituído"
+        },
+        "supersededReasons": {
+            "ADDRESS_CHANGED": "O endereço do anúncio mudou.",
+            "GRANTED_DIRECTLY": "A exceção foi concedida diretamente.",
+            "NOT_NEEDED": "O anúncio já não conflita com outro anúncio publicado do dono."
+        },
+        "system": "Sistema",
+        "revokeDialog": {
+            "title": "Remover a exceção",
+            "description": "O anúncio deixa de poder compartilhar endereço. Se estiver publicado e outro anúncio do mesmo dono ocupar esse endereço, não é possível removê-la.",
+            "reasonLabel": "Motivo (opcional, de 10 a 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Remover exceção"
+        },
+        "grantDialog": {
+            "title": "Conceder a exceção",
+            "description": "O anúncio poderá compartilhar endereço com outros. Fica registrado com o seu usuário.",
+            "reasonLabel": "Motivo (de 10 a 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Conceder"
+        },
+        "reasonInvalid": "O motivo deve ter entre 10 e 500 caracteres.",
+        "revoked": "Exceção removida.",
+        "granted": "Exceção concedida.",
+        "revokeConflict": "Não é possível remover: o anúncio está publicado e outro anúncio publicado do mesmo dono ocupa o mesmo endereço.",
+        "revokeConflictLink": "Ver o anúncio em conflito",
+        "genericError": "Não foi possível concluir a ação."
     }
 }

@@ -453,6 +453,40 @@
             "empty": "No data yet",
             "visitors_one": "{{count}} visitor",
             "visitors_other": "{{count}} visitors"
+        },
+        "locationException": {
+            "requestButton": "Request an exception",
+            "askAgainButton": "Request again",
+            "form": {
+                "title": "Request an address exception",
+                "reasonLabel": "Reason",
+                "reasonHint": "Tell us why this listing needs to be published at an address where you already have another published listing.",
+                "counter": "{{count}} of {{max}} characters",
+                "submit": "Send request",
+                "submitting": "Sending...",
+                "cancel": "Cancel"
+            },
+            "validation": {
+                "tooShort": "The reason must be at least {{min}} characters long.",
+                "tooLong": "The reason cannot exceed {{max}} characters."
+            },
+            "status": {
+                "pending": "Your exception request is under review. We will email you when there is an answer.",
+                "approved": "Your address exception was approved: you can now publish this listing.",
+                "approvedMove": "Approved: you can now save that address.",
+                "rejected": "Your exception request was rejected. Reason: {{reason}}",
+                "rejectedNoReason": "Your exception request was rejected."
+            },
+            "sent": "Request sent. Your exception request is under review.",
+            "errors": {
+                "requestPending": "You already have an exception request under review for this listing.",
+                "alreadyGranted": "This listing already has the exception approved: you can publish it.",
+                "notNeeded": "This listing does not share its address with another published listing of yours, so no exception is needed.",
+                "needsKey": "Fill in the listing's address (street and number) before requesting an exception.",
+                "invalidReason": "The reason is not valid. Write between {{min}} and {{max}} characters.",
+                "notFound": "We could not find this listing.",
+                "generic": "We could not send the request. Please try again in a while."
+            }
         }
     },
     "notices": {

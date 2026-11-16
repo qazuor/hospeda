@@ -3,7 +3,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { createAdjustableClock } from '@repo/test-clock';
 import { Hono } from 'hono';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { enterManualGraceInTx } from '../../../../../packages/service-core/src/services/billing/subscription/manual-grace-entry';
 import { initApp } from '../../../src/app';
 import { protectedBillingSubscriptionReadRoutes } from '../../../src/routes/billing-subscription';
@@ -24,6 +24,8 @@ const fake = new FakePaymentProvider({
 const pathOf = (id: string) => `/api/v1/protected/billing-subscription/${id}/plan-change`;
 let app: ReturnType<typeof initApp>;
 const ownerHeaders = (id: string) => actorHeaders({ id, role: 'USER', permissions: [] });
+/** HOS-2218: the owner route requires the declared payer email. */
+const payerEmail = 'payer@example.test';
 const post = (id: string, ownerId: string, body: unknown) =>
     app.request(pathOf(id), {
         method: 'POST',
@@ -59,7 +61,8 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
                 .where(eq(subscriptions.id, row.subscriptionId));
             expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: null });
             const response = await post(row.subscriptionId, row.userId, {
-                billingOptionId: row.targetOptionId
+                billingOptionId: row.targetOptionId,
+                payerEmail
             });
             expect(response.status).toBe(409);
             expect((await response.json()) as object).toMatchObject({
@@ -86,7 +89,8 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
                 })
             ).toBe(true);
             const response = await post(row.subscriptionId, row.userId, {
-                billingOptionId: row.targetOptionId
+                billingOptionId: row.targetOptionId,
+                payerEmail
             });
             expect(response.status).toBe(409);
             expect(
@@ -141,7 +145,8 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
             );
             expect((await post(row.subscriptionId, row.userId, {})).status).toBe(400);
             const foreign = await post(row.subscriptionId, crypto.randomUUID(), {
-                billingOptionId: row.targetOptionId
+                billingOptionId: row.targetOptionId,
+                payerEmail
             });
             expect(foreign.status).toBe(404);
             expect(((await foreign.json()) as { error: unknown }).error).toEqual({
@@ -151,7 +156,8 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
             expect(
                 (
                     await post(row.subscriptionId, row.userId, {
-                        billingOptionId: crypto.randomUUID()
+                        billingOptionId: crypto.randomUUID(),
+                        payerEmail
                     })
                 ).status
             ).toBe(404);
@@ -168,13 +174,62 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
                 }
             });
             const response = await post(row.subscriptionId, row.userId, {
-                billingOptionId: row.sourceOptionId
+                billingOptionId: row.sourceOptionId,
+                payerEmail
             });
             expect(response.status).toBe(422);
             expect(
                 ((await response.json()) as { error: { details: { reason: string } } }).error
                     .details.reason
             ).toBe('NO_CHANGE');
+        });
+    });
+});
+
+describe('HOS-2218 owner plan change carries the declared payer email', () => {
+    it('answers 400 without payerEmail and creates no successor', async () => {
+        await withCompositionRollback(async (tx) => {
+            const row = await startPlanChangeScenario(tx, {
+                provider: fake,
+                clock,
+                approve: async (authorizationId) => {
+                    await fake.approve({ authorizationId });
+                }
+            });
+            const response = await post(row.subscriptionId, row.userId, {
+                billingOptionId: row.targetOptionId
+            });
+            expect(response.status).toBe(400);
+            const rows = await tx
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.userId, row.userId));
+            expect(rows).toHaveLength(1);
+        });
+    });
+
+    it('sends the declared payer email to the provider and stores it on the successor', async () => {
+        await withCompositionRollback(async (tx) => {
+            const row = await startPlanChangeScenario(tx, {
+                provider: fake,
+                clock,
+                approve: async (authorizationId) => {
+                    await fake.approve({ authorizationId });
+                }
+            });
+            const authorize = vi.spyOn(fake, 'authorize');
+            const response = await post(row.subscriptionId, row.userId, {
+                billingOptionId: row.targetOptionId,
+                payerEmail: 'changed-payer@example.test'
+            });
+            expect(response.status, await response.clone().text()).toBe(200);
+            expect(authorize.mock.calls.at(-1)?.[0].payerEmail).toBe('changed-payer@example.test');
+            authorize.mockRestore();
+            const [successor] = await tx
+                .select({ declaredPayerEmail: subscriptions.declaredPayerEmail })
+                .from(subscriptions)
+                .where(eq(subscriptions.succeedsId, row.subscriptionId));
+            expect(successor?.declaredPayerEmail).toBe('changed-payer@example.test');
         });
     });
 });

@@ -19,6 +19,7 @@ import {
     CourtesyStarted,
     FeedbackReportEmail,
     HostTradeRevoked,
+    ListingLocationExceptionDecision,
     PartnerMentionsLogged,
     PartnerRevoked,
     PaymentFailure,
@@ -75,6 +76,7 @@ import type {
     HostTradeUsageConfirmationRequestPayload,
     HostTradeUsageConfirmedPayload,
     HostTradeUsageRejectedPayload,
+    ListingLocationExceptionDecisionPayload,
     NotificationPayload,
     PartnerMentionsLoggedPayload,
     PartnerRevokedPayload,
@@ -869,6 +871,19 @@ export class NotificationService {
                     locale: p.locale,
                     listings: p.listings,
                     preferencesUrl: p.preferencesUrl
+                });
+            }
+
+            case 'listing_location_exception_approved':
+            case 'listing_location_exception_rejected': {
+                const p = payload as ListingLocationExceptionDecisionPayload;
+                return ListingLocationExceptionDecision({
+                    recipientName,
+                    locale: p.locale,
+                    approved: payload.type === 'listing_location_exception_approved',
+                    listingName: p.listingName,
+                    decisionReason: p.decisionReason,
+                    editorUrl: p.editorUrl
                 });
             }
 

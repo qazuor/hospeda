@@ -261,7 +261,7 @@ describe('claiming verifies the mailbox account and revokes prior access', () =>
         users.push(user.id);
         const secret = `claim-${randomUUID()}`;
         const fixture = await insertClaimablePartner({
-            email: createApplicationEmail(),
+            email: user.email,
             hash: createHash('sha256').update(secret, 'utf8').digest('hex'),
             actorId: user.id
         });
@@ -305,7 +305,7 @@ describe('claiming verifies the mailbox account and revokes prior access', () =>
         });
         const targetSecret = `claim-${randomUUID()}`;
         const target = await insertClaimablePartner({
-            email: createApplicationEmail(),
+            email: user.email,
             hash: createHash('sha256').update(targetSecret, 'utf8').digest('hex'),
             actorId: user.id
         });

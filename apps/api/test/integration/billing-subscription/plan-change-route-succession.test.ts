@@ -38,7 +38,7 @@ const post = (id: string, ownerId: string, billingOptionId: string) =>
     app.request(pathOf(id), {
         method: 'POST',
         headers: actorHeaders({ id: ownerId, role: 'USER', permissions: [] }),
-        body: JSON.stringify({ billingOptionId })
+        body: JSON.stringify({ billingOptionId, payerEmail: 'payer@example.test' })
     });
 const context = (): CronJobContext => ({
     logger: {

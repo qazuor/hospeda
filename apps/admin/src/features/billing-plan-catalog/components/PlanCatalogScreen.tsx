@@ -7,6 +7,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { isApiError } from '@/lib/errors/api-error';
 import { useAdminPlanCatalog } from '../hooks/usePlanCatalog';
 import { CreatePlanDialog } from './CreatePlanDialog';
+import { CyclePriceEditor } from './CyclePriceEditor';
 import { PlanVersionForm } from './PlanVersionForm';
 
 /** Lists a selected vertical's plans and opens inline create/version editors. */
@@ -17,6 +18,7 @@ export function PlanCatalogScreen() {
     const root = 'admin-billing.planCatalogEditor.';
     const [vertical, setVertical] = useState<VerticalEnum>(VerticalEnum.ACCOMMODATION);
     const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
+    const [cyclePricePlanId, setCyclePricePlanId] = useState<string | null>(null);
     const [createOpen, setCreateOpen] = useState(false);
     const [success, setSuccess] = useState<string | null>(null);
     const catalog = useAdminPlanCatalog({ vertical });
@@ -58,6 +60,7 @@ export function PlanCatalogScreen() {
                         onChange={(event) => {
                             setVertical(event.target.value as VerticalEnum);
                             setEditingPlanId(null);
+                            setCyclePricePlanId(null);
                             setSuccess(null);
                         }}
                     >
@@ -106,11 +109,17 @@ export function PlanCatalogScreen() {
                                     key={plan.planId}
                                     plan={plan}
                                     editing={editingPlanId === plan.planId}
+                                    editingCyclePrice={cyclePricePlanId === plan.planId}
                                     onEdit={() => {
                                         setSuccess(null);
                                         setEditingPlanId(plan.planId);
                                     }}
                                     onCancel={() => setEditingPlanId(null)}
+                                    onCyclePrice={() => {
+                                        setEditingPlanId(null);
+                                        setCyclePricePlanId(plan.planId);
+                                    }}
+                                    onCancelCyclePrice={() => setCyclePricePlanId(null)}
                                     onPublished={onPublished}
                                     tr={tr}
                                     root={root}
@@ -135,16 +144,22 @@ export function PlanCatalogScreen() {
 function PlanRow({
     plan,
     editing,
+    editingCyclePrice,
     onEdit,
     onCancel,
+    onCyclePrice,
+    onCancelCyclePrice,
     onPublished,
     tr,
     root
 }: {
     readonly plan: AdminCatalogPlan;
     readonly editing: boolean;
+    readonly editingCyclePrice: boolean;
     readonly onEdit: () => void;
     readonly onCancel: () => void;
+    readonly onCyclePrice: () => void;
+    readonly onCancelCyclePrice: () => void;
     readonly onPublished: (version: PublishedPlanVersion) => void;
     readonly tr: (key: string, values?: Record<string, string | number>) => string;
     readonly root: string;
@@ -185,13 +200,26 @@ function PlanRow({
                         : tr(`${root}noCurrentVersion`)}
                 </td>
                 <td className="border-b p-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={onEdit}
-                    >
-                        {tr(`${root}actions.publish`)}
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={onEdit}
+                        >
+                            {tr(`${root}actions.publish`)}
+                        </Button>
+                        {current?.cycles.some(
+                            (cycle) => cycle === 'monthly' || cycle === 'annual'
+                        ) ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={onCyclePrice}
+                            >
+                                {tr(`${root}cyclePrice.action`)}
+                            </Button>
+                        ) : null}
+                    </div>
                 </td>
             </tr>
             {editing ? (
@@ -204,6 +232,20 @@ function PlanRow({
                             plan={plan}
                             onCancel={onCancel}
                             onPublished={onPublished}
+                        />
+                    </td>
+                </tr>
+            ) : null}
+            {editingCyclePrice && current ? (
+                <tr>
+                    <td
+                        colSpan={12}
+                        className="p-2"
+                    >
+                        <CyclePriceEditor
+                            planVersionId={current.versionId}
+                            version={current}
+                            onClose={onCancelCyclePrice}
                         />
                     </td>
                 </tr>

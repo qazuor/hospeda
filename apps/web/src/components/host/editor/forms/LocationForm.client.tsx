@@ -10,8 +10,10 @@
  * which this page must not work around.
  */
 
+import { LocationExceptionRequestTrigger } from '@/components/listing/LocationExceptionRequestTrigger.client';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildLocationExceptionTarget } from '@/lib/listing/location-exception';
 import { ActionBar } from '../ActionBar.client';
 import { AccommodationLocationSchema } from '../accommodation-edit-form.schema';
 import { LocationPicker } from '../LocationPicker.client';
@@ -40,6 +42,11 @@ export function LocationForm({ locale, accommodationId, initialData }: LocationF
         ownFields: [...OWN_FIELDS],
         schema: AccommodationLocationSchema
     });
+
+    // HOS-2192: a refused move onto an occupied address offers an exception request for it.
+    const refusedTarget = form.refusedLocation
+        ? buildLocationExceptionTarget(form.refusedLocation)
+        : null;
 
     return (
         <form
@@ -73,6 +80,15 @@ export function LocationForm({ locale, accommodationId, initialData }: LocationF
                 >
                     {form.formError}
                 </div>
+            )}
+
+            {refusedTarget && (
+                <LocationExceptionRequestTrigger
+                    locale={locale}
+                    vertical="accommodation"
+                    listingId={accommodationId}
+                    location={refusedTarget}
+                />
             )}
 
             <ActionBar

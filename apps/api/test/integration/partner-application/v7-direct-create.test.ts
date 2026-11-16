@@ -6,6 +6,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { buildOutboxSenderRender } from '../../../src/cron/jobs/email-outbox-sender.job';
+import { claimPartnerByLink } from '../../../src/services/partner-application/partner-link-claim.service';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
@@ -158,7 +159,7 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
             recipient_email: address,
             recipient_user_id: null,
             correlation_id: expect.any(String),
-            payload: { partnerId, partnerName: name, locale: 'es' },
+            payload: { partnerId, partnerName: name, locale: 'es', origin: 'direct' },
             status: 'pending',
             last_error: null,
             dedup_key: row.dedup_key
@@ -188,7 +189,7 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
             recipient_email: address,
             recipient_user_id: null,
             correlation_id: expect.any(String),
-            payload: { partnerId, partnerName: name, locale: 'es' },
+            payload: { partnerId, partnerName: name, locale: 'es', origin: 'direct' },
             status: 'pending',
             last_error: null,
             dedup_key: row.dedup_key
@@ -227,7 +228,7 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         expect(await rowsForEmail(address).then(({ rows }) => rows)).toEqual([]);
     });
 
-    it('(e) grants the role to the account that claims the mailed link', async () => {
+    it('(e) HOS-2222 refuses a different-email account and grants the role to the mailbox account that claims the mailed link', async () => {
         const address = email();
         const accountA = await createOwner({ email: address });
         const accountB = await createOwner();
@@ -242,6 +243,9 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         expect(body.data.id).toBeTruthy();
         const partnerId = String(body.data.id);
         partnerIds.push(partnerId);
+        const provisioned = await getDb().execute(sql`
+            SELECT claim_email, claim_secret_hash FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(provisioned.rows).toEqual([{ claim_email: address, claim_secret_hash: null }]);
         let renderedHtml = '';
         await sendBatch(async (mail) => {
             renderedHtml = renderToStaticMarkup(mail.react);
@@ -256,22 +260,120 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
         const outbox = await rowsForEmail(address);
         expect(outbox.rows).toHaveLength(1);
         expect((outbox.rows[0] as Record<string, unknown>).status).toBe('sent');
-        const responseClaim = await app.request('/api/v1/protected/partner-claims', {
-            method: 'POST',
-            headers: actorHeaders({ id: accountB.id, role: RoleEnum.HOST }),
-            body: JSON.stringify({ partnerId, secret })
-        });
+        const stored = await getDb().execute(sql`
+            SELECT claim_email, owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(stored.rows).toEqual([{ claim_email: address, owner_user_id: null }]);
+        const claimAs = (actorId: string) =>
+            app.request('/api/v1/protected/partner-claims', {
+                method: 'POST',
+                headers: actorHeaders({ id: actorId, role: RoleEnum.HOST }),
+                body: JSON.stringify({ partnerId, secret })
+            });
+        const refused = await claimAs(accountB.id);
+        expect(refused.status).toBe(403);
+        const refusedBody = await refused.json();
+        expect(refusedBody.error.code).toBe('FORBIDDEN');
+        expect(refusedBody.error.reason).toBe('PARTNER_CLAIM_EMAIL_MISMATCH');
+        expect(JSON.stringify(refusedBody)).not.toContain(address);
+        const unowned = await getDb().execute(sql`
+            SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(unowned.rows).toEqual([{ owner_user_id: null }]);
+        const refusedRoleB = await getDb().execute(sql`
+            SELECT role FROM user_role WHERE user_id = ${accountB.id}::uuid AND role = 'PARTNER_OWNER'`);
+        expect(refusedRoleB.rows).toEqual([]);
+        const responseClaim = await claimAs(accountA.id);
         expect(responseClaim.status).toBe(200);
         const owner = await getDb().execute(sql`
             SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
-        expect(owner.rows).toEqual([{ owner_user_id: accountB.id }]);
-        const roleB = await getDb().execute(sql`
-            SELECT role, grant_reason FROM user_role WHERE user_id = ${accountB.id}::uuid AND role = 'PARTNER_OWNER'`);
-        expect(roleB.rows).toEqual([{ role: 'PARTNER_OWNER', grant_reason: 'partner_claimed' }]);
+        expect(owner.rows).toEqual([{ owner_user_id: accountA.id }]);
         const roleA = await getDb().execute(sql`
-            SELECT role FROM user_role WHERE user_id = ${accountA.id}::uuid AND role = 'PARTNER_OWNER'`);
-        expect(roleA.rows).toEqual([]);
+            SELECT role, grant_reason FROM user_role WHERE user_id = ${accountA.id}::uuid AND role = 'PARTNER_OWNER'`);
+        expect(roleA.rows).toEqual([{ role: 'PARTNER_OWNER', grant_reason: 'partner_claimed' }]);
+        const roleB = await getDb().execute(sql`
+            SELECT role FROM user_role WHERE user_id = ${accountB.id}::uuid AND role = 'PARTNER_OWNER'`);
+        expect(roleB.rows).toEqual([]);
         expect(createHash('sha256').update(secret, 'utf8').digest('hex')).toBeTruthy();
         expect(JSON.stringify(body)).not.toContain(address);
+    });
+
+    it('(f) HOS-2222 lets an unverified mailbox account claim a directly created Partner, verifying it and revoking its other sessions', async () => {
+        // Arrange
+        const address = email();
+        const account = await createOwner({ email: address });
+        userIds.push(account.id);
+        await getDb().execute(
+            sql`UPDATE users SET email_verified = false WHERE id = ${account.id}::uuid`
+        );
+        const sessionId = `claim-session-${randomUUID()}`;
+        const otherSessionId = `other-session-${randomUUID()}`;
+        await getDb().execute(sql`
+            INSERT INTO session (id, token, user_id, expires_at, auth_method) VALUES
+                (${sessionId}, ${`token-${randomUUID()}`}, ${account.id}::uuid, now() + interval '1 day', 'credential'),
+                (${otherSessionId}, ${`token-${randomUUID()}`}, ${account.id}::uuid, now() + interval '1 day', 'google')`);
+        const credentialId = `credential-${randomUUID()}`;
+        const googleId = `google-${randomUUID()}`;
+        await getDb().execute(sql`
+            INSERT INTO account (id, account_id, provider_id, user_id) VALUES
+                (${credentialId}, ${account.id}, 'credential', ${account.id}::uuid),
+                (${googleId}, 'google-account', 'google', ${account.id}::uuid)`);
+        const name = `HOS2222 Unverified ${randomUUID()}`;
+        partnerNames.push(name);
+        const { response, body } = await createDirect({ name, claimEmail: address });
+        expect(response.status).toBe(201);
+        const partnerId = String(body.data.id);
+        partnerIds.push(partnerId);
+        expect(
+            (
+                await getDb().execute(sql`
+                    SELECT count(*)::integer AS count FROM partner_application WHERE partner_id = ${partnerId}::uuid`)
+            ).rows
+        ).toEqual([{ count: 0 }]);
+        let renderedHtml = '';
+        await sendBatch(async (mail) => {
+            renderedHtml = renderToStaticMarkup(mail.react);
+            return { messageId: `message-${randomUUID()}` };
+        });
+        const match = renderedHtml.match(/#partner=[^&]+&amp;secret=([^"&]+)/);
+        const secret = decodeURIComponent(match?.[1] ?? '');
+        expect(secret).not.toBe('');
+
+        // Act
+        const claimed = await claimPartnerByLink({
+            actorUserId: account.id,
+            currentSessionId: sessionId,
+            partnerId,
+            secret
+        });
+
+        // Assert
+        expect(claimed).toEqual({ claimed: true, partnerId, emailVerified: true });
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT email_verified FROM users WHERE id = ${account.id}::uuid`
+                )
+            ).rows
+        ).toEqual([{ email_verified: true }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT id FROM session WHERE user_id = ${account.id}::uuid ORDER BY id`
+                )
+            ).rows
+        ).toEqual([{ id: sessionId }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT id FROM account WHERE user_id = ${account.id}::uuid ORDER BY id`
+                )
+            ).rows
+        ).toEqual([{ id: credentialId }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+                )
+            ).rows
+        ).toEqual([{ owner_user_id: account.id }]);
     });
 });

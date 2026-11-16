@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRedirect } from '@tanstack/react-router';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/errors';
 import { BillingPlanChangeScreen } from '../components/BillingPlanChangeScreen';
 import { planChangeOptionsPath } from '../hooks/useBillingPlanChange';
 
@@ -52,9 +53,10 @@ const option = (billingOptionId: string, planName: string, current: boolean) => 
     currency: 'ARS',
     current
 });
-function setup(result: object) {
+function setup(result: object, optionsError?: Error) {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
         if (method === 'POST') return Promise.resolve({ data: { data: result } });
+        if (path === planChangeOptionsPath(id) && optionsError) return Promise.reject(optionsError);
         if (path === planChangeOptionsPath(id))
             return Promise.resolve({
                 data: {
@@ -161,6 +163,21 @@ describe('ACC_10 admin plan change screen', () => {
         setup({ outcome: 'REGRET', amountMinor: 0 });
         expect(screen.queryByTestId('billing-plan-change-screen')).toBeNull();
     });
+    it('explains that Partner plan changes require revocation and reconfiguration', async () => {
+        setup(
+            { outcome: 'REGRET', amountMinor: 0 },
+            new ApiError('Partner plan changes are not supported.', {
+                status: 422,
+                code: 'VALIDATION_ERROR',
+                body: {
+                    error: { details: { reason: 'PARTNER_PLAN_CHANGE_UNSUPPORTED' } }
+                }
+            })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            es.subscriptionPlanChange.partnerUnsupported
+        );
+    });
     it('requires the action 10 permission in beforeLoad', async () => {
         const { Route } = await import(
             '@/routes/_authed/billing/subscriptions/$subscriptionId.plan-change'
@@ -190,5 +207,44 @@ describe('ACC_10 admin plan change screen', () => {
             error = caught;
         }
         expect(isRedirect(error)).toBe(true);
+    });
+});
+
+describe('HOS-2238 admin plan change refusals', () => {
+    async function confirmChange(postError: unknown) {
+        setup({});
+        const post = fetchApi.getMockImplementation();
+        fetchApi.mockImplementation((input: { method?: string; path: string }) =>
+            input.method === 'POST' ? Promise.reject(postError) : post?.(input)
+        );
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
+    }
+
+    it('explains a subscription without a declared payer email instead of the generic error', async () => {
+        await confirmChange(
+            new ApiError('Unprocessable', {
+                status: 422,
+                body: {
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        reason: 'PAYER_EMAIL_UNDECLARED',
+                        details: { reason: 'PAYER_EMAIL_UNDECLARED' }
+                    }
+                }
+            })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            es.subscriptionPlanChange.payerEmailUndeclared
+        );
+    });
+
+    it('keeps the generic error for any other refusal', async () => {
+        await confirmChange(new ApiError('Conflict', { status: 409, body: { error: {} } }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(es.subscriptionPlanChange.error);
     });
 });

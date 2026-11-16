@@ -453,6 +453,40 @@
             "empty": "Ainda não há dados",
             "visitors_one": "{{count}} visitante",
             "visitors_other": "{{count}} visitantes"
+        },
+        "locationException": {
+            "requestButton": "Pedir uma exceção",
+            "askAgainButton": "Pedir novamente",
+            "form": {
+                "title": "Pedir uma exceção de endereço",
+                "reasonLabel": "Motivo",
+                "reasonHint": "Conte por que você precisa publicar este anúncio em um endereço onde você já tem outro anúncio publicado.",
+                "counter": "{{count}} de {{max}} caracteres",
+                "submit": "Enviar solicitação",
+                "submitting": "Enviando…",
+                "cancel": "Cancelar"
+            },
+            "validation": {
+                "tooShort": "O motivo deve ter pelo menos {{min}} caracteres.",
+                "tooLong": "O motivo não pode ultrapassar {{max}} caracteres."
+            },
+            "status": {
+                "pending": "Seu pedido de exceção está em análise. Avisaremos por e-mail quando houver uma resposta.",
+                "approved": "Sua exceção de endereço foi aprovada: agora você pode publicar este anúncio.",
+                "approvedMove": "Aprovado: agora você pode salvar esse endereço.",
+                "rejected": "Seu pedido de exceção foi rejeitado. Motivo: {{reason}}",
+                "rejectedNoReason": "Seu pedido de exceção foi rejeitado."
+            },
+            "sent": "Pedido enviado. Seu pedido de exceção está em análise.",
+            "errors": {
+                "requestPending": "Você já tem um pedido de exceção em análise para este anúncio.",
+                "alreadyGranted": "Este anúncio já tem a exceção aprovada: você pode publicá-lo.",
+                "notNeeded": "Este anúncio não compartilha o endereço com outro anúncio publicado seu, então não é necessária uma exceção.",
+                "needsKey": "Preencha o endereço do anúncio (rua e número) antes de pedir uma exceção.",
+                "invalidReason": "O motivo não é válido. Escreva entre {{min}} e {{max}} caracteres.",
+                "notFound": "Não encontramos este anúncio.",
+                "generic": "Não foi possível enviar o pedido. Tente novamente em instantes."
+            }
         }
     },
     "notices": {

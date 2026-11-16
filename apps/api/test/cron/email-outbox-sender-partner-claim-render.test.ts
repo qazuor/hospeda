@@ -106,7 +106,7 @@ describe('HOS-2040 TEST:V7:11 the claim notice renders its link, the Partner nam
         'es',
         'en',
         'pt'
-    ] as const)('asks the issuer for that Partner once', async (locale) => {
+    ] as const)('asks the issuer for that Partner and its recipient once', async (locale) => {
         // Arrange
         const { issuePartnerClaimSecret } = await renderClaimNotice(locale);
 
@@ -114,7 +114,10 @@ describe('HOS-2040 TEST:V7:11 the claim notice renders its link, the Partner nam
         const callCount = issuePartnerClaimSecret.mock.calls.length;
 
         // Assert
-        expect(issuePartnerClaimSecret).toHaveBeenCalledExactlyOnceWith({ partnerId: 'partner-1' });
+        expect(issuePartnerClaimSecret).toHaveBeenCalledExactlyOnceWith({
+            partnerId: 'partner-1',
+            email: 'partner@example.test'
+        });
         expect(callCount).toBe(1);
     });
 });

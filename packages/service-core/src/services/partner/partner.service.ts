@@ -319,48 +319,6 @@ export class PartnerService extends BaseCrudService<
     }
 
     /**
-     * Activates a partner whose payment was settled off-platform.
-     *
-     * Gated by AC-11 exactly like `send-link`: it flips the partner to ACTIVE,
-     * which is what actually puts them on the carousel. A comp or an off-platform transfer is no reason to
-     * publish content nobody reviewed.
-     */
-    async registerManualPayment(
-        actor: Actor,
-        partnerId: string,
-        _note?: string,
-        _ctx?: ServiceContext
-    ): Promise<Partner> {
-        checkCanCreate(actor, {});
-
-        const partner = await this.model.findById(partnerId);
-        if (!partner) {
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Partner not found');
-        }
-
-        if (!isPartnerContentApprovedForPayment(partner)) {
-            throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
-                PARTNER_CONTENT_NOT_APPROVED_MESSAGE
-            );
-        }
-
-        // Manual payment activates the partner; V7 owns the later claim flow.
-        const updated = await this.model.update(
-            { id: partnerId },
-            { lifecycleState: LifecycleStatusEnum.ACTIVE }
-        );
-
-        if (!updated) {
-            throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to update partner');
-        }
-
-        // TODO: Log manual payment in audit log with note
-
-        return updated;
-    }
-
-    /**
      * The partner listing owned by the calling account, or null (HOS-278 D3).
      *
      * Auth-only by design, exactly like its `host_trades` sibling: an approved

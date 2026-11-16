@@ -21,6 +21,8 @@ vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
     return {
         ...actual,
+        // HOS-2192: the detail route also reads the owner's exception request status; not what this file tests.
+        getOwnerLocationExceptionView: async () => ({ hasException: false, request: null }),
         AccommodationService: vi.fn().mockImplementation(function () {
             return { getById: mockGetById };
         })

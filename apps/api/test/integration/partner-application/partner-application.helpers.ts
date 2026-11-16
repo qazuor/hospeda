@@ -31,7 +31,7 @@ export async function insertPending({
 /** Reads a Partner row for assertions owned by the current test. */
 export async function readPartner({ id }: { readonly id: string }) {
     const result = await getDb().execute(sql`
-        SELECT id, slug, name, type, lifecycle_state, owner_user_id, claim_secret_hash
+        SELECT id, slug, name, type, lifecycle_state, owner_user_id, claim_secret_hash, claim_email
         FROM partners WHERE id = ${id}::uuid`);
     return result.rows[0];
 }

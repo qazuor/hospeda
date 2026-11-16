@@ -2113,7 +2113,8 @@ export const partnersApi = {
      * @param params - Partner UUID and the secret from the URL fragment.
      * @returns The claim on success; errors distinguish an invalid link (404),
      * an already claimed Partner (409), an account that owns another Partner
-     * (409), an unverified account (403), or an unauthenticated request (401).
+     * (409), an account whose email differs from the application's (403
+     * `PARTNER_CLAIM_EMAIL_MISMATCH`), or an unauthenticated request (401).
      */
     claim({
         partnerId,
@@ -5752,17 +5753,23 @@ export const billingSubscriptionApi = {
             body: {}
         });
     },
-    /** Request a change to one owned subscription through the protected route. */
+    /**
+     * Request a change to one owned subscription through the protected route.
+     * `payerEmail` is what the payer declares for the provider checkout (HOS-2218);
+     * it is not a confirmed identity.
+     */
     requestPlanChange({
         subscriptionId,
-        billingOptionId
+        billingOptionId,
+        payerEmail
     }: {
         readonly subscriptionId: string;
         readonly billingOptionId: string;
+        readonly payerEmail: string;
     }): Promise<ApiResult<z.infer<typeof SubscriptionPlanChangeResponseSchema>>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing-subscription/${subscriptionId}/plan-change`,
-            body: { billingOptionId }
+            body: { billingOptionId, payerEmail }
         });
     },
     /** Read the backend-resolved pricing situation for one vertical. */

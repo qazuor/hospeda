@@ -26,6 +26,12 @@
             "ignore": "If you did not apply to become a Hospeda Partner, you can ignore this email.",
             "cta": "Claim the Partner"
         },
+        "claimNoticeDirect": {
+            "preview": "The Hospeda team created the Partner {{partnerName}}",
+            "heading": "The Hospeda team created the Partner {{partnerName}}",
+            "body": "To manage it, claim it: open the link below and sign in with the account you want to use. That account will own the Partner.",
+            "ignore": "If you were not expecting this email, you do not need to do anything."
+        },
         "rejected": {
             "subject": "Your Hospeda Partner application",
             "preview": "We reviewed your application",

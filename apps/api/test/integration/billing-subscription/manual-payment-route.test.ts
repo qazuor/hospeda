@@ -186,7 +186,36 @@ describe('HOS-1541 manual payment admin routes (ACC:3, ACC:4)', () => {
         expect(written.subscription?.status).toBe('GRACE_PERIOD');
     });
 
-    it('(f) returns 404 for a foreign installment, 409 outside grace and 400 for overlong proof', async () => {
+    it('(f) forbids the payer from registering their own installment with the permission', async () => {
+        const seeded = await seedManualRoute();
+        const response = await request({
+            method: 'POST',
+            subscriptionId: seeded.subscription.id,
+            manualPaymentId: seeded.installment.id,
+            action: 'register',
+            actorId: seeded.payer.id,
+            permissions: [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
+            body: { proofRef: 'payer-self-registration' }
+        });
+
+        expect(response.status).toBe(403);
+        expect((await response.json()).error).toMatchObject({
+            code: 'FORBIDDEN',
+            reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN'
+        });
+
+        const persisted = await stateOf(seeded.subscription.id, seeded.installment.id);
+        expect(persisted.installment).toMatchObject({
+            status: 'AWAITING',
+            registeredBy: null,
+            registeredAt: null
+        });
+        expect(persisted.subscription?.status).toBe('PENDING_AUTHORIZATION');
+        expect(persisted.coverage).toHaveLength(0);
+        expect(persisted.receipt).toHaveLength(0);
+    });
+
+    it('(g) returns 404 for a foreign installment, 409 outside grace and 400 for overlong proof', async () => {
         const own = await seedManualRoute({ status: 'ACTIVE', prior: true });
         const foreign = await seedManualRoute();
         const alien = await request({
@@ -226,7 +255,7 @@ describe('HOS-1541 manual payment admin routes (ACC:3, ACC:4)', () => {
         expect((await malformed.json()).error.code).toBe('VALIDATION_ERROR');
     });
 
-    it('(g) lists exactly the two installments seeded for this subscription', async () => {
+    it('(h) lists exactly the two installments seeded for this subscription', async () => {
         const seeded = await seedManualRoute({ status: 'ACTIVE', prior: true });
         const response = await request({
             method: 'GET',

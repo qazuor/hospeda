@@ -27,6 +27,7 @@ import {
     cleanupMigrationCase,
     readMigrationRows
 } from './helpers/plan-migration-cases.ts';
+import { migrationCohortClockStart } from './helpers/plan-migration-clock.ts';
 import {
     anchorOf,
     buildMigrationCohort,
@@ -104,7 +105,10 @@ test.describe('TEST:B12:12 AC:B12:11 la migración de un plan retirado, de punta
         );
         if (!limit) throw new Error('Expected a seeded commercial limit.');
         providerNamespace = randomUUID();
-        const clock = createAdjustableClock({ start: new Date() });
+        // HOS-2240: the whole cohort must be anchored on one market-local day.
+        const clock = createAdjustableClock({
+            start: migrationCohortClockStart({ now: new Date() })
+        });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
                 clock,

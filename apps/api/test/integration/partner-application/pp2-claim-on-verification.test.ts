@@ -265,6 +265,50 @@ describe('TEST:V7:4 claim on email verification', () => {
         expect(owner.rows).toEqual([{ owner_user_id: existingOwnerId }]);
     });
 
+    it('HOS-2222 claims on verification only while the account email is the stored claim email', async () => {
+        const email = createApplicationEmail();
+        emails.push(email);
+        const applicationId = await insertPending({ email });
+        const adminId = await createUser(`admin-${crypto.randomUUID()}@example.test`);
+        const response = await approve(applicationId, adminId);
+        const payload = (await response.json()) as { data: { partnerId: string } };
+        const partnerId = payload.data.partnerId;
+        partners.push(partnerId);
+        const applicant = await getDb().execute(
+            sql`SELECT id FROM users WHERE lower(email) = lower(${email})`
+        );
+        const userId = String(applicant.rows[0]?.id);
+        users.push(userId);
+        await getDb().execute(
+            sql`UPDATE partners SET claim_email = ${`other-${crypto.randomUUID()}@example.test`} WHERE id = ${partnerId}::uuid`
+        );
+
+        await expect(claimPartnerOnEmailVerification({ userId, email })).resolves.toEqual({
+            claimed: false
+        });
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+                )
+            ).rows
+        ).toEqual([{ owner_user_id: null }]);
+
+        await getDb().execute(
+            sql`UPDATE partners SET claim_email = ${email.toUpperCase()} WHERE id = ${partnerId}::uuid`
+        );
+        await expect(claimPartnerOnEmailVerification({ userId, email })).resolves.toEqual({
+            claimed: true
+        });
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+                )
+            ).rows
+        ).toEqual([{ owner_user_id: userId }]);
+    });
+
     it('(a,c) creates an unverified account on approval and claims once when the same link verifies it', async () => {
         const email = createApplicationEmail();
         emails.push(email);

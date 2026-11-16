@@ -543,6 +543,9 @@
                 "confirmHeading": "Como funciona a mudança",
                 "confirmCheckout": "Se precisar de autorização, você irá ao checkout do Mercado Pago; seu plano atual continua até você autorizar.",
                 "confirmScheduled": "Se a mudança for agendada, você verá a data exata em que o novo plano começa.",
+                "payerEmailLabel": "E-mail do pagador no Mercado Pago",
+                "payerEmailHint": "Você declara: é a conta do Mercado Pago que vai autorizar a mudança. O provedor não o confirma.",
+                "payerEmailInvalid": "Informe um e-mail válido do pagador.",
                 "confirm": "Confirmar mudança",
                 "back": "Voltar",
                 "pending": "Processando a mudança...",
@@ -563,6 +566,7 @@
                     "same": "Você já tem essa opção de cobrança.",
                     "scheduled": "Você já tem uma mudança de plano agendada.",
                     "providerNotApplied": "O Mercado Pago não conseguiu aplicar a mudança. Seu plano atual continua ativo. Tente novamente mais tarde.",
+                    "payerEmail": "Falta o e-mail do pagador. Informe-o e tente novamente.",
                     "other": "Esta mudança não está disponível agora. Verifique sua assinatura e tente novamente."
                 }
             },
@@ -865,7 +869,7 @@
                 "listingsHidden_one": "{{count}} ficha não publicada: não aparece para o público.",
                 "listingsHidden_other": "{{count}} fichas não publicadas: não aparecem para o público."
             },
-            "sectionsLabel": "Secciones"
+            "sectionsLabel": "Seções"
         },
         "editProfile": {
             "title": "Editar perfil",
@@ -1552,6 +1556,7 @@
             "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
             "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
             "approved": "Seu conteúdo está aprovado. A equipe da Hospeda configura sua assinatura e vai te escrever para combinar o pagamento por transferência bancária.",
+            "activeSubscription": "Sua assinatura de Partner está ativa e em dia.",
             "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
             "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
         },

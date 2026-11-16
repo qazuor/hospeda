@@ -26,6 +26,12 @@
             "ignore": "Se você não se candidatou a Partner da Hospeda, ignore este e-mail.",
             "cta": "Reivindicar o Partner"
         },
+        "claimNoticeDirect": {
+            "preview": "A equipe da Hospeda criou o Partner {{partnerName}}",
+            "heading": "A equipe da Hospeda criou o Partner {{partnerName}}",
+            "body": "Para administrá-lo, reivindique-o: abra o link abaixo e entre com a conta que deseja usar. Essa conta será a proprietária do Partner.",
+            "ignore": "Se você não esperava este e-mail, não precisa fazer nada."
+        },
         "rejected": {
             "subject": "Sua candidatura a Partner da Hospeda",
             "preview": "Analisamos sua candidatura",

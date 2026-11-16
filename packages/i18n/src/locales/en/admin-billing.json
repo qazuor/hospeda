@@ -92,6 +92,27 @@
             "rejected": "The API rejected the publication: {message}",
             "forbidden": "Only SUPER_ADMIN can publish plan versions.",
             "generic": "Could not complete the action. Try again."
+        },
+        "cyclePrice": {
+            "action": "Change cycle price",
+            "title": "Change cycle price",
+            "cycle": "Billing cycle",
+            "amount": "New price in ARS cents",
+            "preview": "Preview change",
+            "invalid": "Enter a positive whole amount in cents.",
+            "summary": "{cycle} cycle: {previous} to {next}.",
+            "reach": "The preview confirms no customers will be affected. The change takes effect when confirmed.",
+            "explicitConfirmation": "I confirm this cycle price change.",
+            "confirm": "Confirm price change",
+            "saving": "Saving…",
+            "cancel": "Cancel",
+            "migrationLink": "Go to plan migrations",
+            "errors": {
+                "hasCustomers": "This version has customers. A direct change would not move them; start a plan migration to move them safely.",
+                "changedSincePreview": "The price changed after this preview. Review the current amount and preview again before confirming.",
+                "forbidden": "Only SUPER_ADMIN can change cycle prices.",
+                "generic": "The price could not be changed. Check the details and try again."
+            }
         }
     },
     "deadlinesEditor": {
@@ -2294,6 +2315,8 @@
         "invalidId": "Subscription not found.",
         "loading": "Loading options…",
         "error": "Could not complete the change. Check the status and try again.",
+        "payerEmailUndeclared": "This subscription has no declared payer email, so Mercado Pago cannot open the checkout. Ask the customer to change plan from “My subscription”, where they declare the email.",
+        "partnerUnsupported": "Changing a Partner's plan is not supported yet. To change it, revoke the subscription and configure the new plan again.",
         "unavailable": "The subscription is not active.",
         "customer": "Customer: {customer}",
         "current": "Current plan: {plan}",

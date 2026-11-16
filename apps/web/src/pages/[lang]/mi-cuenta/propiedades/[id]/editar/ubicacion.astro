@@ -8,6 +8,7 @@
  */
 
 import { LocationForm } from '@/components/host/editor/forms/LocationForm.client';
+import { LocationExceptionPanel } from '@/components/listing/LocationExceptionPanel.client';
 import LocationDuplicateNotice from '@/components/listing/LocationDuplicateNotice.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
@@ -25,6 +26,10 @@ if (resolution.redirect) return resolution.redirect;
 
 const { data, locale, accommodationId, sectionId } = resolution;
 const { t } = createTranslations(locale);
+// HOS-2192: an exception in force makes the draft warning moot ("ya podés publicar").
+const locationException = data.accommodation.locationException;
+const showDuplicateWarning =
+	data.accommodation.locationDuplicate === true && locationException?.hasException !== true;
 ---
 
 <EditorSectionLayout
@@ -36,7 +41,15 @@ const { t } = createTranslations(locale);
 	hasTranslations={data.translations !== null}
 	title={t('host.properties.editor.section.location', 'Ubicación')}
 >
-	<LocationDuplicateNotice locale={locale} show={data.accommodation.locationDuplicate === true} />
+	<LocationDuplicateNotice locale={locale} show={showDuplicateWarning} />
+	<LocationExceptionPanel
+		locale={locale}
+		vertical="accommodation"
+		listingId={accommodationId}
+		locationDuplicate={data.accommodation.locationDuplicate === true}
+		locationException={locationException}
+		client:load
+	/>
 	<LocationForm
 		locale={locale}
 		accommodationId={accommodationId}

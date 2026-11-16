@@ -22,6 +22,7 @@ import { FaqManager } from '@/components/faqs/FaqManager';
 import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
 import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import { ListingLocationExceptionCard } from '@/features/location-exception-requests/components/ListingLocationExceptionCard';
 import { useVenuePage } from '@/features/venue';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -83,6 +84,13 @@ function VenueEditPage() {
                                 entityType="venue"
                                 flat
                             />
+                            {/* HOS-2192: exception in force, its history and revoke/grant. */}
+                            <div className="mt-6">
+                                <ListingLocationExceptionCard
+                                    vertical="venues"
+                                    listingId={id}
+                                />
+                            </div>
                         </TabsContent>
 
                         <TabsContent

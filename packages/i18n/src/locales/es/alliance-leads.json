@@ -7,6 +7,8 @@
         "sending": "Enviando postulación…",
         "success": "Gracias. Recibimos tu correo y te escribiremos con una respuesta.",
         "error": "No pudimos enviar la postulación. Intentá de nuevo más tarde.",
+        "errorPending": "Ya tenés una postulación pendiente con este correo.",
+        "errorWaitActive": "Podés volver a postularte desde el {{date}}.",
         "unavailable": "El formulario no está disponible en este momento. Probá de nuevo más tarde.",
         "verifyEmailFirst": "Para postular un Partner primero tenés que verificar el correo de tu cuenta. Todavía no registramos tu postulación.",
         "resendVerification": "Reenviar verificación",

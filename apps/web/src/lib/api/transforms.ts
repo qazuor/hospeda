@@ -41,6 +41,7 @@ import type {
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { parseListingPolicyValues } from '../listing/listing-policies';
+import { parseLocationException } from '../listing/location-exception-view';
 import { webLogger } from '../logger';
 import {
     extractFeaturedImage,
@@ -1991,6 +1992,7 @@ export function transformAccommodationEdit({
         floor: String(locationObj?.floor ?? ''),
         apartment: String(locationObj?.apartment ?? ''),
         locationDuplicate: item.locationDuplicate === true,
+        locationException: parseLocationException({ raw: item.locationException }),
         maxGuests: extraInfo?.capacity == null ? null : Number(extraInfo.capacity),
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),

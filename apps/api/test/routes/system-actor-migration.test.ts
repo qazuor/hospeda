@@ -12,32 +12,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
     loadFacts: vi.fn(),
     coverage: vi.fn(),
-    effectiveSet: vi.fn(),
-    manualPayment: vi.fn(),
-    getDb: vi.fn(),
-    adminRoute: vi.fn()
+    effectiveSet: vi.fn()
 }));
 
-vi.mock('@repo/service-core', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@repo/service-core')>()),
-    PartnerService: vi.fn(function () {
-        return { registerManualPayment: mocks.manualPayment };
-    })
-}));
 vi.mock('@repo/db', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@repo/db')>()),
-    getDb: mocks.getDb,
-    partners: { id: 'id', ownerUserId: 'ownerUserId' }
+    ...(await importOriginal<typeof import('@repo/db')>())
 }));
 vi.mock('../../src/utils/route-factory', async (importOriginal) => ({
     ...(await importOriginal<typeof import('../../src/utils/route-factory')>()),
-    createAdminRoute: (config: {
-        path: string;
-        handler: (...args: unknown[]) => Promise<unknown>;
-    }) => {
-        if (config.path === '/{id}/manual-payment') mocks.adminRoute(config);
-        return config;
-    }
+    createAdminRoute: (config: unknown) => config
 }));
 vi.mock('../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
@@ -252,29 +235,5 @@ describe('TEST:V5:14 — los actores de sistema de la API salen de la fábrica',
             })
         ).rejects.toMatchObject({ code: ServiceErrorCode.FORBIDDEN });
         expect(mocks.coverage).not.toHaveBeenCalled();
-    });
-
-    it('rechaza el pago manual antes de llamar al servicio aunque el sistema lleve el permiso', async () => {
-        const ownerId = '11111111-1111-4111-8111-111111111111';
-        const actor = {
-            id: '22222222-2222-4222-8222-222222222222',
-            roles: [RoleEnum.SYSTEM],
-            permissions: [P.PARTNER_MANAGE],
-            _isSystemActor: true
-        } satisfies Actor;
-        const limit = vi.fn().mockResolvedValue([{ ownerUserId: ownerId }]);
-        mocks.getDb.mockReturnValue({
-            select: () => ({ from: () => ({ where: () => ({ limit }) }) })
-        });
-        await import('../../src/routes/partners/admin/manual-payment');
-        const config = mocks.adminRoute.mock.calls[0]?.[0] as {
-            handler: (...args: unknown[]) => Promise<unknown>;
-        };
-        expect(config).toBeDefined();
-        const ctx = { get: (key: string) => (key === 'actor' ? actor : undefined) };
-        await expect(
-            config.handler(ctx, { id: '33333333-3333-4333-8333-333333333333' }, {})
-        ).rejects.toMatchObject({ code: ServiceErrorCode.FORBIDDEN });
-        expect(mocks.manualPayment).not.toHaveBeenCalled();
     });
 });

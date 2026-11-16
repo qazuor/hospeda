@@ -18,29 +18,35 @@ vi.mock('@/lib/auth-cache', () => ({ fetchAuthMe }));
 vi.mock('@/lib/auth-client', () => ({ resendVerificationEmail }));
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (key: string) =>
-            ({
-                'alliance-leads.partnerApplication.title': 'Postulate como partner',
-                'alliance-leads.partnerApplication.emailLabel': 'Correo electrónico',
-                'alliance-leads.partnerApplication.emailHelp':
-                    'Te vamos a escribir a esta dirección para responderte sobre la postulación.',
-                'alliance-leads.partnerApplication.submit': 'Enviar postulación',
-                'alliance-leads.partnerApplication.sending': 'Enviando postulación…',
-                'alliance-leads.partnerApplication.success':
-                    'Gracias. Recibimos tu correo y te escribiremos con una respuesta.',
-                'alliance-leads.partnerApplication.error':
-                    'No pudimos enviar la postulación. Intentá de nuevo más tarde.',
-                'alliance-leads.partnerApplication.unavailable':
-                    'El formulario no está disponible en este momento. Probá de nuevo más tarde.',
-                'alliance-leads.partnerApplication.verifyEmailFirst':
-                    'Para postular un Partner primero tenés que verificar el correo de tu cuenta. Todavía no registramos tu postulación.',
-                'alliance-leads.partnerApplication.resendVerification': 'Reenviar verificación',
-                'alliance-leads.partnerApplication.resendingVerification': 'Reenviando…',
-                'alliance-leads.partnerApplication.verificationResent':
-                    'Listo: te reenviamos el correo de verificación. Revisalo y, cuando lo hayas verificado, volvé a esta página para postular.',
-                'alliance-leads.partnerApplication.resendVerificationError':
-                    'No pudimos reenviar la verificación. Probá de nuevo en unos minutos.'
-            })[key] ?? key
+        t: (key: string, _fallback?: string, params?: Record<string, string>) =>
+            (
+                ({
+                    'alliance-leads.partnerApplication.title': 'Postulate como partner',
+                    'alliance-leads.partnerApplication.emailLabel': 'Correo electrónico',
+                    'alliance-leads.partnerApplication.emailHelp':
+                        'Te vamos a escribir a esta dirección para responderte sobre la postulación.',
+                    'alliance-leads.partnerApplication.submit': 'Enviar postulación',
+                    'alliance-leads.partnerApplication.sending': 'Enviando postulación…',
+                    'alliance-leads.partnerApplication.success':
+                        'Gracias. Recibimos tu correo y te escribiremos con una respuesta.',
+                    'alliance-leads.partnerApplication.error':
+                        'No pudimos enviar la postulación. Intentá de nuevo más tarde.',
+                    'alliance-leads.partnerApplication.unavailable':
+                        'El formulario no está disponible en este momento. Probá de nuevo más tarde.',
+                    'alliance-leads.partnerApplication.verifyEmailFirst':
+                        'Para postular un Partner primero tenés que verificar el correo de tu cuenta. Todavía no registramos tu postulación.',
+                    'alliance-leads.partnerApplication.resendVerification': 'Reenviar verificación',
+                    'alliance-leads.partnerApplication.resendingVerification': 'Reenviando…',
+                    'alliance-leads.partnerApplication.verificationResent':
+                        'Listo: te reenviamos el correo de verificación. Revisalo y, cuando lo hayas verificado, volvé a esta página para postular.',
+                    'alliance-leads.partnerApplication.resendVerificationError':
+                        'No pudimos reenviar la verificación. Probá de nuevo en unos minutos.',
+                    'alliance-leads.partnerApplication.errorPending':
+                        'Ya tenés una postulación pendiente con este correo.',
+                    'alliance-leads.partnerApplication.errorWaitActive':
+                        'Podés volver a postularte desde el {{date}}.'
+                }) as Record<string, string>
+            )[key]?.replace('{{date}}', params?.date ?? '') ?? key
     })
 }));
 vi.mock('../../../src/components/partner/PartnerApplication.module.css', () => ({
@@ -119,6 +125,55 @@ describe('PartnerApplication (AC:V7:15)', () => {
 
     it.each([409, 403, 429])('uses the same generic error for HTTP %s', async (status) => {
         submit.mockResolvedValue({ ok: false, error: { status, message: 'server detail' } });
+        renderForm();
+        completeForm();
+        fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'No pudimos enviar la postulación. Intentá de nuevo más tarde.'
+        );
+    });
+
+    it('says the application is pending when the API names that reason', async () => {
+        submit.mockResolvedValue({
+            ok: false,
+            error: { status: 409, message: 'x', reason: 'PARTNER_APPLICATION_PENDING' }
+        });
+        renderForm();
+        completeForm();
+        fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Ya tenés una postulación pendiente con este correo.'
+        );
+    });
+
+    it('shows the date the wait ends when the API names that reason', async () => {
+        submit.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                message: 'x',
+                reason: 'PARTNER_APPLICATION_WAIT_ACTIVE',
+                details: { reapplyAfter: '2026-12-01T03:00:00.000Z' }
+            }
+        });
+        renderForm();
+        completeForm();
+        fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Podés volver a postularte desde el 1 de diciembre de 2026.'
+        );
+    });
+
+    it('falls back to the generic error when the wait has no usable date', async () => {
+        submit.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                message: 'x',
+                reason: 'PARTNER_APPLICATION_WAIT_ACTIVE',
+                details: { reapplyAfter: 'not a date' }
+            }
+        });
         renderForm();
         completeForm();
         fireEvent.click(screen.getByRole('button', { name: 'Enviar postulación' }));

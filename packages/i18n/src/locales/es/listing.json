@@ -453,6 +453,40 @@
             "empty": "Todavía no hay datos",
             "visitors_one": "{{count}} visitante",
             "visitors_other": "{{count}} visitantes"
+        },
+        "locationException": {
+            "requestButton": "Pedir una excepción",
+            "askAgainButton": "Volver a pedir",
+            "form": {
+                "title": "Pedir una excepción de dirección",
+                "reasonLabel": "Motivo",
+                "reasonHint": "Contanos por qué necesitás publicar esta ficha en una dirección que ya tiene otra ficha publicada tuya.",
+                "counter": "{{count}} de {{max}} caracteres",
+                "submit": "Enviar pedido",
+                "submitting": "Enviando...",
+                "cancel": "Cancelar"
+            },
+            "validation": {
+                "tooShort": "El motivo debe tener al menos {{min}} caracteres.",
+                "tooLong": "El motivo no puede superar los {{max}} caracteres."
+            },
+            "status": {
+                "pending": "Tu pedido de excepción está en revisión. Te avisamos por email cuando tengamos una respuesta.",
+                "approved": "Tu excepción de dirección fue aprobada: ya podés publicar esta ficha.",
+                "approvedMove": "Aprobado: ya podés guardar esa dirección.",
+                "rejected": "Tu pedido de excepción fue rechazado. Motivo: {{reason}}",
+                "rejectedNoReason": "Tu pedido de excepción fue rechazado."
+            },
+            "sent": "Pedido enviado. Tu pedido de excepción está en revisión.",
+            "errors": {
+                "requestPending": "Ya tenés un pedido de excepción en revisión para esta ficha.",
+                "alreadyGranted": "Esta ficha ya tiene la excepción aprobada: podés publicarla.",
+                "notNeeded": "Esta ficha no comparte dirección con otra ficha publicada tuya, así que no hace falta una excepción.",
+                "needsKey": "Completá la dirección de la ficha (calle y número) antes de pedir una excepción.",
+                "invalidReason": "El motivo no es válido. Escribí entre {{min}} y {{max}} caracteres.",
+                "notFound": "No encontramos esta ficha.",
+                "generic": "No pudimos enviar el pedido. Probá de nuevo en un rato."
+            }
         }
     },
     "notices": {

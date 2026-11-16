@@ -11,7 +11,7 @@
  * opt out; featured experiences stay ahead of non-featured experiences within any sort.
  */
 import {
-    ExperiencePublicSchema,
+    ExperiencePublicListItemSchema,
     type ExperienceSearchHttp,
     ExperienceSearchHttpSchema,
     httpToDomainExperienceSearch
@@ -42,7 +42,7 @@ export const publicListExperiencesRoute = createPublicListRoute({
     description: 'Returns a paginated list of public experience listings',
     tags: ['Experience'],
     requestQuery: ExperienceSearchHttpSchema.shape,
-    responseSchema: ExperiencePublicSchema,
+    responseSchema: ExperiencePublicListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

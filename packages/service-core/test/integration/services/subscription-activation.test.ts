@@ -197,7 +197,8 @@ describe('TEST:B3:9 authorization activation', () => {
                 userId: choice.user.id,
                 billingOptionId: choice.targetBillingOptionId,
                 predecessorSubscriptionId: predecessor.predecessor.id,
-                returnUrl: 'https://hospeda.example/account'
+                returnUrl: 'https://hospeda.example/account',
+                payerEmail: 'payer@example.test'
             },
             successionPorts(predecessor.provider)
         );

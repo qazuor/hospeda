@@ -151,6 +151,11 @@ describe('TEST:V7:4 and TEST:V7:5 partner application mail outbox', () => {
             dedup_key: row.dedup_key
         });
         expect((await readPartner({ id: partnerId }))?.claim_secret_hash).toBeNull();
+        // HOS-2222: clear the provisioning value so the assertion below proves the issuer
+        // writes the recipient as claim_email in the same statement as the hash.
+        await getDb().execute(
+            sql`UPDATE partners SET claim_email = NULL WHERE id = ${partnerId}::uuid`
+        );
         const delivered: Array<{
             readonly to: string;
             readonly subject: string;
@@ -173,7 +178,10 @@ describe('TEST:V7:4 and TEST:V7:5 partner application mail outbox', () => {
         expect(match).not.toBeNull();
         const secret = decodeURIComponent(match?.[1] ?? '');
         const expectedHash = createHash('sha256').update(secret, 'utf8').digest('hex');
-        expect((await readPartner({ id: partnerId }))?.claim_secret_hash).toBe(expectedHash);
+        expect(await readPartner({ id: partnerId })).toMatchObject({
+            claim_secret_hash: expectedHash,
+            claim_email: address
+        });
         expect(html).toContain(`partner=${partnerId}&amp;secret=`);
         const logs = await getDb().execute(
             sql`SELECT * FROM notification_log WHERE metadata->>'outboxId' = ${sent.id}`
