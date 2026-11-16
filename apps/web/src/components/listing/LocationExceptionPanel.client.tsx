@@ -68,6 +68,22 @@ export function LocationExceptionPanel({
         );
     }
 
+    if (status === 'approvedMove') {
+        return (
+            <section
+                className={`${styles.block} ${styles.approved}`}
+                data-testid="location-exception-approved-move"
+            >
+                <p className={styles.message}>
+                    {t(
+                        'listing.owner.locationException.status.approvedMove',
+                        'Aprobado: ya podés guardar esa dirección.'
+                    )}
+                </p>
+            </section>
+        );
+    }
+
     if (status === 'pending') {
         return (
             <section
@@ -87,7 +103,11 @@ export function LocationExceptionPanel({
         );
     }
 
-    const canRequest = canRequestLocationException({ status, locationDuplicate });
+    const canRequest = canRequestLocationException({
+        status,
+        locationDuplicate,
+        targetsNewAddress: resolved.targetsNewAddress
+    });
     if (status === 'none' && !canRequest) return null;
 
     const decisionReason = resolved.decisionReason;

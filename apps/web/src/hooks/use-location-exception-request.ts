@@ -9,6 +9,7 @@
 
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react';
 import {
+    type LocationExceptionTarget,
     type LocationExceptionVertical,
     mapLocationExceptionError,
     requestLocationException,
@@ -22,6 +23,8 @@ export type LocationExceptionRequestPhase = 'editing' | 'submitting' | 'sent';
 export interface UseLocationExceptionRequestInput {
     readonly vertical: LocationExceptionVertical;
     readonly listingId: string;
+    /** The address the owner was trying to save, for a request to move the listing there. */
+    readonly location?: LocationExceptionTarget;
     /** Called once after the API accepted the request (201). */
     readonly onSent?: () => void;
 }
@@ -48,6 +51,7 @@ export interface UseLocationExceptionRequestResult {
 export function useLocationExceptionRequest({
     vertical,
     listingId,
+    location,
     onSent
 }: UseLocationExceptionRequestInput): UseLocationExceptionRequestResult {
     const [reason, setReason] = useState('');
@@ -70,7 +74,12 @@ export function useLocationExceptionRequest({
             if (!validation.ok) return;
             setPhase('submitting');
             setErrorKey(null);
-            const result = await requestLocationException({ vertical, listingId, reason });
+            const result = await requestLocationException({
+                vertical,
+                listingId,
+                reason,
+                location
+            });
             if (result.ok) {
                 setPhase('sent');
                 onSent?.();
@@ -79,7 +88,7 @@ export function useLocationExceptionRequest({
             setErrorKey(mapLocationExceptionError({ error: result.error }));
             setPhase('editing');
         },
-        [phase, validation.ok, vertical, listingId, reason, onSent]
+        [phase, validation.ok, vertical, listingId, reason, location, onSent]
     );
 
     return {

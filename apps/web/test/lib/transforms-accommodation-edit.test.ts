@@ -46,7 +46,9 @@ describe('transformAccommodationEdit', () => {
                 reason: 'Dos negocios distintos en el mismo local',
                 decisionReason: 'Falta documentación',
                 requestedAt: '2026-11-15T10:00:00.000Z',
-                decidedAt: '2026-11-15T12:00:00.000Z'
+                decidedAt: '2026-11-15T12:00:00.000Z',
+                targetsNewAddress: true,
+                targetLocation: { street: 'Mitre', number: '100' }
             }
         };
         expect(

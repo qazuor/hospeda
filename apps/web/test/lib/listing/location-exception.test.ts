@@ -8,6 +8,7 @@ const postProtectedMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/client', () => ({ apiClient: { postProtected: postProtectedMock } }));
 
 import {
+    buildLocationExceptionTarget,
     canRequestLocationException,
     mapLocationExceptionError,
     requestLocationException,
@@ -17,14 +18,17 @@ import {
 
 const request = (
     status: 'PENDING' | 'APPROVED' | 'REJECTED',
-    decisionReason: string | null = null
+    decisionReason: string | null = null,
+    targetsNewAddress = false
 ) => ({
     id: '11111111-1111-4111-8111-111111111111',
     status,
     reason: 'Motivo del dueño',
     decisionReason,
     requestedAt: '2026-11-15T10:00:00.000Z',
-    decidedAt: null
+    decidedAt: null,
+    targetsNewAddress,
+    targetLocation: targetsNewAddress ? { street: 'Mitre', number: '100' } : null
 });
 
 beforeEach(() => vi.clearAllMocks());
@@ -69,7 +73,43 @@ describe('resolveLocationExceptionStatus', () => {
                 request: request('REJECTED', 'Falta documentación')
             }
         });
-        expect(result).toEqual({ status: 'rejected', decisionReason: 'Falta documentación' });
+        expect(result).toMatchObject({ status: 'rejected', decisionReason: 'Falta documentación' });
+    });
+});
+
+describe('move requests (HOS-2192 D-23)', () => {
+    it('reads an APPROVED move request as approvedMove while the exception is dormant', () => {
+        const result = resolveLocationExceptionStatus({
+            locationException: { hasException: false, request: request('APPROVED', null, true) }
+        });
+        expect(result).toMatchObject({ status: 'approvedMove', targetsNewAddress: true });
+    });
+
+    it('reads a REJECTED move request as rejected and never offers ask-again from the panel', () => {
+        const resolved = resolveLocationExceptionStatus({
+            locationException: { hasException: false, request: request('REJECTED', 'No', true) }
+        });
+        expect(resolved).toMatchObject({ status: 'rejected', targetsNewAddress: true });
+        expect(
+            canRequestLocationException({
+                status: 'rejected',
+                locationDuplicate: true,
+                targetsNewAddress: true
+            })
+        ).toBe(false);
+    });
+
+    it('builds the target from what was typed, dropping blank floor and apartment', () => {
+        expect(
+            buildLocationExceptionTarget({
+                street: ' Av. San Martin ',
+                number: '10',
+                floor: '  ',
+                apartment: 'B'
+            })
+        ).toEqual({ street: 'Av. San Martin', number: '10', apartment: 'B' });
+        expect(buildLocationExceptionTarget({ street: '', number: '10' })).toBeNull();
+        expect(buildLocationExceptionTarget({ street: 'Mitre', number: ' ' })).toBeNull();
     });
 });
 
@@ -131,6 +171,32 @@ describe('mapLocationExceptionError', () => {
 });
 
 describe('requestLocationException', () => {
+    it('sends the submitted address with the reason and never a key', async () => {
+        postProtectedMock.mockResolvedValue({ ok: true, data: { id: 'r1', status: 'PENDING' } });
+        await requestLocationException({
+            vertical: 'venue',
+            listingId: 'abc',
+            reason: 'motivo largo ok',
+            location: { street: 'Mitre', number: '100' }
+        });
+        const body = postProtectedMock.mock.calls[0]?.[0].body;
+        expect(body).toEqual({
+            reason: 'motivo largo ok',
+            location: { street: 'Mitre', number: '100' }
+        });
+        expect(JSON.stringify(body)).not.toMatch(/key/i);
+    });
+
+    it('omits location for an ordinary request', async () => {
+        postProtectedMock.mockResolvedValue({ ok: true, data: { id: 'r1', status: 'PENDING' } });
+        await requestLocationException({
+            vertical: 'venue',
+            listingId: 'abc',
+            reason: 'motivo largo ok'
+        });
+        expect(postProtectedMock.mock.calls[0]?.[0].body).toEqual({ reason: 'motivo largo ok' });
+    });
+
     it.each([
         ['accommodation', 'accommodations'],
         ['venue', 'venues']

@@ -16,14 +16,17 @@ beforeEach(() => vi.clearAllMocks());
 
 const request = (
     status: 'PENDING' | 'APPROVED' | 'REJECTED',
-    decisionReason: string | null = null
+    decisionReason: string | null = null,
+    targetsNewAddress = false
 ) => ({
     id: '11111111-1111-4111-8111-111111111111',
     status,
     reason: 'Motivo del dueño',
     decisionReason,
     requestedAt: '2026-11-15T10:00:00.000Z',
-    decidedAt: null
+    decidedAt: null,
+    targetsNewAddress,
+    targetLocation: targetsNewAddress ? { street: 'Mitre', number: '100' } : null
 });
 
 const renderPanel = (props: Partial<Parameters<typeof LocationExceptionPanel>[0]> = {}) =>
@@ -58,6 +61,30 @@ describe('LocationExceptionPanel', () => {
         renderPanel({ locationException: { hasException: true, request: request('APPROVED') } });
         expect(screen.getByTestId('location-exception-approved')).toHaveTextContent(
             /ya podés publicar/i
+        );
+        expect(screen.queryByRole('button')).toBeNull();
+    });
+
+    it('approved move request: says it can save that address and offers no button', () => {
+        renderPanel({
+            locationDuplicate: false,
+            locationException: { hasException: false, request: request('APPROVED', null, true) }
+        });
+        expect(screen.getByTestId('location-exception-approved-move')).toHaveTextContent(
+            /ya podés guardar esa dirección/i
+        );
+        expect(screen.queryByRole('button')).toBeNull();
+    });
+
+    it('rejected move request: shows the reason and no ask-again button', () => {
+        renderPanel({
+            locationException: {
+                hasException: false,
+                request: request('REJECTED', 'No corresponde', true)
+            }
+        });
+        expect(screen.getByTestId('location-exception-rejected')).toHaveTextContent(
+            'No corresponde'
         );
         expect(screen.queryByRole('button')).toBeNull();
     });

@@ -439,6 +439,7 @@
             "status": {
                 "pending": "Your exception request is under review. We will email you when there is an answer.",
                 "approved": "Your address exception was approved: you can now publish this listing.",
+                "approvedMove": "Approved: you can now save that address.",
                 "rejected": "Your exception request was rejected. Reason: {{reason}}",
                 "rejectedNoReason": "Your exception request was rejected."
             },

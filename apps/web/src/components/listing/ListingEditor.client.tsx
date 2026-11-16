@@ -71,6 +71,10 @@ import {
     setListingPolicy
 } from '@/lib/listing/listing-policies';
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
+import {
+    buildLocationExceptionTarget,
+    type LocationExceptionTarget
+} from '@/lib/listing/location-exception';
 import type { ListingDetail, VenueOrExperience } from '@/lib/listing/owner-listings';
 import {
     buildSlugRefreshPayload,
@@ -99,6 +103,7 @@ import { joinDuration, splitDuration } from './editor/PracticalInfoSection.clien
 import { LISTING_SECTION_RENDERERS } from './editor/section-renderers';
 import styles from './ListingEditor.module.css';
 import { type ListingI18nValues, parseListingI18nValues } from './ListingTranslationPanel.client';
+import { LocationExceptionRequestTrigger } from './LocationExceptionRequestTrigger.client';
 
 export interface ListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
@@ -775,6 +780,8 @@ export function ListingEditor({
     const currentPublicationStatus = String(data.publicationStatus ?? 'DRAFT');
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
+    /** HOS-2192: the address of the save refused with 409 `DUPLICATE_LOCATION`, to request an exception for it. */
+    const [refusedTarget, setRefusedTarget] = useState<LocationExceptionTarget | null>(null);
 
     /**
      * Generic single-field change, shared by every scalar input in the form —
@@ -931,6 +938,7 @@ export function ListingEditor({
             // use-accommodation-section-form) already opens its submit this way;
             // this editor and `ListingCreateForm` were the two that did not.
             setFormError(null);
+            setRefusedTarget(null);
             if (Object.keys(patchPayload).length === 0) {
                 // Never save silently (HOS-190): "Guardar" always visibly does
                 // something. This used to be a bare `return`, which was
@@ -1004,6 +1012,18 @@ export function ListingEditor({
                     result.error?.status === 409 &&
                     result.error.reason === DUPLICATE_LOCATION_REASON
                 ) {
+                    // HOS-2192 (D-23): keep the address the owner tried to save so the
+                    // exception request carries it (a venue only; an experience has no address).
+                    setRefusedTarget(
+                        vertical === 'venue'
+                            ? buildLocationExceptionTarget({
+                                  street: persisted.location.street,
+                                  number: persisted.location.number,
+                                  floor: persisted.location.floor,
+                                  apartment: persisted.location.apartment
+                              })
+                            : null
+                    );
                     setFormError(
                         t(
                             'listing.owner.locationDuplicate.blocked',
@@ -1029,6 +1049,7 @@ export function ListingEditor({
             formData,
             patchPath,
             listingId,
+            vertical,
             businessLinesError,
             validate,
             handleApiError,
@@ -1142,6 +1163,15 @@ export function ListingEditor({
                 >
                     {formError}
                 </p>
+            )}
+
+            {refusedTarget && (
+                <LocationExceptionRequestTrigger
+                    locale={locale}
+                    vertical="venue"
+                    listingId={listingId}
+                    location={refusedTarget}
+                />
             )}
 
             <ActionBar

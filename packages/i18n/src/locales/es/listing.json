@@ -439,6 +439,7 @@
             "status": {
                 "pending": "Tu pedido de excepción está en revisión. Te avisamos por email cuando tengamos una respuesta.",
                 "approved": "Tu excepción de dirección fue aprobada: ya podés publicar esta ficha.",
+                "approvedMove": "Aprobado: ya podés guardar esa dirección.",
                 "rejected": "Tu pedido de excepción fue rechazado. Motivo: {{reason}}",
                 "rejectedNoReason": "Tu pedido de excepción fue rechazado."
             },

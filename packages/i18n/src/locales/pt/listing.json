@@ -439,6 +439,7 @@
             "status": {
                 "pending": "Seu pedido de exceção está em análise. Avisaremos por e-mail quando houver uma resposta.",
                 "approved": "Sua exceção de endereço foi aprovada: agora você pode publicar este anúncio.",
+                "approvedMove": "Aprovado: agora você pode salvar esse endereço.",
                 "rejected": "Seu pedido de exceção foi rejeitado. Motivo: {{reason}}",
                 "rejectedNoReason": "Seu pedido de exceção foi rejeitado."
             },

@@ -11,7 +11,10 @@ import type { JSX } from 'react';
 import { useId } from 'react';
 import { useLocationExceptionRequest } from '@/hooks/use-location-exception-request';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
-import type { LocationExceptionVertical } from '@/lib/listing/location-exception';
+import type {
+    LocationExceptionTarget,
+    LocationExceptionVertical
+} from '@/lib/listing/location-exception';
 import styles from './LocationExceptionRequest.module.css';
 
 /** Props of {@link LocationExceptionRequestForm}. */
@@ -19,6 +22,8 @@ export interface LocationExceptionRequestFormProps {
     readonly locale: SupportedLocale;
     readonly vertical: LocationExceptionVertical;
     readonly listingId: string;
+    /** The address the owner was trying to save (a request to move the listing there). */
+    readonly location?: LocationExceptionTarget;
     /** Called once after the request was accepted. */
     readonly onSent?: () => void;
     /** Renders a cancel button when given. */
@@ -35,12 +40,13 @@ export function LocationExceptionRequestForm({
     locale,
     vertical,
     listingId,
+    location,
     onSent,
     onCancel
 }: LocationExceptionRequestFormProps): JSX.Element {
     const { t } = createTranslations(locale);
     const fieldId = useId();
-    const form = useLocationExceptionRequest({ vertical, listingId, onSent });
+    const form = useLocationExceptionRequest({ vertical, listingId, location, onSent });
     const limits = { min: LOCATION_EXCEPTION_REASON_MIN, max: LOCATION_EXCEPTION_REASON_MAX };
 
     if (form.phase === 'sent') {
