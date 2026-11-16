@@ -91,7 +91,7 @@ Dos tablas nuevas, **en singular** (convención de las tablas nuevas del repo), 
 |---|---|---|
 | `id` | uuid pk | |
 | `vertical`, `listing_id` | igual que arriba | índice `(vertical, listing_id, created_at)` |
-| `action` | text CHECK in (`REQUESTED`, `APPROVED`, `REJECTED`, `GRANTED`, `REVOKED`) | |
+| `action` | text CHECK in (`REQUESTED`, `APPROVED`, `REJECTED`, `GRANTED`, `REVOKED`, `SUPERSEDED`) | |
 | `actor_id` | uuid NULL FK `users.id` ON DELETE SET NULL | |
 | `reason` | text NULL | |
 | `location_key` | text NULL | clave vigente al momento |
@@ -256,3 +256,11 @@ Existente: `LOCATION_EXCEPTION_NEEDS_KEY`. Las razones que el cliente debe leer 
 - **D-12 (notificación)**: los emails salen **después del commit**, fire-and-forget (un fallo del transporte no deshace la decisión). El idioma sale de `users.settings.languageWeb` (`es` por defecto). La plantilla lleva el idioma en el payload y el asunto ya armado, como `AI_QUESTIONS_WEEKLY_DIGEST`.
 - **D-13 (lectura admin del estado)**: se agrega `GET /api/v1/admin/{accommodations,venues}/:id/location-exception` (estado vigente más historial), necesaria para el bloque del formulario y el historial.
 - **D-14 (PRs de UI)**: los PRs web y admin se cortan desde la rama del PR de API y apuntan a `staging`; hasta que ese PR se mergee, su diff incluye sus commits.
+- **D-15 (revisión independiente: quitar)**: quitar la excepción de una ficha `PUBLISHED` se rechaza (409 `LOCATION_EXCEPTION_REVOKE_CONFLICT`) si existe **cualquier** otra ficha publicada y viva del mismo dueño, vertical y clave, **tenga o no excepción** (tres cabañas con excepción en una dirección no pasan a ser dos con excepción y una sin). Si la ficha es un **borrador**, quitar es libre: no hay nada publicado que choque todavía. Consecuencia heredada de HOS-1810 y NO cambiada acá: al publicarse después, esa ficha sin excepción no choca contra hermanas que sí tienen excepción (`findOwnOccupant` las ignora). Queda anotado como riesgo para decidir aparte.
+- **D-16 (orden de locks)**: toda ruta bloquea la **ficha primero** y el pedido después (`decide` lee el pedido sin lock, bloquea la ficha, y relee el pedido bajo lock revalidando su estado). Pedir, conceder, aprobar y quitar toman además un `pg_advisory_xact_lock` sobre dueño+vertical+clave, así que esas operaciones se serializan entre sí.
+- **D-17 (carrera publicar vs quitar)**: publicar y mover la dirección (HOS-1810) chequean fuera de la transacción de PB1, por lo que NO se pueden serializar con ese lock. Lo que sí cubre el caso es el índice único parcial (dos fichas sin excepción en una clave dan `23505`, que quitar mapea al mismo 409). Queda un caso residual sin cubrir: publicar una ficha **con excepción** en el mismo instante en que se quita la de otra hermana. Documentado, sin test.
+- **D-18 (auditoría en la base)**: `location_exception_event` rechaza UPDATE y DELETE por trigger (`migrations/extras/058-*`). Sus columnas `actor_id` y `request_id` **no tienen FK**, igual que `domain_event.actor_id`, para que borrar una cuenta o un pedido no reescriba ni bloquee el registro. `created_at` usa `clock_timestamp()` para que dos eventos de una misma transacción conserven el orden.
+- **D-19 (`SUPERSEDED`)**: toda transición de un pedido a `SUPERSEDED` escribe un evento `SUPERSEDED` (sin actor; `reason` = `ADDRESS_CHANGED`, `GRANTED_DIRECTLY` o `NOT_NEEDED`).
+- **D-20 (fichas `PURGED`)**: pedir sobre una ficha `PURGED` responde 404, y la cola admin no lista pedidos de fichas purgadas. Ambas tablas están en `purged-closed-list.json` (se conservan).
+- **D-21 (aprobar ya no hace falta)**: si al aprobar la ficha ya no choca con otra publicada del dueño, **no se concede**: el pedido pasa a `SUPERSEDED` (evento `NOT_NEEDED`) y la ruta responde 409 `LOCATION_EXCEPTION_NOT_NEEDED`. El admin ve un mensaje claro y la lista se refresca.
+- **D-22 (cola)**: el total de la cola sale de una consulta de conteo aparte (no de `count(*) OVER()`), así que es correcto pasada la última página.
