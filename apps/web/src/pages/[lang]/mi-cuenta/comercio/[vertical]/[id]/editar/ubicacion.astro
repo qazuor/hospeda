@@ -17,6 +17,7 @@
  */
 
 import { ListingEditor } from '@/components/listing/ListingEditor.client';
+import { LocationExceptionPanel } from '@/components/listing/LocationExceptionPanel.client';
 import LocationDuplicateNotice from '@/components/listing/LocationDuplicateNotice.astro';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
@@ -36,6 +37,9 @@ const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 // HOS-1810: draft warning. Only a venue carries the flag (an experience is outside the rule).
 const locationDuplicate = 'locationDuplicate' in detail && detail.locationDuplicate === true;
+// HOS-2192: the owner's exception request/grant. An exception in force hides the warning.
+const locationException = 'locationException' in detail ? detail.locationException : undefined;
+const showDuplicateWarning = locationDuplicate && locationException?.hasException !== true;
 ---
 
 <ListingEditorSectionLayout
@@ -47,7 +51,19 @@ const locationDuplicate = 'locationDuplicate' in detail && detail.locationDuplic
 	currentSectionSlug="ubicacion"
 	title={t('listing.owner.editor.sectionNav.location', 'Ubicación')}
 >
-	<LocationDuplicateNotice locale={locale} show={locationDuplicate} />
+	<LocationDuplicateNotice locale={locale} show={showDuplicateWarning} />
+	{
+		vertical === 'venue' && (
+			<LocationExceptionPanel
+				locale={locale}
+				vertical="venue"
+				listingId={listingId}
+				locationDuplicate={locationDuplicate}
+				locationException={locationException}
+				client:load
+			/>
+		)
+	}
 	<ListingEditor
 		client:load
 		sectionId="location"

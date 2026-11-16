@@ -1,0 +1,136 @@
+/**
+ * LocationExceptionRequest.module.css
+ *
+ * Owner side of the location exception request (HOS-2192): the status block of
+ * the Ubicacion section and the short request form.
+ */
+
+.block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    width: 100%;
+    margin: 0 0 var(--space-5, 1.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand-primary);
+    border-radius: var(--radius-md, 12px);
+    font-family: var(--font-sans);
+}
+
+.pending {
+    border-left-color: var(--brand-accent);
+}
+
+.approved {
+    border-left-color: oklch(0.55 0.18 145);
+}
+
+.rejected {
+    border-left-color: var(--destructive);
+}
+
+.message {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--core-foreground);
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+
+.title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    resize: vertical;
+}
+
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.counter {
+    align-self: flex-end;
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.error {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--destructive);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.primary {
+    background-color: oklch(0.55 0.18 145);
+    color: #ffffff;
+    border: 1px solid oklch(0.5 0.18 145);
+}
+
+.secondary {
+    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+}

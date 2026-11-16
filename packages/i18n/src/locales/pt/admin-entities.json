@@ -1284,7 +1284,7 @@
             "cancel": "Voltar"
         },
         "errors": {
-            "action": "Não foi possível concluir a ação. Revise o motivo e tente novamente."
+            "action": "Não foi possível concluir a ação. Tente novamente."
         },
         "empty": "Não há candidaturas nesta visualização.",
         "loading": "Carregando candidaturas…",

@@ -222,7 +222,7 @@
         },
         "signupsPaused": {
             "title": "Novas contratações em pausa",
-            "body": "Pausamos temporariamente novas assinaturas e compras. Se você já tem uma assinatura, ela continua funcionando normalmente."
+            "body": "Pausamos temporariamente novas assinaturas. Se você já tem uma assinatura, ela continua funcionando normalmente."
         },
         "firstPublishPaused": {
             "title": "Publicação de novos anúncios em pausa",
@@ -823,6 +823,8 @@
         "noOffers": "Não há complementos disponíveis.",
         "chooseTarget": "Escolha um anúncio",
         "noTargets": "Não há anúncios disponíveis para este complemento.",
+        "chooseSubscription": "Escolha uma assinatura",
+        "noSubscriptions": "Não há assinaturas disponíveis para este complemento.",
         "summary": "Confirmar complemento",
         "freeUnderGrant": "Grátis pelo seu benefício",
         "days_one": "{{count}} dia",
