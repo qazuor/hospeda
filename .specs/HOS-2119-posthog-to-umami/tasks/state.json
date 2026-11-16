@@ -207,22 +207,22 @@
             "id": "T-006",
             "title": "T-0 Write the spike note with the relay path, R-1 answer and per-entity filter contract",
             "description": "Create docs/analytics/umami-spike.md (spec 12 requires a short note in docs/). Sections: relay path and script name (from T-004), R-1 attribution answer (T-002), Umami version + boards/reports API availability (T-001), per-entity_id filter query shape and the entity_id/contact-funnel gaps (T-005). This note is the input of T-016, T-018, T-020, T-028 and T-045/T-046. Docs only; no tests. Keep under 150 lines.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-004", "T-005"],
             "blocks": ["T-007", "T-020"],
             "subtasks": [
                 {
                     "title": "Write docs/analytics/umami-spike.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Include: relay path + script name, R-1 decision, payload contract, API-key read endpoints, entity_id gap and decision, boards API availability",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Link it from the spec folder note if the coordinator wants",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t0-spike", "docs"],
@@ -234,8 +234,8 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:44:33Z",
+                "completed": "2026-11-16T16:46:24Z"
             }
         },
         {
@@ -280,23 +280,23 @@
         {
             "id": "T-008",
             "title": "T-1 Create the staging websites (hospeda-web, hospeda-admin), read-only Umami user and API key (owner action)",
-            "description": "OWNER ACTION. Output: staging website IDs (web, admin) for HOSPEDA_UMAMI_WEBSITE_ID_WEB/ADMIN and PUBLIC_/VITE_UMAMI_WEBSITE_ID, and the read-only API key for HOSPEDA_UMAMI_API_KEY. Server events go to the website of the surface they describe (billing/onboarding facts to hospeda-web). Tests: manual (read endpoint answers 200 with the key).",
-            "status": "pending",
+            "description": "OWNER ACTION. Output: staging website IDs (web, admin) for HOSPEDA_UMAMI_WEBSITE_ID_WEB/ADMIN and PUBLIC_/VITE_UMAMI_WEBSITE_ID, and the read-only API key for HOSPEDA_UMAMI_API_KEY. Server events go to the website of the surface they describe (billing/onboarding facts to hospeda-web). Tests: manual (read endpoint answers 200 with the key).\n\nDONE 2026-11-16: team Hospeda owns hospeda-web-staging (208ccf14-c65d-4233-9612-c76b4fe9b47a) and hospeda-admin-staging (baf86641-3b27-4ede-ad4a-e412c3fbed7d). View-only user hospeda-api-reader (team-view-only); its API key verified: reads 200, writes 401. Staging Coolify env set: api HOSPEDA_UMAMI_URL, _WEBSITE_ID_WEB, _WEBSITE_ID_ADMIN, _API_KEY (reader); web PUBLIC_UMAMI_SCRIPT_URL=https://pulso-staging.hospeda.com.ar/app.js, PUBLIC_UMAMI_WEBSITE_ID; admin VITE_UMAMI_SCRIPT_URL, VITE_UMAMI_WEBSITE_ID. No redeploy. Temporary admin key deleted by owner.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-014", "T-043"],
             "subtasks": [
                 {
                     "title": "Create websites hospeda-web and hospeda-admin on staging",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create a dedicated read-only user and generate an API key; the admin account is never used by code",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hand the website IDs and key to the owner for T-014",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t1-infra", "devops", "owner-action"],
@@ -308,8 +308,8 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:44:33Z",
+                "completed": "2026-11-16T16:44:33Z"
             }
         },
         {
@@ -1009,7 +1009,7 @@
             "id": "T-028",
             "title": "T-3 Create UmamiScript.astro and swap it into BaseLayout and StandaloneLayout",
             "description": "Files: apps/web/src/components/analytics/UmamiScript.astro, apps/web/src/layouts/BaseLayout.astro, apps/web/src/layouts/StandaloneLayout.astro, new apps/web/test/components/analytics/umami-script.test.ts. The page must remain session-blind (apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts): no per-user data in the script tag. Tests: tag present with data-website-id/auto-track/defer when configured, absent when not, no inline script body (so no CSP hash is needed), only BaseLayout/StandaloneLayout render it. Old PostHogScript files are deleted in T-057.\n\nADDED 2026-11-15: measure the page-load impact of the Umami script with Lighthouse on a staging listing page before and after the swap (an external comparison reported ~500 ms; verify). Record LCP/TBT deltas on the Linear issue; a regression over 100 ms TBT or 200 ms LCP blocks the task.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-004", "T-012"],
             "blocks": ["T-029", "T-036", "T-057", "T-074"],
@@ -1044,7 +1044,7 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
+                "started": "2026-11-16T16:44:33Z",
                 "completed": null
             }
         },
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 34,
-        "inProgress": 0,
-        "completed": 42,
+        "pending": 31,
+        "inProgress": 1,
+        "completed": 44,
         "blocked": 0,
         "averageComplexity": 2.5
     }

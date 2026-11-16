@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 42/76 tasks (55%)
+## Progress: 44/76 tasks (58%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -66,7 +66,7 @@ Tracks (can run in parallel):
   - Blocked by: T-001
   - Blocks: T-006, T-016, T-046, T-048
 
-- [ ] **T-006** (complexity: 2) - T-0 Write the spike note with the relay path, R-1 answer and per-entity filter contract
+- [x] **T-006** (complexity: 2) - T-0 Write the spike note with the relay path, R-1 answer and per-entity filter contract
   - Tags: t0-spike, docs
   - Create docs/analytics/umami-spike.md (spec 12 requires a short note in docs/). Sections: relay path ...
   - Blocked by: T-002, T-004, T-005
@@ -78,7 +78,7 @@ Tracks (can run in parallel):
   - Blocked by: T-006
   - Blocks: T-009, T-010
 
-- [ ] **T-008** (complexity: 2) - T-1 Create the staging websites (hospeda-web, hospeda-admin), read-only Umami user and API key (owner action)
+- [x] **T-008** (complexity: 2) - T-1 Create the staging websites (hospeda-web, hospeda-admin), read-only Umami user and API key (owner action)
   - Tags: t1-infra, devops, owner-action
   - OWNER ACTION. Output: staging website IDs (web, admin) for HOSPEDA_UMAMI_WEBSITE_ID_WEB/ADMIN and PU...
   - Blocked by: T-003
