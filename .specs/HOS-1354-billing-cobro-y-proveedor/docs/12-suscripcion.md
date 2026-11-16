@@ -900,6 +900,13 @@ reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. **La
    cobro acreditado recibe la ventana completa. Lo implementan `readHasCreditedCharge`
    (`successor-window-credit.ts`) y `resolveSuccessorWindow`, para `S1` de sucesión y para el
    cambio de plan.
+   **`S1` y `P1` se serializan sobre la fila de la predecesora**: `S1` vuelve a decidir la
+   ventana bajo `FOR UPDATE` dentro de la transacción que inserta la sucesora
+   (`readLockedSuccessorWindowPredecessor`), y `P1` toma `FOR UPDATE` de la misma fila antes de
+   abrir el `covered_period`. Sin eso, un primer cobro acreditado entre la decisión y la
+   inserción dejaba persistida una ventana decidida sobre «sin cobro». Si la decisión nueva
+   rechaza, `S1` responde `SUCCESSION_WINDOW_TOO_SHORT`; si ofrece otra ventana,
+   `SUCCESSION_PREDECESSOR_MOVED`.
 
 **Por qué el corte es al inicio del día y no a la hora de la fecha**: el proveedor **no cobra a la hora
 exacta** de la fecha, sino en **lotes** —medido el 2026-09-24 en producción—: los **trece cobros de
