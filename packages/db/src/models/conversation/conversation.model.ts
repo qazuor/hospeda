@@ -12,13 +12,13 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { countCreatedSinceQuery } from './conversation-counts.query.ts';
 
 /**
  * ConversationModel provides data-access methods for the `conversations` table.
  *
- * Conversations represent a 1:1 messaging thread between a guest and an
- * accommodation owner. This model encapsulates all query logic and ensures
- * soft-delete semantics are applied consistently.
+ * Conversations are 1:1 messaging threads between a guest and an accommodation owner. This
+ * model encapsulates all query logic and applies soft-delete semantics consistently.
  *
  * @example
  * ```ts
@@ -488,48 +488,9 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
         }
     }
 
-    /**
-     * Counts the conversations (inquiries) started on any of the given
-     * accommodations at or after `since`. Soft-deleted conversations are
-     * excluded, as in {@link getMonthlyInquiriesByOwnerId}.
-     *
-     * @param ownerAccommodationIds - Accommodation ids to count over (may be empty).
-     * @param since - Inclusive lower bound on `createdAt`.
-     * @param tx - Optional transaction client.
-     * @returns The number of conversations (0 when `ownerAccommodationIds` is empty).
-     */
-    async countCreatedSince(
-        ownerAccommodationIds: readonly string[],
-        since: Date,
-        tx?: DrizzleClient
-    ): Promise<number> {
-        if (ownerAccommodationIds.length === 0) {
-            return 0;
-        }
-
-        const db = this.getClient(tx);
-        const ctx = { ownerAccommodationIds, since };
-
-        try {
-            const [row] = await db
-                .select({ total: count(conversations.id) })
-                .from(conversations)
-                .where(
-                    and(
-                        inArray(conversations.accommodationId, ownerAccommodationIds as string[]),
-                        isNull(conversations.deletedAt),
-                        gte(conversations.createdAt, since)
-                    )
-                );
-
-            logQuery(this.entityName, 'countCreatedSince', ctx, { total: row?.total ?? 0 });
-
-            return Number(row?.total ?? 0);
-        } catch (error) {
-            const err = error instanceof Error ? error : new Error(String(error));
-            logError(this.entityName, 'countCreatedSince', ctx, err);
-            throw new DbError(this.entityName, 'countCreatedSince', ctx, err.message);
-        }
+    /** Counts non-deleted conversations on the given accommodations created at or after `since`. */
+    countCreatedSince(ids: readonly string[], since: Date, tx?: DrizzleClient): Promise<number> {
+        return countCreatedSinceQuery({ db: this.getClient(tx), ids, since });
     }
 }
 
