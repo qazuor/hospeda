@@ -164,7 +164,7 @@ export function nullFieldsToUndefined(input: { readonly value: unknown }): {
  * @returns The user turn string for the AI provider.
  */
 export function buildImportAiPrompt(text: string): string {
-    return `Extract the structured accommodation data that is explicitly present in the following listing page text. Return only fields you can find; omit anything not clearly stated. Never include guest reviews, ratings, or opinions.\n\nPAGE TEXT:\n${text}`;
+    return `Extract the structured accommodation data that is explicitly present in the following listing page text. Set every field you cannot find to null; never guess a value. Never include guest reviews, ratings, or opinions.\n\nPAGE TEXT:\n${text}`;
 }
 
 // ---------------------------------------------------------------------------
