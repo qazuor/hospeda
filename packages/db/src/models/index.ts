@@ -21,6 +21,7 @@ export * from './feature-flags/index.ts';
 export * from './hostTrade/index.ts';
 export * from './listing/index.ts';
 export * from './notification-log/index.ts';
+export * from './oauth-provider/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './partner/index.ts';
 export * from './plan-catalog/index.ts';
