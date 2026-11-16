@@ -1,7 +1,7 @@
 # View Tracking — Privacy Model
 
-> First-party server-side view counting introduced in SPEC-159. Complements PostHog
-> (product analytics/funnels) with a durable per-entity count stored in our own DB.
+> First-party server-side view counting introduced in SPEC-159. Complements Umami
+> (product analytics/funnels; replaced PostHog in HOS-2119) with a durable per-entity count stored in our own DB.
 
 ## What is tracked
 
@@ -35,8 +35,8 @@ visitorHash = SHA-256( HMAC(dailySalt, date) + truncatedIp + userAgent )
 
 The hash is pseudonymous (no durable client storage, no cookie, no cross-site linkage).
 It expires with the daily salt. This satisfies the "pseudonymous telemetry" exemption
-under the consent model already in place (`respect_dnt`, consent-gated PostHog
-persistence). No `hospeda_vid` cookie is set.
+under the consent model already in place (`respect_dnt`, consent-gated analytics
+tracking). No `hospeda_vid` cookie is set.
 
 ## Unique-visitor counts are approximate
 
@@ -46,7 +46,7 @@ limitations:
 - A visitor on two devices or IPs counts as two unique visitors.
 - Multiple clients sharing NAT may appear as fewer uniques than they are.
 - Counts are a dashboard KPI, not a billing metric. The approximation is acceptable
-  and consistent with the PostHog baseline.
+  and consistent with the product analytics baseline.
 
 ## Bot filtering
 
@@ -64,14 +64,16 @@ margin. No manual action is required; the cron records each run via `recordCronR
 
 ## What this is NOT
 
-- Not a replacement for PostHog. The existing `accommodation_viewed` PostHog event
-  continues firing unchanged. PostHog remains the source of truth for product
-  analytics and funnels; `entity_views` powers the dashboard KPI widgets (SPEC-155).
+- Not a replacement for Umami. The existing `accommodation_viewed` analytics event
+  continues firing unchanged (now to Umami, HOS-2119). Umami is the source of truth
+  for product analytics and funnels; `entity_views` stays the source of the owner
+  view/click counts and powers the dashboard KPI widgets (SPEC-155). Owner stats
+  combine both (hybrid, see [ADR-037](../decisions/ADR-037-umami-over-posthog.md)).
 - Not a billing metric. Never use view counts to gate entitlements or charge users.
 
 ## Related
 
 - API routes: `apps/api/docs/route-architecture.md` § View Tracking Routes
-- PostHog proxy: `docs/guides/posthog-proxy.md`
+- Analytics (Umami): [docs/analytics/README.md](../analytics/README.md)
 - DB schema deviation: `packages/db/CLAUDE.md` § Lean append-only tables
 - Cron system: `apps/api/docs/cron-system.md`

@@ -1,23 +1,26 @@
 # Sentry Tunnel
 
-> First-party error ingestion to defeat ad-blockers (SPEC-181 follow-up). Sibling
-> of the [PostHog Reverse Proxy](./posthog-proxy.md).
+> First-party error ingestion to defeat ad-blockers (SPEC-181 follow-up). It used to
+> have a sibling PostHog reverse proxy, retired in HOS-2119 (see
+> [ADR-037](../decisions/ADR-037-umami-over-posthog.md)). Umami is served first-party
+> by a separate mechanism, see [Analytics](../analytics/README.md).
 
 ## Reserved first-party proxy paths (read this first)
 
-Hospeda runs **two** first-party reverse proxies that exist purely to stop
-ad-blockers from dropping telemetry. They look similar but are **different
+Hospeda used to run **two** first-party reverse proxies that exist purely to stop
+ad-blockers from dropping telemetry. The PostHog one is being removed in HOS-2119
+(the row below is historical until its worker is deleted). They are **different
 mechanisms bound to different paths and Workers**. Do not confuse, merge, or
 repurpose them, and never point an application/API route at these paths:
 
 | Path           | Worker                                  | Upstream                          | Mechanism                                          | Web env var to enable it          |
 | -------------- | --------------------------------------- | --------------------------------- | -------------------------------------------------- | --------------------------------- |
-| `/api/relay/*` | `posthog-proxy` (`@repo/posthog-proxy-worker`) | PostHog Cloud (fixed host)        | Blind passthrough; rewrites `/api/relay`→PostHog   | `PUBLIC_POSTHOG_HOST=…/api/relay` |
+| `/api/relay/*` | `posthog-proxy` (`@repo/posthog-proxy-worker`) | PostHog Cloud (fixed host)        | **Historical** (retired by HOS-2119). Blind passthrough | `PUBLIC_POSTHOG_HOST=…/api/relay` (being removed) |
 | `/api/event`   | `sentry-tunnel` (`@repo/sentry-tunnel-worker`) | Sentry (host derived from DSN)    | Reads envelope, parses DSN, SSRF-guards, forwards  | `PUBLIC_SENTRY_TUNNEL=/api/event` |
 
 Why they can't be one Worker:
 
-- **PostHog** forwards to a *constant* host (a dumb passthrough).
+- **PostHog** (historical) forwarded to a *constant* host (a dumb passthrough).
 - **Sentry's** upstream host lives *inside each envelope* (the DSN on the first
   line), so the Sentry Worker parses it per request and SSRF-guards it.
 - Each path binds to a *separate* Cloudflare route; a route pattern maps to one
@@ -56,7 +59,7 @@ The Worker lives in [`infra/cloudflare/sentry-tunnel/`](../../infra/cloudflare/s
 
 ### SSRF guard (the important part)
 
-Unlike PostHog, the Sentry upstream is attacker-influenceable: the host comes
+Unlike the retired PostHog proxy, the Sentry upstream is attacker-influenceable: the host comes
 from the envelope body. Without validation, anyone could POST an envelope whose
 DSN points anywhere and turn the tunnel into an open proxy. The Worker therefore
 forwards **only** when the DSN host is a `*.sentry.io` host AND the project id is
@@ -111,7 +114,7 @@ Reversing steps 1 and 3 loses browser error reports.
 ## Related
 
 - Worker: [`infra/cloudflare/sentry-tunnel/README.md`](../../infra/cloudflare/sentry-tunnel/README.md)
-- Sibling proxy: [PostHog Reverse Proxy](./posthog-proxy.md)
+- Analytics (Umami): [Analytics docs](../analytics/README.md)
 - CSP source: `apps/web/src/lib/middleware-helpers.ts` (`buildCspHeader`)
 - Env registry: `packages/config/src/env-registry.client.ts` (`PUBLIC_SENTRY_TUNNEL`)
 - SDK init: `apps/web/sentry.client.config.ts` (`tunnel` option)
