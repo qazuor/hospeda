@@ -7,10 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCancellationDate } from '@/features/billing-cancellation/cancellation-format';
 import { useTranslations } from '@/hooks/use-translations';
+import { ApiError } from '@/lib/errors';
 import {
     useBillingPlanChangeAction,
     useBillingPlanChangeData
 } from '../hooks/useBillingPlanChange';
+
+const partnerPlanChangeUnsupportedReason = 'PARTNER_PLAN_CHANGE_UNSUPPORTED';
+
+function isPartnerPlanChangeUnsupported(error: unknown): boolean {
+    if (!(error instanceof ApiError)) return false;
+    const body = error.body as { error?: { details?: { reason?: unknown } } } | undefined;
+    return body?.error?.details?.reason === partnerPlanChangeUnsupportedReason;
+}
 
 export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscriptionId: string }) {
     const { t, locale } = useTranslations();
@@ -20,7 +29,7 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
     const [selectedId, setSelectedId] = useState('');
     const [confirming, setConfirming] = useState(false);
     const [note, setNote] = useState('');
-    const [error, setError] = useState(false);
+    const [error, setError] = useState<'generic' | 'partner-unsupported' | false>(false);
     const [copied, setCopied] = useState(false);
     const date = (iso: string) => formatCancellationDate({ iso, locale });
     const options = data.data?.options.options.filter((option) => !option.current) ?? [];
@@ -47,7 +56,7 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                 ...(note.trim() ? { note: note.trim() } : {})
             });
         } catch {
-            setError(true);
+            setError(isPartnerPlanChangeUnsupported(error) ? 'partner-unsupported' : 'generic');
             setConfirming(false);
             await data.refetch();
         }
@@ -118,7 +127,11 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                         data.isLoading ? (
                             <p>{t('admin-billing.subscriptionPlanChange.loading')}</p>
                         ) : data.error ? (
-                            <p role="alert">{t('admin-billing.subscriptionPlanChange.error')}</p>
+                            <p role="alert">
+                                {isPartnerPlanChangeUnsupported(data.error)
+                                    ? t('admin-billing.subscriptionPlanChange.partnerUnsupported')
+                                    : t('admin-billing.subscriptionPlanChange.error')}
+                            </p>
                         ) : inspection?.status === 'ACTIVE' ? (
                             <>
                                 <p>
@@ -184,7 +197,11 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                         ) : null}
                                         {error ? (
                                             <p role="alert">
-                                                {t('admin-billing.subscriptionPlanChange.error')}
+                                                {t(
+                                                    error === 'partner-unsupported'
+                                                        ? 'admin-billing.subscriptionPlanChange.partnerUnsupported'
+                                                        : 'admin-billing.subscriptionPlanChange.error'
+                                                )}
                                             </p>
                                         ) : null}
                                         <Button
