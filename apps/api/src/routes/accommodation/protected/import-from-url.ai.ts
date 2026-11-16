@@ -2,9 +2,11 @@
  * AI-extraction helpers for the accommodation import route (SPEC-222 T-020).
  *
  * This module holds the *pure* pieces of Strategy B (AI-assisted extraction):
- * the structured-output Zod schema the model must fill, the user-turn prompt
- * builder, and the mapper that converts the model's flat object into the loose
- * {@link RawExtraction} bag the import pipeline consumes.
+ * the structured-output Zod schema the model must fill (strict: every field
+ * required and nullable, HOS-2250), the `null`-to-absent normalizer, the
+ * downstream parse schema, the user-turn prompt builder, and the mapper that
+ * converts the model's flat object into the loose {@link RawExtraction} bag the
+ * import pipeline consumes.
  *
  * Keeping these here (separate from the route wiring) keeps the route file thin
  * and lets the unit/integration tests (T-021) assert on the prompt and the
@@ -24,47 +26,128 @@ import type { RawExtraction } from '@repo/service-core';
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
-// AI output schema
+// AI output schemas
 // ---------------------------------------------------------------------------
 
 /**
- * Flat structured-output schema the AI provider must fill for Strategy B.
+ * The fields the model may fill for Strategy B, each with its loose value type.
  *
- * Every field is optional — the model returns only what is explicitly present
- * in the page text. Values are intentionally loose (strings/numbers); the
- * downstream `mapRawToDraft` step coerces and validates each field against the
- * canonical `AccommodationImportDraftSchema` and drops anything invalid, so
- * this schema does not need to enforce enum membership or formats itself.
+ * This is the single source of both schemas below: the model-facing one (every
+ * field required and nullable, for OpenAI strict structured outputs) and the
+ * downstream parse (every field optional). Values are intentionally loose
+ * (strings/numbers); the downstream `mapRawToDraft` step coerces and validates
+ * each field against the canonical `AccommodationImportDraftSchema` and drops
+ * anything invalid, so neither schema enforces enum membership or formats.
  *
  * `type` is a free string here; `mapRawToDraft` validates it against the 13
  * `AccommodationTypeEnum` values and drops it if it does not match.
+ *
+ * Keep every entry free of `.optional()`, `.default()`, refinements, formats,
+ * unions and records: strict mode rejects or ignores them (HOS-2250). The
+ * strict-shape test converts the model-facing schema with the AI SDK and fails
+ * if an object level is missing a `required` key or `additionalProperties: false`.
  */
-export const AccommodationImportAiOutputSchema = z.object({
-    name: z.string().optional(),
-    summary: z.string().optional(),
-    description: z.string().optional(),
-    type: z.string().optional(),
-    capacity: z.number().optional(),
-    bedrooms: z.number().optional(),
-    beds: z.number().optional(),
-    bathrooms: z.number().optional(),
-    latitude: z.number().optional(),
-    longitude: z.number().optional(),
-    street: z.string().optional(),
-    streetNumber: z.string().optional(),
-    price: z.number().optional(),
-    currency: z.string().optional(),
-    phone: z.string().optional(),
-    website: z.string().optional(),
-    seoTitle: z.string().optional(),
-    seoDescription: z.string().optional(),
-    amenityNames: z.array(z.string()).optional(),
-    locality: z.string().optional(),
-    country: z.string().optional()
-});
+const AI_OUTPUT_FIELDS = {
+    name: z.string(),
+    summary: z.string(),
+    description: z.string(),
+    type: z.string(),
+    capacity: z.number(),
+    bedrooms: z.number(),
+    beds: z.number(),
+    bathrooms: z.number(),
+    latitude: z.number(),
+    longitude: z.number(),
+    street: z.string(),
+    streetNumber: z.string(),
+    price: z.number(),
+    currency: z.string(),
+    phone: z.string(),
+    website: z.string(),
+    seoTitle: z.string(),
+    seoDescription: z.string(),
+    amenityNames: z.array(z.string()),
+    locality: z.string(),
+    country: z.string()
+} as const;
 
-/** Inferred type for the AI structured output. */
+/** A Zod shape whose every field is wrapped in `.nullable()`. */
+type NullableShape<S extends Readonly<Record<string, z.ZodType>>> = {
+    readonly [K in keyof S]: z.ZodNullable<S[K]>;
+};
+
+/**
+ * Wraps every field of a Zod shape in `.nullable()`, keeping it required.
+ *
+ * @param input.shape - The source shape.
+ * @returns `{ shape }` with every field `T | null`.
+ */
+function toNullableShape<S extends Readonly<Record<string, z.ZodType>>>(input: {
+    readonly shape: S;
+}): { readonly shape: NullableShape<S> } {
+    const entries = Object.entries(input.shape).map(([key, field]) => [key, field.nullable()]);
+    return { shape: Object.fromEntries(entries) as NullableShape<S> };
+}
+
+/**
+ * Schema SENT to the model (`generateObject`) for Strategy B (HOS-2250).
+ *
+ * Every field is required and nullable, the only shape OpenAI structured
+ * outputs accept in strict mode. Strict mode is what stops the model from
+ * renaming keys (`maxGuests` for `capacity`, `amenities` for `amenityNames`,
+ * `pricePerNight` for `price`, `address` for `street`): without it the parse
+ * below silently dropped those keys and the import lost the data. The model
+ * answers `null` for anything not on the page; {@link nullFieldsToUndefined}
+ * turns that into an absent field before {@link AccommodationImportAiOutputSchema}.
+ */
+export const AccommodationImportAiModelOutputSchema = z.object(
+    toNullableShape({ shape: AI_OUTPUT_FIELDS }).shape
+);
+
+/** Inferred type of the model-facing output (every field present, `null` when unknown). */
+export type AccommodationImportAiModelOutput = z.infer<
+    typeof AccommodationImportAiModelOutputSchema
+>;
+
+/**
+ * Downstream parse of the model's answer, after {@link nullFieldsToUndefined}.
+ *
+ * Every field is optional: the pipeline treats a missing field as "not found".
+ * The AI SDK has already validated the answer against
+ * {@link AccommodationImportAiModelOutputSchema}; this parse keeps the route's
+ * own contract (and tolerates a provider that omits a key instead of sending
+ * `null`).
+ */
+export const AccommodationImportAiOutputSchema = z.object(AI_OUTPUT_FIELDS).partial();
+
+/** Inferred type for the parsed AI output (absent when not found). */
 export type AccommodationImportAiOutput = z.infer<typeof AccommodationImportAiOutputSchema>;
+
+/**
+ * Turns the strict model answer back into the "absent when unknown" shape the
+ * import pipeline has always consumed: every object key whose value is `null`
+ * is dropped, recursively (nested objects, and objects inside arrays). Every
+ * other value is kept as is, including `0`, `''`, `false` and empty arrays, so
+ * the pipeline sees real values exactly as before. Array items that are `null`
+ * are kept (dropping them would shift positions); the downstream parse rejects
+ * them.
+ *
+ * @param input.value - The raw object the model returned.
+ * @returns `{ value }`, a new value with the `null` fields removed.
+ */
+export function nullFieldsToUndefined(input: { readonly value: unknown }): {
+    readonly value: unknown;
+} {
+    const strip = (node: unknown): unknown => {
+        if (Array.isArray(node)) return node.map(strip);
+        if (typeof node !== 'object' || node === null) return node;
+        const kept = Object.entries(node)
+            .filter(([, child]) => child !== null)
+            .map(([key, child]) => [key, strip(child)] as const);
+        return Object.fromEntries(kept);
+    };
+    return { value: strip(input.value) };
+}
 
 // ---------------------------------------------------------------------------
 // Prompt builder
