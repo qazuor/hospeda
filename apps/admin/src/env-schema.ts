@@ -216,6 +216,19 @@ export const AdminEnvSchema = z.object({
         .url()
         .optional()
         .describe('PostHog Cloud ingestion endpoint (defaults to https://us.i.posthog.com)'),
+    // Analytics: self-hosted Umami (HOS-2119). Public by design; ship in bundle.
+    // The script name is renamed via Umami TRACKER_SCRIPT_NAME to dodge
+    // blockers, so never assume `script.js`. Leave both unset to disable.
+    VITE_UMAMI_SCRIPT_URL: z
+        .string()
+        .url()
+        .optional()
+        .describe('Full URL of the self-hosted Umami tracker script for the admin app'),
+    VITE_UMAMI_WEBSITE_ID: z
+        .string()
+        .uuid()
+        .optional()
+        .describe('Umami website id (UUID) of hospeda-admin'),
 
     // Locale Configuration
     VITE_SUPPORTED_LOCALES: z

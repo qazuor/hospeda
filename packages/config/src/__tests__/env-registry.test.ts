@@ -319,8 +319,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +2 = PUBLIC_UMAMI_SCRIPT_URL, PUBLIC_UMAMI_WEBSITE_ID (client-web category,
  * web only) — build-time Umami tracker config (HOS-2119 T-012).
  * 281 + 2 = 283.
+ *
+ * +2 = VITE_UMAMI_SCRIPT_URL, VITE_UMAMI_WEBSITE_ID (client-admin category,
+ * admin only) - build-time Umami tracker config (HOS-2119 T-013).
+ * 283 + 2 = 285.
  */
-const EXPECTED_VAR_COUNT = 283;
+const EXPECTED_VAR_COUNT = 285;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -718,7 +722,7 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 30 VITE_* admin variables', () => {
+        it('should contain all 32 VITE_* admin variables', () => {
             // Arrange
             // 28 original + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening,
             // dedicated hospeda-csp CSP-violation-report project).
@@ -728,7 +732,8 @@ describe('ENV_REGISTRY', () => {
             // 27 original VITE_* vars + VITE_TURNSTILE_SITE_KEY (SPEC-301 T-010)
             // + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening)
             // + VITE_FEEDBACK_ENABLED (admin twin of PUBLIC_FEEDBACK_ENABLED) = 30
-            expect(viteVars.length).toBe(30);
+            // + VITE_UMAMI_SCRIPT_URL + VITE_UMAMI_WEBSITE_ID (HOS-2119 T-013) = 32
+            expect(viteVars.length).toBe(32);
         });
     });
 
