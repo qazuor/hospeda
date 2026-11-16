@@ -121,12 +121,16 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 | `TRIAL_ENDED` | 422 | `VALIDATION_ERROR` |
 | `CEILING_REACHED` | 422 | `VALIDATION_ERROR` |
 | `REDEMPTION_KEY_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_APPLICATION_PENDING` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_APPLICATION_WAIT_ACTIVE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_UNAVAILABLE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_WAIT_NOT_ACTIVE` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_APPLICATION_NOT_PENDING` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_ALREADY_CLAIMED` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_CLAIM_EMAIL_MISMATCH` | 403 | `FORBIDDEN` |
+
+The public Partner application form (`POST /api/v1/protected/partner-applications`) tells the applicant the exact cause of a 409 (HOS-2242, owner decision; accepted cost: anyone can learn whether an address has a pending or a rejected application). `PARTNER_APPLICATION_PENDING` means the email already has a pending application. `PARTNER_APPLICATION_WAIT_ACTIVE` means it is inside the wait after a rejection, and publishes `error.details.reapplyAfter` (ISO instant); if that date cannot be computed the answer is `PARTNER_APPLICATION_UNAVAILABLE` instead, with no details.
 
 ### Cycle price (ACC:19, HOS-1515)
 
@@ -970,6 +974,12 @@ current sellable offer, so the current choice remains identifiable. It
 returns 404 `SUBSCRIPTION_NOT_FOUND` when the row is absent and 403
 `ADMINISTRATIVE_ACTION_FORBIDDEN` when the actor is the subject. Successful
 reads record `BILLING_READ`.
+
+Both the options GET and plan-change POST return 422 `VALIDATION_ERROR` with
+`error.reason` and `error.details.reason` set to
+`PARTNER_PLAN_CHANGE_UNSUPPORTED` for Partner subscriptions. Partner plan
+changes are not supported; administrators must revoke the subscription and
+configure the new plan again.
 
 `GET /api/v1/admin/billing-subscription/{subscriptionId}` also returns optional
 `subject` identity and `currentPlan` display information from the persisted

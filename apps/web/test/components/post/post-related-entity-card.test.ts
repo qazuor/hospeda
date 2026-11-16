@@ -26,7 +26,7 @@ describe('PostRelatedEntityCard.astro', () => {
     });
 
     it('keeps the existing semantic label wiring intact', () => {
-        expect(src).toContain('aria-label={`${typeLabel}: ${entity.name}`}');
+        expect(src).toMatch(/<a href=\{href\} class="post-related-entity">/);
         expect(src).toContain('alt={entity.name}');
     });
 });

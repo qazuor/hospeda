@@ -18,6 +18,26 @@ function interpolate(value: string, replacements: Readonly<Record<string, string
 export const resolvePartnerMailCopy: PartnerMailCopyResolver = (input): PartnerMailCopy => {
     if (input.kind === 'claim-notice') {
         const replacements = { partnerName: input.partnerName };
+        if (input.origin === 'direct') {
+            const direct = 'notifications.partnerApplication.claimNoticeDirect';
+            return {
+                subject: readCopy(
+                    input.locale,
+                    'notifications.partnerApplication.claimNotice.subject'
+                ),
+                preview: interpolate(readCopy(input.locale, `${direct}.preview`), replacements),
+                heading: interpolate(readCopy(input.locale, `${direct}.heading`), replacements),
+                paragraphs: [
+                    readCopy(input.locale, `${direct}.body`),
+                    readCopy(
+                        input.locale,
+                        'notifications.partnerApplication.claimNotice.singleUse'
+                    ),
+                    readCopy(input.locale, `${direct}.ignore`)
+                ],
+                cta: readCopy(input.locale, 'notifications.partnerApplication.claimNotice.cta')
+            };
+        }
         return {
             subject: readCopy(input.locale, 'notifications.partnerApplication.claimNotice.subject'),
             preview: interpolate(

@@ -19,6 +19,7 @@ import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommo
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
+import { ListingLocationExceptionCard } from '@/features/location-exception-requests/components/ListingLocationExceptionCard';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 /**
@@ -155,6 +156,11 @@ function AccommodationEditContent({ id }: { readonly id: string }) {
                         entityType="accommodation"
                         anchorSectionIds={anchorSectionIds}
                         fieldAddons={fieldAddons}
+                    />
+                    {/* HOS-2192: exception in force, its history and revoke/grant. */}
+                    <ListingLocationExceptionCard
+                        vertical="accommodations"
+                        listingId={id}
                     />
                     {entityData.entity && (
                         <TranslationSection

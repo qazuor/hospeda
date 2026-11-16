@@ -53,6 +53,36 @@ describe('useAccommodationSectionForm: one-address rule (HOS-1810)', () => {
         expect(result.current.formError).toMatch(/ya tiene una ficha publicada tuya/i);
     });
 
+    it('keeps the submitted values after a 409 DUPLICATE_LOCATION and clears them on the next submit (HOS-2192)', async () => {
+        updateMock.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ALREADY_EXISTS',
+                reason: 'DUPLICATE_LOCATION',
+                message: 'x'
+            }
+        });
+        const { result } = setup();
+        await save(result);
+        expect(result.current.refusedLocation).toEqual({ street: 'Urquiza' });
+        updateMock.mockResolvedValue({ ok: true, data: {} });
+        await act(async () => {
+            await result.current.handleSubmit({ preventDefault: () => undefined } as never);
+        });
+        expect(result.current.refusedLocation).toBeNull();
+    });
+
+    it('does not keep values for another failure', async () => {
+        updateMock.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'INTERNAL_ERROR', message: 'boom' }
+        });
+        const { result } = setup();
+        await save(result);
+        expect(result.current.refusedLocation).toBeNull();
+    });
+
     it('keeps the generic error for another failure', async () => {
         updateMock.mockResolvedValue({
             ok: false,

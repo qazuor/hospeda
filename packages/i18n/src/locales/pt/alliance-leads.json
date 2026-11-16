@@ -7,6 +7,8 @@
         "sending": "Enviando candidatura…",
         "success": "Obrigado. Recebemos seu e-mail e entraremos em contato com uma resposta.",
         "error": "Não foi possível enviar sua candidatura. Tente novamente mais tarde.",
+        "errorPending": "Você já tem uma candidatura pendente com este e-mail.",
+        "errorWaitActive": "Você poderá se candidatar novamente a partir de {{date}}.",
         "unavailable": "O formulário está indisponível no momento. Tente novamente mais tarde.",
         "verifyEmailFirst": "Para se candidatar como Partner, você precisa primeiro verificar o e-mail da sua conta. Ainda não registramos sua candidatura.",
         "resendVerification": "Reenviar verificação",

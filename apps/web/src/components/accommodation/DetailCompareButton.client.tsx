@@ -15,9 +15,10 @@
  * Responsive note (HOS-85 post-review fix): the visible label collapses to
  * an icon-only circle below 768px (see DetailCompareButton.module.css) so it
  * does not overflow the header next to the FavoriteButton on mobile. The
- * `aria-label` below is always set explicitly and does not depend on the
- * `.label` span's visibility — the accessible name is unaffected by the
- * responsive collapse.
+ * `.label` span is visually hidden (NOT `display: none`) in that range, so the
+ * accessible name keeps coming from the visible label plus an sr-only
+ * accommodation name. No `aria-label` is used: it would replace the visible
+ * label and break WCAG 2.5.3 (label in name).
  *
  * @module components/accommodation/DetailCompareButton
  */
@@ -36,7 +37,7 @@ import styles from './DetailCompareButton.module.css';
 export interface DetailCompareButtonProps {
     /** UUID of the accommodation to toggle in the comparison list. */
     readonly accommodationId: string;
-    /** Accommodation name, used for the aria-label and the compare-bar label. */
+    /** Accommodation name, used for the sr-only name suffix and the compare-bar label. */
     readonly accommodationName: string;
     /** Thumbnail URL stored alongside the selection for the compare-bar preview. */
     readonly accommodationThumbnailUrl?: string;
@@ -92,16 +93,6 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     const label = selected
         ? t('accommodations.comparison.detail.added', 'En comparación')
         : t('accommodations.comparison.detail.add', 'Agregar a comparación');
-
-    const ariaLabel = selected
-        ? t(
-              'accommodations.comparison.detail.removeAriaLabel',
-              'Quitar {{name}} de la comparación',
-              { name: accommodationName }
-          )
-        : t('accommodations.comparison.detail.addAriaLabel', 'Agregar {{name}} a la comparación', {
-              name: accommodationName
-          });
 
     const handleClick = (_event: MouseEvent<HTMLButtonElement>): void => {
         // Defer while entitlements are still loading (guard fails closed until known).
@@ -159,7 +150,6 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
         <button
             type="button"
             aria-pressed={selected}
-            aria-label={ariaLabel}
             aria-busy={isLoading}
             data-selected={selected ? 'true' : undefined}
             className={cn(styles.button, className)}
@@ -179,6 +169,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
                 />
             )}
             <span className={styles.label}>{label}</span>
+            <span className="sr-only">, {accommodationName}</span>
         </button>
     );
 };

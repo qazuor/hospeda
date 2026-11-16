@@ -7,6 +7,7 @@ import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { partnerApplicationApi } from '@/lib/api/endpoints';
 import { fetchAuthMe } from '@/lib/auth-cache';
 import { resendVerificationEmail } from '@/lib/auth-client';
+import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -36,8 +37,24 @@ export interface PartnerApplicationProps {
     readonly turnstileSiteKey?: string;
 }
 
-type FormState = 'idle' | 'sending' | 'success' | 'error' | 'verify-email';
+type FormState =
+    | 'idle'
+    | 'sending'
+    | 'success'
+    | 'error'
+    | 'pending'
+    | 'wait-active'
+    | 'verify-email';
 type ResendState = 'idle' | 'sending' | 'sent' | 'error';
+
+/** Reads the ISO instant the rejection wait ends from a 409 `details` payload, or null. */
+function readReapplyAfter(details: unknown): Date | null {
+    if (details === null || typeof details !== 'object') return null;
+    const value = (details as { readonly reapplyAfter?: unknown }).reapplyAfter;
+    if (typeof value !== 'string') return null;
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
 
 function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -52,6 +69,7 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
     const [state, setState] = useState<FormState>('idle');
     const [resendState, setResendState] = useState<ResendState>('idle');
     const [accountEmail, setAccountEmail] = useState<string | null>(null);
+    const [reapplyAfter, setReapplyAfter] = useState<Date | null>(null);
     const widgetRef = useRef<HTMLDivElement>(null);
     const resendInFlightRef = useRef(false);
 
@@ -115,6 +133,18 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                 const snapshot = await fetchAuthMe();
                 setAccountEmail(snapshot.user?.email ?? null);
                 setState('verify-email');
+            } else if (
+                result.error.status === 409 &&
+                result.error.reason === 'PARTNER_APPLICATION_PENDING'
+            ) {
+                setState('pending');
+            } else if (
+                result.error.status === 409 &&
+                result.error.reason === 'PARTNER_APPLICATION_WAIT_ACTIVE' &&
+                readReapplyAfter(result.error.details) !== null
+            ) {
+                setReapplyAfter(readReapplyAfter(result.error.details));
+                setState('wait-active');
             } else {
                 setState('error');
             }
@@ -298,12 +328,25 @@ export function PartnerApplication({ locale, turnstileSiteKey }: PartnerApplicat
                     className={styles.turnstile}
                     ref={widgetRef}
                 />
-                {state === 'error' && (
+                {(state === 'error' || state === 'pending' || state === 'wait-active') && (
                     <p
                         className={styles.error}
                         role="alert"
                     >
-                        {t('alliance-leads.partnerApplication.error')}
+                        {state === 'pending'
+                            ? t('alliance-leads.partnerApplication.errorPending')
+                            : state === 'wait-active' && reapplyAfter
+                              ? t('alliance-leads.partnerApplication.errorWaitActive', undefined, {
+                                    date: formatDate({
+                                        date: reapplyAfter,
+                                        locale,
+                                        options: {
+                                            dateStyle: 'long',
+                                            timeZone: 'America/Argentina/Buenos_Aires'
+                                        }
+                                    })
+                                })
+                              : t('alliance-leads.partnerApplication.error')}
                     </p>
                 )}
                 <button

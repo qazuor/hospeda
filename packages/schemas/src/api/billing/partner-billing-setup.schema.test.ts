@@ -46,6 +46,7 @@ describe('AC:V7:17 ACC:6 Partner billing setup schemas', () => {
             PartnerBillingSetupPreviewResponseSchema.parse({
                 partner: { id: uuid, name: 'Partner' },
                 ownerUserId: uuid,
+                owner: { name: 'Ana García', email: 'ana@example.com' },
                 method: 'MANUAL',
                 options: [
                     {
@@ -61,6 +62,15 @@ describe('AC:V7:17 ACC:6 Partner billing setup schemas', () => {
                 effect: 'Creates a subscription pending authorization and opens its first installment.'
             }).options
         ).toHaveLength(1);
+        expect(
+            PartnerBillingSetupPreviewResponseSchema.safeParse({
+                partner: { id: uuid, name: 'Partner' },
+                ownerUserId: uuid,
+                method: 'MANUAL',
+                options: [],
+                effect: 'Creates a subscription pending authorization and opens its first installment.'
+            }).success
+        ).toBe(false);
         expect(
             PartnerBillingSetupResponseSchema.safeParse({
                 subscriptionId: uuid,

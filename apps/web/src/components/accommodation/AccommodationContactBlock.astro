@@ -70,39 +70,30 @@ if (!hasContact && !hasSocial) {
                 <a
                     href={`tel:${contactInfo.phone}`}
                     class="acc-contact__link"
-                    aria-label={t(
-                        'accommodations.detail.contact.phoneAriaLabel',
-                        'Llamar al alojamiento'
-                    )}
                 >
                     <PhoneIcon size={16} aria-hidden="true" />
                     <span>{contactInfo.phone}</span>
+                    <span class="sr-only">, {t('accommodations.detail.contact.phoneAriaLabel', 'Llamar al alojamiento')}</span>
                 </a>
             )}
             {contactInfo?.landlinePhone && (
                 <a
                     href={`tel:${contactInfo.landlinePhone}`}
                     class="acc-contact__link"
-                    aria-label={t(
-                        'accommodations.detail.contact.landlineAriaLabel',
-                        'Llamar al teléfono fijo del alojamiento'
-                    )}
                 >
                     <PhoneIcon size={16} aria-hidden="true" />
                     <span>{contactInfo.landlinePhone}</span>
+                    <span class="sr-only">, {t('accommodations.detail.contact.landlineAriaLabel', 'Llamar al teléfono fijo del alojamiento')}</span>
                 </a>
             )}
             {contactInfo?.email && (
                 <a
                     href={`mailto:${contactInfo.email}`}
                     class="acc-contact__link"
-                    aria-label={t(
-                        'accommodations.detail.contact.emailAriaLabel',
-                        'Enviar email al alojamiento'
-                    )}
                 >
                     <EmailIcon size={16} aria-hidden="true" />
                     <span>{contactInfo.email}</span>
+                    <span class="sr-only">, {t('accommodations.detail.contact.emailAriaLabel', 'Enviar email al alojamiento')}</span>
                 </a>
             )}
             {websiteHref && (
@@ -111,13 +102,10 @@ if (!hasContact && !hasSocial) {
                     class="acc-contact__link"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t(
-                        'accommodations.detail.contact.websiteAriaLabel',
-                        'Visitar sitio web del alojamiento'
-                    )}
                 >
                     <GlobeIcon size={16} aria-hidden="true" />
                     <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
+                    <span class="sr-only">, {t('accommodations.detail.contact.websiteAriaLabel', 'Visitar sitio web del alojamiento')}</span>
                 </a>
             )}
         </div>
