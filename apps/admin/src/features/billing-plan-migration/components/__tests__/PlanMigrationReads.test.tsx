@@ -76,6 +76,27 @@ function setup(element: React.ReactNode) {
 
 describe('TEST:B12:6 AC:B12:6 y el panel la lista sin plazo y con su antigüedad desde el anuncio', () => {
     beforeEach(() => fetchApi.mockReset());
+    it('renders the list when the API pagination carries hasNextPage and hasPreviousPage (HOS-2225)', async () => {
+        fetchApi.mockResolvedValue({
+            data: {
+                data: {
+                    items: [base],
+                    pagination: {
+                        page: 1,
+                        pageSize: 20,
+                        total: 1,
+                        totalPages: 1,
+                        hasNextPage: false,
+                        hasPreviousPage: false
+                    }
+                }
+            }
+        });
+        setup(<PlanMigrationList onSelect={vi.fn()} />);
+        expect(await screen.findByTestId('plan-migration-list-row')).toHaveTextContent(
+            'Plan anterior → Plan siguiente'
+        );
+    });
     it('renders the server page and requests the next page', async () => {
         fetchApi.mockImplementation(async (input?: { path: string }) => ({
             data: {
