@@ -7,7 +7,38 @@ const source = readFileSync(
     resolve(__dirname, '../../../src/components/account/MySubscriptions.astro'),
     'utf8'
 );
+const locales = ['es', 'en', 'pt'] as const;
 describe('MySubscriptions SSR block', () => {
+    it('shows the active successor notice instead of predecessor details and actions', () => {
+        expect(source).toMatch(
+            /\{activeSuccessor && successorSummary[\s\S]*?\? <p[^>]*data-testid="my-subscription-replaced"[\s\S]*?: <>[\s\S]*?<SubscriptionCancel/u
+        );
+        expect(source).toContain('account.subscription.mine.replacedBy');
+    });
+
+    it('explains the hourly predecessor cancellation window in every supported locale', () => {
+        const expected = {
+            es: 'Reemplazada por {{plan}}; se da de baja en la próxima hora.',
+            en: 'Replaced by {{plan}}; it will be canceled within the next hour.',
+            pt: 'Substituída por {{plan}}; será cancelada na próxima hora.'
+        };
+
+        for (const locale of locales) {
+            const translations = JSON.parse(
+                readFileSync(
+                    resolve(
+                        __dirname,
+                        '../../../../../packages/i18n/src/locales',
+                        locale,
+                        'account.json'
+                    ),
+                    'utf8'
+                )
+            ) as { subscription: { mine: { replacedBy: string } } };
+            expect(translations.subscription.mine.replacedBy).toBe(expected[locale]);
+        }
+    });
+
     it('renders the individual grace notice only for card payments with their grace date', () => {
         expect(source).toContain(
             "row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt"

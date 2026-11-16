@@ -228,6 +228,7 @@ export async function readOwnSubscriptions(userId: string) {
             }
             return {
                 id: row.id,
+                predecessorId: row.subscription.succeedsId,
                 vertical: row.vertical,
                 status: row.status,
                 paymentMethod: row.paymentMethod,

@@ -8,6 +8,21 @@ import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
 
 type Row = z.infer<typeof OwnSubscriptionsResponseSchema>['subscriptions'][number];
 
+/** Find an active successor in the owner's own subscription list. */
+export function findActiveSuccessor({
+    row,
+    subscriptions
+}: {
+    readonly row: Row;
+    readonly subscriptions: readonly Row[];
+}): Row | null {
+    return (
+        subscriptions.find(
+            (candidate) => candidate.predecessorId === row.id && candidate.status === 'ACTIVE'
+        ) ?? null
+    );
+}
+
 /** Translation key for each supported business vertical on the subscription page. */
 export const MY_SUBSCRIPTION_VERTICAL_LABEL_KEY: Record<VerticalEnum, string> = {
     accommodation: 'account.subscription.mine.vertical.accommodation',
