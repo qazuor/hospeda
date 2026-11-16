@@ -19,6 +19,7 @@
  * not verified — do not read them as proven.
  */
 import { createRouter } from '../../../utils/create-app';
+import { ownerVenueLocationRoutes } from '../../listing-location/index';
 import { protectedAddVenueFaqRoute } from './addFaq';
 import { protectedAddVenueFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from './addMedia';
@@ -165,6 +166,9 @@ app.route('/', protectedPurgeVenueRoute);
 app.route('/', protectedVenuePurgePreviewRoute);
 app.route('/', protectedVenueSupportEditsRoute);
 app.route('/', protectedVenueReportFixedRoute);
+
+// POST /{id}/location-exception-request - owner asks for an address exception (HOS-2192)
+app.route('/', ownerVenueLocationRoutes.requestException);
 app.route('/', protectedGetVenueByIdRoute);
 
 // PATCH /{id} — Owner operational update.

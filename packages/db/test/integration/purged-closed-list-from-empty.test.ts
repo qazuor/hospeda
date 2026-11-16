@@ -22,13 +22,18 @@ const LIST_PATH = resolve(ROOT_DIR, 'scripts/guards/purged-closed-list.json');
  */
 const PASSAGE_TABLE = 'cutover_v6_deleted_listing';
 
-/** The 9 legacy `entity_type` tables, `fix_request` (the spec's `pedido_de_arreglo`) and `domain_event`. */
+/**
+ * The 9 legacy `entity_type` tables, `fix_request` (the spec's `pedido_de_arreglo`),
+ * `domain_event` and the two HOS-2192 location exception tables: 13 in all.
+ */
 const EXPECTED_ENTITY_TYPE = [
     'domain_event',
     'entity_comments',
     'entity_view_monthly_rollups',
     'entity_views',
     'fix_request',
+    'location_exception_event',
+    'location_exception_request',
     'qr_codes',
     'r_entity_tag',
     'revalidation_config',
@@ -126,7 +131,7 @@ afterAll(async () => {
 });
 
 describe('TEST:V6:15 the schema walk over a database built from empty', () => {
-    it('finds 29 tables by FK and the 11 expected by entity_type, plus the passage table', () => {
+    it('finds 29 tables by FK and the 13 expected by entity_type, plus the passage table', () => {
         expect(byFk).toHaveLength(29);
         // The passage table is seen by the catalog walk and excluded by name (see PASSAGE_TABLE).
         expect(byEntityType).toContain(PASSAGE_TABLE);

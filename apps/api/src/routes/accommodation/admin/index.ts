@@ -56,10 +56,17 @@ app.route('/', adminAccommodationOptionsRoute);
 // Registered before /{id} so "location-duplicates" is not resolved as a UUID param
 app.route('/', adminAccommodationLocationRoutes.listDuplicates);
 
+// GET /location-exception-requests, POST /location-exception-requests/:requestId/approve|reject
+// - owner exception requests (HOS-2192). Literal first segment: before /{id}.
+app.route('/', adminAccommodationLocationRoutes.listRequests);
+app.route('/', adminAccommodationLocationRoutes.approveRequest);
+app.route('/', adminAccommodationLocationRoutes.rejectRequest);
+
 // GET /:id - Get by ID
 app.route('/', adminGetAccommodationByIdRoute);
 
-// POST|DELETE /:id/location-exception - one-address exception (HOS-1810)
+// GET|POST|DELETE /:id/location-exception - one-address exception (HOS-1810, HOS-2192)
+app.route('/', adminAccommodationLocationRoutes.getState);
 app.route('/', adminAccommodationLocationRoutes.setException);
 app.route('/', adminAccommodationLocationRoutes.clearException);
 
