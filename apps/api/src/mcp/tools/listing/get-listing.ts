@@ -285,6 +285,40 @@ export async function readOwnListingDetail(args: {
     return getScheduledListing({ actor, id, vertical });
 }
 
+/** The owned row of any vertical, as the vertical service returns it. */
+export type OwnListingRow = Accommodation | Venue | Experience;
+
+/**
+ * Gates a listing id through the same get-own authorization as `get_listing`
+ * (service `getById`, then resource step `READ_OWN`) and returns the row,
+ * without loading the catalog relations. For tools that only need to know the
+ * listing is the caller's (`get_listing_stats`). A missing, foreign or refused
+ * row is the uniform not-found error.
+ *
+ * @param args - Actor, vertical and listing id
+ * @returns The owned row, or the error to answer with
+ */
+export async function readOwnListingRow(args: {
+    readonly actor: Actor;
+    readonly vertical: ListingToolVertical;
+    readonly id: string;
+}): Promise<
+    | { readonly row: OwnListingRow; readonly error?: never }
+    | { readonly error: ToolHandlerResult<never> }
+> {
+    const { actor, vertical, id } = args;
+    const result =
+        vertical === VerticalEnum.ACCOMMODATION
+            ? await listingToolAccommodationService.getById(actor, id)
+            : vertical === VerticalEnum.VENUE
+              ? await listingToolVenueService.getById(actor, id)
+              : await listingToolExperienceService.getById(actor, id);
+    return admitOwnRow<OwnListingRow>({
+        actor,
+        result: result as { data?: OwnListingRow | null; error?: ToolErrorPayload }
+    });
+}
+
 /**
  * `get_listing`: read-only, available to an unverified email exactly as the
  * HTTP get-own routes are (`READ_OWN`).
