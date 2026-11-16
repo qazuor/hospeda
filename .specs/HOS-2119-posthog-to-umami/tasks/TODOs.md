@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 57/76 tasks (75%)
+## Progress: 59/76 tasks (78%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -440,13 +440,13 @@ Tracks (can run in parallel):
 
 ### Cleanup Phase
 
-- [ ] **T-057** (complexity: 2) - T-6 Remove web PostHog code (PostHogScript, snippet, posthog-client, their tests, stale comments)
+- [x] **T-057** (complexity: 2) - T-6 Remove web PostHog code (PostHogScript, snippet, posthog-client, their tests, stale comments)
   - Tags: t6-removal, web
   - Cut-critical: must land on staging before the next staging to main promotion. Tests: apps/web typech...
   - Blocked by: T-028, T-029, T-030, T-031, T-032, T-033
   - Blocks: T-060, T-063
 
-- [ ] **T-058** (complexity: 2) - T-6 Remove admin PostHog client and references
+- [x] **T-058** (complexity: 2) - T-6 Remove admin PostHog client and references
   - Tags: t6-removal, admin
   - Cut-critical. Tests: admin targeted suites for touched files (router.csp-nonce, router.preload-stale...
   - Blocked by: T-035

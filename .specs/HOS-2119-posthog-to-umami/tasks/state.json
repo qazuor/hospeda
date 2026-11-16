@@ -2058,70 +2058,70 @@
             "id": "T-057",
             "title": "T-6 Remove web PostHog code (PostHogScript, snippet, posthog-client, their tests, stale comments)",
             "description": "Cut-critical: must land on staging before the next staging to main promotion. Tests: apps/web typecheck/targeted tests of touched suites; the cacheable-pages guard and csp-hash-emission tests still pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028", "T-029", "T-030", "T-031", "T-032", "T-033"],
             "blocks": ["T-060", "T-063"],
             "subtasks": [
                 {
                     "title": "Delete apps/web/src/components/analytics/PostHogScript.astro, posthog.snippet.ts, apps/web/src/lib/analytics/posthog-client.ts and apps/web/test/lib/analytics/posthog-client.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix PostHog wording in comments: apps/web/src/lib/cookie-consent.ts, apps/web/src/lib/admin-panel-link.ts, apps/web/src/lib/feedback/feedback-nav-bootstrap.snippet.ts, apps/web/src/components/billing/StripMercadoPagoReturnParams.astro, BaseLayout.astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm no importer remains (rg analytics/posthog-client apps/web)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "web"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:09:39Z",
+                "completed": "2026-11-16T17:15:57Z"
             }
         },
         {
             "id": "T-058",
             "title": "T-6 Remove admin PostHog client and references",
             "description": "Cut-critical. Tests: admin targeted suites for touched files (router.csp-nonce, router.preload-stale-time guard) pass; rg posthog apps/admin returns nothing except env files handled in T-060.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-035"],
             "blocks": ["T-060"],
             "subtasks": [
                 {
                     "title": "Delete apps/admin/src/lib/analytics/posthog-client.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove initPostHog/isPostHogInitialized references in apps/admin/src/routes/__root.tsx and comments in lib/csp-nonce.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Check test mocks that still reference posthog-client",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "admin"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:09:39Z",
+                "completed": "2026-11-16T17:15:57Z"
             }
         },
         {
@@ -2162,7 +2162,7 @@
         {
             "id": "T-060",
             "title": "T-6 Remove PostHog env vars (registry, generated JSON, snapshots, app Zod schemas, .env.example)",
-            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.\n\nNOTE 2026-11-16 (T-059): apps/api/src/utils/env.ts still lists HOSPEDA_POSTHOG_KEY as requiredInProd — remove it here BEFORE the owner deletes the Coolify var, or prod boot fails.",
+            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.\n\nNOTE 2026-11-16 (T-059): apps/api/src/utils/env.ts still lists HOSPEDA_POSTHOG_KEY as requiredInProd — remove it here BEFORE the owner deletes the Coolify var, or prod boot fails.\n\nNOTE (T-057/T-058): leftovers for T-060 — apps/web/src/env.ts:50-53 prod-required refine on PUBLIC_POSTHOG_KEY (remove with the field or prod boot fails); apps/web + apps/admin Dockerfiles ARG/ENV PUBLIC_/VITE_POSTHOG_*; env-schema.ts entries in both apps; apps/admin/src/env.ts:160-161; apps/web/test/lib/revalidation-secret-env.test.ts fixture; .env.example files. apps/api/package.json still declares posthog-node with no importer — remove + lockfile.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-057", "T-058", "T-059"],
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 19,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 57,
+        "completed": 59,
         "blocked": 0,
         "averageComplexity": 2.5
     }
