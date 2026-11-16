@@ -284,6 +284,21 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     meetingPointDirectionsEnabled: z.boolean().optional()
 });
 
+/**
+ * PUBLIC LIST-ITEM schema for an experience (HOS-2200).
+ *
+ * The detail projection ({@link ExperiencePublicSchema}) publishes the narrowed
+ * business `contactInfo`; list responses (`GET /public/experiences` and
+ * `GET /public/experiences/destination/:id`) must NOT, per owner decision:
+ * contact channels are a detail-page concern and a list would let anyone
+ * harvest phone numbers in bulk. Built by omission so every other public field
+ * stays identical between the two. Mirrors `VenuePublicListItemSchema`.
+ */
+export const ExperiencePublicListItemSchema = ExperiencePublicSchema.omit({ contactInfo: true });
+
+/** TypeScript type for {@link ExperiencePublicListItemSchema}. */
+export type ExperiencePublicListItem = z.infer<typeof ExperiencePublicListItemSchema>;
+
 /** TypeScript type for {@link ExperiencePublicSchema}. */
 export type ExperiencePublic = z.infer<typeof ExperiencePublicSchema>;
 
