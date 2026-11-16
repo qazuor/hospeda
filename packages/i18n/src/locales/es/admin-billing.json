@@ -92,6 +92,27 @@
             "rejected": "La API rechazó la publicación: {message}",
             "forbidden": "Sólo SUPER_ADMIN puede publicar versiones de plan.",
             "generic": "No se pudo completar la acción. Probá de nuevo."
+        },
+        "cyclePrice": {
+            "action": "Cambiar precio del ciclo",
+            "title": "Cambiar precio del ciclo",
+            "cycle": "Ciclo",
+            "amount": "Nuevo precio en centavos ARS",
+            "preview": "Ver vista previa",
+            "invalid": "Ingresá un importe entero positivo en centavos.",
+            "summary": "Ciclo {cycle}: de {previous} a {next}.",
+            "reach": "La vista previa confirma que ningún cliente será alcanzado. El cambio rige al confirmar.",
+            "explicitConfirmation": "Confirmo el cambio de precio de este ciclo.",
+            "confirm": "Confirmar cambio de precio",
+            "saving": "Guardando…",
+            "cancel": "Cancelar",
+            "migrationLink": "Ir a migraciones de plan",
+            "errors": {
+                "hasCustomers": "Esta versión tiene clientes. El cambio directo no los afecta: iniciá una migración de plan para moverlos de forma segura.",
+                "changedSincePreview": "El precio cambió desde la vista previa. Revisá el importe actual y generá una nueva vista previa antes de confirmar.",
+                "forbidden": "Sólo SUPER_ADMIN puede cambiar precios de ciclos.",
+                "generic": "No se pudo cambiar el precio. Revisá los datos e intentá de nuevo."
+            }
         }
     },
     "deadlinesEditor": {
