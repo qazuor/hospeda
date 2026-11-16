@@ -61,6 +61,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { entityNotFoundError } from '../../utils/not-found.js';
 import { hasPermission } from '../../utils/permission.js';
 
 // ---------------------------------------------------------------------------
@@ -243,6 +244,25 @@ const GetStatsForOwnListingsSchema = z.object({
     window: EntityViewWindowSchema
 });
 
+/**
+ * Input schema for {@link EntityViewService.getDailySeriesComparisonForOwnListing}
+ * (HOS-2184): one listing of any owner vertical, identified by id, over a
+ * rolling window plus the equally long period right before it.
+ */
+const GetDailySeriesComparisonForOwnListingSchema = z.object({
+    /** Listing vertical. Accommodation, venue or experience. */
+    entityType: z.enum(
+        [EntityTypeEnum.ACCOMMODATION, EntityTypeEnum.VENUE, EntityTypeEnum.EXPERIENCE] as const,
+        { message: 'zodError.entityView.listingStats.entityType.invalid' }
+    ),
+    /** The listing to read. Must belong to the actor, otherwise NOT_FOUND. */
+    listingId: z.string({ message: 'zodError.entityView.entityId.required' }).uuid({
+        message: 'zodError.entityView.entityId.invalidUuid'
+    }),
+    /** Length of each period ('7d' or '30d'). */
+    window: EntityViewWindowSchema
+});
+
 // ---------------------------------------------------------------------------
 // Public input/output types
 // ---------------------------------------------------------------------------
@@ -411,6 +431,40 @@ export interface HostViewDailySeriesOutputItem {
     readonly date: string;
     /** Deduplicated total visits across all owned accommodations for the day. */
     readonly total: number;
+}
+
+/**
+ * Service-layer input for
+ * {@link EntityViewService.getDailySeriesComparisonForOwnListing} (HOS-2184).
+ *
+ * The actor's ownership of `listingId` is the gate (resolved through the
+ * vertical model's `findIdsByOwnerId`, which skips soft-deleted rows); there is
+ * no `PermissionEnum` check, like {@link GetStatsForOwnListingsInput}.
+ */
+export interface GetDailySeriesComparisonForOwnListingInput {
+    /** Authenticated actor performing the request. */
+    readonly actor: Actor;
+    /** Listing vertical. */
+    readonly entityType:
+        | EntityTypeEnum.ACCOMMODATION
+        | EntityTypeEnum.VENUE
+        | EntityTypeEnum.EXPERIENCE;
+    /** The listing to read. */
+    readonly listingId: string;
+    /** Length of each period ('7d' or '30d'). */
+    readonly window: EntityViewWindow;
+}
+
+/**
+ * Output of {@link EntityViewService.getDailySeriesComparisonForOwnListing}.
+ * Both series are gap-filled, ordered by date ASC, and have exactly the same
+ * length (the window's days).
+ */
+export interface ListingViewsComparison {
+    /** The most recent `window` local days, today included. */
+    readonly current: readonly HostViewDailySeriesOutputItem[];
+    /** The `window` local days right before `current`. */
+    readonly previous: readonly HostViewDailySeriesOutputItem[];
 }
 
 // ---------------------------------------------------------------------------
@@ -1122,6 +1176,63 @@ export class EntityViewService extends BaseService {
                 });
 
                 return gapFillHostDailySeries(modelRows, windowDays);
+            }
+        });
+    }
+
+    // -------------------------------------------------------------------------
+    // HOS-2184: per-listing series with previous-period comparison
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the daily view series of ONE listing the actor owns, for the
+     * rolling window and for the equally long period right before it, so a
+     * caller can compare them (HOS-2184 `get_listing_stats`).
+     *
+     * One model query covers both periods (`2 * window` days, within the
+     * 95-day retention of `entity_views`); the gap-filled result is then split
+     * in two. Both periods use the same local-calendar-day bucketing as
+     * {@link getDailySeriesForOwnListings}, so their totals are comparable.
+     *
+     * **Ownership:** the listing must be among the actor's own, non-deleted
+     * listings of that vertical. Anything else (missing, foreign, soft-deleted)
+     * answers the same NOT_FOUND, so the reply never tells whether an id
+     * exists. No `PermissionEnum` is checked, as for the other owner-listing
+     * view reads.
+     *
+     * @param input - Actor, vertical, listing id and window.
+     * @returns The `current` and `previous` daily series.
+     */
+    public async getDailySeriesComparisonForOwnListing(
+        input: GetDailySeriesComparisonForOwnListingInput
+    ): Promise<ServiceOutput<ListingViewsComparison>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDailySeriesComparisonForOwnListing',
+            input: { actor, ...params },
+            schema: GetDailySeriesComparisonForOwnListingSchema,
+            execute: async (validated, validatedActor) => {
+                const ownerModel =
+                    validated.entityType === EntityTypeEnum.ACCOMMODATION
+                        ? this.accommodationModel
+                        : this.listingModelFor(validated.entityType);
+                const ownedIds = await ownerModel.findIdsByOwnerId(validatedActor.id);
+                if (!ownedIds.includes(validated.listingId)) {
+                    throw entityNotFoundError({ entityName: 'listing' });
+                }
+
+                const windowDays = WINDOW_DAYS[validated.window];
+                const modelRows = await this.model.getDailySeriesForEntityIds({
+                    entityType: validated.entityType,
+                    windowDays: windowDays * 2,
+                    entityIds: [validated.listingId]
+                });
+                const series = gapFillHostDailySeries(modelRows, windowDays * 2);
+
+                return {
+                    previous: series.slice(0, windowDays),
+                    current: series.slice(windowDays)
+                };
             }
         });
     }
