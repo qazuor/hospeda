@@ -8,6 +8,25 @@ import { buildSentryReportUri } from '@repo/utils';
 export { buildSentryReportUri };
 
 /**
+ * Derives the CSP source (scheme + host[:port]) of the self-hosted Umami
+ * tracker from its script URL.
+ *
+ * @param params.scriptUrl - Full tracker script URL (`VITE_UMAMI_SCRIPT_URL`).
+ * @returns The origin, or `null` when the URL is unset, malformed, or not
+ *   http/https (so a bad value can never inject an arbitrary CSP source).
+ */
+export function resolveUmamiOrigin({ scriptUrl }: { scriptUrl?: string }): string | null {
+    if (!scriptUrl) return null;
+    try {
+        const url = new URL(scriptUrl);
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+        return url.origin;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Builds the complete CSP directive string for the admin app.
  * Uses nonce-based script integrity with strict-dynamic fallback chain.
  *
@@ -29,14 +48,18 @@ export { buildSentryReportUri };
 export function buildCspDirectives({
     nonce,
     sentryDsn,
-    cspReportUri
+    cspReportUri,
+    umamiScriptUrl
 }: {
     nonce: string;
     sentryDsn: string;
     cspReportUri?: string;
+    umamiScriptUrl?: string;
 }): string {
     const sentryReportUri =
         cspReportUri || (sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null);
+    const umamiOrigin = resolveUmamiOrigin({ scriptUrl: umamiScriptUrl });
+    const umamiSource = umamiOrigin ? ` ${umamiOrigin}` : '';
 
     const directives = [
         "default-src 'self'",
@@ -50,7 +73,10 @@ export function buildCspDirectives({
         // Previously included 'https:' as a CSP1 blanket fallback — removed because no
         // external script CDNs are actually used (Sentry is bundled via npm), and
         // 'strict-dynamic' already neutralized it in CSP2+ browsers.
-        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'`,
+        // HOS-2119: the self-hosted Umami origin serves the tracker script. Under
+        // CSP3 'strict-dynamic' ignores host sources, so the injected tracker
+        // tag also carries this request's nonce; the origin entry covers CSP2.
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-inline'${umamiSource}`,
         // 'unsafe-inline' required for Sentry Replay (rrweb uses inline style attributes).
         "style-src 'self' 'unsafe-inline'",
         "font-src 'self'",
@@ -63,7 +89,8 @@ export function buildCspDirectives({
         // them, but the explicit entry future-proofs the directive when the
         // blanket gets removed.
         "img-src 'self' data: blob: https: https://res.cloudinary.com https://*.tile.openstreetmap.org https://*.openstreetmap.org",
-        "connect-src 'self' https://*.sentry.io",
+        // The Umami tracker posts to `<origin>/api/...` (same origin as the script), so connect-src needs the origin.
+        `connect-src 'self' https://*.sentry.io${umamiSource}`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",

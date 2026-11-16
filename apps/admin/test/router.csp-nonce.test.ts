@@ -6,7 +6,7 @@
  * live in `src/lib/csp-nonce.ts` rather than inline in `router.tsx` itself:
  * `router.tsx` imports the generated `routeTree.gen.ts`, which in turn pulls
  * in `__root.tsx` and therefore every route file plus module-scope side
- * effects (`validateAdminEnv()`, `initSentry()`, `initPostHog()`). Testing
+ * effects (`validateAdminEnv()`, `initSentry()`, `initUmami()`). Testing
  * the nonce logic through a dedicated module avoids paying that cost on
  * every run of this suite while still exercising the exact functions
  * `router.tsx` wires into `ssr: { nonce: getCspNonce() } }`.
