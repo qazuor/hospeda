@@ -7,9 +7,9 @@ CREATE TABLE "location_exception_event" (
 	"reason" text,
 	"location_key" text,
 	"request_id" uuid,
-	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"created_at" timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
 	CONSTRAINT "location_exception_event_entity_type_check" CHECK ("location_exception_event"."entity_type" IN ('accommodation', 'venue')),
-	CONSTRAINT "location_exception_event_action_check" CHECK ("location_exception_event"."action" IN ('REQUESTED', 'APPROVED', 'REJECTED', 'GRANTED', 'REVOKED'))
+	CONSTRAINT "location_exception_event_action_check" CHECK ("location_exception_event"."action" IN ('REQUESTED', 'APPROVED', 'REJECTED', 'GRANTED', 'REVOKED', 'SUPERSEDED'))
 );
 --> statement-breakpoint
 CREATE TABLE "location_exception_request" (
@@ -28,8 +28,6 @@ CREATE TABLE "location_exception_request" (
 	CONSTRAINT "location_exception_request_status_check" CHECK ("location_exception_request"."status" IN ('PENDING', 'APPROVED', 'REJECTED', 'SUPERSEDED'))
 );
 --> statement-breakpoint
-ALTER TABLE "location_exception_event" ADD CONSTRAINT "location_exception_event_actor_id_users_id_fk" FOREIGN KEY ("actor_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "location_exception_event" ADD CONSTRAINT "location_exception_event_request_id_location_exception_request_id_fk" FOREIGN KEY ("request_id") REFERENCES "public"."location_exception_request"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "location_exception_request" ADD CONSTRAINT "location_exception_request_requested_by_users_id_fk" FOREIGN KEY ("requested_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "location_exception_request" ADD CONSTRAINT "location_exception_request_decided_by_users_id_fk" FOREIGN KEY ("decided_by") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "location_exception_event_entity_idx" ON "location_exception_event" USING btree ("entity_type","entity_id","created_at");--> statement-breakpoint
