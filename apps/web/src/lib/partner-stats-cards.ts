@@ -85,6 +85,31 @@ export function resolvePartnerStatsCards({
 }
 
 /**
+ * Resolves the partner id the Umami traffic section is mounted for
+ * (HOS-2119 T-054).
+ *
+ * Uses the SAME gate as the views card (`resolvePartnerStatsCards(...).showViews`,
+ * i.e. the partner has a public page of its own): a partner without one gets no
+ * traffic section, never an empty or zeroed one. The id comes from the
+ * session-resolved stats payload, never from the URL.
+ *
+ * @param stats - The payload from `GET /protected/partners/mine/stats`, or null
+ *   when the fetch failed.
+ * @param locale - Active locale, forwarded to `resolvePartnerStatsCards`.
+ * @returns The partner id, or null when no traffic section applies.
+ */
+export function resolvePartnerTrafficId({
+    stats,
+    locale
+}: {
+    readonly stats: MyPartnerStats | null;
+    readonly locale: SupportedLocale;
+}): string | null {
+    if (!resolvePartnerStatsCards({ stats, locale }).showViews) return null;
+    return stats?.partner?.id ?? null;
+}
+
+/**
  * One metric across both windows §7.4 asks for.
  *
  * `last7` is nullable and `last30` is not, and the asymmetry is deliberate: the
