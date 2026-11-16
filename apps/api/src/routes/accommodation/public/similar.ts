@@ -232,10 +232,14 @@ export const publicGetSimilarRoute = createPublicRoute({
         const mappedRows = rows.map((row, index) => {
             const { destination, ...rest } = gatedRows[index] as Record<string, unknown> & {
                 destination?: unknown;
+                videos?: typeof row.videos;
             };
+            // HOS-2191: videos come from the PROJECTED row, never from the raw
+            // `row.videos`. The projection removes them for an owner without
+            // `can_embed_video`; reading the raw column here put them back.
             const media = composeAccommodationMedia({
                 rows: mediaByAccommodationId.get(row.id) ?? [],
-                videos: row.videos
+                videos: rest.videos
             });
             // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
             // (the only featuring source since HOS-1419); the raw column itself is

@@ -14,7 +14,7 @@
  * projector, each with a test:
  * - `isVerified` is forced to `false` (the public schema requires the key).
  * - `media.videos` (the copy HOS-372 splices from the `videos` column) is emptied
- *   and video URLs inside `description` are stripped.
+ *   and video URLs inside `description` and every locale of `descriptionI18n` are stripped.
  * - `contactInfo.whatsapp` never leaves, and `hasWhatsapp` is derived from it.
  *
  * Public occupancy is NOT projected by the `calendar` section (owner decision
@@ -66,6 +66,16 @@ function applyNonRemovalSteps(args: {
     if (states.get('photos')?.traits.get('videos') !== 'available') {
         if (typeof result.description === 'string') {
             result.description = stripVideoEmbeds(result.description);
+        }
+        // HOS-2191: the translated descriptions carry the same embeds, one per locale.
+        const descriptionI18n = result.descriptionI18n;
+        if (isPlainObject(descriptionI18n)) {
+            result.descriptionI18n = Object.fromEntries(
+                Object.entries(descriptionI18n).map(([locale, text]) => [
+                    locale,
+                    typeof text === 'string' ? stripVideoEmbeds(text) : text
+                ])
+            );
         }
         const media = result.media;
         if (isPlainObject(media) && 'videos' in media) result.media = { ...media, videos: [] };

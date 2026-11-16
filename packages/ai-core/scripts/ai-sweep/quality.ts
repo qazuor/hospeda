@@ -174,10 +174,23 @@ export interface AnswerQuality {
 
 const stripAccents = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
 
-const matches = (input: { readonly pattern: string; readonly text: string }): boolean => {
+/**
+ * Case-insensitive regex test that also tries the text with accents stripped,
+ * so a rubric written without accents still matches an accented answer.
+ *
+ * @param input.pattern - Regex source.
+ * @param input.text - Text to test.
+ * @returns Whether either form matches.
+ */
+export function matchesPattern(input: {
+    readonly pattern: string;
+    readonly text: string;
+}): boolean {
     const re = new RegExp(input.pattern, 'i');
     return re.test(input.text) || re.test(stripAccents(input.text));
-};
+}
+
+const matches = matchesPattern;
 
 /** Runs every automatic rubric check on one answer. */
 export function checkAnswer(input: {

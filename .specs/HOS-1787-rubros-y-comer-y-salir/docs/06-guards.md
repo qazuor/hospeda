@@ -115,7 +115,7 @@ atados al nombre» al final).
     `apps/web/src/pages/qr/[slug].astro`) de un código GENERATED de menú o de folleto llega en **un** salto a
     `/comer-y-salir/…`, porque `qr_codes.target_url` se migró; el redirect legacy de
     `/gastronomia/<slug>/carta/` es la red para enlaces y códigos MANUAL, no lo que protege al sticker;
-  - el código de estado de las rutas retiradas es **302 durante el soak** y 301 después (DEC-FAC-030); el
+  - el código de estado de las rutas retiradas arrancó en **302 durante el soak** (DEC-FAC-030) y es **301 desde HOS-1956** (`/qr/<slug>/` sigue en 302); el
     guard verifica el código vigente declarado en el mapa, no uno fijo;
   - el redirect **de estado** de `/comer-y-salir/<slug>/carta/` a la ficha (sin carta disponible) no es una
     ruta retirada y es siempre **302 con `no-store`** (DEC-FAC-042): el guard lo verifica aparte y es rojo un
