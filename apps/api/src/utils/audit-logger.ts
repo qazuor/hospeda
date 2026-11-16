@@ -171,6 +171,30 @@ interface McpToolCallEntry extends BaseAuditEntry {
     readonly details?: Readonly<Record<string, string | number | boolean>>;
 }
 
+/**
+ * Audit entry for a user disconnecting an AI client (HOS-2184 T-026).
+ * `resourceType` + `resourceId` feed the `targetId` column as
+ * `oauth_client:<clientId>`.
+ */
+interface McpConnectionRevokedEntry extends BaseAuditEntry {
+    readonly auditEvent: typeof AuditEventType.MCP_CONNECTION_REVOKED;
+    /** Hospeda user who revoked, always the owner of the connection. */
+    readonly actorId: string;
+    /** Always `oauth_client`. */
+    readonly resourceType: 'oauth_client';
+    /** OAuth `client_id` that was disconnected. */
+    readonly resourceId: string;
+    /**
+     * Rows removed. The client name is deliberately not recorded: it is
+     * client-supplied, untrusted text.
+     */
+    readonly removed: {
+        readonly consents: number;
+        readonly refreshTokens: number;
+        readonly accessTokens: number;
+    };
+}
+
 /** Discriminated union of all audit entry types */
 export type AuditEntry =
     | AuthLoginFailedEntry
@@ -184,7 +208,8 @@ export type AuditEntry =
     | SessionSignoutEntry
     | UserAdminMutationEntry
     | RouteMutationEntry
-    | McpToolCallEntry;
+    | McpToolCallEntry
+    | McpConnectionRevokedEntry;
 
 /**
  * Audit event types that represent critical security events.

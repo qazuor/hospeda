@@ -174,7 +174,8 @@ vi.mock('@repo/logger', () => {
         SESSION_SIGNOUT: 'session.signout',
         USER_ADMIN_MUTATION: 'user.admin.mutation',
         ROUTE_MUTATION: 'route.mutation',
-        MCP_TOOL_CALL: 'mcp.tool.call'
+        MCP_TOOL_CALL: 'mcp.tool.call',
+        MCP_CONNECTION_REVOKED: 'mcp.connection.revoked'
     };
 
     return {
