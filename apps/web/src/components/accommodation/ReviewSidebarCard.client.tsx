@@ -28,7 +28,7 @@ import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';

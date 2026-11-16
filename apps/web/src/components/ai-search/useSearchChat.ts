@@ -29,7 +29,7 @@ import type {
     SearchIntentEntities
 } from '@repo/schemas';
 import { useCallback, useRef, useState } from 'react';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import {
     type SearchChatMessage,

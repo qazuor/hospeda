@@ -28,8 +28,8 @@ const mockTrackEvent = vi.fn();
  * in, and the resulting failure would surface as a passing test that executed
  * nothing.
  */
-vi.mock('@/lib/analytics/posthog-client', async (importOriginal) => ({
-    ...(await importOriginal<typeof import('@/lib/analytics/posthog-client')>()),
+vi.mock('@/lib/analytics/umami-client', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/analytics/umami-client')>()),
     trackEvent: (...args: unknown[]) => mockTrackEvent(...args)
 }));
 

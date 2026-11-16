@@ -18,7 +18,7 @@ import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import type { ApiErrorShape } from '@/lib/api-errors';
 import { translateApiError } from '@/lib/api-errors';
 import { useZodForm } from '@/lib/forms/use-zod-form';
@@ -312,6 +312,8 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
         // destination and price so funnels can segment inquiries by them.
         const bookingProps = {
             accommodation_id: accommodation.id,
+            entity_id: accommodation.id,
+            entity_type: 'ACCOMMODATION' as const,
             destination_id: accommodation.destinationId,
             owner_id: accommodation.ownerId,
             contact_method: 'platform_message' as const,
