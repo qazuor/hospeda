@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AiConnectionClientIdSchema,
     AiConnectionListSchema,
+    AiConnectionResetReviewBodySchema,
     AiConnectionSchema
 } from '../../../src/entities/ai-connection/ai-connection.schema.js';
 
@@ -41,9 +42,35 @@ describe('AiConnectionSchema', () => {
     });
 
     it('wraps items in a list', () => {
-        expect(AiConnectionListSchema.safeParse({ items: [base] }).success).toBe(true);
         expect(
-            AiConnectionListSchema.safeParse({ items: [{ ...base, scopes: 'mcp' }] }).success
+            AiConnectionListSchema.safeParse({ items: [base], pendingResetReview: null }).success
+        ).toBe(true);
+        expect(
+            AiConnectionListSchema.safeParse({
+                items: [{ ...base, scopes: 'mcp' }],
+                pendingResetReview: null
+            }).success
         ).toBe(false);
+    });
+
+    it('requires pendingResetReview to be present, null or a review', () => {
+        expect(AiConnectionListSchema.safeParse({ items: [base] }).success).toBe(false);
+        const review = { resetAt: '2026-11-10T12:00:00.000Z', connectionsBeforeReset: [base] };
+        const parsed = AiConnectionListSchema.parse({ items: [base], pendingResetReview: review });
+        expect(parsed.pendingResetReview?.resetAt).toBeInstanceOf(Date);
+    });
+});
+
+describe('AiConnectionResetReviewBodySchema', () => {
+    it.each(['revoke_previous', 'keep'])('accepts %s', (action) => {
+        expect(AiConnectionResetReviewBodySchema.safeParse({ action }).success).toBe(true);
+    });
+
+    it('rejects an unknown action and extra keys', () => {
+        expect(AiConnectionResetReviewBodySchema.safeParse({ action: 'nuke' }).success).toBe(false);
+        expect(
+            AiConnectionResetReviewBodySchema.safeParse({ action: 'keep', clientId: 'x' }).success
+        ).toBe(false);
+        expect(AiConnectionResetReviewBodySchema.safeParse({}).success).toBe(false);
     });
 });

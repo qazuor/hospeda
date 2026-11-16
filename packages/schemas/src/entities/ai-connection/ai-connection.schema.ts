@@ -52,10 +52,59 @@ export const AiConnectionSchema = z.object({
 /** TypeScript type inferred from {@link AiConnectionSchema}. */
 export type AiConnection = z.infer<typeof AiConnectionSchema>;
 
+/**
+ * A password reset the user has not yet answered (HOS-2184).
+ *
+ * Present only when the user reset their password through the forgot-password
+ * flow while they had at least one AI assistant connected, and has not chosen
+ * what to do about it yet. Changing the password while signed in never creates
+ * one. `connectionsBeforeReset` holds the connections that were made before the
+ * reset and are still in place: a client connected after the reset is not in it.
+ */
+export const AiConnectionPendingResetReviewSchema = z.object({
+    /** When the password was reset. */
+    resetAt: z.coerce.date(),
+    /** Connections made before `resetAt` that still exist. Never empty. */
+    connectionsBeforeReset: z.array(AiConnectionSchema)
+});
+
+/** TypeScript type inferred from {@link AiConnectionPendingResetReviewSchema}. */
+export type AiConnectionPendingResetReview = z.infer<typeof AiConnectionPendingResetReviewSchema>;
+
 /** Response of `GET /api/v1/protected/ai-connections`. */
 export const AiConnectionListSchema = z.object({
-    items: z.array(AiConnectionSchema)
+    items: z.array(AiConnectionSchema),
+    /** The unanswered post-reset question, or `null` when there is none. */
+    pendingResetReview: AiConnectionPendingResetReviewSchema.nullable()
 });
 
 /** TypeScript type inferred from {@link AiConnectionListSchema}. */
 export type AiConnectionList = z.infer<typeof AiConnectionListSchema>;
+
+/**
+ * The user's answer to the post-reset question: disconnect the assistants that
+ * were connected before the reset, or keep them.
+ */
+export const AiConnectionResetReviewActionSchema = z.enum(['revoke_previous', 'keep']);
+
+/** TypeScript type inferred from {@link AiConnectionResetReviewActionSchema}. */
+export type AiConnectionResetReviewAction = z.infer<typeof AiConnectionResetReviewActionSchema>;
+
+/** Body of `POST /api/v1/protected/ai-connections/reset-review`. */
+export const AiConnectionResetReviewBodySchema = z
+    .object({ action: AiConnectionResetReviewActionSchema })
+    .strict();
+
+/** TypeScript type inferred from {@link AiConnectionResetReviewBodySchema}. */
+export type AiConnectionResetReviewBody = z.infer<typeof AiConnectionResetReviewBodySchema>;
+
+/** Response of `POST /api/v1/protected/ai-connections/reset-review`. */
+export const AiConnectionResetReviewResultSchema = z.object({
+    /** The answer that was applied. */
+    action: AiConnectionResetReviewActionSchema,
+    /** Client ids that were disconnected. Empty for `keep`. */
+    revokedClientIds: z.array(AiConnectionClientIdSchema)
+});
+
+/** TypeScript type inferred from {@link AiConnectionResetReviewResultSchema}. */
+export type AiConnectionResetReviewResult = z.infer<typeof AiConnectionResetReviewResultSchema>;
