@@ -1552,6 +1552,7 @@
             "underReview": "We're reviewing your logo and copy. We'll let you know as soon as we're done — there's nothing to pay yet.",
             "rejected": "We reviewed your details and need you to fix something before moving on. The specifics are below, next to the form.",
             "approved": "Your content is approved. The Hospeda team sets up your subscription and will write to you to arrange payment by bank transfer.",
+            "activeSubscription": "Your Partner subscription is active and up to date.",
             "revoked": "Your partner listing was taken down and no longer appears on the site.",
             "revokedContact": "If you'd like more details, reach out and we'll explain."
         },

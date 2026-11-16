@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { resolveManualInstallmentView } from '../../../src/lib/billing/manual-installment';
+import {
+    hasActivePartnerSubscription,
+    resolveManualInstallmentView
+} from '../../../src/lib/billing/manual-installment';
 import type { TranslationFn } from '../../../src/lib/i18n';
 
 const t: TranslationFn = (key, _fallback, params) => `${key}:${JSON.stringify(params ?? {})}`;
@@ -13,8 +16,49 @@ const item = {
     dueAt: '2026-11-20T00:00:00.000Z'
 };
 const input = (installments: unknown) => ({ ok: true, data: { installments } });
+const ownSubscriptions = (vertical: string, status: string) => ({
+    ok: true,
+    data: {
+        subscriptions: [
+            {
+                id: '00000000-0000-4000-8000-000000000003',
+                vertical,
+                status,
+                paymentMethod: 'MANUAL',
+                serviceEndsAt: null,
+                graceEndsAt: null,
+                createdAt: '2026-11-01T00:00:00.000Z',
+                paidAfterCancellation: null,
+                pause: null,
+                promo: null,
+                succession: null,
+                plan: {
+                    slug: 'partner-silver',
+                    name: 'Silver',
+                    amount: 10000,
+                    currency: 'ARS',
+                    cycle: 'monthly'
+                },
+                nextCharge: null
+            }
+        ],
+        deferredCourtesies: [],
+        declinedSignups: []
+    }
+});
 
 describe('resolveManualInstallmentView (HOS-1782)', () => {
+    it('recognizes an active Partner subscription but not another vertical or inactive state (HOS-2235)', () => {
+        expect(hasActivePartnerSubscription(ownSubscriptions('partner', 'ACTIVE'))).toBe(true);
+        expect(hasActivePartnerSubscription(ownSubscriptions('accommodation', 'ACTIVE'))).toBe(
+            false
+        );
+        expect(hasActivePartnerSubscription(ownSubscriptions('partner', 'GRACE_PERIOD'))).toBe(
+            false
+        );
+        expect(hasActivePartnerSubscription({ ok: false })).toBe(false);
+    });
+
     it('builds plan, amount and due lines for the partner installment', () => {
         // Arrange
         // Act
