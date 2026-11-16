@@ -1993,7 +1993,7 @@
             "actions": "Ações"
         },
         "address": {
-            "street": "{street} {number}",
+            "street": "{street}, {number}",
             "floor": "Andar {floor}",
             "apartment": "Apto {apartment}",
             "none": "Sem endereço"
