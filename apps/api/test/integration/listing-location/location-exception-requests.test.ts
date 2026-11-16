@@ -124,9 +124,9 @@ beforeAll(async () => {
 });
 afterEach(async () => {
     for (const userId of users.splice(0)) {
-        await getDb().execute(
-            sql`DELETE FROM location_exception_event WHERE entity_id IN (SELECT id FROM venues WHERE owner_id = ${userId}::uuid)`
-        );
+        // The events table rejects row UPDATE and DELETE by trigger; TRUNCATE is the
+        // test-only reset (this suite runs alone on its database, under flock).
+        await getDb().execute(sql`TRUNCATE location_exception_event`);
         await getDb().execute(
             sql`DELETE FROM location_exception_request WHERE entity_id IN (SELECT id FROM venues WHERE owner_id = ${userId}::uuid)`
         );
@@ -379,6 +379,7 @@ describe('admin queue, approve and reject', () => {
         expect(res.status).toBe(409);
         expect(await requestRows(draft)).toMatchObject([{ status: 'SUPERSEDED' }]);
         expect(await grantColumns(draft)).toEqual({ by: null, key: null });
+        expect((await events(draft)).map((e) => e.action)).toEqual(['REQUESTED', 'SUPERSEDED']);
     });
 
     it('a direct grant resolves the pending request as approved', async () => {
@@ -505,5 +506,186 @@ describe('GET /admin/venues/:id/location-exception', () => {
         expect(res.status).toBe(200);
         expect(body.data.hasException).toBe(false);
         expect(body.data.events.map((e) => e.action)).toEqual(['REQUESTED']);
+    });
+});
+
+describe('review fixes (HOS-2192)', () => {
+    const revoke = (id: string, headers: Record<string, string>) =>
+        app.request(`${ADMIN_BASE}/${id}/location-exception`, { method: 'DELETE', headers });
+
+    async function seedCabins(owner: string, admin: string, count: number) {
+        const destinationId = await createVerticalDestination();
+        const ids: string[] = [];
+        for (let i = 0; i < count; i++) {
+            ids.push(
+                await createVerticalListing({
+                    vertical: VerticalEnum.VENUE,
+                    ownerId: owner,
+                    destinationId,
+                    status: PublicationStatusEnum.PUBLISHED
+                })
+            );
+        }
+        // One at a time: the unique index forbids two non-excepted twins, so each cabin
+        // gets its key and its exception before the next one gets the key.
+        for (const id of ids) {
+            await getDb().execute(
+                sql`UPDATE venues SET location_key = ${KEY} WHERE id = ${id}::uuid`
+            );
+            await post(`${ADMIN_BASE}/${id}/location-exception`, adminHeaders(admin), {
+                reason: 'Complejo de cabanas con tres fichas en la misma direccion'
+            });
+        }
+        return ids;
+    }
+
+    it('refuses to revoke one of three published, excepted cabins on the same address', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const [a, b, c] = await seedCabins(owner, admin, 3);
+
+        const res = await readResponse(await revoke(a as string, adminHeaders(admin)));
+
+        expect(res.status).toBe(409);
+        expect([b, c]).toContain(
+            (res.body.error?.details as { existingListingId?: string }).existingListingId
+        );
+        expect(await grantColumns(a as string)).toEqual({ by: admin, key: KEY });
+        expect((await events(a as string)).map((e) => e.action)).toEqual(['GRANTED']);
+    });
+
+    it('revokes the exception of a DRAFT cabin even when the siblings are published', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const [a] = await seedCabins(owner, admin, 2);
+        await getDb().execute(
+            sql`UPDATE venues SET publication_status = 'DRAFT' WHERE id = ${a}::uuid`
+        );
+
+        expect((await revoke(a as string, adminHeaders(admin))).status).toBe(200);
+        expect(await grantColumns(a as string)).toEqual({ by: null, key: null });
+    });
+
+    it('does not deadlock when an approval and a direct grant race on the same listing', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const { draft } = await seedPair(owner);
+        await ask(draft, ownerHeaders(owner));
+        const [request] = await requestRows(draft);
+
+        const [approve, grant] = await Promise.all([
+            post(
+                `${ADMIN_BASE}/location-exception-requests/${request?.id}/approve`,
+                adminHeaders(admin),
+                {}
+            ),
+            post(`${ADMIN_BASE}/${draft}/location-exception`, adminHeaders(admin), {
+                reason: 'Concedida directamente por el equipo de soporte'
+            })
+        ]);
+
+        expect([200, 201, 409]).toContain(approve.status);
+        expect([200, 201, 409]).toContain(grant.status);
+        expect(await grantColumns(draft)).toMatchObject({ key: KEY });
+        expect((await requestRows(draft))[0]?.status).toBe('APPROVED');
+    });
+
+    it('rejects UPDATE and DELETE of an audit event at the database', async () => {
+        const owner = await seedUser();
+        const { draft } = await seedPair(owner);
+        await ask(draft, ownerHeaders(owner));
+
+        await expect(
+            getDb().execute(
+                sql`UPDATE location_exception_event SET reason = 'x' WHERE entity_id = ${draft}::uuid`
+            )
+        ).rejects.toThrow();
+        await expect(
+            getDb().execute(
+                sql`DELETE FROM location_exception_event WHERE entity_id = ${draft}::uuid`
+            )
+        ).rejects.toThrow();
+        expect(await events(draft)).toHaveLength(1);
+    });
+
+    it('records a SUPERSEDED event when an obsolete pending request is replaced', async () => {
+        const owner = await seedUser();
+        const { draft } = await seedPair(owner);
+        await ask(draft, ownerHeaders(owner));
+        await getDb().execute(
+            sql`UPDATE venues SET location_key = 'otra|9|dest' WHERE id = ${draft}::uuid`
+        );
+        const other = await getDb().execute(
+            sql`SELECT owner_id AS o, destination_id AS d FROM venues WHERE id = ${draft}::uuid`
+        );
+        const row = other.rows[0] as { o: string; d: string };
+        const twin = await createVerticalListing({
+            vertical: VerticalEnum.VENUE,
+            ownerId: row.o,
+            destinationId: row.d,
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        await getDb().execute(
+            sql`UPDATE venues SET location_key = 'otra|9|dest' WHERE id = ${twin}::uuid`
+        );
+
+        expect((await ask(draft, ownerHeaders(owner))).status).toBe(201);
+
+        expect((await events(draft)).map((e) => e.action)).toEqual([
+            'REQUESTED',
+            'SUPERSEDED',
+            'REQUESTED'
+        ]);
+    });
+
+    it('answers 404 to a request on a PURGED listing', async () => {
+        const owner = await seedUser();
+        const { draft } = await seedPair(owner);
+        await getDb().execute(
+            sql`UPDATE venues SET publication_status = 'PURGED' WHERE id = ${draft}::uuid`
+        );
+
+        expect((await ask(draft, ownerHeaders(owner))).status).toBe(404);
+        expect(await requestRows(draft)).toEqual([]);
+    });
+
+    it('closes the request instead of granting when the listing no longer collides', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const { published, draft } = await seedPair(owner);
+        await ask(draft, ownerHeaders(owner));
+        const [request] = await requestRows(draft);
+        await getDb().execute(
+            sql`UPDATE venues SET publication_status = 'DRAFT' WHERE id = ${published}::uuid`
+        );
+
+        const res = await readResponse(
+            await post(
+                `${ADMIN_BASE}/location-exception-requests/${request?.id}/approve`,
+                adminHeaders(admin),
+                {}
+            )
+        );
+
+        expect(res.status).toBe(409);
+        expect(await grantColumns(draft)).toEqual({ by: null, key: null });
+        expect(await requestRows(draft)).toMatchObject([{ status: 'SUPERSEDED' }]);
+        expect((await events(draft)).map((e) => e.action)).toEqual(['REQUESTED', 'SUPERSEDED']);
+    });
+
+    it('reports the real total when the page is past the last one', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const { draft } = await seedPair(owner);
+        await ask(draft, ownerHeaders(owner));
+
+        const res = await app.request(
+            `${ADMIN_BASE}/location-exception-requests?page=2&pageSize=1`,
+            { headers: adminHeaders(admin) }
+        );
+        const body = (await res.json()) as { data: { items: unknown[]; total: number } };
+
+        expect(body.data.items).toEqual([]);
+        expect(body.data.total).toBeGreaterThanOrEqual(1);
     });
 });

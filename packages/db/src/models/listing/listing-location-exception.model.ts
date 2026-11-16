@@ -100,6 +100,7 @@ export const listingLocationExceptionModel = {
                         AND location_exception_key = location_key) AS has_exception
                 FROM ${sql.identifier(TABLES[args.vertical])}
                 WHERE id = ${args.id} AND deleted_at IS NULL
+                  AND publication_status <> ${PublicationStatusEnum.PURGED}
                 FOR UPDATE`
         );
         const row = rowsOf<{
@@ -119,6 +120,67 @@ export const listingLocationExceptionModel = {
             publicationStatus: row.publication_status,
             hasException: row.has_exception === true
         };
+    },
+
+    /**
+     * Takes the transaction-scoped advisory lock of one owner, vertical and place
+     * key, so the exception changes of the listings sharing a place (request, grant,
+     * approve, revoke) serialize. Held until the transaction ends.
+     */
+    async lockOwnerKey(args: {
+        readonly vertical: LocationKeyVertical;
+        readonly ownerId: string;
+        readonly locationKey: string;
+        readonly tx: DrizzleClient;
+    }): Promise<void> {
+        await args.tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${args.vertical}:${args.ownerId}:${args.locationKey}`}, 0))`
+        );
+    },
+
+    /**
+     * Finds ANOTHER PUBLISHED, live listing of the same owner and vertical holding
+     * the same key, whether or not it holds an exception. Used to refuse a revoke
+     * that would leave two published listings on one place.
+     *
+     * @returns The oldest such listing's id, or `null`.
+     */
+    async findPublishedSibling(args: {
+        readonly vertical: LocationKeyVertical;
+        readonly ownerId: string;
+        readonly locationKey: string;
+        readonly excludeId: string;
+        readonly tx: DrizzleClient;
+    }): Promise<string | null> {
+        const result = await args.tx.execute(
+            sql`SELECT id FROM ${sql.identifier(TABLES[args.vertical])}
+                WHERE location_key = ${args.locationKey}
+                  AND owner_id = ${args.ownerId}
+                  AND id <> ${args.excludeId}
+                  AND publication_status = ${PublicationStatusEnum.PUBLISHED}
+                  AND deleted_at IS NULL
+                ORDER BY created_at ASC LIMIT 1`
+        );
+        return rowsOf<{ id: string }>(result)[0]?.id ?? null;
+    },
+
+    /** One request by id of the given vertical, WITHOUT a lock (to learn which listing to lock first). */
+    async findRequest(args: {
+        readonly vertical: LocationKeyVertical;
+        readonly requestId: string;
+        readonly tx: DrizzleClient;
+    }): Promise<SelectLocationExceptionRequest | null> {
+        const [row] = await args.tx
+            .select()
+            .from(locationExceptionRequests)
+            .where(
+                and(
+                    eq(locationExceptionRequests.id, args.requestId),
+                    eq(locationExceptionRequests.entityType, args.vertical)
+                )
+            )
+            .limit(1);
+        return row ?? null;
     },
 
     /** Appends one audit event. The only write the events table has. */
@@ -346,7 +408,17 @@ export const listingLocationExceptionModel = {
     }): Promise<{ readonly items: readonly LocationExceptionQueueRow[]; readonly total: number }> {
         const table = sql.identifier(TABLES[args.vertical]);
         const offset = (args.page - 1) * args.pageSize;
-        const result = await (args.tx ?? getDb()).execute(
+        const db = args.tx ?? getDb();
+        const counted = await db.execute(
+            sql`SELECT count(*)::int AS total
+                FROM location_exception_request r
+                JOIN ${table} l ON l.id = r.entity_id AND l.deleted_at IS NULL
+                     AND l.publication_status <> ${PublicationStatusEnum.PURGED}
+                WHERE r.entity_type = ${args.vertical} AND r.status = ${args.status}
+                  AND (r.status <> 'PENDING' OR r.location_key = l.location_key)`
+        );
+        const total = Number(rowsOf<{ total: number }>(counted)[0]?.total ?? 0);
+        const result = await db.execute(
             sql`SELECT r.id AS request_id, r.status, r.reason, r.decision_reason, r.requested_at,
                        l.id AS listing_id, l.name AS listing_name,
                        l.destination_id::text AS destination_id,
@@ -362,8 +434,7 @@ export const listingLocationExceptionModel = {
                              AND c.publication_status = ${PublicationStatusEnum.PUBLISHED}
                              AND (c.location_exception_at IS NULL
                                   OR c.location_exception_key IS DISTINCT FROM c.location_key)
-                       ), '[]'::json) AS colliding,
-                       count(*) OVER () AS total_rows
+                       ), '[]'::json) AS colliding
                 FROM location_exception_request r
                 JOIN ${table} l ON l.id = r.entity_id AND l.deleted_at IS NULL
                      AND l.publication_status <> ${PublicationStatusEnum.PURGED}
@@ -390,7 +461,6 @@ export const listingLocationExceptionModel = {
             owner_name: string | null;
             owner_email: string | null;
             colliding: { id: string; name: string }[];
-            total_rows: number | string;
         }>(result);
         return {
             items: rows.map((row) => ({
@@ -411,7 +481,7 @@ export const listingLocationExceptionModel = {
                 decisionReason: row.decision_reason,
                 requestedAt: new Date(row.requested_at)
             })),
-            total: rows[0] ? Number(rows[0].total_rows) : 0
+            total
         };
     }
 };
