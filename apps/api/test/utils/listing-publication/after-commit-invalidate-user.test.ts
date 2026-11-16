@@ -1,6 +1,12 @@
+import { VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ invalidation: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+    invalidation: vi.fn(),
+    invalidatePublicPath: vi.fn(),
+    scheduleRevalidation: vi.fn(),
+    execute: vi.fn()
+}));
 vi.mock('../../../src/utils/effective-set-cache', () => ({
     invalidateEffectiveSetsForUser: mocks.invalidation
 }));
@@ -12,7 +18,7 @@ vi.mock('@repo/db', () => ({
     buildEventOccurrence: vi.fn(),
     buildScheduleOccurrence: vi.fn(),
     emailOutboxModel: {},
-    getDb: vi.fn(),
+    getDb: () => ({ execute: mocks.execute }),
     listingModerationModel: {},
     listingPublicationModel: {},
     listingPurgeModel: {},
@@ -21,7 +27,12 @@ vi.mock('@repo/db', () => ({
     trials: {},
     users: {}
 }));
-vi.mock('@repo/service-core', () => ({ getRevalidationService: vi.fn() }));
+vi.mock('@repo/service-core', () => ({
+    getRevalidationService: () => ({ scheduleRevalidation: mocks.scheduleRevalidation })
+}));
+vi.mock('../../../src/middlewares/cache', () => ({
+    invalidateCacheByPathPrefix: mocks.invalidatePublicPath
+}));
 vi.mock('../../../src/utils/clock', () => ({ getClock: () => ({ clock: {} }) }));
 vi.mock('../../../src/utils/logger', () => ({ apiLogger: { error: vi.fn(), warn: vi.fn() } }));
 vi.mock('../../../src/utils/trial/trial-campaign-outbox', () => ({
@@ -67,5 +78,29 @@ describe('TEST:1698:2 AC:1698:2 after-commit cache invalidation', () => {
         await expect(
             getListingPublicationPorts().afterCommit.invalidateUser({ userId: 'u1' })
         ).resolves.toBeUndefined();
+    });
+
+    it.each([
+        [VerticalEnum.ACCOMMODATION, '/api/v1/public/accommodations'],
+        [VerticalEnum.VENUE, '/api/v1/public/venues'],
+        [VerticalEnum.EXPERIENCE, '/api/v1/public/experiences']
+    ] as const)('invalidates the %s memory cache before scheduling CDN purge', async (vertical, path) => {
+        mocks.execute.mockResolvedValue({ rows: [{ slug: 'listing', destinationSlug: null }] });
+        mocks.invalidatePublicPath.mockImplementation(() => {
+            expect(mocks.scheduleRevalidation).not.toHaveBeenCalled();
+        });
+
+        await getListingPublicationPorts().afterCommit.revalidate({
+            vertical,
+            listingIds: ['listing-id']
+        });
+
+        expect(mocks.invalidatePublicPath).toHaveBeenCalledWith({ pathPrefix: path });
+        expect(mocks.scheduleRevalidation).toHaveBeenCalledWith({
+            entityType: vertical,
+            id: 'listing-id',
+            slug: 'listing',
+            destinationSlug: undefined
+        });
     });
 });
