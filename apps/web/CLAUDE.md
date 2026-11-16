@@ -1238,6 +1238,32 @@ measured at runtime and added to the mobile page bottom reservation.
 Outside the mobile media query, the dock and its wrappers use
 `display: contents`, so desktop controls keep their existing positioning.
 
+### AI assistants panel (HOS-2184)
+
+`/{lang}/mi-cuenta/asistentes-ia/` lets a user connect AI assistants to their account
+over the [MCP server](../api/docs/mcp-server.md) and disconnect the ones they connected.
+
+- **No web env var.** The page asks the API: `GET /.well-known/oauth-protected-resource`
+  answers 200 with `resource` (the MCP URL) when the feature is on and 404 when off
+  (`src/lib/mcp-discovery.ts`). Any failure reads as "off". The answer is cached
+  (60 s positive, 30 s negative, stale-while-revalidate), so no request waits on it
+  after the first.
+- **Visibility.** Flag on: the entry shows for every signed-in user. Flag off: it
+  shows only for a user with at least one connection, so they can disconnect. The
+  count comes from one shared lookup (`src/lib/ai-connections-count.ts`, one request
+  per page load) and the rule lives in `useAiAssistantsEntry`. The account sidebar,
+  the avatar menu and the mobile menu all use it, so the three cannot disagree. A
+  failed lookup hides the entry. The sidebar item is server-rendered `hidden` and
+  revealed by `AiAssistantsNavReveal`, which keeps the page session-blind.
+- **Untrusted client text.** A client's `name`, `uri` and `logoUri` come from the
+  client itself. They render as plain React text. Links go through `toSafeHttpsUrl`
+  (https only) and the logo is never fetched.
+- **Client ids are URLs for CIMD clients.** Always build the disconnect URL with
+  `buildAiConnectionsUrl`, which percent-encodes the id.
+- **Consent page.** `/{lang}/auth/consent/` (`OAuthConsent.client.tsx`) is where the
+  OAuth provider sends the user to approve a client. It shows the account and the
+  full capabilities, and sanitizes the client link.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`
