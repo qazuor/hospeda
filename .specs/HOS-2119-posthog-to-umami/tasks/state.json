@@ -1669,70 +1669,70 @@
             "id": "T-046",
             "title": "T-5 Implement apps/api UmamiStatsClient (native fetch, API key, 3s timeout)",
             "description": "Files: apps/api/src/lib/umami-stats-client.ts, apps/api/test/lib/umami-stats-client.test.ts. Tests with fake fetch: correct URL, auth header and entity_id filter per entity type (all four); 3s abort rejects; non-200 and malformed JSON map to a typed error; website id comes from HOSPEDA_UMAMI_WEBSITE_ID_WEB (web pages are where owner traffic lives). Filter is by entity_id, not by URL path (slugs change, /es /en /pt).\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Auth: API key minted by a view-only user, sent as Authorization: Bearer umami_... (the x-umami-api-key header returns 401 self-hosted). startAt/endAt in ms are required. Endpoints per T-045. Keep ranges narrow so unit=day is honoured.\n\nPORT CHANGED 2026-11-15 (T-045 review): implement TrafficStatsClientPort from packages/service-core/src/services/listing-traffic-stats/ports.ts. Scope carries startAt/endAt (epoch ms, Argentina local-day window via getLocalDayWindow + MARKET_TIMEZONE) and timeZone; query Umami with startAt/endAt and timezone. The funnel port returns TOTALS (getFunnelCounts → {views, contactStarted, contactCompleted}) via event-data pivot filtered by pf_entity_id over the range — no property-series and no gap-fill (the response has no time series; spec §6.5 gap-fill note does not apply). Breakdown rows must never have null/empty value (map Umami direct-traffic null to a label or drop). Entity id is lower-cased by the service.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-045", "T-005", "T-011"],
             "blocks": ["T-048"],
             "subtasks": [
                 {
                     "title": "Create apps/api/src/lib/umami-stats-client.ts implementing UmamiStatsPort over /metrics (referrer, country, device) and /events/stats or /event-data/* filtered by event data entity_id (query shape from T-006)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "API-key auth header, AbortSignal.timeout(3000)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Never log the key",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T02:42:36Z",
+                "completed": "2026-11-16T02:55:37Z"
             }
         },
         {
             "id": "T-047",
             "title": "T-5 Implement the Redis traffic-stats cache adapter (TTL 1h)",
             "description": "Files: apps/api/src/utils/traffic-stats-cache.ts, apps/api/test/utils/traffic-stats-cache.test.ts. Tests: key format exact, setex TTL 3600, miss returns undefined, Redis undefined or throwing degrades to cache-miss without throwing. Follow apps/api/src/utils/effective-set-cache.ts as the local pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-045"],
             "blocks": ["T-048"],
             "subtasks": [
                 {
                     "title": "Create apps/api/src/utils/traffic-stats-cache.ts using getRedisClient from apps/api/src/utils/redis.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Key traffic-stats:{entityType}:{entityId}:{window}, TTL 3600",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Graceful no-op when Redis is not configured",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T02:42:36Z",
+                "completed": "2026-11-16T02:55:37Z"
             }
         },
         {
@@ -1851,7 +1851,7 @@
         {
             "id": "T-051",
             "title": "T-5 Create the web traffic-stats client and the shared TrafficStatsCards island",
-            "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.",
+            "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.\n\nNOTES 2026-11-15 (T-046 review): (1) Umami never returns direct traffic in the referrer breakdown, so the i18n string traffic.referrers.direct can never render as-is — owner decision pending: compute direct = total visitors - sum(referrers) (recommended) or drop the string. (2) Umami device values include `laptop` (desktop|laptop|tablet|mobile); the copy has no laptop label. (3) Breakdown counts are distinct visitors; views are pageviews.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-044", "T-050"],
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 54,
+        "pending": 52,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.5
     }
