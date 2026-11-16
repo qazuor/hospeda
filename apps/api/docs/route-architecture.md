@@ -508,7 +508,7 @@ app.route('/api/v1/admin/<entity>s',      adminEntityRoutes);
 
 ## View Tracking Routes (SPEC-159)
 
-View tracking uses a non-standard layout: one public write endpoint and three protected
+View tracking uses a non-standard layout: one public write endpoint and four protected
 read endpoints, all under the `views` path. There is no admin tier.
 
 ### Public capture
@@ -528,9 +528,26 @@ are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`
 | `GET` | `/api/v1/protected/views/accommodations/me?window=7d\|30d` | `ACCOMMODATION_VIEW_OWN` | `[{ entityId, unique, total }]` scoped to the actor's own accommodations only |
 | `GET` | `/api/v1/protected/views/posts?window=7d\|30d` | `POST_VIEW_ALL` | `[{ entityId, unique, total }]` for requested post ids |
 | `GET` | `/api/v1/protected/views/events?window=7d\|30d` | `EVENT_VIEW_ALL` | `[{ entityId, unique, total }]` for requested event ids |
+| `GET` | `/api/v1/protected/views/:entityType/:entityId/traffic-stats?window=7d\|30d\|90d` | See below | Umami-backed traffic stats for one owned listing (see below) |
 
-All three read routes are cached by the global cache middleware. Unique-visitor counts are **approximate** (cookieless
+The three view-count reads above are cached by the global cache middleware. Unique-visitor counts are **approximate** (cookieless
 dedup — see privacy note). The `window` query param is required (`7d` or `30d`).
+
+### Traffic stats (HOS-2119)
+
+`GET /api/v1/protected/views/:entityType/:entityId/traffic-stats?window=7d|30d|90d` returns referrers, countries, devices and,
+for accommodations only, the contact funnel. Source: `apps/api/src/routes/views/protected/traffic-stats.ts`.
+
+- **Entity types:** `ACCOMMODATION`, `VENUE`, `EXPERIENCE`, `PARTNER`.
+- **Authorization (in order):**
+  1. Authentication (401) and a guest guard.
+  2. ACCOMMODATION only: `ACCOMMODATION_VIEW_OWN`, checked BEFORE input validation. Venue and experience have no such permission.
+  3. VENUE, EXPERIENCE and ACCOMMODATION: the `view_basic_stats` entitlement for the listing's vertical, then ownership via `findIdsByOwnerId`.
+  4. PARTNER: ownership only (`partner.ownerUserId`), with no permission and no entitlement. Revoked partners are still served, mirroring `GET /protected/partners/mine/stats`.
+- **404:** a foreign, soft-deleted or nonexistent listing or partner gets the identical 404.
+- **Umami failure, timeout or missing config:** 200 with `available: false` and empty arrays. Umami is never surfaced as an error.
+- **Response fields:** `window`, `available`, `referrers` (includes the computed `(direct)` and `(internal)` rows), `countries`, `devices`, and `contactFunnel` (accommodations only, `null` otherwise).
+- **Cache:** responses are cached for 1 hour.
 
 ---
 
