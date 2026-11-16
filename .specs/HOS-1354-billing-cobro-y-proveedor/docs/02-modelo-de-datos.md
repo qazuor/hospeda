@@ -390,6 +390,13 @@ avanzaba un período.
   (`RN-1`), y cada madrugada el barrido lo reemplaza por el `next_payment_date` del proveedor.
   Ninguno de los dos escritores nuevos decide un cobro: la decisión de cobrar sigue siendo del
   proveedor.
+
+  **El barrido no escribe una lectura rancia.** Una fecha del proveedor que sea *anterior* a la
+  guardada *y* ya vencida (`<=` al instante del acto) no se copia. Sin esta regla, una relectura
+  hecha cuando el proveedor todavía informa el instante del primer cobro (`PA-3`) desharía la
+  fecha que `P1` avanzó, y la fila volvería a quedar con una fecha vencida. Las demás
+  correcciones del proveedor siguen ganando: una fecha posterior, o una anterior que todavía es
+  futura (el proveedor corrigiendo su propio ancla).
 - **Sin débito** —el pagador manual del §17.2, que *«no tiene nada que pausar porque no hay débito
   que detener»* (`B/06` §7)— **es la única copia que existe**, y sus escrituras están declaradas
   en las transiciones de `B/03` §7.2: `S2` la estrena, `MP1` y `MP4` la avanzan un ciclo al
