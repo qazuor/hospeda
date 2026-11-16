@@ -17,6 +17,7 @@ import type { LocationKeyVertical } from '@repo/db';
 import {
     LocationExceptionRequestCreatedSchema,
     LocationExceptionRequestInputSchema,
+    type LocationExceptionTarget,
     VerticalEnum
 } from '@repo/schemas';
 import { requestLocationException } from '@repo/service-core';
@@ -69,7 +70,8 @@ function ownerRouteOptions(args: { readonly vertical: LocationKeyVertical; reado
                 vertical,
                 listingId,
                 actorId: actor.id,
-                reason: (body as { reason: string }).reason
+                reason: (body as { reason: string }).reason,
+                location: (body as { location?: LocationExceptionTarget }).location
             });
             apiLogger.info(
                 { vertical, listingId, requestId: created.id, ownerId: actor.id },

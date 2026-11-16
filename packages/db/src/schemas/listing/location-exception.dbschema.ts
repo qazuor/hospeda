@@ -9,6 +9,7 @@ import { sql } from 'drizzle-orm';
 import {
     check,
     index,
+    jsonb,
     pgTable,
     text,
     timestamp,
@@ -53,8 +54,23 @@ export const locationExceptionRequests = pgTable(
         entityId: uuid('entity_id').notNull(),
         /** The owner who asked. */
         requestedBy: uuid('requested_by').references(() => users.id, { onDelete: 'set null' }),
-        /** The listing's `location_key` at request time. */
+        /**
+         * The place key the exception is for: the listing's own key at request time, or
+         * the key of `target_location` for a move request.
+         */
         locationKey: text('location_key').notNull(),
+        /**
+         * The address the owner wants to move the listing to (a location PATCH refused
+         * with `DUPLICATE_LOCATION`). NULL for an ordinary request. The key above is
+         * recomputed server-side from it; the exception is granted for that key and
+         * stays dormant until the listing is saved at that address.
+         */
+        targetLocation: jsonb('target_location').$type<{
+            street: string;
+            number: string;
+            floor?: string;
+            apartment?: string;
+        }>(),
         /** The owner's reason. */
         reason: text('reason').notNull(),
         status: varchar('status', { length: 16 })
