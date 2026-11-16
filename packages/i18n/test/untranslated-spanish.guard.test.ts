@@ -62,7 +62,16 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Sistema: ['pt'],
     Anterior: ['pt'],
     // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
-    '{{count}} de {{max}} caracteres': ['pt']
+    '{{count}} de {{max}} caracteres': ['pt'],
+    // Same spelling in Brazilian Portuguese / English (HOS-2119 owner traffic panel).
+    Países: ['pt'],
+    Dispositivos: ['pt'],
+    Notebook: ['pt'],
+    Celular: ['pt'],
+    Tablet: ['en', 'pt'],
+    Período: ['pt'],
+    '{{count}} visitante': ['pt'],
+    '{{count}} visitantes': ['pt']
 };
 
 /** Flattens a nested JSON object to dot-notation leaf entries. */
