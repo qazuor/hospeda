@@ -103,11 +103,14 @@ export async function startPlanChangeScenario(
         beforeCancelNotice: { beforeCancel: async () => 'SENT' as const },
         touristVipInheritance: noTouristVip
     };
+    // HOS-2218: a plan change reuses the predecessor's declared payer email.
+    const declaredPayerEmail = `payer-${crypto.randomUUID()}@example.test`;
     const started = await startSubscription(
         {
             userId: user.userId,
             billingOptionId: source.billingOptionId,
-            returnUrl: 'https://example.test/return'
+            returnUrl: 'https://example.test/return',
+            payerEmail: declaredPayerEmail
         },
         ports
     );
@@ -127,6 +130,7 @@ export async function startPlanChangeScenario(
         userId: user.userId,
         subscriptionId: started.subscriptionId,
         authorizationId: started.authorizationId,
+        declaredPayerEmail,
         sourceOptionId: source.billingOptionId,
         targetOptionId: target.id
     };
@@ -161,7 +165,8 @@ export async function startSettlementSuccession(
         {
             userId: user.userId,
             billingOptionId: option.billingOptionId,
-            returnUrl: 'https://example.test/return'
+            returnUrl: 'https://example.test/return',
+            payerEmail: `payer-${crypto.randomUUID()}@example.test`
         },
         ports
     );
@@ -173,7 +178,8 @@ export async function startSettlementSuccession(
             userId: user.userId,
             predecessorSubscriptionId: predecessorStart.subscriptionId,
             billingOptionId: option.billingOptionId,
-            returnUrl: 'https://example.test/return'
+            returnUrl: 'https://example.test/return',
+            payerEmail: 'payer@example.test'
         },
         ports
     );
