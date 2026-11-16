@@ -24,6 +24,11 @@ function listing(ownerId?: string): Record<string, unknown> {
         id: `listing-${ownerId}`,
         ownerId,
         description: 'Visit https://youtube.com/watch?v=abc123 today',
+        descriptionI18n: {
+            es: 'Mira https://youtu.be/abc123 hoy',
+            en: 'Watch https://vimeo.com/123 today',
+            pt: 'Sem video'
+        },
         richDescription: '<p>Premium</p>',
         richDescriptionI18n: { es: '<p>Premium</p>' },
         isVerified: true,
@@ -73,6 +78,11 @@ describe('projectPublicAccommodations', () => {
         expect(result?.richDescriptionI18n).toEqual({ es: '<p>Premium</p>' });
         expect(result?.videos).toEqual([{ url: 'https://vimeo.com/123' }]);
         expect(result?.description).toBe('Visit https://youtube.com/watch?v=abc123 today');
+        expect(result?.descriptionI18n).toEqual({
+            es: 'Mira https://youtu.be/abc123 hoy',
+            en: 'Watch https://vimeo.com/123 today',
+            pt: 'Sem video'
+        });
         expect(result?.isVerified).toBe(true);
         expect(result?.media).toEqual({
             featuredImage: 'photo',
@@ -97,6 +107,15 @@ describe('projectPublicAccommodations', () => {
         expect(result.description).toBe('Visit today');
         expect(result).not.toHaveProperty('videos');
         expect(result.media).toEqual({ featuredImage: 'photo', videos: [] });
+    });
+
+    it('HOS-2191: strips video embeds from every locale of descriptionI18n without the grant', async () => {
+        const result = await project('plain');
+        expect(result.descriptionI18n).toEqual({
+            es: 'Mira hoy',
+            en: 'Watch today',
+            pt: 'Sem video'
+        });
     });
 
     it.each([
