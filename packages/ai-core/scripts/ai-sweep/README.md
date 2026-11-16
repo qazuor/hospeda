@@ -279,7 +279,11 @@ follow "Adding a feature or a case" below.
 
 `accommodation_import` all-pass: nano 25%, luna none 13%, luna low 100%. Those runs predate strict mode: the misses
 were renamed keys (`maxGuests`, `amenities`, `pricePerNight`, `address`) that the lenient parse dropped, which is why
-HOS-2250 moved the feature to strict structured outputs. Re-measure before comparing new results with these. `chat_answer_classifier`: luna none 100%,
+HOS-2250 moved the feature to strict structured outputs and rewrote both prompts to name exactly the schema keys
+and answer `null` for a missing field. Re-run 2026-11-16 after HOS-2250 (8 cases x 2 variants = 16 calls,
+US$0.0028): all-pass, schema validity and production acceptance 100% for both `gpt-6-luna|none` and
+`gpt-6-luna|low`. Only `none` left out a value the page implied (capacity from "para 2 a 6 personas"); `type`
+stays null on the English "Entire loft" page for both. `chat_answer_classifier`: luna none 100%,
 luna low 44% (5 of 9 empty: reasoning ate the 16-token cap).
 
 Decision: every feature on `gpt-6-luna`; `none` for chat, chat_experience, search, translate and post_generate; `low`
