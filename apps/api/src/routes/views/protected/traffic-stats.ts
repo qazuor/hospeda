@@ -17,6 +17,15 @@
  * 4. ownership: the listing id must be in the caller's own ids
  *    (`findIdsByOwnerId`). A foreign or nonexistent listing answers the SAME 404.
  *
+ * **PARTNER** has its own split, mirroring `GET /protected/partners/mine/stats`
+ * (`routes/partners/protected/mine-stats.ts`) by design (HOS-2119 R-1, spec 5.5):
+ * no permission, NO entitlement gate (a partner is an ordinary account and its
+ * subscription lives in another product domain), and ownership is
+ * `partner.ownerUserId === actor.id` (one partner per owner, unique index). A
+ * soft-deleted, foreign or nonexistent partner answers the SAME 404. A REVOKED
+ * partner (`revokedAt` set) is deliberately NOT refused: `mine-stats` keeps
+ * showing the owner their numbers and only the public reads answer 410.
+ *
  * Input shape (entity type, uuid, window) is validated by the route factory
  * before the handler runs, so no unvalidated value reaches the database.
  *
@@ -24,14 +33,11 @@
  * `available: false`. The same shape is answered, without any outbound call,
  * when the Umami env vars are not all configured.
  *
- * PARTNER is not served here yet (T-049): it is excluded from the accepted
- * entity types, so it answers 400.
- *
  * @module routes/views/protected/traffic-stats
  * @see HOS-2119 T-048
  */
 
-import { accommodationModel, experienceModel, venueModel } from '@repo/db';
+import { accommodationModel, experienceModel, PartnerModel, venueModel } from '@repo/db';
 import {
     EntityTypeEnum,
     ListingTrafficStatsEntityTypeSchema,
@@ -55,21 +61,38 @@ import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { createApiTrafficStatsCache } from '../../../utils/traffic-stats-cache';
 
-/**
- * Entity types served by this route. PARTNER is added by T-049, which owns its
- * own authorization split (`partner.ownerUserId`, no entitlement gate).
- */
-const ServedEntityTypeSchema = ListingTrafficStatsEntityTypeSchema.exclude([
-    EntityTypeEnum.PARTNER
-]);
+/** Entity types served by this route (the four owner-facing types). */
+const ServedEntityTypeSchema = ListingTrafficStatsEntityTypeSchema;
 
 /** Entity types served by this route. */
 type ServedEntityType = z.infer<typeof ServedEntityTypeSchema>;
 
+/** Entity types authorized through a listing vertical gate plus `findIdsByOwnerId`. */
+type ListingEntityType = Exclude<ServedEntityType, typeof EntityTypeEnum.PARTNER>;
+
+/** Partner reader used for ownership; one partner per owner (unique index). */
+const partnerModel = new PartnerModel();
+
+/**
+ * Whether `entityId` is the partner owned by `ownerId`. Same lookup as
+ * `PartnerStatsService.getForOwner`, plus an explicit soft-delete check.
+ *
+ * @param input - The caller id and the requested partner id
+ * @returns `true` only for the caller's own, non-deleted partner
+ */
+async function ownsPartner(input: {
+    readonly ownerId: string;
+    readonly entityId: string;
+}): Promise<boolean> {
+    const partner = await partnerModel.findOne({ ownerUserId: input.ownerId });
+    if (!partner || partner.deletedAt) return false;
+    return String(partner.id).toLowerCase() === input.entityId.toLowerCase();
+}
+
 /** Per-type authorization facts: vertical of the gate, ownership reader and 404 entity name. */
 const LISTING_AUTH: Readonly<
     Record<
-        ServedEntityType,
+        ListingEntityType,
         {
             readonly vertical: VerticalEnum;
             readonly entityName: string;
@@ -191,7 +214,8 @@ export const listingTrafficStatsRoute = createProtectedRoute({
     description:
         'Returns referrers, countries, devices and (accommodations only) the contact funnel ' +
         'of one listing owned by the authenticated user over a rolling window (7d, 30d or 90d). ' +
-        'Requires the view_basic_stats entitlement. A listing that is not the caller’s ' +
+        'Requires the view_basic_stats entitlement for accommodations, venues and experiences ' +
+        '(partners are authorized by ownership only, with no entitlement). A listing that is not the caller’s ' +
         'answers 404. When Umami fails, times out or is not configured the answer is 200 with ' +
         'available=false and empty arrays.',
     tags: ['Views'],
@@ -211,19 +235,28 @@ export const listingTrafficStatsRoute = createProtectedRoute({
             entityId: string;
         };
         const { window } = query as { window: ListingTrafficStatsWindow };
-        const auth = LISTING_AUTH[entityType];
 
-        await enforceUserGate({
-            userId: actor.id,
-            vertical: auth.vertical,
-            keys: ['view_basic_stats']
-        });
+        if (entityType === EntityTypeEnum.PARTNER) {
+            // No entitlement gate by design (see module docblock). Foreign, soft-deleted
+            // and nonexistent partners take the same branch: identical 404.
+            if (!(await ownsPartner({ ownerId: actor.id, entityId }))) {
+                throw entityNotFoundError({ entityName: 'partner' });
+            }
+        } else {
+            const auth = LISTING_AUTH[entityType];
 
-        // Ownership: foreign and nonexistent listings take the same branch, so
-        // the 404 is identical (error contract, H-72 / HOS-600).
-        const ownedIds = await auth.findOwnedIds(actor.id);
-        if (!ownedIds.includes(entityId.toLowerCase())) {
-            throw entityNotFoundError({ entityName: auth.entityName });
+            await enforceUserGate({
+                userId: actor.id,
+                vertical: auth.vertical,
+                keys: ['view_basic_stats']
+            });
+
+            // Ownership: foreign and nonexistent listings take the same branch, so
+            // the 404 is identical (error contract, H-72 / HOS-600).
+            const ownedIds = await auth.findOwnedIds(actor.id);
+            if (!ownedIds.includes(entityId.toLowerCase())) {
+                throw entityNotFoundError({ entityName: auth.entityName });
+            }
         }
 
         const service = getTrafficStatsService();

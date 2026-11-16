@@ -10,7 +10,7 @@
  *  - the Redis client behind the traffic stats cache,
  *  - the global `fetch`, which is what the real `UmamiStatsClient` calls.
  *
- * Status matrix covered: 200 (own listing, three types), 401, 403 (gate and
+ * Status matrix covered: 200 (own listing, four types incl. PARTNER), 401, 403 (gate and
  * accommodation permission), 400 (type, id, window), 404 (foreign, missing,
  * identical bodies), 200 `available:false` (Umami 5xx, Umami hang, env unset).
  *
@@ -26,12 +26,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockAccommodationIds, mockVenueIds, mockExperienceIds, gateState } = vi.hoisted(() => ({
-    mockAccommodationIds: vi.fn(),
-    mockVenueIds: vi.fn(),
-    mockExperienceIds: vi.fn(),
-    gateState: { grantViewBasicStats: true }
-}));
+const { mockAccommodationIds, mockVenueIds, mockExperienceIds, mockPartnerFindOne, gateState } =
+    vi.hoisted(() => ({
+        mockAccommodationIds: vi.fn(),
+        mockVenueIds: vi.fn(),
+        mockExperienceIds: vi.fn(),
+        mockPartnerFindOne: vi.fn(),
+        gateState: { grantViewBasicStats: true, gateCalls: 0 }
+    }));
 
 // `test/setup.ts` replaces `@repo/service-core` (including `ServiceError`) with fakes,
 // under which the real error formatter answers 500 for every typed error. Restore the
@@ -48,14 +50,18 @@ vi.mock('@repo/db', async () => {
         ...base,
         accommodationModel: { ...base.accommodationModel, findIdsByOwnerId: mockAccommodationIds },
         venueModel: { findIdsByOwnerId: mockVenueIds },
-        experienceModel: { findIdsByOwnerId: mockExperienceIds }
+        experienceModel: { findIdsByOwnerId: mockExperienceIds },
+        PartnerModel: class {
+            findOne = mockPartnerFindOne;
+        }
     };
 });
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
-            rehydrateEffectiveSet({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) => {
+            gateState.gateCalls += 1;
+            return rehydrateEffectiveSet({
                 version: 1,
                 userId,
                 vertical,
@@ -64,7 +70,8 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 entries: gateState.grantViewBasicStats
                     ? [{ key: 'view_basic_stats', value: 1, strategy: 'MAX' }]
                     : []
-            })
+            });
+        }
     })
 }));
 
@@ -159,6 +166,8 @@ describe('GET /api/v1/protected/views/:entityType/:entityId/traffic-stats (HOS-2
         _resetTrafficStatsServiceForTests();
 
         gateState.grantViewBasicStats = true;
+        gateState.gateCalls = 0;
+        mockPartnerFindOne.mockResolvedValue({ id: OWN_LISTING_ID, deletedAt: null });
         mockAccommodationIds.mockResolvedValue([OWN_LISTING_ID]);
         mockVenueIds.mockResolvedValue([OWN_LISTING_ID]);
         mockExperienceIds.mockResolvedValue([OWN_LISTING_ID]);
@@ -354,12 +363,139 @@ describe('GET /api/v1/protected/views/:entityType/:entityId/traffic-stats (HOS-2
     });
 
     // -----------------------------------------------------------------------
+    // PARTNER: ownership by partner.ownerUserId, no entitlement gate (T-049)
+    // -----------------------------------------------------------------------
+
+    describe('PARTNER (T-049, AC-7)', () => {
+        it('answers 200 with data and a null funnel for the own partner, without any gate', async () => {
+            // Arrange: no entitlement and no permission at all.
+            gateState.grantViewBasicStats = false;
+
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: OWN_LISTING_ID }), {
+                headers: authHeaders({ role: 'USER', permissions: [] })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.available).toBe(true);
+            expect(body.data.contactFunnel).toBeNull();
+            expect(body.data.referrers.length).toBeGreaterThan(0);
+            expect(gateState.gateCalls).toBe(0);
+            expect(mockPartnerFindOne).toHaveBeenCalledWith({ ownerUserId: OWNER_ID });
+        });
+
+        it('still serves a revoked partner, like partners/mine/stats', async () => {
+            // Arrange
+            mockPartnerFindOne.mockResolvedValue({
+                id: OWN_LISTING_ID,
+                deletedAt: null,
+                revokedAt: new Date()
+            });
+
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: OWN_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+        });
+
+        it('answers 404 for a partner owned by somebody else and never calls Umami', async () => {
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: FOREIGN_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+
+            // Assert
+            expect(res.status).toBe(404);
+            expect((await res.json()).error.code).toBe('NOT_FOUND');
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('answers 404 for an actor who owns no partner', async () => {
+            // Arrange
+            mockPartnerFindOne.mockResolvedValue(null);
+
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: OWN_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+
+            // Assert
+            expect(res.status).toBe(404);
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('answers 404 for a soft-deleted own partner', async () => {
+            // Arrange
+            mockPartnerFindOne.mockResolvedValue({ id: OWN_LISTING_ID, deletedAt: new Date() });
+
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: OWN_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+
+            // Assert
+            expect(res.status).toBe(404);
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('answers foreign, nonexistent and non-partner with the SAME whole body', async () => {
+            // Act
+            const foreign = await app.request(url({ type: 'PARTNER', id: FOREIGN_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+            mockPartnerFindOne.mockResolvedValue(null);
+            const missing = await app.request(url({ type: 'PARTNER', id: MISSING_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+
+            // Assert
+            expect(foreign.status).toBe(404);
+            expect(missing.status).toBe(404);
+            const { metadata: _a, ...foreignBody } = await foreign.json();
+            const { metadata: _b, ...missingBody } = await missing.json();
+            expect(foreignBody).toEqual(missingBody);
+        });
+
+        it('answers 401 without a session', async () => {
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: OWN_LISTING_ID }), {
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+
+            // Assert
+            expect(res.status).toBe(401);
+            expect(mockPartnerFindOne).not.toHaveBeenCalled();
+        });
+
+        it('answers 200 available:false without any outbound call when Umami is not configured', async () => {
+            // Arrange
+            (env as unknown as MutableEnv).HOSPEDA_UMAMI_URL = undefined;
+            _resetTrafficStatsServiceForTests();
+
+            // Act
+            const res = await app.request(url({ type: 'PARTNER', id: OWN_LISTING_ID }), {
+                headers: authHeaders({ permissions: [] })
+            });
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect((await res.json()).data.available).toBe(false);
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // 400: input shape
     // -----------------------------------------------------------------------
 
     describe('input shape', () => {
         it.each([
-            { name: 'PARTNER (T-049)', type: 'PARTNER', id: OWN_LISTING_ID, query: '' },
+            { name: 'PARTNER with a non-uuid id', type: 'PARTNER', id: 'not-a-uuid', query: '' },
             { name: 'POST', type: 'POST', id: OWN_LISTING_ID, query: '' },
             { name: 'a lowercase type', type: 'venue', id: OWN_LISTING_ID, query: '' },
             { name: 'a non-uuid id', type: 'VENUE', id: 'not-a-uuid', query: '' },
