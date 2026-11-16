@@ -71,9 +71,11 @@ CI=true pnpm exec tsx scripts/ai-sweep/sweep.ts --config scripts/ai-sweep/sweep.
 
 Flags: `--config <path>`, `--execute`, `--dry-run`, `--max-calls <n>` (default from
 config, 150), `--concurrency <n>` (default 2), `--out <dir>` (default `scripts/ai-sweep/out/`, git-ignored),
-`--api-key-file <path>` (reads and trims the file; used for every provider instead of its `apiKeyEnv`; the key is never logged),
+`--api-key-file <path>` (reads and trims the file; used instead of `apiKeyEnv` only for providers WITHOUT a custom `baseURL`, so a first-party key never reaches a third-party gateway; the key is never logged),
 `--blind-export <path>`, `--grades <path>`, `--key <path>`, `--results <path>`.
-The script aborts if the matrix exceeds the call cap, and aborts `--execute` if a needed key env var is unset.
+The script aborts if the matrix exceeds the call cap, and aborts `--execute` if a needed key is missing. Numeric
+flags must be positive integers and every value flag needs a value that is not another flag: anything else
+(`--max-calls abc`, `--concurrency 0`, `--max-calls --execute`) exits 2 before doing anything (`cli-args.ts`).
 
 Output per run: `sweep-<timestamp>.jsonl` (one raw result per call) and `sweep-<timestamp>.md`
 (summary table per model x effort x cap with visible %, p50/p95 latency, TTFT, avg output and
@@ -171,7 +173,8 @@ answer, projected monthly cost and latency per feature, plus an overall summary.
 ### End-to-end run (from `packages/ai-core`)
 
 ```bash
-# 0. Replace the PLACEHOLDER monthlyCalls in sweep.config.migration.json with real volumes, read-only:
+# 0. monthlyCalls in sweep.config.migration.json are production 30-day counts measured 2026-11-15
+#    (chat 15, chat_answer_classifier 12, search 4, faq_draft 1, the rest 0). Re-measure them, read-only:
 #    select feature, count(*) from ai_usage where created_at > now() - interval '30 days' group by 1;
 
 # 1. Dry run (default, no network): calls and worst-case USD per feature and in total.
@@ -189,7 +192,9 @@ CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --results out/migration-<sta
 ```
 
 Flags: `--config`, `--features a,b`, `--max-calls`, `--concurrency`, `--out`, `--api-key-file`, `--blind-export`,
-`--results`, `--grades`, `--key`. Read the overall table first, then each feature: a candidate that is cheaper
+`--results`, `--grades`, `--key` (same fail-closed parsing and `--api-key-file` rule as `sweep.ts`). The report also
+prints a quota projection, cost per answer x `monthlyQuotas` (default 20/50/100/250/1250, as in the chat sweep),
+because the measured volumes are too small to project from. Read the overall table first, then each feature: a candidate that is cheaper
 overall but fails one feature (say `accommodation_import` schema validity) is not a drop-in replacement.
 
 ### What each feature measures
@@ -204,6 +209,7 @@ overall but fails one feature (say `accommodation_import` schema validity) is no
 | `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`, `generateObject` (non-strict JSON schema) | field values, values grounded in the page text, no invented coordinates/contacts, reviews never copied |
 | `faq_draft` | chat context + `buildFaqDraftRequest`, `generateObject`, `maxTokens` 1024 / temperature 0 fixed | `hasData` right (false on missing data), draft grounded and plain text, language |
 | `support` | none: no production route calls it today; engine defaults only | decline off-topic/injection, escalation, no invented policy, language |
+| `chat_answer_classifier` | `buildChatAnswerClassifierRequest`: fixed instruction, `maxTokens` 16 / temperature 0, on the vertical's chat feature (its configured model); metered under its own key | the one-word output parsed like production (`parseAnswerVerdict` = `parseClassifierVerdict`) equals the expected verdict |
 
 Trap cases per feature: prompt injection, missing data and language mismatch. All data is synthetic: phones are
 zero-filled, URLs use `example.com`.
@@ -235,7 +241,10 @@ kind without the generator; `test/ai-sweep-provider-parity.test.ts` (ai-core) ru
 
 ### Caveats (migration)
 
-- `monthlyCalls` in the committed config are placeholders; the monthly projection is only as good as them.
+- `monthlyCalls` are a single 30-day measurement (2026-11-15) of a young production; use the quota projection for
+  sizing and re-measure before deciding on the monthly figure.
+- `chat_answer_classifier` is billed under its own sweep feature but routed as `chat`/`chat_venue`/`chat_experience`
+  (production runs it on that feature's model); its 16-token cap is fixed by production, so the config cap never applies.
 - Prompts are the in-code defaults, not DB overrides, and feature configs are not read: the effort is the config's.
 - When production sends no `maxTokens`, the sweep caps the call (`maxOutputTokens` / `featureMaxOutputTokens`) so the
   worst case is bounded; a capped answer shows up as finishReason `length` in the "truncated" column.
