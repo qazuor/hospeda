@@ -37,6 +37,11 @@ function accommodationFor(ownerId: string | undefined, extra: Record<string, unk
         ownerId,
         name: 'Casa del Rio',
         description: 'Mira el video https://www.youtube.com/watch?v=abc123 y reserva',
+        descriptionI18n: {
+            es: 'Mira https://youtu.be/abc123 y reserva',
+            en: 'Watch https://vimeo.com/123 and book',
+            pt: 'Sem video'
+        },
         richDescription: '<p>Premium</p>',
         richDescriptionI18n: { es: '<p>Premium</p>', en: '<p>Premium en</p>' },
         isVerified: true,
@@ -84,6 +89,7 @@ describe('accommodation public payload golden', () => {
                 id: 'acc-sparse-denied',
                 richDescription: undefined,
                 richDescriptionI18n: undefined,
+                descriptionI18n: undefined,
                 isVerified: undefined,
                 media: { gallery: [] },
                 contactInfo: { whatsapp: '   ' },
