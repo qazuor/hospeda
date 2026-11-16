@@ -11,11 +11,18 @@ import {
     isServiceTestDbAvailable,
     withServiceTestTransaction
 } from './helpers.js';
-import { retirePlanChanges, seedPlanChange } from './support/plan-change-fixtures.js';
+import {
+    retirePlanChanges,
+    seedCoveredPayment,
+    seedPlanChange
+} from './support/plan-change-fixtures.js';
 
 const chargeAt = new Date('2026-10-12T15:00:00.000Z');
 const cutoff = new Date('2026-10-12T04:00:00.000Z');
 const clockAt = (instant: string) => ({ now: () => new Date(instant) });
+/** HOS-2223: the charge date cuts the window only once the predecessor's cycle is paid. */
+const creditPredecessor = (subscriptionId: string) =>
+    seedCoveredPayment({ subscriptionId, amountMinor: 250000 });
 
 afterEach(retirePlanChanges);
 afterAll(closeServiceTestPool);
@@ -23,6 +30,7 @@ afterAll(closeServiceTestPool);
 describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', () => {
     it('rejects at 23 hours without creating or authorizing a successor', async () => {
         const seeded = await seedPlanChange({ nextChargeAt: chargeAt, rankRelation: 'LOWER' });
+        await creditPredecessor(seeded.predecessor.id);
         seeded.verticals.setChangeDirection({
             fromPlanVersionId: seeded.planVersionId,
             toPlanVersionId: seeded.targetPlanVersionId,
@@ -53,6 +61,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
 
     it('rejects a direct S1 call when the window became too short before insertion', async () => {
         const seeded = await seedPlanChange({ nextChargeAt: chargeAt });
+        await creditPredecessor(seeded.predecessor.id);
         const authorize = vi.spyOn(seeded.fake, 'authorize');
         await expect(
             startSuccession(
@@ -80,8 +89,59 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
         expect(authorize).toHaveBeenCalledTimes(0);
     });
 
+    it('HOS-2223: offers the full window when the predecessor has no credited charge yet', async () => {
+        // Arrange: S2 copied the provider's first-charge instant (an hour away); P1 never ran.
+        const now = new Date('2026-10-11T05:00:00.000Z');
+        const seeded = await seedPlanChange({
+            nextChargeAt: new Date(now.getTime() + 60 * 60 * 1000)
+        });
+
+        // Act
+        const result = await startSuccession(
+            {
+                userId: seeded.user.id,
+                predecessorSubscriptionId: seeded.predecessor.id,
+                billingOptionId: seeded.targetBillingOptionId,
+                returnUrl: seeded.input.returnUrl
+            },
+            { ...seeded.ports, clock: { now: () => now } }
+        );
+
+        // Assert
+        const [successor] = await getServiceTestDb()
+            .select({ authorizationWindowEndsAt: subscriptions.authorizationWindowEndsAt })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, result.subscriptionId));
+        expect(successor?.authorizationWindowEndsAt).toEqual(
+            new Date(now.getTime() + 72 * 60 * 60 * 1000)
+        );
+    });
+
+    it('HOS-2223: still rejects that same window once a charge is credited', async () => {
+        // Arrange: same instants, but the predecessor's cycle is paid.
+        const now = new Date('2026-10-11T05:00:00.000Z');
+        const seeded = await seedPlanChange({
+            nextChargeAt: new Date(now.getTime() + 60 * 60 * 1000)
+        });
+        await creditPredecessor(seeded.predecessor.id);
+
+        // Act + Assert
+        await expect(
+            startSuccession(
+                {
+                    userId: seeded.user.id,
+                    predecessorSubscriptionId: seeded.predecessor.id,
+                    billingOptionId: seeded.targetBillingOptionId,
+                    returnUrl: seeded.input.returnUrl
+                },
+                { ...seeded.ports, clock: { now: () => now } }
+            )
+        ).rejects.toMatchObject({ reason: 'SUCCESSION_WINDOW_TOO_SHORT' });
+    });
+
     it('offers 30 hours and stores the provider-day cutoff before the first charge', async () => {
         const seeded = await seedPlanChange({ nextChargeAt: chargeAt, rankRelation: 'LOWER' });
+        await creditPredecessor(seeded.predecessor.id);
         seeded.verticals.setChangeDirection({
             fromPlanVersionId: seeded.planVersionId,
             toPlanVersionId: seeded.targetPlanVersionId,
@@ -136,7 +196,12 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
                 now,
                 cardHours: deadlines.values['10'].cardHours,
                 minimumRemainingHours: deadlines.values['15'].hoursRemaining,
-                predecessor: { status: 'ACTIVE', paymentMethod: 'MANUAL', nextChargeAt }
+                predecessor: {
+                    status: 'ACTIVE',
+                    paymentMethod: 'MANUAL',
+                    nextChargeAt,
+                    hasCreditedCharge: true
+                }
             })
         ).toEqual({
             kind: 'OFFERED',
@@ -175,7 +240,12 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
                     now: new Date('2026-10-11T05:00:00.000Z'),
                     cardHours: frozen.values['10'].cardHours,
                     minimumRemainingHours: frozen.values['15'].hoursRemaining,
-                    predecessor: { status: 'ACTIVE', paymentMethod: 'CARD', nextChargeAt: chargeAt }
+                    predecessor: {
+                        status: 'ACTIVE',
+                        paymentMethod: 'CARD',
+                        nextChargeAt: chargeAt,
+                        hasCreditedCharge: true
+                    }
                 })
             ).toEqual({ kind: 'NOT_OFFERED', availableFrom: chargeAt });
             await tx

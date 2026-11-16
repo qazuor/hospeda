@@ -28,6 +28,7 @@ import {
 } from './start-subscription.service.js';
 import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 import { resolveSuccessorWindow } from './successor-window.js';
+import { readHasCreditedCharge } from './successor-window-credit.js';
 
 const logger = createLogger('subscription-succession');
 
@@ -93,9 +94,10 @@ export async function startSuccession(
     }
 
     const deadlines = await getCurrentBillingDeadlines();
-    const cycleDeadlines = await getDb().transaction((tx) =>
-        readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId })
-    );
+    const { cycleDeadlines, credit } = await getDb().transaction(async (tx) => ({
+        cycleDeadlines: await readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId }),
+        credit: await readHasCreditedCharge({ tx, subscriptionId: admitted.predecessorId })
+    }));
     const window = resolveSuccessorWindow({
         now: ports.clock.now(),
         cardHours: deadlines.values['10'].cardHours,
@@ -103,7 +105,8 @@ export async function startSuccession(
         predecessor: {
             status: admitted.predecessor.status,
             paymentMethod: admitted.predecessor.paymentMethod,
-            nextChargeAt: admitted.predecessor.nextChargeAt
+            nextChargeAt: admitted.predecessor.nextChargeAt,
+            hasCreditedCharge: credit.hasCreditedCharge
         }
     });
     if (window.kind === 'NOT_OFFERED')

@@ -168,13 +168,6 @@ export async function startSettlementSuccession(
     await input.approve(predecessorStart.authorizationId);
     const activated = await activateSubscription(predecessorStart.subscriptionId, ports);
     if (!activated.activated) throw new Error('Fixture predecessor did not activate through S2');
-    // HOS-2223: S2 now copies the provider's next payment date, which right after authorizing is the
-    // first-charge instant (about now). The first credited charge (P1) advances it in a later act, so
-    // anchor the future cycle date here; otherwise the successor window correctly reads as too short.
-    await tx
-        .update(subscriptions)
-        .set({ nextChargeAt: new Date(input.clock.now().getTime() + 30 * 24 * 60 * 60 * 1000) })
-        .where(eq(subscriptions.id, predecessorStart.subscriptionId));
     const successorStart = await startSuccession(
         {
             userId: user.userId,
