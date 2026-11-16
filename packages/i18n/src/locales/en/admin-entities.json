@@ -1284,7 +1284,7 @@
             "cancel": "Back"
         },
         "errors": {
-            "action": "The action could not be completed. Check the reason and try again."
+            "action": "The action could not be completed. Try again."
         },
         "empty": "There are no applications in this view.",
         "loading": "Loading applications…",
