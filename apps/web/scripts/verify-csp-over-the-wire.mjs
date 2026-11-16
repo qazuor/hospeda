@@ -24,7 +24,7 @@
  *
  * Env: reads real values from the process env when present; fills safe
  * placeholders for the production-only monitoring vars so the server boots in a
- * CI runner without real Sentry/PostHog credentials.
+ * CI runner without real Sentry/Umami credentials.
  */
 
 import { spawn } from 'node:child_process';
@@ -115,7 +115,10 @@ const serverEnv = {
         process.env.HOSPEDA_BETTER_AUTH_URL ?? 'http://localhost:3001/api/auth',
     // Production-only requirements — placeholders so the server boots in CI.
     PUBLIC_SENTRY_DSN: process.env.PUBLIC_SENTRY_DSN ?? 'https://placeholder@o0.ingest.sentry.io/0',
-    PUBLIC_POSTHOG_KEY: process.env.PUBLIC_POSTHOG_KEY ?? 'phc_placeholder_ci_verify',
+    PUBLIC_UMAMI_SCRIPT_URL:
+        process.env.PUBLIC_UMAMI_SCRIPT_URL ?? 'https://pulso-ci.example.invalid/app.js',
+    PUBLIC_UMAMI_WEBSITE_ID:
+        process.env.PUBLIC_UMAMI_WEBSITE_ID ?? '00000000-0000-4000-8000-000000000000',
     HOSPEDA_REVALIDATION_SECRET:
         process.env.HOSPEDA_REVALIDATION_SECRET ??
         'placeholder_revalidation_secret_for_ci_0123456789'

@@ -499,29 +499,72 @@ describe('buildCspHeader', () => {
         expect(header).toContain('https://*.openstreetmap.org');
     });
 
-    it('should NOT include external PostHog hosts — analytics is proxied first-party via /api/relay (SPEC-181)', () => {
+    it('should carry no PostHog host or relay allowance in any directive (HOS-2119)', () => {
         // Arrange
-        const header = buildCspHeader({ ...NO_HASHES });
+        const header = buildCspHeader({
+            ...NO_HASHES,
+            umamiScriptUrl: 'https://pulso.hospeda.com.ar/app.js'
+        });
 
-        // Act / Assert — directive-scoped checks (not just substring presence
-        // anywhere in the header) so accidental cross-directive leaks fail.
-        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
-        const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
-        const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
+        // Act / Assert
+        expect(header).not.toMatch(/posthog/i);
+        expect(header).not.toContain('/api/relay');
+    });
 
-        // SPEC-181: PostHog ingestion + assets go through the same-origin /api/relay
-        // proxy (covered by 'self'). The external hosts must NOT appear in any
-        // directive, or ad-blockers regain a host to block. Replaces the SPEC-140
-        // allowlist; guards against accidental re-introduction.
-        expect(scriptSrc).not.toContain('us.i.posthog.com');
-        expect(scriptSrc).not.toContain('us-assets.i.posthog.com');
-        expect(connectSrc).not.toContain('us.i.posthog.com');
-        expect(connectSrc).not.toContain('us-assets.i.posthog.com');
-        expect(imgSrc).not.toContain('us.i.posthog.com');
+    describe('Umami origin (HOS-2119)', () => {
+        const directive = (header: string, name: string): string =>
+            header.split('; ').find((d) => d.startsWith(`${name} `)) ?? '';
 
-        // script-src carries 'self' (which covers the same-origin /api/relay
-        // path the PostHog bootstrapper injects its SDK from).
-        expect(scriptSrc).toContain("'self'");
+        it('adds the origin derived from the script URL to script-src and connect-src', () => {
+            // Arrange / Act
+            const header = buildCspHeader({
+                ...NO_HASHES,
+                umamiScriptUrl: 'https://pulso-staging.hospeda.com.ar/app.js'
+            });
+
+            // Assert
+            expect(directive(header, 'script-src')).toContain(
+                'https://pulso-staging.hospeda.com.ar'
+            );
+            expect(directive(header, 'connect-src')).toContain(
+                'https://pulso-staging.hospeda.com.ar'
+            );
+        });
+
+        it('emits the bare origin, never the script path', () => {
+            const header = buildCspHeader({
+                ...NO_HASHES,
+                umamiScriptUrl: 'https://pulso.hospeda.com.ar/app.js'
+            });
+            expect(header).not.toContain('/app.js');
+            expect(header).toMatch(/connect-src [^;]*https:\/\/pulso\.hospeda\.com\.ar(?=[ ;]|$)/);
+        });
+
+        it('does not leak the Umami origin into img-src or default-src', () => {
+            const header = buildCspHeader({
+                ...NO_HASHES,
+                umamiScriptUrl: 'https://pulso.hospeda.com.ar/app.js'
+            });
+            expect(directive(header, 'img-src')).not.toContain('pulso.hospeda.com.ar');
+            expect(directive(header, 'default-src')).not.toContain('pulso.hospeda.com.ar');
+        });
+
+        it.each([
+            undefined,
+            '',
+            '   ',
+            'not a url',
+            'javascript:alert(1)'
+        ])('adds no Umami origin when the script URL is %j', (umamiScriptUrl) => {
+            const header = buildCspHeader({ ...NO_HASHES, umamiScriptUrl });
+            expect(header).not.toContain('pulso');
+            expect(directive(header, 'connect-src')).toBe(
+                directive(buildCspHeader({ ...NO_HASHES }), 'connect-src')
+            );
+            expect(directive(header, 'script-src')).toBe(
+                directive(buildCspHeader({ ...NO_HASHES }), 'script-src')
+            );
+        });
     });
 
     it('should not include report-uri when not provided', () => {
