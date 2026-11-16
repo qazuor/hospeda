@@ -29,6 +29,8 @@ import type {
     ListingNoticesResponse,
     ListingPurgePreviewResponse,
     ListingSupportEditsResponse,
+    ListingTrafficStatsEntityType,
+    ListingTrafficStatsWindow,
     OccupancySourceEnum,
     PendingAttemptCancellationResponseSchema,
     PriceAlertResponse,
@@ -2539,6 +2541,31 @@ export const listingAnalyticsApi = {
             vertical: 'venue',
             listingId: venueId,
             cookieHeader
+        });
+    },
+
+    /**
+     * Get the Umami-backed traffic breakdown (referrers, countries, devices and,
+     * for accommodations, the contact funnel) of ONE owned listing (HOS-2119).
+     *
+     * The payload is typed `unknown` on purpose: the consumer validates it with
+     * `ListingTrafficStatsResponseSchema` and treats any mismatch as "unavailable".
+     *
+     * @param params - `{ entityType, entityId, window }`
+     * @returns The raw response body, to be validated by the caller.
+     */
+    getTrafficStats({
+        entityType,
+        entityId,
+        window: windowParam
+    }: {
+        readonly entityType: ListingTrafficStatsEntityType;
+        readonly entityId: string;
+        readonly window: ListingTrafficStatsWindow;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.getProtected<unknown>({
+            path: `${PROTECTED}/views/${entityType}/${entityId}/traffic-stats`,
+            params: { window: windowParam }
         });
     },
 

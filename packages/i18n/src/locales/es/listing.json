@@ -436,6 +436,7 @@
             "devices": {
                 "title": "Dispositivos",
                 "desktop": "Computadora",
+                "laptop": "Notebook",
                 "mobile": "Celular",
                 "tablet": "Tablet",
                 "other": "Otros"
