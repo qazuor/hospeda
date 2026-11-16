@@ -21,6 +21,8 @@ import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsa
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';
+import { AI_ASSISTANTS_NAV_ITEM_ID } from '@/config/navigation';
+import { getConfiguredMcpUrl } from '@/lib/mcp-discovery';
 import type { NavItem } from '@/config/navigation';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
@@ -80,10 +82,25 @@ function getActiveSectionKey(href: string): string {
 	return href === 'mi-cuenta' ? href : href.replace('mi-cuenta/', '');
 }
 
-const { groups: baseNavGroups } = getNavForSurface({
+const { groups: gatedNavGroups } = getNavForSurface({
 	surface: 'sidebar',
 	visibility: (node) => isVisibleByRoles(node, userRoles),
 });
+
+/**
+ * HOS-2184 T-028: the "Asistentes de IA" entry shows while the MCP feature is
+ * on. With it off the page still answers by URL for anyone who has connections
+ * to disconnect, but the sidebar cannot know that without a per-user fetch, so
+ * the entry stays hidden. The MCP URL comes from a short-lived cached lookup
+ * against the API, so this costs no round trip on most requests.
+ */
+const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
+const baseNavGroups = gatedNavGroups
+	.map((group) => ({
+		...group,
+		items: group.items.filter((item) => mcpEnabled || item.id !== AI_ASSISTANTS_NAV_ITEM_ID),
+	}))
+	.filter((group) => group.items.length > 0);
 
 /**
  * The provider self-service nav entry ("Mi ficha de proveedor", H-158) is

@@ -20,6 +20,7 @@
 import type { IconProps } from '@repo/icons';
 import {
     AlertsIcon,
+    AskToAiIcon,
     BriefcaseIcon,
     BuildingIcon,
     ChatIcon,
@@ -43,6 +44,7 @@ import {
 } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import type { ComponentType } from 'react';
+import { AI_ASSISTANTS_PATH } from '@/lib/routes';
 
 /**
  * The three surfaces that can render a subset of the account navigation:
@@ -110,6 +112,9 @@ export interface NavGroup {
  * picked at render time by `pickBusinessShortcut` (`src/lib/nav-avatar.ts`),
  * so those two items intentionally keep `FULL_SURFACES` here.
  */
+/** Id of the AI assistants nav item, which the sidebar gates on the MCP feature. */
+export const AI_ASSISTANTS_NAV_ITEM_ID = 'aiAssistants';
+
 const FULL_SURFACES: readonly NavSurface[] = ['sidebar', 'mobile'];
 
 /**
@@ -171,6 +176,16 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/novedades',
                 icon: SparkleIcon,
                 surfaces: FULL_SURFACES
+            },
+            {
+                // HOS-2184 T-028. Sidebar only: the layout shows it while the MCP
+                // feature is on, and the mobile/avatar menus are client islands
+                // with no way to know that.
+                id: AI_ASSISTANTS_NAV_ITEM_ID,
+                i18nKey: 'account.nav.aiAssistants',
+                href: AI_ASSISTANTS_PATH,
+                icon: AskToAiIcon,
+                surfaces: ['sidebar']
             }
         ]
     },
