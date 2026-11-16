@@ -34,6 +34,9 @@ They apply to the API only.
 | `HOSPEDA_MCP_RESOURCE_URL` | url | none | Canonical public MCP URL, for example `https://api.hospeda.com.ar/mcp`. It is the token audience and the `resource` in the discovery document. **Required** when the flag is on (the env schema refuses the combination otherwise). |
 | `HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS` | number | `60000` | Rate-limit window. |
 | `HOSPEDA_MCP_RATE_LIMIT_MAX` | number | `60` | Tool calls allowed per window. |
+| `HOSPEDA_MCP_IP_RATE_LIMIT_WINDOW_MS` / `_MAX` | number | `900000` / `10000` | Per-IP safety ceiling of `/mcp` and `/.well-known/*` (see [Rate limit](#rate-limit)). |
+| `HOSPEDA_MCP_OAUTH_RATE_LIMIT_WINDOW_MS` / `_MAX` | number | `300000` / `1000` | Per-IP tier of the OAuth `token`, `revoke` and `introspect` endpoints. |
+| `HOSPEDA_MCP_OAUTH_REGISTER_RATE_LIMIT_WINDOW_MS` / `_MAX` | number | `3600000` / `100` | Per-IP tier of dynamic client registration. |
 
 The flag is read per request by the `/mcp` gate and the discovery routes. The
 Better Auth plugin list is built at boot, so turning the flag on or off needs a
@@ -145,6 +148,20 @@ reaches. Email verification is not a request gate. It is a per-tool check (see
 `emailUnverifiedOperation` below).
 
 ## Rate limit
+
+There are two layers. The per-IP layer is a coarse ceiling, because Claude and
+ChatGPT call from a few shared server IPs and every Hospeda user of an assistant
+would otherwise share one IP budget.
+
+| Tier (`getEndpointType`) | Paths | Per IP default |
+|---|---|---|
+| `mcp` | `/mcp`, `/.well-known/*` | 10000 / 15 min. Out of the `general` tier (500 / 15 min). |
+| `oauth` | `POST /api/auth/oauth2/{token,revoke,introspect}` | 1000 / 5 min. Out of the login `auth` tier (50 / 5 min), which is unchanged. |
+| `oauth-register` | `POST /api/auth/oauth2/register` | 100 / 60 min. Registration is open (no login) and writes a row per call, so it stays strict. |
+
+`/oauth2/authorize`, `/oauth2/consent` and every other method keep the `auth`
+tier: they are browser traffic from the user's own IP. The per-(client, user)
+limiter below is the real governor of `/mcp`.
 
 - Key: `rl:mcp:<clientId>:<userId>`, a sliding window. One user on two clients has
   two budgets.
