@@ -8,6 +8,7 @@ import {
 } from '@repo/db';
 import { permanentGrantLiveAnchors } from '../grant/permanent-grant-live-anchors';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger';
+import { isPayingPrincipal } from '../subscription/paying-predecessor-successor';
 import type { AddonScopeType } from './addon-orphanhood';
 import type { PurchaseAddonPorts } from './purchase-addon-ports';
 import type { PurchaseAddonRefusalReason } from './purchase-addon-types';
@@ -43,16 +44,7 @@ async function hasTitle(
         );
     const payments = ports.payments ?? creditedPaymentsFromLedger;
     for (const principal of principals) {
-        if (await payments.hasCreditedPayment({ subscriptionId: principal.id, tx: input.tx }))
-            return true;
-        if (
-            principal.predecessorId &&
-            (await payments.hasCreditedPayment({
-                subscriptionId: principal.predecessorId,
-                tx: input.tx
-            }))
-        )
-            return true;
+        if (await isPayingPrincipal({ principal, payments, tx: input.tx })) return true;
     }
     return (ports.liveAnchors ?? permanentGrantLiveAnchors).hasLiveAnchor({
         userId: input.ownerId,

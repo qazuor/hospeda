@@ -93,8 +93,8 @@ describe('ExperienceCard.astro', () => {
     });
 
     describe('accessibility', () => {
-        it('has an aria-label on the card link', () => {
-            expect(src).toContain('aria-label={data.name}');
+        it('does not override the card link name with an aria-label (WCAG 2.5.3)', () => {
+            expect(src).toMatch(/<a href=\{detailUrl\} class="exp-card__link">/);
         });
 
         it('marks decorative elements as aria-hidden', () => {

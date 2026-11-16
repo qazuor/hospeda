@@ -222,7 +222,7 @@
         },
         "signupsPaused": {
             "title": "New sign-ups are paused",
-            "body": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual."
+            "body": "We've temporarily paused new subscriptions. If you already have a subscription, it keeps working as usual."
         },
         "firstPublishPaused": {
             "title": "Publishing new listings is paused",
@@ -865,6 +865,8 @@
         "noOffers": "No add-ons are available.",
         "chooseTarget": "Choose a listing",
         "noTargets": "No listings are available for this add-on.",
+        "chooseSubscription": "Choose a subscription",
+        "noSubscriptions": "No subscriptions are available for this add-on.",
         "summary": "Confirm add-on",
         "freeUnderGrant": "Free with your benefit",
         "days_one": "{{count}} day",

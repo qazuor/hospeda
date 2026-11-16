@@ -21,8 +21,8 @@ export interface PaidSignupsPausedNoticeProps {
     /** Optional test id, so each surface can be targeted independently. */
     readonly testId?: string;
     /**
-     * Which promise the notice makes. `signup` (default) is for checkouts and
-     * purchases; `firstPublish` is for a host's FIRST publish, which starts a
+     * Which promise the notice makes. `signup` (default) is for the paid signup
+     * checkout; `firstPublish` is for a host's FIRST publish, which starts a
      * trial and is paused too — its copy says the listing stays a draft.
      */
     readonly variant?: PaidSignupsPausedVariant;
@@ -48,7 +48,7 @@ const COPY_BY_VARIANT: Readonly<
         titleFallback: 'Contrataciones nuevas en pausa',
         bodyKey: 'billing.checkout.signupsPaused.body',
         bodyFallback:
-            'Por el momento pausamos las suscripciones y compras nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.'
+            'Por el momento pausamos las suscripciones nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.'
     },
     firstPublish: {
         titleKey: 'billing.checkout.firstPublishPaused.title',

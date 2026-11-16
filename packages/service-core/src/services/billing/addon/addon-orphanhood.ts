@@ -24,6 +24,7 @@ import { ServiceError } from '../../../types';
 import { permanentGrantLiveAnchors } from '../grant/permanent-grant-live-anchors.js';
 import { creditedPaymentsFromLedger } from '../payment/payment-ledger';
 import { isLiveSuccessionPredecessor } from '../subscription/late-payment-conditions';
+import { isPayingPrincipal } from '../subscription/paying-predecessor-successor';
 import type { SubscriptionPayments } from '../subscription/subscription-billing-ports';
 import type { AddonOrphanhoodPorts, LiveAnchorReader } from './addon-orphanhood-ports';
 
@@ -261,7 +262,8 @@ async function verticalSubscriptionOrphaned(input: {
  * - `LISTING`: no principal of the listing's `user + vertical` is a live row (the SET, 4c),
  *   and no live anchor holds there.
  * - `USER`/`GLOBAL`: in NO compatible vertical of its product is there a live principal that
- *   is paying (I-3: a credited payment of its own or of its `sucede_a`), nor a live anchor.
+ *   is paying (I-3: a credited payment of its own or of its predecessor, read by `sucede_a` or,
+ *   once the succession closed, by the predecessor's `sucedida_por`), nor a live anchor.
  *
  * @param input.tx - The caller's transaction
  * @param input.instance - The instance, with its target and its product's compatible verticals
@@ -309,16 +311,7 @@ export async function isAddonInstanceOrphaned(
             for (const vertical of instance.compatibleVerticals) {
                 const live = await livePrincipals({ tx, userId: instance.ownerId, vertical });
                 for (const principal of live) {
-                    if (await payments.hasCreditedPayment({ subscriptionId: principal.id, tx }))
-                        return false;
-                    if (
-                        principal.predecessorId &&
-                        (await payments.hasCreditedPayment({
-                            subscriptionId: principal.predecessorId,
-                            tx
-                        }))
-                    )
-                        return false;
+                    if (await isPayingPrincipal({ principal, payments, tx })) return false;
                 }
                 if (await anchors.hasLiveAnchor({ userId: instance.ownerId, vertical, tx }))
                     return false;

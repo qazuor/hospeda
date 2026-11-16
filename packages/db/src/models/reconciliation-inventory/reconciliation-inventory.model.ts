@@ -68,6 +68,8 @@ export interface CancellationDecision {
 /** Input for one keyset page of the cancellation-retry population. */
 export interface ListCancellationRetryPageInput {
     readonly afterSubscriptionId?: string;
+    /** Include live S11 scheduled cancellations for the frequent notice-settled retry only. */
+    readonly includeScheduled?: boolean;
     readonly limit: number;
     readonly unconfirmedOnly?: boolean;
     /** Only rows whose most recent decision was recorded at or after this instant (HOS-1955). */
@@ -75,7 +77,7 @@ export interface ListCancellationRetryPageInput {
     readonly tx?: DrizzleClient;
 }
 
-/** One terminal linked subscription with its most recent cancellation decision. */
+/** One eligible linked subscription with its most recent cancellation decision. */
 export interface CancellationRetryRow extends SweepInventoryRow {
     readonly decision: CancellationDecision;
 }
@@ -195,9 +197,11 @@ export class ReconciliationInventoryModel {
      * cancellation records the decision, so a terminal row from the mirror or from S17, or the
      * tombstone of a probe, does not enter. Returns terminal rows (any class) with a provider link
      * and at least one `subscription.provider_cancellation_decided` event, each with its most
-     * recent decision. Keyset by `subscription.id` ascending, like `listSweepInventoryPage`; the
-     * decision lookup rides `domain_event_entity_idx` (entity_type, entity_id, occurred_at).
-     * `decidedSince` limits the most recent decision by its recorded instant.
+     * recent decision. With `includeScheduled`, it also includes S11 `CANCEL_SCHEDULED` rows for
+     * the frequent notice-settled retry; callers still verify the notice state before retrying.
+     * Keyset by `subscription.id` ascending, like `listSweepInventoryPage`; the decision lookup
+     * rides `domain_event_entity_idx` (entity_type, entity_id, occurred_at). `decidedSince` limits
+     * the most recent decision by its recorded instant.
      */
     async listCancellationRetryPage(
         input: ListCancellationRetryPageInput
@@ -232,7 +236,15 @@ export class ReconciliationInventoryModel {
             .innerJoin(decision, eq(decision.entityId, sql`${subscriptions.id}::text`))
             .where(
                 and(
-                    inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
+                    input.includeScheduled
+                        ? or(
+                              inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
+                              and(
+                                  eq(subscriptions.status, 'CANCEL_SCHEDULED'),
+                                  eq(decision.transition, 'S11')
+                              )
+                          )
+                        : inArray(subscriptions.status, TERMINAL_SUBSCRIPTION_STATUSES),
                     input.decidedSince === undefined
                         ? undefined
                         : gte(decision.decidedAt, input.decidedSince),

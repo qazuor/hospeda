@@ -104,6 +104,44 @@ export async function isSuccessorOfPayingPredecessor({
     return payments.hasCreditedPayment({ subscriptionId: predecessor.id, tx });
 }
 
+/**
+ * «Pagando» of a live principal as A1 and the USER/GLOBAL orphanhood read it (B/16 §2.2,
+ * `03-maquinas` A1): it has a credited payment of its own, or its predecessor has one.
+ *
+ * The predecessor is read by the row's `sucede_a` or, once the succession was closed, by the
+ * predecessor's `sucedida_por` (INV:D15, AC:B8b:10): closing it clears `succeeds_id` on the
+ * successor, and a successor in the credit of a plan change has no payment of its own until
+ * its first charge (HOS-2224). A read error is thrown, never taken as "not paying".
+ *
+ * @param input.principal - The principal's id and its `succeeds_id`
+ * @param input.payments - The credited-payment ledger
+ * @param input.tx - Optional transaction every read runs in
+ * @returns True when the principal or its predecessor has a credited payment
+ */
+export async function isPayingPrincipal({
+    principal,
+    payments,
+    tx
+}: {
+    readonly principal: { readonly id: string; readonly predecessorId: string | null };
+    readonly payments: SubscriptionPayments;
+    readonly tx?: DrizzleClient;
+}): Promise<boolean> {
+    if (await payments.hasCreditedPayment({ subscriptionId: principal.id, tx })) return true;
+    let predecessorId = principal.predecessorId;
+    if (predecessorId === null) {
+        const db = tx ?? getDb();
+        const [closed] = await db
+            .select({ id: subscriptions.id })
+            .from(subscriptions)
+            .where(eq(subscriptions.succeededById, principal.id))
+            .limit(1);
+        predecessorId = closed?.id ?? null;
+    }
+    if (predecessorId === null) return false;
+    return payments.hasCreditedPayment({ subscriptionId: predecessorId, tx });
+}
+
 /** A row the sweep or the receiver may find in grace through the successor branch of S4. */
 export interface PayingSuccessorInGraceCandidate extends PayingSuccessorCandidate {
     readonly status: string;

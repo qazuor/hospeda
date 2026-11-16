@@ -98,6 +98,7 @@ export async function runNoticeDeferredCancellationRetry(
     for (;;) {
         const page = await reconciliationInventoryModel.listCancellationRetryPage({
             afterSubscriptionId,
+            includeScheduled: true,
             limit: NOTICE_DEFERRED_RETRY_PAGE_SIZE,
             unconfirmedOnly: true,
             decidedSince: new Date(now.getTime() - OUR_CANCELLATION_RETRY_WINDOW_MS)

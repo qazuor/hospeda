@@ -659,7 +659,10 @@ describe('reconciliation inventory and re-link persistence', () => {
                     transition: 'S11',
                     decidedAt: early
                 });
-                excluded.push(liveWithDecision.subscription.id);
+                expected.set(liveWithDecision.subscription.id, {
+                    transition: 'S11',
+                    decidedAt: early
+                });
                 const terminalWithoutDecision = await addSubscription({
                     tx,
                     anchors,
@@ -688,6 +691,7 @@ describe('reconciliation inventory and re-link persistence', () => {
                     const page = await model.listCancellationRetryPage({
                         afterSubscriptionId,
                         limit: 2,
+                        includeScheduled: true,
                         tx
                     });
                     if (page.length === 0) break;

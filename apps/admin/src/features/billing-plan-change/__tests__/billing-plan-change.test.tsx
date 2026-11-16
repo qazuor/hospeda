@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRedirect } from '@tanstack/react-router';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/errors';
 import { BillingPlanChangeScreen } from '../components/BillingPlanChangeScreen';
 import { planChangeOptionsPath } from '../hooks/useBillingPlanChange';
 
@@ -52,9 +53,10 @@ const option = (billingOptionId: string, planName: string, current: boolean) => 
     currency: 'ARS',
     current
 });
-function setup(result: object) {
+function setup(result: object, optionsError?: Error) {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
         if (method === 'POST') return Promise.resolve({ data: { data: result } });
+        if (path === planChangeOptionsPath(id) && optionsError) return Promise.reject(optionsError);
         if (path === planChangeOptionsPath(id))
             return Promise.resolve({
                 data: {
@@ -160,6 +162,21 @@ describe('ACC_10 admin plan change screen', () => {
         permissions = [];
         setup({ outcome: 'REGRET', amountMinor: 0 });
         expect(screen.queryByTestId('billing-plan-change-screen')).toBeNull();
+    });
+    it('explains that Partner plan changes require revocation and reconfiguration', async () => {
+        setup(
+            { outcome: 'REGRET', amountMinor: 0 },
+            new ApiError('Partner plan changes are not supported.', {
+                status: 422,
+                code: 'VALIDATION_ERROR',
+                body: {
+                    error: { details: { reason: 'PARTNER_PLAN_CHANGE_UNSUPPORTED' } }
+                }
+            })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            es.subscriptionPlanChange.partnerUnsupported
+        );
     });
     it('requires the action 10 permission in beforeLoad', async () => {
         const { Route } = await import(

@@ -103,9 +103,16 @@ describe('AiSearchEntry (SPEC-265 D — hybrid layout)', () => {
             expect(entry).toHaveAttribute('type', 'button');
         });
 
-        it('search bar has an aria-label', () => {
+        it('search bar keeps its visible text inside the accessible name (WCAG 2.5.3)', () => {
+            // An aria-label would replace the visible placeholder and trip axe's
+            // label-content-name-mismatch rule.
             renderEntry();
-            expect(screen.getByTestId('ai-search-entry')).toHaveAttribute('aria-label');
+            const entry = screen.getByTestId('ai-search-entry');
+            expect(entry).not.toHaveAttribute('aria-label');
+            const placeholder = screen.getByText(/contame qué buscás/i).textContent ?? '';
+            expect(placeholder).not.toBe('');
+            expect(entry).toHaveAccessibleName(new RegExp(placeholder.slice(0, 20), 'i'));
+            expect(entry).toHaveAccessibleName(/^Buscá con IA/);
         });
     });
 
