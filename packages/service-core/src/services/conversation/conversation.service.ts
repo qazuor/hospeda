@@ -810,35 +810,92 @@ export class ConversationService extends BaseService {
                 // Update read receipt and cancel notification schedule, unless the
                 // caller asked for a pure read (`markAsRead: false`).
                 if (validated.markAsRead !== false) {
-                    await withServiceTransaction(async (txCtx) => {
-                        const now = new Date();
-                        const readPatch =
-                            validated.actorSide === 'GUEST'
-                                ? ({ lastReadAtByGuest: now } as Partial<SelectConversation>)
-                                : ({ lastReadAtByOwner: now } as Partial<SelectConversation>);
-
-                        // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                        await txCtx
-                            .tx!.update(conversations)
-                            .set(readPatch)
-                            .where(eq(conversations.id, validated.conversationId));
-
-                        const recipientSide =
-                            validated.actorSide === 'OWNER'
-                                ? NotificationRecipientSideEnum.OWNER
-                                : NotificationRecipientSideEnum.GUEST;
-
-                        await this.notificationScheduleService.cancelForRecipient(
-                            this._buildSystemActor(),
-                            { conversationId: validated.conversationId, recipientSide },
-                            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                            txCtx.tx!
-                        );
+                    await this._markRead({
+                        conversationId: validated.conversationId,
+                        side: validated.actorSide === 'GUEST' ? 'GUEST' : 'OWNER'
                     });
                 }
 
                 return { conversation, messages: pageMessages, hasMore };
             }
+        });
+    }
+
+    /**
+     * Marks a conversation as read by its owner: stamps `lastReadAtByOwner`
+     * and cancels the owner's pending notification schedule, exactly what
+     * `getThread` does for the OWNER side when it is not a pure read.
+     *
+     * Used by channels that read a thread without marking it (`markAsRead:
+     * false`) and mark it explicitly after a deliberate action, such as a
+     * reply sent through the assistant (HOS-2184).
+     *
+     * No ownership check is performed here (same contract as
+     * `findOwnedConversation`): callers must gate ownership first.
+     *
+     * @param actor - Actor performing the request.
+     * @param input - `{ conversationId }`.
+     * @param ctx - Optional service context.
+     * @returns ServiceOutput wrapping `{ conversationId }`.
+     *
+     * @example
+     * ```ts
+     * await svc.markReadByOwner(actor, { conversationId });
+     * ```
+     */
+    public async markReadByOwner(
+        actor: Actor,
+        input: { readonly conversationId: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ readonly conversationId: string }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'markReadByOwner',
+            input: { actor, ...input },
+            schema: z.object({ conversationId: z.string().min(1) }),
+            ctx,
+            execute: async (validated) => {
+                await this._markRead({ conversationId: validated.conversationId, side: 'OWNER' });
+                return { conversationId: validated.conversationId };
+            }
+        });
+    }
+
+    /**
+     * Stamps the side's `lastReadAt*` column and cancels that side's pending
+     * notification schedule, in one transaction. Shared by `getThread` and
+     * `markReadByOwner`.
+     */
+    private async _markRead({
+        conversationId,
+        side
+    }: {
+        readonly conversationId: string;
+        readonly side: 'GUEST' | 'OWNER';
+    }): Promise<void> {
+        await withServiceTransaction(async (txCtx) => {
+            const now = new Date();
+            const readPatch =
+                side === 'GUEST'
+                    ? ({ lastReadAtByGuest: now } as Partial<SelectConversation>)
+                    : ({ lastReadAtByOwner: now } as Partial<SelectConversation>);
+
+            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+            await txCtx
+                .tx!.update(conversations)
+                .set(readPatch)
+                .where(eq(conversations.id, conversationId));
+
+            const recipientSide =
+                side === 'OWNER'
+                    ? NotificationRecipientSideEnum.OWNER
+                    : NotificationRecipientSideEnum.GUEST;
+
+            await this.notificationScheduleService.cancelForRecipient(
+                this._buildSystemActor(),
+                { conversationId, recipientSide },
+                // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                txCtx.tx!
+            );
         });
     }
 

@@ -1164,6 +1164,44 @@ describe('ConversationService', () => {
         });
     });
 
+    describe('markReadByOwner', () => {
+        it('stamps lastReadAtByOwner and cancels only the OWNER schedule, in one transaction', async () => {
+            // Arrange
+            const set = vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue([]) });
+            asMock(withServiceTransaction).mockImplementationOnce(
+                async (fn: (ctx: Record<string, unknown>) => Promise<unknown>) =>
+                    fn({ tx: { update: vi.fn().mockReturnValue({ set }) }, hookState: {} })
+            );
+
+            // Act
+            const result = await service.markReadByOwner(OWNER_ACTOR, {
+                conversationId: CONVERSATION_ID
+            });
+
+            // Assert
+            expectSuccess(result);
+            expect(withServiceTransaction).toHaveBeenCalledOnce();
+            expect(set).toHaveBeenCalledOnce();
+            const patch = set.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(Object.keys(patch)).toEqual(['lastReadAtByOwner']);
+            expect(patch.lastReadAtByOwner).toBeInstanceOf(Date);
+            expect(notificationScheduleMock.cancelForRecipient).toHaveBeenCalledOnce();
+            expect(asMock(notificationScheduleMock.cancelForRecipient).mock.calls[0]?.[1]).toEqual({
+                conversationId: CONVERSATION_ID,
+                recipientSide: 'OWNER'
+            });
+        });
+
+        it('rejects an empty conversation id without touching the database', async () => {
+            // Act
+            const result = await service.markReadByOwner(OWNER_ACTOR, { conversationId: '' });
+
+            // Assert
+            expect(result.error).toBeDefined();
+            expect(withServiceTransaction).not.toHaveBeenCalled();
+        });
+    });
+
     // =========================================================================
     // getThread — ownership invariant (SPEC-206 write-IDOR regression)
     // =========================================================================
