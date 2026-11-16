@@ -72,7 +72,7 @@ Hoy esa sección tiene `readOnlyFields: ['venueEvents']` y ningún trait. Se man
 sectionTraits: ({ body }) => venueEventsPayloadCarriesNewWeekly(body) ? ['recurrence'] : []
 ```
 
-`venueEventsPayloadCarriesNewWeekly` **no** puede mirar sólo "hay un semanal en el payload", porque un dueño sin la clave con un semanal viejo (en borrador) quedaría trabado para guardar cualquier otra cosa. Compara el payload contra lo guardado (requiere ids estables, HOS-2255 T-1):
+`venueEventsPayloadCarriesNewWeekly` **no** puede mirar sólo "hay un semanal en el payload", porque un dueño sin la clave con un semanal viejo (en borrador) quedaría trabado para guardar cualquier otra cosa. Compara el payload contra lo guardado (requiere ids estables, HOS-2291):
 
 1. Un semanal es "nuevo" si no trae `id`, o su `id` no pertenece al local, o su `id` existe pero la fila guardada era `once` (conversión a semanal).
 2. Un semanal con `id` de una fila ya `weekly` **no** requiere la clave (se conserva; sigue en borrador). Cambiarle el día o la hora tampoco (es un cambio de contenido de algo que ya tenía). Pasarlo de `isActive:false` a `true` **sí** cuenta como reactivar algo que el plan no incluye: requiere la clave (mismo criterio que "no reactivar" de HOS-2263 6.4).
@@ -143,7 +143,7 @@ Sin job, sin columna. Al subir de plan el trait pasa a `available` y los semanal
 
 ## 11. Risks and open questions for the owner
 
-- R-1. Si HOS-2255 T-1 (ids estables) no está, no se puede distinguir un semanal conservado de uno nuevo: el gate sería "cualquier semanal en el payload requiere la clave", que bloquea a un dueño en baja. Por eso T-1 es prerrequisito duro.
+- R-1. Si HOS-2291 (ids estables de eventos) no está, no se puede distinguir un semanal conservado de uno nuevo: el gate sería "cualquier semanal en el payload requiere la clave", que bloquea a un dueño en baja. Por eso HOS-2291 es prerrequisito duro.
 - R-2. La opción A toca la firma de `sectionTraits` (middleware compartido). Es aditivo, pero el cambio debe coordinarse con HOS-2263, que hace lo mismo con `limit`; conviene un único PR de middleware con ambos.
 - R-3. El default del editor pasa de `weekly` a `once`: un cambio visible aun para pro. Es deliberado.
 - R-4. Cola de cache: el semanal tarda hasta el TTL en volver tras subir de plan (igual que cualquier cambio de plan hoy).
@@ -166,7 +166,7 @@ Sin job, sin columna. Al subir de plan el trait pasa a `available` y los semanal
 
 ### Task breakdown
 
-1. T-1. Helper `venueEventsPayloadCarriesNewWeekly` + tests (0,5 día; usa ids de HOS-2255).
+1. T-1. Helper `venueEventsPayloadCarriesNewWeekly` + tests (0,5 día; usa ids de HOS-2291).
 2. T-2. Ampliar `sectionTraits` + `sectionTraits` en `putEvents.ts` + tests de ruta (1 día; **bloqueada por HOS-2259**).
 3. T-3. `projectVenueEventTraits` + tests del proyector (0,5 día).
 4. T-4. `GET` con `isDraftByPlan` y `recurrenceAllowed` (0,5 día).
@@ -177,6 +177,6 @@ Sin job, sin columna. Al subir de plan el trait pasa a `available` y los semanal
 
 Canonical tracking: HOS-2264. Padre: HOS-2252. Decisiones: HOS-2253 (2, 6).
 
-- Dependencias: **HOS-2259** (clave y trait), HOS-2255 T-1 (ids estables), HOS-2263 (conteo y regla de baja), HOS-2262 (texto del cuadro), HOS-2280 (asignar a pro/premium).
+- Dependencias: **HOS-2259** (clave y trait), HOS-2291 (ids estables de eventos), HOS-2263 (conteo y regla de baja), HOS-2262 (texto del cuadro), HOS-2280 (asignar a pro/premium).
 - Smoke: `status-needs-smoke-staging` (billing/entitlements; checklist de staging). Sin `smoke-prod`.
 - What's New: sí, en la entrega conjunta de HOS-2284.

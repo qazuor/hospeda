@@ -22,8 +22,11 @@ El local ve el grupo como **una unidad** en el panel, con la cantidad confirmada
 Es una **extensión** del modelo de reservas (HOS-2275), no un modelo paralelo: suma
 columnas opcionales a `venue_reservation` y una tabla de integrantes.
 
-Asume las opciones recomendadas de HOS-2260 y de HOS-2275 (solicitud con aceptación del
-local) y de HOS-2276 (pase por persona).
+Aplica las decisiones del owner del 16/11/2026 (HOS-2260) y el modelo de HOS-2275:
+solicitud con aceptación del local que vence a las 24 h o 1 h antes de la fecha, y
+**capacidad = aforo total en personas por noche** (un solo entero por local). Un grupo de N
+personas retiene N personas del aforo desde que se pide (pendiente incluida). El pase por
+persona (HOS-2276) lo valida solo la cuenta del dueño.
 
 ## 2. Problema
 
@@ -43,7 +46,7 @@ de verdad hasta que llegan.
 
 - NG-1: pagos o división de cuenta.
 - NG-2: que los integrantes elijan su plato o consumo.
-- NG-3: grupos que se parten en varias mesas o tipos (un grupo cabe en **un** tipo).
+- NG-3: grupos que se parten en varias mesas o noches; asignar mesas al grupo (plano de mesas, HOS-2295). Un grupo es **una** reserva que descuenta N personas del aforo.
 - NG-4: chat del grupo.
 
 ## 5. Estado actual del código
@@ -59,11 +62,11 @@ de verdad hasta que llegan.
 
 ### 6.1 Cambios de datos (migración aditiva sobre HOS-2275)
 
-`venue_reservation_type`:
+`venue_reservation_setting` (HOS-2275; no hay tipos de reserva, OQ-C):
 
 | Columna | Tipo | Nota |
 |---|---|---|
-| `allows_groups` | boolean not null default false | el local marca qué tipos admiten grupos (por ejemplo "Box VIP 12") |
+| `allows_groups` | boolean not null default false | el local marca si acepta grupos; sin esto la opción no se ofrece |
 
 `venue_reservation` (columnas nuevas, todas opcionales):
 
@@ -100,10 +103,11 @@ El organizador **cuenta** dentro de `party_size`; los integrantes confirmados so
 ### 6.2 Reglas
 
 - Pedir un grupo: igual que una reserva (HOS-2275, 6.3) más `groupName` (3 a 80
-  caracteres, sin URL) y un tipo con `allows_groups = true`. `party_size` debe ser **≥ 2**
-  y dentro de `[min, max]` del tipo.
+  caracteres, sin URL) y un local con `allows_groups = true`. `party_size` debe ser **≥ 2**,
+  hasta 50 y dentro del aforo disponible esa noche (HOS-2275, 6.1): el grupo retiene sus N
+  personas igual que una reserva común.
 - Gate: pedir un grupo exige que el **dueño** tenga `venue_group_reservations`; el público
-  solo ve tipos con `allows_groups` si el plan lo incluye (mismo mecanismo de lectura
+  solo ve la opción de grupo (`allows_groups`) si el plan lo incluye (mismo mecanismo de lectura
   pública que HOS-2275, 6.4). Sin la clave, 403 `ENTITLEMENT_REQUIRED` en el POST de grupo
   y la opción no se muestra.
 - El link se crea cuando la reserva pasa a `CONFIRMED` (no antes: no se comparte algo que
@@ -161,7 +165,7 @@ Rate limit de `join`: 10 por hora por usuario. El `GET` público es de solo lect
 
 ## 7. UX / UI
 
-- **Reserva:** casilla "Es un grupo" con nombre del grupo (solo si el tipo lo admite y el
+- **Reserva:** casilla "Es un grupo" con nombre del grupo (solo si el local acepta grupos y el
   plan del local lo incluye). Tras la confirmación: botón "Compartir link" (Web Share API
   con copiar como alternativa).
 - **Página `/grupo/[token]`** (neutral al idioma, SSR sin caché, sin sesión): nombre,
@@ -179,8 +183,9 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 ## 9. Criterios de aceptación
 
 - AC-1: dado un plan sin `venue_group_reservations`, pedir un grupo responde 403
-  `ENTITLEMENT_REQUIRED` y el público no ve tipos de grupo.
-- AC-2: pedir un grupo con tipo sin `allows_groups` responde 400 `VALIDATION_ERROR`.
+  `ENTITLEMENT_REQUIRED` y el público no ve la opción de grupo.
+- AC-2: pedir un grupo en un local con `allows_groups = false` responde 400 `VALIDATION_ERROR`.
+- AC-2b: un grupo de 12 con aforo 40 y 30 personas retenidas responde 409 `NO_AVAILABILITY`; con 20 retenidas queda `REQUESTED` y retiene 12.
 - AC-3: el grupo pasa por `REQUESTED → CONFIRMED` como cualquier reserva y recién ahí
   existe el link.
 - AC-4: un integrante se une con sesión; el contador sube y el organizador recibe aviso.
@@ -215,18 +220,19 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 
 ## 12. Preguntas abiertas para el owner
 
-- OQ-I: **QR por grupo o por persona.** (1) Uno por grupo: simple; entra uno y pasan
+- OQ-I: **QR por grupo o por persona.** Sigue abierta (menor); el QR lo valida solo la
+  cuenta del dueño (HOS-2276, OQ-6 decidida). (1) Uno por grupo: simple; entra uno y pasan
   todos, sin asistencia individual. (2) **Uno por persona confirmada, con el del
   organizador cubriendo los lugares sin reclamar (recomendada)**: da asistencia real y no
   obliga a todos a unirse. Impacto: la tabla de integrantes y el recálculo de `admits`.
 - OQ-J: **tamaño mínimo para ser "grupo".** Recomendada: 2 (lo marca el organizador) y
-  que el local decida con `allows_groups` qué tipos lo admiten. Alternativa: mínimo fijo
+  que el local decida con `allows_groups` si acepta grupos. Alternativa: mínimo fijo
   de 6 (coincide con el ejemplo de cumpleaños de HOS-2278).
-- OQ-K: **¿los integrantes necesitan cuenta?** Recomendada: sí (OQ-4 de HOS-2260).
+- OQ-K: **Decidido (owner, 16/11/2026): sí, los integrantes necesitan cuenta** con email verificado (OQ-4 de HOS-2260).
 
 ## 13. Dependencias
 
-- Bloqueado por: HOS-2275 (modelo), HOS-2276 (pase por integrante), HOS-2259.
+- Bloqueado por: HOS-2275 (modelo y aforo), HOS-2276 (pase por integrante), HOS-2259. Asignación de mesas a grupos: HOS-2295.
 - Habilita: HOS-2278 (cumpleaños, que suele ser un grupo).
 
 ## 14. Smoke y What's New
@@ -235,7 +241,7 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 
 ## 15. Desglose de tareas
 
-1. T-1: migración aditiva (`allows_groups`, columnas de grupo, tabla de integrantes), CHECK,
+1. T-1: migración aditiva (`allows_groups` en `venue_reservation_setting`, columnas de grupo, tabla de integrantes), CHECK,
    enum y fila PURGED (1 día).
 2. T-2: servicio de grupos (pedir, unirse, salir, cerrar link) con bloqueo (1 día).
 3. T-3: recálculo de `admits` y pases por integrante, junto a HOS-2276 (1 día).

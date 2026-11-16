@@ -87,7 +87,15 @@ la clave. Por lo tanto:
 Entitlements del trial = versión de mayor rank (premium); límites = menor rank (básico),
 más override del plan `trial` (`trial-ratchet.ts`, cabecera). Un venue en trial recibe
 `venue_guest_list`, `venue_reservations`, `venue_group_reservations` y **no** tiene fila de
-`max_venue_guest_list_size`: cupo 0, no puede anotar a nadie. Ver pregunta 2 de HOS-2280.
+`max_venue_guest_list_size`: cupo 0, no puede anotar a nadie.
+
+**Decidido (owner, 16/11/2026):** el trial recibe una fila propia
+`max_venue_guest_list_size = 10` (10 lugares en la lista, mínimo para probar) en la
+versión del plan `trial` de venue, por additive grant (HOS-2280, pieza D). Durante el
+trial, la lista muestra el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6)
+(HOS-2262, sección 6.6): Básico de venue no tiene lista. Los límites nuevos van con
+enforcement `NONE` (decisión 26, HOS-2259): `max_venue_guest_list_size` se evalúa en vivo
+al anotarse y no archiva nada.
 
 ### 5.5 Reservas y cobro
 
@@ -106,6 +114,9 @@ Idéntico a HOS-2280 secciones 6.1 a 6.4. Datos propios:
   en `ADDITIVE_GRANTS_AFTER_0144`.
 - **Pieza C.** Data-migration de seed por `slug` sobre todas las versiones, `NOT EXISTS`,
   `conflicts` si ya hay un `max_venue_guest_list_size` con otro valor.
+- **Pieza D (trial).** Fila `max_venue_guest_list_size = 10` en la versión `trial` de venue,
+  en la migración SQL y en la data-migration (patrón de HOS-2280, sección 6.5). Solo
+  límite. Con esto la migración queda en 4 + 3 filas en v1.
 - **6.5 Rubro y add-on.** Este issue no toca rubros. HOS-2262 pone la marca visual y
   HOS-2274 declara la sección; HOS-2286 pone la elegibilidad del add-on.
 - **Orden dentro del bloque.** La lista (`venue_guest_list`) y las reservas se pueden
@@ -121,6 +132,8 @@ Sin tablas nuevas. 4 + 2 filas por conjunto de versiones v1. Carriles: versionad
 
 Sin UI propia. Filas en la tabla de planes (HOS-2262): lista de invitados con marca
 «Para locales del rubro Noche», cupo (100 / Ilimitado), reservas y reservas de grupo.
+Cada fila se oculta mientras ningún plan la otorgue (no «Próximamente») y aparece sola al
+aplicar el grant.
 
 ## 9. Criterios de aceptación
 
@@ -135,6 +148,9 @@ Sin UI propia. Filas en la tabla de planes (HOS-2262): lista de invitados con ma
 6. G18, G3 y los tests de catálogo desde cero pasan.
 7. Un owner de alojamiento no cambia su set efectivo.
 8. El set efectivo de pro/premium refleja las claves nuevas dentro de los 15 minutos.
+9. Dada la versión del plan `trial` de venue, tiene `max_venue_guest_list_size = 10`; un
+   venue nocturno en trial anota hasta 10 lugares y el siguiente falla, y ve el aviso
+   con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6).
 
 ## 10. Plan de tests
 
@@ -159,9 +175,10 @@ Sin UI propia. Filas en la tabla de planes (HOS-2262): lista de invitados con ma
 
 1. **Un solo grant al final o grants por función.** Opciones: (a) una migración al
    terminar lista + reservas; (b) una por función a medida que salen. Recomendación: (a).
-2. **Trial.** Misma decisión que HOS-2280 pregunta 2 (límite de cupo del trial). Para
-   la lista: opciones (a) cupo 0 en trial (inutilizable), (b) 100 en trial por additive
-   grant sobre la versión `trial`. Recomendación: (b).
+2. **Decidido (owner, 16/11/2026): trial.** Cupo de 10 lugares en la versión `trial` de
+   venue (pieza D), con el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6).
+   Abierto menor: el aviso para reservas (`venue_reservations`, solo Premium) necesita
+   otro texto (HOS-2262, pregunta 4).
 3. **Tope de reservas.** Hoy no hay. Opciones: (a) sin tope; (b) límite por mes para
    premium. Recomendación: (a) hasta ver uso real.
 
@@ -178,14 +195,15 @@ Consultas de solo lectura: C-1 a C-5 de HOS-2280, con las claves `venue_guest_li
 
 - `status-needs-smoke-staging`. Smoke: con un local pro de rubro noche, anotarse en una
   lista; con premium, reservar mesa, grupo y cumpleaños, y validar el QR en la puerta;
-  confirmar que un local `food` no ve la lista. Checklist de billing, staging.
+  confirmar que un local `food` no ve la lista; un venue en trial con 10 lugares y el aviso
+  del plan Básico. Checklist de billing, staging.
 - What's New: sí (HOS-2284).
 
 ## 15. Desglose de tareas
 
 1. Consultas de solo lectura y confirmación de filas (0,25 día).
 2. `catalog.ts` y tabla de grants post-0144 (0,25 día).
-3. Migración SQL + data-migration + tests (0,75 día).
+3. Migración SQL + data-migration + tests, incluida la fila de límite del trial (0,75 día).
 4. Test de `guestList` absent por rubro (0,25 día).
 5. Smoke de staging y firma (0,75 día).
 

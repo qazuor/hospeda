@@ -20,6 +20,8 @@ Esta spec agrega: sección de videos en el editor del local, bloque de videos en
 
 Hija de la épica HOS-2252. Fase 1: no agrega claves ni migraciones de catálogo. **Sí toca una constante del catálogo en código** (un trait nuevo en `LISTING_SECTIONS`), que merece una revisión explícita (sección 6.1 y R-1).
 
+**Decidido (owner, 16/11/2026, decisión 6):** el video se restringe por plan **ya en la fase 1**, con el trait `videos` en `LISTING_SECTIONS` (venue) gateado por `can_embed_video`. La sesión de billing de la épica HOS-1352 dio su OK con condiciones (sección 6.8). Hasta que HOS-2280 otorgue la clave, la función y su fila en la tabla de planes quedan **ocultas**.
+
 ## 2. Problema
 
 - Hoy `venues.videos` es **escribible y público sin ningún gate**. El dueño puede mandar `videos` por `PATCH /api/v1/protected/venues/:id` y el valor sale en el payload público. La ficha simplemente no lo dibuja. Es decir: el contrato ya filtra mal antes de que exista la pantalla.
@@ -85,7 +87,7 @@ Hija de la épica HOS-2252. Fase 1: no agrega claves ni migraciones de catálogo
 
 `buildCatalogComparisonGroup({ vertical: 'venue' })` emite **una fila por cada trait con clave** (`apps/web/src/components/billing/plan-comparison-catalog-rows.ts:~200-240`). Agregar el trait `videos` crea automáticamente una fila nueva en la tabla de planes de local, con `status: 'available'` fijo (`buildRow`) y todas las celdas en "no incluido". Además `VENUE_CATALOG_PRESENTATION` es exhaustivo sobre **secciones**, no sobre traits, y la etiqueta cae a `billing.comparison.row.media.videos` si falta la presentación.
 
-Efecto colateral real: sin más cambios, la página pública de planes de local mostraría "Videos: no incluido" en los tres planes. Es lo contrario de "queda oculta". Ver 6.4.
+Efecto colateral real: sin más cambios, la página pública de planes de local mostraría "Videos: no incluido" en los tres planes. Es lo contrario de "queda oculta". Ver 6.4, que la oculta con `hideUntilGranted`.
 
 ## 6. Diseño
 
@@ -115,9 +117,11 @@ Sin cambios de `VenueService`. La conversión del body (`videos` con `moderation
 
 ### 6.4 Tabla de planes (efecto colateral del trait)
 
-Se agrega a `VENUE_CATALOG_PRESENTATION.media.traits.videos` una presentación con `rowId: 'venueVideos'`, `labelKey`, `descKey` e ícono, y se **extiende `CatalogRowPresentation` con `status?: 'available' | 'upcoming'`** que `buildRow` respeta. Hasta HOS-2280 la presentación declara `status: 'upcoming'`: la tabla ya sabe dibujar "Próximamente" (`PlanComparisonTable.astro:141`, `upcoming` en `plan-comparison-rows.ts` en otras filas). HOS-2280 lo pasa a `available` en el mismo PR que asigna la clave. Los textos finales de la fila son de HOS-2262; aquí van los mínimos es/en/pt (`billing.comparison.row.venueVideos`, `billing.comparison.rowDesc.venueVideos`).
+Se agrega a `VENUE_CATALOG_PRESENTATION.media.traits.videos` una presentación con `rowId: 'venueVideos'`, `labelKey`, `descKey` e ícono, y se **extiende `CatalogRowPresentation` con `hideUntilGranted?: boolean`** que `buildRow` y la tabla respetan: la fila se omite mientras ninguna columna activa otorgue `can_embed_video`. La presentación de videos lo declara en `true`. Al aplicarse HOS-2280 la fila aparece sola, sin deploy de web ni cambio en esta presentación.
 
-La alternativa (no mostrar la fila hasta que algún plan la incluya) es un cambio de comportamiento del constructor de la tabla para **todas** las filas, y se descarta (OQ-2).
+**Decidido (owner, 16/11/2026, decisión 28):** la fila se **oculta**; **no** se muestra como «Próximamente». Discrepancia anotada: el comentario de coordinación con la sesión de billing describía la fila de videos como «Próximamente» en los planes de venue. Esa redacción quedó superada por la decisión 28, posterior. El mecanismo general (ocultar toda fila sin grant) es de HOS-2262, sección 6.3; este issue sale primero (ventana de redeploy de billing) y por eso introduce el campo en el tipo compartido, y HOS-2262 lo reusa y lo extiende a sus filas curadas.
+
+Los textos finales de la fila son de HOS-2262; aquí van los mínimos es/en/pt (`billing.comparison.row.venueVideos`, `billing.comparison.rowDesc.venueVideos`). El estado `upcoming` no se usa.
 
 ### 6.5 Web: editor
 
@@ -142,12 +146,19 @@ La alternativa (no mostrar la fila hasta que algún plan la incluya) es un cambi
 
 Decisión 6: se respeta lo cargado, se frena lo nuevo, se oculta lo que el plan no incluye, no se borra. El mecanismo cubre las tres: la escritura da 403 (frena lo nuevo), la proyección pública vacía videos (oculta), y la lectura del dueño los sigue mostrando (no se borra). Al volver a un plan con la clave, reaparecen solos. No hace falta cron ni data-migration.
 
+### 6.8 Coordinación con la sesión de billing (HOS-1352)
+
+La sesión de la épica de billing dio OK a gatear el video en la fase 1 con estas condiciones, que son parte del alcance:
+
+1. **Aviso al mergear.** Si este PR se mergea a `staging` antes del redeploy de la pasada final de HOS-1352, sale en ese redeploy. Al mergear hay que **avisar a la sesión de billing** para que sume a su re-smoke: (a) la tabla de planes de venue **no** muestra una fila de videos (oculta hasta HOS-2280; la coordinación original decía «Próximamente», superada por la decisión 28); (b) el PATCH y el payload público de videos del local quedan gateados por `can_embed_video`. El PR lleva `status-needs-smoke-staging`.
+2. **Nota explícita en el PR.** La descripción debe decir que gatear `venues.videos` oculta los videos a los planes sin la clave, y que es **intencional, no una regresión**. Datos verificados por el owner: staging tiene 0 videos de venue, producción 0, y los seeds no cargan videos de venue; no hay contenido existente que se oculte.
+
 ## 7. Datos y migraciones
 
 - Estructural: ninguna. La columna existe.
 - Extras: ninguna.
 - Seed / data-migration: ninguna.
-- **Verificación previa al merge (read-only):** contar locales con `videos` no vacío en staging y producción (`hops psql`, sólo lectura; el dueño aprueba cualquier escritura). Como hoy la escritura estaba abierta, podría haber datos. Si hay, se ocultan tras el merge hasta HOS-2280 y se avisa al owner (OQ-3).
+- **Datos existentes (verificado, 16/11/2026):** staging 0 locales con videos, producción 0, y los seeds no cargan videos de venue. No hay nada que ocultar ni migrar. Antes del merge se repite la consulta read-only (`hops psql`) por si cambió algo; si apareciera una fila, se avisa al owner (OQ-3).
 
 ## 8. Criterios de aceptación
 
@@ -161,7 +172,7 @@ Decisión 6: se respeta lo cargado, se frena lo nuevo, se oculta lo que el plan 
 - AC-8. En el editor, con el trait `locked` y algún plan de local que incluya la clave, aparece el panel de bloqueo nombrando ese plan; sin ningún plan que la incluya (hoy), el editor no muestra la sección ni el upsell. Con el trait `available`, el widget guarda sin tocar otras secciones.
 - AC-9. El editor de experiencia no muestra la sección de videos y su PATCH no cambia.
 - AC-10. Los tests y el comportamiento de alojamiento no cambian (bloque, editor, copy).
-- AC-11. La tabla pública de planes de local muestra la fila de videos con la marca «Próximamente» y no «No incluido».
+- AC-11. Mientras ningún plan de local otorgue `can_embed_video`, la tabla pública de planes de local **no muestra** la fila de videos (ni «No incluido» ni «Próximamente»); cuando un plan la otorga, la fila aparece sin cambiar código.
 - AC-12. El texto de la descripción del dueño no se modifica en ninguna respuesta, y ninguna ruta del local arma un embed a partir de él.
 - AC-13. `cacheable-pages-are-session-blind.guard.test.ts` y `check-no-listing-dispatch` siguen verdes.
 
@@ -179,7 +190,7 @@ Integración / API
 - `apps/api/test/routes/venue/protected/patch-videos.test.ts`: AC-2, 6, 7. Un test con clave y otro sin. Verificar que el 403 sale del pipeline y cuenta `evaluatedSteps`.
 - `apps/api/test/routes/venue/public/*`: AC-3 sobre las cuatro rutas y el brochure.
 - Un test que fije AC-12: descripción con una URL de YouTube sale idéntica y la ficha no resuelve embed.
-- `apps/web/test/components/billing/plan-comparison-catalog-rows.test.ts`: la fila `venueVideos` sale con `status: 'upcoming'` (AC-11).
+- `apps/web/test/components/billing/plan-comparison-catalog-rows.test.ts`: la fila `venueVideos` sale con `hideUntilGranted` y no se renderiza sin grant; con un plan que la otorga, sí (AC-11).
 
 E2E (Playwright): editor de local con un usuario con la clave sembrada por fixture, guardar, abrir la ficha, ver la fachada. Sin la clave: 403 visible en el editor.
 
@@ -188,25 +199,18 @@ Guards: `check:guards`, `check-no-listing-dispatch` (G-FAC-05), `check-catalog-k
 ## 10. Riesgos
 
 - R-1. **Toca `LISTING_SECTIONS`.** Es el catálogo en código. Un trait nuevo cambia el esquema de estados de sección de local, la tabla de planes y el comportamiento de escritura de todos los dueños de local. Mitigado con los tests de 6.1 y la consulta al owner (OQ-1).
-- R-2. **Los videos ya guardados desaparecen de la ficha al mergear**, porque ningún plan de local tiene la clave. Es el efecto deseado, pero si hay datos reales sorprende. Verificar antes (sección 7).
-- R-3. **Tabla de planes.** Sin la presentación, la tabla muestra "Videos: no incluido". Cubierto en 6.4. Falta confirmar con HOS-2262 quién escribe los textos finales.
+- R-2. **Los videos ya guardados desaparecen de la ficha al mergear**, porque ningún plan de local tiene la clave. Es intencional (condición 2 de 6.8). Riesgo bajo: staging, producción y seeds tienen 0 videos de venue.
+- R-3. **Tabla de planes.** Sin ocultar la fila, la tabla muestra "Videos: no incluido". Cubierto en 6.4 con `hideUntilGranted`. Los textos finales son de HOS-2262.
+- R-7. **Ventana de redeploy de billing.** Si este PR entra al redeploy de la pasada final de HOS-1352 sin que billing lo sepa, su re-smoke no lo cubre. Cubierto por la condición 1 de 6.8.
 - R-4. **Proyección anidada.** Enseñar al proyector a vaciar `media.<campo>` afecta a toda sección con traits y campos anidados. Hoy sólo `media.videos`; el test de AC-3 lo fija.
 - R-5. **Mover componentes compartidos** (`VideoSection` del editor y de la ficha) toca alojamiento. Cubierto por los tests de regresión de AC-10.
 - R-6. `fotos.astro` es compartida con experiencia: el widget debe decidirse por el estado del trait, nunca por la vertical (G-FAC-05).
 
 ## 11. Preguntas abiertas para el owner
 
-- OQ-1. **¿Se acepta tocar `LISTING_SECTIONS` ahora?** La épica bloquea el catálogo hasta la pasada final de HOS-1352.
-  1. Sí: el trait no crea claves ni valores, sólo estructura de código, y es lo que habilita el gate. Recomendada.
-  2. Esperar a la pasada final y no mergear esta spec antes. Pro: respeta la regla al pie de la letra. Contra: deja la escritura de `videos` abierta y sin gate mientras tanto (hoy ya lo está).
-  3. Hacer sólo el gate por `enforceUserGate` en la ruta, sin trait. Pro: no toca el catálogo. Contra: la proyección pública no puede quitar el campo por catálogo y habría dos mecanismos distintos para lo mismo; no recomendada.
-- OQ-2. **Fila de videos en la tabla de planes antes del grant.**
-  1. Mostrarla con «Próximamente». Recomendada: usa un estado que la tabla ya dibuja y se activa con un cambio de una línea en HOS-2280.
-  2. Ocultarla hasta que algún plan la incluya. Contra: cambia el constructor de toda la tabla.
-  3. Dejar «No incluido». Contra: promete lo contrario de lo que decimos.
-- OQ-3. **Videos ya cargados en producción.** Si la consulta de la sección 7 devuelve filas:
-  1. Ocultarlos hasta HOS-2280 y avisar al dueño del local. Recomendada.
-  2. Un grant temporal de `can_embed_video` sólo a esos locales. Contra: es una decisión de catálogo y de plan.
+- OQ-1. **Decidido (owner, 16/11/2026): se acepta tocar `LISTING_SECTIONS` en la fase 1.** El trait `videos` no crea claves ni valores, solo estructura de código, y es lo que habilita el gate. Billing de la épica dio OK con las condiciones de 6.8. Se descartaron esperar a la pasada final y el gate solo por `enforceUserGate`.
+- OQ-2. **Decidido (owner, 16/11/2026): fila de videos antes del grant.** Se **oculta** hasta que algún plan la otorgue (HOS-2280); no se muestra «Próximamente» ni «No incluido». Supera la redacción «Próximamente» de la coordinación con billing.
+- OQ-3. **Decidido (owner, 16/11/2026): videos ya cargados.** No hay: staging 0, producción 0, seeds sin videos de venue. Sin acción; se repite la consulta antes del merge.
 - OQ-4. **Tope de videos y proveedores.** Alojamiento no tiene tope y acepta tres proveedores.
   1. Tope de 6 por Zod, los mismos tres proveedores. Recomendada.
   2. Sin tope, igual que alojamiento. Pro: paridad. Contra: un local puede cargar cientos de fachadas.
@@ -217,30 +221,32 @@ Guards: `check:guards`, `check-no-listing-dispatch` (G-FAC-05), `check-catalog-k
 
 ## 12. Etiquetas de smoke y Novedades
 
-- `status-needs-smoke-staging`: la ficha con una fachada real de YouTube/Vimeo, la CSP de `frame-src`, y el 403. Requiere un local de staging con el grant (después de HOS-2280); hasta entonces el smoke sólo cubre "oculto y sin romper".
+- `status-needs-smoke-staging` (obligatoria, condición de billing): la ficha con una fachada real de YouTube/Vimeo, la CSP de `frame-src`, y el 403. Requiere un local de staging con el grant (después de HOS-2280); hasta entonces el smoke sólo cubre "oculto y sin romper": fila de videos ausente en la tabla de planes de venue, y PATCH y payload público gateados por `can_embed_video` (los dos puntos de re-smoke de 6.8).
 - `status-needs-smoke-local`: sirve para el editor y el gate (fixture con clave).
 - What's New: **sí aplica, pero se escribe con HOS-2280**, que es cuando la función se vuelve visible. Mientras está oculta no se anuncia.
 
 ## 13. Dependencias
 
 - HOS-2280 la vuelve visible (asigna `can_embed_video` a locales pro/premium) y pasa la fila a `available`.
-- HOS-2262 (textos de la tabla de planes).
+- HOS-2262 (textos de la tabla de planes y mecanismo general de ocultar filas sin grant; este issue introduce el campo `hideUntilGranted` en `CatalogRowPresentation`).
+- Sesión de billing de HOS-1352: avisar al mergear (6.8).
 - HOS-2284 (presentación y Novedades) la menciona.
 - Relacionada con HOS-2191 (mismo criterio de "ningún camino").
-- Depende de la pasada final de HOS-1352 sólo en cuanto a OQ-1.
+- Coordinación con la pasada final de HOS-1352: condiciones de 6.8 (OQ-1 ya decidida).
 
 ## 14. Desglose en tareas
 
-1. T-1. Consulta read-only de datos existentes en staging y producción; informar (0,25 día).
+1. T-1. Repetir la consulta read-only de videos de venue en staging y producción antes del merge (esperado: 0); informar (0,1 día).
 2. T-2. Trait `videos` en `LISTING_SECTIONS.venue.media`; correr tests y guards de catálogo; verificar JSON-LD, brochure y contexto de IA (0,75 día).
 3. T-3. `ListingVideoInputSchema` compartido, uso en `VenueOwnerUpdateInputSchema`, `moderationState` fijado por servidor, tope de 6 + tests (0,75 día).
 4. T-4. `sectionTraits` en el PATCH del local + tests AC-2/6/7 (0,5 día).
 5. T-5. Proyector: vaciado de `media.<campo>` anidado + tests de las cuatro rutas y del brochure (0,75 día).
-6. T-6. Tabla de planes: presentación `venueVideos` con `status`, claves i18n mínimas es/en/pt, test (0,5 día).
+6. T-6. Tabla de planes: presentación `venueVideos` con `hideUntilGranted` (campo nuevo en `CatalogRowPresentation`), claves i18n mínimas es/en/pt, test (0,5 día).
 7. T-7. Generalizar `use-video-section` y mover `VideoSection` del editor a `components/listing/editor/`, regresión de alojamiento (0,75 día).
 8. T-8. Montaje en `fotos.astro` con estados del trait, upsell por catálogo, `readListingMedia` con `videos`, i18n del editor (0,75 día).
 9. T-9. `ListingVideoSection.astro` compartido, `normalizeListingVideos`, montaje en la ficha del local, i18n `venue.detail.videos.*` (0,75 día).
 10. T-10. Tests e2e y smoke (0,5 día).
+11. T-11. En el PR: nota explícita de intencionalidad (6.8, condición 2), etiqueta `status-needs-smoke-staging`, y al mergear avisar a la sesión de billing con los dos puntos de re-smoke (0,1 día).
 
 ## 15. Linear
 

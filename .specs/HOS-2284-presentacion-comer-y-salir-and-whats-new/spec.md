@@ -23,10 +23,16 @@ otro para Noche) y deja su entrada en Novedades.
 
 1. **La página es solo en español por diseño.** `index.astro:1-90` lo declara: «NOT TRANSLATED»,
    `noindex, nofollow`, fuera del sitemap, «el mismo copy en español sirve bajo `/en/` y `/pt/`».
-   El criterio «textos en es, en y pt» de la issue **choca** con eso. Ver pregunta 1.
+   El criterio «textos en es, en y pt» de la issue **choca** con eso.
+   **Decidido (owner, 16/11/2026):** la página de presentación queda solo en español;
+   «es, en y pt» aplica a Novedades (What's New) y a las claves de i18n (pregunta 1).
 2. **La página ya promete cosas que hoy no se cumplen** (sección 5). Hay un error de fondo,
-   no de detalle: dice que el destacado lo maneja el dueño y que los complementos de pago
-   único se piden «desde Mi cuenta».
+   no de detalle: dice que el destacado lo maneja el dueño y lista funciones de plan como
+   complementos. **Decidido (owner, 16/11/2026):** «Destacar tu local por 7 o 30 días» y la
+   frase de «desde Mi cuenta» **quedan como están**: pasan a ser verdaderas cuando salga
+   HOS-2094 (pago único comprable por web). Las otras 3 afirmaciones falsas **sí** se
+   corrigen: el video (L390), el destacado «Vos» (L434) y las funciones de plan bajo
+   «Complementos que vienen» (L309-328).
 3. **El comentario de cabecera está vencido.** Su lista «ahead of the code as of 2026-10-31»
    nombra como no construidos `PUB`/`BOLICHE` (ya existen en `VenueTypeEnum`,
    `packages/schemas/src/enums/venue-type.enum.ts:13-26`) y `contactInfo` público (ya está,
@@ -75,10 +81,15 @@ Referencia: `apps/web/src/pages/[lang]/presentacion/comer-y-salir/index.astro`.
 |---|---|---|
 | 390 | «...Descripción con formato, **y videos si tenés**.» | El local no tiene editor de video ni la ficha pública lo muestra (`VideoSection` solo se monta en el editor de alojamiento: `mi-cuenta/propiedades/[id]/editar/fotos.astro`; ningún componente de `components/venue` ni del editor de comercio lo usa). Ningún plan de venue otorga `can_embed_video`. La habilita HOS-2280. |
 | 434 | «Si tu local aparece destacado — **Vos**.» | El destacado no tiene interruptor (decisión del owner 2026-08-29, HOS-929) y lo da un plan o un complemento. Ningún plan de venue lo da hoy. |
-| 297-302 | «Destacar tu local por 7 o 30 días», en «Estos son los que hay para vos». | Existe en catálogo pero **no se puede comprar por web** (los 6 de visibilidad son de pago único, HOS-2094). |
-| 304 | «Desde Mi cuenta > Complementos... Ves qué hay disponible, elegís el que necesitás y listo.» | Falso para el pago único; verdadero para «1 local más». |
 | 309-328 | Bajo «Complementos que vienen. Todavía no se pueden pedir» figuran la agenda, la carta, el especial del día, la foto por ítem, la carta en inglés/portugués, el PDF con QR, el QR de mesa y el chat de IA como «Hoy, desde Profesional/Premium». | Son **funciones de plan**, no complementos; contradice el propio encabezado del bloque. Quitarlas de ahí. |
 | 477 | «La carta es del plan Profesional para arriba.» | Cierto hoy. **Dejará de serlo si** la carta pasa a otro plan (no está decidido): se verifica contra el catálogo al implementar. |
+
+### 5.1b Falso hoy pero se conserva por decisión del owner (16/11/2026)
+
+| Línea | Afirmación | Por qué se queda |
+|---|---|---|
+| 297-302 | «Destacar tu local por 7 o 30 días», en «Estos son los que hay para vos». | Hoy no se puede comprar por web (pago único, HOS-2094). Se vuelve verdadero cuando salga HOS-2094; no se toca. |
+| 304 | «Desde Mi cuenta > Complementos... Ves qué hay disponible, elegís el que necesitás y listo.» | Mismo motivo: falso para el pago único hasta HOS-2094, verdadero para «1 local más». |
 
 ### 5.2 Verdadero hoy (se conserva)
 
@@ -118,11 +129,12 @@ issue: «lo que no está habilitado no se promete»).
 
 ### 6.2 Limpieza inicial (PR 0, no depende de nada)
 
-Corrige 5.1: sacar «y videos si tenés» (L390); cambiar la fila de destacado de L434 a «Lo define
-tu plan o un complemento» o quitarla; en «Complementos», mover «Destacar tu local» a una lista
-«Próximamente» hasta que HOS-2094 habilite el pago único, **o** dejar la fila con «Por única
-vez» y retirar la frase «sin llamar a nadie» (según la pregunta 2); mover las funciones de plan
-fuera de «Complementos que vienen». Es el único PR que se puede hacer **ya**.
+Corrige 5.1: sacar «y videos si tenés» (L390; vuelve cuando HOS-2280 otorgue
+`can_embed_video`, en el PR del bloque «Video»); cambiar la fila de destacado de L434 a «Lo
+define tu plan o un complemento» o quitarla; mover las funciones de plan fuera de
+«Complementos que vienen». **No se toca** «Destacar tu local por 7 o 30 días» ni la frase de
+«Desde Mi cuenta» (5.1b, decisión del owner: se vuelven verdaderas con HOS-2094). Es el único
+PR que se puede hacer **ya**.
 
 ### 6.3 Plan de copy por bloque
 
@@ -136,10 +148,14 @@ los aprueba en el PR.
 | **Lista de invitados** (solo rubro «noche»; Pro 100 por evento; Premium sin tope) | no aplica: **no se menciona** en Gastronomía | «Armá la lista de tu noche: cada persona se anota y vos ves quién viene. Hasta 100 anotados por evento en Profesional, sin tope en Premium.» | Fila marcada «solo locales de noche» |
 | **Promos** (Pro 5, Premium sin tope, happy hour = promo) | «Cargá tus promos del día o de la semana: el 2x1 de los martes, el menú ejecutivo.» | «Tu happy hour es una promo: horario, qué incluye y hasta cuándo.» | «Promos activas a la vez» (— / 5 / sin tope). Sacar la viñeta de L479 |
 | **Métricas** (estadísticas de eventos HOS-2265, día por día) | «Cuánta gente mira cada evento.» | «Cuánta gente mira cada fecha.» | Mover «estadísticas día por día» de «Lo que se viene» a la tabla si ya existe |
-| **Video** (HOS-2280) | «Mostrá tu cocina y tu salón con un video.» | «Mostrá cómo se vive la noche en tu local.» | Fila «Videos de tu local» con los planes que lo reciban |
+| **Video** (HOS-2258 construye, HOS-2280 otorga) | «Mostrá tu cocina y tu salón con un video.» | «Mostrá cómo se vive la noche en tu local.» | Fila «Videos de tu local» con los planes que lo reciban; hasta el grant la fila no existe (igual que en la tabla pública de planes, HOS-2262) |
 | **Destacado premium** (HOS-2279) | «Premium aparece primero en la lista de su rubro.» | igual | Fila «Aparecés primero en el listado» (— / — / sí). **No nombrar el plan en la ficha**; en la presentación comercial sí se nombra el plan |
-| **Evento destacado, complemento** (HOS-2288) | «Destacá el evento de esta semana por 7 días.» | igual | Pasar de «Complementos que vienen» a la tabla de complementos, **solo cuando HOS-2094 permita pagarlo** |
+| **Evento destacado, complemento** (HOS-2288, elegibilidad en HOS-2292) | «Destacá el evento de esta semana por 7 días.» | igual | Pasar de «Complementos que vienen» a la tabla de complementos, **solo cuando HOS-2094 permita pagarlo**. El complemento se aplica al local (alcance listing, guarda el `event_id` de la compra) y **no se ofrece a Premium**: la presentación no lo lista en la columna Premium |
 | **Baja de plan** (decisión 6 de HOS-2253) | Párrafo «Si bajás de plan, no perdés nada»: lo cargado se guarda, los eventos únicos siguen hasta su fecha, los semanales vuelven a borrador y vuelven si subís; lo confirmado se respeta. | igual | Sin fila |
+
+Durante el trial las funciones nuevas corren con límites mínimos (1 promo activa, 10 lugares
+de lista, 1 evento activo; HOS-2280 a HOS-2283): la página no promete que el trial incluya
+las funciones con los topes de Pro o Premium.
 
 Reglas de redacción: frases cortas, sin números que salgan del catálogo (los topes se leen del
 catálogo en la página de planes; la presentación puede citar cifras **solo si** las decide el
@@ -149,9 +165,10 @@ owner, ver pregunta 3), sin «próximamente» con fecha, sin nombrar rubros que 
 
 Una entrada por bloque, la escribe el flujo del smoke (`smoke-tanda`, fase 2b) **sin preguntar**,
 con `publishedAt: 'on-promotion'`, audiencia `['VENUE_OWNER']` en
-`apps/api/src/data/whats-new/whats-new.ts`, texto es obligatorio y en/pt opcionales. Las que
-salen con traducción automática llevan `translations: { en: 'machine', pt: 'machine' }` y la
-compuerta de promoción exige revisarlas. Los ids siguen el patrón `YYYY-MM-DD-slug`. Entradas
+`apps/api/src/data/whats-new/whats-new.ts`. **Decidido (owner, 16/11/2026):** cada entrada
+sale en es, en y pt (la página de presentación no, ver pregunta 1). Las que salen con
+traducción automática llevan `translations: { en: 'machine', pt: 'machine' }` y la compuerta
+de promoción exige revisarlas. Los ids siguen el patrón `YYYY-MM-DD-slug`. Entradas
 previstas: `venue-events-by-plan`, `venue-guest-list`, `venue-promos`, `venue-event-stats`,
 `venue-video`, `venue-premium-featured`, `venue-featured-event-addon`.
 Cada PR de bloque lleva exactamente **una** etiqueta: `whats-new-done` o `whats-new-none`.
@@ -164,19 +181,23 @@ Cada PR de bloque lleva exactamente **una** etiqueta: `whats-new-done` o `whats-
   `apps/web/src/lib/__tests__/features-content-veracity.test.ts`).
 - Mantener `listing-amenities-render.test.ts` (3 cadenas congeladas).
 - Un test de que la página **no** contiene «videos si tenés» ni «Si tu local aparece destacado»
-  con «Vos» (regresión de 5.1).
+  con «Vos» (regresión de 5.1). El test **no** prohíbe «Destacar tu local por 7 o 30 días»
+  (5.1b).
 
 ## 7. Criterios de aceptación
 
 - AC-1. Dada la página tras el PR 0, entonces no contiene «videos si tenés» ni atribuye el
-  destacado al dueño, y «Complementos que vienen» no lista funciones de plan.
+  destacado al dueño, y «Complementos que vienen» no lista funciones de plan (las otras 3
+  falsedades se corrigen; 5.1b queda intacto).
 - AC-2. Dado un bloque habilitado en staging, cuando se mergea su PR de presentación, entonces la
   página lo describe con texto de Gastronomía **y** de Noche (salvo lista de invitados, solo Noche).
 - AC-3. Dado un bloque **no** habilitado, entonces la página no lo menciona en presente.
 - AC-4. Dada cada fila de la tabla, entonces la clave de catálogo correspondiente existe en el
   plan indicado (test de veracidad).
-- AC-5. Dado cada bloque, entonces existe una entrada de Novedades `VENUE_OWNER` con es, y las
-  traducciones automáticas marcadas `machine` hasta su revisión.
+- AC-5. Dado cada bloque, entonces existe una entrada de Novedades `VENUE_OWNER` con es, en y
+  pt, y las traducciones automáticas marcadas `machine` hasta su revisión.
+- AC-9. La página de presentación sigue solo en español (sin copias en/pt) y mantiene
+  «Destacar tu local por 7 o 30 días» y la frase de «Desde Mi cuenta» tal como están.
 - AC-6. Las tres cadenas congeladas siguen pasando.
 - AC-7. La página sigue `noindex, nofollow`, fuera del sitemap, sin sesión, y cacheable (guard
   `cacheable-pages-are-session-blind`).
@@ -199,16 +220,12 @@ PDF (la página se exporta). Sin e2e. Guards: `pnpm check:guards`.
 
 ## 10. Preguntas abiertas para el owner
 
-1. **Idiomas de la página.** La issue pide es/en/pt; la página es solo español por diseño.
-   - A) Mantener español para la página y traducir **solo** Novedades y claves de i18n.
-     Pro: respeta el diseño y la audiencia local. Contra: no cumple a la letra la issue.
-   - B) Traducir la página a en y pt. Pro: cumple. Contra: tres copias que mantener; rompe «misma
-     copia bajo /en/ y /pt/» y dispara trabajo de revisión por cada bloque.
-   - **Recomiendo A**; se aclara en la issue que «es, en y pt» aplica a Novedades.
-2. **Qué hacer con «Destacar tu local por 7 o 30 días» mientras no sea comprable.**
-   - A) Quitarlo del bloque «los que hay para vos» y pasarlo a «Próximamente».
-   - B) Dejarlo y dejar la frase de «sin llamar a nadie».
-   - **Recomiendo A** hasta que HOS-2094 habilite el pago único (ver HOS-2290).
+1. **Decidido (owner, 16/11/2026): idiomas.** La página de presentación queda solo en
+   español, por diseño. Novedades (What's New) sale en es, en y pt. Se aclara en la issue
+   que «es, en y pt» aplica a Novedades y a las claves de i18n, no a la página.
+2. **Decidido (owner, 16/11/2026): «Destacar tu local por 7 o 30 días».** Queda como está en
+   la página; se vuelve verdadero cuando salga HOS-2094. Las otras 3 afirmaciones falsas sí
+   se corrigen (PR 0).
 3. **¿La presentación cita cifras (1 / 10 / sin tope eventos, 5 promos, 100 anotados) o solo
    describe?** Las cifras vienen de las decisiones de HOS-2253.
    - A) Citarlas: es lo que busca el prospecto. Contra: si cambian, la página miente (R-1).
@@ -222,7 +239,9 @@ PDF (la página se exporta). Sin e2e. Guards: `pnpm check:guards`.
 - HOS-2280 (habilitar eventos, métricas y video): bloqueante declarada; es el primer bloque.
 - Las demás issues de concesiones de la épica HOS-2252/HOS-2253 (promos, lista de invitados,
   topes de eventos): un PR de bloque por cada una.
-- HOS-2279 y HOS-2288 (destacado), HOS-2094 (pago único): condicionan dos filas.
+- HOS-2279 y HOS-2288 (destacado; elegibilidad del add-on en HOS-2292), HOS-2094 (pago
+  único): condicionan dos filas. HOS-2094 además vuelve verdadero lo que 5.1b conserva.
+- HOS-2258 (video) y HOS-2262 (tabla de planes con filas ocultas hasta tener grant).
 - HOS-2290: informe que sostiene las correcciones de 5.1.
 
 ## 12. Smoke y Novedades

@@ -11,11 +11,11 @@ areas:
 
 # Promos de local: editor y ficha
 
-Hijo de HOS-2252. Depende de HOS-2270 (modelo, rutas y sección de catálogo). Antecede a HOS-2272 (franja horaria) y HOS-2273 (VIP).
+Hijo de HOS-2252. Depende de HOS-2270 (modelo `entity_type` + `entity_id`, rutas y sección de catálogo). Antecede a HOS-2272 (franja horaria) y HOS-2273 (VIP).
 
 ## 1. Resumen
 
-El dueño de un local crea, edita, pausa y borra sus promos desde una sección «Promociones» del editor, y ve cuántas activas le quedan según su plan. El turista ve las promos vigentes en la ficha pública (título, condición y vigencia) y una marca discreta «Promo» en las tarjetas del listado. Sin la clave `create_promotions`, el editor muestra el upsell. Textos en es, en y pt.
+El dueño de un local crea, edita, pausa y borra sus promos desde una sección «Promociones» del editor, y ve cuántas activas le quedan según su plan. El turista ve las promos vigentes en la ficha pública (título, condición y vigencia) y una marca discreta «Promo» en las tarjetas del listado. Sin la clave `create_promotions`, el editor muestra el upsell. Incluye el tipo de beneficio «oferta especial» (texto libre, moderado). Textos en es, en y pt.
 
 ## 2. Problema
 
@@ -29,6 +29,7 @@ Con HOS-2270 las promos de local existen en la API, pero no hay forma de cargarl
 - G-4. Tarjetas del listado con marca «Promo».
 - G-5. Sin entitlement: upsell. Con promos ya cargadas tras una baja de plan: se ven, se pausan y se borran, no se crean ni se editan.
 - G-6. i18n es, en y pt.
+- G-7. «Oferta especial»: el dueño escribe el beneficio en texto libre; se muestra en la ficha y se modera (decisión del owner, 16/11/2026; el modelo y la moderación viven en HOS-2270).
 
 ## 4. Fuera de alcance
 
@@ -62,7 +63,7 @@ Verificado en `origin/staging` (`92994b9dc6`).
 ### 6.1 Decisión de reuso (a confirmar, OQ-1)
 
 Los componentes de alojamiento no se parametrizan. Razones: el formulario ya supera las 500 líneas, está lleno de campos de alojamiento, y parametrizarlo por vertical (`vertical === 'venue'` dentro de un componente compartido) es justo lo que prohíbe G1. Se reusa lo que es puro:
-- Extraer `formatPromotionBenefit({ discountType, discountValue, locale })` a `apps/web/src/lib/promotions/format-benefit.ts` y usarlo en `PromotionBanner.astro`, `ExclusiveDealsList.client.tsx` y los componentes nuevos. Se agrega el caso `special_offer` (HOS-2270): muestra solo el título/condición, sin cifra.
+- Extraer `formatPromotionBenefit({ discountType, discountValue, locale })` a `apps/web/src/lib/promotions/format-benefit.ts` y usarlo en `PromotionBanner.astro`, `ExclusiveDealsList.client.tsx` y los componentes nuevos. Se agrega el caso `special_offer` (HOS-2270): muestra el texto libre de la oferta (escapado, sin HTML ni links), sin cifra.
 - Reusar los estilos base y los helpers de formularios (`zodIssuesToFieldErrors`, `@/lib/forms/field-errors`).
 - Componentes nuevos de local, cada uno por debajo de 500 líneas: `VenuePromotionsManager.client.tsx`, `VenuePromotionForm.client.tsx`, `VenuePromotions.astro`.
 
@@ -76,14 +77,14 @@ Los componentes de alojamiento no se parametrizan. Razones: el formulario ya sup
   - Contador: «N de M activas» o «N activas, sin tope» cuando `maxActive === 2147483647` (`isUnlimitedLimit`, `apps/web/src/components/billing/plan-card-delta.ts:51`).
   - Botón «Nueva promoción» deshabilitado si `sectionState === 'locked'` o si `activeCount >= maxActive`; en ambos casos muestra el upsell con el nombre del plan, o texto genérico si `upsellPlanName` es `null`.
   - Bloqueada con promos cargadas (baja de plan): la lista se ve completa, Pausar y Borrar funcionan, Editar y Reactivar muestran el upsell. El 403 `ENTITLEMENT_REQUIRED` o `LIMIT_REACHED` de la API se traduce con `apps/web/src/lib/billing-limit-error.ts` (ya conoce `max_active_promotions`, `:69`).
-- `VenuePromotionForm` (diálogo o panel dentro del manager): título (≤200), condición/descripción (≤1000), tipo de beneficio (porcentaje, monto, beneficio libre), valor (solo para porcentaje y monto; porcentaje tope 100, como `PromotionForm`), vigencia desde y hasta (`validUntil` opcional). Sin `minNights`, sin propiedad, sin canjes. Valida con el schema de alta de local de HOS-2270 (`safeParse` antes de llamar).
+- `VenuePromotionForm` (diálogo o panel dentro del manager): título (≤200), condición/descripción (≤1000), tipo de beneficio (porcentaje, monto, oferta especial), valor (solo para porcentaje y monto; porcentaje tope 100, como `PromotionForm`), texto de la oferta (solo para oferta especial, obligatorio, con contador de caracteres y ayuda «Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos»; si la moderación lo rechaza, el 400 se muestra en el campo), vigencia desde y hasta (`validUntil` opcional). Sin `minNights`, sin propiedad, sin canjes. Valida con el schema de alta de local de HOS-2270 (`safeParse` antes de llamar).
 - Cliente API: `venuePromotionsApi` (`list`, `create`, `update`, `patch`, `remove`) en `apps/web/src/lib/api/endpoints-protected.ts`, junto a `ownerPromotionApi` (`:4369`).
 
 ### 6.3 Ficha pública (session-blind)
 
 - Ruta pública nueva en `apps/api/src/routes/venue/public/getPromotions.ts`: `GET /api/v1/public/venues/{id}/promotions`.
   - Responde 404 si el local no está `PUBLISHED` (igual que `getBySlug`, HOS-1641).
-  - Devuelve las promos del local con `lifecycle_state = ACTIVE`, `deleted_at IS NULL`, dentro de la ventana `valid_from`/`valid_until` y `tourist_audience = 'plus'`. Las `vip` no salen (HOS-2273 suma solo un contador).
+  - Devuelve las promos del local (`entity_type = 'venue'` y `entity_id = {id}`) con `lifecycle_state = ACTIVE`, `deleted_at IS NULL`, dentro de la ventana `valid_from`/`valid_until` y `tourist_audience = 'plus'`. Las `vip` no salen (HOS-2273 suma solo un contador).
   - Campos: `id`, `title`, `description`, `discountType`, `discountValue`, `validFrom`, `validUntil`. Sin `ownerId`, sin canjes.
   - HOS-2273 le suma `vipPromotionsCount` (solo el número de promos VIP vigentes).
   - Cacheable como el resto de lecturas públicas; sin leer sesión.
@@ -94,7 +95,7 @@ Los componentes de alojamiento no se parametrizan. Razones: el formulario ya sup
 
 ### 6.4 Marca «Promo» en la tarjeta
 
-- API: `VenuePublicListItemSchema` suma `promoBadge?: { hasPromo: true }` (HOS-2272 le suma las franjas). En `list.ts` y en las otras rutas que arman tarjetas de local (`getByDestination.ts` y destacados del home) se hace una sola lectura por página: `OwnerPromotionModel.findVenueIdsWithActivePromo({ venueIds })` (ACTIVE, vigente, `tourist_audience = 'plus'`, `GROUP BY venue_id`). Una consulta, no N.
+- API: `VenuePublicListItemSchema` suma `promoBadge?: { hasPromo: true }` (HOS-2272 le suma las franjas). En `list.ts` y en las otras rutas que arman tarjetas de local (`getByDestination.ts` y destacados del home) se hace una sola lectura por página: `OwnerPromotionModel.findVenueIdsWithActivePromo({ venueIds })` (`entity_type = 'venue'`, `entity_id IN venueIds`, ACTIVE, vigente, `tourist_audience = 'plus'`, `GROUP BY entity_id`). Una consulta, no N.
 - Web: `toVenueCardProps` (`apps/web/src/lib/api/transforms.ts:2729`) pasa el dato. `VenueCard.astro` pinta una etiqueta chica «Promo» si `data.promoBadge`. Discreta: misma altura y estilo que los otros chips de la tarjeta, texto fijo, sin interacción, `aria-label` descriptivo.
 - Como el dato es estático (hay o no hay promo vigente), vive en HTML cacheado y se revalida con la etiqueta del local. La parte que depende de la hora (badge «Ahora») es isla de cliente y va en HOS-2272.
 
@@ -105,7 +106,7 @@ Claves nuevas (los tres idiomas; prefijos ya expuestos al cliente o a sumar en `
 - `venue.owner.editor.promotionsManager.*`: título, vacío, contador, «Nueva promoción», campos, ayudas, estados, confirmación de borrado, errores, upsell. El prefijo `venue.owner.editor` hay que verificarlo contra `CLIENT_I18N_KEY_PREFIXES`, como lo hace `VenueEventsManager`.
 - `venue.detail.promotions.*`: título del bloque, vigencia, «sin fecha de fin».
 - `venue.card.promo` («Promo»).
-- `host.promotions.discountTypes.special_offer`.
+- `host.promotions.discountTypes.special_offer` («Oferta especial») y las claves del campo de texto (etiqueta, ayuda, contador).
 Los textos van con la tilde correcta y sin inventar traducciones: pt y en con el mismo cuidado que es. Los guards de i18n miran estructura, no contenido: revisar a mano.
 
 ## 7. Contratos
@@ -130,6 +131,8 @@ Los textos van con la tilde correcta y sin inventar traducciones: pt y en con el
 - AC-4. Dado un dueño sin `create_promotions` y sin promos, entonces la sección muestra el upsell con el nombre del plan que la desbloquea, o el texto genérico si no hay plan que la liste.
 - AC-5. Dado un dueño que bajó de plan con 3 promos activas, entonces las ve, puede pausarlas y borrarlas, y Editar, Reactivar y Nueva muestran el upsell. Las 3 siguen en la ficha pública.
 - AC-6. Dado el formulario de local, entonces no pide `minNights`, propiedad ni canjes, y valida porcentaje ≤ 100.
+- AC-16. Dado un dueño que elige «oferta especial», entonces el formulario pide el texto libre (sin valor numérico), lo guarda, y la ficha lo muestra tal cual escrito y escapado; un texto que la moderación rechaza muestra el error en el campo.
+- AC-17. Dada la tarjeta o la ficha con una promo `special_offer`, entonces nunca se imprime una cifra ni `0`.
 - AC-7. Dado un local sin promos vigentes, entonces la ficha no pinta el bloque ni deja un hueco.
 - AC-8. Dado un local no publicado, entonces `GET /public/venues/{id}/promotions` responde 404.
 - AC-9. Dado un local con una promo vigente, entonces su tarjeta del listado muestra «Promo»; sin promo, no.
@@ -143,7 +146,7 @@ Los textos van con la tilde correcta y sin inventar traducciones: pt y en con el
 ## 10. Plan de pruebas
 
 - Unit web:
-  - `apps/web/test/lib/promotions/format-benefit.test.ts`: los cuatro tipos y los tres idiomas.
+  - `apps/web/test/lib/promotions/format-benefit.test.ts`: los cuatro tipos (incluida la oferta especial sin cifra) y los tres idiomas.
   - `apps/web/test/components/venue/VenuePromotionsManager.test.tsx`: contador, sin tope, bloqueado, tope, errores 403 (`ENTITLEMENT_REQUIRED` y `LIMIT_REACHED`), baja de plan.
   - `apps/web/test/components/venue/VenuePromotionForm.test.tsx`: campos, validación, tope de porcentaje.
   - `apps/web/test/components/venue/VenuePromotions.test.ts` (Astro): vacío y completo.
@@ -159,9 +162,12 @@ Riesgos:
 - R-2. Dos sitios más de `formatDiscount` duplicados quedan sin migrar y se desfasan. Mitigación: la extracción de `format-benefit.ts` migra los tres sitios en este mismo PR.
 - R-3. El bloque público depende de una segunda llamada en SSR: un fallo no tumba la página.
 
-Preguntas:
+Decidido (owner, 16/11/2026): se suma el tipo de beneficio «oferta especial» con texto libre moderado (HOS-2270, HOS-2271). Esta spec lo muestra y lo pide en el formulario.
+
+Preguntas abiertas (menores):
 - OQ-1. Reuso de formularios. Opciones: (a) componentes de local nuevos más helpers compartidos; (b) parametrizar `PromotionForm`/`PromotionList` por vertical. **Recomiendo (a)**: (b) rompe G1 y ya pasa las 500 líneas.
 - OQ-2. Posición del bloque en la ficha. Opciones: (a) por orden del catálogo, tras eventos; (b) arriba, antes de la carta, para que se vea más. **Recomiendo (a)**: cambiar el orden es una decisión de producto y el catálogo ya lo define; (b) se puede pedir después.
+- OQ-4. Texto de la oferta en la tarjeta del listado: la marca queda en «Promo» fija (no se muestra el texto libre ahí). Opciones: (a) solo «Promo»; (b) mostrar el texto corto. **Recomiendo (a)**: la tarjeta es discreta y el texto libre no tiene largo controlado.
 - OQ-3. Aviso de «puede tardar en verse». Opciones: (a) mostrarlo; (b) esperar la revalidación sin aviso. **Recomiendo (a)**.
 
 ## 12. Dependencias
@@ -181,7 +187,7 @@ Preguntas:
 1. T-1 Extraer `formatPromotionBenefit` y migrar `PromotionBanner`, `ExclusiveDealsList` y la lista de alojamiento. Tests.
 2. T-2 Cliente API web: `venuePromotionsApi` protegido y público. Tipos.
 3. T-3 Ruta pública `GET /public/venues/{id}/promotions` + schema + tests.
-4. T-4 `VenuePromotionForm` + tests.
+4. T-4 `VenuePromotionForm` (incluye el campo de texto de la oferta especial) + tests.
 5. T-5 `VenuePromotionsManager` (lista, contador, upsell, baja de plan) + tests.
 6. T-6 Página `promociones.astro`, presentación, `resolveVenueUpsellPlans`.
 7. T-7 `VenuePromotions.astro` + `[slug].astro` + `VENUE_DETAIL_SECTION_BODY`.

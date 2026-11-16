@@ -12,11 +12,11 @@ areas:
 
 # Avisos al turista: aviso de cambio de fecha, hora o suspensión del evento
 
-> Depende de HOS-2266 (suscripciones por evento, gate, **ids estables**) y reusa de HOS-2267 los tipos de notificación, el copy es/en/pt y el link de baja.
+> Depende de HOS-2266 (suscripciones por evento, gate) y de HOS-2291 (**ids estables** de eventos) y reusa de HOS-2267 los tipos de notificación, el copy es/en/pt y el link de baja.
 
 ## 1. Resumen
 
-El editor del local gana una acción **"Suspender evento"**, distinta de borrarlo. Un evento suspendido se muestra en la ficha como "Suspendido" hasta su fecha. Un cambio de fecha u hora, una suspensión o una reanudación dispara **un solo correo** a quienes tocaron "Avisame" en ese evento. Cambiar el título o la descripción no avisa. Si el local hace varios cambios seguidos, se agrupan en un único aviso.
+El editor del local gana una acción **"Suspender evento"**, distinta de borrarlo. Un evento suspendido se muestra en la ficha como "Suspendido" hasta su fecha. Un cambio de fecha u hora, una suspensión o una reanudación dispara **un solo correo** a quienes tocaron "Avisame" en ese evento. Cambiar el título o la descripción no avisa. Si el local hace varios cambios seguidos, se agrupan en un único aviso (ventana de 15 min) y entre avisos de un mismo evento hay 2 h de espera, salvo que el aviso sea una suspensión o una reanudación, que siempre avisan. Suspender un evento semanal afecta solo a la próxima fecha y vuelve sola.
 
 ## 2. Problema
 
@@ -26,7 +26,7 @@ Hoy el local puede mover o cancelar un evento y el turista que dijo "Avisame" se
 
 - G-1: estado "suspendido" por evento, visible en la ficha y en el editor.
 - G-2: detección de cambios **materiales** comparando contra lo último que se les comunicó a los suscriptos.
-- G-3: agrupar ediciones seguidas (ventana de silencio) y limitar la frecuencia por evento.
+- G-3: agrupar ediciones seguidas (ventana de silencio de 15 min) y limitar la frecuencia por evento (2 h de espera), con excepción de suspender y reanudar, que siempre avisan.
 - G-4: correo en el idioma del turista, por la cola `email_outbox`.
 - G-5: mantener coherente el recordatorio (HOS-2267) cuando cambia la fecha.
 
@@ -45,7 +45,7 @@ Hoy el local puede mover o cancelar un evento y el turista que dijo "Avisame" se
 - `replaceVenueEvents` (`packages/service-core/src/services/venue/venue.events.ts:~210-285`): `eventModel.hardDelete({ venueId })` y reinserta cada entrada con `displayOrder` por posición. El comentario de cabecera (líneas 18-24) lo dice: "Entry ids are not stable across a save".
 - `PUT /api/v1/protected/venues/:id/events` (`apps/api/src/routes/venue/protected/putEvents.ts:78-110`): `listingAccess` con `vertical: VENUE`, `operation: 'EDIT'`, `listingSection` `venueEvents` con `intent: 'write'` (o `'delete'` si el array viene vacío). Gate real: `manage_venue_events` vía el catálogo de secciones (`packages/schemas/src/catalog/listing-sections.ts:~111`).
 - Payload sin ids (`VenueEventInputSchema`, `packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts:260-285`); el editor tampoco los lleva (`apps/web/src/lib/venue/venue-event-draft.ts:11-24`).
-- HOS-2266 T-1 introduce ids estables y un diff transaccional. **Sin eso, este spec no es implementable**: no hay "versión anterior de cada evento" contra la cual comparar.
+- HOS-2291 (antes T-1 de HOS-2255, extraído a su propio issue) introduce ids estables y un diff transaccional. **Sin eso, este spec no es implementable**: no hay "versión anterior de cada evento" contra la cual comparar.
 
 ### 5.2 No hay estado "suspendido"
 
@@ -63,7 +63,7 @@ Outbox idempotente, supresión y registro (HOS-2267 5.1-5.2); tope diario solo p
 
 ### 6.1 Qué cuenta como cambio material
 
-Se compara el **estado material**: `{ recurrence, date, weekday, startTime, endTime, suspendedForDate }`. Cualquier diferencia contra `notified_snapshot` es un cambio a comunicar. Todo lo demás (título, descripción, orden, `is_active`, link de entradas) no.
+Se compara el **estado material**: `{ recurrence, date, weekday, startTime, endTime, suspendedForDate }`, donde `suspendedForDate` cuenta **solo si es hoy o futuro** (una suspensión ya vencida se normaliza a `null` en ambos lados de la comparación; así la vuelta automática del evento semanal no se detecta como "reanudación" ni genera aviso). Cualquier diferencia contra `notified_snapshot` es un cambio a comunicar. Todo lo demás (título, descripción, orden, `is_active`, link de entradas) no.
 
 Tipos de aviso que se derivan de la diferencia (para el texto):
 
@@ -72,9 +72,11 @@ Tipos de aviso que se derivan de la diferencia (para el texto):
 - `rescheduled`: cambia `date`, `weekday`, `startTime`, `endTime` o `recurrence`.
 - Combinaciones (suspendido y además cambió la hora): un solo correo con el texto de mayor gravedad (`suspended` > `rescheduled` > `resumed`) y el "antes/después" completo.
 
-### 6.2 Suspensión (modelo)
+### 6.2 Suspensión (modelo; decidido por el owner, 16/11/2026)
 
-Columna nueva `venue_events.suspended_for_date date NULL`: "este evento está suspendido para esta fecha". La fecha es la de la **próxima ocurrencia** al momento de suspender (`computeNextOccurrence`): para `once`, su fecha; para `weekly`, la próxima semana en que ocurre. Ventajas: no hay job que "desuspenda" (se vuelve inerte solo cuando pasa la fecha, comparando con el día de mercado) y un evento semanal suspendido una semana vuelve solo la siguiente. Suspender la **serie** entera es lo que ya cubre `is_active = false` (estacionar); no se duplica ese concepto.
+Decidido: "Suspender" un evento semanal afecta **solo la próxima fecha** y el evento vuelve solo; para cortar la serie entera ya existe estacionar (`is_active = false`).
+
+Columna nueva `venue_events.suspended_for_date date NULL`: "este evento está suspendido para esta fecha". La fecha es la de la **próxima ocurrencia** al momento de suspender (`computeNextOccurrence`): para `once`, su fecha; para `weekly`, la próxima semana en que ocurre. Reanudar antes de esa fecha es posible (endpoint `resume`) y también avisa. Ventajas: no hay job que "desuspenda" (se vuelve inerte solo cuando pasa la fecha, comparando con el día de mercado) y un evento semanal suspendido una semana vuelve solo la siguiente. Suspender la **serie** entera es lo que ya cubre `is_active = false` (estacionar); no se duplica ese concepto.
 
 Rutas (protegidas, mismo `listingAccess` que `putEvents.ts`: `vertical: VENUE`, `operation: 'EDIT'`, sección `venueEvents`, `intent: 'write'`, gate `manage_venue_events`):
 
@@ -83,7 +85,7 @@ Rutas (protegidas, mismo `listingAccess` que `putEvents.ts`: `vertical: VENUE`, 
 | `POST /api/v1/protected/venues/:id/events/:eventId/suspend` | Suspende la próxima ocurrencia. 200 con el evento | 404 si el evento no es de ese local (nunca 403); 409 `ALREADY_EXISTS` si ya está suspendido para esa fecha; 422 si no tiene próxima ocurrencia (evento `once` ya pasado) |
 | `POST /api/v1/protected/venues/:id/events/:eventId/resume` | Quita la suspensión. 200 | 404; 409 si no estaba suspendido |
 
-Dos endpoints separados y no un campo del PUT de la agenda: el PUT envía el documento completo y un cliente que no conozca el campo lo pisaría; el diff de HOS-2266 T-1 **no toca** `suspended_for_date` si el payload no lo trae. Los dos endpoints reusan el servicio de eventos (`packages/service-core/src/services/venue/venue.events.ts` o `venue.event-suspension.ts`) y registran `recordListingSubEntityEdit` como el resto de escrituras (AC:V9a:7).
+Dos endpoints separados y no un campo del PUT de la agenda: el PUT envía el documento completo y un cliente que no conozca el campo lo pisaría; el diff de HOS-2291 **no toca** `suspended_for_date` si el payload no lo trae. Los dos endpoints reusan el servicio de eventos (`packages/service-core/src/services/venue/venue.events.ts` o `venue.event-suspension.ts`) y registran `recordListingSubEntityEdit` como el resto de escrituras (AC:V9a:7).
 
 ### 6.3 Detección y agrupación: snapshot + ventana de silencio
 
@@ -107,8 +109,8 @@ Archivo `apps/api/src/cron/jobs/venue-event-change-notices.job.ts`, manifest `ca
 
 Por corrida, en una transacción por evento (`FOR UPDATE SKIP LOCKED`):
 
-1. Candidatos: `change_touched_at <= ahora - 15 min` (**ventana de silencio**) y (`last_change_notice_at IS NULL OR last_change_notice_at <= ahora - 2 h`) (**enfriamiento**: lo que se edite durante el enfriamiento se acumula y sale en el aviso siguiente).
-2. Recalcular el estado material actual. Si es igual a `notified_snapshot`: limpiar `change_touched_at` y seguir (no hay nada que avisar).
+1. Candidatos: `change_touched_at <= ahora - 15 min` (**ventana de silencio**, decidida por el owner).
+2. Recalcular el estado material actual. Si es igual a `notified_snapshot`: limpiar `change_touched_at` y seguir (no hay nada que avisar). Si no, derivar el tipo de aviso (6.1). **Enfriamiento de 2 h** (decidido): si el tipo es `rescheduled` puro y `last_change_notice_at > ahora - 2 h`, se saltea sin tocar nada (lo editado se acumula y sale en el aviso siguiente). Si el aviso es `suspended`, `resumed` o una combinación que los incluye, **el enfriamiento no aplica**: una suspensión siempre avisa y reanudar también avisa.
 3. Si el evento ya terminó (`once` con fecha pasada, o la fecha anterior y la nueva pasadas): avanzar el snapshot sin enviar.
 4. Gate (`readVenueNotificationGate`). **Si el local no tiene la clave: avanzar el snapshot en silencio** y limpiar `change_touched_at`. No quedan avisos "viejos" esperando a que el local vuelva a pagar y se manden semanas después.
 5. Suscriptores: `venue_event_subscription` activas del evento. Por cada uno: usuario vivo con email, `PreferenceService.shouldSendNotification(userId, VENUE_EVENT_CHANGED)` y encolar en `email_outbox`: `template = NotificationType.VENUE_EVENT_CHANGED`, `sendAfter = ahora`, `dedupKey = buildEmailDedupKey({ recipient: userId, template, occurrence: buildScheduleOccurrence({ subjectKind: 'venue_event', subjectId: eventId, milestone: 'change:' + <epoch segundos de change_touched_at>, targetDate: <día de mercado de change_touched_at> }) })`. El instante de la última edición es estable entre reintentos y cambia con cada edición nueva, así que un doble disparo no duplica y dos cambios distintos con el mismo estado final (A a B, B a A, A a B) **no** chocan.
@@ -125,10 +127,10 @@ Clase de correo: **`transactional`** en el outbox (no se agrega a `OUTBOX_TEMPLA
 
 ### 6.6 Web
 
-- Editor (`VenueEventEntryCard.client.tsx` y su equivalente del editor de ficha): botón **"Suspender evento"** (con confirmación: "Se les avisa por correo a quienes tocaron Avisame") y, si ya está suspendido, **"Reanudar"** y una etiqueta "Suspendido el <fecha>". El texto de ayuda explica la ventana: "Si cambiás la fecha o la hora, avisamos por correo a quienes tocaron Avisame. Los cambios de los próximos 15 minutos se juntan en un solo aviso." Al **borrar**: texto "Borrar no avisa a nadie. Para avisar, usá Suspender."
+- Editor (`VenueEventEntryCard.client.tsx` y su equivalente del editor de ficha): botón **"Suspender evento"** (con confirmación: "Se les avisa por correo a quienes tocaron Avisame. Afecta solo a la próxima fecha; el evento vuelve solo") y, si ya está suspendido, **"Reanudar"** y una etiqueta "Suspendido el <fecha>". El texto de ayuda explica la ventana: "Si cambiás la fecha o la hora, avisamos por correo a quienes tocaron Avisame. Los cambios de los próximos 15 minutos se juntan en un solo aviso." Al **borrar**: texto "Borrar no avisa a nadie. Para avisar, usá Suspender."
 - Ficha pública: `VenueEventPublicSchema` suma `suspendedForDate: string | null`. `VenueEvents.astro` muestra el chip "Suspendido" cuando `suspendedForDate` es la próxima ocurrencia (hasta su fecha, sin job) y oculta el botón "Avisame" de ese evento. Sigue sin leer sesión.
 - Texto en `venue.detail.venueEvents.suspended`, `venue.editor.events.{suspend,resume,suspendedOn,suspendConfirm,deleteWarning,changeNoticeHelp}` es/en/pt en `packages/i18n/src/locales/{es,en,pt}/venue.json`.
-- Importante: la edición del cuerpo del evento sigue yendo por el PUT de la agenda con ids (HOS-2266 T-1).
+- Importante: la edición del cuerpo del evento sigue yendo por el PUT de la agenda con ids (HOS-2291).
 
 ### 6.7 Contrato de datos públicos
 
@@ -136,10 +138,10 @@ Clase de correo: **`transactional`** en el outbox (no se agrega a `OUTBOX_TEMPLA
 
 ### 6.8 Anti-spam y topes
 
-- Ventana de silencio 15 min, enfriamiento 2 h por evento: como mucho ~12 avisos por evento y día en el peor caso, y en la práctica 1 por tanda de ediciones.
+- Ventana de silencio 15 min y enfriamiento 2 h por evento (decididos por el owner). Las suspensiones y reanudaciones saltean el enfriamiento (siempre avisan) pero no la ventana de 15 min. Peor caso para cambios de fecha u hora: ~12 avisos por evento y día, en la práctica 1 por tanda de ediciones.
 - Un correo por suscriptor y por aviso (clave de dedup).
 - Edición sin cambio material no genera nada; volver al estado original cancela el aviso.
-- Constantes (`VENUE_EVENT_CHANGE_DEBOUNCE_MS`, `VENUE_EVENT_CHANGE_COOLDOWN_MS`) en un archivo, no env vars.
+- Constantes (`VENUE_EVENT_CHANGE_DEBOUNCE_MS` = 15 min, `VENUE_EVENT_CHANGE_COOLDOWN_MS` = 2 h, esta última solo para cambios de fecha u hora) en un archivo, no env vars.
 
 ### 6.9 Baja de plan del local
 
@@ -152,12 +154,14 @@ Sin la clave, el job avanza el snapshot sin enviar (6.4 paso 4); las suscripcion
 - AC-3: Dado el dueño que cambia la hora tres veces en 10 minutos, los suscriptos reciben **un** correo con el estado inicial y el final.
 - AC-4: Dado el dueño que cambia la hora y la restituye antes de 15 minutos, no sale ningún correo.
 - AC-5: "Suspender evento" fija `suspended_for_date` a la próxima ocurrencia; la ficha muestra "Suspendido" y oculta "Avisame" hasta esa fecha; los suscriptos reciben un correo de suspensión.
-- AC-6: Un evento semanal suspendido para el jueves 20 vuelve a verse normal el 21 sin ningún job; la semana siguiente no está suspendido.
+- AC-6: Un evento semanal suspendido para el jueves 20 vuelve a verse normal el 21 sin ningún job y sin enviar ningún correo; la semana siguiente no está suspendido y sigue vigente la serie.
 - AC-7: "Reanudar" quita la suspensión y avisa a los suscriptos.
 - AC-8: Borrar un evento no genera correo (sus suscripciones se eliminan por CASCADE).
 - AC-9: El correo sale en el idioma del turista (es/en/pt) con fechas y horas en hora de Argentina y link de baja de un clic.
 - AC-10: Dos corridas del job sobre el mismo cambio no duplican correos (clave de dedup, y el snapshot ya avanzó).
-- AC-11: Dentro del enfriamiento (2 h) un segundo cambio no genera un segundo correo hasta que pase; luego sale un aviso con el estado acumulado.
+- AC-11: Dentro del enfriamiento (2 h) un segundo cambio de fecha u hora no genera un segundo correo hasta que pase; luego sale un aviso con el estado acumulado.
+- AC-16: Si un evento tuvo un aviso hace menos de 2 h y el dueño lo suspende, el aviso de suspensión sale igual (pasados los 15 min de agrupación), sin esperar el enfriamiento; lo mismo con "Reanudar".
+- AC-17: Suspender y reanudar dentro de los 15 min vuelve al snapshot y no envía nada.
 - AC-12: Si el local no tiene `venue_event_notifications` al procesar, no se encola nada y el snapshot avanza; al recuperar la clave no se manda ningún aviso retroactivo.
 - AC-13: Si el cambio mueve la fecha de un evento al que alguien tiene recordatorio pendiente, `remind_for_date` se recalcula y `reminded_at` se limpia; el recordatorio sale para la fecha nueva.
 - AC-14: Las respuestas públicas y de dueño no exponen columnas internas (`notifiedSnapshot`, `changeTouchedAt`, `lastChangeNoticeAt`, `newNoticeAt`).
@@ -178,23 +182,24 @@ Sin la clave, el job avanza el snapshot sin enviar (6.4 paso 4); las suscripcion
 
 ## 9. Riesgos
 
-- R-1: depende de ids estables (HOS-2266 T-1). Un cliente que no mande ids borraría y recrearía eventos (sin avisos y perdiendo suscripciones).
+- R-1: depende de ids estables (HOS-2291). Un cliente que no mande ids borraría y recrearía eventos (sin avisos y perdiendo suscripciones).
 - R-2: conflicto con los specs de eventos (HOS-2254, 2263, 2264) que también tocan `venue_events` y `replaceVenueEvents`. Hay que acordar el orden de merge y una sola migración.
 - R-3: fuga de columnas internas por el `...row` de `projectEvent` (5.3). Mitigado con selección explícita y test.
-- R-4: la semántica de "suspender" un evento semanal (solo la próxima ocurrencia) puede no ser lo que espera el owner. Ver OQ-1.
-- R-5: dueño que se equivoca de hora y corrige dentro del enfriamiento: los suscriptos pueden tener el dato erróneo hasta 2 horas. Ver OQ-3.
+- R-4: "suspender" un evento semanal afecta solo la próxima fecha (decidido por el owner); un dueño que quiera cortar la serie debe estacionar el evento. El texto del editor lo aclara.
+- R-5: dueño que se equivoca de hora y corrige dentro del enfriamiento: los suscriptos pueden tener el dato erróneo hasta 2 horas. Ver OQ-3. No aplica a suspender/reanudar, que saltean el enfriamiento.
 - R-6: no hay aviso al borrar: un dueño que borra en vez de suspender deja a la gente sin aviso. Mitigado con el texto del editor.
 
-## 10. Preguntas abiertas para el owner
+## 10. Preguntas abiertas y decisiones
 
-- OQ-1: ¿Qué significa "Suspender" en un evento semanal? Opciones: (1) solo la próxima fecha, vuelve sola (recomendada: cubre "esta semana no hay show" sin job y sin riesgo de olvidarse reanudar; para cortar la serie ya existe estacionar); (2) la serie completa hasta que el dueño la reanude (más simple de explicar, pero requiere recordar reanudar y mostrar "Suspendido" indefinidamente).
-- OQ-2: Parámetros: silencio 15 min y enfriamiento 2 h. Recomiendo esos valores; ¿cambia alguno?
+- OQ-1 (resuelta): Decidido (owner, 16/11/2026): "Suspender" un evento semanal afecta solo la próxima fecha y vuelve solo.
+- OQ-2 (resuelta): Decidido (owner, 16/11/2026): las ediciones se agrupan 15 min y hay 2 h de espera entre avisos del mismo evento.
 - OQ-3: Si el dueño corrige un error dentro del enfriamiento: (1) esperar al enfriamiento (recomendada, evita ráfagas); (2) saltear el enfriamiento si el cambio revierte al estado que se había avisado antes.
-- OQ-4: ¿Reanudar avisa? Recomiendo sí (si no, quienes recibieron "suspendido" quedan convencidos de que no hay evento).
+- OQ-4 (resuelta): Decidido (owner, 16/11/2026): una suspensión siempre avisa y "reanudar" también avisa (ninguna de las dos espera el enfriamiento de 2 h).
+- OQ-5: ¿La ventana de 15 min también aplica a suspender/reanudar? Hoy sí (permite deshacer un error sin mandar nada, AC-17). Alternativa: enviar en el acto. Recomiendo mantener la ventana.
 
 ## 11. Dependencias
 
-- HOS-2266 (T-1 ids estables, suscripciones, gate), HOS-2267 (tipos, copy, token de baja, `computeNextOccurrence`), HOS-2259/2281 (clave y grant), coordinar con HOS-2254/2263/2264/2255 (eventos).
+- HOS-2291 (ids estables de eventos), HOS-2266 (suscripciones, gate), HOS-2267 (tipos, copy, token de baja, `computeNextOccurrence`), HOS-2259/2281 (clave y grant), coordinar con HOS-2254/2263/2264/2255 (eventos).
 - `manage_venue_events` se reusa para suspender y reanudar.
 
 ## 12. Smoke y Novedades
@@ -206,13 +211,13 @@ Sin la clave, el job avanza el snapshot sin enviar (6.4 paso 4); las suscripcion
 
 ## 13. Desglose de tareas
 
-1. T-1 Migración: `suspended_for_date`, `notified_snapshot`, `change_touched_at`, `last_change_notice_at` + índice (junto con HOS-2268 si corresponde).
+1. T-1 (requiere HOS-2291) Migración: `suspended_for_date`, `notified_snapshot`, `change_touched_at`, `last_change_notice_at` + índice (junto con HOS-2268 si corresponde).
 2. T-2 `projectEvent` con selección explícita + test de no fuga.
 3. T-3 Función pura de estado material y comparación + tests.
 4. T-4 `replaceVenueEvents` (diff) marca `change_touched_at`/snapshot y recalcula `remind_for_date` + tests.
 5. T-5 Servicio y rutas `suspend`/`resume` + tests de integración.
 6. T-6 Tipo `VENUE_EVENT_CHANGED`, plantilla, renderer y copy es/en/pt + tests.
-7. T-7 Job `venue-event-change-notices` + manifest + registry + tests unitarios.
+7. T-7 Job `venue-event-change-notices` + manifest + registry + tests unitarios (enfriamiento solo para cambios de fecha u hora; suspender/reanudar lo saltean).
 8. T-8 Integración Postgres real (agrupación, dedup, enfriamiento).
 9. T-9 Web: editor (Suspender, Reanudar, textos), chip en la ficha, ocultar "Avisame" en suspendidos + i18n.
 10. T-10 Smoke en staging y entrada de What's New.

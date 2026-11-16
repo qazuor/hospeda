@@ -19,7 +19,10 @@ de cierre. El turista (con cuenta) se anota. El local ve la lista, la exporta a 
 puede marcar quién entró o faltó. Pro tiene cupo hasta 100 por evento; premium sin tope.
 Solo para locales con el rubro **noche**.
 
-Esta spec asume las opciones recomendadas de HOS-2260 (modelo común, OQ-1 a OQ-12).
+Esta spec aplica las decisiones del owner del 16/11/2026 de HOS-2260 (OQ-1, OQ-3, OQ-4,
+OQ-7, OQ-8): confirmación **instantánea** al anotarse, y la lista **cierra por cupo en
+personas o por hora de cierre, lo que pase primero**. En un evento semanal el cupo es
+**por fecha**.
 
 ## 2. Problema
 
@@ -29,15 +32,16 @@ no tiene nada de esto.
 
 ## 3. Goals
 
-- G-1: el local activa la lista por evento, con cupo (en personas) y cierre.
-- G-2: el turista se anota con un toque, ve su anotación en "Mi cuenta" y recibe correo.
+- G-1: el local activa la lista por evento, con cupo (en personas) y hora de cierre; cierra con lo que ocurra primero.
+- G-2: el turista (cuenta con email verificado) se anota con un toque, queda confirmado en el acto, ve su anotación en "Mi cuenta" y recibe correo.
 - G-3: el local ve la lista y la exporta a CSV.
 - G-4: gate `venue_guest_list` y límite `max_venue_guest_list_size` (pro 100, premium sin tope).
-- G-5: funciona para eventos únicos **y semanales** (la lista es por fecha).
+- G-5: funciona para eventos únicos **y semanales**; el cupo es por fecha (cada fecha del semanal tiene el suyo).
 
 ## 4. Non-goals
 
-- NG-1: QR de ingreso (HOS-2276). Acá la anotación se muestra con un código corto de texto.
+- NG-1: QR de ingreso (HOS-2276, validado solo por la cuenta del dueño). Acá la anotación se muestra con un código corto de texto.
+- NG-5: personal de puerta con cuenta propia (HOS-2295).
 - NG-2: lista de espera, listas por promotor ("lista de Juan"), precios o entrada paga.
 - NG-3: lista para gastronomía. La decisión 4 del owner la limita al rubro noche.
 - NG-4: avisos por correo al local por cada anotado (solo panel y CSV).
@@ -49,7 +53,8 @@ no tiene nada de esto.
   `isActive`. **Sin capacidad ni ids estables.**
 - `replaceVenueEvents` (`packages/service-core/src/services/venue/venue.events.ts:218`)
   **borra y reinserta todo**; el comentario de la línea 22 advierte que ningún ente
-  referencia aún un evento. Esta spec es el primero que lo hace.
+  referencia aún un evento. Esta spec es el primero que lo hace; los ids estables los
+  entrega **HOS-2291** (extraído de HOS-2255 T-1).
 - Payload sin ids: `VenueEventsReplacePayloadSchema`
   (`packages/schemas/src/entities/venue/subtypes/venue.event.schema.ts:~300`), tope 30.
 - Ruta de escritura: `apps/api/src/routes/venue/protected/putEvents.ts` (gate
@@ -65,7 +70,7 @@ no tiene nada de esto.
 
 ## 6. Diseño propuesto
 
-### 6.1 Prerrequisito: ids estables de eventos (tarea 1)
+### 6.1 Prerrequisito: ids estables de eventos (HOS-2291)
 
 `replaceVenueEvents` pasa a **diff por id**:
 
@@ -78,8 +83,8 @@ no tiene nada de esto.
 - Mantener compatibilidad: un payload sin ids sigue funcionando para el editor viejo
   mientras no haya listas (se resuelve con id nuevo por evento). Una vez que existe
   alguna lista, el cliente debe mandar ids.
-- Puede ya venir resuelto en HOS-2254/2255 (imagen, entrada). Coordinar para no hacerlo
-  dos veces.
+- Lo implementa **HOS-2291**, no esta spec. Si HOS-2291 no está mergeado, esta spec no
+  arranca. La tarea T-1 de abajo queda reducida a consumirlo y verificarlo (AC-12/13).
 
 ### 6.2 Modelo de datos
 
@@ -127,7 +132,12 @@ El alta corre en **una transacción**: `SELECT ... FOR UPDATE` sobre la fila de
 `suma + nuevo > capacity` responde 409 `LIST_FULL`. Sin el bloqueo, dos anotaciones
 simultáneas pasan el control.
 
-Reglas de cierre, en este orden (ver OQ-7): lista cerrada manualmente, o la fecha de
+Confirmación **instantánea**: si hay cupo y la lista está abierta, la anotación nace
+`CONFIRMED` (no hay `REQUESTED` en la lista, OQ-1). El cupo es **por fecha**: en un
+evento semanal cada fecha cuenta sus propias personas, no hay total acumulado.
+
+Reglas de cierre, en este orden (ver OQ-7; la lista cierra por cupo o por hora, lo que
+pase primero): lista cerrada manualmente, o la fecha de
 la ocurrencia ya empezó menos `closes_before_start_minutes`, o fecha pasada: 409
 `LIST_CLOSED`. Una fecha de un evento semanal solo se admite dentro de los próximos
 14 días.
@@ -191,7 +201,7 @@ Devuelve `Result<T>`. Las transiciones son funciones puras probadas con tabla.
   Estados: abierta, "Lista llena", "Lista cerrada", "Ingresá para anotarte". Para un
   semanal, selector de las próximas fechas.
 - **Formulario:** solo cantidad de acompañantes (el nombre sale del perfil). Texto de
-  privacidad con el plazo de retención (90 días, OQ-3).
+  privacidad con el plazo de retención (90 días, OQ-3). El local nunca ve el email.
 - **Panel del local** (junto a `VenueEventsManager`): toggle "Lista de invitados" por
   evento (solo visible si el rubro es noche; si el plan no la incluye, candado y upsell
   con `VenueSectionLockedPanel`), cupo, cierre, acompañantes; tabla por fecha con
@@ -216,11 +226,16 @@ en es, en y pt. Sin textos fijos en componentes.
 - AC-6: dado un turista ya anotado a esa fecha, cuando se anota de nuevo, 409
   `ALREADY_REGISTERED`.
 - AC-7: dada una lista cerrada por hora, anotarse responde 409 `LIST_CLOSED`.
-- AC-8: dado un evento semanal, cada fecha tiene su propio cupo.
+- AC-7b: la lista cierra con lo que ocurra primero: cupo lleno antes de la hora responde
+  `LIST_FULL`; hora de cierre con lugares libres responde `LIST_CLOSED`.
+- AC-7c: una anotación aceptada queda `CONFIRMED` en el acto, sin paso de aprobación.
+- AC-8: dado un evento semanal, cada fecha tiene su propio cupo (decisión OQ-7).
 - AC-9: sin sesión, anotarse responde 401; con email sin verificar, 403
   `EMAIL_NOT_VERIFIED`.
 - AC-10: el turista cancela su anotación hasta la hora de cierre; la de otro usuario
   responde 404.
+- AC-10b: el local marca `no_show` a mano; solo se ve un contador interno de su local y
+  no hay consecuencia automática. Un anotado que nunca pasó por la puerta no se marca solo.
 - AC-11: el CSV exporta las filas de la fecha, sin email, con escape de fórmulas.
 - AC-12: guardar el editor de eventos **no cambia los ids** de eventos existentes y
   conserva las anotaciones.
@@ -245,7 +260,7 @@ en es, en y pt. Sin textos fijos en componentes.
 
 ## 11. Riesgos
 
-- R-1: diff de eventos (6.1). Si sale mal, borra anotados. Cubierto con RESTRICT y AC-12/13.
+- R-1: diff de eventos (HOS-2291, ver 6.1). Si sale mal, borra anotados. Cubierto con RESTRICT y AC-12/13.
 - R-2: sobreventa. Cubierto con bloqueo de fila (AC-5).
 - R-3: inyección de fórmulas en CSV. Cubierto con escape.
 - R-4: la lista expone nombres. Solo los ve el dueño o staff con `venueReservation.viewAll`.
@@ -253,19 +268,20 @@ en es, en y pt. Sin textos fijos en componentes.
 
 ## 12. Preguntas abiertas para el owner
 
-Las generales están en HOS-2260 (OQ-1, OQ-3, OQ-4, OQ-7, OQ-8, OQ-9). Específicas:
+Decididas en HOS-2260 (16/11/2026): OQ-1, OQ-3, OQ-4, OQ-7, OQ-8. OQ-9 sigue abierta
+allá. Específicas:
 
-- OQ-A: **¿el cupo cuenta personas o anotaciones?** Recomendada: personas (un cupo de
-  100 es 100 que entran). Alternativa: anotaciones, que es más simple pero deja pasar
-  300 personas con acompañantes.
-- OQ-B: **máximo de acompañantes.** Recomendada: 3 por defecto, configurable de 0 a 10.
+- OQ-A: **Decidido (owner, 16/11/2026): el cupo cuenta personas**, no anotaciones (OQ-7 de
+  HOS-2260: cupo en personas, cierre por cupo u hora).
+- OQ-B: **máximo de acompañantes.** Sigue abierta (menor). Recomendada: 3 por defecto,
+  configurable de 0 a 10.
 
 ## 13. Dependencias
 
-- Bloqueado por: HOS-2260 (decisiones), HOS-2259 (claves), HOS-2262 (textos de la
-  tabla), HOS-2254/2255 o issue propio (diff de eventos con ids).
+- Bloqueado por: HOS-2259 (claves), HOS-2262 (textos de la tabla), **HOS-2291** (ids
+  estables de eventos). Decisiones de HOS-2260 ya cerradas.
 - Habilita: HOS-2276 (QR), HOS-2283 (asignar a planes), HOS-2286 (+100 lugares).
-- La lista de espera, si se pide, es otra spec.
+- La lista de espera, si se pide, es otra spec. Personal de puerta: HOS-2295.
 
 ## 14. Smoke y What's New
 
@@ -274,7 +290,7 @@ en la entrada de "Listas y reservas".
 
 ## 15. Desglose de tareas
 
-1. T-1: ids estables en `replaceVenueEvents` + esquema + editor web + tests (1 día).
+1. T-1: consumir los ids estables de HOS-2291 (esquema, editor web) y tests AC-12/13 (0,5 día; el diff en sí es de HOS-2291).
 2. T-2: enums y tablas (`venue_event_guest_list`, `venue_guest_list_entry`), migración,
    extras (CHECK, índice parcial), filas PURGED y test congelado (1 día).
 3. T-3: esquemas Zod y servicio con transiciones, cupo y bloqueo (1 día).

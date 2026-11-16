@@ -11,11 +11,11 @@ areas:
 
 # Avisos al turista: recordatorio antes del evento
 
-> Depende de HOS-2266 (tablas `venue_event_subscription`, gate `venue_event_notifications`, ids estables). Las convenciones de este spec (categorías de notificación, clase de correo, copy es/en/pt) las reusan HOS-2268 y HOS-2269.
+> Depende de HOS-2266 (tablas `venue_event_subscription`, gate `venue_event_notifications`) y de HOS-2291 (ids estables de eventos). Las convenciones de este spec (categorías de notificación, clase de correo, copy es/en/pt) las reusan HOS-2268 y HOS-2269.
 
 ## 1. Resumen
 
-A quien tocó "Avisame" en un evento le llega **un correo** antes de la fecha. Un solo correo por persona y por evento (para un evento recurrente, solo para la próxima fecha). Sale en el idioma del turista, trae fecha, hora, local, link a la ficha y "Comprar entrada" si el evento tiene link. Trae link para darse de baja. No sale si el plan del local ya no incluye `venue_event_notifications`, si el local ya no está publicado o si el evento fue suspendido.
+A quien tocó "Avisame" en un evento le llega **un correo** antes de la fecha. Un solo correo por persona y por evento (para un evento semanal, solo para la próxima fecha; después el botón vuelve a "Avisame" y quien quiera otro recordatorio lo pide de nuevo). Sale en el idioma del turista, trae fecha, hora, local, link a la ficha y "Comprar entrada" si el evento tiene link. Trae link para darse de baja. No sale si el plan del local ya no incluye `venue_event_notifications`, si el local ya no está publicado o si el evento fue suspendido.
 
 ## 2. Problema
 
@@ -32,7 +32,7 @@ A quien tocó "Avisame" en un evento le llega **un correo** antes de la fecha. U
 ## 4. Fuera de alcance
 
 - Avisos de evento nuevo y de cambios (HOS-2268, HOS-2269).
-- Recordatorios repetidos cada semana (ver OQ-1; se deja el modelo preparado).
+- Recordatorios repetidos cada semana: descartado por el owner (16/11/2026), el recordatorio semanal es de un solo uso (ver 6.6 y 6.7). El modelo lo soportaría sin migración si algún día cambia.
 - Push, in-app o WhatsApp.
 - El campo "Comprar entrada": lo agrega HOS-2255; acá se lee si existe.
 
@@ -75,16 +75,16 @@ No existe un helper de "próxima ocurrencia" de un evento de local. La web calcu
 
 ## 6. Diseño propuesto
 
-### 6.1 Cuándo sale el correo (regla propuesta)
+### 6.1 Cuándo sale el correo (decidido por el owner, 16/11/2026)
 
 Un único instante de envío por ocurrencia, en hora de Argentina (`sendAt`):
 
 - Si el evento empieza **antes de las 15:00**: el **día anterior a las 18:00**.
 - Si empieza **a las 15:00 o después**: el **mismo día a las 12:00**.
 
-Razón: un boliche que abre a las 23:00 recibe el aviso al mediodía del mismo día (cerca, útil); un brunch de las 11:00 lo recibe la tarde anterior (el mismo día a las 12:00 sería tarde). Constantes en un archivo (`venue-reminder-schedule.ts`), no env vars. Ver OQ-2.
+Razón (decidido por el owner): un boliche que abre a las 23:00 recibe el aviso al mediodía del mismo día (cerca, útil); un brunch de las 11:00 lo recibe la tarde anterior (el mismo día a las 12:00 sería tarde). Constantes en un archivo (`venue-reminder-schedule.ts`), no env vars: umbral 15:00, día anterior 18:00, mismo día 12:00, anticipación mínima 2 h, zona `America/Argentina/Buenos_Aires`.
 
-Regla de seguridad: si al evaluar `sendAt` ya pasó pero el evento todavía no empezó, se envía igual **solo si faltan al menos 2 horas**; si no, se descarta y se marca `reminded_at` (no se manda "recordatorio" a último momento). Esto cubre al turista que toca "Avisame" a las 22:00 de un evento a las 23:00: no se le manda nada raro, la confirmación visual del botón alcanza. Misma lógica si la suscripción se creó **después** de `sendAt` (suscribirse a las 13:00 a un evento de las 23:00, con `sendAt` a las 12:00): no se envía recordatorio y se marca `reminded_at`; el turista acaba de pedirlo y lo está viendo.
+Regla de anticipación mínima (decidida: **nunca con menos de 2 h**): si al evaluar `sendAt` ya pasó pero el evento todavía no empezó, se envía igual **solo si faltan al menos 2 horas**; si no, se descarta y se marca `reminded_at` (no se manda "recordatorio" a último momento). Esto cubre al turista que toca "Avisame" a las 22:00 de un evento a las 23:00: no se le manda nada raro, la confirmación visual del botón alcanza. Misma lógica si la suscripción se creó **después** de `sendAt` (suscribirse a las 13:00 a un evento de las 23:00, con `sendAt` a las 12:00): no se envía recordatorio y se marca `reminded_at`; el turista acaba de pedirlo y lo está viendo.
 
 ### 6.2 Job `venue-event-reminders`
 
@@ -134,6 +134,8 @@ Helper puro nuevo `computeNextOccurrence({ recurrence, date, weekday, startTime,
 - `weekly`: el próximo día con `weekday` (domingo = 0, como la columna) cuya hora de inicio sea posterior a `from`.
 - Un evento que cruza la medianoche (22:00 a 02:00) pertenece al día en que **empieza**.
 
+Un evento semanal genera **un solo** recordatorio, para su próxima fecha (decidido por el owner). Al enviarlo se marca `reminded_at`; la suscripción queda consumida y el botón de la ficha vuelve a "Avisame" (HOS-2266, 6.2). Un nuevo "Avisame" rearma la misma fila con la próxima fecha (`reminded_at = NULL`, nuevo `remind_for_date`), lo que permite otro recordatorio, nunca uno automático.
+
 `remind_for_date` se calcula al suscribirse (HOS-2266 llama a este helper) y se recalcula si cambia la fecha/día (HOS-2269). Si dos specs de eventos (HOS-2254) ya crearon un helper equivalente, se reusa ese: el primero que mergee lo crea.
 
 ### 6.7 Anti-spam
@@ -141,7 +143,7 @@ Helper puro nuevo `computeNextOccurrence({ recurrence, date, weekday, startTime,
 - Máximo 1 recordatorio por `(usuario, evento, fecha)`: lo garantiza el `dedup_key` único aunque el job corra dos veces o dos instancias a la vez.
 - Máximo `N = 5` recordatorios por usuario y día (corte defensivo; el job corta y loguea). Ver OQ-4.
 - Nada se manda si faltan menos de 2 horas (6.1).
-- Una suscripción a un evento semanal genera **un** recordatorio (próxima fecha). Ver OQ-1.
+- Una suscripción a un evento semanal genera **un** recordatorio (próxima fecha); después el botón vuelve a "Avisame" (decidido).
 
 ### 6.8 Baja de plan del local
 
@@ -151,7 +153,7 @@ El gate se evalúa en cada corrida, no al suscribirse: en cuanto el local deja d
 
 - AC-1: Dada una suscripción a un evento `once` que empieza mañana a las 22:00 (después de las 15:00), el job de hoy no envía nada; el job de mañana a las 12:05 envía **un** correo y marca `reminded_at`.
 - AC-2: Dado un evento `once` pasado mañana a las 10:00, el correo sale mañana a las 18:00.
-- AC-3: Dado un evento semanal, la suscripción genera un solo correo, para la próxima fecha; tras enviarlo no se repite la semana siguiente.
+- AC-3: Dado un evento semanal, la suscripción genera un solo correo, para la próxima fecha; tras enviarlo no se repite la semana siguiente y el botón de la ficha vuelve a "Avisame" (`notification-state` ya no la lista).
 - AC-4: Si el job corre dos veces en la misma hora (o dos instancias), el turista recibe un único correo (`dedup_key` único).
 - AC-5: El correo trae fecha y hora en hora de Argentina, nombre del local, link a la ficha con ancla y, si hay `ticketUrl`, "Comprar entrada".
 - AC-6: El correo sale en el idioma `languageWeb` del usuario (es/en/pt); si falta, `es`.
@@ -160,6 +162,8 @@ El gate se evalúa en cada corrida, no al suscribirse: en cuanto el local deja d
 - AC-9: Si el usuario desactivó los avisos por correo (`emailEnabled = false` o categoría `reminder` deshabilitada), no se encola y se marca `reminded_at`.
 - AC-10: No sale ningún recordatorio con menos de 2 horas al inicio del evento, ni cuando la suscripción se creó después del `sendAt` de esa fecha.
 - AC-11: Un recordatorio no se pierde por haber recibido ya un correo comercial ese día (clase `transactional`).
+- AC-13: Tabla de horarios (Argentina): inicio 14:59 -> día anterior 18:00; inicio 15:00 -> mismo día 12:00; inicio 23:00 -> mismo día 12:00; inicio 10:00 -> día anterior 18:00.
+- AC-14: Un evento semanal suspendido para la próxima fecha (HOS-2269) no genera recordatorio para esa fecha mientras dure la suspensión; si se reanuda con tiempo suficiente (2 h), el recordatorio sale.
 - AC-12: `pnpm test` del guard de registro de plantillas del outbox pasa con la plantilla nueva.
 
 ## 8. Plan de pruebas
@@ -175,21 +179,22 @@ El gate se evalúa en cada corrida, no al suscribirse: en cuanto el local deja d
 ## 9. Riesgos
 
 - R-1: copy es/en/pt en un sistema de correos solo en español: es el primer correo de turista multi-idioma por outbox. El molde existe (instalación manual) pero hay que mantener `notifications.json` en tres idiomas.
-- R-2: la regla horaria puede no gustar al owner. Es una constante de un archivo.
+- R-2: la regla horaria (decidida por el owner) vive en constantes de un archivo, fácil de ajustar si la práctica lo pide.
 - R-3: opt-out evaluado al encolar y no al enviar (6.3, opción B). Diferencia de minutos.
 - R-4: HOS-2255 aún no define el nombre del campo del link de entradas. Se lee defensivamente (`ticketUrl ?? null`).
 - R-5: secreto HMAC: si se reusa el de newsletter y rota, rotan también estos links (hay `_PREV`).
 
-## 10. Preguntas abiertas para el owner
+## 10. Preguntas abiertas y decisiones
 
-- OQ-1: Evento semanal: ¿un recordatorio solo (la próxima fecha) o uno por cada semana? Opciones: (1) uno solo, el usuario puede volver a tocar "Avisame" (recomendada: respeta "un solo correo por evento y por persona" y no cansa); (2) todas las semanas con baja fácil (más útil para un happy hour de los jueves, pero es spam si el turista se olvidó). El modelo (`remind_for_date`, `reminded_at`) soporta cambiar a (2) sin migración.
-- OQ-2: Horario. Opciones: (1) regla por hora de inicio: antes de las 15:00 => día anterior 18:00; si no, mismo día 12:00 (recomendada); (2) siempre el día anterior a las 18:00 (más simple, pero para una fiesta a las 00:30 llega con casi un día de anticipación); (3) siempre el mismo día a las 10:00.
+- OQ-1 (resuelta): Decidido (owner, 16/11/2026): evento semanal con "Avisame" manda un solo recordatorio, para la próxima fecha; después el botón vuelve a "Avisame".
+- OQ-2 (resuelta): Decidido (owner, 16/11/2026): si el evento empieza antes de las 15:00, el recordatorio sale el día anterior a las 18:00; si no, el mismo día a las 12:00. Nunca con menos de 2 h de anticipación. Hora de Argentina.
 - OQ-3: Secreto de los links de baja. Opciones: (1) reusar `HOSPEDA_NEWSLETTER_HMAC_SECRET` con un `kind` distinto en el payload (cero env nueva, recomendada); (2) env nueva `HOSPEDA_VENUE_NOTIFICATIONS_HMAC_SECRET` (aislamiento, pero hay que registrarla en `@repo/config`, setearla en Coolify y redeployar).
 - OQ-4: Tope defensivo de 5 recordatorios por usuario y día: ¿alcanza? Recomiendo sí.
+- OQ-5: Si la próxima fecha de un evento semanal está suspendida (HOS-2269) y el recordatorio de esa fecha se omite, ¿la suscripción pasa sola a la fecha siguiente o queda consumida sin aviso? Recomiendo que quede consumida y el botón vuelva a "Avisame" cuando pase la fecha suspendida, para no mandar algo que el turista no pidió para esa semana.
 
 ## 11. Dependencias
 
-- HOS-2266 (tablas, gate, ids), HOS-2259/2281 (clave y grant), HOS-2255 (link de entradas, opcional), HOS-2269 (`suspended_for_date`, opcional hasta que exista).
+- HOS-2266 (tablas, gate), HOS-2291 (ids estables de eventos), HOS-2259/2281 (clave y grant), HOS-2255 (link de entradas, opcional), HOS-2269 (`suspended_for_date`, opcional hasta que exista).
 - Usa el outbox de HOS-1423/1448 ya mergeado.
 
 ## 12. Smoke y Novedades
@@ -200,11 +205,11 @@ El gate se evalúa en cada corrida, no al suscribirse: en cuanto el local deja d
 
 ## 13. Desglose de tareas
 
-1. T-1 `computeNextOccurrence` + tests (o reusar el de HOS-2254).
+1. T-1 `computeNextOccurrence` + tests (o reusar el de HOS-2254) y constantes de horario (`venue-reminder-schedule.ts`) con tabla de casos 14:59/15:00/23:00/10:00 y regla de 2 h.
 2. T-2 Tipos y categorías de notificación (`NotificationType`, `NOTIFICATION_CATEGORY_MAP`) + test del mapa.
 3. T-3 Plantilla React Email + renderer + `resolveCopy` + i18n es/en/pt + tests.
 4. T-4 Token de baja + ruta pública + página `baja-confirmada` + tests.
-5. T-5 Job `venue-event-reminders` + manifest + registry + tests unitarios.
+5. T-5 Job `venue-event-reminders` + manifest + registry + tests unitarios (marca `reminded_at` y consume la suscripción semanal).
 6. T-6 Test de integración (dedup, gate, baja de plan) y guards de registro.
 7. T-7 Smoke en staging y doc de operación.
 
