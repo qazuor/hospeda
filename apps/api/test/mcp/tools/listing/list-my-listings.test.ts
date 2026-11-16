@@ -159,7 +159,9 @@ describe('list_my_listings', () => {
                         name: 'Paseo en kayak',
                         publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
                     }
-                ]
+                ],
+                total: 3,
+                hasMore: false
             }
         });
     });
@@ -209,7 +211,7 @@ describe('list_my_listings', () => {
         });
 
         // Assert
-        expect(outcome).toEqual({ ok: true, data: { listings: [] } });
+        expect(outcome).toEqual({ ok: true, data: { listings: [], total: 0, hasMore: false } });
     });
 
     it('serves an unverified email (READ_OWN is allowed)', async () => {
@@ -240,6 +242,128 @@ describe('list_my_listings', () => {
             ServiceErrorCode.VALIDATION_ERROR
         );
         expect(accList).not.toHaveBeenCalled();
+    });
+
+    it('does not count when no vertical page is full', async () => {
+        // Arrange
+        const venueCount = vi.spyOn(VenueService.prototype, 'countOwn');
+        const expCount = vi.spyOn(ExperienceService.prototype, 'countOwn');
+
+        // Act
+        await runTool({
+            definition: listMyListingsTool,
+            actor: actorFor(OWNER_ID),
+            input: {},
+            context
+        });
+
+        // Assert
+        expect(venueCount).not.toHaveBeenCalled();
+        expect(expCount).not.toHaveBeenCalled();
+    });
+
+    it('reports hasMore and the real total when the venue page is full', async () => {
+        // Arrange
+        const full = Array.from({ length: LIST_MY_LISTINGS_PAGE_SIZE }, (_, i) => ({
+            id: `v-${i}`,
+            ownerId: OWNER_ID,
+            name: `Venue ${i}`,
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        }));
+        venueListOwn.mockResolvedValueOnce({
+            data: { listings: full }
+        } as unknown as VenueListOwnResult);
+        vi.spyOn(VenueService.prototype, 'countOwn').mockResolvedValue({
+            data: { count: 130 }
+        } as never);
+
+        // Act
+        const outcome = await runTool({
+            definition: listMyListingsTool,
+            actor: actorFor(OWNER_ID),
+            input: {},
+            context
+        });
+
+        // Assert: 1 accommodation + 100 venues + 1 experience of 132 owned
+        expect(outcome.ok).toBe(true);
+        const data = outcome.ok ? outcome.data : undefined;
+        expect(data?.listings).toHaveLength(102);
+        expect(data?.total).toBe(132);
+        expect(data?.hasMore).toBe(true);
+    });
+
+    it('reports hasMore false when a full page is exactly everything', async () => {
+        // Arrange
+        const full = Array.from({ length: LIST_MY_LISTINGS_PAGE_SIZE }, (_, i) => ({
+            id: `e-${i}`,
+            ownerId: OWNER_ID,
+            name: `Exp ${i}`,
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        }));
+        expListOwn.mockResolvedValueOnce({
+            data: { listings: full }
+        } as unknown as ExpListOwnResult);
+        vi.spyOn(ExperienceService.prototype, 'countOwn').mockResolvedValue({
+            data: { count: LIST_MY_LISTINGS_PAGE_SIZE }
+        } as never);
+
+        // Act
+        const outcome = await runTool({
+            definition: listMyListingsTool,
+            actor: actorFor(OWNER_ID),
+            input: {},
+            context
+        });
+
+        // Assert
+        expect(outcome.ok ? outcome.data.hasMore : undefined).toBe(false);
+    });
+
+    it('reports hasMore when accommodations exceed the page', async () => {
+        // Arrange
+        accList.mockResolvedValueOnce({
+            data: { items: ownedBy(ACCOMMODATIONS, OWNER_ID), total: 140 }
+        } as unknown as AccListResult);
+
+        // Act
+        const outcome = await runTool({
+            definition: listMyListingsTool,
+            actor: actorFor(OWNER_ID),
+            input: {},
+            context
+        });
+
+        // Assert
+        expect(outcome.ok ? outcome.data.total : undefined).toBe(142);
+        expect(outcome.ok ? outcome.data.hasMore : undefined).toBe(true);
+    });
+
+    it('fails the call when the count behind a full page fails', async () => {
+        // Arrange
+        venueListOwn.mockResolvedValueOnce({
+            data: {
+                listings: Array.from({ length: LIST_MY_LISTINGS_PAGE_SIZE }, (_, i) => ({
+                    id: `v-${i}`,
+                    name: 'x',
+                    publicationStatus: PublicationStatusEnum.PUBLISHED
+                }))
+            }
+        } as unknown as VenueListOwnResult);
+        vi.spyOn(VenueService.prototype, 'countOwn').mockResolvedValue({
+            error: new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'db down')
+        } as never);
+
+        // Act
+        const outcome = await runTool({
+            definition: listMyListingsTool,
+            actor: actorFor(OWNER_ID),
+            input: {},
+            context
+        });
+
+        // Assert
+        expect(outcome.ok).toBe(false);
     });
 
     it('fails the whole call when one vertical fails, instead of a partial list', async () => {

@@ -173,7 +173,7 @@ Nine tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
-| `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. |
+| `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. |
 | `get_listing` | read | read-only | Editable fields, amenities and features as `{ id, slug }`. |
 | `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. |
 | `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. |
