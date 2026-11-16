@@ -45,3 +45,23 @@
     padding: var(--space-2);
     font: inherit;
 }
+
+.confirm {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: start;
+    min-height: 44px;
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button);
+    background: var(--brand-primary);
+    color: var(--core-card);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.confirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

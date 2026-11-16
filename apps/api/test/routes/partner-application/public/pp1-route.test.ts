@@ -170,4 +170,41 @@ describe('TEST:V7:23 PP1 public route', () => {
             metadata: { timestamp: expect.any(String), requestId: 'unknown' }
         });
     });
+
+    it('tells the applicant the application is pending', async () => {
+        mocks.submit.mockRejectedValue(
+            new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Partner application not accepted',
+                undefined,
+                'PARTNER_APPLICATION_PENDING'
+            )
+        );
+        const { response, body } = await post(createGuestActor(), validBody);
+        expect(response.status).toBe(409);
+        expect(body.error).toEqual({
+            code: ServiceErrorCode.ALREADY_EXISTS,
+            message: 'Partner application not accepted',
+            reason: 'PARTNER_APPLICATION_PENDING'
+        });
+    });
+
+    it('publishes the end date of the wait after a rejection', async () => {
+        mocks.submit.mockRejectedValue(
+            new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Partner application not accepted',
+                { reapplyAfter: '2026-12-01T03:00:00.000Z' },
+                'PARTNER_APPLICATION_WAIT_ACTIVE'
+            )
+        );
+        const { response, body } = await post(createGuestActor(), validBody);
+        expect(response.status).toBe(409);
+        expect(body.error).toEqual({
+            code: ServiceErrorCode.ALREADY_EXISTS,
+            message: 'Partner application not accepted',
+            details: { reapplyAfter: '2026-12-01T03:00:00.000Z' },
+            reason: 'PARTNER_APPLICATION_WAIT_ACTIVE'
+        });
+    });
 });

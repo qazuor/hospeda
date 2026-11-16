@@ -205,7 +205,7 @@ describe('TEST:V7:5 PP3 rejection', () => {
         expect(thrown).toBeInstanceOf(ServiceError);
         expect(thrown).toMatchObject({
             code: ServiceErrorCode.ALREADY_EXISTS,
-            reason: 'PARTNER_APPLICATION_UNAVAILABLE'
+            reason: 'PARTNER_APPLICATION_WAIT_ACTIVE'
         });
         const freshEmail = email();
         expect(await submitPartnerApplication({ email: freshEmail })).toEqual({ submitted: true });
