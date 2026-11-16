@@ -1101,6 +1101,36 @@ una regla: hace falta que nadie agregue esa transición.
 
 ---
 
+## 8. El correo del pagador en una sucesión · HOS-2218, HOS-2238
+
+Mercado Pago exige `payer_email` al crear el preapproval. Si falta, responde
+`400 {"message":"payer_email is required"}`. El alta lo pide siempre (`StartSubscriptionRequestSchema`).
+El cambio de plan no lo pedía, y todo cambio de plan que pasaba por el checkout fallaba (smoke de
+staging, 15 y 16/11/2026). Decisión del owner (delegada, 2026-11-16):
+
+- **De dónde sale.** Cuenta el que el pagador declara en el pedido. Si el pedido no trae
+  ninguno, se usa el `declared_payer_email` de la predecesora. Ninguno de los dos es una identidad
+  confirmada: es lo que la persona dijo (`subscription.dbschema.ts`, `declared_payer_email`). El
+  correo de la cuenta de Hospeda **no** se usa, porque no tiene por qué ser la cuenta de Mercado
+  Pago que autoriza.
+- **Web («Mi suscripción» y la tarjeta de precios).** El formulario muestra el correo declarado de la
+  predecesora precargado y editable, y el pedido lo manda **obligatorio**
+  (`SubscriptionPlanChangeRequestSchema`).
+- **Panel (ACC_10).** El admin no declara nada: se usa el declarado de la predecesora. Si es nulo,
+  la API responde **422 `PAYER_EMAIL_UNDECLARED`** antes de cualquier escritura, y el panel lo
+  explica en lugar del mensaje genérico.
+- **La sucesora siempre lo guarda** en `declared_payer_email`, igual que el alta. Así el barrido
+  de creaciones la puede buscar.
+- **Un rechazo del proveedor no traba la sucesión.** Es el mismo `RECREATE` del alta: si la
+  predecesora ya tiene una sucesora `PENDING_AUTHORIZATION` para la **misma** billing option, sin
+  `provider_link`, con la última clave de creación rechazada (o limitada, 429) y la ventana
+  abierta, el reintento acuña una clave nueva sobre **esa** fila
+  (`mintKeyAfterRejectedCreation`). Guarda el correo recién declarado y vuelve a autorizar con el
+  primer cobro que la fila ya tenía. No toca la predecesora ni su `succeeded_by_id`. Cualquier
+  otra sucesora viva sigue respondiendo `SUCCESSION_IN_PROGRESS`.
+
+---
+
 ## Lo que este capítulo NO cierra
 
 - **La vuelta anticipada de una pausa regala hasta un ciclo, y se acepta** (owner 2026-09-26,
