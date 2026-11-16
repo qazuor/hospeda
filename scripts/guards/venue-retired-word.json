@@ -403,7 +403,6 @@
             "markers": {
                 "apps/api/src/routes/media/admin/delete.ts": 1,
                 "apps/api/src/routes/media/protected/delete-entity.ts": 2,
-                "docs/analytics/posthog-audit.md": 1,
                 "docs/decisions/ADR-035-gastronomy-experience-separation.md": 14,
                 "specs-prioritization.csv": 2
             },
@@ -414,5 +413,5 @@
     },
     "historyCount": 137,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "88e2b33e0eaafd47b977a8148c3672585fc03b9c740e2bfc557bc33ff366c52e"
+    "ledgerFingerprint": "ceaf30e1622cb1fe64dba71fe66d28cd2f384a21f3bc4da731220804bc66bcfc"
 }

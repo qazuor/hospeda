@@ -1,6 +1,6 @@
 # Umami Dashboards
 
-Umami boards, funnels and goals that replace the PostHog dashboards `00 Resumen` ... `05 Calidad` (HOS-2119). This document supersedes `posthog-dashboards.md`.
+Umami boards, funnels and goals that replace the PostHog dashboards `00 Resumen` ... `05 Calidad` (HOS-2119). It supersedes the retired PostHog dashboards document.
 
 ## Sources of truth
 
@@ -10,7 +10,7 @@ Umami boards, funnels and goals that replace the PostHog dashboards `00 Resumen`
 | Boards and dropped tiles | `scripts/umami/boards.ts` (`BOARD_SPECS`, `DROPPED_TILES`) |
 | API shapes measured on Umami 3.5.0 | `.specs/HOS-2119-posthog-to-umami/docs/umami-spike-findings.md` |
 | Event names and properties | `packages/analytics/src/catalog.ts`, [event-catalog.md](./event-catalog.md) |
-| PostHog originals (legacy) | `scripts/posthog/data.ts` |
+| PostHog originals (retired) | Removed in HOS-2119; see git history of `scripts/posthog/data.ts` |
 
 Every funnel step and goal is validated against `AnalyticsEventSchemas`; a name that is not in the catalog makes the build throw `UNKNOWN_EVENT`.
 
@@ -53,7 +53,7 @@ Five funnels, deduplicated from the 8 PostHog funnel insights (3 pairs were repe
 | `Funnel · Owner adquisición → publicación` | `sign_up_started` → `sign_up_completed` → `onboarding_started` → `accommodation_published` | 20160 |
 | `Funnel · Suscripción` | `billing_checkout_started` → `billing_subscription_activated` → `billing_charge_succeeded` | 20160 |
 
-Note: the spec mentions "nine funnels"; `scripts/posthog/data.ts` only ever had 8 funnel insights (5 distinct). None were invented.
+Note: the spec mentions "nine funnels"; the retired `scripts/posthog/data.ts` only ever had 8 funnel insights (5 distinct). None were invented.
 
 ## Goals
 
