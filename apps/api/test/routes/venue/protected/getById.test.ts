@@ -85,6 +85,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...orig,
+        // HOS-2192: the detail route also reads the owner's exception request status; not what this file tests.
+        getOwnerLocationExceptionView: async () => ({ hasException: false, request: null }),
         VenueService: class MockVenueService extends orig.VenueService {
             // biome-ignore lint/complexity/noUselessConstructor: need to call super
             constructor(...args: ConstructorParameters<typeof orig.VenueService>) {

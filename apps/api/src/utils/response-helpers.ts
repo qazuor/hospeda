@@ -7,6 +7,7 @@ import { DbError } from '@repo/db/utils';
 import {
     BUSINESS_LINES_INVALID_REASON,
     DUPLICATE_LOCATION_REASON,
+    LOCATION_EXCEPTION_REASONS,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { ErrorLogLevel } from '@repo/service-core';
@@ -701,6 +702,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
                     error.reason === 'SECTION_ABSENT' ||
                     error.reason === DUPLICATE_LOCATION_REASON ||
+                    error.reason === LOCATION_EXCEPTION_REASONS.REVOKE_CONFLICT ||
                     error.reason === BUSINESS_LINES_INVALID_REASON
                         ? error.details
                         : undefined,
