@@ -88,11 +88,10 @@ env:
   PUBLIC_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
   HOSPEDA_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
   HOSPEDA_REVALIDATION_SECRET: ${{ secrets.HOSPEDA_REVALIDATION_SECRET || 'ci-placeholder-revalidation-secret-min-32-characters' }}
-  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are required by the web app in
-  # production. The web build runs in production mode, so they must be present
+  # PUBLIC_SENTRY_DSN is required by the web app in
+  # production. The web build runs in production mode, so it must be present
   # at build time. Placeholders are fine for CI (the bundle is never deployed).
   PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN || 'https://ci-placeholder.invalid' }}
-  PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY || 'phc_ci_placeholder' }}
   PUBLIC_UMAMI_SCRIPT_URL: ${{ secrets.PUBLIC_UMAMI_SCRIPT_URL || 'https://umami-ci-placeholder.invalid/ci.js' }}
   PUBLIC_UMAMI_WEBSITE_ID: ${{ secrets.PUBLIC_UMAMI_WEBSITE_ID || '00000000-0000-4000-8000-000000000000' }}
   # Tells the admin env guard (vite.config.ts + src/env.ts) to ACCEPT the
