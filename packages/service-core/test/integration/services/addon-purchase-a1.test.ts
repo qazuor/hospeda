@@ -4,6 +4,7 @@ import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import {
+    closedSuccessionFixture,
     principalFixture,
     purchaseFixture,
     retirePurchaseFixtures,
@@ -80,6 +81,41 @@ describe('TEST:B10:1 AC:B10:1 addon purchase eligibility', () => {
         await principalFixture({ ownerId: f.ownerId, predecessorId });
         expect(await purchaseAddon(f.input(), f.ports)).toMatchObject({ outcome: 'CREATED' });
     });
+
+    it.skipIf(skip)(
+        'HOS-2224: accepts the successor of a paying predecessor once the succession closed',
+        async () => {
+            const f = await purchaseFixture();
+            // The dead paying predecessor, its credited payment and the successor in credit
+            // (no payment of its own) are seeded directly, with the closed-succession links.
+            const predecessorId = await principalFixture({
+                ownerId: f.ownerId,
+                status: 'CANCELLED',
+                credited: true
+            });
+            const successorId = await principalFixture({ ownerId: f.ownerId });
+            await closedSuccessionFixture({ predecessorId, successorId });
+            expect(await purchaseAddon(f.input(), f.ports)).toMatchObject({ outcome: 'CREATED' });
+        }
+    );
+
+    it.skipIf(skip)(
+        'HOS-2224: refuses the successor of a non-paying predecessor once the succession closed',
+        async () => {
+            const f = await purchaseFixture();
+            // Same closed succession, but the predecessor never had a credited payment.
+            const predecessorId = await principalFixture({
+                ownerId: f.ownerId,
+                status: 'CANCELLED'
+            });
+            const successorId = await principalFixture({ ownerId: f.ownerId });
+            await closedSuccessionFixture({ predecessorId, successorId });
+            expect(await purchaseAddon(f.input(), f.ports)).toEqual({
+                outcome: 'REFUSED',
+                reason: 'NO_VALID_TITLE'
+            });
+        }
+    );
 
     it.skipIf(skip)('refuses a paying principal in GRACE_PERIOD', async () => {
         const f = await purchaseFixture();

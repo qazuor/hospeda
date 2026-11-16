@@ -199,6 +199,21 @@ export async function principalFixture(input: {
     });
 }
 
+/**
+ * Seeds the links of a CLOSED succession (AC:B8b:10, INV:D15): the dead predecessor keeps
+ * `succeeded_by_id` and the successor's `succeeds_id` is null, as `linkClosedPredecessor` and
+ * `clearSuccessorLink` leave them.
+ */
+export async function closedSuccessionFixture(input: {
+    readonly predecessorId: string;
+    readonly successorId: string;
+}): Promise<void> {
+    await getServiceTestDb()
+        .update(subscriptions)
+        .set({ succeededById: input.successorId })
+        .where(eq(subscriptions.id, input.predecessorId));
+}
+
 /** Seeds a running trial directly, without a principal row. */
 export async function trialFixture(input: {
     readonly ownerId: string;
