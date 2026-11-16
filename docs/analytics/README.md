@@ -27,6 +27,7 @@ retired in HOS-2119 and is no longer used anywhere in the platform.
 - [event-catalog.md](./event-catalog.md): current events and properties.
 - [event-migrations.md](./event-migrations.md): old event name to new event name mapping.
 - [umami-dashboards.md](./umami-dashboards.md): boards, funnels and goals, and how to regenerate them.
+- [umami-spike.md](./umami-spike.md): T-0 spike decisions (delivery path, server-event attribution, read API, entity_id gaps).
 - [session-replay-privacy.md](./session-replay-privacy.md): Session Replay status and policy.
 
 ## Operational status
