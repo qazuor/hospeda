@@ -219,6 +219,40 @@ export const CLIENT_WEB_ENV_VARS = [
             'Mirror del valor server-side HOSPEDA_NEWSLETTER_WA_CHANNEL_URL (que usa el email de bienvenida). WhatsApp → Channels → tu canal → Channel link → copiá la URL pública. Dejala vacía para ocultar el CTA.'
     },
     {
+        name: 'PUBLIC_UMAMI_SCRIPT_URL',
+        description:
+            'Full URL of the self-hosted Umami tracker script for the web app (e.g. `https://stats.example.com/xyz.js`). Build-time (inlined into the client bundle). The script and collect endpoint are renamed via Umami TRACKER_SCRIPT_NAME / COLLECT_API_ENDPOINT to dodge blockers, so do not assume `script.js`. Unset disables analytics (HOS-2119).',
+        descriptionEs:
+            'URL completa del script tracker de Umami self-hosted para la app web (ej. `https://stats.example.com/xyz.js`). Build-time (se inlinea en el bundle del cliente). El script y el endpoint de collect se renombran con TRACKER_SCRIPT_NAME / COLLECT_API_ENDPOINT de Umami para esquivar bloqueadores, asi que no asumas `script.js`. Vacia desactiva la analitica (HOS-2119).',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'https://stats.example.com/xyz.js',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Public URL of the Umami instance plus the renamed tracker script path configured through TRACKER_SCRIPT_NAME on the Umami deployment. Must match the value the CSP allows. Set it as a build argument in Coolify for the web app; leave unset to disable analytics.',
+        howToObtainEs:
+            'URL publica de la instancia de Umami mas la ruta del script tracker renombrado configurada con TRACKER_SCRIPT_NAME en el deploy de Umami. Debe coincidir con lo que permite el CSP. Cargala como build argument en Coolify para la app web; dejala vacia para desactivar la analitica.'
+    },
+    {
+        name: 'PUBLIC_UMAMI_WEBSITE_ID',
+        description:
+            'Umami website id (UUID) for the web app. Build-time, public by design (ships in the browser bundle). Unset disables analytics (HOS-2119).',
+        descriptionEs:
+            'Website id (UUID) de Umami para la app web. Build-time, publico por diseno (viaja en el bundle del browser). Vacio desactiva la analitica (HOS-2119).',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: '3f1c2b4e-8a6d-4c1f-9b2e-7d5a1e0c9f33',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Umami dashboard -> Settings -> Websites -> the web website -> copy the Website ID (UUID). Must equal HOSPEDA_UMAMI_WEBSITE_ID_WEB on the API. Set it as a build argument in Coolify for the web app.',
+        howToObtainEs:
+            'Dashboard de Umami -> Settings -> Websites -> el sitio web -> copia el Website ID (UUID). Debe ser igual a HOSPEDA_UMAMI_WEBSITE_ID_WEB en la API. Cargalo como build argument en Coolify para la app web.'
+    },
+    {
         name: 'PUBLIC_POSTHOG_KEY',
         description:
             'PostHog Cloud project API key for the web app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',

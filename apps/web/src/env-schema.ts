@@ -226,6 +226,18 @@ export const serverEnvBaseSchema = z.object({
      */
     PUBLIC_POSTHOG_HOST: z.url().optional(),
     /**
+     * Full URL of the self-hosted Umami tracker script (HOS-2119), e.g.
+     * `https://stats.example.com/xyz.js`. The script name is renamed via
+     * Umami's TRACKER_SCRIPT_NAME to dodge blockers, so never assume
+     * `script.js`. Leave unset to disable analytics (no script injected).
+     */
+    PUBLIC_UMAMI_SCRIPT_URL: z.url().optional(),
+    /**
+     * Umami website id (UUID) for the web app (HOS-2119). Public by design.
+     * Leave unset to disable analytics.
+     */
+    PUBLIC_UMAMI_WEBSITE_ID: z.string().uuid().optional(),
+    /**
      * CI cost guard (HOS-1144): when `'true'` (or `'1'`), every REMOTE media
      * URL is replaced by a placeholder this site serves itself, so a CI run
      * makes zero requests to `res.cloudinary.com` or any other image CDN.

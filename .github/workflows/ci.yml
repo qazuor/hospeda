@@ -93,6 +93,8 @@ env:
   # at build time. Placeholders are fine for CI (the bundle is never deployed).
   PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN || 'https://ci-placeholder.invalid' }}
   PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY || 'phc_ci_placeholder' }}
+  PUBLIC_UMAMI_SCRIPT_URL: ${{ secrets.PUBLIC_UMAMI_SCRIPT_URL || 'https://umami-ci-placeholder.invalid/ci.js' }}
+  PUBLIC_UMAMI_WEBSITE_ID: ${{ secrets.PUBLIC_UMAMI_WEBSITE_ID || '00000000-0000-4000-8000-000000000000' }}
   # Tells the admin env guard (vite.config.ts + src/env.ts) to ACCEPT the
   # placeholder `.invalid` URLs above. It MUST be workflow-level (not just the
   # Build step): admin#build also runs in any job whose Turbo graph reaches it

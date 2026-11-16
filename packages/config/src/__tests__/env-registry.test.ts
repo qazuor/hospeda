@@ -315,8 +315,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_UMAMI_WEBSITE_ID_ADMIN, HOSPEDA_UMAMI_API_KEY (monitoring category,
  * api only) — server-side Umami ingestion and stats reads (HOS-2119 T-011).
  * 277 + 4 = 281.
+ *
+ * +2 = PUBLIC_UMAMI_SCRIPT_URL, PUBLIC_UMAMI_WEBSITE_ID (client-web category,
+ * web only) — build-time Umami tracker config (HOS-2119 T-012).
+ * 281 + 2 = 283.
  */
-const EXPECTED_VAR_COUNT = 281;
+const EXPECTED_VAR_COUNT = 283;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
