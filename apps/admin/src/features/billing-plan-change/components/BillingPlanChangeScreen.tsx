@@ -7,18 +7,19 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCancellationDate } from '@/features/billing-cancellation/cancellation-format';
 import { useTranslations } from '@/hooks/use-translations';
-import { ApiError } from '@/lib/errors';
+import { isApiError } from '@/lib/errors';
 import {
     useBillingPlanChangeAction,
     useBillingPlanChangeData
 } from '../hooks/useBillingPlanChange';
 
-const partnerPlanChangeUnsupportedReason = 'PARTNER_PLAN_CHANGE_UNSUPPORTED';
-
-function isPartnerPlanChangeUnsupported(error: unknown): boolean {
-    if (!(error instanceof ApiError)) return false;
-    const body = error.body as { error?: { details?: { reason?: unknown } } } | undefined;
-    return body?.error?.details?.reason === partnerPlanChangeUnsupportedReason;
+/** Reads the typed refusal reason of a failed plan change (HOS-2238). */
+function errorReason(error: unknown): string {
+    if (!isApiError(error)) return 'UNKNOWN';
+    const body = error.body as
+        | { readonly error?: { readonly details?: { readonly reason?: string } } }
+        | undefined;
+    return body?.error?.details?.reason ?? 'UNKNOWN';
 }
 
 export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscriptionId: string }) {
@@ -29,7 +30,7 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
     const [selectedId, setSelectedId] = useState('');
     const [confirming, setConfirming] = useState(false);
     const [note, setNote] = useState('');
-    const [error, setError] = useState<'generic' | 'partner-unsupported' | false>(false);
+    const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const date = (iso: string) => formatCancellationDate({ iso, locale });
     const options = data.data?.options.options.filter((option) => !option.current) ?? [];
@@ -48,15 +49,15 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
     const submit = async () => {
         if (!selected || inspection?.status !== 'ACTIVE' || action.isPending) return;
         try {
-            setError(false);
+            setError(null);
             await action.mutateAsync({
                 subscriptionId,
                 billingOptionId: selected.billingOptionId,
                 expectedStatus: 'ACTIVE',
                 ...(note.trim() ? { note: note.trim() } : {})
             });
-        } catch {
-            setError(isPartnerPlanChangeUnsupported(error) ? 'partner-unsupported' : 'generic');
+        } catch (failure) {
+            setError(errorReason(failure));
             setConfirming(false);
             await data.refetch();
         }
@@ -128,7 +129,7 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                             <p>{t('admin-billing.subscriptionPlanChange.loading')}</p>
                         ) : data.error ? (
                             <p role="alert">
-                                {isPartnerPlanChangeUnsupported(data.error)
+                                {errorReason(data.error) === 'PARTNER_PLAN_CHANGE_UNSUPPORTED'
                                     ? t('admin-billing.subscriptionPlanChange.partnerUnsupported')
                                     : t('admin-billing.subscriptionPlanChange.error')}
                             </p>
@@ -198,9 +199,12 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                         {error ? (
                                             <p role="alert">
                                                 {t(
-                                                    error === 'partner-unsupported'
-                                                        ? 'admin-billing.subscriptionPlanChange.partnerUnsupported'
-                                                        : 'admin-billing.subscriptionPlanChange.error'
+                                                    error === 'PAYER_EMAIL_UNDECLARED'
+                                                        ? 'admin-billing.subscriptionPlanChange.payerEmailUndeclared'
+                                                        : error ===
+                                                            'PARTNER_PLAN_CHANGE_UNSUPPORTED'
+                                                          ? 'admin-billing.subscriptionPlanChange.partnerUnsupported'
+                                                          : 'admin-billing.subscriptionPlanChange.error'
                                                 )}
                                             </p>
                                         ) : null}

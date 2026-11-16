@@ -50,7 +50,8 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
                 userId: choice.user.id,
                 predecessorSubscriptionId: seeded.predecessor.id,
                 billingOptionId: choice.targetBillingOptionId,
-                returnUrl: successionReturnUrl
+                returnUrl: successionReturnUrl,
+                payerEmail: 'payer@example.test'
             },
             successionPorts(seeded.provider)
         );
@@ -120,7 +121,8 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
                 userId: choice.user.id,
                 predecessorSubscriptionId: seeded.predecessor.id,
                 billingOptionId: choice.targetBillingOptionId,
-                returnUrl: successionReturnUrl
+                returnUrl: successionReturnUrl,
+                payerEmail: 'payer@example.test'
             },
             successionPorts(seeded.provider)
         );
@@ -160,7 +162,8 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
                 userId: choice.user.id,
                 predecessorSubscriptionId: seeded.predecessor.id,
                 billingOptionId: choice.targetBillingOptionId,
-                returnUrl: successionReturnUrl
+                returnUrl: successionReturnUrl,
+                payerEmail: 'payer@example.test'
             },
             successionPorts(seeded.provider)
         );
@@ -195,7 +198,8 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
                     userId: choice.user.id,
                     predecessorSubscriptionId: seeded.predecessor.id,
                     billingOptionId: choice.targetBillingOptionId,
-                    returnUrl: successionReturnUrl
+                    returnUrl: successionReturnUrl,
+                    payerEmail: 'payer@example.test'
                 },
                 successionPorts(seeded.provider, mirror)
             );
@@ -233,7 +237,8 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
                     userId: choice.user.id,
                     predecessorSubscriptionId: seeded.predecessor.id,
                     billingOptionId: choice.targetBillingOptionId,
-                    returnUrl: successionReturnUrl
+                    returnUrl: successionReturnUrl,
+                    payerEmail: 'payer@example.test'
                 },
                 successionPorts(seeded.provider)
             )

@@ -64,7 +64,8 @@ export async function retainingSuspendedBranch6Predecessor() {
             userId: fixture.user.id,
             predecessorSubscriptionId: subscriptionId,
             billingOptionId: inGrace.billingOptionId,
-            returnUrl: 'https://example.test/return'
+            returnUrl: 'https://example.test/return',
+            payerEmail: 'payer@example.test'
         },
         {
             provider: fixture.provider,

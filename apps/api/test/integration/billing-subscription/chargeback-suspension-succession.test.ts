@@ -185,7 +185,8 @@ describe('TEST:B7:7 AC:B7:33 AC:B7:27 S6 cuts a live successor on a chargeback',
                 predecessorSubscriptionId: created.subscriptionId,
                 userId: created.userId,
                 billingOptionId: predecessor.billingOptionId,
-                returnUrl: 'https://hospeda.test/es/planes/'
+                returnUrl: 'https://hospeda.test/es/planes/',
+                payerEmail: 'payer@example.test'
             },
             {
                 provider: getPaymentProvider(),

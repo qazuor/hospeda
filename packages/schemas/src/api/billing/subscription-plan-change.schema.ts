@@ -3,10 +3,15 @@ import { z } from 'zod';
 /** Parameters for the owner plan change route. */
 export const SubscriptionPlanChangeParamsSchema = z.strictObject({ subscriptionId: z.uuid() });
 
-/** Destination and optional listing selection; the server chooses direction. */
+/**
+ * Destination and optional listing selection; the server chooses direction.
+ * `payerEmail` is required, like the signup's (HOS-2218): the payer declares the
+ * provider account email that will authorize a succession. It is not a confirmed
+ * email and is never stored as one; the form prefills the one already declared.
+ */
 export const SubscriptionPlanChangeRequestSchema = z.strictObject({
     billingOptionId: z.uuid(),
-    payerEmail: z.email().optional(),
+    payerEmail: z.string().trim().email().max(255),
     keepSelection: z.record(z.string(), z.array(z.string())).optional()
 });
 

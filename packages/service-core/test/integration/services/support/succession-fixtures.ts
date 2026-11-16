@@ -162,7 +162,9 @@ export async function seedPredecessor(input: {
         {
             userId: input.userId,
             billingOptionId: input.billingOptionId,
-            returnUrl: successionReturnUrl
+            returnUrl: successionReturnUrl,
+            // HOS-2218: a succession reuses the predecessor's declared payer email.
+            payerEmail: `payer-${crypto.randomUUID()}@example.test`
         },
         successionPorts(provider)
     );

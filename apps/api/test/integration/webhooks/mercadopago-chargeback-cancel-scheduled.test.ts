@@ -192,7 +192,8 @@ async function realSuccessor(created: Awaited<ReturnType<typeof scheduledChargeb
             predecessorSubscriptionId: created.subscriptionId,
             userId: created.userId,
             billingOptionId: predecessor.billingOptionId,
-            returnUrl: 'https://hospeda.test/es/planes/'
+            returnUrl: 'https://hospeda.test/es/planes/',
+            payerEmail: 'payer@example.test'
         },
         {
             provider: getPaymentProvider(),

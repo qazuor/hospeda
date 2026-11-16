@@ -230,4 +230,43 @@ describe('TEST:B8b:22 AC:B8b:22 administrative plan change (ACC:10)', () => {
             expect(mutationAudits()).toEqual([]);
         });
     });
+    it('HOS-2238 sends the current subscription declared payer email to the provider', async () => {
+        await withCompositionRollback(async (tx) => {
+            const row = await scenario(tx);
+            const authorize = vi.spyOn(fake, 'authorize');
+            const response = await post(row.subscriptionId, row.targetOptionId);
+            expect(response.status, await response.clone().text()).toBe(200);
+            expect(authorize.mock.calls.at(-1)?.[0].payerEmail).toBe(row.declaredPayerEmail);
+            authorize.mockRestore();
+            const [successor] = await tx
+                .select({ declaredPayerEmail: subscriptions.declaredPayerEmail })
+                .from(subscriptions)
+                .where(eq(subscriptions.succeedsId, row.subscriptionId));
+            expect(successor?.declaredPayerEmail).toBe(row.declaredPayerEmail);
+        });
+    });
+
+    it('HOS-2238 answers 422 PAYER_EMAIL_UNDECLARED and leaves no successor when none was declared', async () => {
+        await withCompositionRollback(async (tx) => {
+            const row = await scenario(tx);
+            await tx
+                .update(subscriptions)
+                .set({ declaredPayerEmail: null })
+                .where(eq(subscriptions.id, row.subscriptionId));
+            const authorize = vi.spyOn(fake, 'authorize');
+            const response = await post(row.subscriptionId, row.targetOptionId);
+            expect(response.status).toBe(422);
+            expect(await response.json()).toMatchObject({
+                error: { code: 'VALIDATION_ERROR', reason: 'PAYER_EMAIL_UNDECLARED' }
+            });
+            expect(authorize).not.toHaveBeenCalled();
+            authorize.mockRestore();
+            const [predecessor] = await tx
+                .select({ succeededById: subscriptions.succeededById })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, row.subscriptionId));
+            expect(predecessor?.succeededById).toBeNull();
+            expect(mutationAudits()).toEqual([]);
+        });
+    });
 });

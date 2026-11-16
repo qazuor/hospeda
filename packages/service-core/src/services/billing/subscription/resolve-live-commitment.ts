@@ -53,6 +53,17 @@ export function throttledCreationResult(): ThrottledCreationResult {
     return { outcome: 'THROTTLED_BY_PROVIDER', code: 'RATE_LIMITED' };
 }
 
+/**
+ * Whether a stored creation result was refused by the provider before anything existed
+ * there (a rejection or a throttle), so a retry may mint a new key on the same row.
+ */
+export function isRecreatableCreationResult(result: unknown): boolean {
+    return (
+        RejectedCreationResultSchema.safeParse(result).success ||
+        ThrottledCreationResultSchema.safeParse(result).success
+    );
+}
+
 /** Builds the stored result for a rejected preapproval creation. */
 export function rejectedCreationResult(): RejectedCreationResult {
     return { outcome: 'REJECTED_BY_PROVIDER', code: 'REJECTED' };
@@ -190,10 +201,7 @@ export async function resolveLiveCommitmentReuse(input: {
     const notApplied = NotAppliedAuthorizationResultSchema.safeParse(key.result);
     if (notApplied.success && input.commitment.providerLink)
         return { kind: 'REPLACE', cause: 'CREATION_NOT_APPLIED' };
-    const rejected =
-        RejectedCreationResultSchema.safeParse(key.result).success ||
-        ThrottledCreationResultSchema.safeParse(key.result).success;
-    if (rejected) {
+    if (isRecreatableCreationResult(key.result)) {
         if (input.commitment.providerLink) {
             logger.error(
                 { subscriptionId: subscription.id, idempotencyKey: key.key },

@@ -8,18 +8,37 @@ import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situat
 const pricingSituation = vi.hoisted(() => vi.fn());
 const listingNotices = vi.hoisted(() => vi.fn());
 const listMine = vi.hoisted(() => vi.fn());
+const readSubscription = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/api/endpoints-protected', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/lib/api/endpoints-protected')>();
     return {
         ...actual,
-        billingSubscriptionApi: { ...actual.billingSubscriptionApi, pricingSituation, listMine },
+        billingSubscriptionApi: {
+            ...actual.billingSubscriptionApi,
+            pricingSituation,
+            listMine,
+            read: readSubscription
+        },
         publishApi: { listingNotices }
     };
 });
 beforeEach(() => {
     vi.clearAllMocks();
     resetPricingSituationCacheForTests();
+    readSubscription.mockResolvedValue({
+        ok: true,
+        data: { declaredPayerEmail: 'declared@example.test' }
+    });
 });
+
+/** HOS-2218: the confirm step waits for the declared payer email to prefill. */
+async function confirmWithDeclaredEmail() {
+    const email = (await screen.findByTestId(
+        'pricing-plan-change-payer-email'
+    )) as HTMLInputElement;
+    await waitFor(() => expect(email.value).toBe('declared@example.test'));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+}
 afterEach(() => vi.unstubAllGlobals());
 
 const componentSource = readFileSync(
@@ -277,14 +296,17 @@ describe('PlanCardCta', () => {
             )
         );
         fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
-        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await confirmWithDeclaredEmail();
         await waitFor(() => expect(fetchMock).toHaveBeenCalled());
         const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
         expect(url).toContain(
             `/api/v1/protected/billing-subscription/${subscriptionId}/plan-change`
         );
         expect(init.method).toBe('POST');
-        expect(JSON.parse(init.body as string)).toEqual({ billingOptionId: 'm2' });
+        expect(JSON.parse(init.body as string)).toEqual({
+            billingOptionId: 'm2',
+            payerEmail: 'declared@example.test'
+        });
     });
     it('TEST:B8b:14 follows the SUCCESSION checkout URL from the pricing card', async () => {
         pricingSituation.mockResolvedValue({
@@ -332,7 +354,7 @@ describe('PlanCardCta', () => {
             />
         );
         fireEvent.click(await screen.findByRole('button', { name: /Cambiar a este plan/ }));
-        fireEvent.click(screen.getByRole('button', { name: 'Confirmar cambio' }));
+        await confirmWithDeclaredEmail();
         await waitFor(() => expect(assigned).toHaveBeenCalledWith(checkoutUrl));
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
