@@ -12,7 +12,7 @@ import { revokeAiConnectionRoute } from './revoke';
 
 const app = createRouter();
 
-// DELETE /{clientId} — disconnect one assistant
+// DELETE /?clientId= — disconnect one assistant
 app.route('/', revokeAiConnectionRoute);
 
 // GET / — list connected assistants

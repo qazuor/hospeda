@@ -985,7 +985,7 @@ remove a connection while the feature is switched off.
 | Method | Path | Auth | Notes |
 |---|---|---|---|
 | `GET` | `/api/v1/protected/ai-connections` | Session | Lists the caller's connections, oldest first, with connection date and an approximate last use. `name`, `uri` and `logoUri` are client-declared and untrusted. |
-| `DELETE` | `/api/v1/protected/ai-connections/{clientId}` | Session | Deletes the caller's consent, refresh tokens and stored access tokens for that client. 204 on success. Audits `mcp.connection.revoked`. |
+| `DELETE` | `/api/v1/protected/ai-connections?clientId=<encoded>` | Session | Deletes the caller's consent, refresh tokens and stored access tokens for that client. 204 on success, 404 when the caller has no such connection, 400 without `clientId`. The id is a query parameter, not a path segment: CIMD client ids are URLs and a `%2F` in a path is rejected by some proxies. Audits `mcp.connection.revoked`. |
 
 - **404, never 403.** A client the caller has not connected answers 404, whether it
   is unknown or connected only by someone else. The response never confirms that

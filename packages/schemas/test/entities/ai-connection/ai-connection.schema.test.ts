@@ -15,8 +15,11 @@ describe('AiConnectionClientIdSchema', () => {
 
     it('rejects empty and oversized ids', () => {
         expect(AiConnectionClientIdSchema.safeParse('').success).toBe(false);
-        expect(AiConnectionClientIdSchema.safeParse('   ').success).toBe(false);
         expect(AiConnectionClientIdSchema.safeParse('x'.repeat(2049)).success).toBe(false);
+    });
+
+    it('treats the id as opaque: it is never trimmed', () => {
+        expect(AiConnectionClientIdSchema.parse(' padded ')).toBe(' padded ');
     });
 });
 

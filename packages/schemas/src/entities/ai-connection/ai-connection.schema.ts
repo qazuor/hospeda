@@ -9,11 +9,12 @@
 import { z } from 'zod';
 
 /**
- * OAuth `client_id` as it appears in a path. A Dynamic-Client-Registration id
- * is an opaque string; a Client-ID-Metadata-Document id is an https URL, so
- * the bound is generous. Never assume a UUID.
+ * OAuth `client_id` as it appears in a query parameter. A
+ * Dynamic-Client-Registration id is an opaque string; a
+ * Client-ID-Metadata-Document id is an https URL, so the bound is generous.
+ * Never assume a UUID, and never normalise it (no `trim`): it is an opaque id.
  */
-export const AiConnectionClientIdSchema = z.string().trim().min(1).max(2048);
+export const AiConnectionClientIdSchema = z.string().min(1).max(2048);
 
 /** TypeScript type inferred from {@link AiConnectionClientIdSchema}. */
 export type AiConnectionClientId = z.infer<typeof AiConnectionClientIdSchema>;

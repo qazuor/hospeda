@@ -117,7 +117,7 @@ connection alive for up to an hour. So `/mcp` checks a live grant on every reque
 1. The `oauth_client` row exists and is not `disabled`.
 2. The user's consent row for that client still exists.
 
-Revoking a connection (`DELETE /api/v1/protected/ai-connections/{clientId}`) deletes,
+Revoking a connection (`DELETE /api/v1/protected/ai-connections?clientId=<encoded>`) deletes,
 in one transaction, the user's consent, refresh tokens and any stored access
 tokens for that client. The next `/mcp` call answers 401. The shared
 `oauth_client` row is **never** deleted: other users may be connected through it.

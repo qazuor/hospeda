@@ -31,7 +31,7 @@ export const AI_CAPABILITY_FALLBACKS: Readonly<
 export interface BuildAiConnectionsUrlParams {
     /** API base URL (trailing slash tolerated). */
     readonly apiUrl: string;
-    /** When set, targets one connection. Always percent-encoded (ids may be URLs). */
+    /** When set, targets one connection as `?clientId=` (percent-encoded: ids may be URLs). */
     readonly clientId?: string;
 }
 
@@ -44,12 +44,12 @@ export interface BuildAiConnectionsUrlParams {
  * @example
  * ```ts
  * buildAiConnectionsUrl({ apiUrl: 'https://api.x', clientId: 'https://c.io/m.json' });
- * // 'https://api.x/api/v1/protected/ai-connections/https%3A%2F%2Fc.io%2Fm.json'
+ * // 'https://api.x/api/v1/protected/ai-connections?clientId=https%3A%2F%2Fc.io%2Fm.json'
  * ```
  */
 export function buildAiConnectionsUrl({ apiUrl, clientId }: BuildAiConnectionsUrlParams): string {
     const base = `${apiUrl.replace(/\/$/, '')}${AI_CONNECTIONS_API_PATH}`;
-    return clientId === undefined ? base : `${base}/${encodeURIComponent(clientId)}`;
+    return clientId === undefined ? base : `${base}?clientId=${encodeURIComponent(clientId)}`;
 }
 
 /** Result of {@link parseAiConnections}. */

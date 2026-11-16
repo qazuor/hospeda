@@ -110,7 +110,7 @@ describe('GET /api/v1/protected/ai-connections', () => {
     });
 });
 
-describe('DELETE /api/v1/protected/ai-connections/{clientId}', () => {
+describe('DELETE /api/v1/protected/ai-connections?clientId=', () => {
     const app = initApp();
 
     beforeEach(() => {
@@ -121,7 +121,7 @@ describe('DELETE /api/v1/protected/ai-connections/{clientId}', () => {
         const removed = { consents: 1, refreshTokens: 2, accessTokens: 0 };
         revokeMock.mockResolvedValue({ data: { clientId: 'client-1', removed } });
 
-        const res = await app.request(`${BASE}/client-1`, {
+        const res = await app.request(`${BASE}?clientId=client-1`, {
             method: 'DELETE',
             headers: headers()
         });
@@ -145,7 +145,7 @@ describe('DELETE /api/v1/protected/ai-connections/{clientId}', () => {
             data: { clientId, removed: { consents: 1, refreshTokens: 0, accessTokens: 0 } }
         });
 
-        const res = await app.request(`${BASE}/${encodeURIComponent(clientId)}`, {
+        const res = await app.request(`${BASE}?clientId=${encodeURIComponent(clientId)}`, {
             method: 'DELETE',
             headers: headers()
         });
@@ -154,12 +154,29 @@ describe('DELETE /api/v1/protected/ai-connections/{clientId}', () => {
         expect(revokeMock).toHaveBeenCalledWith(expect.anything(), { clientId });
     });
 
+    it('answers 400 when the clientId query parameter is missing, without revoking', async () => {
+        const res = await app.request(BASE, { method: 'DELETE', headers: headers() });
+
+        expect(res.status).toBe(400);
+        expect(revokeMock).not.toHaveBeenCalled();
+    });
+
+    it('no longer serves the path-param form', async () => {
+        const res = await app.request(`${BASE}/client-1`, {
+            method: 'DELETE',
+            headers: headers()
+        });
+
+        expect(res.status).toBe(404);
+        expect(revokeMock).not.toHaveBeenCalled();
+    });
+
     it('answers 404 NOT_FOUND for a client the actor has not connected, without auditing', async () => {
         revokeMock.mockResolvedValue({
             error: new ServiceError(ServiceErrorCode.NOT_FOUND, 'AI connection not found')
         });
 
-        const res = await app.request(`${BASE}/foreign-client`, {
+        const res = await app.request(`${BASE}?clientId=foreign-client`, {
             method: 'DELETE',
             headers: headers()
         });
@@ -170,7 +187,7 @@ describe('DELETE /api/v1/protected/ai-connections/{clientId}', () => {
     });
 
     it('answers 401 without a session and never revokes', async () => {
-        const res = await app.request(`${BASE}/client-1`, {
+        const res = await app.request(`${BASE}?clientId=client-1`, {
             method: 'DELETE',
             headers: anonymousHeaders()
         });

@@ -2742,12 +2742,12 @@
             "path": "/api/v1/protected/accommodations/my/market-comparison"
         },
         {
-            "method": "GET",
+            "method": "DELETE",
             "path": "/api/v1/protected/ai-connections"
         },
         {
-            "method": "DELETE",
-            "path": "/api/v1/protected/ai-connections/:clientId"
+            "method": "GET",
+            "path": "/api/v1/protected/ai-connections"
         },
         {
             "method": "POST",

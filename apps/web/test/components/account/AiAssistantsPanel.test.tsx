@@ -143,7 +143,7 @@ describe('AiAssistantsPanel', () => {
         await waitFor(() => expect(screen.queryByText('Asistente sin nombre')).toBeNull());
         const [url, init] = vi.mocked(fetch).mock.calls[1] ?? [];
         expect(url).toBe(
-            `${API_URL}/api/v1/protected/ai-connections/https%3A%2F%2Fchat.example%2Fclient.json`
+            `${API_URL}/api/v1/protected/ai-connections?clientId=https%3A%2F%2Fchat.example%2Fclient.json`
         );
         expect((init as RequestInit).method).toBe('DELETE');
         expect(screen.getByText('Claude')).toBeTruthy();

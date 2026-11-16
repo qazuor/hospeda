@@ -20,7 +20,9 @@ describe('buildAiConnectionsUrl', () => {
     it('percent-encodes a client id that is a URL', () => {
         expect(
             buildAiConnectionsUrl({ apiUrl: 'https://api.x', clientId: 'https://c.io/m.json?a=1' })
-        ).toBe('https://api.x/api/v1/protected/ai-connections/https%3A%2F%2Fc.io%2Fm.json%3Fa%3D1');
+        ).toBe(
+            'https://api.x/api/v1/protected/ai-connections?clientId=https%3A%2F%2Fc.io%2Fm.json%3Fa%3D1'
+        );
     });
 });
 
