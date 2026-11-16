@@ -62,12 +62,15 @@ interface Props {
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
+	/** Entity id forwarded to the Umami tracker as `data-tag` (detail pages only). */
+	readonly analyticsTag?: string;
 }
 
 const {
 	locale,
 	title = 'Hospeda',
 	description = 'Descubrí alojamientos en el Litoral Entrerriano',
+	analyticsTag,
 } = Astro.props;
 
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
@@ -193,7 +196,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  body (no CSP hash) and no per-user data (pages stay session-blind).
 		  Renders nothing unless both PUBLIC_UMAMI_* values are set.
 		-->
-		<UmamiScript />
+		<UmamiScript tag={analyticsTag} />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />

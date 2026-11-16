@@ -227,6 +227,7 @@ const breadcrumbItems = [
     ogType={t(`experience.type.${experience.type}`, experience.type)}
     ogSubtitle={experience.destinationName}
     ogRating={experience.averageRating > 0 ? experience.averageRating.toFixed(1) : undefined}
+    analyticsTag={experience.id}
 >
     <TouristAttractionJsonLd
         slot="head-extra"

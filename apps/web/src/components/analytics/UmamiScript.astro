@@ -16,14 +16,35 @@
  * Renders nothing unless BOTH values are set, so locally-built previews and CI
  * without the variables never ship a broken tag (no `src`, or no website id).
  *
+ * Optional `tag` prop (T-074): rendered as `data-tag` so pageviews carry the
+ * entity id and the owner stats can read per-listing breakdowns
+ * (`metrics?type=...&tag=<entityId>`). Only a UUID-shaped tag of at most 50
+ * characters (Umami's tag limit) is rendered; anything else is dropped. The
+ * entity id is public page data, never per-user, so pages stay session-blind.
+ *
  * Env (both public by design, baked at build time):
  * - `PUBLIC_UMAMI_SCRIPT_URL`: full URL of the (renamed) tracker script.
  * - `PUBLIC_UMAMI_WEBSITE_ID`: Umami website id (UUID).
  */
+
+interface Props {
+	/** Entity id to tag pageviews with. Omitted on every non-detail page. */
+	readonly tag?: string;
+}
+
+const { tag } = Astro.props;
+
+/** Umami's tag limit. */
+const UMAMI_TAG_MAX_LENGTH = 50;
+const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const validTag =
+	typeof tag === 'string' && tag.length <= UMAMI_TAG_MAX_LENGTH && UUID_SHAPE.test(tag)
+		? tag
+		: undefined;
 
 const scriptUrl = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL;
 const websiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
 const shouldRender = Boolean(scriptUrl && websiteId);
 ---
 
-{shouldRender && <script defer src={scriptUrl} data-website-id={websiteId} />}
+{shouldRender && <script defer src={scriptUrl} data-website-id={websiteId} data-tag={validTag} />}

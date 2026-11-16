@@ -21,6 +21,8 @@ interface Props {
 	readonly noindex?: boolean;
 	/** Caveat tagline for the generated OG BRAND card. */
 	readonly ogTagline?: string;
+	/** Entity id forwarded to the Umami tracker as `data-tag` (partner page). */
+	readonly analyticsTag?: string;
 }
 
 const {
@@ -30,6 +32,7 @@ const {
 	canonicalPath = Astro.url.pathname,
 	noindex = false,
 	ogTagline,
+	analyticsTag,
 } = Astro.props;
 
 const siteBase = getSiteUrl();
@@ -39,7 +42,12 @@ const resolvedTitle = title ?? 'Hospeda';
 const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral Entrerriano';
 ---
 
-<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+<BaseLayout
+	locale={locale}
+	title={resolvedTitle}
+	description={resolvedDescription}
+	analyticsTag={analyticsTag}
+>
 	<SEOHead
 		slot="head"
 		title={resolvedTitle}

@@ -397,6 +397,7 @@ const breadcrumbItems = [
     ogType={t(`venue.types.${venue.type}`, venue.type)}
     ogSubtitle={venue.destinationName}
     ogRating={venue.averageRating > 0 ? venue.averageRating.toFixed(1) : undefined}
+    analyticsTag={venue.id}
 >
     <VenueJsonLd
         slot="head-extra"
