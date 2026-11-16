@@ -1349,36 +1349,36 @@
         {
             "id": "T-037",
             "title": "T-4 Create scripts/umami/client.ts (API client with idempotent upsert helpers)",
-            "description": "Files: scripts/umami/client.ts, scripts/umami/client.test.ts (locate which vitest project picks up scripts/ tests; if none, place the test where the repo runs tsx script tests and say so in the PR). Uses the boards/reports API shapes recorded in T-001. Tests: upsert creates when absent, updates when present, no write in dry-run, auth header sent, API errors surfaced with a typed error.",
-            "status": "pending",
+            "description": "Files: scripts/umami/client.ts, scripts/umami/client.test.ts (locate which vitest project picks up scripts/ tests; if none, place the test where the repo runs tsx script tests and say so in the PR). Uses the boards/reports API shapes recorded in T-001. Tests: upsert creates when absent, updates when present, no write in dry-run, auth header sent, API errors surfaced with a typed error.\n\nDONE NOTE: test lives at scripts/__tests__/umami-client.test.ts (scripts/vitest.config.ts only includes __tests__/**).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-038"],
             "subtasks": [
                 {
                     "title": "Port the structure of scripts/posthog/client.ts (357 lines) to Umami's API: API-key or login auth, list/create/update for reports/boards, find-by-name upsert",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Native fetch, dry-run mode like POSTHOG_DRY_RUN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test with mocked fetch",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t4-dashboards", "scripts"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:56:21Z",
+                "completed": "2026-11-16T04:59:43Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 46,
+        "pending": 45,
         "inProgress": 0,
-        "completed": 30,
+        "completed": 31,
         "blocked": 0,
         "averageComplexity": 2.5
     }
