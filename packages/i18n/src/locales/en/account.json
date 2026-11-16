@@ -390,8 +390,7 @@
             "confirmTitle": "Disconnect {{name}}?",
             "confirmBody": "It loses access to your account right away. You can connect it again whenever you want.",
             "confirm": "Yes, disconnect",
-            "cancel": "Cancel",
-            "working": "Disconnecting..."
+            "cancel": "Cancel"
         },
         "errors": {
             "loadFailed": "We could not load your assistants. Please try again.",

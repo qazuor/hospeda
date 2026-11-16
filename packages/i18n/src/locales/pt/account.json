@@ -390,8 +390,7 @@
             "confirmTitle": "Desconectar {{name}}?",
             "confirmBody": "Ele perde o acesso à sua conta imediatamente. Você pode conectá-lo de novo quando quiser.",
             "confirm": "Sim, desconectar",
-            "cancel": "Cancelar",
-            "working": "Desconectando..."
+            "cancel": "Cancelar"
         },
         "errors": {
             "loadFailed": "Não conseguimos carregar seus assistentes. Tente novamente.",
