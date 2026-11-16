@@ -13,8 +13,16 @@
  * - `identifyUser` attaches a distinct id to the Umami session, so it only runs
  *   once analytics consent is granted. Within a browser session it is sent
  *   again only when the person properties change. Before consent, or before
- *   the deferred tracker exists, the identity stays pending and is flushed on
- *   `CONSENT_CHANGED_EVENT` or when the tracker appears.
+ *   this document's pageview was acknowledged by Umami, the identity stays
+ *   pending and is flushed on `CONSENT_CHANGED_EVENT` or on the
+ *   acknowledgement.
+ * - Order (OQ-5, revised 2026-11-16): the identify is ALWAYS sent after this
+ *   document's pageview was answered, so the tracker carries the
+ *   `x-umami-cache` token and Umami claims the anonymous session (same session
+ *   id, distinct id attached). Sent earlier it would open a separate
+ *   `uuid(…, id)` session and break the join with server events, which carry
+ *   no distinct id. If the acknowledgement never comes (ad blocker, failed
+ *   request) the identify is not sent at all. See `umami-pageview.ts`.
  * - Revoking analytics consent forgets the identity (reloading the page when
  *   this document's tracker already holds it, see `forgetIdentityOnRevocation`).
  * - The distinct id is the internal user id, never an email (OQ-5).
@@ -32,7 +40,7 @@ import {
     prepareAnalyticsEvent,
     validateDistinctId
 } from '@repo/analytics';
-import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { waitForPageviewAcknowledgement } from '@/lib/analytics/umami-pageview';
 import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 import { webLogger } from '@/lib/logger';
 
@@ -178,8 +186,9 @@ function writeIdentified(marker: IdentifiedMarker | null): void {
 }
 
 /**
- * Identity waiting to be sent: for consent, or for the deferred tracker to
- * appear. Never dropped by a missing tracker, only by sign-out or revocation.
+ * Identity waiting to be sent: for consent, or for this document's pageview to
+ * be acknowledged. Never dropped by a missing tracker or a wait that gave up,
+ * only by sign-out or revocation.
  */
 let pendingUserId: string | null = null;
 /** Person properties accumulated across calls; sent as Umami session data. */
@@ -192,8 +201,8 @@ let identified: IdentifiedMarker | null = null;
  * later payload, so revoking consent has to discard that document.
  */
 let trackerHoldsIdentity = false;
-/** Cancels the bounded wait for the tracker, when one is running. */
-let cancelTrackerWait: (() => void) | null = null;
+/** Cancels the bounded wait for the pageview acknowledgement, when one is running. */
+let cancelAcknowledgementWait: (() => void) | null = null;
 let consentListenerAttached = false;
 
 function currentMarker(): IdentifiedMarker | null {
@@ -214,8 +223,9 @@ function hasPersonProperties(): boolean {
 }
 
 /**
- * Sends the identify now. Only reached with consent and a present tracker, so
- * marking the session identified here never claims a send that did not happen.
+ * Sends the identify now. Only reached with consent and an acknowledged
+ * pageview (so a present tracker holding the cache token), so marking the
+ * session identified here never claims a send that did not happen.
  */
 function identifyNow(userId: string): void {
     const properties = { ...personProperties };
@@ -229,8 +239,10 @@ function identifyNow(userId: string): void {
 }
 
 /**
- * Sends the identify once the tracker exists. While it does not, the identity
- * stays pending and a bounded wait flushes it when the tracker appears.
+ * Sends the identify once this document's pageview was acknowledged by Umami
+ * (the tracker then holds the `x-umami-cache` token, see the file header).
+ * Until then the identity stays pending and one bounded wait is running; when
+ * it gives up the identity stays pending for the next call.
  */
 function sendIdentify(userId: string): void {
     const marker = currentMarker();
@@ -239,10 +251,12 @@ function sendIdentify(userId: string): void {
         return;
     }
     pendingUserId = userId;
-    if (cancelTrackerWait) return;
-    const { cancel } = waitForUmamiTracker({
-        onReady: () => {
-            cancelTrackerWait = null;
+    if (cancelAcknowledgementWait) return;
+    let settled = false;
+    const { cancel } = waitForPageviewAcknowledgement({
+        onAcknowledged: () => {
+            settled = true;
+            cancelAcknowledgementWait = null;
             const target = pendingUserId;
             if (target === null || !hasAnalyticsConsent()) return;
             pendingUserId = null;
@@ -253,16 +267,17 @@ function sendIdentify(userId: string): void {
         onGiveUp: () => {
             // The identity stays pending: the next identify or property call
             // (every page mounts UserMenu) starts a new wait.
-            cancelTrackerWait = null;
+            settled = true;
+            cancelAcknowledgementWait = null;
         }
     });
-    // A synchronous `onReady` already ran and cleared the wait.
-    cancelTrackerWait = pendingUserId === null ? null : cancel;
+    // A synchronous acknowledgement already ran and settled the wait.
+    if (!settled) cancelAcknowledgementWait = cancel;
 }
 
-function stopTrackerWait(): void {
-    cancelTrackerWait?.();
-    cancelTrackerWait = null;
+function stopAcknowledgementWait(): void {
+    cancelAcknowledgementWait?.();
+    cancelAcknowledgementWait = null;
 }
 
 /**
@@ -274,7 +289,7 @@ function stopTrackerWait(): void {
  * document that never identified needs no reload.
  */
 function forgetIdentityOnRevocation(): void {
-    stopTrackerWait();
+    stopAcknowledgementWait();
     pendingUserId = null;
     personProperties = {};
     identified = null;
@@ -320,9 +335,10 @@ function isAcceptedDistinctId(userId: string): boolean {
  *
  * CONSENT-GATED: fires once analytics consent is granted, otherwise the
  * identity is stashed and sent when `CONSENT_CHANGED_EVENT` reports consent.
- * When the deferred tracker is not there yet the identity stays pending and is
- * sent as soon as it appears (bounded wait); the session is marked identified
- * only after `umami.identify` actually ran. Within a browser session an identify
+ * The identify is sent only after this document's pageview was acknowledged
+ * by Umami (bounded wait; never sent when it is not), so it claims the
+ * anonymous session instead of opening a second one; the session is marked
+ * identified only after `umami.identify` actually ran. Within a browser session an identify
  * is sent again only when the person properties changed, so the enriched
  * properties of a later call always reach Umami. Revoking consent forgets the
  * identity (see `CONSENT_CHANGED_EVENT`). Emails are rejected as distinct ids.
@@ -360,13 +376,13 @@ export function setPersonProperties(props: AnalyticsPersonProperties): void {
 
 /**
  * Forget the identified visitor (call on sign-out). Drops any identity pending
- * consent or the tracker and the session marker so a later login identifies
+ * consent or the pageview acknowledgement and the session marker so a later login identifies
  * again. The tracker keeps its in-memory id until the next full page load; the
  * sign-out flow always ends in one.
  */
 export function resetUser(): void {
     if (typeof window === 'undefined') return;
-    stopTrackerWait();
+    stopAcknowledgementWait();
     pendingUserId = null;
     personProperties = {};
     identified = null;

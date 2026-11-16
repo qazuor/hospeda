@@ -14,10 +14,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildPageviewPayload,
     getCurrentPageReferrer,
+    PAGEVIEW_ACK_TIMEOUT_MS,
     readPageTag,
     type StartUmamiPageviewsResult,
-    startUmamiPageviews
+    startUmamiPageviews,
+    waitForPageviewAcknowledgement
 } from '@/lib/analytics/umami-pageview';
+import { flushMicrotasks, installUmamiTrackerStub } from '../../helpers/umami-tracker-stub';
 
 const TAG_A = '3f2b8c1e-5d4a-4c7b-9e1f-0a1b2c3d4e5f';
 const TAG_B = '9a8b7c6d-1e2f-4a3b-8c4d-5e6f7a8b9c0d';
@@ -248,6 +251,149 @@ describe('startUmamiPageviews without a configured tracker', () => {
         firstLoad();
 
         expect(umami.track).not.toHaveBeenCalled();
+    });
+});
+
+describe('waitForPageviewAcknowledgement (identify after the pageview ack, OQ-5)', () => {
+    function waitAck(): { readonly acknowledged: () => number; readonly gaveUp: () => number } {
+        let acknowledged = 0;
+        let gaveUp = 0;
+        waitForPageviewAcknowledgement({
+            onAcknowledged: () => {
+                acknowledged += 1;
+            },
+            onGiveUp: () => {
+                gaveUp += 1;
+            }
+        });
+        return { acknowledged: () => acknowledged, gaveUp: () => gaveUp };
+    }
+
+    it('does not acknowledge while the pageview request is in flight', async () => {
+        renderHead({ clientRouter: true });
+        installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        firstLoad();
+
+        const wait = waitAck();
+        await flushMicrotasks();
+
+        expect(wait.acknowledged()).toBe(0);
+    });
+
+    it('acknowledges right after Umami answers the pageview with a cache token', async () => {
+        renderHead({ clientRouter: true });
+        const umami = installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        firstLoad();
+        const wait = waitAck();
+
+        umami.respond();
+        await flushMicrotasks();
+
+        expect(wait.acknowledged()).toBe(1);
+        expect(wait.gaveUp()).toBe(0);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('acknowledges at once (synchronously) once this document was acknowledged', async () => {
+        renderHead({ clientRouter: true });
+        const umami = installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        firstLoad();
+        umami.respond();
+        await flushMicrotasks();
+
+        const wait = waitAck();
+
+        expect(wait.acknowledged()).toBe(1);
+    });
+
+    it('stays acknowledged across a soft navigation (the tracker keeps its token)', async () => {
+        renderHead({ clientRouter: true });
+        const umami = installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        firstLoad();
+        umami.respond();
+        await flushMicrotasks();
+
+        softNavigate({ path: '/es/destinos/', tag: null });
+        const wait = waitAck();
+
+        expect(wait.acknowledged()).toBe(1);
+    });
+
+    it('never acknowledges a request that failed (no cache token), and gives up', async () => {
+        renderHead({ clientRouter: true });
+        const umami = installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        firstLoad();
+        const wait = waitAck();
+
+        umami.respond({ ok: false });
+        await flushMicrotasks();
+        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+
+        expect(wait.acknowledged()).toBe(0);
+        expect(wait.gaveUp()).toBe(1);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('never acknowledges a tracker without getSession (cannot prove the token)', async () => {
+        renderHead({ clientRouter: true });
+        const umami = installUmamiTrackerStub({ withGetSession: false });
+        handle = startUmamiPageviews();
+        firstLoad();
+        const wait = waitAck();
+
+        umami.respond();
+        await flushMicrotasks();
+
+        expect(wait.acknowledged()).toBe(0);
+    });
+
+    it('gives up without a timer when the tracker never loads (ad blocker)', () => {
+        renderHead({ clientRouter: true });
+        handle = startUmamiPageviews();
+        firstLoad();
+        const wait = waitAck();
+
+        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+
+        expect(wait.acknowledged()).toBe(0);
+        expect(wait.gaveUp()).toBe(1);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('cancel stops a pending wait without calling back', async () => {
+        renderHead({ clientRouter: true });
+        const umami = installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        firstLoad();
+        const onAcknowledged = vi.fn();
+        const onGiveUp = vi.fn();
+        const { cancel } = waitForPageviewAcknowledgement({ onAcknowledged, onGiveUp });
+
+        cancel();
+        umami.respond();
+        await flushMicrotasks();
+        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+
+        expect(onAcknowledged).not.toHaveBeenCalled();
+        expect(onGiveUp).not.toHaveBeenCalled();
+    });
+
+    it('acknowledges the StandaloneLayout single pageview too', async () => {
+        renderHead({ clientRouter: false });
+        const umami = installUmamiTrackerStub();
+        handle = startUmamiPageviews();
+        const wait = waitAck();
+
+        umami.respond();
+        await flushMicrotasks();
+
+        expect(umami.track).toHaveBeenCalledTimes(1);
+        expect(wait.acknowledged()).toBe(1);
     });
 });
 

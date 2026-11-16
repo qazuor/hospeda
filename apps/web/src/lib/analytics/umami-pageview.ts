@@ -32,10 +32,27 @@
  *
  * Pages without `<ClientRouter />` (StandaloneLayout) never get
  * `astro:page-load`; there the pageview is sent once, directly.
+ *
+ * ## The pageview acknowledgement (OQ-5, revised 2026-11-16)
+ *
+ * Umami 3.5.0 derives the session as `uuid(website, ip, ua, salt, id)`. An
+ * `identify` that carries the tracker's `x-umami-cache` token claims the
+ * anonymous fingerprint session (same session id, distinct id attached); one
+ * sent without the token opens a separate `uuid(…, id)` session, and a server
+ * event (which never carries a distinct id) can no longer join the browser.
+ *
+ * The tracker stores the token from the answer of each request it sends
+ * (`cache = data.cache` in `send()`), keeps it in memory for the life of the
+ * document (a `pushState` does not touch it) and exposes it through
+ * `getSession()`. Its `send()` swallows every error, so the promise `track()`
+ * returns also resolves for a blocked or failed request. A pageview therefore
+ * counts as acknowledged only when that promise resolved AND the tracker then
+ * holds a token. {@link waitForPageviewAcknowledgement} is what the identify
+ * waits for. Module state is per document: a full reload starts unacknowledged.
  */
 
 import type { UmamiTracker } from '@repo/analytics';
-import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { getUmamiTracker, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 
 /** `name` of the per-page `<meta>` carrying the Umami tag (detail pages only). */
 export const UMAMI_TAG_META_NAME = 'umami-tag';
@@ -53,11 +70,127 @@ const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 /** Defaults the tracker passes to the function form of `umami.track`. */
 type TrackerPayload = Record<string, unknown>;
 
+/**
+ * How long an identify waits for this document's pageview to be acknowledged
+ * before giving up. Covers the tracker wait (about 5 s) plus the request.
+ */
+export const PAGEVIEW_ACK_TIMEOUT_MS = 10_000;
+
 /** URL of the page the visitor left on the last soft navigation, if any. */
 let softNavFromUrl: string | null = null;
 /** URL of the page counted by the last pageview. */
 let lastPageUrl: string | null = null;
 let started = false;
+/** Whether a pageview of this document was answered and left a cache token. */
+let pageviewAcknowledged = false;
+/** Bumped by `stop`, so an answer to a request of an earlier wiring is ignored. */
+let wiringGeneration = 0;
+/** Waiters notified on the next acknowledgement. */
+const acknowledgementWaiters = new Set<() => void>();
+
+/**
+ * Whether the tracker holds an `x-umami-cache` token, read through its
+ * `getSession()`. A tracker without `getSession` cannot prove it, so it counts
+ * as not holding one (the identify is then never sent, never sent wrong).
+ */
+function trackerHoldsCacheToken(tracker: UmamiTracker): boolean {
+    try {
+        const getSession: unknown = Reflect.get(tracker, 'getSession');
+        if (typeof getSession !== 'function') return false;
+        const session: unknown = Reflect.apply(getSession, tracker, []);
+        if (typeof session !== 'object' || session === null) return false;
+        const cache: unknown = Reflect.get(session, 'cache');
+        return typeof cache === 'string' && cache.length > 0;
+    } catch {
+        return false;
+    }
+}
+
+/** Whether this document's pageview was acknowledged and the token is still held. */
+function isAcknowledgedNow(): boolean {
+    if (!pageviewAcknowledged) return false;
+    const tracker = getUmamiTracker();
+    return tracker !== undefined && trackerHoldsCacheToken(tracker);
+}
+
+/**
+ * Marks the document acknowledged once the pageview request settled and the
+ * tracker holds a token, then notifies the waiters.
+ */
+async function acknowledgeWhenAnswered({
+    sent,
+    generation
+}: {
+    readonly sent: unknown;
+    readonly generation: number;
+}): Promise<void> {
+    try {
+        await sent;
+    } catch {
+        return;
+    }
+    if (generation !== wiringGeneration) return;
+    const tracker = getUmamiTracker();
+    if (!tracker || !trackerHoldsCacheToken(tracker)) return;
+    pageviewAcknowledged = true;
+    for (const waiter of [...acknowledgementWaiters]) waiter();
+}
+
+/** Input of {@link waitForPageviewAcknowledgement}. */
+export interface WaitForPageviewAcknowledgementInput {
+    /** Called once when this document's pageview has been acknowledged. */
+    readonly onAcknowledged: () => void;
+    /** Called once when the wait gives up (ad blocker, failed request, slow network). */
+    readonly onGiveUp?: () => void;
+    /** Bound of the wait in ms. Defaults to {@link PAGEVIEW_ACK_TIMEOUT_MS}. */
+    readonly timeoutMs?: number;
+}
+
+/** Result of {@link waitForPageviewAcknowledgement}. */
+export interface WaitForPageviewAcknowledgementResult {
+    /** Stops a pending wait without calling back. A no-op once it settled. */
+    readonly cancel: () => void;
+}
+
+/**
+ * Runs `onAcknowledged` once this document's pageview was answered by Umami
+ * and the tracker holds the `x-umami-cache` token: synchronously when that
+ * already happened (also after a soft navigation, the token outlives
+ * `pushState`), otherwise on the acknowledgement. Gives up silently after
+ * `timeoutMs` (then `onGiveUp`), never throws and leaves no timer behind.
+ *
+ * @param input - Callbacks and the optional bound.
+ * @returns A handle to cancel the pending wait.
+ */
+export function waitForPageviewAcknowledgement({
+    onAcknowledged,
+    onGiveUp,
+    timeoutMs = PAGEVIEW_ACK_TIMEOUT_MS
+}: WaitForPageviewAcknowledgementInput): WaitForPageviewAcknowledgementResult {
+    const noop: WaitForPageviewAcknowledgementResult = { cancel: () => undefined };
+    if (typeof window === 'undefined') return noop;
+    if (isAcknowledgedNow()) {
+        onAcknowledged();
+        return noop;
+    }
+
+    let timer: number | undefined;
+    const settle = (): void => {
+        acknowledgementWaiters.delete(waiter);
+        if (timer !== undefined) window.clearTimeout(timer);
+    };
+    function waiter(): void {
+        settle();
+        onAcknowledged();
+    }
+    acknowledgementWaiters.add(waiter);
+    timer = window.setTimeout(() => {
+        settle();
+        onGiveUp?.();
+    }, timeoutMs);
+
+    return { cancel: settle };
+}
 
 /**
  * Referrer of the page being shown: the previous page's URL after a soft
@@ -146,16 +279,22 @@ function countCurrentPage(): void {
     // never reaches its pushState hook), so send the page we came from.
     const referrer = softNavFromUrl === null ? undefined : stripOrigin(softNavFromUrl);
     lastPageUrl = url;
+    const generation = wiringGeneration;
 
     waitForUmamiTracker({
         onReady: (tracker: UmamiTracker) => {
+            let sent: unknown;
             try {
-                tracker.track((defaults) =>
+                // Typed `void` in `@repo/analytics`; the 3.5.0 tracker returns
+                // the promise of its `send()`.
+                sent = tracker.track((defaults) =>
                     buildPageviewPayload({ defaults, url, title, referrer, tag })
                 );
             } catch {
                 // Best-effort: analytics must never break the page.
+                return;
             }
+            void acknowledgeWhenAnswered({ sent, generation });
         }
     });
 }
@@ -168,7 +307,10 @@ function rememberPageBeingLeft(): void {
 
 /** Result of {@link startUmamiPageviews}. */
 export interface StartUmamiPageviewsResult {
-    /** Removes the listeners and forgets the navigation state. */
+    /**
+     * Removes the listeners and forgets the navigation and acknowledgement
+     * state (used by tests to start each case as a fresh document).
+     */
     readonly stop: () => void;
 }
 
@@ -191,6 +333,8 @@ export function startUmamiPageviews(): StartUmamiPageviewsResult {
         softNavFromUrl = null;
         lastPageUrl = null;
         started = false;
+        pageviewAcknowledged = false;
+        wiringGeneration += 1;
     };
 
     if (!document.querySelector(CLIENT_ROUTER_META_SELECTOR)) {
