@@ -90,7 +90,14 @@ Conclusions:
   `uuid(…, id)` on its own, and a later hard reload returns to the anonymous session. The web
   client closes this race (owner decision, 2026-11-16): `identifyUser` waits, bounded, until
   `umami-pageview.ts` saw this document's pageview answered AND the tracker holds the token
-  (`getSession().cache`); otherwise it sends no identify.
+  (`getSession().cache`); otherwise it sends no identify. The admin follows the same rule by
+  polling `getSession().cache`.
+- **Re-check on every Umami upgrade.** The identify ordering, web and admin, depends on two
+  details of the 3.5.0 tracker that are not a documented API: `umami.track()` returns the
+  promise of its `send()` (the web awaits it to know the pageview was answered), and
+  `umami.getSession()` exists and exposes the cache token as `cache` (read by
+  `hasUmamiCacheToken` in `@repo/analytics`). If either changes, no identify is sent at all
+  (fail-closed, never a split session), and logged-in visits silently stop being identified.
 - The server-created session row does carry `distinct_id`, but no `session_link` row is
   written for it (only identify writes one).
 

@@ -231,18 +231,33 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
 
 ### 6.3 Web and admin
 
-- `PostHogScript.astro` → `UmamiScript.astro`, with `data-auto-track` for pageviews
-  and explicit `track` calls through `@repo/analytics/browser`.
+- `PostHogScript.astro` → `UmamiScript.astro`. The tracker renders with
+  `data-auto-pageview="false"` and the web sends one pageview per
+  `astro:page-load` itself (initial load and every `<ClientRouter />` swap), so
+  each pageview carries the current page's tag and referrer. Custom events are
+  explicit `track` calls through `@repo/analytics/browser`.
+- Decision (2026-11-16): only a router navigation counts as a pageview. An app's
+  own `pushState` without the router (the destinations filters,
+  `DestinationPOIFilter`) changes the URL but no longer counts as a pageview.
+  `ListingLayout`'s synthetic `astro:page-load` does count, with the last counted
+  page as its referrer.
 - Consent: Umami is cookieless, so pre-consent capture keeps working without the
   memory-persistence trick. `identify` (Distinct ID + session data) runs only after
   consent, listening to `CONSENT_CHANGED_EVENT` exactly as today.
 - Order (OQ-5, revised 2026-11-16): the web sends `identify` only after Umami
   answered the current document's pageview and the tracker holds the cache token
-  (`getSession().cache`). The wait is bounded; when it runs out (ad blocker, failed
-  request) no identify is sent and nothing throws. Soft navigations keep the
-  token. A full reload re-identifies only when the session marker says the
-  properties changed, and then again after that document's pageview.
-- Admin: same, without `identify` beyond the staff user id (OQ-5).
+  (`getSession().cache`). The web wait has no timeout: with `<ClientRouter />` the
+  initial pageview goes out on `window.load`, often after the identify was
+  requested, so the identify is flushed whenever the acknowledgement arrives. When
+  it never does (ad blocker, failed request) no identify is sent and nothing
+  throws. Soft navigations keep the token. A full reload re-identifies only when
+  the session marker says the properties changed, and then again after that
+  document's pageview.
+- Admin: same order, without `identify` beyond the staff user id (OQ-5). The admin
+  keeps the tracker's auto pageview, so it polls `getSession().cache` (bounded,
+  counted from when the document is `complete`, which is when the tracker sends
+  that pageview) and gives up silently. The token check is shared
+  (`hasUmamiCacheToken` in `@repo/analytics`).
 - CSP: remove PostHog hosts/hashes, add the Umami script origin; update
   `csp-soft-nav-script-hashes.ts` and `csp-nonce.ts`.
 
@@ -349,7 +364,8 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
 - AC-4 A unit test fails if any catalog event exceeds Umami's limits.
 - AC-5 Web before consent: pageviews and anonymous events reach Umami; no
   `identify`. After consent: `identify` with the user's id runs once per session,
-  always after the document's pageview was acknowledged (OQ-5).
+  and again whenever the person properties change, always after the document's
+  pageview was acknowledged (OQ-5).
 - AC-6 The six dashboards exist in Umami, created by `scripts/umami/setup.ts`
   idempotently (running it twice changes nothing).
 - AC-7 `GET …/traffic-stats` returns 404 for a listing the actor does not own,
@@ -463,6 +479,12 @@ answer it has no token and opens `uuid(…, id)`, which also breaks the join.
 Sending `payload.id` from the server was reconsidered and rejected again: it
 joins only that second, racy session, and the api cannot see the consent
 cookie.
+
+*Accepted residual risk (2026-11-16, owner):* revoking consent after an identify
+reloads the page and stops sending any id, but Umami 3.5 cannot unlink a session
+it already claimed. Anonymous hits that keep landing on that fingerprint session
+(same IP + User-Agent + salt) stay associated with the user's distinct id until
+Umami rotates the session salt. No new identity is sent after revocation.
 
 ### OQ-6 · Umami database — RESOLVED: its own Postgres container
 
