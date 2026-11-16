@@ -15,6 +15,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { ConversationService, MessageService } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core/types';
 import { getActorFromContext } from '../../../../utils/actor';
 import { createRouter } from '../../../../utils/create-app';
 import { env } from '../../../../utils/env';
@@ -82,6 +83,16 @@ router.post('/:id/messages', async (c) => {
         // Lightweight ownership check (no getThread side effects): the
         // conversation must exist AND belong to one of the owner's accommodations.
         const ownership = await conversationSvc.findOwnedConversation(actor, { conversationId });
+
+        // Only "not yours / not there" answers 404. Any other service failure keeps
+        // its own status (error-contract.md: a 5xx is never masked as 404).
+        if (
+            ownership.error &&
+            ownership.error.code !== ServiceErrorCode.NOT_FOUND &&
+            ownership.error.code !== ServiceErrorCode.FORBIDDEN
+        ) {
+            throw new ServiceError(ownership.error.code, ownership.error.message);
+        }
 
         if (ownership.error || !ownership.data) {
             return createErrorResponse(
