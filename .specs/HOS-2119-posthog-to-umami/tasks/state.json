@@ -2162,47 +2162,47 @@
         {
             "id": "T-060",
             "title": "T-6 Remove PostHog env vars (registry, generated JSON, snapshots, app Zod schemas, .env.example)",
-            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.\n\nNOTE 2026-11-16 (T-059): apps/api/src/utils/env.ts still lists HOSPEDA_POSTHOG_KEY as requiredInProd — remove it here BEFORE the owner deletes the Coolify var, or prod boot fails.\n\nNOTE (T-057/T-058): leftovers for T-060 — apps/web/src/env.ts:50-53 prod-required refine on PUBLIC_POSTHOG_KEY (remove with the field or prod boot fails); apps/web + apps/admin Dockerfiles ARG/ENV PUBLIC_/VITE_POSTHOG_*; env-schema.ts entries in both apps; apps/admin/src/env.ts:160-161; apps/web/test/lib/revalidation-secret-env.test.ts fixture; .env.example files. apps/api/package.json still declares posthog-node with no importer — remove + lockfile.",
-            "status": "pending",
+            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.\n\nNOTE 2026-11-16 (T-059): apps/api/src/utils/env.ts still lists HOSPEDA_POSTHOG_KEY as requiredInProd — remove it here BEFORE the owner deletes the Coolify var, or prod boot fails.\n\nNOTE (T-057/T-058): leftovers for T-060 — apps/web/src/env.ts:50-53 prod-required refine on PUBLIC_POSTHOG_KEY (remove with the field or prod boot fails); apps/web + apps/admin Dockerfiles ARG/ENV PUBLIC_/VITE_POSTHOG_*; env-schema.ts entries in both apps; apps/admin/src/env.ts:160-161; apps/web/test/lib/revalidation-secret-env.test.ts fixture; .env.example files. apps/api/package.json still declares posthog-node with no importer — remove + lockfile.\n\nDONE NOTE: requiredInProd now HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB (registry requiredScope production). .env.example regenerated with gen:env-examples. dockerfile-build-args test + env:check:registry stay red until T-061 removes Dockerfile ARGs (same PR).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-057", "T-058", "T-059"],
             "blocks": ["T-061", "T-062", "T-067"],
             "subtasks": [
                 {
                     "title": "Remove HOSPEDA_POSTHOG_KEY/HOST, PUBLIC_POSTHOG_KEY/HOST, VITE_POSTHOG_KEY/HOST from packages/config/src/env-registry.hospeda.ts and env-registry.client.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove from apps/api/src/utils/env-schema.ts + env.ts, apps/web/src/env-schema.ts + env.ts, apps/admin/src/env-schema.ts + env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove from the three .env.example files; regenerate packages/config/generated/env-registry.json and snapshot",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update packages/config/src/__tests__/env-registry.test.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "config", "release-env-var-change"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:16:09Z",
+                "completed": "2026-11-16T17:48:09Z"
             }
         },
         {
             "id": "T-061",
             "title": "T-6 Remove PostHog from Dockerfiles, turbo.json, build scripts, guards and package dependencies",
-            "description": "Cut-critical. Tests: dockerfile-build-args.test.ts, `bash scripts/check-dockerfile-build-env-in-turbo.sh`, and typecheck of apps/api and apps/admin pass after dependency removal. Run with CI=true prefix for pnpm.",
-            "status": "pending",
+            "description": "Cut-critical. Tests: dockerfile-build-args.test.ts, `bash scripts/check-dockerfile-build-env-in-turbo.sh`, and typecheck of apps/api and apps/admin pass after dependency removal. Run with CI=true prefix for pnpm.\n\nNOTE (T-060/T-063): also fix HOSPEDA_UMAMI_URL/WEBSITE_ID_WEB registry descriptions (still say leave unset to disable; now prod-required) then regen env-registry.json, env examples, snapshot. Lockfile must drop @repo/posthog-proxy-worker (T-063) and posthog-node. Stale comment scripts/check-dockerfile-build-env-in-turbo.sh:13. dockerfile-build-args.test.ts:100-103 comment.",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-060"],
             "blocks": ["T-067"],
@@ -2233,7 +2233,7 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
+                "started": "2026-11-16T17:48:09Z",
                 "completed": null
             }
         },
@@ -2241,7 +2241,7 @@
             "id": "T-062",
             "title": "T-6 Remove PostHog from CI workflows",
             "description": "Cut-critical. Tests: workflow YAML lint via the repo's actionlint/validate-docs if present; `rg -i posthog .github` returns nothing. The CI Guards job must stay green.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-060"],
             "blocks": ["T-067"],
@@ -2264,47 +2264,47 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
+                "started": "2026-11-16T17:48:09Z",
                 "completed": null
             }
         },
         {
             "id": "T-063",
             "title": "T-6 Delete infra/cloudflare/posthog-proxy and its references",
-            "description": "Cut-critical (the spec deletes the worker in the same cut). Tests: workspace config still resolves (pnpm-workspace patterns), root tests that enumerate infra workers (locate) pass. The deployed Cloudflare worker itself is removed by the owner in T-070, only after the cut is live.",
-            "status": "pending",
+            "description": "Cut-critical (the spec deletes the worker in the same cut). Tests: workspace config still resolves (pnpm-workspace patterns), root tests that enumerate infra workers (locate) pass. The deployed Cloudflare worker itself is removed by the owner in T-070, only after the cut is live.\n\nDONE NOTE: no .github deploy step existed; workspace glob infra/cloudflare/* needs no edit; /api/relay was only the worker route (no app route). Lockfile entry @repo/posthog-proxy-worker regenerated with T-061. Stale comment scripts/check-dockerfile-build-env-in-turbo.sh:13 left for T-061.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-029", "T-057"],
             "blocks": ["T-067"],
             "subtasks": [
                 {
                     "title": "Delete infra/cloudflare/posthog-proxy/ (worker.js, worker.test.ts, wrangler.toml, package.json, vitest.config.ts, README.md)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update infra/cloudflare/README.md, infra/cloudflare/sentry-tunnel/README.md, worker.js and wrangler.toml mentions; scripts/check-qrcode-engine-isolation.sh comment (line ~65)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove any Wrangler deploy step for it (rg posthog-proxy .github scripts package.json)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm nothing in the new relay (T-004) imported from it",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "devops"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:16:09Z",
+                "completed": "2026-11-16T17:17:53Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 17,
-        "inProgress": 0,
-        "completed": 59,
+        "pending": 13,
+        "inProgress": 2,
+        "completed": 61,
         "blocked": 0,
         "averageComplexity": 2.5
     }

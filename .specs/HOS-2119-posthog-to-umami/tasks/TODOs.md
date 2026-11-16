@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 59/76 tasks (78%)
+## Progress: 61/76 tasks (80%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -458,7 +458,7 @@ Tracks (can run in parallel):
   - Blocked by: T-022, T-023, T-024
   - Blocks: T-060
 
-- [ ] **T-060** (complexity: 3) - T-6 Remove PostHog env vars (registry, generated JSON, snapshots, app Zod schemas, .env.example)
+- [x] **T-060** (complexity: 3) - T-6 Remove PostHog env vars (registry, generated JSON, snapshots, app Zod schemas, .env.example)
   - Tags: t6-removal, config, release-env-var-change
   - Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.g...
   - Blocked by: T-057, T-058, T-059
@@ -476,7 +476,7 @@ Tracks (can run in parallel):
   - Blocked by: T-060
   - Blocks: T-067
 
-- [ ] **T-063** (complexity: 2) - T-6 Delete infra/cloudflare/posthog-proxy and its references
+- [x] **T-063** (complexity: 2) - T-6 Delete infra/cloudflare/posthog-proxy and its references
   - Tags: t6-removal, devops
   - Cut-critical (the spec deletes the worker in the same cut). Tests: workspace config still resolves (...
   - Blocked by: T-029, T-057
