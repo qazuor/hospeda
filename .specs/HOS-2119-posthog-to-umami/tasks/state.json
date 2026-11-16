@@ -1952,7 +1952,7 @@
         {
             "id": "T-054",
             "title": "T-5 Mount TrafficStatsCards in the partner panel (mi-cuenta/aliados)",
-            "description": "Partner stats semantics are sensitive (HOS-1063: 'medicion' vs 'constancia'). Only render when the partner has an OWN_PAGE link (same resolvePartnerLogoLink-derived condition used by the views card); silver partners with no page see nothing. Tests: gold partner with page shows cards; no-page partner shows none; unavailable shows none.",
+            "description": "Partner stats semantics are sensitive (HOS-1063: 'medicion' vs 'constancia'). Only render when the partner has an OWN_PAGE link (same resolvePartnerLogoLink-derived condition used by the views card); silver partners with no page see nothing. Tests: gold partner with page shows cards; no-page partner shows none; unavailable shows none.\n\nOWNER DECISION 2026-11-16: the partner traffic block keeps its own 7d/30d/90d selector (deviation from HOS-1063 §7.4 accepted for the traffic block only; the existing partner stats cards stay selector-free).",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-051", "T-049"],
