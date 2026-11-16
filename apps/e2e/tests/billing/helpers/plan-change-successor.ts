@@ -4,6 +4,7 @@
  * independently of service-core, fake provider request filters and the SQL
  * readers the three tests assert against.
  */
+import { randomUUID } from 'node:crypto';
 import { expect, type Page } from '@playwright/test';
 import { addCalendarMonths } from '@repo/utils';
 import { z } from 'zod';
@@ -134,7 +135,10 @@ export async function requestPlanChange(args: {
         {
             method: 'POST',
             headers: { 'content-type': 'application/json', cookie: args.user.sessionCookie },
-            body: JSON.stringify({ billingOptionId: args.billingOptionId })
+            body: JSON.stringify({
+                billingOptionId: args.billingOptionId,
+                payerEmail: `mp-${randomUUID()}@example.test`
+            })
         }
     );
     expectEqual(response.status, 200, 'TEST:2159 plan-change route returns HTTP 200.');

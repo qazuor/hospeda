@@ -154,7 +154,6 @@ import {
     adminGetPartnerRoute,
     adminListPartnerMentionsRoute,
     adminListPartnersRoute,
-    adminManualPaymentRoute,
     adminPreviewPartnerBillingSetupRoute,
     adminReviewPartnerContentRoute,
     adminUpdatePartnerMentionRoute,
@@ -595,7 +594,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminCreatePartnerRoute);
         app.route('/api/v1/admin/partners', adminUpdatePartnerRoute);
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
-        app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
         app.route('/api/v1/admin/partners', adminModeratePartnerPresenceRoute);
         app.route('/api/v1/admin/partners', adminEmptyPartnerPresenceRoute);

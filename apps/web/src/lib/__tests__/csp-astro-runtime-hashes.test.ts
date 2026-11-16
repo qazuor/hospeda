@@ -10,7 +10,7 @@
  * reported by a human.
  *
  * The expected digests below were captured from the real deployed site (a
- * built, running Astro 7.1.6), NOT recomputed with the same helper the module
+ * built, running Astro 7.1.6, re-confirmed on 7.4.7), NOT recomputed with the same helper the module
  * uses — hashing the pinned source with the pinned hasher would only prove the
  * module agrees with itself. Same reasoning as `csp-hash-emission.test.ts`,
  * which sources its expectations from `node:crypto` for exactly this reason.
@@ -21,6 +21,11 @@
  * `replaceServerIsland`) and re-hashed with `node:crypto`. All five came out
  * identical, so these digests are unchanged and still describe what Astro
  * actually emits — see the version-pin note in the module for the detail.
+ *
+ * On the 7.3.1 → 7.4.7 bump all five payloads changed (new prebuilt IIFE shape,
+ * hardened `replaceServerIsland`). Load, only and visible digests are the ones
+ * the CSP Headers CI job read off the real built site; idle and
+ * replaceServerIsland were derived with `node:crypto` from the installed package.
  */
 
 import { readFileSync } from 'node:fs';
@@ -34,15 +39,15 @@ import {
 import { buildCspHeader } from '../middleware-helpers';
 
 /**
- * Digests observed in the wild on Astro 7.1.6, keyed by the global the snippet
+ * Digests for Astro 7.4.7 (load/only/visible observed on the built site in CI, idle/replaceServerIsland derived with node:crypto from the installed package), keyed by the global the snippet
  * installs. Independent of anything this codebase computes.
  */
 const OBSERVED_HASHES: Readonly<Record<string, string>> = {
-    'Astro.load': 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=',
-    'Astro.only': 'sha256-eIXWvAmxkr251LJZkjniEK5LcPF3NkapbJepohwYRIc=',
-    'Astro.idle': 'sha256-BF0290pkb3jxQsE7z00xR8Imp8X34FLC88L0lkMnrGw=',
-    'Astro.visible': 'sha256-Q2BPg90ZMplYY+FSdApNErhpWafg2hcRRbndmvxuL/Q=',
-    replaceServerIsland: 'sha256-0oe0j1+KVmVYcHm1N1/3tGTf3Yhpnd6heIyJsO4LZS0='
+    'Astro.load': 'sha256-1BvDVWLr3QCC20uHhUDi27eDFVJpk1uMQJGIWKUks2I=',
+    'Astro.only': 'sha256-Y8t0ntteBwH+PqGKUyjWW3CAk+BNJKSoQc0xZ68FjhM=',
+    'Astro.idle': 'sha256-xIb/Pa7FUshAu4ihwjchYcQpyCI8eS8kt40GpOAYCz8=',
+    'Astro.visible': 'sha256-0O7iB6zr9x0r6X6eWYITC9V5q+yWCGAoFvcysBGbY9Q=',
+    replaceServerIsland: 'sha256-Skrrsp1OETN88u3yXzewKB0RYKw7ycPH04FOKeriKRE='
 };
 
 const REPO_ROOT = resolve(__dirname, '../../../../..');

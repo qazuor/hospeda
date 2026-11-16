@@ -1,15 +1,11 @@
 import { PartnerContentReviewStateEnum, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { PartnerBillingSetupCard } from '@/features/partners/components/PartnerBillingSetupCard';
 import { PartnerEmptyPresenceCard } from '@/features/partners/components/PartnerEmptyPresenceCard';
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import { PartnerPresenceModerationCard } from '@/features/partners/components/PartnerPresenceModerationCard';
-import {
-    usePartnerQuery,
-    useRegisterPartnerManualPaymentMutation
-} from '@/features/partners/hooks/usePartnerQuery';
+import { usePartnerQuery } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { formatShortDate } from '@/lib/format-helpers';
 
@@ -32,8 +28,6 @@ export const Route = createFileRoute('/_authed/partners/$id')({
 function PartnerViewPage() {
     const { id } = Route.useParams();
     const query = usePartnerQuery(id);
-    const manualPaymentMutation = useRegisterPartnerManualPaymentMutation(id);
-    const [manualNote, setManualNote] = useState('');
 
     if (query.isLoading) {
         return <div className="p-6">Cargando partner...</div>;
@@ -101,33 +95,10 @@ function PartnerViewPage() {
                     partnerName={partner.name}
                 />
 
-                <PartnerBillingSetupCard partnerId={partner.id} />
-
-                <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-3 rounded-lg border p-4">
-                        <h2 className="font-medium text-lg">Registrar pago manual</h2>
-                        <textarea
-                            className="min-h-24 w-full rounded-md border px-3 py-2"
-                            placeholder="Nota interna opcional"
-                            value={manualNote}
-                            onChange={(event) => setManualNote(event.target.value)}
-                        />
-                        <button
-                            type="button"
-                            className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
-                            disabled={manualPaymentMutation.isPending}
-                            onClick={async () => {
-                                await manualPaymentMutation.mutateAsync({
-                                    note: manualNote || undefined
-                                });
-                            }}
-                        >
-                            {manualPaymentMutation.isPending
-                                ? 'Activando...'
-                                : 'Registrar pago manual'}
-                        </button>
-                    </div>
-                </div>
+                <PartnerBillingSetupCard
+                    partnerId={partner.id}
+                    ownerUserId={partner.ownerUserId}
+                />
 
                 <PartnerMentionsSection partnerId={partner.id} />
             </div>

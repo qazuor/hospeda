@@ -151,6 +151,17 @@ describe('mi-cuenta/partner/index.astro (HOS-278 §8 partner self-service)', () 
         expect(approvedBranch).toContain("'account.partner.status.approved'");
     });
 
+    it('does not tell an active Partner that Hospeda still needs to create the subscription (HOS-2235)', () => {
+        const approvedBranch = getApprovedBranch();
+
+        expect(source).toContain('hasActivePartnerSubscription');
+        expect(approvedBranch).toContain('hasActivePartnerSubscription');
+        expect(approvedBranch).toContain("'account.partner.status.activeSubscription'");
+        expect(es.partner.status.activeSubscription).toBeTruthy();
+        expect(en.partner.status.activeSubscription).toBeTruthy();
+        expect(pt.partner.status.activeSubscription).toBeTruthy();
+    });
+
     it('renders an empty state (not an error, not a 404) when the caller has no ficha', () => {
         expect(source).toContain('partner === null');
         expect(source).toContain('account.partner.empty.text');

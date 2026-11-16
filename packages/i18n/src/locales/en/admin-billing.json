@@ -2315,6 +2315,7 @@
         "invalidId": "Subscription not found.",
         "loading": "Loading options…",
         "error": "Could not complete the change. Check the status and try again.",
+        "payerEmailUndeclared": "This subscription has no declared payer email, so Mercado Pago cannot open the checkout. Ask the customer to change plan from “My subscription”, where they declare the email.",
         "partnerUnsupported": "Changing a Partner's plan is not supported yet. To change it, revoke the subscription and configure the new plan again.",
         "unavailable": "The subscription is not active.",
         "customer": "Customer: {customer}",

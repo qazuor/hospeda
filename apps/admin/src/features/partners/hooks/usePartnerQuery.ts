@@ -34,15 +34,6 @@ async function updatePartner(id: string, data: UpdatePartner) {
     return result.data.data;
 }
 
-async function registerPartnerManualPayment(id: string, note?: string) {
-    const result = await fetchApi<{ success: boolean; data: Partner }>({
-        path: `/api/v1/admin/partners/${id}/manual-payment`,
-        method: 'POST',
-        body: { note }
-    });
-    return result.data.data;
-}
-
 export function usePartnerQuery(id: string, options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: partnerQueryKeys.detail(id),
@@ -66,18 +57,6 @@ export function useUpdatePartnerMutation(id: string) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (data: UpdatePartner) => updatePartner(id, data),
-        onSuccess: (updated) => {
-            queryClient.setQueryData(partnerQueryKeys.detail(id), updated);
-            queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });
-        }
-    });
-}
-
-export function useRegisterPartnerManualPaymentMutation(id: string) {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: ({ note }: { readonly note?: string }) =>
-            registerPartnerManualPayment(id, note),
         onSuccess: (updated) => {
             queryClient.setQueryData(partnerQueryKeys.detail(id), updated);
             queryClient.invalidateQueries({ queryKey: partnerQueryKeys.lists() });

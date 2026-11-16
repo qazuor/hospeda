@@ -5726,17 +5726,23 @@ export const billingSubscriptionApi = {
             body: {}
         });
     },
-    /** Request a change to one owned subscription through the protected route. */
+    /**
+     * Request a change to one owned subscription through the protected route.
+     * `payerEmail` is what the payer declares for the provider checkout (HOS-2218);
+     * it is not a confirmed identity.
+     */
     requestPlanChange({
         subscriptionId,
-        billingOptionId
+        billingOptionId,
+        payerEmail
     }: {
         readonly subscriptionId: string;
         readonly billingOptionId: string;
+        readonly payerEmail: string;
     }): Promise<ApiResult<z.infer<typeof SubscriptionPlanChangeResponseSchema>>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing-subscription/${subscriptionId}/plan-change`,
-            body: { billingOptionId }
+            body: { billingOptionId, payerEmail }
         });
     },
     /** Read the backend-resolved pricing situation for one vertical. */

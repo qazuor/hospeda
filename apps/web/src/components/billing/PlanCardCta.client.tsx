@@ -2,7 +2,12 @@ import type { PricingSituationVertical } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { totalCourtesyMonths } from '@/lib/billing/my-subscription-notices';
-import { findActiveSubscriptionId, submitPlanChange } from '@/lib/billing/plan-change-offer';
+import {
+    findActiveSubscriptionId,
+    loadDeclaredPayerEmail,
+    parsePayerEmail,
+    submitPlanChange
+} from '@/lib/billing/plan-change-offer';
 import {
     loadBillingUnpublishedListing,
     loadPricingSituation,
@@ -33,6 +38,9 @@ export function PlanCardCta({
     const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
     const [changeMessage, setChangeMessage] = useState<string | null>(null);
     const [changePending, setChangePending] = useState(false);
+    const [payerEmail, setPayerEmail] = useState('');
+    const [payerEmailTouched, setPayerEmailTouched] = useState(false);
+    const [payerEmailError, setPayerEmailError] = useState(false);
     const [ownerNotice, setOwnerNotice] = useState<{
         readonly promo: boolean;
         readonly checkoutOpen: boolean;
@@ -94,8 +102,22 @@ export function PlanCardCta({
           })
         : { kind: 'none' };
     const label = t(SIGNUP_VERTICAL_LABEL_KEY[vertical]);
+    /** Prefill the payer email with the one declared on the current subscription (HOS-2218). */
+    async function prefillPayerEmail() {
+        if (payerEmailTouched || payerEmail) return;
+        const subscriptionId = await findActiveSubscriptionId({ vertical });
+        if (!subscriptionId) return;
+        const declared = await loadDeclaredPayerEmail({ subscriptionId });
+        setPayerEmail((current) => current || declared);
+    }
     async function confirmPlanChange() {
         if (!selectedOptionId) return;
+        const email = parsePayerEmail({ value: payerEmail });
+        if (!email) {
+            setPayerEmailError(true);
+            return;
+        }
+        setPayerEmailError(false);
         setChangePending(true);
         try {
             const subscriptionId = await findActiveSubscriptionId({ vertical });
@@ -106,6 +128,7 @@ export function PlanCardCta({
             const outcome = await submitPlanChange({
                 subscriptionId,
                 billingOptionId: selectedOptionId,
+                payerEmail: email,
                 locale
             });
             if (outcome.kind === 'redirect') {
@@ -192,7 +215,10 @@ export function PlanCardCta({
                         type="button"
                         className={styles.secondary}
                         data-billing-option-id={id}
-                        onClick={() => setSelectedOptionId(id)}
+                        onClick={() => {
+                            setSelectedOptionId(id);
+                            void prefillPayerEmail();
+                        }}
                     >
                         {t('account.subscription.mine.planChange.pricingOpen')} ·{' '}
                         {t(
@@ -206,6 +232,31 @@ export function PlanCardCta({
                 <div data-testid="pricing-plan-change-confirm">
                     <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
                     <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
+                    <label className={styles.field}>
+                        <span>{t('account.subscription.mine.planChange.payerEmailLabel')}</span>
+                        <input
+                            type="email"
+                            name="payerEmail"
+                            autoComplete="email"
+                            required
+                            value={payerEmail}
+                            aria-invalid={payerEmailError}
+                            data-testid="pricing-plan-change-payer-email"
+                            onChange={(event) => {
+                                setPayerEmailTouched(true);
+                                setPayerEmail(event.target.value);
+                            }}
+                        />
+                        <small>{t('account.subscription.mine.planChange.payerEmailHint')}</small>
+                    </label>
+                    {payerEmailError && (
+                        <p
+                            role="alert"
+                            data-testid="pricing-plan-change-payer-email-error"
+                        >
+                            {t('account.subscription.mine.planChange.payerEmailInvalid')}
+                        </p>
+                    )}
                     {ownerNotice?.promo && (
                         <p data-testid="pricing-plan-change-promo-warning">
                             {t('account.subscription.mine.planChange.promoLost')}

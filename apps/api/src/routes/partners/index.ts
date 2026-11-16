@@ -4,7 +4,6 @@ export {
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
     adminListPartnersRoute,
-    adminManualPaymentRoute,
     adminPreviewPartnerBillingSetupRoute,
     adminReviewPartnerContentRoute,
     adminUpdatePartnerRoute
