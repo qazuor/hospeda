@@ -56,6 +56,9 @@ describe('resolveManualInstallmentView (HOS-1782)', () => {
         expect(hasActivePartnerSubscription(ownSubscriptions('partner', 'GRACE_PERIOD'))).toBe(
             false
         );
+        expect(
+            hasActivePartnerSubscription(ownSubscriptions('partner', 'PENDING_AUTHORIZATION'))
+        ).toBe(false);
         expect(hasActivePartnerSubscription({ ok: false })).toBe(false);
     });
 
