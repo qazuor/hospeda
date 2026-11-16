@@ -140,7 +140,8 @@ const GetThreadInputSchema = z.object({
     conversationId: z.string().uuid(),
     actorSide: z.enum(['GUEST', 'OWNER']),
     cursor: z.date().optional(),
-    limit: z.number().int().min(1).max(MAX_THREAD_LIMIT).optional()
+    limit: z.number().int().min(1).max(MAX_THREAD_LIMIT).optional(),
+    markAsRead: z.boolean().optional()
 });
 
 const ListForGuestInputSchema = z.object({
@@ -738,12 +739,14 @@ export class ConversationService extends BaseService {
     /**
      * Loads a conversation thread with cursor-based pagination.
      *
-     * Fetches `limit + 1` messages to determine `hasMore`. Updates the
-     * actor-side `lastReadAt` timestamp and cancels the pending notification
-     * schedule for the actor's recipient side.
+     * Fetches `limit + 1` messages to determine `hasMore`. Unless
+     * `markAsRead` is `false`, updates the actor-side `lastReadAt` timestamp and
+     * cancels the pending notification schedule for the actor's recipient side.
      *
      * @param actor - Actor requesting the thread.
-     * @param input - `{ conversationId, actorSide, cursor?, limit? }`.
+     * @param input - `{ conversationId, actorSide, cursor?, limit?, markAsRead? }`.
+     *   `markAsRead` defaults to `true`; pass `false` for a pure read (no
+     *   read receipt, no notification cancel).
      * @param ownerAccommodationIds - IDs of accommodations owned by the actor (permission check).
      * @param ctx - Optional service context.
      * @returns ServiceOutput wrapping `{ conversation, messages, hasMore }`.
@@ -760,6 +763,7 @@ export class ConversationService extends BaseService {
             actorSide: 'GUEST' | 'OWNER';
             cursor?: Date;
             limit?: number;
+            markAsRead?: boolean;
         },
         ownerAccommodationIds: readonly string[],
         ctx?: ServiceContext
@@ -803,32 +807,35 @@ export class ConversationService extends BaseService {
                     : loadedMessages;
                 const pageMessages = [...recentMessages].reverse();
 
-                // Update read receipt and cancel notification schedule
-                await withServiceTransaction(async (txCtx) => {
-                    const now = new Date();
-                    const readPatch =
-                        validated.actorSide === 'GUEST'
-                            ? ({ lastReadAtByGuest: now } as Partial<SelectConversation>)
-                            : ({ lastReadAtByOwner: now } as Partial<SelectConversation>);
+                // Update read receipt and cancel notification schedule, unless the
+                // caller asked for a pure read (`markAsRead: false`).
+                if (validated.markAsRead !== false) {
+                    await withServiceTransaction(async (txCtx) => {
+                        const now = new Date();
+                        const readPatch =
+                            validated.actorSide === 'GUEST'
+                                ? ({ lastReadAtByGuest: now } as Partial<SelectConversation>)
+                                : ({ lastReadAtByOwner: now } as Partial<SelectConversation>);
 
-                    // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                    await txCtx
-                        .tx!.update(conversations)
-                        .set(readPatch)
-                        .where(eq(conversations.id, validated.conversationId));
-
-                    const recipientSide =
-                        validated.actorSide === 'OWNER'
-                            ? NotificationRecipientSideEnum.OWNER
-                            : NotificationRecipientSideEnum.GUEST;
-
-                    await this.notificationScheduleService.cancelForRecipient(
-                        this._buildSystemActor(),
-                        { conversationId: validated.conversationId, recipientSide },
                         // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
-                        txCtx.tx!
-                    );
-                });
+                        await txCtx
+                            .tx!.update(conversations)
+                            .set(readPatch)
+                            .where(eq(conversations.id, validated.conversationId));
+
+                        const recipientSide =
+                            validated.actorSide === 'OWNER'
+                                ? NotificationRecipientSideEnum.OWNER
+                                : NotificationRecipientSideEnum.GUEST;
+
+                        await this.notificationScheduleService.cancelForRecipient(
+                            this._buildSystemActor(),
+                            { conversationId: validated.conversationId, recipientSide },
+                            // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
+                            txCtx.tx!
+                        );
+                    });
+                }
 
                 return { conversation, messages: pageMessages, hasMore };
             }

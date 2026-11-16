@@ -1222,6 +1222,30 @@ describe('ConversationService', () => {
             expect(notificationScheduleMock.cancelForRecipient).toHaveBeenCalledOnce();
         });
 
+        it('should return the thread WITHOUT any side effect when markAsRead is false', async () => {
+            // Arrange
+            const ownedConversation = makeConversation({
+                id: CONVERSATION_ID,
+                accommodationId: ACCOMMODATION_ID,
+                userId: null
+            });
+            asMock(conversationModelMock.findById).mockResolvedValue(ownedConversation);
+            asMock(messageModelMock.findByConversationId).mockResolvedValue([]);
+
+            // Act
+            const result = await service.getThread(
+                OWNER_ACTOR,
+                { conversationId: CONVERSATION_ID, actorSide: 'OWNER', markAsRead: false },
+                [ACCOMMODATION_ID]
+            );
+
+            // Assert — a pure read: thread returned, no read receipt, no cancel.
+            expectSuccess(result);
+            expect(messageModelMock.findByConversationId).toHaveBeenCalledOnce();
+            expect(withServiceTransaction).not.toHaveBeenCalled();
+            expect(notificationScheduleMock.cancelForRecipient).not.toHaveBeenCalled();
+        });
+
         it('keeps the most recent messages and returns them ascending (newest at bottom)', async () => {
             // Regression: the page must hold the LATEST messages, not the oldest.
             // The model returns rows newest-first; getThread keeps the newest
