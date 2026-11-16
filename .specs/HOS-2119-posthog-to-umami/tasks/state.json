@@ -803,7 +803,7 @@
             "id": "T-022",
             "title": "T-2 Swap api lib call sites to analytics-client (auth, signup analytics, facts, ai-observability, shutdown)",
             "description": "Mechanical import swap; behavior unchanged (same event names, properties and distinctIds, api-server events keep no distinct id). Tests: the two test files above updated to mock ../../src/lib/analytics-client and still assert the same captured events. Verify with a targeted `pnpm --filter hospeda-api test -- <file>` only (never the full api suite).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-025", "T-059", "T-072"],
@@ -824,21 +824,21 @@
             "tags": ["t2-adapter", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T01:32:26Z",
+                "completed": "2026-11-16T01:53:53Z"
             }
         },
         {
             "id": "T-023",
             "title": "T-2 Swap api route call sites to analytics-client (publish, import-from-url, host-onboarding start)",
             "description": "Mechanical swap, no behavior change. Tests: the listed integration tests still assert the captured analytics events (name + properties) after mocking analytics-client. Integration tests need the api test DB, which is shared by name across worktrees: run one file at a time.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-025", "T-059", "T-072"],
@@ -855,21 +855,21 @@
             "tags": ["t2-adapter", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T01:32:26Z",
+                "completed": "2026-11-16T01:53:53Z"
             }
         },
         {
             "id": "T-024",
             "title": "T-2 Swap api conversation and AI chat call sites to analytics-client",
             "description": "Mechanical swap, no behavior change; contact_owner_* events keep their properties (plus entity_id once T-031 lands). Tests: the three AI integration tests assert the same events; add/adjust a conversations initiate route test (locate under apps/api/test/routes) to assert contact_owner_completed is captured through the new client.\n\nBLOCKER FOUND 2026-11-15 (T-018): the catalog defines ai_chat_opened / ai_chat_cap_reached / ai_chat_message_sent with `message_count`, which FORBIDDEN_PROPERTY_KEY_REGEX (packages/analytics/src/shared.ts:8, `(^|_)message(_|$)`) rejects, so once these call sites go through prepareAnalyticsEvent the three events are dropped silently (onError only). Today they bypass the catalog: captureChatEvent (apps/api/src/routes/ai/protected/chat.helpers.ts:63) calls the PostHog client directly with camelCase `messageCount`. Fix in this task: rename the catalog field to `messages_count` (not matched by the regex), map messageCount → messages_count at the call site, and remove the KNOWN_PREPARE_REJECTS pin in packages/analytics/test/umami-payload.test.ts. Also check search-chat.ts:553.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-025", "T-059", "T-072"],
@@ -886,14 +886,14 @@
             "tags": ["t2-adapter", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T01:32:26Z",
+                "completed": "2026-11-16T01:53:53Z"
             }
         },
         {
@@ -1129,7 +1129,7 @@
         {
             "id": "T-031",
             "title": "T-3 Swap web accommodation islands to Umami (ContactHost, ReviewSidebarCard, useSearchChat) with entity_id on contact events",
-            "description": "Mechanical import swap plus the entity_id addition for the contact funnel. Tests: existing assertions kept; contact_owner_started/completed assert entity_id and entity_type with exact property objects.",
+            "description": "Mechanical import swap plus the entity_id addition for the contact funnel. Tests: existing assertions kept; contact_owner_started/completed assert entity_id and entity_type with exact property objects.\n\nNOTE 2026-11-15 (T-024 review): ai chat events send the conversation entity as `accommodation_id` even for venue/experience (captureChatEvent in apps/api/src/routes/ai/protected/chat.helpers.ts). Consider adding entity_id + entity_type to the ai_chat_* catalog entries here (needs owner OK). Not a regression vs PostHog.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-016", "T-027"],
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 62,
+        "pending": 59,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.5
     }

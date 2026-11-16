@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 12/74 tasks (16%)
+## Progress: 15/74 tasks (20%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -238,19 +238,19 @@ Tracks (can run in parallel):
 
 ### Integration Phase
 
-- [ ] **T-022** (complexity: 3) - T-2 Swap api lib call sites to analytics-client (auth, signup analytics, facts, ai-observability, shutdown)
+- [x] **T-022** (complexity: 3) - T-2 Swap api lib call sites to analytics-client (auth, signup analytics, facts, ai-observability, shutdown)
   - Tags: t2-adapter, api
   - Mechanical import swap; behavior unchanged (same event names, properties and distinctIds, api-server...
   - Blocked by: T-021
   - Blocks: T-025, T-059
 
-- [ ] **T-023** (complexity: 3) - T-2 Swap api route call sites to analytics-client (publish, import-from-url, host-onboarding start)
+- [x] **T-023** (complexity: 3) - T-2 Swap api route call sites to analytics-client (publish, import-from-url, host-onboarding start)
   - Tags: t2-adapter, api
   - Mechanical swap, no behavior change. Tests: the listed integration tests still assert the captured a...
   - Blocked by: T-021
   - Blocks: T-025, T-059
 
-- [ ] **T-024** (complexity: 3) - T-2 Swap api conversation and AI chat call sites to analytics-client
+- [x] **T-024** (complexity: 3) - T-2 Swap api conversation and AI chat call sites to analytics-client
   - Tags: t2-adapter, api
   - Mechanical swap, no behavior change; contact_owner_* events keep their properties (plus entity_id on...
   - Blocked by: T-021
