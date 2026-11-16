@@ -191,6 +191,12 @@ interface McpConnectionRevokedEntry extends BaseAuditEntry {
         readonly refreshTokens: number;
         readonly accessTokens: number;
     };
+    /**
+     * Why the connection was removed when it was not a direct disconnect.
+     * `PASSWORD_RESET_REVIEW`: the user chose to disconnect the assistants that
+     * predate their password reset.
+     */
+    readonly reason?: 'PASSWORD_RESET_REVIEW';
 }
 
 /** Discriminated union of all audit entry types */

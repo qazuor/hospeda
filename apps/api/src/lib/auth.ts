@@ -43,6 +43,7 @@ import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { buildMcpOAuthConfig } from './auth-mcp-oauth';
 import { getMcpOAuthAdapterSchema } from './auth-mcp-oauth-schema';
+import { recordPasswordResetForAiConnections } from './auth-password-reset-ai-review';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
@@ -293,6 +294,13 @@ function buildAuth() {
                     hash: string;
                     password: string;
                 }) => compare(password, storedHash)
+            },
+            // HOS-2184: fires only for the forgot-password reset (never for a
+            // change-password while signed in). When the user has AI assistants
+            // connected it records the reset so the web can OFFER, on the next
+            // login, to disconnect them. Never throws and never disconnects.
+            onPasswordReset: async ({ user }) => {
+                await recordPasswordResetForAiConnections({ userId: user.id });
             },
             sendResetPassword: async ({ user, token }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)

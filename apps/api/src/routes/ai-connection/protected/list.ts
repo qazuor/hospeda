@@ -7,6 +7,9 @@
  * `name`, `uri` and `logoUri` are client-declared and untrusted: clients
  * register themselves through the public registration endpoint.
  *
+ * `pendingResetReview` carries the unanswered "also disconnect the assistants
+ * you connected before your password reset?" question, or `null`.
+ *
  * @route GET /api/v1/protected/ai-connections
  * @module routes/ai-connection/protected/list
  */
@@ -42,6 +45,9 @@ export const listAiConnectionsRoute = createProtectedRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return { items: result.data?.items ?? [] };
+        return {
+            items: result.data?.items ?? [],
+            pendingResetReview: result.data?.pendingResetReview ?? null
+        };
     }
 });

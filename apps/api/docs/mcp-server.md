@@ -128,6 +128,17 @@ tokens for that client. The next `/mcp` call answers 401. The shared
 Refresh tokens rotate and are single use. `refreshTokenReuseInterval` is not set by
 Hospeda. It relies on the provider default of `0`.
 
+### After a password reset
+
+Disconnecting is offered, never forced. When a user resets their password through the
+forgot-password flow and has at least one connection, the reset time is recorded in
+`users.settings.aiConnectionsPasswordResetAt`. A password change while signed in records
+nothing. On the next page load the web asks whether to also disconnect the assistants
+connected before the reset (`pendingResetReview` on `GET /api/v1/protected/ai-connections`,
+answered with `POST .../ai-connections/reset-review`, see
+[route architecture](route-architecture.md#ai-connection-routes-hos-2184)). Connections made
+after the reset are never part of the question. This works with `HOSPEDA_MCP_ENABLED` off.
+
 ## Request checks
 
 `mcp-auth.ts` runs these in order. Any failure of 1 to 4 is a 401 with

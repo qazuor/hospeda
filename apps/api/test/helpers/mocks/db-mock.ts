@@ -1085,6 +1085,13 @@ export function createDbMock() {
                 .fn()
                 .mockResolvedValue({ consents: 0, refreshTokens: 0, accessTokens: 0 })
         },
+        // HOS-2184: the shared `userModel` — read as the default user model of
+        // AiConnectionService (post-password-reset review), instantiated at
+        // module scope by routes/ai-connection, and by lib/auth-password-reset-ai-review.
+        userModel: {
+            findById: vi.fn().mockResolvedValue(null),
+            update: vi.fn().mockResolvedValue(null)
+        },
 
         // Mock UserIdentityModel
         UserIdentityModel: class MockUserIdentityModel {

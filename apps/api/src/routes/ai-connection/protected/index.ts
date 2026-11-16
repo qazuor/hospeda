@@ -8,12 +8,16 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { listAiConnectionsRoute } from './list';
+import { resolveResetReviewRoute } from './reset-review';
 import { revokeAiConnectionRoute } from './revoke';
 
 const app = createRouter();
 
 // DELETE /?clientId= — disconnect one assistant
 app.route('/', revokeAiConnectionRoute);
+
+// POST /reset-review — answer the post-password-reset question
+app.route('/', resolveResetReviewRoute);
 
 // GET / — list connected assistants
 app.route('/', listAiConnectionsRoute);

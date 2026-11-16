@@ -984,8 +984,9 @@ remove a connection while the feature is switched off.
 
 | Method | Path | Auth | Notes |
 |---|---|---|---|
-| `GET` | `/api/v1/protected/ai-connections` | Session | Lists the caller's connections, oldest first, with connection date and an approximate last use. `name`, `uri` and `logoUri` are client-declared and untrusted. |
+| `GET` | `/api/v1/protected/ai-connections` | Session | Lists the caller's connections, oldest first, with connection date and an approximate last use. `name`, `uri` and `logoUri` are client-declared and untrusted. Also carries `pendingResetReview` (`{ resetAt, connectionsBeforeReset }` or `null`), see below. |
 | `DELETE` | `/api/v1/protected/ai-connections?clientId=<encoded>` | Session | Deletes the caller's consent, refresh tokens and stored access tokens for that client. 204 on success, 404 when the caller has no such connection, 400 without `clientId`. The id is a query parameter, not a path segment: CIMD client ids are URLs and a `%2F` in a path is rejected by some proxies. Audits `mcp.connection.revoked`. |
+| `POST` | `/api/v1/protected/ai-connections/reset-review` | Session | Body `{ action: 'revoke_previous' \| 'keep' }`. Answers the post-password-reset question: `revoke_previous` disconnects exactly the connections made before the reset (a client connected after it is untouched) and audits each as `mcp.connection.revoked` with `reason: PASSWORD_RESET_REVIEW`; `keep` revokes nothing. Both clear the question. 200 with `{ action, revokedClientIds }`. 409 `ALREADY_EXISTS` with `reason: NO_PENDING_RESET_REVIEW` when there is nothing to answer, which is also what a repeated call gets (nothing changes), 400 for a bad body. |
 
 - **404, never 403.** A client the caller has not connected answers 404, whether it
   is unknown or connected only by someone else. The response never confirms that
@@ -993,6 +994,13 @@ remove a connection while the feature is switched off.
 - **Percent-encode `clientId`.** A CIMD client id is a URL, so it must go through
   `encodeURIComponent` in the path.
 - Disconnecting never deletes the shared `oauth_client` row. Other users may use it.
+- **Post-reset question.** Better Auth's `emailAndPassword.onPasswordReset` fires only for
+  the forgot-password reset, never for a change-password while signed in. When the user has
+  at least one connection at that moment, `lib/auth-password-reset-ai-review.ts` stores the
+  instant in `users.settings.aiConnectionsPasswordResetAt` (the existing `settings` JSONB, so
+  no migration; the key is absent from the web and admin PATCH schemas, which are strict).
+  Nothing is disconnected automatically: the web asks on the next page load and the user
+  answers. The marker never throws into the reset itself.
 
 ## Anti-Patterns
 
