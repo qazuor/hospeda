@@ -201,9 +201,9 @@ function refineForVertical(
         return; // the `vertical` field reports its own issue
     }
     const { schema, label } = VERTICAL_PATCH[vertical];
-    const allowed = Object.keys(schema.shape);
+    const editableKeys = Object.keys(schema.shape);
     const present = presentFields(input);
-    const foreign = present.filter((field) => !allowed.includes(field));
+    const foreign = present.filter((field) => !editableKeys.includes(field));
     for (const field of foreign) {
         ctx.addIssue({
             code: 'custom',
@@ -211,12 +211,12 @@ function refineForVertical(
             message: `no se puede modificar en ${label}`
         });
     }
-    const editable = present.filter((field) => allowed.includes(field));
+    const editable = present.filter((field) => editableKeys.includes(field));
     if (editable.length === 0) {
         ctx.addIssue({
             code: 'custom',
             path: [],
-            message: `indicá al menos un campo a modificar (${allowed.join(', ')})`
+            message: `indicá al menos un campo a modificar (${editableKeys.join(', ')})`
         });
         return;
     }
