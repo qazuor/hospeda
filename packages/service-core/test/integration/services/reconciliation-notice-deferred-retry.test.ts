@@ -39,6 +39,35 @@ function callsFor(
 }
 
 describe('notice-deferred cancellation retry (HOS-1955)', () => {
+    it('retries a live S11 cancellation after its notice is sent, without adding it to the sweep retry pass', async () => {
+        const h = deferredRetryHarness();
+        const row = await seedDeferredRetryRow({
+            fake: h.fake,
+            transition: 'S11',
+            status: 'CANCEL_SCHEDULED'
+        });
+        h.notices.set(row.subscription.id, { state: 'PENDING', settledAgeMs: null });
+
+        const pending = await withSeededCancellationRetryInventory(() =>
+            runNoticeDeferredCancellationRetry(input(), h.ports)
+        );
+        expect(pending).toMatchObject({ noticePending: 1, retried: { confirmed: 0 } });
+        expect(callsFor(h.cancel, row.providerId)).toBe(0);
+
+        h.notices.set(row.subscription.id, fresh);
+        const sent = await withSeededCancellationRetryInventory(() =>
+            runNoticeDeferredCancellationRetry(input(), h.ports)
+        );
+        expect(sent).toMatchObject({ candidates: 1, retried: { confirmed: 1 }, rowsFailed: 0 });
+        expect(callsFor(h.cancel, row.providerId)).toBe(1);
+
+        const sweepPass = await withSeededCancellationRetryInventory(() =>
+            runOurCancellationRetry({ correlationId: crypto.randomUUID(), pageSize: 100 }, h.ports)
+        );
+        expect(sweepPass.confirmed).toBe(0);
+        expect(callsFor(h.cancel, row.providerId)).toBe(1);
+    });
+
     it('TEST:1955:1 rejects a maxRows override above the D-5 provider retry cap', async () => {
         const h = deferredRetryHarness();
         await expect(
