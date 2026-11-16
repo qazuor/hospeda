@@ -24,9 +24,11 @@ import {
     LOCATION_EXCEPTION_REASONS,
     type LocationExceptionOwnerView,
     type LocationExceptionState,
+    type LocationExceptionTarget,
     PublicationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { buildLocationKey } from '@repo/utils';
 import { type DrizzleClient, ServiceError } from '../../types';
 import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
 import { asDuplicateLocationError } from './listing-location-key';
@@ -107,6 +109,8 @@ export async function requestLocationException(args: {
     readonly listingId: string;
     readonly actorId: string;
     readonly reason: string;
+    /** The address the owner wants to MOVE the listing to (a refused location PATCH). */
+    readonly location?: LocationExceptionTarget;
     readonly tx?: DrizzleClient;
 }): Promise<{ readonly id: string; readonly status: 'PENDING'; readonly requestedAt: Date }> {
     const m = listingLocationExceptionModel;
@@ -114,7 +118,24 @@ export async function requestLocationException(args: {
         const listing = await m.lockListing({ vertical: args.vertical, id: args.listingId, tx });
         // A listing of somebody else answers exactly like a missing one.
         if (!listing || listing.ownerId !== args.actorId) throw notFound(args.vertical);
-        const key = listing.locationKey;
+        // A move request carries the address the owner could not save. Its key is
+        // recomputed here from that address and the listing's own destination; a key
+        // sent by the client is never read.
+        let key = listing.locationKey;
+        let target: LocationExceptionTarget | undefined;
+        if (args.location) {
+            const targetKey = buildLocationKey({
+                street: args.location.street,
+                number: args.location.number,
+                floor: args.location.floor,
+                apartment: args.location.apartment,
+                destinationId: listing.destinationId
+            });
+            if (targetKey && targetKey !== listing.locationKey) {
+                key = targetKey;
+                target = args.location;
+            }
+        }
         if (!key)
             throw conflict(
                 LOCATION_EXCEPTION_REASONS.NEEDS_KEY,
@@ -126,7 +147,7 @@ export async function requestLocationException(args: {
             locationKey: key,
             tx
         });
-        if (listing.hasException)
+        if (target ? listing.exceptionKey === key : listing.hasException)
             throw conflict(
                 LOCATION_EXCEPTION_REASONS.ALREADY_GRANTED,
                 'The listing already has an exception for this address'
@@ -170,6 +191,7 @@ export async function requestLocationException(args: {
                 listingId: args.listingId,
                 requestedBy: args.actorId,
                 locationKey: key,
+                targetLocation: target,
                 reason: args.reason,
                 tx
             });
@@ -222,11 +244,11 @@ async function decide(args: {
         });
         if (!peek) throw notFound(args.vertical);
         const listing = await m.lockListing({ vertical: args.vertical, id: peek.entityId, tx });
-        if (listing?.locationKey) {
+        if (listing) {
             await m.lockOwnerKey({
                 vertical: args.vertical,
                 ownerId: listing.ownerId,
-                locationKey: listing.locationKey,
+                locationKey: peek.locationKey,
                 tx
             });
         }
@@ -238,7 +260,9 @@ async function decide(args: {
         });
         if (!request) throw notFound(args.vertical);
         if (request.status !== 'PENDING') return { kind: 'not_pending' };
-        if (!listing || listing.locationKey !== request.locationKey) {
+        // A move request is for an address the listing is not at yet, so only an
+        // ordinary one goes stale when the address changes.
+        if (!listing || (!request.targetLocation && listing.locationKey !== request.locationKey)) {
             await supersedeRequest({
                 vertical: args.vertical,
                 request,
@@ -271,14 +295,27 @@ async function decide(args: {
         }
         const decisionReason = args.reason ?? request.reason;
         if (args.approve) {
-            await listingLocationModel.setException({
-                vertical: args.vertical,
-                id: listing.id,
-                adminId: args.adminId,
-                reason: decisionReason,
-                at,
-                tx
-            });
+            if (listing.locationKey === request.locationKey) {
+                await listingLocationModel.setException({
+                    vertical: args.vertical,
+                    id: listing.id,
+                    adminId: args.adminId,
+                    reason: decisionReason,
+                    at,
+                    tx
+                });
+            } else {
+                // Move request: bound to the target key, dormant until the listing is saved there.
+                await m.grantForKey({
+                    vertical: args.vertical,
+                    id: listing.id,
+                    locationKey: request.locationKey,
+                    adminId: args.adminId,
+                    reason: decisionReason,
+                    at,
+                    tx
+                });
+            }
         }
         await m.resolveRequest({
             requestId: request.id,
@@ -294,7 +331,7 @@ async function decide(args: {
             action: args.approve ? 'APPROVED' : 'REJECTED',
             actorId: args.adminId,
             reason: decisionReason,
-            locationKey: listing.locationKey,
+            locationKey: request.locationKey,
             requestId: request.id,
             tx
         });
@@ -408,7 +445,11 @@ export async function grantLocationException(args: {
             listingId: args.listingId,
             tx
         });
-        const resolves = pending !== null && pending.locationKey === listing.locationKey;
+        // A move request is for another address; a grant for the current one leaves it alone.
+        const resolves =
+            pending !== null &&
+            !pending.targetLocation &&
+            pending.locationKey === listing.locationKey;
         if (pending && resolves) {
             await m.resolveRequest({
                 requestId: pending.id,
@@ -418,7 +459,7 @@ export async function grantLocationException(args: {
                 at,
                 tx
             });
-        } else if (pending) {
+        } else if (pending && !pending.targetLocation) {
             await supersedeRequest({
                 vertical: args.vertical,
                 request: pending,
@@ -559,7 +600,9 @@ export async function getOwnerLocationExceptionView(args: {
                   reason: latest.reason,
                   decisionReason: latest.decisionReason,
                   requestedAt: latest.requestedAt.toISOString(),
-                  decidedAt: latest.decidedAt ? latest.decidedAt.toISOString() : null
+                  decidedAt: latest.decidedAt ? latest.decidedAt.toISOString() : null,
+                  targetsNewAddress: latest.targetLocation !== null,
+                  targetLocation: latest.targetLocation ?? null
               }
             : null
     };

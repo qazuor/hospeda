@@ -10,6 +10,8 @@
 import { randomUUID } from 'node:crypto';
 import { getDb, sql } from '@repo/db';
 import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
+import { applyLocationRuleOnUpdate } from '@repo/service-core';
+import { buildLocationKey } from '@repo/utils';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -687,5 +689,148 @@ describe('review fixes (HOS-2192)', () => {
 
         expect(body.data.items).toEqual([]);
         expect(body.data.total).toBeGreaterThanOrEqual(1);
+    });
+});
+
+describe('move request: the address of a refused location PATCH (HOS-2192)', () => {
+    async function seedMovePair(owner: string) {
+        const destinationId = await createVerticalDestination();
+        const a = await createVerticalListing({
+            vertical: VerticalEnum.VENUE,
+            ownerId: owner,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        const b = await createVerticalListing({
+            vertical: VerticalEnum.VENUE,
+            ownerId: owner,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        const place = async (id: string, street: string, number: string) =>
+            getDb().execute(
+                sql`UPDATE venues SET location = ${JSON.stringify({ street, number })}::jsonb,
+                       location_key = ${buildLocationKey({ street, number, destinationId })}
+                    WHERE id = ${id}::uuid`
+            );
+        await place(a, 'Av. San Martin', '123');
+        await place(b, 'Mitre', '456');
+        return {
+            a,
+            b,
+            destinationId,
+            keyA: buildLocationKey({ street: 'Av. San Martin', number: '123', destinationId })
+        };
+    }
+
+    async function current(id: string) {
+        const rows = await getDb().execute(
+            sql`SELECT id, owner_id AS "ownerId", publication_status AS "publicationStatus",
+                       location_key AS "locationKey", location_exception_at AS "locationExceptionAt",
+                       location_exception_key AS "locationExceptionKey", destination_id AS "destinationId",
+                       location FROM venues WHERE id = ${id}::uuid`
+        );
+        return rows.rows[0] as Parameters<typeof applyLocationRuleOnUpdate>[0]['current'];
+    }
+
+    const move = { street: 'Avenida San Martin', number: '123' };
+    const save = async (id: string) =>
+        applyLocationRuleOnUpdate({
+            vertical: VerticalEnum.VENUE,
+            payload: { location: { street: 'Avenida San Martin', number: '123' } },
+            current: await current(id)
+        });
+
+    it('lets the owner ask for the target address and save it once approved', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const { b, keyA } = await seedMovePair(owner);
+        await expect(save(b)).rejects.toMatchObject({ reason: 'DUPLICATE_LOCATION' });
+
+        const asked = await post(
+            `/api/v1/protected/venues/${b}/location-exception-request`,
+            ownerHeaders(owner),
+            { reason: REASON, location: move }
+        );
+        expect(asked.status).toBe(201);
+        const [request] = await requestRows(b);
+        const stored = await getDb().execute(
+            sql`SELECT location_key AS key, target_location AS target FROM location_exception_request WHERE id = ${request?.id}::uuid`
+        );
+        expect(stored.rows[0]).toMatchObject({ key: keyA, target: move });
+
+        const approved = await post(
+            `${ADMIN_BASE}/location-exception-requests/${request?.id}/approve`,
+            adminHeaders(admin),
+            {}
+        );
+        expect(approved.status).toBe(200);
+        // Dormant: bound to the target key, not in force at the address the listing has now.
+        expect(await grantColumns(b)).toEqual({ by: admin, key: keyA });
+        const view = (await (
+            await app.request(`/api/v1/protected/venues/${b}`, { headers: ownerHeaders(owner) })
+        ).json()) as {
+            data: {
+                locationException: {
+                    hasException: boolean;
+                    request: { status: string; targetsNewAddress: boolean };
+                };
+            };
+        };
+        expect(view.data.locationException.hasException).toBe(false);
+        expect(view.data.locationException.request).toMatchObject({
+            status: 'APPROVED',
+            targetsNewAddress: true
+        });
+
+        // The save the owner could not make now goes through, and the exception is in force.
+        await expect(save(b)).resolves.toEqual({ locationKey: keyA });
+        await getDb().execute(sql`UPDATE venues SET location_key = ${keyA} WHERE id = ${b}::uuid`);
+        const after = (await (
+            await app.request(`/api/v1/protected/venues/${b}`, { headers: ownerHeaders(owner) })
+        ).json()) as { data: { locationException: { hasException: boolean } } };
+        expect(after.data.locationException.hasException).toBe(true);
+    });
+
+    it('does not trust a key sent by the client and refuses an address nobody holds', async () => {
+        const owner = await seedUser();
+        const { b } = await seedMovePair(owner);
+
+        const res = await post(
+            `/api/v1/protected/venues/${b}/location-exception-request`,
+            ownerHeaders(owner),
+            { reason: REASON, location: { street: 'Belgrano', number: '999' }, locationKey: 'x' }
+        );
+
+        expect(res.status).toBe(409);
+        expect(await requestRows(b)).toEqual([]);
+    });
+
+    it('shows the pending move request in the admin queue with the address to move to', async () => {
+        const owner = await seedUser();
+        const admin = await seedUser();
+        const { a, b } = await seedMovePair(owner);
+        await post(
+            `/api/v1/protected/venues/${b}/location-exception-request`,
+            ownerHeaders(owner),
+            { reason: REASON, location: move }
+        );
+
+        const res = await app.request(`${ADMIN_BASE}/location-exception-requests`, {
+            headers: adminHeaders(admin)
+        });
+        const body = (await res.json()) as {
+            data: {
+                items: {
+                    listing: { id: string };
+                    targetsNewAddress: boolean;
+                    address: { street: string; number: string };
+                    collidingListings: { id: string }[];
+                }[];
+            };
+        };
+        const row = body.data.items.find((i) => i.listing.id === b);
+        expect(row).toMatchObject({ targetsNewAddress: true, address: move });
+        expect(row?.collidingListings.map((c) => c.id)).toEqual([a]);
     });
 });

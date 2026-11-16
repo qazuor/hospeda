@@ -35,10 +35,13 @@ export interface LockedListing {
     readonly id: string;
     readonly ownerId: string;
     readonly name: string;
+    readonly destinationId: string | null;
     readonly locationKey: string | null;
     readonly publicationStatus: string;
     /** `true` when an exception is in force for the key the row holds now. */
     readonly hasException: boolean;
+    /** The key the stored grant is bound to (in force or dormant), or `null` when there is none. */
+    readonly exceptionKey: string | null;
 }
 
 /** One row of the admin queue, before the API names the parts. */
@@ -55,6 +58,8 @@ export interface LocationExceptionQueueRow {
     readonly floor: string | null;
     readonly apartment: string | null;
     readonly destinationId: string | null;
+    /** `true` when the address above is the one the owner wants to move to. */
+    readonly targetsNewAddress: boolean;
     readonly collidingListings: readonly { readonly id: string; readonly name: string }[];
     readonly reason: string;
     readonly decisionReason: string | null;
@@ -94,10 +99,11 @@ export const listingLocationExceptionModel = {
         readonly tx: DrizzleClient;
     }): Promise<LockedListing | null> {
         const result = await args.tx.execute(
-            sql`SELECT id, owner_id, name, location_key, publication_status,
+            sql`SELECT id, owner_id, name, destination_id::text AS destination_id, location_key, publication_status,
                        (location_exception_at IS NOT NULL
                         AND location_key IS NOT NULL
-                        AND location_exception_key = location_key) AS has_exception
+                        AND location_exception_key = location_key) AS has_exception,
+                       CASE WHEN location_exception_at IS NOT NULL THEN location_exception_key END AS exception_key
                 FROM ${sql.identifier(TABLES[args.vertical])}
                 WHERE id = ${args.id} AND deleted_at IS NULL
                   AND publication_status <> ${PublicationStatusEnum.PURGED}
@@ -107,18 +113,22 @@ export const listingLocationExceptionModel = {
             id: string;
             owner_id: string;
             name: string;
+            destination_id: string | null;
             location_key: string | null;
             publication_status: string;
             has_exception: boolean;
+            exception_key: string | null;
         }>(result)[0];
         if (!row) return null;
         return {
             id: row.id,
             ownerId: row.owner_id,
             name: row.name,
+            destinationId: row.destination_id,
             locationKey: row.location_key,
             publicationStatus: row.publication_status,
-            hasException: row.has_exception === true
+            hasException: row.has_exception === true,
+            exceptionKey: row.exception_key
         };
     },
 
@@ -181,6 +191,30 @@ export const listingLocationExceptionModel = {
             )
             .limit(1);
         return row ?? null;
+    },
+
+    /**
+     * Grants an exception for an explicit place key (a move request): the columns are
+     * written with `location_exception_key = key`, so the exception stays dormant until
+     * `location_key` equals it, i.e. until the listing is saved at that address.
+     */
+    async grantForKey(args: {
+        readonly vertical: LocationKeyVertical;
+        readonly id: string;
+        readonly locationKey: string;
+        readonly adminId: string;
+        readonly reason: string;
+        readonly at: Date;
+        readonly tx: DrizzleClient;
+    }): Promise<void> {
+        await args.tx.execute(
+            sql`UPDATE ${sql.identifier(TABLES[args.vertical])}
+                SET location_exception_by = ${args.adminId},
+                    location_exception_reason = ${args.reason},
+                    location_exception_at = ${args.at},
+                    location_exception_key = ${args.locationKey}
+                WHERE id = ${args.id} AND deleted_at IS NULL`
+        );
     },
 
     /** Appends one audit event. The only write the events table has. */
@@ -252,6 +286,7 @@ export const listingLocationExceptionModel = {
         readonly listingId: string;
         readonly requestedBy: string;
         readonly locationKey: string;
+        readonly targetLocation?: SelectLocationExceptionRequest['targetLocation'];
         readonly reason: string;
         readonly tx: DrizzleClient;
     }): Promise<SelectLocationExceptionRequest> {
@@ -262,6 +297,7 @@ export const listingLocationExceptionModel = {
                 entityId: args.listingId,
                 requestedBy: args.requestedBy,
                 locationKey: args.locationKey,
+                targetLocation: args.targetLocation ?? null,
                 reason: args.reason
             })
             .returning();
@@ -308,7 +344,9 @@ export const listingLocationExceptionModel = {
         readonly locationKey: string | null;
         readonly tx?: DrizzleClient;
     }): Promise<SelectLocationExceptionRequest | null> {
-        if (!args.locationKey) return null;
+        // An ordinary request is shown while the listing keeps the address it was made
+        // for; a move request (it carries `target_location`) is shown whatever the
+        // current address is, because its whole point is an address the listing is not at.
         const [row] = await (args.tx ?? getDb())
             .select()
             .from(locationExceptionRequests)
@@ -316,7 +354,10 @@ export const listingLocationExceptionModel = {
                 and(
                     eq(locationExceptionRequests.entityType, args.vertical),
                     eq(locationExceptionRequests.entityId, args.listingId),
-                    eq(locationExceptionRequests.locationKey, args.locationKey),
+                    args.locationKey
+                        ? sql`(${locationExceptionRequests.locationKey} = ${args.locationKey}
+                               OR ${locationExceptionRequests.targetLocation} IS NOT NULL)`
+                        : sql`${locationExceptionRequests.targetLocation} IS NOT NULL`,
                     sql`${locationExceptionRequests.status} <> 'SUPERSEDED'`
                 )
             )
@@ -415,21 +456,25 @@ export const listingLocationExceptionModel = {
                 JOIN ${table} l ON l.id = r.entity_id AND l.deleted_at IS NULL
                      AND l.publication_status <> ${PublicationStatusEnum.PURGED}
                 WHERE r.entity_type = ${args.vertical} AND r.status = ${args.status}
-                  AND (r.status <> 'PENDING' OR r.location_key = l.location_key)`
+                  AND (r.status <> 'PENDING' OR r.target_location IS NOT NULL
+                       OR r.location_key = l.location_key)`
         );
         const total = Number(rowsOf<{ total: number }>(counted)[0]?.total ?? 0);
         const result = await db.execute(
             sql`SELECT r.id AS request_id, r.status, r.reason, r.decision_reason, r.requested_at,
                        l.id AS listing_id, l.name AS listing_name,
                        l.destination_id::text AS destination_id,
-                       l.location->>'street' AS street, l.location->>'number' AS number,
-                       l.location->>'floor' AS floor, l.location->>'apartment' AS apartment,
+                       COALESCE(r.target_location->>'street', l.location->>'street') AS street,
+                       COALESCE(r.target_location->>'number', l.location->>'number') AS number,
+                       CASE WHEN r.target_location IS NULL THEN l.location->>'floor' ELSE r.target_location->>'floor' END AS floor,
+                       CASE WHEN r.target_location IS NULL THEN l.location->>'apartment' ELSE r.target_location->>'apartment' END AS apartment,
+                       (r.target_location IS NOT NULL) AS targets_new_address,
                        u.id AS owner_id, COALESCE(u.display_name, u.first_name, u.email) AS owner_name,
                        u.email AS owner_email,
                        COALESCE((
                            SELECT json_agg(json_build_object('id', c.id, 'name', c.name) ORDER BY c.created_at)
                            FROM ${table} c
-                           WHERE c.owner_id = l.owner_id AND c.location_key = l.location_key
+                           WHERE c.owner_id = l.owner_id AND c.location_key = r.location_key
                              AND c.id <> l.id AND c.deleted_at IS NULL
                              AND c.publication_status = ${PublicationStatusEnum.PUBLISHED}
                              AND (c.location_exception_at IS NULL
@@ -440,7 +485,8 @@ export const listingLocationExceptionModel = {
                      AND l.publication_status <> ${PublicationStatusEnum.PURGED}
                 LEFT JOIN users u ON u.id = l.owner_id
                 WHERE r.entity_type = ${args.vertical} AND r.status = ${args.status}
-                  AND (r.status <> 'PENDING' OR r.location_key = l.location_key)
+                  AND (r.status <> 'PENDING' OR r.target_location IS NOT NULL
+                       OR r.location_key = l.location_key)
                 ORDER BY r.requested_at ASC, r.id ASC
                 LIMIT ${args.pageSize} OFFSET ${offset}`
         );
@@ -457,6 +503,7 @@ export const listingLocationExceptionModel = {
             number: string | null;
             floor: string | null;
             apartment: string | null;
+            targets_new_address: boolean;
             owner_id: string;
             owner_name: string | null;
             owner_email: string | null;
@@ -476,6 +523,7 @@ export const listingLocationExceptionModel = {
                 floor: row.floor,
                 apartment: row.apartment,
                 destinationId: row.destination_id,
+                targetsNewAddress: row.targets_new_address === true,
                 collidingListings: row.colliding,
                 reason: row.reason,
                 decisionReason: row.decision_reason,
