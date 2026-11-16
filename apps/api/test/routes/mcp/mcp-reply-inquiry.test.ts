@@ -294,6 +294,10 @@ describe('/mcp reply_inquiry (end to end)', () => {
             userId: USER_ID
         });
         expect(recordCall).toHaveBeenCalledTimes(2);
+        expect(recordCall.mock.calls.map(([call]) => call.details)).toEqual([
+            { step: 'preview' },
+            { step: 'send' }
+        ]);
         expect(recordCall).toHaveBeenLastCalledWith(
             expect.objectContaining({
                 tool: 'reply_inquiry',

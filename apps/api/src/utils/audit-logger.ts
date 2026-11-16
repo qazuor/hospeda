@@ -167,6 +167,8 @@ interface McpToolCallEntry extends BaseAuditEntry {
     readonly errorCode?: string;
     /** Length of the user content the call carried; never the content itself. */
     readonly contentLength?: number;
+    /** Scalar extras the tool contributed (e.g. which step of a two-step tool). */
+    readonly details?: Readonly<Record<string, string | number | boolean>>;
 }
 
 /** Discriminated union of all audit entry types */

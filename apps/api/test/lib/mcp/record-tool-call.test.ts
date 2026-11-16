@@ -53,6 +53,20 @@ describe('recordMcpToolCall', () => {
         });
     });
 
+    it('should pass tool-contributed details through to the audit payload', () => {
+        recordMcpToolCall({
+            actor,
+            mcpAuth,
+            tool: 'reply_inquiry',
+            outcome: 'success',
+            details: { step: 'send' }
+        });
+
+        expect(mockAuditLog).toHaveBeenCalledWith(
+            expect.objectContaining({ details: { step: 'send' } })
+        );
+    });
+
     it('should include the error code for a denied outcome', () => {
         recordMcpToolCall({
             actor,

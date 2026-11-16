@@ -341,6 +341,17 @@ describe('reply_inquiry', () => {
             expect(markRead).not.toHaveBeenCalled();
         });
 
+        it('tags the audit details with the step', () => {
+            expect(
+                replyInquiryTool.auditDetails?.({ input: { inquiryId: CONV_OWN, text: 'x' } })
+            ).toEqual({ step: 'preview' });
+            expect(
+                replyInquiryTool.auditDetails?.({
+                    input: { inquiryId: CONV_OWN, text: 'x', confirmationToken: 't' }
+                })
+            ).toEqual({ step: 'send' });
+        });
+
         it('sends exactly the previewed text as the owner and returns the message id', async () => {
             const confirmationToken = await preview();
 

@@ -97,6 +97,30 @@ describe('handleMcpToolCall', () => {
         mockLoggerError.mockReset();
     });
 
+    it('adds the details a tool contributes to its audit record', async () => {
+        // Arrange
+        const { ctx } = ctxFor();
+        const definition = defineTool({
+            name: 'probe_details',
+            title: 'Probe details',
+            description: 'Probe',
+            inputSchema,
+            isWrite: true,
+            auditDetails: ({ input: parsed }) => ({ step: parsed.text ? 'send' : 'preview' }),
+            handler: async () => ({ data: { done: true } })
+        });
+
+        // Act
+        await handleMcpToolCall({ definition, input, ctx });
+        await handleMcpToolCall({ definition, input: { listingId: LISTING_ID }, ctx });
+
+        // Assert
+        expect(mockRecord.mock.calls.map(([call]) => call.details)).toEqual([
+            { step: 'send' },
+            { step: 'preview' }
+        ]);
+    });
+
     it('renders success as text content and audits it', async () => {
         // Arrange
         const { actor, ctx } = ctxFor();

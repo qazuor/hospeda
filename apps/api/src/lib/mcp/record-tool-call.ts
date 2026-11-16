@@ -30,6 +30,8 @@ export interface RecordMcpToolCallInput {
     readonly errorCode?: string;
     /** Length of user content carried (e.g. a reply). Never pass the content. */
     readonly contentLength?: number;
+    /** Scalar extras the tool contributed (e.g. `{ step: 'preview' }`). Never user content. */
+    readonly details?: Readonly<Record<string, string | number | boolean>>;
 }
 
 /**
@@ -59,7 +61,7 @@ export interface RecordMcpToolCallInput {
  * ```
  */
 export function recordMcpToolCall(input: RecordMcpToolCallInput): void {
-    const { actor, mcpAuth, tool, target, outcome, errorCode, contentLength } = input;
+    const { actor, mcpAuth, tool, target, outcome, errorCode, contentLength, details } = input;
     try {
         auditLog({
             auditEvent: AuditEventType.MCP_TOOL_CALL,
@@ -70,7 +72,8 @@ export function recordMcpToolCall(input: RecordMcpToolCallInput): void {
             ...(target ? { resourceType: target.type, resourceId: target.id } : {}),
             outcome,
             ...(errorCode === undefined ? {} : { errorCode }),
-            ...(contentLength === undefined ? {} : { contentLength })
+            ...(contentLength === undefined ? {} : { contentLength }),
+            ...(details ? { details } : {})
         });
     } catch (error) {
         try {

@@ -246,6 +246,9 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
             const contentLength = parsed.ok
                 ? readAuditField(() => definition.auditContentLength?.({ input: parsed.input }))
                 : undefined;
+            const details = parsed.ok
+                ? readAuditField(() => definition.auditDetails?.({ input: parsed.input }))
+                : undefined;
             recordMcpToolCall({
                 actor,
                 mcpAuth,
@@ -253,7 +256,8 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
                 outcome: outcome.ok ? 'success' : outcome.failure.kind,
                 ...(target ? { target } : {}),
                 ...(outcome.ok ? {} : { errorCode: String(outcome.failure.code) }),
-                ...(contentLength === undefined ? {} : { contentLength })
+                ...(contentLength === undefined ? {} : { contentLength }),
+                ...(details ? { details } : {})
             });
         }
 

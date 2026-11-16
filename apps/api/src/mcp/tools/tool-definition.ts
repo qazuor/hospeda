@@ -74,6 +74,9 @@ export interface ToolTarget {
     readonly id: string;
 }
 
+/** Scalar facts a tool adds to its audit row (`details`). */
+export type ToolAuditDetails = Readonly<Record<string, string | number | boolean>>;
+
 /**
  * Behaviour hints for the client (MCP tool annotations). `readOnlyHint` is
  * not here: it is derived from {@link ToolDefinition.isWrite} so the two can
@@ -132,6 +135,12 @@ export interface ToolDefinition<TSchema extends z.ZodObject = z.ZodObject, TData
     auditTarget?(args: { readonly input: z.output<TSchema> }): ToolTarget | undefined;
     /** Length of user content the call carries (never the content), for the audit record. */
     auditContentLength?(args: { readonly input: z.output<TSchema> }): number | undefined;
+    /**
+     * Extra scalar facts about the call for the audit row's `details` (e.g.
+     * which step of a two-step tool this call was). Read from validated input,
+     * so it also applies to calls that fail. Never put user content here.
+     */
+    auditDetails?(args: { readonly input: z.output<TSchema> }): ToolAuditDetails | undefined;
     /**
      * The tool itself: a thin adapter over service-core. Receives validated
      * input and the caller's actor; must not know which transport serves it.

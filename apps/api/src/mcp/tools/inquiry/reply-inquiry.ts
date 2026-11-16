@@ -187,6 +187,9 @@ export const replyInquiryTool = defineTool({
     reasonMessages: REPLY_INQUIRY_REASON_MESSAGES,
     auditTarget: ({ input }) => ({ type: 'conversation', id: input.inquiryId }),
     auditContentLength: ({ input }) => input.text.length,
+    auditDetails: ({ input }) => ({
+        step: input.confirmationToken === undefined ? 'preview' : 'send'
+    }),
     handler: async ({ actor, input, context }): Promise<ToolHandlerResult<ReplyInquiryResult>> => {
         const { inquiryId, text, confirmationToken } = input;
 
