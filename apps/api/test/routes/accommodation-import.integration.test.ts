@@ -43,8 +43,8 @@ vi.mock('@repo/utils/safe-fetch', async (importActual) => {
     return { ...actual, safeExternalFetch: vi.fn() };
 });
 
-vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: () => ({ capture: mockCapture }),
+vi.mock('../../src/lib/analytics-client', () => ({
+    getAnalyticsClient: () => ({ capture: mockCapture }),
     captureServerAnalyticsEvent: ({
         distinctId,
         name,
@@ -206,7 +206,7 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
         expect(body.success).toBe(false);
     });
 
-    it('emits ephemeral PostHog started + completed events on a successful import', async () => {
+    it('emits ephemeral analytics started + completed events on a successful import', async () => {
         // Arrange
         mockFetch.mockResolvedValue(fetchSuccess(RICH_JSONLD_HTML));
 

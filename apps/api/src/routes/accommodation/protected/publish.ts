@@ -10,7 +10,7 @@ import {
     VerticalEnum
 } from '@repo/schemas';
 import type { Context } from 'hono';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';

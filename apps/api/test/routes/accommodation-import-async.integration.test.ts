@@ -58,10 +58,10 @@ vi.mock(
     })
 );
 
-vi.mock('../../src/lib/posthog', () => {
+vi.mock('../../src/lib/analytics-client', () => {
     const mockCapture = vi.fn();
     return {
-        getPostHogClient: () => ({ capture: mockCapture }),
+        getAnalyticsClient: () => ({ capture: mockCapture }),
         captureServerAnalyticsEvent: ({
             distinctId,
             name,

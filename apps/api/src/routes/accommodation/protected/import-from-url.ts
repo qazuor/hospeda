@@ -67,7 +67,7 @@ import {
     ServiceError
 } from '@repo/service-core';
 import type { Context } from 'hono';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { createConfiguredAiService } from '../../../services/ai-service.factory';
@@ -375,7 +375,7 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             mercadoLibreTokenProvider: () => getValidMercadoLibreToken()
         };
 
-        // Ephemeral, fire-and-forget analytics (no DB). No-op when PostHog is
+        // Ephemeral, fire-and-forget analytics (no DB). No-op when analytics are
         // disabled. Only the hostname is sent — never the full URL (may carry
         // tokens/PII).
         const sourceHost = safeHostname(input.url);

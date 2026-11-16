@@ -29,7 +29,7 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
