@@ -221,6 +221,36 @@ describe('mapToUmamiBatchItem', () => {
             expect(item.payload.userAgent).toBe('Mozilla/5.0 Test');
         });
 
+        it.each([
+            ['Node.js/22 (undici)', 'Node.js/22 (undici)'],
+            ['undici', 'undici'],
+            ['curl', 'curl/8.5.0'],
+            ['an api client', 'HospedaApiClient/2.0'],
+            ['HospedaServer', 'HospedaServer/1.0']
+        ])('should replace a bot-like visitor user agent (%s) with the synthetic one', (_l, ua) => {
+            expect(isbot(ua)).toBe(true);
+            const { item } = mapToUmamiBatchItem({
+                ...base,
+                event: 'x',
+                properties: {},
+                visitor: { ip: '203.0.113.9', userAgent: ua }
+            });
+            expect(item.payload.userAgent).toBe(UMAMI_SYNTHETIC_USER_AGENT);
+            expect(item.payload.ip).toBe('203.0.113.9');
+        });
+
+        it('should keep a normal Chrome visitor user agent', () => {
+            const chrome =
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+            const { item } = mapToUmamiBatchItem({
+                ...base,
+                event: 'x',
+                properties: {},
+                visitor: { ip: '203.0.113.9', userAgent: chrome }
+            });
+            expect(item.payload.userAgent).toBe(chrome);
+        });
+
         it('should fall back to the synthetic identity without a visitor', () => {
             const { item } = mapToUmamiBatchItem({ ...base, event: 'x', properties: {} });
             expect(item.payload.ip).toBe('127.0.0.1');

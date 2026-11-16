@@ -40,6 +40,16 @@ export const UMAMI_SYNTHETIC_IP = '127.0.0.1';
 export const UMAMI_SYNTHETIC_USER_AGENT =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 
+/**
+ * User-Agent markers Umami (via `isbot`) silently drops with HTTP 200: any
+ * "api" substring, server-side HTTP clients (node, undici, curl, ...) and
+ * crawler words. A visitor UA matching this is replaced by the synthetic one.
+ * Kept local on purpose so `isbot` stays a dev-only dependency; the tests
+ * cross-check it against `isbot`.
+ */
+const BOT_LIKE_USER_AGENT =
+    /api|bot|crawl|spider|slurp|curl|wget|node|undici|python|go-http|java|okhttp|axios|server|headless|https?:\/\//i;
+
 /** Prefix of anonymous distinct ids, which are never forwarded. */
 const ANONYMOUS_DISTINCT_ID_PREFIX = 'anon:';
 /** Distinct id used by events with no user, never forwarded. */
@@ -320,7 +330,9 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
     const rawUserAgent = input.visitor?.userAgent;
     const visitorIp = rawIp !== undefined && !isBlank(rawIp) ? rawIp : UMAMI_SYNTHETIC_IP;
     const visitorUserAgent =
-        rawUserAgent !== undefined && !isBlank(rawUserAgent)
+        rawUserAgent !== undefined &&
+        !isBlank(rawUserAgent) &&
+        !BOT_LIKE_USER_AGENT.test(rawUserAgent)
             ? rawUserAgent
             : UMAMI_SYNTHETIC_USER_AGENT;
 

@@ -55,6 +55,11 @@ export interface CreateUmamiServerClientOptions {
     readonly maxBatchItems?: number;
     /** Max request body bytes. Default 9 MB (Umami rejects ~10 MB). */
     readonly maxBatchBytes?: number;
+    /**
+     * Max events held in memory between flushes. When full, the oldest event is
+     * dropped (one warning per overflow burst). Default 1_000.
+     */
+    readonly maxQueueItems?: number;
 }
 
 /** Server analytics client backed by Umami. */
@@ -141,6 +146,9 @@ export function createUmamiServerClient(
     const timeoutMs = options.timeoutMs ?? 2_500;
     const maxItems = options.maxBatchItems ?? 500;
     const maxBytes = options.maxBatchBytes ?? 9 * 1024 * 1024;
+    const maxQueue = Math.max(1, options.maxQueueItems ?? 1_000);
+    /** True after the first overflow warning; reset when a flush takes the queue. */
+    let overflowWarned = false;
 
     let queue: QueueEntry[] = [];
     let notes: string[] = [];
@@ -238,6 +246,7 @@ export function createUmamiServerClient(
         queue = [];
         notes = [];
         droppedNotes = 0;
+        overflowWarned = false;
         const sendable: QueueEntry[] = [];
         let oversized = 0;
         for (const entry of taken) {
@@ -306,6 +315,15 @@ export function createUmamiServerClient(
                 });
                 for (const warning of warnings) addNote(warning);
                 queue.push({ item, bytes: ENCODER.encode(JSON.stringify(item)).byteLength });
+                if (queue.length > maxQueue) {
+                    queue.shift();
+                    if (!overflowWarned) {
+                        overflowWarned = true;
+                        logger.warn('Umami queue full, dropping oldest events', {
+                            maxQueueItems: maxQueue
+                        });
+                    }
+                }
             } catch (error) {
                 addNote(
                     `Dropped event "${String(input.event).slice(0, 50)}": ${error instanceof Error ? error.name : 'mapping error'}`

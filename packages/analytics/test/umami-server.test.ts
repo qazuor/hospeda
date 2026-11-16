@@ -361,7 +361,7 @@ describe('createUmamiServerClient', () => {
 
     describe('chunking', () => {
         it('should split 1001 events into 500/500/1', async () => {
-            const { client, fetchMock } = setup({ flushAt: 100_000 });
+            const { client, fetchMock } = setup({ flushAt: 100_000, maxQueueItems: 100_000 });
             cap(client, 1001);
             await client.flush();
             expect(sentBodies(fetchMock).map((b) => b.length)).toEqual([500, 500, 1]);
@@ -536,6 +536,33 @@ describe('createUmamiServerClient', () => {
             const second = client.shutdown();
             expect(second).toBe(first);
             await first;
+        });
+    });
+
+    describe('queue cap', () => {
+        it('should drop the oldest events beyond maxQueueItems with a single warning and never throw', async () => {
+            const { client, fetchMock, logger } = setup({ maxQueueItems: 3, flushAt: 1000 });
+            for (let i = 1; i <= 6; i++) {
+                (client.capture as (i: unknown) => void)({
+                    distinctId: 'user-1',
+                    event: 'ai_feature_used',
+                    properties: { feature: `f${i}` }
+                });
+            }
+            await client.flush();
+            const items = sentBodies(fetchMock)[0] as { payload: { data: { feature: string } } }[];
+            expect(items.map((i) => i.payload.data.feature)).toEqual(['f4', 'f5', 'f6']);
+            const overflow = logger.warn.mock.calls.filter(([m]) => /queue full/i.test(String(m)));
+            expect(overflow).toHaveLength(1);
+        });
+
+        it('should warn again for a new burst after a flush', async () => {
+            const { client, logger } = setup({ maxQueueItems: 1, flushAt: 1000 });
+            cap(client, 3);
+            await client.flush();
+            cap(client, 3);
+            const overflow = logger.warn.mock.calls.filter(([m]) => /queue full/i.test(String(m)));
+            expect(overflow).toHaveLength(2);
         });
     });
 
