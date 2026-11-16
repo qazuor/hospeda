@@ -472,39 +472,39 @@
             "id": "T-013",
             "title": "T-1 Register VITE_UMAMI_* admin client env vars (registry, admin Zod schema, .env.example, Dockerfile, turbo)",
             "description": "Same as T-012 for admin (VITE_ prefix). Blocked by T-012 because both edit env-registry.client.ts, turbo.json and the generated registry JSON. Files: packages/config/src/env-registry.client.ts, apps/admin/src/env-schema.ts (env.ts consumes), apps/admin/.env.example, apps/admin/Dockerfile, turbo.json, packages/config/src/__tests__/dockerfile-build-args.test.ts. Tests: same config tests as T-012 plus an admin env test (locate under apps/admin/test/) for the new vars.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-014", "T-015", "T-034"],
             "subtasks": [
                 {
                     "title": "Add VITE_UMAMI_SCRIPT_URL and VITE_UMAMI_WEBSITE_ID to packages/config/src/env-registry.client.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Zod in apps/admin/src/env-schema.ts; placeholders in apps/admin/.env.example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build args in apps/admin/Dockerfile; keys in turbo.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Regenerate registry JSON + snapshot; update dockerfile-build-args test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t1-infra", "config", "admin", "release-env-var-change"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T02:28:58Z",
+                "completed": "2026-11-16T02:42:23Z"
             }
         },
         {
@@ -1626,49 +1626,49 @@
             "id": "T-045",
             "title": "T-5 Implement ListingTrafficStatsService in service-core with injected stats-client and cache ports",
             "description": "Files: packages/service-core/src/services/listing-traffic-stats/listing-traffic-stats.service.ts, ports.ts, index.ts; test packages/service-core/test/services/listing-traffic-stats/listing-traffic-stats.service.test.ts. Tests: cache hit skips the port; miss calls port then stores with TTL 3600s; port rejection/timeout returns available:false with empty arrays and does NOT cache the failure; funnel assembled from the port counts; top-5 referrer cap. contactFunnel: assembled only for ACCOMMODATION; always null for VENUE/EXPERIENCE/PARTNER without querying the funnel (test: port funnel method not called for those types, response has contactFunnel null).\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Referrers/countries/devices come from metrics?type=referrer|country|device&tag=<entityId> (pageviews only, tag set by T-074). Counts and the contact funnel come from event-data-pivot / event-data-pivot/property-series with pf_entity_id=eq.<id> (+ pf_entity_type). event-data/values and plain stats ignore pf_ filters and must not be used. The service asserts every query carries its entity filter (a missing filter returns the site total), fills zero days itself (no gap-fill), and has a contract test with two entities proving no leak.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-044"],
             "blocks": ["T-046", "T-047", "T-048"],
             "subtasks": [
                 {
                     "title": "Create packages/service-core/src/services/listing-traffic-stats/ (service + ports.ts + index) and export it from the services index",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ports: UmamiStatsPort (referrers/countries/devices/funnel for entityType+entityId+window) and TrafficStatsCachePort (get/set with TTL)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Service: cache lookup, call port, assemble the response, return available:false + empty arrays on any port error or timeout (never throw for Umami failure)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Follow the actor-aware pattern of packages/service-core/src/services/entityView/entityView.service.ts; do not do ownership here (the route's listing access runs first)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Return contactFunnel: null for VENUE/EXPERIENCE/PARTNER and skip the funnel query (owner decision, OQ-7 addendum)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T02:28:58Z",
+                "completed": "2026-11-16T02:42:23Z"
             }
         },
         {
             "id": "T-046",
             "title": "T-5 Implement apps/api UmamiStatsClient (native fetch, API key, 3s timeout)",
-            "description": "Files: apps/api/src/lib/umami-stats-client.ts, apps/api/test/lib/umami-stats-client.test.ts. Tests with fake fetch: correct URL, auth header and entity_id filter per entity type (all four); 3s abort rejects; non-200 and malformed JSON map to a typed error; website id comes from HOSPEDA_UMAMI_WEBSITE_ID_WEB (web pages are where owner traffic lives). Filter is by entity_id, not by URL path (slugs change, /es /en /pt).\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Auth: API key minted by a view-only user, sent as Authorization: Bearer umami_... (the x-umami-api-key header returns 401 self-hosted). startAt/endAt in ms are required. Endpoints per T-045. Keep ranges narrow so unit=day is honoured.",
+            "description": "Files: apps/api/src/lib/umami-stats-client.ts, apps/api/test/lib/umami-stats-client.test.ts. Tests with fake fetch: correct URL, auth header and entity_id filter per entity type (all four); 3s abort rejects; non-200 and malformed JSON map to a typed error; website id comes from HOSPEDA_UMAMI_WEBSITE_ID_WEB (web pages are where owner traffic lives). Filter is by entity_id, not by URL path (slugs change, /es /en /pt).\n\nREVISED 2026-11-15 (T-0 findings + owner decision R-1 option 3, spec §5.5/§6.2/§6.5): Auth: API key minted by a view-only user, sent as Authorization: Bearer umami_... (the x-umami-api-key header returns 401 self-hosted). startAt/endAt in ms are required. Endpoints per T-045. Keep ranges narrow so unit=day is honoured.\n\nPORT CHANGED 2026-11-15 (T-045 review): implement TrafficStatsClientPort from packages/service-core/src/services/listing-traffic-stats/ports.ts. Scope carries startAt/endAt (epoch ms, Argentina local-day window via getLocalDayWindow + MARKET_TIMEZONE) and timeZone; query Umami with startAt/endAt and timezone. The funnel port returns TOTALS (getFunnelCounts → {views, contactStarted, contactCompleted}) via event-data pivot filtered by pf_entity_id over the range — no property-series and no gap-fill (the response has no time series; spec §6.5 gap-fill note does not apply). Breakdown rows must never have null/empty value (map Umami direct-traffic null to a label or drop). Entity id is lower-cased by the service.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-045", "T-005", "T-011"],
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 56,
+        "pending": 54,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.5
     }

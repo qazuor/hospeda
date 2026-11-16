@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 18/74 tasks (24%)
+## Progress: 20/74 tasks (27%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -108,7 +108,7 @@ Tracks (can run in parallel):
   - Blocked by: T-011
   - Blocks: T-013, T-014, T-015, T-027, T-028
 
-- [ ] **T-013** (complexity: 3) - T-1 Register VITE_UMAMI_* admin client env vars (registry, admin Zod schema, .env.example, Dockerfile, turbo)
+- [x] **T-013** (complexity: 3) - T-1 Register VITE_UMAMI_* admin client env vars (registry, admin Zod schema, .env.example, Dockerfile, turbo)
   - Tags: t1-infra, config, admin, release-env-var-change
   - Same as T-012 for admin (VITE_ prefix). Blocked by T-012 because both edit env-registry.client.ts, t...
   - Blocked by: T-012
@@ -206,7 +206,7 @@ Tracks (can run in parallel):
   - Blocked by: none
   - Blocks: T-045, T-051
 
-- [ ] **T-045** (complexity: 3) - T-5 Implement ListingTrafficStatsService in service-core with injected stats-client and cache ports
+- [x] **T-045** (complexity: 3) - T-5 Implement ListingTrafficStatsService in service-core with injected stats-client and cache ports
   - Tags: t5-owner-stats, service-core
   - Files: packages/service-core/src/services/listing-traffic-stats/listing-traffic-stats.service.ts, po...
   - Blocked by: T-044
