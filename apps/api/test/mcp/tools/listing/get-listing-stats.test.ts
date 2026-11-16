@@ -325,6 +325,69 @@ describe('get_listing_stats', () => {
         });
     });
 
+    describe('90-day period (no comparison)', () => {
+        it('returns the current window only and says the comparison is unavailable', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.VENUE, { data: listingRow() });
+            const views = vi
+                .spyOn(entityViewService, 'getDailySeriesComparisonForOwnListing')
+                .mockResolvedValue({
+                    data: {
+                        previous: null,
+                        current: series('2026-06-01', [4, 6])
+                    }
+                });
+
+            // Act
+            const outcome = await run({ vertical: 'venue', listingId: LISTING_ID, period: '90d' });
+
+            // Assert
+            expect(views).toHaveBeenCalledWith(expect.objectContaining({ window: '90d' }));
+            expect(outcome).toMatchObject({
+                ok: true,
+                data: {
+                    period: '90d',
+                    views: {
+                        current: { from: '2026-06-01', to: '2026-06-02', views: 10 },
+                        comparison: 'unavailable_beyond_retention',
+                        previous: null,
+                        change: null,
+                        changePercent: null
+                    }
+                }
+            });
+        });
+
+        it('marks the comparison available for 7 and 30 days', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.VENUE, { data: listingRow() });
+            givenViews();
+
+            // Act
+            const outcome = await run({ vertical: 'venue', listingId: LISTING_ID, period: '7d' });
+
+            // Assert
+            expect(outcome).toMatchObject({
+                ok: true,
+                data: { views: { comparison: 'available' } }
+            });
+        });
+
+        it('still reads the reviews for 90 days', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.VENUE, { data: listingRow() });
+            vi.spyOn(entityViewService, 'getDailySeriesComparisonForOwnListing').mockResolvedValue({
+                data: { previous: null, current: series('2026-06-01', [1]) }
+            });
+
+            // Act
+            const outcome = await run({ vertical: 'venue', listingId: LISTING_ID, period: '90d' });
+
+            // Assert
+            expect(outcome).toMatchObject({ ok: true, data: { reviews: { count: 12 } } });
+        });
+    });
+
     describe('reviews', () => {
         it('reads the latest reviews and wraps their third-party text', async () => {
             // Arrange
@@ -499,7 +562,7 @@ describe('get_listing_stats', () => {
             { name: 'a non-uuid listing id', input: { vertical: 'venue', listingId: 'abc' } },
             {
                 name: 'an unsupported period',
-                input: { vertical: 'venue', listingId: LISTING_ID, period: '90d' }
+                input: { vertical: 'venue', listingId: LISTING_ID, period: '60d' }
             },
             {
                 name: 'an extra field',
@@ -520,9 +583,9 @@ describe('get_listing_stats', () => {
             expect(getById).not.toHaveBeenCalled();
         });
 
-        it('accepts both periods the panel offers', () => {
+        it('accepts 7, 30 and 90 days', () => {
             // Act / Assert
-            for (const period of ['7d', '30d']) {
+            for (const period of ['7d', '30d', '90d']) {
                 expect(
                     GetListingStatsInputSchema.safeParse({
                         vertical: 'venue',

@@ -244,6 +244,7 @@ describe('/mcp get_listing_stats (end to end)', () => {
             views: {
                 current: { from: '2026-06-09', to: '2026-06-10', views: 6 },
                 previous: { from: '2026-06-07', to: '2026-06-08', views: 4 },
+                comparison: 'available',
                 change: 2,
                 changePercent: 50
             },
@@ -309,5 +310,40 @@ describe('/mcp get_listing_stats (end to end)', () => {
         expect(message.result?.isError).toBe(true);
         expect(message.result?.content?.[0]?.text).toContain('Tu plan no incluye estadísticas');
         expect(views).not.toHaveBeenCalled();
+    });
+
+    it('serves a 90-day period without a previous-period comparison', async () => {
+        // Arrange
+        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({
+            data: {
+                id: VENUE_ID,
+                ownerId: USER_ID,
+                name: 'La Parrilla',
+                slug: 'la-parrilla',
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                reviewsCount: 0,
+                averageRating: 0
+            }
+        } as unknown as Awaited<ReturnType<VenueService['getById']>>);
+        vi.spyOn(entityViewService, 'getDailySeriesComparisonForOwnListing').mockResolvedValue({
+            data: { previous: null, current: [{ date: '2026-06-10', total: 5 }] }
+        });
+
+        // Act
+        const message = await callTool('get_listing_stats', {
+            vertical: 'venue',
+            listingId: VENUE_ID,
+            period: '90d'
+        });
+
+        // Assert
+        expect(message.result?.isError).toBeUndefined();
+        expect(JSON.parse(message.result?.content?.[0]?.text ?? 'null').views).toEqual({
+            current: { from: '2026-06-10', to: '2026-06-10', views: 5 },
+            comparison: 'unavailable_beyond_retention',
+            previous: null,
+            change: null,
+            changePercent: null
+        });
     });
 });

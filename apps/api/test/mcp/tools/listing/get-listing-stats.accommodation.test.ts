@@ -296,6 +296,29 @@ describe('get_listing_stats accommodation extras', () => {
         );
     });
 
+    it('counts the per-listing inquiries over the 90-day window too', async () => {
+        // Arrange
+        givenOwnListing(VerticalEnum.ACCOMMODATION);
+
+        // Act
+        const outcome = await runTool({
+            definition: getListingStatsTool,
+            actor,
+            input: { vertical: 'accommodation', listingId: LISTING_ID, period: '90d' },
+            context
+        });
+
+        // Assert
+        expect(listingInquiries).toHaveBeenCalledWith(actor, {
+            accommodationId: LISTING_ID,
+            windowDays: 90
+        });
+        expect(outcome).toMatchObject({
+            ok: true,
+            data: { accommodation: { inquiriesThisListing: { period: '90d', count: 3 } } }
+        });
+    });
+
     it('keeps the per-listing count apart from the account-wide figures', async () => {
         // Arrange
         givenOwnListing(VerticalEnum.ACCOMMODATION);
