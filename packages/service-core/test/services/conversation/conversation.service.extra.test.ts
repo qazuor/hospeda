@@ -253,7 +253,8 @@ describe('ConversationService (extra coverage)', () => {
             'listByUserId',
             'listByAccommodationIds',
             'getResponseRateByOwnerId',
-            'getMonthlyInquiriesByOwnerId'
+            'getMonthlyInquiriesByOwnerId',
+            'countCreatedSince'
         ]);
         messageModelMock = createTypedModelMock(MessageModel, ['findByConversationId']);
         accommodationModelMock = createTypedModelMock(AccommodationModel, [
@@ -679,6 +680,80 @@ describe('ConversationService (extra coverage)', () => {
             // Assert
             expectSuccess(result);
             expect(result.data?.responseRatePct).toBe(0);
+        });
+    });
+
+    // =========================================================================
+    // countInquiriesForOwnAccommodation (HOS-2184)
+    // =========================================================================
+
+    describe('countInquiriesForOwnAccommodation', () => {
+        it('should throw FORBIDDEN when actor lacks CONVERSATION_VIEW_OWN', async () => {
+            // Act
+            const result = await service.countInquiriesForOwnAccommodation(FORBIDDEN_ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                windowDays: 30
+            });
+
+            // Assert
+            expectForbiddenError(result);
+            expect(asMock(conversationModelMock.countCreatedSince)).not.toHaveBeenCalled();
+        });
+
+        it('should answer NOT_FOUND for an accommodation the actor does not own', async () => {
+            // Arrange
+            asMock(accommodationModelMock.findIdsByOwnerId).mockResolvedValue([
+                crypto.randomUUID()
+            ]);
+
+            // Act
+            const result = await service.countInquiriesForOwnAccommodation(HOST_ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                windowDays: 30
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(asMock(conversationModelMock.countCreatedSince)).not.toHaveBeenCalled();
+        });
+
+        it('should count only that accommodation since local midnight of the first day', async () => {
+            // Arrange — pinned clock: local today is 2026-06-14, so a 7-day window
+            // starts at 2026-06-08 00:00 Argentina time (03:00Z).
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-06-15T00:00:00.000Z'));
+            asMock(accommodationModelMock.findIdsByOwnerId).mockResolvedValue([
+                ACCOMMODATION_ID,
+                crypto.randomUUID()
+            ]);
+            asMock(conversationModelMock.countCreatedSince).mockResolvedValue(4);
+
+            // Act
+            const result = await service.countInquiriesForOwnAccommodation(HOST_ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                windowDays: 7
+            });
+            vi.useRealTimers();
+
+            // Assert
+            expectSuccess(result);
+            expect(result.data).toEqual({ count: 4 });
+            expect(asMock(conversationModelMock.countCreatedSince)).toHaveBeenCalledWith(
+                [ACCOMMODATION_ID],
+                new Date('2026-06-08T03:00:00.000Z'),
+                undefined
+            );
+        });
+
+        it('should reject a window longer than 90 days', async () => {
+            // Act
+            const result = await service.countInquiriesForOwnAccommodation(HOST_ACTOR, {
+                accommodationId: ACCOMMODATION_ID,
+                windowDays: 91
+            });
+
+            // Assert
+            expect(result.error?.code).toBe('VALIDATION_ERROR');
         });
     });
 

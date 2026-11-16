@@ -48,6 +48,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import { getLocalDayWindow } from '@repo/utils';
 import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
 import { inArray } from 'drizzle-orm';
 import { errors as joseErrors, jwtVerify, SignJWT } from 'jose';
@@ -55,6 +56,7 @@ import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { entityNotFoundError } from '../../utils/not-found.js';
 import { createSystemActor } from '../../utils/system-actor.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { AccessTokenService } from './access-token.service.js';
@@ -1861,6 +1863,60 @@ export class ConversationService extends BaseService {
                     ownerAccommodationIds,
                     execCtx?.tx
                 );
+            }
+        });
+    }
+
+    /**
+     * Number of inquiries ONE accommodation of the authenticated host received
+     * in the last `windowDays` local calendar days, today included (HOS-2184
+     * `get_listing_stats`). The window starts at local midnight of the first
+     * day, like the entity-view daily series, so the figure lines up with the
+     * views of the same period. Soft-deleted conversations are excluded.
+     *
+     * Requires `CONVERSATION_VIEW_OWN`. The accommodation must be among the
+     * actor's own non-deleted ones, otherwise NOT_FOUND (a foreign and a missing
+     * id answer the same).
+     *
+     * @param actor - Authenticated host.
+     * @param input - The accommodation and the window length in days (1 to 90).
+     * @param ctx - Optional service context.
+     * @returns `{ count }`.
+     */
+    public async countInquiriesForOwnAccommodation(
+        actor: Actor,
+        input: { readonly accommodationId: string; readonly windowDays: number },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ readonly count: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'countInquiriesForOwnAccommodation',
+            input: { actor, ...input },
+            schema: z.object({
+                accommodationId: z.string().uuid(),
+                windowDays: z.number().int().min(1).max(90)
+            }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                if (!validatedActor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: CONVERSATION_VIEW_OWN required to count inquiries'
+                    );
+                }
+                const ownedIds = await this.accommodationModel.findIdsByOwnerId(
+                    validatedActor.id,
+                    execCtx?.tx
+                );
+                if (!ownedIds.includes(validated.accommodationId)) {
+                    throw entityNotFoundError({ entityName: 'accommodation' });
+                }
+                const { windowStart } = getLocalDayWindow({ windowDays: validated.windowDays });
+                const count = await this.conversationModel.countCreatedSince(
+                    [validated.accommodationId],
+                    windowStart,
+                    execCtx?.tx
+                );
+                return { count };
             }
         });
     }

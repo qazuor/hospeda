@@ -487,6 +487,50 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
             throw new DbError(this.entityName, 'getMonthlyInquiriesByOwnerId', ctx, err.message);
         }
     }
+
+    /**
+     * Counts the conversations (inquiries) started on any of the given
+     * accommodations at or after `since`. Soft-deleted conversations are
+     * excluded, as in {@link getMonthlyInquiriesByOwnerId}.
+     *
+     * @param ownerAccommodationIds - Accommodation ids to count over (may be empty).
+     * @param since - Inclusive lower bound on `createdAt`.
+     * @param tx - Optional transaction client.
+     * @returns The number of conversations (0 when `ownerAccommodationIds` is empty).
+     */
+    async countCreatedSince(
+        ownerAccommodationIds: readonly string[],
+        since: Date,
+        tx?: DrizzleClient
+    ): Promise<number> {
+        if (ownerAccommodationIds.length === 0) {
+            return 0;
+        }
+
+        const db = this.getClient(tx);
+        const ctx = { ownerAccommodationIds, since };
+
+        try {
+            const [row] = await db
+                .select({ total: count(conversations.id) })
+                .from(conversations)
+                .where(
+                    and(
+                        inArray(conversations.accommodationId, ownerAccommodationIds as string[]),
+                        isNull(conversations.deletedAt),
+                        gte(conversations.createdAt, since)
+                    )
+                );
+
+            logQuery(this.entityName, 'countCreatedSince', ctx, { total: row?.total ?? 0 });
+
+            return Number(row?.total ?? 0);
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'countCreatedSince', ctx, err);
+            throw new DbError(this.entityName, 'countCreatedSince', ctx, err.message);
+        }
+    }
 }
 
 /** Singleton instance of ConversationModel for use across the application. */
