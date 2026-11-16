@@ -79,7 +79,7 @@ promos; el happy hour cuenta como una promo más. Filas en v1: 3 de entitlement
   **Decidido (owner, 16/11/2026):** el trial recibe una fila propia
   `max_active_promotions = 1` (1 promo activa, mínimo para probar) en la versión del plan
   `trial` de venue, por additive grant (HOS-2280, pieza D). Durante el trial el editor de
-  promos muestra el aviso «Incluido en Pro y Premium. El plan Básico no lo tiene»
+  promos muestra el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6)
   (HOS-2262, sección 6.6): el plan Básico de venue no tiene promos.
 - Decisión 6 (baja de plan): las promos confirmadas se respetan «como en alojamiento».
   La clave `max_active_promotions` declara enforcement `ARCHIVE`, pero ningún proceso lo
@@ -170,9 +170,8 @@ este grant.
    (decisión actual del issue); (b) claves propias de venue (`create_venue_promotions`).
    Recomendación: (a), menos claves; el scope por vertical ya los separa.
 2. **Decidido (owner, 16/11/2026): trial.** 1 promo activa en la versión `trial` de venue,
-   por additive grant, con el aviso «Incluido en Pro y Premium. El plan Básico no lo
-   tiene». Abierto menor: el texto del aviso para `venue_vip_promotions` (solo Premium),
-   ver HOS-2262, pregunta 4.
+   por additive grant, con el aviso de los planes que la incluyen, leídos del catálogo
+   (HOS-2262 6.6): `venue_vip_promotions` muestra «Incluido en Premium».
 3. **Premium «sin tope»** (decisión 5). Confirmado en HOS-2253; sin pregunta nueva.
 
 Consultas de solo lectura: C-1 a C-5 de HOS-2280, con las claves `create_promotions`,

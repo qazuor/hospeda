@@ -37,7 +37,7 @@ plan, se ve como «No incluido» en todas las columnas: una promesa vacía.
 - Textos de upsell y de tope alcanzado de los límites nuevos.
 - Ocultar una fila hasta que algún plan la otorga (ver 6.3), incluida la fila de video de
   HOS-2258: **no** se muestra como «Próximamente» (decisión 28 del owner, 16/11/2026).
-- Aviso del trial «Incluido en Pro y Premium. El plan Básico no lo tiene» (ver 6.6).
+- Aviso del trial con los planes que incluyen la función, leídos del catálogo (ver 6.6).
 
 ## 4. Fuera de alcance
 
@@ -190,23 +190,28 @@ módulo de filas y falla si encuentra un literal numérico de tope.
 `LIMIT_DISPLAY_ORDER` (`plan-card-delta.ts:65`) suma los dos límites nuevos en un orden
 razonable (después de `MAX_VENUES`).
 
-### 6.6 Aviso del trial: «Incluido en Pro y Premium. El plan Básico no lo tiene»
+### 6.6 Aviso del trial: qué planes incluyen la función, leído del catálogo
 
-**Decidido (owner, 16/11/2026, decisión 27):** durante el trial las funciones nuevas
+**Decidido (owner, 16/11/2026, decisiones 27 y 27b):** durante el trial las funciones nuevas
 funcionan con valores mínimos (1 promo activa, 10 lugares de lista, 1 evento activo,
-filas de límite en la versión `trial`; HOS-2280 a HOS-2283) y muestran este aviso, porque
-el plan Básico de venue no las tiene.
+filas de límite en la versión `trial`; HOS-2280 a HOS-2283) y muestran un aviso que dice
+**qué planes la incluyen**, calculado del catálogo:
 
-- Texto único en es/en/pt: `billing.trial.notInBasicNotice`, sin nombrar precios; el guard
-  de upsell de editores de venue (que prohíbe nombrar planes en textos de upsell) se revisa
-  contra este texto, porque nombra «Pro y Premium». Si el guard lo rechaza, se agrega una
-  excepción explícita y acotada para esta clave, no se esquiva el guard.
-- Condición: la suscripción está en trial **y** la clave de la función no está en el set de
-  la versión Básico. Se resuelve con el catálogo (`resolveUnlockingPlanName` y el set de
-  Básico), sin lista fija de funciones en la web (HOS-1967).
-- Un componente compartido de aviso lo monta cada editor (promos, lista, avisos, eventos
-  con recurrencia, métricas, video). Cada spec de función solo lo monta; este issue lo
-  define y escribe los textos.
+- «Incluido en Pro y Premium. El plan Básico no lo tiene» cuando la clave está en Pro y
+  Premium (promos, lista, avisos, recurrencia, métricas, video).
+- «Incluido en Premium. Los planes Básico y Pro no lo tienen» cuando solo Premium la tiene
+  (estadísticas por evento, promos VIP, reservas, grupos y cumpleaños).
+- Textos en es/en/pt (`billing.trial.includedInNotice.*`), con los nombres de plan
+  interpolados desde el catálogo (`plan.name` de las versiones vendibles y vigentes que
+  tienen la clave), nunca escritos a mano en el texto, y sin precios.
+- Condición: la suscripción está en trial **y** la clave no está en la versión más baja
+  vendible. Si mañana Pro pierde o gana una clave, el aviso cambia solo (HOS-1967).
+- **Guard de upsell:** `venue-editor-upsell-no-plan-names.guard.test.ts` prohíbe nombrar
+  planes. Se le agrega una excepción explícita y acotada: solo el componente
+  `TrialIncludedInNotice` y solo con nombres que vienen del catálogo, nunca literales. La
+  excepción va con su test (una literal «Premium» en ese componente sigue fallando).
+- Un componente compartido lo monta cada editor. Cada spec de función solo lo monta; este
+  issue lo define y escribe los textos.
 
 ## 7. Modelo de datos / contratos
 
@@ -240,9 +245,13 @@ ownership de `guestList`, según 6.2).
    y guard nuevo).
 7. El upsell de los editores no nombra planes (guard existente verde con los textos nuevos).
 8. La tabla de alojamiento, de experiencia y las filas existentes de venue no cambian.
-9. Dado un venue en trial, cuando abre una función que Básico no tiene (promos, lista,
-   avisos), entonces ve «Incluido en Pro y Premium. El plan Básico no lo tiene» en es, y su
-   equivalente en en/pt; un venue con plan pago no lo ve.
+9. Dado un venue en trial, cuando abre una función que está en Pro y Premium (promos,
+   lista, avisos), entonces ve «Incluido en Pro y Premium. El plan Básico no lo tiene»; si
+   la función es solo de Premium (reservas, promos VIP, estadísticas por evento), ve
+   «Incluido en Premium. Los planes Básico y Pro no lo tienen». Los nombres salen del
+   catálogo, en es/en/pt. Un venue con plan pago no lo ve.
+10. Dado que el componente del aviso tiene un nombre de plan literal, cuando corre el guard
+   de upsell, entonces falla; con nombres leídos del catálogo, pasa.
 
 ## 10. Plan de tests
 
@@ -266,7 +275,7 @@ ownership de `guestList`, según 6.2).
   una sola PR dueña (pregunta 1).
 - R-3. Ocultar filas sin grant (6.3) cambia una regla de la tabla. Mitigación: flag
   opcional, solo en filas nuevas.
-- R-4. El aviso del trial nombra planes y puede chocar con el guard de upsell (6.6).
+- R-4. El aviso del trial nombra planes: se resuelve con la excepción acotada del guard (6.6).
 
 ## 12. Preguntas abiertas para el owner
 
@@ -278,10 +287,8 @@ ownership de `guestList`, según 6.2).
    otorga (6.3); no se muestran como «Próximamente». Incluye la fila de videos.
 3. **Nombre del grupo de filas** («Para la noche», «Eventos y reservas», otro).
    Recomendación: «Eventos y reservas», sirve también para gastronomía.
-4. **Texto del aviso del trial para funciones solo de Premium** (`venue_event_stats`,
-   `venue_vip_promotions`, reservas). «Incluido en Pro y Premium» sería falso ahí.
-   Recomendación: variante «Incluido en Premium. Los planes Básico y Pro no lo tienen»,
-   elegida por el catálogo según qué planes tienen la clave.
+4. **Decidido (owner, 16/11/2026): texto del aviso del trial.** Lo arma el catálogo según
+   qué planes tienen la clave, con excepción acotada en el guard de upsell (6.6).
 
 ## 13. Dependencias
 

@@ -57,7 +57,7 @@ Filas en v1: 2 de `plan_version_entitlement`. Ninguna de límite.
   gratis para quien está en trial).
   **Decidido (owner, 16/11/2026):** se acepta, y no lleva fila propia en la versión
   `trial` (solo hay límites ahí). Durante el trial, el panel de avisos muestra el aviso
-  «Incluido en Pro y Premium. El plan Básico no lo tiene» (mecanismo y texto en HOS-2262,
+  con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6) (mecanismo y texto en HOS-2262,
   sección 6.6).
 - El lector real de la clave es nuevo (HOS-2266 a HOS-2269): `rg venue_event_notifications`
   no tiene usos en `staging`.
@@ -135,7 +135,7 @@ está **oculta** mientras ningún plan la otorga (decisión 28 del owner: no se 
    (b) un límite mensual de avisos para pro. Recomendación: (a) y medir; si aparece abuso,
    se agrega un límite con el mismo patrón (clave nueva más grant).
 2. **Decidido (owner, 16/11/2026): trial.** Recibe la clave por la regla de mayor rank y
-   muestra el aviso «Incluido en Pro y Premium. El plan Básico no lo tiene». No se
+   muestra el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6). No se
    bloquea.
 
 Consultas de solo lectura: C-1 a C-5 de HOS-2280, cambiando `in (...)` de C-3 por

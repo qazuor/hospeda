@@ -92,7 +92,7 @@ más override del plan `trial` (`trial-ratchet.ts`, cabecera). Un venue en trial
 **Decidido (owner, 16/11/2026):** el trial recibe una fila propia
 `max_venue_guest_list_size = 10` (10 lugares en la lista, mínimo para probar) en la
 versión del plan `trial` de venue, por additive grant (HOS-2280, pieza D). Durante el
-trial, la lista muestra el aviso «Incluido en Pro y Premium. El plan Básico no lo tiene»
+trial, la lista muestra el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6)
 (HOS-2262, sección 6.6): Básico de venue no tiene lista. Los límites nuevos van con
 enforcement `NONE` (decisión 26, HOS-2259): `max_venue_guest_list_size` se evalúa en vivo
 al anotarse y no archiva nada.
@@ -150,7 +150,7 @@ aplicar el grant.
 8. El set efectivo de pro/premium refleja las claves nuevas dentro de los 15 minutos.
 9. Dada la versión del plan `trial` de venue, tiene `max_venue_guest_list_size = 10`; un
    venue nocturno en trial anota hasta 10 lugares y el siguiente falla, y ve el aviso
-   «Incluido en Pro y Premium. El plan Básico no lo tiene».
+   con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6).
 
 ## 10. Plan de tests
 
@@ -176,7 +176,7 @@ aplicar el grant.
 1. **Un solo grant al final o grants por función.** Opciones: (a) una migración al
    terminar lista + reservas; (b) una por función a medida que salen. Recomendación: (a).
 2. **Decidido (owner, 16/11/2026): trial.** Cupo de 10 lugares en la versión `trial` de
-   venue (pieza D), con el aviso «Incluido en Pro y Premium. El plan Básico no lo tiene».
+   venue (pieza D), con el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6).
    Abierto menor: el aviso para reservas (`venue_reservations`, solo Premium) necesita
    otro texto (HOS-2262, pregunta 4).
 3. **Tope de reservas.** Hoy no hay. Opciones: (a) sin tope; (b) límite por mes para

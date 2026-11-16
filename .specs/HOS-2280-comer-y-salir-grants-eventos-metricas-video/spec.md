@@ -141,8 +141,7 @@ para probar: 1 promo activa, 10 lugares en la lista de invitados y 1 evento acti
 declaran como filas de límite en la versión del plan `trial` de venue (override de
 límites, la única vía que admite `trial-ratchet.ts`), cada una en el issue de su bloque.
 Este issue pone el patrón (pieza D) y la de eventos. Durante el trial, las funciones que
-el plan Básico no tiene muestran el aviso «Incluido en Pro y Premium. El plan Básico no
-lo tiene» (mecanismo y texto en HOS-2262, sección 6.6).
+el plan Básico no tiene muestran el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6) (mecanismo y texto en HOS-2262, sección 6.6).
 
 ### 5.5 Los lectores de las claves reusadas
 
@@ -376,7 +375,7 @@ C-5. `select max(id) from drizzle.__drizzle_migrations;` (o el último nombre de
   Smoke: venue pro con suscripción real, aplicar la migración, esperar ≤ 15 minutos y ver
   eventos recurrentes, video y métricas habilitados; venue básico con un solo evento y sin
   recurrencia; premium con eventos sin tope; un venue en trial con 1 evento activo y el
-  aviso «Incluido en Pro y Premium. El plan Básico no lo tiene» en lo que Básico no tiene. No toca checkout ni webhooks, así que no
+  aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6) en lo que Básico no tiene. No toca checkout ni webhooks, así que no
   exige parte de producción.
 - What's New: sí, lo escribe el flujo de smoke; el cambio visible es «eventos, métricas y
   video». Lo agrupa HOS-2284.
