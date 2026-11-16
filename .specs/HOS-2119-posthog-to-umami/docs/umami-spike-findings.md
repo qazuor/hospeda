@@ -107,3 +107,40 @@ Checked with two entities (A: 2 pageviews, 2 `contact_owner_started`, 1
     STRING), the second tag answered `visitors: 1`, an unknown tag answered `[]`. One row per
     event name, so the adapter reads the row whose `name` is the event (0 when absent).
     Cross-check: `sessions?tag=&event=<name>&pageSize=1` gives `count: 2` (same figure).
+
+## T-037: reports and boards API shapes (measured 2026-11-16, Umami 3.5.0)
+
+Used by `scripts/umami/client.ts`. All calls sent the login token (or an `umami_...` API
+key) as a bearer credential; the same header worked for both.
+
+- **Auth**: `POST /api/auth/login {username,password}` returns `{token, user}`.
+  `POST /api/auth/verify` with the token returns the user. Missing or bad token on a
+  protected call answers `401 {"error":{"message":"Unauthorized","code":"unauthorized","status":401}}`.
+  Validation runs BEFORE auth: `GET /api/reports` with no token and no `websiteId`
+  answers `400`, not `401`.
+- **Error body**: `{"error":{"message","code","status","errors":[],"properties":{<field>:{"errors":[...]}}}}`.
+  Unknown id answers `404 {"error":{"code":"not-found"}}`.
+- **List envelope**: `{"data":[...],"count":N,"page":1,"pageSize":20}`. `pageSize=1000`
+  is accepted (no cap observed). `search=` is a loose substring match across fields
+  (`search=goal` also returned reports not named "goal"), so exact name matching must be
+  done client side.
+- **Reports**: `GET /api/reports?websiteId=<id>` (`websiteId` REQUIRED; optional `type`
+  filter works). `POST /api/reports` creates, `GET /api/reports/:id` reads,
+  `POST /api/reports/:id` updates, `DELETE /api/reports/:id` answers `{"ok":true}`.
+  Create AND update need the FULL body `{websiteId,type,name,description?,parameters}`
+  (a partial update answers `400` listing websiteId/type/name/parameters). Response:
+  `{id,userId,websiteId,type,name,description,parameters,createdAt,updatedAt}`.
+  `type` is one of `attribution|breakdown|funnel|goal|heatmap|journey|performance|retention|revenue|utm`.
+  Funnel parameters: `{window, steps:[{type:'path'|'event', value}]}`. Umami may
+  reorder keys inside `parameters` on storage, so comparisons must be key-order-insensitive.
+  There is no unique constraint: creating twice makes two rows (hence the upsert).
+- **Boards**: `GET /api/boards` (no filter; user-scoped, paginated), `POST /api/boards`,
+  `GET|POST|DELETE /api/boards/:id` with the same semantics. Body
+  `{type,name,description,parameters}`; `type` is `mixed|website|pixel|link`
+  (the error also mentions an `"open"` alternative). Website boards carry
+  `parameters.websiteId`; layout lives in `parameters.rows[].columns[].component`
+  (accepted as free-form; stored and returned). Response adds `teamId`.
+- Teams exist (`GET /api/teams`); API keys: `GET /api/me/api-keys`. Segments/cohorts
+  were not probed (not used by the setup script).
+- **Natural keys chosen**: report = `websiteId` + `name`; board = `name`. More than one
+  match raises an `ambiguous` error instead of guessing.
