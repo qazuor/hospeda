@@ -36,7 +36,7 @@ permissions:
   contents: read
 
 # Shared env block mirrors ci.yml exactly: same placeholder strategy for
-# PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY, same URL fallbacks to .invalid
+# PUBLIC_SENTRY_DSN, same URL fallbacks to .invalid
 # so the web build does not abort on missing secrets.
 env:
   HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET || 'ci-placeholder-better-auth-secret-min-32-chars' }}
@@ -47,11 +47,10 @@ env:
   PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
   PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
   PUBLIC_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
-  # PUBLIC_SENTRY_DSN and PUBLIC_POSTHOG_KEY are required by the web build
+  # PUBLIC_SENTRY_DSN is required by the web build
   # in production mode. A syntactically valid placeholder is enough for CI
   # because the bundle is never deployed from this workflow.
   PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN || 'https://ci-placeholder.invalid' }}
-  PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY || 'phc_ci_placeholder' }}
   # Tells the env guard to accept .invalid placeholder URLs (same role as
   # in ci.yml — see SPEC-219 T-006).
   ALLOW_PLACEHOLDER_ENV_URLS: 'true'

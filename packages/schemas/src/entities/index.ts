@@ -8,6 +8,7 @@ export * from './ai/index.js';
 export * from './ai-connection/index.js';
 export * from './alliance-lead/index.js';
 export * from './amenity/index.js';
+export * from './analytics/index.js';
 export * from './appLogEntry/index.js';
 export * from './attraction/index.js';
 export * from './auditLogEntry/index.js';

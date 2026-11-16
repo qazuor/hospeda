@@ -6,7 +6,7 @@
  * (ContactSubmitSchema), same POST /api/v1/public/contact, same honeypot and
  * 429 handling — but the contact `type` is locked via the `presetType` prop
  * (no type select rendered) and the success path fires the matching typed
- * `contribution_*_submitted` PostHog event.
+ * `contribution_*_submitted` Umami event.
  *
  * Destination context (FR-3): when `presetType` is `report_destination_info`,
  * the island reads `?destino=<slug>` from the URL client-side (the /colaborar
@@ -26,7 +26,7 @@ import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';

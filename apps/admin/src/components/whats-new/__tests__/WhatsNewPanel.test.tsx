@@ -6,9 +6,9 @@
  *  - "Marcar todo como leído" calls markAllSeen and is disabled when unseenCount===0.
  *  - Empty state renders when items.length === 0.
  *  - Row click opens WhatsNewModal with the correct entryId.
- *  - PostHog `admin.whats_new.panel.opened` fires on open.
+ *  - Umami `admin.whats_new.panel.opened` fires on open.
  *
- * `useWhatsNew` is mocked directly. `trackEvent` is mocked to avoid PostHog calls.
+ * `useWhatsNew` is mocked directly. `trackEvent` is mocked to avoid Umami calls.
  *
  * @see apps/admin/src/components/whats-new/WhatsNewPanel.tsx — subject
  * @see SPEC-175 §7.4, §12.4
@@ -37,7 +37,7 @@ vi.mock('@/hooks/use-whats-new', () => ({
     }))
 }));
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 
@@ -54,7 +54,7 @@ vi.mock('../WhatsNewModal', () => ({
 }));
 
 import { useWhatsNew } from '@/hooks/use-whats-new';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 
 const mockUseWhatsNew = vi.mocked(useWhatsNew);
 const mockTrackEvent = vi.mocked(trackEvent);
@@ -235,7 +235,7 @@ describe('WhatsNewPanel', () => {
     });
 
     // -------------------------------------------------------------------------
-    // PostHog tracking
+    // Umami tracking
     // -------------------------------------------------------------------------
 
     describe('analytics', () => {

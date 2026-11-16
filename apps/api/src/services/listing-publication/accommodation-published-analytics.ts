@@ -8,7 +8,8 @@
  */
 
 import { AnalyticsEvents } from '@repo/analytics';
-import { captureServerAnalyticsEvent } from '../../lib/posthog';
+import { captureServerAnalyticsEvent } from '../../lib/analytics-client';
+import type { VisitorContext } from '../../utils/visitor-context';
 
 /** The accommodation row `ListingPublicationService.publish` returns, as read here. */
 export interface PublishedAccommodationFacts {
@@ -26,7 +27,9 @@ export interface PublishedAccommodationFacts {
  * Emits `accommodationPublished` for a successful owner publish. Fire and
  * forget, like every server analytics capture.
  *
- * @param input - The publishing actor's id and the published accommodation
+ * @param input - The publishing actor's id, the published accommodation and,
+ * for a request-scoped publish, the visitor's IP + User-Agent so the event joins
+ * the browser session (HOS-2119). The assistant tool passes no visitor.
  *
  * @example
  * ```typescript
@@ -37,8 +40,9 @@ export interface PublishedAccommodationFacts {
 export function captureAccommodationPublished(input: {
     readonly actorId: string;
     readonly accommodation: PublishedAccommodationFacts;
+    readonly visitor?: VisitorContext;
 }): void {
-    const { actorId, accommodation } = input;
+    const { actorId, accommodation, visitor } = input;
     captureServerAnalyticsEvent({
         distinctId: actorId,
         name: AnalyticsEvents.accommodationPublished,
@@ -51,6 +55,7 @@ export function captureAccommodationPublished(input: {
                     ? accommodation.destinationId
                     : undefined,
             owner_id: typeof accommodation.ownerId === 'string' ? accommodation.ownerId : undefined
-        }
+        },
+        ...(visitor ? { visitor } : {})
     });
 }

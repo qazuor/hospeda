@@ -111,7 +111,7 @@ const mockToggle = vi.fn();
 const mockCheckBulk = vi.fn();
 const trackEventSpy = vi.fn();
 
-vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
+vi.mock('../../../../src/lib/analytics/umami-client', () => ({
     trackEvent: (...args: unknown[]) => trackEventSpy(...args)
 }));
 
@@ -1147,7 +1147,7 @@ describe('FavoriteButton — locale number formatting', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 13. PostHog analytics — favorite_toggled
+// 13. Umami analytics — favorite_toggled
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — favorite_toggled analytics event', () => {

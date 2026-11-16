@@ -139,3 +139,47 @@
         animation: none;
     }
 }
+
+/* ── Traffic block (HOS-2119) ── */
+
+.trafficBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-5, 1.25rem);
+}
+
+.trafficBlock .sectionTitle {
+    margin-bottom: 0;
+}
+
+.trafficSelectRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.trafficSelectLabel {
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.trafficSelect {
+    min-width: 12rem;
+    max-width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-background, #fff);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    appearance: auto;
+}
+
+.trafficSelect:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}

@@ -103,7 +103,7 @@ Additional safety at the engine chokepoint:
   reports `{ flagged, severity, matches }` but never censors semantic content. The
   caller decides the enforcement policy.
 - **PII scrubber** (`scrubPii`): redacts email, phone (including Argentine formats),
-  and payment cards (Luhn-validated) from data before it reaches Sentry/PostHog.
+  and payment cards (Luhn-validated) from data before it reaches Sentry/Umami.
   The database stores conversations verbatim (AC-11 contract).
 - **Content moderation** (`moderate`): runs at the engine level on both input and
   output for `generateText`/`generateObject`; input-only for `extractIntent`.

@@ -40,6 +40,7 @@ import { getActorFromContext } from '../../utils/actor';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
+import { markHeadersAsNotVisitor } from '../../utils/visitor-context';
 
 const SignupAsHostBodySchema = z.object({
     email: z.string().email(),
@@ -88,7 +89,10 @@ export const signupAsHostRoute = createAdminRoute({
         const auth = getAuth();
         const signUpResult = await auth.api.signUpEmail({
             body: input,
-            headers: c.req.raw.headers,
+            // Staff-initiated: keep the headers Better Auth needs but mark them so
+            // analytics never attributes the new account (nor its first session)
+            // to the staff member's IP / User-Agent.
+            headers: markHeadersAsNotVisitor({ headers: c.req.raw.headers }),
             asResponse: false
         });
 

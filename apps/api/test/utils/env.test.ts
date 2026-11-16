@@ -66,7 +66,8 @@ const createValidProdEnv = (overrides: Record<string, string | undefined> = {}) 
         HOSPEDA_CLOUDINARY_API_SECRET: 'test-cloudinary-secret',
         HOSPEDA_SENTRY_DSN: 'https://test@sentry.io/1',
         HOSPEDA_LINEAR_API_KEY: 'lin_api_test',
-        HOSPEDA_POSTHOG_KEY: 'phc_test',
+        HOSPEDA_UMAMI_URL: 'https://stats.example.com',
+        HOSPEDA_UMAMI_WEBSITE_ID_WEB: '11111111-1111-4111-8111-111111111111',
         HOSPEDA_APIFY_TOKEN: 'apify_api_test',
         HOSPEDA_GOOGLE_PLACES_API_KEY: 'google-places-test',
         ...overrides
@@ -608,6 +609,49 @@ describe('Environment Configuration', () => {
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
             expect(envModule.env.HOSPEDA_SENTRY_DSN).toBe('https://key@sentry.io/123');
+        });
+
+        it.each([
+            'HOSPEDA_UMAMI_URL',
+            'HOSPEDA_UMAMI_WEBSITE_ID_WEB'
+        ])('should require %s in production (HOS-2119: analytics cannot be switched off unnoticed)', async (name) => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidProdEnv({
+                // Explicitly removed to prove production requires it.
+                [name]: undefined
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept production with both Umami vars and no PostHog key', async () => {
+            process.env = createValidProdEnv({
+                HOSPEDA_UMAMI_URL: 'https://stats.example.com',
+                HOSPEDA_UMAMI_WEBSITE_ID_WEB: '11111111-1111-4111-8111-111111111111',
+                HOSPEDA_POSTHOG_KEY: undefined
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_UMAMI_URL).toBe('https://stats.example.com');
+            expect('HOSPEDA_POSTHOG_KEY' in envModule.env).toBe(false);
+        });
+
+        it('should NOT require the Umami vars in non-production environments', async () => {
+            process.env = createValidTestEnv({ NODE_ENV: 'test' });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_UMAMI_URL).toBeUndefined();
         });
 
         it('should NOT require HOSPEDA_SENTRY_DSN in non-production environments', async () => {

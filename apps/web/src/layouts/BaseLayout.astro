@@ -31,7 +31,7 @@ import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
-import PostHogScript from '@/components/analytics/PostHogScript.astro';
+import UmamiScript from '@/components/analytics/UmamiScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPreferenceNudge.client';
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
@@ -63,12 +63,15 @@ interface Props {
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
+	/** Entity id rendered as the Umami page tag (`<meta name="umami-tag">`, detail pages only). */
+	readonly analyticsTag?: string;
 }
 
 const {
 	locale,
 	title = 'Hospeda',
 	description = 'Descubrí alojamientos en el Litoral Entrerriano',
+	analyticsTag,
 } = Astro.props;
 
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
@@ -103,7 +106,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<!--
 		  Named slot for scripts that MUST run before ANY other head content:
 		  analytics snippets, the feedback nav bootstrap, and cross-origin
-		  subresource fetches (fonts, PostHog assets) that would otherwise send a
+		  subresource fetches (fonts, third-party assets) that would otherwise send a
 		  `Referer` header. Rendered first in <head> so an inline script here
 		  executes synchronously during parse, before all of the above. Used by the
 		  checkout success page (HOS-209) to scrub `preapproval_id` from the URL
@@ -190,12 +193,13 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		)}
 
 		<!--
-		  PostHog analytics snippet (SPEC-140).
-		  Inline so window.posthog is stubbed before any island hydrates and
-		  calls trackEvent(). Renders nothing in dev mode or when the project
-		  key is unset (e.g. locally-built previews without the secret).
+		  Umami analytics tag (HOS-2119). External deferred script, no inline
+		  body (no CSP hash) and no per-user data (pages stay session-blind).
+		  Renders nothing unless both PUBLIC_UMAMI_* values are set. Pageviews
+		  are sent per `astro:page-load` by its bundled script, tagged from the
+		  swapped `<meta name="umami-tag">` (see UmamiScript.astro).
 		-->
-		<PostHogScript />
+		<UmamiScript tag={analyticsTag} />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />

@@ -62,7 +62,7 @@ PACKAGE="qrcode"
 #
 # `scripts/` is included so a one-off script cannot mint codes either, and
 # `infra/` because it holds real, tracked TypeScript and JavaScript
-# (`infra/cloudflare/{posthog-proxy,sentry-tunnel}/`) that this guard used to
+# (`infra/cloudflare/sentry-tunnel/`) that this guard used to
 # be blind to. The repo ROOT is covered separately below — `-r` over these
 # directories never visits a top-level file, which was the second blind spot.
 SEARCH_DIRS="apps packages scripts infra"

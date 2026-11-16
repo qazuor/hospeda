@@ -633,6 +633,9 @@ async function runMiddlewarePipeline(
             // Drop the external *.sentry.io connect-src when the first-party
             // Sentry tunnel is active (SPEC-181 follow-up).
             sentryTunnelEnabled: Boolean(import.meta.env.PUBLIC_SENTRY_TUNNEL),
+            // HOS-2119: Umami lives on its own subdomain; allow its origin.
+            umamiScriptUrl:
+                (import.meta.env.PUBLIC_UMAMI_SCRIPT_URL as string | undefined) ?? undefined,
             // Dev-only CSP relaxations, both caused by Astro's ClientRouter
             // behaving differently under `astro dev` (see buildCspHeader JSDoc):
             // HOS-91's style-src, plus frame-src 'self' for the hidden

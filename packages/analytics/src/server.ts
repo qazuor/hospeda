@@ -1,7 +1,9 @@
 import type { AnalyticsEventName, AnalyticsEventProperties } from './catalog.js';
 import {
     type AnalyticsGlobalProperties,
+    type AnalyticsVisitor,
     prepareAnalyticsEvent,
+    sanitizeAnalyticsVisitor,
     validateDistinctId
 } from './shared.js';
 
@@ -12,6 +14,11 @@ export interface ServerAnalyticsClient {
         properties?: Record<string, unknown>;
         uuid?: string;
         timestamp?: Date;
+        /**
+         * Visitor IP and User-Agent for session attribution. Never sent as event
+         * properties. Providers that do not attribute sessions ignore it.
+         */
+        visitor?: AnalyticsVisitor;
     }): void;
 }
 
@@ -28,6 +35,8 @@ export function createServerAnalytics(options: {
             properties: AnalyticsEventProperties<TName>;
             uuid?: string;
             timestamp?: Date;
+            /** Optional visitor identity; an invalid one is dropped, not fatal. */
+            visitor?: AnalyticsVisitor;
         }): void {
             try {
                 const client = options.getClient();
@@ -35,6 +44,7 @@ export function createServerAnalytics(options: {
                     return;
                 }
 
+                const visitor = sanitizeAnalyticsVisitor(input.visitor);
                 client.capture({
                     distinctId: validateDistinctId(input.distinctId),
                     event: input.name,
@@ -46,7 +56,8 @@ export function createServerAnalytics(options: {
                             : {})
                     }),
                     ...(input.uuid === undefined ? {} : { uuid: input.uuid }),
-                    ...(input.timestamp === undefined ? {} : { timestamp: input.timestamp })
+                    ...(input.timestamp === undefined ? {} : { timestamp: input.timestamp }),
+                    ...(visitor === undefined ? {} : { visitor })
                 });
             } catch (error) {
                 options.onError?.(error, { distinctId: input.distinctId, name: input.name });

@@ -346,8 +346,7 @@ overrides:
   # compression 1.8.1. Keep the 1.x line.
   compression: ">=1.8.2 <2"
   # HOS-1894: fflate 0.7.4 (via @vercel/og > satori > @shuding/opentype.js) has a
-  # fix in 0.7.5. Range-scoped so posthog-js's fflate 0.4.9 and vitest's 0.8.x
-  # are left alone.
+  # fix in 0.7.5. Range-scoped so vitest's 0.8.x is left alone.
   "fflate@>=0.7.0 <0.7.5": ">=0.7.5 <0.8"
 
 auditConfig:
@@ -423,9 +422,6 @@ allowBuilds:
   # Native CPU profiler; hospeda-api depends on @sentry/profiling-node
   # directly (dependencies, not transitive) for Sentry performance profiling.
   '@sentry/node-cpu-profiler': true
-  # Pulled in by posthog-js. Its postinstall only prints an OpenCollective
-  # donation message — no build/codegen step is required for it to work.
-  core-js: false
   # Downloads the platform-specific esbuild binary; required transitively by
   # astro, tsup and drizzle-kit builds across every app.
   esbuild: true

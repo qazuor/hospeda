@@ -1,0 +1,65 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+    gap: var(--space-3, 0.75rem);
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--core-card, var(--core-background));
+}
+
+.cardTitle {
+    margin: 0;
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.list,
+.funnel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--text-caption, 0.75rem);
+}
+
+.rowLabel {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    color: var(--core-foreground);
+}
+
+.rowCount {
+    margin: 0;
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+}
+
+.empty {
+    margin: 0;
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+}
+
+.loading {
+    padding: var(--space-4, 1rem);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+}

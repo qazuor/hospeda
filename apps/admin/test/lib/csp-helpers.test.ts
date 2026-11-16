@@ -179,3 +179,68 @@ describe('buildCspDirectives', () => {
         expect(scriptSrc).not.toContain(' https:');
     });
 });
+
+describe('buildCspDirectives - Umami (HOS-2119)', () => {
+    const directive = (csp: string, name: string): string | undefined =>
+        csp.split('; ').find((d) => d.startsWith(name));
+
+    it('adds the Umami origin to script-src and connect-src', () => {
+        // Arrange + Act
+        const csp = buildCspDirectives({
+            nonce: 'n',
+            sentryDsn: '',
+            umamiScriptUrl: 'https://pulso-staging.hospeda.com.ar/app.js'
+        });
+
+        // Assert
+        expect(directive(csp, 'script-src')).toContain('https://pulso-staging.hospeda.com.ar');
+        expect(directive(csp, 'connect-src')).toContain('https://pulso-staging.hospeda.com.ar');
+        expect(csp).not.toContain('/app.js');
+    });
+
+    it('adds no Umami origin when the script URL is unset or empty', () => {
+        // Arrange + Act
+        const unset = buildCspDirectives({ nonce: 'n', sentryDsn: '' });
+        const empty = buildCspDirectives({ nonce: 'n', sentryDsn: '', umamiScriptUrl: '' });
+
+        // Assert
+        expect(directive(unset, 'connect-src')).toBe("connect-src 'self' https://*.sentry.io");
+        expect(empty).toBe(unset);
+    });
+
+    it('ignores a malformed or non-http(s) script URL', () => {
+        // Arrange + Act
+        const bad = buildCspDirectives({ nonce: 'n', sentryDsn: '', umamiScriptUrl: 'not a url' });
+        const js = buildCspDirectives({
+            nonce: 'n',
+            sentryDsn: '',
+            umamiScriptUrl: 'javascript:alert(1)'
+        });
+        const base = buildCspDirectives({ nonce: 'n', sentryDsn: '' });
+
+        // Assert
+        expect(bad).toBe(base);
+        expect(js).toBe(base);
+    });
+
+    it('adds exactly the Umami origin to script-src and connect-src, and no other analytics host', () => {
+        // Arrange
+        const origin = 'https://pulso.hospeda.com.ar';
+        const tokens = (csp: string, name: string) =>
+            (csp.split('; ').find((d) => d.startsWith(name)) ?? '').split(' ');
+        const base = buildCspDirectives({ nonce: 'n', sentryDsn: '' });
+
+        // Act
+        const csp = buildCspDirectives({
+            nonce: 'n',
+            sentryDsn: '',
+            umamiScriptUrl: `${origin}/app.js`
+        });
+
+        // Assert
+        for (const name of ['script-src', 'connect-src']) {
+            const added = tokens(csp, name).filter((t) => !tokens(base, name).includes(t));
+            expect(added).toEqual([origin]);
+        }
+    });
+});

@@ -6,11 +6,11 @@
  *  - Renders null (no DOM output) for both POST and EVENT types.
  *  - Fires `sendViewBeacon` once per mount with the correct EntityTypeEnum
  *    member (POST / EVENT) and the entity UUID.
- *  - Fires the correct typed PostHog event (`post_viewed` / `event_viewed`)
+ *  - Fires the correct typed Umami event (`post_viewed` / `event_viewed`)
  *    with slug, entity id, and locale.
  *  - Does not double-fire on re-render with identical props.
  *  - Re-fires when entityId changes (View Transitions navigation).
- *  - Both beacon and PostHog event fire together on the same mount.
+ *  - Both beacon and Umami event fire together on the same mount.
  */
 
 import { act, render } from '@testing-library/react';
@@ -19,7 +19,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ─── Module mocks (must precede the import under test) ────────────────────────
 
 const trackEventMock = vi.fn();
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: (...args: unknown[]) => trackEventMock(...args)
 }));
 
@@ -86,7 +86,8 @@ describe('EntityViewTracker — POST (SPEC-159 T-013)', () => {
 
         // Assert
         expect(trackEventMock).toHaveBeenCalledTimes(1);
-        expect(trackEventMock).toHaveBeenCalledWith('post_viewed', {
+        expect(trackEventMock.mock.calls[0]?.[0]).toBe('post_viewed');
+        expect(trackEventMock.mock.calls[0]?.[1]).toEqual({
             post_id: POST_PROPS.entityId,
             post_slug: POST_PROPS.slug,
             locale: POST_PROPS.locale,
@@ -135,7 +136,7 @@ describe('EntityViewTracker — POST (SPEC-159 T-013)', () => {
         });
     });
 
-    it('fires both beacon and PostHog event on the same mount', () => {
+    it('fires both beacon and Umami event on the same mount', () => {
         // Arrange / Act
         render(<EntityViewTracker {...POST_PROPS} />);
 
@@ -181,7 +182,8 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
 
         // Assert
         expect(trackEventMock).toHaveBeenCalledTimes(1);
-        expect(trackEventMock).toHaveBeenCalledWith('event_viewed', {
+        expect(trackEventMock.mock.calls[0]?.[0]).toBe('event_viewed');
+        expect(trackEventMock.mock.calls[0]?.[1]).toEqual({
             event_id: EVENT_PROPS.entityId,
             event_slug: EVENT_PROPS.slug,
             locale: EVENT_PROPS.locale,
@@ -230,7 +232,7 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
         });
     });
 
-    it('fires both beacon and PostHog event on the same mount', () => {
+    it('fires both beacon and Umami event on the same mount', () => {
         // Arrange / Act
         render(<EntityViewTracker {...EVENT_PROPS} />);
 
@@ -240,7 +242,7 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
     });
 });
 
-describe('EntityViewTracker — VENUE / EXPERIENCE (HOS-734)', () => {
+describe('EntityViewTracker — VENUE / EXPERIENCE / PARTNER (HOS-734, HOS-2119)', () => {
     const VENUE_PROPS = {
         entityType: 'VENUE' as const,
         slug: 'la-parrilla-del-puerto',
@@ -289,14 +291,64 @@ describe('EntityViewTracker — VENUE / EXPERIENCE (HOS-734)', () => {
         });
     });
 
-    it('does NOT fire a PostHog trackEvent for VENUE (owner decision, HOS-734)', () => {
+    it('emits entity_viewed with exact properties for VENUE, once per mount', () => {
         render(<EntityViewTracker {...VENUE_PROPS} />);
-        expect(trackEventMock).not.toHaveBeenCalled();
+
+        expect(trackEventMock).toHaveBeenCalledTimes(1);
+        expect(trackEventMock).toHaveBeenCalledWith('entity_viewed', {
+            entity_type: 'VENUE',
+            entity_id: VENUE_PROPS.entityId,
+            locale: VENUE_PROPS.locale
+        });
+        expect(trackEventMock.mock.calls[0]?.[1]).toEqual({
+            entity_type: 'VENUE',
+            entity_id: VENUE_PROPS.entityId,
+            locale: 'es'
+        });
     });
 
-    it('does NOT fire a PostHog trackEvent for EXPERIENCE (owner decision, HOS-734)', () => {
+    it('emits entity_viewed with exact properties for EXPERIENCE, once per mount', () => {
         render(<EntityViewTracker {...EXPERIENCE_PROPS} />);
-        expect(trackEventMock).not.toHaveBeenCalled();
+
+        expect(trackEventMock).toHaveBeenCalledTimes(1);
+        expect(trackEventMock.mock.calls[0]?.[0]).toBe('entity_viewed');
+        expect(trackEventMock.mock.calls[0]?.[1]).toEqual({
+            entity_type: 'EXPERIENCE',
+            entity_id: EXPERIENCE_PROPS.entityId,
+            locale: 'es'
+        });
+    });
+
+    it('emits entity_viewed with exact properties for PARTNER and still sends the beacon', () => {
+        const partnerProps = {
+            entityType: 'PARTNER' as const,
+            slug: 'hotel-partner',
+            entityId: '550e8400-e29b-41d4-a716-446655440005',
+            locale: 'pt' as const
+        };
+
+        render(<EntityViewTracker {...partnerProps} />);
+
+        expect(trackEventMock).toHaveBeenCalledTimes(1);
+        expect(trackEventMock.mock.calls[0]?.[0]).toBe('entity_viewed');
+        expect(trackEventMock.mock.calls[0]?.[1]).toEqual({
+            entity_type: 'PARTNER',
+            entity_id: partnerProps.entityId,
+            locale: 'pt'
+        });
+        expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
+        expect(sendViewBeaconMock).toHaveBeenCalledWith({
+            entityType: 'PARTNER',
+            entityId: partnerProps.entityId
+        });
+    });
+
+    it('does not re-fire entity_viewed on re-render with identical props', () => {
+        const { rerender } = render(<EntityViewTracker {...VENUE_PROPS} />);
+        act(() => {
+            rerender(<EntityViewTracker {...VENUE_PROPS} />);
+        });
+        expect(trackEventMock).toHaveBeenCalledTimes(1);
     });
 
     it('fires again when entityId changes (View Transitions navigation) for VENUE', () => {

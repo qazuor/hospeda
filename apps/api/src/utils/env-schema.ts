@@ -41,6 +41,31 @@ export const boolEnv = (defaultValue: boolean) =>
         .transform((v) => (v === undefined ? defaultValue : v.toLowerCase() === 'true'));
 
 /**
+ * Optional env var that treats a blank value as unset.
+ *
+ * Coolify and dotenv files commonly carry `KEY=` (empty string) for "disabled".
+ * Without this, an empty string reaches `.url()` / `.uuid()` / `.min(1)` and
+ * fails validation, crashing API boot. This helper maps `''` and whitespace-only
+ * strings to `undefined` before running the wrapped schema, so the var behaves
+ * exactly like an unset one. Kept zod-only so this module stays import-pure.
+ *
+ * @param schema - Schema applied to the non-blank value.
+ * @returns A schema accepting `undefined`, blank strings (as `undefined`) or a valid value.
+ *
+ * @example
+ * ```ts
+ * const url = blankAsUndefined(z.string().url());
+ * url.parse('');  // undefined
+ * url.parse('https://umami.example.com'); // 'https://umami.example.com'
+ * ```
+ */
+export const blankAsUndefined = <T extends z.ZodType>(schema: T) =>
+    z.preprocess(
+        (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+        schema.optional()
+    );
+
+/**
  * Base shape of the API environment schema.
  *
  * Exported separately from the `.superRefine`-wrapped `ApiEnvSchema` (defined
@@ -538,11 +563,15 @@ export const ApiEnvBaseSchema = z.object({
 
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
-    // PostHog (AI event analytics — optional, no-op when unset)
-    /** PostHog project API key for server-side AI event analytics (e.g. 'phc_xxx'). */
-    HOSPEDA_POSTHOG_KEY: z.string().optional(),
-    /** PostHog API host. Defaults to 'https://us.i.posthog.com' when unset. */
-    HOSPEDA_POSTHOG_HOST: z.string().url().optional(),
+    // Umami (self-hosted analytics, HOS-2119 — optional, no-op when unset)
+    /** Base URL of the self-hosted Umami instance (ingestion + read API). */
+    HOSPEDA_UMAMI_URL: blankAsUndefined(z.string().url()),
+    /** Umami website id (UUID) of `hospeda-web`; server events about the web surface. */
+    HOSPEDA_UMAMI_WEBSITE_ID_WEB: blankAsUndefined(z.string().uuid()),
+    /** Umami website id (UUID) of `hospeda-admin`; server events about the admin surface. */
+    HOSPEDA_UMAMI_WEBSITE_ID_ADMIN: blankAsUndefined(z.string().uuid()),
+    /** Umami API key of a view-only user (`umami_...`), used only to read stats (secret). */
+    HOSPEDA_UMAMI_API_KEY: blankAsUndefined(z.string().min(1)),
     HOSPEDA_SENTRY_RELEASE: z.string().optional(),
     HOSPEDA_SENTRY_PROJECT: z.string().optional(),
     // Healthchecks.io free cron monitors (HOS-1742). Both vars are required for

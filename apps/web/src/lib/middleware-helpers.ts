@@ -739,6 +739,30 @@ export function requestHasSessionCookie(cookieHeader: string | null): boolean {
 }
 
 /**
+ * Derives the Umami origin from `PUBLIC_UMAMI_SCRIPT_URL` for the CSP.
+ *
+ * Only `http:` and `https:` URLs yield an origin; an absent, blank,
+ * unparseable or other-scheme value yields `null` so no source is added.
+ *
+ * @param params - Object with the raw script URL
+ * @returns The bare origin (no path), or `null` when none can be derived
+ */
+export function resolveUmamiOrigin({
+    scriptUrl
+}: {
+    readonly scriptUrl?: string | null;
+}): string | null {
+    const trimmed = scriptUrl?.trim();
+    if (!trimmed) return null;
+    try {
+        const url = new URL(trimmed);
+        return url.protocol === 'https:' || url.protocol === 'http:' ? url.origin : null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Builds a Content-Security-Policy header value using content-hash-based
  * script/style policy.
  *
@@ -793,6 +817,7 @@ export function buildCspHeader({
     apiUrl,
     sentryReportUri,
     sentryTunnelEnabled = false,
+    umamiScriptUrl,
     isDev = false
 }: {
     /** `sha256-…` tokens (unquoted) for every inline `<script>` in the response. */
@@ -807,6 +832,12 @@ export function buildCspHeader({
     readonly apiUrl?: string;
     readonly sentryReportUri?: string | null;
     readonly sentryTunnelEnabled?: boolean;
+    /**
+     * `PUBLIC_UMAMI_SCRIPT_URL` (HOS-2119). Its ORIGIN is allowed in `script-src`
+     * (the tracker `<script src>`) and `connect-src` (the tracker POST). Absent
+     * or unparseable, no Umami origin is added.
+     */
+    readonly umamiScriptUrl?: string;
     readonly isDev?: boolean;
 }): string {
     const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
@@ -864,18 +895,14 @@ export function buildCspHeader({
     // round-trip would give one), so only YouTube's poster host is added here.
     const videoPosterImgHosts = 'https://img.youtube.com';
 
-    // SPEC-181: PostHog analytics is proxied first-party under `/api/relay/*` (a
-    // Cloudflare Worker forwards to PostHog Cloud US — see
-    // infra/cloudflare/posthog-proxy/). Because the proxy path is same-origin,
-    // `'self'` already covers script/connect/img for PostHog — no external
-    // `us.i.posthog.com` / `us-assets.i.posthog.com` allowlist entries are needed
-    // (SPEC-140 added them when the SDK talked to PostHog directly; removed here).
-    // COUPLING: the Worker must be live and `PUBLIC_POSTHOG_HOST` set to the proxy
-    // origin BEFORE this CSP is enforced, or PostHog breaks silently (deploy order
-    // in the Worker README). The PostHog bootstrapper injects the SDK `<script
-    // src>` at runtime pointing at that same-origin relay path, so `'self'`
-    // covers it now that 'strict-dynamic' is gone (see the JSDoc above).
-    //
+    // HOS-2119: Umami is served from its own first-party subdomain (not a relay
+    // path), so `'self'` does not cover it. The browser loads `<origin>/app.js`
+    // (script-src) and the tracker POSTs to `<origin>/api/v` (connect-src). The
+    // tag has no inline body, so no script hash is needed. The origin is derived
+    // from `PUBLIC_UMAMI_SCRIPT_URL`, never hardcoded; when unset nothing is added.
+    const umamiOrigin = resolveUmamiOrigin({ scriptUrl: umamiScriptUrl });
+    const umamiSource = umamiOrigin ? ` ${umamiOrigin}` : '';
+
     // SPEC-181 follow-up: Sentry has its OWN first-party tunnel under `/api/event`
     // (a separate Cloudflare Worker — infra/cloudflare/sentry-tunnel/). When the
     // tunnel is enabled (`PUBLIC_SENTRY_TUNNEL` set), the browser SDK POSTs
@@ -903,13 +930,12 @@ export function buildCspHeader({
     const directives = [
         "default-src 'self'",
         // `'self'` covers every same-origin `<script src>`: the `/_astro/*.js`
-        // island bundles Astro emits, and the PostHog SDK the bootstrapper
-        // injects from the first-party relay. It is load-bearing since HOS-369
+        // island bundles Astro emits. It is load-bearing since HOS-369
         // dropped 'strict-dynamic' (see the JSDoc above) — do NOT reintroduce
         // 'strict-dynamic' without also solving external-script trust, or every
         // island bundle stops executing.
         //
-        // Two cross-origin hosts `'self'` does not cover stay allowlisted:
+        // Cross-origin hosts `'self'` does not cover are allowlisted:
         //   - challenges.cloudflare.com — the Turnstile widget script
         //     (invisible bot-detection on the feedback form, SPEC-301).
         //   - static.cloudflareinsights.com — the Cloudflare Web Analytics
@@ -919,7 +945,8 @@ export function buildCspHeader({
         //     explicit host or the beacon is blocked and CWV telemetry dies
         //     silently. (`connect-src` separately allows cloudflareinsights.com,
         //     where the beacon POSTs — the two hosts are different.)
-        `script-src 'self'${scriptHashSources} https://challenges.cloudflare.com https://static.cloudflareinsights.com`,
+        //   - the Umami origin (HOS-2119), when configured — the tracker script.
+        `script-src 'self'${scriptHashSources} https://challenges.cloudflare.com https://static.cloudflareinsights.com${umamiSource}`,
         // The Astro client runtime injects an inline <style> at hydration time
         // with the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
         // Because the injection happens via JS AFTER the response was sent,
@@ -942,7 +969,7 @@ export function buildCspHeader({
         "style-src-attr 'unsafe-inline'",
         "font-src 'self' https://fonts.gstatic.com",
         `img-src 'self' data: blob: ${remoteImgHosts} ${oauthAvatarHosts} ${videoPosterImgHosts} https://cdn.simpleicons.org https://*.tile.openstreetmap.org https://*.openstreetmap.org${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
-        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''}${sentryConnectSrc} https://*.tile.openstreetmap.org https://cloudflareinsights.com${umamiSource}`,
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",

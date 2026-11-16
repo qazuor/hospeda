@@ -34,11 +34,10 @@ Documentar renombres y consolidaciones para evitar dashboards ambiguos y para co
 - Esa capa permite seguir migrando call sites sin romper todo de una sola vez.
 - La intención es TEMPORAL. Los dashboards nuevos deben usar sólo los nombres nuevos.
 
-## Eventos históricos que NO se borran
+## Historical events
 
-- No se elimina ningún evento histórico en PostHog.
-- Los dashboards nuevos deben filtrar por el naming nuevo.
-- Si se necesita continuidad histórica, los insights pueden usar combinaciones temporales durante la transición.
+- Historical events lived in PostHog, which was retired in HOS-2119. They were not migrated to Umami; history starts at the cut.
+- The Umami boards filter on the new naming only.
 
 ## Reglas de transición
 

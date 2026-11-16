@@ -420,6 +420,40 @@
             "warning": "Você já tem outro anúncio publicado neste endereço. Cada local físico fica em um único anúncio: adicione a categoria que falta a ele em vez de criar outro. Você pode continuar editando este rascunho, mas não poderá publicá-lo.",
             "blocked": "Este endereço já tem um anúncio publicado seu. Cada local físico fica em um único anúncio: adicione a categoria que falta a ele em vez de criar outro."
         },
+        "traffic": {
+            "title": "Tráfego das suas fichas",
+            "partnerTitle": "Tráfego da sua página",
+            "propertySelectLabel": "Propriedade",
+            "verticalTitle": "Tráfego: {{vertical}}",
+            "window": {
+                "label": "Período"
+            },
+            "referrers": {
+                "title": "De onde vêm",
+                "direct": "Direto",
+                "internal": "Pela Hospeda"
+            },
+            "countries": {
+                "title": "Países"
+            },
+            "devices": {
+                "title": "Dispositivos",
+                "desktop": "Computador",
+                "laptop": "Notebook",
+                "mobile": "Celular",
+                "tablet": "Tablet",
+                "other": "Outros"
+            },
+            "contacts": {
+                "title": "Contatos",
+                "views": "Visualizações",
+                "started": "Contato iniciado",
+                "completed": "Contato concluído"
+            },
+            "empty": "Ainda não há dados",
+            "visitors_one": "{{count}} visitante",
+            "visitors_other": "{{count}} visitantes"
+        },
         "locationException": {
             "requestButton": "Pedir uma exceção",
             "askAgainButton": "Pedir novamente",

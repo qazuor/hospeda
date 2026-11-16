@@ -91,7 +91,10 @@ export const cspMiddleware = createMiddleware({ type: 'request' }).server(async 
     // separate from the admin's own error-tracking project (VITE_SENTRY_DSN).
     // Falls back to the DSN-derived report-uri when unset (see buildCspDirectives).
     const cspReportUri = import.meta.env.VITE_SENTRY_CSP_REPORT_URI ?? '';
-    const cspValue = buildCspDirectives({ nonce, sentryDsn, cspReportUri });
+    // HOS-2119: the Umami origin (derived from the tracker script URL) joins
+    // script-src and connect-src. Unset => no origin is added.
+    const umamiScriptUrl = import.meta.env.VITE_UMAMI_SCRIPT_URL ?? '';
+    const cspValue = buildCspDirectives({ nonce, sentryDsn, cspReportUri, umamiScriptUrl });
 
     const result = await next({ context: { cspNonce: nonce } });
 

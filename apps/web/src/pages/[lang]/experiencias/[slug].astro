@@ -29,6 +29,7 @@ import ExperienceContactBlock from '@/components/experience/ExperienceContactBlo
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
 import { hasPublicContactChannel } from '@/lib/experience-contact';
@@ -227,6 +228,7 @@ const breadcrumbItems = [
     ogType={t(`experience.type.${experience.type}`, experience.type)}
     ogSubtitle={experience.destinationName}
     ogRating={experience.averageRating > 0 ? experience.averageRating.toFixed(1) : undefined}
+    analyticsTag={experience.id}
 >
     <TouristAttractionJsonLd
         slot="head-extra"
@@ -346,6 +348,13 @@ const breadcrumbItems = [
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
              basic view stats in mi-cuenta/comercio. -->
+        <!-- Internal-entry analytics event (HOS-2119 T-076): same-origin referrer only. -->
+        <InternalEntryTracker
+            client:idle
+            entityType="EXPERIENCE"
+            entityId={experience.id}
+            locale={locale}
+        />
         <EntityViewTracker
             client:idle
             entityType="EXPERIENCE"

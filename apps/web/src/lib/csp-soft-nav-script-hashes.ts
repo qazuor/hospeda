@@ -56,7 +56,6 @@
 
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import { POSTHOG_INLINE_SNIPPET } from '../components/analytics/posthog.snippet';
 import { SOFT_NAV_SCRIPT_HASHES_PLACEHOLDER } from './csp-soft-nav-placeholder';
 import { DIALOG_POP_GUARD_SNIPPET } from './dialog-history.pop-guard.snippet';
 import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from './feedback/feedback-nav-bootstrap.snippet';
@@ -111,14 +110,13 @@ export const DEPLOYMENT_CONSTANT_INLINE_SCRIPTS: readonly {
     readonly component: string;
     /**
      * The byte-exact content that component renders, or `null` when it renders
-     * nothing in this environment (PostHog in dev or without a key).
+     * nothing in this environment.
      */
     readonly source: string | null;
 }[] = [
     { component: 'src/layouts/BaseLayout.astro', source: FEEDBACK_NAV_BOOTSTRAP_SNIPPET },
     // HOS-1927: second `set:html` constant in the same component.
     { component: 'src/layouts/BaseLayout.astro', source: DIALOG_POP_GUARD_SNIPPET },
-    { component: 'src/components/analytics/PostHogScript.astro', source: POSTHOG_INLINE_SNIPPET },
     // Deterministic for a build (content-addressed sprite URL + committed
     // symbol manifest). Hashed here rather than trusted to be present on every
     // soft-nav origin, because not every page mounting <ClientRouter /> renders it.

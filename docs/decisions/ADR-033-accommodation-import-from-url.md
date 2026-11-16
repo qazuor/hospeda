@@ -77,7 +77,7 @@ An import does not create a row. The pipeline runs, returns a draft, and is
 forgotten. Rationale: the artifact of value is the saved accommodation (which has
 its own audit trail); a separate import-history table would add storage,
 migration, and privacy surface for no product requirement (YAGNI). Observability
-is covered by ephemeral, fire-and-forget PostHog events, not durable rows.
+is covered by ephemeral, fire-and-forget analytics events (PostHog when written; Umami since HOS-2119), not durable rows.
 
 ### 5. Reviews/ratings excluded by construction
 
@@ -152,7 +152,7 @@ sources.
 ### Persisting imports in an audit table
 
 Rejected (YAGNI): no product need; adds storage, migration, and privacy surface.
-Ephemeral PostHog events cover observability.
+Ephemeral analytics events cover observability (PostHog when written; Umami since HOS-2119).
 
 ### Auto-applying high-confidence fields (incl. destination)
 

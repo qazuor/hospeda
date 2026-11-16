@@ -1,0 +1,52 @@
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    margin-top: var(--space-6, 1.5rem);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+    flex-wrap: wrap;
+}
+
+.title {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.toggle {
+    /* The fieldset is used only for its implicit "group" role + aria-label. */
+    display: inline-flex;
+    margin: 0;
+    min-width: 0;
+    border: none;
+    gap: var(--space-1, 0.25rem);
+    padding: 0.125rem;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--surface-warm, rgba(0, 0, 0, 0.04));
+}
+
+.toggleButton,
+.toggleActive {
+    padding: 0.25rem 0.75rem;
+    border: none;
+    border-radius: var(--radius-pill, 999px);
+    font-size: var(--text-caption, 0.75rem);
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    color: var(--core-muted-foreground);
+}
+
+.toggleActive {
+    background: var(--core-card, #fff);
+    color: var(--core-foreground);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}

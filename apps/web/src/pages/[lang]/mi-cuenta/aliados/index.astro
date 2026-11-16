@@ -28,11 +28,13 @@ import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.cl
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
 import PartnerMentionsSection from '@/components/account/PartnerMentionsSection.astro';
 import PartnerStatsSection from '@/components/account/PartnerStatsSection.astro';
+import { PartnerTrafficSection } from '@/components/account/PartnerTrafficSection.client';
 import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolvePartnerTrafficId } from '@/lib/partner-stats-cards';
 import { buildUrl } from '@/lib/urls';
 import { getAdminUrl } from '@/lib/env';
 import { isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
@@ -120,6 +122,13 @@ const myMentionBatches = myMentionsResult.ok ? myMentionsResult.data.batches : [
 const myStats30 = myStats30Result.ok ? myStats30Result.data : null;
 const myStats7 = myStats7Result.ok ? myStats7Result.data : null;
 
+// HOS-2119 T-054. The Umami traffic section follows the SAME condition as the
+// views card (`showViews`, derived from `resolvePartnerLogoLink`): a partner
+// with no page of its own gets nothing, never an empty or zeroed card. The
+// partner id comes from the session-resolved stats payload, so no id is read
+// from the URL.
+const trafficPartnerId = resolvePartnerTrafficId({ stats: myStats30, locale });
+
 // Both force-acquired options are built here rather than inline in the
 // template so the list is one expression to read and to test. Each entry is
 // independent: a partner who is also a provider gets both, and a failed fetch
@@ -163,6 +172,9 @@ const hasPendingClaim =
       can disagree on a page that fetches both.
     */}
     <PartnerStatsSection locale={locale} stats30={myStats30} stats7={myStats7} />
+    {trafficPartnerId !== null && (
+        <PartnerTrafficSection client:visible locale={locale} partnerId={trafficPartnerId} />
+    )}
     <PartnerMentionsSection
         locale={locale}
         batches={myMentionBatches}

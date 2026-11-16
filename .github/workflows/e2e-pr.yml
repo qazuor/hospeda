@@ -98,7 +98,6 @@ jobs:
       HOSPEDA_MAILER_HOST: localhost
       PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
       VITE_SENTRY_DSN: https://ci-placeholder.invalid
-      PUBLIC_POSTHOG_KEY: phc_ci_placeholder
       # Cloudflare always-pass test keys for the real PP1 form in TEST:V7:22.
       PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
       HOSPEDA_TURNSTILE_SECRET_KEY: 1x0000000000000000000000000000000AA

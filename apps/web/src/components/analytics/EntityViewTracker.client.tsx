@@ -1,21 +1,17 @@
 /**
  * @file EntityViewTracker.client.tsx
- * @description Headless React island that fires a typed PostHog event and a
- * view beacon once when a post or event detail page hydrates (SPEC-159 T-013).
- * Widened by HOS-734 to also capture the view beacon (no PostHog funnel event
- * yet) on venue and experience detail pages — the plumbing that feeds
- * the owner-facing "basic view stats" widget in `mi-cuenta/comercio`.
+ * @description Headless React island that fires a typed Umami event and a
+ * view beacon once when a post, event, venue, experience or partner detail page
+ * hydrates (SPEC-159 T-013, HOS-734, HOS-2119 T-030).
  *
  * Renders nothing. Mount in detail pages with `client:idle` so it never
  * competes with above-the-fold rendering.
  *
- * The PostHog events are explicit (not relying on autocapture `$pageview`)
- * because we want typed props (slug, post_id / event_id, locale) that funnels
- * can filter against without parsing the URL. VENUE and EXPERIENCE do
- * NOT get a dedicated PostHog event here (owner decision, HOS-734): a
- * marketing-analytics funnel for venue and experience views is out of scope for the
- * "básicas" this issue covers — only the `entity_views` capture (which feeds
- * the real owner-facing stat) is wired for them.
+ * Events per entity type:
+ *  - POST / EVENT: `post_viewed` / `event_viewed` (unchanged).
+ *  - VENUE / EXPERIENCE / PARTNER: generic `entity_viewed`
+ *    `{ entity_type, entity_id, locale }`, where `entity_id` is the listing id.
+ *    The owner-facing stats filter on it.
  *
  * ## View Transitions / remount behaviour
  *
@@ -26,26 +22,21 @@
  * detail page swaps the DOM node and causes the island to unmount and remount
  * with the new props. The `useEffect` therefore runs once per navigation.
  *
- * Both the PostHog call and the beacon are inside the same `useEffect` with
- * the same dependency array so they fire together on every mount. There is no
- * double-fire risk from React StrictMode double-invocation in tests because:
- *  - `trackEvent` is a no-op when `window.posthog` is absent (dev/test).
- *  - `sendViewBeacon` is a no-op when `navigator` is undefined (SSR/test).
- * In production builds StrictMode is disabled, so the effect runs once only.
+ * Both the Umami call and the beacon are inside the same `useEffect` with
+ * the same dependency array so they fire together on every mount.
  */
 
 import { EntityTypeEnum } from '@repo/schemas';
 import { useEffect } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { sendViewBeacon } from '@/lib/analytics/view-capture';
 import type { SupportedLocale } from '@/lib/i18n';
 
 /**
  * The entity types this tracker currently supports.
- * POST and EVENT each have a corresponding PostHog event in the catalog.
- * VENUE and EXPERIENCE (HOS-734) and PARTNER (HOS-1063) capture the view
- * beacon only — see the file header for why no PostHog event is fired for them.
+ * POST and EVENT each have a dedicated event in the catalog; VENUE, EXPERIENCE
+ * and PARTNER emit the generic `entity_viewed` event.
  *
  * This list had DRIFTED from the server's `TRACKABLE_ENTITY_TYPES`, which has
  * carried ACCOMMODATION all along while this one never did. The drift is
@@ -61,11 +52,11 @@ type SupportedEntityType = 'POST' | 'EVENT' | 'VENUE' | 'EXPERIENCE' | 'PARTNER'
 interface EntityViewTrackerProps {
     /** Entity category: must be 'POST' or 'EVENT'. */
     readonly entityType: SupportedEntityType;
-    /** URL slug of the entity (used as a PostHog prop for funnel filtering). */
+    /** URL slug of the entity (used as an event prop for filtering). */
     readonly slug: string;
     /** UUID of the viewed entity. Passed to the view beacon; NOT the slug. */
     readonly entityId: string;
-    /** Active locale for the PostHog event payload. */
+    /** Active locale for the event payload. */
     readonly locale: SupportedLocale;
 }
 
@@ -87,9 +78,9 @@ const ENTITY_TYPE_ENUM_MAP = {
  * experience detail page views (HOS-734 widened the last two).
  *
  * On each mount it:
- *  1. For POST/EVENT: fires the typed PostHog event (`post_viewed` /
+ *  1. For POST/EVENT: fires the typed Umami event (`post_viewed` /
  *     `event_viewed`) with slug, entity id, and locale (SPEC-159 T-013). For
- *     VENUE/EXPERIENCE: no PostHog event yet — see the file header.
+ *     VENUE/EXPERIENCE/PARTNER: fires `entity_viewed`.
  *  2. Sends a view beacon to `POST /api/v1/public/views` (SPEC-159 T-013,
  *     widened HOS-734) for every supported entity type.
  *
@@ -120,10 +111,13 @@ export function EntityViewTracker({
                 });
                 break;
             default:
-                // VENUE / EXPERIENCE (HOS-734): entity_views capture only.
-                // No dedicated PostHog funnel event yet — advanced venue/experience
-                // analytics (QR scans, dish views, origin destinations) will
-                // define their own event catalog in a follow-up spec.
+                // VENUE / EXPERIENCE / PARTNER (HOS-2119): generic `entity_viewed`
+                // keyed by the listing id, which the owner stats filter on.
+                trackEvent(WebEvents.EntityViewed, {
+                    entity_type: entityType,
+                    entity_id: entityId,
+                    locale
+                });
                 break;
         }
 

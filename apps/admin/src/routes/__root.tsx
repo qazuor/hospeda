@@ -17,7 +17,7 @@ import { ToastProvider } from '@/components/ui/ToastProvider';
 import { validatedConfig } from '@/config/ia/validate';
 import { env, validateAdminEnv } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
-import { initPostHog } from '@/lib/analytics/posthog-client';
+import { initUmami } from '@/lib/analytics/umami-client';
 import { useSession } from '@/lib/auth-client';
 import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { initSentry } from '@/lib/sentry';
@@ -29,8 +29,8 @@ validateAdminEnv();
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();
 
-// Initialize PostHog analytics (only in production with valid VITE_POSTHOG_KEY)
-initPostHog();
+// Initialize Umami analytics (only in production with VITE_UMAMI_* configured)
+initUmami();
 
 import appCss from '../styles.css?url';
 

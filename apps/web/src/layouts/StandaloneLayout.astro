@@ -25,9 +25,13 @@
  * GlobalAnnouncements, SkipToContent, ScrollToTop, NavigationProgress,
  * ClientRouter (view transitions), CookieConsentBanner, ToastViewport,
  * GuestPreferenceNudge, AuthedPreferenceSync, PaginationLoading,
- * FeedbackHeadlessHost, PostHogScript, and the parallax/GLightbox/compare-mode
+ * FeedbackHeadlessHost, and the parallax/GLightbox/compare-mode
  * init that BaseLayout's page-init script wires up. A page using this layout
  * owns 100% of its own visible chrome (top bar, nav, theme toggle, etc.).
+ *
+ * The one non-visual exception is `UmamiScript` (HOS-2119): an external
+ * deferred analytics tag with no markup, so the brochure page is measured like
+ * every other page without gaining any chrome.
  *
  * `astro:page-load` is NOT dispatched on this layout (that event is fired
  * exclusively by `<ClientRouter />`, which this shell intentionally omits) —
@@ -50,6 +54,7 @@ import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
 import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
 import CriticalStyles from '@/components/shared/CriticalStyles.astro';
+import UmamiScript from '@/components/analytics/UmamiScript.astro';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -96,6 +101,10 @@ const { locale } = Astro.props;
 
 		<!-- Applies the saved theme before first paint (dark-mode FOUC guard) -->
 		<ThemeFoucScript />
+
+		<!-- Umami analytics tag (HOS-2119): external deferred script, renders
+		     nothing unless both PUBLIC_UMAMI_* values are set. -->
+		<UmamiScript />
 
 		<!-- Named slot for page-specific head content: SEOHead + JSON-LD.
 		     This layout does NOT render SEOHead itself — the page supplies it. -->

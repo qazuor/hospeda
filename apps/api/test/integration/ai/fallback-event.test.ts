@@ -26,7 +26,7 @@
  *   can write rows with `status: 'fallback'`.
  * - `createAiObservabilityRecordEvent` (apps/api/src/services/ai-observability.service.ts)
  *   is the currently-wired `recordEvent` sink in `createConfiguredAiService` (T-035).
- *   It fans out to Sentry/PostHog/logger but does NOT write to `ai_usage`.
+ *   It fans out to Sentry/Umami/logger but does NOT write to `ai_usage`.
  * - The per-call metering (`recordAiUsage`) is to be wired at the route layer by
  *   children specs (T-016 metering is call-site based). No route currently calls
  *   `recordAiUsage` with `status: 'fallback'` — there are no rows to assert.

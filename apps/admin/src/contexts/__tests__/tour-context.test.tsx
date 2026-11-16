@@ -19,7 +19,7 @@
  * - `useAuthContext` is mocked to return a HOST user.
  * - `useUserPermissions` is mocked to return empty permissions.
  * - `useAdminTourState` is mocked to expose `markSeen` as a spy.
- * - `trackEvent` is mocked to capture PostHog calls.
+ * - `trackEvent` is mocked to capture Umami calls.
  * - `@/config/ia/validate` is mocked to return a minimal catalog with two tours:
  *   one welcome (showWelcomeModal: true) and one contextual (showWelcomeModal: false).
  * - `matchMedia` is stubbed for prefers-reduced-motion tests.
@@ -56,11 +56,11 @@ vi.mock('driver.js', () => ({
 // Mock analytics
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 
 const mockedTrackEvent = vi.mocked(trackEvent);
 

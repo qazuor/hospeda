@@ -230,7 +230,7 @@ The admin app is documented as "Spanish-only UI" but uses `useTranslations()` fr
 | # | Route | Current Source | Recommendation | Priority |
 |---|-------|---------------|----------------|----------|
 | 1 | `/notifications` | localStorage | Migrate to API-backed notifications (WebSocket or polling). localStorage notifications are not persistent across devices and cannot be triggered by server events (new booking, review, etc.). | **High** |
-| 2 | `/dashboard` traffic chart | Placeholder | Integrate with analytics provider (Plausible, PostHog, or custom). This is the main landing page .. empty charts reduce confidence in the tool. | **High** |
+| 2 | `/dashboard` traffic chart | Placeholder | Integrate with analytics provider (Umami, which replaced PostHog in HOS-2119, or custom). This is the main landing page .. empty charts reduce confidence in the tool. | **High** |
 | 3 | `/dashboard` activity feed | Placeholder | Depends on audit log system. Implement audit log service first, then feed recent events here. | **Medium** |
 | 4 | `/events/:id/attendees` | Stub | Implement attendees API (registration, check-in, export). Currently useless as a tab. Consider hiding the tab until implemented. | **Medium** |
 | 5 | `/events/:id/tickets` ticket CRUD | Stub | Implement ticket types API. The page already shows event pricing data .. adding ticket management would complete the events workflow. | **Medium** |

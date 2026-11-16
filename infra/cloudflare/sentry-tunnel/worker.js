@@ -7,7 +7,7 @@
  * envelopes through a same-origin path defeats that (the path itself is neutral
  * and not on privacy blocklists — rename it if a list ever catches it).
  *
- * Unlike the PostHog proxy (a blind passthrough to a fixed host), Sentry's
+ * Unlike a blind passthrough to a fixed host, Sentry's
  * upstream is NOT constant: the SDK's `tunnel` option puts the project DSN in
  * the FIRST line of the envelope (a JSON header). This Worker:
  *  1. Reads the envelope body.

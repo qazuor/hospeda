@@ -1,8 +1,8 @@
 import { type AnalyticsEventName, AnalyticsEvents } from '@repo/analytics';
 import { createLogger } from '@repo/logger';
 import type { BillingFact, BillingFactSink } from '@repo/service-core';
+import { captureServerAnalyticsEvent } from '../../lib/analytics-client.js';
 import { deriveAnalyticsEventUuid } from '../../lib/analytics-event-uuid.js';
-import { captureServerAnalyticsEvent } from '../../lib/posthog.js';
 
 const logger = createLogger('analytics-facts');
 /** A persisted trial fact translated into a catalog analytics event. */

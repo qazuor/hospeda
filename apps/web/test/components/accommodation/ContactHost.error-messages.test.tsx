@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactHost } from '../../../src/components/accommodation/ContactHost.client';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
-vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+vi.mock('../../../src/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 

@@ -29,7 +29,7 @@
  * `driver.js` is mocked at the module level — we capture the steps passed to
  * it without launching a real spotlight.
  *
- * `trackEvent` (PostHog) is mocked to avoid analytics noise.
+ * `trackEvent` (Umami) is mocked to avoid analytics noise.
  *
  * The test setup's global `useLocation` / `useRouter` mock is OVERRIDDEN per
  * describe block using `vi.mocked` reassignment so pathname is configurable.
@@ -106,10 +106,10 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// PostHog mock
+// Umami mock
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 

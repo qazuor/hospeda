@@ -3827,6 +3827,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/views/:entityType/:entityId/traffic-stats"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/views/accommodations/me"
         },
         {

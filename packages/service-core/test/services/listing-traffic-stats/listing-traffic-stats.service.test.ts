@@ -1,0 +1,904 @@
+import {
+    EntityTypeEnum,
+    LISTING_TRAFFIC_DIRECT_REFERRER,
+    LISTING_TRAFFIC_INTERNAL_REFERRER,
+    ListingTrafficStatsResponseSchema
+} from '@repo/schemas';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type {
+    FunnelCounts,
+    GetBreakdownInput,
+    TrafficStatsCachePort,
+    TrafficStatsClientPort,
+    TrafficStatsScope
+} from '../../../src/services/listing-traffic-stats/index.js';
+import {
+    buildListingTrafficStatsCacheKey,
+    ListingTrafficStatsService
+} from '../../../src/services/listing-traffic-stats/index.js';
+
+const ID_A = '11111111-1111-4111-8111-111111111111';
+const ID_HEX = 'abcdef12-abcd-4abc-8abc-abcdefabcdef';
+const ID_B = '22222222-2222-4222-8222-222222222222';
+const NOW = new Date('2026-11-15T10:00:00.000Z');
+
+const emptyFunnel: FunnelCounts = {
+    views: 0,
+    visitors: 0,
+    contactStarted: 0,
+    contactCompleted: 0
+};
+
+const ISO = (iso: string): number => new Date(iso).getTime();
+
+function makeClient(overrides: Partial<TrafficStatsClientPort> = {}) {
+    const getBreakdown = vi.fn(async (input: GetBreakdownInput) => [
+        { value: `${input.dimension}-${input.entityId}`, count: 3 }
+    ]);
+    const getFunnelCounts = vi.fn(async (_scope: TrafficStatsScope) => emptyFunnel);
+    const getVisitorCount = vi.fn(async (_scope: TrafficStatsScope) => 0);
+    const getInternalEntryVisitors = vi.fn(async (_scope: TrafficStatsScope) => 0);
+    const client: TrafficStatsClientPort = {
+        getBreakdown,
+        getFunnelCounts,
+        getVisitorCount,
+        getInternalEntryVisitors,
+        ...overrides
+    };
+    return { client, getBreakdown, getFunnelCounts, getVisitorCount, getInternalEntryVisitors };
+}
+
+function makeCache(initial: Record<string, unknown> = {}) {
+    const store = new Map<string, unknown>(Object.entries(initial));
+    const get = vi.fn(async (key: string) => store.get(key) ?? null);
+    const set = vi.fn(async (input: { key: string; value: unknown; ttlSeconds: number }) => {
+        store.set(input.key, input.value);
+    });
+    const cache: TrafficStatsCachePort = { get, set };
+    return { cache, get, set, store };
+}
+
+function make(
+    opts: { client?: TrafficStatsClientPort; cache?: TrafficStatsCachePort; now?: Date } = {}
+) {
+    const c = makeClient();
+    const k = makeCache();
+    const service = new ListingTrafficStatsService({
+        statsClient: opts.client ?? c.client,
+        cache: opts.cache ?? k.cache,
+        now: () => opts.now ?? NOW,
+        timeoutMs: 50
+    });
+    return { service, ...c, ...k };
+}
+
+describe('ListingTrafficStatsService', () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    describe('cache', () => {
+        it('should skip the port when the cache has a valid entry', async () => {
+            const hit = {
+                window: '7d',
+                available: true,
+                referrers: [{ value: 'cached.com', count: 1 }],
+                countries: [],
+                devices: [],
+                contactFunnel: null
+            };
+            const key = buildListingTrafficStatsCacheKey({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+            const c = makeClient();
+            const k = makeCache({ [key]: hit });
+            const { service } = make({ client: c.client, cache: k.cache });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(result).toEqual(hit);
+            expect(k.set).not.toHaveBeenCalled();
+            expect(c.getBreakdown).not.toHaveBeenCalled();
+            expect(c.getFunnelCounts).not.toHaveBeenCalled();
+        });
+
+        it('should call the port on a miss and store with a 3600s TTL', async () => {
+            const { service, getBreakdown, set } = make();
+
+            await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(getBreakdown).toHaveBeenCalledTimes(3);
+            expect(set).toHaveBeenCalledTimes(1);
+            const arg = set.mock.calls[0]?.[0];
+            expect(arg?.key).toBe(`traffic-stats:VENUE:${ID_A}:7d`);
+            expect(arg?.ttlSeconds).toBe(3600);
+        });
+
+        it('should store exactly the value it returns on a miss', async () => {
+            const { service, set } = make();
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(set.mock.calls[0]?.[0].value).toEqual(result);
+        });
+
+        it('should treat a cached available:false entry as a miss', async () => {
+            const key = buildListingTrafficStatsCacheKey({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+            const c = makeClient();
+            const k = makeCache({
+                [key]: {
+                    window: '7d',
+                    available: false,
+                    referrers: [],
+                    countries: [],
+                    devices: [],
+                    contactFunnel: null
+                }
+            });
+            const { service } = make({ client: c.client, cache: k.cache });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(c.getBreakdown).toHaveBeenCalledTimes(3);
+            expect(result.available).toBe(true);
+        });
+
+        it('should treat a cache read that never resolves as a miss within the budget', async () => {
+            vi.useFakeTimers();
+            const k = makeCache();
+            const cache: TrafficStatsCachePort = {
+                get: vi.fn(() => new Promise<never>(() => undefined)),
+                set: k.set
+            };
+            const c = makeClient();
+            const { service } = make({ client: c.client, cache });
+
+            const pending = service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+            await vi.advanceTimersByTimeAsync(200);
+
+            expect(c.getBreakdown).toHaveBeenCalledTimes(3);
+            const result = await pending;
+            expect(result.available).toBe(true);
+        });
+
+        it('should treat an invalid cached value as a miss', async () => {
+            const key = buildListingTrafficStatsCacheKey({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '30d'
+            });
+            const c = makeClient();
+            const k = makeCache({ [key]: { garbage: true } });
+            const { service } = make({ client: c.client, cache: k.cache });
+
+            await service.getStats({ entityType: EntityTypeEnum.VENUE, entityId: ID_A });
+
+            expect(c.getBreakdown).toHaveBeenCalledTimes(3);
+        });
+
+        it('should still answer when the cache itself fails', async () => {
+            const get = vi.fn(async () => {
+                throw new Error('redis down');
+            });
+            const set = vi.fn(async () => {
+                throw new Error('redis down');
+            });
+            const cache: TrafficStatsCachePort = { get, set };
+            const c = makeClient();
+            const { service } = make({ cache, client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.available).toBe(true);
+            expect(get).toHaveBeenCalledTimes(1);
+            expect(c.getBreakdown).toHaveBeenCalledTimes(3);
+            expect(set).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('Umami failure', () => {
+        it('should answer available:false with empty arrays and NOT cache when the port rejects', async () => {
+            const c = makeClient({
+                getBreakdown: vi.fn(async () => {
+                    throw new Error('umami 500');
+                })
+            });
+            const { service, set } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(result).toEqual({
+                window: '7d',
+                available: false,
+                referrers: [],
+                countries: [],
+                devices: [],
+                contactFunnel: null
+            });
+            expect(ListingTrafficStatsResponseSchema.safeParse(result).success).toBe(true);
+            expect(set).not.toHaveBeenCalled();
+        });
+
+        it('should answer available:false and NOT cache when the port times out', async () => {
+            const c = makeClient({
+                getBreakdown: vi.fn(() => new Promise<never>(() => undefined))
+            });
+            const { service, set } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.available).toBe(false);
+            expect(set).not.toHaveBeenCalled();
+        });
+
+        it('should not surface an unhandled rejection when the port rejects after the timeout', async () => {
+            const c = makeClient({
+                getBreakdown: vi.fn(
+                    () =>
+                        new Promise<never>((_resolve, reject) => {
+                            setTimeout(() => reject(new Error('late umami failure')), 90);
+                        })
+                )
+            });
+            const { service, set } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+            await new Promise((resolve) => setTimeout(resolve, 150));
+
+            expect(result.available).toBe(false);
+            expect(set).not.toHaveBeenCalled();
+        });
+
+        it('should not cache when only the funnel call fails', async () => {
+            const c = makeClient({
+                getFunnelCounts: vi.fn(async () => {
+                    throw new Error('boom');
+                })
+            });
+            const { service, set } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            expect(result.available).toBe(false);
+            expect(set).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('assembly', () => {
+        it('should cap referrers to the top 5 by count', async () => {
+            const c = makeClient({
+                getBreakdown: vi.fn(async (input: GetBreakdownInput) =>
+                    input.dimension === 'referrer'
+                        ? Array.from({ length: 8 }, (_, i) => ({ value: `r${i}`, count: i + 1 }))
+                        : []
+                )
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.referrers.map((r) => r.value)).toEqual(['r7', 'r6', 'r5', 'r4', 'r3']);
+            expect(ListingTrafficStatsResponseSchema.safeParse(result).success).toBe(true);
+        });
+
+        it('should map the funnel totals into contactFunnel', async () => {
+            const funnelSpy = vi.fn(
+                async (_scope: TrafficStatsScope): Promise<FunnelCounts> => ({
+                    views: 15,
+                    visitors: 0,
+                    contactStarted: 3,
+                    contactCompleted: 1
+                })
+            );
+            const c = makeClient({ getFunnelCounts: funnelSpy });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(result.contactFunnel).toEqual({
+                views: 15,
+                contactStarted: 3,
+                contactCompleted: 1
+            });
+            expect(ListingTrafficStatsResponseSchema.safeParse(result).success).toBe(true);
+        });
+
+        it('should sort countries and devices by count descending without capping them', async () => {
+            const rows = Array.from({ length: 8 }, (_, i) => ({ value: `v${i}`, count: i }));
+            const c = makeClient({
+                getBreakdown: vi.fn(async (input: GetBreakdownInput) =>
+                    input.dimension === 'referrer' ? [] : rows
+                )
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            const expected = ['v7', 'v6', 'v5', 'v4', 'v3', 'v2', 'v1', 'v0'];
+            expect(result.countries.map((r) => r.value)).toEqual(expected);
+            expect(result.devices.map((r) => r.value)).toEqual(expected);
+        });
+
+        it('should drop invalid breakdown rows individually and keep the rest and the funnel', async () => {
+            const warn = vi.fn();
+            const bad = [
+                { value: null, count: 1 },
+                { value: '', count: 1 },
+                { value: 'x', count: 1.5 },
+                { value: 'y', count: -1 }
+            ] as unknown as { value: string; count: number }[];
+            const c = makeClient({
+                getBreakdown: vi.fn(async (input: GetBreakdownInput) =>
+                    input.dimension === 'country' ? [{ value: 'AR', count: 4 }, ...bad] : []
+                ),
+                getFunnelCounts: vi.fn(async () => ({
+                    views: 2,
+                    visitors: 0,
+                    contactStarted: 1,
+                    contactCompleted: 0
+                }))
+            });
+            const k = makeCache();
+            const service = new ListingTrafficStatsService({
+                statsClient: c.client,
+                cache: k.cache,
+                logger: { warn } as never,
+                now: () => NOW,
+                timeoutMs: 50
+            });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            expect(result.available).toBe(true);
+            expect(result.countries).toEqual([{ value: 'AR', count: 4 }]);
+            expect(result.contactFunnel).toEqual({
+                views: 2,
+                contactStarted: 1,
+                contactCompleted: 0
+            });
+            expect(warn).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            EntityTypeEnum.VENUE,
+            EntityTypeEnum.EXPERIENCE,
+            EntityTypeEnum.PARTNER
+        ] as const)('should return contactFunnel null and not call the funnel port for %s', async (entityType) => {
+            const { service, getFunnelCounts } = make();
+
+            const result = await service.getStats({ entityType, entityId: ID_A });
+
+            expect(result.contactFunnel).toBeNull();
+            expect(getFunnelCounts).not.toHaveBeenCalled();
+            expect(ListingTrafficStatsResponseSchema.safeParse(result).success).toBe(true);
+        });
+
+        it('should reject an invalid entity id before any query goes out', async () => {
+            const { service, getBreakdown } = make();
+
+            await expect(
+                service.getStats({ entityType: EntityTypeEnum.VENUE, entityId: '' })
+            ).rejects.toThrow();
+            expect(getBreakdown).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('direct traffic', () => {
+        const referrerRows = (rows: { value: string; count: number }[]) =>
+            vi.fn(async (input: GetBreakdownInput) => (input.dimension === 'referrer' ? rows : []));
+
+        it('should append direct = visitors - sum(referrers) for ACCOMMODATION', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([
+                    { value: 'google.com', count: 4 },
+                    { value: 'fb.com', count: 2 }
+                ]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 10 }))
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([
+                { value: 'google.com', count: 4 },
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 4 },
+                { value: 'fb.com', count: 2 }
+            ]);
+            expect(ListingTrafficStatsResponseSchema.safeParse(result).success).toBe(true);
+        });
+
+        it('should drop a raw referrer row forged as the direct sentinel before summing', async () => {
+            // A referrer host `(direct)` is valid per WHATWG: it must neither show up as a
+            // second direct row nor reduce the computed direct count.
+            const c = makeClient({
+                getBreakdown: referrerRows([
+                    { value: 'google.com', count: 4 },
+                    { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 5 }
+                ]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 10 }))
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 6 },
+                { value: 'google.com', count: 4 }
+            ]);
+        });
+
+        it('should never produce a negative direct row when referrers exceed visitors', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 5 }]),
+                getVisitorCount: vi.fn(async () => 3)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([{ value: 'google.com', count: 5 }]);
+        });
+
+        it('should omit the direct row when it is exactly 0', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 3 }]),
+                getVisitorCount: vi.fn(async () => 3)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.referrers.map((r) => r.value)).toEqual(['google.com']);
+        });
+
+        it('should compute direct from the FULL referrer list, then apply the top-5 cut', async () => {
+            // 8 referrers with counts 1..8 (sum 36), visitors 46 -> direct 10: it outranks
+            // every referrer and pushes r4 out of the top 5. Computing direct from the
+            // top 5 only (sum 30) would give 16 instead.
+            const c = makeClient({
+                getBreakdown: referrerRows(
+                    Array.from({ length: 8 }, (_, i) => ({ value: `r${i + 1}`, count: i + 1 }))
+                ),
+                getVisitorCount: vi.fn(async () => 46)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.EXPERIENCE,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 10 },
+                { value: 'r8', count: 8 },
+                { value: 'r7', count: 7 },
+                { value: 'r6', count: 6 },
+                { value: 'r5', count: 5 }
+            ]);
+        });
+
+        it('should cut a small direct row out of the top 5', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows(
+                    Array.from({ length: 5 }, (_, i) => ({ value: `r${i}`, count: 10 + i }))
+                ),
+                getVisitorCount: vi.fn(async () => 61)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.PARTNER,
+                entityId: ID_A
+            });
+
+            // sum = 60, direct = 1 -> lowest, falls off the top 5.
+            expect(result.referrers.map((r) => r.value)).toEqual(['r4', 'r3', 'r2', 'r1', 'r0']);
+        });
+
+        it.each([
+            EntityTypeEnum.VENUE,
+            EntityTypeEnum.EXPERIENCE,
+            EntityTypeEnum.PARTNER
+        ] as const)('should add direct for %s with NO funnel (contact events) query', async (entityType) => {
+            const getVisitorCount = vi.fn(async (_scope: TrafficStatsScope) => 4);
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 1 }]),
+                getVisitorCount
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({ entityType, entityId: ID_A });
+
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 3 },
+                { value: 'google.com', count: 1 }
+            ]);
+            expect(result.contactFunnel).toBeNull();
+            expect(c.getFunnelCounts).not.toHaveBeenCalled();
+            expect(getVisitorCount).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not cache when only the visitors call fails', async () => {
+            const c = makeClient({
+                getVisitorCount: vi.fn(async () => {
+                    throw new Error('boom');
+                })
+            });
+            const { service, set } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.available).toBe(false);
+            expect(set).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('internal navigation', () => {
+        const referrerRows = (rows: { value: string; count: number }[]) =>
+            vi.fn(async (input: GetBreakdownInput) => (input.dimension === 'referrer' ? rows : []));
+
+        it('should append an internal row and reduce direct accordingly', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 4 }]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 10 })),
+                getInternalEntryVisitors: vi.fn(async () => 5)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            // visitors 10 - external 4 = 6 remaining: internal 5, direct 1.
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: 5 },
+                { value: 'google.com', count: 4 },
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 1 }
+            ]);
+            expect(ListingTrafficStatsResponseSchema.safeParse(result).success).toBe(true);
+        });
+
+        it('should omit the internal row when there are no internal entries', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 4 }]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 6 }))
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([
+                { value: 'google.com', count: 4 },
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 2 }
+            ]);
+        });
+
+        it('should clamp internal to the visitors not explained by external referrers', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 4 }]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 6 })),
+                getInternalEntryVisitors: vi.fn(async () => 50)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            // remaining 2: all of it internal, direct omitted (never negative).
+            expect(result.referrers).toEqual([
+                { value: 'google.com', count: 4 },
+                { value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: 2 }
+            ]);
+        });
+
+        it('should omit both computed rows when external referrers exceed visitors', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 9 }]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 3 })),
+                getInternalEntryVisitors: vi.fn(async () => 2)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([{ value: 'google.com', count: 9 }]);
+        });
+
+        it('should drop raw rows forged as either sentinel before summing', async () => {
+            const c = makeClient({
+                getBreakdown: referrerRows([
+                    { value: 'google.com', count: 4 },
+                    { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 5 },
+                    { value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: 7 }
+                ]),
+                getFunnelCounts: vi.fn(async () => ({ ...emptyFunnel, visitors: 10 })),
+                getInternalEntryVisitors: vi.fn(async () => 1)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+
+            // The forged rows neither show up nor reduce remaining (10 - 4 = 6).
+            // Computed: internal 1, direct 5 (not the forged 5 / 7 counts).
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 5 },
+                { value: 'google.com', count: 4 },
+                { value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: 1 }
+            ]);
+        });
+
+        it('should let computed rows compete in the top 5 (computed from the full list)', async () => {
+            const rows = Array.from({ length: 6 }, (_, i) => ({
+                value: `r${i + 1}.com`,
+                count: i + 1
+            }));
+            // sum 21, visitors 41 -> remaining 20: internal 12, direct 8.
+            const c = makeClient({
+                getBreakdown: referrerRows(rows),
+                getVisitorCount: vi.fn(async () => 41),
+                getInternalEntryVisitors: vi.fn(async () => 12)
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: 12 },
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 8 },
+                { value: 'r6.com', count: 6 },
+                { value: 'r5.com', count: 5 },
+                { value: 'r4.com', count: 4 }
+            ]);
+        });
+
+        it.each([
+            EntityTypeEnum.VENUE,
+            EntityTypeEnum.EXPERIENCE,
+            EntityTypeEnum.PARTNER
+        ] as const)('should add internal and direct for %s with the exact entity scope', async (entityType) => {
+            const getInternalEntryVisitors = vi.fn(async (_scope: TrafficStatsScope) => 2);
+            const c = makeClient({
+                getBreakdown: referrerRows([{ value: 'google.com', count: 1 }]),
+                getVisitorCount: vi.fn(async () => 6),
+                getInternalEntryVisitors
+            });
+            const { service } = make({ client: c.client });
+
+            const result = await service.getStats({ entityType, entityId: ID_A });
+
+            expect(result.referrers).toEqual([
+                { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: 3 },
+                { value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: 2 },
+                { value: 'google.com', count: 1 }
+            ]);
+            expect(getInternalEntryVisitors).toHaveBeenCalledTimes(1);
+            expect(getInternalEntryVisitors.mock.calls[0]?.[0]).toMatchObject({
+                entityType,
+                entityId: ID_A
+            });
+            expect(c.getFunnelCounts).not.toHaveBeenCalled();
+        });
+
+        it('should answer available:false and NOT cache when the internal-entry read fails', async () => {
+            const c = makeClient({
+                getInternalEntryVisitors: vi.fn(async () => {
+                    throw new Error('boom');
+                })
+            });
+            const { service, set } = make({ client: c.client });
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.available).toBe(false);
+            expect(result.referrers).toEqual([]);
+            expect(set).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('window and scope', () => {
+        const expectedWindows = {
+            '7d': ISO('2026-11-09T03:00:00.000Z'),
+            '30d': ISO('2026-10-17T03:00:00.000Z'),
+            '90d': ISO('2026-08-18T03:00:00.000Z')
+        } as const;
+
+        it.each([
+            '7d',
+            '30d',
+            '90d'
+        ] as const)('should build the exact scope for %s', async (window) => {
+            const { service, getBreakdown } = make();
+
+            await service.getStats({ entityType: EntityTypeEnum.VENUE, entityId: ID_A, window });
+
+            expect(getBreakdown.mock.calls[0]?.[0]).toEqual({
+                entityType: 'VENUE',
+                entityId: ID_A,
+                window,
+                startAt: expectedWindows[window],
+                endAt: NOW.getTime(),
+                timeZone: 'America/Argentina/Buenos_Aires',
+                dimension: 'referrer'
+            });
+        });
+
+        it('should default to the 30d window', async () => {
+            const { service, getBreakdown } = make();
+
+            const result = await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A
+            });
+
+            expect(result.window).toBe('30d');
+            expect(getBreakdown.mock.calls[0]?.[0].startAt).toBe(expectedWindows['30d']);
+        });
+
+        it('should flip the window at LOCAL midnight (03:00Z), not at UTC midnight', async () => {
+            const before = make({ now: new Date('2026-11-15T02:59:59.999Z') });
+            const after = make({ now: new Date('2026-11-15T03:00:00.000Z') });
+
+            await before.service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+            await after.service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_A,
+                window: '7d'
+            });
+
+            expect(before.getBreakdown.mock.calls[0]?.[0].startAt).toBe(
+                ISO('2026-11-08T03:00:00.000Z')
+            );
+            expect(after.getBreakdown.mock.calls[0]?.[0].startAt).toBe(
+                ISO('2026-11-09T03:00:00.000Z')
+            );
+        });
+
+        it('should lower-case the entity id for the port scope and the cache key', async () => {
+            const { service, getBreakdown, get, set } = make();
+
+            await service.getStats({
+                entityType: EntityTypeEnum.VENUE,
+                entityId: ID_HEX.toUpperCase(),
+                window: '7d'
+            });
+
+            expect(getBreakdown.mock.calls[0]?.[0].entityId).toBe(ID_HEX);
+            expect(get).toHaveBeenCalledWith(`traffic-stats:VENUE:${ID_HEX}:7d`);
+            expect(set.mock.calls[0]?.[0].key).toBe(`traffic-stats:VENUE:${ID_HEX}:7d`);
+        });
+    });
+
+    describe('entity isolation (contract)', () => {
+        it('should carry the exact entity scope on every port call and never leak between entities', async () => {
+            const { service, getBreakdown, getFunnelCounts, store } = make();
+            const scopeFor = (entityId: string) => ({
+                entityType: 'ACCOMMODATION',
+                entityId,
+                window: '30d',
+                startAt: ISO('2026-10-17T03:00:00.000Z'),
+                endAt: NOW.getTime(),
+                timeZone: 'America/Argentina/Buenos_Aires'
+            });
+
+            const a = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_A
+            });
+            const callsA = getBreakdown.mock.calls.map((c) => c[0]);
+            const funnelA = getFunnelCounts.mock.calls.map((c) => c[0]);
+            getBreakdown.mockClear();
+            getFunnelCounts.mockClear();
+            const b = await service.getStats({
+                entityType: EntityTypeEnum.ACCOMMODATION,
+                entityId: ID_B
+            });
+            const callsB = getBreakdown.mock.calls.map((c) => c[0]);
+            const funnelB = getFunnelCounts.mock.calls.map((c) => c[0]);
+
+            expect(callsA).toHaveLength(3);
+            expect(callsB).toHaveLength(3);
+            for (const call of callsA) {
+                expect(call).toEqual({ ...scopeFor(ID_A), dimension: call.dimension });
+            }
+            for (const call of callsB) {
+                expect(call).toEqual({ ...scopeFor(ID_B), dimension: call.dimension });
+            }
+            expect(funnelA).toEqual([scopeFor(ID_A)]);
+            expect(funnelB).toEqual([scopeFor(ID_B)]);
+            expect(a.referrers[0]?.value).toBe(`referrer-${ID_A}`);
+            expect(b.referrers[0]?.value).toBe(`referrer-${ID_B}`);
+            expect(store.size).toBe(2);
+        });
+    });
+});

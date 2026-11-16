@@ -37,14 +37,13 @@ env:
   HOSPEDA_LOCATION_SALT: e2e-location-salt-deterministic-min-32-characters
   HOSPEDA_VIEWS_HASH_SECRET: e2e-views-hash-secret-deterministic-min-32-chars
   HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
-  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are REQUIRED by the web env schema in
+  # PUBLIC_SENTRY_DSN is REQUIRED by the web env schema in
   # production, and `astro build` always runs in production mode regardless of
-  # NODE_ENV — so they MUST be present at build time (an empty string fails the
-  # URL check; omitting them fails the required check). Use the same
-  # syntactically-valid placeholders as the CI workflow's build job: the sweep
+  # NODE_ENV — so it MUST be present at build time (an empty string fails the
+  # URL check; omitting it fails the required check). Use the same
+  # syntactically-valid placeholder as the CI workflow's build job: the sweep
   # bundle is never deployed, so fake values are fine. Keep in sync with ci.yml.
   PUBLIC_SENTRY_DSN: 'https://ci-placeholder.invalid'
-  PUBLIC_POSTHOG_KEY: 'phc_ci_placeholder'
   # NODE_ENV is intentionally NOT set to production at the job level: a
   # production install skips devDependencies (husky, turbo, playwright, …),
   # which breaks `pnpm install` and the turbo build. It is applied only to the
@@ -135,7 +134,7 @@ jobs:
         # Deliberately NOT NODE_ENV=production: the sweep only needs the API to
         # boot and serve public list endpoints for route discovery. Production
         # mode makes the API env schema require deploy-only secrets (MercadoPago,
-        # Redis, AI vault master key, email, Linear, PostHog, Apify, Google
+        # Redis, AI vault master key, email, Linear, Apify, Google
         # Places…) that the sweep does not use — and supplying fake values is
         # worse than omitting them: a bogus HOSPEDA_REDIS_URL or vault key can
         # hang or crash the API on boot. e2e-pr.yml boots the same stack in

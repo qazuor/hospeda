@@ -238,7 +238,8 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
             ['HOSPEDA_EMAIL_FROM_EMAIL', data.HOSPEDA_EMAIL_FROM_EMAIL],
             ['HOSPEDA_SENTRY_DSN', data.HOSPEDA_SENTRY_DSN],
             ['HOSPEDA_LINEAR_API_KEY', data.HOSPEDA_LINEAR_API_KEY],
-            ['HOSPEDA_POSTHOG_KEY', data.HOSPEDA_POSTHOG_KEY],
+            ['HOSPEDA_UMAMI_URL', data.HOSPEDA_UMAMI_URL],
+            ['HOSPEDA_UMAMI_WEBSITE_ID_WEB', data.HOSPEDA_UMAMI_WEBSITE_ID_WEB],
             ['HOSPEDA_APIFY_TOKEN', data.HOSPEDA_APIFY_TOKEN],
             ['HOSPEDA_GOOGLE_PLACES_API_KEY', data.HOSPEDA_GOOGLE_PLACES_API_KEY]
         ];

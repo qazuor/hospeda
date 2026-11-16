@@ -4,6 +4,7 @@
     "window": {
         "7d": "7 days",
         "30d": "30 days",
+        "90d": "90 days",
         "ariaLabel": "Time period"
     },
     "backHome": "Back to home",

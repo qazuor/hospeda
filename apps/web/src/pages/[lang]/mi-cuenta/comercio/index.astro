@@ -230,7 +230,8 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
             listings={listings.map((listing) => ({
                 id: listing.id,
                 vertical: listing.vertical,
-                name: listing.name
+                name: listing.name,
+                purged: isPurged(listing)
             }))}
         />
     </div>

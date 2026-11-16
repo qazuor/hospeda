@@ -44,15 +44,6 @@ export const serverEnvSchema = serverEnvBaseSchema
             path: ['PUBLIC_SENTRY_DSN']
         }
     )
-    .refine(
-        (data) =>
-            data.NODE_ENV !== 'production' ||
-            (data.PUBLIC_POSTHOG_KEY !== undefined && data.PUBLIC_POSTHOG_KEY !== ''),
-        {
-            message: 'PUBLIC_POSTHOG_KEY is required in production',
-            path: ['PUBLIC_POSTHOG_KEY']
-        }
-    )
     // Required in production: the cache-revalidation endpoint authenticates with
     // this shared secret. Optional in dev/test (no CDN to purge) so getApiUrl()
     // and friends never throw when the Vite SSR module-runner lacks it (FU-1).

@@ -29,11 +29,11 @@ import {
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
-
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { getVisitorContext } from '../../../utils/visitor-context';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -67,6 +67,7 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
+        const visitor = getVisitorContext(ctx);
         const result = await accommodationService.createForOnboarding(
             actor,
             body as Parameters<AccommodationService['createForOnboarding']>[1]
@@ -92,7 +93,8 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
             properties: {
                 onboarding_type: 'host_accommodation',
                 draft_source: 'manual'
-            }
+            },
+            ...(visitor ? { visitor } : {})
         });
 
         captureServerAnalyticsEvent({
@@ -101,7 +103,8 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
             properties: {
                 accommodation_id: data.accommodation.id,
                 creation_source: 'manual'
-            }
+            },
+            ...(visitor ? { visitor } : {})
         });
 
         return {

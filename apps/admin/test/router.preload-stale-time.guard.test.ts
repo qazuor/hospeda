@@ -14,7 +14,7 @@
  *
  * Importing `router.tsx` pulls in `routeTree.gen.ts` → `__root.tsx` → every
  * route file and its module-scope side effects (`validateAdminEnv()`,
- * `initSentry()`, `initPostHog()`) — see `router.csp-nonce.test.ts`'s header
+ * `initSentry()`, `initUmami()`) — see `router.csp-nonce.test.ts`'s header
  * for the same reasoning. So this asserts on the single declaration line
  * instead, with an anchored per-line regex that captures the VALUE: a guard
  * that only checked the option were PRESENT would pass against `0`, which is

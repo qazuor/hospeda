@@ -13,6 +13,7 @@ import { persistChatTurn } from '../../../services/ai-chat-persistence.js';
 import { warnMissingModelRate } from '../../../utils/ai-missing-model-rate.js';
 import { loadModelRateOverrides } from '../../../utils/ai-rate-overrides.js';
 import { apiLogger } from '../../../utils/logger.js';
+import type { VisitorContext } from '../../../utils/visitor-context.js';
 import { captureChatEvent } from './chat.helpers.js';
 import { resolveChatUsageStatus } from './chat.usage-status.js';
 
@@ -40,6 +41,8 @@ export interface FinalizeChatTurnInput {
     readonly userMessage: string;
     /** `Date.now()` at the start of the handler, for the metered latency. */
     readonly handlerStartMs: number;
+    /** Visitor IP + User-Agent captured at request time, for analytics session attribution. */
+    readonly visitor?: VisitorContext | undefined;
 }
 
 /**
@@ -168,14 +171,19 @@ export async function finalizeChatTurn(
         }
     }
 
-    captureChatEvent(actorId, 'ai_chat_response_completed', {
-        entityId,
-        locale: input.locale,
-        provider: resolvedMeta.provider,
-        model: resolvedMeta.model,
-        promptTokens: resolvedMeta.usage.promptTokens,
-        completionTokens: resolvedMeta.usage.completionTokens
-    });
+    captureChatEvent(
+        actorId,
+        'ai_chat_response_completed',
+        {
+            entityId,
+            locale: input.locale,
+            provider: resolvedMeta.provider,
+            model: resolvedMeta.model,
+            promptTokens: resolvedMeta.usage.promptTokens,
+            completionTokens: resolvedMeta.usage.completionTokens
+        },
+        { visitor: input.visitor }
+    );
 
     return { conversationId: resolvedConversationId };
 }

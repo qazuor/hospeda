@@ -21,7 +21,7 @@ import { createPortal } from 'react-dom';
 import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { cn } from '@/lib/cn';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { trapFocus } from '@/lib/focus-trap';

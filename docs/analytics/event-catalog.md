@@ -10,9 +10,11 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `destination_viewed` | Destination detail viewed | web | `DestinationViewTracker.client.tsx` | frontend | `destination_id`, `destination_slug` | `locale`, `source_page` | no | Descubrimiento, Adquisición |
 | `accommodation_viewed` | Accommodation detail viewed | web | `AccommodationViewTracker.client.tsx` | frontend | `accommodation_id`, `accommodation_slug` | `accommodation_type`, `destination_id`, `is_featured`, `locale`, `source_page` | no | Resumen, Descubrimiento |
+| `entity_viewed` | Generic detail view for entity types without a dedicated view event | web | `EntityViewTracker.client.tsx` | frontend | `entity_type` (`VENUE`, `EXPERIENCE`, `PARTNER`), `entity_id` (UUID) | `locale` | no | Owners |
 | `event_viewed` | Event detail viewed | web | `EntityViewTracker.client.tsx` | frontend | `event_id`, `event_slug` | `locale`, `source_page` | no | Descubrimiento |
 | `post_viewed` | Post detail viewed | web | `EntityViewTracker.client.tsx` | frontend | `post_id`, `post_slug` | `locale`, `source_page` | no | Descubrimiento, Adquisición |
 | `search_performed` | Search submitted from the public UI | web | `SearchBar.client.tsx` | frontend | `search_type` | `destination_id`, `destination_slug`, `adult_count`, `child_count`, `filter_count`, `locale`, `source_page` | no | Descubrimiento |
+| `listing_internal_entry` | Listing detail page entered from a same-site page (owner stats "Desde Hospeda") | web | listing detail pages (HOS-2119 T-076) | frontend | `entity_type`, `entity_id` | `locale` | no | Owners |
 | `contact_owner_started` | User started a contact flow with an accommodation owner | web | `ContactHost.client.tsx` | frontend | `accommodation_id`, `contact_method`, `is_authenticated` | `destination_id`, `owner_id`, `locale`, `source_page` | no | Resumen, Descubrimiento |
 | `contact_owner_completed` | Contact flow completed and conversation/request was created | web, api | `ContactHost.client.tsx`, `conversations/*/initiate.ts` | frontend + backend | `accommodation_id`, `contact_method`, `conversation_flow`, `is_authenticated` | `destination_id`, `owner_id`, `locale` | no | Resumen, Descubrimiento, Adquisición |
 | `contact_owner_failed` | Contact flow failed for a business-relevant reason | web, api | `ContactHost.client.tsx`, `conversations/*/initiate.ts` | frontend + backend | `failure_reason` | `accommodation_id`, `destination_id`, `owner_id`, `contact_method`, `is_authenticated`, `locale` | no | Calidad |
@@ -56,5 +58,7 @@
 
 ## Notas
 
+- `entity_id` (UUID) and `entity_type` are Umami filter keys (`pf_entity_id`). They are an optional, additive pair on `accommodation_viewed` and the `contact_owner_*` events (type `ACCOMMODATION`, both or neither), and required on `entity_viewed` and `listing_internal_entry`.
+- Server events are sent to Umami by `apps/api/src/lib/analytics-client.ts`; there is no distinct id on them.
 - `apps/web` usa aliases de compatibilidad en `src/lib/analytics/events.ts` para evitar romper todos los call sites de una sola vez.
 - Los eventos de AI siguen existiendo en el catálogo compartido, pero no forman parte del dashboard ejecutivo principal de negocio.

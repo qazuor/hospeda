@@ -420,6 +420,40 @@
             "warning": "Ya tenés otra ficha publicada en esta dirección. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra. Podés seguir editando este borrador, pero no vas a poder publicarlo.",
             "blocked": "Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra."
         },
+        "traffic": {
+            "title": "Tráfico de tus fichas",
+            "partnerTitle": "Tráfico de tu página",
+            "propertySelectLabel": "Propiedad",
+            "verticalTitle": "Tráfico: {{vertical}}",
+            "window": {
+                "label": "Período"
+            },
+            "referrers": {
+                "title": "De dónde vienen",
+                "direct": "Directo",
+                "internal": "Desde Hospeda"
+            },
+            "countries": {
+                "title": "Países"
+            },
+            "devices": {
+                "title": "Dispositivos",
+                "desktop": "Computadora",
+                "laptop": "Notebook",
+                "mobile": "Celular",
+                "tablet": "Tablet",
+                "other": "Otros"
+            },
+            "contacts": {
+                "title": "Contactos",
+                "views": "Vistas",
+                "started": "Contacto iniciado",
+                "completed": "Contacto completado"
+            },
+            "empty": "Todavía no hay datos",
+            "visitors_one": "{{count}} visitante",
+            "visitors_other": "{{count}} visitantes"
+        },
         "locationException": {
             "requestButton": "Pedir una excepción",
             "askAgainButton": "Volver a pedir",

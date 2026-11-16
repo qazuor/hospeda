@@ -1498,37 +1498,75 @@ export const HOSPEDA_ENV_VARS = [
             'Etiqueta libre que se aplica a todos los eventos de Sentry. Poné `production` en el contenedor prod y `staging` en el de staging. Tiene precedencia sobre NODE_ENV en el init de Sentry — permite que ambos deploys corran con NODE_ENV=production (preservando el sampling de traces/profiles tipo prod) pero queden separables en el dashboard de Sentry.'
     },
     {
-        name: 'HOSPEDA_POSTHOG_KEY',
-        description: 'PostHog project API key for server-side AI event analytics',
-        descriptionEs: 'API key del proyecto PostHog para analíticas server-side de eventos de IA',
+        name: 'HOSPEDA_UMAMI_URL',
+        description:
+            'Base URL of the self-hosted Umami instance (server-side event ingestion via POST /api/batch and the read API). Required in production, optional elsewhere',
+        descriptionEs:
+            'URL base de la instancia self-hosted de Umami (ingesta server-side de eventos vía POST /api/batch y API de lectura). Requerida en producción, opcional en el resto',
+        type: 'url',
+        required: false,
+        requiredScope: 'production',
+        secret: false,
+        exampleValue: 'https://umami.example.com',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain:
+            'Base URL where the self-hosted Umami is deployed, without a trailing slash. Required in production (the API refuses to boot without it); in other environments leave unset or empty to disable server-side Umami events and stats reads.',
+        howToObtainEs:
+            'URL base donde está deployado el Umami self-hosted, sin barra final. Requerida en producción (la API no arranca sin ella); en el resto de los entornos dejala sin setear o vacía para deshabilitar los eventos server-side y las lecturas de stats de Umami.'
+    },
+    {
+        name: 'HOSPEDA_UMAMI_WEBSITE_ID_WEB',
+        description:
+            'Umami website id (UUID) of the hospeda-web website; server events that describe the public web surface are sent to it. Required in production, optional elsewhere',
+        descriptionEs:
+            'Id de website de Umami (UUID) de hospeda-web; los eventos server-side que describen la superficie web pública se envían ahí. Requerido en producción, opcional en el resto',
         type: 'string',
         required: false,
         requiredScope: 'production',
-        secret: true,
-        exampleValue: 'phc_xxx',
+        secret: false,
+        exampleValue: '00000000-0000-0000-0000-000000000000',
         apps: ['api'],
         category: 'monitoring',
-        helpUrl: 'https://posthog.com/docs/libraries/node',
-        howToObtain:
-            'PostHog → your project → Settings → Project API Keys → copy the project API key (starts with phc_). Leave blank to disable AI event analytics without breaking anything.',
-        howToObtainEs:
-            'PostHog → tu proyecto → Settings → Project API Keys → copiá el project API key (empieza con phc_). Dejala vacía para deshabilitar las analíticas de eventos de IA sin romper nada.'
+        helpUrl: 'https://umami.is/docs',
+        howToObtain: 'Umami → Settings → Websites → hospeda-web → copy the Website ID (a UUID).',
+        howToObtainEs: 'Umami → Settings → Websites → hospeda-web → copiá el Website ID (un UUID).'
     },
     {
-        name: 'HOSPEDA_POSTHOG_HOST',
-        description: 'PostHog API host (defaults to https://us.i.posthog.com)',
-        descriptionEs: 'Host de la API de PostHog (por defecto https://us.i.posthog.com)',
-        type: 'url',
+        name: 'HOSPEDA_UMAMI_WEBSITE_ID_ADMIN',
+        description:
+            'Umami website id (UUID) of the hospeda-admin website; server events that describe the admin surface are sent to it',
+        descriptionEs:
+            'Id de website de Umami (UUID) de hospeda-admin; los eventos server-side que describen la superficie admin se envían ahí',
+        type: 'string',
         required: false,
         secret: false,
-        exampleValue: 'https://us.i.posthog.com',
+        exampleValue: '00000000-0000-0000-0000-000000000000',
         apps: ['api'],
         category: 'monitoring',
-        helpUrl: 'https://posthog.com/docs/libraries/node',
-        howToObtain:
-            'Only needed when using a self-hosted PostHog instance or the EU cloud (https://eu.i.posthog.com). Leave unset to use the default US cloud endpoint.',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain: 'Umami → Settings → Websites → hospeda-admin → copy the Website ID (a UUID).',
         howToObtainEs:
-            'Solo necesitás configurarlo si usás una instancia self-hosted de PostHog o el cloud EU (https://eu.i.posthog.com). Si no lo configurás, se usa el endpoint por defecto del cloud US.'
+            'Umami → Settings → Websites → hospeda-admin → copiá el Website ID (un UUID).'
+    },
+    {
+        name: 'HOSPEDA_UMAMI_API_KEY',
+        description:
+            'Umami API key of a view-only user, sent as `Authorization: Bearer`; used only for reading stats',
+        descriptionEs:
+            'API key de Umami de un usuario view-only, enviada como `Authorization: Bearer`; se usa solo para leer stats',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'umami_xxx',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://umami.is/docs',
+        howToObtain:
+            'Create a view-only Umami user, then mint an API key for it (format `umami_...`). Never use an admin user key: this key only reads stats.',
+        howToObtainEs:
+            'Creá un usuario view-only en Umami y generá una API key para él (formato `umami_...`). Nunca uses la key de un admin: esta key solo lee stats.'
     },
     {
         name: 'SENTRY_AUTH_TOKEN',

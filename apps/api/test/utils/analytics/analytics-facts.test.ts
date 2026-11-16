@@ -360,3 +360,21 @@ describe('analytics facts (TEST:1878:15, TEST:1878:16)', () => {
         }
     });
 });
+
+describe('analytics facts visitor (HOS-2119 T-072)', () => {
+    it('never attaches a visitor: facts come from crons/webhooks, not a visitor request', () => {
+        const capture = vi.fn();
+        const sink = createAnalyticsFactSink({ capture });
+        sink.emit({
+            kind: 'TRIAL_STARTED',
+            userId: 'u-1',
+            vertical: 'accommodation',
+            actorKind: 'SYSTEM',
+            trialId: 't-1',
+            activationEvent: 'listing_published',
+            occurredAt: new Date('2026-01-01T00:00:00.000Z')
+        });
+        expect(capture).toHaveBeenCalledTimes(1);
+        expect(capture.mock.calls[0]?.[0]).not.toHaveProperty('visitor');
+    });
+});

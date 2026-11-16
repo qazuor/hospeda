@@ -2,8 +2,11 @@
  * Isomorphic CSP nonce reader for the router's `ssr.nonce` option (HOS-33
  * T-006 / GAP-042-18). Extracted from `router.tsx` into its own module so it
  * can be unit-tested without importing the generated route tree (and
- * everything `__root.tsx` initializes at module scope — Sentry, PostHog,
+ * everything `__root.tsx` initializes at module scope — Sentry, Umami,
  * env validation).
+ *
+ * `getCspNonceOnClient` is also consumed by `lib/analytics/umami-client.ts`,
+ * which stamps the nonce on the injected Umami tracker `<script>` (HOS-2119).
  *
  * @see ../router.tsx
  */

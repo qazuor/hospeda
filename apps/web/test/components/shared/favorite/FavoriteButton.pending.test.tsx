@@ -26,7 +26,7 @@ vi.mock('../../../../src/components/auth/AuthRequiredPopover.client', () => ({
     AuthRequiredPopover: () => <div data-testid="auth-required-popover" />
 }));
 vi.mock('@repo/icons', () => ({ FavoriteIcon: () => <svg aria-hidden="true" /> }));
-vi.mock('../../../../src/lib/analytics/posthog-client', () => ({ trackEvent: vi.fn() }));
+vi.mock('../../../../src/lib/analytics/umami-client', () => ({ trackEvent: vi.fn() }));
 vi.mock('../../../../src/components/shared/favorite/user-collections-cache', () => ({
     getUserCollections: () => Promise.resolve([])
 }));

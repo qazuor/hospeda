@@ -315,8 +315,28 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_MCP_RATE_LIMIT_WINDOW_MS and HOSPEDA_MCP_RATE_LIMIT_MAX (features
  * category, api only) — the MCP server's switch, audience URL and rate limit
  * (HOS-2184). 277 + 4 = 281.
+ *
+ * +4 = HOSPEDA_UMAMI_URL, HOSPEDA_UMAMI_WEBSITE_ID_WEB,
+ * HOSPEDA_UMAMI_WEBSITE_ID_ADMIN, HOSPEDA_UMAMI_API_KEY (monitoring category,
+ * api only) — server-side Umami ingestion and stats reads (HOS-2119 T-011).
+ * 277 + 4 = 281.
+ *
+ * +2 = PUBLIC_UMAMI_SCRIPT_URL, PUBLIC_UMAMI_WEBSITE_ID (client-web category,
+ * web only) — build-time Umami tracker config (HOS-2119 T-012).
+ * 281 + 2 = 283.
+ *
+ * +2 = VITE_UMAMI_SCRIPT_URL, VITE_UMAMI_WEBSITE_ID (client-admin category,
+ * admin only) - build-time Umami tracker config (HOS-2119 T-013).
+ * 283 + 2 = 285.
+ *
+ * -6 = HOSPEDA_POSTHOG_KEY/HOST (api-config), PUBLIC_POSTHOG_KEY/HOST
+ * (client-web), VITE_POSTHOG_KEY/HOST (client-admin) - PostHog removed
+ * (HOS-2119 T-060). 285 - 6 = 279.
+ *
+ * Merge of HOS-2184 (+4 MCP and the rest of staging, 287 with PostHog) and
+ * HOS-2119 (+8 Umami, -6 PostHog): 287 - 6 + 8 = 289.
  */
-const EXPECTED_VAR_COUNT = 287;
+const EXPECTED_VAR_COUNT = 289;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -724,6 +744,8 @@ describe('ENV_REGISTRY', () => {
             // 27 original VITE_* vars + VITE_TURNSTILE_SITE_KEY (SPEC-301 T-010)
             // + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening)
             // + VITE_FEEDBACK_ENABLED (admin twin of PUBLIC_FEEDBACK_ENABLED) = 30
+            // + VITE_UMAMI_SCRIPT_URL + VITE_UMAMI_WEBSITE_ID (HOS-2119 T-013) = 32
+            // - VITE_POSTHOG_KEY + VITE_POSTHOG_HOST (HOS-2119 T-060) = 30
             expect(viteVars.length).toBe(30);
         });
     });

@@ -123,6 +123,10 @@ pnpm env:check
 | `HOSPEDA_SENTRY_DSN` | url | no | yes | - | Sentry DSN for API error tracking |
 | `HOSPEDA_SENTRY_RELEASE` | string | no | no | - | Sentry release identifier |
 | `HOSPEDA_SENTRY_PROJECT` | string | no | no | - | Sentry project name |
+| `HOSPEDA_UMAMI_URL` | url | no | no | - | Base URL of the self-hosted Umami instance (server events via `POST /api/batch`, read API). Unset or empty disables server-side Umami (HOS-2119) |
+| `HOSPEDA_UMAMI_WEBSITE_ID_WEB` | string | no | no | - | Umami website id (UUID) of `hospeda-web`; server events describing the web surface go here (HOS-2119) |
+| `HOSPEDA_UMAMI_WEBSITE_ID_ADMIN` | string | no | no | - | Umami website id (UUID) of `hospeda-admin`; server events describing the admin surface go here (HOS-2119) |
+| `HOSPEDA_UMAMI_API_KEY` | string | no | yes | - | API key (`umami_...`) of a view-only Umami user, sent as `Authorization: Bearer`; only used to read stats (HOS-2119) |
 | `HOSPEDA_HEALTHCHECKS_PING_KEY` | string | no | yes | - | Healthchecks.io project ping key for the free cron monitors (HOS-1742) |
 | `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX` | enum | no | no | - | `staging` or `prod`; prefixes each check slug (HOS-1742) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
@@ -358,7 +362,7 @@ via `TEST_DB_URL` and `TEST_DB_NAME` before the test suite runs.
 | Variable | Development | Staging | Production |
 |----------|-------------|---------|------------|
 | `NODE_ENV` | `development` | `production` | `production` |
-| `HOSPEDA_API_URL` | `http://localhost:3001` | `https://api.staging.hospeda.com.ar` | `https://api.hospeda.com.ar` |
+| `HOSPEDA_API_URL` | `http://localhost:3001` | `https://staging-api.hospeda.com.ar` | `https://api.hospeda.com.ar` |
 | `HOSPEDA_SITE_URL` | `http://localhost:4321` | `https://staging.hospeda.com.ar` | `https://hospeda.com.ar` |
 | `HOSPEDA_DATABASE_URL` | local Docker Postgres | staging Postgres | production Postgres |
 | `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` | `TEST-xxxx` token | `TEST-xxxx` token | live token |

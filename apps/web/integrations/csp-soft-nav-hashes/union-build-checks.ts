@@ -44,10 +44,6 @@ export const RENDER_TIME_INLINE_SCRIPT_ALLOWLIST: readonly RenderTimeInlineScrip
     {
         component: 'src/components/shared/IconSpriteClientData.astro',
         reason: 'iconSpriteClientScript() is deterministic for a build: the content-addressed sprite URL plus the committed symbol manifest.'
-    },
-    {
-        component: 'src/components/analytics/PostHogScript.astro',
-        reason: 'POSTHOG_INLINE_SNIPPET is built from build-time env constants. Only BaseLayout renders it, so pages on AuthLayout and ErrorLayout do not carry it themselves.'
     }
 ];
 

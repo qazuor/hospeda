@@ -1,11 +1,11 @@
 /**
  * @file events.test.ts
- * @description Catalog-shape regression test for the explicit PostHog event
+ * @description Catalog-shape regression test for the explicit analytics event
  * names exported by `src/lib/analytics/events.ts` (SPEC-140).
  *
  * These tests guard the public contract of the event catalog: the 5
  * acceptance-criteria events must stay present + use the agreed snake_case
- * naming convention so downstream PostHog dashboards keep matching.
+ * naming convention so downstream dashboards keep matching.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -28,6 +28,7 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             ContributionEditorSubmitted: 'contribution_editor_submitted',
             PostViewed: 'post_viewed',
             EventViewed: 'event_viewed',
+            EntityViewed: 'entity_viewed',
             AiSearchSubmitted: 'ai_search_performed',
             AiSearchIntentApplied: 'ai_search_intent_applied',
             AiSearchFallbackKeyword: 'ai_search_fallback_keyword',

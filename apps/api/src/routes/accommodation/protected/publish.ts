@@ -14,6 +14,7 @@ import { ListingPublicationService } from '../../../services/listing-publication
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { getVisitorContext } from '../../../utils/visitor-context';
 
 const listingPublicationService = new ListingPublicationService();
 
@@ -43,9 +44,14 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
     },
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
+        const visitor = getVisitorContext(ctx);
         const data = await listingPublicationService.publish({ actor, id: params.id as string });
 
-        captureAccommodationPublished({ actorId: actor.id, accommodation: data });
+        captureAccommodationPublished({
+            actorId: actor.id,
+            accommodation: data,
+            ...(visitor ? { visitor } : {})
+        });
 
         // BETA-199: `AccommodationProtectedSchema` declares the premium
         // rich-description pair so the owner's editor GET can show translation

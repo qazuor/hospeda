@@ -67,7 +67,7 @@ import { StreamTextFinalMetaSchema } from './ai-capability.schema.js';
  * 400 (`VALIDATION_ERROR`).
  *
  * The route handler also reads this constant to fire the
- * `ai_chat_cap_reached` PostHog event exactly when the client submits
+ * `ai_chat_cap_reached` analytics event exactly when the client submits
  * 20 messages (AC-8.5 / design §6.5). Keep the schema-level `.max(...)`
  * and the route-level check in lock-step by importing this constant
  * from one place.

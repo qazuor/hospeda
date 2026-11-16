@@ -5,7 +5,6 @@ in version control.
 
 | What | Where | Deployed by |
 |---|---|---|
-| PostHog first-party reverse proxy (Worker) | [`posthog-proxy/`](posthog-proxy/) | `wrangler deploy` |
 | Sentry envelope tunnel (Worker) | [`sentry-tunnel/`](sentry-tunnel/) | `wrangler deploy` |
 | Cache Rules | [`rules/cache-rules.md`](rules/cache-rules.md) | **Dashboard (manual)** |
 | Redirect Rules | [`rules/redirect-rules.md`](rules/redirect-rules.md) | **Dashboard (manual)** |

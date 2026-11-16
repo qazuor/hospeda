@@ -1,53 +1,59 @@
-# PostHog Analytics
+# Analytics (Umami)
 
-Esta carpeta documenta la implementación de analytics de Hospeda basada en PostHog.
+Hospeda analytics run on a self-hosted [Umami](https://umami.is) instance. PostHog was
+retired in HOS-2119 and is no longer used anywhere in the platform.
 
-## Objetivos
+## Goals
 
-- Medir hechos de negocio útiles, no clicks decorativos.
-- Mantener naming y propiedades consistentes entre `web`, `admin` y `api`.
-- Evitar PII y reducir ruido/costo.
-- Priorizar backend como fuente canónica cuando una operación pueda confirmarse server-side.
+- Measure useful business facts, not decorative clicks.
+- Keep event names and properties consistent across `web`, `admin` and `api`.
+- Avoid PII and keep noise and cost low.
+- Treat the backend as the canonical source whenever an operation can be confirmed server-side.
 
-## Modelo actual
+## Current model
 
-- `apps/web`: modelo híbrido mejorado.
-  - Antes del consentimiento: captura anónima cookieless con `persistence: 'memory'`.
-  - Después del consentimiento: `localStorage+cookie`, `identify`, person properties.
-- `apps/admin`: captura autenticada interna con eventos explícitos y sin `autocapture`.
-- `apps/api`: captura server-side para signup, onboarding, contacto, publicación y billing.
-- `packages/analytics`: catálogo tipado, schemas Zod, helpers browser/server y guardas anti-PII.
+- `apps/web`: Umami tracker script served through a first-party relay.
+  - Umami is cookieless, so anonymous pageviews and events are captured before consent.
+  - After cookie consent the user id is attached with `identify`, once per session.
+- `apps/admin`: authenticated internal capture with explicit events and no autocapture.
+  The identity is the staff user id.
+- `apps/api`: server-side capture for signup, onboarding, contact, publication and billing
+  through `apps/api/src/lib/analytics-client.ts`. Server events never carry a distinct id.
+- `packages/analytics`: typed event catalog, Zod schemas, browser/server helpers, the Umami
+  payload and server providers, and anti-PII guards.
 
-## Documentos
+## Documents
 
-- `posthog-audit.md` — auditoría inicial, problemas detectados y plan de cambio.
-- `event-catalog.md` — catálogo actual de eventos y propiedades.
-- `event-migrations.md` — mapeo de eventos viejos → nuevos.
-- `posthog-dashboards.md` — estrategia y regeneración de dashboards.
-- `session-replay-privacy.md` — estado actual y política de Replay.
+- [event-catalog.md](./event-catalog.md): current events and properties.
+- [event-migrations.md](./event-migrations.md): old event name to new event name mapping.
+- [umami-dashboards.md](./umami-dashboards.md): boards, funnels and goals, and how to regenerate them.
+- [umami-spike.md](./umami-spike.md): T-0 spike decisions (delivery path, server-event attribution, read API, entity_id gaps).
+- [session-replay-privacy.md](./session-replay-privacy.md): Session Replay status and policy.
 
-## Estado operativo
+## Operational status
 
-- Session Replay: deshabilitado.
-- Dashboard automation: disponible vía `pnpm posthog:setup` con credenciales administrativas de PostHog.
-- Funnels/cohortes: pendientes de automatización sobre la taxonomía nueva.
+- Session Replay: not offered (Umami does not provide it).
+- Dashboards, funnels and goals: created idempotently by `pnpm umami:setup`
+  (see [umami-dashboards.md](./umami-dashboards.md)).
 
-## Setup operativo
+## Environment variables
 
-Comando:
+| Variable | Used by | Purpose |
+| --- | --- | --- |
+| `HOSPEDA_UMAMI_URL` | api | Base URL of the Umami instance |
+| `HOSPEDA_UMAMI_WEBSITE_ID_WEB` | api | Website id for web-surface events |
+| `HOSPEDA_UMAMI_WEBSITE_ID_ADMIN` | api | Website id for admin-surface events |
+| `HOSPEDA_UMAMI_API_KEY` | api | Read access for owner-facing stats |
+| `PUBLIC_UMAMI_SCRIPT_URL`, `PUBLIC_UMAMI_WEBSITE_ID` | web | Tracker script and website id (build args) |
+| `VITE_UMAMI_SCRIPT_URL`, `VITE_UMAMI_WEBSITE_ID` | admin | Tracker script and website id (build args) |
 
-```bash
-pnpm posthog:setup
-```
+The canonical registry is in `packages/config`. When a variable is unset, analytics is
+disabled silently for that surface.
 
-Variables de ejemplo:
+## Practical rules
 
-- `scripts/posthog/.env.example`
-
-## Reglas prácticas
-
-- `snake_case` para eventos y propiedades.
-- No enviar email, teléfono, mensaje, token, password, dirección ni payloads de DB completos.
-- Usar IDs estables (`user.id`, IDs de entidad, subscription IDs locales) y no nombres visibles.
-- En frontend, preferir eventos explícitos a `autocapture`.
-- En backend, capturar sólo cuando la operación quedó confirmada.
+- `snake_case` for events and properties.
+- Never send email, phone, message, token, password, address or full DB payloads.
+- Use stable ids (`user.id`, entity ids, local subscription ids), never display names.
+- On the frontend, prefer explicit events.
+- On the backend, capture only once the operation is confirmed.

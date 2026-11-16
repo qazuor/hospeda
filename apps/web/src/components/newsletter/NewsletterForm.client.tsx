@@ -39,7 +39,7 @@ import { NewsletterGuestSubscribeRequestSchema } from '@repo/schemas';
 import { useEffect, useId, useState } from 'react';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';

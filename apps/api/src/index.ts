@@ -26,11 +26,11 @@ import type { Worker } from 'bullmq';
 import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
+import { shutdownAnalytics } from './lib/analytics-client';
 import { registerAppLogDbSink } from './lib/app-log-sink';
 import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { isEntityPubliclyVisible } from './lib/indexnow-visibility';
-import { shutdownPostHog } from './lib/posthog';
 import { getRequestContext, getRequestCorrelationId } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
@@ -498,8 +498,8 @@ const startServer = async (): Promise<void> => {
                     );
                 }
 
-                // Flush PostHog AI analytics events
-                await shutdownPostHog();
+                // Flush Umami analytics events
+                await shutdownAnalytics();
 
                 // Flush Sentry events
                 await closeSentry(2000);

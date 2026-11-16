@@ -38,7 +38,7 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
-import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
+import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/umami-client';
 import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
@@ -115,21 +115,20 @@ const TEXTS = {
 } as const;
 
 /**
- * Permission that marks a user as a host (owner of accommodations). Fed to
- * PostHog as the `is_host` person property so funnels can segment hosts vs
+ * Permission that marks a user as a host (owner of accommodations). Fed to Umami as the `is_host` person property so funnels can segment hosts vs
  * pure tourists.
  */
 const HOST_PERMISSION = 'accommodation.create' as const;
 
 /**
  * Permission that marks a user as a venue listing owner (self-service,
- * SPEC-253). Fed to PostHog as `is_venue_owner`.
+ * SPEC-253). Fed to Umami as `is_venue_owner`.
  */
 const VENUE_OWNER_PERMISSION = 'venue.editOwn' as const;
 
 /**
  * Permission that marks a user as an experience listing owner (self-service,
- * SPEC-253). Fed to PostHog as `is_experience_owner`.
+ * SPEC-253). Fed to Umami as `is_experience_owner`.
  */
 const EXPERIENCE_OWNER_PERMISSION = 'experience.editOwn' as const;
 
@@ -194,39 +193,40 @@ export function UserMenu({
     // responsible for the `data-user-authenticated` attribute.
     const { user, permissions, roles } = useAccountPermissions({ initialUser });
 
-    // ── PostHog identify ─────────────────────────────────────────────────
+    // ── Umami identify ──────────────────────────────────────────────────
     // Fires whenever `user` resolves to a known, authenticated id (from the
     // SSR-provided `initialUser`, the sessionStorage cache, or the /auth/me
     // fetch above). UserMenu is mounted on every page (`client:load`), so
     // this is the single place that reliably knows the current visitor's id
-    // client-side. Idempotent — safe to call again with the same id on every
-    // remount (soft nav). The counterpart `resetUser()` call lives in
-    // `handleSignOut` below, not here, so a guest page load never resets an
-    // anonymous visitor's distinct id.
+    // client-side. Safe to call again with the same id on every remount (soft
+    // nav): `identifyUser` only re-sends to Umami when the person properties
+    // changed since the last identify of the session. The counterpart
+    // `resetUser()` call lives in `handleSignOut` below, not here, so a guest
+    // page load never resets an anonymous visitor's distinct id.
     //
     // Person properties (roles + segment flags) are attached once `permissions`
     // resolve. On first mount `permissions` is null (SSR gave us the user id
     // but not the permission set), so the initial identify carries the id
-    // alone; a second identify with the enriched props fires when /auth/me (or
-    // the cache) lands. PostHog merges person properties across identify calls,
-    // so segmenting funnels by is_host / is_venue_owner / is_experience_owner / is_staff works
-    // without re-sending the id-only call.
+    // alone; when /auth/me (or the cache) lands, the second call carries new
+    // properties, so `identifyUser` sends a second identify with the full set
+    // and segmenting by is_host / is_venue_owner / is_experience_owner /
+    // is_staff works. Both are consent-gated and wait for the deferred tracker
+    // (see `identifyUser`).
     //
     // HOS-296 — the `role` scalar person-property became the `roles` ARRAY.
     // Deliberately NOT a derived "primary role" and NOT a joined string:
     //   - the spec forbids inventing a primary role (an account genuinely
     //     wears several hats, and picking one would silently mis-segment the
     //     exact users this change exists for);
-    //   - PostHog supports array person properties natively and filters them
-    //     with `contains`, so `roles contains 'HOST'` replaces the old
-    //     `role = 'HOST'` breakdown one-for-one;
+    //   - an array keeps every hat of a multi-role account in one property
+    //     instead of collapsing them into a single scalar;
     //   - the real segmentation levers here are already the permission-derived
     //     `is_host` / `is_venue_owner` / `is_experience_owner` / `is_staff` booleans below, which
     //     are unchanged and keep working for a multi-hat user (a HOST +
     //     a vertical owner correctly reports BOTH as true instead of
     //     whichever single role happened to win).
-    // Sorted so the property value is stable across identify calls and PostHog
-    // does not record a person-property change on every page load.
+    // Sorted so the property value is stable across identify calls and
+    // does not look like a property change on every page load.
     const rolesKey = [...roles].sort().join(',');
     // biome-ignore lint/correctness/useExhaustiveDependencies: `rolesKey` is the stable, order-independent projection of `roles`; depending on the array itself would re-fire on every render since it is a new reference each time.
     useEffect(() => {
@@ -245,7 +245,7 @@ export function UserMenu({
         identifyUser(user.id, props);
     }, [user, permissions, rolesKey]);
 
-    // ── PostHog locale person property ───────────────────────────────────
+    // ── Umami locale person property ───────────────────────────────────
     // The active locale is already known client-side, so this is free (no
     // server hit) and updates if the user switches language mid-session.
     useEffect(() => {

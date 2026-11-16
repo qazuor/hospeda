@@ -8,8 +8,7 @@
  * - It joins the two halves that must agree — the walker that reads the body
  *   and the header builder that publishes the policy. A drift between them is
  *   invisible to either unit suite and fatal in the browser (spec risk R-9:
- *   a hash that does not match blocks the script — no theme, no i18n, no
- *   PostHog).
+ *   a hash that does not match blocks the script — no theme, no i18n).
  * - It runs against a fixture that mirrors what Astro actually emits (scoped
  *   `<style>` blocks, Vite dev-id styles, bundled module scripts, a JSON data
  *   block, `<noscript>` fallbacks) rather than hand-minimal snippets.
@@ -25,6 +24,7 @@ import { resolve } from 'node:path';
 import { type DefaultTreeAdapterMap, parse } from 'parse5';
 import { describe, expect, it } from 'vitest';
 import { collectCspHashes } from '../../integrations/csp-hash-collector';
+import { DEPLOYMENT_CONSTANT_INLINE_SCRIPTS } from '../../src/lib/csp-soft-nav-script-hashes';
 import { buildCspHeader } from '../../src/lib/middleware-helpers';
 
 const FIXTURE_HTML = readFileSync(resolve(__dirname, 'fixtures/astro-emitted-page.html'), 'utf8');
@@ -201,5 +201,23 @@ describe('CSP hash emission (end-to-end pipeline)', () => {
         await collectCspHashes({ html: FIXTURE_HTML });
 
         expect(FIXTURE_HTML).toBe(before);
+    });
+
+    it('emits no PostHog snippet hash and still allows the Umami origin (HOS-2119)', async () => {
+        const { scriptHashes, styleHashes } = await collectCspHashes({ html: FIXTURE_HTML });
+        const header = buildCspHeader({
+            scriptHashes,
+            styleHashes,
+            umamiScriptUrl: 'https://pulso.hospeda.com.ar/app.js'
+        });
+        // The Umami tag is an external <script src> with no inline body, so the
+        // union carries no analytics hash at all, and the origin rides on script-src.
+        expect(header).not.toMatch(/posthog/i);
+        expect(
+            DEPLOYMENT_CONSTANT_INLINE_SCRIPTS.some((entry) => /posthog/i.test(entry.component))
+        ).toBe(false);
+        expect(DEPLOYMENT_CONSTANT_INLINE_SCRIPTS.length).toBeGreaterThan(0);
+        expect(findDirective(header, 'script-src')).toContain('https://pulso.hospeda.com.ar');
+        expect(findDirective(header, 'connect-src')).toContain('https://pulso.hospeda.com.ar');
     });
 });

@@ -44,7 +44,7 @@ vi.mock('@/lib/cn', () => ({
 
 const trackEventSpy = vi.fn();
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: (...args: unknown[]) => trackEventSpy(...args)
 }));
 

@@ -204,18 +204,19 @@ export const AdminEnvSchema = z.object({
             'Cloudflare Turnstile site key for the admin feedback form. Passed as turnstileSiteKey prop; never read inside @repo/feedback.'
         ),
 
-    // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
-    // Leave unset to disable PostHog init in posthog-client.ts (T-140-17).
-    // Per-env values come from Coolify; keys live in 1Password.
-    VITE_POSTHOG_KEY: z
-        .string()
-        .optional()
-        .describe('PostHog Cloud project API key (phc_...) for the admin app'),
-    VITE_POSTHOG_HOST: z
+    // Analytics: self-hosted Umami (HOS-2119). Public by design; ship in bundle.
+    // The script name is renamed via Umami TRACKER_SCRIPT_NAME to dodge
+    // blockers, so never assume `script.js`. Leave both unset to disable.
+    VITE_UMAMI_SCRIPT_URL: z
         .string()
         .url()
         .optional()
-        .describe('PostHog Cloud ingestion endpoint (defaults to https://us.i.posthog.com)'),
+        .describe('Full URL of the self-hosted Umami tracker script for the admin app'),
+    VITE_UMAMI_WEBSITE_ID: z
+        .string()
+        .uuid()
+        .optional()
+        .describe('Umami website id (UUID) of hospeda-admin'),
 
     // Locale Configuration
     VITE_SUPPORTED_LOCALES: z

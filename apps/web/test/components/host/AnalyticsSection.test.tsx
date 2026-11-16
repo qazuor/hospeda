@@ -10,7 +10,8 @@
  * (market + favorites) widgets.
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useEffect } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock recharts BEFORE any imports — it's heavy and causes OOM in CI
@@ -25,6 +26,30 @@ vi.mock('recharts', () => ({
     CartesianGrid: () => null,
     Tooltip: () => null,
     Legend: () => null
+}));
+
+const { mockIslandMounted, mockIslandUnmounted } = vi.hoisted(() => ({
+    mockIslandMounted: vi.fn(),
+    mockIslandUnmounted: vi.fn()
+}));
+
+// HOS-2119: the traffic island is stubbed; lifecycle spies prove it receives a
+// new prop instead of being remounted.
+vi.mock('../../../src/components/listing/TrafficStatsCards.client', () => ({
+    TrafficStatsCards: (props: { entityType: string; entityId: string; window: string }) => {
+        useEffect(() => {
+            mockIslandMounted(props.entityId);
+            return () => mockIslandUnmounted(props.entityId);
+        }, [props.entityId]);
+        return (
+            <div
+                data-testid="traffic-stub"
+                data-entity-type={props.entityType}
+                data-entity-id={props.entityId}
+                data-window={props.window}
+            />
+        );
+    }
 }));
 
 // Mock before any imports — vitest hoists vi.mock to top of file
@@ -224,5 +249,110 @@ describe('TEST:B13a:25 AnalyticsSection effective-set gate', () => {
 
         expect(await screen.findByText(/Vistas/i)).toBeInTheDocument();
         expect(mockGetViewsDailySeries).toHaveBeenCalled();
+    });
+});
+
+describe('HOS-2119 AnalyticsSection traffic block', () => {
+    beforeEach(() => {
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { view_basic_stats: 1, view_advanced_stats: 1 },
+            limits: {},
+            failed: false
+        });
+        stubWiredEndpoints();
+    });
+
+    /** Stub the owner's accommodations list. */
+    function stubAccommodations(items: ReadonlyArray<{ id: string; name: string }>): void {
+        mockListOwnAccommodations.mockResolvedValue({ ok: true, data: { items } });
+    }
+
+    it('mounts the island for the only property, with no selector', async () => {
+        render(<AnalyticsSection locale="es" />);
+
+        const stub = await screen.findByTestId('traffic-stub');
+        expect(stub).toHaveAttribute('data-entity-id', 'a1');
+        expect(stub).toHaveAttribute('data-entity-type', 'ACCOMMODATION');
+        expect(stub).toHaveAttribute('data-window', '30d');
+        expect(screen.getAllByTestId('traffic-stub')).toHaveLength(1);
+        expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    });
+
+    it('titles the block with an h2 and labels it by that heading', async () => {
+        render(<AnalyticsSection locale="es" />);
+
+        const block = await screen.findByTestId('analytics-traffic-block');
+        const heading = within(block).getByRole('heading', { level: 2 });
+        expect(heading).toHaveTextContent('Tráfico de tus fichas');
+        expect(block).toHaveAttribute('aria-labelledby', heading.id);
+    });
+
+    it('shows a labelled select with every property and the first as default for 2+', async () => {
+        stubAccommodations([
+            { id: 'a1', name: 'Casa Uno' },
+            { id: 'a2', name: 'Casa Dos' }
+        ]);
+
+        render(<AnalyticsSection locale="es" />);
+
+        const select = await screen.findByRole('combobox', { name: 'Propiedad' });
+        const options = within(select).getAllByRole('option');
+        expect(options.map((o) => o.textContent)).toEqual(['Casa Uno', 'Casa Dos']);
+        expect(select).toHaveValue('a1');
+        expect(screen.getByTestId('traffic-stub')).toHaveAttribute('data-entity-id', 'a1');
+        expect(screen.getAllByTestId('traffic-stub')).toHaveLength(1);
+    });
+
+    it('updates the island entityId when another property is selected', async () => {
+        stubAccommodations([
+            { id: 'a1', name: 'Casa Uno' },
+            { id: 'a2', name: 'Casa Dos' }
+        ]);
+
+        render(<AnalyticsSection locale="es" />);
+        const select = await screen.findByRole('combobox', { name: 'Propiedad' });
+        fireEvent.change(select, { target: { value: 'a2' } });
+
+        expect(screen.getByTestId('traffic-stub')).toHaveAttribute('data-entity-id', 'a2');
+        expect(screen.getAllByTestId('traffic-stub')).toHaveLength(1);
+    });
+
+    it('renders no traffic block when the host has no properties', async () => {
+        stubAccommodations([]);
+
+        render(<AnalyticsSection locale="es" />);
+        await screen.findAllByText(/Tiempo de respuesta/i);
+
+        expect(screen.queryByTestId('analytics-traffic-block')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('traffic-stub')).not.toBeInTheDocument();
+    });
+
+    it('passes the toggled window to the island WITHOUT remounting it', async () => {
+        render(<AnalyticsSection locale="es" />);
+        const stub = await screen.findByTestId('traffic-stub');
+        expect(stub).toHaveAttribute('data-window', '30d');
+        expect(mockIslandMounted).toHaveBeenCalledTimes(1);
+
+        fireEvent.click(screen.getByRole('button', { name: '7d' }));
+
+        await waitFor(() =>
+            expect(screen.getByTestId('traffic-stub')).toHaveAttribute('data-window', '7d')
+        );
+        expect(screen.getByTestId('traffic-stub')).toBe(stub);
+        expect(mockIslandMounted).toHaveBeenCalledTimes(1);
+        expect(mockIslandUnmounted).not.toHaveBeenCalled();
+    });
+
+    it('keeps the existing views cards and renders the traffic block after them', async () => {
+        render(<AnalyticsSection locale="es" />);
+
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        expect((await screen.findAllByText('Casa Uno')).length).toBeGreaterThanOrEqual(1);
+        expect(await screen.findByText(/Favoritos/i)).toBeInTheDocument();
+        const block = await screen.findByTestId('analytics-traffic-block');
+        const views = screen.getByRole('button', { name: '7d' });
+        expect(
+            views.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
     });
 });

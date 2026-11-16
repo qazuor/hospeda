@@ -420,6 +420,40 @@
             "warning": "You already have another published listing at this address. Each physical place goes in a single listing: add the missing category to it instead of creating another one. You can keep editing this draft, but you will not be able to publish it.",
             "blocked": "You already have a published listing at this address. Each physical place goes in a single listing: add the missing category to it instead of creating another one."
         },
+        "traffic": {
+            "title": "Traffic to your listings",
+            "partnerTitle": "Traffic to your page",
+            "propertySelectLabel": "Property",
+            "verticalTitle": "Traffic: {{vertical}}",
+            "window": {
+                "label": "Period"
+            },
+            "referrers": {
+                "title": "Where visitors come from",
+                "direct": "Direct",
+                "internal": "From Hospeda"
+            },
+            "countries": {
+                "title": "Countries"
+            },
+            "devices": {
+                "title": "Devices",
+                "desktop": "Desktop",
+                "laptop": "Laptop",
+                "mobile": "Mobile",
+                "tablet": "Tablet",
+                "other": "Other"
+            },
+            "contacts": {
+                "title": "Contacts",
+                "views": "Views",
+                "started": "Contact started",
+                "completed": "Contact completed"
+            },
+            "empty": "No data yet",
+            "visitors_one": "{{count}} visitor",
+            "visitors_other": "{{count}} visitors"
+        },
         "locationException": {
             "requestButton": "Request an exception",
             "askAgainButton": "Request again",

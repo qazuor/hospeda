@@ -1,85 +1,45 @@
 # Session Replay Privacy
 
-## Estado actual
+## Current status
 
-- Session Replay está **deshabilitado** en este momento.
-- `apps/web`: `disable_session_recording: true`
-- `apps/admin`: `disable_session_recording: true`
+- Session Replay is **not offered**. Hospeda analytics run on Umami, which has no session recording.
+- Replay was disabled in the previous PostHog setup (`disable_session_recording: true`) and
+  was never turned on. PostHog was retired in HOS-2119.
+- Nothing in `apps/web`, `apps/admin` or `apps/api` records sessions.
 
-## Motivo
+## If recording is ever introduced
 
-Antes de activarlo hay que cerrar una política de privacidad explícita. Hoy el repo todavía no implementa:
+Adopting any session-recording tool needs its own spec and a privacy review first. The
+minimum policy is below.
 
-- masking de inputs para PostHog
-- selectores `ph-no-capture` en todos los formularios sensibles
-- exclusión documentada de rutas con mayor riesgo
-- estrategia de sampling aprobada
+### What must stay hidden
 
-## Qué se grabaría si se activa
+- passwords
+- emails and phone numbers typed by users
+- private messages
+- contact data
+- payment data
+- tokens or sensitive query params
 
-Cuando se active, la intención es permitir Replay sólo donde aporte valor de producto:
+### Sensitive surfaces
 
-- onboarding owner
-- publicación de alojamientos
-- checkout de suscripciones
-- errores de UX en navegación pública
-
-## Qué debe quedar oculto
-
-Si Replay se activa, estos datos NO deben llegar a PostHog:
-
-- contraseñas
-- emails escritos por usuarios
-- teléfonos escritos por usuarios
-- mensajes privados
-- datos de contacto
-- datos de pago
-- tokens o query params sensibles
-
-## Rutas o superficies sensibles
-
-Estas superficies requieren protección reforzada antes de cualquier activación:
-
-- autenticación
-- formularios de contacto a alojamientos
+- authentication
+- contact forms to accommodations
 - guest conversation access
-- checkout / suscripciones
-- mensajería
-- panel admin con datos de usuarios y billing
+- checkout and subscriptions
+- messaging
+- admin panel with user and billing data
 
-## Estrategia recomendada para una futura activación
+### Requirements
 
-### Web
+- Mask all inputs and all text by default, with selective unmask on elements marked safe.
+- Redact captured URLs that carry sensitive query params.
+- Keep the admin panel off by default.
+- Sample: never record 100% of sessions, prioritise error sessions and onboarding,
+  publication and checkout flows.
+- Verify manually (login/sign up, contact form, checkout, public navigation) before enabling.
 
-- `maskAllInputs: true`
-- `maskTextSelector: '*'`
-- unmask selectivo sólo en elementos marcados como seguros
-- `ph-no-capture` en componentes sensibles
-- revisar y redactar URLs capturadas cuando haya query params delicados
+## Conclusion
 
-### Admin
-
-- mantener Replay apagado por defecto
-- sólo evaluar activación parcial si existe un caso muy concreto de soporte interno
-- en caso de activación, exigir masking todavía más estricto que en web
-
-## Sampling recomendado
-
-Si se habilita más adelante:
-
-- no grabar 100% de sesiones
-- priorizar sesiones con error
-- priorizar onboarding / publicación / checkout
-- mantener tráfico general en una tasa baja
-
-## Verificación manual requerida antes de activarlo
-
-1. Probar login/sign up y verificar que no se vea texto sensible.
-2. Probar formulario de contacto y verificar que no se vea el mensaje.
-3. Probar checkout y verificar que no se vea información de pago.
-4. Probar navegación pública y verificar que las URLs sensibles estén redacted si corresponde.
-5. Confirmar costo y volumen estimado en PostHog.
-
-## Conclusión
-
-Replay no está listo para producción todavía. La postura actual correcta es mantenerlo deshabilitado hasta completar masking, exclusiones y sampling con revisión manual.
+Replay is not offered. Keep it that way until masking, exclusions and sampling are approved
+and manually verified.

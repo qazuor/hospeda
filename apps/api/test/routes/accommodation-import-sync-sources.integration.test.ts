@@ -55,10 +55,10 @@ vi.mock('@repo/utils/safe-fetch', async (importActual) => {
     return { ...actual, safeExternalFetch: vi.fn() };
 });
 
-vi.mock('../../src/lib/posthog', () => {
+vi.mock('../../src/lib/analytics-client', () => {
     const mockCapture = vi.fn();
     return {
-        getPostHogClient: () => ({ capture: mockCapture }),
+        getAnalyticsClient: () => ({ capture: mockCapture }),
         captureServerAnalyticsEvent: ({
             distinctId,
             name,

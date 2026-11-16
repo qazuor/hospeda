@@ -23,7 +23,7 @@ import { type FC, type MouseEvent, useRef, useState } from 'react';
 import { AuthRequiredPopover } from '@/components/auth/AuthRequiredPopover.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';

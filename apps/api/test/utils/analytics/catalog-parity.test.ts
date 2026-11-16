@@ -1,5 +1,15 @@
-import { AnalyticsEventSchemas } from '@repo/analytics';
-import { BILLING_CYCLES, CancellationReasonEnum, VerticalEnum } from '@repo/schemas';
+import {
+    ANALYTICS_ENTITY_TYPES,
+    ANALYTICS_LISTING_ENTITY_TYPES,
+    AnalyticsEventSchemas
+} from '@repo/analytics';
+import {
+    BILLING_CYCLES,
+    CancellationReasonEnum,
+    LISTING_TRAFFIC_STATS_ENTITY_TYPES,
+    TRACKABLE_ENTITY_TYPES,
+    VerticalEnum
+} from '@repo/schemas';
 import { SUSPEND_FOR_ARREARS_EVENTS } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -24,6 +34,14 @@ describe('billing analytics catalog parity (TEST:1878:16)', () => {
             AnalyticsEventSchemas.billing_cancel_scheduled.shape.reason.unwrap().options
         ).toEqual(Object.values(CancellationReasonEnum));
         expect(SUBSCRIPTION_CANCELLATION_REASONS).toEqual(Object.values(CancellationReasonEnum));
+    });
+    it('keeps analytics entity types in parity with TRACKABLE_ENTITY_TYPES (HOS-2119)', () => {
+        expect([...ANALYTICS_ENTITY_TYPES]).toEqual([...TRACKABLE_ENTITY_TYPES]);
+    });
+    it('keeps listing analytics entity types in parity with the owner traffic-stats types (HOS-2119)', () => {
+        expect([...ANALYTICS_LISTING_ENTITY_TYPES]).toEqual([
+            ...LISTING_TRAFFIC_STATS_ENTITY_TYPES
+        ]);
     });
     it('rejects forbidden analytics property names', () => {
         const forbidden =

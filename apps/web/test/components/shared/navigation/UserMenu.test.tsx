@@ -14,7 +14,7 @@ import {
     identifyUser,
     resetUser,
     setPersonProperties
-} from '../../../../src/lib/analytics/posthog-client';
+} from '../../../../src/lib/analytics/umami-client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import { signOut } from '../../../../src/lib/auth-client';
 
@@ -22,7 +22,7 @@ vi.mock('../../../../src/lib/auth-client', () => ({
     signOut: vi.fn().mockResolvedValue(undefined)
 }));
 
-vi.mock('../../../../src/lib/analytics/posthog-client', () => ({
+vi.mock('../../../../src/lib/analytics/umami-client', () => ({
     identifyUser: vi.fn(),
     resetUser: vi.fn(),
     setPersonProperties: vi.fn()
@@ -601,7 +601,7 @@ describe('UserMenu — sign out', () => {
     });
 });
 
-describe('UserMenu — PostHog identify/reset', () => {
+describe('UserMenu — Umami identify/reset', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         global.fetch = vi.fn().mockResolvedValue({

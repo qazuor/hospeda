@@ -17,7 +17,7 @@
  * mock it without requiring `@tiptap/core` (a transitive dep that vitest cannot
  * resolve in this worktree without an explicit alias in vitest.config.ts).
  *
- * PostHog events:
+ * Umami events:
  *  - `admin_whats_new_modal_shown` on open ({ entry_count, roles })
  *  - `admin_whats_new_modal_closed` on close ({ entry_count })
  *
@@ -44,7 +44,7 @@ import {
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useWhatsNew } from '@/hooks/use-whats-new';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { renderMarkdownToHtml } from '@/lib/whats-new/render-markdown';
 
 // ---------------------------------------------------------------------------

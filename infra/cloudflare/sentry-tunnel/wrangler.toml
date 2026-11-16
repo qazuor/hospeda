@@ -1,9 +1,6 @@
 # Cloudflare Worker config for the Sentry tunnel (SPEC-181 follow-up).
 #
-# Sibling of infra/cloudflare/posthog-proxy/. Both are first-party reverse
-# proxies that defeat ad-blockers, but they bind DIFFERENT paths and forward to
-# DIFFERENT upstreams — do NOT merge them:
-#   - posthog-proxy  ->  /api/relay/*  ->  PostHog Cloud (fixed host, passthrough)
+# First-party reverse proxy that defeats ad-blockers for Sentry envelopes:
 #   - sentry-tunnel  ->  /api/event    ->  Sentry (host derived from envelope DSN)
 #
 # Deploy is a manual OWNER action. Two environments are defined so each origin

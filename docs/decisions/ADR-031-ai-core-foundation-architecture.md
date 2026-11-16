@@ -118,7 +118,7 @@ Additional safety at the engine chokepoint:
   Moderation is **fail-open** with a telemetry event — a moderation outage must
   not take down the AI layer.
 - **PII scrubber**: email/phone/card (Luhn-validated) stripped from data before
-  sending to Sentry/PostHog. The DB stores conversations verbatim (AC-11).
+  sending to Sentry/analytics (PostHog when written; Umami since HOS-2119). The DB stores conversations verbatim (AC-11).
 - **Streaming moderation**: output is moderated at stream drain; a violation
   raises a post-stream throw.
 

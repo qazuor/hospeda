@@ -235,7 +235,7 @@ export async function createConfiguredAiService(): Promise<AiService> {
         getProvider: buildGetProvider(keyMap, metadataMap),
 
         // T-035: fan-out to structured logging, Sentry breadcrumbs/captures,
-        // and PostHog analytics events. The sink is fire-and-forget and never
+        // and analytics events (Umami). The sink is fire-and-forget and never
         // throws into the engine.
         recordEvent: createAiObservabilityRecordEvent(),
 

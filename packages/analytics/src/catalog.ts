@@ -8,13 +8,69 @@ const nullableStringSchema = z.string().min(1).nullable().optional();
 const nullableNumberSchema = z.number().finite().nullable().optional();
 const countSchema = z.number().int().nonnegative();
 
+/**
+ * Entity types that can carry `entity_id` / `entity_type` on view and contact
+ * events. Mirrors `TRACKABLE_ENTITY_TYPES` in `@repo/schemas` (this package
+ * does not depend on it; parity is asserted in `apps/api` catalog-parity test).
+ */
+export const ANALYTICS_ENTITY_TYPES = [
+    'ACCOMMODATION',
+    'POST',
+    'EVENT',
+    'VENUE',
+    'EXPERIENCE',
+    'PARTNER'
+] as const;
+
+/** Entity types that emit the generic `entity_viewed` event (no dedicated view event). */
+export const ANALYTICS_ENTITY_VIEWED_TYPES = ['VENUE', 'EXPERIENCE', 'PARTNER'] as const;
+
+/** Entity-id schema: must be the entity UUID (Umami filters on `pf_entity_id=eq.<uuid>`). */
+const entityIdSchema = z.string().uuid();
+const entityViewedTypeSchema = z.enum(ANALYTICS_ENTITY_VIEWED_TYPES);
+
+/**
+ * Listing types that have an owner-facing traffic page (and so an internal-entry
+ * event): the subset of `ANALYTICS_ENTITY_TYPES` a user can own. Mirrors
+ * `LISTING_TRAFFIC_STATS_ENTITY_TYPES` in `@repo/schemas` (this package does not
+ * depend on it); parity is asserted in apps/api `catalog-parity.test.ts`.
+ */
+export const ANALYTICS_LISTING_ENTITY_TYPES = [
+    'ACCOMMODATION',
+    'VENUE',
+    'EXPERIENCE',
+    'PARTNER'
+] as const;
+
+/**
+ * Optional, additive entity identification shared by the accommodation view
+ * and contact events. These events only ever describe an ACCOMMODATION; other
+ * types use `entity_viewed`.
+ */
+const optionalEntityShape = {
+    entity_id: entityIdSchema.optional(),
+    entity_type: z.literal('ACCOMMODATION').optional()
+};
+
+/** Refinement: `entity_id` and `entity_type` must come together (both or neither). */
+const entityPairRefinement = {
+    check: (value: { entity_id?: string | undefined; entity_type?: string | undefined }) =>
+        (value.entity_id === undefined) === (value.entity_type === undefined),
+    params: {
+        message: 'entity_id and entity_type must be provided together',
+        path: ['entity_id']
+    }
+};
+
 /** Shared analytics event catalog for Hospeda. */
 export const AnalyticsEvents = {
     destinationViewed: 'destination_viewed',
     accommodationViewed: 'accommodation_viewed',
     eventViewed: 'event_viewed',
+    entityViewed: 'entity_viewed',
     postViewed: 'post_viewed',
     searchPerformed: 'search_performed',
+    listingInternalEntry: 'listing_internal_entry',
     contactOwnerStarted: 'contact_owner_started',
     contactOwnerCompleted: 'contact_owner_completed',
     contactOwnerFailed: 'contact_owner_failed',
@@ -79,21 +135,29 @@ export const AnalyticsEventSchemas = {
         locale: localeSchema,
         source_page: z.string().min(1).optional()
     }),
-    [AnalyticsEvents.accommodationViewed]: z.object({
-        accommodation_id: idSchema,
-        accommodation_slug: slugSchema,
-        accommodation_type: z.string().min(1).optional(),
-        destination_id: idSchema.optional(),
-        destination_slug: slugSchema.optional(),
-        is_featured: z.boolean().optional(),
-        locale: localeSchema,
-        source_page: z.string().min(1).optional()
-    }),
+    [AnalyticsEvents.accommodationViewed]: z
+        .object({
+            accommodation_id: idSchema,
+            ...optionalEntityShape,
+            accommodation_slug: slugSchema,
+            accommodation_type: z.string().min(1).optional(),
+            destination_id: idSchema.optional(),
+            destination_slug: slugSchema.optional(),
+            is_featured: z.boolean().optional(),
+            locale: localeSchema,
+            source_page: z.string().min(1).optional()
+        })
+        .refine(entityPairRefinement.check, entityPairRefinement.params),
     [AnalyticsEvents.eventViewed]: z.object({
         event_id: idSchema,
         event_slug: slugSchema,
         locale: localeSchema,
         source_page: z.string().min(1).optional()
+    }),
+    [AnalyticsEvents.entityViewed]: z.object({
+        entity_type: entityViewedTypeSchema,
+        entity_id: entityIdSchema,
+        locale: localeSchema
     }),
     [AnalyticsEvents.postViewed]: z.object({
         post_id: idSchema,
@@ -114,33 +178,54 @@ export const AnalyticsEventSchemas = {
         query_length: countSchema.optional(),
         source_page: z.string().min(1).optional()
     }),
-    [AnalyticsEvents.contactOwnerStarted]: z.object({
-        accommodation_id: idSchema,
-        destination_id: idSchema.optional(),
-        owner_id: idSchema.optional(),
-        contact_method: z.string().min(1),
-        is_authenticated: z.boolean(),
-        locale: localeSchema,
-        source_page: z.string().min(1).optional()
-    }),
-    [AnalyticsEvents.contactOwnerCompleted]: z.object({
-        accommodation_id: idSchema,
-        destination_id: idSchema.optional(),
-        owner_id: idSchema.optional(),
-        contact_method: z.string().min(1),
-        conversation_flow: z.string().min(1),
-        is_authenticated: z.boolean(),
+    /*
+     * A listing detail page was entered from another page of the same site.
+     * Umami hides same-site referrers, so without this event that navigation is
+     * indistinguishable from a direct visit in the owner traffic stats
+     * (HOS-2119 T-075). Sent with `tag=<entity_id>`; the API reads DISTINCT
+     * visitors through `metrics/expanded?type=event`.
+     */
+    [AnalyticsEvents.listingInternalEntry]: z.object({
+        entity_id: entityIdSchema,
+        entity_type: z.enum(ANALYTICS_LISTING_ENTITY_TYPES),
         locale: localeSchema
     }),
-    [AnalyticsEvents.contactOwnerFailed]: z.object({
-        accommodation_id: idSchema.optional(),
-        destination_id: idSchema.optional(),
-        owner_id: idSchema.optional(),
-        contact_method: z.string().min(1).optional(),
-        failure_reason: z.string().min(1),
-        is_authenticated: z.boolean().optional(),
-        locale: localeSchema
-    }),
+    [AnalyticsEvents.contactOwnerStarted]: z
+        .object({
+            accommodation_id: idSchema,
+            ...optionalEntityShape,
+            destination_id: idSchema.optional(),
+            owner_id: idSchema.optional(),
+            contact_method: z.string().min(1),
+            is_authenticated: z.boolean(),
+            locale: localeSchema,
+            source_page: z.string().min(1).optional()
+        })
+        .refine(entityPairRefinement.check, entityPairRefinement.params),
+    [AnalyticsEvents.contactOwnerCompleted]: z
+        .object({
+            accommodation_id: idSchema,
+            ...optionalEntityShape,
+            destination_id: idSchema.optional(),
+            owner_id: idSchema.optional(),
+            contact_method: z.string().min(1),
+            conversation_flow: z.string().min(1),
+            is_authenticated: z.boolean(),
+            locale: localeSchema
+        })
+        .refine(entityPairRefinement.check, entityPairRefinement.params),
+    [AnalyticsEvents.contactOwnerFailed]: z
+        .object({
+            accommodation_id: idSchema.optional(),
+            ...optionalEntityShape,
+            destination_id: idSchema.optional(),
+            owner_id: idSchema.optional(),
+            contact_method: z.string().min(1).optional(),
+            failure_reason: z.string().min(1),
+            is_authenticated: z.boolean().optional(),
+            locale: localeSchema
+        })
+        .refine(entityPairRefinement.check, entityPairRefinement.params),
     [AnalyticsEvents.signUpStarted]: z.object({
         auth_method: z.string().min(1),
         locale: localeSchema,
@@ -294,18 +379,18 @@ export const AnalyticsEventSchemas = {
     [AnalyticsEvents.aiChatOpened]: z.object({
         accommodation_id: idSchema,
         locale: localeSchema,
-        message_count: countSchema.optional()
+        messages_count: countSchema.optional()
     }),
     [AnalyticsEvents.aiChatCapReached]: z.object({
         accommodation_id: idSchema,
         locale: localeSchema,
-        message_count: countSchema.optional()
+        messages_count: countSchema.optional()
     }),
     [AnalyticsEvents.aiChatMessageSent]: z.object({
         accommodation_id: idSchema,
         conversation_id: idSchema.nullable().optional(),
         locale: localeSchema,
-        message_count: countSchema.optional()
+        messages_count: countSchema.optional()
     }),
     [AnalyticsEvents.aiChatModerationBlocked]: z.object({
         accommodation_id: idSchema,

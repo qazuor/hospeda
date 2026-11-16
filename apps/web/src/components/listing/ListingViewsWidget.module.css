@@ -102,3 +102,24 @@
     font-size: var(--text-caption, 0.75rem);
     font-variant-numeric: tabular-nums;
 }
+
+.traffic {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid var(--border);
+}
+
+.trafficListing {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.trafficListingName {
+    margin: 0;
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}

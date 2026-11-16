@@ -6,9 +6,10 @@
 import type { StreamTextFinalMeta } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockPersist, mockSchedule } = vi.hoisted(() => ({
+const { mockPersist, mockSchedule, mockCaptureChatEvent } = vi.hoisted(() => ({
     mockPersist: vi.fn(),
-    mockSchedule: vi.fn()
+    mockSchedule: vi.fn(),
+    mockCaptureChatEvent: vi.fn()
 }));
 
 vi.mock('@repo/ai-core', () => ({ recordAiUsage: vi.fn().mockResolvedValue(undefined) }));
@@ -22,7 +23,7 @@ vi.mock('../../../../src/utils/ai-rate-overrides.js', () => ({
     loadModelRateOverrides: vi.fn().mockResolvedValue({})
 }));
 vi.mock('../../../../src/routes/ai/protected/chat.helpers.js', () => ({
-    captureChatEvent: vi.fn()
+    captureChatEvent: mockCaptureChatEvent
 }));
 
 import { finalizeChatTurn } from '../../../../src/routes/ai/protected/chat.finalize';
@@ -90,5 +91,35 @@ describe('finalizeChatTurn — answer classification (HOS-2101)', () => {
 
         expect(out.conversationId).toBeNull();
         expect(mockSchedule).not.toHaveBeenCalled();
+    });
+});
+
+describe('finalizeChatTurn — visitor attribution (HOS-2119 T-072)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockPersist.mockResolvedValue({
+            conversationId: 'conv-1',
+            userMessageId: 'user-1',
+            assistantMessageId: 'assistant-1'
+        });
+    });
+
+    it('forwards the request-time visitor to ai_chat_response_completed', async () => {
+        const visitor = { ip: '203.0.113.7', userAgent: 'UA/1' };
+
+        await finalizeChatTurn({ ...input('Sí.'), visitor });
+
+        expect(mockCaptureChatEvent).toHaveBeenCalledWith(
+            '33333333-3333-4333-8333-333333333333',
+            'ai_chat_response_completed',
+            expect.objectContaining({ provider: 'openai' }),
+            { visitor }
+        );
+    });
+
+    it('forwards no visitor when none was captured', async () => {
+        await finalizeChatTurn(input('Sí.'));
+
+        expect(mockCaptureChatEvent.mock.calls[0]?.[3]).toEqual({ visitor: undefined });
     });
 });

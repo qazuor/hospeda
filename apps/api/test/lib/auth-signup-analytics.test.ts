@@ -6,14 +6,14 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// PostHog capture spy — hoisted so it is available inside the vi.mock factory.
-const { mockPostHogCapture, mockGetPostHogClient } = vi.hoisted(() => ({
-    mockPostHogCapture: vi.fn(),
-    mockGetPostHogClient: vi.fn(() => ({ capture: mockPostHogCapture }))
+// analytics capture spy — hoisted so it is available inside the vi.mock factory.
+const { mockAnalyticsCapture, mockGetAnalyticsClient } = vi.hoisted(() => ({
+    mockAnalyticsCapture: vi.fn(),
+    mockGetAnalyticsClient: vi.fn(() => ({ capture: mockAnalyticsCapture }))
 }));
 
-vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: mockGetPostHogClient,
+vi.mock('../../src/lib/analytics-client', () => ({
+    getAnalyticsClient: mockGetAnalyticsClient,
     captureServerAnalyticsEvent: ({
         distinctId,
         name,
@@ -23,14 +23,14 @@ vi.mock('../../src/lib/posthog', () => ({
         name: string;
         properties: Record<string, unknown>;
     }) => {
-        const client = mockGetPostHogClient();
+        const client = mockGetAnalyticsClient();
         if (client) {
             client.capture({ distinctId, event: name, properties });
         }
     },
-    isPostHogEnabled: () => true,
-    shutdownPostHog: vi.fn(),
-    _resetPostHogClientForTests: vi.fn()
+    isAnalyticsEnabled: () => true,
+    shutdownAnalytics: vi.fn(),
+    _resetAnalyticsClientForTests: vi.fn()
 }));
 
 vi.mock('@repo/logger', () => ({
@@ -76,7 +76,7 @@ describe('captureSignupCompleted', () => {
             context: { path: '/callback/:id', params: { id: 'google' } }
         });
 
-        expect(mockPostHogCapture).toHaveBeenCalledWith({
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith({
             distinctId: 'user-1',
             event: 'sign_up_completed',
             properties: {
@@ -90,7 +90,7 @@ describe('captureSignupCompleted', () => {
     it('captures auth_method "email" for an email signup', () => {
         captureSignupCompleted({ userId: 'user-1', context: { path: '/sign-up/email' } });
 
-        expect(mockPostHogCapture).toHaveBeenCalledWith({
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith({
             distinctId: 'user-1',
             event: 'sign_up_completed',
             properties: {
@@ -101,8 +101,8 @@ describe('captureSignupCompleted', () => {
         });
     });
 
-    it('never throws when the PostHog client is unavailable (returns null)', () => {
-        mockGetPostHogClient.mockReturnValueOnce(null as never);
+    it('never throws when the analytics client is unavailable (returns null)', () => {
+        mockGetAnalyticsClient.mockReturnValueOnce(null as never);
 
         expect(() =>
             captureSignupCompleted({ userId: 'user-1', context: { path: '/sign-up/email' } })
@@ -110,8 +110,8 @@ describe('captureSignupCompleted', () => {
     });
 
     it('swallows a throwing capture so signup never fails', () => {
-        mockPostHogCapture.mockImplementationOnce(() => {
-            throw new Error('posthog down');
+        mockAnalyticsCapture.mockImplementationOnce(() => {
+            throw new Error('analytics down');
         });
 
         expect(() =>

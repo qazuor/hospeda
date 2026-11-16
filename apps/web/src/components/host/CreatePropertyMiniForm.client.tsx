@@ -43,7 +43,7 @@ import { CharacterCounter } from '@/components/ui/CharacterCounter';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { translateApiError } from '@/lib/api-errors';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';

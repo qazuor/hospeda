@@ -31,7 +31,7 @@
  * `@/lib/whats-new/render-markdown` to keep the integration suite light, the
  * same approach used in `WhatsNewModal.test.tsx`.
  *
- * `trackEvent` (PostHog) is mocked to avoid analytics noise.
+ * `trackEvent` (Umami) is mocked to avoid analytics noise.
  *
  * @see apps/admin/src/hooks/use-whats-new.ts              — shared hook (D10)
  * @see apps/admin/src/components/whats-new/WhatsNewBadge.tsx
@@ -65,10 +65,10 @@ vi.mock('@/lib/api/client', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// PostHog mock — no analytics noise in integration tests
+// Umami mock — no analytics noise in integration tests
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/analytics/posthog-client', () => ({
+vi.mock('@/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 

@@ -180,7 +180,7 @@ vi.mock('../../src/services/ai-cost-alert.service', () => ({
 }));
 
 // Mock the new observability sink so the factory test remains isolated from
-// Sentry / PostHog and the existing recordEvent assertions still pass.
+// Sentry / Umami and the existing recordEvent assertions still pass.
 vi.mock('../../src/services/ai-observability.service', () => ({
     createAiObservabilityRecordEvent: vi.fn(() => {
         // Return a thin wrapper that calls apiLogger.debug exactly as the old

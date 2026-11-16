@@ -16,7 +16,8 @@ import { describe, expect, it } from 'vitest';
 import type { MyPartnerStats } from '../../src/lib/api/endpoints-protected';
 import {
     resolvePartnerStatsCards,
-    resolvePartnerStatsView
+    resolvePartnerStatsView,
+    resolvePartnerTrafficId
 } from '../../src/lib/partner-stats-cards';
 
 const statsFor = (partner: Partial<NonNullable<MyPartnerStats['partner']>>): MyPartnerStats => ({
@@ -328,5 +329,45 @@ describe('resolvePartnerStatsView — gating is unchanged by the second window',
         expect(view.visible).toBe(true);
         expect(view.showViews).toBe(false);
         expect(view.showClicks).toBe(false);
+    });
+});
+
+describe('resolvePartnerTrafficId — HOS-2119 T-054 shares the views-card gate', () => {
+    it('returns the partner id when the partner has its own page', () => {
+        const stats = statsFor({ slug: 'bodega', hasPublicPage: true });
+
+        expect(resolvePartnerTrafficId({ stats, locale: 'es' })).toBe(stats.partner?.id);
+    });
+
+    it('agrees with showViews for every shape (never a section without a views card)', () => {
+        const shapes = [
+            statsFor({ slug: 'bodega', hasPublicPage: true }),
+            statsFor({ slug: 'bodega', websiteUrl: 'https://bodega.test', hasPublicPage: false }),
+            statsFor({ hasPublicPage: false })
+        ];
+
+        for (const stats of shapes) {
+            const { showViews } = resolvePartnerStatsCards({ stats, locale: 'es' });
+            expect(resolvePartnerTrafficId({ stats, locale: 'es' }) !== null).toBe(showViews);
+        }
+    });
+
+    it('returns null for an external-site partner without a public page (silver)', () => {
+        const stats = statsFor({
+            slug: 'bodega',
+            websiteUrl: 'https://bodega.test',
+            hasPublicPage: false
+        });
+
+        expect(resolvePartnerTrafficId({ stats, locale: 'es' })).toBeNull();
+    });
+
+    it('returns null for a partner with no page and no site', () => {
+        expect(resolvePartnerTrafficId({ stats: statsFor({}), locale: 'es' })).toBeNull();
+    });
+
+    it('returns null when the stats are unavailable or the fetch failed', () => {
+        expect(resolvePartnerTrafficId({ stats: { available: false }, locale: 'es' })).toBeNull();
+        expect(resolvePartnerTrafficId({ stats: null, locale: 'es' })).toBeNull();
     });
 });

@@ -27,6 +27,7 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
+        "isbot": "^5.2.3",
         "zod": "^4.0.8"
     },
     "devDependencies": {

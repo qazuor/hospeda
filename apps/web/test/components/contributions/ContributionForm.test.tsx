@@ -38,7 +38,7 @@ vi.mock('../../../src/lib/i18n', () => {
 
 const { trackEventMock } = vi.hoisted(() => ({ trackEventMock: vi.fn() }));
 
-vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+vi.mock('../../../src/lib/analytics/umami-client', () => ({
     trackEvent: trackEventMock
 }));
 

@@ -46,7 +46,7 @@ vi.mock('../../../src/components/shared/feedback/LoadingButton.module.css', () =
 
 const trackEventSpy = vi.fn();
 
-vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+vi.mock('../../../src/lib/analytics/umami-client', () => ({
     trackEvent: (...args: unknown[]) => trackEventSpy(...args)
 }));
 
@@ -882,7 +882,7 @@ describe('ContactHost', () => {
     });
 
     // -------------------------------------------------------------------------
-    // PostHog analytics — booking_request_sent (fires only on success)
+    // Umami analytics — booking_request_sent (fires only on success)
     // -------------------------------------------------------------------------
 
     describe('booking_request_sent analytics event', () => {
@@ -937,17 +937,18 @@ describe('ContactHost', () => {
             const bookingRequestCall = trackEventSpy.mock.calls.find(
                 (call) => call[0] === 'contact_owner_completed'
             );
-            expect(bookingRequestCall?.[1]).toEqual(
-                expect.objectContaining({
-                    accommodation_id: ACTIVE_ACCOMMODATION.id,
-                    destination_id: 'dest-colon',
-                    owner_id: 'owner-9',
-                    contact_method: 'platform_message',
-                    conversation_flow: 'anonymous',
-                    is_authenticated: false,
-                    locale: LOCALE
-                })
-            );
+            expect(bookingRequestCall?.[1]).toEqual({
+                accommodation_id: ACTIVE_ACCOMMODATION.id,
+                entity_id: ACTIVE_ACCOMMODATION.id,
+                entity_type: 'ACCOMMODATION',
+                destination_id: 'dest-colon',
+                owner_id: 'owner-9',
+                contact_method: 'platform_message',
+                conversation_flow: 'anonymous',
+                is_authenticated: false,
+                locale: LOCALE,
+                source_page: 'accommodation_detail'
+            });
         });
 
         it('Mode B: fires booking_request_sent when an authenticated conversation is created', async () => {
@@ -985,17 +986,18 @@ describe('ContactHost', () => {
             const bookingRequestCall = trackEventSpy.mock.calls.find(
                 (call) => call[0] === 'contact_owner_completed'
             );
-            expect(bookingRequestCall?.[1]).toEqual(
-                expect.objectContaining({
-                    accommodation_id: ACTIVE_ACCOMMODATION.id,
-                    destination_id: 'dest-colon',
-                    owner_id: 'owner-9',
-                    contact_method: 'platform_message',
-                    conversation_flow: 'authenticated',
-                    is_authenticated: true,
-                    locale: LOCALE
-                })
-            );
+            expect(bookingRequestCall?.[1]).toEqual({
+                accommodation_id: ACTIVE_ACCOMMODATION.id,
+                entity_id: ACTIVE_ACCOMMODATION.id,
+                entity_type: 'ACCOMMODATION',
+                destination_id: 'dest-colon',
+                owner_id: 'owner-9',
+                contact_method: 'platform_message',
+                conversation_flow: 'authenticated',
+                is_authenticated: true,
+                locale: LOCALE,
+                source_page: 'accommodation_detail'
+            });
         });
 
         it('does NOT fire booking_request_sent on a 409 duplicate response', async () => {
@@ -1042,17 +1044,18 @@ describe('ContactHost', () => {
             const duplicateCall = trackEventSpy.mock.calls.find(
                 (call) => call[0] === 'contact_owner_failed'
             );
-            expect(duplicateCall?.[1]).toEqual(
-                expect.objectContaining({
-                    accommodation_id: ACTIVE_ACCOMMODATION.id,
-                    destination_id: 'dest-colon',
-                    owner_id: 'owner-9',
-                    contact_method: 'platform_message',
-                    failure_reason: 'conversation_duplicate',
-                    is_authenticated: false,
-                    locale: LOCALE
-                })
-            );
+            expect(duplicateCall?.[1]).toEqual({
+                accommodation_id: ACTIVE_ACCOMMODATION.id,
+                entity_id: ACTIVE_ACCOMMODATION.id,
+                entity_type: 'ACCOMMODATION',
+                destination_id: 'dest-colon',
+                owner_id: 'owner-9',
+                contact_method: 'platform_message',
+                failure_reason: 'conversation_duplicate',
+                is_authenticated: false,
+                locale: LOCALE,
+                source_page: 'accommodation_detail'
+            });
         });
 
         it('fires conversation_rate_limited on a 429 response with retry_after', async () => {
@@ -1095,17 +1098,18 @@ describe('ContactHost', () => {
             const rateLimitedCall = trackEventSpy.mock.calls.find(
                 (call) => call[0] === 'contact_owner_failed'
             );
-            expect(rateLimitedCall?.[1]).toEqual(
-                expect.objectContaining({
-                    accommodation_id: ACTIVE_ACCOMMODATION.id,
-                    destination_id: 'dest-colon',
-                    owner_id: 'owner-9',
-                    is_authenticated: false,
-                    contact_method: 'platform_message',
-                    failure_reason: 'rate_limited:90',
-                    locale: LOCALE
-                })
-            );
+            expect(rateLimitedCall?.[1]).toEqual({
+                accommodation_id: ACTIVE_ACCOMMODATION.id,
+                entity_id: ACTIVE_ACCOMMODATION.id,
+                entity_type: 'ACCOMMODATION',
+                destination_id: 'dest-colon',
+                owner_id: 'owner-9',
+                is_authenticated: false,
+                contact_method: 'platform_message',
+                failure_reason: 'rate_limited:90',
+                locale: LOCALE,
+                source_page: 'accommodation_detail'
+            });
             expect(
                 trackEventSpy.mock.calls.some((call) => call[0] === 'contact_owner_completed')
             ).toBe(false);

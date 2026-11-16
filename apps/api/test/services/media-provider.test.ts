@@ -115,7 +115,8 @@ describe('getMediaProvider()', () => {
         process.env.HOSPEDA_EMAIL_FROM_EMAIL = 'noreply@hospeda.com.ar';
         process.env.HOSPEDA_SENTRY_DSN = 'https://test@sentry.io/1';
         process.env.HOSPEDA_LINEAR_API_KEY = 'lin_api_test';
-        process.env.HOSPEDA_POSTHOG_KEY = 'phc_test';
+        process.env.HOSPEDA_UMAMI_URL = 'https://stats.example.com';
+        process.env.HOSPEDA_UMAMI_WEBSITE_ID_WEB = '11111111-1111-4111-8111-111111111111';
         process.env.HOSPEDA_APIFY_TOKEN = 'apify_api_test';
         process.env.HOSPEDA_GOOGLE_PLACES_API_KEY = 'google-places-test';
 

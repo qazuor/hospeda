@@ -38,17 +38,17 @@ import { admin } from 'better-auth/plugins';
 import { claimPartnerOnEmailVerification } from '../services/partner-application/partner-claim.service';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
+import { captureServerAnalyticsEvent } from './analytics-client';
 import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { buildMcpOAuthConfig } from './auth-mcp-oauth';
 import { getMcpOAuthAdapterSchema } from './auth-mcp-oauth-schema';
 import { recordPasswordResetForAiConnections } from './auth-password-reset-ai-review';
-import { captureSignupCompleted } from './auth-signup-analytics';
+import { captureSignupCompleted, resolveSignInVisitor } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 import { AUTH_BASE_PATH } from './mcp-well-known';
-import { captureServerAnalyticsEvent } from './posthog';
 import { resolveSessionAuthMethod } from './session-auth-method';
 import { resolveVerificationUrl } from './verification-callback';
 
@@ -730,8 +730,9 @@ function buildAuth() {
                             }
                         };
                     },
-                    after: async (session) => {
+                    after: async (session, context) => {
                         try {
+                            const visitor = resolveSignInVisitor({ session, context });
                             const db = getDb();
                             const rows = await db
                                 .select({ role: userRole.role })
@@ -748,7 +749,8 @@ function buildAuth() {
                                     role:
                                         effectiveRoles.length === 1 ? effectiveRoles[0] : undefined,
                                     user_type: resolveAnalyticsUserType(effectiveRoles)
-                                }
+                                },
+                                ...(visitor ? { visitor } : {})
                             });
                         } catch (error) {
                             logger.warn(
@@ -833,7 +835,7 @@ function buildAuth() {
                         // here would skip the onboarding funnel state transition.
                         await grantBaselineUserRole({ userId: user.id, email: user.email });
 
-                        // Product analytics: signup_completed (PostHog). Fired
+                        // Product analytics: signup_completed (Umami). Fired
                         // server-side so it covers BOTH email and OAuth signups
                         // uniformly (the OAuth flow is a full redirect that
                         // unmounts the web form) and exactly once per new user.

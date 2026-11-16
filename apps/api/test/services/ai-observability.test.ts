@@ -8,13 +8,13 @@
  *    breadcrumb and the raw email ABSENT.
  * 2. `exhausted` → Sentry captureMessage called with feature tag.
  * 3. `moderation_error` → Sentry captureMessage called with scrubbed message.
- * 4. `moderation_blocked` → NO Sentry capture, PostHog event emitted.
- * 5. `success` → PostHog `ai_feature_used` {feature, provider} event emitted.
- * 6. Sink disabled (no PostHog key / Sentry off) → no throws, no calls.
- * 7. Sink internal failure (PostHog capture throws) → swallowed, callback returns normally.
+ * 4. `moderation_blocked` → NO Sentry capture, Umami event emitted.
+ * 5. `success` → Umami `ai_feature_used` {feature, provider} event emitted.
+ * 6. Sink disabled (no Umami config / Sentry off) → no throws, no calls.
+ * 7. Sink internal failure (Umami capture throws) → swallowed, callback returns normally.
  * 8. Factory wiring: `createConfiguredAiService` uses the new observability sink.
- * 9. `kill_switch` → Sentry breadcrumb (info level) + PostHog `ai_kill_switch_hit`.
- * 10. `fallback` → PostHog `ai_fallback` event emitted alongside the breadcrumb.
+ * 9. `kill_switch` → Sentry breadcrumb (info level) + Umami `ai_kill_switch_hit`.
+ * 10. `fallback` → Umami `ai_fallback` event emitted alongside the breadcrumb.
  *
  * @module test/services/ai-observability
  */
@@ -30,13 +30,13 @@ const {
     mockSentryCaptureException,
     mockSentryCaptureMessage,
     mockIsSentryEnabled,
-    mockPostHogCapture,
-    mockGetPostHogClient,
+    mockAnalyticsCapture,
+    mockGetAnalyticsClient,
     mockApiLogger
 } = vi.hoisted(() => {
-    const mockPostHogCapture = vi.fn();
-    const mockGetPostHogClient = vi.fn().mockReturnValue({
-        capture: mockPostHogCapture
+    const mockAnalyticsCapture = vi.fn();
+    const mockGetAnalyticsClient = vi.fn().mockReturnValue({
+        capture: mockAnalyticsCapture
     });
 
     return {
@@ -44,8 +44,8 @@ const {
         mockSentryCaptureException: vi.fn(),
         mockSentryCaptureMessage: vi.fn(),
         mockIsSentryEnabled: vi.fn().mockReturnValue(true),
-        mockPostHogCapture,
-        mockGetPostHogClient,
+        mockAnalyticsCapture,
+        mockGetAnalyticsClient,
         mockApiLogger: {
             debug: vi.fn(),
             info: vi.fn(),
@@ -68,8 +68,8 @@ vi.mock('../../src/lib/sentry', () => ({
     }
 }));
 
-vi.mock('../../src/lib/posthog', () => ({
-    getPostHogClient: mockGetPostHogClient
+vi.mock('../../src/lib/analytics-client', () => ({
+    getAnalyticsClient: mockGetAnalyticsClient
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -103,7 +103,7 @@ async function flushAsync(): Promise<void> {
 beforeEach(() => {
     vi.clearAllMocks();
     mockIsSentryEnabled.mockReturnValue(true);
-    mockGetPostHogClient.mockReturnValue({ capture: mockPostHogCapture });
+    mockGetAnalyticsClient.mockReturnValue({ capture: mockAnalyticsCapture });
 });
 
 afterEach(() => {
@@ -171,7 +171,7 @@ describe('fallback event', () => {
         expect(mockSentryCaptureException).not.toHaveBeenCalled();
     });
 
-    it('should emit PostHog ai_fallback event alongside the breadcrumb', async () => {
+    it('should emit Umami ai_fallback event alongside the breadcrumb', async () => {
         // Arrange
         const sink = createAiObservabilityRecordEvent();
 
@@ -186,7 +186,7 @@ describe('fallback event', () => {
         await flushAsync();
 
         // Assert
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
             expect.objectContaining({
                 event: 'ai_fallback',
                 properties: expect.objectContaining({
@@ -227,7 +227,7 @@ describe('exhausted event', () => {
         expect(options.tags.feature).toBe('text_improve');
     });
 
-    it('should emit PostHog ai_call_exhausted event', async () => {
+    it('should emit Umami ai_call_exhausted event', async () => {
         // Arrange
         const sink = createAiObservabilityRecordEvent();
 
@@ -236,7 +236,7 @@ describe('exhausted event', () => {
         await flushAsync();
 
         // Assert
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
             expect.objectContaining({
                 event: 'ai_call_exhausted',
                 properties: expect.objectContaining({ feature: 'text_improve' })
@@ -277,7 +277,7 @@ describe('moderation_error event', () => {
         expect(options.level).toBe('warning');
     });
 
-    it('should NOT emit a PostHog event for moderation_error', async () => {
+    it('should NOT emit a Umami event for moderation_error', async () => {
         // Arrange
         const sink = createAiObservabilityRecordEvent();
 
@@ -291,12 +291,12 @@ describe('moderation_error event', () => {
         await flushAsync();
 
         // Assert
-        expect(mockPostHogCapture).not.toHaveBeenCalled();
+        expect(mockAnalyticsCapture).not.toHaveBeenCalled();
     });
 });
 
 // ---------------------------------------------------------------------------
-// 4. moderation_blocked — NO Sentry, PostHog event emitted
+// 4. moderation_blocked — NO Sentry, Umami event emitted
 // ---------------------------------------------------------------------------
 
 describe('moderation_blocked event', () => {
@@ -319,7 +319,7 @@ describe('moderation_blocked event', () => {
         expect(mockSentryAddBreadcrumb).not.toHaveBeenCalled();
     });
 
-    it('should emit PostHog ai_moderation_blocked event with feature, direction, categories', async () => {
+    it('should emit Umami ai_moderation_blocked event with feature, direction, categories', async () => {
         // Arrange
         const categories = { hate: true, violence: false };
         const sink = createAiObservabilityRecordEvent();
@@ -334,7 +334,7 @@ describe('moderation_blocked event', () => {
         await flushAsync();
 
         // Assert
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
             expect.objectContaining({
                 event: 'ai_moderation_blocked',
                 properties: expect.objectContaining({
@@ -348,11 +348,11 @@ describe('moderation_blocked event', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 5. success — PostHog ai_feature_used {feature, provider}
+// 5. success — Umami ai_feature_used {feature, provider}
 // ---------------------------------------------------------------------------
 
 describe('success event', () => {
-    it('should emit PostHog ai_feature_used with feature and provider', async () => {
+    it('should emit Umami ai_feature_used with feature and provider', async () => {
         // Arrange
         const sink = createAiObservabilityRecordEvent();
 
@@ -361,7 +361,7 @@ describe('success event', () => {
         await flushAsync();
 
         // Assert
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
             expect.objectContaining({
                 event: 'ai_feature_used',
                 properties: expect.objectContaining({
@@ -391,11 +391,11 @@ describe('success event', () => {
 // 6. Sink disabled — no throws, no external calls
 // ---------------------------------------------------------------------------
 
-describe('sink disabled (Sentry off, PostHog unavailable)', () => {
-    it('should not throw and not call any Sentry/PostHog function when both are off', async () => {
+describe('sink disabled (Sentry off, Umami unavailable)', () => {
+    it('should not throw and not call any Sentry/Umami function when both are off', async () => {
         // Arrange
         mockIsSentryEnabled.mockReturnValue(false);
-        mockGetPostHogClient.mockReturnValue(null);
+        mockGetAnalyticsClient.mockReturnValue(null);
 
         const sink = createAiObservabilityRecordEvent();
 
@@ -422,7 +422,7 @@ describe('sink disabled (Sentry off, PostHog unavailable)', () => {
         expect(mockSentryAddBreadcrumb).not.toHaveBeenCalled();
         expect(mockSentryCaptureException).not.toHaveBeenCalled();
         expect(mockSentryCaptureMessage).not.toHaveBeenCalled();
-        expect(mockPostHogCapture).not.toHaveBeenCalled();
+        expect(mockAnalyticsCapture).not.toHaveBeenCalled();
     });
 });
 
@@ -431,10 +431,10 @@ describe('sink disabled (Sentry off, PostHog unavailable)', () => {
 // ---------------------------------------------------------------------------
 
 describe('sink internal failure', () => {
-    it('should swallow PostHog capture errors and return normally', async () => {
-        // Arrange — PostHog capture throws.
-        mockPostHogCapture.mockImplementation(function () {
-            throw new Error('PostHog network error');
+    it('should swallow Umami capture errors and return normally', async () => {
+        // Arrange — Umami capture throws.
+        mockAnalyticsCapture.mockImplementation(function () {
+            throw new Error('Umami network error');
         });
 
         const sink = createAiObservabilityRecordEvent();
@@ -473,7 +473,7 @@ describe('factory wiring', () => {
         // contract from the existing factory test suite: recordEvent is a
         // function AND it calls apiLogger.debug. That is sufficient to confirm
         // the new sink is wired (since the old inline lambda only called
-        // apiLogger.debug, but the new sink additionally fans out to Sentry/PostHog).
+        // apiLogger.debug, but the new sink additionally fans out to Sentry/Umami).
         //
         // The definitive wiring verification is in the factory unit test (test 9).
         // Here we just confirm the sink factory itself is a named function.
@@ -512,7 +512,7 @@ describe('kill_switch event', () => {
         expect(breadcrumbArg.data.feature).toBe('text_improve');
     });
 
-    it('should emit PostHog ai_kill_switch_hit event', async () => {
+    it('should emit Umami ai_kill_switch_hit event', async () => {
         // Arrange
         const sink = createAiObservabilityRecordEvent();
 
@@ -521,7 +521,7 @@ describe('kill_switch event', () => {
         await flushAsync();
 
         // Assert
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
             expect.objectContaining({
                 event: 'ai_kill_switch_hit',
                 properties: expect.objectContaining({ feature: 'text_improve' })

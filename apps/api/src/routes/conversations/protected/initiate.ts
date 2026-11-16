@@ -29,8 +29,8 @@ import {
     MessageService,
     ServiceError
 } from '@repo/service-core';
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';
@@ -40,6 +40,7 @@ import {
     createResponse,
     handleRouteError
 } from '../../../utils/response-helpers';
+import { getVisitorContext } from '../../../utils/visitor-context';
 
 /** System-level actor used when calling services that require conversation permissions. */
 const SYSTEM_ACTOR = createSystemActor({
@@ -100,6 +101,7 @@ router.post('/', async (c) => {
         const body = parseResult.data;
         const actor = getActorFromContext(c);
         const analyticsContext = await resolveAccommodationAnalyticsContext(body.accommodationId);
+        const visitor = getVisitorContext(c);
 
         const conversationSvc = new ConversationService(
             { logger: apiLogger },
@@ -134,7 +136,8 @@ router.post('/', async (c) => {
                             : initiateResult.error.code.toLowerCase(),
                     is_authenticated: true,
                     locale: body.locale
-                }
+                },
+                ...(visitor ? { visitor } : {})
             });
 
             throw new ServiceError(
@@ -168,7 +171,8 @@ router.post('/', async (c) => {
                     conversation_flow: 'authenticated',
                     is_authenticated: true,
                     locale: body.locale
-                }
+                },
+                ...(visitor ? { visitor } : {})
             });
 
             return createResponse(
@@ -206,7 +210,8 @@ router.post('/', async (c) => {
                 conversation_flow: 'authenticated',
                 is_authenticated: true,
                 locale: body.locale
-            }
+            },
+            ...(visitor ? { visitor } : {})
         });
 
         return createResponse(
