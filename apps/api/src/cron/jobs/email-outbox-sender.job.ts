@@ -310,6 +310,7 @@ export function createEmailOutboxSenderJob(
                     });
                 }
 
+                let sentSuccessionNoticeId: string | undefined;
                 const stats = await processEmailOutboxBatch({
                     deps: {
                         ...deps,
@@ -359,28 +360,7 @@ export function createEmailOutboxSenderJob(
                         },
                         onSent: async ({ row }) => {
                             if (row.template !== 'billing.succession-predecessor-cancel') return;
-                            try {
-                                const summary = await (
-                                    input.reevaluateSuccession ??
-                                    reevaluateActiveSuccessionPredecessors
-                                )();
-                                ctx.logger.info(
-                                    'Succession predecessor retried after notice delivery',
-                                    {
-                                        outboxId: row.id,
-                                        summary
-                                    }
-                                );
-                            } catch (error) {
-                                ctx.logger.error(
-                                    'Succession predecessor retry after notice delivery failed',
-                                    {
-                                        outboxId: row.id,
-                                        error:
-                                            error instanceof Error ? error.message : String(error)
-                                    }
-                                );
-                            }
+                            sentSuccessionNoticeId = row.id;
                         }
                     },
                     owner: `email-outbox-sender:${randomUUID()}`,
@@ -388,6 +368,26 @@ export function createEmailOutboxSenderJob(
                     leaseMs: EMAIL_OUTBOX_LEASE_MS,
                     batchSize: EMAIL_OUTBOX_BATCH_SIZE
                 });
+
+                if (sentSuccessionNoticeId) {
+                    try {
+                        const summary = await (
+                            input.reevaluateSuccession ?? reevaluateActiveSuccessionPredecessors
+                        )();
+                        ctx.logger.info('Succession predecessor retried after notice delivery', {
+                            outboxId: sentSuccessionNoticeId,
+                            summary
+                        });
+                    } catch (error) {
+                        ctx.logger.error(
+                            'Succession predecessor retry after notice delivery failed',
+                            {
+                                outboxId: sentSuccessionNoticeId,
+                                error: error instanceof Error ? error.message : String(error)
+                            }
+                        );
+                    }
+                }
 
                 ctx.logger.info('Email outbox batch processed', { ...stats });
                 return result({

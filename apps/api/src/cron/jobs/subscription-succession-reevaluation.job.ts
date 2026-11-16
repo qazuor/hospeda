@@ -1,4 +1,4 @@
-import { reevaluateActiveSuccessionPredecessors } from '../../utils/reevaluate-succession.js';
+import { reevaluateActiveSuccessionPredecessors as reevaluateSuccessionPredecessors } from '../../utils/reevaluate-succession.js';
 import type { CronJobDefinition } from '../types.js';
 
 /** Retries S17 and reissues deferred courtesy when its predecessor closes. */
@@ -22,7 +22,7 @@ export const subscriptionSuccessionReevaluationJob: CronJobDefinition = {
             };
         }
         try {
-            const summary = await reevaluateActiveSuccessionPredecessors();
+            const summary = await reevaluateSuccessionPredecessors();
             logger.info('Succession reevaluation completed', { summary });
             return {
                 success: true,
