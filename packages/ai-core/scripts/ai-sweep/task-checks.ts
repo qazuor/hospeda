@@ -159,6 +159,28 @@ const MARKDOWN = /(^|\n)\s*(#{1,6} |[-*+] |\d+\. )|\*\*|```|(^|\s)__\S/;
 const HTML_TAG = /<(p|h[1-6]|ul|ol|li|strong|em|br|section|article|blockquote)[\s>/]/i;
 const DECLINE_EN_PT =
     /(I can only|I can't help|I cannot help|I'm only able|outside (my|the) scope|só posso|não posso ajudar|fora do (meu )?escopo)/i;
+/**
+ * Reads a one-word classifier verdict exactly as production's
+ * `parseClassifierVerdict` (apps/api/src/services/ai-chat-answer-classifier.ts)
+ * does: uppercase, letters only, `UNANSWERED` before `ANSWERED`, anything else
+ * `null`. ai-core may not import apps/api, so the apps/api parity test runs
+ * both parsers over the same table.
+ *
+ * @param input.text - The raw model output.
+ * @returns `{ verdict }`.
+ */
+export function parseAnswerVerdict(input: { readonly text: string }): {
+    readonly verdict: 'answered' | 'unanswered' | null;
+} {
+    const normalized = input.text
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z]/g, '');
+    if (normalized === 'UNANSWERED') return { verdict: 'unanswered' };
+    if (normalized === 'ANSWERED') return { verdict: 'answered' };
+    return { verdict: null };
+}
+
 const PLACEHOLDER_TOKEN = /\{\{\{HOSPEDA_URL_\d+\}\}\}/g;
 
 const normalize = (s: string): string =>
@@ -193,6 +215,10 @@ export function checkText(input: {
         out[`maxChars ${checks.maxChars}`] = text.length <= checks.maxChars;
     if (checks.noPreamble) out.noPreamble = !PREAMBLE.test(text) && !WRAPPED_IN_QUOTES.test(text);
     if (checks.noMarkdown) out.noMarkdown = !MARKDOWN.test(text);
+    if (checks.expectVerdict !== undefined) {
+        out[`verdict: ${checks.expectVerdict}`] =
+            parseAnswerVerdict({ text }).verdict === checks.expectVerdict;
+    }
     if (checks.mustEqual !== undefined) out.exactText = text.trim() === checks.mustEqual.trim();
     for (const literal of checks.preserve) out[`preserve: ${literal}`] = text.includes(literal);
     if (input.placeholders.length > 0) {

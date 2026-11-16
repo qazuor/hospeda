@@ -47,6 +47,24 @@ describe('HOS-2217 migration config', () => {
         ]);
     });
 
+    it('carries the production 30-day volumes measured 2026-11-15 and the quota tiers', () => {
+        // Act
+        const volumes = Object.fromEntries(
+            Object.entries(config.features).map(([f, c]) => [f, c.monthlyCalls])
+        );
+
+        // Assert
+        expect(volumes).toMatchObject({
+            chat: 15,
+            chat_answer_classifier: 12,
+            search: 4,
+            faq_draft: 1,
+            translate: 0,
+            support: 0
+        });
+        expect(config.monthlyQuotas).toEqual([20, 50, 100, 250, 1250]);
+    });
+
     it('configures every AI feature', () => {
         // Assert
         expect(Object.keys(config.features).sort()).toEqual([...MIGRATION_FEATURES].sort());
@@ -234,7 +252,8 @@ describe('HOS-2217 migration report', () => {
 
         // Act
         const { featureRows, overallRows } = aggregateMigration({ results, config: narrowed });
-        const md = renderMigrationReport({ featureRows, overallRows });
+        const { quotas } = aggregateMigration({ results, config: narrowed });
+        const md = renderMigrationReport({ featureRows, overallRows, quotas });
 
         // Assert
         const base = featureRows.find((r) => r.variantKey === 'gpt-5.4-nano | none');
@@ -247,6 +266,9 @@ describe('HOS-2217 migration report', () => {
             overallRows.find((r) => r.variantKey === 'gpt-5-nano | minimal')?.costVsBaseline
         ).toBeCloseTo(0.5, 6);
         expect(md).toContain('## support');
+        expect(base?.quotaCostUsd[100]).toBeCloseTo(0.1, 6);
+        expect(md).toContain('## Quota projection');
+        expect(md).toContain('USD/mo @1250');
     });
 
     it('re-checking stored results re-scores them with the current checks', () => {

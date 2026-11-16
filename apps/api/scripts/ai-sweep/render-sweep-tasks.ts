@@ -1,6 +1,9 @@
 /**
  * Renders the provider request of every non-chat AI sweep case (HOS-2217).
  *
+ * `render-sweep-tasks.ts` is a library, never run directly. It runs through the
+ * generator: `CI=true pnpm --filter hospeda-api exec tsx scripts/ai-sweep/generate-sweep-tasks.ts`.
+ *
  * The sweep in `packages/ai-core/scripts/ai-sweep` stores each case's raw route
  * input (`task-fixtures/<feature>.json`). This module turns that input into the
  * exact engine request the production route hands `aiService`, calling the
@@ -16,6 +19,7 @@
  * | `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`                            |
  * | `faq_draft`            | the chat context builders + `buildChatSystemMessage` + `buildFaqDraftRequest` |
  * | `support`              | none: no production route calls it (engine defaults only)           |
+ * | `chat_answer_classifier` | `buildChatAnswerClassifierRequest` (runs on the chat feature)     |
  *
  * It also serializes each output schema with the AI SDK's own conversion
  * (`toSdkJsonSchema`, imported from the sweep by relative path because `ai` is
@@ -49,6 +53,7 @@ import {
 } from '../../src/routes/ai/protected/search-chat.prompt.js';
 import { sanitizeSearchIntentEntities } from '../../src/routes/ai/protected/search-intent.mapper.js';
 import { buildTextImprovePrompt } from '../../src/routes/ai/protected/text-improve.prompt.js';
+import { buildChatAnswerClassifierRequest } from '../../src/services/ai-chat-answer-classifier.js';
 import { buildChatSystemMessage } from '../../src/services/ai-context/owner-data-fence.js';
 import { buildFaqDraftRequest } from '../../src/services/ai-faq-draft.service.js';
 import { buildTranslationPrompt, protectUrls } from '../../src/services/ai-translate.service.js';
@@ -93,7 +98,15 @@ export const TASK_INPUT_SCHEMAS = {
         locale: LocaleSchema,
         question: z.string().min(1)
     }),
-    support: z.object({ locale: LocaleSchema, message: z.string().min(1), history: HistorySchema })
+    support: z.object({ locale: LocaleSchema, message: z.string().min(1), history: HistorySchema }),
+    chat_answer_classifier: z.object({
+        /** The vertical's chat feature: the classifier runs on its configured model. */
+        feature: z.enum(['chat', 'chat_venue', 'chat_experience']),
+        locale: LocaleSchema,
+        question: z.string(),
+        /** The bot's reply being classified (may be empty in a trap case). */
+        answer: z.string()
+    })
 } as const;
 
 /** A call kind the renderer knows. */
@@ -305,6 +318,18 @@ export function renderTask(input: {
                     schemaId: 'faq_draft',
                     placeholders: [],
                     groundingText: context
+                }
+            };
+        }
+        case 'chat_answer_classifier': {
+            const i = TASK_INPUT_SCHEMAS.chat_answer_classifier.parse(input.input);
+            const { request } = buildChatAnswerClassifierRequest(i);
+            return {
+                rendered: {
+                    mode: 'text',
+                    stream: false,
+                    request: { ...request, params: { ...request.params } },
+                    ...none
                 }
             };
         }

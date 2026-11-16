@@ -21,7 +21,8 @@ import { loadTaskCases } from '../scripts/ai-sweep/load-cases.js';
 import {
     checkTaskAnswer,
     evaluateExpectation,
-    listLeafPaths
+    listLeafPaths,
+    parseAnswerVerdict
 } from '../scripts/ai-sweep/task-checks.js';
 import {
     GeneratedTasksFileSchema,
@@ -369,5 +370,30 @@ describe('HOS-2217 text answer checks', () => {
         // Assert
         expect(result.checks.decline).toBe(false);
         expect(result.checks['notClaim: wrote the essay']).toBe(false);
+    });
+
+    it('chat_answer_classifier: the parsed verdict must match, prose is no verdict', () => {
+        // Arrange
+        const task = taskCase('chat_answer_classifier-not-in-listing');
+
+        // Act
+        const right = checkTaskAnswer({ task, text: ' unanswered. ' });
+        const wrong = checkTaskAnswer({ task, text: 'ANSWERED' });
+        const prose = checkTaskAnswer({ task, text: 'The reply is UNANSWERED because...' });
+
+        // Assert
+        expect(right.allPass).toBe(true);
+        expect(wrong.checks['verdict: unanswered']).toBe(false);
+        expect(prose.checks['verdict: unanswered']).toBe(false);
+    });
+
+    it('parseAnswerVerdict tests UNANSWERED before ANSWERED', () => {
+        // Act
+        const verdicts = ['UNANSWERED', 'Answered', '', 'maybe'].map(
+            (text) => parseAnswerVerdict({ text }).verdict
+        );
+
+        // Assert
+        expect(verdicts).toEqual(['unanswered', 'answered', null, null]);
     });
 });

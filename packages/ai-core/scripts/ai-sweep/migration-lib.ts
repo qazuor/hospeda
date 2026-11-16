@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { type PromptCase, SWEEP_FEATURES } from './cases.js';
 import {
     approxTokens,
+    DEFAULT_MONTHLY_QUOTAS,
     estimateCostUsd,
     type Grade,
     percentile,
@@ -73,6 +74,12 @@ export const MigrationConfigSchema = z.object({
     repetitions: z.number().int().positive().default(1),
     concurrency: z.number().int().positive().default(2),
     maxCalls: z.number().int().positive(),
+    /**
+     * Monthly answer quotas (per account) for the quota-based projection, the
+     * same one the chat sweep uses: cost per answer x quota. It stays useful
+     * while measured production volumes are too small to project from.
+     */
+    monthlyQuotas: z.array(z.number().int().positive()).default([...DEFAULT_MONTHLY_QUOTAS]),
     /** Features to run. A feature missing here is not run. */
     features: z.partialRecord(z.enum(MIGRATION_FEATURES), FeatureSettingsSchema)
 });

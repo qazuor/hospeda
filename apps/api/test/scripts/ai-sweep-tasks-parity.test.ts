@@ -23,6 +23,7 @@ import {
 import { stripHtmlToText } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
 import { toSdkJsonSchema } from '../../../../packages/ai-core/scripts/ai-sweep/sdk-json-schema.js';
+import { parseAnswerVerdict } from '../../../../packages/ai-core/scripts/ai-sweep/task-checks.js';
 import { SWEEP_DIR } from '../../scripts/ai-sweep/generate-sweep-contexts.js';
 import { buildGeneratedTasksFile } from '../../scripts/ai-sweep/generate-sweep-tasks.js';
 import {
@@ -32,6 +33,13 @@ import {
 import { buildPostGeneratePrompt } from '../../src/routes/ai/admin/post-generate.js';
 import { buildConversationalSearchPrompt } from '../../src/routes/ai/protected/search-chat.prompt.js';
 import { buildTextImprovePrompt } from '../../src/routes/ai/protected/text-improve.js';
+import {
+    buildChatAnswerClassifierRequest,
+    CLASSIFIER_MAX_OUTPUT_TOKENS,
+    parseClassifierVerdict
+} from '../../src/services/ai-chat-answer-classifier.js';
+import { buildChatSystemMessage } from '../../src/services/ai-context/owner-data-fence.js';
+import { buildFaqDraftRequest } from '../../src/services/ai-faq-draft.service.js';
 import { buildTranslationPrompt, protectUrls } from '../../src/services/ai-translate.service.js';
 
 interface StoredCase {
@@ -193,18 +201,74 @@ describe('HOS-2217 sweep task requests are the production requests', () => {
         });
     });
 
-    it('faq_draft: fixed production params and the plain visitor-question prompt', () => {
+    it('faq_draft: the full production request, instruction suffix included', () => {
         // Arrange
-        const input = fixtureInput('faq_draft', 'faq_draft-pets-missing') as { question: string };
-
-        // Act
+        const input = fixtureInput('faq_draft', 'faq_draft-pets-missing') as {
+            question: string;
+            locale: 'es' | 'en' | 'pt';
+        };
         const c = stored('faq_draft-pets-missing');
 
+        // Act: the chat assemblers build the FAQ system message with an empty prompt.
+        const { request } = buildFaqDraftRequest({
+            systemMessage: buildChatSystemMessage(c.groundingText, '', input.locale),
+            question: input.question,
+            locale: input.locale
+        });
+
         // Assert
-        expect(c.request.params).toEqual({ maxTokens: 1024, temperature: 0 });
-        expect(c.request.prompt).toBe(`Visitor question: ${input.question}`);
+        expect(request).not.toBeNull();
+        expect(c.request).toEqual({ ...request, params: { ...request?.params } });
         expect(c.groundingText.length).toBeGreaterThan(100);
-        expect(String(c.request.systemPrompt).startsWith(c.groundingText)).toBe(true);
+        expect(String(c.request.systemPrompt)).toMatch(
+            /Create an editable answer using only the listing context above\. If it lacks the requested fact, return hasData=false and an empty draft\./
+        );
+        expect(c.request.params).toEqual({ maxTokens: 1024, temperature: 0 });
+    });
+
+    it('chat_answer_classifier: the production request on the chat feature, every case', () => {
+        // Arrange
+        const file = JSON.parse(read('task-fixtures/chat_answer_classifier.json')) as {
+            cases: { id: string; input: Parameters<typeof buildChatAnswerClassifierRequest>[0] }[];
+        };
+        expect(file.cases.length).toBeGreaterThan(0);
+
+        // Act / Assert
+        for (const fixture of file.cases) {
+            const { request } = buildChatAnswerClassifierRequest(fixture.input);
+            const c = stored(fixture.id);
+            expect(c.mode).toBe('text');
+            expect(c.request).toEqual({ ...request, params: { ...request.params } });
+        }
+        expect(stored('chat_answer_classifier-clearly-answered').request.params).toEqual({
+            maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS,
+            temperature: 0
+        });
+        expect(stored('chat_answer_classifier-contact-owner-only').request.feature).toBe(
+            'chat_venue'
+        );
+    });
+
+    it('chat_answer_classifier: the sweep verdict parser equals the production parser', () => {
+        // Arrange
+        const outputs = [
+            'ANSWERED',
+            'UNANSWERED',
+            ' unanswered. ',
+            'Answered!',
+            '',
+            'The reply is ANSWERED',
+            'UN-ANSWERED',
+            'ANSWERED UNANSWERED',
+            'respondida'
+        ];
+
+        // Act
+        const sweep = outputs.map((text) => parseAnswerVerdict({ text }).verdict);
+        const production = outputs.map((text) => parseClassifierVerdict({ text }).verdict);
+
+        // Assert
+        expect(sweep).toEqual(production);
     });
 
     it('support: engine defaults only (no caller system), since no route calls it', () => {

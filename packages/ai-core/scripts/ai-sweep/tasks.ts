@@ -24,11 +24,33 @@ export const TASK_FEATURES = [
     'post_generate',
     'accommodation_import',
     'faq_draft',
-    'support'
+    'support',
+    'chat_answer_classifier'
 ] as const;
 
 /** One non-chat feature. */
 export type TaskFeature = (typeof TASK_FEATURES)[number];
+
+/**
+ * The `feature` an engine request is routed and configured under. It differs
+ * from the sweep feature for `chat_answer_classifier`, which is metered under
+ * its own key but runs on the vertical's CHAT feature (its configured model).
+ */
+export const ENGINE_FEATURES = [
+    'chat',
+    'chat_venue',
+    'chat_experience',
+    'search',
+    'translate',
+    'text_improve',
+    'post_generate',
+    'accommodation_import',
+    'faq_draft',
+    'support'
+] as const;
+
+/** One engine feature. */
+export type EngineFeature = (typeof ENGINE_FEATURES)[number];
 
 /**
  * The production call a case exercises. `search` makes two calls per request
@@ -42,7 +64,8 @@ export const TASK_CALLS = [
     'post_generate',
     'accommodation_import',
     'faq_draft',
-    'support'
+    'support',
+    'chat_answer_classifier'
 ] as const;
 
 /** One call kind. */
@@ -57,7 +80,8 @@ export const FEATURE_OF_CALL: Readonly<Record<TaskCall, TaskFeature>> = {
     post_generate: 'post_generate',
     accommodation_import: 'accommodation_import',
     faq_draft: 'faq_draft',
-    support: 'support'
+    support: 'support',
+    chat_answer_classifier: 'chat_answer_classifier'
 };
 
 /** One expectation on a field of a structured answer (dot path, `[n]` not supported). */
@@ -104,6 +128,12 @@ export const TaskChecksSchema = z.object({
     noPreamble: z.boolean().default(false),
     /** No markdown headings, bold, lists or fences. */
     noMarkdown: z.boolean().default(false),
+    /**
+     * `chat_answer_classifier`: the verdict the one-word answer must parse to
+     * (`parseAnswerVerdict`, kept equal to production's parser by the apps/api
+     * parity test).
+     */
+    expectVerdict: z.enum(['answered', 'unanswered']).optional(),
     /** The answer must equal this text exactly (after trimming), e.g. a proper name. */
     mustEqual: z.string().optional(),
     /** Literal substrings that must survive verbatim (numbers, names). */
@@ -152,7 +182,7 @@ export const TaskFixtureFileSchema = z.object({
 
 /** The engine request a route hands `aiService` (before the engine injects anything). */
 export const EngineRequestSchema = z.object({
-    feature: z.enum(TASK_FEATURES),
+    feature: z.enum(ENGINE_FEATURES),
     locale: z.enum(['es', 'en', 'pt']),
     prompt: z.string().min(1).optional(),
     messages: z

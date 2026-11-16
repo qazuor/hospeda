@@ -145,6 +145,7 @@ describe('HOS-2217 sweep provider requests equal the engine output', () => {
             const captured: unknown[] = [];
             const engine = createAiEngine({ getProvider: () => capturingProvider(captured) });
             const mismatches: string[] = [];
+            expect(cases.length).toBeGreaterThan(0);
 
             // Act
             for (const c of cases) {
@@ -195,6 +196,8 @@ describe('HOS-2217 sweep SDK options equal the OpenAI adapter output', () => {
         const adapter = new OpenAiAdapter({ apiKey: 'test-key' });
         const mismatches: string[] = [];
         const CAP = 777;
+
+        expect(cases.length).toBeGreaterThan(0);
 
         // Act
         for (const c of cases) {

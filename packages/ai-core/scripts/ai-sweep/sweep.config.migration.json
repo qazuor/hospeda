@@ -1,34 +1,51 @@
 {
-    "_note": "HOS-2217 model migration. The FIRST model is the baseline (production today). monthlyCalls are PLACEHOLDERS, not production numbers: replace them with the last 30 days from ai_usage before trusting the projected monthly cost (README, 'Model migration').",
-    "providers": [{ "id": "openai", "apiKeyEnv": "OPENAI_API_KEY" }],
+    "_note": "HOS-2217 model migration. The FIRST model is the baseline (production today). monthlyCalls are the real production ai_usage counts over the 30 days before 2026-11-15 (measured that day); re-measure them with the README query before trusting the monthly projection. They are tiny, so the report also prints the quota-based projection (cost per answer x monthlyQuotas), the same one the chat sweep uses.",
+    "providers": [
+        {
+            "id": "openai",
+            "apiKeyEnv": "OPENAI_API_KEY"
+        }
+    ],
     "models": [
         {
             "id": "gpt-5.4-nano",
             "provider": "openai",
             "reasoning": true,
             "reasoningEfforts": ["none"],
-            "rates": { "inputUsdPerMillion": 0.2, "outputUsdPerMillion": 1.25 }
+            "rates": {
+                "inputUsdPerMillion": 0.2,
+                "outputUsdPerMillion": 1.25
+            }
         },
         {
             "id": "gpt-5.4-mini",
             "provider": "openai",
             "reasoning": true,
             "reasoningEfforts": ["none"],
-            "rates": { "inputUsdPerMillion": 0.75, "outputUsdPerMillion": 4.5 }
+            "rates": {
+                "inputUsdPerMillion": 0.75,
+                "outputUsdPerMillion": 4.5
+            }
         },
         {
             "id": "gpt-5-nano",
             "provider": "openai",
             "reasoning": true,
             "reasoningEfforts": ["minimal"],
-            "rates": { "inputUsdPerMillion": 0.05, "outputUsdPerMillion": 0.4 }
+            "rates": {
+                "inputUsdPerMillion": 0.05,
+                "outputUsdPerMillion": 0.4
+            }
         },
         {
             "id": "gpt-5-mini",
             "provider": "openai",
             "reasoning": true,
             "reasoningEfforts": ["minimal"],
-            "rates": { "inputUsdPerMillion": 0.25, "outputUsdPerMillion": 2.0 }
+            "rates": {
+                "inputUsdPerMillion": 0.25,
+                "outputUsdPerMillion": 2.0
+            }
         }
     ],
     "maxOutputTokens": 1024,
@@ -40,16 +57,40 @@
     "repetitions": 1,
     "concurrency": 3,
     "maxCalls": 600,
+    "monthlyQuotas": [20, 50, 100, 250, 1250],
     "features": {
-        "chat": { "monthlyCalls": 3000 },
-        "chat_venue": { "monthlyCalls": 1000 },
-        "chat_experience": { "monthlyCalls": 300 },
-        "search": { "monthlyCalls": 4000 },
-        "translate": { "monthlyCalls": 2000 },
-        "text_improve": { "monthlyCalls": 500 },
-        "post_generate": { "monthlyCalls": 50 },
-        "accommodation_import": { "monthlyCalls": 100 },
-        "faq_draft": { "monthlyCalls": 300 },
-        "support": { "monthlyCalls": 0 }
+        "chat": {
+            "monthlyCalls": 15
+        },
+        "chat_venue": {
+            "monthlyCalls": 0
+        },
+        "chat_experience": {
+            "monthlyCalls": 0
+        },
+        "search": {
+            "monthlyCalls": 4
+        },
+        "translate": {
+            "monthlyCalls": 0
+        },
+        "text_improve": {
+            "monthlyCalls": 0
+        },
+        "post_generate": {
+            "monthlyCalls": 0
+        },
+        "accommodation_import": {
+            "monthlyCalls": 0
+        },
+        "faq_draft": {
+            "monthlyCalls": 1
+        },
+        "support": {
+            "monthlyCalls": 0
+        },
+        "chat_answer_classifier": {
+            "monthlyCalls": 12
+        }
     }
 }

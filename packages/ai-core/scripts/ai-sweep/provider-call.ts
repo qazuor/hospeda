@@ -23,12 +23,11 @@ import { composeSystemPrompt } from '../../src/config/prompt-resolver.js';
 import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../../src/engine/default-prompts.js';
 import { injectSystemPrompt } from '../../src/engine/prompt-injection.js';
 import { FEATURES_WITHOUT_STRICT_JSON_SCHEMA } from '../../src/providers/vercel-openai.adapter.js';
-import type { SWEEP_FEATURES } from './cases.js';
 import type { ReasoningEffort } from './lib.js';
-import type { EngineRequest, TaskFeature } from './tasks.js';
+import type { EngineFeature, EngineRequest } from './tasks.js';
 
-/** Any feature a provider request can be billed under (chat features included). */
-export type ProviderFeature = (typeof SWEEP_FEATURES)[number] | TaskFeature;
+/** The engine feature a provider request is routed under (chat features included). */
+export type ProviderFeature = EngineFeature;
 
 /** Params as the engine forwards them to the adapter. */
 export interface ProviderParams {
@@ -62,7 +61,7 @@ export interface ProviderObjectRequest {
 export type ProviderRequest = ProviderTextRequest | ProviderObjectRequest;
 
 /** The in-code system prompt the engine resolves for a feature (no DB override). */
-export function defaultSystemFor(feature: TaskFeature): string {
+export function defaultSystemFor(feature: EngineFeature): string {
     return composeSystemPrompt({
         content: DEFAULT_PROMPTS[feature],
         rules: DEFAULT_RULES[feature]

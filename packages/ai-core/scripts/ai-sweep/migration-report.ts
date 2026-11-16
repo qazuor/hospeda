@@ -37,6 +37,8 @@ export interface FeatureRow {
     readonly avgReasoningTokens: number;
     readonly avgCostUsd: number | null;
     readonly monthlyCostUsd: number | null;
+    /** Cost per answer x each configured monthly quota (`config.monthlyQuotas`). */
+    readonly quotaCostUsd: Readonly<Record<number, number | null>>;
     readonly avgScore: number | null;
     readonly gradedCount: number;
     /** Check names that failed most often (top 3, with counts). */
@@ -80,7 +82,11 @@ export function aggregateMigration(input: {
     readonly results: readonly MigrationResult[];
     readonly config: MigrationConfig;
     readonly grades?: GradeMap | undefined;
-}): { readonly featureRows: FeatureRow[]; readonly overallRows: OverallRow[] } {
+}): {
+    readonly featureRows: FeatureRow[];
+    readonly overallRows: OverallRow[];
+    readonly quotas: readonly number[];
+} {
     const groups = new Map<string, MigrationResult[]>();
     for (const r of input.results) {
         const key = `${r.feature}||${r.variantKey}`;
@@ -125,6 +131,12 @@ export function aggregateMigration(input: {
             avgReasoningTokens: mean(list.map((r) => r.reasoningTokens)) ?? 0,
             avgCostUsd,
             monthlyCostUsd: avgCostUsd === null || volume === null ? null : avgCostUsd * volume,
+            quotaCostUsd: Object.fromEntries(
+                input.config.monthlyQuotas.map((q) => [
+                    q,
+                    avgCostUsd === null ? null : avgCostUsd * q
+                ])
+            ),
             avgScore: mean(scores),
             gradedCount: scores.length,
             topFailures: [...failures.entries()]
@@ -169,6 +181,7 @@ export function aggregateMigration(input: {
     const baselineCost = overallRows[0]?.monthlyCostUsd ?? null;
     return {
         featureRows,
+        quotas: input.config.monthlyQuotas,
         overallRows: overallRows.map((r) => ({
             ...r,
             costVsBaseline:
@@ -194,6 +207,7 @@ const fmt = (n: number | null, digits = 0): string => (n === null ? 'n/a' : n.to
 export function renderMigrationReport(input: {
     readonly featureRows: readonly FeatureRow[];
     readonly overallRows: readonly OverallRow[];
+    readonly quotas?: readonly number[];
 }): string {
     const out: string[] = [
         '## Overall (every feature weighs the same; the first variant is the baseline)',
@@ -217,6 +231,25 @@ export function renderMigrationReport(input: {
                 fmt(r.avgScore, 2)
             ].join(' | ')} |`
         );
+    }
+    const quotas = input.quotas ?? [];
+    if (quotas.length > 0) {
+        out.push(
+            '',
+            '## Quota projection (cost per answer x monthly answers per account)',
+            '',
+            `| feature | variant | ${quotas.map((q) => `USD/mo @${q}`).join(' | ')} |`,
+            `| --- | --- | ${quotas.map(() => '---').join(' | ')} |`
+        );
+        for (const r of input.featureRows) {
+            out.push(
+                `| ${[
+                    r.feature,
+                    r.variantKey.replaceAll('|', '/'),
+                    ...quotas.map((q) => usd(r.quotaCostUsd[q] ?? null, 4))
+                ].join(' | ')} |`
+            );
+        }
     }
     const features = [...new Set(input.featureRows.map((r) => r.feature))];
     for (const feature of features) {

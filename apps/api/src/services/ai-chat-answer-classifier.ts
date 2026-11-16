@@ -211,6 +211,40 @@ function clip(text: string): string {
         : text;
 }
 
+/** The engine request of one classifier call (see {@link buildChatAnswerClassifierRequest}). */
+export interface ChatAnswerClassifierRequest {
+    readonly feature: AiFeature;
+    readonly locale: LanguageEnum;
+    readonly system: string;
+    readonly prompt: string;
+    readonly params: { readonly maxTokens: number; readonly temperature: number };
+}
+
+/**
+ * Builds the engine request of one classifier call: the fixed instruction as
+ * the caller system, the clipped question/answer pair, and the fixed output
+ * cap and temperature. Pure, so the AI sweep (HOS-2217) can render it.
+ *
+ * @param input - The question/answer pair, the chat feature and the locale.
+ * @returns `{ request }`.
+ */
+export function buildChatAnswerClassifierRequest(input: {
+    readonly question: string;
+    readonly answer: string;
+    readonly feature: AiFeature;
+    readonly locale: LanguageEnum;
+}): { readonly request: ChatAnswerClassifierRequest } {
+    return {
+        request: {
+            feature: input.feature,
+            locale: input.locale,
+            system: CHAT_ANSWER_CLASSIFIER_SYSTEM,
+            prompt: `Question: ${clip(input.question)}\nReply: ${clip(input.answer)}`,
+            params: { maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS, temperature: 0 }
+        }
+    };
+}
+
 /**
  * Classifies one persisted chat answer and stores the verdict.
  *
@@ -229,13 +263,8 @@ export async function classifyChatAnswer(
         const startedAt = Date.now();
         // The configured service runs the cost-ceiling check before calling the
         // provider: a reached ceiling throws here and the row stays unclassified.
-        const result = await aiService.generateText({
-            feature: input.feature,
-            locale: input.locale,
-            system: CHAT_ANSWER_CLASSIFIER_SYSTEM,
-            prompt: `Question: ${clip(input.question)}\nReply: ${clip(input.answer)}`,
-            params: { maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS, temperature: 0 }
-        });
+        const { request } = buildChatAnswerClassifierRequest(input);
+        const result = await aiService.generateText({ ...request, params: { ...request.params } });
         // Tokens were spent whatever the output says, so the call is metered
         // before parsing. A metering failure must not discard a good verdict.
         try {
