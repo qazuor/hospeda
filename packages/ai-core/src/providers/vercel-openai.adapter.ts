@@ -86,11 +86,16 @@ const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
  * ... Missing '<field>'"`.
  *
  * These features opt OUT of strict JSON schema (`strictJsonSchema: false`) so the
- * model may omit slots. The result is still validated downstream — both callers
- * `safeParse` the returned object (search-chat re-parses the entity bag and
- * falls back to `{}`; accommodation-import re-parses its output and falls back
- * to `null`) — so relaxing the provider-side contract does not lose runtime
- * type safety.
+ * model may omit slots. The result is still validated downstream (search-chat
+ * re-parses the entity bag and falls back to `{}`), but relaxing the
+ * provider-side contract has a cost: without strict mode the model may rename
+ * keys, and a lenient downstream parse silently drops the renamed ones.
+ *
+ * Prefer strict mode for a new feature: send a schema whose every field is
+ * required and nullable, and map `null` back to absent after the call. That is
+ * what `accommodation_import` does since HOS-2250 (it left this list after the
+ * model renamed `capacity`/`price`/`amenityNames`/`street` and imports lost
+ * them; see `apps/api/src/routes/accommodation/protected/import-from-url.ai.ts`).
  *
  * This list is intentionally OpenAI-specific: the Anthropic adapter does not
  * suffer this constraint. If you add a NEW `generateObject` feature whose output
@@ -101,10 +106,7 @@ const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
  * Exported (not re-exported from the package barrel) so the AI model sweep
  * (`scripts/ai-sweep`, HOS-2217) sends the same strict flag production sends.
  */
-export const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set([
-    'search',
-    'accommodation_import'
-]);
+export const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set(['search']);
 
 // ---------------------------------------------------------------------------
 // Constructor input
