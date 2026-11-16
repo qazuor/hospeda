@@ -222,7 +222,7 @@
         },
         "signupsPaused": {
             "title": "New sign-ups are paused",
-            "body": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual."
+            "body": "We've temporarily paused new subscriptions. If you already have a subscription, it keeps working as usual."
         },
         "firstPublishPaused": {
             "title": "Publishing new listings is paused",

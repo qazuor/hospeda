@@ -222,7 +222,7 @@
         },
         "signupsPaused": {
             "title": "Novas contratações em pausa",
-            "body": "Pausamos temporariamente novas assinaturas e compras. Se você já tem uma assinatura, ela continua funcionando normalmente."
+            "body": "Pausamos temporariamente novas assinaturas. Se você já tem uma assinatura, ela continua funcionando normalmente."
         },
         "firstPublishPaused": {
             "title": "Publicação de novos anúncios em pausa",
