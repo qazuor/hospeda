@@ -61,6 +61,10 @@ function CardBody({ vertical, listingId }: ListingLocationExceptionCardProps) {
         (event) =>
             event.actorId === data.by && (event.action === 'APPROVED' || event.action === 'GRANTED')
     )?.actorName;
+    const supersededReason = (code: string) =>
+        code === 'ADDRESS_CHANGED' || code === 'GRANTED_DIRECTLY' || code === 'NOT_NEEDED'
+            ? t(`admin-entities.locationException.supersededReasons.${code}`)
+            : code;
     const formatDate = (value: string) => new Date(value).toLocaleString(locale);
 
     const close = () => {
@@ -205,7 +209,13 @@ function CardBody({ vertical, listingId }: ListingLocationExceptionCardProps) {
                                                     )}{' '}
                                                 · {formatDate(event.createdAt)}
                                             </span>
-                                            {event.reason && <p>{event.reason}</p>}
+                                            {event.reason && (
+                                                <p>
+                                                    {event.action === 'SUPERSEDED'
+                                                        ? supersededReason(event.reason)
+                                                        : event.reason}
+                                                </p>
+                                            )}
                                         </li>
                                     ))}
                                 </ul>

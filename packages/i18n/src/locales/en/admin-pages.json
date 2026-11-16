@@ -2024,7 +2024,8 @@
         "rejected": "Request rejected.",
         "conflict": {
             "notPending": "Someone else already resolved this request. The list was refreshed.",
-            "stale": "The owner changed the listing's address after asking for the exception, so the request is out of date. The list was refreshed."
+            "stale": "The owner changed the listing's address after asking for the exception, so the request is out of date. The list was refreshed.",
+            "notNeeded": "The listing no longer collides with another published listing of the owner, so the request was closed and nothing was granted. The list was refreshed."
         },
         "genericError": "The action could not be completed."
     }

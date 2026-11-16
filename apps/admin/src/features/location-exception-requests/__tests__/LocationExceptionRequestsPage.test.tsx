@@ -178,7 +178,8 @@ describe('LocationExceptionRequestsPage', () => {
 
     it.each([
         ['LOCATION_EXCEPTION_REQUEST_NOT_PENDING', 'conflict.notPending'],
-        ['LOCATION_EXCEPTION_REQUEST_STALE', 'conflict.stale']
+        ['LOCATION_EXCEPTION_REQUEST_STALE', 'conflict.stale'],
+        ['LOCATION_EXCEPTION_NOT_NEEDED', 'conflict.notNeeded']
     ])('shows the clear message for the 409 %s', async (reason, messageKey) => {
         mocks.error.status = 409;
         mocks.error.reason = reason;

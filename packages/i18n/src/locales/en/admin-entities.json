@@ -1342,7 +1342,13 @@
             "APPROVED": "Approved",
             "REJECTED": "Rejected",
             "GRANTED": "Granted",
-            "REVOKED": "Removed"
+            "REVOKED": "Removed",
+            "SUPERSEDED": "Superseded"
+        },
+        "supersededReasons": {
+            "ADDRESS_CHANGED": "The listing's address changed.",
+            "GRANTED_DIRECTLY": "The exception was granted directly.",
+            "NOT_NEEDED": "The listing no longer collides with another published listing of the owner."
         },
         "system": "System",
         "revokeDialog": {

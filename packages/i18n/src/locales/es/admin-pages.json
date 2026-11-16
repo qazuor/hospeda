@@ -2024,7 +2024,8 @@
         "rejected": "Pedido rechazado.",
         "conflict": {
             "notPending": "Este pedido ya fue resuelto por otra persona. Se actualizó la lista.",
-            "stale": "El dueño cambió la dirección de la ficha después de pedir la excepción, así que el pedido quedó obsoleto. Se actualizó la lista."
+            "stale": "El dueño cambió la dirección de la ficha después de pedir la excepción, así que el pedido quedó obsoleto. Se actualizó la lista.",
+            "notNeeded": "La ficha ya no choca con otra ficha publicada del dueño, así que el pedido se cerró y no se concedió nada. Se actualizó la lista."
         },
         "genericError": "No se pudo completar la acción."
     }

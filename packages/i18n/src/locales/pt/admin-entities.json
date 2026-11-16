@@ -1342,7 +1342,13 @@
             "APPROVED": "Aprovada",
             "REJECTED": "Rejeitada",
             "GRANTED": "Concedida",
-            "REVOKED": "Removida"
+            "REVOKED": "Removida",
+            "SUPERSEDED": "Substituído"
+        },
+        "supersededReasons": {
+            "ADDRESS_CHANGED": "O endereço do anúncio mudou.",
+            "GRANTED_DIRECTLY": "A exceção foi concedida diretamente.",
+            "NOT_NEEDED": "O anúncio já não conflita com outro anúncio publicado do dono."
         },
         "system": "Sistema",
         "revokeDialog": {

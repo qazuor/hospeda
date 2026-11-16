@@ -2024,7 +2024,8 @@
         "rejected": "Pedido rejeitado.",
         "conflict": {
             "notPending": "Outra pessoa já resolveu este pedido. A lista foi atualizada.",
-            "stale": "O dono mudou o endereço do anúncio depois de pedir a exceção, então o pedido ficou desatualizado. A lista foi atualizada."
+            "stale": "O dono mudou o endereço do anúncio depois de pedir a exceção, então o pedido ficou desatualizado. A lista foi atualizada.",
+            "notNeeded": "O anúncio já não conflita com outro anúncio publicado do dono, então o pedido foi encerrado e nada foi concedido. A lista foi atualizada."
         },
         "genericError": "Não foi possível concluir a ação."
     }

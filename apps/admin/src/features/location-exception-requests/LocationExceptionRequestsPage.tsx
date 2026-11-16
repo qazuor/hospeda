@@ -45,6 +45,22 @@ interface Decision {
 }
 
 /**
+ * Maps a 409 `error.reason` of approve/reject to its message key.
+ *
+ * @param reason - The top-level `error.reason`.
+ * @returns The i18n key; an unknown reason reads as "already resolved".
+ */
+function conflictMessageKey(reason: string | undefined) {
+    if (reason === LOCATION_EXCEPTION_REASONS.REQUEST_STALE) {
+        return 'admin-pages.locationExceptionRequests.conflict.stale' as const;
+    }
+    if (reason === LOCATION_EXCEPTION_REASONS.NOT_NEEDED) {
+        return 'admin-pages.locationExceptionRequests.conflict.notNeeded' as const;
+    }
+    return 'admin-pages.locationExceptionRequests.conflict.notPending' as const;
+}
+
+/**
  * Page body: vertical selector, status filter, table, pagination and the two
  * decision dialogs.
  */
@@ -211,13 +227,7 @@ export function LocationExceptionRequestsPage() {
         } catch (error) {
             const info = readLocationExceptionError(error);
             if (info.status === CONFLICT_STATUS) {
-                setNotice(
-                    t(
-                        info.reason === LOCATION_EXCEPTION_REASONS.REQUEST_STALE
-                            ? 'admin-pages.locationExceptionRequests.conflict.stale'
-                            : 'admin-pages.locationExceptionRequests.conflict.notPending'
-                    )
-                );
+                setNotice(t(conflictMessageKey(info.reason)));
                 close();
                 return;
             }

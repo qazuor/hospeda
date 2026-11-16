@@ -1342,7 +1342,13 @@
             "APPROVED": "Aprobada",
             "REJECTED": "Rechazada",
             "GRANTED": "Concedida",
-            "REVOKED": "Quitada"
+            "REVOKED": "Quitada",
+            "SUPERSEDED": "Reemplazado"
+        },
+        "supersededReasons": {
+            "ADDRESS_CHANGED": "La dirección de la ficha cambió.",
+            "GRANTED_DIRECTLY": "Ya se le concedió la excepción directamente.",
+            "NOT_NEEDED": "La ficha ya no choca con otra ficha publicada del dueño."
         },
         "system": "Sistema",
         "revokeDialog": {

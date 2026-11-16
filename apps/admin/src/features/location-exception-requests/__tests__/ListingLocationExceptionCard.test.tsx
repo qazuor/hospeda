@@ -96,6 +96,32 @@ describe('ListingLocationExceptionCard', () => {
         expect(items[1]).toHaveTextContent(`${KEY}.actions.REQUESTED`);
     });
 
+    it('renders a SUPERSEDED event with its label and translated reason', () => {
+        mocks.state = {
+            ...mocks.state,
+            events: [
+                {
+                    id: 'e3',
+                    action: 'SUPERSEDED',
+                    actorId: null,
+                    actorName: null,
+                    reason: 'ADDRESS_CHANGED',
+                    requestId: null,
+                    createdAt: '2026-11-02T10:00:00.000Z'
+                }
+            ]
+        };
+        render(
+            <ListingLocationExceptionCard
+                vertical="venues"
+                listingId={LISTING}
+            />
+        );
+        const item = screen.getByTestId('location-exception-history').querySelector('li');
+        expect(item).toHaveTextContent(`${KEY}.actions.SUPERSEDED`);
+        expect(item).toHaveTextContent(`${KEY}.supersededReasons.ADDRESS_CHANGED`);
+    });
+
     it('revokes without a body reason when none is typed', async () => {
         render(
             <ListingLocationExceptionCard
