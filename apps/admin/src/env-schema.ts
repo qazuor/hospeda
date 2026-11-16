@@ -205,7 +205,7 @@ export const AdminEnvSchema = z.object({
         ),
 
     // Analytics — PostHog Cloud (SPEC-140). Public by design; ship in bundle.
-    // Leave unset to disable PostHog init in posthog-client.ts (T-140-17).
+    // Leave unset to disable analytics init (T-140-17).
     // Per-env values come from Coolify; keys live in 1Password.
     VITE_POSTHOG_KEY: z
         .string()

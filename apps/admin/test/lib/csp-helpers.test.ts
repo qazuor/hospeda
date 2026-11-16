@@ -223,15 +223,24 @@ describe('buildCspDirectives - Umami (HOS-2119)', () => {
         expect(js).toBe(base);
     });
 
-    it('never mentions PostHog', () => {
-        // Arrange + Act
+    it('adds exactly the Umami origin to script-src and connect-src, and no other analytics host', () => {
+        // Arrange
+        const origin = 'https://pulso.hospeda.com.ar';
+        const tokens = (csp: string, name: string) =>
+            (csp.split('; ').find((d) => d.startsWith(name)) ?? '').split(' ');
+        const base = buildCspDirectives({ nonce: 'n', sentryDsn: '' });
+
+        // Act
         const csp = buildCspDirectives({
             nonce: 'n',
             sentryDsn: '',
-            umamiScriptUrl: 'https://pulso.hospeda.com.ar/app.js'
+            umamiScriptUrl: `${origin}/app.js`
         });
 
         // Assert
-        expect(csp.toLowerCase()).not.toContain('posthog');
+        for (const name of ['script-src', 'connect-src']) {
+            const added = tokens(csp, name).filter((t) => !tokens(base, name).includes(t));
+            expect(added).toEqual([origin]);
+        }
     });
 });

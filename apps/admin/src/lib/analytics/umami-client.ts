@@ -2,7 +2,7 @@
  * @file umami-client.ts
  * @description Umami browser client for the admin dashboard (HOS-2119).
  *
- * Replaces the PostHog client. The self-hosted Umami tracker is injected as a
+ * Self-hosted Umami analytics client. The tracker is injected as a
  * deferred `<script>` carrying the per-request CSP nonce, so it is allowed by
  * the admin CSP. Events go through `createBrowserAnalytics`, which validates
  * them against the shared catalog (`prepareAnalyticsEvent`).
