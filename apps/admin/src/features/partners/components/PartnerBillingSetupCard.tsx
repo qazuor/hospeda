@@ -13,6 +13,7 @@ import {
     formatPartnerBillingSetupAmount,
     partnerBillingSetupCycleKey
 } from '../hooks/usePartnerBillingSetup';
+import { usePartnerManualPayments } from '../hooks/usePartnerManualPayments';
 import { PartnerBillingSetupDialog } from './PartnerBillingSetupDialog';
 
 type BillingOption = z.infer<typeof PartnerBillingSetupOptionSchema>;
@@ -107,12 +108,16 @@ export function PartnerBillingSetupOptionList({
 export interface PartnerBillingSetupCardProps {
     /** Partner UUID. AC:V7:17; ACC:6. */
     readonly partnerId: string;
+    readonly ownerUserId?: string | null;
 }
 
 /** Shows the action 6 entry point only to users with its dedicated permission. AC:V7:17; ACC:6. */
-export function PartnerBillingSetupCard({ partnerId }: PartnerBillingSetupCardProps) {
-    const { t } = useTranslations();
+export function PartnerBillingSetupCard({ partnerId, ownerUserId }: PartnerBillingSetupCardProps) {
+    const { t, locale } = useTranslations();
     const [open, setOpen] = useState(false);
+    const [notes, setNotes] = useState<Record<string, string>>({});
+    const billing = usePartnerManualPayments(partnerId, ownerUserId ?? '');
+    const subscription = billing.subscription;
     return (
         <Card data-testid="partner-billing-setup-card">
             <CardHeader>
@@ -121,23 +126,109 @@ export function PartnerBillingSetupCard({ partnerId }: PartnerBillingSetupCardPr
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-                <p className="text-muted-foreground text-sm">
-                    {t('admin-entities.partnerBillingSetup.state')}
-                </p>
-                <PermissionGate permissions={[PermissionEnum.PARTNER_CONFIGURE_BILLING]}>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setOpen(true)}
-                    >
-                        {t('admin-entities.partnerBillingSetup.configure')}
-                    </Button>
-                    <PartnerBillingSetupDialog
-                        partnerId={partnerId}
-                        open={open}
-                        onOpenChange={setOpen}
-                    />
-                </PermissionGate>
+                {billing.isLoading ? (
+                    <p>{t('admin-entities.partnerBillingSetup.loading')}</p>
+                ) : null}
+                {billing.isError ? (
+                    <p role="alert">{t('admin-entities.partnerBillingSetup.readError')}</p>
+                ) : null}
+                {billing.isRegisterError ? (
+                    <p role="alert">{t('admin-entities.partnerBillingSetup.registerError')}</p>
+                ) : null}
+                {!billing.isLoading && !billing.isError && subscription ? (
+                    <>
+                        <p>
+                            {subscription.plan?.planName ??
+                                t('admin-entities.partnerBillingSetup.configured')}{' '}
+                            · {subscription.price?.cycle ?? subscription.cycle} ·{' '}
+                            {subscription.status}
+                        </p>
+                        {subscription.price ? (
+                            <p>
+                                {(subscription.price.amountMinor / 100).toLocaleString()}{' '}
+                                {subscription.price.currency}
+                            </p>
+                        ) : null}
+                        {billing.installments.length ? (
+                            billing.installments.map((installment) => (
+                                <div
+                                    className="space-y-2 rounded-md border p-3"
+                                    key={installment.id}
+                                >
+                                    <p>
+                                        {new Intl.DateTimeFormat(locale, {
+                                            month: 'long',
+                                            year: 'numeric',
+                                            timeZone: 'UTC'
+                                        }).format(new Date(installment.periodStart))}{' '}
+                                        ·{' '}
+                                        {subscription.price
+                                            ? (
+                                                  subscription.price.amountMinor / 100
+                                              ).toLocaleString()
+                                            : ''}{' '}
+                                        {subscription.price?.currency}
+                                    </p>
+                                    <textarea
+                                        aria-label={t(
+                                            'admin-entities.partnerBillingSetup.paymentNote'
+                                        )}
+                                        value={notes[installment.id] ?? ''}
+                                        onChange={(event) =>
+                                            setNotes((current) => ({
+                                                ...current,
+                                                [installment.id]: event.target.value
+                                            }))
+                                        }
+                                    />
+                                    <PermissionGate
+                                        permissions={[
+                                            PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT
+                                        ]}
+                                    >
+                                        <Button
+                                            type="button"
+                                            disabled={billing.register.isPending}
+                                            onClick={() =>
+                                                billing.register.mutate({
+                                                    manualPaymentId: installment.id,
+                                                    note: notes[installment.id] || undefined
+                                                })
+                                            }
+                                        >
+                                            {t(
+                                                'admin-entities.partnerBillingSetup.registerPayment'
+                                            )}
+                                        </Button>
+                                    </PermissionGate>
+                                </div>
+                            ))
+                        ) : (
+                            <p>{t('admin-entities.partnerBillingSetup.noOpenInstallments')}</p>
+                        )}
+                    </>
+                ) : null}
+                {!billing.isLoading && !billing.isError && !subscription ? (
+                    <>
+                        <p className="text-muted-foreground text-sm">
+                            {t('admin-entities.partnerBillingSetup.state')}
+                        </p>
+                        <PermissionGate permissions={[PermissionEnum.PARTNER_CONFIGURE_BILLING]}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setOpen(true)}
+                            >
+                                {t('admin-entities.partnerBillingSetup.configure')}
+                            </Button>
+                            <PartnerBillingSetupDialog
+                                partnerId={partnerId}
+                                open={open}
+                                onOpenChange={setOpen}
+                            />
+                        </PermissionGate>
+                    </>
+                ) : null}
             </CardContent>
         </Card>
     );

@@ -1093,6 +1093,12 @@
         "cancel": "Cancel",
         "previewError": "Plan options could not be loaded.",
         "loading": "Loading plan options…",
+        "readError": "The Partner's manual subscription could not be loaded.",
+        "registerError": "The payment could not be registered. Check the installment and try again.",
+        "configured": "Manual subscription",
+        "noOpenInstallments": "There are no open installments to register.",
+        "registerPayment": "Register payment",
+        "paymentNote": "Optional internal note",
         "cycle": {
             "monthly": "monthly",
             "quarterly": "quarterly",
