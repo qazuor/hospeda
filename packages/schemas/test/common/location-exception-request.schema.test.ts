@@ -71,7 +71,8 @@ describe('location exception request schemas (HOS-2192)', () => {
             'APPROVED',
             'REJECTED',
             'GRANTED',
-            'REVOKED'
+            'REVOKED',
+            'SUPERSEDED'
         ]);
         expect(new Set(Object.values(LOCATION_EXCEPTION_REASONS)).size).toBe(7);
     });
