@@ -136,5 +136,10 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // AI questions weekly digest (HOS-2101) — REMINDER: a nudge the owner can
     // switch off from their preferences.
-    [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: NotificationCategory.REMINDER
+    [NotificationType.AI_QUESTIONS_WEEKLY_DIGEST]: NotificationCategory.REMINDER,
+
+    // Location exception decisions (HOS-2192) — TRANSACTIONAL: the answer to
+    // something the owner asked for.
+    [NotificationType.LISTING_LOCATION_EXCEPTION_APPROVED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED]: NotificationCategory.TRANSACTIONAL
 };
