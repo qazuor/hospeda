@@ -212,3 +212,26 @@ Event names drifted from PostHog: billing events were renamed by HOS-1352, so
 `trial_converted_to_paid` -> `trial_converted`. The builders validate every event
 against `AnalyticsEventSchemas` and throw on the old names. The old "nine funnels"
 figure in the spec does not match the 8 insights in `scripts/posthog/data.ts`.
+
+## T-039 / T-040: the six boards (2026-11-16, Umami 3.5.0)
+
+Code: `scripts/umami/boards.ts` (`BOARD_SPECS`, `buildBoardDefinitions`, `DROPPED_TILES`).
+Board names are the natural keys: `00 Resumen`, `01 Adquisición`, `02 Descubrimiento`,
+`03 Owners`, `04 Suscripciones`, `05 Calidad`. Reports first, boards second:
+`buildBoardDefinitions({ websiteId, reportIds })` takes the `name -> id` map of the
+upserted reports and throws `UNRESOLVED_REPORT` on a missing name.
+
+Measured: all six boards were created on the local Umami (`POST /api/boards`, 200) and
+read back with every component stored (8, 8, 6, 5, 7, 4); then deleted. From the 3.5.0
+editor registry: `EventsChart` and `EventsMetricsBar` have NO configurable props (they cover
+ALL custom events, no per-event filter); `MetricsTable` takes `type` and `limit`;
+`Funnel`/`Goal` take only `reportId`. Rendering was not verified (no browser).
+
+Funnels: the spec says "nine funnels" without listing them. `scripts/posthog/data.ts` has
+8 funnel insights, 5 distinct; the 5 are kept, none invented. All 5 are on a board.
+
+Tiles not ported one-to-one are listed in `DROPPED_TILES` (17 entries): MAU/DAU math, the
+pageview -> sign-up funnel (now a goal), per-event trends (the board's events
+`MetricsTable` lists each event with its count), every breakdown by an event property
+(`destination_slug`, `accommodation_id`, `destination_id`, `plan_slug`, `billing_period`,
+`failure_category`) and the person-property breakdown (`plan`).
