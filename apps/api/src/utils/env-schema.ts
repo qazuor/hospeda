@@ -537,11 +537,6 @@ export const ApiEnvBaseSchema = z.object({
 
     // Sentry
     HOSPEDA_SENTRY_DSN: z.string().optional(),
-    // PostHog (AI event analytics — optional, no-op when unset)
-    /** PostHog project API key for server-side AI event analytics (e.g. 'phc_xxx'). */
-    HOSPEDA_POSTHOG_KEY: z.string().optional(),
-    /** PostHog API host. Defaults to 'https://us.i.posthog.com' when unset. */
-    HOSPEDA_POSTHOG_HOST: z.string().url().optional(),
     // Umami (self-hosted analytics, HOS-2119 — optional, no-op when unset)
     /** Base URL of the self-hosted Umami instance (ingestion + read API). */
     HOSPEDA_UMAMI_URL: blankAsUndefined(z.string().url()),

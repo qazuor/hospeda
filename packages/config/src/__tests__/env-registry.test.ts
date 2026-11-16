@@ -323,8 +323,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +2 = VITE_UMAMI_SCRIPT_URL, VITE_UMAMI_WEBSITE_ID (client-admin category,
  * admin only) - build-time Umami tracker config (HOS-2119 T-013).
  * 283 + 2 = 285.
+ *
+ * -6 = HOSPEDA_POSTHOG_KEY/HOST (api-config), PUBLIC_POSTHOG_KEY/HOST
+ * (client-web), VITE_POSTHOG_KEY/HOST (client-admin) - PostHog removed
+ * (HOS-2119 T-060). 285 - 6 = 279.
  */
-const EXPECTED_VAR_COUNT = 285;
+const EXPECTED_VAR_COUNT = 279;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -722,7 +726,7 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(false);
         });
 
-        it('should contain all 32 VITE_* admin variables', () => {
+        it('should contain all 30 VITE_* admin variables', () => {
             // Arrange
             // 28 original + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening,
             // dedicated hospeda-csp CSP-violation-report project).
@@ -733,7 +737,8 @@ describe('ENV_REGISTRY', () => {
             // + VITE_SENTRY_CSP_REPORT_URI (Sentry prod-hardening)
             // + VITE_FEEDBACK_ENABLED (admin twin of PUBLIC_FEEDBACK_ENABLED) = 30
             // + VITE_UMAMI_SCRIPT_URL + VITE_UMAMI_WEBSITE_ID (HOS-2119 T-013) = 32
-            expect(viteVars.length).toBe(32);
+            // - VITE_POSTHOG_KEY + VITE_POSTHOG_HOST (HOS-2119 T-060) = 30
+            expect(viteVars.length).toBe(30);
         });
     });
 

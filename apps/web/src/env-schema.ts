@@ -74,7 +74,7 @@ export const serverEnvBaseSchema = z.object({
     // getSiteUrl, …) do not throw when it is absent. It is only consumed by the
     // Cloudflare cache-revalidation endpoint, which has no effect in local dev
     // (no CDN to purge). Required in production via the `.refine` below — mirrors
-    // the PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY production-only pattern. This is
+    // the PUBLIC_SENTRY_DSN production-only pattern. This is
     // the FU-1 fix: under `astro dev` the Vite SSR module-runner runs with an
     // isolated process.env that never receives this server-only var, so making it
     // hard-required broke every web write flow that calls getApiUrl().
@@ -212,19 +212,6 @@ export const serverEnvBaseSchema = z.object({
         .regex(/^[A-Za-z0-9]{1,20}$/, 'PUBLIC_DAILYMOTION_PLAYER_ID must be alphanumeric')
         .optional()
         .or(z.literal('')),
-    /**
-     * PostHog Cloud project API key for the web app (SPEC-140). Public by
-     * design — ships in the browser bundle. Leave unset to disable PostHog
-     * init (no events sent, no cookies set, no network requests). Per-env
-     * values come from Coolify (one project key per staging/prod).
-     */
-    PUBLIC_POSTHOG_KEY: z.string().optional(),
-    /**
-     * PostHog ingestion endpoint for the web app (SPEC-140). Defaults to
-     * the US Cloud region in posthog-client.ts when unset. Override only
-     * if migrating to EU Cloud or self-hosted PostHog.
-     */
-    PUBLIC_POSTHOG_HOST: z.url().optional(),
     /**
      * Full URL of the self-hosted Umami tracker script (HOS-2119), e.g.
      * `https://stats.example.com/xyz.js`. The script name is renamed via

@@ -110,9 +110,9 @@ export const CLIENT_WEB_ENV_VARS = [
         apps: ['web'],
         category: 'client-web',
         howToObtain:
-            'Set to `/api/event` once the Cloudflare Worker in infra/cloudflare/sentry-tunnel/ is deployed for this environment (staging route: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). DEPLOY ORDER MATTERS: the Worker must be live first — the same env flip drops the external *.sentry.io CSP entry, so if the tunnel path 404s, all browser error reports are lost. Sibling of PUBLIC_POSTHOG_HOST (PostHog uses a DIFFERENT path, /api/relay, and a DIFFERENT Worker — do not mix them). Leave unset for direct-to-Sentry reporting (default; *.sentry.io stays in the CSP).',
+            'Set to `/api/event` once the Cloudflare Worker in infra/cloudflare/sentry-tunnel/ is deployed for this environment (staging route: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). DEPLOY ORDER MATTERS: the Worker must be live first — the same env flip drops the external *.sentry.io CSP entry, so if the tunnel path 404s, all browser error reports are lost. Leave unset for direct-to-Sentry reporting (default; *.sentry.io stays in the CSP).',
         howToObtainEs:
-            'Seteá `/api/event` una vez deployado el Cloudflare Worker en infra/cloudflare/sentry-tunnel/ para este entorno (route staging: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo primero — el mismo flip de env saca la entrada externa *.sentry.io del CSP, así que si el path del tunnel da 404, se pierden todos los reportes de error del browser. Hermano de PUBLIC_POSTHOG_HOST (PostHog usa un path DISTINTO, /api/relay, y un Worker DISTINTO — no los mezcles). Dejalo sin setear para reportar directo a Sentry (default; *.sentry.io queda en el CSP).'
+            'Seteá `/api/event` una vez deployado el Cloudflare Worker en infra/cloudflare/sentry-tunnel/ para este entorno (route staging: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo primero — el mismo flip de env saca la entrada externa *.sentry.io del CSP, así que si el path del tunnel da 404, se pierden todos los reportes de error del browser. Dejalo sin setear para reportar directo a Sentry (default; *.sentry.io queda en el CSP).'
     },
     {
         name: 'PUBLIC_SENTRY_TRACES_SAMPLE_RATE',
@@ -251,43 +251,6 @@ export const CLIENT_WEB_ENV_VARS = [
             'Umami dashboard -> Settings -> Websites -> the web website -> copy the Website ID (UUID). Must equal HOSPEDA_UMAMI_WEBSITE_ID_WEB on the API. Set it as a build argument in Coolify for the web app.',
         howToObtainEs:
             'Dashboard de Umami -> Settings -> Websites -> el sitio web -> copia el Website ID (UUID). Debe ser igual a HOSPEDA_UMAMI_WEBSITE_ID_WEB en la API. Cargalo como build argument en Coolify para la app web.'
-    },
-    {
-        name: 'PUBLIC_POSTHOG_KEY',
-        description:
-            'PostHog Cloud project API key for the web app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',
-        descriptionEs:
-            'API key del proyecto PostHog Cloud para la app web (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
-        type: 'string',
-        required: false,
-        requiredScope: 'production',
-        secret: true,
-        exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        apps: ['web'],
-        category: 'client-web',
-        helpUrl: 'https://us.posthog.com',
-        howToObtain:
-            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → project `hospeda-web-prod` (or `hospeda-web-staging` for staging) → Settings → Project → Project API Key → copy the value starting with `phc_`. Stored in 1Password under "Hospeda / PostHog project keys". Marked secret for log hygiene even though PostHog treats project keys as public ingestion keys (they ship to every browser).',
-        howToObtainEs:
-            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → proyecto `hospeda-web-prod` (o `hospeda-web-staging` para staging) → Settings → Project → Project API Key → copiá el valor que empieza con `phc_`. Guardada en 1Password bajo "Hospeda / PostHog project keys". Marcada como secret por higiene de logs aunque PostHog las trata como keys públicas de ingestión (viajan a todos los browsers).'
-    },
-    {
-        name: 'PUBLIC_POSTHOG_HOST',
-        description:
-            'PostHog ingestion endpoint for the web app. RECOMMENDED: the first-party reverse proxy `https://hospeda.com.ar/api/relay` (SPEC-181) so ad-blockers cannot intercept analytics. Falls back to US Cloud direct (`https://us.i.posthog.com`) when unset. Changing this REQUIRES a matching CSP update in apps/web/src/lib/middleware-helpers.ts (same deploy).',
-        descriptionEs:
-            'Endpoint de ingestión de PostHog para la app web. RECOMENDADO: el reverse proxy first-party `https://hospeda.com.ar/api/relay` (SPEC-181) para que los ad-blockers no intercepten analytics. Fallback a US Cloud directo (`https://us.i.posthog.com`) si no se setea. Cambiarlo REQUIERE actualizar el CSP en apps/web/src/lib/middleware-helpers.ts (mismo deploy).',
-        type: 'url',
-        required: false,
-        secret: false,
-        defaultValue: 'https://us.i.posthog.com',
-        exampleValue: 'https://hospeda.com.ar/api/relay',
-        apps: ['web'],
-        category: 'client-web',
-        howToObtain:
-            'Set to the first-party proxy `https://hospeda.com.ar/api/relay` (staging: `https://staging.hospeda.com.ar/api/relay`) once the Cloudflare Worker in infra/cloudflare/posthog-proxy/ is deployed. DEPLOY ORDER MATTERS: the Worker must be live AND the CSP in middleware-helpers.ts must drop the external PostHog hosts in the SAME deploy, or PostHog breaks silently. Falls back to `https://us.i.posthog.com` (US Cloud, Hospeda org, decided 2026-05-17) if unset. For EU Cloud use `https://eu.i.posthog.com`.',
-        howToObtainEs:
-            'Seteá el proxy first-party `https://hospeda.com.ar/api/relay` (staging: `https://staging.hospeda.com.ar/api/relay`) una vez deployado el Cloudflare Worker en infra/cloudflare/posthog-proxy/. EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo Y el CSP en middleware-helpers.ts debe sacar los hosts externos de PostHog en el MISMO deploy, o PostHog se rompe silenciosamente. Fallback a `https://us.i.posthog.com` (US Cloud, org Hospeda, decidido 2026-05-17) si no se setea. Para EU Cloud usá `https://eu.i.posthog.com`.'
     }
 ] as const satisfies readonly EnvVarDefinition[];
 
@@ -744,41 +707,5 @@ export const CLIENT_ADMIN_ENV_VARS = [
             'Umami dashboard -> Settings -> Websites -> hospeda-admin -> copy the Website ID (UUID). Must equal HOSPEDA_UMAMI_WEBSITE_ID_ADMIN on the API. Set it as a build argument in Coolify for the admin app.',
         howToObtainEs:
             'Dashboard de Umami -> Settings -> Websites -> hospeda-admin -> copia el Website ID (UUID). Debe ser igual a HOSPEDA_UMAMI_WEBSITE_ID_ADMIN en la API. Cargalo como build argument en Coolify para la app admin.'
-    },
-    {
-        name: 'VITE_POSTHOG_KEY',
-        description:
-            'PostHog Cloud project API key for the admin app (`phc_...`). Client-exposed by design (ships in the browser bundle). Empty disables PostHog init.',
-        descriptionEs:
-            'API key del proyecto PostHog Cloud para la app admin (`phc_...`). Es client-exposed por diseño (viaja en el bundle del browser). Vacía desactiva el init de PostHog.',
-        type: 'string',
-        required: false,
-        secret: true,
-        exampleValue: 'phc_xxxxxxxxxxxxxxxxxxxxxxxxxxxx',
-        apps: ['admin'],
-        category: 'client-admin',
-        helpUrl: 'https://us.posthog.com',
-        howToObtain:
-            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → project `hospeda-admin-prod` (or `hospeda-admin-staging` for staging) → Settings → Project → Project API Key → copy the value starting with `phc_`. Stored in 1Password under "Hospeda / PostHog project keys". Admin app uses Vite (TanStack Start) so the prefix is VITE_ instead of PUBLIC_.',
-        howToObtainEs:
-            'PostHog Cloud (https://us.posthog.com) → org `Hospeda` → proyecto `hospeda-admin-prod` (o `hospeda-admin-staging` para staging) → Settings → Project → Project API Key → copiá el valor que empieza con `phc_`. Guardada en 1Password bajo "Hospeda / PostHog project keys". La app admin usa Vite (TanStack Start), por eso el prefijo es VITE_ y no PUBLIC_.'
-    },
-    {
-        name: 'VITE_POSTHOG_HOST',
-        description:
-            'PostHog ingestion endpoint for the admin app. Defaults to US Cloud region. Override for EU Cloud or self-hosted.',
-        descriptionEs:
-            'Endpoint de ingestión de PostHog para la app admin. Default región US Cloud. Override para EU Cloud o self-hosted.',
-        type: 'url',
-        required: false,
-        secret: false,
-        defaultValue: 'https://us.i.posthog.com',
-        exampleValue: 'https://us.i.posthog.com',
-        apps: ['admin'],
-        category: 'client-admin',
-        howToObtain:
-            'Default `https://us.i.posthog.com` (matches Hospeda org in US Cloud, decided 2026-05-17). Change ONLY if migrating to EU Cloud (`https://eu.i.posthog.com`) or self-hosted PostHog. Admin app uses Vite (TanStack Start) so the prefix is VITE_ instead of PUBLIC_.',
-        howToObtainEs:
-            'Default `https://us.i.posthog.com` (matchea la org de Hospeda en US Cloud, decidido 2026-05-17). Cambialo SOLO si migrás a EU Cloud (`https://eu.i.posthog.com`) o a PostHog self-hosted. La app admin usa Vite (TanStack Start), por eso el prefijo es VITE_ y no PUBLIC_.'
     }
 ] as const satisfies readonly EnvVarDefinition[];

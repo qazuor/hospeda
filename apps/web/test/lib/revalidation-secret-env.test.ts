@@ -16,10 +16,9 @@ const baseValid = {
     PUBLIC_ADMIN_URL: 'https://admin.test'
 } as const;
 
-// Production also requires Sentry DSN + PostHog key (separate refines).
+// Production also requires Sentry DSN (separate refine).
 const prodMonitoring = {
-    PUBLIC_SENTRY_DSN: 'https://abc@o0.ingest.sentry.io/1',
-    PUBLIC_POSTHOG_KEY: 'phc_test'
+    PUBLIC_SENTRY_DSN: 'https://abc@o0.ingest.sentry.io/1'
 } as const;
 
 describe('serverEnvSchema — HOSPEDA_REVALIDATION_SECRET (FU-1)', () => {
