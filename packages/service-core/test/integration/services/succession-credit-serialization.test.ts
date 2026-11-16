@@ -117,6 +117,54 @@ describe.skipIf(!isServiceTestDbAvailable())('HOS-2223 succession and P1 seriali
             .where(eq(coveredPeriods.paymentId, paymentId));
         expect(opened).toHaveLength(1);
     });
+
+    it('takes the subscription before the payment, so S19 order (subscription → payment) cannot deadlock it', async () => {
+        // Arrange: a pending charge, and a session that follows S19's order: it holds the
+        // subscription row, and once P1 is waiting, it asks for the payment row.
+        const seeded = await seedPlanChange({ nextChargeAt: new Date('2026-10-12T15:00:00.000Z') });
+        const paymentId = await pendingPayment(seeded.predecessor.id, 'PENDING');
+        const holder = await getServiceTestPool().connect();
+        let credit: Promise<unknown> | undefined;
+        let holderPaymentLock: Error | null = null;
+        try {
+            await holder.query('BEGIN');
+            await holder.query('SELECT id FROM subscription WHERE id = $1 FOR UPDATE', [
+                seeded.predecessor.id
+            ]);
+            const holderPid = (
+                await holder.query<{ pid: number }>('SELECT pg_backend_pid() AS pid')
+            ).rows[0]?.pid;
+            credit = creditPayment(
+                { paymentId, chargeCreatedAt: new Date('2026-10-11T05:00:00.000Z') },
+                { clock: { now: () => new Date('2026-10-11T05:00:00.000Z') } }
+            );
+            credit.catch(() => undefined);
+            let waiting = false;
+            for (let attempt = 0; attempt < 150 && !waiting; attempt++) {
+                const rows = await getServiceTestPool().query(
+                    `SELECT 1 FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND pid <> $1`,
+                    [holderPid]
+                );
+                waiting = (rows.rowCount ?? 0) > 0;
+                if (!waiting) await new Promise((resolve) => setTimeout(resolve, 20));
+            }
+            expect(waiting).toBe(true);
+
+            // Act: S19's second lock, while P1 is waiting.
+            try {
+                await holder.query('SELECT id FROM payment WHERE id = $1 FOR UPDATE', [paymentId]);
+            } catch (error) {
+                holderPaymentLock = error as Error;
+            }
+        } finally {
+            await holder.query('ROLLBACK');
+            holder.release();
+        }
+
+        // Assert: neither side was chosen as a deadlock victim, and P1 still credited.
+        expect(holderPaymentLock).toBeNull();
+        await expect(credit).resolves.toMatchObject({ outcome: 'CREDITED' });
+    });
 });
 
 async function pendingPayment(

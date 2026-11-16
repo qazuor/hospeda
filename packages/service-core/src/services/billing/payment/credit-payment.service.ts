@@ -98,6 +98,15 @@ export async function creditPayment(
                         after: { exhaustedPromos: [] }
                     };
 
+                // Lock order (HOS-2223): subscription row FIRST, then the payment row. The
+                // payment above was read without a lock; the optimistic UPDATE below takes
+                // its lock and revalidates `status = 'PENDING'` and `version`, so nothing read
+                // before this lock is trusted. S19 (`reactivateSuspended` →
+                // `retainPaymentForSuccession`) and S1 (`readLockedSuccessorWindowPredecessor`)
+                // take the subscription before any payment too; locking the payment first
+                // here would deadlock against S19 on the same charge. Held until commit, so S1
+                // never persists a window decided on "no credited charge" while this credit is
+                // in flight.
                 const subscription = payment.subscriptionId
                     ? (
                           await tx
@@ -105,6 +114,7 @@ export async function creditPayment(
                               .from(subscriptions)
                               .where(eq(subscriptions.id, payment.subscriptionId))
                               .limit(1)
+                              .for('update')
                       )[0]
                     : undefined;
                 const firstPayment =
@@ -168,18 +178,6 @@ export async function creditPayment(
                 const exhaustedPromos: { subscriptionId: string; redemptionId: string }[] = [];
                 let promoApplied = false;
                 if (subscription && subscription.class !== 'LAPIDA') {
-                    // HOS-2223: hold the subscription row from before the covered period opens
-                    // until commit. S1 decides a successor's window under this same lock
-                    // (`readLockedSuccessorWindowPredecessor`), so it never persists a window
-                    // chosen on "no credited charge" while this credit is in flight. Order is
-                    // payment then subscription, the order P1 already had via the
-                    // next-charge advance below.
-                    await tx
-                        .select({ id: subscriptions.id })
-                        .from(subscriptions)
-                        .where(eq(subscriptions.id, subscription.id))
-                        .limit(1)
-                        .for('update');
                     try {
                         await tx.transaction(async (savepoint) => {
                             await savepoint.insert(coveredPeriods).values({

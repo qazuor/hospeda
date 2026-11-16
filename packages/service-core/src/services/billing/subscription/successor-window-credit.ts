@@ -50,9 +50,11 @@ export interface LockedSuccessorWindowPredecessor {
  * cannot credit a charge in between. P1 (`creditPayment`) takes the same row lock before it
  * opens the `covered_period`, so the two serialize on this one row.
  *
- * Call it as the FIRST statement that touches the predecessor in the transaction that inserts
- * the successor: S1 holds no other lock at that point, and P1 acquires payment then
- * subscription, so no lock cycle can form.
+ * Global lock order: the subscription row before any payment row. S1 calls this as the
+ * FIRST statement that touches the predecessor in the transaction that inserts the successor,
+ * and touches no payment there; P1 locks the subscription before its optimistic payment
+ * update; S19 locks the subscription before `retainPaymentForSuccession` locks the payment.
+ * The refund flows read the subscription without a lock (its `user_id` is immutable).
  *
  * @param input.tx - The successor's insert transaction
  * @param input.subscriptionId - The predecessor subscription
