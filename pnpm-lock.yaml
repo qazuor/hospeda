@@ -1077,6 +1077,9 @@ importers:
 
   packages/analytics:
     dependencies:
+      isbot:
+        specifier: ^5.2.3
+        version: 5.2.3
       zod:
         specifier: 4.6.6
         version: 4.6.6
@@ -1087,9 +1090,6 @@ importers:
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
-      isbot:
-        specifier: ^5.2.3
-        version: 5.2.3
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.28)(supports-color@8.1.1)(tsx@4.23.15)(typescript@6.0.3)(yaml@2.9.1)

@@ -210,15 +210,18 @@ describe('mapToUmamiBatchItem', () => {
     });
 
     describe('visitor identity', () => {
+        // isbot flags the bare word "Test", so the fixture must look like a real browser.
+        const REAL_UA =
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15';
         it('should use the visitor ip and user agent when provided', () => {
             const { item } = mapToUmamiBatchItem({
                 ...base,
                 event: 'x',
                 properties: {},
-                visitor: { ip: '203.0.113.9', userAgent: 'Mozilla/5.0 Test' }
+                visitor: { ip: '203.0.113.9', userAgent: REAL_UA }
             });
             expect(item.payload.ip).toBe('203.0.113.9');
-            expect(item.payload.userAgent).toBe('Mozilla/5.0 Test');
+            expect(item.payload.userAgent).toBe(REAL_UA);
         });
 
         it.each([
@@ -237,6 +240,51 @@ describe('mapToUmamiBatchItem', () => {
             });
             expect(item.payload.userAgent).toBe(UMAMI_SYNTHETIC_USER_AGENT);
             expect(item.payload.ip).toBe('203.0.113.9');
+        });
+
+        it.each([
+            [
+                'CUBOT Android phone',
+                'Mozilla/5.0 (Linux; Android 10; CUBOT X30) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+            ],
+            [
+                'Rapido Android phone',
+                'Mozilla/5.0 (Linux; Android 11; Rapido Build/RP1A.200720.011) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+            ],
+            [
+                'iPhone Safari',
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+            ]
+        ])('should keep a real device user agent (%s) that Umami does not drop', (_l, ua) => {
+            expect(isbot(ua)).toBe(false);
+            const { item } = mapToUmamiBatchItem({
+                ...base,
+                event: 'x',
+                properties: {},
+                visitor: { ip: '203.0.113.9', userAgent: ua }
+            });
+            expect(item.payload.userAgent).toBe(ua);
+        });
+
+        it.each([
+            [
+                'Googlebot',
+                'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'
+            ],
+            [
+                'HeadlessChrome',
+                'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/120.0.0.0 Safari/537.36'
+            ],
+            ['bare api', 'api'],
+            ['blank', '   ']
+        ])('should replace a dropped or blank user agent (%s) with the synthetic one', (_l, ua) => {
+            const { item } = mapToUmamiBatchItem({
+                ...base,
+                event: 'x',
+                properties: {},
+                visitor: { ip: '203.0.113.9', userAgent: ua }
+            });
+            expect(item.payload.userAgent).toBe(UMAMI_SYNTHETIC_USER_AGENT);
         });
 
         it('should keep a normal Chrome visitor user agent', () => {

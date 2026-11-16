@@ -8,6 +8,7 @@
  * - Umami truncates over-limit values silently (HTTP 200) and rejects the WHOLE
  *   event for numbers with `|n| >= 1e15`, so everything is bounded here.
  */
+import { isbot } from 'isbot';
 import { z } from 'zod';
 
 /** Umami runtime limits (measured). Values above them are cut or reject the event. */
@@ -41,14 +42,19 @@ export const UMAMI_SYNTHETIC_USER_AGENT =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 
 /**
- * User-Agent markers Umami (via `isbot`) silently drops with HTTP 200: any
- * "api" substring, server-side HTTP clients (node, undici, curl, ...) and
- * crawler words. A visitor UA matching this is replaced by the synthetic one.
- * Kept local on purpose so `isbot` stays a dev-only dependency; the tests
- * cross-check it against `isbot`.
+ * Whether Umami would silently drop an event carrying this User-Agent (HTTP 200,
+ * nothing stored). Umami 3.5.0 filters with `isbot` and has no extra rule: the
+ * "api" substring in the spike doc is an `isbot` match, not a separate check.
+ * Using the same detector at runtime (instead of a local regex) keeps real phones
+ * such as "CUBOT" or "Rapido" on their own session. A visitor UA matching this is
+ * replaced by {@link UMAMI_SYNTHETIC_USER_AGENT}.
+ *
+ * @param userAgent - Raw visitor User-Agent.
+ * @returns `true` when Umami would treat it as a bot.
  */
-const BOT_LIKE_USER_AGENT =
-    /api|bot|crawl|spider|slurp|curl|wget|node|undici|python|go-http|java|okhttp|axios|server|headless|https?:\/\//i;
+function isUmamiDroppedUserAgent(userAgent: string): boolean {
+    return isbot(userAgent);
+}
 
 /** Prefix of anonymous distinct ids, which are never forwarded. */
 const ANONYMOUS_DISTINCT_ID_PREFIX = 'anon:';
@@ -332,7 +338,7 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
     const visitorUserAgent =
         rawUserAgent !== undefined &&
         !isBlank(rawUserAgent) &&
-        !BOT_LIKE_USER_AGENT.test(rawUserAgent)
+        !isUmamiDroppedUserAgent(rawUserAgent)
             ? rawUserAgent
             : UMAMI_SYNTHETIC_USER_AGENT;
 

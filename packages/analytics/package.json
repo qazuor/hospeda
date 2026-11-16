@@ -27,12 +27,12 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
+        "isbot": "^5.2.3",
         "zod": "^4.0.8"
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.6",
-        "isbot": "^5.2.3",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
         "vitest": "^5.1.0"
