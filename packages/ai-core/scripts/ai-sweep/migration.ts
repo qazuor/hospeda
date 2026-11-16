@@ -19,6 +19,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { generateObject, generateText, jsonSchema, streamText } from 'ai';
 import { MODEL_RATES } from '../../src/usage/model-rates.js';
 import { type BlindKey, ingestGrades } from './blind.js';
+import { CliArgError, readFlag, readPositiveIntFlag, resolveProviderKey } from './cli-args.js';
 import { estimateCostUsd, type Grade, resolveRates, resultKey, type UsdRates } from './lib.js';
 import { loadMigrationCases } from './load-cases.js';
 import {
@@ -55,18 +56,12 @@ interface CliArgs {
 }
 
 function parseArgs(argv: readonly string[]): CliArgs {
-    const value = (flag: string): string | null => {
-        const i = argv.indexOf(flag);
-        return i >= 0 ? (argv[i + 1] ?? null) : null;
-    };
+    const value = (flag: string): string | null => readFlag({ argv, flag }).value;
     const path = (flag: string): string | null => {
         const v = value(flag);
         return v === null ? null : resolve(v);
     };
-    const num = (flag: string): number | null => {
-        const v = value(flag);
-        return v === null ? null : Number(v);
-    };
+    const num = (flag: string): number | null => readPositiveIntFlag({ argv, flag }).value;
     const features = value('--features');
     return {
         execute: argv.includes('--execute') && !argv.includes('--dry-run'),
@@ -84,7 +79,14 @@ function parseArgs(argv: readonly string[]): CliArgs {
 }
 
 function main(): void {
-    const args = parseArgs(process.argv.slice(2));
+    let args: CliArgs;
+    try {
+        args = parseArgs(process.argv.slice(2));
+    } catch (error) {
+        if (!(error instanceof CliArgError)) throw error;
+        console.error(`ABORT: ${error.message}`);
+        process.exit(2);
+    }
     const config = MigrationConfigSchema.parse(JSON.parse(readFileSync(args.configPath, 'utf8')));
     const { selected } = selectCases({
         config,
@@ -135,13 +137,14 @@ function main(): void {
             process.exit(2);
         }
         // The key is never logged, echoed or measured.
-        const apiKey = args.apiKeyFile
-            ? readFileSync(args.apiKeyFile, 'utf8').trim()
-            : process.env[def.apiKeyEnv];
+        // --api-key-file is never sent to a provider with a custom baseURL.
+        const { apiKey, source } = resolveProviderKey({
+            provider: def,
+            keyFileContent: args.apiKeyFile ? readFileSync(args.apiKeyFile, 'utf8') : null,
+            env: process.env
+        });
         if (!apiKey) {
-            console.error(
-                `ABORT: no key for provider "${id}" (${def.apiKeyEnv} or --api-key-file).`
-            );
+            console.error(`ABORT: no key for provider "${id}" (${source} is empty or unset).`);
             process.exit(2);
         }
         providers.set(
@@ -304,7 +307,14 @@ function writeReport(input: {
     );
     const errors = input.results.filter((r) => r.error !== null);
     const errorLines = errors.slice(0, 20).map((r) => `- ${r.variantKey} ${r.caseId}: ${r.error}`);
-    const text = `# Model migration sweep\n\nMonthly volumes come from the config (owner input), not from production.\n\n${md}\n${errors.length ? `\n## Provider errors (${errors.length}, first 20)\n\n${errorLines.join('\n')}\n` : ''}`;
+    const volumesNote =
+        'Monthly volumes (USD/month) come from `features.*.monthlyCalls` in the config: production ' +
+        '`ai_usage` counts, re-measure them before trusting the projection. The quota projection ' +
+        'multiplies cost per answer by `monthlyQuotas`.';
+    const errorBlock = errors.length
+        ? `\n## Provider errors (${errors.length}, first 20)\n\n${errorLines.join('\n')}\n`
+        : '';
+    const text = `# Model migration sweep\n\n${volumesNote}\n\n${md}\n${errorBlock}`;
     writeFileSync(input.mdPath, text);
     console.log(`\n${text}\nSummary: ${input.mdPath}`);
 }
