@@ -56,6 +56,7 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { IconButton } from '@/components/ui/IconButtonReact';
 import type { NavItem as AccountNavItem } from '@/config/navigation';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { buildAdminPanelItem } from '@/lib/admin-panel-link';
 import { type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
@@ -135,6 +136,12 @@ interface MobileMenuProps {
      * by the owner CTA any more — see HOS-311 in the body.
      */
     readonly adminPanelUrl?: string;
+    /**
+     * Whether the MCP feature is on, known by the server that mounts the menu.
+     * Omit when unknown: the "Asistentes de IA" entry then follows the
+     * connection-count rule (HOS-2184 T-028).
+     */
+    readonly mcpEnabled?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +174,8 @@ export function MobileMenu({
     homeHref,
     initialUser,
     initialRoles,
-    adminPanelUrl
+    adminPanelUrl,
+    mcpEnabled
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
@@ -213,9 +221,14 @@ export function MobileMenu({
     // dropdown (HOS-131 §6.5 mobile "option A"). Fail-closed while
     // `permissions` is still loading via `permissions ?? []`.
     // ------------------------------------------------------------------
+    const showAiAssistants = useAiAssistantsEntry({ mcpEnabled, enabled: user !== null });
     const avatarNav = useMemo(
-        () => getCuratedAccountNav({ permissions: permissions ?? [] }),
-        [permissions]
+        () =>
+            getCuratedAccountNav({
+                permissions: permissions ?? [],
+                includeAiAssistants: showAiAssistants
+            }),
+        [permissions, showAiAssistants]
     );
     const curatedAccountItems = useMemo(
         () =>

@@ -42,6 +42,7 @@ import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitch
 import { ThemeControl } from "@/components/shared/preferences/ThemeControl.client";
 import IconButton from '@/components/shared/ui/IconButton.astro';
 import { getAdminUrl } from "@/lib/env";
+import { getConfiguredMcpUrl } from "@/lib/mcp-discovery";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -110,6 +111,8 @@ const initialUserMenuUser = serverUser
     : null;
 
 const adminPanelUrl = getAdminUrl();
+// HOS-2184 T-028: a global fact (not per-user), so it is safe on cacheable pages.
+const mcpEnabled = (await getConfiguredMcpUrl()) !== null;
 
 /**
  * SSR role-set hint, forwarded to `MobileMenuIsland` below.
@@ -217,6 +220,7 @@ const serverUserRoles = serverUser?.roles ?? [];
                     currentPath={currentPath}
                     variant={isHero ? "hero" : "scrolled"}
                     adminPanelUrl={adminPanelUrl}
+                    mcpEnabled={mcpEnabled}
                 />
             </div>
 
@@ -244,6 +248,7 @@ const serverUserRoles = serverUser?.roles ?? [];
     initialUser={initialUserMenuUser}
     initialRoles={serverUserRoles}
     adminPanelUrl={adminPanelUrl}
+    mcpEnabled={mcpEnabled}
 />
 
 <style>

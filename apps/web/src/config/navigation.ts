@@ -178,9 +178,12 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 surfaces: FULL_SURFACES
             },
             {
-                // HOS-2184 T-028. Sidebar only: the layout shows it while the MCP
-                // feature is on, and the mobile/avatar menus are client islands
-                // with no way to know that.
+                // HOS-2184 T-028. Gated, not always shown: with the MCP feature on
+                // it is shown to everyone, with it off only to users who still have
+                // connections. The sidebar renders it from here; the avatar and
+                // mobile menus append it through
+                // `getCuratedAccountNav({ includeAiAssistants })` (it stays off the
+                // `avatar` surface so that surface keeps its three fixed items).
                 id: AI_ASSISTANTS_NAV_ITEM_ID,
                 i18nKey: 'account.nav.aiAssistants',
                 href: AI_ASSISTANTS_PATH,
