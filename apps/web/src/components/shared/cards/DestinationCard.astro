@@ -60,7 +60,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 ---
 
 <article class={`dest-card dest-card--${variant}`}>
-	<a href={detailUrl} class="dest-card__link" aria-label={destination.name}>
+	<a href={detailUrl} class="dest-card__link">
 		<!-- IMAGE AREA -->
 		<div class="dest-card__image-area">
 			{isExternalImage && !shouldProxyFeaturedImage ? (

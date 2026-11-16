@@ -38,6 +38,7 @@ import {
 } from '@repo/schemas';
 import { type JSX, useState } from 'react';
 import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
+import { LocationExceptionRequestForm } from '@/components/listing/LocationExceptionRequestForm.client';
 import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
@@ -178,6 +179,9 @@ export function PublishButton({
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
+    /** HOS-2192: the last publish was refused with `DUPLICATE_LOCATION`, so an exception can be requested. */
+    const [duplicateLocation, setDuplicateLocation] = useState(false);
+    const [exceptionFormOpen, setExceptionFormOpen] = useState(false);
     const [missingRequirements, setMissingRequirements] = useState<
         readonly AccommodationPublishRequirementId[]
     >([]);
@@ -205,6 +209,7 @@ export function PublishButton({
     async function handleConfirm(): Promise<void> {
         setState('pending');
         setApiError(null);
+        setDuplicateLocation(false);
 
         const result = await publishListing({ vertical, id: listingId });
 
@@ -265,6 +270,8 @@ export function PublishButton({
                         'Esta dirección ya tiene una ficha publicada tuya. Cada local físico va en una sola ficha: sumale el rubro que falta en vez de crear otra.'
                     )
                 );
+                // HOS-2192: offer "Pedir una excepción" (an experience has no address rule).
+                setDuplicateLocation(vertical !== 'experience');
                 setState('error');
                 return;
             }
@@ -370,6 +377,33 @@ export function PublishButton({
                         }}
                     >
                         {apiError}
+                    </span>
+                )}
+                {state === 'error' && duplicateLocation && vertical !== 'experience' && (
+                    <span
+                        style={{ width: '100%', marginTop: '6px' }}
+                        data-testid="publish-location-exception"
+                    >
+                        {exceptionFormOpen ? (
+                            <LocationExceptionRequestForm
+                                locale={locale}
+                                vertical={vertical}
+                                listingId={listingId}
+                                onCancel={() => setExceptionFormOpen(false)}
+                            />
+                        ) : (
+                            <button
+                                type="button"
+                                className={`${styles.action} ${styles.secondary}`}
+                                onClick={() => setExceptionFormOpen(true)}
+                                data-testid="publish-location-exception-open"
+                            >
+                                {t(
+                                    'listing.owner.locationException.requestButton',
+                                    'Pedir una excepción'
+                                )}
+                            </button>
+                        )}
                     </span>
                 )}
             </span>

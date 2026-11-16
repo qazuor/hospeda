@@ -2294,6 +2294,7 @@
         "invalidId": "Subscription not found.",
         "loading": "Loading options…",
         "error": "Could not complete the change. Check the status and try again.",
+        "partnerUnsupported": "Changing a Partner's plan is not supported yet. To change it, revoke the subscription and configure the new plan again.",
         "unavailable": "The subscription is not active.",
         "customer": "Customer: {customer}",
         "current": "Current plan: {plan}",

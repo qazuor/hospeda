@@ -21,6 +21,7 @@ export const PartnerBillingSetupOptionSchema = z.strictObject({
 export const PartnerBillingSetupPreviewResponseSchema = z.strictObject({
     partner: z.strictObject({ id: z.uuid(), name: z.string().min(1) }),
     ownerUserId: z.uuid(),
+    owner: z.strictObject({ name: z.string().min(1), email: z.email() }),
     method: z.literal('MANUAL'),
     options: z.array(PartnerBillingSetupOptionSchema),
     effect: z.literal(

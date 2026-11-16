@@ -175,7 +175,11 @@ export const PlanMigrationListSchema = z.strictObject({
         page: z.number().int().positive(),
         pageSize: z.number().int().min(1).max(100),
         total: z.number().int().nonnegative(),
-        totalPages: z.number().int().nonnegative()
+        totalPages: z.number().int().nonnegative(),
+        /** Added by the API route's pagination helper; the service omits it. */
+        hasNextPage: z.boolean().optional(),
+        /** Added by the API route's pagination helper; the service omits it. */
+        hasPreviousPage: z.boolean().optional()
     })
 });
 /** Validated migration list response. */

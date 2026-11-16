@@ -2294,6 +2294,7 @@
         "invalidId": "Assinatura não encontrada.",
         "loading": "Carregando opções…",
         "error": "Não foi possível concluir a alteração. Confira o status e tente novamente.",
+        "partnerUnsupported": "A alteração do plano de um Partner ainda não é compatível. Para mudar, revogue a assinatura e configure o novo plano novamente.",
         "unavailable": "A assinatura não está ativa.",
         "customer": "Cliente: {customer}",
         "current": "Plano atual: {plan}",

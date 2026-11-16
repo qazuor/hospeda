@@ -172,20 +172,18 @@ describe('DetailCompareButton — render', () => {
         expect(screen.getByTestId('compare-icon')).toBeInTheDocument();
     });
 
-    it('sets a full-sentence aria-label independent of the visible .label text', () => {
-        // Arrange / Act — the accessible name must not rely on the `.label`
-        // span, since that span is visually hidden on mobile (HOS-85
-        // post-review fix) via CSS `display: none`.
+    it('starts the accessible name with the visible label and appends the accommodation name', () => {
+        // Arrange / Act — an aria-label would replace the visible text and trip
+        // axe's label-content-name-mismatch rule (WCAG 2.5.3).
         render(<DetailCompareButton {...buildProps()} />);
 
         // Assert
-        expect(screen.getByRole('button')).toHaveAttribute(
-            'aria-label',
-            'Agregar Cabaña del Río a la comparación'
-        );
+        const button = screen.getByRole('button');
+        expect(button).not.toHaveAttribute('aria-label');
+        expect(button).toHaveAccessibleName(/^Agregar a comparación\s*,\s*Cabaña del Río$/);
     });
 
-    it('switches the aria-label to the "remove" phrasing once selected', () => {
+    it('switches the accessible name to the "added" label once selected', () => {
         // Arrange
         render(<DetailCompareButton {...buildProps()} />);
 
@@ -193,9 +191,8 @@ describe('DetailCompareButton — render', () => {
         fireEvent.click(screen.getByRole('button'));
 
         // Assert
-        expect(screen.getByRole('button')).toHaveAttribute(
-            'aria-label',
-            'Quitar Cabaña del Río de la comparación'
+        expect(screen.getByRole('button')).toHaveAccessibleName(
+            /^En comparación\s*,\s*Cabaña del Río$/
         );
     });
 });
@@ -293,9 +290,11 @@ describe('DetailCompareButton.module.css — mobile collapse', () => {
         expect(mobileBlock).toContain('width: 2.5rem');
     });
 
-    it('hides the .label text within the mobile breakpoint', () => {
+    it('visually hides (never display:none) the .label text within the mobile breakpoint', () => {
+        // display:none would empty the accessible name now that there is no aria-label.
         const mobileBlock = cssSrc.split('@media (max-width: 767px)')[1];
-        expect(mobileBlock).toMatch(/\.label\s*\{[^}]*display:\s*none/);
+        expect(mobileBlock).toMatch(/\.label\s*\{[^}]*clip:\s*rect\(0,\s*0,\s*0,\s*0\)/);
+        expect(mobileBlock).not.toMatch(/\.label\s*\{[^}]*display:\s*none/);
     });
 
     it('keeps the circular shape when combined with the sticky-scroll compact header', () => {

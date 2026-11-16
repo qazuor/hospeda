@@ -93,20 +93,20 @@ const hasSocial = Boolean(
                 <a
                     href={`mailto:${contact.email}`}
                     class="event-organizer-card__contact-link"
-                    aria-label={t('events.detail.contactEmail', 'Enviar email al organizador')}
                 >
                     <EmailIcon size={15} aria-hidden="true" />
                     <span>{contact.email}</span>
+                    <span class="sr-only">, {t('events.detail.contactEmail', 'Enviar email al organizador')}</span>
                 </a>
             )}
             {contact.phone && (
                 <a
                     href={`tel:${contact.phone}`}
                     class="event-organizer-card__contact-link"
-                    aria-label={t('events.detail.contactPhone', 'Llamar al organizador')}
                 >
                     <PhoneIcon size={15} aria-hidden="true" />
                     <span>{contact.phone}</span>
+                    <span class="sr-only">, {t('events.detail.contactPhone', 'Llamar al organizador')}</span>
                 </a>
             )}
             {websiteHref && (
@@ -115,10 +115,10 @@ const hasSocial = Boolean(
                     class="event-organizer-card__contact-link"
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label={t('events.detail.contactWebsite', 'Visitar sitio web del organizador')}
                 >
                     <GlobeIcon size={15} aria-hidden="true" />
                     <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
+                    <span class="sr-only">, {t('events.detail.contactWebsite', 'Visitar sitio web del organizador')}</span>
                 </a>
             )}
         </div>

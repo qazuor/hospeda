@@ -41,11 +41,12 @@ export function deferredRetryHarness(existingFake?: FakePaymentProvider) {
 export async function seedDeferredRetryRow(input: {
     readonly fake: FakePaymentProvider;
     readonly transition: ProviderCancellationTransition;
+    readonly status?: 'ABANDONED' | 'CANCEL_SCHEDULED';
     readonly decidedAt?: Date;
     readonly pending?: boolean;
 }) {
     const seeded = await seedSubscription({
-        status: 'ABANDONED',
+        status: input.status ?? 'ABANDONED',
         withLink: !input.pending,
         fake: input.fake
     });

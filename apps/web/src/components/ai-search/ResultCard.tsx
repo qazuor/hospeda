@@ -78,7 +78,6 @@ export function ResultCard({ item, locale, t }: ResultCardProps) {
             // kept as its own class (rather than folded into `resultCard`) so
             // tests/consumers have a stable hook for "this is the compact card".
             className={`${styles.resultCard} ${styles.resultCardCompact}`}
-            aria-label={item.name}
         >
             <div className={styles.resultCardImageWrap}>
                 {thumbnail ? (

@@ -1284,7 +1284,7 @@
             "cancel": "Volver"
         },
         "errors": {
-            "action": "No se pudo completar la acción. Revisá el motivo e intentá de nuevo."
+            "action": "No se pudo completar la acción. Intentá de nuevo."
         },
         "empty": "No hay postulaciones en esta vista.",
         "loading": "Cargando postulaciones…",
