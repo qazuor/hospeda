@@ -292,10 +292,10 @@ vi.mock('../../../src/services/ai-chat-persistence', () => ({
 }));
 
 /**
- * Mock PostHog — suppress analytics side-effects.
+ * Mock analytics client — suppress analytics side-effects.
  */
-vi.mock('../../../src/lib/posthog', () => ({
-    getPostHogClient: vi.fn(() => ({ capture: vi.fn() }))
+vi.mock('../../../src/lib/analytics-client', () => ({
+    captureServerAnalyticsEvent: vi.fn()
 }));
 
 /**

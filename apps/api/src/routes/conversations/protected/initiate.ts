@@ -29,8 +29,8 @@ import {
     MessageService,
     ServiceError
 } from '@repo/service-core';
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
 import { env } from '../../../utils/env';

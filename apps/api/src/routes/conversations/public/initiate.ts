@@ -13,8 +13,8 @@ import { CreateConversationAnonSchema, PermissionEnum, ServiceErrorCode } from '
 import { ConversationService, createSystemActor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { captureServerAnalyticsEvent } from '../../../lib/analytics-client';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
-import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import {
     createKeyedRateLimitMiddleware,
     createPerRouteRateLimitMiddleware

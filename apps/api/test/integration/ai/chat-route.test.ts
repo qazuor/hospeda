@@ -16,7 +16,7 @@
  * - `assembleAccommodationContext()` and `persistChatTurn()` are controlled
  *   per-test so we can exercise 404 / timeout / failure behavior without
  *   seeding unrelated tables.
- * - `getPostHogClient()` returns a capture spy so event payloads can be
+ * - `captureServerAnalyticsEvent()` is a capture spy so event payloads can be
  *   asserted for no-PII compliance.
  *
  * @module test/integration/ai/chat-route
@@ -41,7 +41,7 @@ const {
     nextContextError,
     featureConfigMaxTokensForTest,
     nextPersistPromise,
-    mockPostHogCapture,
+    mockAnalyticsCapture,
     mockApiLogger,
     effectiveSetSpy
 } = vi.hoisted(() => ({
@@ -102,7 +102,7 @@ const {
             conversationId: string;
         }>
     },
-    mockPostHogCapture: vi.fn(),
+    mockAnalyticsCapture: vi.fn(),
     mockApiLogger: {
         info: vi.fn(),
         warn: vi.fn(),
@@ -304,8 +304,8 @@ vi.mock('../../../src/services/ai-chat-persistence', () => ({
     persistChatTurn: vi.fn(() => nextPersistPromise.current)
 }));
 
-vi.mock('../../../src/lib/posthog', () => ({
-    getPostHogClient: vi.fn(() => ({ capture: mockPostHogCapture }))
+vi.mock('../../../src/lib/analytics-client', () => ({
+    captureServerAnalyticsEvent: mockAnalyticsCapture
 }));
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -314,6 +314,7 @@ vi.mock('../../../src/utils/logger', () => ({
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { recordAiUsage } from '@repo/ai-core';
+import { type AnalyticsEventName, prepareAnalyticsEvent } from '@repo/analytics';
 import {
     EntitlementKeyEnum,
     LimitKeyEnum,
@@ -424,6 +425,22 @@ function makeMessages(count = 1): Array<{ role: 'user' | 'assistant'; content: s
     }));
 }
 
+/**
+ * Runs every captured analytics event through the real catalog validation
+ * (`prepareAnalyticsEvent`), so a property the catalog rejects is caught here.
+ */
+function expectCapturedEventsPassCatalog(): void {
+    expect(mockAnalyticsCapture.mock.calls.length).toBeGreaterThan(0);
+    for (const [payload] of mockAnalyticsCapture.mock.calls) {
+        expect(() =>
+            prepareAnalyticsEvent({
+                name: payload.name as AnalyticsEventName,
+                properties: payload.properties as never
+            })
+        ).not.toThrow();
+    }
+}
+
 describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () => {
     const app = buildTestApp();
 
@@ -469,7 +486,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
 
         streamTextCalls.length = 0;
         effectiveSetSpy.mockReset();
-        mockPostHogCapture.mockReset();
+        mockAnalyticsCapture.mockReset();
         mockApiLogger.info.mockReset();
         mockApiLogger.warn.mockReset();
         mockApiLogger.debug.mockReset();
@@ -1040,9 +1057,14 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(JSON.parse(errorFrames[0]?.data ?? '{}')).toMatchObject({
             code: 'MODERATION_BLOCKED'
         });
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
-            expect.objectContaining({ event: 'ai_chat_moderation_blocked' })
-        );
+        const blocked = mockAnalyticsCapture.mock.calls
+            .map((call) => call[0])
+            .find((payload) => payload?.name === 'ai_chat_moderation_blocked');
+        expect(blocked?.properties).toEqual({
+            accommodation_id: ACCOMMODATION_ID,
+            locale: 'es'
+        });
+        expectCapturedEventsPassCatalog();
     });
 
     it('still emits done without conversationId when persistence rejects, and logs apiLogger.error', async () => {
@@ -1103,13 +1125,57 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(res.status).toBe(200);
         await readSseFrames(res);
 
-        const events = mockPostHogCapture.mock.calls.map((call) => call[0]?.event);
+        const events = mockAnalyticsCapture.mock.calls.map((call) => call[0]?.name);
         expect(events).toContain('ai_chat_message_sent');
         expect(events).toContain('ai_chat_response_completed');
         expect(events).toContain('ai_chat_cap_reached');
         expect(events).not.toContain('ai_chat_opened');
 
-        for (const [payload] of mockPostHogCapture.mock.calls) {
+        // HOS-2119 T-024: catalog property names (snake_case, messages_count)
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
+            expect.objectContaining({
+                distinctId: UNIQUE_USER_ID,
+                name: 'ai_chat_message_sent',
+                properties: expect.objectContaining({
+                    accommodation_id: ACCOMMODATION_ID,
+                    messages_count: 20,
+                    locale: 'es'
+                })
+            })
+        );
+        const sentPayload = mockAnalyticsCapture.mock.calls
+            .map((call) => call[0])
+            .find((payload) => payload?.name === 'ai_chat_message_sent');
+        expect(sentPayload?.properties).not.toHaveProperty('message_count');
+        expect(sentPayload?.properties).not.toHaveProperty('messageCount');
+
+        expect(Object.keys(sentPayload?.properties ?? {}).sort()).toEqual([
+            'accommodation_id',
+            'locale',
+            'messages_count'
+        ]);
+        const completedPayload = mockAnalyticsCapture.mock.calls
+            .map((call) => call[0])
+            .find((payload) => payload?.name === 'ai_chat_response_completed');
+        expect(completedPayload?.properties).toEqual({
+            accommodation_id: ACCOMMODATION_ID,
+            locale: 'es',
+            provider: 'stub',
+            model: 'stub-model',
+            prompt_tokens: 11,
+            completion_tokens: 7
+        });
+        expect(Object.keys(completedPayload?.properties ?? {}).sort()).toEqual([
+            'accommodation_id',
+            'completion_tokens',
+            'locale',
+            'model',
+            'prompt_tokens',
+            'provider'
+        ]);
+        expectCapturedEventsPassCatalog();
+
+        for (const [payload] of mockAnalyticsCapture.mock.calls) {
             const serialized = JSON.stringify(payload);
             expect(serialized).not.toContain(PII_SENTINEL);
             expect(serialized).not.toContain('SYSTEM MESSAGE');
@@ -1126,8 +1192,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             })
         });
 
-        expect(mockPostHogCapture).toHaveBeenCalledWith(
-            expect.objectContaining({ event: 'ai_chat_opened' })
+        expect(mockAnalyticsCapture).toHaveBeenCalledWith(
+            expect.objectContaining({ name: 'ai_chat_opened' })
         );
     });
 

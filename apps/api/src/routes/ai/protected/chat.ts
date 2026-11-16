@@ -34,7 +34,7 @@
  *
  * ## Analytics
  *
- * Server-side PostHog events (no PII / no message content):
+ * Server-side analytics events (no PII / no message content):
  * - `ai_chat_opened`
  * - `ai_chat_message_sent`
  * - `ai_chat_response_completed`

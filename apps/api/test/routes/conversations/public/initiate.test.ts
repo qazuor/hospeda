@@ -45,6 +45,12 @@ vi.mock('../../../../src/utils/redis', () => ({
     getRedisClient: vi.fn().mockResolvedValue(undefined)
 }));
 
+const mockCaptureServerAnalyticsEvent = vi.fn();
+
+vi.mock('../../../../src/lib/analytics-client', () => ({
+    captureServerAnalyticsEvent: (...args: unknown[]) => mockCaptureServerAnalyticsEvent(...args)
+}));
+
 // ── Service mock ──────────────────────────────────────────────────────────────
 
 const mockInitiateAnonymous = vi.fn();
@@ -157,6 +163,38 @@ describe('POST /api/v1/public/conversations/initiate', () => {
         expect(res.status).toBe(200);
         const body = (await res.json()) as { data: { status: string } };
         expect(body.data.status).toBe('resent');
+    });
+
+    it('captures contact_owner_completed through the analytics client on a new conversation', async () => {
+        // Arrange
+        mockInitiateAnonymous.mockResolvedValueOnce({
+            data: {
+                status: 'pending_verification',
+                conversationId: '550e8400-e29b-41d4-a716-446655440001'
+            },
+            error: undefined
+        });
+
+        // Act
+        const res = await app.request('/initiate/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(VALID_BODY)
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(mockCaptureServerAnalyticsEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+                distinctId: `anon:${VALID_BODY.accommodationId}`,
+                name: 'contact_owner_completed',
+                properties: expect.objectContaining({
+                    accommodation_id: VALID_BODY.accommodationId,
+                    conversation_flow: 'anonymous',
+                    is_authenticated: false
+                })
+            })
+        );
     });
 
     // ── Duplicate (verified) ──────────────────────────────────────────────────
