@@ -72,7 +72,8 @@ export async function seedDiesAloneCase() {
             userId: user.userId,
             billingOptionId: plan.billingOptionId,
             predecessorSubscriptionId: started.subscriptionId,
-            returnUrl: 'https://example.test/return'
+            returnUrl: 'https://example.test/return',
+            payerEmail: 'payer@example.test'
         },
         ports
     );

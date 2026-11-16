@@ -80,7 +80,8 @@ export async function pendingSuccessor(
             userId: input.fixture.user.id,
             predecessorSubscriptionId: input.fixture.started.subscriptionId,
             billingOptionId: input.subscription.billingOptionId!,
-            returnUrl: 'https://example.test/return'
+            returnUrl: 'https://example.test/return',
+            payerEmail: 'payer@example.test'
         },
         {
             provider: input.fixture.provider,

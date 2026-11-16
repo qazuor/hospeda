@@ -63,7 +63,8 @@ describe('TEST:1739:3 succession rejects manual-only Partner plans', () => {
                 userId: user.id,
                 predecessorSubscriptionId: crypto.randomUUID(),
                 billingOptionId: option.id,
-                returnUrl: 'https://example.test'
+                returnUrl: 'https://example.test',
+                payerEmail: 'payer@example.test'
             },
             {
                 provider: fake,

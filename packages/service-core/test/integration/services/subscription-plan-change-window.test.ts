@@ -60,7 +60,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:18 plan change window', (
                     userId: seeded.user.id,
                     predecessorSubscriptionId: seeded.predecessor.id,
                     billingOptionId: seeded.targetBillingOptionId,
-                    returnUrl: seeded.input.returnUrl
+                    returnUrl: seeded.input.returnUrl,
+                    payerEmail: 'payer@example.test'
                 },
                 { ...seeded.ports, clock: clockAt('2026-10-11T05:00:00.000Z') }
             )
