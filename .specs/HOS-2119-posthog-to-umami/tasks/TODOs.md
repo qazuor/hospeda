@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 61/76 tasks (80%)
+## Progress: 63/76 tasks (83%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -464,13 +464,13 @@ Tracks (can run in parallel):
   - Blocked by: T-057, T-058, T-059
   - Blocks: T-061, T-062, T-067
 
-- [ ] **T-061** (complexity: 3) - T-6 Remove PostHog from Dockerfiles, turbo.json, build scripts, guards and package dependencies
+- [x] **T-061** (complexity: 3) - T-6 Remove PostHog from Dockerfiles, turbo.json, build scripts, guards and package dependencies
   - Tags: t6-removal, config, devops
   - Cut-critical. Tests: dockerfile-build-args.test.ts, `bash scripts/check-dockerfile-build-env-in-turb...
   - Blocked by: T-060
   - Blocks: T-067
 
-- [ ] **T-062** (complexity: 2) - T-6 Remove PostHog from CI workflows
+- [x] **T-062** (complexity: 2) - T-6 Remove PostHog from CI workflows
   - Tags: t6-removal, devops, ci
   - Cut-critical. Tests: workflow YAML lint via the repo's actionlint/validate-docs if present; `rg -i p...
   - Blocked by: T-060

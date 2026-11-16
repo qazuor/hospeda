@@ -2201,71 +2201,71 @@
         {
             "id": "T-061",
             "title": "T-6 Remove PostHog from Dockerfiles, turbo.json, build scripts, guards and package dependencies",
-            "description": "Cut-critical. Tests: dockerfile-build-args.test.ts, `bash scripts/check-dockerfile-build-env-in-turbo.sh`, and typecheck of apps/api and apps/admin pass after dependency removal. Run with CI=true prefix for pnpm.\n\nNOTE (T-060/T-063): also fix HOSPEDA_UMAMI_URL/WEBSITE_ID_WEB registry descriptions (still say leave unset to disable; now prod-required) then regen env-registry.json, env examples, snapshot. Lockfile must drop @repo/posthog-proxy-worker (T-063) and posthog-node. Stale comment scripts/check-dockerfile-build-env-in-turbo.sh:13. dockerfile-build-args.test.ts:100-103 comment.",
-            "status": "in-progress",
+            "description": "Cut-critical. Tests: dockerfile-build-args.test.ts, `bash scripts/check-dockerfile-build-env-in-turbo.sh`, and typecheck of apps/api and apps/admin pass after dependency removal. Run with CI=true prefix for pnpm.\n\nNOTE (T-060/T-063): also fix HOSPEDA_UMAMI_URL/WEBSITE_ID_WEB registry descriptions (still say leave unset to disable; now prod-required) then regen env-registry.json, env examples, snapshot. Lockfile must drop @repo/posthog-proxy-worker (T-063) and posthog-node. Stale comment scripts/check-dockerfile-build-env-in-turbo.sh:13. dockerfile-build-args.test.ts:100-103 comment.\n\nDONE NOTE: lockfile has no posthog. Umami build args already present (T-012/T-013), covered by PUBLIC_*/VITE_* turbo wildcards. Open: pnpm-workspace.yaml lines ~349/426 posthog-js transitive override comments/overrides may now be dead — owner decision, left as-is.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-060"],
             "blocks": ["T-067"],
             "subtasks": [
                 {
                     "title": "apps/web/Dockerfile, apps/admin/Dockerfile build args; turbo.json POSTHOG_* keys (lines ~15-22 and PUBLIC_/VITE_ keys)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "apps/e2e/package.json e2e:build command (PUBLIC_POSTHOG_KEY / VITE_POSTHOG_KEY placeholders)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "scripts/check-dockerfile-build-env-in-turbo.sh comment, packages/config/src/__tests__/dockerfile-build-args.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove posthog-node from apps/api/package.json and posthog-js (and other PostHog deps) from apps/admin/package.json and root package.json; update the lockfile via pnpm install in the implementer's full environment",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "config", "devops"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
                 "started": "2026-11-16T17:48:09Z",
-                "completed": null
+                "completed": "2026-11-16T17:56:25Z"
             }
         },
         {
             "id": "T-062",
             "title": "T-6 Remove PostHog from CI workflows",
             "description": "Cut-critical. Tests: workflow YAML lint via the repo's actionlint/validate-docs if present; `rg -i posthog .github` returns nothing. The CI Guards job must stay green.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-060"],
             "blocks": ["T-067"],
             "subtasks": [
                 {
                     "title": "Remove PUBLIC_POSTHOG_KEY/VITE_POSTHOG_KEY/secrets from .github/workflows/ci.yml (line ~91-95), e2e-pr.yml, e2e-nightly.yml, a11y-sweep.yml, lighthouse.yml, e2e-local.self-hosted.yml",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Replace with PUBLIC_UMAMI_* placeholders only where the build requires them (as added in T-012/T-013)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "devops", "ci"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
                 "started": "2026-11-16T17:48:09Z",
-                "completed": null
+                "completed": "2026-11-16T17:49:05Z"
             }
         },
         {
@@ -2760,8 +2760,8 @@
     "summary": {
         "total": 76,
         "pending": 13,
-        "inProgress": 2,
-        "completed": 61,
+        "inProgress": 0,
+        "completed": 63,
         "blocked": 0,
         "averageComplexity": 2.5
     }
