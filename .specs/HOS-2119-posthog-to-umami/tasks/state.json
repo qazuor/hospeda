@@ -2598,40 +2598,40 @@
         {
             "id": "T-072",
             "title": "T-2 Pass visitor context from request-scoped server call sites",
-            "description": "After the call-site swaps (T-023, T-024) and the auth/signup swap (T-022), pass getVisitorContext(c) to capture in the request-scoped call sites: conversations/*/initiate, accommodation/protected/publish, accommodation/protected/import-from-url, host-onboarding/protected/start, auth signup analytics, ai/protected/chat*. Crons, webhooks and api-server events pass nothing. If a call site is reached through Astro SSR, note it so the web forwards the visitor IP/UA (spec §6.2). Tests: per call site, a route test asserting capture receives the visitor from request headers; a cron/webhook test asserting no visitor.",
-            "status": "pending",
+            "description": "After the call-site swaps (T-023, T-024) and the auth/signup swap (T-022), pass getVisitorContext(c) to capture in the request-scoped call sites: conversations/*/initiate, accommodation/protected/publish, accommodation/protected/import-from-url, host-onboarding/protected/start, auth signup analytics, ai/protected/chat*. Crons, webhooks and api-server events pass nothing. If a call site is reached through Astro SSR, note it so the web forwards the visitor IP/UA (spec §6.2). Tests: per call site, a route test asserting capture receives the visitor from request headers; a cron/webhook test asserting no visitor.\n\nDONE 2026-11-15: also wired sign_in_completed (session.create.after) with visitor; staff-initiated signup (signup-as-host) and impersonation/admin paths carry no visitor (x-hospeda-no-visitor marker). All web callers are direct browser calls (no SSR proxy). Known pre-existing gap: import-from-url async (202) path emits only started, no completed/failed.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022", "T-023", "T-024", "T-071"],
             "blocks": ["T-025", "T-073"],
             "subtasks": [
                 {
                     "title": "Pass visitor in conversations initiate and ai chat",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass visitor in publish, import-from-url, host-onboarding start",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass visitor in auth signup analytics",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Route tests asserting visitor passed / absent for crons",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-15T06:02:25Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T01:55:58Z",
+                "completed": "2026-11-16T02:19:43Z"
             }
         },
         {
@@ -2715,9 +2715,9 @@
     ],
     "summary": {
         "total": 74,
-        "pending": 59,
+        "pending": 58,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.5
     }
