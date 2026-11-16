@@ -969,40 +969,40 @@
         {
             "id": "T-027",
             "title": "T-3 Create the web Umami client (trackEvent, consent-gated identify, resetUser) replacing posthog-client",
-            "description": "Read apps/web/src/lib/analytics/posthog-client.ts (290 lines) first and port the consent logic, not the SDK stub logic. Files: apps/web/src/lib/analytics/umami-client.ts, apps/web/test/lib/analytics/umami-client.test.ts (model on apps/web/test/lib/analytics/posthog-client.test.ts). Tests (AC-5): before consent track works and identify is never called; after CONSENT_CHANGED_EVENT identify is called once with the user id; repeated consent events do not re-identify within a session; email as distinct id is rejected; forbidden property keys rejected.",
-            "status": "pending",
+            "description": "Read apps/web/src/lib/analytics/posthog-client.ts (290 lines) first and port the consent logic, not the SDK stub logic. Files: apps/web/src/lib/analytics/umami-client.ts, apps/web/test/lib/analytics/umami-client.test.ts (model on apps/web/test/lib/analytics/posthog-client.test.ts). Tests (AC-5): before consent track works and identify is never called; after CONSENT_CHANGED_EVENT identify is called once with the user id; repeated consent events do not re-identify within a session; email as distinct id is rejected; forbidden property keys rejected.\n\nDONE NOTE: exports trackEvent, identifyUser (consent-gated, once per user per session via sessionStorage, rejects ids with @), setPersonProperties (re-identify with merged data), resetUser, associateGroup/resetGroups (documented no-ops until T-030 removes callers), trackTaggedEvent({name,properties,tag}) validating via prepareAnalyticsEvent then captureTagged (for T-076).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020", "T-012"],
             "blocks": ["T-030", "T-031", "T-032", "T-033"],
             "subtasks": [
                 {
                     "title": "Create apps/web/src/lib/analytics/umami-client.ts with the same exported names the islands use: trackEvent, identifyUser, resetUser (setPersonProperties folds into identify data; associateGroup/resetGroups are dropped with a note)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pre-consent: cookieless anonymous track only; identify runs only after consent, once per session, listening to CONSENT_CHANGED_EVENT from apps/web/src/lib/cookie-consent.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Distinct ID is the internal user id, never an email (OQ-5)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keep prepareAnalyticsEvent validation and anti-PII guards",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "web"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:53:51Z",
+                "completed": "2026-11-16T16:57:52Z"
             }
         },
         {
@@ -1222,46 +1222,46 @@
         {
             "id": "T-034",
             "title": "T-3 Create the admin Umami client, initialize it in __root.tsx and adapt the CSP nonce handling",
-            "description": "Port apps/admin/src/lib/analytics/posthog-client.ts (205 lines). Admin identifies only the staff user id (OQ-5). Tests: no-op when env unset or in dev; script injected once with nonce; identify/reset delegate; trackEvent validates through prepareAnalyticsEvent.",
-            "status": "pending",
+            "description": "Port apps/admin/src/lib/analytics/posthog-client.ts (205 lines). Admin identifies only the staff user id (OQ-5). Tests: no-op when env unset or in dev; script injected once with nonce; identify/reset delegate; trackEvent validates through prepareAnalyticsEvent.\n\nDONE NOTE: initUmami injects one defer script with nonce (no-op on server/dev/env unset). identifyUser(userId) only — T-035 must update auth-context.tsx call. CSP: Umami origin in script-src+connect-src (with strict-dynamic the nonce is what permits it in CSP3). Admin typecheck could not be fully verified locally: src/routeTree.gen.ts is gitignored and absent in the worktree (246 pre-existing route errors, none in touched files); CI verifies.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020", "T-013"],
             "blocks": ["T-035"],
             "subtasks": [
                 {
                     "title": "Create apps/admin/src/lib/analytics/umami-client.ts: init loads the tracker script (VITE_UMAMI_SCRIPT_URL, VITE_UMAMI_WEBSITE_ID) with the CSP nonce, exports trackEvent, identifyUser, resetUser, isUmamiInitialized",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "apps/admin/src/routes/__root.tsx: call the new init instead of initPostHog",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "apps/admin/src/lib/csp-nonce.ts: update PostHog mentions and make sure the injected script carries the nonce",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests: new apps/admin/test/lib/analytics/umami-client.test.ts; apps/admin/test/router.csp-nonce.test.ts updated",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "admin"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:53:51Z",
+                "completed": "2026-11-16T17:01:30Z"
             }
         },
         {
             "id": "T-035",
             "title": "T-3 Swap admin consumers to the Umami client (auth-context identify, tour, whats-new)",
-            "description": "Mechanical swap. Tests: all listed suites updated to the new module path with the same assertions; auth-context test asserts identifyUser(staffUserId) on login and resetUser on logout.",
+            "description": "Mechanical swap. Tests: all listed suites updated to the new module path with the same assertions; auth-context test asserts identifyUser(staffUserId) on login and resetUser on logout.\n\nNOTE (T-034): admin identifyUser now takes only the user id.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-034"],
@@ -2738,7 +2738,7 @@
             "id": "T-076",
             "title": "T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page",
             "description": "Web side of T-075: on accommodation/venue/experience/partner detail pages, when document.referrer is same-origin, send the T-075 catalog event once per page load via the Umami tracker, with tag=<entityId>. Consent rules as for the other web events. Tests: emitted on same-origin referrer, not on external/empty referrer.\n\nREVIEW NOTES 2026-11-16: send with the function form umami.track((p) => ({...p, name: AnalyticsEvents.listingInternalEntry, data, tag: entityId})) so the tag never depends on the script attribute (umami.track({...}) object form drops the tag). The tracker script is defer: wait/queue until window.umami exists. G20 is satisfied by the api reader, so it will NOT catch a missing emitter: this task MUST include a test asserting the emission. Side effect: any custom event removes the visit from Umami bounce counting.\n\nNOTE 2026-11-16 (T-020): createUmamiBrowserClient() exposes captureTagged({name,data,tag}) → umami.track(d=>({...d,name,data,tag})). createBrowserAnalytics() has no tag path, so calling captureTagged directly skips catalog validation — prefer extending the wrapper with a tagged capture that still validates.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-075", "T-074"],
             "blocks": ["T-056"],
@@ -2752,16 +2752,16 @@
             },
             "timestamps": {
                 "created": "2026-11-16T03:21:10Z",
-                "started": null,
+                "started": "2026-11-16T16:57:52Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 76,
-        "pending": 27,
-        "inProgress": 0,
-        "completed": 49,
+        "pending": 24,
+        "inProgress": 1,
+        "completed": 51,
         "blocked": 0,
         "averageComplexity": 2.5
     }

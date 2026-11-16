@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 49/76 tasks (64%)
+## Progress: 51/76 tasks (67%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -164,13 +164,13 @@ Tracks (can run in parallel):
   - Blocked by: T-019, T-011
   - Blocks: T-022, T-023, T-024
 
-- [ ] **T-027** (complexity: 3) - T-3 Create the web Umami client (trackEvent, consent-gated identify, resetUser) replacing posthog-client
+- [x] **T-027** (complexity: 3) - T-3 Create the web Umami client (trackEvent, consent-gated identify, resetUser) replacing posthog-client
   - Tags: t3-web-admin, web
   - Read apps/web/src/lib/analytics/posthog-client.ts (290 lines) first and port the consent logic, not ...
   - Blocked by: T-020, T-012
   - Blocks: T-030, T-031, T-032, T-033
 
-- [ ] **T-034** (complexity: 3) - T-3 Create the admin Umami client, initialize it in __root.tsx and adapt the CSP nonce handling
+- [x] **T-034** (complexity: 3) - T-3 Create the admin Umami client, initialize it in __root.tsx and adapt the CSP nonce handling
   - Tags: t3-web-admin, admin
   - Port apps/admin/src/lib/analytics/posthog-client.ts (205 lines). Admin identifies only the staff use...
   - Blocked by: T-020, T-013
