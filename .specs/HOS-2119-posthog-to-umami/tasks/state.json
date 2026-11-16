@@ -1852,45 +1852,45 @@
             "id": "T-051",
             "title": "T-5 Create the web traffic-stats client and the shared TrafficStatsCards island",
             "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.\n\nNOTES 2026-11-15 (T-046 review): (1) Umami never returns direct traffic in the referrer breakdown, so the i18n string traffic.referrers.direct can never render as-is — owner decision pending: compute direct = total visitors - sum(referrers) (recommended) or drop the string. (2) Umami device values include `laptop` (desktop|laptop|tablet|mobile); the copy has no laptop label. (3) Breakdown counts are distinct visitors; views are pageviews.\n\nOWNER DECISION 2026-11-15: direct traffic IS shown, computed server-side as max(0, total distinct visitors - sum(referrer visitors)) and rendered with traffic.referrers.direct (implemented in ListingTrafficStatsService + UmamiStatsClient, see follow-up commit).\n\nMEASURED 2026-11-16: Umami hides same-site referrers (tracker rewrites same-origin referrer to a path; metrics omit it), so the derived (direct) row ALSO includes internal navigation within Hospeda. Label pending owner decision.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-044", "T-050", "T-075"],
             "blocks": ["T-052", "T-053", "T-054"],
             "subtasks": [
                 {
                     "title": "Add listingAnalyticsApi.getTrafficStats({entityType, entityId, window}) in apps/web/src/lib/api/endpoints-protected.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create apps/web/src/components/listing/TrafficStatsCards.client.tsx + TrafficStatsCards.module.css (vanilla CSS modules, no Tailwind): four cards (Contactos absent, not zero, when contactFunnel is null), top 5 referrers, empty state, hides itself entirely when available:false, no error banner",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Takes window as a prop (shared selector with the existing cards)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: apps/web/test/components/listing/TrafficStatsCards.test.tsx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:08:16Z",
+                "completed": "2026-11-16T04:19:53Z"
             }
         },
         {
             "id": "T-052",
             "title": "T-5 Mount TrafficStatsCards in the accommodation owner panel",
-            "description": "Which accommodation id to pass depends on how AnalyticsSection aggregates owned accommodations today (it is host-level, not per listing): locate in the file and, if it is aggregate-only, mount per selected accommodation or flag it to the coordinator rather than inventing aggregation. Tests: cards mounted beneath existing cards; existing view cards unchanged; window change propagates.",
+            "description": "Which accommodation id to pass depends on how AnalyticsSection aggregates owned accommodations today (it is host-level, not per listing): locate in the file and, if it is aggregate-only, mount per selected accommodation or flag it to the coordinator rather than inventing aggregation. Tests: cards mounted beneath existing cards; existing view cards unchanged; window change propagates.\n\nNOTES 2026-11-16 (T-051 review): the island lives at apps/web/src/components/listing/TrafficStatsCards.client.tsx (props entityType, entityId, window; parent owns the window selector) and renders h3 cards with NO h2 — the mounting page must add an h2 with listing.owner.traffic.title. Mount with client:visible.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-051", "T-048"],
@@ -1988,31 +1988,31 @@
             "id": "T-055",
             "title": "T-5 Document the traffic-stats route in the API docs",
             "description": "Docs only: apps/api/docs/route-architecture.md. No tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-049"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add the route, params, response and 404/available:false semantics to apps/api/docs/route-architecture.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Note the HOS-734/HOS-1063 precedent (entity_views stays the source of promised counts)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "docs", "api"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:08:16Z",
+                "completed": "2026-11-16T04:19:53Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 51,
+        "pending": 49,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.5
     }

@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 25/76 tasks (33%)
+## Progress: 27/76 tasks (36%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -322,7 +322,7 @@ Tracks (can run in parallel):
   - Blocked by: T-048
   - Blocks: T-054, T-055
 
-- [ ] **T-051** (complexity: 3) - T-5 Create the web traffic-stats client and the shared TrafficStatsCards island
+- [x] **T-051** (complexity: 3) - T-5 Create the web traffic-stats client and the shared TrafficStatsCards island
   - Tags: t5-owner-stats, web
   - Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in...
   - Blocked by: T-044, T-050
@@ -420,7 +420,7 @@ Tracks (can run in parallel):
   - Blocked by: T-039, T-040
   - Blocks: T-065
 
-- [ ] **T-055** (complexity: 1) - T-5 Document the traffic-stats route in the API docs
+- [x] **T-055** (complexity: 1) - T-5 Document the traffic-stats route in the API docs
   - Tags: t5-owner-stats, docs, api
   - Docs only: apps/api/docs/route-architecture.md. No tests....
   - Blocked by: T-049
