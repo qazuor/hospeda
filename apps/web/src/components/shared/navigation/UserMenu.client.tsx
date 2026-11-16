@@ -37,7 +37,7 @@ import { LanguageSwitcher } from '@/components/shared/preferences/LanguageSwitch
 import { ThemeControl } from '@/components/shared/preferences/ThemeControl.client';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
-import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/posthog-client';
+import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/umami-client';
 import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
@@ -186,7 +186,7 @@ export function UserMenu({
     // responsible for the `data-user-authenticated` attribute.
     const { user, permissions, roles } = useAccountPermissions({ initialUser });
 
-    // ── PostHog identify ─────────────────────────────────────────────────
+    // ── Umami identify ──────────────────────────────────────────────────
     // Fires whenever `user` resolves to a known, authenticated id (from the
     // SSR-provided `initialUser`, the sessionStorage cache, or the /auth/me
     // fetch above). UserMenu is mounted on every page (`client:load`), so
@@ -237,7 +237,7 @@ export function UserMenu({
         identifyUser(user.id, props);
     }, [user, permissions, rolesKey]);
 
-    // ── PostHog locale person property ───────────────────────────────────
+    // ── Umami locale person property ───────────────────────────────────
     // The active locale is already known client-side, so this is free (no
     // server hit) and updates if the user switches language mid-session.
     useEffect(() => {

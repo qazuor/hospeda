@@ -53,7 +53,7 @@ vi.mock('../../../src/lib/i18n', async () => {
  * PostHog would drop as `{}`).
  */
 const { trackEventSpy } = vi.hoisted(() => ({ trackEventSpy: vi.fn() }));
-vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+vi.mock('../../../src/lib/analytics/umami-client', () => ({
     trackEvent: trackEventSpy
 }));
 
