@@ -13,6 +13,12 @@ export {
     AnalyticsEvents
 } from './catalog.js';
 export type {
+    CaptureTaggedInput,
+    UmamiBrowserClient,
+    UmamiTracker
+} from './providers/umami-browser.js';
+export { createUmamiBrowserClient } from './providers/umami-browser.js';
+export type {
     CreateUmamiServerClientOptions,
     UmamiServerClient,
     UmamiServerLogger
