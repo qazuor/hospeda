@@ -1968,5 +1968,64 @@
             "cancel": "Cancel",
             "confirm": "Grant"
         }
+    },
+    "locationExceptionRequests": {
+        "title": "Exception requests",
+        "description": "Owner requests to publish a listing at an address another listing already holds. Approving grants the exception; rejecting tells the owner with your reason.",
+        "verticals": {
+            "accommodations": "Accommodations",
+            "venues": "Venues (Eat and go out)"
+        },
+        "filters": {
+            "status": "Status",
+            "PENDING": "Pending",
+            "APPROVED": "Approved",
+            "REJECTED": "Rejected",
+            "SUPERSEDED": "Superseded"
+        },
+        "columns": {
+            "listing": "Listing",
+            "owner": "Owner",
+            "address": "Address",
+            "colliding": "Colliding listings",
+            "reason": "Owner's reason",
+            "requestedAt": "Requested on",
+            "actions": "Actions"
+        },
+        "address": {
+            "street": "{street} {number}",
+            "floor": "Floor {floor}",
+            "apartment": "Apt {apartment}",
+            "none": "No address"
+        },
+        "approve": "Approve",
+        "reject": "Reject",
+        "empty": "There are no requests with this status.",
+        "loading": "Loading...",
+        "loadError": "The requests could not be loaded.",
+        "previous": "Previous",
+        "next": "Next",
+        "approveDialog": {
+            "title": "Approve the exception",
+            "description": "The listing will be able to share its address. The reason is recorded and the owner sees it as you leave it.",
+            "reasonLabel": "Reason (10 to 500 characters)",
+            "cancel": "Cancel",
+            "confirm": "Approve"
+        },
+        "rejectDialog": {
+            "title": "Reject the request",
+            "description": "The owner will see your reason. It is required.",
+            "reasonLabel": "Reason for rejecting (10 to 500 characters)",
+            "cancel": "Cancel",
+            "confirm": "Reject"
+        },
+        "reasonInvalid": "The reason must be between 10 and 500 characters.",
+        "approved": "Exception approved.",
+        "rejected": "Request rejected.",
+        "conflict": {
+            "notPending": "Someone else already resolved this request. The list was refreshed.",
+            "stale": "The owner changed the listing's address after asking for the exception, so the request is out of date. The list was refreshed."
+        },
+        "genericError": "The action could not be completed."
     }
 }

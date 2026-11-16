@@ -1322,5 +1322,48 @@
             "storage": "We could not delete the files from external storage. Nothing was emptied: try again in a few minutes.",
             "forbidden": "You cannot empty the presence of a Partner that is yours: another team account with the permission does it."
         }
+    },
+    "locationException": {
+        "title": "Location exception",
+        "none": "This listing has no location exception.",
+        "inForce": "Exception in force",
+        "by": "Granted by {name}",
+        "byUnknown": "Granted by an unidentified user",
+        "at": "on {date}",
+        "reasonLabel": "Reason",
+        "revoke": "Remove exception",
+        "grant": "Grant exception",
+        "historyTitle": "History",
+        "historyEmpty": "No events yet.",
+        "loading": "Loading...",
+        "loadError": "The exception could not be loaded.",
+        "actions": {
+            "REQUESTED": "Requested",
+            "APPROVED": "Approved",
+            "REJECTED": "Rejected",
+            "GRANTED": "Granted",
+            "REVOKED": "Removed"
+        },
+        "system": "System",
+        "revokeDialog": {
+            "title": "Remove the exception",
+            "description": "The listing can no longer share its address. If it is published and another listing of the same owner holds that address, it cannot be removed.",
+            "reasonLabel": "Reason (optional, 10 to 500 characters)",
+            "cancel": "Cancel",
+            "confirm": "Remove exception"
+        },
+        "grantDialog": {
+            "title": "Grant the exception",
+            "description": "The listing will be able to share its address with others. It is recorded under your user.",
+            "reasonLabel": "Reason (10 to 500 characters)",
+            "cancel": "Cancel",
+            "confirm": "Grant"
+        },
+        "reasonInvalid": "The reason must be between 10 and 500 characters.",
+        "revoked": "Exception removed.",
+        "granted": "Exception granted.",
+        "revokeConflict": "It cannot be removed: the listing is published and another published listing of the same owner holds the same address.",
+        "revokeConflictLink": "View the colliding listing",
+        "genericError": "The action could not be completed."
     }
 }
