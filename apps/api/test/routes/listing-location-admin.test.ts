@@ -2,13 +2,15 @@
  * Admin routes of the one-address rule (HOS-1810): exception grant/removal and the
  * repeated-address report, for venues and accommodations.
  */
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core/types';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../src/types.js';
 
 const mocks = vi.hoisted(() => ({
-    setException: vi.fn(),
-    clearException: vi.fn(),
+    grantException: vi.fn(),
+    revokeException: vi.fn(),
     listDuplicateGroups: vi.fn(),
     actor: {
         value: {
@@ -25,12 +27,24 @@ vi.mock('@repo/db', async () => {
         ...actual,
         listingLocationModel: {
             ...actual.listingLocationModel,
-            setException: mocks.setException,
-            clearException: mocks.clearException,
             listDuplicateGroups: mocks.listDuplicateGroups
         }
     };
 });
+
+// The grant and the removal now run through service-core (one transaction that also
+// writes the audit event); their behavior is covered by the integration suite.
+vi.mock('@repo/service-core', async () => {
+    const actual = await vi.importActual<typeof import('@repo/service-core')>('@repo/service-core');
+    return {
+        ...actual,
+        grantLocationException: mocks.grantException,
+        revokeLocationException: mocks.revokeException
+    };
+});
+vi.mock('../../src/lib/location-exception-notifications.js', () => ({
+    notifyLocationExceptionDecision: vi.fn()
+}));
 
 vi.mock('../../src/utils/actor.js', () => ({
     getActorFromContext: () => mocks.actor.value,
@@ -80,8 +94,8 @@ describe('venue one-address admin routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mocks.actor.value = { ...ADMIN };
-        mocks.setException.mockResolvedValue('granted');
-        mocks.clearException.mockResolvedValue(true);
+        mocks.grantException.mockResolvedValue(null);
+        mocks.revokeException.mockResolvedValue(true);
         mocks.listDuplicateGroups.mockResolvedValue({ items: [], total: 0 });
         app = buildApp();
     });
@@ -93,15 +107,12 @@ describe('venue one-address admin routes', () => {
         );
         expect(res.status).toBe(201);
         expect((await res.json()).data).toEqual({ id: ID, hasException: true });
-        expect(mocks.setException).toHaveBeenCalledWith(
-            expect.objectContaining({
-                vertical: 'venue',
-                id: ID,
-                adminId: ADMIN.id,
-                reason: 'Food court, three venues share the building',
-                at: expect.any(Date)
-            })
-        );
+        expect(mocks.grantException).toHaveBeenCalledWith({
+            vertical: 'venue',
+            listingId: ID,
+            adminId: ADMIN.id,
+            reason: 'Food court, three venues share the building'
+        });
     });
 
     it('rejects a missing or too short reason with 400 and writes nothing', async () => {
@@ -109,7 +120,7 @@ describe('venue one-address admin routes', () => {
         expect(
             (await app.request(`/${ID}/location-exception`, post({ reason: 'short' }))).status
         ).toBe(400);
-        expect(mocks.setException).not.toHaveBeenCalled();
+        expect(mocks.grantException).not.toHaveBeenCalled();
     });
 
     it('answers 400 for a non-UUID id before touching the database', async () => {
@@ -118,11 +129,18 @@ describe('venue one-address admin routes', () => {
             post({ reason: 'A long enough reason' })
         );
         expect(res.status).toBe(400);
-        expect(mocks.setException).not.toHaveBeenCalled();
+        expect(mocks.grantException).not.toHaveBeenCalled();
     });
 
     it('answers 409 LOCATION_EXCEPTION_NEEDS_KEY for a listing with no comparable address', async () => {
-        mocks.setException.mockResolvedValue('no_key');
+        mocks.grantException.mockRejectedValue(
+            new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'no comparable address',
+                undefined,
+                'LOCATION_EXCEPTION_NEEDS_KEY'
+            )
+        );
         const res = await app.request(
             `/${ID}/location-exception`,
             post({ reason: 'A long enough reason' })
@@ -135,7 +153,9 @@ describe('venue one-address admin routes', () => {
     });
 
     it('answers 404 for a listing that does not exist', async () => {
-        mocks.setException.mockResolvedValue('not_found');
+        mocks.grantException.mockRejectedValue(
+            new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue not found')
+        );
         const res = await app.request(
             `/${ID}/location-exception`,
             post({ reason: 'A long enough reason' })
@@ -157,16 +177,19 @@ describe('venue one-address admin routes', () => {
             post({ reason: 'A long enough reason' })
         );
         expect(guest.status).toBe(401);
-        expect(mocks.setException).not.toHaveBeenCalled();
+        expect(mocks.grantException).not.toHaveBeenCalled();
     });
 
     it('removes an exception', async () => {
         const res = await app.request(`/${ID}/location-exception`, { method: 'DELETE' });
         expect(res.status).toBe(200);
         expect((await res.json()).data).toEqual({ id: ID, hasException: false });
-        expect(mocks.clearException).toHaveBeenCalledWith(
-            expect.objectContaining({ vertical: 'venue', id: ID })
-        );
+        expect(mocks.revokeException).toHaveBeenCalledWith({
+            vertical: 'venue',
+            listingId: ID,
+            adminId: ADMIN.id,
+            reason: undefined
+        });
     });
 
     it('lists the repeated-address groups with page and pageSize', async () => {

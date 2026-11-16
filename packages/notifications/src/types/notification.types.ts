@@ -291,7 +291,21 @@ export enum NotificationType {
      * dedicated `settings.aiQuestionsDigest === false` switch, and never sends
      * when the week had no unanswered question.
      */
-    AI_QUESTIONS_WEEKLY_DIGEST = 'ai_questions_weekly_digest'
+    AI_QUESTIONS_WEEKLY_DIGEST = 'ai_questions_weekly_digest',
+
+    /**
+     * HOS-2192 — an admin approved the owner's request for a location exception:
+     * the listing may now share its address with another of the owner's listings.
+     *
+     * TRANSACTIONAL: it answers something the owner asked for.
+     */
+    LISTING_LOCATION_EXCEPTION_APPROVED = 'listing_location_exception_approved',
+
+    /**
+     * HOS-2192 — an admin rejected the owner's request for a location exception.
+     * Carries the admin's reason. TRANSACTIONAL, same as the approval.
+     */
+    LISTING_LOCATION_EXCEPTION_REJECTED = 'listing_location_exception_rejected'
 }
 
 /**
@@ -1166,6 +1180,31 @@ export interface AiQuestionsWeeklyDigestPayload extends BaseNotificationPayload 
 }
 
 /**
+ * Payload of the two location-exception decision notifications (HOS-2192):
+ * LISTING_LOCATION_EXCEPTION_APPROVED and LISTING_LOCATION_EXCEPTION_REJECTED.
+ *
+ * The copy is localised inside the template (this package does not use
+ * `@repo/i18n`), so the payload carries the locale and the already-built subject.
+ * It names the listing and, on a rejection, the admin's reason. It never carries
+ * the address or another listing.
+ */
+export interface ListingLocationExceptionDecisionPayload extends BaseNotificationPayload {
+    readonly type:
+        | NotificationType.LISTING_LOCATION_EXCEPTION_APPROVED
+        | NotificationType.LISTING_LOCATION_EXCEPTION_REJECTED;
+    /** Recipient locale for the copy. */
+    readonly locale: 'es' | 'en' | 'pt';
+    /** Localised subject line, built by `buildListingLocationExceptionSubject`. */
+    readonly decisionSubject: string;
+    /** Name of the listing the request was about. */
+    readonly listingName: string;
+    /** The admin's reason, set on a rejection. */
+    readonly decisionReason?: string;
+    /** Absolute link to the listing's location editor. */
+    readonly editorUrl: string;
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -1332,4 +1371,5 @@ export type NotificationPayload =
     | PartnerMentionsLoggedPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload
-    | AiQuestionsWeeklyDigestPayload;
+    | AiQuestionsWeeklyDigestPayload
+    | ListingLocationExceptionDecisionPayload;
