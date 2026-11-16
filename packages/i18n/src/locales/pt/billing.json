@@ -817,6 +817,48 @@
         "max_active_private_galleries": "Quantas galerias privadas você pode manter vivas ao mesmo tempo. Cada galeria expira sozinha quando o prazo termina e é apagada, então as vagas voltam à medida que vencem.",
         "max_ai_faq_draft_per_month": "Quantos rascunhos de resposta você pode gerar com IA por mês para as perguntas das suas fichas. A cota é renovada no início de cada mês."
     },
+    "addon": {
+        "extra-accommodations-5": {
+            "name": "Pacote de acomodações extras (+5)",
+            "description": "Adiciona 5 acomodações a mais ao seu plano. Renova todo mês."
+        },
+        "extra-photos-20": {
+            "name": "Pacote de fotos extras (+20 fotos)",
+            "description": "Adiciona 20 fotos a mais em cada acomodação. Renova todo mês."
+        },
+        "extra-venues-1": {
+            "name": "Anúncio extra de Comer y salir (+1)",
+            "description": "Adiciona 1 anúncio a mais de Comer y salir ao seu plano. Renova todo mês."
+        },
+        "extra-experiences-1": {
+            "name": "Anúncio extra de experiência (+1)",
+            "description": "Adiciona 1 anúncio a mais de experiência ao seu plano. Renova todo mês."
+        },
+        "visibility-boost-7d": {
+            "name": "Impulso de visibilidade (7 dias)",
+            "description": "Sua acomodação aparece em destaque nos resultados de busca por 7 dias."
+        },
+        "visibility-boost-30d": {
+            "name": "Impulso de visibilidade (30 dias)",
+            "description": "Sua acomodação aparece em destaque nos resultados de busca por 30 dias."
+        },
+        "visibility-boost-venue-7d": {
+            "name": "Impulso de visibilidade — Comer y salir (7 dias)",
+            "description": "Seu local de Comer y salir aparece em destaque nos resultados de busca por 7 dias."
+        },
+        "visibility-boost-venue-30d": {
+            "name": "Impulso de visibilidade — Comer y salir (30 dias)",
+            "description": "Seu local de Comer y salir aparece em destaque nos resultados de busca por 30 dias."
+        },
+        "visibility-boost-experience-7d": {
+            "name": "Impulso de visibilidade — Experiência (7 dias)",
+            "description": "Sua experiência aparece em destaque nos resultados de busca por 7 dias."
+        },
+        "visibility-boost-experience-30d": {
+            "name": "Impulso de visibilidade — Experiência (30 dias)",
+            "description": "Sua experiência aparece em destaque nos resultados de busca por 30 dias."
+        }
+    },
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Escolha um complemento",

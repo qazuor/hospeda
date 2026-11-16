@@ -17,6 +17,7 @@ export async function readAddonOffers(input: {
                 productId: addonProducts.id,
                 addonVersionId: addonProducts.versionId,
                 addonId: addonProducts.addonId,
+                slug: addons.slug,
                 name: addons.name,
                 description: addons.description,
                 chargeKind: addonProducts.chargeKind,
@@ -51,6 +52,7 @@ export async function readAddonOffers(input: {
             items.push({
                 productId: row.productId,
                 addonVersionId: row.addonVersionId,
+                slug: row.slug,
                 name: row.name,
                 description: row.description,
                 chargeKind: row.chargeKind,

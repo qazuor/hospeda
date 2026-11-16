@@ -1,4 +1,5 @@
 import type { AddonOffersResponse } from '@repo/schemas';
+import { getAddonDescription, getAddonName } from '@/lib/billing/addon-purchase';
 import type { createTranslations } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
 
@@ -19,18 +20,21 @@ export function AddonOfferList(input: {
             <h2>{input.t('billing.addonPurchase.chooseOffer')}</h2>
             {input.offers.length === 0 && <p>{input.t('billing.addonPurchase.noOffers')}</p>}
             <div className={styles.grid}>
-                {input.offers.map((offer) => (
-                    <button
-                        key={offer.productId}
-                        type="button"
-                        className={styles.card}
-                        data-testid={`addon-offer-${offer.productId}`}
-                        onClick={() => input.onSelect(offer)}
-                    >
-                        <strong>{offer.name}</strong>
-                        {offer.description && <span>{offer.description}</span>}
-                    </button>
-                ))}
+                {input.offers.map((offer) => {
+                    const description = getAddonDescription({ offer, t: input.t });
+                    return (
+                        <button
+                            key={offer.productId}
+                            type="button"
+                            className={styles.card}
+                            data-testid={`addon-offer-${offer.productId}`}
+                            onClick={() => input.onSelect(offer)}
+                        >
+                            <strong>{getAddonName({ offer, t: input.t })}</strong>
+                            {description && <span>{description}</span>}
+                        </button>
+                    );
+                })}
             </div>
         </section>
     );
