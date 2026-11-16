@@ -1,5 +1,5 @@
 {
-    "_note": "HOS-2217 model migration. The FIRST model is the baseline (production today). monthlyCalls are the real production ai_usage counts over the 30 days before 2026-11-15 (measured that day); re-measure them with the README query before trusting the monthly projection. They are tiny, so the report also prints the quota-based projection (cost per answer x monthlyQuotas), the same one the chat sweep uses.",
+    "_note": "HOS-2217 model migration. The FIRST model is the baseline (production today). gpt-5-nano and gpt-5-mini were dropped as candidates: OpenAI marks them DEPRECATED (checked 2026-11-15); check OpenAI's deprecations page before choosing candidates. monthlyCalls are the real production ai_usage counts over the 30 days before 2026-11-15 (measured that day); re-measure them with the README query before trusting the monthly projection. They are tiny, so the report also prints the quota-based projection (cost per answer x monthlyQuotas), the same one the chat sweep uses.",
     "providers": [
         {
             "id": "openai",
@@ -18,6 +18,26 @@
             }
         },
         {
+            "id": "gpt-6-luna",
+            "provider": "openai",
+            "reasoning": true,
+            "reasoningEfforts": ["none", "low"],
+            "rates": {
+                "inputUsdPerMillion": 0.1,
+                "outputUsdPerMillion": 0.5
+            }
+        },
+        {
+            "id": "gpt-5.6-luna",
+            "provider": "openai",
+            "reasoning": true,
+            "reasoningEfforts": ["none"],
+            "rates": {
+                "inputUsdPerMillion": 0.2,
+                "outputUsdPerMillion": 1.2
+            }
+        },
+        {
             "id": "gpt-5.4-mini",
             "provider": "openai",
             "reasoning": true,
@@ -25,26 +45,6 @@
             "rates": {
                 "inputUsdPerMillion": 0.75,
                 "outputUsdPerMillion": 4.5
-            }
-        },
-        {
-            "id": "gpt-5-nano",
-            "provider": "openai",
-            "reasoning": true,
-            "reasoningEfforts": ["minimal"],
-            "rates": {
-                "inputUsdPerMillion": 0.05,
-                "outputUsdPerMillion": 0.4
-            }
-        },
-        {
-            "id": "gpt-5-mini",
-            "provider": "openai",
-            "reasoning": true,
-            "reasoningEfforts": ["minimal"],
-            "rates": {
-                "inputUsdPerMillion": 0.25,
-                "outputUsdPerMillion": 2.0
             }
         }
     ],
@@ -56,7 +56,7 @@
     },
     "repetitions": 1,
     "concurrency": 3,
-    "maxCalls": 600,
+    "maxCalls": 780,
     "monthlyQuotas": [20, 50, 100, 250, 1250],
     "features": {
         "chat": {

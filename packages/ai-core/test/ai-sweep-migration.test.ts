@@ -19,6 +19,7 @@ import {
     selectCases
 } from '../scripts/ai-sweep/migration-lib.js';
 import { aggregateMigration, renderMigrationReport } from '../scripts/ai-sweep/migration-report.js';
+import { MODEL_RATES } from '../src/usage/model-rates.js';
 
 const DIR = resolve(import.meta.dirname, '../scripts/ai-sweep');
 const config = MigrationConfigSchema.parse(
@@ -34,17 +35,35 @@ const ratesFor = (model: string) => {
 };
 
 describe('HOS-2217 migration config', () => {
-    it('baseline first, then the three candidates, with the agreed USD/1M rates', () => {
+    it('baseline first, then the three non-deprecated candidates, with the agreed USD/1M rates', () => {
         // Act
-        const models = config.models.map((m) => [m.id, m.rates]);
+        const models = config.models.map((m) => [m.id, m.reasoningEfforts, m.rates]);
 
         // Assert
         expect(models).toEqual([
-            ['gpt-5.4-nano', { inputUsdPerMillion: 0.2, outputUsdPerMillion: 1.25 }],
-            ['gpt-5.4-mini', { inputUsdPerMillion: 0.75, outputUsdPerMillion: 4.5 }],
-            ['gpt-5-nano', { inputUsdPerMillion: 0.05, outputUsdPerMillion: 0.4 }],
-            ['gpt-5-mini', { inputUsdPerMillion: 0.25, outputUsdPerMillion: 2.0 }]
+            ['gpt-5.4-nano', ['none'], { inputUsdPerMillion: 0.2, outputUsdPerMillion: 1.25 }],
+            ['gpt-6-luna', ['none', 'low'], { inputUsdPerMillion: 0.1, outputUsdPerMillion: 0.5 }],
+            ['gpt-5.6-luna', ['none'], { inputUsdPerMillion: 0.2, outputUsdPerMillion: 1.2 }],
+            ['gpt-5.4-mini', ['none'], { inputUsdPerMillion: 0.75, outputUsdPerMillion: 4.5 }]
         ]);
+        expect(config.models.every((m) => m.reasoning)).toBe(true);
+    });
+
+    it('every candidate has its production metering rate in MODEL_RATES', () => {
+        // Act
+        const missing = config.models.filter((m) => {
+            const rate = MODEL_RATES[m.id];
+            if (!m.rates) return true;
+            return (
+                rate?.inputMicroUsdPerMillionTokens !==
+                    Math.round(m.rates.inputUsdPerMillion * 1_000_000) ||
+                rate.outputMicroUsdPerMillionTokens !==
+                    Math.round(m.rates.outputUsdPerMillion * 1_000_000)
+            );
+        });
+
+        // Assert
+        expect(missing.map((m) => m.id)).toEqual([]);
     });
 
     it('carries the production 30-day volumes measured 2026-11-15 and the quota tiers', () => {
@@ -78,7 +97,8 @@ describe('HOS-2217 migration config', () => {
         const { calls } = expandMigrationMatrix({ config, cases: selected });
 
         // Assert
-        expect(calls.length).toBe(selected.length * config.models.length * config.repetitions);
+        const variants = config.models.reduce((a, m) => a + m.reasoningEfforts.length, 0);
+        expect(calls.length).toBe(selected.length * variants * config.repetitions);
         expect(calls.length).toBeLessThanOrEqual(config.maxCalls);
     });
 });
@@ -158,9 +178,10 @@ describe('HOS-2217 case selection and matrix', () => {
         expect(efforts).toEqual(
             new Set([
                 'gpt-5.4-nano:none',
-                'gpt-5.4-mini:none',
-                'gpt-5-nano:minimal',
-                'gpt-5-mini:minimal'
+                'gpt-6-luna:none',
+                'gpt-6-luna:low',
+                'gpt-5.6-luna:none',
+                'gpt-5.4-mini:none'
             ])
         );
     });
@@ -239,10 +260,10 @@ describe('HOS-2217 migration report', () => {
         };
         const results = [
             result({}),
-            result({ variantKey: 'gpt-5-nano | minimal', model: 'gpt-5-nano', costUsd: 0.0005 }),
+            result({ variantKey: 'gpt-6-luna | none', model: 'gpt-6-luna', costUsd: 0.0005 }),
             result({
-                variantKey: 'gpt-5-nano | minimal',
-                model: 'gpt-5-nano',
+                variantKey: 'gpt-6-luna | none',
+                model: 'gpt-6-luna',
                 caseId: 'support-injection',
                 costUsd: null,
                 error: 'timeout',
@@ -257,13 +278,13 @@ describe('HOS-2217 migration report', () => {
 
         // Assert
         const base = featureRows.find((r) => r.variantKey === 'gpt-5.4-nano | none');
-        const cand = featureRows.find((r) => r.variantKey === 'gpt-5-nano | minimal');
+        const cand = featureRows.find((r) => r.variantKey === 'gpt-6-luna | none');
         expect(base?.monthlyCostUsd).toBeCloseTo(1, 6);
         expect(cand?.errorRate).toBe(0.5);
         expect(cand?.effectivePassRate).toBe(0.5);
         expect(overallRows[0]?.variantKey).toBe('gpt-5.4-nano | none');
         expect(
-            overallRows.find((r) => r.variantKey === 'gpt-5-nano | minimal')?.costVsBaseline
+            overallRows.find((r) => r.variantKey === 'gpt-6-luna | none')?.costVsBaseline
         ).toBeCloseTo(0.5, 6);
         expect(md).toContain('## support');
         expect(base?.quotaCostUsd[100]).toBeCloseTo(0.1, 6);

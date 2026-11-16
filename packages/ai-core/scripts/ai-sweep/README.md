@@ -166,9 +166,20 @@ rules, or when a case's entity/feature/locale changed since generation.
 ## Model migration (every AI feature, HOS-2217)
 
 `migration.ts` is the single entry point for a model change. It runs the chat cases above plus 6-12 cases for each
-of the seven other features, against every model of `sweep.config.migration.json` (first model = baseline, today
-`gpt-5.4-nano`; candidates `gpt-5.4-mini`, `gpt-5-nano`, `gpt-5-mini`), and reports quality, error rate, cost per
-answer, projected monthly cost and latency per feature, plus an overall summary.
+of the eight other features, against every model of `sweep.config.migration.json`, and reports quality, error rate,
+cost per answer, projected monthly cost and latency per feature, plus an overall summary.
+
+| model | role | efforts | USD / 1M in / out |
+| --- | --- | --- | --- |
+| `gpt-5.4-nano` | baseline (production today) | `none` | 0.20 / 1.25 |
+| `gpt-6-luna` | candidate: OpenAI's most efficient model for focused, high-volume tasks | `none`, `low` | 0.10 / 0.50 |
+| `gpt-5.6-luna` | candidate | `none` | 0.20 / 1.20 |
+| `gpt-5.4-mini` | candidate; chat_venue and faq_draft already run on it | `none` | 0.75 / 4.50 |
+
+All four are reasoning models; the luna models accept none/low/medium/high/xhigh/max (no `minimal`). Both luna
+models are in `MODEL_RATES` (`src/usage/model-rates.ts`), so production metering is rated the day one is chosen.
+`gpt-5-nano` and `gpt-5-mini` were dropped as candidates: OpenAI marks them DEPRECATED (checked 2026-11-15).
+**Check OpenAI's deprecations page (<https://platform.openai.com/docs/deprecations>) before choosing candidates.**
 
 ### End-to-end run (from `packages/ai-core`)
 
