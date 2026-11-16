@@ -49,8 +49,8 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     getUserRoles: vi.fn(async () => ['USER'])
 }));
-vi.mock('@better-auth/cimd/node', () => ({
-    fetchClientMetadataResource: async () => new Response('not found', { status: 404 })
+vi.mock('@repo/utils/safe-fetch', () => ({
+    safeExternalFetch: async () => ({ ok: false, status: 0, error: 'not found', blocked: true })
 }));
 
 import { initApp } from '../../src/app';

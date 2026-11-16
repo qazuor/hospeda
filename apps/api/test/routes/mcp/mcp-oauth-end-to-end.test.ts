@@ -27,7 +27,7 @@
  *   path): a fixed HOST actor for the real user id (their own suites cover them);
  * - the two `auth.ts` hooks that read the user tables (deleted-user guard,
  *   baseline role);
- * - the CIMD metadata fetch (the real one resolves public DNS and pins the IP);
+ * - the CIMD metadata fetch (`safeExternalFetch` resolves public DNS and pins the IP);
  * - the listing services behind `list_my_listings` (prototype spies);
  * - `recordMcpToolCall` (it writes the audit row).
  */
@@ -36,9 +36,10 @@ import type { Actor } from '@repo/service-core';
 import { AccommodationService, ExperienceService, VenueService } from '@repo/service-core';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
-const { actorState, CIMD_CLIENT_ID } = vi.hoisted(() => ({
+const { actorState, CIMD_CLIENT_ID, cimdFetchSpy } = vi.hoisted(() => ({
     actorState: { userId: '' },
-    CIMD_CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata'
+    CIMD_CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
+    cimdFetchSpy: { calls: [] as string[] }
 }));
 
 vi.mock('better-auth/adapters/drizzle', async () => {
@@ -76,22 +77,25 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<typeof import('@repo/service-core')>()),
     getUserRoles: vi.fn(async () => ['HOST'])
 }));
-vi.mock('@better-auth/cimd/node', () => ({
-    fetchClientMetadataResource: async (input: RequestInfo | URL) => {
-        if (String(input) !== CIMD_CLIENT_ID) {
-            return new Response('not found', { status: 404 });
+vi.mock('@repo/utils/safe-fetch', () => ({
+    safeExternalFetch: async ({ url }: { url: string }) => {
+        cimdFetchSpy.calls.push(url);
+        if (url !== CIMD_CLIENT_ID) {
+            return { ok: false, status: 0, error: 'not found', blocked: true };
         }
-        return new Response(
-            JSON.stringify({
+        return {
+            ok: true,
+            status: 200,
+            finalUrl: url,
+            body: JSON.stringify({
                 client_id: CIMD_CLIENT_ID,
                 client_name: 'Claude (CIMD)',
                 redirect_uris: ['https://claude.ai/api/mcp/auth_callback'],
                 token_endpoint_auth_method: 'none',
                 grant_types: ['authorization_code', 'refresh_token'],
                 response_types: ['code']
-            }),
-            { status: 200, headers: { 'content-type': 'application/json' } }
-        );
+            })
+        };
     }
 }));
 
@@ -805,6 +809,35 @@ describe('OAuth + MCP, end to end', () => {
             const clients = authMemoryStore.oauthClient as { clientId: string; name?: string }[];
             expect(clients.find((client) => client.clientId === CIMD_CLIENT_ID)?.name).toBe(
                 'Claude (CIMD)'
+            );
+        });
+
+        it.each([
+            'https://evil.example/oauth/client.json',
+            'http://claude.ai/oauth/mcp-client-metadata',
+            'https://169.254.169.254/latest/meta-data',
+            'https://10.0.0.5/client.json'
+        ])('refuses %s before any metadata fetch', async (clientId) => {
+            cimdFetchSpy.calls.length = 0;
+            const query = new URLSearchParams({
+                response_type: 'code',
+                client_id: clientId,
+                redirect_uri: 'https://claude.ai/api/mcp/auth_callback',
+                scope: 'openid offline_access',
+                state: 'state-1',
+                code_challenge: createPkcePair().challenge,
+                code_challenge_method: 'S256',
+                resource: RESOURCE
+            });
+
+            const res = await app().request(`${ISSUER}/oauth2/authorize?${query}`, {
+                headers: { cookie: journey.cookie, 'user-agent': 'vitest' }
+            });
+
+            expect(cimdFetchSpy.calls).toEqual([]);
+            const location = res.headers.get('location') ?? '';
+            expect(location.startsWith('https://claude.ai/api/mcp/auth_callback?code=')).toBe(
+                false
             );
         });
     });

@@ -41,7 +41,6 @@
  */
 
 import { cimd } from '@better-auth/cimd';
-import { fetchClientMetadataResource } from '@better-auth/cimd/node';
 import {
     type GrantType,
     type OAuthOptions,
@@ -51,6 +50,7 @@ import {
 import type { BetterAuthPlugin } from 'better-auth';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { jwt } from 'better-auth/plugins';
+import { mcpCimdFetch } from './auth-mcp-cimd-fetch';
 
 /**
  * Scopes the provider accepts. `offline_access` is what makes the provider
@@ -86,6 +86,38 @@ export const MCP_ALLOWED_REDIRECT_URIS = [
  * it is accepted so a connection is not lost if ChatGPT classifies us that way.
  */
 const CHATGPT_CALLBACK_ID_REDIRECT = /^https:\/\/chatgpt\.com\/connector\/oauth\/[A-Za-z0-9_-]+$/;
+
+/**
+ * Hosts whose CIMD metadata documents are fetched: the hosts of the hosted-client
+ * redirect URIs ({@link MCP_ALLOWED_REDIRECT_URIS}). Exact match, no subdomains.
+ */
+export const MCP_ALLOWED_CIMD_HOSTS: ReadonlySet<string> = new Set(
+    MCP_ALLOWED_REDIRECT_URIS.map((uri) => new URL(uri).hostname)
+);
+
+/**
+ * Whether a CIMD `client_id` URL may be fetched at all. A CIMD client id is an
+ * attacker-chosen URL, so anything but `https` on an allowlisted host (no
+ * credentials, default port) is refused before any network call.
+ *
+ * @param clientIdUrl - The `client_id` URL
+ * @returns `true` when the metadata document may be fetched
+ */
+export function isMcpCimdUrlAllowed(clientIdUrl: string | URL): boolean {
+    let url: URL;
+    try {
+        url = new URL(String(clientIdUrl));
+    } catch {
+        return false;
+    }
+    return (
+        url.protocol === 'https:' &&
+        url.username === '' &&
+        url.password === '' &&
+        url.port === '' &&
+        MCP_ALLOWED_CIMD_HOSTS.has(url.hostname)
+    );
+}
 
 /** Loopback hosts accepted for CLI clients (Claude Code and similar). */
 const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1']);
@@ -335,7 +367,11 @@ export function buildMcpOAuthConfig({
         plugins: [
             jwt({ disableSettingJwtHeader: true }),
             oauthProvider(oauthProviderOptions),
-            cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' }),
+            cimd({
+                fetchClientMetadataResource: mcpCimdFetch,
+                isMetadataDocumentUrlAllowed: (clientIdUrl) => isMcpCimdUrlAllowed(clientIdUrl),
+                metadataProfile: 'mcp-2026-07-28'
+            }),
             mcpRegistrationRedirectGuard
         ],
         disabledPaths: [...MCP_DISABLED_AUTH_PATHS],
