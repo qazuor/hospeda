@@ -38,6 +38,7 @@ import {
     toSafeHttpsUrl
 } from '@/lib/oauth-consent';
 import { AI_ASSISTANTS_PATH } from '@/lib/routes';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildUrl } from '@/lib/urls';
 import styles from './OAuthConsent.module.css';
 
@@ -286,7 +287,7 @@ export function OAuthConsent({ locale }: OAuthConsentProps) {
             ? client.client_name.trim()
             : null;
     const logoUrl = toSafeHttpsUrl({ raw: client.logo_uri });
-    const siteUrl = toSafeHttpsUrl({ raw: client.client_uri });
+    const siteUrl = resolveSafeExternalUrl(toSafeHttpsUrl({ raw: client.client_uri }) ?? undefined);
     const scopes = request?.scopes ?? [];
 
     return (
