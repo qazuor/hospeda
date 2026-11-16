@@ -64,6 +64,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'accommodations.featureCategories',
     'accommodations.featureNames',
     'accommodations.types',
+    'account.aiAssistants',
     'account.alerts',
     'account.alliances',
     'account.avatar',
