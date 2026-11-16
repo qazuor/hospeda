@@ -865,7 +865,7 @@
                 "listingsHidden_one": "{{count}} listing not published: it is not visible to the public.",
                 "listingsHidden_other": "{{count}} listings not published: they are not visible to the public."
             },
-            "sectionsLabel": "Secciones"
+            "sectionsLabel": "Sections"
         },
         "editProfile": {
             "title": "Edit Profile",

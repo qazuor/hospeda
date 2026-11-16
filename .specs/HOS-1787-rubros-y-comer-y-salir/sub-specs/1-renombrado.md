@@ -75,8 +75,9 @@ exige CI completo en verde. Hoy ese guard vigila **una** umbrella (`UMBRELLA_BRA
 5. desplegar la API (crons y webhook vuelven con ella);
 6. desplegar web y admin; purgar cache y actualizar reglas de Cloudflare (paso 7 de «Mecánica»).
 
-**Redirects**: 302 (temporales) en staging y prod mientras dura el soak; 301 con un cambio explícito
-después (un 301 queda grabado en los navegadores y no se deshace). **Marcha atrás** (DEC-FAC-061, Q-12): **no hay migración inversa** (no puede deshacer el catálogo nacido `venue`:
+**Redirects**: arrancaron en 302 (temporales) mientras duraba el soak, porque un 301 queda grabado en los
+navegadores y no se deshace; **desde HOS-1956 responden 301** (`RETIRED_ROUTE_REDIRECT_STATUS = 301`,
+`apps/web/src/lib/legacy-redirects.ts`). Los `/qr/<slug>/` siguen en 302 a propósito. **Marcha atrás** (DEC-FAC-061, Q-12): **no hay migración inversa** (no puede deshacer el catálogo nacido `venue`:
 triggers de `extras/041`, G18, FK compuestas, y Drizzle sólo va hacia adelante). En **staging**, volver atrás es
 revertir el PR físico y hacer **otro reset** (la misma ventana, en sentido inverso). En **prod**, es la marcha atrás
 del corte V6: restaurar el backup completo del **paso 2b**. Se conserva la lista escrita de lo que no vuelve solo:
@@ -234,7 +235,7 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
      conservan los nombres viejos: son tests de historia, fuera del escaneo (DEC-FAC-070).
 4. **Redirects y QR** (F-V1-007):
    - Redirect de un salto en `apps/web/src/lib/legacy-redirects.ts` para cada ruta retirada; los de
-     `mi-cuenta` conservan ruta profunda y query. **302** durante el soak, 301 con un cambio explícito.
+     `mi-cuenta` conservan ruta profunda y query. Arrancaron en 302 durante el soak; **desde HOS-1956 responden 301**. Los `/qr/<slug>/` siguen en 302 a propósito.
    - **Lo que protege a los QR impresos es `qr_codes.target_url`**: el sticker codifica `/qr/<slug>/`
      (inmutable; `apps/web/src/pages/qr/[slug].astro:8`, F-V2-051) y la plataforma redirige a `target_url`. La migración reescribe `target_url` de las
      filas GENERATED de `entity_type = GASTRONOMY`, cualquier `purpose` (menú y folleto), al prefijo
@@ -289,7 +290,7 @@ nace rojo): clave `home.categoryTiles.tiles.gastronomy` → `foodEvents` (nombre
 - **AC:1:11** — Marcha atrás escrita como revert + reset en staging y restauración del backup del paso 2b en prod
   (DEC-FAC-061), con la lista de lo que no vuelve; sin migración inversa.
 - **AC:1:12** — Una mutación posterior al renombrado por cada guard atado al nombre.
-- **AC:1:13** — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects 302 (incluido `/carta/` y un
+- **AC:1:13** — Smoke en staging (`status-needs-smoke-staging`) tras la ventana: redirects de rutas retiradas (301 desde HOS-1956), `/carta/` (302 `no-store`) y un
   escaneo `/qr/<slug>/` de un salto), alta y edición de un local, checkout de un plan de la vertical con el título
   «Comer y salir Básico» en el resumen de MP, Cloudinary (fotos de ejemplo bajo `venues/`), cache.
 - **AC:1:14** — El corte V6 de HOS-1352 no se ejecuta hasta que la etapa B esté mergeada y verificada en staging.

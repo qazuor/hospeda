@@ -865,7 +865,7 @@
                 "listingsHidden_one": "{{count}} ficha não publicada: não aparece para o público.",
                 "listingsHidden_other": "{{count}} fichas não publicadas: não aparecem para o público."
             },
-            "sectionsLabel": "Secciones"
+            "sectionsLabel": "Seções"
         },
         "editProfile": {
             "title": "Editar perfil",
