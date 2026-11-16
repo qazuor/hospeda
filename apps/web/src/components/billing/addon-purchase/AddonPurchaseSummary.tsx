@@ -1,5 +1,5 @@
 import type { AddonOffersResponse } from '@repo/schemas';
-import { hiddenListingNoticeKind } from '@/lib/billing/addon-purchase';
+import { getAddonName, hiddenListingNoticeKind } from '@/lib/billing/addon-purchase';
 import { formatPrice } from '@/lib/format-utils';
 import type { createTranslations, SupportedLocale } from '@/lib/i18n';
 import styles from './AddonPurchase.module.css';
@@ -35,7 +35,7 @@ export function AddonPurchaseSummary(input: {
             data-testid="addon-purchase-summary"
         >
             <h2>{t('billing.addonPurchase.summary')}</h2>
-            <strong>{offer.name}</strong>
+            <strong>{getAddonName({ offer, t })}</strong>
             <p>
                 {free
                     ? t('billing.addonPurchase.freeUnderGrant')
@@ -81,6 +81,7 @@ export function AddonPurchaseSummary(input: {
             {free ? (
                 <button
                     type="button"
+                    className={styles.confirm}
                     data-testid="addon-free-choice-confirm"
                     disabled={input.busy}
                     onClick={input.onConfirm}
@@ -90,6 +91,7 @@ export function AddonPurchaseSummary(input: {
             ) : offer.chargeKind === 'PERIODICO' ? (
                 <button
                     type="button"
+                    className={styles.confirm}
                     data-testid="addon-purchase-confirm"
                     disabled={input.busy}
                     onClick={input.onConfirm}

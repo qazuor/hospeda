@@ -6,10 +6,15 @@ const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 const LOCALES = ['es', 'en', 'pt'] as const;
 type PartnerMailLocale = (typeof LOCALES)[number];
 
+/** How the Partner came to exist: an approved application, or a direct creation by the team. */
+export type PartnerClaimOrigin = 'application' | 'direct';
+
 /** Input used to resolve localized partner-application mail copy. */
 export type PartnerMailCopyInput =
     | {
           readonly kind: 'claim-notice';
+          /** `direct` when the team created the Partner, so no application ever existed. */
+          readonly origin: PartnerClaimOrigin;
           readonly locale: PartnerMailLocale;
           readonly partnerName: string;
       }
@@ -61,10 +66,15 @@ function validLocale(value: unknown): value is PartnerMailLocale {
     return typeof value === 'string' && LOCALES.includes(value as PartnerMailLocale);
 }
 
-function validateExactKeys(data: Record<string, unknown>, expected: readonly string[]): void {
+function validateExactKeys(
+    data: Record<string, unknown>,
+    expected: readonly string[],
+    optional: readonly string[] = []
+): void {
+    const keys = Object.keys(data);
     if (
-        Object.keys(data).length !== expected.length ||
-        expected.some((key) => !Object.hasOwn(data, key))
+        expected.some((key) => !Object.hasOwn(data, key)) ||
+        keys.some((key) => !expected.includes(key) && !optional.includes(key))
     ) {
         throw new TypeError('El payload del aviso de postulación tiene campos no válidos');
     }
@@ -74,9 +84,14 @@ function readClaimPayload(row: EmailOutboxRow): {
     readonly partnerId: string;
     readonly partnerName: string;
     readonly locale: PartnerMailLocale;
+    readonly origin: PartnerClaimOrigin;
 } {
     const data = payloadObject(row);
-    validateExactKeys(data, ['partnerId', 'partnerName', 'locale']);
+    // `origin` is optional: rows queued before it existed are all approved applications.
+    validateExactKeys(data, ['partnerId', 'partnerName', 'locale'], ['origin']);
+    if (data.origin !== undefined && data.origin !== 'application' && data.origin !== 'direct') {
+        throw new TypeError('El origen del aviso de reclamo no es válido');
+    }
     if (
         typeof data.partnerId !== 'string' ||
         data.partnerId.trim() === '' ||
@@ -89,7 +104,8 @@ function readClaimPayload(row: EmailOutboxRow): {
     return {
         partnerId: data.partnerId,
         partnerName: data.partnerName,
-        locale: data.locale
+        locale: data.locale,
+        origin: data.origin ?? 'application'
     };
 }
 
@@ -134,6 +150,7 @@ export function createPartnerApplicationRenderers(input: {
             const claimUrl = `${siteUrl}/${data.locale}/partners/reclamar/#partner=${data.partnerId}&secret=${encodeURIComponent(issued.secret)}`;
             const copy = input.resolveCopy({
                 kind: 'claim-notice',
+                origin: data.origin,
                 locale: data.locale,
                 partnerName: data.partnerName
             });

@@ -295,8 +295,8 @@ function errorMessage(error: unknown): string {
 /**
  * The retry pass over the terminal population (AC:B11:6): walks `listCancellationRetryPage`
  * by keyset and retries each row. One row's error is caught, counted and noted (never the
- * provider's body) and the pass goes on. A `CANCEL_SCHEDULED` row is live, so it is not here:
- * the sweep's live loop retries it.
+ * provider's body) and the pass goes on. Live `CANCEL_SCHEDULED` rows remain in the sweep's live
+ * loop; only the separate notice-settled pass opts into them.
  *
  * @param input - The sweep's correlation id and page size
  * @param ports - Provider, clock, the before-cancel notice and the optional mark payments port

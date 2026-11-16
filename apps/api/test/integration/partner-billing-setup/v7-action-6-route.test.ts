@@ -114,12 +114,19 @@ async function seedCatalog() {
     };
 }
 
-async function createOwner() {
+async function createOwner(
+    overrides: {
+        displayName?: string | null;
+        firstName?: string | null;
+        lastName?: string | null;
+    } = {}
+) {
     const [owner] = await db()
         .insert(users)
         .values({
             email: `hos1489-owner-${randomUUID()}@example.test`,
             displayName: 'Action 6 owner',
+            ...overrides,
             emailVerified: true,
             lifecycleState: 'ACTIVE'
         })
@@ -383,9 +390,18 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
         });
         expect(preview.status).toBe(200);
         const previewData = (
-            (await preview.json()) as { data: { options: unknown[]; method: string } }
+            (await preview.json()) as {
+                data: {
+                    options: unknown[];
+                    method: string;
+                    owner: { name: string; email: string };
+                    ownerUserId: string;
+                };
+            }
         ).data;
         expect(previewData.method).toBe('MANUAL');
+        expect(previewData.owner).toEqual({ name: 'Action 6 owner', email: owner.email });
+        expect(previewData.ownerUserId).toBe(owner.id);
         expect(
             (previewData.options as Array<Record<string, unknown>>).filter((option) =>
                 [partnerOptions.monthlyOptionId, partnerOptions.quarterlyOptionId].includes(
@@ -420,6 +436,36 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
         expect(deniedPreview.status).toBe(403);
     });
 
+    it('returns the owner name fallback in the preview', async () => {
+        const owner = await createOwner({
+            displayName: null,
+            firstName: 'Ana',
+            lastName: 'García'
+        });
+        const partner = await createPartner(owner.id);
+        const preview = await app.request(`/api/v1/admin/partners/${partner.id}/billing-setup`, {
+            headers: actorHeaders(randomUUID(), [permission])
+        });
+        expect(preview.status).toBe(200);
+        const response = (await preview.json()) as {
+            data: { owner: { name: string; email: string } };
+        };
+        expect(response.data.owner).toEqual({ name: 'Ana García', email: owner.email });
+    });
+
+    it('falls back to the owner email when display and personal names are empty', async () => {
+        const owner = await createOwner({ displayName: '   ', firstName: null, lastName: null });
+        const partner = await createPartner(owner.id);
+        const preview = await app.request(`/api/v1/admin/partners/${partner.id}/billing-setup`, {
+            headers: actorHeaders(randomUUID(), [permission])
+        });
+        expect(preview.status).toBe(200);
+        const response = (await preview.json()) as {
+            data: { owner: { name: string; email: string } };
+        };
+        expect(response.data.owner).toEqual({ name: owner.email, email: owner.email });
+    });
+
     it('rejects missing owners, self-configuration, and billing options from another vertical', async () => {
         const owner = await createOwner();
         const unowned = await createPartner(null, 'Action 6 unowned Partner');
@@ -430,6 +476,14 @@ describe('TEST:V7:17 AC:V7:17 — action 6 configures a Partner plan and manual 
         );
         expect(missingOwner.status).toBe(409);
         expect(await missingOwner.json()).toMatchObject({
+            error: { reason: 'PARTNER_WITHOUT_OWNER' }
+        });
+        const missingOwnerPreview = await app.request(
+            `/api/v1/admin/partners/${unowned.id}/billing-setup`,
+            { headers: actorHeaders(randomUUID(), [permission]) }
+        );
+        expect(missingOwnerPreview.status).toBe(409);
+        expect(await missingOwnerPreview.json()).toMatchObject({
             error: { reason: 'PARTNER_WITHOUT_OWNER' }
         });
         const selfPartner = await createPartner(owner.id, 'Action 6 self-owned Partner');

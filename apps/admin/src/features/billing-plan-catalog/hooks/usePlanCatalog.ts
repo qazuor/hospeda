@@ -1,5 +1,8 @@
 import type {
     CreatePlanRequest,
+    CyclePriceConfirmation,
+    CyclePricePreviewRequest,
+    CyclePriceSetResponse,
     PlanPublicationConfirmation,
     PlanVersionContentInput,
     PublishedPlanVersion
@@ -7,8 +10,12 @@ import type {
 import {
     AdminPlanCatalogResponseSchema,
     CreatePlanRequestSchema,
+    CyclePriceConfirmationSchema,
+    CyclePricePreviewRequestSchema,
+    CyclePriceSetResponseSchema,
     PlanPublicationConfirmationSchema,
-    PublishedPlanVersionSchema
+    PublishedPlanVersionSchema,
+    SetCyclePriceRequestSchema
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
@@ -92,6 +99,45 @@ export function useCreatePlan() {
         },
         onSuccess: (_data, variables) =>
             queryClient.invalidateQueries({ queryKey: planCatalogQueryKey(variables.vertical) }),
+        retry: false
+    });
+}
+
+/** Previews the action 19 cycle price change. */
+export function usePreviewCyclePrice() {
+    return useMutation({
+        mutationFn: async (body: CyclePricePreviewRequest): Promise<CyclePriceConfirmation> => {
+            const parsed = CyclePricePreviewRequestSchema.parse(body);
+            const response = await fetchApi<{ data: unknown }>({
+                path: '/api/v1/admin/billing-prices/preview',
+                method: 'POST',
+                body: parsed
+            });
+            return CyclePriceConfirmationSchema.parse(response.data.data);
+        },
+        retry: false
+    });
+}
+
+/** Confirms an action 19 price change and refreshes the plan catalog. */
+export function useSetCyclePrice() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (body: {
+            readonly planVersionId: string;
+            readonly cycle: CyclePricePreviewRequest['cycle'];
+            readonly amount: number;
+            readonly expectedPreviousAmount: number | null;
+        }): Promise<CyclePriceSetResponse> => {
+            const parsed = SetCyclePriceRequestSchema.parse({ ...body, confirmed: true });
+            const response = await fetchApi<{ data: unknown }>({
+                path: '/api/v1/admin/billing-prices',
+                method: 'POST',
+                body: parsed
+            });
+            return CyclePriceSetResponseSchema.parse(response.data.data);
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-plan-catalog'] }),
         retry: false
     });
 }

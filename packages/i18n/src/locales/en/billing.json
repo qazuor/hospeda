@@ -222,7 +222,7 @@
         },
         "signupsPaused": {
             "title": "New sign-ups are paused",
-            "body": "We've temporarily paused new subscriptions and purchases. If you already have a subscription, it keeps working as usual."
+            "body": "We've temporarily paused new subscriptions. If you already have a subscription, it keeps working as usual."
         },
         "firstPublishPaused": {
             "title": "Publishing new listings is paused",
@@ -817,12 +817,56 @@
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse.",
         "max_ai_faq_draft_per_month": "How many AI answer drafts you can generate each month for questions about your listings. The quota resets at the start of each month."
     },
+    "addon": {
+        "extra-accommodations-5": {
+            "name": "Extra Accommodations Pack (+5)",
+            "description": "Adds 5 additional accommodations to your plan. Renews monthly."
+        },
+        "extra-photos-20": {
+            "name": "Extra Photos Pack (+20 photos)",
+            "description": "Adds 20 additional photos to each accommodation. Renews monthly."
+        },
+        "extra-venues-1": {
+            "name": "Extra Comer y salir Listing (+1)",
+            "description": "Adds 1 additional venue listing to your plan. Renews monthly."
+        },
+        "extra-experiences-1": {
+            "name": "Extra Experience Listing (+1)",
+            "description": "Adds 1 additional experience listing to your plan. Renews monthly."
+        },
+        "visibility-boost-7d": {
+            "name": "Visibility Boost (7 days)",
+            "description": "Your accommodation appears featured in search results for 7 days."
+        },
+        "visibility-boost-30d": {
+            "name": "Visibility Boost (30 days)",
+            "description": "Your accommodation appears featured in search results for 30 days."
+        },
+        "visibility-boost-venue-7d": {
+            "name": "Visibility Boost — Comer y salir (7 days)",
+            "description": "Your restaurant appears featured in search results for 7 days."
+        },
+        "visibility-boost-venue-30d": {
+            "name": "Visibility Boost — Comer y salir (30 days)",
+            "description": "Your restaurant appears featured in search results for 30 days."
+        },
+        "visibility-boost-experience-7d": {
+            "name": "Visibility Boost — Experience (7 days)",
+            "description": "Your experience appears featured in search results for 7 days."
+        },
+        "visibility-boost-experience-30d": {
+            "name": "Visibility Boost — Experience (30 days)",
+            "description": "Your experience appears featured in search results for 30 days."
+        }
+    },
     "addonPurchase": {
         "title": "Buy add-ons",
         "chooseOffer": "Choose an add-on",
         "noOffers": "No add-ons are available.",
         "chooseTarget": "Choose a listing",
         "noTargets": "No listings are available for this add-on.",
+        "chooseSubscription": "Choose a subscription",
+        "noSubscriptions": "No subscriptions are available for this add-on.",
         "summary": "Confirm add-on",
         "freeUnderGrant": "Free with your benefit",
         "days_one": "{{count}} day",

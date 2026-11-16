@@ -160,7 +160,6 @@ function RecommendationCard({ scored, locale, t }: RecommendationCardProps) {
             <a
                 href={detailHref}
                 className={styles.cardLink}
-                aria-label={accommodation.name}
             >
                 <div className={styles.cardImage}>
                     {thumbnail ? (
