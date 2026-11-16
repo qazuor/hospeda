@@ -185,7 +185,7 @@ describe('TEST:V7:3 partner application rejection wait cancellation', () => {
         expect(thrown).toBeInstanceOf(ServiceError);
         expect(thrown).toMatchObject({
             code: ServiceErrorCode.ALREADY_EXISTS,
-            reason: 'PARTNER_APPLICATION_UNAVAILABLE'
+            reason: 'PARTNER_APPLICATION_WAIT_ACTIVE'
         });
         expect(await readApplication(id)).toMatchObject({
             status: 'REJECTED',

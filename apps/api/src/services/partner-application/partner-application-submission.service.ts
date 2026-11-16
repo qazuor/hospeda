@@ -3,10 +3,17 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import {
     classifyPartnerApplicationInsertError,
-    PARTNER_APPLICATION_UNAVAILABLE
+    PARTNER_APPLICATION_PENDING,
+    PARTNER_APPLICATION_UNAVAILABLE,
+    PARTNER_APPLICATION_WAIT_ACTIVE
 } from './partner-application-errors';
 
-/** Creates a pending Partner application, translating database guards to one opaque conflict. */
+const NOT_ACCEPTED_MESSAGE = 'Partner application not accepted';
+
+/**
+ * Creates a pending Partner application. A database guard that refuses it becomes a 409 whose
+ * reason says which one: a pending application, or the wait after a rejection with its end date.
+ */
 export async function submitPartnerApplication({
     email
 }: {
@@ -19,12 +26,23 @@ export async function submitPartnerApplication({
         return { submitted: true };
     } catch (error) {
         const classification = classifyPartnerApplicationInsertError({ error });
-        if (classification !== null) {
+        if (classification === 'PENDING_EXISTS') {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
-                'Partner application not accepted',
+                NOT_ACCEPTED_MESSAGE,
                 undefined,
-                PARTNER_APPLICATION_UNAVAILABLE
+                PARTNER_APPLICATION_PENDING
+            );
+        }
+        if (classification === 'WAIT_ACTIVE') {
+            const reapplyAfter = await getDb().transaction(async (tx) =>
+                partnerApplicationModel.readActiveWaitReapplyAfter({ tx, email })
+            );
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                NOT_ACCEPTED_MESSAGE,
+                reapplyAfter ? { reapplyAfter: reapplyAfter.toISOString() } : undefined,
+                reapplyAfter ? PARTNER_APPLICATION_WAIT_ACTIVE : PARTNER_APPLICATION_UNAVAILABLE
             );
         }
         throw error;

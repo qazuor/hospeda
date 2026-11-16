@@ -12,7 +12,8 @@ import {
     readApplications
 } from './partner-application.helpers';
 
-const EXPECTED_REASON = 'PARTNER_APPLICATION_UNAVAILABLE';
+const PENDING_REASON = 'PARTNER_APPLICATION_PENDING';
+const WAIT_REASON = 'PARTNER_APPLICATION_WAIT_ACTIVE';
 const testEmails: string[] = [];
 const rememberEmail = () => {
     const email = createApplicationEmail();
@@ -20,7 +21,7 @@ const rememberEmail = () => {
     return email;
 };
 
-async function expectUnavailable(action: Promise<unknown>): Promise<ServiceError> {
+async function expectConflict(action: Promise<unknown>, reason: string): Promise<ServiceError> {
     let thrown: unknown;
     try {
         await action;
@@ -30,7 +31,7 @@ async function expectUnavailable(action: Promise<unknown>): Promise<ServiceError
     expect(thrown).toBeInstanceOf(ServiceError);
     const serviceError = thrown as ServiceError;
     expect(serviceError.code).toBe(ServiceErrorCode.ALREADY_EXISTS);
-    expect(serviceError.reason).toBe(EXPECTED_REASON);
+    expect(serviceError.reason).toBe(reason);
     return serviceError;
 }
 
@@ -92,7 +93,7 @@ describe('TEST:V7:2 PP1 database guards', () => {
         expect(error).toBeInstanceOf(ServiceError);
         expect(error).toMatchObject({
             code: ServiceErrorCode.ALREADY_EXISTS,
-            reason: EXPECTED_REASON
+            reason: PENDING_REASON
         });
         const rows = await readApplications({ email });
         expect(rows).toHaveLength(1);
@@ -104,7 +105,7 @@ describe('TEST:V7:2 PP1 database guards', () => {
         await submitPartnerApplication({ email });
         const before = await readApplications({ email });
         expect(before).toHaveLength(1);
-        await expectUnavailable(submitPartnerApplication({ email }));
+        await expectConflict(submitPartnerApplication({ email }), PENDING_REASON);
         const after = await readApplications({ email });
         expect(after).toHaveLength(1);
         expect(after[0]?.id).toBe(before[0]?.id);
@@ -116,7 +117,9 @@ describe('TEST:V7:2 PP1 database guards', () => {
         const rejectedId = await insertRejected({ email, resolvedDaysAgo: 1 });
         const before = await readApplications({ email });
         expect(before).toHaveLength(1);
-        await expectUnavailable(submitPartnerApplication({ email }));
+        const conflict = await expectConflict(submitPartnerApplication({ email }), WAIT_REASON);
+        const details = conflict.details as { reapplyAfter: string };
+        expect(new Date(details.reapplyAfter).getTime()).toBeGreaterThan(Date.now());
         expect(await readApplications({ email })).toEqual(before);
         expect(before[0]?.id).toBe(rejectedId);
         expect(before[0]?.status).toBe('REJECTED');

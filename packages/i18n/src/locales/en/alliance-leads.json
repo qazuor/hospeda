@@ -7,6 +7,8 @@
         "sending": "Submitting application…",
         "success": "Thank you. We received your email and will contact you with an answer.",
         "error": "We could not submit your application. Please try again later.",
+        "errorPending": "You already have a pending application with this email.",
+        "errorWaitActive": "You can apply again from {{date}}.",
         "unavailable": "The form is unavailable right now. Please try again later.",
         "verifyEmailFirst": "To apply as a Partner you first need to verify your account email. We have not registered your application yet.",
         "resendVerification": "Resend verification",
