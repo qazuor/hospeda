@@ -903,7 +903,10 @@ reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. **La
    **`S1` y `P1` se serializan sobre la fila de la predecesora**: `S1` vuelve a decidir la
    ventana bajo `FOR UPDATE` dentro de la transacción que inserta la sucesora
    (`readLockedSuccessorWindowPredecessor`), y `P1` toma `FOR UPDATE` de la misma fila antes de
-   abrir el `covered_period`. Sin eso, un primer cobro acreditado entre la decisión y la
+   tocar el pago. **Orden global de locks: la suscripción antes que cualquier pago.** Lo siguen
+   `S1`, `P1` y `S19` (`reactivateSuspended` → `retainPaymentForSuccession`); los flujos de
+   reembolso leen la suscripción sin lock, porque su `user_id` no cambia nunca. Con el pago
+   primero, `P1` y `S19` sobre el mismo cobro se trababan (deadlock). Sin eso, un primer cobro acreditado entre la decisión y la
    inserción dejaba persistida una ventana decidida sobre «sin cobro». Si la decisión nueva
    rechaza, `S1` responde `SUCCESSION_WINDOW_TOO_SHORT`; si ofrece otra ventana,
    `SUCCESSION_PREDECESSOR_MOVED`.
