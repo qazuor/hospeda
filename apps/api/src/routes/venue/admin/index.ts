@@ -64,10 +64,17 @@ app.route('/', adminVenueOptionsRoute);
 // Registered before /{id} so "location-duplicates" is not resolved as a UUID param
 app.route('/', adminVenueLocationRoutes.listDuplicates);
 
+// GET /location-exception-requests, POST /location-exception-requests/:requestId/approve|reject
+// - owner exception requests (HOS-2192). Literal first segment: before /{id}.
+app.route('/', adminVenueLocationRoutes.listRequests);
+app.route('/', adminVenueLocationRoutes.approveRequest);
+app.route('/', adminVenueLocationRoutes.rejectRequest);
+
 // GET /:id - Get by ID
 app.route('/', adminGetVenueByIdRoute);
 
-// POST|DELETE /:id/location-exception - one-address exception (HOS-1810)
+// GET|POST|DELETE /:id/location-exception - one-address exception (HOS-1810, HOS-2192)
+app.route('/', adminVenueLocationRoutes.getState);
 app.route('/', adminVenueLocationRoutes.setException);
 app.route('/', adminVenueLocationRoutes.clearException);
 

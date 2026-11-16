@@ -47,6 +47,16 @@ export {
     recordListingBusinessLinesChange
 } from './listing-business-lines-change';
 export {
+    approveLocationExceptionRequest,
+    getLocationExceptionState,
+    getOwnerLocationExceptionView,
+    grantLocationException,
+    type LocationExceptionDecision,
+    rejectLocationExceptionRequest,
+    requestLocationException,
+    revokeLocationException
+} from './listing-location-exception';
+export {
     applyLocationRuleOnUpdate,
     asDuplicateLocationError,
     assertNoOwnLocationConflict,
