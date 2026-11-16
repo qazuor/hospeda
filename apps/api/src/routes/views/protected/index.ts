@@ -10,6 +10,7 @@
  *   GET /accommodations/me/daily-series — host's own daily view-count series (SPEC-207)
  *   GET /posts                         — editor view stats for a batch of POSTs (T-010)
  *   GET /events                        — editor view stats for a batch of EVENTs (T-010)
+ *   GET /:entityType/:entityId/traffic-stats — Umami traffic stats of one own listing (HOS-2119 T-048)
  *
  * @module routes/views/protected
  * @see SPEC-159 T-009, T-010
@@ -21,6 +22,7 @@ import { hostAccommodationViewStatsRoute } from './accommodations-me';
 import { hostAccommodationDailySeriesRoute } from './daily-series';
 import { eventViewStatsRoute } from './events';
 import { postViewStatsRoute } from './posts';
+import { listingTrafficStatsRoute } from './traffic-stats';
 
 const app = createRouter();
 
@@ -39,5 +41,10 @@ app.route('/', postViewStatsRoute);
 // T-010: editor view stats for EVENTs
 // Path: GET /events
 app.route('/', eventViewStatsRoute);
+
+// HOS-2119 T-048: Umami traffic stats of one own listing
+// Path: GET /:entityType/:entityId/traffic-stats (registered last: the static
+// routes above are matched first)
+app.route('/', listingTrafficStatsRoute);
 
 export { app as protectedViewsRoutes };
