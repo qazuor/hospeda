@@ -6,7 +6,7 @@
  * The first `reply_inquiry` call (moderation preview) calls
  * {@link issueConfirmationToken}; the second call (the actual send) calls
  * {@link consumeConfirmationToken} with the same text. A token is:
- * - **Bound** to `(userId, conversationId, sha256(text))`. Any change to the
+ * - **Bound** to `(userId, clientId, conversationId, sha256(text))`. Any change to the
  *   text, the user or the conversation makes it unusable.
  * - **Single-use.** Consumption is one atomic `GETDEL`, so two concurrent
  *   calls with the same token cannot both succeed. A mismatching attempt also
@@ -49,6 +49,8 @@ export type ConfirmationTokenFailureReason =
 export interface ConfirmationBinding {
     /** The authenticated user. */
     readonly userId: string;
+    /** The OAuth client the preview was shown through. A token never crosses clients. */
+    readonly clientId: string;
     /** The conversation being replied to. */
     readonly conversationId: string;
     /** The exact reply text. */
@@ -86,9 +88,9 @@ export type ConsumeConfirmationTokenResult =
 const sha256Hex = (value: string): string => createHash('sha256').update(value).digest('hex');
 
 /** Digest of the binding. Length-prefixed fields so no field can bleed into another. */
-function bindingDigest({ userId, conversationId, text }: ConfirmationBinding): string {
+function bindingDigest({ userId, clientId, conversationId, text }: ConfirmationBinding): string {
     return sha256Hex(
-        `${userId.length}:${userId}|${conversationId.length}:${conversationId}|${sha256Hex(text)}`
+        `${userId.length}:${userId}|${clientId.length}:${clientId}|${conversationId.length}:${conversationId}|${sha256Hex(text)}`
     );
 }
 
@@ -132,7 +134,7 @@ function logUnavailable({
  *
  * @example
  * ```typescript
- * const issued = await issueConfirmationToken({ userId, conversationId, text });
+ * const issued = await issueConfirmationToken({ userId, clientId, conversationId, text });
  * if (!issued.ok) return toolError('unavailable');
  * return preview({ token: issued.token });
  * ```
@@ -166,7 +168,7 @@ export async function issueConfirmationToken(
  *
  * @example
  * ```typescript
- * const consumed = await consumeConfirmationToken({ token, userId, conversationId, text });
+ * const consumed = await consumeConfirmationToken({ token, userId, clientId, conversationId, text });
  * if (!consumed.ok) return toolError(consumed.reason);
  * await messageService.createMessage(...);
  * ```

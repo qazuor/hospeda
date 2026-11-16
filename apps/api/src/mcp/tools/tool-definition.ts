@@ -57,6 +57,13 @@ export type ToolChannel = 'mcp';
 export interface ToolContext {
     /** The channel serving the call. */
     readonly channel: ToolChannel;
+    /**
+     * The OAuth client the call comes through (MCP: the connector the user
+     * authorized). Optional because other channels have none; tools that bind
+     * something to the client (`reply_inquiry`'s confirmation token) refuse to
+     * run without it.
+     */
+    readonly clientId?: string;
 }
 
 /** The single entity a call acts on, for the audit record. */

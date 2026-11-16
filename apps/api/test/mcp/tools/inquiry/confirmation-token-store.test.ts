@@ -43,7 +43,12 @@ function makeFakeRedis() {
     };
 }
 
-const BINDING = { userId: 'user-1', conversationId: 'conv-1', text: 'Hola, te espero el sábado.' };
+const BINDING = {
+    userId: 'user-1',
+    clientId: 'client-1',
+    conversationId: 'conv-1',
+    text: 'Hola, te espero el sábado.'
+};
 
 describe('confirmation-token-store', () => {
     let fake: ReturnType<typeof makeFakeRedis>;
@@ -129,6 +134,19 @@ describe('confirmation-token-store', () => {
         expect(result).toEqual({ ok: false, reason: 'INVALID' });
     });
 
+    it('rejects another OAuth client', async () => {
+        const token = await issue();
+
+        const result = await consumeConfirmationToken({
+            ...BINDING,
+            clientId: 'client-2',
+            token,
+            ...deps
+        });
+
+        expect(result).toEqual({ ok: false, reason: 'INVALID' });
+    });
+
     it('rejects another conversation', async () => {
         const token = await issue();
 
@@ -147,6 +165,7 @@ describe('confirmation-token-store', () => {
 
         const result = await consumeConfirmationToken({
             userId: 'user-',
+            clientId: BINDING.clientId,
             conversationId: `1|${BINDING.conversationId}`,
             text: BINDING.text,
             token,

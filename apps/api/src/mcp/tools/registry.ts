@@ -8,6 +8,7 @@
 
 import { getInquiryTool } from './inquiry/get-inquiry';
 import { listInquiriesTool } from './inquiry/list-inquiries';
+import { replyInquiryTool } from './inquiry/reply-inquiry';
 import { getListingTool } from './listing/get-listing';
 import { listAmenitiesAndFeaturesTool } from './listing/list-amenities-and-features';
 import { listMyListingsTool } from './listing/list-my-listings';
@@ -23,5 +24,6 @@ export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     setListingPublicationTool,
     listAmenitiesAndFeaturesTool,
     listInquiriesTool,
-    getInquiryTool
+    getInquiryTool,
+    replyInquiryTool
 ];

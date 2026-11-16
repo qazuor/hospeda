@@ -233,7 +233,7 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
                   definition,
                   actor,
                   input: parsed.input,
-                  context: { channel: 'mcp' }
+                  context: { channel: 'mcp', clientId: mcpAuth.clientId }
               })
             : parsed;
 
