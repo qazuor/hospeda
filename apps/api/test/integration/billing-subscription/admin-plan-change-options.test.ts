@@ -20,6 +20,7 @@ let subscriptionId: string;
 let currentOptionId: string;
 let currentVersionId: string;
 let destinationOptionId: string;
+let partnerSubscriptionId: string;
 const optionsPath = (id = subscriptionId) =>
     `/api/v1/admin/billing-subscription/${id}/plan-change-options`;
 const inspectPath = () => `/api/v1/admin/billing-subscription/${subscriptionId}`;
@@ -85,6 +86,53 @@ beforeAll(async () => {
         .returning({ id: subscriptions.id });
     if (!subscription) throw new Error('subscription missing');
     subscriptionId = subscription.id;
+
+    const [partnerPlan] = await getDb()
+        .insert(plans)
+        .values({
+            vertical: 'partner',
+            slug: `partner-options-${crypto.randomUUID()}`,
+            name: 'Partner Gold'
+        })
+        .returning({ id: plans.id });
+    if (!partnerPlan) throw new Error('partner plan missing');
+    const [partnerVersion] = await getDb()
+        .insert(planVersions)
+        .values({
+            planId: partnerPlan.id,
+            vertical: 'partner',
+            rank: 1,
+            sellable: true,
+            current: true,
+            trialDays: 0,
+            allowsPause: false
+        })
+        .returning({ id: planVersions.id });
+    if (!partnerVersion) throw new Error('partner plan version missing');
+    const [partnerOption] = await getDb()
+        .insert(billingOptions)
+        .values({
+            planVersionId: partnerVersion.id,
+            cycle: 'monthly',
+            amount: 10000,
+            currency: 'ARS'
+        })
+        .returning({ id: billingOptions.id });
+    if (!partnerOption) throw new Error('partner billing option missing');
+    const [partnerSubscription] = await getDb()
+        .insert(subscriptions)
+        .values({
+            userId: ownerId,
+            vertical: 'partner',
+            planVersionId: partnerVersion.id,
+            billingOptionId: partnerOption.id,
+            paymentMethod: 'MANUAL',
+            status: 'ACTIVE',
+            class: 'PRINCIPAL'
+        })
+        .returning({ id: subscriptions.id });
+    if (!partnerSubscription) throw new Error('partner subscription missing');
+    partnerSubscriptionId = partnerSubscription.id;
 });
 afterAll(async () => testDb.teardown());
 
@@ -134,6 +182,42 @@ describe('ACC_10 plan change options and enriched inspection', () => {
                 resourceId: subscriptionId
             })
         );
+    });
+    it('returns a typed rejection for Partner plan option reads', async () => {
+        const response = await app.request(optionsPath(partnerSubscriptionId), {
+            headers: headers(adminId, [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN])
+        });
+        expect(response.status).toBe(422);
+        expect(await response.json()).toMatchObject({
+            error: {
+                code: 'VALIDATION_ERROR',
+                details: { reason: 'PARTNER_PLAN_CHANGE_UNSUPPORTED' }
+            }
+        });
+    });
+    it('returns the same typed rejection for Partner plan change submissions', async () => {
+        const response = await app.request(
+            `/api/v1/admin/billing-subscription/${partnerSubscriptionId}/plan-change`,
+            {
+                method: 'POST',
+                headers: {
+                    ...headers(adminId, [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN]),
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    billingOptionId: destinationOptionId,
+                    expectedStatus: 'ACTIVE',
+                    confirmed: true
+                })
+            }
+        );
+        expect(response.status).toBe(422);
+        expect(await response.json()).toMatchObject({
+            error: {
+                code: 'VALIDATION_ERROR',
+                details: { reason: 'PARTNER_PLAN_CHANGE_UNSUPPORTED' }
+            }
+        });
     });
     it('adds subject identity and current plan to inspect', async () => {
         const response = await app.request(inspectPath(), {

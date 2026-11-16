@@ -42,7 +42,8 @@ export function PartnerBillingSetupConfirmation({
                 {t('admin-entities.partnerBillingSetup.partner')}: {preview.partner.name}
             </p>
             <p>
-                {t('admin-entities.partnerBillingSetup.owner')}: {preview.ownerUserId}
+                {t('admin-entities.partnerBillingSetup.owner')}: {preview.owner.name} ·{' '}
+                {preview.owner.email}
             </p>
             <p>
                 {t('admin-entities.partnerBillingSetup.planLabel')}: {option.planName} ·{' '}

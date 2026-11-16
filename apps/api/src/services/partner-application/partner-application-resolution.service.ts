@@ -108,6 +108,7 @@ export async function approvePartnerApplication(input: {
                     email: application.email,
                     partnerId: partner.id,
                     partnerName: input.name,
+                    origin: 'application',
                     correlationId
                 });
             }

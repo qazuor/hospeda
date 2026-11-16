@@ -26,6 +26,12 @@
             "ignore": "Si no te postulaste como Partner de Hospeda, ignorá este correo.",
             "cta": "Reclamar el Partner"
         },
+        "claimNoticeDirect": {
+            "preview": "El equipo de Hospeda creó el Partner {{partnerName}}",
+            "heading": "El equipo de Hospeda creó el Partner {{partnerName}}",
+            "body": "Para administrarlo, reclamalo: abrí el link de abajo e iniciá sesión con la cuenta con la que lo vas a manejar. Esa cuenta queda como dueña del Partner.",
+            "ignore": "Si no esperabas este correo, no hace falta que hagas nada."
+        },
         "rejected": {
             "subject": "Tu postulación como Partner de Hospeda",
             "preview": "Revisamos tu postulación",

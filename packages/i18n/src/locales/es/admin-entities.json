@@ -1290,7 +1290,7 @@
             "cancel": "Volver"
         },
         "errors": {
-            "action": "No se pudo completar la acción. Revisá el motivo e intentá de nuevo."
+            "action": "No se pudo completar la acción. Intentá de nuevo."
         },
         "empty": "No hay postulaciones en esta vista.",
         "loading": "Cargando postulaciones…",
@@ -1328,5 +1328,54 @@
             "storage": "No pudimos borrar los archivos del almacenamiento externo. No se vació nada: probá de nuevo en unos minutos.",
             "forbidden": "No podés vaciar la presencia de un Partner que es tuyo: lo hace otra cuenta del equipo con el permiso."
         }
+    },
+    "locationException": {
+        "title": "Excepción de ubicación",
+        "none": "Esta ficha no tiene excepción de ubicación.",
+        "inForce": "Excepción vigente",
+        "by": "Concedida por {name}",
+        "byUnknown": "Concedida por un usuario no identificado",
+        "at": "el {date}",
+        "reasonLabel": "Motivo",
+        "revoke": "Quitar excepción",
+        "grant": "Conceder excepción",
+        "historyTitle": "Historial",
+        "historyEmpty": "Sin eventos todavía.",
+        "loading": "Cargando...",
+        "loadError": "No se pudo cargar la excepción.",
+        "actions": {
+            "REQUESTED": "Pedida",
+            "APPROVED": "Aprobada",
+            "REJECTED": "Rechazada",
+            "GRANTED": "Concedida",
+            "REVOKED": "Quitada",
+            "SUPERSEDED": "Reemplazado"
+        },
+        "supersededReasons": {
+            "ADDRESS_CHANGED": "La dirección de la ficha cambió.",
+            "GRANTED_DIRECTLY": "Ya se le concedió la excepción directamente.",
+            "NOT_NEEDED": "La ficha ya no choca con otra ficha publicada del dueño."
+        },
+        "system": "Sistema",
+        "revokeDialog": {
+            "title": "Quitar la excepción",
+            "description": "La ficha deja de poder compartir dirección. Si está publicada y otra ficha del mismo dueño ocupa esa dirección, no se puede quitar.",
+            "reasonLabel": "Motivo (opcional, entre 10 y 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Quitar excepción"
+        },
+        "grantDialog": {
+            "title": "Conceder la excepción",
+            "description": "La ficha podrá compartir dirección con otras. Queda registrado con tu usuario.",
+            "reasonLabel": "Motivo (entre 10 y 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Conceder"
+        },
+        "reasonInvalid": "El motivo debe tener entre 10 y 500 caracteres.",
+        "revoked": "Excepción quitada.",
+        "granted": "Excepción concedida.",
+        "revokeConflict": "No se puede quitar: la ficha está publicada y otra ficha publicada del mismo dueño ocupa la misma dirección.",
+        "revokeConflictLink": "Ver la ficha que choca",
+        "genericError": "No se pudo completar la acción."
     }
 }

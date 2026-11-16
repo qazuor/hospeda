@@ -17,6 +17,7 @@ const preview = {
     data: {
         partner: { id: '27f9b37c-8d07-4f93-8340-6819e8740517', name: 'Socio de prueba' },
         ownerUserId: '20b9b37c-8d07-4f93-8340-6819e8740517',
+        owner: { name: 'Ana García', email: 'ana@example.com' },
         method: 'MANUAL' as const,
         options: [
             {
@@ -107,6 +108,15 @@ describe('PartnerBillingSetupCard', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Revisar' }));
         expect(screen.getByTestId('partner-billing-setup-confirmation')).toHaveTextContent(
             'Socio de prueba'
+        );
+        expect(screen.getByTestId('partner-billing-setup-confirmation')).toHaveTextContent(
+            'Ana García'
+        );
+        expect(screen.getByTestId('partner-billing-setup-confirmation')).toHaveTextContent(
+            'ana@example.com'
+        );
+        expect(screen.getByTestId('partner-billing-setup-confirmation')).not.toHaveTextContent(
+            preview.data.ownerUserId
         );
         expect(screen.getByTestId('partner-billing-setup-confirmation')).toHaveTextContent(
             'Manual'

@@ -10,7 +10,12 @@ describe('partner application mail copy', () => {
     it.each(['es', 'en', 'pt'] as const)('resolves complete claim copy from %s JSON', (locale) => {
         const source = locales[locale].partnerApplication.claimNotice;
         expect(
-            resolvePartnerMailCopy({ kind: 'claim-notice', locale, partnerName: 'Casa' })
+            resolvePartnerMailCopy({
+                kind: 'claim-notice',
+                origin: 'application',
+                locale,
+                partnerName: 'Casa'
+            })
         ).toEqual({
             subject: source.subject,
             preview: source.preview.replace('{{partnerName}}', 'Casa'),
@@ -18,6 +23,29 @@ describe('partner application mail copy', () => {
             paragraphs: [source.body, source.singleUse, source.ignore],
             cta: source.cta
         });
+    });
+
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('resolves direct-creation claim copy from %s JSON without mentioning an application', (locale) => {
+        const source = locales[locale].partnerApplication.claimNotice;
+        const direct = locales[locale].partnerApplication.claimNoticeDirect;
+        const copy = resolvePartnerMailCopy({
+            kind: 'claim-notice',
+            origin: 'direct',
+            locale,
+            partnerName: 'Casa'
+        });
+        expect(copy).toEqual({
+            subject: source.subject,
+            preview: direct.preview.replace('{{partnerName}}', 'Casa'),
+            heading: direct.heading.replace('{{partnerName}}', 'Casa'),
+            paragraphs: [direct.body, source.singleUse, direct.ignore],
+            cta: source.cta
+        });
+        expect(JSON.stringify(copy)).not.toMatch(/postulaci|application|candidatura/i);
     });
 
     it.each([

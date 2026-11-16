@@ -38,7 +38,12 @@ export function PartnerApplicationActionDialog({
     const [apiError, setApiError] = useState(false);
     const pending = actions[action].isPending;
     const form = useForm({
-        defaultValues: { reason: '', name: '', type: 'ACCOMMODATION' },
+        // The select shows its first option, so the form must start from that same value.
+        defaultValues: {
+            reason: '',
+            name: '',
+            type: PartnerTypeEnum.BUSINESS as PartnerTypeEnum
+        },
         onSubmit: async ({ value }) => {
             setApiError(false);
             try {
@@ -47,7 +52,7 @@ export function PartnerApplicationActionDialog({
                         id: item.id,
                         reason: value.reason.trim(),
                         name: value.name.trim(),
-                        type: value.type as (typeof PartnerTypeEnum)[keyof typeof PartnerTypeEnum]
+                        type: value.type
                     });
                 else if (action === 'reject')
                     await actions.reject.mutateAsync({
@@ -112,7 +117,11 @@ export function PartnerApplicationActionDialog({
                                         id="partner-type"
                                         className="w-full rounded-md border px-3 py-2"
                                         value={field.state.value}
-                                        onChange={(event) => field.handleChange(event.target.value)}
+                                        onChange={(event) =>
+                                            field.handleChange(
+                                                event.target.value as PartnerTypeEnum
+                                            )
+                                        }
                                     >
                                         {Object.values(PartnerTypeEnum).map((type) => (
                                             <option

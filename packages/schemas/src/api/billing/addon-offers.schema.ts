@@ -4,6 +4,9 @@ import { z } from 'zod';
 export const AddonOfferSchema = z.strictObject({
     productId: z.uuid(),
     addonVersionId: z.uuid(),
+    /** Stable addon slug: the key web uses to look up the localized name and description. */
+    slug: z.string().min(1),
+    /** Catalog display name (fallback copy when a locale has none for the slug). */
     name: z.string(),
     description: z.string().nullable(),
     chargeKind: z.enum(['UNA_VEZ', 'PERIODICO']),

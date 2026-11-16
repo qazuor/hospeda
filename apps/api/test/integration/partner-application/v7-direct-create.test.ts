@@ -159,7 +159,7 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
             recipient_email: address,
             recipient_user_id: null,
             correlation_id: expect.any(String),
-            payload: { partnerId, partnerName: name, locale: 'es' },
+            payload: { partnerId, partnerName: name, locale: 'es', origin: 'direct' },
             status: 'pending',
             last_error: null,
             dedup_key: row.dedup_key
@@ -189,7 +189,7 @@ describe('TEST:V7:11 AC:V7:11 admin direct Partner creation', () => {
             recipient_email: address,
             recipient_user_id: null,
             correlation_id: expect.any(String),
-            payload: { partnerId, partnerName: name, locale: 'es' },
+            payload: { partnerId, partnerName: name, locale: 'es', origin: 'direct' },
             status: 'pending',
             last_error: null,
             dedup_key: row.dedup_key

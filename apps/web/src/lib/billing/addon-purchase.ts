@@ -43,6 +43,40 @@ export function eligibleTargets<
     );
 }
 
+/** Minimal offer shape needed to localize an addon's display copy. */
+interface AddonCopySource {
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string | null;
+}
+
+type CopyTranslator = (key: string, fallback?: string) => string;
+
+/**
+ * Localized addon name: `billing.addon.<slug>.name`, falling back to the catalog name
+ * (the same slug-keyed pattern as `getPlanName`).
+ */
+export function getAddonName(input: {
+    readonly offer: AddonCopySource;
+    readonly t: CopyTranslator;
+}): string {
+    return input.t(`billing.addon.${input.offer.slug}.name`, input.offer.name);
+}
+
+/** Localized addon description, or `null` when neither a translation nor a catalog text exists. */
+export function getAddonDescription(input: {
+    readonly offer: AddonCopySource;
+    readonly t: CopyTranslator;
+}): string | null {
+    const { offer, t } = input;
+    if (!offer.description) {
+        const key = `billing.addon.${offer.slug}.description`;
+        const translated = t(key, '');
+        return translated || null;
+    }
+    return t(`billing.addon.${offer.slug}.description`, offer.description);
+}
+
 /** Mint one client order identity when opening a purchase summary. */
 export function mintOrderRequestId(): string {
     return crypto.randomUUID();
@@ -71,4 +105,31 @@ export function purchaseStateFrom(input: {
     if (response.outcome === 'PENDING_ELSEWHERE' || response.processing) return 'PROCESSING';
     if (response.checkoutUrl) return 'REDIRECT';
     return 'PROCESSING';
+}
+
+/** A live principal subscription an owner can hang a recurring addon on. */
+export interface AddonSubscriptionTarget {
+    readonly id: string;
+    readonly vertical: string;
+    readonly planName: string;
+}
+
+/**
+ * Keep the owner's ACTIVE principal subscriptions whose vertical the addon is compatible with.
+ * `VERTICAL_SUBSCRIPTION` addons are purchased against a subscription id, never a listing id.
+ */
+export function eligibleSubscriptionTargets(input: {
+    readonly subscriptions: readonly {
+        readonly id: string;
+        readonly vertical: string;
+        readonly status: string;
+        readonly plan: { readonly name: string };
+    }[];
+    readonly compatibleVerticals: readonly string[];
+}): AddonSubscriptionTarget[] {
+    return input.subscriptions
+        .filter(
+            (item) => item.status === 'ACTIVE' && input.compatibleVerticals.includes(item.vertical)
+        )
+        .map((item) => ({ id: item.id, vertical: item.vertical, planName: item.plan.name }));
 }

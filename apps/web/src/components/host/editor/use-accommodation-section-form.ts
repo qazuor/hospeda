@@ -46,6 +46,12 @@ export interface AccommodationSectionForm<TValues> {
     readonly formError: string | null;
     readonly isSaving: boolean;
     readonly isDirty: boolean;
+    /**
+     * HOS-2192: the values of the last save the API refused with 409
+     * `DUPLICATE_LOCATION`, or `null`. Lets the owner ask for an exception for
+     * the address they were trying to save.
+     */
+    readonly refusedLocation: TValues | null;
     readonly handleSubmit: (event: React.FormEvent) => Promise<void>;
     readonly handleCancel: () => void;
 }
@@ -111,6 +117,8 @@ export function useAccommodationSectionForm<TValues extends object>({
     const [values, setValues] = useState<TValues>(initialValues);
     const [baseline, setBaseline] = useState<TValues>(initialValues);
     const [isSaving, setIsSaving] = useState(false);
+    /** HOS-2192: the values of the save refused with 409 `DUPLICATE_LOCATION` (null otherwise). */
+    const [refusedLocation, setRefusedLocation] = useState<TValues | null>(null);
 
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
         useZodForm({
@@ -167,6 +175,7 @@ export function useAccommodationSectionForm<TValues extends object>({
         async (event: React.FormEvent) => {
             event.preventDefault();
             setFormError(null);
+            setRefusedLocation(null);
 
             if (!isDirty) {
                 // Never save silently (HOS-190): "Save" must always visibly do
@@ -205,7 +214,9 @@ export function useAccommodationSectionForm<TValues extends object>({
                     result.error.reason === DUPLICATE_LOCATION_REASON
                 ) {
                     // HOS-1810: moving a published listing onto an address its owner
-                    // already publishes. Nothing was saved.
+                    // already publishes. Nothing was saved. HOS-2192: the submitted
+                    // values are kept so the owner can ask for an exception.
+                    setRefusedLocation(values);
                     setFormError(
                         t(
                             'listing.owner.locationDuplicate.blocked',
@@ -261,6 +272,7 @@ export function useAccommodationSectionForm<TValues extends object>({
         formError,
         isSaving,
         isDirty,
+        refusedLocation,
         handleSubmit,
         handleCancel
     };
