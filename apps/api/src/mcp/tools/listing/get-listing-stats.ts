@@ -17,8 +17,9 @@
  * `READ_OWN` resource step. A missing, foreign, staff-visible-only or purged
  * listing is the same not-found error (AC-6).
  *
- * No plan or entitlement gate: the HTTP routes gate stats on `view_basic_stats`,
- * which is phase B for the assistant tools (T-035 adds the plan status).
+ * Plan gated, like the HTTP routes: the call needs the `view_basic_stats`
+ * entitlement, and the favorites block needs `view_advanced_stats`. Without the
+ * basic entitlement the call is refused (see `enforceUserGate`).
  *
  * Review titles and texts are written by third parties, so they are returned
  * inside the untrusted-data envelope (spec §6.6).

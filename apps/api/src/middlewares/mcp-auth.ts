@@ -37,7 +37,8 @@
  * The middleware is also the flag gate of the `/mcp` route
  * (`routes/mcp/index.ts`): with `HOSPEDA_MCP_ENABLED` off (or no
  * `HOSPEDA_MCP_RESOURCE_URL`) it answers the app's normal 404 body, read per
- * request like the discovery routes.
+ * request like the discovery routes. The OAuth plugins are not per request:
+ * toggling the flag needs an API redeploy (see `auth-mcp-oauth.ts`).
  *
  * The raw token is never logged.
  */
@@ -129,7 +130,11 @@ export interface McpAuthDeps {
 }
 
 /**
- * Runtime configuration, read per request so a flag flip needs no restart.
+ * Runtime configuration for this middleware, read per request.
+ *
+ * Only the `/mcp` gate and the discovery routes follow the flag live. The Better
+ * Auth OAuth plugins are built once in `getAuth()`, so toggling
+ * `HOSPEDA_MCP_ENABLED` needs an API redeploy to take full effect.
  */
 export interface McpAuthConfig {
     /** `HOSPEDA_MCP_ENABLED`. Anything but `true` is off. */

@@ -19,7 +19,8 @@
  *
  * - `mcpRegistrationRedirectGuard` — the redirect allowlist at DCR.
  *
- * Everything is gated by `HOSPEDA_MCP_ENABLED`. With the flag off
+ * Everything is gated by `HOSPEDA_MCP_ENABLED`. The plugin list is built once
+ * when `getAuth()` first runs, so flipping the flag needs an API redeploy. With the flag off
  * {@link buildMcpOAuthConfig} constructs nothing and returns empty lists, so
  * `auth.ts` passes Better Auth exactly the options it passed before HOS-2184.
  *
@@ -36,7 +37,7 @@
  * `oauthClientAssertion`, `oauthResource`, `oauthClientResource`, `jwks`)
  * that the Drizzle adapter must map. Better Auth validates the schema at
  * runtime, so enabling the flag before those tables exist fails every auth
- * request. The tables are migration `0225_hos2184_oauth_provider_tables`
+ * request. The tables are migration `0227_hos2184_oauth_provider_tables`
  * (HOS-2184 T-005); `auth-mcp-oauth-schema.ts` maps them for the adapter.
  */
 
@@ -126,8 +127,9 @@ const LOOPBACK_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1']);
 export const MCP_OAUTH_LOGIN_PATH = '/es/auth/signin/';
 
 /**
- * Path of the web consent page. The page itself is a later HOS-2184 task;
- * only the URL is configured here.
+ * Path of the web consent page (`/es/auth/consent/`). The provider redirects
+ * here when a client has no stored consent; the page shows the account and the
+ * capabilities the connection grants.
  */
 export const MCP_OAUTH_CONSENT_PATH = '/es/auth/consent/';
 

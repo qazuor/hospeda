@@ -40,7 +40,7 @@ Better Auth plugin list is built at boot, so turning the flag on or off needs a
 redeploy of the API. The web app has no flag of its own (see
 [the web panel](../../web/CLAUDE.md#ai-assistants-panel-hos-2184)).
 
-Enabling the flag requires migration `0225_hos2184_oauth_provider_tables`. Without
+Enabling the flag requires migration `0227_hos2184_oauth_provider_tables`. Without
 those tables every auth request fails, because Better Auth validates its schema.
 
 ## OAuth flow
