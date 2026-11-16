@@ -54,6 +54,45 @@ session and cannot be joined with the browser pageview. Therefore:
 - **Distinct id:** never send `payload.id` (it overrides the session identity). A real
   user id goes to `data.user_id`. API-originated events carry no distinct id (OQ-5).
 
+### Distinct id and session join (measured 2026-11-16)
+
+Question: if a server event for a consented, logged-in user carries `payload.id = <user id>`
+(the same id the web sends with `umami.identify`), does it land in the browser session?
+
+**Source (v3.5.0).** `resolveCollectionSession` (`src/lib/collection-session.ts`) computes
+`sessionId = uuid(websiteId, ip, userAgent, salt, distinctId ?? '')`. When a request carries
+a distinct id AND the tracker's `x-umami-cache` token, `resolveIdentifiedSession` reuses the
+cached anonymous session if the IP + UA fingerprint is unchanged (claiming it through
+`session_link`). The cache token lives in the tracker's memory only; a server request never
+has it. So a server event with `payload.id` always gets `uuid(…, id)`.
+
+**Probe** (local spike, website `spike-web`, `/api/send` for the browser side with the cache
+token as the tracker sends it, `/api/batch` for the server side; sessions read from
+`website_event` joined to `session`):
+
+| Case | Browser session | Server event | Server session | Joined |
+| --- | --- | --- | --- | --- |
+| Pageview first, then `identify(X)` with cache (the web's flow) | `92cd…`, anonymous, `distinct_id` set to X by the claim | `payload.id = X`, same IP + UA | `2893…` (new) | **no** |
+| same | `92cd…` | no `payload.id`, same IP + UA, `data.user_id = X` | `92cd…` | **yes** |
+| same | `92cd…` | `payload.id = X`, other IP + UA | `b2a8…` (new) | no |
+| Hard reload after identify (web does not re-identify: sessionStorage marker) | `92cd…` again | n/a | n/a | n/a |
+| `identify(Y)` is the document's FIRST request (no cache) | `f116…` = `uuid(…, Y)` | `payload.id = Y`, same IP + UA | `f116…` | yes |
+| same | `f116…` | no `payload.id`, same IP + UA | `5004…` (new) | no |
+
+Conclusions:
+
+- In the web's normal flow (anonymous pageview first, identify later) the browser stays in
+  the **anonymous fingerprint session**, which Umami stamps with the distinct id. A server
+  event joins it only **without** `payload.id`. Adding `payload.id` on the server splits it
+  into a new session (one extra visitor per user), the opposite of the goal.
+- `payload.id` joins only when the browser document's first request already carried the id.
+  The web client does not guarantee that order today: the auto pageview and the identify both
+  wait for the tracker, and an identify sent before the pageview's response has no cache token,
+  so it opens `uuid(…, id)` on its own. A later hard reload then returns to the anonymous
+  session. This race is a risk for AC-12 regardless of the server rule.
+- The server-created session row does carry `distinct_id`, but no `session_link` row is
+  written for it (only identify writes one).
+
 ### Payload contract used by T-018
 
 | Field | Rule |
@@ -141,6 +180,11 @@ Owner permission and entitlement for views (feeds T-048/T-049) are not recorded 
 T-005 notes. Locate them there, not here.
 
 ## Open items
+
+- Owner re-decision on the server distinct id (2026-11-16): the measurement above shows that
+  `payload.id` on server events splits the session in the web's normal flow, and the api cannot
+  see the `cookie-consent` cookie (host-only on the web host). Until decided, server events keep
+  sending no `payload.id`.
 
 - Ad-block check with a real browser (AC-12 smoke).
 - CSP entries for the subdomain (T-028/T-029).
