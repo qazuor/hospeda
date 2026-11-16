@@ -50,7 +50,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 ---
 
 <article class="exp-card">
-    <a href={detailUrl} class="exp-card__link" aria-label={data.name}>
+    <a href={detailUrl} class="exp-card__link">
         <!-- IMAGE AREA -->
         <div class="exp-card__image-area">
             {shouldProxyFeaturedImage ? (

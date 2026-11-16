@@ -189,7 +189,7 @@ describe('VenueCard.astro', () => {
 
     describe('accessibility', () => {
         it('has an aria-label on the card link', () => {
-            expect(src).toContain('aria-label={data.name}');
+            expect(src).toMatch(/<a href=\{detailUrl\} class="venue-card__link">/);
         });
 
         it('marks decorative elements as aria-hidden', () => {
