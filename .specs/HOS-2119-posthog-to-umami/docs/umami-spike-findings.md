@@ -144,3 +144,71 @@ key) as a bearer credential; the same header worked for both.
   were not probed (not used by the setup script).
 - **Natural keys chosen**: report = `websiteId` + `name`; board = `name`. More than one
   match raises an `ambiguous` error instead of guessing.
+
+## T-038: report parameter shapes and the PostHog -> Umami mapping (measured 2026-11-16, Umami 3.5.0)
+
+Code: `scripts/umami/definitions.ts`. Every shape below was created with
+`POST /api/reports`, read back, run where a run endpoint exists, then deleted.
+
+### Parameter shapes
+
+`POST /api/reports` accepts ANY `parameters` object for every type (it is free-form:
+`{}` is stored for `retention`, `utm`, `revenue`), so acceptance proves nothing. Shapes
+were therefore validated against the RUN endpoints, which do validate:
+
+| Type | Stored `parameters` | Run endpoint (GET, `startAt`/`endAt` in epoch ms) |
+|---|---|---|
+| funnel | `{window:<MINUTES>, steps:[{type:'event'\|'path', value}]}` (>= 2 steps) | `/api/websites/:id/funnels/:reportId/stats` -> `[{type,value,visitors,previous,dropped,dropoff,remaining}]` |
+| goal | `{type:'event'\|'path', value}` | `/api/websites/:id/goals/:reportId/stats` -> `{num,total}` |
+| journey | `{steps:<int>, startStep?, endStep?}` | `/api/websites/:id/journeys?steps=&startStep=` (no `:reportId` form) |
+| retention | `{}` | `/api/websites/:id/retention` |
+| attribution | `{model:'first-click'\|'last-click', type:'path'\|'event', step}` | `/api/websites/:id/attribution` (camelCase `firstClick` is rejected) |
+| breakdown | `{fields:[<column>]}`, columns limited to a fixed enum (`path`, `referrer`, `title`, ...); `destination_slug` is rejected | `/api/websites/:id/breakdown?fields=<JSON array>` |
+| utm, revenue | `{}` | no run endpoint found (`/utm`, `/revenue` answer 404) |
+
+- There is NO `POST /api/reports/<type>` run endpoint: `POST /api/reports/funnel` is parsed
+  as `POST /api/reports/:id` (update) and `/api/reports/run` hits `findUnique` with
+  id `run` (500, invalid uuid).
+- Funnel `window` is in MINUTES: two events 2 h apart, `window:10` -> second step 0
+  visitors, `window:200` and `200000` -> 1 visitor.
+- `GET /api/websites/:id/funnels` and `/goals` list the saved reports of that type;
+  ad-hoc `funnels/stats` needs `window` and `steps` as a JSON array of >= 2 steps.
+- Board components (from the 3.5.0 editor bundle): column `component` =
+  `{type, title, description, props?}`; `entityType`/`entityId` only on mixed boards.
+  Types: `WebsiteMetricsBar`, `EventsMetricsBar`, `WebsiteChart`, `EventsChart`, `Goal`
+  and `Funnel` (both with `props.reportId` = saved report id, so board upserts must run
+  AFTER report upserts), `UTM` (`props.param`, `props.limit`), `MetricsTable`
+  (`props.type` in path|fullPath|entry|exit|title|query|referrer|channel|country|region|
+  city|browser|os|device|language|screen|utmSource|utmMedium|utmCampaign|utmContent|
+  utmTerm|event|hostname, `props.limit` 5|10|20), `WorldMap`, `WeeklyTraffic`,
+  `TextBlock` (`props.text`), realtime and revenue components. Row/column ids are
+  client-generated; the builder uses positional ids. A built board is stored and returned
+  with the same content but a different key order (compare key-order-insensitively).
+  Not verified: rendering in the UI (no browser).
+- A report does not store a date range; every run passes `startAt`/`endAt`.
+
+### PostHog insight -> Umami
+
+PostHog shipped 8 funnel insights (3 pairs duplicated across dashboards, so 5 distinct)
+and ~45 trend insights.
+
+| PostHog insight | Umami |
+|---|---|
+| Funnels (sign_up -> published; viewed -> contact; owner 4 steps; contact 3 steps; subscription) | `funnel` reports, 5 distinct (`HOSPEDA_FUNNELS`) |
+| Funnel `$pageview` -> `sign_up_completed` | Dropped as a funnel (no "any pageview" step; a path step needs one path). Replaced by `goal` on `sign_up_completed` (share of all visitors) |
+| Single-event trends for conversion KPIs (sign up, published, contact, subscription, payment, trial) | `goal` reports (`HOSPEDA_GOALS`, 6). A goal is the share of visitors, not an event count |
+| Other single-event trends (search, destination/accommodation/event/post viewed, contact started/failed, drafts, imports, onboarding, failed payments) | No saved report. `EventsChart` / `EventsMetricsBar` board components show custom events over time |
+| `$pageview` trend, MAU, DAU | Board components `WebsiteChart` / `WebsiteMetricsBar` (no report) |
+| Breakdown by `$referring_domain`, `$utm_source`, `$utm_campaign`, `$pathname` | `MetricsTable` board component with `referrer` / `utmSource` / `utmCampaign` / `path` or `entry` |
+| Breakdown by an EVENT property (`destination_slug`, `accommodation_id`, `destination_id`, `plan_slug`, `billing_period`, `failure_category`) | Dropped. The `breakdown` report accepts only fixed columns; per-property reads go through `event-data` (spec 6.4: event-data breakdown or an admin page) |
+| Breakdown by a PERSON property (`plan`) | Dropped: Umami has no person properties |
+| HogQL SQL insights | None existed in the ported set |
+
+Event names drifted from PostHog: billing events were renamed by HOS-1352, so
+`subscription_checkout_started` -> `billing_checkout_started`,
+`subscription_created` -> `billing_subscription_activated`,
+`subscription_payment_succeeded` -> `billing_charge_succeeded`,
+`subscription_payment_failed` -> `billing_charge_declined`,
+`trial_converted_to_paid` -> `trial_converted`. The builders validate every event
+against `AnalyticsEventSchemas` and throw on the old names. The old "nine funnels"
+figure in the spec does not match the 8 insights in `scripts/posthog/data.ts`.
