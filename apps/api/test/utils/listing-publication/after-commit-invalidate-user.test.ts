@@ -81,10 +81,13 @@ describe('TEST:1698:2 AC:1698:2 after-commit cache invalidation', () => {
     });
 
     it.each([
-        [VerticalEnum.ACCOMMODATION, '/api/v1/public/accommodations'],
-        [VerticalEnum.VENUE, '/api/v1/public/venues'],
-        [VerticalEnum.EXPERIENCE, '/api/v1/public/experiences']
-    ] as const)('invalidates the %s memory cache before scheduling CDN purge', async (vertical, path) => {
+        [
+            VerticalEnum.ACCOMMODATION,
+            ['/api/v1/public/accommodations', '/api/v1/public/destinations', '/api/v1/public/users']
+        ],
+        [VerticalEnum.VENUE, ['/api/v1/public/venues']],
+        [VerticalEnum.EXPERIENCE, ['/api/v1/public/experiences']]
+    ] as const)('invalidates every %s memory cache before scheduling CDN purge', async (vertical, paths) => {
         mocks.execute.mockResolvedValue({ rows: [{ slug: 'listing', destinationSlug: null }] });
         mocks.invalidatePublicPath.mockImplementation(() => {
             expect(mocks.scheduleRevalidation).not.toHaveBeenCalled();
@@ -95,7 +98,9 @@ describe('TEST:1698:2 AC:1698:2 after-commit cache invalidation', () => {
             listingIds: ['listing-id']
         });
 
-        expect(mocks.invalidatePublicPath).toHaveBeenCalledWith({ pathPrefix: path });
+        expect(mocks.invalidatePublicPath.mock.calls).toEqual(
+            paths.map((pathPrefix) => [{ pathPrefix }])
+        );
         expect(mocks.scheduleRevalidation).toHaveBeenCalledWith({
             entityType: vertical,
             id: 'listing-id',
