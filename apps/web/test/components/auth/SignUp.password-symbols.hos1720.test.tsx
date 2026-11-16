@@ -14,7 +14,7 @@ vi.mock('../../../src/lib/auth-client', () => ({
     signIn: { email: vi.fn(), social: vi.fn() },
     signUp: { email: (...args: unknown[]) => signUpEmailMock(...args) }
 }));
-vi.mock('../../../src/lib/analytics/posthog-client', () => ({ trackEvent: vi.fn() }));
+vi.mock('../../../src/lib/analytics/umami-client', () => ({ trackEvent: vi.fn() }));
 vi.mock('../../../src/components/ui/GradientButtonReact', () => ({
     GradientButton: ({ label, ...props }: { label: string; [key: string]: unknown }) => (
         <button {...props}>{label}</button>

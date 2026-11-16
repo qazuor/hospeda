@@ -106,7 +106,7 @@ describe('ContributionBanner.astro', () => {
         });
 
         it('fires the typed contribution_banner_clicked event via trackEvent', () => {
-            expect(src).toContain("from '@/lib/analytics/posthog-client'");
+            expect(src).toContain("from '@/lib/analytics/umami-client'");
             expect(src).toContain("from '@/lib/analytics/events'");
             expect(src).toContain('WebEvents.ContributionBannerClicked');
         });

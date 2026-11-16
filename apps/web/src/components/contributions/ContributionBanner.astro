@@ -72,11 +72,11 @@ const variantClass = variant === 'editors' ? styles.editors : styles.photos;
 
 <script>
     import { WebEvents } from '@/lib/analytics/events';
-    import { trackEvent } from '@/lib/analytics/posthog-client';
+    import { trackEvent } from '@/lib/analytics/umami-client';
 
     /**
      * Wire the click-tracking event on every ContributionBanner CTA in the
-     * page. trackEvent is a safe no-op before the PostHog SDK loads, and
+     * page. trackEvent is a safe no-op before the Umami tracker loads, and
      * navigation to ctaHref proceeds normally (no preventDefault).
      *
      * Hoisted module scripts execute ONCE per session — after a

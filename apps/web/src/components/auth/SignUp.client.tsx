@@ -24,7 +24,7 @@ import { StrongPasswordSchema } from '@repo/schemas';
 import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
-import { trackEvent } from '@/lib/analytics/posthog-client';
+import { trackEvent } from '@/lib/analytics/umami-client';
 import { translateApiError } from '@/lib/api-errors';
 import { signUp } from '@/lib/auth-client';
 import { EmailFormatSchema } from '@/lib/forms/email-format';

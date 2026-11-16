@@ -23,7 +23,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreatePropertyMiniForm } from '../../../src/components/host/CreatePropertyMiniForm.client';
-import { trackEvent } from '../../../src/lib/analytics/posthog-client';
+import { trackEvent } from '../../../src/lib/analytics/umami-client';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -411,8 +411,8 @@ vi.mock('../../../src/lib/accommodation-type-icons', () => ({
     getAccommodationTypeIcon: vi.fn(() => '🏠')
 }));
 
-/** Mock PostHog analytics — capture calls for SPEC-258 A7 verification. */
-vi.mock('../../../src/lib/analytics/posthog-client', () => ({
+/** Mock Umami analytics — capture calls for SPEC-258 A7 verification. */
+vi.mock('../../../src/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));
 
@@ -1381,7 +1381,7 @@ describe('CreatePropertyMiniForm — submit payload with extras (SPEC-258)', () 
 });
 
 // ---------------------------------------------------------------------------
-// SPEC-258 A7: PostHog import analytics
+// SPEC-258 A7: Umami import analytics
 // ---------------------------------------------------------------------------
 
 describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
@@ -1392,13 +1392,10 @@ describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
         await triggerFullImport(user);
 
         // trackEvent should have been called with the success event
-        expect(trackEvent).toHaveBeenCalledWith(
-            'accommodation_import_completed',
-            expect.objectContaining({
-                import_source: 'booking',
-                prefilled_field_count: expect.any(Number)
-            })
-        );
+        expect(trackEvent).toHaveBeenCalledWith('accommodation_import_completed', {
+            import_source: 'booking',
+            prefilled_field_count: expect.any(Number)
+        });
     });
 
     it('fires PropertyImportSucceeded with source from the response', async () => {
@@ -1408,10 +1405,10 @@ describe('CreatePropertyMiniForm — import analytics (SPEC-258 A7)', () => {
         // Base fixture has source: 'generic'
         await triggerImport(user);
 
-        expect(trackEvent).toHaveBeenCalledWith(
-            'accommodation_import_completed',
-            expect.objectContaining({ import_source: 'generic' })
-        );
+        expect(trackEvent).toHaveBeenCalledWith('accommodation_import_completed', {
+            import_source: 'generic',
+            prefilled_field_count: expect.any(Number)
+        });
     });
 });
 
