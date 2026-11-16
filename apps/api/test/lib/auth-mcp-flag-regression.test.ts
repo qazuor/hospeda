@@ -90,8 +90,10 @@ interface Run {
     readonly endpoints: readonly Endpoint[];
     readonly socialRedirects: Readonly<Record<string, string | null>>;
     readonly oauthRouteStatuses: Readonly<Record<string, number>>;
-    /** `skipConsent` of a client a plain user created asking for it (flag on only). */
-    readonly createdClientSkipsConsent: unknown;
+    /** Status of each client-management endpoint, called by a signed-in plain user. */
+    readonly clientManagement: Readonly<Record<string, number>>;
+    /** Status of Dynamic Client Registration with an allowed redirect. */
+    readonly registerStatus: number;
 }
 
 const OAUTH_ROUTES = [
@@ -171,23 +173,30 @@ async function exercise(enabled: boolean): Promise<Run> {
         oauthRouteStatuses[`${method} ${path}`] = res.status;
     }
 
-    let createdClientSkipsConsent: unknown;
-    if (enabled) {
-        const created = await post(
-            '/oauth2/create-client',
+    const clientManagement: Record<string, number> = {};
+    for (const path of [
+        '/oauth2/create-client',
+        '/oauth2/update-client',
+        '/oauth2/delete-client',
+        '/oauth2/client/rotate-secret',
+        '/oauth2/client/rotate-keys'
+    ]) {
+        const res = await post(
+            path,
             {
-                client_name: 'Wants to skip consent',
+                client_name: 'Wants a client',
                 redirect_uris: ['https://claude.ai/api/mcp/auth_callback'],
-                token_endpoint_auth_method: 'none',
-                skip_consent: true
+                client_id: 'x'
             },
             { cookie }
         );
-        const { client_id: clientId } = (await created.json()) as { client_id: string };
-        createdClientSkipsConsent = (authMemoryStore.oauthClient as Record<string, unknown>[]).find(
-            (client) => client.clientId === clientId
-        )?.skipConsent;
+        clientManagement[path] = res.status;
     }
+    const registered = await post('/oauth2/register', {
+        client_name: 'Claude Code',
+        redirect_uris: ['http://127.0.0.1:5555/callback'],
+        token_endpoint_auth_method: 'none'
+    });
 
     const signOut = await post('/sign-out', {}, { cookie });
 
@@ -223,7 +232,8 @@ async function exercise(enabled: boolean): Promise<Run> {
         endpoints,
         socialRedirects: social,
         oauthRouteStatuses,
-        createdClientSkipsConsent
+        clientManagement,
+        registerStatus: registered.status
     };
 }
 
@@ -419,10 +429,20 @@ describe('auth flows with the MCP plugins on and off (AC-13)', () => {
             }
         });
 
-        it('does not let a plain signed-in user create a client that skips the consent screen', () => {
-            // Arrange / Act / Assert: the consent row is what AC-11 revokes, so every
-            // client must go through it.
-            expect(on.createdClientSkipsConsent).toBeFalsy();
+        it.each([
+            ['off', () => off],
+            ['on', () => on]
+        ] as const)('serves no client-management endpoint to a signed-in user (flag %s)', (_label, getRun) => {
+            // Arrange / Act / Assert: clients come only from DCR and CIMD.
+            for (const [path, status] of Object.entries(getRun().clientManagement)) {
+                expect(status, path).toBe(404);
+            }
+        });
+
+        it('still registers a client through DCR with the flag on, and not with it off', () => {
+            // Arrange / Act / Assert
+            expect(on.registerStatus).toBe(201);
+            expect(off.registerStatus).toBe(404);
         });
 
         it('serves the OAuth endpoints with the flag on', () => {

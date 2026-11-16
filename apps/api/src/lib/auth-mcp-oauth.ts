@@ -146,6 +146,32 @@ export function isAllowedMcpRedirectUri({ redirectUri }: IsAllowedMcpRedirectUri
 }
 
 /**
+ * Better Auth paths disabled while the MCP authorization server is on.
+ *
+ * - `/token`: the `jwt()` plugin's own endpoint; the OAuth token endpoint is
+ *   `/oauth2/token`.
+ * - `/oauth2/create-client`, `/oauth2/update-client`, `/oauth2/delete-client`,
+ *   `/oauth2/client/rotate-secret`, `/oauth2/client/rotate-keys`: the provider's
+ *   client management for signed-in users. Any user could mint a confidential
+ *   client (with a secret) bypassing the registration policy. Clients come in
+ *   only through DCR (`/oauth2/register`) and CIMD; the account panel manages
+ *   consents, not clients.
+ *
+ * Kept on purpose: `/oauth2/register`, `/oauth2/public-client` (consent page),
+ * `/oauth2/get-client(s)` (read only), and the consent endpoints the consent
+ * page and the connections panel use. The provider's `/admin/oauth2/*`
+ * endpoints are server-only and not served over HTTP.
+ */
+export const MCP_DISABLED_AUTH_PATHS: readonly string[] = [
+    '/token',
+    '/oauth2/create-client',
+    '/oauth2/update-client',
+    '/oauth2/delete-client',
+    '/oauth2/client/rotate-secret',
+    '/oauth2/client/rotate-keys'
+];
+
+/**
  * Arguments for {@link buildMcpOAuthProviderOptions}. RO-RO.
  */
 export interface BuildMcpOAuthProviderOptionsArgs {
@@ -265,7 +291,7 @@ export function buildMcpOAuthConfig({
             oauthProvider(oauthProviderOptions),
             cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' })
         ],
-        disabledPaths: ['/token'],
+        disabledPaths: [...MCP_DISABLED_AUTH_PATHS],
         oauthProviderOptions
     };
 }

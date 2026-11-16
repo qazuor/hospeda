@@ -223,7 +223,7 @@ describe('buildMcpOAuthConfig', () => {
         expect(config.oauthProviderOptions?.resources).toEqual([RESOURCE_URL]);
     });
 
-    it("disables the JWT plugin's /token endpoint when on", () => {
+    it("disables the JWT plugin's /token and the user-facing client management endpoints when on", () => {
         // Arrange / Act
         const config = buildMcpOAuthConfig({
             enabled: true,
@@ -232,7 +232,15 @@ describe('buildMcpOAuthConfig', () => {
         });
 
         // Assert
-        expect(config.disabledPaths).toEqual(['/token']);
+        expect(config.disabledPaths).toEqual([
+            '/token',
+            '/oauth2/create-client',
+            '/oauth2/update-client',
+            '/oauth2/delete-client',
+            '/oauth2/client/rotate-secret',
+            '/oauth2/client/rotate-keys'
+        ]);
+        expect(config.disabledPaths).not.toContain('/oauth2/register');
     });
 
     it('throws when the flag is on without a resource URL', () => {
