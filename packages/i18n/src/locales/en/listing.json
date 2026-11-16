@@ -422,6 +422,8 @@
         },
         "traffic": {
             "title": "Traffic to your listings",
+            "partnerTitle": "Traffic to your page",
+            "verticalTitle": "Traffic: {{vertical}}",
             "window": {
                 "label": "Period"
             },

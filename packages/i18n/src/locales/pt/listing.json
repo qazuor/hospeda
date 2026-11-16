@@ -422,6 +422,8 @@
         },
         "traffic": {
             "title": "Tráfego das suas fichas",
+            "partnerTitle": "Tráfego da sua página",
+            "verticalTitle": "Tráfego: {{vertical}}",
             "window": {
                 "label": "Período"
             },

@@ -13,7 +13,8 @@
  *    unpaid) is an informative locked sentence, not that error.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { useEffect } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     ListingViewsWidget,
@@ -22,7 +23,11 @@ import {
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
+        t: (_key: string, fallback?: string, params?: Record<string, unknown>) =>
+            Object.entries(params ?? {}).reduce(
+                (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
+                fallback ?? _key
+            )
     })
 }));
 
@@ -30,7 +35,29 @@ vi.mock('../../../src/components/listing/ListingViewsWidget.module.css', () => (
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
-const { mockGetViews } = vi.hoisted(() => ({ mockGetViews: vi.fn() }));
+vi.mock('../../../src/components/listing/TrafficStatsCards.client', () => ({
+    TrafficStatsCards: (props: { entityType: string; entityId: string; window: string }) => {
+        // Lifecycle spies prove an island is handed a new prop, not remounted.
+        useEffect(() => {
+            mockIslandMounted(props.entityId);
+            return () => mockIslandUnmounted(props.entityId);
+        }, [props.entityId]);
+        return (
+            <div
+                data-testid="traffic-stub"
+                data-entity-type={props.entityType}
+                data-entity-id={props.entityId}
+                data-window={props.window}
+            />
+        );
+    }
+}));
+
+const { mockGetViews, mockIslandMounted, mockIslandUnmounted } = vi.hoisted(() => ({
+    mockGetViews: vi.fn(),
+    mockIslandMounted: vi.fn(),
+    mockIslandUnmounted: vi.fn()
+}));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     listingAnalyticsApi: {
@@ -89,8 +116,10 @@ describe('ListingViewsWidget (HOS-734)', () => {
 
         await waitFor(() => expect(mockGetViews).toHaveBeenCalledTimes(2));
 
-        expect(await screen.findByText('La Parrilla del Puerto')).toBeTruthy();
-        expect(await screen.findByText('Paseo en Kayak')).toBeTruthy();
+        // Scoped to the views list: the traffic section repeats each listing name.
+        const list = await screen.findByTestId('listing-views-list');
+        expect(within(list).getByText('La Parrilla del Puerto')).toBeTruthy();
+        expect(within(list).getByText('Paseo en Kayak')).toBeTruthy();
         expect(screen.getAllByTestId('listing-views-unique')).toHaveLength(2);
         expect(screen.getByText(/12 únicos/)).toBeTruthy();
         expect(screen.getByText(/30 totales/)).toBeTruthy();
@@ -221,5 +250,199 @@ describe('ListingViewsWidget (HOS-734)', () => {
 
         expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar las vistas');
         expect(screen.queryByTestId('listing-views-locked')).toBeNull();
+    });
+
+    describe('traffic cards (HOS-2119)', () => {
+        it('mounts one island per listing beneath the views list with the right entity type and id', async () => {
+            mockGetViews.mockImplementation(async ({ vertical }: { vertical: string }) => ({
+                ok: true,
+                data:
+                    vertical === 'venue'
+                        ? [{ entityId: 'venue-1', unique: 12, total: 30 }]
+                        : [{ entityId: 'exp-1', unique: 4, total: 9 }]
+            }));
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[GASTRO_LISTING, EXPERIENCE_LISTING]}
+                />
+            );
+
+            const section = await screen.findByTestId('listing-traffic-section-venue');
+            const expSection = screen.getByTestId('listing-traffic-section-experience');
+            // Separate section and h2 per vertical, never one mixed block.
+            expect(section.querySelector('h2')).toHaveTextContent('Tráfico: Comer y salir');
+            expect(expSection.querySelector('h2')).toHaveTextContent('Tráfico: Experiencia');
+            expect(section.querySelector('h2')?.textContent).not.toContain('{{');
+            const venueStubs = section.querySelectorAll('[data-testid="traffic-stub"]');
+            const expStubs = expSection.querySelectorAll('[data-testid="traffic-stub"]');
+            expect(venueStubs).toHaveLength(1);
+            expect(expStubs).toHaveLength(1);
+            expect(venueStubs[0]).toHaveAttribute('data-entity-type', 'VENUE');
+            expect(venueStubs[0]).toHaveAttribute('data-entity-id', 'venue-1');
+            expect(expStubs[0]).toHaveAttribute('data-entity-type', 'EXPERIENCE');
+            expect(expStubs[0]).toHaveAttribute('data-entity-id', 'exp-1');
+            // Beneath the existing views list, in document order.
+            const list = screen.getByTestId('listing-views-list');
+            expect(
+                list.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+            // Existing cards unchanged.
+            expect(screen.getByText(/12 únicos/)).toBeTruthy();
+            expect(screen.getByText(/30 totales/)).toBeTruthy();
+        });
+
+        it('passes the selected window to every island and updates it on toggle WITHOUT remounting', async () => {
+            let resolveSecond: (value: { ok: true; data: [] }) => void = () => undefined;
+            mockGetViews.mockResolvedValueOnce({ ok: true, data: [] });
+            mockGetViews.mockImplementationOnce(
+                () =>
+                    new Promise((resolve) => {
+                        resolveSecond = resolve;
+                    })
+            );
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[GASTRO_LISTING]}
+                />
+            );
+
+            const stub = await screen.findByTestId('traffic-stub');
+            expect(stub).toHaveAttribute('data-window', '30d');
+            expect(mockIslandMounted).toHaveBeenCalledTimes(1);
+
+            fireEvent.click(screen.getByText('7 días'));
+
+            // The views read is still in flight: the section must not vanish.
+            await waitFor(() => expect(mockGetViews).toHaveBeenCalledTimes(2));
+            expect(screen.getByTestId('listing-traffic-section-venue')).toBeTruthy();
+            expect(screen.getByTestId('traffic-stub')).toHaveAttribute('data-window', '7d');
+
+            await act(async () => {
+                resolveSecond({ ok: true, data: [] });
+            });
+
+            // Same DOM node, handed the new prop; never torn down and rebuilt.
+            expect(screen.getByTestId('traffic-stub')).toBe(stub);
+            expect(stub).toHaveAttribute('data-window', '7d');
+            expect(mockIslandMounted).toHaveBeenCalledTimes(1);
+            expect(mockIslandUnmounted).not.toHaveBeenCalled();
+        });
+
+        it('scopes each listing block with a section labelled by the listing name', async () => {
+            mockGetViews.mockResolvedValue({ ok: true, data: [] });
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[GASTRO_LISTING]}
+                />
+            );
+
+            const region = await screen.findByRole('region', { name: 'La Parrilla del Puerto' });
+            expect(region).toContainElement(screen.getByTestId('traffic-stub'));
+        });
+
+        it('renders no traffic island for a PURGED listing but keeps it in the views list', async () => {
+            mockGetViews.mockResolvedValue({
+                ok: true,
+                data: [
+                    { entityId: 'venue-1', unique: 1, total: 2 },
+                    { entityId: 'venue-2', unique: 3, total: 4 }
+                ]
+            });
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[
+                        GASTRO_LISTING,
+                        { id: 'venue-2', vertical: 'venue', name: 'Cerrado', purged: true }
+                    ]}
+                />
+            );
+
+            await screen.findByTestId('listing-views-list');
+            const stubs = await screen.findAllByTestId('traffic-stub');
+            expect(stubs).toHaveLength(1);
+            expect(stubs[0]).toHaveAttribute('data-entity-id', 'venue-1');
+            expect(screen.getAllByTestId('listing-views-row')).toHaveLength(2);
+        });
+
+        it('renders no traffic section when the only listing is PURGED', async () => {
+            mockGetViews.mockResolvedValue({ ok: true, data: [] });
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[{ ...GASTRO_LISTING, purged: true }]}
+                />
+            );
+
+            await waitFor(() => expect(mockGetViews).toHaveBeenCalledTimes(1));
+            await act(async () => undefined);
+            expect(screen.queryByTestId('listing-traffic-section-venue')).toBeNull();
+            expect(screen.queryByTestId('traffic-stub')).toBeNull();
+        });
+
+        it('renders no traffic island for a locked vertical, only for the one that answered', async () => {
+            mockGetViews.mockImplementation(async ({ vertical }: { vertical: string }) =>
+                vertical === 'venue'
+                    ? {
+                          ok: false,
+                          error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' }
+                      }
+                    : { ok: true, data: [{ entityId: 'exp-1', unique: 7, total: 11 }] }
+            );
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[GASTRO_LISTING, EXPERIENCE_LISTING]}
+                />
+            );
+
+            const stub = await screen.findByTestId('traffic-stub');
+            expect(screen.queryByTestId('listing-traffic-section-venue')).toBeNull();
+            expect(stub).toHaveAttribute('data-entity-type', 'EXPERIENCE');
+            expect(screen.getAllByTestId('traffic-stub')).toHaveLength(1);
+        });
+
+        it('renders no traffic section when every vertical is locked', async () => {
+            mockGetViews.mockResolvedValue({
+                ok: false,
+                error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' }
+            });
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[GASTRO_LISTING, EXPERIENCE_LISTING]}
+                />
+            );
+
+            await screen.findByTestId('listing-views-locked');
+            expect(screen.queryByTestId('listing-traffic-section-venue')).toBeNull();
+            expect(screen.queryByTestId('listing-traffic-section-experience')).toBeNull();
+            expect(screen.queryByTestId('traffic-stub')).toBeNull();
+        });
+
+        it('renders no traffic section on a genuine views failure', async () => {
+            mockGetViews.mockResolvedValue({ ok: false, error: { status: 500, message: 'boom' } });
+
+            render(
+                <ListingViewsWidget
+                    locale="es"
+                    listings={[GASTRO_LISTING]}
+                />
+            );
+
+            await screen.findByRole('alert');
+            expect(screen.queryByTestId('listing-traffic-section-venue')).toBeNull();
+            expect(screen.queryByTestId('listing-traffic-section-experience')).toBeNull();
+        });
     });
 });

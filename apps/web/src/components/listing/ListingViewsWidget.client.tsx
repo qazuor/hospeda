@@ -30,6 +30,7 @@
  * fold.
  */
 
+import { EntityTypeEnum, type ListingTrafficStatsEntityType } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
@@ -37,12 +38,27 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import styles from './ListingViewsWidget.module.css';
+import { TrafficStatsCards } from './TrafficStatsCards.client';
+
+/** Verticals that get their own traffic section, in display order. */
+const TRAFFIC_VERTICALS: readonly VenueOrExperience[] = ['venue', 'experience'];
+
+/** Traffic-stats entity type for each owner vertical. */
+const TRAFFIC_ENTITY_TYPE: Readonly<Record<VenueOrExperience, ListingTrafficStatsEntityType>> = {
+    venue: EntityTypeEnum.VENUE,
+    experience: EntityTypeEnum.EXPERIENCE
+};
 
 /** Minimal listing shape the widget needs — id, vertical, and display name. */
 export interface ListingViewsWidgetListing {
     readonly id: string;
     readonly vertical: VenueOrExperience;
     readonly name: string;
+    /**
+     * `true` for a `PURGED` listing (HOS-1492 keeps it in the views list on
+     * purpose). A purged listing offers no traffic section: nothing to measure.
+     */
+    readonly purged?: boolean;
 }
 
 export interface ListingViewsWidgetProps {
@@ -69,12 +85,19 @@ type WidgetState =
           readonly status: 'ready';
           readonly rows: readonly ViewRow[];
           readonly hasLockedVertical: boolean;
+          /** Verticals the API refused with `ENTITLEMENT_REQUIRED` (no traffic cards for them). */
+          readonly lockedVerticals: readonly VenueOrExperience[];
       }
     | { readonly status: 'error' };
 
 /** What {@link fetchRows} resolves to: rows plus the locked flag, or a genuine failure. */
 type FetchOutcome =
-    | { readonly ok: true; readonly rows: readonly ViewRow[]; readonly hasLockedVertical: boolean }
+    | {
+          readonly ok: true;
+          readonly rows: readonly ViewRow[];
+          readonly hasLockedVertical: boolean;
+          readonly lockedVerticals: readonly VenueOrExperience[];
+      }
     | { readonly ok: false };
 
 /**
@@ -97,11 +120,14 @@ async function fetchRows(
     );
 
     let hasLockedVertical = false;
+    const lockedVerticals: VenueOrExperience[] = [];
     const rows: ViewRow[] = [];
-    for (const result of results) {
+    for (const [index, result] of results.entries()) {
         if (!result.ok) {
             if (result.error.status === 403 && result.error.code === 'ENTITLEMENT_REQUIRED') {
                 hasLockedVertical = true;
+                const lockedVertical = verticals[index];
+                if (lockedVertical !== undefined) lockedVerticals.push(lockedVertical);
                 continue;
             }
             return { ok: false };
@@ -115,7 +141,7 @@ async function fetchRows(
             });
         }
     }
-    return { ok: true, rows, hasLockedVertical };
+    return { ok: true, rows, hasLockedVertical, lockedVerticals };
 }
 
 /**
@@ -134,24 +160,42 @@ export function ListingViewsWidget({
     const { t } = createTranslations(locale);
     const [windowParam, setWindowParam] = useState<'7d' | '30d'>('30d');
     const [state, setState] = useState<WidgetState>({ status: 'loading' });
+    /**
+     * Verticals refused with `ENTITLEMENT_REQUIRED`, or `null` while unknown or
+     * after a genuine failure. Kept apart from `state` and updated ONLY when a
+     * read settles: deriving it from `state.status` would empty the traffic
+     * sections on every window toggle (status goes back to `loading`), unmounting
+     * the islands instead of handing them the new `window` prop.
+     */
+    const [lockedVerticals, setLockedVerticals] = useState<readonly VenueOrExperience[] | null>(
+        null
+    );
 
     useEffect(() => {
         let cancelled = false;
 
         if (listings.length === 0) {
-            setState({ status: 'ready', rows: [], hasLockedVertical: false });
+            setState({
+                status: 'ready',
+                rows: [],
+                hasLockedVertical: false,
+                lockedVerticals: []
+            });
+            setLockedVerticals([]);
             return;
         }
 
         setState({ status: 'loading' });
         fetchRows(listings, windowParam).then((outcome) => {
             if (cancelled) return;
+            setLockedVerticals(outcome.ok ? outcome.lockedVerticals : null);
             setState(
                 outcome.ok
                     ? {
                           status: 'ready',
                           rows: outcome.rows,
-                          hasLockedVertical: outcome.hasLockedVertical
+                          hasLockedVertical: outcome.hasLockedVertical,
+                          lockedVerticals: outcome.lockedVerticals
                       }
                     : { status: 'error' }
             );
@@ -165,6 +209,17 @@ export function ListingViewsWidget({
     if (listings.length === 0) {
         return null;
     }
+
+    // HOS-2119: Umami traffic cards per listing whose vertical answered the
+    // views read. A locked vertical (no tier) gets none: the island would only
+    // spend a request to be refused. A PURGED listing gets none either. The set
+    // survives a window toggle (see `lockedVerticals`), so islands stay mounted.
+    const trafficListings =
+        lockedVerticals === null
+            ? []
+            : listings.filter(
+                  (listing) => !listing.purged && !lockedVerticals.includes(listing.vertical)
+              );
 
     return (
         <div
@@ -246,6 +301,50 @@ export function ListingViewsWidget({
                     ))}
                 </ul>
             )}
+
+            {TRAFFIC_VERTICALS.map((vertical) => {
+                const verticalListings = trafficListings.filter(
+                    (listing) => listing.vertical === vertical
+                );
+                if (verticalListings.length === 0) return null;
+                return (
+                    <section
+                        key={vertical}
+                        className={styles.traffic}
+                        data-testid={`listing-traffic-section-${vertical}`}
+                    >
+                        <h2 className={styles.title}>
+                            {t('listing.owner.traffic.verticalTitle', 'Tráfico: {{vertical}}', {
+                                vertical: t(
+                                    `listing.owner.list.badge.${vertical}`,
+                                    vertical === 'venue' ? 'Comer y salir' : 'Experiencia'
+                                )
+                            })}
+                        </h2>
+                        {verticalListings.map((listing) => (
+                            <section
+                                key={listing.id}
+                                className={styles.trafficListing}
+                                aria-labelledby={`listing-traffic-name-${listing.id}`}
+                                data-testid="listing-traffic-listing"
+                            >
+                                <p
+                                    id={`listing-traffic-name-${listing.id}`}
+                                    className={styles.trafficListingName}
+                                >
+                                    {listing.name}
+                                </p>
+                                <TrafficStatsCards
+                                    locale={locale}
+                                    entityType={TRAFFIC_ENTITY_TYPE[vertical]}
+                                    entityId={listing.id}
+                                    window={windowParam}
+                                />
+                            </section>
+                        ))}
+                    </section>
+                );
+            })}
         </div>
     );
 }
