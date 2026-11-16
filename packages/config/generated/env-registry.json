@@ -1371,6 +1371,7 @@
       "descriptionEs": "URL base de la instancia self-hosted de Umami (ingesta server-side de eventos vía POST /api/batch y API de lectura). Requerida en producción, opcional en el resto",
       "type": "url",
       "required": false,
+      "requiredScope": "production",
       "secret": false,
       "exampleValue": "https://umami.example.com",
       "apps": [
@@ -1387,6 +1388,7 @@
       "descriptionEs": "Id de website de Umami (UUID) de hospeda-web; los eventos server-side que describen la superficie web pública se envían ahí. Requerido en producción, opcional en el resto",
       "type": "string",
       "required": false,
+      "requiredScope": "production",
       "secret": false,
       "exampleValue": "00000000-0000-0000-0000-000000000000",
       "apps": [
