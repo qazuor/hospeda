@@ -9,6 +9,7 @@
  * (see `.specs/HOS-2119-posthog-to-umami/docs/umami-spike-findings.md`).
  */
 
+import { AnalyticsEvents } from '@repo/analytics';
 import type { ListingTrafficBreakdownItem } from '@repo/schemas';
 import type {
     FunnelCounts,
@@ -25,6 +26,9 @@ export const UMAMI_STATS_TIMEOUT_MS = 3000;
 /** Event names read for the contact funnel. */
 const CONTACT_STARTED_EVENT = 'contact_owner_started';
 const CONTACT_COMPLETED_EVENT = 'contact_owner_completed';
+
+/** Event sent by listing pages entered from a same-site page (T-075). */
+const INTERNAL_ENTRY_EVENT = AnalyticsEvents.listingInternalEntry;
 
 /** Failure categories of {@link UmamiStatsError}. */
 export type UmamiStatsErrorKind = 'http' | 'network' | 'timeout' | 'schema';
@@ -67,6 +71,13 @@ const MetricsSchema = z.array(z.object({ x: z.string().nullable(), y: z.number()
 const StatsSchema = z.object({ pageviews: z.number(), visitors: z.number() });
 /** `count` is the EVENT count (measured on Umami 3.5.0); `isCapped` flags a truncated count. */
 const PivotSchema = z.object({ count: z.number(), isCapped: z.boolean().optional() });
+/**
+ * `metrics/expanded?type=event` rows. `visitors` is DISTINCT visitors per event name
+ * (measured on Umami 3.5.0); `pageviews` (the event count, a string) is ignored.
+ */
+const ExpandedEventMetricsSchema = z.array(
+    z.object({ name: z.string(), visitors: z.coerce.number().int().nonnegative() })
+);
 const EntityIdSchema = z.string().uuid();
 
 /**
@@ -228,6 +239,16 @@ export function createUmamiStatsClient(input: CreateUmamiStatsClientInput): Traf
             assertEntityId(scope.entityId);
             const stats = await readStats(scope);
             return stats.visitors;
+        },
+
+        async getInternalEntryVisitors(scope: TrafficStatsScope): Promise<number> {
+            assertEntityId(scope.entityId);
+            const rows = await request({
+                path: 'metrics/expanded',
+                params: { ...range(scope), type: 'event', tag: scope.entityId },
+                schema: ExpandedEventMetricsSchema
+            });
+            return rows.find((row) => row.name === INTERNAL_ENTRY_EVENT)?.visitors ?? 0;
         }
     };
 }

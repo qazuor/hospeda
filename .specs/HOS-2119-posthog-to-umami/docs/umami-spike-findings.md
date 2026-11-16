@@ -94,3 +94,16 @@ Checked with two entities (A: 2 pageviews, 2 `contact_owner_started`, 1
   server then drops. Consequence: the derived `(direct)` row is an approximation that
   includes internal-only navigation (and, conversely, a visitor with several referrers is
   counted in each row, understating direct).
+- **Internal-entry visitors (T-075, measured 2026-11-16, Umami 3.5.0)**: custom event
+  `listing_internal_entry` sent via `/api/send` with `payload.tag=<id>`: visitor 1 twice,
+  visitor 2 once, visitor 3 once under a second tag.
+  - `metrics?type=event&tag=<id>` honours the tag (no leak: the second tag only saw its own
+    event) BUT `y` is the EVENT count (`[{"x":"listing_internal_entry","y":3}]`), not distinct
+    visitors. Unusable for the stats units. `stats?tag=&event=` returns zeros (stats only
+    counts pageviews).
+  - **`metrics/expanded?type=event&tag=<id>&startAt&endAt` is the right call**: it answered
+    `[{"name":"listing_internal_entry","pageviews":"3","visitors":2,"visits":2,"bounces":1,"totaltime":"0"}]`
+    (`visitors` = distinct visitors: 2, not 3; `pageviews` is the event count and comes as a
+    STRING), the second tag answered `visitors: 1`, an unknown tag answered `[]`. One row per
+    event name, so the adapter reads the row whose `name` is the event (0 when absent).
+    Cross-check: `sessions?tag=&event=<name>&pageSize=1` gives `count: 2` (same figure).

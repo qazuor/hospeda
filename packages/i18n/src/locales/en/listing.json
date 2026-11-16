@@ -423,14 +423,12 @@
         "traffic": {
             "title": "Traffic to your listings",
             "window": {
-                "label": "Period",
-                "7d": "7 days",
-                "30d": "30 days",
-                "90d": "90 days"
+                "label": "Period"
             },
             "referrers": {
                 "title": "Where visitors come from",
-                "direct": "Direct"
+                "direct": "Direct",
+                "internal": "From Hospeda"
             },
             "countries": {
                 "title": "Countries"

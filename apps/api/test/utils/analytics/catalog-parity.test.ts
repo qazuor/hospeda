@@ -1,7 +1,12 @@
-import { ANALYTICS_ENTITY_TYPES, AnalyticsEventSchemas } from '@repo/analytics';
+import {
+    ANALYTICS_ENTITY_TYPES,
+    ANALYTICS_LISTING_ENTITY_TYPES,
+    AnalyticsEventSchemas
+} from '@repo/analytics';
 import {
     BILLING_CYCLES,
     CancellationReasonEnum,
+    LISTING_TRAFFIC_STATS_ENTITY_TYPES,
     TRACKABLE_ENTITY_TYPES,
     VerticalEnum
 } from '@repo/schemas';
@@ -32,6 +37,11 @@ describe('billing analytics catalog parity (TEST:1878:16)', () => {
     });
     it('keeps analytics entity types in parity with TRACKABLE_ENTITY_TYPES (HOS-2119)', () => {
         expect([...ANALYTICS_ENTITY_TYPES]).toEqual([...TRACKABLE_ENTITY_TYPES]);
+    });
+    it('keeps listing analytics entity types in parity with the owner traffic-stats types (HOS-2119)', () => {
+        expect([...ANALYTICS_LISTING_ENTITY_TYPES]).toEqual([
+            ...LISTING_TRAFFIC_STATS_ENTITY_TYPES
+        ]);
     });
     it('rejects forbidden analytics property names', () => {
         const forbidden =

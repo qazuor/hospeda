@@ -75,6 +75,13 @@ export interface TrafficStatsClientPort {
      * which are ACCOMMODATION-only. Used to derive direct traffic.
      */
     getVisitorCount(input: TrafficStatsScope): Promise<number>;
+    /**
+     * DISTINCT visitors of the listing who entered the page from another page of
+     * the same site, over `[startAt, endAt]`, for every listing type. Read from the
+     * `listing_internal_entry` custom event (0 when no event was recorded). Same
+     * unit as `getVisitorCount`, so the service can subtract it from direct traffic.
+     */
+    getInternalEntryVisitors(input: TrafficStatsScope): Promise<number>;
 }
 
 /** Input of {@link TrafficStatsCachePort.set}. */

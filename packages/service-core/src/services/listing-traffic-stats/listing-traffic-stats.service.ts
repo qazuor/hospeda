@@ -1,6 +1,7 @@
 import {
     EntityTypeEnum,
     LISTING_TRAFFIC_DIRECT_REFERRER,
+    LISTING_TRAFFIC_INTERNAL_REFERRER,
     type ListingContactFunnel,
     type ListingTrafficBreakdownItem,
     ListingTrafficBreakdownItemSchema,
@@ -230,43 +231,53 @@ export class ListingTrafficStatsService {
                       .getVisitorCount(scope)
                       .then((visitors) => ({ visitors, contactFunnel: null }));
 
-        const [rawReferrers, countries, devices, { visitors, contactFunnel }] = await Promise.all([
-            breakdown('referrer'),
-            breakdown('country'),
-            breakdown('device'),
-            statsPromise
-        ]);
+        const [rawReferrers, countries, devices, { visitors, contactFunnel }, internalVisitors] =
+            await Promise.all([
+                breakdown('referrer'),
+                breakdown('country'),
+                breakdown('device'),
+                statsPromise,
+                this.statsClient.getInternalEntryVisitors(scope)
+            ]);
 
-        // A forged referrer host `(direct)` is a valid WHATWG host, so a raw row can carry
-        // the reserved sentinel: drop it before summing so it can neither impersonate nor
-        // inflate the computed direct row.
+        // A forged referrer host `(direct)` or `(internal)` is a valid WHATWG host, so a raw
+        // row can carry a reserved sentinel: drop both before summing so none can
+        // impersonate or inflate a computed row.
         const referrers = rawReferrers.filter(
-            (row) => row.value !== LISTING_TRAFFIC_DIRECT_REFERRER
+            (row) =>
+                row.value !== LISTING_TRAFFIC_DIRECT_REFERRER &&
+                row.value !== LISTING_TRAFFIC_INTERNAL_REFERRER
         );
 
         // APPROXIMATION: Umami counts a visitor once per referrer row, so a visitor with
         // several referrers in the window is counted in each and the sum can exceed the
-        // total (direct is then understated, clamped at 0). Same-site navigation is not
-        // a referrer row either (the tracker rewrites it to a path and Umami drops it),
-        // so internal-only visitors land in direct.
-        // Umami never reports direct visits in the referrer metrics, so derive them from
-        // the FULL referrer list (before the top-N cut, otherwise the dropped tail would
-        // be miscounted as direct). The two reads are not atomic, so the difference can be
-        // negative: the `direct > 0` check below is the clamp (a row is never negative).
-        // The direct row then competes in the top-N like any other row.
+        // total. Same-site navigation is not a referrer row (Umami drops it), so it is read
+        // from the `listing_internal_entry` event and reported as its own row.
+        // Both computed rows derive from the FULL referrer list (before the top-N cut,
+        // otherwise the dropped tail would be miscounted as direct). The reads are not
+        // atomic, so the figures can disagree: internal is clamped to the visitors left
+        // after the external referrers, direct is whatever remains, and a row is only
+        // appended when positive. The computed rows then compete in the top-N.
         const referrerVisitors = referrers.reduce((sum, row) => sum + row.count, 0);
-        const direct = visitors - referrerVisitors;
-        const withDirect =
-            direct > 0
-                ? [...referrers, { value: LISTING_TRAFFIC_DIRECT_REFERRER, count: direct }].sort(
-                      (a, b) => b.count - a.count
-                  )
+        const remaining = Math.max(0, visitors - referrerVisitors);
+        const internal = Math.min(Math.max(0, internalVisitors), remaining);
+        const direct = remaining - internal;
+        const computed: ListingTrafficBreakdownItem[] = [];
+        if (internal > 0) {
+            computed.push({ value: LISTING_TRAFFIC_INTERNAL_REFERRER, count: internal });
+        }
+        if (direct > 0) {
+            computed.push({ value: LISTING_TRAFFIC_DIRECT_REFERRER, count: direct });
+        }
+        const withComputed =
+            computed.length > 0
+                ? [...referrers, ...computed].sort((a, b) => b.count - a.count)
                 : referrers;
 
         return {
             window: scope.window,
             available: true,
-            referrers: withDirect.slice(0, LISTING_TRAFFIC_STATS_TOP_REFERRERS),
+            referrers: withComputed.slice(0, LISTING_TRAFFIC_STATS_TOP_REFERRERS),
             countries,
             devices,
             contactFunnel

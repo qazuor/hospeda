@@ -30,6 +30,19 @@ const entityIdSchema = z.string().uuid();
 const entityViewedTypeSchema = z.enum(ANALYTICS_ENTITY_VIEWED_TYPES);
 
 /**
+ * Listing types that have an owner-facing traffic page (and so an internal-entry
+ * event): the subset of `ANALYTICS_ENTITY_TYPES` a user can own. Mirrors
+ * `LISTING_TRAFFIC_STATS_ENTITY_TYPES` in `@repo/schemas` (this package does not
+ * depend on it); parity is asserted in apps/api `catalog-parity.test.ts`.
+ */
+export const ANALYTICS_LISTING_ENTITY_TYPES = [
+    'ACCOMMODATION',
+    'VENUE',
+    'EXPERIENCE',
+    'PARTNER'
+] as const;
+
+/**
  * Optional, additive entity identification shared by the accommodation view
  * and contact events. These events only ever describe an ACCOMMODATION; other
  * types use `entity_viewed`.
@@ -57,6 +70,7 @@ export const AnalyticsEvents = {
     entityViewed: 'entity_viewed',
     postViewed: 'post_viewed',
     searchPerformed: 'search_performed',
+    listingInternalEntry: 'listing_internal_entry',
     contactOwnerStarted: 'contact_owner_started',
     contactOwnerCompleted: 'contact_owner_completed',
     contactOwnerFailed: 'contact_owner_failed',
@@ -163,6 +177,18 @@ export const AnalyticsEventSchemas = {
         locale: localeSchema,
         query_length: countSchema.optional(),
         source_page: z.string().min(1).optional()
+    }),
+    /*
+     * A listing detail page was entered from another page of the same site.
+     * Umami hides same-site referrers, so without this event that navigation is
+     * indistinguishable from a direct visit in the owner traffic stats
+     * (HOS-2119 T-075). Sent with `tag=<entity_id>`; the API reads DISTINCT
+     * visitors through `metrics/expanded?type=event`.
+     */
+    [AnalyticsEvents.listingInternalEntry]: z.object({
+        entity_id: entityIdSchema,
+        entity_type: z.enum(ANALYTICS_LISTING_ENTITY_TYPES),
+        locale: localeSchema
     }),
     [AnalyticsEvents.contactOwnerStarted]: z
         .object({

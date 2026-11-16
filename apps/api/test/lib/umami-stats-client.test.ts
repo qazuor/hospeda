@@ -136,6 +136,72 @@ describe('createUmamiStatsClient', () => {
         });
     });
 
+    describe('getInternalEntryVisitors', () => {
+        const expandedRows = (visitors: number) => [
+            { name: 'page_scroll', pageviews: '9', visitors: 9 },
+            { name: 'listing_internal_entry', pageviews: '3', visitors }
+        ];
+
+        it('should read DISTINCT visitors of the event with ONE tag-filtered metrics/expanded call', async () => {
+            const f = makeFetch({ expanded: expandedRows(2) });
+            const result = await make(f as unknown as typeof fetch).getInternalEntryVisitors(
+                scopeFor(ENTITY_A)
+            );
+
+            expect(result).toBe(2);
+            const urls = calls(f);
+            expect(urls).toHaveLength(1);
+            expect(urls[0]?.pathname).toBe(`/api/websites/${WEBSITE}/metrics/expanded`);
+            expect(Object.fromEntries(urls[0]?.searchParams ?? [])).toEqual({
+                type: 'event',
+                tag: ENTITY_A,
+                startAt: '1000',
+                endAt: '2000',
+                timezone: 'America/Argentina/Buenos_Aires'
+            });
+        });
+
+        it('should answer 0 when the event has no row', async () => {
+            const f = makeFetch({ expanded: [{ name: 'other', pageviews: '1', visitors: 1 }] });
+            await expect(
+                make(f as unknown as typeof fetch).getInternalEntryVisitors(scopeFor(ENTITY_A))
+            ).resolves.toBe(0);
+        });
+
+        it('should never leak between two entities', async () => {
+            const f = vi.fn(async (url: string | URL | Request) => {
+                const tag = new URL(String(url)).searchParams.get('tag');
+                return json(tag === ENTITY_A ? expandedRows(4) : expandedRows(1));
+            });
+            const client = make(f as unknown as typeof fetch);
+
+            const a = await client.getInternalEntryVisitors(scopeFor(ENTITY_A));
+            const b = await client.getInternalEntryVisitors(scopeFor(ENTITY_B));
+
+            expect([a, b]).toEqual([4, 1]);
+            const all = calls(f);
+            expect(all.map((u) => u.searchParams.get('tag'))).toEqual([ENTITY_A, ENTITY_B]);
+            for (const u of all) {
+                expect(u.search.includes(ENTITY_A) && u.search.includes(ENTITY_B)).toBe(false);
+            }
+        });
+
+        it('should reject an invalid entity id before any fetch', async () => {
+            const f = makeFetch({ expanded: [] });
+            await expect(
+                make(f as unknown as typeof fetch).getInternalEntryVisitors(scopeFor('nope'))
+            ).rejects.toMatchObject({ kind: 'schema' });
+            expect(f).not.toHaveBeenCalled();
+        });
+
+        it('should reject on a shape mismatch', async () => {
+            const f = makeFetch({ expanded: { nope: true } });
+            await expect(
+                make(f as unknown as typeof fetch).getInternalEntryVisitors(scopeFor(ENTITY_A))
+            ).rejects.toMatchObject({ kind: 'schema' });
+        });
+    });
+
     describe('getFunnelCounts', () => {
         it('should map stats pageviews and pivot counts, filtering EVERY request by entity', async () => {
             const f = vi.fn(async (url: string | URL | Request) => {

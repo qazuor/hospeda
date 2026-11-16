@@ -83,16 +83,29 @@ export type ListingTrafficStatsQuery = z.infer<typeof ListingTrafficStatsQuerySc
  * **It is an approximation.** Umami counts a visitor once per referrer row, so a
  * visitor who arrived through several referrers in the window is counted in each
  * row and the sum can exceed the total (which understates direct traffic, clamped
- * at 0). Same-site navigation is not a referrer row either: the Umami tracker
- * rewrites a same-origin referrer to a bare path and the server drops it from the
- * referrer metrics (measured on Umami 3.5.0), so a visitor who only navigated
- * internally is counted as direct.
+ * at 0). Same-site navigation is not a referrer row either (Umami drops it, measured
+ * on 3.5.0); it is reported separately as {@link LISTING_TRAFFIC_INTERNAL_REFERRER}
+ * and subtracted from direct.
  *
- * The service never trusts a raw referrer row equal to this sentinel: a forged
- * referrer host `(direct)` is a valid URL host, so such rows are dropped before
- * the direct row is computed.
+ * The service never trusts a raw referrer row equal to this sentinel (or to the
+ * internal one): a forged referrer host `(direct)` is a valid URL host, so such
+ * rows are dropped before the computed rows are derived.
  */
 export const LISTING_TRAFFIC_DIRECT_REFERRER = '(direct)' as const;
+
+/**
+ * Reserved referrer `value` for INTERNAL navigation: visitors who entered the
+ * listing page from another page of the Hospeda site. Umami hides same-site
+ * referrers, so the listing pages send a dedicated `listing_internal_entry`
+ * event and the service turns its distinct-visitor count into a row with this
+ * value. The UI must render it with the i18n key `traffic.referrers.internal`
+ * instead of showing the raw value.
+ *
+ * Like direct it is an approximation: the count is clamped to the visitors not
+ * already explained by an external referrer, and raw rows equal to this value
+ * are dropped as forgeries.
+ */
+export const LISTING_TRAFFIC_INTERNAL_REFERRER = '(internal)' as const;
 
 /**
  * One breakdown row (referrer host, country code or device type) with its

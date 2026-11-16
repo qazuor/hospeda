@@ -8,6 +8,7 @@ export type { AnalyticsEventName, AnalyticsEventProperties } from './catalog.js'
 export {
     ANALYTICS_ENTITY_TYPES,
     ANALYTICS_ENTITY_VIEWED_TYPES,
+    ANALYTICS_LISTING_ENTITY_TYPES,
     AnalyticsEventSchemas,
     AnalyticsEvents
 } from './catalog.js';

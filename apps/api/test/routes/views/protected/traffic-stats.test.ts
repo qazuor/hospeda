@@ -125,6 +125,9 @@ function umamiOk(requestUrl: string): Response {
             { x: 'AR', y: 3 }
         ]);
     }
+    if (path.endsWith('/metrics/expanded')) {
+        return Response.json([{ name: 'listing_internal_entry', pageviews: '4', visitors: 1 }]);
+    }
     if (path.endsWith('/stats')) return Response.json({ pageviews: 10, visitors: 12 });
     if (path.endsWith('/event-data-pivot')) return Response.json({ count: 2 });
     return new Response('not found', { status: 404 });
@@ -198,11 +201,13 @@ describe('GET /api/v1/protected/views/:entityType/:entityId/traffic-stats (HOS-2
             expect(body.success).toBe(true);
             expect(body.data.available).toBe(true);
             expect(body.data.window).toBe('30d');
-            // Umami: visitors 12, referrers 7 + 3 => 2 direct visitors.
+            // Umami: visitors 12, referrers 7 + 3 => 2 left: 1 internal-entry visitor
+            // (the event row) and 1 direct.
             expect(body.data.referrers).toEqual([
                 { value: 'google.com', count: 7 },
                 { value: 'AR', count: 3 },
-                { value: '(direct)', count: 2 }
+                { value: '(internal)', count: 1 },
+                { value: '(direct)', count: 1 }
             ]);
             if (funnel) {
                 expect(body.data.contactFunnel).toEqual({

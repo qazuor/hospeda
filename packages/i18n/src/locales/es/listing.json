@@ -423,14 +423,12 @@
         "traffic": {
             "title": "Tráfico de tus fichas",
             "window": {
-                "label": "Período",
-                "7d": "7 días",
-                "30d": "30 días",
-                "90d": "90 días"
+                "label": "Período"
             },
             "referrers": {
                 "title": "De dónde vienen",
-                "direct": "Directo"
+                "direct": "Directo",
+                "internal": "Desde Hospeda"
             },
             "countries": {
                 "title": "Países"
