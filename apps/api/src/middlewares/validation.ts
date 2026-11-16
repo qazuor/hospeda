@@ -58,6 +58,19 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                 '/.well-known/openid-configuration',
                 '/.well-known/openid-configuration/api/auth',
                 '/api/auth/.well-known/openid-configuration',
+                // OAuth machine endpoints (HOS-2184 T-029). Called server to server
+                // by the AI client's backend, not by a browser: RFC 6749 section 3.2
+                // makes the token endpoint (and RFC 7009 / 7662 the revoke and
+                // introspect ones) `application/x-www-form-urlencoded`, which the
+                // generic content-type check refuses, and such backends do not
+                // always send a User-Agent. Without this every code exchange
+                // answered 400 before Better Auth saw it. Matched exactly, so
+                // the rest of `/api/auth` keeps the generic validation; with the
+                // MCP flag off these paths do not exist and answer 404.
+                '/api/auth/oauth2/token',
+                '/api/auth/oauth2/revoke',
+                '/api/auth/oauth2/introspect',
+                '/api/auth/oauth2/register',
                 // MCP Streamable HTTP endpoint (HOS-2184 T-010). Its clients are
                 // third-party agents: the SDK validates Accept (406) and
                 // Content-Type (415) per the transport spec, a missing
