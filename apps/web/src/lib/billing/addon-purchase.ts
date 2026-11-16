@@ -72,3 +72,30 @@ export function purchaseStateFrom(input: {
     if (response.checkoutUrl) return 'REDIRECT';
     return 'PROCESSING';
 }
+
+/** A live principal subscription an owner can hang a recurring addon on. */
+export interface AddonSubscriptionTarget {
+    readonly id: string;
+    readonly vertical: string;
+    readonly planName: string;
+}
+
+/**
+ * Keep the owner's ACTIVE principal subscriptions whose vertical the addon is compatible with.
+ * `VERTICAL_SUBSCRIPTION` addons are purchased against a subscription id, never a listing id.
+ */
+export function eligibleSubscriptionTargets(input: {
+    readonly subscriptions: readonly {
+        readonly id: string;
+        readonly vertical: string;
+        readonly status: string;
+        readonly plan: { readonly name: string };
+    }[];
+    readonly compatibleVerticals: readonly string[];
+}): AddonSubscriptionTarget[] {
+    return input.subscriptions
+        .filter(
+            (item) => item.status === 'ACTIVE' && input.compatibleVerticals.includes(item.vertical)
+        )
+        .map((item) => ({ id: item.id, vertical: item.vertical, planName: item.plan.name }));
+}

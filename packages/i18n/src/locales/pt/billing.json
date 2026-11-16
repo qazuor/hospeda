@@ -823,6 +823,8 @@
         "noOffers": "Não há complementos disponíveis.",
         "chooseTarget": "Escolha um anúncio",
         "noTargets": "Não há anúncios disponíveis para este complemento.",
+        "chooseSubscription": "Escolha uma assinatura",
+        "noSubscriptions": "Não há assinaturas disponíveis para este complemento.",
         "summary": "Confirmar complemento",
         "freeUnderGrant": "Grátis pelo seu benefício",
         "days_one": "{{count}} dia",
