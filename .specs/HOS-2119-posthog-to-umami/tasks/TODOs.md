@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 45/76 tasks (59%)
+## Progress: 48/76 tasks (63%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -114,7 +114,7 @@ Tracks (can run in parallel):
   - Blocked by: T-012
   - Blocks: T-014, T-015, T-034
 
-- [ ] **T-014** (complexity: 1) - T-1 Set the UMAMI env vars in Coolify for staging (owner action, no redeploy without approval)
+- [x] **T-014** (complexity: 1) - T-1 Set the UMAMI env vars in Coolify for staging (owner action, no redeploy without approval)
   - Tags: t1-infra, devops, owner-action, config
   - OWNER ACTION. Repo rule: after the registry/Zod/.env.example work, the agent stops and tells the own...
   - Blocked by: T-008, T-011, T-012, T-013
@@ -152,7 +152,7 @@ Tracks (can run in parallel):
   - Blocked by: T-018
   - Blocks: T-021
 
-- [ ] **T-020** (complexity: 2) - T-2 Implement the Umami browser provider wrapper over window.umami
+- [x] **T-020** (complexity: 2) - T-2 Implement the Umami browser provider wrapper over window.umami
   - Tags: t2-adapter, analytics, web, admin
   - Files: packages/analytics/src/providers/umami-browser.ts, packages/analytics/src/index.ts, packages/...
   - Blocked by: T-006
@@ -352,7 +352,7 @@ Tracks (can run in parallel):
   - Blocked by: T-022, T-023, T-024, T-071
   - Blocks: T-025, T-073
 
-- [ ] **T-074** (complexity: 2) - T-5 Tag listing detail pageviews with the entity id (Umami data-tag) [NEW]
+- [x] **T-074** (complexity: 2) - T-5 Tag listing detail pageviews with the entity id (Umami data-tag) [NEW]
   - Tags: t5-owner-stats, t3-web-admin, web
   - On the public detail pages of accommodation, venue (comer-y-salir), experience and partner, render t...
   - Blocked by: T-028

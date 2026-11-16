@@ -510,19 +510,19 @@
         {
             "id": "T-014",
             "title": "T-1 Set the UMAMI env vars in Coolify for staging (owner action, no redeploy without approval)",
-            "description": "OWNER ACTION. Repo rule: after the registry/Zod/.env.example work, the agent stops and tells the owner which vars to set. Staging values come from T-008 and the relay path from T-004. A new env var is not picked up by app-restart; it needs a redeploy, and redeploys ALWAYS need explicit owner approval. Tests: `hops env-list` shows the keys.",
-            "status": "pending",
+            "description": "OWNER ACTION. Repo rule: after the registry/Zod/.env.example work, the agent stops and tells the owner which vars to set. Staging values come from T-008 and the relay path from T-004. A new env var is not picked up by app-restart; it needs a redeploy, and redeploys ALWAYS need explicit owner approval. Tests: `hops env-list` shows the keys.\n\nDONE 2026-11-16 via hops env-set (see T-008 note). No redeploy.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008", "T-011", "T-012", "T-013"],
             "blocks": ["T-026", "T-036", "T-056"],
             "subtasks": [
                 {
                     "title": "hops env-set <kind> KEY VALUE for api, web, admin on staging (UI alternative)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Do NOT redeploy; ask the owner and notify peer agents first",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t1-infra", "devops", "owner-action", "config"],
@@ -534,8 +534,8 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:48:33Z",
+                "completed": "2026-11-16T16:48:33Z"
             }
         },
         {
@@ -729,35 +729,35 @@
             "id": "T-020",
             "title": "T-2 Implement the Umami browser provider wrapper over window.umami",
             "description": "Files: packages/analytics/src/providers/umami-browser.ts, packages/analytics/src/index.ts, packages/analytics/test/umami-browser.test.ts. Tests (jsdom or stubbed window): no-op and no throw when window.umami is undefined; track forwards name+data; identify forwards id+session data; ad-blocked script load leaves calls harmless. Used by apps/web (T-027) and apps/admin (T-034).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006"],
             "blocks": ["T-027", "T-034"],
             "subtasks": [
                 {
                     "title": "Create packages/analytics/src/providers/umami-browser.ts implementing the existing browser interface in packages/analytics/src/browser.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "track(name, data) and identify(id, data) delegate to window.umami; no-op when the tracker is not loaded",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Export from index.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t2-adapter", "analytics", "web", "admin"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:48:33Z",
+                "completed": "2026-11-16T16:50:05Z"
             }
         },
         {
@@ -1052,7 +1052,7 @@
             "id": "T-029",
             "title": "T-3 Update web CSP for Umami (remove PostHog hosts/hashes, allow the relay script origin)",
             "description": "CSP errors are silent in prod, so this is test-led. Tests: apps/web/test/integration/csp-hash-emission.test.ts updated (no PostHog hash expected, Umami src allowed), a middleware-helpers CSP test (locate existing under apps/web/test/lib or test/middleware) asserting script-src/connect-src contain the Umami origin and no *.posthog.com host. Also run the over-the-wire verify script mentally/dry against the new env.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-028"],
             "blocks": ["T-036", "T-057", "T-063"],
@@ -1083,7 +1083,7 @@
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
+                "started": "2026-11-16T16:48:33Z",
                 "completed": null
             }
         },
@@ -2680,36 +2680,36 @@
         {
             "id": "T-074",
             "title": "T-5 Tag listing detail pageviews with the entity id (Umami data-tag)",
-            "description": "On the public detail pages of accommodation, venue (comer-y-salir), experience and partner, render the Umami tracker with data-tag=\"<entityId>\" (UUID, 36 chars; tag limit is 50) so pageviews carry the entity id. Umami computes referrers/countries/devices from pageviews only, and metrics?type=referrer|country|device&tag=<entityId> is how the owner cards get per-listing breakdowns (T-045/T-046). Other pages keep no tag. Tests: component/page tests asserting the tag attribute is rendered with the entity id on the four detail pages and absent elsewhere.",
-            "status": "pending",
+            "description": "On the public detail pages of accommodation, venue (comer-y-salir), experience and partner, render the Umami tracker with data-tag=\"<entityId>\" (UUID, 36 chars; tag limit is 50) so pageviews carry the entity id. Umami computes referrers/countries/devices from pageviews only, and metrics?type=referrer|country|device&tag=<entityId> is how the owner cards get per-listing breakdowns (T-045/T-046). Other pages keep no tag. Tests: component/page tests asserting the tag attribute is rendered with the entity id on the four detail pages and absent elsewhere.\n\nDONE NOTE: analyticsTag prop flows DetailLayout/DefaultLayout → BaseLayout → UmamiScript data-tag (UUID-validated, ≤50). Pages: accommodation.id, venue.id, experience.id, partnerId (=partner.id). fotos/carta sub-pages untagged. Real tag arrival to verify in the staging smoke.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": ["T-056"],
             "subtasks": [
                 {
                     "title": "Accept an optional tag prop in UmamiScript.astro",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass the entity id from the four detail pages",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests: tag rendered on detail pages, absent elsewhere",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t5-owner-stats", "t3-web-admin", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-15T06:02:25Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T16:48:33Z",
+                "completed": "2026-11-16T16:52:50Z"
             }
         },
         {
@@ -2737,7 +2737,7 @@
         {
             "id": "T-076",
             "title": "T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page",
-            "description": "Web side of T-075: on accommodation/venue/experience/partner detail pages, when document.referrer is same-origin, send the T-075 catalog event once per page load via the Umami tracker, with tag=<entityId>. Consent rules as for the other web events. Tests: emitted on same-origin referrer, not on external/empty referrer.\n\nREVIEW NOTES 2026-11-16: send with the function form umami.track((p) => ({...p, name: AnalyticsEvents.listingInternalEntry, data, tag: entityId})) so the tag never depends on the script attribute (umami.track({...}) object form drops the tag). The tracker script is defer: wait/queue until window.umami exists. G20 is satisfied by the api reader, so it will NOT catch a missing emitter: this task MUST include a test asserting the emission. Side effect: any custom event removes the visit from Umami bounce counting.",
+            "description": "Web side of T-075: on accommodation/venue/experience/partner detail pages, when document.referrer is same-origin, send the T-075 catalog event once per page load via the Umami tracker, with tag=<entityId>. Consent rules as for the other web events. Tests: emitted on same-origin referrer, not on external/empty referrer.\n\nREVIEW NOTES 2026-11-16: send with the function form umami.track((p) => ({...p, name: AnalyticsEvents.listingInternalEntry, data, tag: entityId})) so the tag never depends on the script attribute (umami.track({...}) object form drops the tag). The tracker script is defer: wait/queue until window.umami exists. G20 is satisfied by the api reader, so it will NOT catch a missing emitter: this task MUST include a test asserting the emission. Side effect: any custom event removes the visit from Umami bounce counting.\n\nNOTE 2026-11-16 (T-020): createUmamiBrowserClient() exposes captureTagged({name,data,tag}) → umami.track(d=>({...d,name,data,tag})). createBrowserAnalytics() has no tag path, so calling captureTagged directly skips catalog validation — prefer extending the wrapper with a tagged capture that still validates.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-075", "T-074"],
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 31,
-        "inProgress": 0,
-        "completed": 45,
+        "pending": 27,
+        "inProgress": 1,
+        "completed": 48,
         "blocked": 0,
         "averageComplexity": 2.5
     }
