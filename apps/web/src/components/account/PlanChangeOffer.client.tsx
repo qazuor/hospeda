@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
     loadPlanChangeChoices,
     type PlanChangeChoice,
+    parsePayerEmail,
     submitPlanChange
 } from '@/lib/billing/plan-change-offer';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
@@ -32,6 +33,8 @@ export function PlanChangeOffer({
     const [choices, setChoices] = useState<readonly PlanChangeChoice[]>([]);
     const [selected, setSelected] = useState<PlanChangeChoice | null>(null);
     const [message, setMessage] = useState('');
+    const [payerEmail, setPayerEmail] = useState('');
+    const [payerEmailError, setPayerEmailError] = useState(false);
 
     async function open() {
         setState('loading');
@@ -40,16 +43,24 @@ export function PlanChangeOffer({
             setState('error');
             return;
         }
-        setChoices(loaded);
+        setChoices(loaded.choices);
+        setPayerEmail(loaded.declaredPayerEmail);
         setState('choices');
     }
 
     async function submitSelectedPlanChange() {
         if (!selected) return;
+        const email = parsePayerEmail({ value: payerEmail });
+        if (!email) {
+            setPayerEmailError(true);
+            return;
+        }
+        setPayerEmailError(false);
         setState('pending');
         const result = await submitPlanChange({
             subscriptionId,
             billingOptionId: selected.id,
+            payerEmail: email,
             locale
         });
         if (result.kind === 'redirect') {
@@ -117,6 +128,28 @@ export function PlanChangeOffer({
                     <p>{selected.label}</p>
                     <p>{t('account.subscription.mine.planChange.confirmCheckout')}</p>
                     <p>{t('account.subscription.mine.planChange.confirmScheduled')}</p>
+                    <label className={styles.field}>
+                        <span>{t('account.subscription.mine.planChange.payerEmailLabel')}</span>
+                        <input
+                            type="email"
+                            name="payerEmail"
+                            autoComplete="email"
+                            required
+                            value={payerEmail}
+                            aria-invalid={payerEmailError}
+                            data-testid="plan-change-payer-email"
+                            onChange={(event) => setPayerEmail(event.target.value)}
+                        />
+                        <small>{t('account.subscription.mine.planChange.payerEmailHint')}</small>
+                    </label>
+                    {payerEmailError && (
+                        <p
+                            role="alert"
+                            data-testid="plan-change-payer-email-error"
+                        >
+                            {t('account.subscription.mine.planChange.payerEmailInvalid')}
+                        </p>
+                    )}
                     {promo && (
                         <p data-testid="plan-change-promo-warning">
                             {t('account.subscription.mine.planChange.promoLost')}

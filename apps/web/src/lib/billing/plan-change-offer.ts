@@ -4,6 +4,7 @@ import {
     PublicPlanCatalogResponseSchema,
     SubscriptionPlanChangeResponseSchema
 } from '@repo/schemas';
+import { z } from 'zod';
 import { apiClient } from '@/lib/api/client';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import type { ApiResult } from '@/lib/api/types';
@@ -34,6 +35,32 @@ export async function findActiveSubscriptionId({
     );
 }
 
+/** Choices for the account offer plus the payer email already declared on the subscription. */
+export interface PlanChangeChoices {
+    readonly choices: readonly PlanChangeChoice[];
+    /** What the payer declared on the current subscription; prefills the form (HOS-2218). */
+    readonly declaredPayerEmail: string;
+}
+
+/**
+ * Read the email the payer declared on one owned subscription, to prefill the plan-change
+ * form (HOS-2218). It is a declaration, never a confirmed identity; `''` when none is known.
+ */
+export async function loadDeclaredPayerEmail({
+    subscriptionId
+}: {
+    readonly subscriptionId: string;
+}): Promise<string> {
+    const current = await billingSubscriptionApi.read({ subscriptionId });
+    return current.ok ? (current.data.declaredPayerEmail ?? '') : '';
+}
+
+/** Validate a declared payer email before sending it; `null` when it is not an email. */
+export function parsePayerEmail({ value }: { readonly value: string }): string | null {
+    const parsed = z.string().trim().email().max(255).safeParse(value);
+    return parsed.success ? parsed.data : null;
+}
+
 /** Read the pricing catalog and the anchored option, omitting only that option. */
 export async function loadPlanChangeChoices({
     subscriptionId,
@@ -43,7 +70,7 @@ export async function loadPlanChangeChoices({
     readonly subscriptionId: string;
     readonly vertical: PricingSituationVertical;
     readonly locale: SupportedLocale;
-}): Promise<readonly PlanChangeChoice[] | null> {
+}): Promise<PlanChangeChoices | null> {
     const [catalog, current] = await Promise.all([
         apiClient.get<unknown>({ path: '/api/v1/public/plan-catalog', params: { vertical } }),
         billingSubscriptionApi.read({ subscriptionId })
@@ -52,7 +79,7 @@ export async function loadPlanChangeChoices({
     const parsed = PublicPlanCatalogResponseSchema.safeParse(catalog.data);
     if (!parsed.success || parsed.data.vertical !== vertical) return null;
     const { t } = createTranslations(locale);
-    return parsed.data.plans.flatMap((plan) => {
+    const choices = parsed.data.plans.flatMap((plan) => {
         if (!plan.billingOptions.some((option) => option.cycle === 'monthly')) return [];
         const name = getPlanName({
             plan: { slug: plan.slug, name: plan.name, description: plan.description ?? '' },
@@ -74,6 +101,7 @@ export async function loadPlanChangeChoices({
                 })
             }));
     });
+    return { choices, declaredPayerEmail: current.data.declaredPayerEmail ?? '' };
 }
 
 /** Localized response after a protected plan-change request. */
@@ -85,17 +113,21 @@ export type PlanChangeResult =
 export async function submitPlanChange({
     subscriptionId,
     billingOptionId,
+    payerEmail,
     locale
 }: {
     readonly subscriptionId: string;
     readonly billingOptionId: string;
+    /** The payer email declared in the form (HOS-2218). */
+    readonly payerEmail: string;
     readonly locale: SupportedLocale;
 }): Promise<PlanChangeResult> {
     const { t } = createTranslations(locale);
     try {
         const response = await billingSubscriptionApi.requestPlanChange({
             subscriptionId,
-            billingOptionId
+            billingOptionId,
+            payerEmail
         });
         if (!response.ok)
             return {
@@ -171,8 +203,11 @@ export function planChangeErrorMessage({
                     ? 'window'
                     : reason === 'NO_CHANGE'
                       ? 'same'
-                      : reason === 'SCHEDULED_CHANGE_EXISTS' || reason === 'MIGRATION_CHANGE_QUEUED'
-                        ? 'scheduled'
-                        : 'other';
+                      : reason === 'PAYER_EMAIL_UNDECLARED'
+                        ? 'payerEmail'
+                        : reason === 'SCHEDULED_CHANGE_EXISTS' ||
+                            reason === 'MIGRATION_CHANGE_QUEUED'
+                          ? 'scheduled'
+                          : 'other';
     return t(`account.subscription.mine.planChange.reason.${key}`);
 }
