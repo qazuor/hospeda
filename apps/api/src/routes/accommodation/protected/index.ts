@@ -7,6 +7,7 @@
  * leaking to other routes (e.g. contact). See route-factory.ts applyRouteMiddlewares().
  */
 import { createRouter } from '../../../utils/create-app';
+import { ownerAccommodationLocationRoutes } from '../../listing-location/index';
 import { protectedAccommodationReviewRoutes } from '../reviews/protected/index.js';
 import { addFaqRoute } from './addFaq';
 import { protectedAddFeaturedMediaRoute } from './addFeaturedMedia';
@@ -70,6 +71,8 @@ ownershipRoutes.route('/', protectedPurgeAccommodationRoute);
 ownershipRoutes.route('/', protectedAccommodationPurgePreviewRoute);
 ownershipRoutes.route('/', protectedAccommodationSupportEditsRoute);
 ownershipRoutes.route('/', protectedAccommodationReportFixedRoute);
+// POST /:id/location-exception-request - owner asks for an address exception (HOS-2192)
+ownershipRoutes.route('/', ownerAccommodationLocationRoutes.requestException);
 // POST /:id/publish - Transition DRAFT (or INACTIVE) → ACTIVE (HOS-110)
 ownershipRoutes.route('/', protectedPublishAccommodationRoute);
 
