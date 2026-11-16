@@ -22,13 +22,27 @@
  * `data-auto-pageview` (not `data-auto-track`) is deliberate: with auto-track
  * off the tracker never hooks `history.pushState`, so the URL it puts on every
  * custom event would stay frozen at the landing page. With only auto-pageview
- * off it keeps updating that URL and still sends no pageview of its own.
+ * off it keeps hooking `pushState` / `replaceState` and still sends no pageview
+ * of its own.
+ *
+ * Known limitation: the tracker hooks only those two history methods, never
+ * `popstate`. After a back/forward navigation a custom event therefore carries
+ * the URL the tracker last saw through a push (the page before the
+ * back/forward), until the next push or replace. Pageviews are not affected:
+ * {@link buildPageviewPayload} always overwrites the URL.
+ *
+ * Only a router navigation (`astro:page-load`) counts as a page. An app's own
+ * `pushState` without the router (the destinations filters,
+ * `DestinationPOIFilter`) changes the URL but sends no pageview, by decision.
  *
  * ## The referrer of a soft navigation
  *
  * `document.referrer` does not change on `pushState`. The URL of the page the
  * visitor came from is recorded on `astro:before-swap` and exposed through
  * {@link getCurrentPageReferrer}, which the internal-entry island also uses.
+ * `ListingLayout.astro` fetches and swaps the results itself and then
+ * dispatches a synthetic `astro:page-load` WITHOUT `astro:before-swap`; a URL
+ * change without that event takes the last counted page as the referrer.
  *
  * Pages without `<ClientRouter />` (StandaloneLayout) never get
  * `astro:page-load`; there the pageview is sent once, directly.
@@ -47,11 +61,19 @@
  * `getSession()`. Its `send()` swallows every error, so the promise `track()`
  * returns also resolves for a blocked or failed request. A pageview therefore
  * counts as acknowledged only when that promise resolved AND the tracker then
- * holds a token. {@link waitForPageviewAcknowledgement} is what the identify
- * waits for. Module state is per document: a full reload starts unacknowledged.
+ * holds a token. {@link subscribePageviewAcknowledgement} is what the identify
+ * waits on. Module state is per document: a full reload starts unacknowledged.
+ *
+ * The subscription has no timeout on purpose. With `<ClientRouter />` the
+ * initial `astro:page-load` fires on `window.load`, which on a slow page comes
+ * long after the islands hydrate (where the identify is requested). A wait
+ * bounded from the identify call gave up before the pageview was even sent, so
+ * a single-page visit never identified. A subscriber that only waits holds no
+ * timer and costs nothing when the acknowledgement never comes.
  */
 
 import type { UmamiTracker } from '@repo/analytics';
+import { hasUmamiCacheToken } from '@repo/analytics';
 import { getUmamiTracker, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 
 /** `name` of the per-page `<meta>` carrying the Umami tag (detail pages only). */
@@ -70,12 +92,6 @@ const UUID_SHAPE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 /** Defaults the tracker passes to the function form of `umami.track`. */
 type TrackerPayload = Record<string, unknown>;
 
-/**
- * How long an identify waits for this document's pageview to be acknowledged
- * before giving up. Covers the tracker wait (about 5 s) plus the request.
- */
-export const PAGEVIEW_ACK_TIMEOUT_MS = 10_000;
-
 /** URL of the page the visitor left on the last soft navigation, if any. */
 let softNavFromUrl: string | null = null;
 /** URL of the page counted by the last pageview. */
@@ -85,32 +101,14 @@ let started = false;
 let pageviewAcknowledged = false;
 /** Bumped by `stop`, so an answer to a request of an earlier wiring is ignored. */
 let wiringGeneration = 0;
-/** Waiters notified on the next acknowledgement. */
-const acknowledgementWaiters = new Set<() => void>();
-
-/**
- * Whether the tracker holds an `x-umami-cache` token, read through its
- * `getSession()`. A tracker without `getSession` cannot prove it, so it counts
- * as not holding one (the identify is then never sent, never sent wrong).
- */
-function trackerHoldsCacheToken(tracker: UmamiTracker): boolean {
-    try {
-        const getSession: unknown = Reflect.get(tracker, 'getSession');
-        if (typeof getSession !== 'function') return false;
-        const session: unknown = Reflect.apply(getSession, tracker, []);
-        if (typeof session !== 'object' || session === null) return false;
-        const cache: unknown = Reflect.get(session, 'cache');
-        return typeof cache === 'string' && cache.length > 0;
-    } catch {
-        return false;
-    }
-}
+/** Subscribers notified on the next acknowledgement. */
+const acknowledgementSubscribers = new Set<() => void>();
 
 /** Whether this document's pageview was acknowledged and the token is still held. */
 function isAcknowledgedNow(): boolean {
     if (!pageviewAcknowledged) return false;
     const tracker = getUmamiTracker();
-    return tracker !== undefined && trackerHoldsCacheToken(tracker);
+    return hasUmamiCacheToken({ tracker });
 }
 
 /**
@@ -131,65 +129,56 @@ async function acknowledgeWhenAnswered({
     }
     if (generation !== wiringGeneration) return;
     const tracker = getUmamiTracker();
-    if (!tracker || !trackerHoldsCacheToken(tracker)) return;
+    if (!hasUmamiCacheToken({ tracker })) return;
     pageviewAcknowledged = true;
-    for (const waiter of [...acknowledgementWaiters]) waiter();
+    for (const subscriber of [...acknowledgementSubscribers]) subscriber();
 }
 
-/** Input of {@link waitForPageviewAcknowledgement}. */
-export interface WaitForPageviewAcknowledgementInput {
+/** Input of {@link subscribePageviewAcknowledgement}. */
+export interface SubscribePageviewAcknowledgementInput {
     /** Called once when this document's pageview has been acknowledged. */
     readonly onAcknowledged: () => void;
-    /** Called once when the wait gives up (ad blocker, failed request, slow network). */
-    readonly onGiveUp?: () => void;
-    /** Bound of the wait in ms. Defaults to {@link PAGEVIEW_ACK_TIMEOUT_MS}. */
-    readonly timeoutMs?: number;
 }
 
-/** Result of {@link waitForPageviewAcknowledgement}. */
-export interface WaitForPageviewAcknowledgementResult {
-    /** Stops a pending wait without calling back. A no-op once it settled. */
-    readonly cancel: () => void;
+/** Result of {@link subscribePageviewAcknowledgement}. */
+export interface SubscribePageviewAcknowledgementResult {
+    /** Drops the subscription without calling back. A no-op once it ran. */
+    readonly unsubscribe: () => void;
 }
 
 /**
  * Runs `onAcknowledged` once this document's pageview was answered by Umami
  * and the tracker holds the `x-umami-cache` token: synchronously when that
  * already happened (also after a soft navigation, the token outlives
- * `pushState`), otherwise on the acknowledgement. Gives up silently after
- * `timeoutMs` (then `onGiveUp`), never throws and leaves no timer behind.
+ * `pushState`), otherwise on the acknowledgement, however late it comes.
  *
- * @param input - Callbacks and the optional bound.
- * @returns A handle to cancel the pending wait.
+ * There is no timeout (see the file header): when the acknowledgement never
+ * comes (ad blocker, failed request) the callback simply never runs. The
+ * subscription holds no timer, never throws, and lives until it ran, the
+ * caller unsubscribes, or the document goes away.
+ *
+ * @param input - The callback.
+ * @returns A handle to drop the subscription.
  */
-export function waitForPageviewAcknowledgement({
-    onAcknowledged,
-    onGiveUp,
-    timeoutMs = PAGEVIEW_ACK_TIMEOUT_MS
-}: WaitForPageviewAcknowledgementInput): WaitForPageviewAcknowledgementResult {
-    const noop: WaitForPageviewAcknowledgementResult = { cancel: () => undefined };
+export function subscribePageviewAcknowledgement({
+    onAcknowledged
+}: SubscribePageviewAcknowledgementInput): SubscribePageviewAcknowledgementResult {
+    const noop: SubscribePageviewAcknowledgementResult = { unsubscribe: () => undefined };
     if (typeof window === 'undefined') return noop;
     if (isAcknowledgedNow()) {
         onAcknowledged();
         return noop;
     }
 
-    let timer: number | undefined;
-    const settle = (): void => {
-        acknowledgementWaiters.delete(waiter);
-        if (timer !== undefined) window.clearTimeout(timer);
+    const unsubscribe = (): void => {
+        acknowledgementSubscribers.delete(subscriber);
     };
-    function waiter(): void {
-        settle();
+    function subscriber(): void {
+        unsubscribe();
         onAcknowledged();
     }
-    acknowledgementWaiters.add(waiter);
-    timer = window.setTimeout(() => {
-        settle();
-        onGiveUp?.();
-    }, timeoutMs);
-
-    return { cancel: settle };
+    acknowledgementSubscribers.add(subscriber);
+    return { unsubscribe };
 }
 
 /**
@@ -275,6 +264,10 @@ function countCurrentPage(): void {
     const url = window.location.href;
     const title = document.title;
     const tag = readPageTag({ doc: document });
+    // A synthetic page-load (ListingLayout's own fetch-and-swap) changes the
+    // URL without `astro:before-swap`: the page being left is the last one
+    // counted. After a real swap this is the value before-swap stored anyway.
+    if (lastPageUrl !== null && url !== lastPageUrl) softNavFromUrl = lastPageUrl;
     // After a soft navigation the tracker's own referrer is stale (back/forward
     // never reaches its pushState hook), so send the page we came from.
     const referrer = softNavFromUrl === null ? undefined : stripOrigin(softNavFromUrl);

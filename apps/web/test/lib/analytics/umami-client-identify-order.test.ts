@@ -19,16 +19,23 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { identifyUser, resetUser } from '@/lib/analytics/umami-client';
-import { PAGEVIEW_ACK_TIMEOUT_MS } from '@/lib/analytics/umami-pageview';
 import { saveConsent } from '@/lib/cookie-consent';
 import {
     flushMicrotasks,
+    installUmamiTrackerStub,
     loadPage,
     renderTrackerElement,
     STUB_CACHE_TOKEN,
     startPageviews,
     unloadPage
 } from '../../helpers/umami-tracker-stub';
+
+/**
+ * Longer than any bound the identify used to have (10 s). The wait has none now:
+ * the initial ClientRouter pageview goes out on `window.load`, which on a slow
+ * page comes long after the UserMenu island hydrated and asked to identify.
+ */
+const LONG_DELAY_MS = 30_000;
 
 function grantConsent(): void {
     saveConsent({ crashReporting: false, analytics: true, marketing: false });
@@ -90,7 +97,7 @@ describe('identifyUser waits for the pageview acknowledgement (OQ-5, AC-12)', ()
         expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
     });
 
-    it('should never identify when the pageview is not acknowledged within the bound', async () => {
+    it('should not identify while the pageview stays unanswered, and hold no timer', async () => {
         // Arrange
         vi.useFakeTimers();
         grantConsent();
@@ -98,10 +105,10 @@ describe('identifyUser waits for the pageview acknowledgement (OQ-5, AC-12)', ()
 
         // Act
         identifyUser('user-1');
-        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+        vi.advanceTimersByTime(LONG_DELAY_MS);
         await flushMicrotasks();
 
-        // Assert: gave up silently, nothing marked, no timer left
+        // Assert: still waiting silently, nothing marked, no timer held
         expect(umami.identify).not.toHaveBeenCalled();
         expect(window.sessionStorage.getItem('umami-identified-user')).toBeNull();
         expect(vi.getTimerCount()).toBe(0);
@@ -117,7 +124,7 @@ describe('identifyUser waits for the pageview acknowledgement (OQ-5, AC-12)', ()
         // Act
         umami.respond({ ok: false });
         await flushMicrotasks();
-        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+        vi.advanceTimersByTime(LONG_DELAY_MS);
 
         // Assert
         expect(umami.identify).not.toHaveBeenCalled();
@@ -132,27 +139,66 @@ describe('identifyUser waits for the pageview acknowledgement (OQ-5, AC-12)', ()
 
         // Act / Assert
         expect(() => identifyUser('user-1')).not.toThrow();
-        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+        vi.advanceTimersByTime(LONG_DELAY_MS);
         expect(vi.getTimerCount()).toBe(0);
         expect(window.sessionStorage.getItem('umami-identified-user')).toBeNull();
     });
 
-    it('should retry on the next call once a late pageview was acknowledged', async () => {
-        // Arrange: the first wait gave up before Umami answered
+    it('should identify right after a late acknowledgement, without another call', async () => {
+        // Arrange: Umami answers long after the identify was requested
         vi.useFakeTimers();
         grantConsent();
         const umami = loadPage();
         identifyUser('user-1');
-        vi.advanceTimersByTime(PAGEVIEW_ACK_TIMEOUT_MS);
+        vi.advanceTimersByTime(LONG_DELAY_MS);
+
+        // Act
         umami.respond();
         await flushMicrotasks();
-        expect(umami.identify).not.toHaveBeenCalled();
-
-        // Act: the next page's UserMenu mount
-        identifyUser('user-1');
 
         // Assert
         expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
+    });
+
+    it('should identify a single-page visit whose pageview is sent on window.load after >10 s', async () => {
+        // Arrange: ClientRouter page; UserMenu hydrates and identifies first
+        vi.useFakeTimers();
+        grantConsent();
+        renderTrackerElement({ clientRouter: true });
+        const umami = installUmamiTrackerStub();
+        startPageviews();
+        identifyUser('user-1', { is_host: true });
+        vi.advanceTimersByTime(LONG_DELAY_MS);
+        expect(umami.track).not.toHaveBeenCalled();
+        // The waiting identify holds no timer of its own.
+        expect(vi.getTimerCount()).toBe(0);
+
+        // Act: window.load fires the router's initial astro:page-load, Umami answers
+        document.dispatchEvent(new Event('astro:page-load'));
+        expect(umami.identify).not.toHaveBeenCalled();
+        umami.respond();
+        await flushMicrotasks();
+
+        // Assert: exactly one identify, right after the ack, carrying the token
+        expect(umami.track).toHaveBeenCalledTimes(1);
+        expect(umami.identify).toHaveBeenCalledTimes(1);
+        expect(umami.identify).toHaveBeenCalledWith('user-1', { is_host: true });
+        expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
+    });
+
+    it('should send nothing on a late ack after sign-out', async () => {
+        // Arrange
+        grantConsent();
+        const umami = loadPage();
+        identifyUser('user-1');
+
+        // Act
+        resetUser();
+        umami.respond();
+        await flushMicrotasks();
+
+        // Assert
+        expect(umami.identify).not.toHaveBeenCalled();
     });
 
     it('should drop a wait on revocation: no identify and no reload', async () => {
