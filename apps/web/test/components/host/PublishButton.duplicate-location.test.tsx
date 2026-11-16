@@ -56,6 +56,32 @@ describe('PublishButton one-address rule (HOS-1810)', () => {
         expect(screen.queryByText('Error genérico')).toBeNull();
     });
 
+    it('offers "Pedir una excepción" on 409 DUPLICATE_LOCATION and opens the form (HOS-2192)', async () => {
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ALREADY_EXISTS',
+                reason: 'DUPLICATE_LOCATION',
+                message: 'Another published listing of yours already occupies this address'
+            }
+        });
+        await publish();
+        const user = userEvent.setup();
+        await user.click(await screen.findByRole('button', { name: 'Pedir una excepción' }));
+        expect(screen.getByTestId('location-exception-form')).toBeInTheDocument();
+    });
+
+    it('does not offer the exception button for another 409', async () => {
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 409, code: 'ALREADY_EXISTS', message: 'Listing state changed' }
+        });
+        await publish();
+        await screen.findByText('Error genérico');
+        expect(screen.queryByRole('button', { name: 'Pedir una excepción' })).toBeNull();
+    });
+
     it('keeps the generic error for another 409', async () => {
         publishMock.mockResolvedValue({
             ok: false,

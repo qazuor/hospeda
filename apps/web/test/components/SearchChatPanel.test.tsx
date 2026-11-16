@@ -382,7 +382,7 @@ describe('SearchChatPanel', () => {
         it('renders result card links pointing to detail pages', () => {
             mockHook({ results: mockResults as ReturnType<typeof useSearchChat>['results'] });
             renderPanel();
-            const link = screen.getByRole('link', { name: 'Cabaña Río Verde' });
+            const link = screen.getByRole('link', { name: /Cabaña Río Verde/ });
             expect(link).toHaveAttribute('href', '/es/alojamientos/cabana-rio/');
         });
 
@@ -429,7 +429,7 @@ describe('SearchChatPanel', () => {
         it('applies the compact card layout class', () => {
             mockHook({ results: [mockResults[0]] as ReturnType<typeof useSearchChat>['results'] });
             renderPanel();
-            const link = screen.getByRole('link', { name: 'Cabaña Río Verde' });
+            const link = screen.getByRole('link', { name: /Cabaña Río Verde/ });
             expect(link.className).toContain('resultCardCompact');
         });
 

@@ -76,9 +76,33 @@ describe('partner application outbox renderers', () => {
         expect(html).toContain('Manage this Partner.');
         expect(resolveCopy).toHaveBeenCalledWith({
             kind: 'claim-notice',
+            origin: 'application',
             locale: 'es',
             partnerName: 'Hostería'
         });
+    });
+
+    it('tells the copy resolver when the Partner was created directly by the team', async () => {
+        const { renderers, resolveCopy } = makeRenderers();
+        await renderers[claimTemplate]!({
+            row: row({ template: claimTemplate, payload: { ...validClaim, origin: 'direct' } })
+        });
+        expect(resolveCopy).toHaveBeenCalledWith({
+            kind: 'claim-notice',
+            origin: 'direct',
+            locale: 'es',
+            partnerName: 'Hostería'
+        });
+    });
+
+    it('rejects an unknown claim origin before issuing a secret', async () => {
+        const { renderers, issueClaimSecret } = makeRenderers();
+        await expect(
+            renderers[claimTemplate]!({
+                row: row({ template: claimTemplate, payload: { ...validClaim, origin: 'other' } })
+            })
+        ).rejects.toThrow(TypeError);
+        expect(issueClaimSecret).not.toHaveBeenCalled();
     });
 
     it('rejects an invalid rejected-mail instant', async () => {

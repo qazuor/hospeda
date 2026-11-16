@@ -18,6 +18,21 @@ import { answer, rejectionAnswer } from '../plan-change';
 import { buildPlanChangePorts } from '../plan-change-ports';
 import { readSubscription } from '../read-subscription';
 
+const partnerPlanChangeUnsupportedReason = 'PARTNER_PLAN_CHANGE_UNSUPPORTED';
+
+function partnerPlanChangeUnsupported(ctx: Parameters<typeof createErrorResponse>[1]) {
+    return createErrorResponse(
+        {
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: 'Partner plan changes are not supported.',
+            reason: partnerPlanChangeUnsupportedReason,
+            details: { reason: partnerPlanChangeUnsupportedReason }
+        },
+        ctx,
+        422
+    );
+}
+
 /** Read sellable choices under the same permission and subject guard as ACC_10. */
 export const adminPlanChangeOptionsRoute = createAdminRoute({
     method: 'get',
@@ -54,6 +69,7 @@ export const adminPlanChangeOptionsRoute = createAdminRoute({
                 ctx,
                 403
             );
+        if (found.row.vertical === 'partner') return partnerPlanChangeUnsupported(ctx);
         const vertical = PublicPlanCatalogVerticalSchema.parse(found.row.vertical);
         const catalog = await readSellablePlanCatalog({ vertical });
         const offeredOptions = catalog.plans.flatMap((plan) =>
@@ -113,6 +129,7 @@ export const adminPlanChangeRoute = createAdminRoute({
         if (!found) return reject(404, ServiceErrorCode.NOT_FOUND, 'SUBSCRIPTION_NOT_FOUND');
         if (found.subjectId?.toLowerCase() === actor.id.toLowerCase())
             return reject(403, ServiceErrorCode.FORBIDDEN, 'ADMINISTRATIVE_ACTION_FORBIDDEN');
+        if (found.row.vertical === 'partner') return partnerPlanChangeUnsupported(ctx);
         if (found.row.status !== input.expectedStatus)
             return reject(409, 'CONFLICT', 'ADMINISTRATIVE_ACTION_STATE_CHANGED');
         if (!found.subjectId)

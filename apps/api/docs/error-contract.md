@@ -971,6 +971,12 @@ returns 404 `SUBSCRIPTION_NOT_FOUND` when the row is absent and 403
 `ADMINISTRATIVE_ACTION_FORBIDDEN` when the actor is the subject. Successful
 reads record `BILLING_READ`.
 
+Both the options GET and plan-change POST return 422 `VALIDATION_ERROR` with
+`error.reason` and `error.details.reason` set to
+`PARTNER_PLAN_CHANGE_UNSUPPORTED` for Partner subscriptions. Partner plan
+changes are not supported; administrators must revoke the subscription and
+configure the new plan again.
+
 `GET /api/v1/admin/billing-subscription/{subscriptionId}` also returns optional
 `subject` identity and `currentPlan` display information from the persisted
 subscription associations.

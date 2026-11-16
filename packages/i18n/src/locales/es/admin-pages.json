@@ -1968,5 +1968,67 @@
             "cancel": "Cancelar",
             "confirm": "Conceder"
         }
+    },
+    "locationExceptionRequests": {
+        "title": "Pedidos de excepción",
+        "description": "Pedidos de los dueños para publicar una ficha en una dirección que ya ocupa otra. Aprobar concede la excepción; rechazar le avisa al dueño con tu motivo.",
+        "verticals": {
+            "accommodations": "Alojamientos",
+            "venues": "Comercios (Comer y salir)"
+        },
+        "filters": {
+            "status": "Estado",
+            "PENDING": "Pendientes",
+            "APPROVED": "Aprobados",
+            "REJECTED": "Rechazados",
+            "SUPERSEDED": "Reemplazados"
+        },
+        "columns": {
+            "listing": "Ficha",
+            "owner": "Dueño",
+            "address": "Dirección",
+            "colliding": "Fichas que chocan",
+            "reason": "Motivo del dueño",
+            "requestedAt": "Pedido el",
+            "actions": "Acciones"
+        },
+        "address": {
+            "street": "{street} {number}",
+            "floor": "Piso {floor}",
+            "apartment": "Depto {apartment}",
+            "none": "Sin dirección"
+        },
+        "targetsNewAddress": "Dirección a la que quiere mudarse",
+        "approve": "Aprobar",
+        "reject": "Rechazar",
+        "empty": "No hay pedidos con este estado.",
+        "loading": "Cargando...",
+        "loadError": "No se pudieron cargar los pedidos.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "approveDialog": {
+            "movesNotice": "Al aprobar, el dueño podrá guardar esa dirección.",
+            "title": "Aprobar la excepción",
+            "description": "La ficha podrá compartir dirección. El motivo queda en el registro y se lo ves al dueño tal como lo dejes.",
+            "reasonLabel": "Motivo (entre 10 y 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Aprobar"
+        },
+        "rejectDialog": {
+            "title": "Rechazar el pedido",
+            "description": "El dueño va a ver tu motivo. Es obligatorio.",
+            "reasonLabel": "Motivo del rechazo (entre 10 y 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Rechazar"
+        },
+        "reasonInvalid": "El motivo debe tener entre 10 y 500 caracteres.",
+        "approved": "Excepción aprobada.",
+        "rejected": "Pedido rechazado.",
+        "conflict": {
+            "notPending": "Este pedido ya fue resuelto por otra persona. Se actualizó la lista.",
+            "stale": "El dueño cambió la dirección de la ficha después de pedir la excepción, así que el pedido quedó obsoleto. Se actualizó la lista.",
+            "notNeeded": "La ficha ya no choca con otra ficha publicada del dueño, así que el pedido se cerró y no se concedió nada. Se actualizó la lista."
+        },
+        "genericError": "No se pudo completar la acción."
     }
 }

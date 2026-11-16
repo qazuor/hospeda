@@ -262,11 +262,6 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                         name: destination.name
                                     }
                                 );
-                                const cardAriaLabel = t(
-                                    'destinations.carousel.viewDestination',
-                                    'Ver destino {{name}}',
-                                    { name: destination.name }
-                                );
 
                                 return (
                                     <article
@@ -284,7 +279,6 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                             )}
                                             aria-current={isActive ? 'true' : undefined}
                                             tabIndex={isActive ? 0 : -1}
-                                            aria-label={cardAriaLabel}
                                             onClick={(e) => {
                                                 if (!isActive) {
                                                     e.preventDefault();

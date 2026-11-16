@@ -3,6 +3,7 @@
  * Maps to the standard response shapes from @repo/schemas.
  */
 
+import type { LocationExceptionOwnerView } from '@repo/schemas';
 import type { ListingPolicyValues } from '../listing/listing-policies';
 import type { MediaAttribution } from '../media';
 
@@ -255,6 +256,11 @@ export interface AccommodationEditData {
      * address, so this draft cannot be published. Never part of the PATCH diff.
      */
     readonly locationDuplicate?: boolean;
+    /**
+     * HOS-2192 (read-only): the owner's side of the location exception, the
+     * latest request for the address the listing has now. Never part of the PATCH diff.
+     */
+    readonly locationException?: LocationExceptionOwnerView;
     readonly maxGuests: number | null;
     readonly bedrooms: number | null;
     readonly bathrooms: number | null;

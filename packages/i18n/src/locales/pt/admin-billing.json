@@ -92,6 +92,27 @@
             "rejected": "A API recusou a publicação: {message}",
             "forbidden": "Somente SUPER_ADMIN pode publicar versões de plano.",
             "generic": "Não foi possível concluir a ação. Tente novamente."
+        },
+        "cyclePrice": {
+            "action": "Alterar preço do ciclo",
+            "title": "Alterar preço do ciclo",
+            "cycle": "Ciclo de cobrança",
+            "amount": "Novo preço em centavos ARS",
+            "preview": "Pré-visualizar alteração",
+            "invalid": "Informe um valor inteiro positivo em centavos.",
+            "summary": "Ciclo {cycle}: de {previous} para {next}.",
+            "reach": "A pré-visualização confirma que nenhum cliente será afetado. A alteração vale ao confirmar.",
+            "explicitConfirmation": "Confirmo a alteração do preço deste ciclo.",
+            "confirm": "Confirmar alteração de preço",
+            "saving": "Salvando…",
+            "cancel": "Cancelar",
+            "migrationLink": "Ir para migrações de plano",
+            "errors": {
+                "hasCustomers": "Esta versão tem clientes. A alteração direta não os moveria; inicie uma migração de plano para movê-los com segurança.",
+                "changedSincePreview": "O preço mudou desde esta pré-visualização. Confira o valor atual e gere outra pré-visualização antes de confirmar.",
+                "forbidden": "Somente SUPER_ADMIN pode alterar preços de ciclos.",
+                "generic": "Não foi possível alterar o preço. Confira os dados e tente novamente."
+            }
         }
     },
     "deadlinesEditor": {
@@ -2295,6 +2316,7 @@
         "loading": "Carregando opções…",
         "error": "Não foi possível concluir a alteração. Confira o status e tente novamente.",
         "payerEmailUndeclared": "Esta assinatura não tem um e-mail de pagador declarado, então o Mercado Pago não pode abrir o checkout. Peça ao cliente que mude de plano em “Minha assinatura”, onde ele declara o e-mail.",
+        "partnerUnsupported": "A alteração do plano de um Partner ainda não é compatível. Para mudar, revogue a assinatura e configure o novo plano novamente.",
         "unavailable": "A assinatura não está ativa.",
         "customer": "Cliente: {customer}",
         "current": "Plano atual: {plan}",

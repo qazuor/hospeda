@@ -132,6 +132,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-959: the sign-in/sign-up tab strip.
     'auth.tabs',
     'auth.verifyEmail',
+    // HOS-2230 — the addon purchase island resolves the localized addon
+    // name and description (`billing.addon.<slug>.name|description`).
+    'billing.addon',
     'billing.addonPurchase',
     'billing.checkout',
     'billing.limit',

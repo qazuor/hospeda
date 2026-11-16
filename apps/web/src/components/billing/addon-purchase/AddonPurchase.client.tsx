@@ -1,9 +1,15 @@
 import type { AddonOffersResponse } from '@repo/schemas';
 import { useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
-import { type PublishVerticalSlug, publishApi } from '@/lib/api/endpoints-protected';
+import {
+    billingSubscriptionApi,
+    type PublishVerticalSlug,
+    publishApi
+} from '@/lib/api/endpoints-protected';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import {
+    type AddonSubscriptionTarget,
+    eligibleSubscriptionTargets,
     eligibleTargets,
     mintOrderRequestId,
     purchasableOffers,
@@ -14,10 +20,19 @@ import stylesNotice from '../PaidSignupsPausedNotice.module.css';
 import { AddonOfferList } from './AddonOfferList';
 import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
+import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
 
 type Offer = AddonOffersResponse['items'][number];
-type View = 'LOADING' | 'OFFERS' | 'TARGETS' | 'SUMMARY' | 'PROCESSING' | 'ACTIVE' | 'CLOSED';
+type View =
+    | 'LOADING'
+    | 'OFFERS'
+    | 'TARGETS'
+    | 'SUBSCRIPTIONS'
+    | 'SUMMARY'
+    | 'PROCESSING'
+    | 'ACTIVE'
+    | 'CLOSED';
 const POLL_INTERVAL_MS = 3000;
 const POLL_MAX_ATTEMPTS = 10;
 const PUBLISH_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
@@ -34,6 +49,12 @@ export function AddonPurchase(input: {
     const [offer, setOffer] = useState<Offer | null>(null);
     const [targets, setTargets] = useState<readonly AddonTarget[]>([]);
     const [target, setTarget] = useState<AddonTarget | null>(null);
+    const [subscriptionTargets, setSubscriptionTargets] = useState<
+        readonly AddonSubscriptionTarget[]
+    >([]);
+    const [subscriptionTarget, setSubscriptionTarget] = useState<AddonSubscriptionTarget | null>(
+        null
+    );
     const [orderRequestId, setOrderRequestId] = useState<string | null>(null);
     const [view, setView] = useState<View>(input.returnOrderRequestId ? 'PROCESSING' : 'LOADING');
     const [busy, setBusy] = useState(false);
@@ -41,10 +62,11 @@ export function AddonPurchase(input: {
     const [purchasesPaused, setPurchasesPaused] = useState(false);
     const [payerEmail, setPayerEmail] = useState(input.accountEmail);
     const [pollAttempt, setPollAttempt] = useState(0);
+    const targetVertical = target?.vertical ?? subscriptionTarget?.vertical ?? null;
     const free =
         !!offer &&
-        (target
-            ? offer.freeUnderGrantVerticals.includes(target.vertical)
+        (targetVertical
+            ? offer.freeUnderGrantVerticals.includes(targetVertical)
             : offer.compatibleVerticals.some((vertical) =>
                   offer.freeUnderGrantVerticals.includes(vertical)
               ));
@@ -113,9 +135,31 @@ export function AddonPurchase(input: {
     const selectOffer = async (selected: Offer) => {
         setOffer(selected);
         setTarget(null);
+        setSubscriptionTarget(null);
         setOrderRequestId(null);
         setError(null);
         setPurchasesPaused(false);
+        if (selected.scopeType === 'VERTICAL_SUBSCRIPTION') {
+            setView('LOADING');
+            try {
+                const result = await billingSubscriptionApi.listMine({});
+                if (!result.ok) throw new Error(result.error.message);
+                const items = eligibleSubscriptionTargets({
+                    subscriptions: result.data.subscriptions,
+                    compatibleVerticals: selected.compatibleVerticals
+                });
+                setSubscriptionTargets(items);
+                const [only] = items;
+                if (items.length === 1 && only) selectSubscription(only);
+                else setView('SUBSCRIPTIONS');
+            } catch (cause) {
+                setError(
+                    cause instanceof Error ? cause.message : t('billing.addonPurchase.loadError')
+                );
+                setView('OFFERS');
+            }
+            return;
+        }
         if (selected.scopeType !== 'LISTING') {
             setOrderRequestId(mintOrderRequestId());
             setView('SUMMARY');
@@ -147,6 +191,12 @@ export function AddonPurchase(input: {
         }
     };
 
+    const selectSubscription = (selected: AddonSubscriptionTarget) => {
+        setSubscriptionTarget(selected);
+        setOrderRequestId(mintOrderRequestId());
+        setView('SUMMARY');
+    };
+
     const selectTarget = (selected: AddonTarget) => {
         setTarget(selected);
         setOrderRequestId(mintOrderRequestId());
@@ -161,7 +211,7 @@ export function AddonPurchase(input: {
         const body = {
             productId: offer.productId,
             addonVersionId: offer.addonVersionId,
-            targetId: target?.listingId ?? null,
+            targetId: target?.listingId ?? subscriptionTarget?.id ?? null,
             orderRequestId
         };
         try {
@@ -232,6 +282,13 @@ export function AddonPurchase(input: {
                 <AddonTargetPicker
                     items={targets}
                     onSelect={selectTarget}
+                    t={t}
+                />
+            )}
+            {view === 'SUBSCRIPTIONS' && (
+                <AddonSubscriptionPicker
+                    items={subscriptionTargets}
+                    onSelect={selectSubscription}
                     t={t}
                 />
             )}

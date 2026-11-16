@@ -1968,5 +1968,67 @@
             "cancel": "Cancelar",
             "confirm": "Conceder"
         }
+    },
+    "locationExceptionRequests": {
+        "title": "Pedidos de exceção",
+        "description": "Pedidos dos donos para publicar um anúncio em um endereço que outro já ocupa. Aprovar concede a exceção; rejeitar avisa o dono com o seu motivo.",
+        "verticals": {
+            "accommodations": "Hospedagens",
+            "venues": "Comércios (Comer e sair)"
+        },
+        "filters": {
+            "status": "Situação",
+            "PENDING": "Pendentes",
+            "APPROVED": "Aprovados",
+            "REJECTED": "Rejeitados",
+            "SUPERSEDED": "Substituídos"
+        },
+        "columns": {
+            "listing": "Anúncio",
+            "owner": "Dono",
+            "address": "Endereço",
+            "colliding": "Anúncios em conflito",
+            "reason": "Motivo do dono",
+            "requestedAt": "Pedido em",
+            "actions": "Ações"
+        },
+        "address": {
+            "street": "{street}, {number}",
+            "floor": "Andar {floor}",
+            "apartment": "Apto {apartment}",
+            "none": "Sem endereço"
+        },
+        "targetsNewAddress": "Endereço para o qual o dono quer se mudar",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
+        "empty": "Não há pedidos com este estado.",
+        "loading": "Carregando...",
+        "loadError": "Não foi possível carregar os pedidos.",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "approveDialog": {
+            "movesNotice": "Ao aprovar, o dono poderá salvar esse endereço.",
+            "title": "Aprovar a exceção",
+            "description": "O anúncio poderá compartilhar endereço. O motivo fica registrado e o dono o vê como você o deixar.",
+            "reasonLabel": "Motivo (de 10 a 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Aprovar"
+        },
+        "rejectDialog": {
+            "title": "Rejeitar o pedido",
+            "description": "O dono verá o seu motivo. É obrigatório.",
+            "reasonLabel": "Motivo da rejeição (de 10 a 500 caracteres)",
+            "cancel": "Cancelar",
+            "confirm": "Rejeitar"
+        },
+        "reasonInvalid": "O motivo deve ter entre 10 e 500 caracteres.",
+        "approved": "Exceção aprovada.",
+        "rejected": "Pedido rejeitado.",
+        "conflict": {
+            "notPending": "Outra pessoa já resolveu este pedido. A lista foi atualizada.",
+            "stale": "O dono mudou o endereço do anúncio depois de pedir a exceção, então o pedido ficou desatualizado. A lista foi atualizada.",
+            "notNeeded": "O anúncio já não conflita com outro anúncio publicado do dono, então o pedido foi encerrado e nada foi concedido. A lista foi atualizada."
+        },
+        "genericError": "Não foi possível concluir a ação."
     }
 }

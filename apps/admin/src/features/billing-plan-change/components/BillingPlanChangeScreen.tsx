@@ -128,7 +128,11 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                         data.isLoading ? (
                             <p>{t('admin-billing.subscriptionPlanChange.loading')}</p>
                         ) : data.error ? (
-                            <p role="alert">{t('admin-billing.subscriptionPlanChange.error')}</p>
+                            <p role="alert">
+                                {errorReason(data.error) === 'PARTNER_PLAN_CHANGE_UNSUPPORTED'
+                                    ? t('admin-billing.subscriptionPlanChange.partnerUnsupported')
+                                    : t('admin-billing.subscriptionPlanChange.error')}
+                            </p>
                         ) : inspection?.status === 'ACTIVE' ? (
                             <>
                                 <p>
@@ -197,7 +201,10 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                                 {t(
                                                     error === 'PAYER_EMAIL_UNDECLARED'
                                                         ? 'admin-billing.subscriptionPlanChange.payerEmailUndeclared'
-                                                        : 'admin-billing.subscriptionPlanChange.error'
+                                                        : error ===
+                                                            'PARTNER_PLAN_CHANGE_UNSUPPORTED'
+                                                          ? 'admin-billing.subscriptionPlanChange.partnerUnsupported'
+                                                          : 'admin-billing.subscriptionPlanChange.error'
                                                 )}
                                             </p>
                                         ) : null}
