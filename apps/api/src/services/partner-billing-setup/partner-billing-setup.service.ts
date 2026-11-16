@@ -10,7 +10,8 @@ import {
     PartnerModel,
     planCatalogModel,
     plans,
-    planVersions
+    planVersions,
+    users
 } from '@repo/db';
 import { PartnerBillingSetupOptionSchema, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import type {
@@ -45,6 +46,7 @@ export async function previewPartnerBillingSetup(input: {
 }): Promise<{
     readonly partner: { readonly id: string; readonly name: string };
     readonly ownerUserId: string;
+    readonly owner: { readonly name: string; readonly email: string };
     readonly method: 'MANUAL';
     readonly options: readonly PartnerBillingSetupOption[];
     readonly effect: typeof EFFECT;
@@ -59,6 +61,26 @@ export async function previewPartnerBillingSetup(input: {
             'Partner has no owner'
         );
 
+    const [ownerUser] = await getDb()
+        .select({
+            email: users.email,
+            displayName: users.displayName,
+            firstName: users.firstName,
+            lastName: users.lastName
+        })
+        .from(users)
+        .where(eq(users.id, partner.ownerUserId))
+        .limit(1);
+    if (!ownerUser)
+        throw rejection(
+            'PARTNER_WITHOUT_OWNER',
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Partner owner not found'
+        );
+    const fullName = [ownerUser.firstName, ownerUser.lastName].filter(Boolean).join(' ').trim();
+    const ownerName = ownerUser.displayName?.trim() || fullName || ownerUser.email;
+    const owner = { name: ownerName, email: ownerUser.email };
+
     const versions = await planCatalogModel.findSellableCurrentVersions({
         vertical: VerticalEnum.PARTNER
     });
@@ -66,6 +88,7 @@ export async function previewPartnerBillingSetup(input: {
         return {
             partner: { id: partner.id, name: partner.name },
             ownerUserId: partner.ownerUserId,
+            owner,
             method: 'MANUAL',
             options: [],
             effect: EFFECT
@@ -105,6 +128,7 @@ export async function previewPartnerBillingSetup(input: {
     return {
         partner: { id: partner.id, name: partner.name },
         ownerUserId: partner.ownerUserId,
+        owner,
         method: 'MANUAL',
         options,
         effect: EFFECT
