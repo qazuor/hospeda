@@ -335,6 +335,32 @@ export const partnerApplicationModel = {
         return locale === 'en' || locale === 'pt' || locale === 'es' ? locale : 'es';
     },
 
+    /**
+     * Reads the date a rejected application's wait ends, for the same row the
+     * `partner_application_wait_active` trigger consults: the latest REJECTED application of
+     * the email (case-insensitive) whose wait was not cancelled. Null when there is none or its
+     * deadline cannot be computed.
+     */
+    async readActiveWaitReapplyAfter(args: {
+        readonly tx: DrizzleClient;
+        readonly email: string;
+    }): Promise<Date | null> {
+        const result = await args.tx.execute(sql`
+            SELECT pa.resolved_at + make_interval(days => (v."values" -> '9' ->> 'days')::integer) AS reapply_after
+            FROM partner_application pa
+            JOIN vertical_deadline_version v
+              ON v.version = COALESCE(pa.deadlines_version, (SELECT max(version) FROM vertical_deadline_version))
+            WHERE lower(pa.email) = lower(${args.email})
+              AND pa.status = 'REJECTED'
+              AND pa.wait_cancelled_at IS NULL
+            ORDER BY pa.resolved_at DESC NULLS LAST
+            LIMIT 1`);
+        const rawValue = result.rows[0]?.reapply_after;
+        if (rawValue == null) return null;
+        const value = rawValue instanceof Date ? rawValue : new Date(String(rawValue));
+        return Number.isNaN(value.getTime()) ? null : value;
+    },
+
     /** Reads the rejection's market reapplication date from its stored deadline version. */
     async readReapplyAfter(args: {
         readonly tx: DrizzleClient;
