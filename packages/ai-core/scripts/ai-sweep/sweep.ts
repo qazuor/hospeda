@@ -16,6 +16,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { MODEL_RATES } from '../../src/usage/model-rates.js';
 import { type BlindKey, buildBlindExport, entriesToJsonl, ingestGrades } from './blind.js';
+import { CliArgError, readFlag, readPositiveIntFlag, resolveProviderKey } from './cli-args.js';
 import {
     aggregateResults,
     approxTokens,
@@ -57,14 +58,8 @@ interface CliArgs {
 }
 
 function parseArgs(argv: readonly string[]): CliArgs {
-    const value = (flag: string): string | null => {
-        const i = argv.indexOf(flag);
-        return i >= 0 ? (argv[i + 1] ?? null) : null;
-    };
-    const num = (flag: string): number | null => {
-        const v = value(flag);
-        return v === null ? null : Number(v);
-    };
+    const value = (flag: string): string | null => readFlag({ argv, flag }).value;
+    const num = (flag: string): number | null => readPositiveIntFlag({ argv, flag }).value;
     const path = (flag: string): string | null => {
         const v = value(flag);
         return v === null ? null : resolve(v);
@@ -98,7 +93,14 @@ function loadCases(): PromptCase[] {
 }
 
 function main(): void {
-    const args = parseArgs(process.argv.slice(2));
+    let args: CliArgs;
+    try {
+        args = parseArgs(process.argv.slice(2));
+    } catch (error) {
+        if (!(error instanceof CliArgError)) throw error;
+        console.error(`ABORT: ${error.message}`);
+        process.exit(2);
+    }
     const config = SweepConfigSchema.parse(JSON.parse(readFileSync(args.configPath, 'utf8')));
     const cases = loadCases();
     if (args.resultsPath) {
@@ -179,15 +181,14 @@ function main(): void {
             process.exit(2);
         }
         // The key is never logged, echoed or measured.
-        const apiKey = args.apiKeyFile
-            ? readFileSync(args.apiKeyFile, 'utf8').trim()
-            : process.env[def.apiKeyEnv];
+        // --api-key-file is never sent to a provider with a custom baseURL.
+        const { apiKey, source } = resolveProviderKey({
+            provider: def,
+            keyFileContent: args.apiKeyFile ? readFileSync(args.apiKeyFile, 'utf8') : null,
+            env: process.env
+        });
         if (!apiKey) {
-            console.error(
-                args.apiKeyFile
-                    ? `ABORT: the key file is empty (provider "${id}").`
-                    : `ABORT: env var ${def.apiKeyEnv} is not set (provider "${id}"); or pass --api-key-file.`
-            );
+            console.error(`ABORT: no key for provider "${id}" (${source} is empty or unset).`);
             process.exit(2);
         }
         providers.set(

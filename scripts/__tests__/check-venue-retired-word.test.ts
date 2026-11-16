@@ -21,7 +21,6 @@ function fixture(
     files: Readonly<Record<string, string>>,
     options: {
         readonly exemptions?: typeof emptyExceptions;
-        readonly historyCount?: number;
         readonly historyWordFiles?: number;
     } = {}
 ) {
@@ -30,7 +29,6 @@ function fixture(
     const config = {
         $comment: 'fixture',
         exemptions,
-        historyCount: options.historyCount ?? 0,
         historyWordFiles: options.historyWordFiles ?? 0,
         ledgerFingerprint: ledgerFingerprint(exemptions)
     };
@@ -272,7 +270,7 @@ describe('G-FAC-R1 retired venue word', () => {
             [support]: supportSource,
             'packages/db/test/integration/check-seed-dual-write.test.ts': `const fixture = 'packages/seed/src/data-migrations/0001-test'; const x = '${oldWord}';`
         };
-        const { result } = fixture(files, { historyCount: 1, historyWordFiles: 1 });
+        const { result } = fixture(files, { historyWordFiles: 1 });
         expect(result.history).toEqual([migrationTest]);
         expect(
             result.violations.some(
@@ -291,6 +289,25 @@ describe('G-FAC-R1 retired venue word', () => {
         ).toBe(true);
     });
 
+    it('does not count a data-migration test without the retired word as history weight (HOS-2190)', () => {
+        const withoutWord =
+            "import { up } from '../../src/data-migrations/0300-some-unrelated-change.js'; void up;";
+        const { result } = fixture({
+            'packages/seed/test/data-migrations/0300-some-unrelated-change.test.ts': withoutWord,
+            'packages/seed/test/data-migrations/0301-another-unrelated.test.ts': withoutWord
+        });
+        expect(result.history).toHaveLength(2);
+        expect(result.violations).toEqual([]);
+    });
+
+    it('still fails when a new data-migration test contains the retired word (HOS-2190)', () => {
+        const { result } = fixture({
+            'packages/seed/test/data-migrations/0300-new-with-word.test.ts': `import { up } from '../../src/data-migrations/0300-x.js'; const t = '${oldWord}'; void up;`
+        });
+        expect(result.violations.some(({ text }) => text.includes('with retired word'))).toBe(true);
+        expect(result.exitCode).toBe(1);
+    });
+
     it('derives the real history list and fixes its measured counts', () => {
         const files = execFileSync('git', ['ls-files', '-z'], {
             cwd: ROOT,
@@ -307,11 +324,13 @@ describe('G-FAC-R1 retired venue word', () => {
                 readFileSync(join(ROOT, file), 'utf8')
             )
         );
-        expect(history.length).toBe(137);
         expect(history).toContain(
             'packages/seed/test/data-migrations/0167-hos-2105-faq-draft-ai-settings.test.ts'
         );
-        expect(historyWord.length).toBe(14);
+        const { historyWordFiles } = JSON.parse(
+            readFileSync(join(ROOT, 'scripts/guards/venue-retired-word.json'), 'utf8')
+        ) as { historyWordFiles: number };
+        expect(historyWord.length).toBe(historyWordFiles);
         expect(history).toContain('packages/db/test/integration/cut-migration-over-data.test.ts');
         expect(history).toContain(
             'packages/seed/test/data-migrations/whats-new-seen-ids-rename.integration.test.ts'

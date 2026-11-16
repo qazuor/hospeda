@@ -4,7 +4,11 @@
         "ownerId": "owner-0",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
-        "isVerified": false,
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "media": {
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
@@ -22,19 +26,24 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": true
+        "hasWhatsapp": true,
+        "isVerified": false
     },
     {
         "id": "acc-owner-1",
         "ownerId": "owner-1",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "richDescription": "<p>Premium</p>",
         "richDescriptionI18n": {
             "es": "<p>Premium</p>",
             "en": "<p>Premium en</p>"
         },
-        "isVerified": false,
         "media": {
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
@@ -52,14 +61,19 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": true
+        "hasWhatsapp": true,
+        "isVerified": false
     },
     {
         "id": "acc-owner-2",
         "ownerId": "owner-2",
         "name": "Casa del Rio",
         "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
-        "isVerified": false,
+        "descriptionI18n": {
+            "es": "Mira https://youtu.be/abc123 y reserva",
+            "en": "Watch https://vimeo.com/123 and book",
+            "pt": "Sem video"
+        },
         "videos": [
             {
                 "url": "https://example.com/v.mp4"
@@ -86,19 +100,24 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": true
+        "hasWhatsapp": true,
+        "isVerified": false
     },
     {
         "id": "acc-owner-3",
         "ownerId": "owner-3",
         "name": "Casa del Rio",
         "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "descriptionI18n": {
+            "es": "Mira https://youtu.be/abc123 y reserva",
+            "en": "Watch https://vimeo.com/123 and book",
+            "pt": "Sem video"
+        },
         "richDescription": "<p>Premium</p>",
         "richDescriptionI18n": {
             "es": "<p>Premium</p>",
             "en": "<p>Premium en</p>"
         },
-        "isVerified": false,
         "videos": [
             {
                 "url": "https://example.com/v.mp4"
@@ -125,13 +144,19 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": true
+        "hasWhatsapp": true,
+        "isVerified": false
     },
     {
         "id": "acc-owner-4",
         "ownerId": "owner-4",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "isVerified": true,
         "media": {
             "featuredImage": {
@@ -157,6 +182,11 @@
         "ownerId": "owner-5",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "richDescription": "<p>Premium</p>",
         "richDescriptionI18n": {
             "es": "<p>Premium</p>",
@@ -187,6 +217,11 @@
         "ownerId": "owner-6",
         "name": "Casa del Rio",
         "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "descriptionI18n": {
+            "es": "Mira https://youtu.be/abc123 y reserva",
+            "en": "Watch https://vimeo.com/123 and book",
+            "pt": "Sem video"
+        },
         "isVerified": true,
         "videos": [
             {
@@ -221,6 +256,11 @@
         "ownerId": "owner-7",
         "name": "Casa del Rio",
         "description": "Mira el video https://www.youtube.com/watch?v=abc123 y reserva",
+        "descriptionI18n": {
+            "es": "Mira https://youtu.be/abc123 y reserva",
+            "en": "Watch https://vimeo.com/123 and book",
+            "pt": "Sem video"
+        },
         "richDescription": "<p>Premium</p>",
         "richDescriptionI18n": {
             "es": "<p>Premium</p>",
@@ -260,7 +300,11 @@
         "ownerId": "owner-failing",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
-        "isVerified": false,
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "media": {
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
@@ -278,14 +322,19 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": true
+        "hasWhatsapp": true,
+        "isVerified": false
     },
     {
         "id": "acc-owner-unknown",
         "ownerId": "owner-unknown",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
-        "isVerified": false,
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "media": {
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
@@ -301,13 +350,18 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": false
+        "hasWhatsapp": false,
+        "isVerified": false
     },
     {
         "id": "acc-without-owner",
         "name": "Casa del Rio",
         "description": "Mira el video y reserva",
-        "isVerified": false,
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "media": {
             "featuredImage": {
                 "url": "https://example.com/f.jpg"
@@ -325,13 +379,13 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": true
+        "hasWhatsapp": true,
+        "isVerified": false
     },
     {
         "id": "acc-sparse-denied",
         "ownerId": "owner-0",
         "name": "Casa del Rio",
-        "isVerified": false,
         "media": {
             "gallery": []
         },
@@ -339,14 +393,19 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": false
+        "hasWhatsapp": false,
+        "isVerified": false
     },
     {
         "id": "acc-odd-shapes",
         "ownerId": "owner-0",
         "name": "Casa del Rio",
         "description": 42,
-        "isVerified": false,
+        "descriptionI18n": {
+            "es": "Mira y reserva",
+            "en": "Watch and book",
+            "pt": "Sem video"
+        },
         "media": [
             {
                 "videos": ["x"]
@@ -356,13 +415,19 @@
         "price": {
             "price": 1000
         },
-        "hasWhatsapp": false
+        "hasWhatsapp": false,
+        "isVerified": false
     },
     {
         "id": "acc-sparse",
         "ownerId": "owner-7",
         "name": "Casa del Rio",
         "description": "Plain text",
+        "descriptionI18n": {
+            "es": "Mira https://youtu.be/abc123 y reserva",
+            "en": "Watch https://vimeo.com/123 and book",
+            "pt": "Sem video"
+        },
         "videos": [
             {
                 "url": "https://example.com/v.mp4"

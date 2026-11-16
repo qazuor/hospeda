@@ -97,8 +97,11 @@ const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
  * schema has optional/default fields AND may run against OpenAI (or an
  * OpenAI-compatible endpoint), add its feature key here — otherwise it will fail
  * at call time against real OpenAI.
+ *
+ * Exported (not re-exported from the package barrel) so the AI model sweep
+ * (`scripts/ai-sweep`, HOS-2217) sends the same strict flag production sends.
  */
-const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set([
+export const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set([
     'search',
     'accommodation_import'
 ]);
