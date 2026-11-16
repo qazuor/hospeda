@@ -381,7 +381,7 @@
             "empty": "Você ainda não conectou nenhum assistente.",
             "unnamed": "Assistente sem nome",
             "connectedAt": "Conectado em {{date}}",
-            "lastUsed": "Último uso aprox.: {{date}}",
+            "lastUsed": "Último uso aproximado: {{date}}",
             "neverUsed": "Sem uso registrado"
         },
         "disconnect": {
