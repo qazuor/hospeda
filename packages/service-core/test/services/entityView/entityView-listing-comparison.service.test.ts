@@ -70,7 +70,7 @@ describe('EntityViewService.getDailySeriesComparisonForOwnListing (HOS-2184)', (
         const result = await service.getDailySeriesComparisonForOwnListing({
             ...baseInput,
             // @ts-expect-error intentionally invalid window
-            window: '90d'
+            window: '60d'
         });
 
         // Assert
@@ -121,9 +121,9 @@ describe('EntityViewService.getDailySeriesComparisonForOwnListing (HOS-2184)', (
         expect(result.error).toBeUndefined();
         expect(result.data?.previous).toHaveLength(7);
         expect(result.data?.current).toHaveLength(7);
-        expect(result.data?.previous[0]).toEqual({ date: '2026-06-01', total: 0 });
-        expect(result.data?.previous[2]).toEqual({ date: '2026-06-03', total: 4 });
-        expect(result.data?.previous[6]?.date).toBe('2026-06-07');
+        expect(result.data?.previous?.[0]).toEqual({ date: '2026-06-01', total: 0 });
+        expect(result.data?.previous?.[2]).toEqual({ date: '2026-06-03', total: 4 });
+        expect(result.data?.previous?.[6]?.date).toBe('2026-06-07');
         expect(result.data?.current[0]?.date).toBe('2026-06-08');
         expect(result.data?.current[4]).toEqual({ date: '2026-06-12', total: 9 });
         expect(result.data?.current[6]?.date).toBe('2026-06-14');
@@ -146,6 +146,49 @@ describe('EntityViewService.getDailySeriesComparisonForOwnListing (HOS-2184)', (
         });
         expect(result.data?.previous).toHaveLength(30);
         expect(result.data?.current).toHaveLength(30);
+    });
+
+    it('queries only the 90-day window, never past the retention, and has no previous period', async () => {
+        // Arrange
+        asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING]);
+        asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([
+            { date: '2026-06-12', total: 6 }
+        ]);
+
+        // Act
+        const result = await service.getDailySeriesComparisonForOwnListing({
+            ...baseInput,
+            window: '90d'
+        });
+
+        // Assert
+        expect(asMock(modelMock.getDailySeriesForEntityIds)).toHaveBeenCalledOnce();
+        expect(asMock(modelMock.getDailySeriesForEntityIds).mock.calls[0]?.[0]).toMatchObject({
+            windowDays: 90
+        });
+        expect(result.error).toBeUndefined();
+        expect(result.data?.previous).toBeNull();
+        expect(result.data?.current).toHaveLength(90);
+        expect(result.data?.current[89]).toEqual({ date: '2026-06-14', total: 0 });
+        expect(result.data?.current.find((d) => d.date === '2026-06-12')?.total).toBe(6);
+    });
+
+    it('keeps a previous period for every window whose double fits the retention', async () => {
+        // Arrange
+        asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING]);
+        asMock(modelMock.getDailySeriesForEntityIds).mockResolvedValue([]);
+
+        // Act
+        const results = await Promise.all(
+            (['7d', '30d'] as const).map((window) =>
+                service.getDailySeriesComparisonForOwnListing({ ...baseInput, window })
+            )
+        );
+
+        // Assert
+        for (const result of results) {
+            expect(result.data?.previous).not.toBeNull();
+        }
     });
 
     it.each([

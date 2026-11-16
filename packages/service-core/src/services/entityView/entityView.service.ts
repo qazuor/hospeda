@@ -108,6 +108,20 @@ const EntityViewServiceCaptureSchema = EntityViewCaptureInputSchema.extend({
 const WINDOW_DAYS: Record<'7d' | '30d', number> = { '7d': 7, '30d': 30 };
 
 /**
+ * Days `entity_views` rows are kept before the purge cron hard-deletes them
+ * (`apps/api/src/cron/jobs/entity-views-purge.job.ts`, 95 days). Reads must not
+ * ask for data older than this.
+ */
+const ENTITY_VIEWS_RETENTION_DAYS = 95;
+
+/** Window lengths of the per-listing comparison read, in days. */
+const LISTING_COMPARISON_WINDOW_DAYS: Record<'7d' | '30d' | '90d', number> = {
+    '7d': 7,
+    '30d': 30,
+    '90d': 90
+};
+
+/**
  * Input schema for {@link EntityViewService.getStatsForHostAccommodations}.
  *
  * Only `window` is accepted — `actor.id` is used to resolve owned accommodation
@@ -259,8 +273,10 @@ const GetDailySeriesComparisonForOwnListingSchema = z.object({
     listingId: z.string({ message: 'zodError.entityView.entityId.required' }).uuid({
         message: 'zodError.entityView.entityId.invalidUuid'
     }),
-    /** Length of each period ('7d' or '30d'). */
-    window: EntityViewWindowSchema
+    /** Length of the period: '7d', '30d' or '90d'. */
+    window: z.enum(['7d', '30d', '90d'], {
+        message: 'zodError.entityView.listingStats.window.invalid'
+    })
 });
 
 // ---------------------------------------------------------------------------
@@ -451,8 +467,8 @@ export interface GetDailySeriesComparisonForOwnListingInput {
         | EntityTypeEnum.EXPERIENCE;
     /** The listing to read. */
     readonly listingId: string;
-    /** Length of each period ('7d' or '30d'). */
-    readonly window: EntityViewWindow;
+    /** Length of the period: '7d', '30d' or '90d'. */
+    readonly window: EntityViewWindow | '90d';
 }
 
 /**
@@ -463,8 +479,13 @@ export interface GetDailySeriesComparisonForOwnListingInput {
 export interface ListingViewsComparison {
     /** The most recent `window` local days, today included. */
     readonly current: readonly HostViewDailySeriesOutputItem[];
-    /** The `window` local days right before `current`. */
-    readonly previous: readonly HostViewDailySeriesOutputItem[];
+    /**
+     * The `window` local days right before `current`, or `null` when that
+     * period would reach back beyond the `entity_views` retention (see
+     * {@link ENTITY_VIEWS_RETENTION_DAYS}): the data no longer exists, so there
+     * is nothing honest to compare against.
+     */
+    readonly previous: readonly HostViewDailySeriesOutputItem[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -1191,7 +1212,9 @@ export class EntityViewService extends BaseService {
      *
      * One model query covers both periods (`2 * window` days, within the
      * 95-day retention of `entity_views`); the gap-filled result is then split
-     * in two. Both periods use the same local-calendar-day bucketing as
+     * in two. For the 90-day window the previous period would reach back 180
+     * days, past the retention, so only the current window is queried and
+     * `previous` is `null`. Both periods use the same local-calendar-day bucketing as
      * {@link getDailySeriesForOwnListings}, so their totals are comparable.
      *
      * **Ownership:** the listing must be among the actor's own, non-deleted
@@ -1221,17 +1244,20 @@ export class EntityViewService extends BaseService {
                     throw entityNotFoundError({ entityName: 'listing' });
                 }
 
-                const windowDays = WINDOW_DAYS[validated.window];
+                const windowDays = LISTING_COMPARISON_WINDOW_DAYS[validated.window];
+                // The previous period is read only while it still exists.
+                const withPrevious = windowDays * 2 <= ENTITY_VIEWS_RETENTION_DAYS;
+                const queriedDays = withPrevious ? windowDays * 2 : windowDays;
                 const modelRows = await this.model.getDailySeriesForEntityIds({
                     entityType: validated.entityType,
-                    windowDays: windowDays * 2,
+                    windowDays: queriedDays,
                     entityIds: [validated.listingId]
                 });
-                const series = gapFillHostDailySeries(modelRows, windowDays * 2);
+                const series = gapFillHostDailySeries(modelRows, queriedDays);
 
                 return {
-                    previous: series.slice(0, windowDays),
-                    current: series.slice(windowDays)
+                    previous: withPrevious ? series.slice(0, windowDays) : null,
+                    current: series.slice(withPrevious ? windowDays : 0)
                 };
             }
         });
