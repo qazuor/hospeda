@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRedirect } from '@tanstack/react-router';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiError } from '@/lib/errors';
 import { BillingPlanChangeScreen } from '../components/BillingPlanChangeScreen';
 import { planChangeOptionsPath } from '../hooks/useBillingPlanChange';
 
@@ -190,5 +191,44 @@ describe('ACC_10 admin plan change screen', () => {
             error = caught;
         }
         expect(isRedirect(error)).toBe(true);
+    });
+});
+
+describe('HOS-2238 admin plan change refusals', () => {
+    async function confirmChange(postError: unknown) {
+        setup({});
+        const post = fetchApi.getMockImplementation();
+        fetchApi.mockImplementation((input: { method?: string; path: string }) =>
+            input.method === 'POST' ? Promise.reject(postError) : post?.(input)
+        );
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
+    }
+
+    it('explains a subscription without a declared payer email instead of the generic error', async () => {
+        await confirmChange(
+            new ApiError('Unprocessable', {
+                status: 422,
+                body: {
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        reason: 'PAYER_EMAIL_UNDECLARED',
+                        details: { reason: 'PAYER_EMAIL_UNDECLARED' }
+                    }
+                }
+            })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            es.subscriptionPlanChange.payerEmailUndeclared
+        );
+    });
+
+    it('keeps the generic error for any other refusal', async () => {
+        await confirmChange(new ApiError('Conflict', { status: 409, body: { error: {} } }));
+        expect(await screen.findByRole('alert')).toHaveTextContent(es.subscriptionPlanChange.error);
     });
 });

@@ -7,10 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCancellationDate } from '@/features/billing-cancellation/cancellation-format';
 import { useTranslations } from '@/hooks/use-translations';
+import { isApiError } from '@/lib/errors';
 import {
     useBillingPlanChangeAction,
     useBillingPlanChangeData
 } from '../hooks/useBillingPlanChange';
+
+/** Reads the typed refusal reason of a failed plan change (HOS-2238). */
+function errorReason(error: unknown): string {
+    if (!isApiError(error)) return 'UNKNOWN';
+    const body = error.body as
+        | { readonly error?: { readonly details?: { readonly reason?: string } } }
+        | undefined;
+    return body?.error?.details?.reason ?? 'UNKNOWN';
+}
 
 export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscriptionId: string }) {
     const { t, locale } = useTranslations();
@@ -20,7 +30,7 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
     const [selectedId, setSelectedId] = useState('');
     const [confirming, setConfirming] = useState(false);
     const [note, setNote] = useState('');
-    const [error, setError] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const date = (iso: string) => formatCancellationDate({ iso, locale });
     const options = data.data?.options.options.filter((option) => !option.current) ?? [];
@@ -39,15 +49,15 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
     const submit = async () => {
         if (!selected || inspection?.status !== 'ACTIVE' || action.isPending) return;
         try {
-            setError(false);
+            setError(null);
             await action.mutateAsync({
                 subscriptionId,
                 billingOptionId: selected.billingOptionId,
                 expectedStatus: 'ACTIVE',
                 ...(note.trim() ? { note: note.trim() } : {})
             });
-        } catch {
-            setError(true);
+        } catch (failure) {
+            setError(errorReason(failure));
             setConfirming(false);
             await data.refetch();
         }
@@ -184,7 +194,11 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                         ) : null}
                                         {error ? (
                                             <p role="alert">
-                                                {t('admin-billing.subscriptionPlanChange.error')}
+                                                {t(
+                                                    error === 'PAYER_EMAIL_UNDECLARED'
+                                                        ? 'admin-billing.subscriptionPlanChange.payerEmailUndeclared'
+                                                        : 'admin-billing.subscriptionPlanChange.error'
+                                                )}
                                             </p>
                                         ) : null}
                                         <Button
