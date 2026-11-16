@@ -1,0 +1,29 @@
+---
+/**
+ * @file UmamiScript.astro
+ * @description Umami analytics tracker tag for the web app (HOS-2119).
+ *
+ * Renders a single external, deferred `<script>` pointing at the self-hosted
+ * Umami tracker, and nothing else:
+ * - No inline body, so the CSP needs no hash for it.
+ * - No per-user data, so every page that renders it stays session-blind
+ *   (`test/pages/cacheable-pages-are-session-blind.guard.test.ts`).
+ * - No explicit host attribute: the tracker derives the collect endpoint from
+ *   the origin it was loaded from, which is the Umami host itself.
+ * - Auto-track stays at the tracker default (on), so page views are collected
+ *   with no extra wiring.
+ *
+ * Renders nothing unless BOTH values are set, so locally-built previews and CI
+ * without the variables never ship a broken tag (no `src`, or no website id).
+ *
+ * Env (both public by design, baked at build time):
+ * - `PUBLIC_UMAMI_SCRIPT_URL`: full URL of the (renamed) tracker script.
+ * - `PUBLIC_UMAMI_WEBSITE_ID`: Umami website id (UUID).
+ */
+
+const scriptUrl = import.meta.env.PUBLIC_UMAMI_SCRIPT_URL;
+const websiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
+const shouldRender = Boolean(scriptUrl && websiteId);
+---
+
+{shouldRender && <script defer src={scriptUrl} data-website-id={websiteId} />}
