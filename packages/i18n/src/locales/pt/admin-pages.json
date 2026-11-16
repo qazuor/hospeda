@@ -1977,7 +1977,7 @@
             "venues": "Comércios (Comer e sair)"
         },
         "filters": {
-            "status": "Estado",
+            "status": "Situação",
             "PENDING": "Pendentes",
             "APPROVED": "Aprovados",
             "REJECTED": "Rejeitados",

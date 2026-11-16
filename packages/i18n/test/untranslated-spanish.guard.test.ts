@@ -46,7 +46,14 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Camping: ['en'],
     Error: ['en'],
     Partner: ['en'],
-    Slug: ['en', 'pt']
+    Slug: ['en', 'pt'],
+    // Same word in Brazilian Portuguese (HOS-2192 location-exception screens).
+    Cancelar: ['pt'],
+    Conceder: ['pt'],
+    Concedida: ['pt'],
+    Motivo: ['pt'],
+    Sistema: ['pt'],
+    Anterior: ['pt']
 };
 
 /** Flattens a nested JSON object to dot-notation leaf entries. */

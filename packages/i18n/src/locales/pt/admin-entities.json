@@ -1327,7 +1327,7 @@
         "title": "Exceção de localização",
         "none": "Este anúncio não tem exceção de localização.",
         "inForce": "Exceção em vigor",
-        "by": "Concedida por {name}",
+        "by": "Exceção concedida por {name}",
         "byUnknown": "Concedida por um usuário não identificado",
         "at": "em {date}",
         "reasonLabel": "Motivo",
@@ -1338,7 +1338,7 @@
         "loading": "Carregando...",
         "loadError": "Não foi possível carregar a exceção.",
         "actions": {
-            "REQUESTED": "Pedida",
+            "REQUESTED": "Solicitada",
             "APPROVED": "Aprovada",
             "REJECTED": "Rejeitada",
             "GRANTED": "Concedida",
