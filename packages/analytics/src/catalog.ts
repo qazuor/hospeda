@@ -353,18 +353,18 @@ export const AnalyticsEventSchemas = {
     [AnalyticsEvents.aiChatOpened]: z.object({
         accommodation_id: idSchema,
         locale: localeSchema,
-        message_count: countSchema.optional()
+        messages_count: countSchema.optional()
     }),
     [AnalyticsEvents.aiChatCapReached]: z.object({
         accommodation_id: idSchema,
         locale: localeSchema,
-        message_count: countSchema.optional()
+        messages_count: countSchema.optional()
     }),
     [AnalyticsEvents.aiChatMessageSent]: z.object({
         accommodation_id: idSchema,
         conversation_id: idSchema.nullable().optional(),
         locale: localeSchema,
-        message_count: countSchema.optional()
+        messages_count: countSchema.optional()
     }),
     [AnalyticsEvents.aiChatModerationBlocked]: z.object({
         accommodation_id: idSchema,

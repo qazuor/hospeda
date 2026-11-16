@@ -65,18 +65,6 @@ function sample(schema: z.ZodType, key: string): unknown {
     }
 }
 
-/**
- * Events whose schema has a property key that `prepareAnalyticsEvent` itself
- * rejects (`message_count` matches the forbidden `message` key pattern). For
- * these the parity check uses the schema-parsed properties directly. The test
- * below pins this list so a fix upstream shows up here.
- */
-const KNOWN_PREPARE_REJECTS = [
-    'ai_chat_cap_reached',
-    'ai_chat_message_sent',
-    'ai_chat_opened'
-] as const;
-
 /** Independent expectation of a scalar's mapped value (does not use the mapper). */
 function expectedScalar(value: string | number | boolean): string | number {
     if (typeof value === 'boolean') return value ? 'true' : 'false';
@@ -116,11 +104,26 @@ describe('mapToUmamiBatchItem', () => {
             expect(eventNames.length).toBeGreaterThan(30);
         });
 
+        it.each([
+            'ai_chat_cap_reached',
+            'ai_chat_message_sent',
+            'ai_chat_opened'
+        ] as const)('should prepare %s with messages_count (HOS-2119 T-024)', (name) => {
+            // Arrange
+            const properties = { accommodation_id: 'acc-1', locale: 'es', messages_count: 3 };
+
+            // Act
+            const prepared = prepareAnalyticsEvent({ name, properties });
+
+            // Assert
+            expect(prepared['messages_count']).toBe(3);
+        });
+
         it.each(
-            KNOWN_PREPARE_REJECTS
-        )('should still be rejected by prepareAnalyticsEvent: %s', (name) => {
+            eventNames
+        )('should prepare every catalog event without a forbidden key: %s', (name) => {
             const raw = sample(AnalyticsEventSchemas[name], name) as never;
-            expect(() => prepareAnalyticsEvent({ name, properties: raw })).toThrow(/Forbidden/);
+            expect(() => prepareAnalyticsEvent({ name, properties: raw })).not.toThrow();
         });
 
         it.each(eventNames)('should map %s keeping name and every property', (name) => {
@@ -131,12 +134,7 @@ describe('mapToUmamiBatchItem', () => {
                 environment: 'test',
                 roles: ['HOST', 'ADMIN']
             };
-            const properties = (KNOWN_PREPARE_REJECTS as readonly string[]).includes(name)
-                ? ({ ...globalProperties, ...AnalyticsEventSchemas[name].parse(raw) } as Record<
-                      string,
-                      unknown
-                  >)
-                : prepareAnalyticsEvent({ name, properties: raw, globalProperties });
+            const properties = prepareAnalyticsEvent({ name, properties: raw, globalProperties });
 
             // Act
             const { item, warnings } = mapToUmamiBatchItem({
