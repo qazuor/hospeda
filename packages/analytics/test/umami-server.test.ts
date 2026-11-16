@@ -266,6 +266,35 @@ describe('createUmamiServerClient', () => {
             expect(text).toContain('processed');
         });
 
+        it('should redact ip and userAgent echoed back in details before logging', async () => {
+            const { client, logger, fetchMock } = setup();
+            fetchMock.mockResolvedValue(
+                new Response(
+                    JSON.stringify({
+                        size: 1,
+                        processed: 0,
+                        errors: 1,
+                        details: [
+                            {
+                                ip: '203.0.113.7',
+                                user_agent: 'UA-secret/1',
+                                payload: { ip: '198.51.100.9', userAgent: 'UA-secret/2', url: '/x' }
+                            }
+                        ]
+                    }),
+                    { status: 200 }
+                )
+            );
+            cap(client);
+            await client.flush();
+            const text = JSON.stringify(logger.error.mock.calls[0]);
+            expect(text).toContain('[redacted]');
+            expect(text).toContain('/x');
+            expect(text).not.toContain('203.0.113.7');
+            expect(text).not.toContain('198.51.100.9');
+            expect(text).not.toContain('UA-secret');
+        });
+
         it('should log when only processed < size signals the loss', async () => {
             const { client, logger, fetchMock } = setup();
             fetchMock.mockResolvedValue(

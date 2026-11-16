@@ -77,6 +77,29 @@ const BatchResponseSchema = z.object({
     details: z.array(z.unknown()).optional()
 });
 
+const REDACTED_KEYS = new Set(['ip', 'useragent', 'user_agent']);
+const MAX_REDACT_DEPTH = 4;
+
+/**
+ * Returns a copy of a value where every `ip` / `userAgent` / `user_agent` field
+ * (any depth up to a small bound, including inside `payload`) is replaced by
+ * `'[redacted]'`, so visitor network identity echoed back by Umami is never logged.
+ */
+function redactVisitorFields(value: unknown, depth = 0): unknown {
+    if (depth > MAX_REDACT_DEPTH) return '[truncated]';
+    if (Array.isArray(value)) return value.map((item) => redactVisitorFields(item, depth + 1));
+    if (value !== null && typeof value === 'object') {
+        const out: Record<string, unknown> = {};
+        for (const [key, inner] of Object.entries(value)) {
+            out[key] = REDACTED_KEYS.has(key.toLowerCase())
+                ? '[redacted]'
+                : redactVisitorFields(inner, depth + 1);
+        }
+        return out;
+    }
+    return value;
+}
+
 interface QueueEntry {
     readonly item: UmamiBatchItem;
     readonly bytes: number;
@@ -173,7 +196,7 @@ export function createUmamiServerClient(
             const details = parsed.details ?? [];
             if (parsed.processed < parsed.size || parsed.errors > 0 || details.length > 0) {
                 return [
-                    `Partial failure: size=${parsed.size} processed=${parsed.processed} errors=${parsed.errors} details=${JSON.stringify(details.slice(0, MAX_DETAILS_LOGGED))}`
+                    `Partial failure: size=${parsed.size} processed=${parsed.processed} errors=${parsed.errors} details=${JSON.stringify(redactVisitorFields(details.slice(0, MAX_DETAILS_LOGGED)))}`
                 ];
             }
             return [];
