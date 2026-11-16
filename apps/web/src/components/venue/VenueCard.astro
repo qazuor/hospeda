@@ -60,7 +60,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 ---
 
 <article class="venue-card">
-    <a href={detailUrl} class="venue-card__link" aria-label={data.name}>
+    <a href={detailUrl} class="venue-card__link">
         <!-- IMAGE AREA -->
         <div class="venue-card__image-area">
             {data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (

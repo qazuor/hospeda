@@ -212,10 +212,13 @@ export function AiSearchEntry({
                 type="button"
                 className={styles.searchBar}
                 onClick={handleOpen}
-                aria-label={t('aiSearch.triggerLabel', 'Buscá con IA')}
                 data-testid="ai-search-entry"
             >
                 <AiSearchCompositeIcon className={styles.searchBarIcon} />
+                {/* WCAG 2.5.3: no aria-label here, so the accessible name is built
+                    from the visible placeholder. The trigger label is prepended as
+                    sr-only text to keep the "search with AI" context. */}
+                <span className="sr-only">{t('aiSearch.triggerLabel', 'Buscá con IA')}. </span>
                 <span className={styles.searchBarPlaceholder}>
                     {t(
                         'aiSearch.chat.placeholder',

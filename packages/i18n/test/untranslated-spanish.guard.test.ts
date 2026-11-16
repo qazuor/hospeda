@@ -53,7 +53,9 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Concedida: ['pt'],
     Motivo: ['pt'],
     Sistema: ['pt'],
-    Anterior: ['pt']
+    Anterior: ['pt'],
+    // Placeholder-only wording that reads the same in Brazilian Portuguese (HOS-2192).
+    '{{count}} de {{max}} caracteres': ['pt']
 };
 
 /** Flattens a nested JSON object to dot-notation leaf entries. */
