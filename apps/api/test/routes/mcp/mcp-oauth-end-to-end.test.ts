@@ -268,7 +268,10 @@ describe('OAuth + MCP, end to end', () => {
             name: 'Ana Owner'
         });
         expect(signUp.status, await signUp.clone().text()).toBe(200);
-        const user = (authMemoryStore.user as Record<string, unknown>[])[0];
+        const user = (authMemoryStore.user as Record<string, unknown>[])[0] as Record<
+            string,
+            unknown
+        >;
         user.emailVerified = true;
         journey.userId = user.id as string;
         actorState.userId = journey.userId;
