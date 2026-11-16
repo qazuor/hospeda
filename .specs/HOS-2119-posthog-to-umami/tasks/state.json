@@ -2381,35 +2381,35 @@
             "id": "T-066",
             "title": "T-6 Update guides and ADRs and add the ADR 'Umami over PostHog'",
             "description": "Docs only. The ADR records: owner decision 12/11/2026, direct cut (OQ-2), history discarded (OQ-3), own Postgres (OQ-6), hybrid source of truth with entity_views (OQ-1, no new ADR for that point). Tests: validate-docs checks (links) pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-065"],
             "blocks": ["T-067"],
             "subtasks": [
                 {
                     "title": "Delete docs/guides/posthog-proxy.md; fix docs/guides/README.md, sentry-tunnel.md, view-tracking-privacy.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Annotate docs/decisions/ADR-031 and ADR-033 PostHog mentions as historical",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add docs/decisions/ADR-0NN-umami-over-posthog.md using the next free number (ADR-036 is the last seen; confirm with ls) and list it in docs/decisions/README.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:26:52Z",
+                "completed": "2026-11-16T05:28:24Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 37,
+        "pending": 36,
         "inProgress": 0,
-        "completed": 39,
+        "completed": 40,
         "blocked": 0,
         "averageComplexity": 2.5
     }

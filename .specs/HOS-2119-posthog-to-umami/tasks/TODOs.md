@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 39/76 tasks (51%)
+## Progress: 40/76 tasks (53%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -432,7 +432,7 @@ Tracks (can run in parallel):
   - Blocked by: T-016, T-042
   - Blocks: T-066, T-067
 
-- [ ] **T-066** (complexity: 3) - T-6 Update guides and ADRs and add the ADR 'Umami over PostHog'
+- [x] **T-066** (complexity: 3) - T-6 Update guides and ADRs and add the ADR 'Umami over PostHog'
   - Tags: t6-removal, docs
   - Docs only. The ADR records: owner decision 12/11/2026, direct cut (OQ-2), history discarded (OQ-3), ...
   - Blocked by: T-065
