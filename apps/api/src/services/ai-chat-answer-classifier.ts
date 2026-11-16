@@ -62,6 +62,20 @@ export const CHAT_ANSWER_CLASSIFIER_USAGE_FEATURE = 'chat_answer_classifier';
  */
 export const CLASSIFIER_MAX_OUTPUT_TOKENS = 16;
 
+/**
+ * Reasoning effort of every classifier call, sent explicitly.
+ *
+ * The engine merges the feature config's `reasoningEffort` UNDER the caller
+ * params, and the classifier runs under the vertical's chat feature, so
+ * without this it inherits that feature's effort. With `low`, the reasoning
+ * tokens eat the 16-token cap and the output comes back empty (HOS-2217
+ * sweep: 5 of 9 empty on gpt-6-luna|low; venue chats ran it on
+ * gpt-5.4-mini|low). Every model the chat features use supports `none`.
+ * A chat feature moved to a model WITHOUT reasoning support would reject
+ * this parameter: revisit it before such a switch.
+ */
+export const CLASSIFIER_REASONING_EFFORT = 'none';
+
 /** Lowest `max_output_tokens` the OpenAI Responses API accepts. */
 export const OPENAI_MIN_OUTPUT_TOKENS = 16;
 
@@ -217,13 +231,19 @@ export interface ChatAnswerClassifierRequest {
     readonly locale: LanguageEnum;
     readonly system: string;
     readonly prompt: string;
-    readonly params: { readonly maxTokens: number; readonly temperature: number };
+    readonly params: {
+        readonly maxTokens: number;
+        readonly temperature: number;
+        readonly reasoningEffort: typeof CLASSIFIER_REASONING_EFFORT;
+    };
 }
 
 /**
  * Builds the engine request of one classifier call: the fixed instruction as
  * the caller system, the clipped question/answer pair, and the fixed output
- * cap and temperature. Pure, so the AI sweep (HOS-2217) can render it.
+ * cap, temperature and reasoning effort (`none`, so the chat feature's own
+ * effort never reaches the classifier). Pure, so the AI sweep (HOS-2217) can
+ * render it.
  *
  * @param input - The question/answer pair, the chat feature and the locale.
  * @returns `{ request }`.
@@ -240,7 +260,11 @@ export function buildChatAnswerClassifierRequest(input: {
             locale: input.locale,
             system: CHAT_ANSWER_CLASSIFIER_SYSTEM,
             prompt: `Question: ${clip(input.question)}\nReply: ${clip(input.answer)}`,
-            params: { maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS, temperature: 0 }
+            params: {
+                maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS,
+                temperature: 0,
+                reasoningEffort: CLASSIFIER_REASONING_EFFORT
+            }
         }
     };
 }

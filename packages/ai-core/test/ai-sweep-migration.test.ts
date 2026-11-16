@@ -187,6 +187,26 @@ describe('HOS-2217 case selection and matrix', () => {
     });
 });
 
+describe('HOS-2217 classifier effort is production-fixed', () => {
+    it('every classifier call sends none, whatever the variant effort', () => {
+        // Arrange
+        const { selected } = selectCases({
+            config,
+            cases,
+            onlyFeatures: ['chat_answer_classifier']
+        });
+
+        // Act
+        const { calls } = expandMigrationMatrix({ config, cases: selected });
+
+        // Assert
+        expect(calls.some((c) => c.effort === 'low')).toBe(true);
+        expect(new Set(calls.map((c) => c.request.params?.reasoningEffort))).toEqual(
+            new Set(['none'])
+        );
+    });
+});
+
 describe('HOS-2217 dry-run plan', () => {
     it('totals are the sum of the feature rows and the worst case assumes the cap', () => {
         // Arrange

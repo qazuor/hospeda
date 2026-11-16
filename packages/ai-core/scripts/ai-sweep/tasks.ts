@@ -195,7 +195,12 @@ export const EngineRequestSchema = z.object({
     params: z
         .object({
             maxTokens: z.number().int().positive().optional(),
-            temperature: z.number().optional()
+            temperature: z.number().optional(),
+            /**
+             * A production-fixed effort (the classifier sends `none`). As in the
+             * engine, it wins over the variant's effort.
+             */
+            reasoningEffort: z.enum(['none', 'minimal', 'low', 'medium', 'high']).optional()
         })
         .optional()
 });

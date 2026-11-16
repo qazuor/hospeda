@@ -177,6 +177,39 @@ describe('HOS-2217 sweep provider requests equal the engine output', () => {
     }
 });
 
+describe('HOS-2217 regression: the classifier never inherits the chat feature effort', () => {
+    it('a chat feature configured with low still reaches the provider as none', async () => {
+        // Arrange: the classifier runs under the vertical's chat feature.
+        vi.mocked(configResolver.resolveFeatureConfig).mockResolvedValue(featureConfig('low'));
+        const captured: unknown[] = [];
+        const engine = createAiEngine({ getProvider: () => capturingProvider(captured) });
+        const classifier = cases.filter((c) => c.id.startsWith('chat_answer_classifier-'));
+        const control = cases.find((c) => c.id === 'support-off-topic');
+        expect(classifier.length).toBeGreaterThan(0);
+
+        // Act
+        const efforts: unknown[] = [];
+        for (const c of classifier) {
+            captured.length = 0;
+            await engine.generateText({ ...c.request } as never);
+            efforts.push(
+                (captured[0] as { params?: { reasoningEffort?: string } }).params?.reasoningEffort
+            );
+        }
+        captured.length = 0;
+        await engine.generateText({
+            ...control?.request,
+            messages: control?.request.messages?.map((m) => ({ ...m }))
+        } as never);
+        const controlEffort = (captured[0] as { params?: { reasoningEffort?: string } }).params
+            ?.reasoningEffort;
+
+        // Assert
+        expect(efforts).toEqual(classifier.map(() => 'none'));
+        expect(controlEffort).toBe('low');
+    });
+});
+
 describe('HOS-2217 sweep SDK options equal the OpenAI adapter output', () => {
     it('every task case: system, prompt/messages, temperature, cap and provider options', async () => {
         // Arrange

@@ -131,10 +131,17 @@ describe('classifyChatAnswer', () => {
         const request = generate.mock.calls[0]?.[0] as {
             feature: string;
             prompt: string;
-            params: { maxTokens: number; temperature: number };
+            params: { maxTokens: number; temperature: number; reasoningEffort?: string };
         };
         expect(request.feature).toBe('chat_venue');
-        expect(request.params).toEqual({ maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS, temperature: 0 });
+        // Regression (HOS-2217): reasoningEffort is explicit, so the chat feature's
+        // own effort (merged UNDER caller params) never reaches the classifier and
+        // its reasoning cannot eat the 16-token cap.
+        expect(request.params).toEqual({
+            maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS,
+            temperature: 0,
+            reasoningEffort: 'none'
+        });
         // Regression (HOS-2101 smoke): OpenAI rejects a cap below 16, which left
         // every staging turn unclassified.
         expect(request.params.maxTokens).toBeGreaterThanOrEqual(OPENAI_MIN_OUTPUT_TOKENS);

@@ -242,7 +242,8 @@ describe('HOS-2217 sweep task requests are the production requests', () => {
         }
         expect(stored('chat_answer_classifier-clearly-answered').request.params).toEqual({
             maxTokens: CLASSIFIER_MAX_OUTPUT_TOKENS,
-            temperature: 0
+            temperature: 0,
+            reasoningEffort: 'none'
         });
         expect(stored('chat_answer_classifier-contact-owner-only').request.feature).toBe(
             'chat_venue'
