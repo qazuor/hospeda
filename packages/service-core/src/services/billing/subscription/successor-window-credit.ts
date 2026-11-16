@@ -1,4 +1,4 @@
-import { and, coveredPeriods, type DrizzleClient, eq, isNull } from '@repo/db';
+import { and, coveredPeriods, type DrizzleClient, eq, isNull, subscriptions } from '@repo/db';
 
 /**
  * HOS-2223: whether a succession predecessor has a credited charge, the fact that turns its
@@ -34,4 +34,45 @@ export async function readHasCreditedCharge(input: {
         )
         .limit(1);
     return { hasCreditedCharge: rows.length > 0 };
+}
+
+/** The predecessor facts the successor window is decided on, read under its row lock. */
+export interface LockedSuccessorWindowPredecessor {
+    readonly status: string;
+    readonly paymentMethod: string | null;
+    readonly nextChargeAt: Date | null;
+    readonly hasCreditedCharge: boolean;
+}
+
+/**
+ * HOS-2223: locks the predecessor row (`FOR UPDATE`) and re-reads every input of
+ * `resolveSuccessorWindow`, so S1 decides the window and persists the successor while P1
+ * cannot credit a charge in between. P1 (`creditPayment`) takes the same row lock before it
+ * opens the `covered_period`, so the two serialize on this one row.
+ *
+ * Call it as the FIRST statement that touches the predecessor in the transaction that inserts
+ * the successor: S1 holds no other lock at that point, and P1 acquires payment then
+ * subscription, so no lock cycle can form.
+ *
+ * @param input.tx - The successor's insert transaction
+ * @param input.subscriptionId - The predecessor subscription
+ * @returns The predecessor's window inputs, or `null` when the row does not exist
+ */
+export async function readLockedSuccessorWindowPredecessor(input: {
+    readonly tx: DrizzleClient;
+    readonly subscriptionId: string;
+}): Promise<LockedSuccessorWindowPredecessor | null> {
+    const [row] = await input.tx
+        .select({
+            status: subscriptions.status,
+            paymentMethod: subscriptions.paymentMethod,
+            nextChargeAt: subscriptions.nextChargeAt
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, input.subscriptionId))
+        .limit(1)
+        .for('update');
+    if (!row) return null;
+    const { hasCreditedCharge } = await readHasCreditedCharge(input);
+    return { ...row, hasCreditedCharge };
 }

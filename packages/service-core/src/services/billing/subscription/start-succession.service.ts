@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
     and,
+    type DrizzleClient,
     eq,
     getDb,
     idempotencyKeys,
@@ -28,7 +29,10 @@ import {
 } from './start-subscription.service.js';
 import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 import { resolveSuccessorWindow } from './successor-window.js';
-import { readHasCreditedCharge } from './successor-window-credit.js';
+import {
+    readHasCreditedCharge,
+    readLockedSuccessorWindowPredecessor
+} from './successor-window-credit.js';
 
 const logger = createLogger('subscription-succession');
 
@@ -61,6 +65,54 @@ export function scheduleSuccessorFirstCharge(input: { readonly authorizationWind
     return {
         firstChargeAt: new Date(input.authorizationWindowEndsAt.getTime() + 24 * 60 * 60 * 1000)
     };
+}
+
+/**
+ * HOS-2223: re-decides the successor window under the predecessor's row lock, inside the
+ * transaction that persists the successor. The first decision ran in an earlier transaction;
+ * if P1 credited the predecessor's first charge in between, the window chosen then (full,
+ * because no charge was credited) may no longer hold. P1 takes the same row lock before
+ * opening the covered period, so from here until commit no charge can be credited.
+ *
+ * @throws {ServiceError} `SUCCESSION_WINDOW_TOO_SHORT` when the fresh decision rejects, or
+ *   `SUCCESSION_PREDECESSOR_MOVED` when it offers a different window than the one stored
+ */
+async function revalidateSuccessorWindow(input: {
+    readonly tx: DrizzleClient;
+    readonly predecessorId: string;
+    readonly windowLimits: {
+        readonly now: Date;
+        readonly cardHours: number;
+        readonly minimumRemainingHours: number;
+    };
+    readonly authorizationWindowEndsAt: Date;
+}): Promise<void> {
+    const predecessor = await readLockedSuccessorWindowPredecessor({
+        tx: input.tx,
+        subscriptionId: input.predecessorId
+    });
+    if (!predecessor)
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Succession predecessor moved during creation',
+            undefined,
+            'SUCCESSION_PREDECESSOR_MOVED'
+        );
+    const fresh = resolveSuccessorWindow({ ...input.windowLimits, predecessor });
+    if (fresh.kind === 'NOT_OFFERED')
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'Successor authorization window is too short',
+            undefined,
+            'SUCCESSION_WINDOW_TOO_SHORT'
+        );
+    if (fresh.endsAt.getTime() !== input.authorizationWindowEndsAt.getTime())
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Succession predecessor moved during creation',
+            undefined,
+            'SUCCESSION_PREDECESSOR_MOVED'
+        );
 }
 
 /**
@@ -98,10 +150,14 @@ export async function startSuccession(
         cycleDeadlines: await readCycleDeadlines({ tx, subscriptionId: admitted.predecessorId }),
         credit: await readHasCreditedCharge({ tx, subscriptionId: admitted.predecessorId })
     }));
-    const window = resolveSuccessorWindow({
-        now: ports.clock.now(),
+    const windowNow = ports.clock.now();
+    const windowLimits = {
+        now: windowNow,
         cardHours: deadlines.values['10'].cardHours,
-        minimumRemainingHours: cycleDeadlines.values['15'].hoursRemaining,
+        minimumRemainingHours: cycleDeadlines.values['15'].hoursRemaining
+    } as const;
+    const window = resolveSuccessorWindow({
+        ...windowLimits,
         predecessor: {
             status: admitted.predecessor.status,
             paymentMethod: admitted.predecessor.paymentMethod,
@@ -167,6 +223,12 @@ export async function startSuccession(
     let pending: PendingAuthorizationRow;
     try {
         pending = await getDb().transaction(async (tx) => {
+            await revalidateSuccessorWindow({
+                tx,
+                predecessorId: admitted.predecessorId,
+                windowLimits,
+                authorizationWindowEndsAt
+            });
             const [subscription] = await tx.insert(subscriptions).values(values).returning();
             if (!subscription)
                 throw new ServiceError(
