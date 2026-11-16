@@ -28,6 +28,7 @@
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import { buildEntityCacheTags, CACHE_TAG_ALL } from '@repo/cache-tags';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { partnerApi } from '@/lib/api/endpoints';
 import { toPartnerDetailProps } from '@/lib/api/transforms';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -212,6 +213,14 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
           `id`. Not rendering it at all is cheaper than teaching the tracker
           to skip an empty id.
         -->
+        {partnerId && (
+        <InternalEntryTracker
+            client:idle
+            entityType="PARTNER"
+            entityId={partnerId}
+            locale={locale}
+        />
+        )}
         {partnerId && (
         <EntityViewTracker
             client:idle

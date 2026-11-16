@@ -42,6 +42,7 @@ import VenueReviewsPreview from '@/components/venue/VenueReviewsPreview.astro';
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { venueApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import { toVenueDetailPageProps } from '@/lib/api/transforms';
 import { getApiUrl } from '@/lib/env';
@@ -486,6 +487,13 @@ const breadcrumbItems = [
 
         <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
              basic view stats in mi-cuenta/comercio. -->
+        <!-- Internal-entry analytics event (HOS-2119 T-076): same-origin referrer only. -->
+        <InternalEntryTracker
+            client:idle
+            entityType="VENUE"
+            entityId={venue.id}
+            locale={locale}
+        />
         <EntityViewTracker
             client:idle
             entityType="VENUE"

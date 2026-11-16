@@ -38,6 +38,7 @@ import { ContactHost } from '@/components/accommodation/ContactHost.client';
 import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
 import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
+import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
 import { getApiUrl } from '@/lib/env';
@@ -682,6 +683,13 @@ const faqSections = accommodation.faqs.map((faq) => ({
         </RelatedCarousel>
     )}
 
+    <!-- Internal-entry analytics event (HOS-2119 T-076): same-origin referrer only. -->
+    <InternalEntryTracker
+        client:idle
+        entityType="ACCOMMODATION"
+        entityId={accommodation.id}
+        locale={locale}
+    />
     <!-- Analytics tracker (headless, SPEC-140) -->
     <AccommodationViewTracker
         client:idle
