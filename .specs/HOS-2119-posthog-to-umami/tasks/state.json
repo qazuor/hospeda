@@ -1854,7 +1854,7 @@
             "description": "Spec path is components/analytics/TrafficStatsCards.client.tsx, but listing owner components live in apps/web/src/components/listing/ (ListingViewsWidget); pick one and say which in the PR. Tests: renders four cards with data for ACCOMMODATION; renders three cards (no Contactos) when contactFunnel is null; renders 'Todavia no hay datos' on empty data; renders nothing when available:false; refetches on window change; fetch error also renders nothing (fail-soft). Use the i18n keys from T-050.\n\nNOTES 2026-11-15 (T-046 review): (1) Umami never returns direct traffic in the referrer breakdown, so the i18n string traffic.referrers.direct can never render as-is — owner decision pending: compute direct = total visitors - sum(referrers) (recommended) or drop the string. (2) Umami device values include `laptop` (desktop|laptop|tablet|mobile); the copy has no laptop label. (3) Breakdown counts are distinct visitors; views are pageviews.\n\nOWNER DECISION 2026-11-15: direct traffic IS shown, computed server-side as max(0, total distinct visitors - sum(referrer visitors)) and rendered with traffic.referrers.direct (implemented in ListingTrafficStatsService + UmamiStatsClient, see follow-up commit).\n\nMEASURED 2026-11-16: Umami hides same-site referrers (tracker rewrites same-origin referrer to a path; metrics omit it), so the derived (direct) row ALSO includes internal navigation within Hospeda. Label pending owner decision.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-044", "T-050"],
+            "blockedBy": ["T-044", "T-050", "T-075"],
             "blocks": ["T-052", "T-053", "T-054"],
             "subtasks": [
                 {
@@ -2021,7 +2021,7 @@
             "description": "OWNER ACTION / smoke (status-needs-smoke-staging). T-5 may ship in a release after the cut. Redeploys need explicit owner approval.",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-014", "T-036", "T-052", "T-053", "T-054", "T-074"],
+            "blockedBy": ["T-014", "T-036", "T-052", "T-053", "T-054", "T-074", "T-076"],
             "blocks": [],
             "subtasks": [
                 {
@@ -2711,13 +2711,57 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-075",
+            "title": "T-5 Split internal navigation from direct traffic in owner stats (catalog event + adapter + service)",
+            "description": "OWNER DECISION 2026-11-16 (option 2): show \"Desde Hospeda\" (internal navigation) separately from \"Directo\". Umami hides same-site referrers, so listing pages send a dedicated custom event when the entry referrer is same-origin. Measure first against local Umami 3.5.0 whether metrics?type=event&tag=<entityId> returns DISTINCT VISITORS per event name (units must match stats.visitors and referrer y). Add the event to the @repo/analytics catalog, an adapter method returning internal visitors, and a sentinel row (e.g. (internal)) computed before direct: direct = max(0, visitors - Σ external - internal). i18n key traffic.referrers.internal (es/en/pt). Tests incl. two-entity filter and mutation proofs.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-048"],
+            "blocks": ["T-076", "T-051"],
+            "subtasks": [],
+            "tags": ["api", "service-core", "analytics"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-11-16T03:21:10Z",
+                "started": "2026-11-16T03:21:10Z",
+                "completed": "2026-11-16T03:41:34Z"
+            }
+        },
+        {
+            "id": "T-076",
+            "title": "T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page",
+            "description": "Web side of T-075: on accommodation/venue/experience/partner detail pages, when document.referrer is same-origin, send the T-075 catalog event once per page load via the Umami tracker, with tag=<entityId>. Consent rules as for the other web events. Tests: emitted on same-origin referrer, not on external/empty referrer.\n\nREVIEW NOTES 2026-11-16: send with the function form umami.track((p) => ({...p, name: AnalyticsEvents.listingInternalEntry, data, tag: entityId})) so the tag never depends on the script attribute (umami.track({...}) object form drops the tag). The tracker script is defer: wait/queue until window.umami exists. G20 is satisfied by the api reader, so it will NOT catch a missing emitter: this task MUST include a test asserting the emission. Side effect: any custom event removes the visit from Umami bounce counting.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-075", "T-074"],
+            "blocks": ["T-056"],
+            "subtasks": [],
+            "tags": ["web", "analytics"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-11-16T03:21:10Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 74,
-        "pending": 51,
+        "total": 76,
+        "pending": 52,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 24,
         "blocked": 0,
         "averageComplexity": 2.5
     }

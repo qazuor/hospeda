@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 23/74 tasks (31%)
+## Progress: 24/76 tasks (32%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -356,6 +356,16 @@ Tracks (can run in parallel):
   - Tags: t5-owner-stats, t3-web-admin, web
   - On the public detail pages of accommodation, venue (comer-y-salir), experience and partner, render t...
   - Blocked by: T-028
+  - Blocks: T-056
+
+- [x] **T-075** (complexity: 3) - T-5 Split internal navigation from direct traffic in owner stats (catalog event + adapter + service) [NEW]
+  - Owner decision 2026-11-16 (option 2): "Desde Hospeda" separate from "Directo"; metrics/expanded?type=event gives distinct visitors
+  - Blocked by: T-048
+  - Blocks: T-076, T-051
+
+- [ ] **T-076** (complexity: 3) - T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page [NEW]
+  - umami.track function form with explicit tag; must include an emission test (G20 will not catch a missing emitter)
+  - Blocked by: T-075, T-074
   - Blocks: T-056
 
 ### Testing Phase
