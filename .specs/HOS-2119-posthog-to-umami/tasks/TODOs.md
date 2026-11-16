@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 40/76 tasks (53%)
+## Progress: 42/76 tasks (55%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -48,13 +48,13 @@ Tracks (can run in parallel):
   - Blocked by: T-001
   - Blocks: T-006, T-018
 
-- [ ] **T-003** (complexity: 3) - T-0/T-1 Bring up the staging Umami instance and its own Postgres container in Coolify (owner action)
+- [x] **T-003** (complexity: 3) - T-0/T-1 Bring up the staging Umami instance and its own Postgres container in Coolify (owner action)
   - Tags: t0-spike, t1-infra, devops, owner-action
   - OWNER ACTION: Coolify is operated by the human owner (<https://coolify.hospeda.com.ar>). Agents prepar...
   - Blocked by: T-001
   - Blocks: T-004, T-008, T-010
 
-- [ ] **T-004** (complexity: 3) - T-0 Decide and validate the same-origin relay path for the tracker and ingestion behind Cloudflare (OQ-4, owner action)
+- [x] **T-004** (complexity: 3) - T-0 Decide and validate the same-origin relay path for the tracker and ingestion behind Cloudflare (OQ-4, owner action)
   - Tags: t0-spike, devops, owner-action, web, admin
   - OWNER ACTION (Cloudflare). Reuse the /api/relay/* pattern conceptually, but build it so that deletin...
   - Blocked by: T-003
