@@ -167,11 +167,6 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
     },
     ACC_3: {
         bindings: [
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/partners/admin/manual-payment.ts',
-                route: 'adminManualPaymentRoute'
-            },
             manualBinding('adminManualPaymentRegistrationPreviewRoute'),
             manualBinding('adminRegisterManualPaymentRoute'),
             manualBinding('adminLateManualPaymentPreviewRoute', true),

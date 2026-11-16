@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import { PartnerBillingSetupCard } from '../PartnerBillingSetupCard';
 
-const mocks = vi.hoisted(() => ({ permissions: [] as string[], mutateAsync: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+    permissions: [] as string[],
+    mutateAsync: vi.fn(),
+    register: vi.fn(),
+    billing: null as unknown
+}));
 const preview = {
     data: {
         partner: { id: '27f9b37c-8d07-4f93-8340-6819e8740517', name: 'Socio de prueba' },
@@ -57,10 +62,24 @@ vi.mock('../../hooks/usePartnerBillingSetup', () => ({
     partnerBillingSetupCycleKey: (cycle: string) =>
         `admin-entities.partnerBillingSetup.cycle.${cycle}`
 }));
+vi.mock('../../hooks/usePartnerManualPayments', () => ({
+    usePartnerManualPayments: () => mocks.billing
+}));
 
 describe('PartnerBillingSetupCard', () => {
     beforeEach(() => {
-        mocks.permissions = [PermissionEnum.PARTNER_CONFIGURE_BILLING];
+        mocks.permissions = [
+            PermissionEnum.PARTNER_CONFIGURE_BILLING,
+            PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT
+        ];
+        mocks.billing = {
+            isLoading: false,
+            isError: false,
+            subscription: null,
+            installments: [],
+            register: { isPending: false, mutate: mocks.register }
+        };
+        mocks.register.mockReset();
         mocks.mutateAsync.mockReset().mockResolvedValue({ created: true });
     });
 
@@ -116,6 +135,44 @@ describe('PartnerBillingSetupCard', () => {
         render(<PartnerBillingSetupCard partnerId={preview.data.partner.id} />);
         expect(screen.getByText('Plan y pago del Partner')).toBeInTheDocument();
         expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('shows the live manual subscription and registers its awaiting installment with the note', async () => {
+        mocks.billing = {
+            isLoading: false,
+            isError: false,
+            subscription: {
+                id: 'subscription-1',
+                plan: { planName: 'Silver' },
+                cycle: 'monthly',
+                status: 'ACTIVE',
+                price: { amountMinor: 120000, currency: 'ARS', cycle: 'monthly' }
+            },
+            installments: [
+                { id: 'payment-1', periodStart: '2026-11-01T00:00:00.000Z', status: 'AWAITING' }
+            ],
+            register: { isPending: false, mutate: mocks.register }
+        };
+        render(
+            <PartnerBillingSetupCard
+                partnerId={preview.data.partner.id}
+                ownerUserId="20b9b37c-8d07-4f93-8340-6819e8740517"
+            />
+        );
+        expect(screen.getByText(/Silver/)).toBeInTheDocument();
+        expect(screen.getAllByText(/1,200 ARS/)).toHaveLength(2);
+        await userEvent.type(
+            screen.getByLabelText('Nota interna opcional'),
+            'Transferencia recibida'
+        );
+        await userEvent.click(screen.getByRole('button', { name: 'Registrar pago' }));
+        expect(mocks.register).toHaveBeenCalledWith({
+            manualPaymentId: 'payment-1',
+            note: 'Transferencia recibida'
+        });
+        expect(
+            screen.queryByRole('button', { name: 'Configurar plan y pago' })
+        ).not.toBeInTheDocument();
     });
 
     it('shows the translated conflict message for a 409', async () => {

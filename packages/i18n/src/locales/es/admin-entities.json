@@ -1093,6 +1093,12 @@
         "cancel": "Cancelar",
         "previewError": "No se pudieron cargar las opciones de plan.",
         "loading": "Cargando opciones de plan…",
+        "readError": "No se pudo leer la suscripción manual del Partner.",
+        "registerError": "No se pudo registrar el pago. Revisá la cuota y volvé a intentar.",
+        "configured": "Suscripción manual",
+        "noOpenInstallments": "No hay cuotas abiertas para registrar.",
+        "registerPayment": "Registrar pago",
+        "paymentNote": "Nota interna opcional",
         "cycle": {
             "monthly": "mensual",
             "quarterly": "trimestral",

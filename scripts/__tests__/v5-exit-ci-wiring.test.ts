@@ -415,7 +415,10 @@ describe('TEST:V5:27 AC:V5:23 - V5 exit: LISTA:V5 evidence in the tree, six guar
 
     describe('(f) integration suites are included and CI Pass waits for their job', () => {
         it('the API integration config includes the V5 suites', () => {
-            for (const dir of ['partners', 'super-admin', 'auth/banned-user-signin.test.ts']) {
+            // `partners` left this list with HOS-2234: its only suite covered the legacy
+            // `POST /admin/partners/{id}/manual-payment` stub, which was retired in favour
+            // of the billing-subscription manual-payment administrative action.
+            for (const dir of ['super-admin', 'auth/banned-user-signin.test.ts']) {
                 const api = apiIntegrationCollection({ target: `test/integration/${dir}` });
                 expect(api.collected.length, dir).toBeGreaterThan(0);
                 expect(api.excluded, dir).toEqual([]);

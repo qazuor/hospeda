@@ -1093,6 +1093,12 @@
         "cancel": "Cancelar",
         "previewError": "Não foi possível carregar as opções de plano.",
         "loading": "Carregando opções de plano…",
+        "readError": "Não foi possível carregar a assinatura manual do Partner.",
+        "registerError": "Não foi possível registrar o pagamento. Confira a parcela e tente novamente.",
+        "configured": "Assinatura manual",
+        "noOpenInstallments": "Não há parcelas abertas para registrar.",
+        "registerPayment": "Registrar pagamento",
+        "paymentNote": "Observação interna opcional",
         "cycle": {
             "monthly": "mensal",
             "quarterly": "trimestral",

@@ -1499,10 +1499,6 @@
         },
         {
             "method": "POST",
-            "path": "/api/v1/admin/partners/:id/manual-payment"
-        },
-        {
-            "method": "POST",
             "path": "/api/v1/admin/partners/:id/presence-moderation"
         },
         {
