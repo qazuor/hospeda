@@ -1384,36 +1384,36 @@
         {
             "id": "T-038",
             "title": "T-4 Port the insight builders to Umami report definitions (scripts/umami/definitions.ts)",
-            "description": "Files: scripts/umami/definitions.ts, scripts/umami/definitions.test.ts. Tests: funnel builder produces the ordered steps with event names validated against AnalyticsEventSchemas keys (unknown event name throws), window/date defaults, deterministic output (needed for idempotency, AC-6).",
-            "status": "pending",
+            "description": "Files: scripts/umami/definitions.ts, scripts/umami/definitions.test.ts. Tests: funnel builder produces the ordered steps with event names validated against AnalyticsEventSchemas keys (unknown event name throws), window/date defaults, deterministic output (needed for idempotency, AC-6).\n\nDONE NOTE 2026-11-16: 5 funnels + 6 goals + board components. Dropped (no Umami equivalent): $pageview→signup funnel (now a goal), event-property breakdowns (breakdown report rejects custom props), person-property breakdowns. Billing events renamed to HOS-1352 names (subscription_created → billing_subscription_activated). Spec said nine funnels; PostHog data.ts has 8 (5 distinct). Funnel window is in MINUTES (default 20160 = 14d).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-037"],
             "blocks": ["T-039", "T-040"],
             "subtasks": [
                 {
                     "title": "Port funnelInsight/trendInsight from scripts/posthog/definitions.ts (231 lines) to Umami funnel/event/goal report builders",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Typed, pure builders",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests for each builder output",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t4-dashboards", "scripts"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T04:59:54Z",
+                "completed": "2026-11-16T05:09:16Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 45,
+        "pending": 44,
         "inProgress": 0,
-        "completed": 31,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.5
     }

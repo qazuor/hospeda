@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 31/76 tasks (41%)
+## Progress: 32/76 tasks (42%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -182,7 +182,7 @@ Tracks (can run in parallel):
   - Blocked by: T-001
   - Blocks: T-038
 
-- [ ] **T-038** (complexity: 3) - T-4 Port the insight builders to Umami report definitions (scripts/umami/definitions.ts)
+- [x] **T-038** (complexity: 3) - T-4 Port the insight builders to Umami report definitions (scripts/umami/definitions.ts)
   - Tags: t4-dashboards, scripts
   - Files: scripts/umami/definitions.ts, scripts/umami/definitions.test.ts. Tests: funnel builder produc...
   - Blocked by: T-037
