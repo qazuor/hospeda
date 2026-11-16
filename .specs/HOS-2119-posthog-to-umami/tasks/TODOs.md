@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 34/76 tasks (45%)
+## Progress: 36/76 tasks (47%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -298,7 +298,7 @@ Tracks (can run in parallel):
   - Blocked by: T-034
   - Blocks: T-036, T-058
 
-- [ ] **T-041** (complexity: 3) - T-4 Create the idempotent scripts/umami/setup.ts runner and the umami:setup package script (AC-6)
+- [x] **T-041** (complexity: 3) - T-4 Create the idempotent scripts/umami/setup.ts runner and the umami:setup package script (AC-6)
   - Tags: t4-dashboards, scripts
   - Files: scripts/umami/setup.ts, scripts/umami/setup.test.ts, package.json (scripts block). Tests (AC-...
   - Blocked by: T-039, T-040
@@ -414,7 +414,7 @@ Tracks (can run in parallel):
 
 ### Docs Phase
 
-- [ ] **T-042** (complexity: 2) - T-4 Write docs/analytics/umami-dashboards.md including the PostHog-to-Umami gap list
+- [x] **T-042** (complexity: 2) - T-4 Write docs/analytics/umami-dashboards.md including the PostHog-to-Umami gap list
   - Tags: t4-dashboards, docs
   - Docs only: docs/analytics/umami-dashboards.md. Source of truth for gaps is the GAPS constant from T-...
   - Blocked by: T-039, T-040

@@ -1490,76 +1490,76 @@
             "id": "T-041",
             "title": "T-4 Create the idempotent scripts/umami/setup.ts runner and the umami:setup package script (AC-6)",
             "description": "Files: scripts/umami/setup.ts, scripts/umami/setup.test.ts, package.json (scripts block). Tests (AC-6): idempotency (second run changes nothing), dry-run, missing env exits non-zero with a clear message.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-039", "T-040"],
             "blocks": ["T-043", "T-064"],
             "subtasks": [
                 {
                     "title": "scripts/umami/setup.ts mirrors scripts/posthog/setup.ts (101 lines): reads env, upserts all dashboards/reports",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add \"umami:setup\" to root package.json (next to posthog:setup; the old one is removed in T-064)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: run twice against a recording fake client, second run issues zero writes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t4-dashboards", "scripts"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:13:06Z",
+                "completed": "2026-11-16T05:18:50Z"
             }
         },
         {
             "id": "T-042",
             "title": "T-4 Write docs/analytics/umami-dashboards.md including the PostHog-to-Umami gap list",
             "description": "Docs only: docs/analytics/umami-dashboards.md. Source of truth for gaps is the GAPS constant from T-040. Replaces docs/analytics/posthog-dashboards.md (deleted in T-065).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-039", "T-040"],
             "blocks": ["T-065"],
             "subtasks": [
                 {
                     "title": "Describe each of the six dashboards and nine funnels as built",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gap table: what PostHog expressed that Umami cannot, and its replacement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "How to run umami:setup on staging/prod",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t4-dashboards", "docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:13:06Z",
+                "completed": "2026-11-16T05:18:50Z"
             }
         },
         {
             "id": "T-043",
             "title": "T-4 Run umami:setup on staging and prod and close HOS-1887 as superseded (owner action)",
-            "description": "OWNER ACTION. T-4 may ship in a later release than the cut (spec 12). Not a precondition of the cut. Tests: run the script twice and confirm no change on the second run.",
+            "description": "OWNER ACTION. T-4 may ship in a later release than the cut (spec 12). Not a precondition of the cut. Tests: run the script twice and confirm no change on the second run.\n\nNOTE 2026-11-16 (T-041): run with HOSPEDA_UMAMI_URL, HOSPEDA_UMAMI_WEBSITE_ID_WEB and a READ-WRITE credential: UMAMI_SETUP_API_KEY (or UMAMI_SETUP_USERNAME/UMAMI_SETUP_PASSWORD). HOSPEDA_UMAMI_API_KEY is view-only and will be rejected on writes. Script-only vars (unregistered, like POSTHOG_*). Use --dry-run first.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-041", "T-008", "T-009"],
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 42,
+        "pending": 40,
         "inProgress": 0,
-        "completed": 34,
+        "completed": 36,
         "blocked": 0,
         "averageComplexity": 2.5
     }
