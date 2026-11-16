@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => ({
     mutateAsync: vi.fn(),
     addToast: vi.fn(),
     error: { status: undefined as number | undefined, reason: undefined as string | undefined },
-    queryArgs: vi.fn()
+    queryArgs: vi.fn(),
+    targets: { value: false }
 }));
 
 vi.mock('@/components/auth/RoutePermissionGuard', () => ({
@@ -73,6 +74,7 @@ vi.mock('../hooks', async () => {
                             ],
                             reason: 'Somos un complejo de cabanas',
                             decisionReason: null,
+                            targetsNewAddress: mocks.targets.value,
                             requestedAt: '2026-11-01T10:00:00.000Z'
                         }
                     ]
@@ -88,6 +90,7 @@ beforeEach(() => {
     vi.clearAllMocks();
     mocks.error.status = undefined;
     mocks.error.reason = undefined;
+    mocks.targets.value = false;
     mocks.mutateAsync.mockResolvedValue({});
 });
 
@@ -109,6 +112,25 @@ describe('LocationExceptionRequestsPage', () => {
         expect(mocks.queryArgs).toHaveBeenCalledWith(
             expect.objectContaining({ status: 'PENDING', vertical: 'accommodations', page: 1 })
         );
+    });
+
+    it('marks a move request with the badge and says so in the approve dialog', () => {
+        mocks.targets.value = true;
+        render(<LocationExceptionRequestsPage />);
+        expect(screen.getByTestId('targets-new-address')).toHaveTextContent(
+            `${KEY}.targetsNewAddress`
+        );
+        fireEvent.click(screen.getByText(`${KEY}.approve`));
+        expect(
+            screen.getByText(new RegExp(`${KEY}.approveDialog.movesNotice`))
+        ).toBeInTheDocument();
+    });
+
+    it('shows no badge and no move notice for a request about the saved address', () => {
+        render(<LocationExceptionRequestsPage />);
+        expect(screen.queryByTestId('targets-new-address')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByText(`${KEY}.approve`));
+        expect(screen.queryByText(/movesNotice/)).not.toBeInTheDocument();
     });
 
     it('switches the vertical and links to venues', () => {

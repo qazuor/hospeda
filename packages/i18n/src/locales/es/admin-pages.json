@@ -1998,6 +1998,7 @@
             "apartment": "Depto {apartment}",
             "none": "Sin dirección"
         },
+        "targetsNewAddress": "Dirección a la que quiere mudarse",
         "approve": "Aprobar",
         "reject": "Rechazar",
         "empty": "No hay pedidos con este estado.",
@@ -2006,6 +2007,7 @@
         "previous": "Anterior",
         "next": "Siguiente",
         "approveDialog": {
+            "movesNotice": "Al aprobar, el dueño podrá guardar esa dirección.",
             "title": "Aprobar la excepción",
             "description": "La ficha podrá compartir dirección. El motivo queda en el registro y se lo ves al dueño tal como lo dejes.",
             "reasonLabel": "Motivo (entre 10 y 500 caracteres)",

@@ -136,9 +136,23 @@ export function LocationExceptionRequestsPage() {
                               })
                             : null
                     ].filter((part): part is string => part !== null);
-                    return parts.length > 0
-                        ? parts.join(', ')
-                        : t('admin-pages.locationExceptionRequests.address.none');
+                    return (
+                        <div className="space-y-1">
+                            <div>
+                                {parts.length > 0
+                                    ? parts.join(', ')
+                                    : t('admin-pages.locationExceptionRequests.address.none')}
+                            </div>
+                            {row.original.targetsNewAddress && (
+                                <span
+                                    data-testid="targets-new-address"
+                                    className="inline-block rounded bg-amber-100 px-2 py-0.5 text-amber-900 text-xs"
+                                >
+                                    {t('admin-pages.locationExceptionRequests.targetsNewAddress')}
+                                </span>
+                            )}
+                        </div>
+                    );
                 }
             },
             {
@@ -385,9 +399,13 @@ export function LocationExceptionRequestsPage() {
                         if (!next) close();
                     }}
                     title={t(`admin-pages.locationExceptionRequests.${dialogKey}.title`)}
-                    description={t(
+                    description={`${t(
                         `admin-pages.locationExceptionRequests.${dialogKey}.description`
-                    )}
+                    )}${
+                        decision?.kind === 'approve' && decision.row.targetsNewAddress
+                            ? ` ${t('admin-pages.locationExceptionRequests.approveDialog.movesNotice')}`
+                            : ''
+                    }`}
                     reasonLabel={t(
                         `admin-pages.locationExceptionRequests.${dialogKey}.reasonLabel`
                     )}

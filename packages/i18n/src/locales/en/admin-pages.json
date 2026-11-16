@@ -1998,6 +1998,7 @@
             "apartment": "Apt {apartment}",
             "none": "No address"
         },
+        "targetsNewAddress": "Address the owner wants to move to",
         "approve": "Approve",
         "reject": "Reject",
         "empty": "There are no requests with this status.",
@@ -2006,6 +2007,7 @@
         "previous": "Previous",
         "next": "Next",
         "approveDialog": {
+            "movesNotice": "By approving, the owner will be able to save that address.",
             "title": "Approve the exception",
             "description": "The listing will be able to share its address. The reason is recorded and the owner sees it as you leave it.",
             "reasonLabel": "Reason (10 to 500 characters)",

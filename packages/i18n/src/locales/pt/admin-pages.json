@@ -1998,6 +1998,7 @@
             "apartment": "Apto {apartment}",
             "none": "Sem endereço"
         },
+        "targetsNewAddress": "Endereço para o qual o dono quer se mudar",
         "approve": "Aprovar",
         "reject": "Rejeitar",
         "empty": "Não há pedidos com este estado.",
@@ -2006,6 +2007,7 @@
         "previous": "Anterior",
         "next": "Próxima",
         "approveDialog": {
+            "movesNotice": "Ao aprovar, o dono poderá salvar esse endereço.",
             "title": "Aprovar a exceção",
             "description": "O anúncio poderá compartilhar endereço. O motivo fica registrado e o dono o vê como você o deixar.",
             "reasonLabel": "Motivo (de 10 a 500 caracteres)",
