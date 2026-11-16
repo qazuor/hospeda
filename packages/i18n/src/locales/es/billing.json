@@ -817,6 +817,48 @@
         "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen.",
         "max_ai_faq_draft_per_month": "Cuántos borradores de respuesta podés generar con IA por mes para las preguntas de tus fichas. La cuota se renueva al empezar cada mes."
     },
+    "addon": {
+        "extra-accommodations-5": {
+            "name": "Pack de alojamientos extra (+5)",
+            "description": "Suma 5 alojamientos más a tu plan. Se renueva todos los meses."
+        },
+        "extra-photos-20": {
+            "name": "Pack de fotos extra (+20 fotos)",
+            "description": "Suma 20 fotos más a cada alojamiento. Se renueva todos los meses."
+        },
+        "extra-venues-1": {
+            "name": "Ficha extra de Comer y salir (+1)",
+            "description": "Suma 1 ficha más de Comer y salir a tu plan. Se renueva todos los meses."
+        },
+        "extra-experiences-1": {
+            "name": "Ficha extra de experiencia (+1)",
+            "description": "Suma 1 ficha más de experiencia a tu plan. Se renueva todos los meses."
+        },
+        "visibility-boost-7d": {
+            "name": "Impulso de visibilidad (7 días)",
+            "description": "Tu alojamiento aparece destacado en los resultados de búsqueda durante 7 días."
+        },
+        "visibility-boost-30d": {
+            "name": "Impulso de visibilidad (30 días)",
+            "description": "Tu alojamiento aparece destacado en los resultados de búsqueda durante 30 días."
+        },
+        "visibility-boost-venue-7d": {
+            "name": "Impulso de visibilidad — Comer y salir (7 días)",
+            "description": "Tu local de Comer y salir aparece destacado en los resultados de búsqueda durante 7 días."
+        },
+        "visibility-boost-venue-30d": {
+            "name": "Impulso de visibilidad — Comer y salir (30 días)",
+            "description": "Tu local de Comer y salir aparece destacado en los resultados de búsqueda durante 30 días."
+        },
+        "visibility-boost-experience-7d": {
+            "name": "Impulso de visibilidad — Experiencia (7 días)",
+            "description": "Tu experiencia aparece destacado en los resultados de búsqueda durante 7 días."
+        },
+        "visibility-boost-experience-30d": {
+            "name": "Impulso de visibilidad — Experiencia (30 días)",
+            "description": "Tu experiencia aparece destacado en los resultados de búsqueda durante 30 días."
+        }
+    },
     "addonPurchase": {
         "title": "Comprar complementos",
         "chooseOffer": "Elegí un complemento",
