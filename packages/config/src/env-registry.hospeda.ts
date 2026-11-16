@@ -1500,9 +1500,9 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_UMAMI_URL',
         description:
-            'Base URL of the self-hosted Umami instance (server-side event ingestion via POST /api/batch and the read API)',
+            'Base URL of the self-hosted Umami instance (server-side event ingestion via POST /api/batch and the read API). Required in production, optional elsewhere',
         descriptionEs:
-            'URL base de la instancia self-hosted de Umami (ingesta server-side de eventos vía POST /api/batch y API de lectura)',
+            'URL base de la instancia self-hosted de Umami (ingesta server-side de eventos vía POST /api/batch y API de lectura). Requerida en producción, opcional en el resto',
         type: 'url',
         required: false,
         secret: false,
@@ -1511,16 +1511,16 @@ export const HOSPEDA_ENV_VARS = [
         category: 'monitoring',
         helpUrl: 'https://umami.is/docs',
         howToObtain:
-            'Base URL where the self-hosted Umami is deployed, without a trailing slash. Leave unset or empty to disable server-side Umami events and stats reads.',
+            'Base URL where the self-hosted Umami is deployed, without a trailing slash. Required in production (the API refuses to boot without it); in other environments leave unset or empty to disable server-side Umami events and stats reads.',
         howToObtainEs:
-            'URL base donde está deployado el Umami self-hosted, sin barra final. Dejala sin setear o vacía para deshabilitar los eventos server-side y las lecturas de stats de Umami.'
+            'URL base donde está deployado el Umami self-hosted, sin barra final. Requerida en producción (la API no arranca sin ella); en el resto de los entornos dejala sin setear o vacía para deshabilitar los eventos server-side y las lecturas de stats de Umami.'
     },
     {
         name: 'HOSPEDA_UMAMI_WEBSITE_ID_WEB',
         description:
-            'Umami website id (UUID) of the hospeda-web website; server events that describe the public web surface are sent to it',
+            'Umami website id (UUID) of the hospeda-web website; server events that describe the public web surface are sent to it. Required in production, optional elsewhere',
         descriptionEs:
-            'Id de website de Umami (UUID) de hospeda-web; los eventos server-side que describen la superficie web pública se envían ahí',
+            'Id de website de Umami (UUID) de hospeda-web; los eventos server-side que describen la superficie web pública se envían ahí. Requerido en producción, opcional en el resto',
         type: 'string',
         required: false,
         secret: false,

@@ -37,7 +37,7 @@ ARG PUBLIC_ADMIN_URL=https://admin.placeholder.local
 # Client-baked vars: Astro inlines `import.meta.env.PUBLIC_*` into the browser
 # bundle at build time, so each MUST be declared here. Coolify only forwards a
 # --build-arg for ARGs the Dockerfile declares; an undeclared one is silently
-# dropped and the value bakes EMPTY. That is exactly what disabled PostHog and
+# dropped and the value bakes EMPTY. That is exactly what disabled the Umami tracker and
 # client-side Sentry in prod (both were set in Coolify but never declared here).
 # No placeholder defaults: these are optional / production-scoped, and the build
 # stage does not set NODE_ENV=production, so an empty local `docker build` still
@@ -46,8 +46,6 @@ ARG PUBLIC_SENTRY_DSN
 ARG PUBLIC_SENTRY_TUNNEL
 ARG PUBLIC_SENTRY_TRACES_SAMPLE_RATE
 ARG PUBLIC_SENTRY_CSP_REPORT_URI
-ARG PUBLIC_POSTHOG_KEY
-ARG PUBLIC_POSTHOG_HOST
 ARG PUBLIC_UMAMI_SCRIPT_URL
 ARG PUBLIC_UMAMI_WEBSITE_ID
 ARG PUBLIC_VERSION
@@ -91,7 +89,7 @@ ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 # Declaring the ARG is half the fix and the half that is easy to miss: Coolify
 # only forwards a --build-arg for ARGs this file declares, so setting the value
 # in Coolify WITHOUT this line bakes it empty and silently changes nothing (see
-# the PUBLIC_* comment above — that is exactly how PostHog and client-side
+# the PUBLIC_* comment above — that is exactly how client-side
 # Sentry ended up dead in production).
 ARG ASTRO_KEY
 ENV ASTRO_KEY=$ASTRO_KEY
@@ -108,8 +106,6 @@ ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     PUBLIC_SENTRY_TUNNEL=$PUBLIC_SENTRY_TUNNEL \
     PUBLIC_SENTRY_TRACES_SAMPLE_RATE=$PUBLIC_SENTRY_TRACES_SAMPLE_RATE \
     PUBLIC_SENTRY_CSP_REPORT_URI=$PUBLIC_SENTRY_CSP_REPORT_URI \
-    PUBLIC_POSTHOG_KEY=$PUBLIC_POSTHOG_KEY \
-    PUBLIC_POSTHOG_HOST=$PUBLIC_POSTHOG_HOST \
     PUBLIC_UMAMI_SCRIPT_URL=$PUBLIC_UMAMI_SCRIPT_URL \
     PUBLIC_UMAMI_WEBSITE_ID=$PUBLIC_UMAMI_WEBSITE_ID \
     PUBLIC_VERSION=$PUBLIC_VERSION \

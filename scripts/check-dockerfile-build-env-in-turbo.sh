@@ -10,7 +10,7 @@
 # infers for a detected framework). Anything else is silently dropped before
 # Vite/Astro runs, so `import.meta.env.VITE_X` compiles to `void 0` and nothing
 # errors. Measured in the deployed prod and staging admin bundles: six VITE_*
-# vars (Sentry environment/project/CSP report URI, Turnstile site key, PostHog
+# vars (Sentry environment/project/CSP report URI, Turnstile site key, analytics
 # key/host) were dead for months.
 #
 # What is checked (ARG names in apps/*/Dockerfile):

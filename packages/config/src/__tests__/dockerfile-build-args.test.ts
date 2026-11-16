@@ -97,10 +97,10 @@ describe('Dockerfile build ARGs are registered (I4)', () => {
  * `PUBLIC_*` (Astro) and `VITE_*` (Vite) values are inlined into the client
  * bundle at build time. Coolify only forwards a `--build-arg` for ARGs the
  * Dockerfile actually declares — an undeclared one is silently dropped and the
- * value bakes EMPTY, disabling whatever depends on it (PostHog, client-side
+ * value bakes EMPTY, disabling whatever depends on it (the analytics tracker, client-side
  * Sentry, Turnstile) with no error. The forward gate above only checks
  * ARG → registry; this checks registry → ARG, closing the blind spot that let
- * `PUBLIC_POSTHOG_KEY` ship unbaked to prod.
+ * a `PUBLIC_*` analytics key ship unbaked to prod.
  *
  * Basis is the NAME PREFIX, not `stage: 'build'`: the client vars are not
  * consistently tagged `stage: 'build'` in the registry, but the `PUBLIC_`/

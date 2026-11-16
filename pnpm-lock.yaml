@@ -563,9 +563,6 @@ importers:
       pngjs:
         specifier: ^7.0.0
         version: 7.0.0
-      posthog-node:
-        specifier: ^5.47.11
-        version: 5.47.11
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
@@ -991,12 +988,6 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
-      vitest:
-        specifier: 5.0.5
-        version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(jsdom@26.0.0(supports-color@8.1.1))(msw@2.15.0(@types/node@26.6.2)(typescript@6.0.3))(vite@8.3.6(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
-
-  infra/cloudflare/posthog-proxy:
-    devDependencies:
       vitest:
         specifier: 5.0.5
         version: 5.0.5(@opentelemetry/api@1.9.1)(@types/node@26.6.2)(@vitest/coverage-v8@5.0.5)(@vitest/ui@5.0.5)(jsdom@26.0.0(supports-color@8.1.1))(msw@2.15.0(@types/node@26.6.2)(typescript@6.0.3))(vite@8.3.6(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -4123,12 +4114,6 @@ packages:
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
-
-  '@posthog/core@1.47.0':
-    resolution: {integrity: sha512-LW62V+9yx7G7mLd+EYpwW0PiaPZI8XRJ1tLuhw+9fXHpugLp8XQD5JuCQ2kIXvoUfyx1DpKfGQY3dUnzMOIn7Q==}
-
-  '@posthog/types@1.402.2':
-    resolution: {integrity: sha512-ZZTiS4dLwF4/D0YTzS3gGSLFnhuNOY5yu4d9VGS9trGe5GW6FjIXo20p18K5BPW2RZSYSld8sdnSAY3AUXleUQ==}
 
   '@puppeteer/browsers@2.13.2':
     resolution: {integrity: sha512-5EUZSUIc37H6aIXyWO0Z4y8NlF8NnjgmqeQgOGiswAU7pY0HOo16ho4+alIWmSfdZnjqBRawMsP3I5YqLSn6kw==}
@@ -10856,15 +10841,6 @@ packages:
     resolution: {integrity: sha512-d+JFcLM17njZaOLkv6SCev7uoLaBtfK86vMUXhW1Z4glPWh4jozno9APvW/XKFJ3CCxVoC7OL38BqRydtu5nGg==}
     engines: {node: '>=12'}
 
-  posthog-node@5.47.11:
-    resolution: {integrity: sha512-6p6hc3JynK3Nt5Xm89olcAsZ3Ol+EtFj7mIApL7R4tptBxXalVjRQSbPtVxRl33H1QeDHgQof1TxKgHhefo4lA==}
-    engines: {node: ^20.20.0 || >=22.22.0}
-    peerDependencies:
-      rxjs: ^7.0.0
-    peerDependenciesMeta:
-      rxjs:
-        optional: true
-
   powershell-utils@0.1.0:
     resolution: {integrity: sha512-dM0jVuXJPsDN6DvRpea484tCUaMiXWjuCn++HGTqUWzGDjv5tZkEZldAJ/UMlqRYGFrD/etByo4/xOuC/snX2A==}
     engines: {node: '>=20'}
@@ -15419,12 +15395,6 @@ snapshots:
       playwright: 1.63.0
 
   '@polka/url@1.0.0-next.29': {}
-
-  '@posthog/core@1.47.0':
-    dependencies:
-      '@posthog/types': 1.402.2
-
-  '@posthog/types@1.402.2': {}
 
   '@puppeteer/browsers@2.13.2(supports-color@8.1.1)':
     dependencies:
@@ -23273,10 +23243,6 @@ snapshots:
 
   postgres@3.4.8:
     optional: true
-
-  posthog-node@5.47.11:
-    dependencies:
-      '@posthog/core': 1.47.0
 
   powershell-utils@0.1.0: {}
 
