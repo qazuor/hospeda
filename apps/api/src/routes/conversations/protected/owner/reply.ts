@@ -29,6 +29,28 @@ import { SYSTEM_ACTOR } from './system-actor';
 
 const router = createRouter();
 
+/**
+ * Service error codes that are 4xx-class: their message is written for the
+ * caller and safe to show. Every other code (INTERNAL_ERROR,
+ * CONFIGURATION_ERROR, SERVICE_UNAVAILABLE, anything unknown) is 5xx-class and
+ * its message may carry internals (SQL, hostnames, config keys), so it is
+ * replaced by a generic text.
+ */
+const CLIENT_SAFE_ERROR_CODES: ReadonlySet<string> = new Set([
+    ServiceErrorCode.VALIDATION_ERROR,
+    ServiceErrorCode.INVALID_PAGINATION_PARAMS,
+    ServiceErrorCode.UNAUTHORIZED,
+    ServiceErrorCode.FORBIDDEN,
+    ServiceErrorCode.EMAIL_NOT_VERIFIED,
+    ServiceErrorCode.ALREADY_EXISTS,
+    ServiceErrorCode.QUOTA_EXCEEDED,
+    ServiceErrorCode.LIMIT_REACHED,
+    ServiceErrorCode.ENTITLEMENT_REQUIRED
+]);
+
+/** Generic text for a 5xx-class failure, the same one the API's fallback uses. */
+const GENERIC_ERROR_MESSAGE = 'An unexpected error occurred';
+
 const conversationSvc = new ConversationService(
     { logger: apiLogger },
     {
@@ -91,7 +113,13 @@ router.post('/:id/messages', async (c) => {
             ownership.error.code !== ServiceErrorCode.NOT_FOUND &&
             ownership.error.code !== ServiceErrorCode.FORBIDDEN
         ) {
-            throw new ServiceError(ownership.error.code, ownership.error.message);
+            // Keep the status, but never echo a 5xx-class message: it can carry internals.
+            throw new ServiceError(
+                ownership.error.code,
+                CLIENT_SAFE_ERROR_CODES.has(ownership.error.code)
+                    ? ownership.error.message
+                    : GENERIC_ERROR_MESSAGE
+            );
         }
 
         if (ownership.error || !ownership.data) {

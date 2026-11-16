@@ -96,4 +96,45 @@ describe('owner reply ownership gate', () => {
 
         expect(res.status).toBe(503);
     });
+
+    describe('error message echo (internal details never reach the client)', () => {
+        const INTERNAL = 'connection to 10.0.0.5:5432 refused (password authentication failed)';
+
+        it.each([
+            ['INTERNAL_ERROR', 500],
+            ['CONFIGURATION_ERROR', 500],
+            ['SERVICE_UNAVAILABLE', 503]
+        ])('replaces the message of a %s with a generic text', async (code, status) => {
+            mockFindOwned.mockResolvedValue({ error: { code, message: INTERNAL } });
+
+            const res = await post(buildApp());
+            const text = await res.text();
+
+            expect(res.status).toBe(status);
+            expect(text).not.toContain('10.0.0.5');
+            expect(text).not.toContain('password');
+            expect(text).toContain('An unexpected error occurred');
+        });
+
+        it('replaces the message of an unknown code with a generic text', async () => {
+            mockFindOwned.mockResolvedValue({
+                error: { code: 'SOMETHING_NEW', message: INTERNAL }
+            });
+
+            const res = await post(buildApp());
+
+            expect(await res.text()).not.toContain('10.0.0.5');
+        });
+
+        it('keeps the message of a 4xx-class code', async () => {
+            mockFindOwned.mockResolvedValue({
+                error: { code: 'VALIDATION_ERROR', message: 'conversationId is malformed' }
+            });
+
+            const res = await post(buildApp());
+
+            expect(res.status).toBe(400);
+            expect(await res.text()).toContain('conversationId is malformed');
+        });
+    });
 });
