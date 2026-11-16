@@ -88,7 +88,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
         expect(result.path).toBe('DOWNGRADE');
     });
 
-    it('rejects a downgrade after real activation while the next charge date is pending', async () => {
+    it('rejects a downgrade after real activation while the next charge date is unknown', async () => {
         const seeded = await seedPlanChange({
             rankRelation: 'HIGHER',
             leaveCycleEndPending: true
@@ -102,7 +102,13 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:7 plan change direction',
             .select({ status: subscriptions.status, nextChargeAt: subscriptions.nextChargeAt })
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.predecessor.id));
-        expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: null });
+        // HOS-2223: S2 copies the provider's date, so the real activation fills it.
+        expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: expect.any(Date) });
+        // A provider read that reported no date leaves it unknown: the rejection still holds.
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ nextChargeAt: null })
+            .where(eq(subscriptions.id, seeded.predecessor.id));
         const mutate = vi.spyOn(seeded.fake, 'changeAmount');
 
         expect(await requestPlanChange(seeded.input, seeded.ports)).toEqual({

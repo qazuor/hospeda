@@ -24,6 +24,7 @@ import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
 import { resolvePlanDisplayName } from '../plan-display-name';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
+import { advanceCardNextChargeAt } from './card-next-charge-advance';
 import { issueReceipt, readReceiptPayer } from './issue-receipt.js';
 import {
     createPaymentReconciliationMarkPayments,
@@ -201,6 +202,13 @@ export async function creditPayment(
                         );
                         coverage = 'DUPLICATE_MARKED';
                     }
+                    if (coverage === 'WRITTEN')
+                        await advanceCardNextChargeAt({
+                            tx,
+                            subscription,
+                            chargeCreatedAt: input.chargeCreatedAt,
+                            now: ports.clock.now()
+                        });
 
                     const redemptions = await tx
                         .select({

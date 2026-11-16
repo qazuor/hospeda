@@ -22,6 +22,7 @@ export interface ActivatePendingWithSignupNoticePorts {
  *
  * @param input.subscriptionId - The pending row
  * @param input.now - The act's instant
+ * @param input.nextChargeAt - The provider's next payment date, copied forward (HOS-2223)
  * @param ports.successionCloser - S18's interface (optional)
  * @returns True when the row was activated
  */
@@ -29,6 +30,8 @@ export async function activatePendingWithSignupNotice(
     input: {
         readonly subscriptionId: string;
         readonly now: Date;
+        /** HOS-2223: the provider's next payment date from the authorizing re-read. */
+        readonly nextChargeAt?: Date | null;
     },
     ports: ActivatePendingWithSignupNoticePorts = {}
 ): Promise<boolean> {
@@ -41,6 +44,7 @@ export async function activatePendingWithSignupNotice(
         const wrote = await subscriptionModel.activatePendingAuthorization({
             subscriptionId: input.subscriptionId,
             now: input.now,
+            nextChargeAt: input.nextChargeAt ?? null,
             tx
         });
         if (wrote) {

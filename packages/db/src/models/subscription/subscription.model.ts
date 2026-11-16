@@ -1,5 +1,17 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, isNotNull, isNull, lte, ne, notInArray, or } from 'drizzle-orm';
+import {
+    and,
+    desc,
+    eq,
+    inArray,
+    isNotNull,
+    isNull,
+    lte,
+    ne,
+    notInArray,
+    or,
+    sql
+} from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type COURTESY_CLOSE_REASONS,
@@ -118,6 +130,12 @@ export interface PendingAuthorizationTransitionInput {
     readonly subscriptionId: string;
     readonly now: Date;
     readonly tx?: DrizzleClient;
+    /**
+     * HOS-2223: the provider's next payment date from the re-read that authorized S2.
+     * Written only forward (`GREATEST`), so it never undoes a later date P1 already wrote.
+     * Omitted or null leaves the column untouched.
+     */
+    readonly nextChargeAt?: Date | null;
 }
 
 /** Input for S39/S40's conditional close of a pending card signup attempt. */
@@ -303,14 +321,23 @@ export class SubscriptionModel {
             .limit(input.limit);
     }
 
-    /** S2 persistence: activates only a still-pending row, returning false when another actor moved it. */
+    /** S2 persistence: activates only a still-pending row, returning false when another actor moved it; copies the provider's next charge date forward when given (HOS-2223). */
     async activatePendingAuthorization(
         input: PendingAuthorizationTransitionInput
     ): Promise<boolean> {
         const db = input.tx ?? getDb();
         const rows = await db
             .update(subscriptions)
-            .set({ status: 'ACTIVE', updatedAt: input.now })
+            .set({
+                status: 'ACTIVE',
+                updatedAt: input.now,
+                ...(input.nextChargeAt
+                    ? {
+                          // GREATEST ignores NULL: a missing date takes the provider's.
+                          nextChargeAt: sql`greatest(${subscriptions.nextChargeAt}, ${input.nextChargeAt.toISOString()}::timestamptz)`
+                      }
+                    : {})
+            })
             .where(
                 and(
                     eq(subscriptions.id, input.subscriptionId),
