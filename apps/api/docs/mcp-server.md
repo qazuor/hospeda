@@ -160,7 +160,7 @@ Both use the existing `auditLog()` pipeline (`audit_log_entries`). No new table.
 
 | Event | When | Notable fields |
 |---|---|---|
-| `mcp.tool.call` | Every **write** tool call, including malformed ones | actor, `clientId`, `clientName`, tool, target, outcome (`success`, `denied`, `error`), `errorCode`, `contentLength`, `details` |
+| `mcp.tool.call` | Every **write** tool call, including malformed ones | actor, `clientId`, tool, target, outcome (`success`, `denied`, `error`), `errorCode`, `contentLength`, `details`. The client-declared name is never recorded (untrusted text) |
 | `mcp.connection.revoked` | A user disconnects an assistant | actor, `clientId`, `removed` counts (consents, refresh tokens, access tokens) |
 
 For `reply_inquiry`, `details.step` is `preview` or `send`. Content (a reply text)

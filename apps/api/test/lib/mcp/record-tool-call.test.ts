@@ -44,13 +44,18 @@ describe('recordMcpToolCall', () => {
             auditEvent: 'mcp.tool.call',
             actorId: actor.id,
             clientId: mcpAuth.clientId,
-            clientName: 'Claude',
             tool: 'reply_to_conversation',
             resourceType: 'conversation',
             resourceId: 'conv-1',
             outcome: 'success',
             contentLength: 42
         });
+    });
+
+    it('should never persist the client-declared name', () => {
+        recordMcpToolCall({ actor, mcpAuth, tool: 'reply_inquiry', outcome: 'success' });
+
+        expect(mockAuditLog.mock.calls[0]?.[0]).not.toHaveProperty('clientName');
     });
 
     it('should pass tool-contributed details through to the audit payload', () => {
@@ -82,10 +87,10 @@ describe('recordMcpToolCall', () => {
         );
     });
 
-    it('should include the error code for an error outcome and keep a null client name', () => {
+    it('should include the error code for an error outcome', () => {
         recordMcpToolCall({
             actor,
-            mcpAuth: { clientId: 'dcr-1', clientName: null },
+            mcpAuth: { clientId: 'dcr-1' },
             tool: 'update_listing',
             outcome: 'error',
             errorCode: 'INTERNAL_ERROR'
@@ -93,7 +98,6 @@ describe('recordMcpToolCall', () => {
 
         const payload = mockAuditLog.mock.calls[0]?.[0];
         expect(payload).toMatchObject({
-            clientName: null,
             outcome: 'error',
             errorCode: 'INTERNAL_ERROR'
         });

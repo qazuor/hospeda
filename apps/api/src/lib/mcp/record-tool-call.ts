@@ -19,7 +19,7 @@ export interface RecordMcpToolCallInput {
     /** Actor the call ran as. */
     readonly actor: Pick<Actor, 'id'>;
     /** OAuth grant of the request (`c.get('mcpAuth')`). */
-    readonly mcpAuth: Pick<McpAuthContext, 'clientId' | 'clientName'>;
+    readonly mcpAuth: Pick<McpAuthContext, 'clientId'>;
     /** MCP tool name. */
     readonly tool: string;
     /** Entity the call targeted. Omit for calls with no single target (lists). */
@@ -35,8 +35,9 @@ export interface RecordMcpToolCallInput {
 }
 
 /**
- * Records one MCP tool call in the audit log: actor, OAuth client id and name,
- * tool, target and outcome.
+ * Records one MCP tool call in the audit log: actor, OAuth client id, tool,
+ * target and outcome. The client name is not recorded: the client declares it itself, so
+ * it is untrusted text (the revoke audit leaves it out for the same reason).
  *
  * Failure policy: auditing must never change what the tool returns. This
  * function is synchronous, never throws, and never returns a value the caller
@@ -67,7 +68,6 @@ export function recordMcpToolCall(input: RecordMcpToolCallInput): void {
             auditEvent: AuditEventType.MCP_TOOL_CALL,
             actorId: actor.id,
             clientId: mcpAuth.clientId,
-            clientName: mcpAuth.clientName,
             tool,
             ...(target ? { resourceType: target.type, resourceId: target.id } : {}),
             outcome,

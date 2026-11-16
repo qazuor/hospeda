@@ -153,8 +153,6 @@ interface McpToolCallEntry extends BaseAuditEntry {
     readonly actorId: string;
     /** OAuth `client_id` of the AI client. */
     readonly clientId: string;
-    /** Registered client name, or null when the client row has none. */
-    readonly clientName: string | null;
     /** MCP tool name. */
     readonly tool: string;
     /** Entity type the call targeted, when it targets one. */
