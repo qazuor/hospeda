@@ -1556,6 +1556,7 @@
             "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
             "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
             "approved": "Seu conteúdo está aprovado. A equipe da Hospeda configura sua assinatura e vai te escrever para combinar o pagamento por transferência bancária.",
+            "activeSubscription": "Sua assinatura de Partner está ativa e em dia.",
             "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
             "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
         },

@@ -1,8 +1,28 @@
-import { OwnManualInstallmentsResponseSchema } from '@repo/schemas';
+import { OwnManualInstallmentsResponseSchema, OwnSubscriptionsResponseSchema } from '@repo/schemas';
 import { formatSelfCancelDate } from '@/lib/billing/self-cancel';
 import { getPlanName } from '@/lib/billing-i18n';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale, TranslationFn } from '@/lib/i18n';
+
+/** Whether the authenticated owner has an active Partner subscription. */
+export function hasActivePartnerSubscription(result: unknown): boolean {
+    if (
+        !result ||
+        typeof result !== 'object' ||
+        !('ok' in result) ||
+        result.ok !== true ||
+        !('data' in result)
+    )
+        return false;
+    const parsed = OwnSubscriptionsResponseSchema.safeParse(result.data);
+    return (
+        parsed.success &&
+        parsed.data.subscriptions.some(
+            (subscription) =>
+                subscription.vertical === 'partner' && subscription.status === 'ACTIVE'
+        )
+    );
+}
 
 /** What the partner page shows for the open manual installment, or null when there is none. */
 export function resolveManualInstallmentView(input: {
