@@ -6,6 +6,7 @@ import {
     inArray,
     isNotNull,
     isNull,
+    lt,
     lte,
     ne,
     notInArray,
@@ -351,9 +352,16 @@ export class SubscriptionModel {
     /**
      * HOS-1685: the sweep's copy of the provider's next payment date; a conditional write that
      * never moves a row out of `ACTIVE` and never rewrites an equal value (B11.md:250).
+     *
+     * HOS-2223: it never writes a stale read either, meaning a provider date that is EARLIER
+     * than the stored one AND already elapsed (`<= now`). Right after the first charge the
+     * provider can still report the first-charge instant (PA-3), and copying it would undo the
+     * date P1 advanced. A later date, or an earlier one still in the future (the provider
+     * correcting its own anchor), keeps winning: the sweep still aligns the row with MP.
      */
     async syncNextChargeAt(input: SyncNextChargeAtInput): Promise<boolean> {
         const db = input.tx ?? getDb();
+        const providerDateIsFuture = input.nextChargeAt.getTime() > input.now.getTime();
         const rows = await db
             .update(subscriptions)
             // Same shape as the other writers here; the global updated_at trigger
@@ -365,7 +373,9 @@ export class SubscriptionModel {
                     eq(subscriptions.status, 'ACTIVE'),
                     or(
                         isNull(subscriptions.nextChargeAt),
-                        ne(subscriptions.nextChargeAt, input.nextChargeAt)
+                        providerDateIsFuture
+                            ? ne(subscriptions.nextChargeAt, input.nextChargeAt)
+                            : lt(subscriptions.nextChargeAt, input.nextChargeAt)
                     )
                 )
             )

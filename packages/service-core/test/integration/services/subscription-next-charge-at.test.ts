@@ -14,6 +14,7 @@ import {
     eq,
     payments,
     providerLinks,
+    subscriptionModel,
     subscriptions,
     users
 } from '@repo/db';
@@ -322,6 +323,64 @@ describe('HOS-2223 P1 advances next_charge_at when a card charge is credited', (
             expect(await nextChargeAtOf(complementId)).toEqual(
                 new Date('2027-10-01T03:26:00.000Z')
             );
+        }
+    );
+});
+
+describe('HOS-2223 the sweep never restores a stale provider date over P1', () => {
+    async function chargedPrincipal(): Promise<string> {
+        const { provider, started } = await approvedPendingPrincipal();
+        await activateSubscription(started.subscriptionId, {
+            provider,
+            clock,
+            beforeCancelNotice: { beforeCancel: async () => 'SENT' },
+            touristVipInheritance: noTouristVip
+        });
+        await creditCardCharge({
+            subscriptionId: started.subscriptionId,
+            chargeCreatedAt: new Date('2026-10-01T03:26:00.000Z')
+        });
+        return started.subscriptionId;
+    }
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'keeps the P1 date when the provider still reports the elapsed first-charge instant',
+        async () => {
+            // Arrange: P1 moved the date to 2026-11-01T03:26Z.
+            const subscriptionId = await chargedPrincipal();
+
+            // Act: a later sweep read still carries the PA-3 instant, already elapsed.
+            const wrote = await subscriptionModel.syncNextChargeAt({
+                subscriptionId,
+                nextChargeAt: clock.now(),
+                now: new Date('2026-10-02T02:10:00.000Z')
+            });
+
+            // Assert
+            expect(wrote).toBe(false);
+            expect(await nextChargeAtOf(subscriptionId)).toEqual(
+                new Date('2026-11-01T03:26:00.000Z')
+            );
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'still takes an earlier provider date that is in the future',
+        async () => {
+            // Arrange
+            const subscriptionId = await chargedPrincipal();
+            const providerDate = new Date('2026-11-01T03:00:00.000Z');
+
+            // Act: MP's own anchor is minutes earlier than the local derivation.
+            const wrote = await subscriptionModel.syncNextChargeAt({
+                subscriptionId,
+                nextChargeAt: providerDate,
+                now: new Date('2026-10-02T02:10:00.000Z')
+            });
+
+            // Assert
+            expect(wrote).toBe(true);
+            expect(await nextChargeAtOf(subscriptionId)).toEqual(providerDate);
         }
     );
 });
