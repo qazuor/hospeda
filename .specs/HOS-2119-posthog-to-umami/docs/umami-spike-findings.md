@@ -54,3 +54,31 @@ need an extra DB provider. Limits for the Umami containers: 512 MB app, 256 MB D
 The api sends events over the internal Docker network. Tracker script and collect
 endpoint are renamed (`TRACKER_SCRIPT_NAME`, `COLLECT_API_ENDPOINT`) and served
 from a first-party subdomain to reduce ad-blocker loss.
+
+## Verified read requests used by `UmamiStatsClient` (T-046, 2026-11-15, Umami 3.5.0)
+
+All are `GET {base}/api/websites/{websiteId}/...` with `Authorization: Bearer <key>`
+(an invalid token answers `401`). `startAt`/`endAt` are epoch ms; `timezone` is IANA.
+Checked with two entities (A: 2 pageviews, 2 `contact_owner_started`, 1
+`contact_owner_completed`; B: 1, 1, 0): each query returned only its entity's numbers.
+
+- **Breakdown**: `metrics?type=referrer|country|device&startAt&endAt&timezone&tag=<entityId>`
+  returns `[{"x": string, "y": number}]`. `y` counts distinct visitors (2 pageviews
+  by one visitor give `y: 1`). An unknown tag returns `[]`. Direct traffic (no
+  referrer) and unresolved geo are simply absent (`[]`), not `x: null`; the adapter
+  still drops null/empty `x` defensively.
+- **Views**: `stats?startAt&endAt&tag=<entityId>` returns
+  `{"pageviews","visitors","visits","bounces","totaltime","comparison":{...}}`;
+  `pageviews` is the view total for the entity.
+- **Contact events**: `event-data-pivot?startAt&endAt&eventName=<name>&pf_entity_id=eq.<entityId>&pageSize=1`
+  returns `{"data":[...rows],"count":N,"page":1,"pageSize":1,"isCapped":false}`.
+  `eventName` is REQUIRED (`400` without it). `count` is the total across pages, so
+  `pageSize=1` keeps the payload small. `pageSize=0` is a `400`. Without the
+  `pf_entity_id` filter it answers the site-wide rows (leak). The filter value MUST be
+  `eq.<id>`: a bare `pf_entity_id=<id>` is ignored (measured: 9 site-wide vs 3).
+  **Measured meaning of `count`** (Umami 3.5.0, 2026-11-15): 3 `contact_owner_started`
+  events for one fresh entity id from the same visitor/session gave `count: 3`, so
+  `count` is the EVENT count (not grouped rows or sessions). `isCapped` was `false`;
+  it is not reproducible with small data and is assumed to flag a truncated (lower
+  bound) count. The adapter parses it and logs a warning when `true`.
+- `tag` is set by sending `payload.tag` on a pageview (`/api/send`, type `event`, no `name`).

@@ -85,7 +85,7 @@ export type ListingTrafficStatsQuery = z.infer<typeof ListingTrafficStatsQuerySc
 export const ListingTrafficBreakdownItemSchema = z.object({
     /** Dimension value as reported by Umami (e.g. `google.com`, `AR`, `mobile`). */
     value: z.string(),
-    /** Visitors/pageviews for this value. Non-negative integer. */
+    /** Distinct visitors for this value. Non-negative integer. */
     count: z.number().int().nonnegative()
 });
 
