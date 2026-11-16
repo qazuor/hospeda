@@ -8,21 +8,28 @@
  */
 
 import { getDb } from '@repo/db';
-import { PublicationStatusEnum } from '@repo/schemas';
-import { type Actor, entityViewService, VenueService } from '@repo/service-core';
+import { PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import { type Actor, entityViewService, ServiceError, VenueService } from '@repo/service-core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, latestReviews } = vi.hoisted(() => {
-    const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
-    return {
-        USER_ID: userId,
-        CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
-        VALID_TOKEN: 'valid-access-token-0123456789',
-        ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
-        findOneMock: vi.fn(),
-        latestReviews: vi.fn()
-    };
-});
+const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, latestReviews, enforceGate } =
+    vi.hoisted(() => {
+        const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
+        return {
+            USER_ID: userId,
+            CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
+            VALID_TOKEN: 'valid-access-token-0123456789',
+            ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
+            findOneMock: vi.fn(),
+            latestReviews: vi.fn(),
+            enforceGate: vi.fn()
+        };
+    });
+
+vi.mock('../../../src/utils/listing-access/user-gate', () => ({
+    enforceUserGate: enforceGate,
+    readEffectiveKeys: vi.fn(async () => ({ view_advanced_stats: true }))
+}));
 
 vi.mock('../../../src/mcp/tools/listing/listing-stats-readers', () => ({
     readLatestListingReviews: latestReviews
@@ -147,6 +154,7 @@ describe('/mcp get_listing_stats (end to end)', () => {
             model === 'oauthClient' ? { name: 'Claude', disabled: false } : { id: 'consent-1' }
         );
         latestReviews.mockResolvedValue([]);
+        enforceGate.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -155,6 +163,7 @@ describe('/mcp get_listing_stats (end to end)', () => {
         vi.mocked(getDb).mockReset();
         findOneMock.mockReset();
         latestReviews.mockReset();
+        enforceGate.mockReset();
         vi.restoreAllMocks();
     });
 
@@ -280,6 +289,25 @@ describe('/mcp get_listing_stats (end to end)', () => {
             isError: true,
             content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
         });
+        expect(views).not.toHaveBeenCalled();
+    });
+
+    it('refuses with the plan message when the plan has no basic stats', async () => {
+        // Arrange
+        enforceGate.mockRejectedValue(
+            new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required')
+        );
+        const views = vi.spyOn(entityViewService, 'getDailySeriesComparisonForOwnListing');
+
+        // Act
+        const message = await callTool('get_listing_stats', {
+            vertical: 'venue',
+            listingId: VENUE_ID
+        });
+
+        // Assert
+        expect(message.result?.isError).toBe(true);
+        expect(message.result?.content?.[0]?.text).toContain('Tu plan no incluye estadísticas');
         expect(views).not.toHaveBeenCalled();
     });
 });

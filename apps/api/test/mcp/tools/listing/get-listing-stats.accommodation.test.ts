@@ -23,7 +23,15 @@ import {
 } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { countBookmarks } = vi.hoisted(() => ({ countBookmarks: vi.fn() }));
+const { countBookmarks, effectiveKeys } = vi.hoisted(() => ({
+    countBookmarks: vi.fn(),
+    effectiveKeys: vi.fn()
+}));
+
+vi.mock('../../../../src/utils/listing-access/user-gate', () => ({
+    enforceUserGate: vi.fn(async () => undefined),
+    readEffectiveKeys: effectiveKeys
+}));
 
 vi.mock('../../../../src/mcp/tools/listing/listing-stats-readers', () => ({
     readLatestListingReviews: vi.fn(async () => [])
@@ -98,6 +106,7 @@ const run = (vertical: string) =>
 
 describe('get_listing_stats accommodation extras', () => {
     beforeEach(() => {
+        effectiveKeys.mockResolvedValue({ view_advanced_stats: true });
         countBookmarks.mockResolvedValue({ data: { count: 7 } });
         monthly.mockResolvedValue({
             data: [
@@ -118,7 +127,7 @@ describe('get_listing_stats accommodation extras', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
-        for (const fn of [countBookmarks, monthly, responseRate]) {
+        for (const fn of [countBookmarks, monthly, responseRate, effectiveKeys]) {
             fn.mockReset();
         }
     });
@@ -157,6 +166,50 @@ describe('get_listing_stats accommodation extras', () => {
                 }
             }
         });
+    });
+
+    it('reads the advanced capability for the accommodation vertical', async () => {
+        // Arrange
+        givenOwnListing(VerticalEnum.ACCOMMODATION);
+
+        // Act
+        await run('accommodation');
+
+        // Assert
+        expect(effectiveKeys).toHaveBeenCalledWith({
+            userId: OWNER_ID,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_advanced_stats']
+        });
+    });
+
+    it('omits favorites, says why and does not count them without view_advanced_stats', async () => {
+        // Arrange
+        givenOwnListing(VerticalEnum.ACCOMMODATION);
+        effectiveKeys.mockResolvedValue({ view_advanced_stats: false });
+
+        // Act
+        const outcome = await run('accommodation');
+
+        // Assert
+        expect(countBookmarks).not.toHaveBeenCalled();
+        const extras = outcome.ok ? outcome.data.accommodation : undefined;
+        expect(extras).not.toHaveProperty('favorites');
+        expect(extras).toMatchObject({
+            omitted: { favorites: 'not_in_plan' },
+            inquiries: { scope: 'all_my_accommodations' }
+        });
+    });
+
+    it('has no omitted note when the plan includes advanced stats', async () => {
+        // Arrange
+        givenOwnListing(VerticalEnum.ACCOMMODATION);
+
+        // Act
+        const outcome = await run('accommodation');
+
+        // Assert
+        expect(outcome.ok && outcome.data.accommodation).not.toHaveProperty('omitted');
     });
 
     it('keeps a null average response time while no inquiry was answered', async () => {

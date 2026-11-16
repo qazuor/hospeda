@@ -24,9 +24,14 @@
  * inside the untrusted-data envelope (spec §6.6).
  */
 
-import { EntityTypeEnum, VerticalEnum } from '@repo/schemas';
-import { entityViewService, type HostViewDailySeriesOutputItem } from '@repo/service-core';
+import { EntityTypeEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import {
+    entityViewService,
+    type HostViewDailySeriesOutputItem,
+    ServiceError
+} from '@repo/service-core';
 import { z } from 'zod';
+import { enforceUserGate, readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { type OwnListingRow, readOwnListingRow } from './get-listing';
@@ -121,6 +126,15 @@ export interface ListingStats {
     readonly accommodation?: AccommodationStatsExtras;
 }
 
+/** `reason` of the refusal when the plan has no stats; its Spanish text is below. */
+export const NO_STATS_ENTITLEMENT_REASON = 'NO_STATS_ENTITLEMENT';
+
+/** Spanish messages for the reasons this tool refuses with. */
+const GET_LISTING_STATS_REASON_MESSAGES: Readonly<Record<string, string>> = {
+    [NO_STATS_ENTITLEMENT_REASON]:
+        'Tu plan no incluye estadísticas. Podés mejorar tu plan desde tu panel de Hospeda para verlas.'
+};
+
 /** Entity type the view telemetry is keyed by, per vertical. */
 const ENTITY_TYPE_FOR = {
     [VerticalEnum.ACCOMMODATION]: EntityTypeEnum.ACCOMMODATION,
@@ -194,12 +208,32 @@ async function readReviews(input: {
 export const getListingStatsTool = defineTool({
     name: 'get_listing_stats',
     title: 'Estadísticas de la publicación',
-    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7 or 30 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (null when the previous period had no views). Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period), "inquiries" (guest inquiries per calendar month, this month and the previous one) and "responseTime" (reply rate in percent and average minutes to the first reply, all time). Inquiries and responseTime cover ALL the owner's accommodations, not just this one (their scope says so), and are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Reads the statistics of one listing the connected Hospeda user owns. Returns "views": visits in the chosen period (last 7 or 30 days, today included, Argentina calendar days; a visitor returning within 30 minutes counts once) next to the previous period of the same length, with the change and the percent change (null when the previous period had no views). Returns "reviews": approved review count and average rating, ALL TIME and not tied to the period (average is null when there are no reviews), plus the latest reviews with title, comment and rating. Requires the plan's basic stats; without it the call is refused with "Tu plan no incluye estadísticas". Works for accommodations, venues and experiences. For accommodations only it also returns "accommodation": "favorites" (users who currently saved it, not tied to the period; only with the plan's advanced stats, otherwise left out and "omitted": {"favorites": "not_in_plan"} says why), "inquiries" (guest inquiries per calendar month, this month and the previous one) and "responseTime" (reply rate in percent and average minutes to the first reply, all time). Inquiries and responseTime cover ALL the owner's accommodations, not just this one (their scope says so), and are omitted if the user may not read inquiries. Venues and experiences have no "accommodation" block at all. Metrics that do not exist for a vertical are omitted, never reported as zero. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: GetListingStatsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
+    reasonMessages: GET_LISTING_STATS_REASON_MESSAGES,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingStats>> => {
         const { vertical, listingId, period } = input;
+
+        // The same capability the HTTP stats routes require of this vertical.
+        try {
+            await enforceUserGate({ userId: actor.id, vertical, keys: ['view_basic_stats'] });
+        } catch (error) {
+            if (
+                error instanceof ServiceError &&
+                error.code === ServiceErrorCode.ENTITLEMENT_REQUIRED
+            ) {
+                return {
+                    error: {
+                        code: error.code,
+                        message: error.message,
+                        reason: NO_STATS_ENTITLEMENT_REASON
+                    }
+                };
+            }
+            throw error;
+        }
         const admitted = await readOwnListingRow({ actor, vertical, id: listingId });
         if (admitted.error) {
             return admitted.error;
@@ -207,6 +241,16 @@ export const getListingStatsTool = defineTool({
         const { row } = admitted;
 
         const isAccommodation = vertical === VerticalEnum.ACCOMMODATION;
+        // Favorites need the advanced capability, as `hostFavoritesBreakdown` does.
+        const includeFavorites =
+            isAccommodation &&
+            (
+                await readEffectiveKeys({
+                    userId: actor.id,
+                    vertical,
+                    keys: ['view_advanced_stats']
+                })
+            ).view_advanced_stats === true;
         const [viewsResult, reviews, extras] = await Promise.all([
             entityViewService.getDailySeriesComparisonForOwnListing({
                 actor,
@@ -215,7 +259,9 @@ export const getListingStatsTool = defineTool({
                 window: period
             }),
             readReviews({ vertical, row }),
-            isAccommodation ? readAccommodationStatsExtras({ actor, listingId: row.id }) : undefined
+            isAccommodation
+                ? readAccommodationStatsExtras({ actor, listingId: row.id, includeFavorites })
+                : undefined
         ]);
         if (viewsResult.error) {
             return { error: viewsResult.error };

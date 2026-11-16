@@ -28,7 +28,16 @@ import {
 } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { latestReviews } = vi.hoisted(() => ({ latestReviews: vi.fn() }));
+const { latestReviews, enforceGate, effectiveKeys } = vi.hoisted(() => ({
+    latestReviews: vi.fn(),
+    enforceGate: vi.fn(),
+    effectiveKeys: vi.fn()
+}));
+
+vi.mock('../../../../src/utils/listing-access/user-gate', () => ({
+    enforceUserGate: enforceGate,
+    readEffectiveKeys: effectiveKeys
+}));
 
 vi.mock('../../../../src/mcp/tools/listing/listing-stats-readers', () => ({
     readLatestListingReviews: latestReviews
@@ -122,11 +131,15 @@ const run = (input: Record<string, unknown>, actor: Actor = actorFor(OWNER_ID)) 
 describe('get_listing_stats', () => {
     beforeEach(() => {
         latestReviews.mockResolvedValue([]);
+        enforceGate.mockResolvedValue(undefined);
+        effectiveKeys.mockResolvedValue({ view_advanced_stats: true });
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
         latestReviews.mockReset();
+        enforceGate.mockReset();
+        effectiveKeys.mockReset();
     });
 
     it('is a read-only tool available to unverified emails as READ_OWN', () => {
@@ -185,6 +198,63 @@ describe('get_listing_stats', () => {
         // Assert
         expect(views).toHaveBeenCalledWith(expect.objectContaining({ window: '30d' }));
         expect(outcome).toMatchObject({ ok: true, data: { period: '30d' } });
+    });
+
+    describe('plan entitlements', () => {
+        it.each(
+            VERTICALS
+        )('checks view_basic_stats for %s like the HTTP routes', async (vertical) => {
+            // Arrange
+            givenGetById(vertical, { data: listingRow() });
+            givenViews();
+
+            // Act
+            await run({ vertical, listingId: LISTING_ID });
+
+            // Assert
+            expect(enforceGate).toHaveBeenCalledWith({
+                userId: OWNER_ID,
+                vertical,
+                keys: ['view_basic_stats']
+            });
+        });
+
+        it('refuses without view_basic_stats, in Spanish, before reading anything', async () => {
+            // Arrange
+            const getById = givenGetById(VerticalEnum.VENUE, { data: listingRow() });
+            const views = givenViews();
+            enforceGate.mockRejectedValue(
+                new ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED, 'Entitlement required', {
+                    entitlementKey: 'view_basic_stats'
+                })
+            );
+
+            // Act
+            const outcome = await run({ vertical: 'venue', listingId: LISTING_ID });
+
+            // Assert
+            expect(outcome.ok).toBe(false);
+            expect(outcome.ok ? undefined : outcome.failure).toMatchObject({
+                kind: 'denied',
+                message: expect.stringContaining('Tu plan no incluye estadísticas')
+            });
+            expect(getById).not.toHaveBeenCalled();
+            expect(views).not.toHaveBeenCalled();
+        });
+
+        it('does not turn other gate failures into a plan refusal', async () => {
+            // Arrange
+            givenGetById(VerticalEnum.VENUE, { data: listingRow() });
+            enforceGate.mockRejectedValue(new Error('effective set down'));
+
+            // Act
+            const outcome = await run({ vertical: 'venue', listingId: LISTING_ID });
+
+            // Assert
+            expect(outcome.ok ? undefined : outcome.failure.message).toBe(
+                TOOL_UNEXPECTED_ERROR_MESSAGE
+            );
+        });
     });
 
     describe('views comparison', () => {

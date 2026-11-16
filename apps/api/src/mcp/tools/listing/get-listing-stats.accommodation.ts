@@ -15,6 +15,10 @@
  *   Those two are computed over ALL the owner's accommodations, not this one,
  *   and the result says so in `scope`.
  *
+ * Favorites need the `view_advanced_stats` entitlement, exactly as
+ * `hostFavoritesBreakdown` requires; without it they are omitted and `omitted`
+ * says so.
+ *
  * The two conversation reads need `CONVERSATION_VIEW_OWN`. An owner without it
  * gets those metrics omitted; any other failure is reported as an error.
  */
@@ -38,8 +42,13 @@ export interface MonthlyInquiries {
 
 /** Accommodation-only block of `get_listing_stats`. */
 export interface AccommodationStatsExtras {
-    /** Users who currently have this accommodation saved as a favorite. Not tied to the period. */
-    readonly favorites: number;
+    /**
+     * Users who currently have this accommodation saved as a favorite. Not tied
+     * to the period. Omitted (see `omitted`) when the plan lacks `view_advanced_stats`.
+     */
+    readonly favorites?: number;
+    /** Metrics left out of this block and why. Absent when nothing was left out. */
+    readonly omitted?: { readonly favorites: 'not_in_plan' };
     /**
      * Inquiries per calendar month over ALL the owner's accommodations (not only
      * this one). Omitted when the owner may not read inquiries.
@@ -74,22 +83,27 @@ export type AccommodationExtrasResult =
  */
 export async function readAccommodationStatsExtras({
     actor,
-    listingId
+    listingId,
+    includeFavorites
 }: {
     readonly actor: Actor;
     readonly listingId: string;
+    /** Whether the plan includes `view_advanced_stats`; favorites are read only then. */
+    readonly includeFavorites: boolean;
 }): Promise<AccommodationExtrasResult> {
     const conversations = getInquiryConversationService();
     const [favorites, monthly, responseRate] = await Promise.all([
-        listingToolBookmarkService.countBookmarksForEntity(actor, {
-            entityId: listingId,
-            entityType: EntityTypeEnum.ACCOMMODATION
-        }),
+        includeFavorites
+            ? listingToolBookmarkService.countBookmarksForEntity(actor, {
+                  entityId: listingId,
+                  entityType: EntityTypeEnum.ACCOMMODATION
+              })
+            : undefined,
         conversations.getHostMonthlyInquiries(actor, { months: LISTING_STATS_INQUIRY_MONTHS }),
         conversations.getHostResponseRate(actor)
     ]);
 
-    if (favorites.error) {
+    if (favorites?.error) {
         return { error: favorites.error };
     }
     // Missing permission means "not available to this owner", not a failure.
@@ -101,7 +115,8 @@ export async function readAccommodationStatsExtras({
 
     return {
         extras: {
-            favorites: favorites.data?.count ?? 0,
+            ...(favorites ? { favorites: favorites.data?.count ?? 0 } : {}),
+            ...(includeFavorites ? {} : { omitted: { favorites: 'not_in_plan' as const } }),
             ...(monthly.data
                 ? {
                       inquiries: {
