@@ -38,13 +38,13 @@ import { admin } from 'better-auth/plugins';
 import { claimPartnerOnEmailVerification } from '../services/partner-application/partner-claim.service';
 import { sendAppEmail } from '../utils/email-sender';
 import { env } from '../utils/env';
+import { captureServerAnalyticsEvent } from './analytics-client';
 import { adminPluginRoles } from './auth-admin-access';
 import { resolveCookieDomain } from './auth-cookie-domain';
 import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
-import { captureServerAnalyticsEvent } from './posthog';
 import { resolveSessionAuthMethod } from './session-auth-method';
 import { resolveVerificationUrl } from './verification-callback';
 
@@ -804,7 +804,7 @@ function buildAuth() {
                         // here would skip the onboarding funnel state transition.
                         await grantBaselineUserRole({ userId: user.id, email: user.email });
 
-                        // Product analytics: signup_completed (PostHog). Fired
+                        // Product analytics: signup_completed (Umami). Fired
                         // server-side so it covers BOTH email and OAuth signups
                         // uniformly (the OAuth flow is a full redirect that
                         // unmounts the web form) and exactly once per new user.

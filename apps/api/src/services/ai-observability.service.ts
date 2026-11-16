@@ -3,19 +3,19 @@
  *
  * Creates the `recordEvent` callback that is injected into `createAiService` via
  * the factory.  The sink fans out each {@link AiEngineEvent} to structured logging,
- * Sentry (for reliability/alerting), and PostHog (for product analytics).
+ * Sentry (for reliability/alerting), and Umami (for product analytics).
  *
  * ## Design: fire-and-forget
  *
  * The returned callback is SYNCHRONOUS from the engine's perspective (matches the
  * `recordEvent?: (event: AiEngineEvent) => void` contract).  All async work
- * (Sentry + PostHog captures) is enqueued with `void asyncHandle(...)` and never
+ * (Sentry + Umami captures) is enqueued with `void asyncHandle(...)` and never
  * throws back to the engine.
  *
  * ## AC-4 compliance
  *
  * This file lives in `apps/api`, NOT in `packages/ai-core`.  The ai-core package
- * has zero knowledge of Sentry or PostHog.  The sink is injected at the
+ * has zero knowledge of Sentry or Umami.  The sink is injected at the
  * `createConfiguredAiService()` call site in `ai-service.factory.ts`.
  *
  * ## PII safety (AC-11)
@@ -25,20 +25,20 @@
  * being attached to an external telemetry payload.  Enum-like fields (feature,
  * providerId, direction, categories) are safe and are passed as-is.
  *
- * ## PostHog distinctId
+ * ## Umami distinctId
  *
  * AI engine events carry NO userId — the engine is a shared infrastructure layer.
  * A stable server identity (`'api-server'`) is used as the `distinctId` for all
- * PostHog captures from this sink.  Per-user attribution will arrive separately
+ * Umami captures from this sink.  Per-user attribution will arrive separately
  * from the user-facing route layer (children specs), which can call
- * `ph.capture({ distinctId: userId, ... })` directly or via a route-level hook.
+ * `client.capture({ distinctId: userId, ... })` directly or via a route-level hook.
  *
  * @module services/ai-observability
  */
 
 import type { AiEngineEvent } from '@repo/ai-core';
 import { scrubPii } from '@repo/ai-core';
-import { getPostHogClient } from '../lib/posthog.js';
+import { getAnalyticsClient } from '../lib/analytics-client.js';
 import { isSentryEnabled, Sentry } from '../lib/sentry.js';
 import { apiLogger } from '../utils/logger.js';
 
@@ -47,17 +47,17 @@ import { apiLogger } from '../utils/logger.js';
 // ---------------------------------------------------------------------------
 
 /**
- * Stable server-side `distinctId` used for PostHog captures from this sink.
+ * Stable server-side `distinctId` used for Umami captures from this sink.
  * Per-user attribution is the responsibility of user-facing route handlers.
  */
-const POSTHOG_DISTINCT_ID = 'api-server';
+const ANALYTICS_DISTINCT_ID = 'api-server';
 
 // ---------------------------------------------------------------------------
 // Internal async handlers (one per event type)
 // ---------------------------------------------------------------------------
 
 /**
- * Handles Sentry + PostHog side-effects for a `fallback` event.
+ * Handles Sentry + Umami side-effects for a `fallback` event.
  *
  * Spec §5.3: fallback = breadcrumb (NOT exception).  The provider error message
  * is scrubbed via `scrubPii` before being attached to the breadcrumb.
@@ -87,10 +87,10 @@ async function handleFallback(event: {
         });
     }
 
-    const ph = getPostHogClient();
-    if (ph) {
-        ph.capture({
-            distinctId: POSTHOG_DISTINCT_ID,
+    const client = getAnalyticsClient();
+    if (client) {
+        client.capture({
+            distinctId: ANALYTICS_DISTINCT_ID,
             event: 'ai_fallback',
             properties: {
                 feature: event.feature,
@@ -102,7 +102,7 @@ async function handleFallback(event: {
 }
 
 /**
- * Handles Sentry + PostHog side-effects for an `exhausted` event.
+ * Handles Sentry + Umami side-effects for an `exhausted` event.
  *
  * All providers failed — treated as a real error in Sentry.
  *
@@ -122,10 +122,10 @@ async function handleExhausted(event: {
         });
     }
 
-    const ph = getPostHogClient();
-    if (ph) {
-        ph.capture({
-            distinctId: POSTHOG_DISTINCT_ID,
+    const client = getAnalyticsClient();
+    if (client) {
+        client.capture({
+            distinctId: ANALYTICS_DISTINCT_ID,
             event: 'ai_call_exhausted',
             properties: {
                 feature: event.feature
@@ -135,7 +135,7 @@ async function handleExhausted(event: {
 }
 
 /**
- * Handles Sentry + PostHog side-effects for a `kill_switch` event.
+ * Handles Sentry + Umami side-effects for a `kill_switch` event.
  *
  * Kill-switch = expected behavior, not an error.  Sentry breadcrumb only (info level).
  *
@@ -156,10 +156,10 @@ async function handleKillSwitch(event: {
         });
     }
 
-    const ph = getPostHogClient();
-    if (ph) {
-        ph.capture({
-            distinctId: POSTHOG_DISTINCT_ID,
+    const client = getAnalyticsClient();
+    if (client) {
+        client.capture({
+            distinctId: ANALYTICS_DISTINCT_ID,
             event: 'ai_kill_switch_hit',
             properties: {
                 feature: event.feature
@@ -172,7 +172,7 @@ async function handleKillSwitch(event: {
  * Handles Sentry side-effects for a `moderation_error` event.
  *
  * Moderation outage must be visible in Sentry (warning level).  The error message
- * is scrubbed via `scrubPii`.  No PostHog event — this is infrastructure noise,
+ * is scrubbed via `scrubPii`.  No Umami event — this is infrastructure noise,
  * not a product analytics signal.
  *
  * @param event - The moderation_error event.
@@ -201,9 +201,9 @@ async function handleModerationError(event: {
 }
 
 /**
- * Handles PostHog side-effects for a `moderation_blocked` event.
+ * Handles Umami side-effects for a `moderation_blocked` event.
  *
- * Moderation blocks are EXPECTED policy outcomes — no Sentry.  PostHog captures the
+ * Moderation blocks are EXPECTED policy outcomes — no Sentry.  Umami captures the
  * event for product-side moderation analytics.  The `categories` object contains
  * boolean flags (safe to include — no PII).
  *
@@ -215,10 +215,10 @@ async function handleModerationBlocked(event: {
     readonly direction: 'input' | 'output';
     readonly categories: Record<string, boolean>;
 }): Promise<void> {
-    const ph = getPostHogClient();
-    if (ph) {
-        ph.capture({
-            distinctId: POSTHOG_DISTINCT_ID,
+    const client = getAnalyticsClient();
+    if (client) {
+        client.capture({
+            distinctId: ANALYTICS_DISTINCT_ID,
             event: 'ai_moderation_blocked',
             properties: {
                 feature: event.feature,
@@ -230,7 +230,7 @@ async function handleModerationBlocked(event: {
 }
 
 /**
- * Handles PostHog side-effects for a `success` event.
+ * Handles Umami side-effects for a `success` event.
  *
  * Records per-feature AI usage for product analytics (spec §5.13).
  *
@@ -241,10 +241,10 @@ async function handleSuccess(event: {
     readonly feature: string;
     readonly providerId: string;
 }): Promise<void> {
-    const ph = getPostHogClient();
-    if (ph) {
-        ph.capture({
-            distinctId: POSTHOG_DISTINCT_ID,
+    const client = getAnalyticsClient();
+    if (client) {
+        client.capture({
+            distinctId: ANALYTICS_DISTINCT_ID,
             event: 'ai_feature_used',
             properties: {
                 feature: event.feature,
@@ -267,7 +267,7 @@ async function handleSuccess(event: {
  *
  * ## Behavior per event type
  *
- * | Event type          | Logger   | Sentry                       | PostHog                  |
+ * | Event type          | Logger   | Sentry                       | Umami                    |
  * |---------------------|----------|------------------------------|--------------------------|
  * | `success`           | debug    | —                            | `ai_feature_used`        |
  * | `fallback`          | debug    | breadcrumb (warning)         | `ai_fallback`            |

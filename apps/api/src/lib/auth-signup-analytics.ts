@@ -1,6 +1,6 @@
 /**
  * @file auth-signup-analytics.ts
- * @description Helpers for the `signup_completed` PostHog event, fired from the
+ * @description Helpers for the `signup_completed` Umami event, fired from the
  * Better Auth `databaseHooks.user.create.after` hook (see `auth.ts`).
  *
  * Capturing signup server-side (rather than in the web SignUp form) is what
@@ -13,7 +13,7 @@
 
 import { AnalyticsEvents } from '@repo/analytics';
 import { createLogger } from '@repo/logger';
-import { captureServerAnalyticsEvent } from './posthog';
+import { captureServerAnalyticsEvent } from './analytics-client';
 
 const logger = createLogger('auth-signup-analytics');
 
@@ -50,12 +50,12 @@ export function deriveSignupProvider(context: SignupContextLike | null | undefin
 }
 
 /**
- * Fire the `signup_completed` PostHog event for a newly created user.
+ * Fire the `signup_completed` Umami event for a newly created user.
  *
- * Non-blocking by contract: any failure (PostHog client unavailable, capture
+ * Non-blocking by contract: any failure (Umami client unavailable, capture
  * throwing) is swallowed and logged so it can NEVER fail user registration.
  *
- * @param input - The new user's id (used as the PostHog distinct id) and the
+ * @param input - The new user's id (used as the Umami distinct id) and the
  *   Better Auth endpoint context used to derive the provider.
  */
 export function captureSignupCompleted(input: {
@@ -78,7 +78,7 @@ export function captureSignupCompleted(input: {
                 userId: input.userId,
                 error: error instanceof Error ? error.message : String(error)
             },
-            'PostHog capture failed for signup_completed (non-blocking)'
+            'Umami capture failed for signup_completed (non-blocking)'
         );
     }
 }
