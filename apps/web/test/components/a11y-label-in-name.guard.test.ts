@@ -41,7 +41,9 @@ const CARD_LINKS: ReadonlyArray<{ file: string; className: string }> = [
     { file: 'venue/VenueCard.astro', className: 'venue-card__link' },
     { file: 'experience/ExperienceCard.astro', className: 'exp-card__link' },
     { file: 'post/PostRelatedEntityCard.astro', className: 'post-related-entity' },
-    { file: 'shared/auth/SignInCtaCard.astro', className: 'signin-cta__link' }
+    { file: 'shared/auth/SignInCtaCard.astro', className: 'signin-cta__link' },
+    { file: 'shared/cards/EventCardFeatured.astro', className: 'event-card-featured__link' },
+    { file: 'shared/cards/FeaturedArticleCard.astro', className: 'featured-card__link' }
 ];
 
 describe('label in name (WCAG 2.5.3): links whose visible text is their content', () => {
