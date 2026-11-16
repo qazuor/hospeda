@@ -84,5 +84,5 @@
 .error {
     margin: 0;
     font-size: 0.875rem;
-    color: var(--core-destructive, var(--core-foreground));
+    color: var(--destructive-text, var(--destructive));
 }
