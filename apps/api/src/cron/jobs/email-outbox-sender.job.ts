@@ -66,7 +66,6 @@ import { apiLogger } from '../../utils/logger.js';
 import { issuePartnerClaimSecret } from '../../utils/partner-application/partner-claim-secret.js';
 import { resolvePartnerMailCopy } from '../../utils/partner-application/partner-mail-copy.js';
 import { readReconciliationSubjects } from '../../utils/reconciliation-summary/reconciliation-subjects-reader.js';
-import { reevaluateActiveSuccessionPredecessors } from '../../utils/reevaluate-succession.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
 /** The sender runs every minute. */
@@ -159,8 +158,6 @@ export interface CreateEmailOutboxSenderJobInput {
     readonly recoverExpired?: (input: { readonly now: Date }) => Promise<readonly string[]>;
     /** Writes one domain event. Defaults to the `domain_event` model. */
     readonly recordEvent?: (input: Parameters<DomainEventModel['insert']>[0]) => Promise<unknown>;
-    /** Injects the fast succession retry for unit tests; production uses the real reevaluator. */
-    readonly reevaluateSuccession?: () => Promise<unknown>;
 }
 
 /** Entity type of an outbox row in `domain_event`. */
@@ -310,7 +307,6 @@ export function createEmailOutboxSenderJob(
                     });
                 }
 
-                let sentSuccessionNoticeId: string | undefined;
                 const stats = await processEmailOutboxBatch({
                     deps: {
                         ...deps,
@@ -357,10 +353,6 @@ export function createEmailOutboxSenderJob(
                                 'Email outbox: mail sent but the lease was lost before marking it sent',
                                 { ...event }
                             );
-                        },
-                        onSent: async ({ row }) => {
-                            if (row.template !== 'billing.succession-predecessor-cancel') return;
-                            sentSuccessionNoticeId = row.id;
                         }
                     },
                     owner: `email-outbox-sender:${randomUUID()}`,
@@ -368,26 +360,6 @@ export function createEmailOutboxSenderJob(
                     leaseMs: EMAIL_OUTBOX_LEASE_MS,
                     batchSize: EMAIL_OUTBOX_BATCH_SIZE
                 });
-
-                if (sentSuccessionNoticeId) {
-                    try {
-                        const summary = await (
-                            input.reevaluateSuccession ?? reevaluateActiveSuccessionPredecessors
-                        )();
-                        ctx.logger.info('Succession predecessor retried after notice delivery', {
-                            outboxId: sentSuccessionNoticeId,
-                            summary
-                        });
-                    } catch (error) {
-                        ctx.logger.error(
-                            'Succession predecessor retry after notice delivery failed',
-                            {
-                                outboxId: sentSuccessionNoticeId,
-                                error: error instanceof Error ? error.message : String(error)
-                            }
-                        );
-                    }
-                }
 
                 ctx.logger.info('Email outbox batch processed', { ...stats });
                 return result({

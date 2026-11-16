@@ -481,7 +481,7 @@
         },
         "mine": {
             "title": "Suas assinaturas",
-            "replacedBy": "Substituída por {{plan}}; será cancelada em alguns minutos.",
+            "replacedBy": "Substituída por {{plan}}; será cancelada na próxima hora.",
             "empty": "Você não tem assinaturas vigentes.",
             "pause": {
                 "open": "Pausar assinatura",

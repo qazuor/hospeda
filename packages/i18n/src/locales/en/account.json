@@ -481,7 +481,7 @@
         },
         "mine": {
             "title": "Your subscriptions",
-            "replacedBy": "Replaced by {{plan}}; it will be canceled in a few minutes.",
+            "replacedBy": "Replaced by {{plan}}; it will be canceled within the next hour.",
             "empty": "You have no current subscriptions.",
             "pause": {
                 "open": "Pause subscription",

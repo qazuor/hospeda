@@ -152,58 +152,6 @@ describe('email-outbox-sender handler', () => {
         expect(result).toMatchObject({ success: true, processed: 1, errors: 0 });
     });
 
-    it('retries succession only after the matching notice is durably marked sent', async () => {
-        const notice = row({
-            template: 'billing.succession-predecessor-cancel',
-            payload: { subscriptionId: crypto.randomUUID() }
-        });
-        const { deps, outbox } = fakeDeps([notice]);
-        const reevaluateSuccession = vi.fn(async () => ({ cancelled: 1 }));
-        const job = createEmailOutboxSenderJob({
-            buildDeps: () => deps,
-            reevaluateSuccession
-        });
-
-        await job.handler(context());
-
-        expect(reevaluateSuccession).toHaveBeenCalledOnce();
-        expect(outbox.markSent.mock.invocationCallOrder[0]).toBeLessThan(
-            reevaluateSuccession.mock.invocationCallOrder[0] ?? 0
-        );
-    });
-
-    it('waits until the whole claimed batch is sent and ignores unrelated mail', async () => {
-        const notice = row({ template: 'billing.succession-predecessor-cancel' });
-        const unrelated = row();
-        const { deps, send } = fakeDeps([notice, unrelated]);
-        const reevaluateSuccession = vi.fn(async () => ({ cancelled: 1 }));
-        const job = createEmailOutboxSenderJob({
-            buildDeps: () => deps,
-            reevaluateSuccession
-        });
-
-        await job.handler(context());
-
-        expect(send).toHaveBeenCalledTimes(2);
-        expect(reevaluateSuccession).toHaveBeenCalledOnce();
-        expect(send.mock.invocationCallOrder[1]).toBeLessThan(
-            reevaluateSuccession.mock.invocationCallOrder[0] ?? 0
-        );
-    });
-
-    it('does not retry succession when only an unrelated mail is sent', async () => {
-        const { deps } = fakeDeps([row()]);
-        const reevaluateSuccession = vi.fn(async () => ({ cancelled: 1 }));
-        const job = createEmailOutboxSenderJob({
-            buildDeps: () => deps,
-            reevaluateSuccession
-        });
-
-        await job.handler(context());
-
-        expect(reevaluateSuccession).not.toHaveBeenCalled();
-    });
-
     it('TEST:U2:4 escalates an exhausted transactional mail as a captured error and still succeeds', async () => {
         // Arrange
         const { deps, send } = fakeDeps([row({ attempts: 4 })]);

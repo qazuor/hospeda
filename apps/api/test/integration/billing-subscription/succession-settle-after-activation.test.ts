@@ -18,7 +18,6 @@ import { getSuccessionCloser } from '../../../src/utils/billing-succession-ports
 import { injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
-import { reevaluateActiveSuccessionPredecessors } from '../../../src/utils/reevaluate-succession';
 import { testDb } from '../../e2e/setup/test-database';
 import { startSettlementSuccession, withCompositionRollback } from './succession-wiring-fixtures';
 
@@ -240,26 +239,6 @@ describe('TEST:B8b:8 TEST:B8b:24 real S17/S9 after activation', () => {
             const second = await subscriptionSuccessionReevaluationJob.handler(context());
             expect(second.success).toBe(true);
             expect(second.details).toMatchObject({ selected: 0 });
-            expect(oldCancelCalls(oldId)).toHaveLength(1);
-        });
-    });
-
-    it('retries deferred S17 immediately after its notice is marked sent', async () => {
-        await withCompositionRollback(async (tx) => {
-            const ids = await settlementCase(tx);
-            const oldId = ids.predecessorAuthorizationId;
-            server.mercadoPagoDeliveries({ webhookSecret });
-            expect((await deliverAuthorization(ids.successorAuthorizationId)).status).toBe(200);
-            expect((await readCloseCase(tx, ids)).predecessor?.status).toBe('ACTIVE');
-            await tx
-                .update(emailOutbox)
-                .set({ status: 'sent' })
-                .where(eq(emailOutbox.recipientUserId, ids.userId));
-
-            const summary = await reevaluateActiveSuccessionPredecessors();
-
-            expect(summary.cancelled).toBe(1);
-            expect((await readCloseCase(tx, ids)).predecessor?.status).toBe('CANCELLED');
             expect(oldCancelCalls(oldId)).toHaveLength(1);
         });
     });
