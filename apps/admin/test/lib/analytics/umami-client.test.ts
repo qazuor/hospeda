@@ -245,5 +245,51 @@ describe('umami-client (admin)', () => {
             // Act + Assert
             expect(() => mod.identifyUser('user-123')).not.toThrow();
         });
+
+        it('delivers an identify issued before load exactly once on the script load event', async () => {
+            // Arrange
+            const mod = await loadFreshModule();
+            mod.initUmami();
+            mod.identifyUser('user-early');
+            const tracker = installTracker();
+
+            // Act
+            trackerScripts()[0]?.dispatchEvent(new Event('load'));
+            trackerScripts()[0]?.dispatchEvent(new Event('load'));
+
+            // Assert
+            expect(tracker.identify).toHaveBeenCalledTimes(1);
+            expect(tracker.identify).toHaveBeenCalledWith('user-early');
+        });
+
+        it('identifies immediately when the tracker is already loaded', async () => {
+            // Arrange
+            const mod = await loadFreshModule();
+            mod.initUmami();
+            const tracker = installTracker();
+            trackerScripts()[0]?.dispatchEvent(new Event('load'));
+
+            // Act
+            mod.identifyUser('user-late');
+
+            // Assert
+            expect(tracker.identify).toHaveBeenCalledTimes(1);
+            expect(tracker.identify).toHaveBeenCalledWith('user-late');
+        });
+
+        it('drops a pending identify when resetUser runs before load', async () => {
+            // Arrange
+            const mod = await loadFreshModule();
+            mod.initUmami();
+            mod.identifyUser('user-early');
+            mod.resetUser();
+            const tracker = installTracker();
+
+            // Act
+            trackerScripts()[0]?.dispatchEvent(new Event('load'));
+
+            // Assert
+            expect(tracker.identify).not.toHaveBeenCalled();
+        });
     });
 });

@@ -39,6 +39,26 @@ import { adminLogger } from '@/utils/logger';
  */
 let isInitialized = false;
 
+/**
+ * Identity requested before the tracker script finished loading. Flushed once
+ * on the script `load` event, cleared by `resetUser()`.
+ */
+let pendingUserId: string | null = null;
+
+/** Whether `window.umami` (the deferred tracker) is available yet. */
+function isTrackerReady(): boolean {
+    // TYPE-WORKAROUND: window.umami is injected at runtime by the third-party tracker script and has no global declaration; the narrow structural cast only probes for its presence.
+    return typeof (window as unknown as { umami?: unknown }).umami !== 'undefined';
+}
+
+/** Deliver the pending identity (if any) exactly once. */
+function flushPendingIdentity(): void {
+    if (pendingUserId === null) return;
+    const userId = pendingUserId;
+    pendingUserId = null;
+    analytics.identify(userId);
+}
+
 const umamiClient = createUmamiBrowserClient();
 
 function resolveBrowserEnvironment():
@@ -111,6 +131,7 @@ export function initUmami(): void {
     if (nonce) {
         script.nonce = nonce;
     }
+    script.addEventListener('load', flushPendingIdentity);
     document.head.appendChild(script);
 
     isInitialized = true;
@@ -150,6 +171,12 @@ export function trackEvent<TName extends AnalyticsEventName>(
 export function identifyUser(userId: string): void {
     if (typeof window === 'undefined') return;
     if (!isInitialized) return;
+    if (!isTrackerReady()) {
+        // The tracker is deferred: keep the identity and deliver it on load.
+        pendingUserId = userId;
+        return;
+    }
+    pendingUserId = null;
     analytics.identify(userId);
 }
 
@@ -159,6 +186,7 @@ export function identifyUser(userId: string): void {
  */
 export function resetUser(): void {
     if (typeof window === 'undefined') return;
+    pendingUserId = null;
     if (!isInitialized) return;
     analytics.reset();
 }
