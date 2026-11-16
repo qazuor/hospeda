@@ -1068,6 +1068,24 @@ export function createDbMock() {
             raw: vi.fn().mockResolvedValue(undefined)
         },
 
+        // HOS-2184 T-026: OauthConnectionModel — read as the default model of
+        // AiConnectionService, which routes/ai-connection instantiates at module
+        // scope. Present so initApp() loads; tests that need data inject their own.
+        OauthConnectionModel: class MockOauthConnectionModel {
+            async listForUser(_input: unknown) {
+                return [];
+            }
+            async revokeForUser(_input: unknown) {
+                return { consents: 0, refreshTokens: 0, accessTokens: 0 };
+            }
+        },
+        oauthConnectionModel: {
+            listForUser: vi.fn().mockResolvedValue([]),
+            revokeForUser: vi
+                .fn()
+                .mockResolvedValue({ consents: 0, refreshTokens: 0, accessTokens: 0 })
+        },
+
         // Mock UserIdentityModel
         UserIdentityModel: class MockUserIdentityModel {
             async findById(_id: string) {

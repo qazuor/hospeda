@@ -40,6 +40,7 @@ import {
     aiSocialDraftsRoute,
     aiSocialPublicDataRoute
 } from './ai/social/index.js';
+import { protectedAiConnectionRoutes } from './ai-connection';
 import {
     adminAllianceRoutes,
     protectedAllianceRoutes,
@@ -480,6 +481,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
             '/api/v1/protected/user-bookmark-collections',
             protectedUserBookmarkCollectionRoutes
         );
+        // Connected AI assistants: list and revoke (HOS-2184 T-026). Not behind the
+        // MCP flag: a user can still disconnect while the feature is off.
+        app.route('/api/v1/protected/ai-connections', protectedAiConnectionRoutes);
         // Search history (SPEC-289 — entitlement-gated, plan-limited)
         app.route('/api/v1/protected/search-history', protectedSearchHistoryRoutes);
         // Price alerts (SPEC-286 — entitlement-gated, plan-limited)
