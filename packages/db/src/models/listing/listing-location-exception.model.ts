@@ -366,6 +366,7 @@ export const listingLocationExceptionModel = {
                        count(*) OVER () AS total_rows
                 FROM location_exception_request r
                 JOIN ${table} l ON l.id = r.entity_id AND l.deleted_at IS NULL
+                     AND l.publication_status <> ${PublicationStatusEnum.PURGED}
                 LEFT JOIN users u ON u.id = l.owner_id
                 WHERE r.entity_type = ${args.vertical} AND r.status = ${args.status}
                   AND (r.status <> 'PENDING' OR r.location_key = l.location_key)
