@@ -37,6 +37,30 @@ describe('transformAccommodationEdit', () => {
         expect(transformAccommodationEdit({ item: { id: 'a' } }).locationDuplicate).toBe(false);
     });
 
+    it('carries the HOS-2192 location exception block and drops a malformed one', () => {
+        const block = {
+            hasException: false,
+            request: {
+                id: '11111111-1111-4111-8111-111111111111',
+                status: 'REJECTED',
+                reason: 'Dos negocios distintos en el mismo local',
+                decisionReason: 'Falta documentación',
+                requestedAt: '2026-11-15T10:00:00.000Z',
+                decidedAt: '2026-11-15T12:00:00.000Z'
+            }
+        };
+        expect(
+            transformAccommodationEdit({ item: { id: 'a', locationException: block } })
+                .locationException
+        ).toEqual(block);
+        expect(transformAccommodationEdit({ item: { id: 'a' } }).locationException).toBeUndefined();
+        expect(
+            transformAccommodationEdit({
+                item: { id: 'a', locationException: { hasException: 'yes' } }
+            }).locationException
+        ).toBeUndefined();
+    });
+
     it('should extract all editable fields from a raw API accommodation object', () => {
         const raw = {
             id: 'acc-123',
