@@ -6,6 +6,7 @@ import {
     ListingAmenityPublicSchema,
     ListingFeaturePublicSchema
 } from '../../common/listing-catalog.schema.js';
+import { LocationExceptionOwnerViewSchema } from '../../common/location-rule.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { PostalAddressReadSchema } from '../../common/postal-address.schema.js';
 import { AmenityRelationAttributesSchema } from '../amenity/amenity.schema.js';
@@ -445,7 +446,13 @@ export const VenueProtectedSchema = VenueSchema.pick({
      * this listing's address (the draft warning). A flag only: it never carries
      * the other listing's id, and a duplicate of another owner never sets it.
      */
-    locationDuplicate: z.boolean().optional()
+    locationDuplicate: z.boolean().optional(),
+    /**
+     * HOS-2192 — the owner's side of the location exception: whether one is in
+     * force and the latest request for the address the listing has now. Never
+     * carries another listing's id.
+     */
+    locationException: LocationExceptionOwnerViewSchema.optional()
 });
 
 /** TypeScript type for {@link VenueProtectedSchema}. */
