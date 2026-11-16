@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 36/76 tasks (47%)
+## Progress: 39/76 tasks (51%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -426,7 +426,7 @@ Tracks (can run in parallel):
   - Blocked by: T-049
   - Blocks: none
 
-- [ ] **T-065** (complexity: 3) - T-6 Rewrite docs/analytics for Umami and delete the PostHog docs
+- [x] **T-065** (complexity: 3) - T-6 Rewrite docs/analytics for Umami and delete the PostHog docs
   - Tags: t6-removal, docs
   - Docs plus one guard data file. Tests: pnpm check:guards (venue-retired-word guard) and the docs vali...
   - Blocked by: T-016, T-042
@@ -452,7 +452,7 @@ Tracks (can run in parallel):
   - Blocked by: T-035
   - Blocks: T-060
 
-- [ ] **T-059** (complexity: 2) - T-6 Remove the api PostHog client (lib/posthog.ts) and remaining references
+- [x] **T-059** (complexity: 2) - T-6 Remove the api PostHog client (lib/posthog.ts) and remaining references
   - Tags: t6-removal, api
   - Cut-critical. posthog-node dependency removal is in T-061 (package.json edits batched there). Tests:...
   - Blocked by: T-022, T-023, T-024
@@ -482,7 +482,7 @@ Tracks (can run in parallel):
   - Blocked by: T-029, T-057
   - Blocks: T-067
 
-- [ ] **T-064** (complexity: 2) - T-6 Delete scripts/posthog and the posthog:setup script
+- [x] **T-064** (complexity: 2) - T-6 Delete scripts/posthog and the posthog:setup script
   - Tags: t6-removal, scripts
   - Safe only after scripts/umami/setup.ts exists (T-041). Tests: scripts/client-tools tests for the run...
   - Blocked by: T-041

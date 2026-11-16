@@ -2128,41 +2128,41 @@
             "id": "T-059",
             "title": "T-6 Remove the api PostHog client (lib/posthog.ts) and remaining references",
             "description": "Cut-critical. posthog-node dependency removal is in T-061 (package.json edits batched there). Tests: apps/api targeted suites for touched files; apps/api/test/services/ai-observability.test.ts passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022", "T-023", "T-024"],
             "blocks": ["T-060"],
             "subtasks": [
                 {
                     "title": "Delete apps/api/src/lib/posthog.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix remaining mentions: apps/api/src/services/ai-service.factory.ts, packages/ai-core/src/safety/pii-scrubber.ts comment, packages/ai-core/README.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm rg 'lib/posthog' apps/api returns nothing",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "api"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:20:07Z",
+                "completed": "2026-11-16T05:26:42Z"
             }
         },
         {
             "id": "T-060",
             "title": "T-6 Remove PostHog env vars (registry, generated JSON, snapshots, app Zod schemas, .env.example)",
-            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.",
+            "description": "Cut-critical. Tests: pnpm env:check:registry-style suites (env-registry.test.ts, env-registry-json.guard.test.ts) and per-app env tests pass. Owner follow-up after the cut: remove the unused PostHog vars from Coolify with hops env-* (owner action, no redeploy needed for removal alone).\n\nDECISION POINT (review 2026-11-15): HOSPEDA_POSTHOG_KEY is in requiredInProd (apps/api/src/utils/env.ts ~232). When removing it, decide explicitly whether HOSPEDA_UMAMI_URL + HOSPEDA_UMAMI_WEBSITE_ID_WEB take its place in requiredInProd (fail loudly at boot if ingestion is unconfigured) or ingestion stays optional (silently off). Recommendation: require them in prod so analytics cannot be switched off unnoticed; runtime Umami outages are still non-fatal (G-6). Ask the owner.\n\nNOTE 2026-11-16 (T-059): apps/api/src/utils/env.ts still lists HOSPEDA_POSTHOG_KEY as requiredInProd — remove it here BEFORE the owner deletes the Coolify var, or prod boot fails.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-057", "T-058", "T-059"],
@@ -2311,70 +2311,70 @@
             "id": "T-064",
             "title": "T-6 Delete scripts/posthog and the posthog:setup script",
             "description": "Safe only after scripts/umami/setup.ts exists (T-041). Tests: scripts/client-tools tests for the run command (locate) still pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-041"],
             "blocks": ["T-067"],
             "subtasks": [
                 {
                     "title": "Delete scripts/posthog/{client,data,definitions,setup}.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove posthog:setup from root package.json and the reference in scripts/client-tools/src/commands/run/run.ts (and its test if any)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove POSTHOG_* entries from turbo.json if T-061 did not already",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "scripts"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:20:07Z",
+                "completed": "2026-11-16T05:26:42Z"
             }
         },
         {
             "id": "T-065",
             "title": "T-6 Rewrite docs/analytics for Umami and delete the PostHog docs",
             "description": "Docs plus one guard data file. Tests: pnpm check:guards (venue-retired-word guard) and the docs validation workflow's checks pass (validate-docs.yml); no doc presents PostHog as live.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-042"],
             "blocks": ["T-066", "T-067"],
             "subtasks": [
                 {
                     "title": "Rewrite docs/analytics/README.md and event-catalog.md (entity_id/entity_viewed from T-016)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete docs/analytics/posthog-audit.md and posthog-dashboards.md; also remove the posthog-audit.md entry from scripts/guards/venue-retired-word.json (line ~406) or the guard fails",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update event-migrations.md and session-replay-privacy.md (replay stays disabled/not offered)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t6-removal", "docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T05:20:07Z",
+                "completed": "2026-11-16T05:26:42Z"
             }
         },
         {
@@ -2759,9 +2759,9 @@
     ],
     "summary": {
         "total": 76,
-        "pending": 40,
+        "pending": 37,
         "inProgress": 0,
-        "completed": 36,
+        "completed": 39,
         "blocked": 0,
         "averageComplexity": 2.5
     }
