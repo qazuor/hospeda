@@ -2751,6 +2751,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/protected/ai-connections/reset-review"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/protected/ai/chat"
         },
         {
