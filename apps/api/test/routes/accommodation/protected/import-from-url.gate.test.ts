@@ -34,7 +34,10 @@ import {
     buildImportAiExtract,
     getImportAiBlockedReason
 } from '../../../../src/routes/accommodation/protected/import-from-url';
-import type { AiGateState } from '../../../../src/routes/accommodation/protected/import-from-url.ai';
+import {
+    AccommodationImportAiModelOutputSchema,
+    type AiGateState
+} from '../../../../src/routes/accommodation/protected/import-from-url.ai';
 
 /** Fake Hono context exposing only the `billingLoadFailed` var the gate reads. */
 function fakeContext(billingLoadFailed: boolean): Context {
@@ -225,6 +228,34 @@ describe('buildImportAiExtract gate', () => {
         // Assert
         expect(result).toBeNull();
         expect(mockRecordAiUsage).not.toHaveBeenCalled();
+    });
+
+    it('HOS-2250: sends the strict model schema and maps a null-filled answer like an omitted one', async () => {
+        // Arrange: a strict-mode answer carries every key, null when not on the page.
+        const strictObject = Object.fromEntries(
+            Object.keys(AccommodationImportAiModelOutputSchema.shape).map((key) => [key, null])
+        );
+        Object.assign(strictObject, { name: 'Cabaña del Río', capacity: 4, price: 120 });
+        mockGenerateObject.mockResolvedValue({ ...GOOD_AI_RESULT, object: strictObject });
+        const { port } = runPort({});
+
+        // Act
+        const result = await port({ text: 'page', locale: 'es' });
+
+        // Assert
+        expect(mockGenerateObject.mock.calls[0]?.[1]).toBe(AccommodationImportAiModelOutputSchema);
+        expect(result).toEqual({
+            sourcePlatform: 'generic',
+            name: { value: 'Cabaña del Río', source: 'ai' },
+            price: { price: { value: 120, source: 'ai' }, currency: undefined },
+            extraInfo: {
+                capacity: { value: 4, source: 'ai' },
+                bedrooms: undefined,
+                beds: undefined,
+                bathrooms: undefined
+            }
+        });
+        expect(mockRecordAiUsage).toHaveBeenCalledTimes(1);
     });
 
     it('still returns the extraction when metering fails (best-effort)', async () => {

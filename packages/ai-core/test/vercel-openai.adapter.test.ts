@@ -73,6 +73,7 @@ vi.mock('@ai-sdk/openai', () => ({
 // ---------------------------------------------------------------------------
 
 import { NotImplementedError, OpenAiAdapter } from '../src/providers/index.js';
+import { FEATURES_WITHOUT_STRICT_JSON_SCHEMA } from '../src/providers/vercel-openai.adapter.js';
 
 // ---------------------------------------------------------------------------
 // Shared test fixtures
@@ -707,13 +708,12 @@ describe('OpenAiAdapter', () => {
         // Regression (AI search broken in prod): OpenAI structured-outputs strict
         // mode (the AI SDK default) rejects an output schema that has optional
         // properties with "Invalid schema for response_format ... 'required' is
-        // required ... Missing '<field>'". The `search` and `accommodation_import`
-        // features extract partial slots (all-optional schemas), so the adapter
-        // must opt them out via providerOptions.openai.strictJsonSchema:false.
+        // required ... Missing '<field>'". The `search` feature extracts partial
+        // slots (all-optional schema), so the adapter must opt it out via
+        // providerOptions.openai.strictJsonSchema:false.
 
         it.each([
-            'search',
-            'accommodation_import'
+            'search'
         ] as const)('disables strict JSON schema for the "%s" feature (all-optional output)', async (feature) => {
             // Arrange
             const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
@@ -733,6 +733,39 @@ describe('OpenAiAdapter', () => {
                     providerOptions: { openai: { strictJsonSchema: false } }
                 })
             );
+        });
+
+        it('HOS-2250: accommodation_import runs strict (required + nullable schema, no opt-out)', async () => {
+            // Arrange: the measured failure (renamed keys silently dropped) needs strict mode.
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            const schema = z.object({ capacity: z.number().nullable() });
+            mockGenerateObject.mockResolvedValue({
+                object: { capacity: null },
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act: with and without a configured reasoning effort (production runs `low`).
+            await adapter.generateObject(
+                { feature: 'accommodation_import', locale: 'es', prompt: 'q' },
+                schema
+            );
+            await adapter.generateObject(
+                {
+                    feature: 'accommodation_import',
+                    locale: 'es',
+                    prompt: 'q',
+                    params: { reasoningEffort: 'low' }
+                },
+                schema
+            );
+
+            // Assert
+            expect(FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has('accommodation_import')).toBe(false);
+            const first = mockGenerateObject.mock.calls[0]?.[0] as { providerOptions?: unknown };
+            const second = mockGenerateObject.mock.calls[1]?.[0] as { providerOptions?: unknown };
+            expect(first?.providerOptions).toBeUndefined();
+            expect(second?.providerOptions).toEqual({ openai: { reasoningEffort: 'low' } });
         });
 
         it('keeps strict JSON schema (no opt-out) for features not in the list, e.g. "chat"', async () => {

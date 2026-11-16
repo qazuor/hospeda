@@ -231,10 +231,35 @@ export function checkText(input: {
 }
 
 /**
- * The parse production runs on a structured result, per output schema.
- * `accommodation_import` parses with a non-strict Zod object that lives in
- * apps/api; its JSON Schema minus `additionalProperties` is the equivalent.
+ * Whether production accepts an `accommodation_import` answer (HOS-2250).
+ *
+ * Production runs two steps, both in apps/api (which ai-core may not import):
+ * the AI SDK validates the answer against the strict model-facing Zod schema
+ * (every field required and nullable; unknown keys are stripped, not
+ * rejected), then the route drops the `null` fields and re-parses with the
+ * all-optional schema. The second step accepts everything the first accepts,
+ * so the equivalent here is the stored model-facing JSON Schema without
+ * `additionalProperties`. `apps/api/test/scripts/ai-sweep-tasks-parity.test.ts`
+ * runs this and the real production chain over the same table.
+ *
+ * @param input.schema - The stored model-facing JSON Schema.
+ * @param input.object - The model's answer.
+ * @returns `{ accepted }`.
  */
+export function accommodationImportProductionAccepts(input: {
+    readonly schema: Readonly<Record<string, unknown>>;
+    readonly object: unknown;
+}): { readonly accepted: boolean } {
+    return {
+        accepted: validateJsonSchema({
+            schema: input.schema,
+            value: input.object,
+            options: { ignoreAdditionalProperties: true }
+        }).valid
+    };
+}
+
+/** The parse production runs on a structured result, per output schema. */
 function productionAccepts(input: {
     readonly schemaId: OutputSchemaId;
     readonly object: unknown;
@@ -253,11 +278,10 @@ function productionAccepts(input: {
         case 'accommodation_import':
             return input.task.outputSchema === null
                 ? false
-                : validateJsonSchema({
+                : accommodationImportProductionAccepts({
                       schema: input.task.outputSchema,
-                      value: input.object,
-                      options: { ignoreAdditionalProperties: true }
-                  }).valid;
+                      object: input.object
+                  }).accepted;
     }
 }
 
