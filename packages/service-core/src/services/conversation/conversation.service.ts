@@ -28,11 +28,11 @@ import type {
 } from '@repo/db';
 import {
     AccommodationModel,
-    accommodations,
     and,
     ConversationModel,
     conversations,
     eq,
+    findOwnedConversationById,
     getDb,
     isNotNull,
     isNull,
@@ -1070,23 +1070,11 @@ export class ConversationService extends BaseService {
             ctx,
             execute: async (validated, validatedActor, execCtx) => {
                 const db = (execCtx?.tx as DrizzleClient | undefined) ?? getDb();
-                const rows = await db
-                    .select()
-                    .from(conversations)
-                    .where(
-                        and(
-                            eq(conversations.id, validated.conversationId),
-                            inArray(
-                                conversations.accommodationId,
-                                db
-                                    .select({ id: accommodations.id })
-                                    .from(accommodations)
-                                    .where(eq(accommodations.ownerId, validatedActor.id))
-                            )
-                        )
-                    )
-                    .limit(1);
-                return rows[0] ?? null;
+                return findOwnedConversationById({
+                    db,
+                    conversationId: validated.conversationId,
+                    ownerId: validatedActor.id
+                });
             }
         });
     }
