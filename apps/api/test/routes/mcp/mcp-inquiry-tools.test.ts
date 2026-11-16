@@ -223,7 +223,10 @@ describe('/mcp inquiry tools (end to end)', () => {
             } as unknown as Awaited<ReturnType<ConversationService['listForOwner']>>);
 
         // Act
-        const message = await callTool('list_inquiries', { status: 'PENDING_OWNER' });
+        const message = await callTool('list_inquiries', {
+            status: 'PENDING_OWNER',
+            listingId: ACC_ID
+        });
 
         // Assert
         expect(message.result?.isError).toBeUndefined();
@@ -232,6 +235,7 @@ describe('/mcp inquiry tools (end to end)', () => {
             expect.objectContaining({
                 userId: USER_ID,
                 accommodationIds: [ACC_ID],
+                accommodationId: ACC_ID,
                 status: 'PENDING_OWNER'
             })
         );

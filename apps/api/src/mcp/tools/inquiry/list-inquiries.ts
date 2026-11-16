@@ -81,6 +81,12 @@ export const ListInquiriesInputSchema = z
             .describe(
                 'Only inquiries in this state. PENDING_OWNER = waiting for the owner to reply (unanswered); OPEN = ongoing; PENDING_GUEST = the owner replied and awaits the guest; CLOSED; BLOCKED. Omit for all.'
             ),
+        listingId: z
+            .uuid()
+            .optional()
+            .describe(
+                "Only inquiries about this accommodation (its id, from list_my_listings). An id that is not one of the user's own accommodations returns an empty list. Omit for all accommodations."
+            ),
         page: z.number().int().min(1).default(1).describe('Page number, starting at 1.'),
         pageSize: z
             .number()
@@ -107,7 +113,7 @@ function iso(value: Date | string | null | undefined): string | null {
 export const listInquiriesTool = defineTool({
     name: 'list_inquiries',
     title: 'Mis consultas',
-    description: `Lists the inquiries (messages from guests) the connected Hospeda user received on their accommodations, most recent activity first. Returns, per inquiry: id, accommodation, status, guest name, a preview of the latest message, unread count and dates. Use status PENDING_OWNER to see the ones still waiting for a reply. Only accommodations have inquiries; venues and experiences do not. Take an id to get_inquiry to read the whole conversation. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Lists the inquiries (messages from guests) the connected Hospeda user received on their accommodations, most recent activity first. Returns, per inquiry: id, accommodation, status, guest name, a preview of the latest message, unread count and dates. Use status PENDING_OWNER to see the ones still waiting for a reply, and listingId to see only those of one accommodation. Only accommodations have inquiries; venues and experiences do not. Take an id to get_inquiry to read the whole conversation. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: ListInquiriesInputSchema,
     isWrite: false,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListInquiriesResult>> => {
@@ -119,7 +125,7 @@ export const listInquiriesTool = defineTool({
                 }
             };
         }
-        const { page, pageSize, status } = input;
+        const { page, pageSize, status, listingId } = input;
         const emptyPage = {
             data: {
                 inquiries: [],
@@ -137,7 +143,8 @@ export const listInquiriesTool = defineTool({
             accommodationIds: [...accommodationIds],
             page,
             pageSize,
-            status
+            status,
+            accommodationId: listingId
         });
         if (result.error) {
             return { error: result.error };

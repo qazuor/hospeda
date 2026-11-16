@@ -121,6 +121,8 @@ describe('list_inquiries', () => {
                 const items = CONVERSATIONS.filter(
                     (c) =>
                         input.accommodationIds.includes(c.accommodationId) &&
+                        (input.accommodationId === undefined ||
+                            c.accommodationId === input.accommodationId) &&
                         (input.status === undefined || c.status === input.status)
                 );
                 return {
@@ -262,6 +264,37 @@ describe('list_inquiries', () => {
         });
         const ids = outcome.ok ? outcome.data.inquiries.map((i) => i.id) : [];
         expect(ids).toEqual([CONV_1]);
+    });
+
+    it('passes listingId to the service as the accommodation filter', async () => {
+        // Act
+        const outcome = await run({ listingId: OWN_ACC });
+
+        // Assert
+        expect(listForOwner).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({ accommodationIds: [OWN_ACC], accommodationId: OWN_ACC })
+        );
+        expect(outcome.ok).toBe(true);
+        const ids = outcome.ok ? outcome.data.inquiries.map((i) => i.id) : [];
+        expect(ids).toEqual([CONV_1, CONV_2]);
+    });
+
+    it("answers an empty list for a listingId that is not the actor's, never foreign data", async () => {
+        // Act
+        const outcome = await run({ listingId: OTHER_ACC });
+
+        // Assert
+        expect(outcome).toMatchObject({ ok: true, data: { inquiries: [] } });
+    });
+
+    it('rejects a listingId that is not a uuid', async () => {
+        // Act
+        const outcome = await run({ listingId: 'not-a-uuid' });
+
+        // Assert
+        expect(outcome.ok).toBe(false);
+        expect(listForOwner).not.toHaveBeenCalled();
     });
 
     it('passes the requested page through to the service', async () => {
