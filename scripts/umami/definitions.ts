@@ -3,8 +3,8 @@ import type { BoardType, JsonValue, ReportType } from './client.js';
 
 /**
  * Pure, deterministic builders for the Umami report and board definitions
- * (HOS-2119, T-038). They port the PostHog insight builders in
- * `scripts/posthog/definitions.ts`; the PostHog -> Umami mapping and the
+ * (HOS-2119, T-038). They port the retired PostHog insight builders (removed in
+ * HOS-2119 T-064); the PostHog -> Umami mapping and the
  * insights that have no Umami equivalent are recorded in
  * `.specs/HOS-2119-posthog-to-umami/docs/umami-spike-findings.md` ("T-038").
  *

@@ -18,7 +18,7 @@ ${pc.bold('hops run')} — cualquier script del repo
   ${pc.dim('anterior nunca abría.')}
 
   ${pc.dim('No es para el día a día: para eso están los comandos propios. Es para')}
-  ${pc.dim('el día que necesitás posthog:setup y no te acordás dónde vivía.')}
+  ${pc.dim('el día que necesitás umami:setup y no te acordás dónde vivía.')}
 
 ${pc.bold('Uso')}
 
