@@ -83,13 +83,14 @@ export const LOCATION_EXCEPTION_REQUEST_STATUSES = [
 export const LocationExceptionRequestStatusSchema = z.enum(LOCATION_EXCEPTION_REQUEST_STATUSES);
 export type LocationExceptionRequestStatus = z.infer<typeof LocationExceptionRequestStatusSchema>;
 
-/** The five audited actions on a location exception. */
+/** The six audited actions on a location exception (SUPERSEDED: a request that stopped applying). */
 export const LOCATION_EXCEPTION_EVENT_ACTIONS = [
     'REQUESTED',
     'APPROVED',
     'REJECTED',
     'GRANTED',
-    'REVOKED'
+    'REVOKED',
+    'SUPERSEDED'
 ] as const;
 export const LocationExceptionEventActionSchema = z.enum(LOCATION_EXCEPTION_EVENT_ACTIONS);
 export type LocationExceptionEventAction = z.infer<typeof LocationExceptionEventActionSchema>;

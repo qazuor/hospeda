@@ -1,5 +1,5 @@
 {
-  "id": "cbda91f5-44af-4aa7-8a93-63e24f351cf9",
+  "id": "3fd253c6-a514-46c0-8c77-07329c350e97",
   "prevId": "6c9c8610-d64e-4a24-89a8-10bf7fc60727",
   "version": "7",
   "dialect": "postgresql",
@@ -13741,7 +13741,7 @@
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "default": "clock_timestamp()"
         }
       },
       "indexes": {
@@ -13773,34 +13773,7 @@
           "with": {}
         }
       },
-      "foreignKeys": {
-        "location_exception_event_actor_id_users_id_fk": {
-          "name": "location_exception_event_actor_id_users_id_fk",
-          "tableFrom": "location_exception_event",
-          "tableTo": "users",
-          "columnsFrom": [
-            "actor_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "location_exception_event_request_id_location_exception_request_id_fk": {
-          "name": "location_exception_event_request_id_location_exception_request_id_fk",
-          "tableFrom": "location_exception_event",
-          "tableTo": "location_exception_request",
-          "columnsFrom": [
-            "request_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -13811,7 +13784,7 @@
         },
         "location_exception_event_action_check": {
           "name": "location_exception_event_action_check",
-          "value": "\"location_exception_event\".\"action\" IN ('REQUESTED', 'APPROVED', 'REJECTED', 'GRANTED', 'REVOKED')"
+          "value": "\"location_exception_event\".\"action\" IN ('REQUESTED', 'APPROVED', 'REJECTED', 'GRANTED', 'REVOKED', 'SUPERSEDED')"
         }
       },
       "isRLSEnabled": false

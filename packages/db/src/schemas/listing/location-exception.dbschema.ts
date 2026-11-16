@@ -101,8 +101,8 @@ export const locationExceptionRequests = pgTable(
  *
  * The listing's own `location_exception_*` columns hold only the CURRENT grant and
  * are nulled by a revoke, so this table is the record that survives it. Rows are
- * never updated or deleted: no model method or route does it, and a static test
- * pins that. Each row is written in the same transaction as the state change it
+ * never updated or deleted: no model method or route does it, a static test pins
+ * that and the trigger of `migrations/extras/058-*` rejects it at the database. Each row is written in the same transaction as the state change it
  * audits.
  */
 export const locationExceptionEvents = pgTable(
@@ -114,14 +114,19 @@ export const locationExceptionEvents = pgTable(
             .notNull(),
         entityId: uuid('entity_id').notNull(),
         action: varchar('action', { length: 16 }).$type<LocationExceptionEventAction>().notNull(),
-        actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+        // No FK on `actor_id` and `request_id` (same as `domain_event.actor_id`): the
+        // audit row must outlive, and never block or be rewritten by, the deletion of
+        // an account or a request.
+        actorId: uuid('actor_id'),
         reason: text('reason'),
         /** The listing's `location_key` when the action happened. */
         locationKey: text('location_key'),
-        requestId: uuid('request_id').references(() => locationExceptionRequests.id, {
-            onDelete: 'set null'
-        }),
-        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+        requestId: uuid('request_id'),
+        // `clock_timestamp()`, not `now()`: two events of one transaction (a SUPERSEDED
+        // and the REQUESTED that follows it) must keep their order in the history.
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .default(sql`clock_timestamp()`)
+            .notNull()
     },
     (table) => ({
         location_exception_event_entity_idx: index('location_exception_event_entity_idx').on(

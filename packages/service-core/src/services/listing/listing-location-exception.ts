@@ -29,6 +29,7 @@ import {
 } from '@repo/schemas';
 import { type DrizzleClient, ServiceError } from '../../types';
 import { extractPostgresErrorCause } from '../../utils/postgres-error-cause';
+import { asDuplicateLocationError } from './listing-location-key';
 
 const PENDING_UNIQUE_INDEX = 'location_exception_request_one_pending_uidx';
 
@@ -38,6 +39,43 @@ function conflict(reason: string, message: string, details?: Record<string, unkn
 
 function notFound(vertical: LocationKeyVertical) {
     return new ServiceError(ServiceErrorCode.NOT_FOUND, `${vertical} not found`);
+}
+
+/**
+ * Marks a pending request `SUPERSEDED` and appends the matching audit event, in
+ * the caller's transaction. Every transition to `SUPERSEDED` goes through here so
+ * none is left without a record.
+ */
+async function supersedeRequest(args: {
+    readonly vertical: LocationKeyVertical;
+    readonly request: {
+        readonly id: string;
+        readonly entityId: string;
+        readonly locationKey: string;
+    };
+    readonly cause: 'ADDRESS_CHANGED' | 'GRANTED_DIRECTLY' | 'NOT_NEEDED';
+    readonly at: Date;
+    readonly tx: DrizzleClient;
+}): Promise<void> {
+    const m = listingLocationExceptionModel;
+    await m.resolveRequest({
+        requestId: args.request.id,
+        status: 'SUPERSEDED',
+        decidedBy: null,
+        decisionReason: null,
+        at: args.at,
+        tx: args.tx
+    });
+    await m.insertEvent({
+        vertical: args.vertical,
+        listingId: args.request.entityId,
+        action: 'SUPERSEDED',
+        actorId: null,
+        reason: args.cause,
+        locationKey: args.request.locationKey,
+        requestId: args.request.id,
+        tx: args.tx
+    });
 }
 
 /** What a notification needs after a request was decided. */
@@ -82,6 +120,12 @@ export async function requestLocationException(args: {
                 LOCATION_EXCEPTION_REASONS.NEEDS_KEY,
                 'The listing has no comparable address to ask an exception for'
             );
+        await m.lockOwnerKey({
+            vertical: args.vertical,
+            ownerId: listing.ownerId,
+            locationKey: key,
+            tx
+        });
         if (listing.hasException)
             throw conflict(
                 LOCATION_EXCEPTION_REASONS.ALREADY_GRANTED,
@@ -99,11 +143,10 @@ export async function requestLocationException(args: {
                     'There is already a pending request for this listing'
                 );
             // The address moved after that request: it is obsolete, not a blocker.
-            await m.resolveRequest({
-                requestId: pending.id,
-                status: 'SUPERSEDED',
-                decidedBy: null,
-                decisionReason: null,
+            await supersedeRequest({
+                vertical: args.vertical,
+                request: pending,
+                cause: 'ADDRESS_CHANGED',
                 at: new Date(),
                 tx
             });
@@ -156,7 +199,8 @@ export async function requestLocationException(args: {
 type DecideOutcome =
     | { readonly kind: 'ok'; readonly decision: LocationExceptionDecision }
     | { readonly kind: 'not_pending' }
-    | { readonly kind: 'stale' };
+    | { readonly kind: 'stale' }
+    | { readonly kind: 'not_needed' };
 
 async function decide(args: {
     readonly vertical: LocationKeyVertical;
@@ -169,6 +213,24 @@ async function decide(args: {
     const m = listingLocationExceptionModel;
     const at = new Date();
     const outcome = await withTransaction<DecideOutcome>(async (tx) => {
+        // Lock order, everywhere: the LISTING first, then the request. The request is
+        // read without a lock only to learn which listing that is.
+        const peek = await m.findRequest({
+            vertical: args.vertical,
+            requestId: args.requestId,
+            tx
+        });
+        if (!peek) throw notFound(args.vertical);
+        const listing = await m.lockListing({ vertical: args.vertical, id: peek.entityId, tx });
+        if (listing?.locationKey) {
+            await m.lockOwnerKey({
+                vertical: args.vertical,
+                ownerId: listing.ownerId,
+                locationKey: listing.locationKey,
+                tx
+            });
+        }
+        // Re-read under the lock: the request may have been resolved meanwhile.
         const request = await m.findRequestForUpdate({
             vertical: args.vertical,
             requestId: args.requestId,
@@ -176,21 +238,36 @@ async function decide(args: {
         });
         if (!request) throw notFound(args.vertical);
         if (request.status !== 'PENDING') return { kind: 'not_pending' };
-        const listing = await m.lockListing({
-            vertical: args.vertical,
-            id: request.entityId,
-            tx
-        });
         if (!listing || listing.locationKey !== request.locationKey) {
-            await m.resolveRequest({
-                requestId: request.id,
-                status: 'SUPERSEDED',
-                decidedBy: null,
-                decisionReason: null,
+            await supersedeRequest({
+                vertical: args.vertical,
+                request,
+                cause: 'ADDRESS_CHANGED',
                 at,
                 tx
             });
             return { kind: 'stale' };
+        }
+        // Approving only makes sense while the listing still collides with another
+        // published listing of its owner; otherwise there is nothing to except.
+        if (args.approve) {
+            const occupant = await listingLocationModel.findOwnOccupant({
+                vertical: args.vertical,
+                locationKey: request.locationKey,
+                ownerId: listing.ownerId,
+                excludeId: listing.id,
+                tx
+            });
+            if (!occupant) {
+                await supersedeRequest({
+                    vertical: args.vertical,
+                    request,
+                    cause: 'NOT_NEEDED',
+                    at,
+                    tx
+                });
+                return { kind: 'not_needed' };
+            }
         }
         const decisionReason = args.reason ?? request.reason;
         if (args.approve) {
@@ -243,6 +320,11 @@ async function decide(args: {
         throw conflict(
             LOCATION_EXCEPTION_REASONS.REQUEST_STALE,
             'The listing changed address after the request was made'
+        );
+    if (outcome.kind === 'not_needed')
+        throw conflict(
+            LOCATION_EXCEPTION_REASONS.NOT_NEEDED,
+            'No other published listing of the owner shares this address anymore; the request was closed'
         );
     return outcome.decision;
 }
@@ -300,6 +382,14 @@ export async function grantLocationException(args: {
     return withTransaction(async (tx) => {
         const listing = await m.lockListing({ vertical: args.vertical, id: args.listingId, tx });
         if (!listing) throw notFound(args.vertical);
+        if (listing.locationKey) {
+            await m.lockOwnerKey({
+                vertical: args.vertical,
+                ownerId: listing.ownerId,
+                locationKey: listing.locationKey,
+                tx
+            });
+        }
         const done = await listingLocationModel.setException({
             vertical: args.vertical,
             id: args.listingId,
@@ -319,12 +409,20 @@ export async function grantLocationException(args: {
             tx
         });
         const resolves = pending !== null && pending.locationKey === listing.locationKey;
-        if (pending) {
+        if (pending && resolves) {
             await m.resolveRequest({
                 requestId: pending.id,
-                status: resolves ? 'APPROVED' : 'SUPERSEDED',
-                decidedBy: resolves ? args.adminId : null,
-                decisionReason: resolves ? args.reason : null,
+                status: 'APPROVED',
+                decidedBy: args.adminId,
+                decisionReason: args.reason,
+                at,
+                tx
+            });
+        } else if (pending) {
+            await supersedeRequest({
+                vertical: args.vertical,
+                request: pending,
+                cause: 'ADDRESS_CHANGED',
                 at,
                 tx
             });
@@ -371,28 +469,44 @@ export async function revokeLocationException(args: {
     readonly tx?: DrizzleClient;
 }): Promise<boolean> {
     const m = listingLocationExceptionModel;
-    const outcome = await withTransaction<
+    type Outcome =
         | { readonly kind: 'done'; readonly removed: boolean }
-        | { readonly kind: 'conflict'; readonly id: string }
-    >(async (tx) => {
+        | { readonly kind: 'conflict'; readonly id?: string };
+    const outcome = await withTransaction<Outcome>(async (tx) => {
         const listing = await m.lockListing({ vertical: args.vertical, id: args.listingId, tx });
         if (!listing) throw notFound(args.vertical);
         if (!listing.hasException || !listing.locationKey) return { kind: 'done', removed: false };
+        await m.lockOwnerKey({
+            vertical: args.vertical,
+            ownerId: listing.ownerId,
+            locationKey: listing.locationKey,
+            tx
+        });
+        // A PUBLISHED listing losing its exception must be alone on its place. EVERY
+        // other published sibling counts, excepted or not: three excepted cabins at one
+        // address must not become two excepted ones plus an unexcepted third.
+        // A DRAFT has nothing to conflict with yet; the rule is checked when it publishes.
         if (listing.publicationStatus === PublicationStatusEnum.PUBLISHED) {
-            const occupant = await listingLocationModel.findOwnOccupant({
+            const sibling = await m.findPublishedSibling({
                 vertical: args.vertical,
-                locationKey: listing.locationKey,
                 ownerId: listing.ownerId,
+                locationKey: listing.locationKey,
                 excludeId: listing.id,
                 tx
             });
-            if (occupant) return { kind: 'conflict', id: occupant };
+            if (sibling) return { kind: 'conflict', id: sibling };
         }
-        await listingLocationModel.clearException({
-            vertical: args.vertical,
-            id: args.listingId,
-            tx
-        });
+        try {
+            await listingLocationModel.clearException({
+                vertical: args.vertical,
+                id: args.listingId,
+                tx
+            });
+        } catch (error) {
+            // A concurrent publish slipped a non-excepted twin in: the unique index refuses.
+            if (asDuplicateLocationError(error)) return { kind: 'conflict' };
+            throw error;
+        }
         await m.insertEvent({
             vertical: args.vertical,
             listingId: args.listingId,
@@ -408,7 +522,10 @@ export async function revokeLocationException(args: {
         throw conflict(
             LOCATION_EXCEPTION_REASONS.REVOKE_CONFLICT,
             'Removing the exception would leave two published listings of the owner on one address',
-            { reason: LOCATION_EXCEPTION_REASONS.REVOKE_CONFLICT, existingListingId: outcome.id }
+            {
+                reason: LOCATION_EXCEPTION_REASONS.REVOKE_CONFLICT,
+                ...(outcome.id ? { existingListingId: outcome.id } : {})
+            }
         );
     return outcome.removed;
 }
