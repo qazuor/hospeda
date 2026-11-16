@@ -43,9 +43,13 @@ describe('mapToUmamiBatchItem totality', () => {
         expect(item.payload.data['d']).toBe('2026-11-15T10:00:00.000Z');
     });
 
+    /** A real browser UA: `isbot` flags placeholder UAs like `Mozilla/5.0 X`. */
+    const REAL_BROWSER_UA =
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15';
+
     it.each([
-        ['empty ip', { ip: '', userAgent: 'Mozilla/5.0 X' }],
-        ['whitespace ip', { ip: '  ', userAgent: 'Mozilla/5.0 X' }],
+        ['empty ip', { ip: '', userAgent: REAL_BROWSER_UA }],
+        ['whitespace ip', { ip: '  ', userAgent: REAL_BROWSER_UA }],
         ['empty userAgent', { ip: '203.0.113.9', userAgent: '' }]
     ])('should fall back to the synthetic identity per field with %s', (_label, visitor) => {
         const { item } = map({}, { visitor });
