@@ -18,6 +18,8 @@ export async function activateAuthorizedPending(
             readonly class: string;
         };
         readonly now: Date;
+        /** HOS-2223: the provider's next payment date from the authorizing re-read. */
+        readonly nextChargeAt?: Date | null;
     },
     ports: AfterSubscriptionActivatedPorts & {
         readonly successionCloser: SuccessionCloser;
@@ -27,7 +29,7 @@ export async function activateAuthorizedPending(
 ): Promise<boolean> {
     if (input.row.class === 'PRINCIPAL') {
         const changed = await activatePendingWithSignupNotice(
-            { subscriptionId: input.row.id, now: input.now },
+            { subscriptionId: input.row.id, now: input.now, nextChargeAt: input.nextChargeAt },
             { successionCloser: ports.successionCloser }
         );
         if (changed) await afterSubscriptionActivated({ subscription: input.row }, ports);
@@ -46,7 +48,12 @@ export async function activateAuthorizedPending(
     const complements = ports.complements;
     const activated = await getDb().transaction((tx) =>
         applyA2Recurring(
-            { tx, complementSubscriptionId: input.row.id, now: input.now },
+            {
+                tx,
+                complementSubscriptionId: input.row.id,
+                now: input.now,
+                nextChargeAt: input.nextChargeAt
+            },
             complements
         )
     );

@@ -107,12 +107,15 @@ async function readSubject(tx: DrizzleClient, locked: LockedRefundSource): Promi
             ? locked.payment.subscriptionId
             : locked.manualPayment.subscriptionId;
     if (subscriptionId) {
+        // No row lock (HOS-2223): `subscription.user_id` is written once at insert and never
+        // updated, so there is nothing to protect. A lock here would be taken AFTER the payment
+        // lock, inverting the global order (subscription before payment) that P1, S1 and S19
+        // follow, and could deadlock against them on the same charge.
         const [subscription] = await tx
             .select({ userId: subscriptions.userId })
             .from(subscriptions)
             .where(eq(subscriptions.id, subscriptionId))
-            .limit(1)
-            .for('share');
+            .limit(1);
         return subscription?.userId ?? null;
     }
     const addonInstanceId = locked.kind === 'PAYMENT' ? locked.payment.addonInstanceId : null;

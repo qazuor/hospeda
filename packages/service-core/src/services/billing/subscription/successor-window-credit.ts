@@ -1,0 +1,80 @@
+import { and, coveredPeriods, type DrizzleClient, eq, isNull, subscriptions } from '@repo/db';
+
+/**
+ * HOS-2223: whether a succession predecessor has a credited charge, the fact that turns its
+ * `next_charge_at` into the end of a paid cycle for `resolveSuccessorWindow`.
+ *
+ * Source: an open `covered_period` row (`released_at IS NULL`) of the subscription, from an
+ * automatic (`payment_id`) or a manual (`manual_payment_id`) payment. That row is written only
+ * when a payment is credited (P1 `creditPayment`, or a registered manual payment) and released
+ * when it is refunded, so it is the ledger of "this subscription has been paid", not a
+ * provider claim.
+ *
+ * Deliberately not narrowed to "the period covering now": a predecessor that was paid once and
+ * is waiting on its next charge keeps its window cut at that charge, as before HOS-2223. Only a
+ * subscription that never had a charge credited (S2 copied the provider's first-charge instant)
+ * is offered the full window.
+ *
+ * @param input.tx - Transaction or client to read with
+ * @param input.subscriptionId - The predecessor subscription
+ * @returns `hasCreditedCharge` true when an open covered period exists
+ */
+export async function readHasCreditedCharge(input: {
+    readonly tx: DrizzleClient;
+    readonly subscriptionId: string;
+}): Promise<{ readonly hasCreditedCharge: boolean }> {
+    const rows = await input.tx
+        .select({ id: coveredPeriods.id })
+        .from(coveredPeriods)
+        .where(
+            and(
+                eq(coveredPeriods.subscriptionId, input.subscriptionId),
+                isNull(coveredPeriods.releasedAt)
+            )
+        )
+        .limit(1);
+    return { hasCreditedCharge: rows.length > 0 };
+}
+
+/** The predecessor facts the successor window is decided on, read under its row lock. */
+export interface LockedSuccessorWindowPredecessor {
+    readonly status: string;
+    readonly paymentMethod: string | null;
+    readonly nextChargeAt: Date | null;
+    readonly hasCreditedCharge: boolean;
+}
+
+/**
+ * HOS-2223: locks the predecessor row (`FOR UPDATE`) and re-reads every input of
+ * `resolveSuccessorWindow`, so S1 decides the window and persists the successor while P1
+ * cannot credit a charge in between. P1 (`creditPayment`) takes the same row lock before it
+ * opens the `covered_period`, so the two serialize on this one row.
+ *
+ * Global lock order: the subscription row before any payment row. S1 calls this as the
+ * FIRST statement that touches the predecessor in the transaction that inserts the successor,
+ * and touches no payment there; P1 locks the subscription before its optimistic payment
+ * update; S19 locks the subscription before `retainPaymentForSuccession` locks the payment.
+ * The refund flows read the subscription without a lock (its `user_id` is immutable).
+ *
+ * @param input.tx - The successor's insert transaction
+ * @param input.subscriptionId - The predecessor subscription
+ * @returns The predecessor's window inputs, or `null` when the row does not exist
+ */
+export async function readLockedSuccessorWindowPredecessor(input: {
+    readonly tx: DrizzleClient;
+    readonly subscriptionId: string;
+}): Promise<LockedSuccessorWindowPredecessor | null> {
+    const [row] = await input.tx
+        .select({
+            status: subscriptions.status,
+            paymentMethod: subscriptions.paymentMethod,
+            nextChargeAt: subscriptions.nextChargeAt
+        })
+        .from(subscriptions)
+        .where(eq(subscriptions.id, input.subscriptionId))
+        .limit(1)
+        .for('update');
+    if (!row) return null;
+    const { hasCreditedCharge } = await readHasCreditedCharge(input);
+    return { ...row, hasCreditedCharge };
+}

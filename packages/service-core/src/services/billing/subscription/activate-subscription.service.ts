@@ -9,6 +9,7 @@ import {
     afterSubscriptionActivated
 } from './after-activation-commit.js';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
+import { providerNextChargeDate } from './provider-next-charge-date.js';
 import { refuseUndeclaredSubscriptionTransition } from './refuse-undeclared-transition.js';
 import type { BeforeCancelNotice } from './start-subscription.service';
 import type { SuccessionCloser } from './subscription-billing-ports';
@@ -75,7 +76,12 @@ export async function activateSubscription(
     if (snapshot.status !== 'active') return { activated: false, subscriptionId };
 
     const activated = await activatePendingWithSignupNotice(
-        { subscriptionId, now: ports.clock.now() },
+        {
+            subscriptionId,
+            now: ports.clock.now(),
+            nextChargeAt: providerNextChargeDate({ nextChargeAt: snapshot.nextChargeAt })
+                .nextChargeAt
+        },
         { successionCloser: ports.successionCloser }
     );
     if (activated) {

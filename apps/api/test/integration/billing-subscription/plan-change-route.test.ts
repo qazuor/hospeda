@@ -59,7 +59,13 @@ describe('TEST:B8b:17 plan change route rejects grace', () => {
                 .select({ status: subscriptions.status, nextChargeAt: subscriptions.nextChargeAt })
                 .from(subscriptions)
                 .where(eq(subscriptions.id, row.subscriptionId));
-            expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: null });
+            // HOS-2223: S2 copies the provider's date, so the real activation fills it.
+            expect(activated).toEqual({ status: 'ACTIVE', nextChargeAt: expect.any(Date) });
+            // A provider read that reported no date leaves it unknown: the 409 still holds.
+            await tx
+                .update(subscriptions)
+                .set({ nextChargeAt: null })
+                .where(eq(subscriptions.id, row.subscriptionId));
             const response = await post(row.subscriptionId, row.userId, {
                 billingOptionId: row.targetOptionId,
                 payerEmail

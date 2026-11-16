@@ -445,6 +445,12 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 cycle: 'monthly',
                 amount: 300000
             });
+            // HOS-2223: S2 now copies the provider's first-charge date; this case launches
+            // the additional customer before any charge date is known, as it was written.
+            await db
+                .update(subscriptions)
+                .set({ nextChargeAt: null })
+                .where(eq(subscriptions.id, additional.subscriptionId));
             const { rows } = await launch(seeded);
             const subscriptionIds = rows.map((row) => row.subscriptionId);
             // The additional customer fixture has no synchronized charge date yet.

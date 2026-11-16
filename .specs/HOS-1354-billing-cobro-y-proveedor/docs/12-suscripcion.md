@@ -885,6 +885,31 @@ reducida**, de modo que la autorización no pueda cruzar la fecha de cobro. **La
    ese momento**: se ofrece **después** del cobro, y se le dice a la persona desde cuándo puede
    hacerlo. Pasado el cobro, el crédito ya incluye lo que se pagó ese día, y la ventana vuelve a
    ser la completa.
+3. **El corte sólo vale cuando la fecha cierra un ciclo pagado** (HOS-2223, owner 2026-11-16).
+   Desde HOS-2223, `S2` copia la fecha del proveedor al activar, y apenas autorizada esa fecha es
+   el instante del primer cobro (`PA-3`, minutos después): no es el fin de ningún ciclo. Con los
+   puntos 1 y 2 solos, toda sucesión pedida antes de que `P1` acreditara ese primer cobro se
+   rechazaba por ventana corta, cuando antes (fecha en NULL) se ofrecía completa. **Mientras la
+   predecesora no tenga un cobro acreditado, la ventana ignora la fecha y es la completa.** La
+   fuente de «cobro acreditado» es un `covered_period` abierto (`released_at IS NULL`) de la
+   predecesora, de pago automático o manual: lo escribe sólo la acreditación (`P1` o el registro
+   de un pago manual) y lo libera el reembolso, así que es el libro de lo cobrado y no una
+   afirmación del proveedor. **Se eligió la lectura conservadora:** no se pide que el período
+   cubra el instante actual. Una predecesora que ya pagó un ciclo y espera el siguiente cobro
+   sigue con la ventana cortada en esa fecha, como antes de HOS-2223; sólo la que nunca tuvo un
+   cobro acreditado recibe la ventana completa. Lo implementan `readHasCreditedCharge`
+   (`successor-window-credit.ts`) y `resolveSuccessorWindow`, para `S1` de sucesión y para el
+   cambio de plan.
+   **`S1` y `P1` se serializan sobre la fila de la predecesora**: `S1` vuelve a decidir la
+   ventana bajo `FOR UPDATE` dentro de la transacción que inserta la sucesora
+   (`readLockedSuccessorWindowPredecessor`), y `P1` toma `FOR UPDATE` de la misma fila antes de
+   tocar el pago. **Orden global de locks: la suscripción antes que cualquier pago.** Lo siguen
+   `S1`, `P1` y `S19` (`reactivateSuspended` → `retainPaymentForSuccession`); los flujos de
+   reembolso leen la suscripción sin lock, porque su `user_id` no cambia nunca. Con el pago
+   primero, `P1` y `S19` sobre el mismo cobro se trababan (deadlock). Sin eso, un primer cobro acreditado entre la decisión y la
+   inserción dejaba persistida una ventana decidida sobre «sin cobro». Si la decisión nueva
+   rechaza, `S1` responde `SUCCESSION_WINDOW_TOO_SHORT`; si ofrece otra ventana,
+   `SUCCESSION_PREDECESSOR_MOVED`.
 
 **Por qué el corte es al inicio del día y no a la hora de la fecha**: el proveedor **no cobra a la hora
 exacta** de la fecha, sino en **lotes** —medido el 2026-09-24 en producción—: los **trece cobros de

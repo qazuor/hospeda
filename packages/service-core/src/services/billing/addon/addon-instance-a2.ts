@@ -6,6 +6,7 @@ import {
     type DrizzleClient,
     domainEventModel,
     eq,
+    sql,
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -20,7 +21,8 @@ const logger = createLogger('addon-instance-a2');
 const inputSchema = z.object({
     tx: z.custom<DrizzleClient>((value) => value !== null && value !== undefined),
     complementSubscriptionId: z.uuid(),
-    now: z.date()
+    now: z.date(),
+    nextChargeAt: z.date().nullable().optional()
 });
 
 /** An instance activated by A2 and the verticals whose coverage changed. */
@@ -37,6 +39,8 @@ export async function applyA2Recurring(
         readonly tx: DrizzleClient;
         readonly complementSubscriptionId: string;
         readonly now: Date;
+        /** HOS-2223: the provider's next payment date from the authorizing re-read. */
+        readonly nextChargeAt?: Date | null;
     },
     ports: A5Ports
 ): Promise<ActivatedAddon | { readonly outcome: 'NOT_APPLICABLE' }> {
@@ -76,7 +80,16 @@ export async function applyA2Recurring(
     });
     const [updatedComplement] = await tx
         .update(subscriptions)
-        .set({ status: 'ACTIVE', updatedAt: now })
+        .set({
+            status: 'ACTIVE',
+            updatedAt: now,
+            // HOS-2223: GREATEST keeps a later date P1 may already have written.
+            ...(input.nextChargeAt
+                ? {
+                      nextChargeAt: sql`greatest(${subscriptions.nextChargeAt}, ${input.nextChargeAt.toISOString()}::timestamptz)`
+                  }
+                : {})
+        })
         .where(
             and(
                 eq(subscriptions.id, complement.id),

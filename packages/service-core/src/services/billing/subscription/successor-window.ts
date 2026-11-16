@@ -11,11 +11,24 @@ const inputSchema = z.strictObject({
     predecessor: z.strictObject({
         status: z.string(),
         paymentMethod: z.string().nullable(),
-        nextChargeAt: z.date().nullable()
+        nextChargeAt: z.date().nullable(),
+        hasCreditedCharge: z.boolean()
     })
 });
 
-/** Resolves the AC:B8b:18 successor window against PLAZO:15 and the provider's charge day. */
+/**
+ * Resolves the AC:B8b:18 successor window against PLAZO:15 and the provider's charge day.
+ *
+ * HOS-2223: the window is cut at the predecessor's `next_charge_at` only once that date
+ * ends a paid cycle, that is, once the predecessor has a credited charge
+ * (`predecessor.hasCreditedCharge`, read by `readHasCreditedCharge` in
+ * `successor-window-credit.ts`). Before
+ * that, S2 copied the provider's first-charge instant (minutes after authorizing), which
+ * is not the end of any cycle, so the full window is offered as if the date were unknown.
+ *
+ * @param input.predecessor.hasCreditedCharge - Whether the predecessor holds an open
+ *   covered period (a credited automatic or manual payment)
+ */
 export function resolveSuccessorWindow(
     input: z.input<typeof inputSchema>
 ):
@@ -27,7 +40,8 @@ export function resolveSuccessorWindow(
     if (
         predecessor.status !== 'ACTIVE' ||
         predecessor.paymentMethod !== 'CARD' ||
-        predecessor.nextChargeAt === null
+        predecessor.nextChargeAt === null ||
+        !predecessor.hasCreditedCharge
     )
         return { kind: 'OFFERED', endsAt: fullEndsAt, reduced: false };
     const cutoff = getUtcInstantForLocalMidnight({

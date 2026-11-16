@@ -138,6 +138,14 @@
         "reason": "MP1 writes next_charge_at only; S29 activation is inventoried through activatePendingAuthorization, while S5 keeps the same source in GRACE_PERIOD and ACTIVE (AC:B5:14-15)."
     },
     {
+        "file": "packages/service-core/src/services/billing/payment/card-next-charge-advance.ts",
+        "symbol": "advanceCardNextChargeAt",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2223: P1 advances next_charge_at only, never status, so the coverage source is unchanged."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
         "symbol": "reactivateFromGrace",
         "table": "subscriptions",

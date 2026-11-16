@@ -24,6 +24,7 @@ import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
 import { resolvePlanDisplayName } from '../plan-display-name';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
+import { advanceCardNextChargeAt } from './card-next-charge-advance';
 import { issueReceipt, readReceiptPayer } from './issue-receipt.js';
 import {
     createPaymentReconciliationMarkPayments,
@@ -97,6 +98,15 @@ export async function creditPayment(
                         after: { exhaustedPromos: [] }
                     };
 
+                // Lock order (HOS-2223): subscription row FIRST, then the payment row. The
+                // payment above was read without a lock; the optimistic UPDATE below takes
+                // its lock and revalidates `status = 'PENDING'` and `version`, so nothing read
+                // before this lock is trusted. S19 (`reactivateSuspended` →
+                // `retainPaymentForSuccession`) and S1 (`readLockedSuccessorWindowPredecessor`)
+                // take the subscription before any payment too; locking the payment first
+                // here would deadlock against S19 on the same charge. Held until commit, so S1
+                // never persists a window decided on "no credited charge" while this credit is
+                // in flight.
                 const subscription = payment.subscriptionId
                     ? (
                           await tx
@@ -104,6 +114,7 @@ export async function creditPayment(
                               .from(subscriptions)
                               .where(eq(subscriptions.id, payment.subscriptionId))
                               .limit(1)
+                              .for('update')
                       )[0]
                     : undefined;
                 const firstPayment =
@@ -201,6 +212,13 @@ export async function creditPayment(
                         );
                         coverage = 'DUPLICATE_MARKED';
                     }
+                    if (coverage === 'WRITTEN')
+                        await advanceCardNextChargeAt({
+                            tx,
+                            subscription,
+                            chargeCreatedAt: input.chargeCreatedAt,
+                            now: ports.clock.now()
+                        });
 
                     const redemptions = await tx
                         .select({
