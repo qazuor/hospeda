@@ -1,5 +1,5 @@
 {
-  "id": "3fd253c6-a514-46c0-8c77-07329c350e97",
+  "id": "2dcbd7ba-baec-4843-b21e-517d5be2c5db",
   "prevId": "6c9c8610-d64e-4a24-89a8-10bf7fc60727",
   "version": "7",
   "dialect": "postgresql",
@@ -13823,6 +13823,12 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
+        },
+        "target_location": {
+          "name": "target_location",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
         },
         "reason": {
           "name": "reason",

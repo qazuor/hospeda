@@ -118,8 +118,28 @@ const reasonField = (key: string) =>
         .min(LOCATION_EXCEPTION_REASON_MIN, { message: `zodError.locationException.${key}.min` })
         .max(LOCATION_EXCEPTION_REASON_MAX, { message: `zodError.locationException.${key}.max` });
 
-/** Body of the owner's `POST .../location-exception-request`. */
-export const LocationExceptionRequestInputSchema = z.object({ reason: reasonField('reason') });
+/**
+ * The address an owner was trying to save when a location PATCH on a PUBLISHED
+ * listing was refused (`DUPLICATE_LOCATION`). The server recomputes the place key
+ * from it (with the listing's own destination); a client-sent key is never read.
+ */
+export const LocationExceptionTargetSchema = z.object({
+    street: z.string().trim().min(1).max(200),
+    number: z.string().trim().min(1).max(50),
+    floor: z.string().trim().max(50).optional(),
+    apartment: z.string().trim().max(50).optional()
+});
+export type LocationExceptionTarget = z.infer<typeof LocationExceptionTargetSchema>;
+
+/**
+ * Body of the owner's `POST .../location-exception-request`. With `location` the
+ * request is for the address the owner wants to MOVE the listing to, not for the one
+ * it has now.
+ */
+export const LocationExceptionRequestInputSchema = z.object({
+    reason: reasonField('reason'),
+    location: LocationExceptionTargetSchema.optional()
+});
 export type LocationExceptionRequestInput = z.infer<typeof LocationExceptionRequestInputSchema>;
 
 /** Body of the admin's approve: the reason is optional (defaults to the owner's). */
@@ -145,7 +165,11 @@ export const LocationExceptionRequestViewSchema = z.object({
     reason: z.string(),
     decisionReason: z.string().nullable(),
     requestedAt: z.string(),
-    decidedAt: z.string().nullable()
+    decidedAt: z.string().nullable(),
+    /** `true` when the request is for an address the listing is not at yet (a move). */
+    targetsNewAddress: z.boolean(),
+    /** The address of a move request, as the owner submitted it. */
+    targetLocation: LocationExceptionTargetSchema.nullable()
 });
 export type LocationExceptionRequestView = z.infer<typeof LocationExceptionRequestViewSchema>;
 
@@ -188,6 +212,8 @@ export const LocationExceptionRequestRowSchema = z.object({
         destinationId: z.string().nullable()
     }),
     collidingListings: z.array(namedRef),
+    /** `true` when `address` is the address the owner wants to move to, not the saved one. */
+    targetsNewAddress: z.boolean(),
     reason: z.string(),
     decisionReason: z.string().nullable(),
     requestedAt: z.string()

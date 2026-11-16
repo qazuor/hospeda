@@ -18,6 +18,7 @@ CREATE TABLE "location_exception_request" (
 	"entity_id" uuid NOT NULL,
 	"requested_by" uuid,
 	"location_key" text NOT NULL,
+	"target_location" jsonb,
 	"reason" text NOT NULL,
 	"status" varchar(16) DEFAULT 'PENDING' NOT NULL,
 	"requested_at" timestamp with time zone DEFAULT now() NOT NULL,

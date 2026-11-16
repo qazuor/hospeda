@@ -183,6 +183,7 @@ export function createAdminLocationRoutes(args: {
                         apartment: row.apartment,
                         destinationId: row.destinationId
                     },
+                    targetsNewAddress: row.targetsNewAddress,
                     collidingListings: [...row.collidingListings],
                     reason: row.reason,
                     decisionReason: row.decisionReason,
