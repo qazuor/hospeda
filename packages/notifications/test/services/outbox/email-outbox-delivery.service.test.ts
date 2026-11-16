@@ -5,7 +5,7 @@
  * primitives are proved against a real database in
  * `packages/db/test/integration/email-outbox-delivery.integration.test.ts`.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { EMAIL_OUTBOX_CONSTANTS } from '../../../src/constants/notification.constants';
 import {
     EmailHardBounceError,
@@ -98,6 +98,20 @@ describe('processEmailOutboxBatch — the run', () => {
 });
 
 describe('TEST:U2:8 one attempt record, in notification_log only', () => {
+    it('calls the sent hook only after the row is durably marked sent', async () => {
+        const r = row();
+        const h = harness([r]);
+        const onSent = vi.fn(async () => undefined);
+        h.deps.onSent = onSent;
+
+        await run(h);
+
+        expect(onSent).toHaveBeenCalledWith({ row: r });
+        expect(h.outbox.markSent.mock.invocationCallOrder[0]).toBeLessThan(
+            onSent.mock.invocationCallOrder[0] ?? 0
+        );
+    });
+
     it('a sent transactional mail leaves exactly one `sent` record and marks the row sent', async () => {
         // Arrange
         const r = row();

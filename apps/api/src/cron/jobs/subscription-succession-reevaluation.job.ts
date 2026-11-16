@@ -1,13 +1,4 @@
-import {
-    createPaymentReconciliationMarkPayments,
-    reevaluateSuccessionPredecessors,
-    reissueDeferredCourtesy
-} from '@repo/service-core';
-import { beforeCancelNotice } from '../../routes/billing-subscription/before-cancel-notice.js';
-import { getSuccessionCloser } from '../../utils/billing-succession-ports.js';
-import { getClock } from '../../utils/clock.js';
-import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
-import { getPaymentProvider } from '../../utils/payment-provider.js';
+import { reevaluateActiveSuccessionPredecessors } from '../../utils/reevaluate-succession.js';
 import type { CronJobDefinition } from '../types.js';
 
 /** Retries S17 and reissues deferred courtesy when its predecessor closes. */
@@ -31,34 +22,7 @@ export const subscriptionSuccessionReevaluationJob: CronJobDefinition = {
             };
         }
         try {
-            const provider = getPaymentProvider();
-            const clock = getClock().clock;
-            const coverageNotices = getCoverageNotices();
-            const summary = await reevaluateSuccessionPredecessors(
-                { limit: 100 },
-                {
-                    provider,
-                    clock,
-                    beforeCancelNotice,
-                    successionCloser: getSuccessionCloser(),
-                    coverageNotices,
-                    afterCancelled: async ({ successorSubscriptionId }) => {
-                        const courtesy = await reissueDeferredCourtesy(
-                            { successorSubscriptionId },
-                            {
-                                provider,
-                                clock,
-                                markPayments: createPaymentReconciliationMarkPayments(clock),
-                                coverageNotices
-                            }
-                        );
-                        logger.info('S9 courtesy retry completed', {
-                            successorSubscriptionId,
-                            outcome: courtesy.outcome
-                        });
-                    }
-                }
-            );
+            const summary = await reevaluateActiveSuccessionPredecessors();
             logger.info('Succession reevaluation completed', { summary });
             return {
                 success: true,

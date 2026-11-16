@@ -66,6 +66,7 @@ import { apiLogger } from '../../utils/logger.js';
 import { issuePartnerClaimSecret } from '../../utils/partner-application/partner-claim-secret.js';
 import { resolvePartnerMailCopy } from '../../utils/partner-application/partner-mail-copy.js';
 import { readReconciliationSubjects } from '../../utils/reconciliation-summary/reconciliation-subjects-reader.js';
+import { reevaluateActiveSuccessionPredecessors } from '../../utils/reevaluate-succession.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
 /** The sender runs every minute. */
@@ -158,6 +159,8 @@ export interface CreateEmailOutboxSenderJobInput {
     readonly recoverExpired?: (input: { readonly now: Date }) => Promise<readonly string[]>;
     /** Writes one domain event. Defaults to the `domain_event` model. */
     readonly recordEvent?: (input: Parameters<DomainEventModel['insert']>[0]) => Promise<unknown>;
+    /** Injects the fast succession retry for unit tests; production uses the real reevaluator. */
+    readonly reevaluateSuccession?: () => Promise<unknown>;
 }
 
 /** Entity type of an outbox row in `domain_event`. */
@@ -353,6 +356,31 @@ export function createEmailOutboxSenderJob(
                                 'Email outbox: mail sent but the lease was lost before marking it sent',
                                 { ...event }
                             );
+                        },
+                        onSent: async ({ row }) => {
+                            if (row.template !== 'billing.succession-predecessor-cancel') return;
+                            try {
+                                const summary = await (
+                                    input.reevaluateSuccession ??
+                                    reevaluateActiveSuccessionPredecessors
+                                )();
+                                ctx.logger.info(
+                                    'Succession predecessor retried after notice delivery',
+                                    {
+                                        outboxId: row.id,
+                                        summary
+                                    }
+                                );
+                            } catch (error) {
+                                ctx.logger.error(
+                                    'Succession predecessor retry after notice delivery failed',
+                                    {
+                                        outboxId: row.id,
+                                        error:
+                                            error instanceof Error ? error.message : String(error)
+                                    }
+                                );
+                            }
                         }
                     },
                     owner: `email-outbox-sender:${randomUUID()}`,

@@ -481,6 +481,7 @@
         },
         "mine": {
             "title": "Tus suscripciones",
+            "replacedBy": "Reemplazada por {{plan}}; se da de baja en unos minutos.",
             "empty": "No tenés suscripciones vigentes.",
             "pause": {
                 "open": "Pausar suscripción",

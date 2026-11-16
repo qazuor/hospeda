@@ -145,6 +145,8 @@ export interface EmailOutboxDeliveryDeps {
      * sender may take it again). The cron wires it to a `warn` log. Must not throw.
      */
     readonly onLeaseLost: (event: OutboxLeaseLost) => void;
+    /** Runs after a row is durably marked sent. Must not throw. */
+    readonly onSent?: (event: { readonly row: EmailOutboxRow }) => Promise<void>;
 }
 
 /** A row whose processing threw. */
@@ -409,6 +411,12 @@ async function sendRow(input: {
             template: row.template,
             providerMessageId: messageId
         });
+    } else if (deps.onSent) {
+        try {
+            await deps.onSent({ row });
+        } catch {
+            // The queue is already sent; domain follow-up failures are retried by their own sweep.
+        }
     }
     await deps.log.recordEmailAttempt({
         outboxId: row.id,

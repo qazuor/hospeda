@@ -2,6 +2,7 @@ import type { OwnSubscriptionsResponseSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 import {
+    findActiveSuccessor,
     MY_SUBSCRIPTION_PRICE_SHOWN,
     resolveMySubscriptionSummary,
     resolveMySubscriptionVerticalLabelKey
@@ -41,6 +42,28 @@ describe('resolveMySubscriptionSummary — TEST:1755:5', () => {
                 t: fallbackT
             }).title
         ).toBe('Basic');
+    });
+});
+
+describe('findActiveSuccessor — HOS-2220', () => {
+    it('finds the active successor so the predecessor can be shown as replaced', () => {
+        const predecessor = row({ id: 'old-subscription' });
+        const successor = row({ id: 'new-subscription', predecessorId: predecessor.id });
+        expect(
+            findActiveSuccessor({ row: predecessor, subscriptions: [predecessor, successor] })
+        ).toBe(successor);
+    });
+
+    it('does not treat a pending or inactive successor as a replacement', () => {
+        const predecessor = row({ id: 'old-subscription' });
+        const successor = row({
+            id: 'new-subscription',
+            status: 'SUSPENDED',
+            predecessorId: predecessor.id
+        });
+        expect(
+            findActiveSuccessor({ row: predecessor, subscriptions: [predecessor, successor] })
+        ).toBeNull();
     });
 });
 

@@ -15,7 +15,7 @@ import {
     GRACE_PLAN_CHANGE_KEY,
     totalCourtesyMonths
 } from '@/lib/billing/my-subscription-notices';
-import { resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
+import { findActiveSuccessor, resolveMySubscriptionSummary, resolveMySubscriptionVerticalLabelKey } from '@/lib/billing/my-subscription-summary';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './MySubscriptions.module.css';
 
@@ -40,10 +40,17 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
     {result && result.subscriptions.length === 0 && result.deferredCourtesies.length === 0 && <p class={styles.line}>{t('account.subscription.mine.empty')}</p>}
     {result?.subscriptions.map((row) => {
         const summary = resolveMySubscriptionSummary({ row, locale, t });
+        const activeSuccessor = findActiveSuccessor({ row, subscriptions: result.subscriptions });
+        const successorSummary = activeSuccessor
+            ? resolveMySubscriptionSummary({ row: activeSuccessor, locale, t })
+            : null;
         return (
             <article class={styles.item} data-testid="my-subscription" data-subscription-id={row.id} data-renewal={renewalKind(row)}>
                 <h3 class={styles.title}>{summary.title}</h3>
                 <p class={styles.line} data-testid="my-subscription-vertical">{t(summary.verticalLabelKey)}</p>
+                {activeSuccessor && successorSummary
+                    ? <p class={styles.line} data-testid="my-subscription-replaced">{t('account.subscription.mine.replacedBy', undefined, { plan: successorSummary.title })}</p>
+                    : <>
                 <p class={styles.line}>{t(statusKey(row))}</p>
                 {summary.priceLine && <p class={styles.line} data-testid="my-subscription-price">{summary.priceLine}</p>}
                 {summary.nextChargeLine && <p class={styles.line} data-testid="my-subscription-next-charge">{summary.nextChargeLine}</p>}
@@ -63,6 +70,7 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                 {row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt && <p class={styles.line} data-testid="my-subscription-grace">{t('account.subscription.mine.grace', undefined, { date: date(row.graceEndsAt) })}</p>}
                 {CANCELLATION_OFFERED[row.status] && <SubscriptionCancel client:visible subscriptionId={row.id} locale={locale} planName={summary.title} verticalLabel={t(summary.verticalLabelKey)} />}
                 {PROMO_REDEEM_OFFERED[row.status][row.paymentMethod] && <PromoCodeRedeem client:visible vertical={row.vertical as PublishVerticalSlug} locale={locale} offer="SUBSCRIPTION" />}
+                    </>}
             </article>
         );
     })}

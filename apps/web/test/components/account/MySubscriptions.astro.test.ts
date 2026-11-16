@@ -8,6 +8,13 @@ const source = readFileSync(
     'utf8'
 );
 describe('MySubscriptions SSR block', () => {
+    it('shows the active successor notice instead of predecessor details and actions', () => {
+        expect(source).toMatch(
+            /\{activeSuccessor && successorSummary[\s\S]*?\? <p[^>]*data-testid="my-subscription-replaced"[\s\S]*?: <>[\s\S]*?<SubscriptionCancel/u
+        );
+        expect(source).toContain('account.subscription.mine.replacedBy');
+    });
+
     it('renders the individual grace notice only for card payments with their grace date', () => {
         expect(source).toContain(
             "row.status === 'GRACE_PERIOD' && GRACE_NOTICE[row.paymentMethod] && row.graceEndsAt"
