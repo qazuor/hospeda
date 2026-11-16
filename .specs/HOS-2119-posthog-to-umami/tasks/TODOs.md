@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 48/76 tasks (63%)
+## Progress: 49/76 tasks (64%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -262,7 +262,7 @@ Tracks (can run in parallel):
   - Blocked by: T-004, T-012
   - Blocks: T-029, T-036, T-057
 
-- [ ] **T-029** (complexity: 3) - T-3 Update web CSP for Umami (remove PostHog hosts/hashes, allow the relay script origin)
+- [x] **T-029** (complexity: 3) - T-3 Update web CSP for Umami (remove PostHog hosts/hashes, allow the relay script origin)
   - Tags: t3-web-admin, web, security
   - CSP errors are silent in prod, so this is test-led. Tests: apps/web/test/integration/csp-hash-emissi...
   - Blocked by: T-028
