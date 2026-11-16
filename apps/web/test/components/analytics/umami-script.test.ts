@@ -17,7 +17,7 @@
  *   must stay session-blind);
  * - no `data-host-url` (the script origin is the Umami host);
  * - only `BaseLayout` and `StandaloneLayout` render it, and neither renders
- *   `PostHogScript` any more.
+ *   the removed PostHog snippet any more.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';

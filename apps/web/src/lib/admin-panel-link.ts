@@ -22,7 +22,7 @@ export const ADMIN_PANEL_PERMISSION = 'access.panelAdmin' as const;
  * `access.panelAdmin`, but only staff get `access.apiAdmin`. Used to pick
  * between the "Modo anfitrión" label (a HOST that just got admin access to
  * manage their own listings) and "Panel de administración" (actual Hospeda
- * staff doing platform-wide work). Also fed to PostHog as `is_staff` by
+ * staff doing platform-wide work). Also fed to Umami as `is_staff` by
  * `UserMenu.client.tsx`.
  */
 export const STAFF_DISCRIMINATOR_PERMISSION = 'access.apiAdmin' as const;

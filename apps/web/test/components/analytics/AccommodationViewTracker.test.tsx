@@ -149,7 +149,7 @@ describe('AccommodationViewTracker (SPEC-159 T-012)', () => {
         });
     });
 
-    // ── Both beacon and PostHog fire together ──────────────────────────────
+    // ── Both beacon and Umami fire together ──────────────────────────────
 
     it('fires both beacon and Umami event on the same mount', () => {
         // Arrange / Act

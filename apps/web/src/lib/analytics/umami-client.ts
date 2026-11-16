@@ -1,7 +1,7 @@
 /**
  * @file umami-client.ts
  * @description Typed web wrapper over the Umami browser tracker (HOS-2119, T-027).
- * Replaces `posthog-client.ts` with the same call-site surface:
+ * Exposes the call-site surface used across the web app:
  * `trackEvent`, `identifyUser`, `setPersonProperties`, `resetUser`
  * (plus the no-op `associateGroup` / `resetGroups`).
  *

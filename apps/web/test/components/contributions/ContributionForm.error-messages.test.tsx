@@ -12,7 +12,7 @@ import { fireEvent, render, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContributionForm } from '../../../src/components/contributions/ContributionForm.client';
 
-// PostHog is only hit on success; mock it so the module has no side effects.
+// Umami is only hit on success; mock it so the module has no side effects.
 vi.mock('../../../src/lib/analytics/umami-client', () => ({
     trackEvent: vi.fn()
 }));

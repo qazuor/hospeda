@@ -672,8 +672,8 @@ describe('buildCspHeader', () => {
     // SPEC-047 (rewritten in SPEC-140, again in HOS-369 WB0-1): lock the
     // script-src security posture — self + per-response content hashes + NO
     // 'unsafe-inline' and NO 'strict-dynamic'. The SPEC-047 original asserted
-    // exact-string equality which made any new https: host (e.g. PostHog
-    // ingestion hosts in SPEC-140) regress the test.
+    // exact-string equality which made any new https: host (e.g. an analytics
+    // ingestion host) regress the test.
     it('script-src must have self + the response hashes and no unsafe-inline', () => {
         const header = buildCspHeader({ scriptHashes: ['sha256-abc123'], styleHashes: [] });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src '));

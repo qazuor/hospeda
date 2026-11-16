@@ -882,7 +882,7 @@ describe('ContactHost', () => {
     });
 
     // -------------------------------------------------------------------------
-    // PostHog analytics — booking_request_sent (fires only on success)
+    // Umami analytics — booking_request_sent (fires only on success)
     // -------------------------------------------------------------------------
 
     describe('booking_request_sent analytics event', () => {

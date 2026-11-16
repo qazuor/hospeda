@@ -17,7 +17,7 @@ export const CONSENT_COOKIE_NAME = 'cookie-consent' as const;
 
 /**
  * Window event dispatched after every {@link saveConsent} call so listeners
- * (e.g. the PostHog initializer) can react to consent changes without a
+ * (e.g. the Umami identify flush) can react to consent changes without a
  * full page reload. The event's `detail` is the new {@link ConsentState}.
  *
  * Sibling to the existing `cookie-consent:reopen` event which is fired by
@@ -128,7 +128,7 @@ export function saveConsent({
         'SameSite=Lax'
     ].join('; ');
 
-    // Notify any listener (PostHog initializer, future analytics SDKs)
+    // Notify any listener (Umami identify flush, future analytics SDKs)
     // that consent has been updated so they can switch persistence mode
     // mid-session without a full page reload.
     if (typeof window !== 'undefined') {

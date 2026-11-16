@@ -50,7 +50,7 @@ vi.mock('../../../src/lib/i18n', async () => {
  * Capture analytics calls so the submit flow can assert the payload shape.
  * A hoisted spy lets the regression test below verify that
  * `accommodation_types` is serialized as a plain array (not a JS Set, which
- * PostHog would drop as `{}`).
+ * the analytics layer would drop as `{}`).
  */
 const { trackEventSpy } = vi.hoisted(() => ({ trackEventSpy: vi.fn() }));
 vi.mock('../../../src/lib/analytics/umami-client', () => ({

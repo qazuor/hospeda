@@ -1,11 +1,11 @@
 /**
  * @file events.test.ts
- * @description Catalog-shape regression test for the explicit PostHog event
+ * @description Catalog-shape regression test for the explicit analytics event
  * names exported by `src/lib/analytics/events.ts` (SPEC-140).
  *
  * These tests guard the public contract of the event catalog: the 5
  * acceptance-criteria events must stay present + use the agreed snake_case
- * naming convention so downstream PostHog dashboards keep matching.
+ * naming convention so downstream dashboards keep matching.
  */
 
 import { describe, expect, it } from 'vitest';

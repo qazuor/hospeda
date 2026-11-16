@@ -1147,7 +1147,7 @@ describe('FavoriteButton — locale number formatting', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 13. PostHog analytics — favorite_toggled
+// 13. Umami analytics — favorite_toggled
 // ---------------------------------------------------------------------------
 
 describe('FavoriteButton — favorite_toggled analytics event', () => {
