@@ -1,4 +1,7 @@
-# AI chat model and parameter sweep (HOS-2095)
+# AI model and parameter sweep (HOS-2095, HOS-2217)
+
+> Changing the production model? Jump to [Model migration (every AI feature)](#model-migration-every-ai-feature-hos-2217):
+> one command compares the candidates across all ten AI features.
 
 Compares models x reasoning effort x `maxOutputTokens` for the AI chat feature:
 visible-answer rate, `finishReason`, input/output/reasoning tokens, time to first
@@ -157,3 +160,85 @@ rules, or when a case's entity/feature/locale changed since generation.
 - Worst-case input tokens use ~4 chars/token; real counts differ.
 - Results are small-sample and non-deterministic; raise `repetitions` within the call cap.
 - A reasoning model's reasoning tokens count against `maxOutputTokens`, which is the point of the sweep.
+
+## Model migration (every AI feature, HOS-2217)
+
+`migration.ts` is the single entry point for a model change. It runs the chat cases above plus 6-12 cases for each
+of the seven other features, against every model of `sweep.config.migration.json` (first model = baseline, today
+`gpt-5.4-nano`; candidates `gpt-5.4-mini`, `gpt-5-nano`, `gpt-5-mini`), and reports quality, error rate, cost per
+answer, projected monthly cost and latency per feature, plus an overall summary.
+
+### End-to-end run (from `packages/ai-core`)
+
+```bash
+# 0. Replace the PLACEHOLDER monthlyCalls in sweep.config.migration.json with real volumes, read-only:
+#    select feature, count(*) from ai_usage where created_at > now() - interval '30 days' group by 1;
+
+# 1. Dry run (default, no network): calls and worst-case USD per feature and in total.
+CI=true pnpm exec tsx scripts/ai-sweep/migration.ts
+CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --features translate,faq_draft   # a subset
+
+# 2. Execute (spends money: get the budget approved first). Aborts above maxCalls (or --max-calls).
+OPENAI_API_KEY=... CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --execute --blind-export out/blind.jsonl
+#    -> out/migration-<stamp>.jsonl (raw), out/migration-<stamp>.md (report), blind.jsonl + blind.jsonl.key.json
+
+# 3. Grade blind.jsonl 1-5 (human or LLM; it carries the input, grounding text, notes and answer, never the model)
+#    into grades.json, then merge offline. --results alone re-checks old answers with the current checks.
+CI=true pnpm exec tsx scripts/ai-sweep/migration.ts --results out/migration-<stamp>.jsonl \
+  --grades grades.json --key out/blind.jsonl.key.json
+```
+
+Flags: `--config`, `--features a,b`, `--max-calls`, `--concurrency`, `--out`, `--api-key-file`, `--blind-export`,
+`--results`, `--grades`, `--key`. Read the overall table first, then each feature: a candidate that is cheaper
+overall but fails one feature (say `accommodation_import` schema validity) is not a drop-in replacement.
+
+### What each feature measures
+
+| feature | production call reproduced | automatic checks |
+| --- | --- | --- |
+| `chat`, `chat_venue`, `chat_experience` | streamed chat over the real listing context (see above) | rubric facts, unknown handling, decline, language, raw codes, owner voice |
+| `search` | two calls: filter extraction (`generateObject`, `SearchIntentOutputSchema`) and the streamed reply (fixed ideal filters, so it is measured alone) | expected field values, no hallucinated filters, schema validity and production parse; reply rubric |
+| `translate` | `translateField`: URL placeholders + `buildTranslationPrompt` | proper names verbatim, placeholders intact once, no preamble, language, preserved literals |
+| `text_improve` | `buildTextImprovePrompt`, streamed | facts kept, nothing invented, no preamble, voseo, length |
+| `post_generate` | `buildPostGeneratePrompt`, `generateObject` | schema + production strict parse, HTML content, requested language, no invented figures |
+| `accommodation_import` | `stripHtmlToText` + `buildImportAiPrompt`, `generateObject` (non-strict JSON schema) | field values, values grounded in the page text, no invented coordinates/contacts, reviews never copied |
+| `faq_draft` | chat context + `buildFaqDraftRequest`, `generateObject`, `maxTokens` 1024 / temperature 0 fixed | `hasData` right (false on missing data), draft grounded and plain text, language |
+| `support` | none: no production route calls it today; engine defaults only | decline off-topic/injection, escalation, no invented policy, language |
+
+Trap cases per feature: prompt injection, missing data and language mismatch. All data is synthetic: phones are
+zero-filled, URLs use `example.com`.
+
+### Production parity
+
+Like the chat contexts, the non-chat requests are never rebuilt in ai-core. `apps/api` renders each stored input
+(`task-fixtures/<feature>.json`) with the real route builders into `tasks.generated.json`, together with the output
+schemas converted by the AI SDK itself (`zodSchema`, via `sdk-json-schema.ts`):
+
+```bash
+# from the repo root, after changing a fixture input, a builder, an output schema or inputs/*.json
+CI=true pnpm --filter hospeda-api exec tsx scripts/ai-sweep/generate-sweep-tasks.ts
+```
+
+Guards: `apps/api/test/scripts/ai-sweep-tasks-parity.test.ts` fails on a stale file and rebuilds one case per call
+kind without the generator; `test/ai-sweep-provider-parity.test.ts` (ai-core) runs every case through the real
+`createAiEngine` and `OpenAiAdapter` and compares what reaches the provider and the SDK with what the sweep sends;
+`test/ai-sweep-tasks.test.ts` refuses a fixture edited after generation.
+
+### Adding a feature or a case
+
+- **A case**: add it to `task-fixtures/<feature>.json` (`id` prefixed with the feature, raw route `input`, `checks`,
+  grader `notes`), regenerate `tasks.generated.json`, and run the three tests above.
+- **A feature**: export its pure prompt builder from apps/api (a `*.prompt.ts` module if the route file loads env),
+  add the call kind to `TASK_CALLS`/`FEATURE_OF_CALL` (`tasks.ts`) and its input schema and `renderTask` branch
+  (`apps/api/scripts/ai-sweep/render-sweep-tasks.ts`), plus its output schema to `OUTPUT_SCHEMA_IDS` and
+  `OUTPUT_ZOD_SCHEMAS` if structured, then add it to `sweep.config.migration.json` with its monthly volume.
+
+### Caveats (migration)
+
+- `monthlyCalls` in the committed config are placeholders; the monthly projection is only as good as them.
+- Prompts are the in-code defaults, not DB overrides, and feature configs are not read: the effort is the config's.
+- When production sends no `maxTokens`, the sweep caps the call (`maxOutputTokens` / `featureMaxOutputTokens`) so the
+  worst case is bounded; a capped answer shows up as finishReason `length` in the "truncated" column.
+- `support` has no production caller, so its parity is with the engine defaults only.
+- `faq_draft` contexts use every listing section; production may hide sections the owner's plan does not grant.
+- The JSON Schema validator supports only the keywords the stored schemas use and throws on any other one.
