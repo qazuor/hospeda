@@ -7,6 +7,11 @@
  *
  * - Same-origin is decided by comparing parsed URL origins, never by string
  *   prefix (`https://site.com.evil.com` must not pass).
+ * - The referrer is the page the visitor came from: `document.referrer` on a
+ *   full page load, the previous page's URL after a ClientRouter soft
+ *   navigation (`pushState` never updates `document.referrer`). Both come from
+ *   {@link getCurrentPageReferrer}. The island is not `transition:persist`ed,
+ *   so it remounts and re-evaluates on every page load.
  * - The Umami tracker script is `defer`, so it may not exist yet at hydration.
  *   The island polls briefly (bounded) and gives up silently.
  * - Receives only the entity id, type and locale: no per-user data, so the
@@ -19,12 +24,9 @@
 import { AnalyticsEvents } from '@repo/analytics';
 import { useEffect, useRef } from 'react';
 import { trackTaggedEvent } from '@/lib/analytics/umami-client';
+import { getCurrentPageReferrer } from '@/lib/analytics/umami-pageview';
+import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 import type { SupportedLocale } from '@/lib/i18n';
-
-/** Interval between checks for `window.umami`. */
-const POLL_INTERVAL_MS = 250;
-/** Maximum number of checks (about 5 seconds in total). */
-const MAX_POLL_ATTEMPTS = 20;
 
 /** Listing types that have an owner traffic page. */
 export type InternalEntryEntityType = 'ACCOMMODATION' | 'VENUE' | 'EXPERIENCE' | 'PARTNER';
@@ -60,11 +62,6 @@ export function isSameOriginReferrer({
     }
 }
 
-function isTrackerReady(): boolean {
-    // TYPE-WORKAROUND: the Umami script attaches window.umami at runtime and no global typing is declared for it.
-    return typeof (window as unknown as { umami?: unknown }).umami !== 'undefined';
-}
-
 /**
  * Sends `listing_internal_entry` once per mount when the referrer is
  * same-origin. Renders nothing.
@@ -80,39 +77,25 @@ export function InternalEntryTracker({
         if (sentRef.current) return;
         if (
             !isSameOriginReferrer({
-                referrer: document.referrer,
+                referrer: getCurrentPageReferrer(),
                 currentOrigin: window.location.origin
             })
         ) {
             return;
         }
 
-        const send = (): void => {
-            sentRef.current = true;
-            trackTaggedEvent({
-                name: AnalyticsEvents.listingInternalEntry,
-                properties: { entity_id: entityId, entity_type: entityType, locale },
-                tag: entityId
-            });
-        };
-
-        if (isTrackerReady()) {
-            send();
-            return;
-        }
-
-        let attempts = 0;
-        const timer = window.setInterval(() => {
-            attempts += 1;
-            if (isTrackerReady()) {
-                window.clearInterval(timer);
-                send();
-            } else if (attempts >= MAX_POLL_ATTEMPTS) {
-                window.clearInterval(timer);
+        const { cancel } = waitForUmamiTracker({
+            onReady: () => {
+                sentRef.current = true;
+                trackTaggedEvent({
+                    name: AnalyticsEvents.listingInternalEntry,
+                    properties: { entity_id: entityId, entity_type: entityType, locale },
+                    tag: entityId
+                });
             }
-        }, POLL_INTERVAL_MS);
+        });
 
-        return () => window.clearInterval(timer);
+        return cancel;
     }, [entityType, entityId, locale]);
 
     return null;

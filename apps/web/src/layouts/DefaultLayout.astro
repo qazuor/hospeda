@@ -21,7 +21,7 @@ interface Props {
 	readonly noindex?: boolean;
 	/** Caveat tagline for the generated OG BRAND card. */
 	readonly ogTagline?: string;
-	/** Entity id forwarded to the Umami tracker as `data-tag` (partner page). */
+	/** Entity id rendered as the Umami page tag (`<meta name="umami-tag">`, partner page). */
 	readonly analyticsTag?: string;
 }
 

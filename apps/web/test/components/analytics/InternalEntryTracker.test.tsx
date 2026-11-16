@@ -11,6 +11,10 @@ import { resolve } from 'node:path';
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
+import {
+    type StartUmamiPageviewsResult,
+    startUmamiPageviews
+} from '@/lib/analytics/umami-pageview';
 
 const ENTITY_ID = '3f2b8c1e-5d4a-4c7b-9e1f-0a1b2c3d4e5f';
 const SAME_ORIGIN_REFERRER = `${window.location.origin}/es/alojamientos/`;
@@ -50,7 +54,22 @@ beforeEach(() => {
     vi.useFakeTimers();
 });
 
+let pageviews: StartUmamiPageviewsResult | null = null;
+
+/** Head of a ClientRouter page with the tracker, plus the pageview wiring. */
+function startRouterPage(): void {
+    document.head.insertAdjacentHTML(
+        'beforeend',
+        '<script data-website-id="site-id"></script><meta name="astro-view-transitions-enabled" content="true">'
+    );
+    pageviews = startUmamiPageviews();
+    document.dispatchEvent(new Event('astro:page-load'));
+}
+
 afterEach(() => {
+    pageviews?.stop();
+    pageviews = null;
+    document.head.innerHTML = '';
     vi.useRealTimers();
     (window as unknown as { umami?: unknown }).umami = undefined;
     setReferrer('');
@@ -160,6 +179,64 @@ describe('InternalEntryTracker', () => {
             vi.advanceTimersByTime(10_000);
         });
         expect(umami.track).not.toHaveBeenCalled();
+    });
+});
+
+describe('InternalEntryTracker after a ClientRouter soft navigation', () => {
+    it('emits when the visitor soft-navigated from another Hospeda page', () => {
+        // The landing page came from Google; pushState never updates
+        // document.referrer, so only the recorded soft-nav origin can tell.
+        setReferrer('https://www.google.com/search?q=hospeda');
+        window.history.replaceState({}, '', '/es/alojamientos/');
+        const umami = installUmami();
+        startRouterPage();
+        // Drop the pageview of the landing page; only the entry event matters.
+        umami.track.mockClear();
+
+        document.dispatchEvent(new Event('astro:before-swap'));
+        window.history.pushState({}, '', '/es/alojamientos/casa/');
+        mountTracker();
+
+        expect(umami.track).toHaveBeenCalledTimes(1);
+        expect(payloadOf(umami)).toMatchObject({ name: 'listing_internal_entry', tag: ENTITY_ID });
+    });
+
+    it('does not emit on an external first load', () => {
+        setReferrer('https://www.google.com/search?q=hospeda');
+        window.history.replaceState({}, '', '/es/alojamientos/casa/');
+        const umami = installUmami();
+        startRouterPage();
+        // Drop the pageview of the landing page; only the entry event matters.
+        umami.track.mockClear();
+
+        mountTracker();
+
+        expect(umami.track).not.toHaveBeenCalled();
+    });
+
+    it('re-evaluates on each page load: a later mount counts its own entry', () => {
+        setReferrer('');
+        window.history.replaceState({}, '', '/es/');
+        const umami = installUmami();
+        startRouterPage();
+        // Drop the pageview of the landing page; only the entry event matters.
+        umami.track.mockClear();
+
+        const first = render(
+            <InternalEntryTracker
+                entityType="ACCOMMODATION"
+                entityId={ENTITY_ID}
+                locale="es"
+            />
+        );
+        expect(umami.track).not.toHaveBeenCalled();
+        first.unmount();
+
+        document.dispatchEvent(new Event('astro:before-swap'));
+        window.history.pushState({}, '', '/es/alojamientos/casa/');
+        mountTracker();
+
+        expect(umami.track).toHaveBeenCalledTimes(1);
     });
 });
 

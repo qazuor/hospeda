@@ -3,24 +3,38 @@
  * @file UmamiScript.astro
  * @description Umami analytics tracker tag for the web app (HOS-2119).
  *
- * Renders a single external, deferred `<script>` pointing at the self-hosted
- * Umami tracker, and nothing else:
- * - No inline body, so the CSP needs no hash for it.
+ * Renders one external, deferred `<script>` pointing at the self-hosted Umami
+ * tracker, an optional `<meta name="umami-tag">` and one bundled pageview
+ * script:
+ * - No inline body on the tracker tag, so the CSP needs no hash for it.
  * - No per-user data, so every page that renders it stays session-blind
  *   (`test/pages/cacheable-pages-are-session-blind.guard.test.ts`).
  * - No explicit host attribute: the tracker derives the collect endpoint from
  *   the origin it was loaded from, which is the Umami host itself.
- * - Auto-track stays at the tracker default (on), so page views are collected
- *   with no extra wiring.
+ * - `data-auto-pageview="false"`: the tracker sends no pageview of its own.
+ *   The bundled script below sends exactly one per page load on
+ *   `astro:page-load` (initial load and every ClientRouter swap), see
+ *   `src/lib/analytics/umami-pageview.ts` for why the tracker cannot (C1).
+ *   Auto-track itself stays on so the tracker keeps following `pushState` and
+ *   custom events carry the current URL.
  *
  * Renders nothing unless BOTH values are set, so locally-built previews and CI
  * without the variables never ship a broken tag (no `src`, or no website id).
  *
- * Optional `tag` prop (T-074): rendered as `data-tag` so pageviews carry the
- * entity id and the owner stats can read per-listing breakdowns
- * (`metrics?type=...&tag=<entityId>`). Only a UUID-shaped tag of at most 50
- * characters (Umami's tag limit) is rendered; anything else is dropped. The
- * entity id is public page data, never per-user, so pages stay session-blind.
+ * Optional `tag` prop (T-074): rendered as `<meta name="umami-tag">`, NOT as
+ * `data-tag` on the tracker. The router swaps head metas with the document but
+ * never re-runs the tracker, and the tracker reads `data-tag` once at start-up,
+ * so a script attribute would stick to the first page of the visit. The
+ * pageview script reads the meta of the page being counted, and the owner
+ * stats read per-listing breakdowns (`metrics?type=...&tag=<entityId>`). Only a
+ * UUID-shaped tag of at most 50 characters (Umami's tag limit) is rendered;
+ * anything else is dropped. The entity id is public page data, never per-user,
+ * so pages stay session-blind.
+ *
+ * The bundled `<script>` is a processed Astro script (no `is:inline`): it ships
+ * as a `/_astro/` module or, when Vite inlines it, its hash is collected by the
+ * `csp-soft-nav-hashes` build integration like every other processed script.
+ * It does nothing on a page without the tracker element.
  *
  * Env (both public by design, baked at build time):
  * - `PUBLIC_UMAMI_SCRIPT_URL`: full URL of the (renamed) tracker script.
@@ -47,4 +61,13 @@ const websiteId = import.meta.env.PUBLIC_UMAMI_WEBSITE_ID;
 const shouldRender = Boolean(scriptUrl && websiteId);
 ---
 
-{shouldRender && <script defer src={scriptUrl} data-website-id={websiteId} data-tag={validTag} />}
+{shouldRender && (
+	<script defer src={scriptUrl} data-website-id={websiteId} data-auto-pageview="false" />
+)}
+{shouldRender && validTag && <meta name="umami-tag" content={validTag} />}
+
+<script>
+	import { startUmamiPageviews } from '@/lib/analytics/umami-pageview';
+
+	startUmamiPageviews();
+</script>

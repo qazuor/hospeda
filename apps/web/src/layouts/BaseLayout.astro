@@ -62,7 +62,7 @@ interface Props {
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
-	/** Entity id forwarded to the Umami tracker as `data-tag` (detail pages only). */
+	/** Entity id rendered as the Umami page tag (`<meta name="umami-tag">`, detail pages only). */
 	readonly analyticsTag?: string;
 }
 
@@ -194,7 +194,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<!--
 		  Umami analytics tag (HOS-2119). External deferred script, no inline
 		  body (no CSP hash) and no per-user data (pages stay session-blind).
-		  Renders nothing unless both PUBLIC_UMAMI_* values are set.
+		  Renders nothing unless both PUBLIC_UMAMI_* values are set. Pageviews
+		  are sent per `astro:page-load` by its bundled script, tagged from the
+		  swapped `<meta name="umami-tag">` (see UmamiScript.astro).
 		-->
 		<UmamiScript tag={analyticsTag} />
 

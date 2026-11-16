@@ -2,8 +2,8 @@
  * @file umami-client.ts
  * @description Typed web wrapper over the Umami browser tracker (HOS-2119, T-027).
  * Exposes the call-site surface used across the web app:
- * `trackEvent`, `identifyUser`, `setPersonProperties`, `resetUser`
- * (plus the no-op `associateGroup` / `resetGroups`).
+ * `trackEvent`, `trackTaggedEvent`, `identifyUser`, `setPersonProperties`,
+ * `resetUser`. Umami has no group concept, so there is no group API.
  *
  * Built on `createBrowserAnalytics` so catalog validation, `prepareAnalyticsEvent`
  * and the anti-PII guards stay in force.
@@ -11,9 +11,12 @@
  * Consent model (AC-5):
  * - Anonymous `trackEvent` is cookieless and works BEFORE consent.
  * - `identifyUser` attaches a distinct id to the Umami session, so it only runs
- *   once analytics consent is granted, and at most once per user per browser
- *   session. Before consent the identity is stashed and flushed on
- *   `CONSENT_CHANGED_EVENT`.
+ *   once analytics consent is granted. Within a browser session it is sent
+ *   again only when the person properties change. Before consent, or before
+ *   the deferred tracker exists, the identity stays pending and is flushed on
+ *   `CONSENT_CHANGED_EVENT` or when the tracker appears.
+ * - Revoking analytics consent forgets the identity (reloading the page when
+ *   this document's tracker already holds it, see `forgetIdentityOnRevocation`).
  * - The distinct id is the internal user id, never an email (OQ-5).
  */
 
@@ -26,12 +29,14 @@ import type {
 import {
     createBrowserAnalytics,
     createUmamiBrowserClient,
-    prepareAnalyticsEvent
+    prepareAnalyticsEvent,
+    validateDistinctId
 } from '@repo/analytics';
+import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 import { webLogger } from '@/lib/logger';
 
-/** sessionStorage key holding the user id already identified in this session. */
+/** sessionStorage key holding the last identify sent in this session (user id + properties). */
 const IDENTIFIED_SESSION_KEY = 'umami-identified-user';
 
 function resolveBrowserEnvironment():
@@ -135,41 +140,149 @@ function hasAnalyticsConsent(): boolean {
     return getConsent()?.analytics === true;
 }
 
-function readIdentified(): string | null {
+/** What was last sent to `umami.identify` in this browser session. */
+interface IdentifiedMarker {
+    /** Distinct id that was identified. */
+    readonly userId: string;
+    /** Person properties that identify carried (accumulated). */
+    readonly properties: AnalyticsPersonProperties;
+}
+
+function isPersonPropertiesRecord(value: unknown): value is AnalyticsPersonProperties {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readIdentified(): IdentifiedMarker | null {
     try {
-        return window.sessionStorage.getItem(IDENTIFIED_SESSION_KEY);
+        const raw = window.sessionStorage.getItem(IDENTIFIED_SESSION_KEY);
+        if (raw === null) return null;
+        const parsed: unknown = JSON.parse(raw);
+        if (typeof parsed !== 'object' || parsed === null) return null;
+        const userId: unknown = Reflect.get(parsed, 'userId');
+        const properties: unknown = Reflect.get(parsed, 'properties');
+        if (typeof userId !== 'string' || !isPersonPropertiesRecord(properties)) return null;
+        return { userId, properties };
     } catch {
+        // Unavailable storage or a marker from an older format: identify again.
         return null;
     }
 }
 
-function writeIdentified(userId: string | null): void {
+function writeIdentified(marker: IdentifiedMarker | null): void {
     try {
-        if (userId === null) window.sessionStorage.removeItem(IDENTIFIED_SESSION_KEY);
-        else window.sessionStorage.setItem(IDENTIFIED_SESSION_KEY, userId);
+        if (marker === null) window.sessionStorage.removeItem(IDENTIFIED_SESSION_KEY);
+        else window.sessionStorage.setItem(IDENTIFIED_SESSION_KEY, JSON.stringify(marker));
     } catch {
         // Storage unavailable: fall back to in-memory state only.
     }
 }
 
-/** Identity requested before consent, flushed on `CONSENT_CHANGED_EVENT`. */
+/**
+ * Identity waiting to be sent: for consent, or for the deferred tracker to
+ * appear. Never dropped by a missing tracker, only by sign-out or revocation.
+ */
 let pendingUserId: string | null = null;
 /** Person properties accumulated across calls; sent as Umami session data. */
 let personProperties: AnalyticsPersonProperties = {};
-/** User id identified in memory this page (mirrors sessionStorage). */
-let identifiedUserId: string | null = null;
+/** Last identify sent in this session (mirrors the sessionStorage marker). */
+let identified: IdentifiedMarker | null = null;
+/**
+ * Whether THIS document's tracker received an identify. The tracker keeps the
+ * distinct id in memory for the life of the document and attaches it to every
+ * later payload, so revoking consent has to discard that document.
+ */
+let trackerHoldsIdentity = false;
+/** Cancels the bounded wait for the tracker, when one is running. */
+let cancelTrackerWait: (() => void) | null = null;
 let consentListenerAttached = false;
+
+function currentMarker(): IdentifiedMarker | null {
+    return identified ?? readIdentified();
+}
+
+/** Whether every current person property was already sent with the same value. */
+function alreadySent(marker: IdentifiedMarker, userId: string): boolean {
+    if (marker.userId !== userId) return false;
+    const sent = new Map<string, unknown>(Object.entries(marker.properties));
+    return Object.entries(personProperties).every(
+        ([key, value]) => JSON.stringify(sent.get(key)) === JSON.stringify(value)
+    );
+}
 
 function hasPersonProperties(): boolean {
     return Object.keys(personProperties).length > 0;
 }
 
+/**
+ * Sends the identify now. Only reached with consent and a present tracker, so
+ * marking the session identified here never claims a send that did not happen.
+ */
+function identifyNow(userId: string): void {
+    const properties = { ...personProperties };
+    analytics.identify(userId, hasPersonProperties() ? properties : undefined);
+    const previous = currentMarker();
+    const sentBefore = previous?.userId === userId ? previous.properties : {};
+    const marker: IdentifiedMarker = { userId, properties: { ...sentBefore, ...properties } };
+    identified = marker;
+    trackerHoldsIdentity = true;
+    writeIdentified(marker);
+}
+
+/**
+ * Sends the identify once the tracker exists. While it does not, the identity
+ * stays pending and a bounded wait flushes it when the tracker appears.
+ */
 function sendIdentify(userId: string): void {
-    const alreadyIdentified = (identifiedUserId ?? readIdentified()) === userId;
-    if (alreadyIdentified) return;
-    identifiedUserId = userId;
-    writeIdentified(userId);
-    analytics.identify(userId, hasPersonProperties() ? personProperties : undefined);
+    const marker = currentMarker();
+    if (marker && alreadySent(marker, userId)) {
+        pendingUserId = null;
+        return;
+    }
+    pendingUserId = userId;
+    if (cancelTrackerWait) return;
+    const { cancel } = waitForUmamiTracker({
+        onReady: () => {
+            cancelTrackerWait = null;
+            const target = pendingUserId;
+            if (target === null || !hasAnalyticsConsent()) return;
+            pendingUserId = null;
+            const latest = currentMarker();
+            if (latest && alreadySent(latest, target)) return;
+            identifyNow(target);
+        },
+        onGiveUp: () => {
+            // The identity stays pending: the next identify or property call
+            // (every page mounts UserMenu) starts a new wait.
+            cancelTrackerWait = null;
+        }
+    });
+    // A synchronous `onReady` already ran and cleared the wait.
+    cancelTrackerWait = pendingUserId === null ? null : cancel;
+}
+
+function stopTrackerWait(): void {
+    cancelTrackerWait?.();
+    cancelTrackerWait = null;
+}
+
+/**
+ * Consent was revoked: forget every identity of this session. The Umami 3.5
+ * tracker has no API to clear its in-memory distinct id (`identify` only ever
+ * sets it, and `identify({ id: '' })` would still send an identify request and
+ * write an `id` key as session data), so when this document's tracker already
+ * holds the id, the page reloads: the fresh tracker starts anonymous. A
+ * document that never identified needs no reload.
+ */
+function forgetIdentityOnRevocation(): void {
+    stopTrackerWait();
+    pendingUserId = null;
+    personProperties = {};
+    identified = null;
+    writeIdentified(null);
+    if (trackerHoldsIdentity) {
+        trackerHoldsIdentity = false;
+        window.location.reload();
+    }
 }
 
 function attachConsentListenerOnce(): void {
@@ -177,22 +290,43 @@ function attachConsentListenerOnce(): void {
     consentListenerAttached = true;
     window.addEventListener(CONSENT_CHANGED_EVENT, (event) => {
         const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
-        if (detail?.analytics !== true) return;
+        if (detail?.analytics !== true) {
+            forgetIdentityOnRevocation();
+            return;
+        }
         if (pendingUserId === null) return;
-        const userId = pendingUserId;
-        pendingUserId = null;
-        sendIdentify(userId);
+        sendIdentify(pendingUserId);
     });
+}
+
+function isAcceptedDistinctId(userId: string): boolean {
+    if (userId.includes('@')) {
+        webLogger.debug('[analytics] identify rejected: distinct id looks like an email');
+        return false;
+    }
+    try {
+        validateDistinctId(userId);
+        return true;
+    } catch (error) {
+        webLogger.debug('[analytics] identify rejected', {
+            error: error instanceof Error ? error.message : String(error)
+        });
+        return false;
+    }
 }
 
 /**
  * Identify the visitor to Umami under the internal user id.
  *
- * CONSENT-GATED and once per session: fires immediately when analytics consent
- * is already granted, otherwise the identity is stashed and sent when
- * `CONSENT_CHANGED_EVENT` reports consent. Calling again with the same id in
- * the same browser session is a no-op. Emails are rejected as distinct ids.
- * No-op on the server and when the tracker is absent.
+ * CONSENT-GATED: fires once analytics consent is granted, otherwise the
+ * identity is stashed and sent when `CONSENT_CHANGED_EVENT` reports consent.
+ * When the deferred tracker is not there yet the identity stays pending and is
+ * sent as soon as it appears (bounded wait); the session is marked identified
+ * only after `umami.identify` actually ran. Within a browser session an identify
+ * is sent again only when the person properties changed, so the enriched
+ * properties of a later call always reach Umami. Revoking consent forgets the
+ * identity (see `CONSENT_CHANGED_EVENT`). Emails are rejected as distinct ids.
+ * No-op on the server.
  *
  * @param userId - Internal user id (Better Auth `user.id`). Never an email.
  * @param props - Optional non-sensitive person properties, folded into the
@@ -200,64 +334,43 @@ function attachConsentListenerOnce(): void {
  */
 export function identifyUser(userId: string, props?: AnalyticsPersonProperties): void {
     if (typeof window === 'undefined') return;
-    if (userId.includes('@')) {
-        webLogger.debug('[analytics] identify rejected: distinct id looks like an email');
-        return;
-    }
+    if (!isAcceptedDistinctId(userId)) return;
     if (props) personProperties = { ...personProperties, ...props };
+    attachConsentListenerOnce();
     if (hasAnalyticsConsent()) {
         sendIdentify(userId);
         return;
     }
     pendingUserId = userId;
-    attachConsentListenerOnce();
 }
 
 /**
  * Set person properties. Umami has no person profiles, so they fold into the
- * data of the next identify (session data): buffered until consent and the
- * identify, and re-sent for the current identified user when one exists.
+ * data of the identify (session data): buffered until consent and the
+ * identify, and re-sent for the current identified user when they changed.
  *
  * @param props - Non-sensitive person properties. Never pass PII.
  */
 export function setPersonProperties(props: AnalyticsPersonProperties): void {
     if (typeof window === 'undefined') return;
     personProperties = { ...personProperties, ...props };
-    const current = identifiedUserId ?? readIdentified();
-    if (current && hasAnalyticsConsent()) {
-        analytics.identify(current, personProperties);
-    }
-}
-
-/**
- * No-op kept so existing islands compile. Umami has no group concept; per-entity
- * breakdowns use `entity_id` event data and tags instead (HOS-2119).
- *
- * @param _groupType - Ignored.
- * @param _groupKey - Ignored.
- */
-export function associateGroup(_groupType: string, _groupKey: string): void {
-    // Intentionally empty: groups are dropped in the Umami migration.
-}
-
-/**
- * No-op kept so existing islands compile. Umami has no group concept
- * (see {@link associateGroup}).
- */
-export function resetGroups(): void {
-    // Intentionally empty: groups are dropped in the Umami migration.
+    const current = pendingUserId ?? currentMarker()?.userId;
+    if (current && hasAnalyticsConsent()) sendIdentify(current);
 }
 
 /**
  * Forget the identified visitor (call on sign-out). Drops any identity pending
- * consent and the once-per-session marker so a later login identifies again.
- * Umami has no client reset: the session is derived server-side.
+ * consent or the tracker and the session marker so a later login identifies
+ * again. The tracker keeps its in-memory id until the next full page load; the
+ * sign-out flow always ends in one.
  */
 export function resetUser(): void {
     if (typeof window === 'undefined') return;
+    stopTrackerWait();
     pendingUserId = null;
     personProperties = {};
-    identifiedUserId = null;
+    identified = null;
+    trackerHoldsIdentity = false;
     writeIdentified(null);
     analytics.reset();
 }

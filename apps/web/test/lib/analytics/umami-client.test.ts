@@ -1,17 +1,16 @@
 /**
  * @file umami-client.test.ts
  * @description Unit tests for the web Umami client (HOS-2119, T-027, AC-5).
- * Covers cookieless pre-consent tracking, consent-gated once-per-session
- * identify, OQ-5 (no email distinct id), anti-PII keys, a missing tracker and
- * the validated tagged capture.
+ * Covers cookieless pre-consent tracking, consent-gated identify (sent once
+ * per session unless the person properties change), the pending identity
+ * while the deferred tracker is missing (M4), consent revocation (M6), OQ-5
+ * (no email distinct id), anti-PII keys and the validated tagged capture.
  */
 
 import type { AnalyticsEventProperties } from '@repo/analytics';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-    associateGroup,
     identifyUser,
-    resetGroups,
     resetUser,
     setPersonProperties,
     trackEvent,
@@ -43,6 +42,7 @@ function clearConsentCookie(): void {
 
 afterEach(() => {
     resetUser();
+    vi.useRealTimers();
     (window as unknown as { umami?: unknown }).umami = undefined;
     clearConsentCookie();
     window.sessionStorage.clear();
@@ -232,17 +232,164 @@ describe('identifyUser (consent-gated, once per session)', () => {
     });
 });
 
-describe('documented no-ops', () => {
-    it('should not throw or call the tracker for groups', () => {
+describe('identifyUser before the deferred tracker exists (M4)', () => {
+    it('should keep the identity pending and send it once the tracker appears', () => {
         // Arrange
-        const umami = installUmami();
+        vi.useFakeTimers();
+        grantConsent();
 
-        // Act
-        associateGroup('accommodation', 'acc-1');
-        resetGroups();
+        // Act: no window.umami yet
+        identifyUser('user-1');
+        vi.advanceTimersByTime(1000);
+        const umami = installUmami();
+        vi.advanceTimersByTime(250);
+        vi.advanceTimersByTime(10_000);
 
         // Assert
-        expect(umami.track).not.toHaveBeenCalled();
+        expect(umami.identify).toHaveBeenCalledTimes(1);
+        expect(umami.identify).toHaveBeenCalledWith('user-1');
+        vi.useRealTimers();
+    });
+
+    it('should not mark the session identified while the tracker is missing', () => {
+        // Arrange
+        vi.useFakeTimers();
+        grantConsent();
+
+        // Act
+        identifyUser('user-1');
+
+        // Assert
+        expect(window.sessionStorage.getItem('umami-identified-user')).toBeNull();
+        vi.useRealTimers();
+    });
+
+    it('should retry on the next call after the bounded wait gave up', () => {
+        // Arrange
+        vi.useFakeTimers();
+        grantConsent();
+        identifyUser('user-1');
+        vi.advanceTimersByTime(30_000);
+        expect(vi.getTimerCount()).toBe(0);
+        const umami = installUmami();
+
+        // Act: the next page's UserMenu mount
+        identifyUser('user-1');
+
+        // Assert
+        expect(umami.identify).toHaveBeenCalledTimes(1);
+        vi.useRealTimers();
+    });
+});
+
+describe('identifyUser when person properties change (M4)', () => {
+    it('should send the enriched properties of a second call for the same id', () => {
+        // Arrange
+        grantConsent();
+        const umami = installUmami();
+
+        // Act: UserMenu calls with the id alone, then with the props
+        identifyUser('user-1');
+        identifyUser('user-1', { is_host: true, user_type: 'host' });
+
+        // Assert
+        expect(umami.identify).toHaveBeenCalledTimes(2);
+        expect(umami.identify).toHaveBeenLastCalledWith('user-1', {
+            is_host: true,
+            user_type: 'host'
+        });
+    });
+
+    it('should not re-send when the properties did not change', () => {
+        // Arrange
+        grantConsent();
+        const umami = installUmami();
+        identifyUser('user-1', { is_host: true });
+
+        // Act
+        identifyUser('user-1', { is_host: true });
+        identifyUser('user-1');
+
+        // Assert
+        expect(umami.identify).toHaveBeenCalledTimes(1);
+    });
+
+    it('should re-send for a changed property from setPersonProperties', () => {
+        // Arrange
+        grantConsent();
+        const umami = installUmami();
+        identifyUser('user-1', { locale: 'es' });
+
+        // Act
+        setPersonProperties({ locale: 'es' });
+        setPersonProperties({ locale: 'en' });
+
+        // Assert
+        expect(umami.identify).toHaveBeenCalledTimes(2);
+        expect(umami.identify).toHaveBeenLastCalledWith('user-1', { locale: 'en' });
+    });
+});
+
+describe('consent revocation after an identify (M6)', () => {
+    const originalLocation = window.location;
+
+    function stubReload(): ReturnType<typeof vi.fn> {
+        const reload = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            value: { ...originalLocation, reload }
+        });
+        return reload;
+    }
+
+    afterEach(() => {
+        Object.defineProperty(window, 'location', { configurable: true, value: originalLocation });
+    });
+
+    it('should forget the identity and reload when this page sent it', () => {
+        // Arrange
+        const reload = stubReload();
+        grantConsent();
+        const umami = installUmami();
+        identifyUser('user-1', { is_host: true });
+
+        // Act
+        saveConsent({ crashReporting: false, analytics: false, marketing: false });
+
+        // Assert
+        expect(reload).toHaveBeenCalledTimes(1);
+        expect(window.sessionStorage.getItem('umami-identified-user')).toBeNull();
+        expect(umami.identify).toHaveBeenCalledTimes(1);
+    });
+
+    it('should identify from scratch when consent is granted again', () => {
+        // Arrange
+        stubReload();
+        grantConsent();
+        const umami = installUmami();
+        identifyUser('user-1');
+        saveConsent({ crashReporting: false, analytics: false, marketing: false });
+
+        // Act
+        grantConsent();
+        identifyUser('user-1');
+
+        // Assert: the marker was cleared, so the id is sent again
+        expect(umami.identify).toHaveBeenCalledTimes(2);
+    });
+
+    it('should drop a pending identity and not reload when nothing was sent', () => {
+        // Arrange
+        const reload = stubReload();
+        const umami = installUmami();
+        identifyUser('user-1');
+
+        // Act: reject, then accept later in the same page
+        saveConsent({ crashReporting: false, analytics: false, marketing: false });
+        grantConsent();
+
+        // Assert
+        expect(reload).not.toHaveBeenCalled();
         expect(umami.identify).not.toHaveBeenCalled();
     });
 });

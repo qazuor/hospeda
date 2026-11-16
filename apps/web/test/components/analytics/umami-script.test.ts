@@ -13,8 +13,12 @@
  * - external deferred script from `PUBLIC_UMAMI_SCRIPT_URL` with
  *   `data-website-id` from `PUBLIC_UMAMI_WEBSITE_ID`;
  * - rendered only when BOTH values are set;
- * - no inline body (so the CSP needs no hash) and no per-user data (the page
- *   must stay session-blind);
+ * - `data-auto-pageview="false"`: pageviews come from the bundled
+ *   `startUmamiPageviews` script on `astro:page-load` (C1), while auto-track
+ *   stays on so custom events keep the current URL;
+ * - the tracker tag has no inline body (so the CSP needs no hash), the
+ *   pageview script is a processed (bundled) Astro script, and nothing reads
+ *   per-user data (the page must stay session-blind);
  * - no `data-host-url` (the script origin is the Umami host);
  * - only `BaseLayout` and `StandaloneLayout` render it, and neither renders
  *   the removed PostHog snippet any more.
@@ -57,8 +61,17 @@ describe('UmamiScript — the tag when configured', () => {
         expect(COMPONENT_CODE).not.toContain('data-host-url');
     });
 
-    it('leaves auto-track at its default (no data-auto-track attribute)', () => {
+    it('turns off the automatic pageview only, never auto-track', () => {
+        expect(TEMPLATE).toMatch(/<script\b[^>]*\bdata-auto-pageview="false"/);
+        // auto-track=false would stop the tracker following pushState, freezing
+        // the URL of every custom event at the landing page.
         expect(COMPONENT_CODE).not.toContain('data-auto-track');
+    });
+
+    it('starts the per-page-load pageview from a bundled script', () => {
+        expect(TEMPLATE).toMatch(
+            /<script>\s*import \{ startUmamiPageviews \} from '@\/lib\/analytics\/umami-pageview';\s*startUmamiPageviews\(\);\s*<\/script>/
+        );
     });
 });
 
@@ -69,16 +82,24 @@ describe('UmamiScript — the tag when not configured', () => {
         expect(TEMPLATE).toContain('shouldRender &&');
     });
 
-    it('renders a single script element, only behind the gate', () => {
-        expect(TEMPLATE.match(/<script\b/g)).toHaveLength(1);
+    it('renders the tracker element only behind the gate', () => {
+        const trackerTags = TEMPLATE.match(/<script\b[^>]*\bsrc=/g) ?? [];
+        expect(trackerTags).toHaveLength(1);
+        expect(TEMPLATE).toMatch(/shouldRender && \(\s*<script\b[^>]*\bsrc=\{scriptUrl\}/);
+    });
+
+    it('renders exactly two script elements: the tracker and the pageview script', () => {
+        expect(TEMPLATE.match(/<script\b/g)).toHaveLength(2);
     });
 });
 
 describe('UmamiScript — no inline body, no per-user data', () => {
-    it('has no inline script body and no set:html / define:vars / is:inline', () => {
+    it('has no set:html / define:vars / is:inline (no hand-hashed inline script)', () => {
         expect(TEMPLATE).not.toMatch(/set:html|define:vars|is:inline/);
-        // Self-closing or empty element: nothing between the tags.
-        expect(TEMPLATE).toMatch(/<script\b[^>]*(\/>|><\/script>)/);
+    });
+
+    it('renders the tracker tag self-closing, with no inline body', () => {
+        expect(TEMPLATE).toMatch(/<script\b[^>]*\bsrc=\{scriptUrl\}[^>]*\/>/);
     });
 
     it('reads no request, session, cookie or locals data', () => {

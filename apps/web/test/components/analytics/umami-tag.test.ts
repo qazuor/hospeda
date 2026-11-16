@@ -1,11 +1,15 @@
 /**
  * @file umami-tag.test.ts
- * @description Source-level tests for the Umami `data-tag` wiring (HOS-2119 T-074).
+ * @description Source-level tests for the Umami page-tag wiring (HOS-2119 T-074).
  *
  * Vitest cannot render `.astro` here (see `umami-script.test.ts`), so these
  * assertions read the SOURCE. Contract under test:
- * - `UmamiScript` renders `data-tag` only for a valid tag (UUID-shaped, <= 50
- *   chars); an invalid or absent tag renders no attribute;
+ * - `UmamiScript` renders `<meta name="umami-tag">` only for a valid tag
+ *   (UUID-shaped, <= 50 chars); an invalid or absent tag renders no meta;
+ * - the tracker element never carries `data-tag`: the router does not re-run
+ *   it on a soft navigation and the tracker reads `data-tag` once, so the
+ *   attribute would stick to the first page of the visit (C1). The swapped
+ *   meta is read per page load by `umami-pageview.ts`;
  * - the tag travels `page -> DetailLayout|DefaultLayout -> BaseLayout ->
  *   UmamiScript`, each hop forwarding it;
  * - exactly the four public detail pages pass it, each with the SAME id the
@@ -13,7 +17,8 @@
  * - no other page under `src/pages` passes a tag.
  *
  * The definitive check is the staging deploy: the rendered `<head>` of a detail
- * page must carry `data-tag="<uuid>"`.
+ * page must carry `<meta name="umami-tag" content="<uuid>">`, and a pageview
+ * after a soft navigation must carry the destination page's tag.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -49,15 +54,26 @@ const TAGGED_PAGES = {
     'pages/[lang]/partners/[slug].astro': 'partnerId'
 } as const;
 
-describe('UmamiScript — data-tag', () => {
+describe('UmamiScript — page tag', () => {
     it('declares an optional tag prop', () => {
         expect(SCRIPT).toMatch(/readonly tag\?:\s*string/);
         expect(SCRIPT).toMatch(/=\s*Astro\.props/);
     });
 
-    it('renders data-tag from the validated tag, never from the raw prop', () => {
-        expect(SCRIPT_TEMPLATE).toMatch(/<script\b[^>]*\bdata-tag=\{validTag\}/);
-        expect(SCRIPT_TEMPLATE).not.toMatch(/data-tag=\{tag\}/);
+    it('renders the tag meta from the validated tag, never from the raw prop', () => {
+        expect(SCRIPT_TEMPLATE).toMatch(
+            /shouldRender && validTag && <meta name="umami-tag" content=\{validTag\} \/>/
+        );
+        expect(SCRIPT_TEMPLATE).not.toMatch(/content=\{tag\}/);
+    });
+
+    it('never puts the tag on the tracker element', () => {
+        expect(SCRIPT_TEMPLATE).not.toContain('data-tag');
+    });
+
+    it('uses the meta name the pageview script reads', () => {
+        const pageview = read('lib/analytics/umami-pageview.ts');
+        expect(pageview).toContain("UMAMI_TAG_META_NAME = 'umami-tag'");
     });
 
     it('accepts only a UUID-shaped tag of at most 50 characters', () => {
@@ -67,8 +83,8 @@ describe('UmamiScript — data-tag', () => {
         expect(SCRIPT).toMatch(/validTag[\s\S]*:\s*undefined/);
     });
 
-    it('still renders a single script element', () => {
-        expect(SCRIPT_TEMPLATE.match(/<script\b/g)).toHaveLength(1);
+    it('renders a single tracker element', () => {
+        expect(SCRIPT_TEMPLATE.match(/<script\b[^>]*\bsrc=/g)).toHaveLength(1);
     });
 });
 
@@ -98,17 +114,23 @@ describe('which pages pass a tag', () => {
         const allowed = new Set(Object.keys(TAGGED_PAGES));
         const offenders = listAstro(PAGES_ROOT)
             .filter((file) =>
-                /\banalyticsTag\s*=|\bdata-tag\b/.test(stripComments(readFileSync(file, 'utf8')))
+                /\banalyticsTag\s*=|\bdata-tag\b|umami-tag/.test(
+                    stripComments(readFileSync(file, 'utf8'))
+                )
             )
             .map((file) => file.slice(SRC_ROOT.length + 1))
             .filter((rel) => !allowed.has(rel));
         expect(offenders).toEqual([]);
     });
 
-    it('only UmamiScript renders data-tag outside pages', () => {
-        const holders = listAstro(SRC_ROOT)
-            .filter((file) => /\bdata-tag\b/.test(stripComments(readFileSync(file, 'utf8'))))
+    it('only UmamiScript renders the tag meta, and nothing renders data-tag', () => {
+        const metaHolders = listAstro(SRC_ROOT)
+            .filter((file) => /umami-tag/.test(stripComments(readFileSync(file, 'utf8'))))
             .map((file) => file.slice(SRC_ROOT.length + 1));
-        expect(holders).toEqual(['components/analytics/UmamiScript.astro']);
+        expect(metaHolders).toEqual(['components/analytics/UmamiScript.astro']);
+        const dataTagHolders = listAstro(SRC_ROOT).filter((file) =>
+            /\bdata-tag\b/.test(stripComments(readFileSync(file, 'utf8')))
+        );
+        expect(dataTagHolders).toEqual([]);
     });
 });

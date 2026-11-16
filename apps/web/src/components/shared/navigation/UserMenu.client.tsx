@@ -190,17 +190,20 @@ export function UserMenu({
     // SSR-provided `initialUser`, the sessionStorage cache, or the /auth/me
     // fetch above). UserMenu is mounted on every page (`client:load`), so
     // this is the single place that reliably knows the current visitor's id
-    // client-side. Idempotent — safe to call again with the same id on every
-    // remount (soft nav). The counterpart `resetUser()` call lives in
-    // `handleSignOut` below, not here, so a guest page load never resets an
-    // anonymous visitor's distinct id.
+    // client-side. Safe to call again with the same id on every remount (soft
+    // nav): `identifyUser` only re-sends to Umami when the person properties
+    // changed since the last identify of the session. The counterpart
+    // `resetUser()` call lives in `handleSignOut` below, not here, so a guest
+    // page load never resets an anonymous visitor's distinct id.
     //
     // Person properties (roles + segment flags) are attached once `permissions`
     // resolve. On first mount `permissions` is null (SSR gave us the user id
     // but not the permission set), so the initial identify carries the id
-    // alone; a second identify with the enriched props fires when /auth/me (or
-    // the cache) lands. The enriched call carries the full set, so segmenting by
-    // is_host / is_venue_owner / is_experience_owner / is_staff works.
+    // alone; when /auth/me (or the cache) lands, the second call carries new
+    // properties, so `identifyUser` sends a second identify with the full set
+    // and segmenting by is_host / is_venue_owner / is_experience_owner /
+    // is_staff works. Both are consent-gated and wait for the deferred tracker
+    // (see `identifyUser`).
     //
     // HOS-296 — the `role` scalar person-property became the `roles` ARRAY.
     // Deliberately NOT a derived "primary role" and NOT a joined string:
