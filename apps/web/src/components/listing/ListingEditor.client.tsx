@@ -73,7 +73,8 @@ import {
 import { LISTING_VERTICAL_FORM_CONFIG } from '@/lib/listing/listing-vertical-form-config';
 import {
     buildLocationExceptionTarget,
-    type LocationExceptionTarget
+    type LocationExceptionTarget,
+    toLocationExceptionVertical
 } from '@/lib/listing/location-exception';
 import type { ListingDetail, VenueOrExperience } from '@/lib/listing/owner-listings';
 import {
@@ -781,6 +782,7 @@ export function ListingEditor({
 
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
     /** HOS-2192: the address of the save refused with 409 `DUPLICATE_LOCATION`, to request an exception for it. */
+    const exceptionVertical = toLocationExceptionVertical({ vertical });
     const [refusedTarget, setRefusedTarget] = useState<LocationExceptionTarget | null>(null);
 
     /**
@@ -1015,7 +1017,7 @@ export function ListingEditor({
                     // HOS-2192 (D-23): keep the address the owner tried to save so the
                     // exception request carries it (a venue only; an experience has no address).
                     setRefusedTarget(
-                        vertical === 'venue'
+                        exceptionVertical
                             ? buildLocationExceptionTarget({
                                   street: persisted.location.street,
                                   number: persisted.location.number,
@@ -1049,7 +1051,7 @@ export function ListingEditor({
             formData,
             patchPath,
             listingId,
-            vertical,
+            exceptionVertical,
             businessLinesError,
             validate,
             handleApiError,
@@ -1165,10 +1167,10 @@ export function ListingEditor({
                 </p>
             )}
 
-            {refusedTarget && (
+            {refusedTarget && exceptionVertical && (
                 <LocationExceptionRequestTrigger
                     locale={locale}
-                    vertical="venue"
+                    vertical={exceptionVertical}
                     listingId={listingId}
                     location={refusedTarget}
                 />

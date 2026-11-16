@@ -33,6 +33,24 @@ const PLURAL_BY_VERTICAL: Readonly<Record<LocationExceptionVertical, string>> = 
 };
 
 /**
+ * Narrow a listing vertical to one that carries the one-address rule. An
+ * experience has no postal address, so it has no request to make.
+ *
+ * Kept here (not in the editor) so the editor never dispatches on a vertical
+ * literal (GUARD:G-FAC-05).
+ *
+ * @param input.vertical - Any listing vertical slug.
+ * @returns The vertical, or `null` when it has no address rule.
+ */
+export function toLocationExceptionVertical({
+    vertical
+}: {
+    readonly vertical: string;
+}): LocationExceptionVertical | null {
+    return vertical in PLURAL_BY_VERTICAL ? (vertical as LocationExceptionVertical) : null;
+}
+
+/**
  * What the owner sees in the location section.
  *
  * - `none`: no exception and no request for the current address.
