@@ -1091,132 +1091,132 @@
             "id": "T-030",
             "title": "T-3 Swap the web view trackers to Umami and emit entity_viewed with entity_id for every vertical",
             "description": "Tests: each tracker fires the expected event once per mount with entity_id equal to the listing id (assert exact properties with toEqual, not objectContaining, which is blind to missing fields); VENUE/EXPERIENCE/PARTNER now emit entity_viewed; POST/EVENT behavior unchanged; sendViewBeacon still called. If the partner page has no tracker today (T-005), add EntityViewTracker usage there.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-027"],
             "blocks": ["T-036", "T-057", "T-073"],
             "subtasks": [
                 {
                     "title": "apps/web/src/components/analytics/AccommodationViewTracker.client.tsx, DestinationViewTracker.client.tsx, EntityViewTracker.client.tsx: import from umami-client",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "EntityViewTracker default branch (VENUE/EXPERIENCE) and the partner page (apps/web/src/pages/[lang]/partners/[slug].astro) emit entity_viewed {entity_type, entity_id, locale}",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "AccommodationViewTracker adds entity_id/entity_type to accommodation_viewed",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update apps/web/test/components/analytics/AccommodationViewTracker.test.tsx and EntityViewTracker.test.tsx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "t5-owner-stats", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:04:47Z",
+                "completed": "2026-11-16T17:09:14Z"
             }
         },
         {
             "id": "T-031",
             "title": "T-3 Swap web accommodation islands to Umami (ContactHost, ReviewSidebarCard, useSearchChat) with entity_id on contact events",
-            "description": "Mechanical import swap plus the entity_id addition for the contact funnel. Tests: existing assertions kept; contact_owner_started/completed assert entity_id and entity_type with exact property objects.\n\nNOTE 2026-11-15 (T-024 review): ai chat events send the conversation entity as `accommodation_id` even for venue/experience (captureChatEvent in apps/api/src/routes/ai/protected/chat.helpers.ts). Consider adding entity_id + entity_type to the ai_chat_* catalog entries here (needs owner OK). Not a regression vs PostHog.",
-            "status": "pending",
+            "description": "Mechanical import swap plus the entity_id addition for the contact funnel. Tests: existing assertions kept; contact_owner_started/completed assert entity_id and entity_type with exact property objects.\n\nNOTE 2026-11-15 (T-024 review): ai chat events send the conversation entity as `accommodation_id` even for venue/experience (captureChatEvent in apps/api/src/routes/ai/protected/chat.helpers.ts). Consider adding entity_id + entity_type to the ai_chat_* catalog entries here (needs owner OK). Not a regression vs PostHog.\n\nDONE NOTE: ContactHost bookingProps carry entity_id/entity_type for all 4 contact_owner_* events (exact toEqual). Gap: NewsletterForm and SignUp tests never mocked analytics, so those payloads have no coverage.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-027"],
             "blocks": ["T-036", "T-057"],
             "subtasks": [
                 {
                     "title": "apps/web/src/components/accommodation/ContactHost.client.tsx (add entity_id/entity_type to contact_owner_* calls), ReviewSidebarCard.client.tsx, apps/web/src/components/ai-search/useSearchChat.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update tests: apps/web/test/components/accommodation/ContactHost.test.tsx, ContactHost.error-messages.test.tsx, ReviewSidebarCard.test.tsx, ReviewSidebarCard.history-back.test.tsx, apps/web/test/hooks/useSearchChat.test.ts (change vi.mock path to umami-client)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:01:42Z",
+                "completed": "2026-11-16T17:05:39Z"
             }
         },
         {
             "id": "T-032",
             "title": "T-3 Swap web auth/contribution/onboarding islands to Umami (SignUp, ContributionBanner, ContributionForm, CreatePropertyMiniForm)",
             "description": "Mechanical import swap, same events and properties. Tests: vi.mock paths moved to umami-client; whole-module vi.mock factories must export every symbol the component imports (a missing export arrives as undefined and the test passes vacuously). Run each file individually.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-027"],
             "blocks": ["T-036", "T-057"],
             "subtasks": [
                 {
                     "title": "apps/web/src/components/auth/SignUp.client.tsx, contributions/ContributionBanner.astro, contributions/ContributionForm.client.tsx, host/CreatePropertyMiniForm.client.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update tests: SignUp.password-symbols.hos1720.test.tsx, ContributionBanner.test.ts, ContributionForm.test.tsx, ContributionForm.error-messages.test.tsx, CreatePropertyMiniForm.test.tsx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:01:42Z",
+                "completed": "2026-11-16T17:05:39Z"
             }
         },
         {
             "id": "T-033",
             "title": "T-3 Swap web navigation/search/favorites/newsletter islands to Umami (NewsletterForm, SearchBar, FavoriteButton, UserMenu)",
             "description": "Mechanical import swap; UserMenu keeps identify/resetUser behind consent (logic lives in T-027). Tests: mock paths moved; UserMenu test still asserts identifyUser on login and resetUser on logout.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-027"],
             "blocks": ["T-036", "T-057"],
             "subtasks": [
                 {
                     "title": "apps/web/src/components/newsletter/NewsletterForm.client.tsx, sections/SearchBar.client.tsx, shared/favorite/FavoriteButton.client.tsx, shared/navigation/UserMenu.client.tsx (identify/reset)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update tests: SearchBar.test.tsx, FavoriteButton.test.tsx, FavoriteButton.pending.test.tsx, UserMenu.test.tsx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:01:42Z",
+                "completed": "2026-11-16T17:05:39Z"
             }
         },
         {
@@ -1261,36 +1261,36 @@
         {
             "id": "T-035",
             "title": "T-3 Swap admin consumers to the Umami client (auth-context identify, tour, whats-new)",
-            "description": "Mechanical swap. Tests: all listed suites updated to the new module path with the same assertions; auth-context test asserts identifyUser(staffUserId) on login and resetUser on logout.\n\nNOTE (T-034): admin identifyUser now takes only the user id.",
-            "status": "pending",
+            "description": "Mechanical swap. Tests: all listed suites updated to the new module path with the same assertions; auth-context test asserts identifyUser(staffUserId) on login and resetUser on logout.\n\nNOTE (T-034): admin identifyUser now takes only the user id.\n\nDONE NOTE: identify sends only the staff id (roles/emailDomain traits dropped, OQ-5). Only posthog-client.ts imports remain (T-058). Stale PostHog comment in apps/admin/src/env-schema.ts:208 left for T-060.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-034"],
             "blocks": ["T-036", "T-058"],
             "subtasks": [
                 {
                     "title": "apps/admin/src/contexts/auth-context.tsx (identify staff user id), contexts/tour-context.tsx, components/whats-new/WhatsNewModal.tsx, WhatsNewPanel.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update tests: apps/admin/test/contexts/auth-context.test.tsx, src/contexts/__tests__/tour-context.test.tsx, src/components/whats-new/__tests__/*.test.tsx (4 files), src/components/tour/__tests__/tour-a11y.test.tsx and tour-integration.test.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Also check apps/admin/src/lib/dashboard-sources/host.ts, which mentions PostHog",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["t3-web-admin", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-14T12:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-16T17:01:42Z",
+                "completed": "2026-11-16T17:04:09Z"
             }
         },
         {
@@ -2737,8 +2737,8 @@
         {
             "id": "T-076",
             "title": "T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page",
-            "description": "Web side of T-075: on accommodation/venue/experience/partner detail pages, when document.referrer is same-origin, send the T-075 catalog event once per page load via the Umami tracker, with tag=<entityId>. Consent rules as for the other web events. Tests: emitted on same-origin referrer, not on external/empty referrer.\n\nREVIEW NOTES 2026-11-16: send with the function form umami.track((p) => ({...p, name: AnalyticsEvents.listingInternalEntry, data, tag: entityId})) so the tag never depends on the script attribute (umami.track({...}) object form drops the tag). The tracker script is defer: wait/queue until window.umami exists. G20 is satisfied by the api reader, so it will NOT catch a missing emitter: this task MUST include a test asserting the emission. Side effect: any custom event removes the visit from Umami bounce counting.\n\nNOTE 2026-11-16 (T-020): createUmamiBrowserClient() exposes captureTagged({name,data,tag}) → umami.track(d=>({...d,name,data,tag})). createBrowserAnalytics() has no tag path, so calling captureTagged directly skips catalog validation — prefer extending the wrapper with a tagged capture that still validates.",
-            "status": "in-progress",
+            "description": "Web side of T-075: on accommodation/venue/experience/partner detail pages, when document.referrer is same-origin, send the T-075 catalog event once per page load via the Umami tracker, with tag=<entityId>. Consent rules as for the other web events. Tests: emitted on same-origin referrer, not on external/empty referrer.\n\nREVIEW NOTES 2026-11-16: send with the function form umami.track((p) => ({...p, name: AnalyticsEvents.listingInternalEntry, data, tag: entityId})) so the tag never depends on the script attribute (umami.track({...}) object form drops the tag). The tracker script is defer: wait/queue until window.umami exists. G20 is satisfied by the api reader, so it will NOT catch a missing emitter: this task MUST include a test asserting the emission. Side effect: any custom event removes the visit from Umami bounce counting.\n\nNOTE 2026-11-16 (T-020): createUmamiBrowserClient() exposes captureTagged({name,data,tag}) → umami.track(d=>({...d,name,data,tag})). createBrowserAnalytics() has no tag path, so calling captureTagged directly skips catalog validation — prefer extending the wrapper with a tagged capture that still validates.\n\nDONE NOTE: InternalEntryTracker (client:idle) on the 4 detail pages; URL-origin comparison; polls window.umami 250ms x20 then gives up; emits once via trackTaggedEvent with tag=entityId. Real arrival to verify in staging smoke.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-075", "T-074"],
             "blocks": ["T-056"],
@@ -2746,22 +2746,22 @@
             "tags": ["web", "analytics"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-11-16T03:21:10Z",
                 "started": "2026-11-16T16:57:52Z",
-                "completed": null
+                "completed": "2026-11-16T17:04:47Z"
             }
         }
     ],
     "summary": {
         "total": 76,
-        "pending": 24,
-        "inProgress": 1,
-        "completed": 51,
+        "pending": 19,
+        "inProgress": 0,
+        "completed": 57,
         "blocked": 0,
         "averageComplexity": 2.5
     }

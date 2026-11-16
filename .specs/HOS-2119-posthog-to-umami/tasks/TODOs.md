@@ -1,6 +1,6 @@
 # HOS-2119: Migrate product analytics from PostHog to self-hosted Umami, and surface Umami stats to listing owners
 
-## Progress: 51/76 tasks (67%)
+## Progress: 57/76 tasks (75%)
 
 **Average Complexity:** 2.5/3 (max 3)
 **Critical Path:** T-001 -> T-003 -> T-004 -> T-006 -> T-020 -> T-034 -> T-035 -> T-058 -> T-060 -> T-062 -> T-067 -> T-068 -> T-069 -> T-070 (14 steps)
@@ -268,31 +268,31 @@ Tracks (can run in parallel):
   - Blocked by: T-028
   - Blocks: T-036, T-057, T-063
 
-- [ ] **T-030** (complexity: 3) - T-3 Swap the web view trackers to Umami and emit entity_viewed with entity_id for every vertical
+- [x] **T-030** (complexity: 3) - T-3 Swap the web view trackers to Umami and emit entity_viewed with entity_id for every vertical
   - Tags: t3-web-admin, t5-owner-stats, web
   - Tests: each tracker fires the expected event once per mount with entity_id equal to the listing id (...
   - Blocked by: T-016, T-027
   - Blocks: T-036, T-057
 
-- [ ] **T-031** (complexity: 3) - T-3 Swap web accommodation islands to Umami (ContactHost, ReviewSidebarCard, useSearchChat) with entity_id on contact events
+- [x] **T-031** (complexity: 3) - T-3 Swap web accommodation islands to Umami (ContactHost, ReviewSidebarCard, useSearchChat) with entity_id on contact events
   - Tags: t3-web-admin, web
   - Mechanical import swap plus the entity_id addition for the contact funnel. Tests: existing assertion...
   - Blocked by: T-016, T-027
   - Blocks: T-036, T-057
 
-- [ ] **T-032** (complexity: 3) - T-3 Swap web auth/contribution/onboarding islands to Umami (SignUp, ContributionBanner, ContributionForm, CreatePropertyMiniForm)
+- [x] **T-032** (complexity: 3) - T-3 Swap web auth/contribution/onboarding islands to Umami (SignUp, ContributionBanner, ContributionForm, CreatePropertyMiniForm)
   - Tags: t3-web-admin, web
   - Mechanical import swap, same events and properties. Tests: vi.mock paths moved to umami-client; whol...
   - Blocked by: T-027
   - Blocks: T-036, T-057
 
-- [ ] **T-033** (complexity: 3) - T-3 Swap web navigation/search/favorites/newsletter islands to Umami (NewsletterForm, SearchBar, FavoriteButton, UserMenu)
+- [x] **T-033** (complexity: 3) - T-3 Swap web navigation/search/favorites/newsletter islands to Umami (NewsletterForm, SearchBar, FavoriteButton, UserMenu)
   - Tags: t3-web-admin, web
   - Mechanical import swap; UserMenu keeps identify/resetUser behind consent (logic lives in T-027). Tes...
   - Blocked by: T-027
   - Blocks: T-036, T-057
 
-- [ ] **T-035** (complexity: 3) - T-3 Swap admin consumers to the Umami client (auth-context identify, tour, whats-new)
+- [x] **T-035** (complexity: 3) - T-3 Swap admin consumers to the Umami client (auth-context identify, tour, whats-new)
   - Tags: t3-web-admin, admin
   - Mechanical swap. Tests: all listed suites updated to the new module path with the same assertions; a...
   - Blocked by: T-034
@@ -363,7 +363,7 @@ Tracks (can run in parallel):
   - Blocked by: T-048
   - Blocks: T-076, T-051
 
-- [ ] **T-076** (complexity: 3) - T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page [NEW]
+- [x] **T-076** (complexity: 3) - T-5 Listing detail pages emit the internal-entry event when arriving from a same-origin page [NEW]
   - umami.track function form with explicit tag; must include an emission test (G20 will not catch a missing emitter)
   - Blocked by: T-075, T-074
   - Blocks: T-056
