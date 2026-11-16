@@ -276,6 +276,27 @@ export class MessageService extends BaseService {
     // -------------------------------------------------------------------------
 
     /**
+     * Dry run of the content rules `createMessage` applies to a message body:
+     * the length limit and content moderation, with nothing stored and no
+     * conversation or actor involved. Lets a caller that previews a reply
+     * (the `reply_inquiry` MCP tool) refuse a body before asking anybody to
+     * confirm it. `createMessage` stays authoritative: it runs the same check
+     * again when the message is actually created.
+     *
+     * @param input - `{ body }`, the exact message text
+     * @throws {ServiceError} VALIDATION_ERROR with reason `MESSAGE_TOO_LONG` or
+     *   `MESSAGE_CONTENT_BLOCKED`, exactly as `createMessage` would.
+     *
+     * @example
+     * ```ts
+     * await svc.assertMessageBodyAllowed({ body: 'Hola, sí tenemos lugar.' });
+     * ```
+     */
+    public async assertMessageBodyAllowed({ body }: { readonly body: string }): Promise<void> {
+        await this._validateMessageContent(body);
+    }
+
+    /**
      * Creates a new message in a conversation, updating metrics and scheduling
      * notifications atomically inside a single database transaction.
      *
