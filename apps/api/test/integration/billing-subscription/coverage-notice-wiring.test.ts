@@ -15,25 +15,38 @@ import {
     emailOutbox,
     eq,
     getDb,
+    partners,
     payments,
     plans,
     planVersions,
     subscriptions,
     users
 } from '@repo/db';
-import { VerticalEnum } from '@repo/schemas';
+import { PartnerTypeEnum, VerticalEnum } from '@repo/schemas';
 import { creditPayment } from '@repo/service-core';
 import { sql } from 'drizzle-orm';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { buildMercadoPagoNoticePorts } from '../../../src/routes/webhooks/mercadopago-ports';
 import { getClock, injectClock } from '../../../src/utils/clock';
 import { validateApiEnv } from '../../../src/utils/env';
+import { getCoverageNotices } from '../../../src/utils/listing-access/coverage-notices';
 import { getListingAccessPorts } from '../../../src/utils/listing-access/ports';
 import { defaultPaymentProvider, injectPaymentProvider } from '../../../src/utils/payment-provider';
 import { getTrialMachinePorts } from '../../../src/utils/trial/trial-machine-ports';
 import { testDb } from '../../e2e/setup/test-database';
 
 const now = new Date('2026-10-12T12:00:00.000Z');
+const state = vi.hoisted(() => ({ scheduledRevalidations: [] as unknown[] }));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        getRevalidationService: () => ({
+            scheduleRevalidation: (input: unknown) => state.scheduledRevalidations.push(input)
+        })
+    };
+});
 
 /** The rows one case created, deleted in `afterEach` (children first). */
 interface Created {
@@ -54,9 +67,11 @@ beforeAll(async () => {
 
 afterEach(async () => {
     for (const stop of unsubscribes.splice(0)) stop();
+    state.scheduledRevalidations = [];
     const db = getDb();
     for (const rows of created.splice(0)) {
         if (rows.userId) {
+            await db.delete(partners).where(eq(partners.ownerUserId, rows.userId));
             const subscriptionIds = sql`(SELECT id FROM subscription WHERE user_id = ${rows.userId})`;
             await db.execute(
                 sql`DELETE FROM covered_period WHERE subscription_id IN ${subscriptionIds}`
@@ -166,6 +181,42 @@ async function chargedBits(userId: string): Promise<(boolean | null)[]> {
 }
 
 describe('TEST:B4:2 — the first credited payment notice reaches the composition root listener (AC:B4:2, AC:B4:3)', () => {
+    it('revalidates the owned partner presence when billing coverage changes', async () => {
+        const userId = crypto.randomUUID();
+        const db = getDb();
+        await db.insert(users).values({
+            id: userId,
+            email: `b4-partner-purge-${userId}@example.test`,
+            displayName: 'Partner purge owner',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE'
+        });
+        created.push({ userId });
+        const [partner] = await db
+            .insert(partners)
+            .values({
+                ownerUserId: userId,
+                slug: `b4-partner-purge-${userId}`,
+                name: 'Partner purge',
+                type: PartnerTypeEnum.BUSINESS
+            })
+            .returning({ id: partners.id, slug: partners.slug });
+        if (!partner) throw new Error('Expected partner');
+
+        await getCoverageNotices().emitCoverageChanged({
+            userId,
+            vertical: VerticalEnum.PARTNER,
+            sourceType: 'SUBSCRIPTION',
+            change: 'REMOVED'
+        });
+
+        expect(state.scheduledRevalidations).toContainEqual({
+            entityType: 'partner',
+            id: partner.id,
+            slug: partner.slug
+        });
+    });
+
     it('delivers exactly one SUBSCRIPTION CHANGED after commit, and the listener re-reads charged: true', async () => {
         // Arrange
         const { userId, paymentId } = await seedActiveWithPendingPayment();

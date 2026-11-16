@@ -43,6 +43,40 @@ export function eligibleTargets<
     );
 }
 
+/** Minimal offer shape needed to localize an addon's display copy. */
+interface AddonCopySource {
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string | null;
+}
+
+type CopyTranslator = (key: string, fallback?: string) => string;
+
+/**
+ * Localized addon name: `billing.addon.<slug>.name`, falling back to the catalog name
+ * (the same slug-keyed pattern as `getPlanName`).
+ */
+export function getAddonName(input: {
+    readonly offer: AddonCopySource;
+    readonly t: CopyTranslator;
+}): string {
+    return input.t(`billing.addon.${input.offer.slug}.name`, input.offer.name);
+}
+
+/** Localized addon description, or `null` when neither a translation nor a catalog text exists. */
+export function getAddonDescription(input: {
+    readonly offer: AddonCopySource;
+    readonly t: CopyTranslator;
+}): string | null {
+    const { offer, t } = input;
+    if (!offer.description) {
+        const key = `billing.addon.${offer.slug}.description`;
+        const translated = t(key, '');
+        return translated || null;
+    }
+    return t(`billing.addon.${offer.slug}.description`, offer.description);
+}
+
 /** Mint one client order identity when opening a purchase summary. */
 export function mintOrderRequestId(): string {
     return crypto.randomUUID();

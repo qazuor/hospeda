@@ -72,6 +72,180 @@ describe('TEST:1704:13 PlanCatalogScreen', () => {
             within(second).getAllByText(es.planCatalogEditor.noCurrentVersion).length
         ).toBeGreaterThan(0);
     });
+    it('offers the cycle price action for a published plan version', async () => {
+        renderScreen();
+        const row = await screen.findByTestId(`plan-row-${withVersion.planId}`);
+        expect(
+            within(row).getByRole('button', { name: 'Cambiar precio del ciclo' })
+        ).toBeInTheDocument();
+    });
+    it('previews and explicitly confirms a cycle price in integer centavos', async () => {
+        fetchApi.mockImplementation(async (input: { path?: string } = {}) => {
+            if (input.path?.endsWith('/preview') && input.path?.includes('billing-prices')) {
+                return {
+                    data: {
+                        data: {
+                            planVersionId: withVersion.currentVersion.versionId,
+                            cycle: 'monthly',
+                            currency: 'ARS',
+                            previousAmount: 10000,
+                            newAmount: 12500,
+                            graceDays: 2,
+                            customersReached: 0,
+                            effectiveFrom: 'ON_CONFIRMATION',
+                            message: 'Review'
+                        }
+                    }
+                };
+            }
+            if (input.path === '/api/v1/admin/billing-prices') {
+                return {
+                    data: {
+                        data: {
+                            billingOption: {
+                                id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+                                planVersionId: withVersion.currentVersion.versionId,
+                                cycle: 'monthly',
+                                amount: 12500,
+                                currency: 'ARS'
+                            },
+                            previousAmount: 10000,
+                            newAmount: 12500,
+                            domainEventId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+                        }
+                    }
+                };
+            }
+            return {
+                data: { data: { vertical: 'accommodation', plans: [withVersion, withoutVersion] } }
+            };
+        });
+        renderScreen();
+        const row = await screen.findByTestId(`plan-row-${withVersion.planId}`);
+        fireEvent.click(
+            within(row).getByRole('button', { name: es.planCatalogEditor.cyclePrice.action })
+        );
+        fireEvent.change(screen.getByLabelText(es.planCatalogEditor.cyclePrice.amount), {
+            target: { value: '12500' }
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: es.planCatalogEditor.cyclePrice.preview })
+        );
+        expect(await screen.findByTestId('cycle-price-preview')).toHaveTextContent(
+            '10000 centavos ARS'
+        );
+        expect(screen.getByTestId('cycle-price-preview')).toHaveTextContent('12500 centavos ARS');
+        const confirm = screen.getByRole('button', {
+            name: es.planCatalogEditor.cyclePrice.confirm
+        });
+        expect(confirm).toBeDisabled();
+        fireEvent.click(
+            screen.getByLabelText(es.planCatalogEditor.cyclePrice.explicitConfirmation)
+        );
+        fireEvent.click(confirm);
+        await screen.findByTestId(`plan-row-${withVersion.planId}`);
+        const call = fetchApi.mock.calls.find(
+            ([input]) => input.path === '/api/v1/admin/billing-prices'
+        );
+        expect(call?.[0]).toMatchObject({
+            method: 'POST',
+            body: {
+                planVersionId: withVersion.currentVersion.versionId,
+                cycle: 'monthly',
+                amount: 12500,
+                expectedPreviousAmount: 10000,
+                confirmed: true
+            }
+        });
+    });
+    it('explains a customer conflict and links to plan migration', async () => {
+        fetchApi.mockImplementation(async (input: { path?: string } = {}) => {
+            if (input.path?.endsWith('/preview') && input.path?.includes('billing-prices')) {
+                throw new (await import('@/lib/errors/api-error')).ApiError('Conflict', {
+                    status: 409,
+                    body: { error: { reason: 'PLAN_VERSION_HAS_CUSTOMERS' } }
+                });
+            }
+            return {
+                data: { data: { vertical: 'accommodation', plans: [withVersion, withoutVersion] } }
+            };
+        });
+        renderScreen();
+        const row = await screen.findByTestId(`plan-row-${withVersion.planId}`);
+        fireEvent.click(
+            within(row).getByRole('button', { name: es.planCatalogEditor.cyclePrice.action })
+        );
+        fireEvent.change(screen.getByLabelText(es.planCatalogEditor.cyclePrice.amount), {
+            target: { value: '12500' }
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: es.planCatalogEditor.cyclePrice.preview })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            es.planCatalogEditor.cyclePrice.errors.hasCustomers
+        );
+        expect(
+            screen.getByRole('link', { name: es.planCatalogEditor.cyclePrice.migrationLink })
+        ).toHaveAttribute('href', '/billing/plan-migration');
+    });
+    it('explains when the cycle price changed after preview and links to migration', async () => {
+        fetchApi.mockImplementation(async (input: { path?: string } = {}) => {
+            if (input.path === '/api/v1/admin/billing-prices') {
+                throw new (await import('@/lib/errors/api-error')).ApiError('Conflict', {
+                    status: 409,
+                    body: { error: { reason: 'CYCLE_PRICE_CHANGED_SINCE_PREVIEW' } }
+                });
+            }
+            if (input.path?.endsWith('/preview') && input.path?.includes('billing-prices')) {
+                return {
+                    data: {
+                        data: {
+                            planVersionId: withVersion.currentVersion.versionId,
+                            cycle: 'monthly',
+                            currency: 'ARS',
+                            previousAmount: 10000,
+                            newAmount: 12500,
+                            graceDays: 2,
+                            customersReached: 0,
+                            effectiveFrom: 'ON_CONFIRMATION',
+                            message: 'Review'
+                        }
+                    }
+                };
+            }
+            return {
+                data: { data: { vertical: 'accommodation', plans: [withVersion, withoutVersion] } }
+            };
+        });
+        renderScreen();
+        const row = await screen.findByTestId(`plan-row-${withVersion.planId}`);
+        fireEvent.click(
+            within(row).getByRole('button', { name: es.planCatalogEditor.cyclePrice.action })
+        );
+        fireEvent.change(screen.getByLabelText(es.planCatalogEditor.cyclePrice.amount), {
+            target: { value: '12500' }
+        });
+        fireEvent.click(
+            screen.getByRole('button', { name: es.planCatalogEditor.cyclePrice.preview })
+        );
+        const confirmation = await screen.findByTestId('cycle-price-preview');
+        fireEvent.click(
+            within(confirmation).getByLabelText(
+                es.planCatalogEditor.cyclePrice.explicitConfirmation
+            )
+        );
+        fireEvent.click(
+            within(confirmation).getByRole('button', {
+                name: es.planCatalogEditor.cyclePrice.confirm
+            })
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            es.planCatalogEditor.cyclePrice.errors.changedSincePreview
+        );
+        expect(
+            screen.getByRole('link', { name: es.planCatalogEditor.cyclePrice.migrationLink })
+        ).toHaveAttribute('href', '/billing/plan-migration');
+    });
     it('requests the selected vertical with the exact API call', async () => {
         renderScreen();
         await screen.findByTestId(`plan-row-${withVersion.planId}`);

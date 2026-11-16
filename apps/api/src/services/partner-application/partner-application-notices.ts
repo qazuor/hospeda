@@ -18,6 +18,8 @@ export async function enqueuePartnerClaimNotice(input: {
     readonly email: string;
     readonly partnerId: string;
     readonly partnerName: string;
+    /** `direct` when the team created the Partner: the mail must not mention an application. */
+    readonly origin: 'application' | 'direct';
     readonly correlationId: string;
 }): Promise<void> {
     const locale = await partnerApplicationModel.readAccountLocaleByEmail({
@@ -30,7 +32,13 @@ export async function enqueuePartnerClaimNotice(input: {
             recipientUserId: null,
             recipientEmail: input.email,
             template,
-            payload: { partnerId: input.partnerId, partnerName: input.partnerName, locale },
+            payload: {
+                partnerId: input.partnerId,
+                partnerName: input.partnerName,
+                locale,
+                // Absent means an approved application, which keeps queued rows readable.
+                ...(input.origin === 'direct' ? { origin: input.origin } : {})
+            },
             dedupKey: buildEmailDedupKey({
                 recipient: input.email.toLowerCase(),
                 template,

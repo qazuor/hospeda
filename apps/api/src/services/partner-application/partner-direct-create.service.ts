@@ -37,6 +37,7 @@ export async function createPartnerDirectly(input: {
             email: claimEmail,
             partnerId: result.data.id,
             partnerName: result.data.name,
+            origin: 'direct',
             correlationId: getRequestCorrelationId() ?? randomUUID()
         });
         return result.data;

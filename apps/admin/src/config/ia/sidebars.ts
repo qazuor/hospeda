@@ -817,6 +817,20 @@ const plataformaSidebar: SidebarInput = {
             permissions: ['LISTING_LOCATION_EXCEPTION_MANAGE'],
             onMissing: 'hide'
         },
+        // ── Pedidos de excepción (HOS-2192) ───────────────────────────────
+        {
+            type: 'link',
+            id: 'location-exception-requests',
+            label: {
+                es: 'Pedidos de excepción',
+                en: 'Exception requests',
+                pt: 'Pedidos de exceção'
+            },
+            icon: 'ShieldAlertIcon',
+            route: '/platform/location-exception-requests',
+            permissions: ['LISTING_LOCATION_EXCEPTION_MANAGE'],
+            onMissing: 'hide'
+        },
         { type: 'separator', id: 'sep-tags-sistema' },
         // ── Tags del sistema ──────────────────────────────────────────────
         {

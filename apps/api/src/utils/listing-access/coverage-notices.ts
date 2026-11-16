@@ -21,6 +21,7 @@
  * the whole listing access composition.
  */
 import { type CoverageNoticeRegistry, createCoverageNoticeRegistry } from '@repo/service-core';
+import { registerPartnerCoverageRevalidation } from './partner-coverage-revalidation';
 
 let registry: CoverageNoticeRegistry | undefined;
 
@@ -32,5 +33,6 @@ let registry: CoverageNoticeRegistry | undefined;
  */
 export function getCoverageNotices(): CoverageNoticeRegistry {
     if (!registry) registry = createCoverageNoticeRegistry();
+    registerPartnerCoverageRevalidation(registry);
     return registry;
 }

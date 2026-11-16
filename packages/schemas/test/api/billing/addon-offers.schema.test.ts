@@ -5,6 +5,7 @@ describe('addon offers response', () => {
     const offer = {
         productId: crypto.randomUUID(),
         addonVersionId: crypto.randomUUID(),
+        slug: 'listing-boost',
         name: 'Listing boost',
         description: null,
         chargeKind: 'PERIODICO',
@@ -25,6 +26,8 @@ describe('addon offers response', () => {
 
     it('rejects missing policy, invalid price and extra fields', () => {
         const { scopeType: _scopeType, ...withoutPolicy } = offer;
+        const { slug: _slug, ...withoutSlug } = offer;
+        expect(AddonOffersResponseSchema.safeParse({ items: [withoutSlug] }).success).toBe(false);
         expect(AddonOffersResponseSchema.safeParse({ items: [withoutPolicy] }).success).toBe(false);
         expect(
             AddonOffersResponseSchema.safeParse({ items: [{ ...offer, price: 0 }] }).success
