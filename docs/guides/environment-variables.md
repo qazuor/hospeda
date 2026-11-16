@@ -352,7 +352,7 @@ via `TEST_DB_URL` and `TEST_DB_NAME` before the test suite runs.
 | Variable | Development | Staging | Production |
 |----------|-------------|---------|------------|
 | `NODE_ENV` | `development` | `production` | `production` |
-| `HOSPEDA_API_URL` | `http://localhost:3001` | `https://api.staging.hospeda.com.ar` | `https://api.hospeda.com.ar` |
+| `HOSPEDA_API_URL` | `http://localhost:3001` | `https://staging-api.hospeda.com.ar` | `https://api.hospeda.com.ar` |
 | `HOSPEDA_SITE_URL` | `http://localhost:4321` | `https://staging.hospeda.com.ar` | `https://hospeda.com.ar` |
 | `HOSPEDA_DATABASE_URL` | local Docker Postgres | staging Postgres | production Postgres |
 | `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` | `TEST-xxxx` token | `TEST-xxxx` token | live token |

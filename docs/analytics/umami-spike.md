@@ -86,10 +86,11 @@ Conclusions:
   event joins it only **without** `payload.id`. Adding `payload.id` on the server splits it
   into a new session (one extra visitor per user), the opposite of the goal.
 - `payload.id` joins only when the browser document's first request already carried the id.
-  The web client does not guarantee that order today: the auto pageview and the identify both
-  wait for the tracker, and an identify sent before the pageview's response has no cache token,
-  so it opens `uuid(…, id)` on its own. A later hard reload then returns to the anonymous
-  session. This race is a risk for AC-12 regardless of the server rule.
+  An identify sent before the pageview's response has no cache token, so it opens
+  `uuid(…, id)` on its own, and a later hard reload returns to the anonymous session. The web
+  client closes this race (owner decision, 2026-11-16): `identifyUser` waits, bounded, until
+  `umami-pageview.ts` saw this document's pageview answered AND the tracker holds the token
+  (`getSession().cache`); otherwise it sends no identify.
 - The server-created session row does carry `distinct_id`, but no `session_link` row is
   written for it (only identify writes one).
 
@@ -181,10 +182,9 @@ T-005 notes. Locate them there, not here.
 
 ## Open items
 
-- Owner re-decision on the server distinct id (2026-11-16): the measurement above shows that
-  `payload.id` on server events splits the session in the web's normal flow, and the api cannot
-  see the `cookie-consent` cookie (host-only on the web host). Until decided, server events keep
-  sending no `payload.id`.
+- ~~Owner re-decision on the server distinct id~~. Decided 2026-11-16: server events never send
+  `payload.id` (it splits the session in the web's flow, and the api cannot see the host-only
+  `cookie-consent` cookie); the web identifies strictly after the pageview ack (spec OQ-5).
 
 - Ad-block check with a real browser (AC-12 smoke).
 - CSP entries for the subdomain (T-028/T-029).
