@@ -94,6 +94,28 @@ export function toConversationDetail(input: {
     };
 }
 
+/**
+ * Select list of the conversation list. The correlated subqueries qualify the
+ * outer id explicitly: Drizzle renders a column of a single-table select
+ * unqualified, so a bare `${aiConversations.id}` inside a subquery over
+ * `ai_messages` resolved to the INNER `id` and matched nothing (HOS-2319:
+ * every row listed 0 messages and an empty first question). Built lazily so
+ * importing this module never reads the tables (suites mock `@repo/db` wholesale).
+ */
+export const buildConversationListSelect = () =>
+    ({
+        id: aiConversations.id,
+        entityType: aiConversations.listingEntityType,
+        entityId: aiConversations.listingEntityId,
+        startedAt: aiConversations.createdAt,
+        lastMessageAt: sql<Date>`coalesce((select max(m.created_at) from ${aiMessages} m where m.conversation_id = ${aiConversations}.id and m.deleted_at is null), ${aiConversations.createdAt})`,
+        messageCount: sql<number>`(select count(*) from ${aiMessages} m where m.conversation_id = ${aiConversations}.id and m.deleted_at is null)`,
+        firstQuestion: sql<
+            string | null
+        >`(select m.content from ${aiMessages} m where m.conversation_id = ${aiConversations}.id and m.role = 'user' and m.deleted_at is null order by m.created_at asc limit 1)`,
+        total: sql<number>`count(*) over ()`
+    }) as const;
+
 /** Input of {@link listConversations}. */
 export interface ListConversationsInput {
     readonly entityType?: AiChatEntityType;
@@ -132,18 +154,7 @@ export async function listConversations(
     );
 
     const rows = await db
-        .select({
-            id: aiConversations.id,
-            entityType: aiConversations.listingEntityType,
-            entityId: aiConversations.listingEntityId,
-            startedAt: aiConversations.createdAt,
-            lastMessageAt: sql<Date>`coalesce((select max(m.created_at) from ${aiMessages} m where m.conversation_id = ${aiConversations.id} and m.deleted_at is null), ${aiConversations.createdAt})`,
-            messageCount: sql<number>`(select count(*) from ${aiMessages} m where m.conversation_id = ${aiConversations.id} and m.deleted_at is null)`,
-            firstQuestion: sql<
-                string | null
-            >`(select m.content from ${aiMessages} m where m.conversation_id = ${aiConversations.id} and m.role = 'user' and m.deleted_at is null order by m.created_at asc limit 1)`,
-            total: sql<number>`count(*) over ()`
-        })
+        .select(buildConversationListSelect())
         .from(aiConversations)
         .where(where)
         .orderBy(desc(aiConversations.createdAt), desc(aiConversations.id))

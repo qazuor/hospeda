@@ -46,7 +46,7 @@ import { apiLogger } from '../../utils/logger';
 const MCP_METHODS = ['GET', 'POST', 'DELETE'] as const;
 
 /** The SDK handler. Holds no per-caller state; instances are per request. */
-const mcpHandler = createMcpHandler(() => createHospedaMcpServer(), {
+const mcpHandler = createMcpHandler(() => createHospedaMcpServer({ apiUrl: env.HOSPEDA_API_URL }), {
     onerror: (error) => {
         apiLogger.warn(`MCP handler error: [${error.name}] ${error.message}`);
     }

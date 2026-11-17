@@ -11,13 +11,17 @@ export const AdminSubscriptionPlanChangeParamsSchema = z.strictObject({
 export const AdminSubscriptionPlanChangeOptionsResponseSchema = z.strictObject({
     subscriptionId: z.uuid(),
     vertical: z.string(),
+    nextChargeAt: z.iso.datetime().nullable(),
+    currentCycle: BillingCycleSchema.nullable(),
     options: z.array(
         z.strictObject({
             billingOptionId: z.uuid(),
             planId: z.uuid(),
             planName: z.string(),
+            planSlug: z.string(),
             planVersionId: z.uuid(),
             cycle: BillingCycleSchema,
+            direction: z.enum(['UP', 'DOWN', 'CYCLE', 'NONE']),
             amountMinor: z.number().int().nonnegative(),
             currency: z.literal('ARS'),
             current: z.boolean()

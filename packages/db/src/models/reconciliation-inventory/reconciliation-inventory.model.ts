@@ -221,7 +221,7 @@ export class ReconciliationInventoryModel {
                     eq(domainEvent.eventType, CANCELLATION_DECIDED_EVENT)
                 )
             )
-            .orderBy(domainEvent.entityId, desc(domainEvent.occurredAt), desc(domainEvent.id))
+            .orderBy(domainEvent.entityId, desc(domainEvent.occurredAt), desc(domainEvent.seq))
             .as('decision');
         const rows = await db
             .select({
@@ -291,7 +291,7 @@ export class ReconciliationInventoryModel {
                     eq(domainEvent.eventType, CANCELLATION_DECIDED_EVENT)
                 )
             )
-            .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id))
+            .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.seq))
             .limit(1);
         if (!row) return null;
         return { eventId: row.eventId, transition: row.transition ?? '', decidedAt: row.decidedAt };

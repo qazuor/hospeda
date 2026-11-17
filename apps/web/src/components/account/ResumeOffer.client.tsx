@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { pauseDate } from '@/lib/billing/pause-offer';
+import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-card';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './PlanChangeOffer.module.css';
@@ -30,6 +31,7 @@ export function ResumeOffer({ subscriptionId, locale }: ResumeOfferProps) {
             }
             setCharge(result.data.nextCharge);
             setState('done');
+            scheduleSubscriptionRefresh({});
         } catch {
             setState('error');
         }

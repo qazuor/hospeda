@@ -160,6 +160,43 @@ export function getUtcInstantForLocalMidnight({
     return new Date(guess.getTime() - offsetMs);
 }
 
+/** Input for {@link getUtcInstantForLocalEndOfDay}. */
+export interface GetUtcInstantForLocalEndOfDayInput {
+    /** The local calendar date, as `'YYYY-MM-DD'`. */
+    readonly date: string;
+    /** IANA time zone. Defaults to {@link MARKET_TIMEZONE}. */
+    readonly timeZone?: string;
+}
+
+/**
+ * Returns the final millisecond of `date` in `timeZone`, by finding local
+ * midnight of the following calendar day and subtracting one millisecond.
+ * Calendar arithmetic is anchored at UTC, never the process's local zone.
+ *
+ * @param input - {@link GetUtcInstantForLocalEndOfDayInput}.
+ * @returns The final instant of the local day.
+ * @throws {Error} If `date` is not a well-formed `'YYYY-MM-DD'` string.
+ *
+ * @example
+ * ```ts
+ * getUtcInstantForLocalEndOfDay({ date: '2026-06-30' });
+ * // 2026-07-01T02:59:59.999Z in America/Argentina/Buenos_Aires.
+ * ```
+ */
+export function getUtcInstantForLocalEndOfDay({
+    date,
+    timeZone = MARKET_TIMEZONE
+}: GetUtcInstantForLocalEndOfDayInput): Date {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        throw new Error(`getUtcInstantForLocalEndOfDay: invalid date "${date}"`);
+    }
+    const year = Number(date.slice(0, 4));
+    const month = Number(date.slice(5, 7));
+    const day = Number(date.slice(8, 10));
+    const nextDate = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+    return new Date(getUtcInstantForLocalMidnight({ date: nextDate, timeZone }).getTime() - 1);
+}
+
 /** Input for {@link startOfMarketDay}. */
 export interface StartOfMarketDayInput {
     /** The instant whose local calendar day is wanted. Defaults to `new Date()`. */

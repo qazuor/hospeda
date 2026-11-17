@@ -13,6 +13,9 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 import { useAiConversationQuery, useAiConversationsQuery } from '@/features/ai-conversations/hooks';
+import enAdmin from '../../../../../../../packages/i18n/src/locales/en/admin-pages.json';
+import esAdmin from '../../../../../../../packages/i18n/src/locales/es/admin-pages.json';
+import ptAdmin from '../../../../../../../packages/i18n/src/locales/pt/admin-pages.json';
 import { AiConversationsTable } from '../AiConversationsTable';
 import { AiConversationTranscript } from '../AiConversationTranscript';
 
@@ -124,5 +127,31 @@ describe('AiConversationTranscript', () => {
         } as unknown as ReturnType<typeof useAiConversationQuery>);
         render(<AiConversationTranscript id={ID} />);
         expect(screen.getByRole('alert')).toBeTruthy();
+    });
+});
+
+describe('conversation vertical labels (HOS-2319)', () => {
+    const locales = [
+        {
+            locale: 'es',
+            messages: esAdmin,
+            venue: 'Comer y salir',
+            staleSubtitle: /alojamiento\./i
+        },
+        {
+            locale: 'en',
+            messages: enAdmin,
+            venue: 'Food & nightlife',
+            staleSubtitle: /accommodation\./i
+        },
+        { locale: 'pt', messages: ptAdmin, venue: 'Comer e sair', staleSubtitle: /anúncio\./i }
+    ] as const;
+
+    it.each(locales)('labels the venue vertical as the catalog does in $locale', (row) => {
+        expect(row.messages.ai.conversations.verticals.venue).toBe(row.venue);
+    });
+
+    it.each(locales)('keeps the subtitle vertical-neutral in $locale', (row) => {
+        expect(row.messages.ai.conversations.subtitle).not.toMatch(row.staleSubtitle);
     });
 });

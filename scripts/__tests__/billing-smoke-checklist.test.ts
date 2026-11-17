@@ -163,3 +163,53 @@ describe('HOS-1622 TEST:B13a:14 (support) AC:B13a:14 the new-system smoke checkl
         expect(source).not.toContain('.qtm/');
     });
 });
+
+describe('HOS-2302 refunds are smoked in production only', () => {
+    const ruleStart = source.indexOf('## Refunds are smoked in production only (HOS-2302)');
+    const part1Start = source.indexOf('## Part 1 — Staging');
+    const rule =
+        ruleStart === -1 ? '' : source.slice(ruleStart, part1Start === -1 ? undefined : part1Start);
+    const p2Match = source.match(
+        /### P2 — Refund \(revocation, confirmed refund and addon refund\)\n([\s\S]*?)(?=\n### P3 )/
+    );
+    const p2 = p2Match?.[1] ?? '';
+    const p2Steps = p2.match(/- \*\*Steps:\*\*([\s\S]*?)- \*\*Expected:\*\*/)?.[1] ?? '';
+    const s21 = source.match(/### S21 — [^\n]+\n([\s\S]*?)(?=\n### |\n## )/)?.[1] ?? '';
+
+    it('the production-only refunds rule exists as an H2 before Part 1', () => {
+        expect(ruleStart, 'the H2 rule section is missing').toBeGreaterThan(-1);
+        expect(part1Start, 'Part 1 must come after the rule section').toBeGreaterThan(ruleStart);
+    });
+
+    it('the rule cites the literal staging 401 and the staging-safe scope', () => {
+        expect(rule, 'the literal 401 error quote is missing').toContain(
+            'Unauthorized use of live credentials'
+        );
+        expect(rule).toContain('401');
+        expect(rule).toContain('Part 2');
+        expect(rule).toContain('REQUESTED');
+        expect(rule).toContain('billing-10-admin-revocation.spec.ts');
+        expect(rule).toContain('expected, not a failure');
+    });
+
+    it('P2 covers the S36 revocation, the confirmed refund and the addon refund', () => {
+        expect(p2Match, 'P2 does not carry the HOS-2302 expanded title').toBeTruthy();
+        expect(p2).toContain('S36');
+        expect(p2).toContain('DEC-RF-001');
+        expect(p2).toContain('action 13 of B6');
+        expect(p2).toContain('REQUESTED');
+        expect(
+            p2Steps,
+            'the addon refund step must require the refund to reach its final state'
+        ).toMatch(/addon[\s\S]*final state/);
+        expect(p2).toContain('HOS-2094');
+        expect(p2).toContain('Why here: staging cannot do this');
+        expect(p2).toContain('Unauthorized use of live credentials');
+    });
+
+    it('S21 no longer promises a real provider refund in staging', () => {
+        expect(s21, 'the S21 refund moved-to-production notice is missing').toContain(
+            'Refund at the provider: moved to P2 / P12 (HOS-2302); staging answers 401.'
+        );
+    });
+});

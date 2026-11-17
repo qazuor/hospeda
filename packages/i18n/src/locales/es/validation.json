@@ -120,9 +120,9 @@
         },
         "location": {
             "apartment": {
-                "max": "El apartment no puede superar los {{max}} caracteres",
-                "min": "El apartment debe tener al menos {{min}} caracteres",
-                "required": "El apartment es obligatorio"
+                "max": "El departamento no puede superar los {{max}} caracteres",
+                "min": "El departamento debe tener al menos {{min}} caracteres",
+                "required": "El departamento es obligatorio"
             },
             "coordinates": {
                 "lat": {
@@ -135,19 +135,19 @@
                 }
             },
             "floor": {
-                "max": "El floor no puede superar los {{max}} caracteres",
-                "min": "El floor debe tener al menos {{min}} caracteres",
-                "required": "El floor es obligatorio"
+                "max": "El piso no puede superar los {{max}} caracteres",
+                "min": "El piso debe tener al menos {{min}} caracteres",
+                "required": "El piso es obligatorio"
             },
             "number": {
-                "max": "El number no puede superar los {{max}} caracteres",
-                "min": "El number debe tener al menos {{min}} caracteres",
-                "required": "El number es obligatorio"
+                "max": "El número no puede superar los {{max}} caracteres",
+                "min": "El número debe tener al menos {{min}} caracteres",
+                "required": "El número es obligatorio"
             },
             "street": {
-                "max": "El street no puede superar los {{max}} caracteres",
-                "min": "El street debe tener al menos {{min}} caracteres",
-                "required": "El street es obligatorio"
+                "max": "La calle no puede superar los {{max}} caracteres",
+                "min": "La calle debe tener al menos {{min}} caracteres",
+                "required": "La calle es obligatoria"
             }
         },
         "media": {
@@ -1240,7 +1240,6 @@
                 "invalidType": "El trial enabled tiene un tipo de dato inválido"
             }
         },
-
         "subscriptionEvent": {
             "createdAt": {
                 "invalid": "La fecha de creación no es válida",
@@ -1469,19 +1468,19 @@
         },
         "approximateLocation": {
             "lat": {
-                "max": "El lat no puede superar los {{max}} caracteres",
-                "min": "El lat debe tener al menos {{min}} caracteres",
-                "required": "El lat es obligatorio"
+                "max": "La latitud no puede superar los {{max}} caracteres",
+                "min": "La latitud debe tener al menos {{min}} caracteres",
+                "required": "La latitud es obligatoria"
             },
             "lng": {
-                "max": "El lng no puede superar los {{max}} caracteres",
-                "min": "El lng debe tener al menos {{min}} caracteres",
-                "required": "El lng es obligatorio"
+                "max": "La longitud no puede superar los {{max}} caracteres",
+                "min": "La longitud debe tener al menos {{min}} caracteres",
+                "required": "La longitud es obligatoria"
             },
             "radiusMeters": {
-                "int": "El radius meters debe ser un número entero",
-                "positive": "El radius meters debe ser positivo",
-                "required": "El radius meters es obligatorio"
+                "int": "El radio en metros debe ser un número entero",
+                "positive": "El radio en metros debe ser positivo",
+                "required": "El radio en metros es obligatorio"
             }
         },
         "checkIn": {
@@ -1741,8 +1740,8 @@
                     "required": "La latitud es obligatoria"
                 },
                 "long": {
-                    "invalidValue": "El long no es válido",
-                    "required": "El long es obligatorio"
+                    "invalidValue": "La longitud no es válida",
+                    "required": "La longitud es obligatoria"
                 }
             },
             "country": {
@@ -2749,9 +2748,9 @@
     },
     "eventLocation": {
         "apartment": {
-            "max": "El apartment no puede superar los {{max}} caracteres",
-            "min": "El apartment debe tener al menos {{min}} caracteres",
-            "required": "El apartment es obligatorio"
+            "max": "El departamento no puede superar los {{max}} caracteres",
+            "min": "El departamento debe tener al menos {{min}} caracteres",
+            "required": "El departamento es obligatorio"
         },
         "city": {
             "max": "La ciudad no puede superar los {{max}} caracteres",
@@ -2770,27 +2769,27 @@
             }
         },
         "department": {
-            "max": "El department no puede superar los {{max}} caracteres",
-            "min": "El department debe tener al menos {{min}} caracteres"
+            "max": "El departamento no puede superar los {{max}} caracteres",
+            "min": "El departamento debe tener al menos {{min}} caracteres"
         },
         "floor": {
-            "max": "El floor no puede superar los {{max}} caracteres",
-            "min": "El floor debe tener al menos {{min}} caracteres",
-            "required": "El floor es obligatorio"
+            "max": "El piso no puede superar los {{max}} caracteres",
+            "min": "El piso debe tener al menos {{min}} caracteres",
+            "required": "El piso es obligatorio"
         },
         "neighborhood": {
-            "max": "El neighborhood no puede superar los {{max}} caracteres",
-            "min": "El neighborhood debe tener al menos {{min}} caracteres"
+            "max": "El barrio no puede superar los {{max}} caracteres",
+            "min": "El barrio debe tener al menos {{min}} caracteres"
         },
         "number": {
-            "max": "El number no puede superar los {{max}} caracteres",
-            "min": "El number debe tener al menos {{min}} caracteres",
-            "required": "El number es obligatorio"
+            "max": "El número no puede superar los {{max}} caracteres",
+            "min": "El número debe tener al menos {{min}} caracteres",
+            "required": "El número es obligatorio"
         },
         "placeName": {
-            "max": "El place name no puede superar los {{max}} caracteres",
-            "min": "El place name debe tener al menos {{min}} caracteres",
-            "required": "El place name es obligatorio"
+            "max": "El nombre del lugar no puede superar los {{max}} caracteres",
+            "min": "El nombre del lugar debe tener al menos {{min}} caracteres",
+            "required": "El nombre del lugar es obligatorio"
         },
         "slug": {
             "format": "El formato del slug no es válido",
@@ -2799,9 +2798,9 @@
             "required": "El slug es obligatorio"
         },
         "street": {
-            "max": "El street no puede superar los {{max}} caracteres",
-            "min": "El street debe tener al menos {{min}} caracteres",
-            "required": "El street es obligatorio"
+            "max": "La calle no puede superar los {{max}} caracteres",
+            "min": "La calle debe tener al menos {{min}} caracteres",
+            "required": "La calle es obligatoria"
         }
     },
     "eventOrganizer": {
@@ -3598,22 +3597,22 @@
             "min": "La longitud debe tener al menos {{min}} caracteres"
         },
         "near": {
-            "invalidType": "El near tiene un tipo de dato inválido",
-            "max": "El near no puede superar los {{max}} caracteres",
-            "min": "El near debe tener al menos {{min}} caracteres"
+            "invalidType": "El filtro de cercanía tiene un tipo de dato inválido",
+            "max": "El filtro de cercanía no puede superar los {{max}} caracteres",
+            "min": "El filtro de cercanía debe tener al menos {{min}} caracteres"
         },
         "radius": {
-            "invalidType": "El radius tiene un tipo de dato inválido",
-            "max": "El radius no puede superar los {{max}} caracteres",
-            "min": "El radius debe tener al menos {{min}} caracteres"
+            "invalidType": "El radio tiene un tipo de dato inválido",
+            "max": "El radio no puede superar los {{max}} caracteres",
+            "min": "El radio debe tener al menos {{min}} caracteres"
         },
         "radiusUnit": {
-            "enum": "El radius unit debe ser uno de los valores permitidos"
+            "enum": "La unidad del radio debe ser uno de los valores permitidos"
         },
         "region": {
-            "invalidType": "El region tiene un tipo de dato inválido",
-            "max": "El region no puede superar los {{max}} caracteres",
-            "min": "El region debe tener al menos {{min}} caracteres"
+            "invalidType": "La región tiene un tipo de dato inválido",
+            "max": "La región no puede superar los {{max}} caracteres",
+            "min": "La región debe tener al menos {{min}} caracteres"
         },
         "state": {
             "invalidType": "El estado/provincia tiene un tipo de dato inválido",
@@ -3621,9 +3620,9 @@
             "min": "El estado/provincia debe tener al menos {{min}} caracteres"
         },
         "within": {
-            "invalidType": "El within tiene un tipo de dato inválido",
-            "max": "El within no puede superar los {{max}} caracteres",
-            "min": "El within debe tener al menos {{min}} caracteres"
+            "invalidType": "El filtro de área tiene un tipo de dato inválido",
+            "max": "El filtro de área no puede superar los {{max}} caracteres",
+            "min": "El filtro de área debe tener al menos {{min}} caracteres"
         }
     },
     "newsletter": {
@@ -3870,9 +3869,9 @@
             "max": "No se pueden superar las {{max}} palabras clave"
         },
         "lat": {
-            "max": "El lat no puede superar los {{max}} caracteres",
-            "min": "El lat debe tener al menos {{min}} caracteres",
-            "required": "El lat es obligatorio"
+            "max": "La latitud no puede superar los {{max}} caracteres",
+            "min": "La latitud debe tener al menos {{min}} caracteres",
+            "required": "La latitud es obligatoria"
         },
         "listItem": {
             "destinationCount": {
@@ -3881,9 +3880,9 @@
             }
         },
         "long": {
-            "max": "El long no puede superar los {{max}} caracteres",
-            "min": "El long debe tener al menos {{min}} caracteres",
-            "required": "El long es obligatorio"
+            "max": "La longitud no puede superar los {{max}} caracteres",
+            "min": "La longitud debe tener al menos {{min}} caracteres",
+            "required": "La longitud es obligatoria"
         },
         "nearby": {
             "limit": {

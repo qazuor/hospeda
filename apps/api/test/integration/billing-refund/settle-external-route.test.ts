@@ -26,6 +26,7 @@ import {
     coveredPeriodRow,
     moneyState,
     refundsOfPayment,
+    seedFailedRefund,
     seedOpenRetention,
     seedPaidAddonInstance,
     seedPaidSubscription,
@@ -127,6 +128,7 @@ describe('TEST:B5:6 admin action 14 route (AC:B5:10, AC:B5:41)', () => {
                 reference: 'TRX-0001',
                 reason: 'OUT_OF_FLOW_REFUND',
                 closedRequestedRefundId: null,
+                settledFailedRefundId: null,
                 paymentOutcome: 'P3',
                 coverageReleased: true,
                 note: 'Refunded by transfer'
@@ -172,6 +174,43 @@ describe('TEST:B5:6 admin action 14 route (AC:B5:10, AC:B5:41)', () => {
                 action: 'update',
                 resourceId: requestedId,
                 metadata: expect.objectContaining({ closedRequestedRefundId: requestedId })
+            })
+        );
+    });
+
+    it('answers a FAILED refund with a new row and audits its id without reopening it', async () => {
+        const seeded = await seedPaidSubscription(10000);
+        const failedId = await seedFailedRefund({ paymentId: seeded.paymentId, amount: 10000 });
+
+        const response = await settle({
+            paymentId: seeded.paymentId,
+            refundId: failedId,
+            amount: 10000,
+            channel: 'PROVIDER_PANEL',
+            reference: `PANEL-${crypto.randomUUID()}`,
+            reason: 'OUT_OF_FLOW_REFUND'
+        });
+
+        expect(response.status).toBe(200);
+        const body = (await response.json()).data;
+        expect(body).toMatchObject({ status: 'EXECUTED', closedRequestedRefund: false });
+        expect(await refundsOfPayment(seeded.paymentId)).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({ id: failedId, status: 'FAILED' }),
+                expect.objectContaining({
+                    id: body.refundId,
+                    status: 'EXECUTED',
+                    executedVia: 'EXTERNAL'
+                })
+            ])
+        );
+        expect(audit).toHaveBeenCalledWith(
+            expect.objectContaining({
+                resourceId: body.refundId,
+                metadata: expect.objectContaining({
+                    closedRequestedRefundId: null,
+                    settledFailedRefundId: failedId
+                })
             })
         );
     });

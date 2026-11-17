@@ -99,6 +99,7 @@ export async function runAiQuestionsWeeklyDigest(input: {
 }): Promise<AiQuestionsDigestRunOutput> {
     const selection = await import('../../services/ai-questions-digest.helpers.js');
     const { NotificationType, buildAiQuestionsDigestSubject } = await import('@repo/notifications');
+    const { localizeRedactionTokens } = await import('@repo/i18n');
     const { deps } = input;
 
     const windowEnd = input.now;
@@ -145,7 +146,10 @@ export async function runAiQuestionsWeeklyDigest(input: {
             listings: digest.listings.map((listing) => ({
                 listingName: listing.listingName,
                 unansweredCount: listing.unansweredCount,
-                questions: listing.questions,
+                // Stored markers are technical: show the owner a label in their language.
+                questions: listing.questions.map(
+                    (question) => localizeRedactionTokens({ text: question, locale }).text
+                ),
                 panelUrl: selection.buildPanelUrl({
                     siteUrl: deps.siteUrl,
                     locale,

@@ -32,7 +32,14 @@ function change(args: {
 
 function row(businessLinesChanges: readonly ListingBusinessLinesChangedEventRow[]) {
     return assembleListingNoticeRows({
-        listings: [{ id: ID, publicationStatus: S.PUBLISHED, deletionAnnouncedAt: null }],
+        listings: [
+            {
+                id: ID,
+                name: 'Ficha de prueba',
+                publicationStatus: S.PUBLISHED,
+                deletionAnnouncedAt: null
+            }
+        ],
         events: [],
         fixRequests: [],
         businessLinesChanges

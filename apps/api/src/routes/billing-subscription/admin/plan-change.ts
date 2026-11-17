@@ -1,3 +1,4 @@
+import { planCatalogModel } from '@repo/db';
 import {
     AdminSubscriptionPlanChangeOptionsResponseSchema,
     AdminSubscriptionPlanChangeParamsSchema,
@@ -8,6 +9,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { requestPlanChange } from '@repo/service-core';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { env } from '../../../utils/env';
@@ -72,17 +74,34 @@ export const adminPlanChangeOptionsRoute = createAdminRoute({
         if (found.row.vertical === 'partner') return partnerPlanChangeUnsupported(ctx);
         const vertical = PublicPlanCatalogVerticalSchema.parse(found.row.vertical);
         const catalog = await readSellablePlanCatalog({ vertical });
-        const offeredOptions = catalog.plans.flatMap((plan) =>
-            plan.billingOptions.map((option) => ({
-                billingOptionId: option.id,
-                planId: plan.planId,
-                planName: plan.name,
-                planVersionId: plan.planVersionId,
-                cycle: option.cycle,
-                amountMinor: option.amount,
-                currency: option.currency,
-                current: option.id === found.row.billingOptionId
-            }))
+        const inverse = createPlanCatalogInverse({ reader: planCatalogModel });
+        const offeredOptions = await Promise.all(
+            catalog.plans.flatMap((plan) =>
+                plan.billingOptions.map(async (option) => ({
+                    billingOptionId: option.id,
+                    planId: plan.planId,
+                    planName: plan.name,
+                    planSlug: plan.slug,
+                    planVersionId: plan.planVersionId,
+                    cycle: option.cycle,
+                    amountMinor: option.amount,
+                    currency: option.currency,
+                    current: option.id === found.row.billingOptionId,
+                    direction:
+                        option.id === found.row.billingOptionId
+                            ? ('NONE' as const)
+                            : found.row.planVersionId
+                              ? plan.planVersionId === found.row.planVersionId
+                                  ? ('CYCLE' as const)
+                                  : (
+                                        await inverse.changeDirection({
+                                            fromPlanVersionId: found.row.planVersionId,
+                                            toPlanVersionId: plan.planVersionId
+                                        })
+                                    ).direction
+                              : ('NONE' as const)
+                }))
+            )
         );
         auditLog({
             auditEvent: AuditEventType.BILLING_READ,
@@ -94,9 +113,14 @@ export const adminPlanChangeOptionsRoute = createAdminRoute({
         return {
             subscriptionId,
             vertical,
+            nextChargeAt: found.row.nextChargeAt?.toISOString() ?? null,
+            currentCycle: found.currentPlan?.cycle ?? null,
             options:
                 found.currentBillingOption && !offeredOptions.some((option) => option.current)
-                    ? [found.currentBillingOption, ...offeredOptions]
+                    ? [
+                          { ...found.currentBillingOption, direction: 'NONE' as const },
+                          ...offeredOptions
+                      ]
                     : offeredOptions
         };
     }

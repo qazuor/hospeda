@@ -1,9 +1,20 @@
 /**
  * Pure mapping of the staff conversation read (HOS-2075): anonymity and redaction.
  */
-import { describe, expect, it } from 'vitest';
+import { aiConversations } from '@repo/db';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { describe, expect, it, vi } from 'vitest';
+
+// The global setup mocks @repo/db; this test needs the real table definitions.
+vi.mock('@repo/db', async () => ({
+    ...(await import('../../../../packages/db/src/schemas/ai/ai_conversations.dbschema.ts')),
+    ...(await import('../../../../packages/db/src/schemas/ai/ai_messages.dbschema.ts')),
+    getDb: vi.fn()
+}));
+
 import {
     AI_CONVERSATION_PREVIEW_MAX,
+    buildConversationListSelect,
     toConversationDetail,
     toConversationListItems
 } from '../../src/services/ai-conversations-admin.service.js';
@@ -94,5 +105,25 @@ describe('toConversationDetail', () => {
         expect(Object.keys(detail).sort()).toEqual(
             ['entityId', 'entityType', 'id', 'startedAt', 'turns'].sort()
         );
+    });
+});
+
+describe('buildConversationListSelect (HOS-2319)', () => {
+    it('correlates the message subqueries to the OUTER conversation id', () => {
+        // Arrange
+        const db = drizzle.mock();
+
+        // Act
+        const { sql: text } = db
+            .select(buildConversationListSelect())
+            .from(aiConversations)
+            .toSQL();
+
+        // Assert: a bare "id" would resolve to the inner ai_messages.id.
+        const correlations = text.match(/m\.conversation_id = ([^ )]+)/g) ?? [];
+        expect(correlations).toHaveLength(3);
+        for (const c of correlations) {
+            expect(c).toBe('m.conversation_id = "ai_conversations".id');
+        }
     });
 });

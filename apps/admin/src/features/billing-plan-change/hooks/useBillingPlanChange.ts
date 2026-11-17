@@ -15,6 +15,7 @@ export interface PlanChangeInspection {
     };
     readonly currentPlan?: {
         readonly planName: string;
+        readonly planSlug: string;
         readonly versionLabel?: string;
         readonly cycle: string;
     };
