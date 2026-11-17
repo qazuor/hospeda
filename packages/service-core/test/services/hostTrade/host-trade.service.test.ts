@@ -75,7 +75,12 @@ function buildService(
     modelOverrides: Partial<ReturnType<typeof createModelMock>> = {},
     accommodationModelOverrides: Partial<ReturnType<typeof createModelMock>> = {}
 ) {
-    const model = { ...createModelMock(['findForHost']), ...modelOverrides };
+    const model = {
+        ...createModelMock(['findForHost']),
+        // HOS-919: list reads hydrate categories in one batched call.
+        hydrateCategories: vi.fn().mockResolvedValue(new Map()),
+        ...modelOverrides
+    };
     const accommodationModel = { ...createModelMock(), ...accommodationModelOverrides };
 
     const service = new HostTradeService(
@@ -368,7 +373,7 @@ describe('HostTradeService', () => {
             const result = await service.listForHost(actorWithView);
 
             expect(result.error).toBeUndefined();
-            expect(result.data?.trades).toEqual(trades);
+            expect(result.data?.trades).toEqual(trades.map((t) => ({ ...t, categories: [] })));
 
             // findForHost must be called with DISTINCT destinationIds only
             const calledWith = findForHostMock.mock.calls[0]?.[0] as string[];

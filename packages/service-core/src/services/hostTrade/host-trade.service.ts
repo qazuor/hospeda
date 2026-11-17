@@ -471,51 +471,93 @@ export class HostTradeService extends BaseCrudService<
     /**
      * Executes the host-trade search query for public / host-facing list calls.
      *
-     * Filters by `destinationId`, `category`, and `is24h` when provided.
+     * Filters by `destinationId`, `categories` (catalog slugs, any-of) and
+     * `is24h` when provided. The legacy single `category` filter is no longer
+     * applied (HOS-919): new providers have no value in that column.
+     *
+     * Every returned page is hydrated with its categories using ONE batched
+     * query ({@link HostTradeService.attachCategories}).
      *
      * @param params - Validated query parameters from HostTradeQuerySchema.
      * @param _actor - The requesting actor (unused; result set is not actor-scoped here).
-     * @param _ctx - Service context (carries optional transaction).
+     * @param ctx - Service context (carries optional transaction).
      */
     protected async _executeSearch(
         params: HostTradeQuery,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<HostTrade>> {
-        const where: Record<string, unknown> = {};
-        if (params.destinationId) where.destinationId = params.destinationId;
-        if (params.category) where.category = params.category;
-        if (typeof params.is24h === 'boolean') where.is24h = params.is24h;
+        const where = this.buildSearchWhere(params);
+        const additionalConditions = this.buildCategoryConditions(params.categories);
 
-        const { items, total } = await this.model.findAll(where);
-        return { items, total };
+        const { items, total } = await this.model.findAll(
+            where,
+            undefined,
+            additionalConditions,
+            ctx?.tx
+        );
+        return { items: await this.attachCategories(items, ctx), total };
     }
 
     /**
-     * Executes the host-trade count query.
+     * Executes the host-trade count query. It applies the SAME filters as
+     * {@link HostTradeService._executeSearch}, the categories predicate
+     * included, so the count always matches the list.
      *
      * @param params - Validated query parameters from HostTradeQuerySchema.
      * @param _actor - The requesting actor.
-     * @param _ctx - Service context.
+     * @param ctx - Service context.
      */
     protected async _executeCount(
         params: HostTradeQuery,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<CountResponse> {
+        const count = await this.model.count(this.buildSearchWhere(params), {
+            additionalConditions: this.buildCategoryConditions(params.categories),
+            tx: ctx?.tx
+        });
+        return { count };
+    }
+
+    /** Key-value part of the public search filter (everything but categories). */
+    private buildSearchWhere(params: HostTradeQuery): Record<string, unknown> {
         const where: Record<string, unknown> = {};
         if (params.destinationId) where.destinationId = params.destinationId;
-        if (params.category) where.category = params.category;
         if (typeof params.is24h === 'boolean') where.is24h = params.is24h;
+        return where;
+    }
 
-        const count = await this.model.count(where);
-        return { count };
+    /**
+     * Translates the `categories` slug list into the model's EXISTS predicate.
+     * An absent or empty list means "no filter" and yields no condition: the
+     * model predicate for an empty list would match nothing.
+     */
+    private buildCategoryConditions(categories: readonly string[] | undefined): SQL[] | undefined {
+        if (!categories || categories.length === 0) return undefined;
+        return [this.model.buildCategoriesFilterCondition({ categorySlugs: categories })];
+    }
+
+    /**
+     * Fills `categories` on a page of providers with ONE batched model call
+     * (no N+1). A provider without categories gets `[]`.
+     */
+    private async attachCategories(
+        items: HostTrade[],
+        ctx: ServiceContext | undefined
+    ): Promise<HostTrade[]> {
+        if (items.length === 0) return items;
+        const byProvider = await this.model.hydrateCategories({
+            hostTradeIds: items.map((item) => item.id),
+            tx: ctx?.tx
+        });
+        return items.map((item) => ({ ...item, categories: byProvider.get(item.id) ?? [] }));
     }
 
     /**
      * Executes the admin search query with admin-specific filters.
      *
-     * Most entity-specific filter fields (`category`, `destinationId`, `isActive`,
+     * Most entity-specific filter fields (`destinationId`, `isActive`,
      * `is24h`) map directly to table column names, so they are merged into the
      * `where` clause by the base implementation. Sorting, pagination, and text
      * search are also forwarded to the base class, which handles them uniformly.
@@ -537,9 +579,20 @@ export class HostTradeService extends BaseCrudService<
         params: AdminSearchExecuteParams<HostTradeAdminEntityFilters>
     ): Promise<PaginatedListOutput<HostTrade>> {
         const { entityFilters, ...rest } = params;
-        const { declarationSuspended, ...columnFilters } = entityFilters;
+        // `category` is the deprecated single-category filter (HOS-919): it is
+        // dropped, never mapped to a column. `categories` is a slug list that
+        // becomes an EXISTS predicate below; neither is a plain column filter.
+        const {
+            declarationSuspended,
+            categories,
+            category: _legacyCategory,
+            ...columnFilters
+        } = entityFilters;
 
-        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+        const extraConditions: SQL[] = [
+            ...(params.extraConditions ?? []),
+            ...(this.buildCategoryConditions(categories) ?? [])
+        ];
 
         if (declarationSuspended === true) {
             extraConditions.push(isNotNull(hostTrades.declarationSuspendedAt));
@@ -547,11 +600,12 @@ export class HostTradeService extends BaseCrudService<
             extraConditions.push(isNull(hostTrades.declarationSuspendedAt));
         }
 
-        return super._executeAdminSearch({
+        const page = await super._executeAdminSearch({
             ...rest,
             entityFilters: columnFilters,
             extraConditions: extraConditions.length > 0 ? extraConditions : undefined
         });
+        return { ...page, items: await this.attachCategories(page.items, params.ctx) };
     }
 
     // --- Custom methods ---
@@ -625,7 +679,7 @@ export class HostTradeService extends BaseCrudService<
                 // 3. Fetch active host-trade entries for those destinations
                 const trades = await this.model.findForHost(distinctDestinationIds, ctx?.tx);
 
-                return { trades };
+                return { trades: await this.attachCategories(trades, ctx) };
             }
         });
     }
