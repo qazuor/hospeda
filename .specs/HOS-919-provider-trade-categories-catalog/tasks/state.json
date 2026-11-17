@@ -444,35 +444,35 @@
             "id": "T-013",
             "title": "Switch hostTrade seed fixtures to categorySlugs and seed join rows",
             "description": "Edit packages/seed/src/data/hostTrade/*.json: replace category (enum) with categorySlugs: string[] using the backfill map (PILETA_JARDIN fixture -> ['piletas','parque-jardineria']); update the host-trade seed factory/normalizer to resolve slugs to category ids and insert r_host_trade_category rows; update the seed JSON-schema for hostTrade; update alliance-lead seed fixtures if they carry category (-> categorySlugs). Order the seeder after the catalog seeders.\nACs: AC-2.1, AC-5.1.\nTests (packages/seed/test/): every hostTrade fixture has >=1 valid slug present in the catalog baseline; the seeder produces join rows (20 providers, 21 links given PILETA_JARDIN gives 2); no fixture still carries category.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Edit hostTrade/*.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update seeder + JSON-schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Seed tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:59:59Z",
+                "completed": "2026-11-17T19:59:59Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 28,
+        "completed": 29,
         "blocked": 0,
         "averageComplexity": 2.5
     }

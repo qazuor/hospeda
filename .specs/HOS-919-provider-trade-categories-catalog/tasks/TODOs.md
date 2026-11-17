@@ -75,7 +75,7 @@
   - Blocked by: T-010
   - Blocks: T-013, T-014
 
-- [ ] **T-013** (complexity: 3) - Switch hostTrade seed fixtures to categorySlugs and seed join rows
+- [x] **T-013** (complexity: 3) - Switch hostTrade seed fixtures to categorySlugs and seed join rows
   - Edit packages/seed/src/data/hostTrade/*.json: replace category (enum) with categorySlugs: string[] u...
   - Blocked by: T-012
   - Blocks: T-017
