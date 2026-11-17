@@ -51,7 +51,19 @@ export function buildCatalogSearchCondition(input: {
     for (const locale of CATALOG_LOCALES) {
         conditions.push(like(sql`(${nameI18n} ->> ${locale})`));
         if (keywordsI18n) {
-            conditions.push(like(sql`(${keywordsI18n} -> ${locale})::text`));
+            // One element at a time: matching the array's `::text` would also hit
+            // its JSON syntax (`"`, `,`, `[`) and match every row with keywords.
+            conditions.push(sql`EXISTS (
+                SELECT 1
+                FROM jsonb_array_elements_text(
+                    CASE
+                        WHEN jsonb_typeof(${keywordsI18n} -> ${locale}) = 'array'
+                        THEN ${keywordsI18n} -> ${locale}
+                        ELSE '[]'::jsonb
+                    END
+                ) AS keyword(value)
+                WHERE ${like(sql`keyword.value`)}
+            )`);
         }
     }
     return sql`(${sql.join(conditions, sql` OR `)})`;
