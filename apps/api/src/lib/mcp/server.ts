@@ -11,6 +11,7 @@
 import { Server } from '@modelcontextprotocol/server';
 import { MCP_TOOL_DEFINITIONS } from '../../mcp/tools/registry';
 import type { ToolDefinition } from '../../mcp/tools/tool-definition';
+import { buildBrandIcons } from '../brand-icon/brand-icon';
 import { registerMcpToolHandlers } from './tool-handlers';
 
 /**
@@ -30,6 +31,12 @@ export const MCP_SERVER_INFO = {
 export interface CreateHospedaMcpServerArgs {
     /** Tools to register. Defaults to the registry (`mcp/tools/registry.ts`). */
     readonly tools?: readonly ToolDefinition[];
+    /**
+     * Public base URL of the API (`HOSPEDA_API_URL`). When set, the server
+     * declares the Hospeda icon in its `serverInfo` (`icons`, MCP spec
+     * 2025-11-25) so clients can show it next to the connector.
+     */
+    readonly apiUrl?: string;
 }
 
 /**
@@ -44,7 +51,7 @@ export interface CreateHospedaMcpServerArgs {
  * then answers an empty list, so a client sees a valid, empty server instead
  * of a `Method not found`.
  *
- * @param args - Optional tool list (tests)
+ * @param args - Optional tool list (tests) and the API public URL (icon)
  * @returns A new, unconnected server instance
  *
  * @example
@@ -53,10 +60,14 @@ export interface CreateHospedaMcpServerArgs {
  * ```
  */
 export function createHospedaMcpServer({
-    tools = MCP_TOOL_DEFINITIONS
+    tools = MCP_TOOL_DEFINITIONS,
+    apiUrl
 }: CreateHospedaMcpServerArgs = {}): Server {
     const server = new Server(
-        { ...MCP_SERVER_INFO },
+        {
+            ...MCP_SERVER_INFO,
+            ...(apiUrl ? { icons: buildBrandIcons({ apiUrl }) } : {})
+        },
         { capabilities: { tools: { listChanged: false } } }
     );
     registerMcpToolHandlers({ server, tools });
