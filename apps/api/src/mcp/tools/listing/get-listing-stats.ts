@@ -40,6 +40,7 @@ import {
     type AccommodationStatsExtras,
     readAccommodationStatsExtras
 } from './get-listing-stats.accommodation';
+import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import { type ListingToolVertical, ListingToolVerticalSchema } from './listing-services';
 import { readLatestListingReviews } from './listing-stats-readers';
 
@@ -236,6 +237,15 @@ export const getListingStatsTool = defineTool({
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
     reasonMessages: GET_LISTING_STATS_REASON_MESSAGES,
+    refusalAction: ({ error, input }) => {
+        const ref = readListingRef({ input, idKey: 'listingId' });
+        if (ref === undefined) {
+            return undefined;
+        }
+        return error.reason === NO_STATS_ENTITLEMENT_REASON
+            ? { destination: { kind: 'plans', vertical: ref.vertical } }
+            : listingRefusalLink({ error, ref });
+    },
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingStats>> => {
         const { vertical, listingId, period } = input;
 

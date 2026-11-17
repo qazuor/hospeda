@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { readInquiryListContext, readOwnerAccommodationIds } from './inquiry-readers';
+import { inquiryRefusalLink } from './inquiry-refusal-action';
 import { getInquiryConversationService } from './inquiry-services';
 
 /** Default page size. */
@@ -115,6 +116,7 @@ export const listInquiriesTool = defineTool({
     title: 'Mis consultas',
     description: `Lists the inquiries (messages from guests) the connected Hospeda user received on their accommodations, most recent activity first. Returns, per inquiry: id, accommodation, status, guest name, a preview of the latest message, unread count and dates. Use status PENDING_OWNER to see the ones still waiting for a reply, and listingId to see only those of one accommodation. Only accommodations have inquiries; venues and experiences do not. Take an id to get_inquiry to read the whole conversation. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: ListInquiriesInputSchema,
+    refusalAction: ({ error }) => inquiryRefusalLink({ error }),
     isWrite: false,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListInquiriesResult>> => {
         if (!actor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {

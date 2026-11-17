@@ -36,6 +36,7 @@ import { z } from 'zod';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { readInquiryThreadContext } from './inquiry-readers';
+import { inquiryRefusalLink } from './inquiry-refusal-action';
 import { getInquiryConversationService } from './inquiry-services';
 
 /** Default and largest number of messages per call (the thread route's bounds). */
@@ -121,6 +122,7 @@ export const getInquiryTool = defineTool({
     title: 'Ver consulta',
     description: `Reads one inquiry the connected Hospeda user received: the accommodation, the status, the guest name and the messages of the conversation, oldest first (the latest ones; use before to page back). Guest messages come in guestMessage, owner and system messages in text. Reading does not mark the inquiry as read. An inquiry that does not exist or belongs to someone else is reported as not found. Take the id from list_inquiries. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: GetInquiryInputSchema,
+    refusalAction: ({ error }) => inquiryRefusalLink({ error }),
     isWrite: false,
     auditTarget: ({ input }) => ({ type: 'conversation', id: input.id }),
     handler: async ({ actor, input }): Promise<ToolHandlerResult<InquiryThread>> => {

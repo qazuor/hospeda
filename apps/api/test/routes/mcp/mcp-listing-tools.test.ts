@@ -101,9 +101,9 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
-import { TOOL_NOT_FOUND_MESSAGE } from '../../../src/mcp/tools/tool-errors';
 import { ListingPublicationService } from '../../../src/services/listing-publication/listing-publication.service';
 import { env, validateApiEnv } from '../../../src/utils/env';
+import { notFoundWithListLink } from './not-found-text';
 
 const PROTOCOL_VERSION = '2025-06-18';
 
@@ -366,7 +366,14 @@ describe('/mcp listing tools (end to end)', () => {
         // Assert
         expect(message.result).toMatchObject({
             isError: true,
-            content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
+            content: [
+                {
+                    text: notFoundWithListLink({
+                        siteUrl: env.HOSPEDA_SITE_URL,
+                        path: 'mi-cuenta/comercio'
+                    })
+                }
+            ]
         });
     });
     it('lists update_listing_basic as a non-destructive idempotent write', async () => {
@@ -541,7 +548,14 @@ describe('/mcp listing tools (end to end)', () => {
         // Assert
         expect(message.result).toMatchObject({
             isError: true,
-            content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
+            content: [
+                {
+                    text: notFoundWithListLink({
+                        siteUrl: env.HOSPEDA_SITE_URL,
+                        path: 'mi-cuenta/comercio'
+                    })
+                }
+            ]
         });
         expect(unpublish).not.toHaveBeenCalled();
     });

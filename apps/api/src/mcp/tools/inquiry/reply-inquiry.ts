@@ -57,6 +57,7 @@ import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { consumeConfirmationToken, issueConfirmationToken } from './confirmation-token-store';
 import { readInquiryThreadContext } from './inquiry-readers';
+import { inquiryRefusalLink } from './inquiry-refusal-action';
 import { getInquiryConversationService, getInquiryMessageService } from './inquiry-services';
 
 /** Reason of the error a token that cannot be used answers with. */
@@ -194,6 +195,7 @@ export const replyInquiryTool = defineTool({
     isWrite: true,
     hints: { destructiveHint: false, idempotentHint: false, openWorldHint: true },
     reasonMessages: REPLY_INQUIRY_REASON_MESSAGES,
+    refusalAction: ({ error }) => inquiryRefusalLink({ error }),
     auditTarget: ({ input }) => ({ type: 'conversation', id: input.inquiryId }),
     auditContentLength: ({ input }) => input.text.length,
     auditDetails: ({ input }) => ({
