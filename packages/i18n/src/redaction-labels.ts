@@ -10,7 +10,7 @@
  */
 
 import type { Locale } from './config.shared';
-import { webTrans } from './config.shared';
+import { defaultLocale, webTrans } from './config.shared';
 
 /** Marker emitted by the redactor mapped to its `common.redactedContact.*` key. */
 const REDACTION_TOKEN_KEYS = {
@@ -32,7 +32,10 @@ export function localizeRedactionTokens(input: {
     readonly text: string;
     readonly locale: Locale;
 }): { readonly text: string } {
-    const dictionary = webTrans[input.locale] as Record<string, string>;
+    const dictionary = (webTrans[input.locale] ?? webTrans[defaultLocale]) as Record<
+        string,
+        string
+    >;
     return {
         text: input.text.replace(REDACTION_TOKEN_PATTERN, (token) => {
             const key = REDACTION_TOKEN_KEYS[token as keyof typeof REDACTION_TOKEN_KEYS];

@@ -109,7 +109,8 @@ describe('AiQuestionsPanel', () => {
             await screen.findByText('Llamenme al [teléfono oculto] o a [email oculto]')
         ).toBeInTheDocument();
         expect(container.innerHTML).not.toContain('REDACTED');
-        const link = container.querySelector('a[href*="preguntas"]');
+        const link = container.querySelector(`a[href^="${FAQ_URL}"]`);
+        expect(link).not.toBeNull();
         expect(decodeURIComponent(link?.getAttribute('href') ?? '')).not.toContain('REDACTED');
     });
 
