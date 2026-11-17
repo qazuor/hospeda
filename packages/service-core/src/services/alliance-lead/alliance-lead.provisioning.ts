@@ -1,6 +1,10 @@
 import type { HostTradeCategoryModel, HostTradeModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
-import { type HostTradeBenefitTypeEnum, HostTradeBenefitTypeEnumSchema } from '@repo/schemas';
+import {
+    type HostTradeBenefitTypeEnum,
+    HostTradeBenefitTypeEnumSchema,
+    LEGACY_CATEGORY_TO_SLUGS
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
 /**
@@ -87,11 +91,16 @@ export const resolveProvisionPlan = (lead: SelectAllianceLead): ProvisionPlan =>
     // seam — a cast would let a value the enum rejects reach the insert and
     // fail there, mid-approval.
     //
-    // The categories come from `categorySlugs` ONLY (HOS-919). The legacy
-    // `category` column is never read: a lead that has only it is a legacy
-    // lead. Whether the slugs are still ACTIVE is a database question, answered
-    // at write time (this function stays pure).
-    const categorySlugs = lead.categorySlugs ?? [];
+    // The categories come from `categorySlugs` (HOS-919). A lead written by a
+    // container that still ran the pre-HOS-919 code after the data-migration
+    // ran (rolling deploy) has only the legacy `category`: it is mapped through
+    // the same table the migration uses. `categorySlugs` always wins when set.
+    // Whether the slugs are still ACTIVE is a database question, answered at
+    // write time (this function stays pure).
+    const categorySlugs =
+        lead.categorySlugs && lead.categorySlugs.length > 0
+            ? lead.categorySlugs
+            : (LEGACY_CATEGORY_TO_SLUGS[lead.category ?? ''] ?? []);
     const benefitType = HostTradeBenefitTypeEnumSchema.nullish().safeParse(lead.benefitType);
 
     if (

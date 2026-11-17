@@ -53,7 +53,7 @@ import {
     rolePermission,
     sql
 } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { LEGACY_CATEGORY_TO_SLUGS, PermissionEnum, RoleEnum } from '@repo/schemas';
 import requiredManifest from '../manifest-required.json';
 import {
     normalizeHostTradeCategoryGroupSeedItem,
@@ -74,26 +74,10 @@ export const meta = {
 } as const satisfies SeedMigrationModule['meta'];
 
 /**
- * Old `HostTradeCategoryEnum` value to the catalog slug(s) it becomes (spec
- * 5.5). `GAS` maps to installation only; `PILETA_JARDIN` splits in two.
- *
- * Exported so the test can pin it against the legacy enum and the baseline.
+ * Re-exported so the test can pin the map against the legacy enum and the baseline.
+ * The map itself lives in `@repo/schemas`, shared with alliance lead provisioning.
  */
-export const LEGACY_CATEGORY_TO_SLUGS: Readonly<Record<string, readonly string[]>> = {
-    CERRAJERIA: ['cerrajeria'],
-    PLOMERIA: ['plomeria'],
-    ELECTRICIDAD: ['electricidad'],
-    GAS: ['gas-instalacion'],
-    CLIMATIZACION: ['climatizacion'],
-    LIMPIEZA: ['limpieza-domicilio'],
-    FLETES: ['fletes'],
-    VIDRIERIA: ['vidrieria'],
-    CARPINTERIA: ['carpinteria'],
-    PILETA_JARDIN: ['piletas', 'parque-jardineria'],
-    PLAGAS: ['control-plagas'],
-    INTERNET: ['internet-tv'],
-    ALBANILERIA: ['albanileria']
-};
+export { LEGACY_CATEGORY_TO_SLUGS };
 
 /** The five catalog permissions granted to the admin roles. */
 const CATEGORY_PERMISSIONS: readonly PermissionEnum[] = [

@@ -112,19 +112,19 @@ describe('resolveProvisionPlan', () => {
         expect(plan).toEqual({ kind: 'skip', reason: 'legacy-lead-without-typed-fields' });
     });
 
-    it('should treat a lead with only the legacy category as legacy and never read it (HOS-919)', () => {
-        // Arrange — `category` throws if touched: the plan must not read it.
-        const lead = providerLead({ categorySlugs: null });
-        Object.defineProperty(lead, 'category', {
-            get() {
-                throw new Error('legacy category must not be read');
-            }
-        });
+    it('should map a lead with only the legacy category to catalog slugs (rolling deploy, HOS-919)', () => {
+        const lead = providerLead({ categorySlugs: null, category: 'GAS' });
 
-        // Act
         const plan = resolveProvisionPlan(lead);
 
-        // Assert
+        expect(plan).toMatchObject({ kind: 'provision', categorySlugs: ['gas-instalacion'] });
+    });
+
+    it('should skip a lead whose legacy category has no mapping', () => {
+        const lead = providerLead({ categorySlugs: null, category: 'UNKNOWN' as never });
+
+        const plan = resolveProvisionPlan(lead);
+
         expect(plan).toEqual({ kind: 'skip', reason: 'legacy-lead-without-typed-fields' });
     });
 

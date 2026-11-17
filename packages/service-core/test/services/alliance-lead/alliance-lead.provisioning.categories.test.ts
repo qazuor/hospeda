@@ -98,15 +98,49 @@ describe('provisionServiceProviderListing — categories (HOS-919)', () => {
         expect(hostTradeModel.replaceCategories).not.toHaveBeenCalled();
     });
 
-    it('should not touch the catalog for a legacy lead with only category', async () => {
-        const result = await run(lead({ category: 'PLOMERIA', categorySlugs: null }));
+    describe('rolling-deploy lead that only carries the legacy category', () => {
+        it('should map the legacy category to its catalog slugs', async () => {
+            findActiveBySlugs.mockResolvedValue([cat(CAT_PLOMERIA, 'plomeria')]);
 
-        expect(result).toMatchObject({
-            provisioned: false,
-            reason: 'legacy-lead-without-typed-fields'
+            const result = await run(lead({ category: 'PLOMERIA', categorySlugs: null }));
+
+            expect(result).toEqual({ provisioned: true, hostTradeId: HT_ID });
+            expect(findActiveBySlugs).toHaveBeenCalledWith(['plomeria'], TX);
         });
-        expect(findActiveBySlugs).not.toHaveBeenCalled();
-        expect(hostTradeModel.create).not.toHaveBeenCalled();
+
+        it('should expand a legacy value that splits into several slugs', async () => {
+            findActiveBySlugs.mockResolvedValue([cat(CAT_PLOMERIA, 'piletas')]);
+
+            await run(lead({ category: 'PILETA_JARDIN', categorySlugs: [] }));
+
+            expect(findActiveBySlugs).toHaveBeenCalledWith(['piletas', 'parque-jardineria'], TX);
+        });
+
+        it('should prefer categorySlugs over the legacy category when both are present', async () => {
+            findActiveBySlugs.mockResolvedValue([cat(CAT_PLOMERIA, 'plomeria')]);
+
+            await run(lead({ category: 'ELECTRICIDAD', categorySlugs: ['plomeria'] }));
+
+            expect(findActiveBySlugs).toHaveBeenCalledWith(['plomeria'], TX);
+        });
+
+        it('should skip when the legacy value is unknown', async () => {
+            const result = await run(lead({ category: 'NOPE' as never, categorySlugs: null }));
+
+            expect(result).toMatchObject({
+                provisioned: false,
+                reason: 'legacy-lead-without-typed-fields'
+            });
+            expect(findActiveBySlugs).not.toHaveBeenCalled();
+            expect(hostTradeModel.create).not.toHaveBeenCalled();
+        });
+
+        it('should skip when there is neither categorySlugs nor a legacy category', async () => {
+            const result = await run(lead({ category: null, categorySlugs: null }));
+
+            expect(result).toMatchObject({ provisioned: false });
+            expect(hostTradeModel.create).not.toHaveBeenCalled();
+        });
     });
 
     it('should not write the legacy category column on the new listing', async () => {
