@@ -589,6 +589,8 @@ The two reasons differ because the retry differs: a 429 is refused before proces
 
 The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is what the action says before the person confirms (AC:B5:41). An empty or over-255 reference is normally a 400 from the request schema; `EXTERNAL_REFERENCE_INVALID` is the service's own check behind it.
 
+`REFUND_NOT_OPEN` answers an `EXECUTED` or `CONFIRMED` `refundId`. A `FAILED` `refundId` is not an error: the settlement is a new `EXECUTED` row (RF4 from no row), and the `FAILED` row stays `FAILED`.
+
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
 ## Action 13 rejections (B6.1)

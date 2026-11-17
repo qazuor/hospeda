@@ -195,6 +195,24 @@ export async function seedRequestedRefund(input: {
     return row.id;
 }
 
+/** A terminal FAILED refund row named by RF4 after a provider rejection. */
+export async function seedFailedRefund(input: {
+    readonly paymentId: string;
+    readonly amount: number;
+}): Promise<string> {
+    const [row] = await getDb()
+        .insert(refunds)
+        .values({
+            paymentId: input.paymentId,
+            amount: input.amount,
+            reason: 'REVOCATION',
+            status: 'FAILED'
+        })
+        .returning({ id: refunds.id });
+    if (!row) throw new Error('Expected failed refund');
+    return row.id;
+}
+
 /**
  * An OPEN S19 retention of `paymentId` on `subscriptionId` (HOS-1561), as the
  * retained-payment gate reads it: the seeded subscription is ACTIVE, so live.

@@ -65,6 +65,7 @@ export type SettleExternalRefundResult = {
     readonly refundId: string;
     readonly subjectId: string | null;
     readonly closedRequestedRefundId: string | null;
+    readonly settledFailedRefundId: string | null;
     readonly paymentOutcome: ApplyExecutedRefundResult['outcome'] | null;
     readonly coverageReleased: boolean;
 };
@@ -194,7 +195,7 @@ function alreadySettled(): ServiceError {
 async function findOpenRequest(
     tx: DrizzleClient,
     input: SettleExternalRefundInput
-): Promise<SelectRefund | null> {
+): Promise<{ readonly requested: SelectRefund | null; readonly failed: SelectRefund | null }> {
     const sourceColumn =
         input.source.kind === 'PAYMENT' ? refunds.paymentId : refunds.manualPaymentId;
     if (input.refundId) {
@@ -205,13 +206,14 @@ async function findOpenRequest(
             .limit(1)
             .for('update');
         if (!row) throw reject(ServiceErrorCode.NOT_FOUND, 'Refund not found', 'REFUND_NOT_FOUND');
+        if (row.status === 'FAILED') return { requested: null, failed: row };
         if (row.status !== 'REQUESTED')
             throw reject(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'Refund is no longer open',
                 'REFUND_NOT_OPEN'
             );
-        return row;
+        return { requested: row, failed: null };
     }
     const open = await tx
         .select()
@@ -224,7 +226,7 @@ async function findOpenRequest(
             'More than one open refund request on this payment; name the one to close',
             'OPEN_REQUESTS_AMBIGUOUS'
         );
-    return open[0] ?? null;
+    return { requested: open[0] ?? null, failed: null };
 }
 
 /** Step f: which open request, if any, this settlement closes (H5). */
@@ -366,6 +368,8 @@ async function applyEffects(
  * this source is resolved with this refund (`resolved_at`, `refund_id`; HOS-1697).
  *
  * @param input - The settlement.
+ * A `refundId` naming a `FAILED` row records a new RF4 row answering it; the
+ * FAILED row stays FAILED and `onAmountMismatch` is ignored on that path.
  * @param ports - The clock.
  * @returns The settled row and its effects.
  * @throws ServiceError with a `reason` from `SETTLE_EXTERNAL_REFUND_REJECTIONS`; never INTERNAL_ERROR for a rejection.
@@ -391,8 +395,8 @@ export async function settleExternalRefund(
             assertRefundable({ locked });
             await assertRetainedPaymentRefundable({ tx, locked });
             await validateSettlement(tx, input);
-            const requested = await findOpenRequest(tx, input);
-            const closing = requestToClose(input, requested);
+            const found = await findOpenRequest(tx, input);
+            const closing = requestToClose(input, found.requested);
             await assertWithinBalance({
                 tx,
                 locked,
@@ -411,6 +415,7 @@ export async function settleExternalRefund(
                 refundId,
                 subjectId,
                 closedRequestedRefundId: closing?.id ?? null,
+                settledFailedRefundId: found.failed?.id ?? null,
                 ...effects
             };
         });
