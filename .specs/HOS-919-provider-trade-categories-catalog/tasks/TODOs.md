@@ -45,7 +45,7 @@
   - Blocked by: T-005
   - Blocks: T-010
 
-- [ ] **T-007** (complexity: 3) - Create HostTradeCategoryGroupModel and HostTradeCategoryModel
+- [x] **T-007** (complexity: 3) - Create HostTradeCategoryGroupModel and HostTradeCategoryModel
   - Create packages/db/src/models/hostTrade/host-trade-category-group.model.ts and host-trade-category.m...
   - Blocked by: T-005
   - Blocks: T-010, T-018, T-022, T-024

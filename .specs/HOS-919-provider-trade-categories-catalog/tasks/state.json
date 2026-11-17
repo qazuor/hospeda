@@ -230,35 +230,35 @@
             "id": "T-007",
             "title": "Create HostTradeCategoryGroupModel and HostTradeCategoryModel",
             "description": "Create packages/db/src/models/hostTrade/host-trade-category-group.model.ts and host-trade-category.model.ts extending BaseModel (pattern: packages/db/src/models/destination/poi-category.model.ts). Methods: findPublicCatalog() (join groups+categories, lifecycleState=ACTIVE and deletedAt IS NULL on both levels, ordered by group displayWeight, category displayWeight, name), findActiveBySlugs(slugs), findByIds(ids), countLinkedHostTrades(categoryId) (non-deleted host_trades only), countActiveChildren(groupId). Export from models barrel.\nACs: AC-1.1, AC-3.3, AC-3.4, AC-1.7.\nTests (packages/db/test/integration/host-trade-category.model.integration.test.ts, isDbAvailable pattern): inactive/deleted rows excluded at BOTH levels in findPublicCatalog; ordering by displayWeight then name; countLinkedHostTrades ignores soft-deleted host_trades; findActiveBySlugs ignores unknown slugs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-010", "T-018", "T-022", "T-024"],
             "subtasks": [
                 {
                     "title": "Group model",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Category model",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:43:27Z",
+                "completed": "2026-11-17T18:43:27Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 46,
+        "pending": 45,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     }
