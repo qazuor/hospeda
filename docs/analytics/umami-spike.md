@@ -90,7 +90,17 @@ Conclusions:
   "identify(Y) is the document's FIRST request" above). Anonymous and system server events send
   no `payload.id`. The web and admin therefore send the identify as soon as the tracker is
   present and SKIP it (never delay it) when `getSession().cache` already holds a token, read
-  with `hasUmamiCacheToken` in `@repo/analytics`. A lost race leaves that document anonymous.
+  with `hasUmamiCacheToken` in `@repo/analytics`.
+- **The first-pageview race is closed (2026-11-17, owner option 1).** Any answered request hands
+  the tracker the token, and the first pageview used to win: on the web it fires on
+  `astro:page-load` before the UserMenu island resolves the session, and the admin used the
+  tracker's auto pageview. The identify was then skipped and the logged-in visitor stayed
+  anonymous in the browser. Now the first pageview of a document waits until the identity
+  settles: web `umami-identity-gate.ts` (identify sent or skipped, guest declared via
+  `markVisitorAnonymous` once `/auth/me` answered, only on BaseLayout pages and with analytics
+  consent), admin `trackPageview` driven by `UmamiPageviews` on the router with
+  `data-auto-pageview="false"` (under `/_authed`, released by `AuthProvider`). Both fall back
+  to an anonymous pageview after 3000 ms; the token guard still applies to a late identify.
 - **Re-check on every Umami upgrade.** The identify ordering, web and admin, depends on a detail
   of the 3.5.0 tracker that is not a documented API: `umami.getSession()` exists and exposes the
   cache token as `cache`. If it changes, no identify is sent at all (fail-closed, never a
@@ -189,6 +199,8 @@ T-005 notes. Locate them there, not here.
 - ~~Owner re-decision on the server distinct id~~. Decided 2026-11-16: server events never send
   `payload.id` (it splits the session in the web's flow, and the api cannot see the host-only
   `cookie-consent` cookie); the web identifies strictly after the pageview ack (spec OQ-5).
+  Superseded 2026-11-17: server events of a real user send `payload.id`, and the identify
+  precedes the first pageview (see Conclusions).
 
 - Ad-block check with a real browser (AC-12 smoke).
 - CSP entries for the subdomain (T-028/T-029).

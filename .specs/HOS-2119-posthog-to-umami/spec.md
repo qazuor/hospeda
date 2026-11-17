@@ -145,7 +145,9 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
   carries the same Distinct ID lands in it (OQ-5, revised 2026-11-17). An
   identify that claims the anonymous session leaks it: every later visitor on
   the same device/IP keeps landing in that session, attributed to the first
-  user, until Umami rotates its salt.
+  user, until Umami rotates its salt. Any request answered before the identify
+  (typically the first pageview) hands the tracker that token, so web and admin
+  hold the document's first pageview until the identity settles (§6.3).
 - Server-side ingestion: `POST /api/send` and `POST /api/batch` (max 500 items,
   ~10 MB), no auth token. A bot-like `User-Agent` (curl, node, anything with
   "api") is answered 200 and silently dropped. `payload.ip` and
@@ -197,7 +199,8 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
     lands in the visitor's browser session and inherits its referrer, UTM and
     path. When the visitor is logged in, the event also carries their user id
     as Distinct ID (see the `distinctId` mapping below), so it lands in the
-    user's per-user session.
+    user's per-user session. The browser reaches that same session because its
+    identify precedes the first pageview (§6.3).
   - Events with no visitor request (crons, webhooks, `api-server`) send a fixed
     synthetic identity: IP `127.0.0.1` and a browser-like, non-bot `User-Agent`.
     This counts as one synthetic visitor and stays out of `/stats` and path
@@ -260,13 +263,24 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
   it is SKIPPED, never delayed, and that document stays anonymous. The tracker
   keeps the id in memory, so every document identifies again (nothing persists
   across reloads) and a changed person property re-sends it. Trade-off:
-  pageviews before the login do not join the post-login session. Known race: if
-  the document's first pageview is answered before the identify runs (the
-  `<ClientRouter />` pageview goes out on `window.load`; an island that
-  hydrates later loses the race), that document is not identified.
-- Admin: same rule for the staff user id (OQ-5). It keeps the tracker's auto
-  pageview, so the race above is more likely there (the session resolves
-  asynchronously); a lost race leaves that document anonymous (fail-closed).
+  pageviews before the login do not join the post-login session.
+- First pageview gate (2026-11-17, owner, option 1): the first pageview fires on
+  `astro:page-load`, usually before the UserMenu island resolves the session, so
+  unheld it was answered first and the identify was skipped. Now the FIRST
+  pageview of a document waits until the identity settles
+  (`umami-identity-gate.ts`): identify sent or skipped, guest declared by
+  UserMenu (`markVisitorAnonymous`, only once `/auth/me` or its cache answered),
+  or 3000 ms elapsed, after which it goes out anonymously (the token guard still
+  applies to a late identify). It waits only on pages that mount UserMenu
+  (BaseLayout renders `<meta name="umami-await-identity">`; StandaloneLayout
+  identifies nobody and sends at once) and only with analytics consent. Later
+  pageviews are not held; one counted meanwhile queues behind the first.
+- Admin: same rule for the staff user id (OQ-5). The tracker renders with
+  `data-auto-pageview="false"` (not auto-track, which would freeze the URL of
+  custom events) and `UmamiPageviews` sends one pageview per resolved router
+  location. Under `/_authed` the first one waits for `AuthProvider` (identify,
+  or `markVisitorAnonymous` when the session resolves without a user) with the
+  same 3000 ms fallback.
 - CSP: remove PostHog hosts/hashes, add the Umami script origin; update
   `csp-soft-nav-script-hashes.ts` and `csp-nonce.ts`.
 
@@ -396,8 +410,9 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
   (no consent, logged out), and with consent and a logged-in user. In the second
   run the browser (after its identify) and the server events of that user share
   one per-user `session_id` (`uuid(…, id)`), distinct from the anonymous
-  pageview's session. Then a second account on the same device does NOT land in
-  the first user's session. Events from crons and webhooks carry the synthetic
+  pageview's session; the first pageview of each logged-in document also
+  carries that `session_id` (it waits for the identify). Then a second account
+  on the same device does NOT land in the first user's session. Events from crons and webhooks carry the synthetic
   identity and no Distinct ID.
 
 ## 10. Risks
@@ -410,7 +425,8 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
   smoke: claimed fingerprint session leaked across accounts): request-scoped
   events forward the visitor's IP + User-Agent; with a logged-in user they also
   carry the user id as Distinct ID, and the browser identifies BEFORE holding a
-  cache token, so both land in `uuid(…, id)`. Anonymous visitors and the
+  cache token (the first pageview waits for the identify, §6.3), so both land
+  in `uuid(…, id)`. Anonymous visitors and the
   synthetic identity send no Distinct ID (§6.2). Residual risk:
   the join depends on the tracker and the api seeing the same client IP (both
   behind Cloudflare). A mismatch only loses the join, not the event. AC-12
