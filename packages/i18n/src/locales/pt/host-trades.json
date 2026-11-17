@@ -23,6 +23,8 @@
         "is24h": "Disponível 24h",
         "benefit": "Benefício para anfitriões",
         "contact": "Contatar",
+        "categoriesLabel": "Categorias",
+        "moreCategories": "mais {{count}} categorias",
         "stats": {
             "ratingLabel": "{{rating}} de 5 estrelas",
             "reviews_one": "{{count}} avaliação",

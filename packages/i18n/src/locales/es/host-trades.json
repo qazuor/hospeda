@@ -23,6 +23,8 @@
         "is24h": "Disponible 24hs",
         "benefit": "Beneficio para hosts",
         "contact": "Contactar",
+        "categoriesLabel": "Rubros",
+        "moreCategories": "{{count}} rubros más",
         "stats": {
             "ratingLabel": "{{rating}} de 5 estrellas",
             "reviews_one": "{{count}} valoración",

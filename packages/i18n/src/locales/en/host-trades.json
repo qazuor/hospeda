@@ -23,6 +23,8 @@
         "is24h": "Available 24/7",
         "benefit": "Host benefit",
         "contact": "Contact",
+        "categoriesLabel": "Categories",
+        "moreCategories": "{{count}} more categories",
         "stats": {
             "ratingLabel": "{{rating}} out of 5 stars",
             "reviews_one": "{{count}} review",

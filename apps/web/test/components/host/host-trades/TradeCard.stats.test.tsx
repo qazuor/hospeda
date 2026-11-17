@@ -73,7 +73,14 @@ function buildTrade(aggregates: Partial<HostTradePublic> = {}): HostTradePublic 
         id: 'trade-1',
         slug: 'plomeria-lopez',
         name: 'Plomería López',
-        category: 'PLOMERIA',
+        categories: [
+            {
+                id: 'cat-plomeria',
+                slug: 'plomeria',
+                nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+                groupSlug: 'instalaciones'
+            }
+        ],
         benefit: '15% de descuento',
         contact: '+54 9 3442 567890',
         is24h: false,

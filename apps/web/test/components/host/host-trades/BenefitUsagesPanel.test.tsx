@@ -55,7 +55,14 @@ const PROVIDER = {
     id: '22222222-2222-4222-8222-222222222222',
     slug: 'plomero-centro',
     name: 'Plomero Centro',
-    category: 'PLOMERIA' as const
+    categories: [
+        {
+            id: 'cat-plomeria',
+            slug: 'plomeria',
+            nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+            groupSlug: 'instalaciones'
+        }
+    ]
 };
 
 const OTHER_PROVIDER = {
@@ -162,6 +169,27 @@ describe('BenefitUsagesPanel — what each list shows', () => {
         // The page already read both lists; hydrating must not re-read them.
         expect(mockListPending).not.toHaveBeenCalled();
         expect(mockListUsages).not.toHaveBeenCalled();
+    });
+
+    it('shows every category of the provider as a badge, capped at 3 plus «+N» (HOS-919)', () => {
+        const many = {
+            ...PROVIDER,
+            categories: ['Plomería', 'Electricidad', 'Piletas', 'Pintura', 'Herrería'].map(
+                (es, i) => ({
+                    id: `cat-${i}`,
+                    slug: `cat-${i}`,
+                    nameI18n: { es, en: '', pt: '' },
+                    groupSlug: 'g'
+                })
+            )
+        };
+        renderPanel({ pending: [makeUsage({ hostTrade: many })], history: [] });
+
+        const badges = within(inbox()).getByRole('list', { name: 'Rubros' });
+        expect(within(badges).getAllByRole('listitem')).toHaveLength(4);
+        expect(within(badges).getByText('Piletas')).toBeInTheDocument();
+        expect(within(badges).queryByText('Pintura')).toBeNull();
+        expect(within(badges).getByText('+2')).toBeInTheDocument();
     });
 
     it('names the provider on the row rather than showing its id', () => {

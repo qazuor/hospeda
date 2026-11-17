@@ -39,6 +39,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { matchCatalogQuery } from '@/lib/search/match-catalog-query';
+import { resolveTradeCategoryName, type TradeCategoryNameI18n } from '@/lib/trade-category-labels';
 import styles from './TradeCategoryMultiSelect.module.css';
 
 /** Groups of the public catalog, as served by `GET /api/v1/public/host-trade-categories`. */
@@ -79,12 +80,8 @@ export interface TradeCategoryMultiSelectProps {
 }
 
 /** Display name of a group or category in the active locale, falling back to Spanish. */
-function localizedName(
-    nameI18n: { readonly es: string; readonly en?: string; readonly pt?: string },
-    locale: SupportedLocale
-): string {
-    const own = nameI18n[locale];
-    return own && own.length > 0 ? own : nameI18n.es;
+function localizedName(nameI18n: TradeCategoryNameI18n, locale: SupportedLocale): string {
+    return resolveTradeCategoryName({ nameI18n, locale });
 }
 
 /**
