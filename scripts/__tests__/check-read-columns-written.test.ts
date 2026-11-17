@@ -106,7 +106,8 @@ describe('HOS-1448 corrida 2b - exhaustive billing transition annotations', () =
         // 2026-10-21, HOS-1734: P8 reads payment.status.
         // 2026-10-22, HOS-1735: S40 adds 1 decision read.
         // 2026-11-17, HOS-2218: S39 reads subscription.succeeds_id (successor not applied).
-        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(174);
+        // 2026-11-17, HOS-1715: 182 reads (P1/P3/P4/P5 read payment.amount, P1 reads payment.subscription_id and addon_instance_id, A4 reads addon_instance.ends_at, A5 reads addon_instance.complement_subscription_id; the 8 retired reads return).
+        expect(corpus.transitions.reduce((total, row) => total + row.reads.length, 0)).toBe(182);
     });
 });
 
