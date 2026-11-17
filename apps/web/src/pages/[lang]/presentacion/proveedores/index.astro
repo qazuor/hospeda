@@ -49,8 +49,10 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { getBrandPhoneLocalDisplay } from '@/lib/brand-phone';
 import { getSiteUrl } from '@/lib/env';
 
-import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
-import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { CACHE_TAG_HOST_TRADE_CATEGORIES, CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { hostTradeCategoryApi } from '@/lib/api/endpoints';
+import { applyCacheHeaders, markResponseDegraded } from '@/lib/cache/response-cache';
+import { buildProviderCategoryChipGroups } from '@/lib/presentacion/provider-category-chips';
 
 const locale = Astro.locals.locale as SupportedLocale;
 // Closing button: the label is authored in Spanish like the rest of this page (it is not
@@ -64,16 +66,31 @@ const ctaUrlText = ctaHref;
 // parameterized so a real number change does not require re-editing prose.
 const brandPhone = getBrandPhoneLocalDisplay();
 
-// --- Edge cacheability (HOS-369 W2-2) ---
-// No session and no API call: the content is hardcoded copy, so it only
-// changes on deploy. Same class and tag as the `/funcionalidades/` brochure.
+// --- Edge cacheability (HOS-369 W2-2, HOS-919) ---
+// No session. The copy is hardcoded, so a deploy changes it (`site-config`,
+// same class and tag as the `/funcionalidades/` brochure); the category chips
+// come from the public catalog, so an admin write to the catalog changes them
+// too, and that purge is the `host-trade-categories` tag (HOS-919 §6.6).
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: true,
 	cacheClass: 'static',
-	tags: [CACHE_TAG_SITE_CONFIG]
+	tags: [CACHE_TAG_SITE_CONFIG, CACHE_TAG_HOST_TRADE_CATEGORIES]
 });
+
+// --- Category chips (HOS-919 US-6) ---
+// Rendered from the public catalog at SSR, grouped, in the page locale. If the
+// call fails the page still renders (200) without the chips block, and the
+// render is marked degraded so the edge does not keep the failure for the whole
+// cache lifetime (HOS-1154).
+const { groups: chipGroups, degraded } = buildProviderCategoryChipGroups({
+	result: await hostTradeCategoryApi.getHostTradeCatalog(),
+	locale
+});
+if (degraded) {
+	markResponseDegraded({ locals: Astro.locals });
+}
 
 const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/proveedores/`;
 ---
@@ -225,25 +242,20 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
       en el mensaje y lo agregamos a la lista.
     </p>
     <p class="subhead">Y elegís uno o más rubros. Estos son los de hoy, y la lista sigue creciendo:</p>
-    <div class="chips">
-      <span class="chip">Plomería</span>
-      <span class="chip">Instalación de gas</span>
-      <span class="chip">Venta de gas</span>
-      <span class="chip">Electricidad</span>
-      <span class="chip">Cerrajería</span>
-      <span class="chip">Climatización</span>
-      <span class="chip">Albañilería</span>
-      <span class="chip">Techista</span>
-      <span class="chip">Herrería</span>
-      <span class="chip">Electrodomésticos</span>
-      <span class="chip">Carpintería</span>
-      <span class="chip">Vidriería</span>
-      <span class="chip">Limpieza</span>
-      <span class="chip">Pileta y jardín</span>
-      <span class="chip">Control de plagas</span>
-      <span class="chip">Fletes</span>
-      <span class="chip">Internet</span>
-    </div>
+    {chipGroups.length > 0 && (
+      <div class="chip-groups">
+        {chipGroups.map((group) => (
+          <div class="chip-group">
+            <h3 class="chip-group__title">{group.title}</h3>
+            <div class="chips">
+              {group.chips.map((chip) => (
+                <span class="chip">{chip.label}</span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
     <p>
       Si tu oficio no está en esa lista, <strong>escribilo igual en el mensaje</strong> y lo sumamos.
       Y ojo, que no todo es arreglar la casa: al anfitrión también le sirve tener a quién mandarle

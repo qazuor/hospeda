@@ -650,6 +650,17 @@ td.mono {
     flex-wrap: wrap;
     gap: 0.45rem;
 }
+.chip-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+.chip-group__title {
+    margin: 0 0 0.45rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+}
 .chip {
     font-size: 0.95rem;
     font-weight: 500;
