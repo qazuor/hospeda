@@ -656,7 +656,7 @@ trimestral o un semestral—.
 
 | caso | regla |
 |---|---|
-| **la unidad** | **meses enteros**: N meses saltean exactamente N cobros |
+| **la unidad** | **meses enteros**: N meses saltean exactamente N cobros, contados desde el próximo cobro (`next_charge_at`), nunca desde hoy (owner 2026-11-16, HOS-2300) |
 | **el plan** | **sólo mensual** — la misma validación de la pausa (`DEC-SUB-010`; el término del ciclo mensual de `puedePausar()`, `NUCLEO/01` §3). Es condición de `S9` por su primer disparador (`B/03` §3.2) |
 | **un plan ~~anual~~ no mensual** —trimestral, semestral o anual— | **no se ofrece**: el admin ve que no está disponible y por qué, y `S9` no ocurre. Le quedan **la cortesía permanente** (el grant del §35) o **una promo sobre la renovación** (la fila decía *«anual»* donde la regla dice *«sólo mensual»*; FASE 9 completa, contradicción 1 de `03` §R4.5) |
 | **cortesía sobre cortesía** | **se suman meses**, no se reemplazan, y el aviso dice la **fecha de fin nueva** (`DEC-GRANT-004` punto 3). **Lo ejecuta `S34`** (`B/03` §3.2): `S9` sale sólo de `ACTIVE` y exige *«no hay pausa vigente»*, así que la segunda cortesía no tenía transición (FASE 9 completa, contradicción 4 de `03` §R4.5) |

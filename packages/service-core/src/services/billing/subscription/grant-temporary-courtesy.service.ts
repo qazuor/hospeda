@@ -13,12 +13,15 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
-import { addCalendarMonths } from '@repo/utils';
 import { z } from 'zod';
 import { hasLivePermanentGrantAnchor } from '../grant/permanent-grant-live-anchors.js';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import { confirmPrincipalPause } from './pause-subscription-provider.js';
+import {
+    computeTemporaryCourtesyWindow,
+    resolveCourtesyAnchor
+} from './temporary-courtesy-window.js';
 
 const logger = createLogger('grant-temporary-courtesy');
 const monthsSchema = z.number().int().min(1);
@@ -210,7 +213,7 @@ export async function grantTemporaryCourtesy(
             const [grant] = await tx
                 .select({
                     id: courtesyGrants.id,
-                    endsAt: courtesyGrants.endsAt,
+                    startsAt: courtesyGrants.startsAt,
                     months: courtesyGrants.months
                 })
                 .from(courtesyGrants)
@@ -223,15 +226,9 @@ export async function grantTemporaryCourtesy(
                 )
                 .limit(1);
             if (pause?.reason !== 'COURTESY' || !pause.expectedEndAt || !grant) return null;
-            const endsAt = addCalendarMonths({
-                from: grant.endsAt,
-                months: value.months,
-                dayOverflow: 'clamp'
-            });
-            const pauseEndsAt = addCalendarMonths({
-                from: pause.expectedEndAt,
-                months: value.months,
-                dayOverflow: 'clamp'
+            const { endsAt } = computeTemporaryCourtesyWindow({
+                anchor: grant.startsAt,
+                months: grant.months + value.months
             });
             await tx
                 .update(courtesyGrants)
@@ -239,7 +236,7 @@ export async function grantTemporaryCourtesy(
                 .where(eq(courtesyGrants.id, grant.id));
             await tx
                 .update(subscriptionPauses)
-                .set({ expectedEndAt: pauseEndsAt })
+                .set({ expectedEndAt: endsAt })
                 .where(eq(subscriptionPauses.id, pause.id));
             return { courtesyGrantId: grant.id, pauseId: pause.id, endsAt };
         });
@@ -268,14 +265,14 @@ export async function grantTemporaryCourtesy(
         });
         if (confirmed === 'NOT_APPLIED') return { outcome: 'NOT_APPLIED' };
     }
-    const endsAt = addCalendarMonths({ from: now, months: value.months, dayOverflow: 'clamp' });
     const written = await db.transaction(async (tx) => {
         const [locked] = await tx
             .select({
                 status: subscriptions.status,
                 class: subscriptions.class,
                 userId: subscriptions.userId,
-                vertical: subscriptions.vertical
+                vertical: subscriptions.vertical,
+                nextChargeAt: subscriptions.nextChargeAt
             })
             .from(subscriptions)
             .where(eq(subscriptions.id, value.subscriptionId))
@@ -290,6 +287,17 @@ export async function grantTemporaryCourtesy(
             !locked.vertical
         )
             return null;
+        if (!locked.nextChargeAt)
+            logger.warn(
+                { subscriptionId: value.subscriptionId },
+                'Courtesy grant has no next charge date; anchoring at now'
+            );
+        const anchor = resolveCourtesyAnchor({
+            nextChargeAt: locked.nextChargeAt,
+            now,
+            cycleMonths: 1
+        });
+        const window = computeTemporaryCourtesyWindow({ anchor, months: value.months });
         const [existingPause] = await tx
             .select({ id: subscriptionPauses.id })
             .from(subscriptionPauses)
@@ -322,8 +330,8 @@ export async function grantTemporaryCourtesy(
             .values({
                 beneficiaryUserId: locked.userId,
                 months: value.months,
-                startsAt: now,
-                endsAt,
+                startsAt: window.startsAt,
+                endsAt: window.endsAt,
                 grantedBy: value.grantedBy,
                 reason: value.reason,
                 subscriptionId: value.subscriptionId,
@@ -338,11 +346,11 @@ export async function grantTemporaryCourtesy(
                 reason: 'COURTESY',
                 requestedMonths: value.months,
                 startsAt: now,
-                expectedEndAt: endsAt
+                expectedEndAt: window.endsAt
             })
             .returning({ id: subscriptionPauses.id });
         if (!pause) throw new Error('Temporary courtesy pause insert returned no row');
-        return { courtesyGrantId: grant.id, pauseId: pause.id, endsAt };
+        return { courtesyGrantId: grant.id, pauseId: pause.id, endsAt: window.endsAt };
     });
     if (!written) return markLostRace({ subscriptionId: value.subscriptionId });
     await notifyCoverage({

@@ -50,7 +50,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:7 temporary courtesy S9',
         const result = await grant(s);
         expect(result).toMatchObject({
             outcome: 'GRANTED',
-            endsAt: new Date('2026-12-14T12:00:00.000Z')
+            endsAt: new Date('2026-12-13T12:00:00.000Z')
         });
         const [row] = await db
             .select()
@@ -69,7 +69,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:7 temporary courtesy S9',
             reason: 'COURTESY',
             requestedMonths: 2,
             startsAt: courtesyNow,
-            expectedEndAt: new Date('2026-12-14T12:00:00.000Z')
+            expectedEndAt: new Date('2026-12-13T12:00:00.000Z')
         });
         expect(courtesy).toMatchObject({
             months: 2,

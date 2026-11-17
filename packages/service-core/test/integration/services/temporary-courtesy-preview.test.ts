@@ -33,7 +33,7 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B9b:10 temporary courtesy previ
         const firstPreview = await preview(s);
         expect(firstPreview).toMatchObject({
             offered: true,
-            endsAt: new Date('2026-12-14T12:00:00.000Z'),
+            endsAt: new Date('2026-12-13T12:00:00.000Z'),
             liveCourtesy: null
         });
         const first = await grant(s);
@@ -41,7 +41,7 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B9b:10 temporary courtesy previ
         const secondPreview = await preview(s, 3);
         expect(secondPreview).toMatchObject({
             offered: true,
-            endsAt: new Date('2027-03-14T12:00:00.000Z')
+            endsAt: new Date('2027-03-13T12:00:00.000Z')
         });
         expect(secondPreview.liveCourtesy).toMatchObject({
             courtesyGrantId: first.outcome === 'GRANTED' ? first.courtesyGrantId : '',
@@ -147,9 +147,7 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B9b:10 temporary courtesy previ
             s.ports
         );
         expect(revoke.inForce).toBe(true);
-        expect(revoke.predictedNextChargeAt).toEqual(
-            result.outcome === 'GRANTED' ? result.endsAt : undefined
-        );
+        expect(revoke.predictedNextChargeAt).toEqual(new Date('2026-11-14T12:00:00.000Z'));
     });
 
     it('rolls a past next-charge date by billing cycle until it passes the clock', async () => {
@@ -171,5 +169,40 @@ describe.skipIf(!isServiceTestDbAvailable())('AC:B9b:10 temporary courtesy previ
         expect(revoke.courtesy?.endsAt).toEqual(
             result.outcome === 'GRANTED' ? result.endsAt : undefined
         );
+    });
+
+    it('predicts the stored charge anchor before it and the following cycle after it', async () => {
+        const s = await seedCourtesyPrincipal({ manual: true });
+        const anchor = new Date('2026-11-10T12:00:00.000Z');
+        await db
+            .update(subscriptions)
+            .set({ nextChargeAt: anchor })
+            .where(eq(subscriptions.id, s.subscriptionId));
+        const result = await grant(s, 2);
+        expect(result.outcome).toBe('GRANTED');
+        await db
+            .update(subscriptions)
+            .set({ nextChargeAt: null })
+            .where(eq(subscriptions.id, s.subscriptionId));
+        const beforeAnchor = await previewTemporaryCourtesyRevoke(
+            { subscriptionId: s.subscriptionId },
+            s.ports
+        );
+        expect(beforeAnchor.predictedNextChargeAt).toEqual(anchor);
+        const afterAnchor = await previewTemporaryCourtesyRevoke(
+            { subscriptionId: s.subscriptionId },
+            { ...s.ports, clock: { now: () => new Date('2026-11-15T12:00:00.000Z') } }
+        );
+        expect(afterAnchor.predictedNextChargeAt).toEqual(new Date('2026-12-10T12:00:00.000Z'));
+    });
+
+    it('uses the next charge anchor for S9 preview', async () => {
+        const s = await seedCourtesyPrincipal({ manual: true });
+        const anchor = new Date('2026-11-10T12:00:00.000Z');
+        await db
+            .update(subscriptions)
+            .set({ nextChargeAt: anchor })
+            .where(eq(subscriptions.id, s.subscriptionId));
+        expect((await preview(s, 2)).endsAt).toEqual(new Date('2027-01-09T12:00:00.000Z'));
     });
 });
