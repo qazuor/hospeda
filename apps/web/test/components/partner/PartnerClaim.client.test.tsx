@@ -14,7 +14,12 @@ const mocks = vi.hoisted(() => ({
     user: { id: 'signed-in-user', name: 'Test', email: 'test@example.test' },
     permissions: [] as string[],
     claim: vi.fn(),
-    refresh: vi.fn()
+    refresh: vi.fn(),
+    lookup: vi.fn(),
+    signUp: vi.fn(),
+    signInEmail: vi.fn(),
+    signOut: vi.fn(),
+    resend: vi.fn()
 }));
 
 vi.mock('../../../src/hooks/use-account-permissions', () => ({
@@ -35,7 +40,18 @@ vi.mock('../../../src/lib/api/endpoints-protected', async (importOriginal) => {
 
 vi.mock('../../../src/lib/auth-client', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../src/lib/auth-client')>();
-    return { ...actual, refreshBetterAuthSession: mocks.refresh };
+    return {
+        ...actual,
+        refreshBetterAuthSession: mocks.refresh,
+        signIn: { ...actual.signIn, email: mocks.signInEmail },
+        signOut: mocks.signOut,
+        resendVerificationEmail: mocks.resend
+    };
+});
+
+vi.mock('../../../src/lib/api/endpoints', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../src/lib/api/endpoints')>();
+    return { ...actual, partnerClaimsPublicApi: { lookup: mocks.lookup, signUp: mocks.signUp } };
 });
 
 vi.mock('../../../src/components/partner/PartnerClaim.module.css', () => ({
@@ -73,6 +89,14 @@ describe('PartnerClaim', () => {
         mocks.authenticated = false;
         mocks.claim.mockReset().mockResolvedValue({ ok: true, data: CLAIMED });
         mocks.refresh.mockReset().mockResolvedValue(undefined);
+        mocks.lookup.mockReset().mockResolvedValue({
+            ok: true,
+            data: { email: 'claim@example.test', accountExists: false }
+        });
+        mocks.signUp.mockReset().mockResolvedValue({ ok: true, data: { claimed: true } });
+        mocks.signInEmail.mockReset().mockResolvedValue({ data: {} });
+        mocks.signOut.mockReset().mockResolvedValue(undefined);
+        mocks.resend.mockReset();
     });
 
     afterEach(() => {
@@ -80,15 +104,78 @@ describe('PartnerClaim', () => {
         vi.restoreAllMocks();
     });
 
+    it('looks up the token and offers a fixed-email signup that signs in after claiming', async () => {
+        setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+        renderClaim();
+
+        expect(
+            await screen.findByText('Creá tu cuenta para reclamar el Partner')
+        ).toBeInTheDocument();
+        expect(screen.getByDisplayValue('claim@example.test')).toHaveAttribute('readonly');
+        expect(document.querySelector('input[type="email"]:not([readonly])')).toBeNull();
+        await userEvent.type(screen.getByLabelText(/Contraseña/), 'StrongPass123!');
+        await userEvent.type(screen.getByLabelText(/Confirmar contraseña/), 'StrongPass123!');
+        await userEvent.click(screen.getByRole('button', { name: 'Crear cuenta y reclamar' }));
+
+        expect(mocks.lookup).toHaveBeenCalledWith({ partnerId: PARTNER_ID, secret: SECRET });
+        expect(mocks.signUp).toHaveBeenCalledWith({
+            partnerId: PARTNER_ID,
+            secret: SECRET,
+            password: 'StrongPass123!'
+        });
+        expect(mocks.signUp.mock.calls[0]?.[0]).not.toHaveProperty('email');
+        expect(mocks.signInEmail).toHaveBeenCalledWith({
+            email: 'claim@example.test',
+            password: 'StrongPass123!'
+        });
+        expect(
+            await screen.findByText('Listo: el Partner quedó vinculado a tu cuenta.')
+        ).toBeInTheDocument();
+        expect(mocks.resend).not.toHaveBeenCalled();
+    });
+
+    it('shows the fixed-email password sign-in for an existing mailbox account', async () => {
+        setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+        mocks.lookup.mockResolvedValue({
+            ok: true,
+            data: { email: 'claim@example.test', accountExists: true }
+        });
+        renderClaim();
+
+        expect(
+            await screen.findByText('Iniciá sesión para reclamar el Partner.')
+        ).toBeInTheDocument();
+        expect(screen.getByDisplayValue('claim@example.test')).toHaveAttribute('readonly');
+        expect(document.querySelector('input[type="email"]:not([readonly])')).toBeNull();
+        await userEvent.type(screen.getByLabelText(/Contraseña/), 'ExistingPass123!');
+        await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+        expect(mocks.signInEmail).toHaveBeenCalledWith({
+            email: 'claim@example.test',
+            password: 'ExistingPass123!'
+        });
+        expect(
+            await screen.findByText(
+                'Vas a vincular este Partner a la cuenta con la que iniciaste sesión.'
+            )
+        ).toBeInTheDocument();
+        await userEvent.click(screen.getByRole('button', { name: 'Reclamar el Partner' }));
+        expect(
+            await screen.findByText('Listo: el Partner quedó vinculado a tu cuenta.')
+        ).toBeInTheDocument();
+    });
+
     it('clears the fragment and saves the secret only as a pending action before sign-in', async () => {
+        mocks.lookup.mockResolvedValue({
+            ok: true,
+            data: { email: 'claim@example.test', accountExists: true }
+        });
         setFragment(`partner=${PARTNER_ID}&secret=${encodeURIComponent(SECRET)}`);
         const replaceState = vi.spyOn(window.history, 'replaceState');
         renderClaim();
 
         expect(
-            await screen.findByText(
-                'Para reclamar el Partner, iniciá sesión con la cuenta con la que lo vas a administrar. Esa cuenta queda como dueña.'
-            )
+            await screen.findByText('Iniciá sesión para reclamar el Partner.')
         ).toBeInTheDocument();
         await waitFor(() => expect(window.location.hash).toBe(''));
         expect(replaceState).toHaveBeenCalledWith(null, '', PATH);
@@ -99,7 +186,7 @@ describe('PartnerClaim', () => {
             writable: true,
             value: { pathname: PATH, hash: '', assign }
         });
-        await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+        await userEvent.click(screen.getByRole('button', { name: 'Entrar de otra forma' }));
 
         expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).not.toBeNull();
         const stored = JSON.parse(
@@ -181,7 +268,7 @@ describe('PartnerClaim', () => {
             name: 'unverified account',
             status: 403,
             reason: 'EMAIL_NOT_VERIFIED',
-            text: 'Para reclamar este Partner con esta cuenta, primero verificá tu correo.'
+            text: 'No pudimos completar el reclamo. Probá de nuevo en unos minutos.'
         },
         {
             name: 'server error',
@@ -231,9 +318,24 @@ describe('PartnerClaim', () => {
             'href',
             expect.stringContaining('contacto')
         );
-        expect(screen.queryByRole('button', { name: 'Reenviar verificación' })).toBeNull();
+        expect(
+            screen.getByRole('button', { name: 'Cerrar sesión y continuar' })
+        ).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Reclamar el Partner' })).toBeNull();
         expect(mocks.refresh).not.toHaveBeenCalled();
+        const reload = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: { pathname: PATH, hash: '', reload }
+        });
+        mocks.signOut.mockImplementation(async () => {
+            expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).not.toBeNull();
+            return undefined;
+        });
+        await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión y continuar' }));
+        expect(mocks.signOut).toHaveBeenCalledOnce();
+        expect(reload).toHaveBeenCalledOnce();
     });
 
     it('renders the email mismatch copy in English and Portuguese', async () => {
@@ -280,9 +382,7 @@ describe('PartnerClaim', () => {
         await userEvent.click(await screen.findByRole('button', { name: 'Reclamar el Partner' }));
 
         expect(
-            await screen.findByText(
-                'Para reclamar el Partner, iniciá sesión con la cuenta con la que lo vas a administrar. Esa cuenta queda como dueña.'
-            )
+            await screen.findByText('Iniciá sesión para reclamar el Partner.')
         ).toBeInTheDocument();
         expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).not.toBeNull();
     });

@@ -146,6 +146,7 @@ export interface AbandonReplacedPendingAuthorizationInput {
     readonly subscriptionId: string;
     readonly now: Date;
     readonly tx: DrizzleClient;
+    readonly predecessorId?: string;
 }
 
 /** Provider result persisted after the external authorization call. */
@@ -470,8 +471,8 @@ export class SubscriptionModel {
 
     /**
      * S39 closes a replaced pending card signup; S40 closes one cancelled by
-     * the person. Neither closes courtesy balances or manual installments:
-     * both apply only to a card signup that is not a successor.
+     * the person. S39 also replaces an unapplied successor of the just-admitted
+     * predecessor (HOS-2218). Neither transition closes courtesy balances or installments.
      */
     async abandonReplacedPendingAuthorization(
         input: AbandonReplacedPendingAuthorizationInput
@@ -484,7 +485,9 @@ export class SubscriptionModel {
                     eq(subscriptions.id, input.subscriptionId),
                     eq(subscriptions.status, 'PENDING_AUTHORIZATION'),
                     eq(subscriptions.class, 'PRINCIPAL'),
-                    isNull(subscriptions.succeedsId)
+                    input.predecessorId === undefined
+                        ? isNull(subscriptions.succeedsId)
+                        : eq(subscriptions.succeedsId, input.predecessorId)
                 )
             )
             .returning({ id: subscriptions.id });

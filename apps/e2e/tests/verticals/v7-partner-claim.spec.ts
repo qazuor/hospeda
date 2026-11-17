@@ -116,8 +116,8 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         const claimUrl = `${WEB_URL}/es/partners/reclamar/#partner=${partnerId}&secret=${encodeURIComponent(secret)}`;
         await seedCookieConsent(page);
         await page.goto(claimUrl);
-        await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
-        await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+        await expect(page.getByRole('button', { name: 'Entrar de otra forma' })).toBeVisible();
+        await page.getByRole('button', { name: 'Entrar de otra forma' }).click();
         await expect(page).toHaveURL(/\/es\/auth\/signin\/\?returnUrl=/);
         const returnUrl = new URL(page.url()).searchParams.get('returnUrl');
         expect(returnUrl).toBe('/es/partners/reclamar/');

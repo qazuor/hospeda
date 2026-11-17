@@ -327,9 +327,9 @@ describe('TEST:V7:4 and TEST:V7:5 partner application mail outbox', () => {
             subjects.push(mail.subject);
             return { messageId: `message-${randomUUID()}` };
         });
-        expect(subjects).toContain(
-            trans.en['notifications.partnerApplication.claimNotice.subject']
-        );
+        const subjectTemplate = trans.en['notifications.partnerApplication.claimNotice.subject'];
+        expect(subjectTemplate).toBeDefined();
+        expect(subjects).toContain(subjectTemplate?.replace('{{partnerName}}', BODY.name));
     });
 
     it('(h) rolls back each outbox enqueue when its domain event fails', async () => {

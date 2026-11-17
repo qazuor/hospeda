@@ -67,6 +67,47 @@ describe('resolveLocationKeyPatch', () => {
         });
         expect(patch).toEqual({ locationKey: null });
     });
+
+    // HOS-2318: an explicit `location: null` wipes the address, so the key must go too.
+    it('clears the key when the payload sets location to null', () => {
+        const patch = resolveLocationKeyPatch({
+            payload: { location: null },
+            current: { destinationId: DEST, location: { street: 'Mitre', number: '1' } }
+        });
+        expect(patch).toEqual({ locationKey: null });
+    });
+
+    it('clears the key when location is nulled together with a destination change', () => {
+        const patch = resolveLocationKeyPatch({
+            payload: { location: null, destinationId: 'dest-2' },
+            current: { destinationId: DEST, location: { street: 'Mitre', number: '1' } }
+        });
+        expect(patch).toEqual({ locationKey: null });
+    });
+
+    it('clears the key when street and number are blanked through flat fields', () => {
+        const patch = resolveLocationKeyPatch({
+            payload: { location: { street: '', number: '' } },
+            current: { destinationId: DEST, location: { street: 'Mitre', number: '1' } }
+        });
+        expect(patch).toEqual({ locationKey: null });
+    });
+
+    it('clears the key when the destination is explicitly set to null', () => {
+        const patch = resolveLocationKeyPatch({
+            payload: { destinationId: null },
+            current: { destinationId: DEST, location: { street: 'Mitre', number: '1' } }
+        });
+        expect(patch).toEqual({ locationKey: null });
+    });
+
+    it('applies a fresh location over a null stored one on update', () => {
+        const patch = resolveLocationKeyPatch({
+            payload: { location: { street: 'Mitre', number: '1' } },
+            current: { destinationId: DEST, location: null }
+        });
+        expect(patch).toEqual({ locationKey: 'mitre|1|dest-1' });
+    });
 });
 
 describe('assertNoOwnLocationConflict', () => {

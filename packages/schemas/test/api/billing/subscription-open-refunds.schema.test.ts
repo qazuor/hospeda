@@ -4,6 +4,8 @@ import { SubscriptionOpenRefundsResponseSchema } from '../../../src/api/billing/
 const item = {
     refundId: '3c4d5e6f-7a8b-4c9d-8e0f-1a2b3c4d5e6f',
     refundAmount: 1200,
+    status: 'REQUESTED',
+    providerRejection: null,
     reason: 'REVOCATION',
     requestedAt: '2026-10-19T12:00:00.000Z',
     payment: { source: 'PAYMENT', id: '9e8d7c6b-5a49-4382-9716-05f4e3d2c1b0' },
@@ -39,5 +41,29 @@ describe('TEST:1711:8 AC:1711:10 SubscriptionOpenRefundsResponseSchema', () => {
                 SubscriptionOpenRefundsResponseSchema.safeParse({ items: [invalid] }).success
             ).toBe(false);
         }
+    });
+
+    it('requires provider rejection details exactly for FAILED requests', () => {
+        const rejection = {
+            code: 'REJECTED',
+            message: 'Mercado Pago request failed (401)',
+            detail: 'Unauthorized use of live credentials',
+            rejectedAt: '2026-10-19T12:00:00.000Z'
+        };
+        expect(
+            SubscriptionOpenRefundsResponseSchema.safeParse({
+                items: [{ ...item, status: 'FAILED', providerRejection: rejection }]
+            }).success
+        ).toBe(true);
+        expect(
+            SubscriptionOpenRefundsResponseSchema.safeParse({
+                items: [{ ...item, status: 'FAILED' }]
+            }).success
+        ).toBe(false);
+        expect(
+            SubscriptionOpenRefundsResponseSchema.safeParse({
+                items: [{ ...item, providerRejection: rejection }]
+            }).success
+        ).toBe(false);
     });
 });

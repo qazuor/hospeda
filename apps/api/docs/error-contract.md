@@ -128,6 +128,7 @@ are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
 | `PARTNER_APPLICATION_NOT_PENDING` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_ALREADY_CLAIMED` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS` | 409 | `ALREADY_EXISTS` |
+| `PARTNER_CLAIM_ACCOUNT_EXISTS` | 409 | `ALREADY_EXISTS` |
 | `PARTNER_CLAIM_EMAIL_MISMATCH` | 403 | `FORBIDDEN` |
 
 The public Partner application form (`POST /api/v1/protected/partner-applications`) tells the applicant the exact cause of a 409 (HOS-2242, owner decision; accepted cost: anyone can learn whether an address has a pending or a rejected application). `PARTNER_APPLICATION_PENDING` means the email already has a pending application. `PARTNER_APPLICATION_WAIT_ACTIVE` means it is inside the wait after a rejection, and publishes `error.details.reapplyAfter` (ISO instant); if that date cannot be computed the answer is `PARTNER_APPLICATION_UNAVAILABLE` instead, with no details.
@@ -588,6 +589,8 @@ The two reasons differ because the retry differs: a 429 is refused before proces
 `RETAINED_PAYMENT_SUCCESSION_OPEN` comes from the retained-payment gate (GUARD:G-R1-D, AC:B7:17, HOS-1561): the payment is retained by `S19` and the succession that retains it is still open, so no refund is recorded until it closes. Its `reason` is not in `SETTLE_EXTERNAL_REFUND_REJECTIONS`; the route adds it to its own `Record`.
 
 The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is what the action says before the person confirms (AC:B5:41). An empty or over-255 reference is normally a 400 from the request schema; `EXTERNAL_REFERENCE_INVALID` is the service's own check behind it.
+
+`REFUND_NOT_OPEN` answers an `EXECUTED` or `CONFIRMED` `refundId`. A `FAILED` `refundId` is not an error: the settlement is a new `EXECUTED` row (RF4 from no row), and the `FAILED` row stays `FAILED`.
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 

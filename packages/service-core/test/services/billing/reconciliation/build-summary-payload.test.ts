@@ -15,6 +15,7 @@ const window = {
 function event(id: number, entityId: string, reason = 'COBRO_DUPLICADO'): SelectDomainEvent {
     return {
         id: `00000000-0000-4000-8000-${String(id).padStart(12, '0')}`,
+        seq: id,
         eventType: 'reconciliation.mark_opened',
         entityType: 'subscription',
         entityId,

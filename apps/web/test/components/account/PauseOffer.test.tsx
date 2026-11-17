@@ -1,8 +1,14 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PauseOffer } from '@/components/account/PauseOffer.client';
 
 const id = '123e4567-e89b-42d3-a456-426614174000';
+/** Flush the mocked fetch promise chain under fake timers. */
+async function flushPromises(): Promise<void> {
+    for (let i = 0; i < 10; i++) {
+        await Promise.resolve();
+    }
+}
 const response = (data: unknown) => ({
     ok: true,
     status: 200,
@@ -48,7 +54,10 @@ beforeEach(() => {
     );
     vi.stubGlobal('fetch', fetchMock);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+});
 
 describe('TEST:B8b:25 PauseOffer', () => {
     it('TEST:B9b:8 warns with the courtesy end date and confirms the forfeit with the selected months', async () => {
@@ -79,8 +88,7 @@ describe('TEST:B8b:25 PauseOffer', () => {
             'Tenés una cortesía hasta el 25 de noviembre de 2026. Si pausás, perdés lo que queda y no vuelve.',
             'Al confirmar la pausa, tu cortesía termina hoy y perdés el tiempo que quedaba.',
             'Si confirmás, tu suscripción queda pausada hasta el 5 de enero de 2027.',
-            'Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.',
-            'Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:'
+            'Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.'
         ]);
         fireEvent.click(within(panel).getByRole('button', { name: 'Confirmar pausa' }));
         await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument());
@@ -185,5 +193,93 @@ describe('TEST:B8b:25 PauseOffer', () => {
             'Tenés una cortesía hasta el 5 de diciembre de 2026; mientras dure no podés pausar.'
         );
         expect(within(screen.getByTestId('pause-offer')).queryAllByRole('button')).toEqual([]);
+    });
+    it('TEST:HOS-2303 hides the vertical addons heading when the preview lists no vertical addons', async () => {
+        fetchMock.mockImplementation(async (_url: string, init?: RequestInit) =>
+            init?.method === 'POST'
+                ? response({
+                      outcome: 'PAUSED',
+                      expectedEndAt: '2027-01-05T03:00:00.000Z'
+                  })
+                : response(courtesyPreview)
+        );
+        render(
+            <PauseOffer
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Pausar suscripción' }));
+        const panel = await screen.findByTestId('pause-confirmation');
+        fireEvent.change(screen.getByLabelText('Meses de pausa'), { target: { value: '2' } });
+        expect(
+            within(panel).queryByText(
+                'Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:'
+            )
+        ).toBeNull();
+    });
+    it('TEST:HOS-2303 reloads the SSR card once 2500 ms after a confirmed pause', async () => {
+        const reload = vi.fn();
+        vi.stubGlobal('location', { reload });
+        fetchMock.mockImplementation(async (_url: string, init?: RequestInit) =>
+            init?.method === 'POST'
+                ? response({
+                      outcome: 'PAUSED',
+                      expectedEndAt: '2027-01-05T03:00:00.000Z'
+                  })
+                : response(courtesyPreview)
+        );
+        vi.useFakeTimers();
+        render(
+            <PauseOffer
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Pausar suscripción' }));
+        await act(async () => {
+            await flushPromises();
+        });
+        const panel = screen.getByTestId('pause-confirmation');
+        fireEvent.click(within(panel).getByRole('button', { name: 'Confirmar pausa' }));
+        await act(async () => {
+            await flushPromises();
+        });
+        expect(screen.getByRole('status')).toBeInTheDocument();
+        expect(reload).not.toHaveBeenCalled();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2500);
+        });
+        expect(reload).toHaveBeenCalledTimes(1);
+    });
+    it('TEST:HOS-2303 never schedules a reload when the pause fails', async () => {
+        const reload = vi.fn();
+        vi.stubGlobal('location', { reload });
+        fetchMock.mockImplementation(async (_url: string, init?: RequestInit) =>
+            init?.method === 'POST'
+                ? { ok: false, status: 500, json: async () => ({ success: false }) }
+                : response(courtesyPreview)
+        );
+        vi.useFakeTimers();
+        render(
+            <PauseOffer
+                subscriptionId={id}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Pausar suscripción' }));
+        await act(async () => {
+            await flushPromises();
+        });
+        const panel = screen.getByTestId('pause-confirmation');
+        fireEvent.click(within(panel).getByRole('button', { name: 'Confirmar pausa' }));
+        await act(async () => {
+            await flushPromises();
+        });
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2500);
+        });
+        expect(reload).not.toHaveBeenCalled();
     });
 });

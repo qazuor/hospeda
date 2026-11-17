@@ -424,7 +424,7 @@
             },
             "verticals": {
                 "accommodation": "Accommodation",
-                "venue": "Venue",
+                "venue": "Food & nightlife",
                 "experience": "Experience"
             },
             "table": {
@@ -1493,6 +1493,7 @@
         "toResolve": "To resolve",
         "waits": "Waits until active again",
         "losesPromo": "Loses promotion",
+        "keepsPromo": "Keeps promotion",
         "excludedBadge": "Excluded",
         "result": "Migration {id}. Rows written: {rows}. Excluded: {excluded}.",
         "columns": {

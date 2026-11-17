@@ -48,6 +48,7 @@ describe('AC:B8b:4 el monto informado al reanudar cuando el cobro es la fecha de
             currentAmount: 250000,
             newAmount: 350000,
             currency: 'ARS',
+            keepsPromo: true,
             losesPromo: false
         });
 
@@ -81,6 +82,7 @@ describe('AC:B8b:4 el monto informado al reanudar cuando el cobro es la fecha de
             currentAmount: 250000,
             newAmount: 350000,
             currency: 'ARS',
+            keepsPromo: true,
             losesPromo: false
         });
 
@@ -107,6 +109,7 @@ describe('AC:B8b:4 el monto informado al reanudar cuando el cobro es la fecha de
             currentAmount: 250000,
             newAmount: 300000,
             currency: 'ARS',
+            keepsPromo: false,
             losesPromo: true
         });
 

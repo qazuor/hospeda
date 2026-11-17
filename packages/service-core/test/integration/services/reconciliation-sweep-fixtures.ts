@@ -140,9 +140,10 @@ async function anchors(
         )
     ).rows[0]?.id;
     if (!planId) throw new Error('No plan was seeded');
+    // The anchor stays out of the sellable catalog and its partial unique index.
     const versionId = (
         await getServiceTestPool().query<{ id: string }>(
-            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, true, true, 0, false) RETURNING id',
+            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, false, true, 0, false) RETURNING id',
             [planId, Math.floor(Math.random() * 100000000) + 1, vertical]
         )
     ).rows[0]?.id;

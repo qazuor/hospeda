@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AddonPurchase } from '@/components/billing/addon-purchase/AddonPurchase.client';
 
@@ -65,7 +65,14 @@ async function selectListing(status: string) {
         data: {
             trialRunning: false,
             items: [
-                { listingId, publicationStatus: status, recurringListingAddons: 0, notices: [] }
+                {
+                    listingId,
+                    name: 'Cabaña del Río',
+                    publicationStatus: status,
+                    recurringListingAddons: 0,
+                    recurringListingAddonItems: [],
+                    notices: []
+                }
             ]
         }
     });
@@ -84,6 +91,37 @@ async function selectListing(status: string) {
 }
 
 describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
+    it('shows the listing name instead of its UUID in the target card', async () => {
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [
+                    {
+                        listingId,
+                        name: 'Cabaña del Río',
+                        publicationStatus: 'PUBLISHED',
+                        recurringListingAddons: 0,
+                        recurringListingAddonItems: [],
+                        notices: []
+                    }
+                ]
+            }
+        });
+        render(
+            <AddonPurchase
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+            />
+        );
+        fireEvent.click(await screen.findByTestId(`addon-offer-${productId}`));
+
+        const card = await screen.findByTestId(`addon-target-${listingId}`);
+        expect(within(card).getByText('Cabaña del Río')).toBeInTheDocument();
+        expect(within(card).queryByText(listingId)).not.toBeInTheDocument();
+    });
+
     it('shows the paused notice when A1 returns ADDON_PURCHASES_FROZEN', async () => {
         await selectListing('PUBLISHED');
         purchase.mockResolvedValue({
@@ -199,6 +237,7 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
                 items: [
                     {
                         listingId,
+                        name: 'Cabaña del Río',
                         publicationStatus: 'DRAFT',
                         recurringListingAddons: 0,
                         notices: []
@@ -249,6 +288,7 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
                 trialRunning: false,
                 items: ['PURGED', 'MODERATED'].map((publicationStatus, index) => ({
                     listingId: index ? '123e4567-e89b-42d3-a456-426614174005' : listingId,
+                    name: 'Cabaña del Río',
                     publicationStatus,
                     recurringListingAddons: 0,
                     notices: []

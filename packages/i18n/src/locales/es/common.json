@@ -1,5 +1,10 @@
 {
     "accommodations": "Alojamientos",
+    "redactedContact": {
+        "email": "[email oculto]",
+        "phone": "[teléfono oculto]",
+        "card": "[tarjeta oculta]"
+    },
     "apply": "Aplicar",
     "window": {
         "7d": "7 días",

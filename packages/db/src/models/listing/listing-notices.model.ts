@@ -50,6 +50,7 @@ export interface ListingBusinessLinesChangeFact {
 /** One listing of an owner with the facts its notices are built from (H2). */
 export interface ListingNoticeRow {
     readonly id: string;
+    readonly name: string;
     readonly publicationStatus: PublicationStatusEnum;
     readonly deletionAnnouncedAt: Date | null;
     /** The most recent transition INTO the listing's current status, if recorded. */
@@ -68,6 +69,7 @@ export interface ListingNoticeRow {
 /** A listing row as the notices query reads it. */
 export interface ListingNoticeListing {
     readonly id: string;
+    readonly name: string;
     readonly publicationStatus: PublicationStatusEnum;
     readonly deletionAnnouncedAt: Date | null;
 }
@@ -237,6 +239,7 @@ export function assembleListingNoticeRows(input: {
         const fix = fixByListing.get(listing.id);
         return {
             id: listing.id,
+            name: listing.name,
             publicationStatus: listing.publicationStatus,
             deletionAnnouncedAt: listing.deletionAnnouncedAt,
             enteredCurrentStatus: latest(
@@ -282,16 +285,18 @@ export const listingNoticesModel = {
         const client = args.tx ?? getDb();
         const result = await client.execute(sql<{
             id: string;
+            name: string;
             publicationStatus: string;
             deletionAnnouncedAt: string | Date | null;
         }>`
-            SELECT id, publication_status AS "publicationStatus",
+            SELECT id, name, publication_status AS "publicationStatus",
                    deletion_announced_at AS "deletionAnnouncedAt"
             FROM ${sql.identifier(TABLES[args.vertical])}
             WHERE owner_id = ${args.ownerId}::uuid AND deleted_at IS NULL
             ORDER BY created_at ASC, id ASC`);
         const listings: ListingNoticeListing[] = result.rows.map((row) => ({
             id: String(row.id),
+            name: String(row.name),
             publicationStatus: row.publicationStatus as PublicationStatusEnum,
             deletionAnnouncedAt:
                 row.deletionAnnouncedAt === null || row.deletionAnnouncedAt === undefined
@@ -317,7 +322,7 @@ export const listingNoticesModel = {
                     inArray(domainEvent.entityId, ids)
                 )
             )
-            .orderBy(asc(domainEvent.occurredAt));
+            .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
         const open = await client
             .select()
             .from(fixRequests)
@@ -344,7 +349,7 @@ export const listingNoticesModel = {
                     sql`${domainEvent.changes} @> ${JSON.stringify([{ field: 'businessLines' }])}::jsonb`
                 )
             )
-            .orderBy(asc(domainEvent.occurredAt));
+            .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
         return assembleListingNoticeRows({
             listings,
             events,

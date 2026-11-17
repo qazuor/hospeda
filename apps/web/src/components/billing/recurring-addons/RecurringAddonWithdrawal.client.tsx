@@ -7,6 +7,7 @@ import {
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
 import { visibleApiMessage } from '@/lib/api-errors';
+import { getAddonName } from '@/lib/billing/addon-purchase';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './RecurringAddonWithdrawal.module.css';
@@ -139,7 +140,12 @@ export function RecurringAddonWithdrawal({
                     data-testid={`recurring-addon-${item.addonInstanceId}`}
                     key={item.addonInstanceId}
                 >
-                    <strong>{item.name}</strong>
+                    <strong>
+                        {getAddonName({
+                            offer: { slug: item.slug, name: item.name, description: null },
+                            t
+                        })}
+                    </strong>
                     <span>
                         {formatPrice({ amount: item.price / 100, currency: item.currency, locale })}{' '}
                         · {t(`billing.addonPurchase.cycle.${item.cycle}`)}

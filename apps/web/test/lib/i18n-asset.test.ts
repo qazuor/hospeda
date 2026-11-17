@@ -15,6 +15,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import {
+    buildI18nAssetBody,
     getI18nAssetBody,
     I18N_ASSET_PATH_PREFIX,
     i18nAssetUrl,
@@ -131,6 +132,21 @@ describe('getI18nAssetBody', () => {
 
         expect(body, 'a non-client namespace was serialized into the asset').not.toContain('"faq.');
         expect(body, 'a client prefix was pruned by mistake').toContain('"nav.signIn"');
+    });
+});
+
+describe('buildI18nAssetBody', () => {
+    it('serializes a supplied dictionary through the same client-prefix filter', () => {
+        const body = buildI18nAssetBody({
+            locale: 'pt',
+            messages: {
+                'billing.addonPurchase.chooseOffer': 'Escolha um complemento',
+                'admin.users.title': 'Admin'
+            }
+        });
+
+        expect(body).toContain('"billing.addonPurchase.chooseOffer":"Escolha um complemento"');
+        expect(body).not.toContain('admin.users.title');
     });
 });
 

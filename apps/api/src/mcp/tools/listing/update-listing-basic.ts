@@ -22,9 +22,14 @@
  *    staff edit.
  * 3. **The service call** the route makes. Accommodation:
  *    `httpToDomainAccommodationUpdate` then `AccommodationService.update`;
- *    venue/experience: `updateOwn`. Cache revalidation, junction sync of
+ *    venue/experience: `updateOwn`. Edge revalidation, junction sync of
  *    amenities/features and auto-translation live in the services' update
  *    hooks, so they run exactly as for the route.
+ * 4. **Public API cache eviction (accommodation, HOS-2323).** The route gets it
+ *    from `accommodationCacheInvalidationMiddleware`, which wraps the HTTP
+ *    router and so never runs for a tool call. The tool evicts the same path
+ *    prefixes itself after a successful write; otherwise the public detail
+ *    keeps serving the pre-edit body from this process's response cache.
  *
  * The answer is the listing as `get_listing` returns it, re-read after the
  * write, so the model can confirm what was stored.
@@ -48,6 +53,8 @@ import {
 } from '@repo/schemas';
 import { type Actor, entityNotFoundError } from '@repo/service-core';
 import { z } from 'zod';
+import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../middlewares/accommodation-cache-invalidation';
+import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
 import {
     decideListingAccess,
     type ListingAccessWithSections,
@@ -330,6 +337,10 @@ async function updateAccommodation(input: {
     );
     if (result.error) {
         return { error: result.error };
+    }
+    // The route's HTTP-level eviction (HOS-2063) does not wrap a tool call.
+    for (const pathPrefix of ACCOMMODATION_CACHE_INVALIDATION_PREFIXES) {
+        invalidateCacheByPathPrefix({ pathPrefix });
     }
     return undefined;
 }

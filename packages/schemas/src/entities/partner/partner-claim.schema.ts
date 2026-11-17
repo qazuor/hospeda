@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { StrongPasswordSchema } from '../../common/password.schema.js';
 
 /** Request body for claiming an approved Partner with its single-use link. */
 export const PartnerClaimRequestSchema = z.object({
@@ -11,4 +12,25 @@ export const PartnerClaimResponseSchema = z.object({
     claimed: z.literal(true),
     partnerId: z.string().uuid(),
     emailVerified: z.boolean()
+});
+
+/** Public request to inspect the account associated with a valid claim link. */
+export const PartnerClaimLookupRequestSchema = PartnerClaimRequestSchema.strict();
+
+/** Public lookup result, disclosed only after verifying the claim secret. */
+export const PartnerClaimLookupResponseSchema = z.object({
+    email: z.string().email(),
+    accountExists: z.boolean()
+});
+
+/** Public token-bound signup request. Email is deliberately absent and unknown fields fail. */
+export const PartnerClaimSignUpRequestSchema = PartnerClaimRequestSchema.extend({
+    password: StrongPasswordSchema
+}).strict();
+
+/** Successful token-bound account creation and Partner claim. */
+export const PartnerClaimSignUpResponseSchema = z.object({
+    claimed: z.literal(true),
+    partnerId: z.string().uuid(),
+    email: z.string().email()
 });
