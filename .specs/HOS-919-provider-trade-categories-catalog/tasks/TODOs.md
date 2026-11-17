@@ -222,32 +222,32 @@
   - Blocked by: T-036, T-011
   - Blocks: T-042, T-049
 
-- [ ] **T-042** (complexity: 3) - Web i18n cleanup: remove host-trades.categories, update baseline and zod-keys inventory
+- [x] **T-042** (complexity: 3) - Web i18n cleanup: remove host-trades.categories, update baseline and zod-keys inventory
   - packages/i18n: remove host-trades.categories.* from es, en and pt locale files (only after all web c...
   - Blocked by: T-037, T-038, T-039, T-040, T-041
   - Blocks: T-049
 
-- [ ] **T-043** (complexity: 3) - Create admin catalog route and groups table with dialogs
+- [x] **T-043** (complexity: 3) - Create admin catalog route and groups table with dialogs
   - Create apps/admin/src/routes/_authed/content/host-trade-categories/ (index route, file-based routing...
   - Blocked by: T-033
   - Blocks: T-044, T-047
 
-- [ ] **T-044** (complexity: 3) - Add categories table with keywords editor to the admin catalog screen
+- [x] **T-044** (complexity: 3) - Add categories table with keywords editor to the admin catalog screen
   - In the same admin feature add the categories TanStack table (filters groupId, lifecycleState, q) and...
   - Blocked by: T-043
   - Blocks: T-047, T-050
 
-- [ ] **T-045** (complexity: 3) - Replace host-trade admin form category SELECT with catalog multi-select
+- [x] **T-045** (complexity: 3) - Replace host-trade admin form category SELECT with catalog multi-select
   - Edit apps/admin/src/features/host-trades/config/sections/basic-info.consolidated.ts (lines ~61-77): ...
   - Blocked by: T-033
   - Blocks: T-046
 
-- [ ] **T-046** (complexity: 3) - Admin list: multi-badge cell and catalog-driven multi filter
+- [x] **T-046** (complexity: 3) - Admin list: multi-badge cell and catalog-driven multi filter
   - Edit apps/admin/src/features/host-trades/config/host-trades.columns.ts (one badge per category) and ...
   - Blocked by: T-045
   - Blocks: T-047, T-050
 
-- [ ] **T-047** (complexity: 2) - Admin i18n cleanup: remove admin-filters.hostTradeCategory
+- [x] **T-047** (complexity: 2) - Admin i18n cleanup: remove admin-filters.hostTradeCategory
   - packages/i18n: delete the admin-filters.hostTradeCategory block in es, en and pt (superseded by cata...
   - Blocked by: T-046, T-043, T-044
   - Blocks: T-049

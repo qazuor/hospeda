@@ -1487,14 +1487,14 @@
             "id": "T-042",
             "title": "Web i18n cleanup: remove host-trades.categories, update baseline and zod-keys inventory",
             "description": "packages/i18n: remove host-trades.categories.* from es, en and pt locale files (only after all web consumers are migrated); add zodError.allianceLead.categorySlugs.requiredForServiceProvider (es/en/pt) and drop the old category key; regenerate typed keys if the package generates them. Update packages/i18n/test/untranslated-spanish.baseline.json for the removed keys (and the new keys if they trigger it), and scripts/zod-keys-inventory.json for the moved Zod message key. Rebuild @repo/i18n afterwards.\nACs: AC-1.5.\nTests: i18n key-parity guard (es/en/pt same keys); untranslated-spanish baseline test green; scripts/zod-keys-inventory check passes; rg confirms no remaining reference to host-trades.categories in apps/web.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-037", "T-038", "T-039", "T-040", "T-041"],
             "blocks": ["T-049"],
             "subtasks": [
                 {
                     "title": "Remove keys es/en/pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add zodError key",
@@ -1516,201 +1516,201 @@
             "tags": ["i18n", "web", "guards"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": "2026-11-17T20:33:35Z",
-                "completed": null
+                "completed": "2026-11-17T21:01:35Z"
             }
         },
         {
             "id": "T-043",
             "title": "Create admin catalog route and groups table with dialogs",
             "description": "Create apps/admin/src/routes/_authed/content/host-trade-categories/ (index route, file-based routing, beforeLoad permission guard on HOST_TRADE_CATEGORY_VIEW) and the groups TanStack table with create/edit dialogs: I18nTextField for nameI18n, displayWeight, lifecycle toggle; slug editable only on create; delete shows CATEGORY_IN_USE as a toast; hooks with TanStack Query in apps/admin/src/hooks; Tailwind v4 + Shadcn only; add navigation entry under the host-trades menu section; i18n strings for the screen in @repo/i18n (es/en/pt). Uses only /admin/ endpoints.\nACs: AC-3.1, AC-3.2, AC-3.4, AC-3.5.\nTests (apps/admin/src/features/host-trade-categories/__tests__/groups.test.tsx): table renders groups; create dialog requires es name; slug input disabled on edit; 409 CATEGORY_IN_USE surfaces the message; menu entry only visible with the permission.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-033"],
             "blocks": ["T-044", "T-047"],
             "subtasks": [
                 {
                     "title": "Route + guard + nav entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Groups table",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create/edit dialogs + hooks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:01:35Z",
+                "completed": "2026-11-17T21:01:35Z"
             }
         },
         {
             "id": "T-044",
             "title": "Add categories table with keywords editor to the admin catalog screen",
             "description": "In the same admin feature add the categories TanStack table (filters groupId, lifecycleState, q) and create/edit dialogs: I18nTextField nameI18n, per-locale keywords tag input for keywordsI18n (lowercase, max 30 per locale, 40 chars), displayWeight, group select, lifecycle toggle; slug immutable on edit; deactivate vs delete messaging (D2).\nACs: AC-3.1, AC-3.2, AC-3.3, AC-3.4.\nTests (apps/admin/src/features/host-trade-categories/__tests__/categories.test.tsx): keyword tag input normalizes to lowercase and enforces the 30/40 limits per locale; group select lists active groups; INACTIVE toggle sends PATCH lifecycleState; 409 CATEGORY_IN_USE message; slug disabled on edit.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-043"],
             "blocks": ["T-047", "T-050"],
             "subtasks": [
                 {
                     "title": "Categories table + filters",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Keywords per-locale tag input",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Dialogs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:01:35Z",
+                "completed": "2026-11-17T21:01:35Z"
             }
         },
         {
             "id": "T-045",
             "title": "Replace host-trade admin form category SELECT with catalog multi-select",
             "description": "Edit apps/admin/src/features/host-trades/config/sections/basic-info.consolidated.ts (lines ~61-77): replace the SELECT of raw enum values with ENTITY_MULTISELECT fed by the admin catalog endpoint (min 1, max 10), field name categoryIds, labels from nameI18n never raw slug. Open point: check whether ENTITY_MULTISELECT supports a static-endpoint source; if not add a small loader like PoiCategorySelectField / apps/admin/src/components/entity-form/fields/entity-selects/utils/poi-category-api.utils.ts. Update host-trade-consolidated.config.ts and apps/admin/src/features/host-trades/schemas/host-trades.schemas.ts for categoryIds; inactive categories already on the provider stay selectable.\nACs: AC-4.1, AC-4.2, AC-4.3.\nTests (apps/admin/src/features/host-trades/__tests__/host-trades-config.test.ts + loader test): field type is ENTITY_MULTISELECT with min 1 max 10; option labels come from nameI18n; submit payload carries categoryIds; loader keeps already-linked inactive options.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-033"],
             "blocks": ["T-046"],
             "subtasks": [
                 {
                     "title": "ENTITY_MULTISELECT field",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Loader if needed",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Form schema categoryIds",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend", "forms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:01:35Z",
+                "completed": "2026-11-17T21:01:35Z"
             }
         },
         {
             "id": "T-046",
             "title": "Admin list: multi-badge cell and catalog-driven multi filter",
             "description": "Edit apps/admin/src/features/host-trades/config/host-trades.columns.ts (one badge per category) and host-trades.config.ts (lines ~35-88): the category filter becomes multi-select any-of sending categories, options loaded from the catalog; DELETE the 13 hand-written filter options. Rewrite the test 'badge options cover all enum values' in apps/admin/src/features/host-trades/__tests__/host-trades-config.test.ts as 'options come from the catalog'.\nACs: AC-4.4.\nTests: column cell renders N badges for N categories with nameI18n labels; filter param is categories (comma-separated slugs); config contains no hardcoded category options (assert options come from the loader); rewritten catalog-options test passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-045"],
             "blocks": ["T-047", "T-050"],
             "subtasks": [
                 {
                     "title": "Columns badge cell",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Filter multi from catalog",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Rewrite config test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:01:35Z",
+                "completed": "2026-11-17T21:01:35Z"
             }
         },
         {
             "id": "T-047",
             "title": "Admin i18n cleanup: remove admin-filters.hostTradeCategory",
             "description": "packages/i18n: delete the admin-filters.hostTradeCategory block in es, en and pt (superseded by catalog nameI18n); keep the new admin catalog-screen strings added in the admin tasks; update packages/i18n/test/untranslated-spanish.baseline.json for removed keys and any new untranslated admin keys; rebuild @repo/i18n.\nACs: AC-4.4.\nTests: key-parity guard green; untranslated baseline test green; rg shows no remaining reference to admin-filters.hostTradeCategory in apps/admin.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-046", "T-043", "T-044"],
             "blocks": ["T-049"],
             "subtasks": [
                 {
                     "title": "Remove block es/en/pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update baseline",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Rebuild i18n",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "admin", "guards"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:01:35Z",
+                "completed": "2026-11-17T21:01:35Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 12,
-        "inProgress": 1,
-        "completed": 41,
+        "pending": 7,
+        "inProgress": 0,
+        "completed": 47,
         "blocked": 0,
         "averageComplexity": 2.5
     }
