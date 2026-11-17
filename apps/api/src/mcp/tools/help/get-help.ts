@@ -133,7 +133,7 @@ async function readHelpOwnListings({
         return mine.data.listings.map((listing) => ({
             vertical: listing.vertical,
             id: listing.id,
-            name: listing.name
+            publicationStatus: listing.publicationStatus
         }));
     } catch (error) {
         apiLogger.warn(

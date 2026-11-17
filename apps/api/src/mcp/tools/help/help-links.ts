@@ -16,6 +16,7 @@
  * is better than none.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import type {
     OwnerHelpCallerAudience,
     OwnerHelpDestination,
@@ -39,15 +40,19 @@ export interface HelpOwnListing {
     readonly vertical: PortalListingVertical;
     /** The listing id. */
     readonly id: string;
-    /** The listing's name (the owner's own text). */
-    readonly name: string;
+    /** The listing's publication state: a purged listing has no editor to link. */
+    readonly publicationStatus: PublicationStatusEnum;
 }
 
 /** Most listings one editor-section destination expands to, per vertical. */
 export const HELP_LINKS_MAX_LISTINGS_PER_VERTICAL = 3;
 
-/** Longest listing name shown in a link label. */
-const LINK_NAME_MAX_CHARS = 60;
+/** What each vertical's listing is called in a link label. */
+const VERTICAL_NOUN: Readonly<Record<PortalListingVertical, string>> = {
+    accommodation: 'alojamiento',
+    venue: 'comercio',
+    experience: 'experiencia'
+};
 
 /** The vertical a kind of owner works in. A provider has none. */
 const AUDIENCE_VERTICAL: Readonly<
@@ -77,12 +82,6 @@ function destinationFitsAudience({
         return true;
     }
     return AUDIENCE_VERTICAL[audience] === vertical;
-}
-
-/** A listing name as one short line. */
-function nameForLabel({ name }: { readonly name: string }): string {
-    const line = name.replace(/\s+/g, ' ').trim();
-    return line.length > LINK_NAME_MAX_CHARS ? `${line.slice(0, LINK_NAME_MAX_CHARS - 1)}…` : line;
 }
 
 /** Builds a link, or `undefined` when the URL cannot be built. */
@@ -187,9 +186,14 @@ export function buildHelpLinks({
             }
             continue;
         }
-        for (const listing of ownListings
-            .filter((candidate) => candidate.vertical === destination.vertical)
-            .slice(0, HELP_LINKS_MAX_LISTINGS_PER_VERTICAL)) {
+        const editable = ownListings.filter(
+            (candidate) =>
+                candidate.vertical === destination.vertical &&
+                candidate.publicationStatus !== PublicationStatusEnum.PURGED
+        );
+        for (const [index, listing] of editable
+            .slice(0, HELP_LINKS_MAX_LISTINGS_PER_VERTICAL)
+            .entries()) {
             const link = toLink({
                 destination: {
                     kind: 'listingEditor',
@@ -197,7 +201,7 @@ export function buildHelpLinks({
                     id: listing.id,
                     section: destination.section
                 },
-                label: `${destination.label ?? 'Editor'} · ${nameForLabel({ name: listing.name })}`,
+                label: `${destination.label ?? 'Editor'} · ${VERTICAL_NOUN[destination.vertical]} ${index + 1}`,
                 siteUrl
             });
             if (link !== undefined) {

@@ -437,7 +437,9 @@ describe('get_help', () => {
             });
 
             // Act: a broad question that matches three topics with editor links.
-            const result = await answer({ question: 'servicios fotos publicar requisitos' });
+            const result = await answer({
+                question: 'servicios y comodidades fotos publicar requisitos'
+            });
 
             // Assert
             expect(result.topics).toHaveLength(3);
