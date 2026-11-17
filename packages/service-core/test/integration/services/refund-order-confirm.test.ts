@@ -142,7 +142,11 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
                           throw new PaymentProviderError({
                               code: 'REJECTED',
                               capability: 'refund',
-                              message: 'declined'
+                              message: 'Mercado Pago order refund failed (401)',
+                              cause: {
+                                  status: 401,
+                                  body: { message: 'Unauthorized use of live credentials' }
+                              }
                           });
                       }
                     : Reflect.get(target, property, receiver);
@@ -170,7 +174,17 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
         expect(rows.refund?.status).toBe('FAILED');
         expect(rows.calls).toHaveLength(0);
         expect(rows.keys).toHaveLength(1);
-        expect(rows.keys[0]).toMatchObject({ result: { outcome: 'REJECTED', code: 'REJECTED' } });
+        expect(rows.keys[0]).toMatchObject({
+            result: {
+                outcome: 'REJECTED',
+                code: 'REJECTED',
+                message: 'Mercado Pago order refund failed (401)',
+                cause: expect.objectContaining({
+                    httpStatus: 401,
+                    message: 'Unauthorized use of live credentials'
+                })
+            }
+        });
         expect(rows.keys[0]?.completedAt).toBeInstanceOf(Date);
     });
 

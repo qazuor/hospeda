@@ -238,6 +238,42 @@ describe('TEST:1669:8 AC:1669:0 AC:1669:2 Mercado Pago refunds', () => {
 });
 
 describe('TEST:HOS-1551:2 Mercado Pago refund refusal code', () => {
+    it('keeps the status and sanitized provider body on rejected payment refunds', async () => {
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'test-token',
+            fetch: async () =>
+                new Response(
+                    JSON.stringify({
+                        status: 'REJECTED',
+                        message: 'Unauthorized for person@example.com',
+                        error: 'unauthorized',
+                        cause: [{ code: 4010, description: 'Invalid token for person@example.com' }]
+                    }),
+                    { status: 401 }
+                )
+        });
+        let error: (Error & { code: string; cause: unknown }) | undefined;
+        try {
+            await provider.refund({
+                chargeId: 'PAY1',
+                amount: input.amount,
+                reference: 'refund-key'
+            });
+        } catch (caught) {
+            error = caught as Error & { code: string; cause: unknown };
+        }
+        expect(error).toBeDefined();
+        if (!error) throw new Error('Expected rejected payment refund');
+        expect(error).toMatchObject({ code: 'REJECTED', httpStatus: 401 });
+        expect(error.cause).toMatchObject({
+            status: 'REJECTED',
+            message: 'Unauthorized for [REDACTED_EMAIL]',
+            error: 'unauthorized',
+            cause: [{ description: 'Invalid token for [REDACTED_EMAIL]' }]
+        });
+    });
+
     it.each([
         { code: 2084, expected: 'AMOUNT_NOT_ACCEPTED' },
         { code: '2084', expected: 'AMOUNT_NOT_ACCEPTED' },

@@ -86,7 +86,11 @@ describe('TEST:B6:5 AC:B6:7 provider refund deadline and definitive refusal', ()
                             throw new PaymentProviderError({
                                 code: 'REJECTED',
                                 capability: 'refund',
-                                message: 'refund rejected'
+                                message: 'Mercado Pago request failed (401)',
+                                cause: {
+                                    status: 401,
+                                    body: { message: 'Unauthorized use of live credentials' }
+                                }
                             });
                         };
                     return Reflect.get(target, property, receiver);
@@ -109,7 +113,15 @@ describe('TEST:B6:5 AC:B6:7 provider refund deadline and definitive refusal', ()
             expect(after.refund?.status).toBe('FAILED');
             expect(after.calls).toHaveLength(1);
             expect(after.keys).toHaveLength(1);
-            expect(after.keys[0]?.result).toEqual({ outcome: 'REJECTED', code: 'REJECTED' });
+            expect(after.keys[0]?.result).toMatchObject({
+                outcome: 'REJECTED',
+                code: 'REJECTED',
+                message: 'Mercado Pago request failed (401)',
+                cause: {
+                    httpStatus: 401,
+                    message: 'Unauthorized use of live credentials'
+                }
+            });
             expect(after.payment).toEqual(before.payment);
             expect(after.notices).toHaveLength(1);
         }

@@ -6,7 +6,12 @@ import type {
     RefundResult
 } from '../../provider/payment-provider';
 import type { MercadoPagoSend } from './mercadopago-http';
-import { assertResponseOk, providerError, refundErrorCause } from './mercadopago-http';
+import {
+    assertResponseOk,
+    providerError,
+    refundErrorCause,
+    sanitizeMercadoPagoErrorBody
+} from './mercadopago-http';
 
 const RefundResponseSchema = z.object({ id: z.union([z.string(), z.number()]) });
 
@@ -82,19 +87,22 @@ export async function refundMercadoPagoPayment(
                 : undefined;
         const refundRefusal =
             refusalCode === 2084 || refusalCode === '2084' ? 'AMOUNT_NOT_ACCEPTED' : undefined;
+        const sanitizedBody = sanitizeMercadoPagoErrorBody(cause);
         const code =
             response.status === 404
                 ? 'NOT_FOUND'
                 : response.status >= 400 && response.status < 500
                   ? 'REJECTED'
                   : 'UNAVAILABLE';
-        throw providerError(
+        const error = providerError(
             code,
             'refund',
             `Mercado Pago request failed (${response.status})`,
-            cause,
+            sanitizedBody,
             refundRefusal
         );
+        Object.assign(error, { httpStatus: response.status });
+        throw error;
     }
     if (response.status !== 201)
         throw providerError(
