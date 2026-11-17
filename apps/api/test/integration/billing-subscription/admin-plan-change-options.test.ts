@@ -21,6 +21,7 @@ let currentOptionId: string;
 let currentVersionId: string;
 let destinationOptionId: string;
 let partnerSubscriptionId: string;
+const NEXT_CHARGE_AT = new Date('2026-12-01T03:00:00.000Z');
 const optionsPath = (id = subscriptionId) =>
     `/api/v1/admin/billing-subscription/${id}/plan-change-options`;
 const inspectPath = () => `/api/v1/admin/billing-subscription/${subscriptionId}`;
@@ -81,7 +82,8 @@ beforeAll(async () => {
             billingOptionId: current.optionId,
             paymentMethod: 'CARD',
             status: 'ACTIVE',
-            class: 'PRINCIPAL'
+            class: 'PRINCIPAL',
+            nextChargeAt: NEXT_CHARGE_AT
         })
         .returning({ id: subscriptions.id });
     if (!subscription) throw new Error('subscription missing');
@@ -180,7 +182,7 @@ describe('ACC_10 plan change options and enriched inspection', () => {
                 direction: expect.stringMatching(/^(UP|DOWN)$/)
             })
         );
-        expect(data.nextChargeAt).toBeNull();
+        expect(data.nextChargeAt).toBe(NEXT_CHARGE_AT.toISOString());
         expect(data.currentCycle).toBe('monthly');
         expect(audit).toHaveBeenCalledWith(
             expect.objectContaining({

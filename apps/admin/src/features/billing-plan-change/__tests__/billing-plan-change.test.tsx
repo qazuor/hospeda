@@ -51,7 +51,9 @@ const option = (
     billingOptionId: string,
     planName: string,
     current: boolean,
-    planSlug = 'owner-pro'
+    planSlug = 'owner-pro',
+    amountMinor = 10000,
+    direction: 'UP' | 'DOWN' = 'DOWN'
 ) => ({
     billingOptionId,
     planId: crypto.randomUUID(),
@@ -59,12 +61,12 @@ const option = (
     planName,
     planSlug,
     cycle: 'monthly',
-    amountMinor: 10000,
+    amountMinor,
     currency: 'ARS',
     current,
-    direction: current ? 'NONE' : 'DOWN'
+    direction: current ? 'NONE' : direction
 });
-function setup(result: object, optionsError?: Error) {
+function setup(result: object, optionsError?: Error, targetDirection: 'UP' | 'DOWN' = 'DOWN') {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
         if (method === 'POST') return Promise.resolve({ data: { data: result } });
         if (path === planChangeOptionsPath(id) && optionsError) return Promise.reject(optionsError);
@@ -78,7 +80,7 @@ function setup(result: object, optionsError?: Error) {
                         currentCycle: 'monthly',
                         options: [
                             option(currentId, 'Professional', true, 'owner-pro'),
-                            option(targetId, 'Basic', false, 'owner-basico')
+                            option(targetId, 'Basic', false, 'owner-basico', 20000, targetDirection)
                         ]
                     }
                 }
@@ -133,6 +135,9 @@ describe('ACC_10 admin plan change screen', () => {
         expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
             'Próximo cobro:'
         );
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            new Intl.NumberFormat('es', { style: 'currency', currency: 'ARS' }).format(200)
+        );
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
         await waitFor(() =>
             expect(fetchApi).toHaveBeenCalledWith({
@@ -160,6 +165,22 @@ describe('ACC_10 admin plan change screen', () => {
             expect(writeText).toHaveBeenCalledWith('https://example.test/checkout')
         );
         expect(screen.getByTestId('billing-plan-change-SUCCESSION').textContent).toContain('4');
+    });
+
+    it('shows when a plan change needs a new checkout', async () => {
+        setup(
+            { outcome: 'SUCCESSION', checkoutUrl: 'https://example.test/checkout' },
+            undefined,
+            'UP'
+        );
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            es.subscriptionPlanChange.previewNeedsCheckout
+        );
     });
     it.each([
         [
