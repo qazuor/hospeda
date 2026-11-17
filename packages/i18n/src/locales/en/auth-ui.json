@@ -39,7 +39,8 @@
         "activeSession": {
             "message": "You are already signed in as {{email}}",
             "continue": "Continue",
-            "useOtherAccount": "Use another account"
+            "useOtherAccount": "Use another account",
+            "signOutError": "Could not sign out. Please try again."
         }
     },
     "signUp": {

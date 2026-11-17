@@ -64,7 +64,7 @@ export function ActiveSessionNotice({
                     className={styles.error}
                 >
                     {t(
-                        'auth.resetPassword.signOutError',
+                        'auth-ui.signIn.activeSession.signOutError',
                         'No se pudo cerrar la sesión. Probá de nuevo.'
                     )}
                 </div>

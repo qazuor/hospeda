@@ -127,6 +127,11 @@ describe('ResetPassword success state with an open session (BETA-216)', () => {
                 'No se pudo cerrar la sesión. Probá de nuevo.'
             );
             expect(window.location.href).toBe('');
+            expect(screen.getByRole('link', { name: 'Iniciar sesión' })).toHaveAttribute(
+                'href',
+                SIGN_IN_URL
+            );
+            expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeEnabled();
         } finally {
             Object.defineProperty(window, 'location', {
                 configurable: true,

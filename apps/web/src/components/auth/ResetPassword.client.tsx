@@ -226,6 +226,14 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                                 {error}
                             </div>
                         )}
+                        {error && (
+                            <a
+                                href={signInUrl}
+                                className={styles.backLink}
+                            >
+                                {t('auth.resetPassword.goToSignIn', 'Iniciar sesión')}
+                            </a>
+                        )}
                     </>
                 ) : (
                     <a

@@ -39,7 +39,8 @@
         "activeSession": {
             "message": "Você já iniciou sessão como {{email}}",
             "continue": "Prosseguir",
-            "useOtherAccount": "Usar outra conta"
+            "useOtherAccount": "Usar outra conta",
+            "signOutError": "Não foi possível encerrar a sessão. Tente novamente."
         }
     },
     "signUp": {
