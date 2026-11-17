@@ -1156,31 +1156,31 @@
             "id": "T-033",
             "title": "Rebuild packages before web and admin tests",
             "description": "Before running web/admin tests rebuild dist of @repo/schemas, @repo/cache-tags and @repo/i18n (and @repo/service-core if apps import it) with CI=true so apps see the new exports (stale dist makes new exports undefined). Re-run after every later change to schemas or i18n JSON/types.\nTests: typecheck of apps/web and apps/admin with CI=true (so tsc actually runs) shows no missing-export errors for the new catalog schemas.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002", "T-027"],
             "blocks": ["T-035", "T-036", "T-043", "T-045"],
             "subtasks": [
                 {
                     "title": "Build packages",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CI=true typecheck smoke on web and admin",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["build", "tooling"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:08:07Z",
+                "completed": "2026-11-17T20:08:07Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 21,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 33,
+        "completed": 34,
         "blocked": 0,
         "averageComplexity": 2.5
     }

@@ -182,7 +182,7 @@
   - Blocked by: T-024, T-025
   - Blocks: T-050
 
-- [ ] **T-033** (complexity: 1) - Rebuild packages before web and admin tests
+- [x] **T-033** (complexity: 1) - Rebuild packages before web and admin tests
   - Before running web/admin tests rebuild dist of @repo/schemas, @repo/cache-tags and @repo/i18n (and @...
   - Blocked by: T-002, T-027
   - Blocks: T-035, T-036, T-043, T-045
