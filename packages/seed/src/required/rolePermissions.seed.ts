@@ -442,6 +442,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL,
         PermissionEnum.HOST_TRADE_USAGE_MANAGE,
 
+        // HOST_TRADE_CATEGORY (HOS-919): admin-managed provider trade category
+        // catalog. Staff-only, mirroring who writes HOST_TRADE today; the
+        // public catalog read needs no permission.
+        PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
+        PermissionEnum.HOST_TRADE_CATEGORY_CREATE,
+        PermissionEnum.HOST_TRADE_CATEGORY_UPDATE,
+        PermissionEnum.HOST_TRADE_CATEGORY_DELETE,
+        PermissionEnum.HOST_TRADE_CATEGORY_RESTORE,
+
         // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
         PermissionEnum.SOCIAL_POST_VIEW,
         PermissionEnum.SOCIAL_POST_CREATE,
@@ -815,6 +824,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_TRADE_REVIEW_MODERATE,
         PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL,
         PermissionEnum.HOST_TRADE_USAGE_MANAGE,
+
+        // HOST_TRADE_CATEGORY (HOS-919): admin-managed provider trade category
+        // catalog. Staff-only, mirroring who writes HOST_TRADE today; the
+        // public catalog read needs no permission.
+        PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
+        PermissionEnum.HOST_TRADE_CATEGORY_CREATE,
+        PermissionEnum.HOST_TRADE_CATEGORY_UPDATE,
+        PermissionEnum.HOST_TRADE_CATEGORY_DELETE,
+        PermissionEnum.HOST_TRADE_CATEGORY_RESTORE,
 
         // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
         PermissionEnum.SOCIAL_POST_VIEW,
