@@ -86,9 +86,11 @@ Conclusions:
   2026-11-16 design) leaks it: every later visitor on the same device/IP keeps landing in the
   first user's session until Umami rotates its salt. The design is now: the browser identify
   must be the document's FIRST request (no cache token), which opens `uuid(…, id)`, and server
-  events with a real user id send `payload.id = id`, landing in the same session (probe rows
-  "identify(Y) is the document's FIRST request" above). Anonymous and system server events send
-  no `payload.id`. The web and admin therefore send the identify as soon as the tracker is
+  events with a real user id AND the visitor's IP + User-Agent send `payload.id = id`, landing
+  in the same session (probe rows "identify(Y) is the document's FIRST request" above). A user
+  event without a visitor (webhooks, crons) keeps the synthetic identity and only `data.user_id`
+  (an `id` would open a stray per-user session from the api's IP + UA). Anonymous, guest and
+  system server events send no `payload.id`. The web and admin therefore send the identify as soon as the tracker is
   present and SKIP it (never delay it) when `getSession().cache` already holds a token, read
   with `hasUmamiCacheToken` in `@repo/analytics`.
 - **The first-pageview race is closed (2026-11-17, owner option 1).** Any answered request hands

@@ -217,13 +217,17 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
   - `properties` (already sanitized by `prepareAnalyticsEvent`) → event `data`.
     Arrays become strings (Umami behavior); the only array today is `roles`, which
     is acceptable.
-  - `distinctId` → a real user id is sent BOTH as `data.user_id` and as the Umami
-    Distinct ID (`payload.id`), so the event lands in `uuid(…, userId)`, the
-    same per-user session the browser opens with its identify (OQ-5, revised
-    2026-11-17, owner, after staging smoke: claimed fingerprint session leaked
-    across accounts). `api-server` and `anon:*` ids, and events with no user
-    id, send NO Distinct ID: they keep the fingerprint session (anonymous
-    visitor) or the synthetic identity (crons, webhooks).
+  - `distinctId` → a real user id is always sent as `data.user_id`. It is ALSO
+    sent as the Umami Distinct ID (`payload.id`) only when the event carries a
+    visitor context (non-blank IP and User-Agent), so a request-scoped event
+    lands in `uuid(…, userId)`, the same per-user session the browser opens
+    with its identify (OQ-5, revised 2026-11-17, owner, after staging smoke:
+    claimed fingerprint session leaked across accounts). A user event without a
+    visitor (billing facts from webhooks and crons) keeps the synthetic identity
+    and NO Distinct ID: with one it would open a stray per-user session from
+    the api's IP + UA. `api-server`, `anon:*` and the guest actor id
+    (`00000000-0000-4000-8000-000000000000`), and events with no user id, send
+    NO Distinct ID and no `data.user_id`.
   - Every server event sends `hostname` (the surface's host) and a virtual `url`
     `/_server/<event>` unless the visitor's page url is known.
   - `uuid` (`analytics-event-uuid.ts`) → kept as a `data.event_uuid` property for
@@ -490,8 +494,10 @@ settled in the T-0 spike.
 
 Distinct ID is always Hospeda's internal user id, never an email. Web: only after
 cookie consent, and **before** the tracker holds a cache token (§6.3). Admin: the
-staff user id. Server events: the user id as Distinct ID (`payload.id`) AND in
-`data.user_id` when the event has a real user; no Distinct ID for anonymous and
+staff user id. Server events: the user id in `data.user_id` when the event has a
+real user, and as Distinct ID (`payload.id`) only when it also carries the
+visitor's IP + User-Agent (crons and webhooks keep the synthetic identity); no
+Distinct ID for anonymous and
 system events. Logged-in traffic (web + server) lives in a per-user
 `uuid(…, id)` session; anonymous traffic lives in the fingerprint session, which
 is never claimed (§5.5, §6.2, R-1).
