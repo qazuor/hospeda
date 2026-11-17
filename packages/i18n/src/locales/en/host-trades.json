@@ -35,21 +35,6 @@
             "hosts_other": "{{count}} hosts"
         }
     },
-    "categories": {
-        "CERRAJERIA": "Locksmith",
-        "PLOMERIA": "Plumbing",
-        "ELECTRICIDAD": "Electrical",
-        "GAS": "Gas",
-        "CLIMATIZACION": "HVAC",
-        "LIMPIEZA": "Cleaning",
-        "FLETES": "Moving / Freight",
-        "VIDRIERIA": "Glazier",
-        "CARPINTERIA": "Carpentry",
-        "PILETA_JARDIN": "Pool & Garden",
-        "PLAGAS": "Pest control",
-        "INTERNET": "Internet / TV",
-        "ALBANILERIA": "Masonry"
-    },
     "registerUsage": {
         "title": "Record benefit use",
         "subtitle": "Record that you used {{name}}'s benefit. We'll ask them to confirm it.",

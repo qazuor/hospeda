@@ -35,21 +35,6 @@
             "hosts_other": "{{count}} anfitriões"
         }
     },
-    "categories": {
-        "CERRAJERIA": "Chaveiro",
-        "PLOMERIA": "Encanamento",
-        "ELECTRICIDAD": "Elétrica",
-        "GAS": "Gás",
-        "CLIMATIZACION": "Climatização",
-        "LIMPIEZA": "Limpeza",
-        "FLETES": "Fretes",
-        "VIDRIERIA": "Vidraçaria",
-        "CARPINTERIA": "Carpintaria",
-        "PILETA_JARDIN": "Piscina e Jardim",
-        "PLAGAS": "Controle de pragas",
-        "INTERNET": "Internet / TV",
-        "ALBANILERIA": "Alvenaria"
-    },
     "registerUsage": {
         "title": "Registrar uso do benefício",
         "subtitle": "Registre que você usou o benefício de {{name}}. Vamos pedir que confirme.",

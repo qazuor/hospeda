@@ -233,22 +233,6 @@
     "hostTradeCategories": {
         "label": "Categories"
     },
-    "hostTradeCategory": {
-        "label": "Category",
-        "cerrajeria": "Locksmith",
-        "plomeria": "Plumbing",
-        "electricidad": "Electrical",
-        "gas": "Gas",
-        "climatizacion": "HVAC",
-        "limpieza": "Cleaning",
-        "fletes": "Moving / Transport",
-        "vidrieria": "Glazier",
-        "carpinteria": "Carpentry",
-        "piletaJardin": "Pool / Garden",
-        "plagas": "Pest control",
-        "internet": "Internet",
-        "albanileria": "Masonry"
-    },
     "venueType": {
         "label": "Type",
         "restaurant": "Restaurant",

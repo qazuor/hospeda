@@ -233,22 +233,6 @@
     "hostTradeCategories": {
         "label": "Categorias"
     },
-    "hostTradeCategory": {
-        "label": "Categoria",
-        "cerrajeria": "Serralheiro",
-        "plomeria": "Encanamento",
-        "electricidad": "Elétrica",
-        "gas": "Gás",
-        "climatizacion": "Climatização",
-        "limpieza": "Limpeza",
-        "fletes": "Fretes / Mudanças",
-        "vidrieria": "Vidraçaria",
-        "carpinteria": "Carpintaria",
-        "piletaJardin": "Piscina / Jardim",
-        "plagas": "Pragas",
-        "internet": "Internet",
-        "albanileria": "Alvenaria"
-    },
     "venueType": {
         "label": "Tipo",
         "restaurant": "Restaurante",
