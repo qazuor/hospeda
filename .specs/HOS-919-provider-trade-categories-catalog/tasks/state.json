@@ -121,35 +121,35 @@
             "id": "T-004",
             "title": "Create host_trade_category_groups and host_trade_categories dbschemas",
             "description": "Create packages/db/src/schemas/host-trade/host-trade-category-group.dbschema.ts and host-trade-category.dbschema.ts modelled on packages/db/src/schemas/destination/poi-category.dbschema.ts. Groups: id, slug (text unique), name_i18n jsonb I18nText, translation_meta jsonb default {}, display_weight int default 50, lifecycle_state LifecycleStatusPgEnum default ACTIVE, admin_info, audit cols, deleted_at, deleted_by_id. Categories: same plus group_id uuid NOT NULL FK -> groups.id onDelete restrict, keywords_i18n jsonb default {}. Indexes: unique slug (includes deleted rows), group_id, lifecycle_state. Export from the schemas barrel.\nACs: AC-3.1, AC-3.4 (DB side), D8.\nTests (packages/db/test/schemas/host-trade/host-trade-category-group.dbschema.test.ts and host-trade-category.dbschema.test.ts, pattern of poi-category.dbschema.test.ts): column names/types/defaults, group_id FK onDelete=restrict, unique slug index present, lifecycle_state default ACTIVE.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-005"],
             "subtasks": [
                 {
                     "title": "Group dbschema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Category dbschema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Barrel + dbschema tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:36:38Z",
+                "completed": "2026-11-17T18:36:38Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 49,
+        "pending": 48,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.5
     }

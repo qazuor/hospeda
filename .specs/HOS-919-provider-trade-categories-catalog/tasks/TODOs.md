@@ -30,7 +30,7 @@
 
 ### Core Phase
 
-- [ ] **T-004** (complexity: 3) - Create host_trade_category_groups and host_trade_categories dbschemas
+- [x] **T-004** (complexity: 3) - Create host_trade_category_groups and host_trade_categories dbschemas
   - Create packages/db/src/schemas/host-trade/host-trade-category-group.dbschema.ts and host-trade-categ...
   - Blocked by: T-001
   - Blocks: T-005
