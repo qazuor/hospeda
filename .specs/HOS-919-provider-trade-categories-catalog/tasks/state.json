@@ -1717,78 +1717,78 @@
             "id": "T-048",
             "title": "Write service-level DB integration tests for catalog and provider categories",
             "description": "Create packages/service-core/test/integration/host-trade-categories.integration.test.ts (isDbAvailable-gated, real DB with fixed non-colliding name per the repo's integration-DB conventions): any-of filter with real data (2 matching categories -> provider once; unknown slugs ignored; all-unknown -> empty), hydration order and query count (assert no N+1), atomic replacement with forced insert failure keeps the old set, delete of a used category -> service 409 CATEGORY_IN_USE AND the FK RESTRICT holds when bypassing the service, provisioning end-to-end for AC-2.1/2.2 (all active, partial, none -> skip). Only run the new file locally, never the full package suite.\nACs: AC-2.1, AC-2.2, AC-3.4, AC-4.2, AC-5.2, AC-5.4.\nTests: the assertions listed above; confirm the test count is >0 (not a silent skip).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021", "T-022", "T-024", "T-026"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Filter + hydration + query count",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Atomic replacement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Restrict + in-use",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Provisioning end-to-end",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "database", "services"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:30:25.000Z",
+                "completed": "2026-11-17T21:30:25.000Z"
             }
         },
         {
             "id": "T-049",
             "title": "Run guards and frozen-count sweep before opening the PR",
             "description": "Run (targeted, not full-package suites): pnpm check:guards and each CI Guards step touched (check-seed-dual-write.sh against committed diff, check-catalog/commercial guards, zod-keys-inventory, env registry untouched), packages/schemas permission guards (permission-naming-convention.guard.test.ts and inventory tests), packages/seed role-permission-audit.test.ts, packages/i18n untranslated baseline + key parity, apps/web cacheable-pages-are-session-blind.guard.test.ts, host-trade-managed-fields.guard.test.ts, and the changed test files per package plus CI=true typecheck and biome check --max-diagnostics=400 for schemas, db, service-core, api, web, admin. Merge staging first (merge-only failures) and rebuild packages. Rely on CI for the full suites. List every frozen guard touched in the PR description.\nACs: all (regression gate).\nTests: every command above exits 0 with a non-zero test count; guard list recorded.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-017", "T-030", "T-041", "T-042", "T-047"],
             "blocks": ["T-050"],
             "subtasks": [
                 {
                     "title": "Merge staging + rebuild",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "check:guards and dual-write",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Frozen guards + targeted tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Typecheck + biome per package",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "guards"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:30:25.000Z",
+                "completed": "2026-11-17T21:30:25.000Z"
             }
         },
         {
@@ -1826,35 +1826,35 @@
             "id": "T-051",
             "title": "Document catalog carril, endpoints and error code",
             "description": "Edit packages/seed/CLAUDE.md (new catalog entities, deterministic ids, data-migration with requiresColumns, hostTrade fixtures use categorySlugs), apps/api/docs/route-architecture.md (new public catalog and admin catalog routes, CATEGORY_IN_USE 409, cache tag purge) and apps/api/docs/error-contract.md if the new code needs a listed entry; add a note to packages/db/CLAUDE.md or docs/guides/migrations.md if the expand/contract example is useful. Remove/adjust any doc mention of HostTradeCategoryEnum as live and of the 13 categories.\nACs: n/a (docs).\nTests: markdown link check (validate-docs workflow) passes; rg finds no doc claiming category is a single enum value.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017", "T-030"],
             "blocks": ["T-052"],
             "subtasks": [
                 {
                     "title": "seed CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "route-architecture.md + error-contract.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Stale doc scan",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T21:30:25.000Z",
+                "completed": "2026-11-17T21:30:25.000Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 7,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 47,
+        "completed": 50,
         "blocked": 0,
         "averageComplexity": 2.5
     }

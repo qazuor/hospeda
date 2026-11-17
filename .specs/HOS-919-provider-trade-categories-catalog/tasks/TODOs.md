@@ -254,12 +254,12 @@
 
 ### Testing Phase
 
-- [ ] **T-048** (complexity: 3) - Write service-level DB integration tests for catalog and provider categories
+- [x] **T-048** (complexity: 3) - Write service-level DB integration tests for catalog and provider categories
   - Create packages/service-core/test/integration/host-trade-categories.integration.test.ts (isDbAvailab...
   - Blocked by: T-021, T-022, T-024, T-026
   - Blocks: none
 
-- [ ] **T-049** (complexity: 2) - Run guards and frozen-count sweep before opening the PR
+- [x] **T-049** (complexity: 2) - Run guards and frozen-count sweep before opening the PR
   - Run (targeted, not full-package suites): pnpm check:guards and each CI Guards step touched (check-se...
   - Blocked by: T-003, T-017, T-030, T-041, T-042, T-047
   - Blocks: T-050
@@ -271,7 +271,7 @@
 
 ### Docs Phase
 
-- [ ] **T-051** (complexity: 2) - Document catalog carril, endpoints and error code
+- [x] **T-051** (complexity: 2) - Document catalog carril, endpoints and error code
   - Edit packages/seed/CLAUDE.md (new catalog entities, deterministic ids, data-migration with requiresC...
   - Blocked by: T-017, T-030
   - Blocks: T-052
