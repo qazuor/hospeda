@@ -1,7 +1,10 @@
-import type { HostTrade } from '@repo/schemas';
-import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import type { HostTrade, HostTradeCategoryRef } from '@repo/schemas';
+import { and, asc, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTrades } from '../../schemas/host-trade/host_trade.dbschema.ts';
+import { hostTradeCategories } from '../../schemas/host-trade/host-trade-category.dbschema.ts';
+import { hostTradeCategoryGroups } from '../../schemas/host-trade/host-trade-category-group.dbschema.ts';
+import { rHostTradeCategory } from '../../schemas/host-trade/r_host_trade_category.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -26,8 +29,8 @@ export class HostTradeModel extends BaseModelImpl<HostTrade> {
      * Returns all active, non-deleted host-trade entries whose
      * `destinationId` is in the provided list.
      *
-     * Rows are ordered by `category ASC, name ASC` so callers can
-     * render a grouped directory without a secondary sort step.
+     * Rows are ordered by `name ASC` only (HOS-919): a provider now holds
+     * several categories, so the directory no longer orders by category.
      *
      * An empty `destinationIds` array returns `[]` immediately without
      * issuing a `WHERE IN ()` query to the database (which is invalid SQL
@@ -56,7 +59,7 @@ export class HostTradeModel extends BaseModelImpl<HostTrade> {
                         isNull(hostTrades.deletedAt)
                     )
                 )
-                .orderBy(asc(hostTrades.category), asc(hostTrades.name));
+                .orderBy(asc(hostTrades.name));
 
             try {
                 logQuery(this.entityName, 'findForHost', logContext, results);
@@ -69,6 +72,121 @@ export class HostTradeModel extends BaseModelImpl<HostTrade> {
                 logError(this.entityName, 'findForHost', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findForHost', logContext, err.message);
+        }
+    }
+
+    /**
+     * Builds the any-of category filter as a SQL condition for the
+     * `additionalConditions` of `findAll` / `count` (HOS-919). The key-value
+     * `where` map cannot express it.
+     *
+     * The condition is
+     * `EXISTS (SELECT 1 FROM r_host_trade_category r JOIN host_trade_categories c
+     * ON c.id = r.category_id WHERE r.host_trade_id = host_trades.id AND c.slug IN (...))`.
+     * Being an `EXISTS` (not a join) a provider holding several of the
+     * requested categories matches ONCE. Unknown slugs simply match nothing,
+     * so a list of only unknown slugs yields an empty result.
+     *
+     * An EMPTY `categorySlugs` list matches NOTHING (fail closed): "no filter"
+     * is the caller's decision and must be expressed by not adding the
+     * condition at all.
+     *
+     * The condition correlates against the outer `host_trades` table, so it
+     * only works in a query that selects from `host_trades` without an alias.
+     * It does not filter on the category's lifecycle state or soft-delete: a
+     * provider keeps matching a category that was deactivated after linking.
+     *
+     * @param input.categorySlugs - Category slugs; a provider matches if it has ANY of them.
+     * @returns A SQL condition to AND into the provider query.
+     */
+    buildCategoriesFilterCondition(input: { readonly categorySlugs: readonly string[] }): SQL {
+        const { categorySlugs } = input;
+        if (categorySlugs.length === 0) return sql`false`;
+
+        return sql`exists (
+            select 1
+            from ${rHostTradeCategory}
+            inner join ${hostTradeCategories}
+                on ${hostTradeCategories.id} = ${rHostTradeCategory.categoryId}
+            where ${rHostTradeCategory.hostTradeId} = ${hostTrades.id}
+                and ${inArray(hostTradeCategories.slug, [...categorySlugs])}
+        )`;
+    }
+
+    /**
+     * Loads the categories of many providers with ONE query (no N+1).
+     *
+     * Every requested id appears in the returned map; a provider without
+     * categories maps to `[]`. Each list is in catalog order: group
+     * `displayWeight`, category `displayWeight`, then slug.
+     *
+     * Soft-deleted categories are skipped. INACTIVE categories are kept on
+     * purpose: a provider that has one still shows it on its card (AC-3.3).
+     *
+     * An empty `hostTradeIds` returns an empty map without querying.
+     *
+     * @param input.hostTradeIds - Host-trade UUIDs to hydrate.
+     * @param input.tx - Optional transaction client.
+     * @returns Map from host-trade id to its ordered category refs.
+     * @throws DbError if the database query fails.
+     */
+    async hydrateCategories(input: {
+        readonly hostTradeIds: readonly string[];
+        readonly tx?: DrizzleClient;
+    }): Promise<Map<string, HostTradeCategoryRef[]>> {
+        const { hostTradeIds, tx } = input;
+        const result = new Map<string, HostTradeCategoryRef[]>();
+        if (hostTradeIds.length === 0) return result;
+
+        const db = this.getClient(tx);
+        const logContext = { count: hostTradeIds.length };
+
+        try {
+            const rows = await db
+                .select({
+                    hostTradeId: rHostTradeCategory.hostTradeId,
+                    id: hostTradeCategories.id,
+                    slug: hostTradeCategories.slug,
+                    nameI18n: hostTradeCategories.nameI18n,
+                    groupSlug: hostTradeCategoryGroups.slug
+                })
+                .from(rHostTradeCategory)
+                .innerJoin(
+                    hostTradeCategories,
+                    eq(hostTradeCategories.id, rHostTradeCategory.categoryId)
+                )
+                .innerJoin(
+                    hostTradeCategoryGroups,
+                    eq(hostTradeCategoryGroups.id, hostTradeCategories.groupId)
+                )
+                .where(
+                    and(
+                        inArray(rHostTradeCategory.hostTradeId, [...hostTradeIds]),
+                        isNull(hostTradeCategories.deletedAt)
+                    )
+                )
+                .orderBy(
+                    asc(hostTradeCategoryGroups.displayWeight),
+                    asc(hostTradeCategories.displayWeight),
+                    asc(hostTradeCategories.slug)
+                );
+
+            for (const id of hostTradeIds) result.set(id, []);
+            for (const { hostTradeId, ...ref } of rows) {
+                result.get(hostTradeId)?.push(ref);
+            }
+
+            try {
+                logQuery(this.entityName, 'hydrateCategories', logContext, rows);
+            } catch {}
+
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'hydrateCategories', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'hydrateCategories', logContext, err.message, err);
         }
     }
 }

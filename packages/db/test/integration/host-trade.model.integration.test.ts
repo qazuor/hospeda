@@ -4,12 +4,20 @@
  * Each test wraps DB writes in `withTestTransaction` so they are always
  * rolled back — no TRUNCATE overhead, parallel-safe via MVCC isolation.
  */
+import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setDb } from '../../src/client.ts';
 import { HostTradeModel } from '../../src/models/hostTrade/host-trade.model.ts';
+import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
 import { hostTrades } from '../../src/schemas/host-trade/host_trade.dbschema.ts';
+import { hostTradeCategories } from '../../src/schemas/host-trade/host-trade-category.dbschema.ts';
+import { hostTradeCategoryGroups } from '../../src/schemas/host-trade/host-trade-category-group.dbschema.ts';
+import { rHostTradeCategory } from '../../src/schemas/host-trade/r_host_trade_category.dbschema.ts';
+import * as hospedaSchema from '../../src/schemas/index.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
-import { closeTestPool, getTestDb, testData, withTestTransaction } from './helpers.ts';
+import type { DrizzleClient } from '../../src/types.ts';
+import { closeTestPool, getTestDb, getTestPool, testData, withTestTransaction } from './helpers.ts';
 
 beforeAll(() => {
     // Wire the module-level getDb() to the ephemeral test pool so that model
@@ -126,7 +134,7 @@ describe('HostTradeModel.findForHost', () => {
         });
     });
 
-    it('orders results by category ASC then name ASC', async () => {
+    it('orders results by name ASC only (HOS-919: category no longer drives order)', async () => {
         await withTestTransaction(async (tx) => {
             const dest = testData.destination();
             const { destinations } = await import(
@@ -134,30 +142,21 @@ describe('HostTradeModel.findForHost', () => {
             );
             await tx.insert(destinations).values(dest);
 
-            // PostgreSQL pgEnum sorts by declaration order, not alphabetically.
-            // The HostTradeCategoryEnum declaration order is:
-            //   CERRAJERIA (1) < PLOMERIA (2) < ELECTRICIDAD (3) < ...
-            // So CERRAJERIA sorts before PLOMERIA in ORDER BY category ASC.
-            // Within the same category, name is sorted alphabetically (ASC).
+            // Legacy categories are deliberately in the OPPOSITE order of the
+            // names: under the old `category ASC, name ASC` order tradeA
+            // (CERRAJERIA) would come first; by name it must come last.
             const tradeA = tradeFixture(dest.id, { category: 'CERRAJERIA', name: 'Zeta' });
             const tradeB = tradeFixture(dest.id, { category: 'PLOMERIA', name: 'Alpha' });
             const tradeC = tradeFixture(dest.id, { category: 'PLOMERIA', name: 'Omega' });
 
-            // Insert in reverse expected order to prove the ORDER BY clause works
+            // Insert out of order to prove the ORDER BY clause works
             await tx.insert(hostTrades).values(tradeC);
-            await tx.insert(hostTrades).values(tradeB);
             await tx.insert(hostTrades).values(tradeA);
+            await tx.insert(hostTrades).values(tradeB);
 
             const results = await model.findForHost([dest.id], tx);
 
-            // Expected order: tradeA (CERRAJERIA/Zeta), tradeB (PLOMERIA/Alpha), tradeC (PLOMERIA/Omega)
-            const ids = results.map((r) => r.id);
-            const posA = ids.indexOf(tradeA.id);
-            const posB = ids.indexOf(tradeB.id);
-            const posC = ids.indexOf(tradeC.id);
-
-            expect(posA).toBeLessThan(posB);
-            expect(posB).toBeLessThan(posC);
+            expect(results.map((r) => r.id)).toEqual([tradeB.id, tradeC.id, tradeA.id]);
         });
     });
 
@@ -173,5 +172,282 @@ describe('HostTradeModel.findForHost', () => {
             const results = await model.findForHost([nonExistentId], tx);
             expect(results).toEqual([]);
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-919 T-008 / T-009: category filter, hydration and set replacement
+// ---------------------------------------------------------------------------
+
+const uid = () => crypto.randomUUID().slice(0, 8);
+
+const eqCategoryId = (id: string) => eq(hostTradeCategories.id, id);
+
+type CatRef = { id: string; slug: string };
+
+type Seeded = {
+    destinationId: string;
+    groupId: string;
+    categories: CatRef[];
+};
+
+/** Inserts a destination, one group and `count` categories (weights 10, 20, ...). */
+async function seedCatalog(tx: DrizzleClient, count: number): Promise<Seeded> {
+    const dest = testData.destination();
+    await tx.insert(destinations).values(dest);
+    const groupId = crypto.randomUUID();
+    await tx.insert(hostTradeCategoryGroups).values({
+        id: groupId,
+        slug: `grp-${uid()}`,
+        nameI18n: { es: 'Grupo', en: 'Group', pt: 'Grupo' },
+        displayWeight: 10
+    });
+    const categories = Array.from({ length: count }, (_, index) => ({
+        id: crypto.randomUUID(),
+        slug: `cat-${uid()}`,
+        index
+    }));
+    await tx.insert(hostTradeCategories).values(
+        categories.map((c) => ({
+            id: c.id,
+            slug: c.slug,
+            groupId,
+            nameI18n: { es: `Cat ${c.index}`, en: `Cat ${c.index}`, pt: `Cat ${c.index}` },
+            displayWeight: (c.index + 1) * 10
+        }))
+    );
+    return {
+        destinationId: dest.id,
+        groupId,
+        categories: categories.map(({ id, slug }) => ({ id, slug }))
+    };
+}
+
+async function insertTrade(
+    tx: DrizzleClient,
+    destinationId: string,
+    name: string
+): Promise<string> {
+    const id = crypto.randomUUID();
+    await tx.insert(hostTrades).values({
+        id,
+        slug: `trade-${uid()}`,
+        name,
+        contact: '+54 999 000 001',
+        benefit: '10%',
+        destinationId
+    });
+    return id;
+}
+
+async function link(tx: DrizzleClient, hostTradeId: string, categoryIds: string[]): Promise<void> {
+    await tx
+        .insert(rHostTradeCategory)
+        .values(categoryIds.map((categoryId) => ({ hostTradeId, categoryId })));
+}
+
+describe('HostTradeModel categories any-of EXISTS condition', () => {
+    const model = new HostTradeModel();
+
+    it('matches a provider holding BOTH requested categories exactly once', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 3);
+            const [a, b, c] = seed.categories as [CatRef, CatRef, CatRef];
+            const both = await insertTrade(tx, seed.destinationId, 'Both');
+            const onlyC = await insertTrade(tx, seed.destinationId, 'OnlyC');
+            await link(tx, both, [a.id, b.id]);
+            await link(tx, onlyC, [c.id]);
+
+            const condition = model.buildCategoriesFilterCondition({
+                categorySlugs: [a.slug, b.slug]
+            });
+            const { items, total } = await model.findAll(
+                { destinationId: seed.destinationId },
+                { pageSize: 50 },
+                [condition],
+                tx
+            );
+            const count = await model.count(
+                { destinationId: seed.destinationId },
+                { additionalConditions: [condition], tx }
+            );
+
+            expect(items.map((t) => t.id)).toEqual([both]);
+            expect(total).toBe(1);
+            expect(count).toBe(1);
+        });
+    });
+
+    it('matches any-of across providers and ignores unknown slugs in the list', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 2);
+            const [a, b] = seed.categories as [CatRef, CatRef];
+            const tradeA = await insertTrade(tx, seed.destinationId, 'A');
+            const tradeB = await insertTrade(tx, seed.destinationId, 'B');
+            await link(tx, tradeA, [a.id]);
+            await link(tx, tradeB, [b.id]);
+
+            const condition = model.buildCategoriesFilterCondition({
+                categorySlugs: [a.slug, 'no-such-slug', b.slug]
+            });
+            const { items } = await model.findAll(
+                { destinationId: seed.destinationId },
+                { pageSize: 50 },
+                [condition],
+                tx
+            );
+
+            expect(items.map((t) => t.id).sort()).toEqual([tradeA, tradeB].sort());
+        });
+    });
+
+    it('yields an empty result when every slug is unknown', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 1);
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [(seed.categories[0] as CatRef).id]);
+
+            const condition = model.buildCategoriesFilterCondition({
+                categorySlugs: ['nope-1', 'nope-2']
+            });
+            const { items, total } = await model.findAll(
+                { destinationId: seed.destinationId },
+                { pageSize: 50 },
+                [condition],
+                tx
+            );
+
+            expect(items).toEqual([]);
+            expect(total).toBe(0);
+        });
+    });
+
+    it('matches nothing for an empty slug list (fail closed)', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 1);
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [(seed.categories[0] as CatRef).id]);
+
+            const condition = model.buildCategoriesFilterCondition({ categorySlugs: [] });
+            const { items } = await model.findAll(
+                { destinationId: seed.destinationId },
+                { pageSize: 50 },
+                [condition],
+                tx
+            );
+
+            expect(items).toEqual([]);
+        });
+    });
+});
+
+describe('HostTradeModel.hydrateCategories', () => {
+    const model = new HostTradeModel();
+
+    it('returns refs in catalog order (group weight, category weight, slug) per provider', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 3);
+            const [c1, c2, c3] = seed.categories as [CatRef, CatRef, CatRef];
+            // A second group that sorts AFTER the first (weight 90 vs 10).
+            const lateGroupId = crypto.randomUUID();
+            await tx.insert(hostTradeCategoryGroups).values({
+                id: lateGroupId,
+                slug: `late-${uid()}`,
+                nameI18n: { es: 'Tarde', en: 'Late', pt: 'Tarde' },
+                displayWeight: 90
+            });
+            const lateCat = { id: crypto.randomUUID(), slug: `late-cat-${uid()}` };
+            await tx.insert(hostTradeCategories).values({
+                ...lateCat,
+                groupId: lateGroupId,
+                nameI18n: { es: 'Late', en: 'Late', pt: 'Late' },
+                displayWeight: 1
+            });
+
+            const trade = await insertTrade(tx, seed.destinationId, 'Multi');
+            const empty = await insertTrade(tx, seed.destinationId, 'Empty');
+            // Linked out of order on purpose.
+            await link(tx, trade, [lateCat.id, c3.id, c1.id, c2.id]);
+
+            const map = await model.hydrateCategories({ hostTradeIds: [trade, empty], tx });
+
+            expect(map.get(trade)?.map((c) => c.slug)).toEqual([
+                c1.slug,
+                c2.slug,
+                c3.slug,
+                lateCat.slug
+            ]);
+            expect(map.get(trade)?.[0]).toEqual({
+                id: c1.id,
+                slug: c1.slug,
+                nameI18n: { es: 'Cat 0', en: 'Cat 0', pt: 'Cat 0' },
+                groupSlug: expect.stringMatching(/^grp-/)
+            });
+            expect(map.get(empty)).toEqual([]);
+        });
+    });
+
+    it('keeps an INACTIVE linked category visible on the provider (AC-3.3)', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 1);
+            const cat = seed.categories[0] as CatRef;
+            await tx
+                .update(hostTradeCategories)
+                .set({ lifecycleState: 'INACTIVE' })
+                .where(eqCategoryId(cat.id));
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [cat.id]);
+
+            const map = await model.hydrateCategories({ hostTradeIds: [trade], tx });
+
+            expect(map.get(trade)?.map((c) => c.slug)).toEqual([cat.slug]);
+        });
+    });
+
+    it('returns an empty map without querying for an empty id list', async () => {
+        const map = await model.hydrateCategories({ hostTradeIds: [] });
+        expect(map.size).toBe(0);
+    });
+
+    it('issues ONE query regardless of how many providers it hydrates (no N+1)', async () => {
+        const queries: string[] = [];
+        const countingDb = drizzle({
+            client: getTestPool(),
+            schema: { ...hospedaSchema },
+            logger: { logQuery: (query: string) => void queries.push(query) }
+        }) as unknown as DrizzleClient;
+
+        class Rollback extends Error {}
+        try {
+            await countingDb.transaction(async (tx) => {
+                const txClient = tx as unknown as DrizzleClient;
+                const seed = await seedCatalog(txClient, 4);
+                const ids: string[] = [];
+                for (let i = 0; i < 20; i++) {
+                    const id = await insertTrade(txClient, seed.destinationId, `T${i}`);
+                    await link(
+                        txClient,
+                        id,
+                        seed.categories.slice(0, 2 + (i % 3)).map((c) => c.id)
+                    );
+                    ids.push(id);
+                }
+
+                queries.length = 0;
+                const map20 = await model.hydrateCategories({ hostTradeIds: ids, tx: txClient });
+                const queriesFor20 = queries.length;
+
+                queries.length = 0;
+                await model.hydrateCategories({ hostTradeIds: ids.slice(0, 2), tx: txClient });
+                const queriesFor2 = queries.length;
+
+                expect(map20.size).toBe(20);
+                expect(queriesFor20).toBe(1);
+                expect(queriesFor2).toBe(queriesFor20);
+                throw new Rollback();
+            });
+        } catch (error) {
+            if (!(error instanceof Rollback)) throw error;
+        }
     });
 });
