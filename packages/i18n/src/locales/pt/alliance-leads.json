@@ -40,7 +40,6 @@
             "benefitText": "Condições do benefício (opcional)"
         },
         "placeholders": {
-            "category": "Selecione uma categoria",
             "destinationId": "Selecione uma localidade",
             "benefitType": "Selecione um benefício",
             "partnerType": "Selecione um tipo de organização"

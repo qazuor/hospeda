@@ -21,7 +21,6 @@ vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) => {
             const labels: Record<string, string> = {
-                'host-trades.categories.PLOMERIA': 'Plomería',
                 'host-trades.card.benefit': 'Beneficio para hosts',
                 'host-trades.card.contact': 'Contactar',
                 'host-trades.card.stats.ratingLabel': '{{rating}} de 5 estrellas'

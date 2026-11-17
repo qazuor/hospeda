@@ -612,9 +612,6 @@
             "min": "El nombre del negocio debe tener al menos {{min}} caracteres",
             "requiredForServiceProvider": "Indicá el nombre de tu negocio"
         },
-        "category": {
-            "requiredForServiceProvider": "Elegí la categoría del servicio que ofrecés"
-        },
         "categorySlugs": {
             "max": "Você pode escolher até {{max}} categorias",
             "requiredForServiceProvider": "Escolha pelo menos uma categoria do serviço que você oferece",

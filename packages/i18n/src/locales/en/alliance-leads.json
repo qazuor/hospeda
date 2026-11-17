@@ -40,7 +40,6 @@
             "benefitText": "Benefit conditions (optional)"
         },
         "placeholders": {
-            "category": "Select a category",
             "destinationId": "Select a destination",
             "benefitType": "Select a benefit",
             "partnerType": "Select an organization type"

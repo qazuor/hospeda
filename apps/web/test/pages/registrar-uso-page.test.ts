@@ -237,9 +237,6 @@ describe('registrar-uso — i18n keys resolve', () => {
 
     it('resolves every host-trades key the page uses to real Spanish copy', () => {
         for (const key of collectHostTradeKeys(pageSrc)) {
-            // The category key is built dynamically from the enum value; the
-            // catalog is asserted for the whole set elsewhere.
-            if (key.startsWith('host-trades.categories.')) continue;
             expect(resolveEsKey(key), `missing i18n key: ${key}`).toBeTypeOf('string');
         }
     });
