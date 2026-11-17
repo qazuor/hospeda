@@ -588,35 +588,35 @@
             "id": "T-017",
             "title": "Verify seed dual-write guard and run the data-migration locally",
             "description": "Commit the baseline and the data-migration, then run scripts/check-seed-dual-write.sh against the COMMITTED diff vs staging (it reads committed diff, not the working tree) and confirm it passes with both. On a scratch DB (NEVER pnpm db:fresh-dev inside a worktree) run db:migrate -> db:apply-extras -> db:seed:migrate and confirm: 5 groups, 29 categories, backfilled links, ledger row recorded, second run applies 0.\nACs: AC-2.1, AC-2.3.\nTests: guard exit code 0; SQL counts after migration (select count(*) from host_trade_category_groups = 5, categories = 29); seed_migrations ledger contains the migration once.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013", "T-016"],
             "blocks": ["T-049", "T-051"],
             "subtasks": [
                 {
                     "title": "Commit then run dual-write guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run migrate/extras/seed-migrate on scratch DB",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Record counts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "guards", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:05:29Z",
+                "completed": "2026-11-17T20:05:29Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 32,
+        "completed": 33,
         "blocked": 0,
         "averageComplexity": 2.5
     }

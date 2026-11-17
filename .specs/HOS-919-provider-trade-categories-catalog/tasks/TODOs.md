@@ -95,7 +95,7 @@
   - Blocked by: T-015, T-003
   - Blocks: T-017
 
-- [ ] **T-017** (complexity: 2) - Verify seed dual-write guard and run the data-migration locally
+- [x] **T-017** (complexity: 2) - Verify seed dual-write guard and run the data-migration locally
   - Commit the baseline and the data-migration, then run scripts/check-seed-dual-write.sh against the CO...
   - Blocked by: T-013, T-016
   - Blocks: T-049, T-051
