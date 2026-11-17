@@ -60,7 +60,7 @@
   - Blocked by: T-008
   - Blocks: T-010, T-022, T-024
 
-- [ ] **T-010** (complexity: 1) - Rebuild packages after schema changes before running dependant tests
+- [x] **T-010** (complexity: 1) - Rebuild packages after schema changes before running dependant tests
   - After merging staging into the worktree and finishing the schema/db changes, rebuild dist of the aff...
   - Blocked by: T-002, T-003, T-006, T-007, T-009
   - Blocks: T-012, T-018, T-021, T-024

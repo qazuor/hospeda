@@ -339,35 +339,35 @@
             "id": "T-010",
             "title": "Rebuild packages after schema changes before running dependant tests",
             "description": "After merging staging into the worktree and finishing the schema/db changes, rebuild dist of the affected packages so dependants do not see new exports as undefined (risk in spec §12): run corepack pnpm --filter @repo/schemas build, then @repo/db, then @repo/cache-tags (and @repo/i18n if already edited). Use CI=true prefix (no TTY). Verify by typechecking one dependant with CI=true so tsc really runs (apps are not @repo/* names: use correct filter names).\nTests: new exports (HostTradeCategorySchema, HOST_TRADE_CATEGORY_* permissions, new dbschema tables) are importable from a dependant package typecheck with no 'no exported member' errors.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002", "T-003", "T-006", "T-007", "T-009"],
             "blocks": ["T-012", "T-018", "T-021", "T-024"],
             "subtasks": [
                 {
                     "title": "Merge staging first",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build schemas, db, cache-tags",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Typecheck a dependant with CI=true",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["build", "tooling"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:55:30Z",
+                "completed": "2026-11-17T18:55:30Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 43,
+        "pending": 42,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.5
     }
