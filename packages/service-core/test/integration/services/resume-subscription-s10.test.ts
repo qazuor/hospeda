@@ -295,6 +295,97 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:3 S10 principal return', 
         expect(byReason.get('PAUSA_NO_APLICADA')?.liftedBy).toBeNull();
     });
 
+    it('keeps the open resume mark when another update wins before the confirming write', async () => {
+        await ensureSystemUser();
+        const harness = adjustablePauseHarness();
+        const principal = await seedPausePrincipal({ harness });
+        expect((await pause(harness, principal.subscriptionId, 2)).outcome).toBe('PAUSED');
+        await db().insert(reconciliationMarks).values({
+            subscriptionId: principal.subscriptionId,
+            reason: 'REANUDACION_NO_APLICADA',
+            placedAt: harness.clock.now()
+        });
+        const racingProvider = new Proxy(harness.provider, {
+            get(target, property, receiver) {
+                const value = Reflect.get(target, property, receiver);
+                if (property === 'resume' && typeof value === 'function')
+                    return async (input: { readonly authorizationId: string }) => {
+                        await db()
+                            .update(subscriptions)
+                            .set({ status: 'CANCELLED' })
+                            .where(eq(subscriptions.id, principal.subscriptionId));
+                        return value.call(target, input);
+                    };
+                return typeof value === 'function' ? value.bind(target) : value;
+            }
+        });
+        const result = await resumeSubscription(
+            { subscriptionId: principal.subscriptionId, cause: 'EARLY' },
+            { provider: racingProvider, clock: harness.clock, complements: emptyComplements }
+        );
+        const marks = await db()
+            .select()
+            .from(reconciliationMarks)
+            .where(
+                and(
+                    eq(reconciliationMarks.subscriptionId, principal.subscriptionId),
+                    eq(reconciliationMarks.reason, 'REANUDACION_NO_APLICADA')
+                )
+            );
+        expect(result.outcome).toBe('LOST_RACE');
+        expect((await row(principal.subscriptionId)).subscription?.status).toBe('CANCELLED');
+        expect(marks).toHaveLength(1);
+        expect(marks[0]?.liftedAt).toBeNull();
+        expect(marks[0]?.liftedBy).toBeNull();
+        expect(marks[0]?.version).toBe(1);
+    });
+
+    it('rolls the lift back when the confirming transaction fails after it', async () => {
+        await ensureSystemUser();
+        const harness = adjustablePauseHarness();
+        const principal = await seedPausePrincipal({ harness });
+        const now = harness.clock.now();
+        await db()
+            .update(subscriptions)
+            .set({ status: 'PAUSED' })
+            .where(eq(subscriptions.id, principal.subscriptionId));
+        await db()
+            .insert(subscriptionPauses)
+            .values({
+                subscriptionId: principal.subscriptionId,
+                reason: 'COURTESY',
+                startsAt: new Date(now.getTime() - 86_400_000),
+                expectedEndAt: now,
+                requestedMonths: 1
+            });
+        await db().insert(reconciliationMarks).values({
+            subscriptionId: principal.subscriptionId,
+            reason: 'REANUDACION_NO_APLICADA',
+            placedAt: now
+        });
+        await expect(
+            resumeSubscription(
+                { subscriptionId: principal.subscriptionId, cause: 'COURTESY_REVOKED' },
+                ports(harness)
+            )
+        ).rejects.toThrow('S10 courtesy grant missing');
+        const marks = await db()
+            .select()
+            .from(reconciliationMarks)
+            .where(
+                and(
+                    eq(reconciliationMarks.subscriptionId, principal.subscriptionId),
+                    eq(reconciliationMarks.reason, 'REANUDACION_NO_APLICADA')
+                )
+            );
+        const actual = await row(principal.subscriptionId);
+        expect(actual.subscription?.status).toBe('PAUSED');
+        expect(actual.pauseRow?.actualEndAt).toBeNull();
+        expect(marks).toHaveLength(1);
+        expect(marks[0]?.liftedAt).toBeNull();
+        expect(marks[0]?.liftedBy).toBeNull();
+    });
+
     it('advances every expired manual cycle without calling the provider or opening a payment', async () => {
         const harness = adjustablePauseHarness();
         const principal = await seedPausePrincipal({ harness, paymentMethod: 'MANUAL' });
