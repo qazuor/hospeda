@@ -32,6 +32,41 @@
     line-height: 1.6;
 }
 
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+    width: 100%;
+}
+
+.field {
+    display: grid;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    font: 600 var(--text-body) / 1.4 var(--font-sans);
+}
+
+.input {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: var(--space-3, 0.75rem);
+    color: var(--core-foreground);
+    background: var(--core-card);
+    border: 1px solid var(--core-foreground-a30);
+    border-radius: var(--radius-button);
+}
+
+.textButton {
+    align-self: flex-start;
+    padding: 0;
+    color: var(--brand-primary);
+    font: 600 var(--text-body) / 1.4 var(--font-sans);
+    text-decoration: underline;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+
 .error {
     margin: 0;
     color: var(--destructive);
