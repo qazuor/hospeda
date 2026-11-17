@@ -51,9 +51,44 @@ describe('describeProviderRejection', () => {
             describeProviderRejection({
                 error: Object.assign(new Error('failed'), { cause: cyclic })
             })
-        ).toEqual({ message: 'failed', cause: '[object Object]' });
+        ).toEqual({ message: 'failed', cause: { message: '[object Object]' } });
         expect(describeProviderRejection({ error: new Error('failed') })).toEqual({
             message: 'failed'
         });
+    });
+
+    it('filters root cause arrays through the provider whitelist', () => {
+        const { cause } = describeProviderRejection({
+            error: Object.assign(new Error('failed'), {
+                cause: [
+                    {
+                        code: 'REJECTED',
+                        description: 'declined',
+                        payer: { email: 'private@example.com' },
+                        card_id: 'secret-card'
+                    },
+                    { code: 4010, email: 'private@example.com' },
+                    'untrusted text'
+                ]
+            })
+        });
+
+        expect(cause).toEqual([{ code: 'REJECTED', description: 'declined' }, { code: 4010 }]);
+        expect(JSON.stringify(cause)).not.toContain('private@example.com');
+        expect(JSON.stringify(cause)).not.toContain('secret-card');
+    });
+
+    it('sanitizes primitive and non-serializable fallback causes', () => {
+        expect(
+            describeProviderRejection({ error: Object.assign(new Error('failed'), { cause: 42 }) })
+        ).toEqual({ message: 'failed', cause: { message: '42' } });
+
+        const cyclic: Record<string, unknown> = { email: 'private@example.com' };
+        cyclic.self = cyclic;
+        expect(
+            describeProviderRejection({
+                error: Object.assign(new Error('failed'), { cause: cyclic })
+            })
+        ).toEqual({ message: 'failed', cause: { message: '[object Object]' } });
     });
 });

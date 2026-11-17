@@ -12,9 +12,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+function safeCauseEntries(value: readonly unknown[]): readonly Record<string, unknown>[] {
+    return value.slice(0, 4).flatMap((entry) => {
+        if (!isRecord(entry)) return [];
+        const allowed: Record<string, unknown> = {};
+        if (typeof entry.code === 'string' || typeof entry.code === 'number')
+            allowed.code = truncated(entry.code);
+        if (typeof entry.description === 'string')
+            allowed.description = truncated(entry.description);
+        return Object.keys(allowed).length === 0 ? [] : [allowed];
+    });
+}
+
 function safeCause(value: unknown, errorHttpStatus?: unknown): unknown {
     if (typeof value === 'string') return { message: truncated(value) };
-    if (!isRecord(value)) return value;
+    if (Array.isArray(value)) return safeCauseEntries(value);
+    if (!isRecord(value)) return { message: truncated(String(value)) };
     const isWrappedBody = typeof value.status === 'number' && isRecord(value.body);
     const body = isWrappedBody ? (value.body as Record<string, unknown>) : value;
     const result: Record<string, unknown> = {};
@@ -24,17 +37,7 @@ function safeCause(value: unknown, errorHttpStatus?: unknown): unknown {
     for (const key of ['message', 'error'] as const) {
         if (typeof body[key] === 'string') result[key] = truncated(body[key]);
     }
-    if (Array.isArray(body.cause)) {
-        result.cause = body.cause.slice(0, 4).flatMap((entry) => {
-            if (!isRecord(entry)) return [];
-            const allowed: Record<string, unknown> = {};
-            if (typeof entry.code === 'string' || typeof entry.code === 'number')
-                allowed.code = truncated(entry.code);
-            if (typeof entry.description === 'string')
-                allowed.description = truncated(entry.description);
-            return Object.keys(allowed).length === 0 ? [] : [allowed];
-        });
-    }
+    if (Array.isArray(body.cause)) result.cause = safeCauseEntries(body.cause);
     return result;
 }
 
@@ -56,11 +59,14 @@ export function describeProviderRejection(input: { readonly error: unknown }): {
                 while (cause.cause.length > 0 && JSON.stringify(cause).length > 2000)
                     cause.cause.pop();
             }
+            if (Array.isArray(cause)) {
+                while (cause.length > 0 && JSON.stringify(cause).length > 2000) cause.pop();
+            }
             if (JSON.stringify(cause).length > 2000)
                 cause = `${JSON.stringify(cause).slice(0, 1980)}…[truncated]`;
         }
     } catch {
-        cause = String(error.cause);
+        cause = safeCause(String(error.cause), error.httpStatus);
     }
     return { message, cause };
 }
