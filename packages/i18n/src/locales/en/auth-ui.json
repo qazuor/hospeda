@@ -35,6 +35,11 @@
                 "oauth_state_mismatch": "Your session expired during sign-in. Please try again.",
                 "unknown": "We couldn't complete sign-in with {{provider}}. Please try again later."
             }
+        },
+        "activeSession": {
+            "message": "You are already signed in as {{email}}",
+            "continue": "Continue",
+            "useOtherAccount": "Use another account"
         }
     },
     "signUp": {

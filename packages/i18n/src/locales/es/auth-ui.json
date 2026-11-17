@@ -35,6 +35,11 @@
                 "oauth_state_mismatch": "Tu sesión expiró durante el inicio de sesión. Intentá de nuevo.",
                 "unknown": "No pudimos completar el inicio de sesión con {{provider}}. Intentá de nuevo más tarde."
             }
+        },
+        "activeSession": {
+            "message": "Ya iniciaste sesión como {{email}}",
+            "continue": "Continuar",
+            "useOtherAccount": "Usar otra cuenta"
         }
     },
     "signUp": {

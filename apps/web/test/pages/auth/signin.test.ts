@@ -73,10 +73,25 @@ describe('signin.astro', () => {
             );
         });
 
-        it('lets a valid callbackUrl take precedence over returnPath on the auth redirect', () => {
+        it('lets a valid callbackUrl take precedence over returnPath as the continue destination', () => {
             expect(src).toMatch(
-                /Astro\.redirect\(\s*validatedCallbackUrl\s*\?\?\s*returnPath\s*\)/
+                /const\s+continueUrl\s*=\s*validatedCallbackUrl\s*\?\?\s*returnPath/
             );
+        });
+    });
+
+    // BETA-216 — an authenticated visitor gets an interstitial, not a silent bounce.
+    describe('already-authenticated visitor (BETA-216)', () => {
+        it('only redirects silently when the session gate says so', () => {
+            expect(src).toMatch(
+                /resolveAuthenticatedSigninAction\(\{\s*search:\s*Astro\.url\.search\s*\}\)\s*===\s*'redirect'/
+            );
+            expect(src.match(/Astro\.redirect\(/g)).toHaveLength(1);
+        });
+
+        it('hands the open session and the validated destination to the island', () => {
+            expect(src).toMatch(/email:\s*Astro\.locals\.user\.email,\s*continueUrl/);
+            expect(src).toContain('activeSession={activeSession}');
         });
     });
 

@@ -1,0 +1,75 @@
+/* ActiveSessionNotice.module.css — interstitial for an already-authenticated sign-in visit. */
+
+.notice {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    text-align: center;
+}
+
+.message {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--core-foreground);
+    overflow-wrap: anywhere;
+}
+
+.error {
+    padding: 0.75rem;
+    border-radius: var(--radius-button);
+    background-color: var(--destructive-a10);
+    color: var(--destructive);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.primary,
+.secondary {
+    display: inline-block;
+    padding: 0.625rem 1.5rem;
+    border-radius: var(--radius-button);
+    font-size: var(--text-body);
+    font-weight: 600;
+    font-family: var(--font-sans);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.primary {
+    border: 1px solid transparent;
+    color: var(--primary-foreground, #fff);
+    background-color: var(--brand-primary);
+    transition: filter var(--duration-fast) ease;
+}
+
+.primary:hover {
+    filter: brightness(1.1);
+}
+
+.secondary {
+    border: 1px solid var(--border);
+    color: var(--core-foreground);
+    background-color: transparent;
+}
+
+.secondary:hover:not(:disabled) {
+    background-color: var(--muted);
+}
+
+.secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.primary:focus-visible,
+.secondary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
