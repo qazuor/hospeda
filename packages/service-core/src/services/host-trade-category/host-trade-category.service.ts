@@ -25,7 +25,7 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../../types';
-import { runInTransaction } from '../hostTrade/host-trade.categories';
+import { runInServiceTransaction } from '../../utils/service-transaction';
 import {
     checkCanCreateHostTradeCatalog,
     checkCanDeleteHostTradeCatalog,
@@ -206,7 +206,7 @@ export class HostTradeCategoryService extends BaseCrudService<
         id: string,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
-        return runInTransaction(ctx, (txCtx) => super.softDelete(actor, id, txCtx));
+        return runInServiceTransaction(ctx, (txCtx) => super.softDelete(actor, id, txCtx));
     }
 
     /**

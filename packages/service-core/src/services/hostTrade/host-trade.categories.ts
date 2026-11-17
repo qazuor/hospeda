@@ -1,8 +1,7 @@
 import type { DrizzleClient, HostTradeCategoryModel, HostTradeModel } from '@repo/db';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
-import type { ServiceContext, ServiceOutput } from '../../types';
+import type { ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
-import { withServiceTransaction } from '../../utils/transaction';
 
 /** `hookState` key carrying the validated category ids from `_beforeX` to `_afterX`. */
 export const CATEGORY_IDS_HOOK_KEY = 'hostTradeCategoryIds';
@@ -170,23 +169,3 @@ type CategoryRefs =
     Awaited<ReturnType<HostTradeModel['hydrateCategories']>> extends Map<string, infer Refs>
         ? Refs
         : never;
-
-/**
- * Runs a create/update inside ONE transaction (the caller's when `ctx.tx` is
- * set, a new one otherwise). Once a transaction is present the base write
- * methods RE-THROW their errors, which is what rolls the row back together
- * with a failed category write; on the transaction this function opened, that
- * rejection is converted back into the usual result.
- */
-export async function runInTransaction<T>(
-    ctx: ServiceContext | undefined,
-    run: (txCtx: ServiceContext) => Promise<ServiceOutput<T>>
-): Promise<ServiceOutput<T>> {
-    if (ctx?.tx) return run(ctx);
-    try {
-        return await withServiceTransaction(run, ctx);
-    } catch (error) {
-        if (error instanceof ServiceError) return { error };
-        throw error;
-    }
-}

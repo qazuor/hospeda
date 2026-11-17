@@ -38,12 +38,12 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { runInServiceTransaction } from '../../utils/service-transaction';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import {
     attachCategories,
     HOST_TRADE_ID_HOOK_KEY,
     persistStagedCategoryIds,
-    runInTransaction,
     stageCategoryIds
 } from './host-trade.categories';
 import {
@@ -443,7 +443,7 @@ export class HostTradeService extends BaseCrudService<
         data: z.infer<typeof CreateHostTradeSchema>,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<HostTrade>> {
-        return runInTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
+        return runInServiceTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
     }
 
     /**
@@ -461,7 +461,7 @@ export class HostTradeService extends BaseCrudService<
         data: z.infer<typeof UpdateHostTradeSchema>,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<HostTrade>> {
-        return runInTransaction(ctx, (txCtx) =>
+        return runInServiceTransaction(ctx, (txCtx) =>
             super.update(actor, id, data, {
                 ...txCtx,
                 hookState: { ...txCtx.hookState, [HOST_TRADE_ID_HOOK_KEY]: id }
