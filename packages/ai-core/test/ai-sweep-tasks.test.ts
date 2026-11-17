@@ -309,25 +309,79 @@ describe('HOS-2217 structured answer checks', () => {
         expect(result.productionAccepts).toBe(true);
     });
 
-    it('search_intent: a refinement that keeps the carried filters passes', () => {
-        // Arrange
-        const task = taskCase('search-intent-refine-cheaper');
-        const object = {
+    /** A strict-mode search answer: every entity key present, `null` unless given (HOS-2294). */
+    const strictSearchAnswer = (
+        task: TaskCase,
+        entities: Record<string, unknown>,
+        top: Record<string, unknown> = {}
+    ): Record<string, unknown> => {
+        const props = (task.outputSchema?.properties ?? {}) as Record<string, unknown>;
+        const entityProps = ((props.entities ?? {}) as { properties?: Record<string, unknown> })
+            .properties;
+        return {
             confidence: 0.9,
-            isNewSearch: false,
+            isNewSearch: null,
+            ...top,
             entities: {
-                accommodationType: 'CABIN',
-                minGuests: 4,
-                city: 'Colón',
-                locationType: 'city',
-                maxPrice: 50000
+                ...Object.fromEntries(Object.keys(entityProps ?? {}).map((k) => [k, null])),
+                ...entities
             }
         };
+    };
+
+    it('search_intent: the stored schema is strict (all keys required, closed, both levels)', () => {
+        // Arrange
+        const schema = taskCase('search-intent-refine-cheaper').outputSchema as {
+            properties: Record<string, unknown>;
+            required: string[];
+            additionalProperties: unknown;
+        };
+        const entities = schema.properties.entities as {
+            properties: Record<string, unknown>;
+            required: string[];
+            additionalProperties: unknown;
+        };
+
+        // Assert
+        expect([...schema.required].sort()).toEqual(Object.keys(schema.properties).sort());
+        expect(schema.additionalProperties).toBe(false);
+        expect([...entities.required].sort()).toEqual(Object.keys(entities.properties).sort());
+        expect(entities.additionalProperties).toBe(false);
+    });
+
+    it('search_intent: a renamed-key answer fails schema validity and production (HOS-2294)', () => {
+        // Arrange: the lenient-mode failure, `guests` instead of `minGuests`.
+        const task = taskCase('search-intent-refine-cheaper');
+        const object = { confidence: 0.9, entities: { guests: 4, city: 'Colón' } };
 
         // Act
         const result = checkTaskAnswer({ task, text: JSON.stringify(object), object });
 
         // Assert
+        expect(result.schemaValid).toBe(false);
+        expect(result.productionAccepts).toBe(false);
+    });
+
+    it('search_intent: a refinement that keeps the carried filters passes', () => {
+        // Arrange
+        const task = taskCase('search-intent-refine-cheaper');
+        const object = strictSearchAnswer(
+            task,
+            {
+                accommodationType: 'CABIN',
+                minGuests: 4,
+                city: 'Colón',
+                locationType: 'city',
+                maxPrice: 50000
+            },
+            { isNewSearch: false }
+        );
+
+        // Act
+        const result = checkTaskAnswer({ task, text: JSON.stringify(object), object });
+
+        // Assert
+        expect(result.schemaValid).toBe(true);
         expect(result.checks).toMatchObject({ productionAccepts: true });
         expect(Object.entries(result.checks).filter(([, ok]) => !ok)).toEqual([]);
     });

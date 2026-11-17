@@ -14,11 +14,7 @@
  * @module ai-core/scripts/ai-sweep/task-checks
  */
 
-import {
-    AiFaqDraftOutputSchema,
-    AiPostGenerateDraftSchema,
-    SearchIntentEntitiesSchema
-} from '@repo/schemas';
+import { AiFaqDraftOutputSchema, AiPostGenerateDraftSchema } from '@repo/schemas';
 import { validateJsonSchema } from './json-schema-check.js';
 import { detectLanguage, looksLikeDecline, matchesPattern } from './quality.js';
 import type { FieldExpectation, OutputSchemaId, TaskCase, TaskChecks } from './tasks.js';
@@ -259,6 +255,36 @@ export function accommodationImportProductionAccepts(input: {
     };
 }
 
+/**
+ * Whether production accepts a `search_intent` answer (HOS-2294).
+ *
+ * Production runs two steps, both in apps/api (which ai-core may not import):
+ * the AI SDK validates the answer against the strict model-facing Zod schema
+ * (every field required and nullable; unknown keys are stripped, not
+ * rejected), then `normalizeSearchModelOutput` drops `null` slots and
+ * validates the rest slot by slot. That second step never rejects an answer
+ * (an invalid slot is dropped alone), so the equivalent here is the stored
+ * model-facing JSON Schema without `additionalProperties`.
+ * `apps/api/test/scripts/ai-sweep-tasks-parity.test.ts` runs this and the real
+ * production chain over the same table.
+ *
+ * @param input.schema - The stored model-facing JSON Schema.
+ * @param input.object - The model's answer.
+ * @returns `{ accepted }`.
+ */
+export function searchIntentProductionAccepts(input: {
+    readonly schema: Readonly<Record<string, unknown>>;
+    readonly object: unknown;
+}): { readonly accepted: boolean } {
+    return {
+        accepted: validateJsonSchema({
+            schema: input.schema,
+            value: input.object,
+            options: { ignoreAdditionalProperties: true }
+        }).valid
+    };
+}
+
 /** The parse production runs on a structured result, per output schema. */
 function productionAccepts(input: {
     readonly schemaId: OutputSchemaId;
@@ -267,10 +293,12 @@ function productionAccepts(input: {
 }): boolean {
     switch (input.schemaId) {
         case 'search_intent':
-            return (
-                isRecord(input.object) &&
-                SearchIntentEntitiesSchema.safeParse(input.object.entities).success
-            );
+            return input.task.outputSchema === null
+                ? false
+                : searchIntentProductionAccepts({
+                      schema: input.task.outputSchema,
+                      object: input.object
+                  }).accepted;
         case 'post_generate':
             return AiPostGenerateDraftSchema.safeParse(input.object).success;
         case 'faq_draft':
