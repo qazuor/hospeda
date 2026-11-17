@@ -18,19 +18,19 @@ import {
 const ROOT = path.resolve(import.meta.dirname, '../..');
 const TICK = String.fromCharCode(96);
 
-/** Each retired column, the only transition that writes it, and who reads it. */
+/** Each retired column, the exact set of transitions that write it, and who reads it. */
 const CASES = [
     {
         column: 'payment.amount',
-        writer: 'TRANS:B:P0',
+        writers: ['TRANS:B:P0', 'TRANS:B:A2'],
         readers: ['TRANS:B:P1', 'TRANS:B:P3', 'TRANS:B:P4', 'TRANS:B:P5']
     },
-    { column: 'payment.subscription_id', writer: 'TRANS:B:P0', readers: ['TRANS:B:P1'] },
-    { column: 'payment.addon_instance_id', writer: 'TRANS:B:P0', readers: ['TRANS:B:P1'] },
-    { column: 'addon_instance.ends_at', writer: 'TRANS:B:A2', readers: ['TRANS:B:A4'] },
+    { column: 'payment.subscription_id', writers: ['TRANS:B:P0'], readers: ['TRANS:B:P1'] },
+    { column: 'payment.addon_instance_id', writers: ['TRANS:B:A2'], readers: ['TRANS:B:P1'] },
+    { column: 'addon_instance.ends_at', writers: ['TRANS:B:A2'], readers: ['TRANS:B:A4'] },
     {
         column: 'addon_instance.complement_subscription_id',
-        writer: 'TRANS:B:A1',
+        writers: ['TRANS:B:A1'],
         readers: ['TRANS:B:A5']
     }
 ] as const;
@@ -55,14 +55,14 @@ function read({ root }: { readonly root: string }): TransitionCorpus {
     return JSON.parse(readFileSync(path.join(root, CORPUS_PATH), 'utf8')) as TransitionCorpus;
 }
 
-describe('TEST:1715:1 AC:1715:1 — single writer per retired column', () => {
-    it.each(CASES)('declares $writer as the sole corpus writer of $column', (item) => {
+describe('TEST:1715:1 AC:1715:1 — expected writer set per retired column', () => {
+    it.each(CASES)('declares exactly $writers as the corpus writers of $column', (item) => {
         const corpus = read({ root: ROOT });
         expect(
             corpus.transitions
                 .filter((row) => row.writes.includes(item.column))
                 .map((row) => row.id)
-        ).toEqual([item.writer]);
+        ).toEqual([...item.writers]);
     });
 
     it.each(CASES)('keeps the $column reads in $readers', (item) => {
@@ -82,17 +82,14 @@ describe('TEST:1715:2 AC:1715:2 — P0 is the charge-fact record', () => {
         expect(p0?.to).toEqual(['PENDING']);
     });
 
-    it('states in the catalog that P0 is recordChargeFact and cites its three columns', () => {
+    it('states in the catalog that P0 is recordChargeFact and cites its two columns and disclaims addon_instance_id', () => {
         const nota =
             parseCatalog({ root: ROOT }).find((row) => row.id === 'TRANS:B:P0')?.bullets.nota ?? '';
         expect(nota).toContain('`P0` ES el registro del hecho de cobro');
         expect(nota).toContain('no es un paso nuevo ni un segundo escritor');
-        for (const column of [
-            'payment.amount',
-            'payment.subscription_id',
-            'payment.addon_instance_id'
-        ])
+        for (const column of ['payment.amount', 'payment.subscription_id'])
             expect(nota).toContain(TICK + column + TICK);
+        expect(nota).toContain(`P0${TICK} no escribe ${TICK}payment.addon_instance_id`);
     });
 
     it('cites the addon writers in the A1 and A2 catalog bullets', () => {
@@ -100,9 +97,13 @@ describe('TEST:1715:2 AC:1715:2 — P0 is the charge-fact record', () => {
         expect(rows.find((row) => row.id === 'TRANS:B:A1')?.bullets.nota).toContain(
             `${TICK}addon_instance.complement_subscription_id${TICK}`
         );
-        expect(rows.find((row) => row.id === 'TRANS:B:A2')?.bullets.nota).toContain(
-            `${TICK}addon_instance.ends_at${TICK}`
-        );
+        const a2 = rows.find((row) => row.id === 'TRANS:B:A2')?.bullets.nota;
+        for (const column of [
+            'addon_instance.ends_at',
+            'payment.addon_instance_id',
+            'payment.amount'
+        ])
+            expect(a2).toContain(`${TICK}${column}${TICK}`);
     });
 });
 
@@ -114,12 +115,14 @@ describe('TEST:1715:3 AC:1715:3 — each writer is required', () => {
         });
     });
 
-    it.each(CASES)('reports exact violations when $writer stops writing $column', (item) => {
+    it.each(CASES)('reports exact violations when $writers stop writing $column', (item) => {
         const root = tempTree();
         const corpus = read({ root });
-        const row = corpus.transitions.find((candidate) => candidate.id === item.writer);
-        if (!row) throw new Error(`${item.writer} is missing from the corpus`);
-        (row.writes as string[]) = row.writes.filter((written) => written !== item.column);
+        for (const writer of item.writers) {
+            const row = corpus.transitions.find((candidate) => candidate.id === writer);
+            if (!row) throw new Error(`${writer} is missing from the corpus`);
+            (row.writes as string[]) = row.writes.filter((written) => written !== item.column);
+        }
         writeFileSync(path.join(root, CORPUS_PATH), JSON.stringify(corpus, null, 2));
         expect(run({ root })).toEqual({
             exitCode: 1,
@@ -128,5 +131,17 @@ describe('TEST:1715:3 AC:1715:3 — each writer is required', () => {
                 ...item.readers.map((reader) => `${reader} reads unwritten column ${item.column}`)
             ].join('\n')
         });
+    });
+});
+
+describe('TEST:1715:4 AC:1715:4 — payment.amount keeps a writer while either remains', () => {
+    it.each(['TRANS:B:P0', 'TRANS:B:A2'])('stays green when only %s stops writing it', (writer) => {
+        const root = tempTree();
+        const corpus = read({ root });
+        const row = corpus.transitions.find((candidate) => candidate.id === writer);
+        if (!row) throw new Error(`${writer} is missing from the corpus`);
+        (row.writes as string[]) = row.writes.filter((written) => written !== 'payment.amount');
+        writeFileSync(path.join(root, CORPUS_PATH), JSON.stringify(corpus, null, 2));
+        expect(run({ root }).exitCode).toBe(0);
     });
 });
