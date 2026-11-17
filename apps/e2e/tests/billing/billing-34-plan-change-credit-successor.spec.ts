@@ -174,7 +174,11 @@ test.describe('TEST:2159:1 TEST:2159:2 TEST:2159:3 TEST:2159:4 plan change credi
             creditFirst,
             'TEST:2159:1 precondition: the credit term outweighs the window term.'
         ).toBeGreaterThan(windowFirst);
-        const expectedFirst = new Date(Math.max(windowFirst, creditFirst));
+        // HOS-2218: the successor's first charge is truncated to the whole second, because the
+        // provider stores start_date at that precision (RP17).
+        const expectedFirst = new Date(
+            Math.floor(Math.max(windowFirst, creditFirst) / 1000) * 1000
+        );
         expectEqual(
             successor.first_charge_at.toISOString(),
             new Date(change.firstChargeAt).toISOString(),

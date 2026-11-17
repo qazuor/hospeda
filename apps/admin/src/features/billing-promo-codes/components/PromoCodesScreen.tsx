@@ -1,12 +1,12 @@
 import type { TranslationKey } from '@repo/i18n';
 import type { AdminPromoCode } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
+import { MARKET_TIMEZONE } from '@repo/utils';
 import { useEffect, useRef, useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
-import { formatDateWithTime } from '@/lib/format-helpers';
 import { usePromoCodes } from '../hooks/usePromoCodes';
 import {
     describePromoCodeDraft,
@@ -157,6 +157,13 @@ function PromoCodesBody() {
     );
 }
 
+function formatPromoValidityDate(date: Date | string, locale: string): string {
+    return new Intl.DateTimeFormat(locale, {
+        dateStyle: 'medium',
+        timeZone: MARKET_TIMEZONE
+    }).format(typeof date === 'string' ? new Date(date) : date);
+}
+
 function PromoCodeRow({
     promoCode,
     locale,
@@ -210,9 +217,9 @@ function PromoCodeRow({
                 {promoCode.totalQuota ?? t('admin-billing.promoCodes.editor.unlimited')}
             </td>
             <td className="p-2">
-                {formatDateWithTime({ date: promoCode.validFrom, locale })} –{' '}
+                {formatPromoValidityDate(promoCode.validFrom, locale)} –{' '}
                 {promoCode.validUntil
-                    ? formatDateWithTime({ date: promoCode.validUntil, locale })
+                    ? formatPromoValidityDate(promoCode.validUntil, locale)
                     : t('admin-billing.promoCodes.editor.noEndDate')}
             </td>
             <td className="p-2">{t(availabilityKey)}</td>

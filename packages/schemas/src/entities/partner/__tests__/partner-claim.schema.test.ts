@@ -1,4 +1,19 @@
 import { describe, expect, it } from 'vitest';
+import { PartnerClaimSignUpRequestSchema } from '../partner-claim.schema';
+
+describe('PartnerClaimSignUpRequestSchema', () => {
+    it('rejects a client-supplied email so the claim token remains the source of truth', () => {
+        expect(
+            PartnerClaimSignUpRequestSchema.safeParse({
+                partnerId: 'd32b0f9b-0864-49d8-bf8f-0fb52c40fd15',
+                secret: 'claim-secret',
+                password: 'StrongPass123!',
+                email: 'attacker@example.test'
+            }).success
+        ).toBe(false);
+    });
+});
+
 import { PartnerClaimRequestSchema } from '../partner-claim.schema';
 
 /** TEST:V7:9 checks claim request UUID and secret boundary validation. */

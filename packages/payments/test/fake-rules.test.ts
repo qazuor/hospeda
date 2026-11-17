@@ -73,9 +73,9 @@ async function approvedCharge(): Promise<string> {
 }
 
 describe('TEST:B1:14 the list of rules and measured behaviour', () => {
-    it('holds sixteen rows, RP1 to RP16: ten rules and six measured behaviours', () => {
+    it('holds seventeen rows, RP1 to RP17: eleven rules and six measured behaviours', () => {
         expect(FAKE_RULES.map((row) => row.id)).toEqual(
-            Array.from({ length: 16 }, (_, i) => `RP${i + 1}`)
+            Array.from({ length: 17 }, (_, i) => `RP${i + 1}`)
         );
         expect(FAKE_RULES.filter((row) => row.kind === 'rule').map((row) => row.id)).toEqual([
             'RP1',
@@ -87,11 +87,30 @@ describe('TEST:B1:14 the list of rules and measured behaviour', () => {
             'RP13',
             'RP14',
             'RP15',
-            'RP16'
+            'RP16',
+            'RP17'
         ]);
         expect(
             FAKE_RULES.filter((row) => row.kind === 'measuredBehaviour').map((row) => row.id)
         ).toEqual(['RP7', 'RP8', 'RP9', 'RP10', 'RP11', 'RP12']);
+    });
+
+    it('stores firstChargeAt truncated to a whole second (RP17, EX-60)', async () => {
+        const honestFake = new FakePaymentProvider({
+            clock: createAdjustableClock({ start: new Date('2026-10-01T03:00:00.000Z') }),
+            honestAbout: [
+                { lie: 'M1', why: 'isolate RP17 first-charge truncation' },
+                { lie: 'M9', why: 'isolate RP17 first-charge truncation' }
+            ]
+        });
+        const { authorizationId } = await honestFake.authorize({
+            ...AUTHORIZE,
+            firstChargeAt: '2026-11-20T21:05:59.318Z'
+        });
+
+        const read = await honestFake.readAuthorization({ authorizationId });
+
+        expect(read.snapshot.firstChargeAt).toBe('2026-11-20T21:05:59.000Z');
     });
 });
 

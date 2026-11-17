@@ -161,7 +161,7 @@ export class DomainEventModel {
     }
 
     /**
-     * Reads every event of one entity, oldest first.
+     * Reads every event of one entity, oldest first; ties by write order (`seq`).
      *
      * @param input - Entity type and id.
      * @returns The entity's events.
@@ -179,7 +179,7 @@ export class DomainEventModel {
                         eq(domainEvent.entityId, input.entityId)
                     )
                 )
-                .orderBy(asc(domainEvent.occurredAt));
+                .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
             this.logOk('findByEntity', logContext, rows);
             return rows;
         } catch (error) {
@@ -188,7 +188,7 @@ export class DomainEventModel {
     }
 
     /**
-     * Reads every event of one correlation, oldest first: the chain of one
+     * Reads every event of one correlation, oldest first; ties by write order (`seq`): the chain of one
      * business intention (NUCLEO/08 §2).
      *
      * @param input - Correlation id.
@@ -204,7 +204,7 @@ export class DomainEventModel {
                 .select()
                 .from(domainEvent)
                 .where(eq(domainEvent.correlationId, input.correlationId))
-                .orderBy(asc(domainEvent.occurredAt));
+                .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
             this.logOk('findByCorrelationId', logContext, rows);
             return rows;
         } catch (error) {

@@ -248,6 +248,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(preview.rows[0]?.currentAmount).toBe(249000);
             expect(preview.rows[0]?.newAmount).toBe(349000);
             expect(preview.rows[0]?.losesPromo).toBe(false);
+            expect(preview.rows[0]?.keepsPromo).toBe(true);
             const [mail] = await getServiceTestDb()
                 .select({ payload: emailOutbox.payload })
                 .from(emailOutbox)

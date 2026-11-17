@@ -4187,6 +4187,14 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/public/partner-claims/lookup"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/public/partner-claims/signup"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/public/partner-logo-clicks"
         },
         {

@@ -58,6 +58,8 @@ The preview and action report the following twelve reasons (source: `apps/api/do
 
 ## 6. Getting the money out (cutover state)
 
+For a provider rejection, inspect the sanitized reason in `idempotency_key.result` for the key `refund:<refund-id>:N` (`operation = 'REFUND_CREATE'`). The same details are logged as `Provider rejected refund`.
+
 RF2/RF3 (confirming and executing through the provider) belong to B6 and do not exist yet (`packages/service-core/src/services/billing/refund/refund-machine.ts:29-41`). First refund the payment manually from the Mercado Pago panel.
 
 ### Record it from the revocation result (panel)

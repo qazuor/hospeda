@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-card';
 import { formatSelfCancelDate, parseCancellationPreview } from '@/lib/billing/self-cancel';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './SubscriptionCancel.module.css';
@@ -60,6 +61,7 @@ export function PausedCancel({
             }
             setOutcome(result.data.outcome);
             setState('done');
+            scheduleSubscriptionRefresh({});
         } catch {
             setState('error');
         }

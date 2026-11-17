@@ -51,8 +51,9 @@ describe('billing signup outbox renderers', () => {
             row: row({ template: 'billing.attempt-replaced-cancel', payload: { subscriptionId } })
         });
         const html = renderToStaticMarkup(result.react);
-        expect(result.subject).toBe('Reemplazamos tu intento de alta de suscripción anterior');
-        expect(html).toContain('Reemplazamos tu intento de alta de suscripción anterior');
+        expect(result.subject).toBe('Reemplazamos tu intento anterior');
+        expect(html).toContain('Reemplazamos tu intento anterior');
+        expect(html).toContain('Volviste a empezar el alta o el cambio de plan');
         expect(html).toContain('Si Mercado Pago te avisa esa cancelación, es por esto.');
         expect(html).toContain('Ese intento no te cobró nada.');
         expect(() =>

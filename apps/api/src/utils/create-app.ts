@@ -4,6 +4,7 @@ import { requestId } from 'hono/request-id';
 import { actorMiddleware } from '../middlewares/actor';
 import { authMiddleware } from '../middlewares/auth';
 import { bodyLimitMiddleware } from '../middlewares/body-limit';
+import { serveBrandIcon } from '../middlewares/brand-icon';
 import { cacheMiddleware } from '../middlewares/cache';
 import { compressionMiddleware } from '../middlewares/compression';
 import { corsMiddleware } from '../middlewares/cors';
@@ -46,18 +47,6 @@ const lazyMockAuthMiddleware: MiddlewareHandler<AppBindings> = async (c, next) =
         await next();
     }
 };
-
-// Strongly typed middleware functions
-const serveEmojiFavicon =
-    (emoji: string): MiddlewareHandler<AppBindings> =>
-    async (c, next) => {
-        if (c.req.path === '/favicon.ico') {
-            return new Response(emoji, {
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' }
-            });
-        }
-        await next();
-    };
 
 const notFound = async (c: Context<AppBindings>) => {
     return c.json(
@@ -134,7 +123,7 @@ export function createApp() {
         // and before auth: visitor grouping applies to anonymous requests too,
         // and is independent of whether auth later resolves a real user.
         .use(wrapMiddleware(visitorIdMiddleware()))
-        .use(serveEmojiFavicon('📝'))
+        .use(serveBrandIcon())
         .use(wrapMiddleware(sentryMiddleware()))
         .use(wrapMiddleware(loggerMiddleware))
 
@@ -197,7 +186,7 @@ export function createDocApp() {
     app.use(wrapMiddleware(requestId()));
     // Establish per-request AsyncLocalStorage scope immediately after requestId.
     app.use(wrapMiddleware(requestContextMiddleware()));
-    app.use(serveEmojiFavicon('📝'));
+    app.use(serveBrandIcon());
     app.use(wrapMiddleware(loggerMiddleware)); // Needed for request logging
     app.use(wrapMiddleware(corsMiddleware())); // Needed for cross-origin requests and assets
     app.use(wrapMiddleware(compressionMiddleware())); // Helps with large documentation assets

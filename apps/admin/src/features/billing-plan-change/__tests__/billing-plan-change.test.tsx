@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import es from '@repo/i18n/locales/es/admin-billing.json';
+import billingEs from '@repo/i18n/locales/es/billing.json';
 import { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRedirect } from '@tanstack/react-router';
@@ -19,8 +20,11 @@ vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
         locale: 'es',
         t: (key: string, params?: Record<string, unknown>) => {
-            let value: unknown = es;
-            for (const segment of key.replace('admin-billing.', '').split('.'))
+            let value: unknown = key.startsWith('billing.') ? billingEs : es;
+            const translationKey = key.startsWith('billing.')
+                ? key.replace('billing.', '')
+                : key.replace('admin-billing.', '');
+            for (const segment of translationKey.split('.'))
                 value =
                     typeof value === 'object' && value !== null
                         ? (value as Record<string, unknown>)[segment]
@@ -41,19 +45,34 @@ const inspection = {
     status: 'ACTIVE',
     billingOptionId: currentId,
     subject: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', displayName: 'Cliente Uno' },
-    currentPlan: { planName: 'Plan Base', cycle: 'monthly' }
+    currentPlan: { planName: 'Professional', planSlug: 'owner-pro', cycle: 'monthly' }
 };
-const option = (billingOptionId: string, planName: string, current: boolean) => ({
+const option = (
+    billingOptionId: string,
+    planName: string,
+    current: boolean,
+    planSlug = 'owner-pro',
+    amountMinor = 10000,
+    direction: 'UP' | 'DOWN' = 'DOWN'
+) => ({
     billingOptionId,
     planId: crypto.randomUUID(),
     planVersionId: crypto.randomUUID(),
     planName,
+    planSlug,
     cycle: 'monthly',
-    amountMinor: 10000,
+    amountMinor,
     currency: 'ARS',
-    current
+    current,
+    direction: current ? 'NONE' : direction
 });
-function setup(result: object, optionsError?: Error) {
+function setup(
+    result: object,
+    optionsError?: Error,
+    targetDirection: 'UP' | 'DOWN' = 'DOWN',
+    inspectionOverride: object = inspection,
+    nextChargeAt: string | null = '2026-12-01T03:00:00.000Z'
+) {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
         if (method === 'POST') return Promise.resolve({ data: { data: result } });
         if (path === planChangeOptionsPath(id) && optionsError) return Promise.reject(optionsError);
@@ -63,14 +82,17 @@ function setup(result: object, optionsError?: Error) {
                     data: {
                         subscriptionId: id,
                         vertical: 'accommodation',
+                        nextChargeAt,
+
+                        currentCycle: 'monthly',
                         options: [
-                            option(currentId, 'Plan Base', true),
-                            option(targetId, 'Plan Plus', false)
+                            option(currentId, 'Professional', true, 'owner-pro'),
+                            option(targetId, 'Basic', false, 'owner-basico', 20000, targetDirection)
                         ]
                     }
                 }
             });
-        return Promise.resolve({ data: { data: inspection } });
+        return Promise.resolve({ data: { data: inspectionOverride } });
     });
     render(
         <QueryClientProvider
@@ -85,7 +107,7 @@ beforeEach(() => {
     permissions = [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN];
 });
 describe('ACC_10 admin plan change screen', () => {
-    it('omits the current option and confirms customer, plans, path and body', async () => {
+    it('translates plans and cycle and previews date and next charge before confirming', async () => {
         setup({
             outcome: 'SUCCESSION',
             checkoutUrl: 'https://example.test/checkout',
@@ -96,6 +118,14 @@ describe('ACC_10 admin plan change screen', () => {
         const select = screen.getByLabelText(
             es.subscriptionPlanChange.destination
         ) as HTMLSelectElement;
+        expect(
+            screen.getByText(es.subscriptionPlanChange.current.replace('{plan}', 'Profesional'))
+        ).toBeTruthy();
+        expect(screen.getByTestId('billing-plan-change-screen').textContent).not.toContain(
+            'Professional'
+        );
+        expect(select.textContent).toContain('Básico · Mensual');
+        expect(select.textContent).not.toContain('Basic');
         expect(select.options).toHaveLength(2);
         expect(Array.from(select.options, (option) => option.value)).toEqual(['', targetId]);
         fireEvent.change(select, { target: { value: targetId } });
@@ -104,7 +134,16 @@ describe('ACC_10 admin plan change screen', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
         expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
-            'Cliente Uno: de Plan Base a Plan Plus'
+            'Cliente Uno: de Profesional a Básico'
+        );
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            '01/12/2026'
+        );
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            'Próximo cobro:'
+        );
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            new Intl.NumberFormat('es', { style: 'currency', currency: 'ARS' }).format(200)
         );
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
         await waitFor(() =>
@@ -133,6 +172,48 @@ describe('ACC_10 admin plan change screen', () => {
             expect(writeText).toHaveBeenCalledWith('https://example.test/checkout')
         );
         expect(screen.getByTestId('billing-plan-change-SUCCESSION').textContent).toContain('4');
+    });
+
+    it('shows when a plan change needs a new checkout', async () => {
+        setup(
+            { outcome: 'SUCCESSION', checkoutUrl: 'https://example.test/checkout' },
+            undefined,
+            'UP'
+        );
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            es.subscriptionPlanChange.previewNeedsCheckout
+        );
+    });
+    it('keeps the end-of-cycle message when the next charge date is unknown', async () => {
+        setup(
+            {
+                outcome: 'DOWNGRADE',
+                effectiveAt: null,
+                amountMinor: 0,
+                surplus: { applicable: false }
+            },
+            undefined,
+            'DOWN',
+            inspection,
+            null
+        );
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        const confirmation =
+            screen.getByTestId('billing-plan-change-confirmation').textContent ?? '';
+        // A same-cycle downgrade is always applied at the end of the cycle, even when the
+        // subscription exposes no next charge date: it never requires a new checkout.
+        expect(confirmation).toContain('cierre del ciclo actual');
+        expect(confirmation).not.toContain(es.subscriptionPlanChange.previewNeedsCheckout);
+        expect(confirmation).toContain('Próximo cobro:');
     });
     it.each([
         [
@@ -207,6 +288,31 @@ describe('ACC_10 admin plan change screen', () => {
             error = caught;
         }
         expect(isRedirect(error)).toBe(true);
+    });
+    it('does not submit a plan change when the subscription is no longer ACTIVE', async () => {
+        const mutableInspection = {
+            status: 'ACTIVE',
+            billingOptionId: currentId,
+            subject: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', displayName: 'Cliente Uno' },
+            currentPlan: { planName: 'Professional', planSlug: 'owner-pro', cycle: 'monthly' }
+        };
+        setup({ outcome: 'REGRET', amountMinor: 0 }, undefined, 'DOWN', mutableInspection);
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        expect(screen.getByTestId('billing-plan-change-confirmation')).toBeTruthy();
+        // The subscription leaves ACTIVE after the preview rendered but before the
+        // operator confirms: the submit guard must read the current status and stop.
+        mutableInspection.status = 'PAST_DUE';
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(
+            fetchApi.mock.calls.filter(
+                ([input]) => (input as { method?: string }).method === 'POST'
+            )
+        ).toHaveLength(0);
     });
 });
 

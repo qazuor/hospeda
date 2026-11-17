@@ -180,11 +180,13 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         await expect(confirmation.locator('p').nth(1)).toHaveText(
             'Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.'
         );
-        await expect(confirmation.locator('p').nth(2)).toHaveText(
-            'Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:'
-        );
+        await expect(
+            confirmation.getByText('Los addons recurrentes de esta vertical', { exact: false })
+        ).toHaveCount(0);
         await confirmation.getByRole('button', { name: 'Confirmar pausa' }).click();
+        const pausedReloaded = page.waitForEvent('load', { timeout: 15_000 });
         await expect(article.getByRole('status')).toBeVisible();
+        const pauseStatusText = await article.getByRole('status').textContent();
         const rows = await execSQL<{ status: string; expected_end_at: Date }>(
             'SELECT s.status, sp.expected_end_at FROM subscription s JOIN subscription_pause sp ON sp.subscription_id = s.id WHERE s.id = $1',
             [subscriptionId]
@@ -193,9 +195,11 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         expect(confirmationText).toBe(
             `Si confirmás, tu suscripción queda pausada hasta el ${formatMarketDate(rows[0]!.expected_end_at)}.`
         );
-        await expect(article.getByRole('status')).toHaveText(
+        expect(pauseStatusText).toBe(
             `Tu suscripción quedó pausada hasta el ${formatMarketDate(rows[0]!.expected_end_at)}.`
         );
+        await pausedReloaded;
+        await expect(article.getByText('Pausada', { exact: true })).toBeVisible();
     });
 
     test('a paused customer sees only the next charge and amount on resume, and why plan change is blocked', async ({
@@ -215,7 +219,9 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
             'Tu suscripción se reanuda hoy y te mostramos el día del próximo cobro.Confirmar reanudación'
         );
         await article.getByRole('button', { name: 'Confirmar reanudación' }).click();
+        const resumedReloaded = page.waitForEvent('load', { timeout: 15_000 });
         await expect(article.getByTestId('resume-result')).toBeVisible();
+        const resumeText = await article.getByTestId('resume-result').textContent();
         const response = await execSQL<{ status: string; next_charge_at: Date | null }>(
             'SELECT status, next_charge_at FROM subscription WHERE id = $1',
             [subscriptionId]
@@ -234,9 +240,9 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0
         }).format(Number(charge[0].amount) / 100);
-        await expect(article.getByTestId('resume-result')).toHaveText(
-            `Te vamos a cobrar el ${formatMarketDate(chargeAt)}: ${amount}.`
-        );
+        expect(resumeText).toBe(`Te vamos a cobrar el ${formatMarketDate(chargeAt)}: ${amount}.`);
+        await resumedReloaded;
+        await expect(article.getByText('Activa', { exact: true })).toBeVisible();
     });
 
     test('grace states the payment remedy and does not offer a plan-change control', async ({

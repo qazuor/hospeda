@@ -15,6 +15,7 @@ const listingId = '2f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
 const instanceId = '3f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11';
 const item = {
     addonInstanceId: instanceId,
+    slug: 'destaque-alfa',
     name: 'Destaque Alfa',
     chargeKind: 'PERIODICO',
     cycle: 'monthly',
@@ -133,4 +134,28 @@ describe('TEST:B13b:1 AC:B13b:1 — la baja ofrecida cancela el destaque recurre
         ).toBeInTheDocument();
         expect(screen.queryAllByTestId(/^recurring-addon-/)).toHaveLength(0);
     });
+});
+
+it('shows the Spanish localized addon name rather than its catalog name', async () => {
+    listRecurringAddons.mockResolvedValue({
+        ok: true,
+        data: {
+            items: [
+                {
+                    ...item,
+                    slug: 'extra-experiences-1',
+                    name: 'Extra Experience Listing (+1)'
+                }
+            ]
+        }
+    });
+    render(
+        <RecurringAddonWithdrawal
+            locale="es"
+            listingId={listingId}
+        />
+    );
+
+    expect(await screen.findByText('Ficha extra de experiencia (+1)')).toBeInTheDocument();
+    expect(screen.queryByText('Extra Experience Listing (+1)')).toBeNull();
 });

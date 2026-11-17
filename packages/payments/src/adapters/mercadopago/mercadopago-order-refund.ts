@@ -3,7 +3,7 @@ import type { PaymentCapability } from '../../provider/capabilities';
 import { PaymentProviderError } from '../../provider/errors';
 import type { OrderRefundInput, OrderRefundResult } from '../../provider/payment-provider';
 import type { MercadoPagoSend } from './mercadopago-http';
-import { parseResponse } from './mercadopago-http';
+import { parseResponse, refundErrorCause, sanitizeMercadoPagoErrorBody } from './mercadopago-http';
 import { nullAsAbsent } from './mercadopago-null-as-absent';
 
 const RefundAmountSchema = z
@@ -71,6 +71,7 @@ export async function refundMercadoPagoOrder(
         headers: { 'X-Idempotency-Key': input.reference }
     });
     if (!response.ok) {
+        const body = sanitizeMercadoPagoErrorBody(await refundErrorCause(response));
         const code =
             response.status === 404
                 ? 'NOT_FOUND'
@@ -81,6 +82,7 @@ export async function refundMercadoPagoOrder(
             code,
             capability: 'refund',
             message: `Mercado Pago order refund failed (${response.status})`,
+            cause: { status: response.status, body },
             ...(response.status === 409 ? { refundRefusal: 'KEY_REUSED' as const } : {})
         });
     }

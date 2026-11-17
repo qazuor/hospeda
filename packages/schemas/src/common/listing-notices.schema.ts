@@ -110,6 +110,8 @@ export type ListingNoticeKind = ListingNotice['kind'];
 /** One listing of the owner with its notices. */
 export const ListingNoticesItemSchema = z.object({
     listingId: z.string().uuid(),
+    /** Canonical display name of the listing. */
+    name: z.string(),
     publicationStatus: z.nativeEnum(PublicationStatusEnum),
     /**
      * How many recurring add-ons (`ADDON`, scope `LISTING`, `until` with no known

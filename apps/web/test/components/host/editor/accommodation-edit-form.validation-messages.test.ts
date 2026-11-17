@@ -150,7 +150,11 @@ describe('AccommodationEditor edit-form validation messages — sibling numeric 
                 field: 'latitude',
                 locale
             });
-            expect(message).toBe('La latitud no puede superar los 90');
+            expect(message).toBe(
+                locale === 'en'
+                    ? 'The latitude cannot exceed 90'
+                    : 'A latitude não pode ultrapassar 90'
+            );
         });
 
         it(`renders the longitude.max error without a locale marker in ${locale}`, () => {
@@ -159,7 +163,11 @@ describe('AccommodationEditor edit-form validation messages — sibling numeric 
                 field: 'longitude',
                 locale
             });
-            expect(message).toBe('La longitud no puede superar los 180');
+            expect(message).toBe(
+                locale === 'en'
+                    ? 'The longitude cannot exceed 180'
+                    : 'A longitude não pode ultrapassar 180'
+            );
         });
     }
 });

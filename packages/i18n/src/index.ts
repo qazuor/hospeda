@@ -46,6 +46,8 @@ export { matchAcceptLanguage, resolveDisplayLocale } from './locale-resolution';
 export { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
 // Pluralization utilities
 export { pluralize } from './pluralization';
+// Render-time labels for the AI chat PII redaction markers (HOS-2320)
+export { localizeRedactionTokens } from './redaction-labels';
 // TypeScript types for translation keys
 export type { TranslationKey, TranslationKeys } from './types';
 // Validation utilities

@@ -86,7 +86,11 @@ export function PlanMigrationPreviewTable({ preview }: { readonly preview: PlanM
                                     {amount({ cents: row.newAmount, currency: row.currency })}
                                 </td>
                                 <td className="p-2">
-                                    {row.losesPromo ? tr('losesPromo') : tr('notAvailable')}
+                                    {row.losesPromo
+                                        ? tr('losesPromo')
+                                        : row.keepsPromo
+                                          ? tr('keepsPromo')
+                                          : tr('notAvailable')}
                                 </td>
                                 <td
                                     className="p-2"

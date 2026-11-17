@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     getLocalDateString,
     getLocalDayWindow,
+    getUtcInstantForLocalEndOfDay,
     getUtcInstantForLocalMidnight,
     MARKET_TIMEZONE
 } from '../src/local-day';
@@ -104,6 +105,27 @@ describe.each(PROCESS_ZONES)('getUtcInstantForLocalMidnight under process TZ=%s'
 
     it('throws on a malformed date string', () => {
         expect(() => getUtcInstantForLocalMidnight({ date: '2026-9-4' })).toThrow();
+    });
+});
+
+describe.each(PROCESS_ZONES)('getUtcInstantForLocalEndOfDay under process TZ=%s', (zone) => {
+    beforeEach(() => {
+        vi.stubEnv('TZ', zone);
+    });
+
+    it('returns the last millisecond of the Argentina local day', () => {
+        expect(getUtcInstantForLocalEndOfDay({ date: '2026-06-30' }).toISOString()).toBe(
+            '2026-07-01T02:59:59.999Z'
+        );
+    });
+
+    it('handles year end and leap day', () => {
+        expect(getUtcInstantForLocalEndOfDay({ date: '2026-12-31' }).toISOString()).toBe(
+            '2027-01-01T02:59:59.999Z'
+        );
+        expect(getUtcInstantForLocalEndOfDay({ date: '2024-02-29' }).toISOString()).toBe(
+            '2024-03-01T02:59:59.999Z'
+        );
     });
 });
 

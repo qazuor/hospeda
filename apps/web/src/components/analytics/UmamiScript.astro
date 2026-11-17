@@ -36,6 +36,15 @@
  * `csp-soft-nav-hashes` build integration like every other processed script.
  * It does nothing on a page without the tracker element.
  *
+ * Optional `awaitIdentity` prop (HOS-2119, OQ-5): rendered as
+ * `<meta name="umami-await-identity">`. It declares that the page mounts an
+ * auth-aware island (UserMenu) that settles the visitor identity, so the
+ * pageview script holds the document's FIRST pageview until the identify went
+ * out or the visitor is known to be a guest (bounded by a timeout), see
+ * `src/lib/analytics/umami-pageview.ts`. BaseLayout sets it; StandaloneLayout
+ * has no UserMenu and leaves it off, so its pageview is never held. It is the
+ * same for every visitor, so pages stay session-blind.
+ *
  * Env (both public by design, baked at build time):
  * - `PUBLIC_UMAMI_SCRIPT_URL`: full URL of the (renamed) tracker script.
  * - `PUBLIC_UMAMI_WEBSITE_ID`: Umami website id (UUID).
@@ -44,9 +53,11 @@
 interface Props {
 	/** Entity id to tag pageviews with. Omitted on every non-detail page. */
 	readonly tag?: string;
+	/** Whether the layout mounts UserMenu, which settles the visitor identity. */
+	readonly awaitIdentity?: boolean;
 }
 
-const { tag } = Astro.props;
+const { tag, awaitIdentity = false } = Astro.props;
 
 /** Umami's tag limit. */
 const UMAMI_TAG_MAX_LENGTH = 50;
@@ -65,6 +76,7 @@ const shouldRender = Boolean(scriptUrl && websiteId);
 	<script defer src={scriptUrl} data-website-id={websiteId} data-auto-pageview="false" />
 )}
 {shouldRender && validTag && <meta name="umami-tag" content={validTag} />}
+{shouldRender && awaitIdentity && <meta name="umami-await-identity" content="true" />}
 
 <script>
 	import { startUmamiPageviews } from '@/lib/analytics/umami-pageview';

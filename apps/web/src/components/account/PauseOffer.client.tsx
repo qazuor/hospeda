@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 import { parsePausePreview, pauseDate } from '@/lib/billing/pause-offer';
+import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-card';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './PlanChangeOffer.module.css';
 
@@ -54,6 +55,7 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
             }
             setEndAt(result.data.expectedEndAt);
             setState('done');
+            scheduleSubscriptionRefresh({});
         } catch {
             setState('error');
         }
@@ -138,10 +140,14 @@ export function PauseOffer({ subscriptionId, locale }: PauseOfferProps) {
                                 })}
                             </p>
                             <p>{t('account.subscription.mine.pause.listing')}</p>
-                            <p>{t('account.subscription.mine.pause.addonsVertical')}</p>
-                            {preview.addons.vertical.map((name) => (
-                                <p key={name}>{name}</p>
-                            ))}
+                            {preview.addons.vertical.length > 0 && (
+                                <>
+                                    <p>{t('account.subscription.mine.pause.addonsVertical')}</p>
+                                    {preview.addons.vertical.map((name) => (
+                                        <p key={name}>{name}</p>
+                                    ))}
+                                </>
+                            )}
                             {preview.addons.account.map((addon) => (
                                 <p key={addon.name}>
                                     {t(

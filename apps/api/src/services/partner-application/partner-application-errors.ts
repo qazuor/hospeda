@@ -27,6 +27,9 @@ export const PARTNER_ALREADY_CLAIMED = 'PARTNER_ALREADY_CLAIMED' as const;
 /** Conflict reason when the claimant already owns a different Partner. */
 export const PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS = 'PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS' as const;
 
+/** Conflict reason when a claim signup token belongs to an existing account. */
+export const PARTNER_CLAIM_ACCOUNT_EXISTS = 'PARTNER_CLAIM_ACCOUNT_EXISTS' as const;
+
 /**
  * Forbidden reason when the claimant's email differs from the Partner's claim mailbox
  * (HOS-2222). The source is the stored `partners.claim_email`, written with every claim

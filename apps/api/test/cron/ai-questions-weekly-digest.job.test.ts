@@ -171,6 +171,26 @@ describe('runAiQuestionsWeeklyDigest', () => {
         ]);
     });
 
+    it.each([
+        ['es', '[teléfono oculto]', '[email oculto]'],
+        ['en', '[phone hidden]', '[email hidden]'],
+        ['pt', '[telefone oculto]', '[e-mail oculto]']
+    ] as const)('shows %s labels instead of the raw redaction markers (HOS-2320)', async (locale, phoneLabel, emailLabel) => {
+        // Arrange
+        const deps = buildDeps({
+            rows: [row({ question: 'Call [REDACTED_PHONE] or [REDACTED_EMAIL]' })],
+            settings: { languageWeb: locale }
+        });
+
+        // Act
+        await runAiQuestionsWeeklyDigest({ now: NOW, deps });
+
+        // Assert
+        const questions = deps.send.mock.calls[0]?.[0].listings[0].questions;
+        expect(questions).toEqual([`Call ${phoneLabel} or ${emailLabel}`]);
+        expect(JSON.stringify(questions)).not.toContain('REDACTED');
+    });
+
     it('sends nothing on a manual re-run later in the same week (Tuesday)', async () => {
         // Arrange: a log that remembers what was sent, keyed like production.
         const sentKeys = new Set<string>();

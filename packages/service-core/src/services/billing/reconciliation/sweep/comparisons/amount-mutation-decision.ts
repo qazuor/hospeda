@@ -83,7 +83,7 @@ export function createRecordedAmountMutationDecisions(): AmountMutationDecisions
                         eq(domainEvent.eventType, 'subscription.amount_mutation_decided')
                     )
                 )
-                .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id))
+                .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.seq))
                 .limit(1);
             if (!row) return null;
             const transition = z.enum(TRANSITIONS).safeParse(row.transition);

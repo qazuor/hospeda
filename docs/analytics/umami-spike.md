@@ -81,23 +81,32 @@ token as the tracker sends it, `/api/batch` for the server side; sessions read f
 
 Conclusions:
 
-- In the web's normal flow (anonymous pageview first, identify later) the browser stays in
-  the **anonymous fingerprint session**, which Umami stamps with the distinct id. A server
-  event joins it only **without** `payload.id`. Adding `payload.id` on the server splits it
-  into a new session (one extra visitor per user), the opposite of the goal.
-- `payload.id` joins only when the browser document's first request already carried the id.
-  An identify sent before the pageview's response has no cache token, so it opens
-  `uuid(…, id)` on its own, and a later hard reload returns to the anonymous session. The web
-  client closes this race (owner decision, 2026-11-16): `identifyUser` waits, bounded, until
-  `umami-pageview.ts` saw this document's pageview answered AND the tracker holds the token
-  (`getSession().cache`); otherwise it sends no identify. The admin follows the same rule by
-  polling `getSession().cache`.
-- **Re-check on every Umami upgrade.** The identify ordering, web and admin, depends on two
-  details of the 3.5.0 tracker that are not a documented API: `umami.track()` returns the
-  promise of its `send()` (the web awaits it to know the pageview was answered), and
-  `umami.getSession()` exists and exposes the cache token as `cache` (read by
-  `hasUmamiCacheToken` in `@repo/analytics`). If either changes, no identify is sent at all
-  (fail-closed, never a split session), and logged-in visits silently stop being identified.
+- **Revised 2026-11-17 (owner, after staging smoke: claimed fingerprint session leaked across
+  accounts).** Claiming the anonymous fingerprint session (identify WITH the cache token, the
+  2026-11-16 design) leaks it: every later visitor on the same device/IP keeps landing in the
+  first user's session until Umami rotates its salt. The design is now: the browser identify
+  must be the document's FIRST request (no cache token), which opens `uuid(…, id)`, and server
+  events with a real user id AND the visitor's IP + User-Agent send `payload.id = id`, landing
+  in the same session (probe rows "identify(Y) is the document's FIRST request" above). A user
+  event without a visitor (webhooks, crons) keeps the synthetic identity and only `data.user_id`
+  (an `id` would open a stray per-user session from the api's IP + UA). Anonymous, guest and
+  system server events send no `payload.id`. The web and admin therefore send the identify as soon as the tracker is
+  present and SKIP it (never delay it) when `getSession().cache` already holds a token, read
+  with `hasUmamiCacheToken` in `@repo/analytics`.
+- **The first-pageview race is closed (2026-11-17, owner option 1).** Any answered request hands
+  the tracker the token, and the first pageview used to win: on the web it fires on
+  `astro:page-load` before the UserMenu island resolves the session, and the admin used the
+  tracker's auto pageview. The identify was then skipped and the logged-in visitor stayed
+  anonymous in the browser. Now the first pageview of a document waits until the identity
+  settles: web `umami-identity-gate.ts` (identify sent or skipped, guest declared via
+  `markVisitorAnonymous` once `/auth/me` answered, only on BaseLayout pages and with analytics
+  consent), admin `trackPageview` driven by `UmamiPageviews` on the router with
+  `data-auto-pageview="false"` (under `/_authed`, released by `AuthProvider`). Both fall back
+  to an anonymous pageview after 3000 ms; the token guard still applies to a late identify.
+- **Re-check on every Umami upgrade.** The identify ordering, web and admin, depends on a detail
+  of the 3.5.0 tracker that is not a documented API: `umami.getSession()` exists and exposes the
+  cache token as `cache`. If it changes, no identify is sent at all (fail-closed, never a
+  claimed session), and logged-in visits silently stop being identified.
 - The server-created session row does carry `distinct_id`, but no `session_link` row is
   written for it (only identify writes one).
 
@@ -192,6 +201,8 @@ T-005 notes. Locate them there, not here.
 - ~~Owner re-decision on the server distinct id~~. Decided 2026-11-16: server events never send
   `payload.id` (it splits the session in the web's flow, and the api cannot see the host-only
   `cookie-consent` cookie); the web identifies strictly after the pageview ack (spec OQ-5).
+  Superseded 2026-11-17: server events of a real user send `payload.id`, and the identify
+  precedes the first pageview (see Conclusions).
 
 - Ad-block check with a real browser (AC-12 smoke).
 - CSP entries for the subdomain (T-028/T-029).
