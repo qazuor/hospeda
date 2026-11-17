@@ -26,15 +26,29 @@ const DECLARATIONS = /(?:\.d\.ts|\.test\.[jt]sx?$)/;
 function lineOf(node: ts.Node, sf: ts.SourceFile): number {
     return sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1;
 }
-function businessLineType(type: ts.Type, checker: ts.TypeChecker): boolean {
+/**
+ * Whether `type` is, or structurally contains (through unions, intersections,
+ * arrays and tuples), a `BusinessLine` / `BusinessLineValue`.
+ *
+ * `seen` breaks cycles: a recursive alias such as
+ * `type Json = string | Json[]` would otherwise recurse forever and crash the
+ * guard with a RangeError (it hit `CanonicalJsonValue` in HOS-2335).
+ */
+function businessLineType(
+    type: ts.Type,
+    checker: ts.TypeChecker,
+    seen: Set<ts.Type> = new Set()
+): boolean {
+    if (seen.has(type)) return false;
+    seen.add(type);
     const symbol = type.aliasSymbol ?? type.getSymbol();
     if (symbol?.getName() === 'BusinessLine' || symbol?.getName() === 'BusinessLineValue')
         return true;
     if (type.isUnionOrIntersection())
-        return type.types.some((part) => businessLineType(part, checker));
+        return type.types.some((part) => businessLineType(part, checker, seen));
     if (checker.isArrayType(type) || checker.isTupleType(type)) {
         const element = checker.getTypeArguments(type as ts.TypeReference)[0];
-        return !!element && businessLineType(element, checker);
+        return !!element && businessLineType(element, checker, seen);
     }
     return false;
 }

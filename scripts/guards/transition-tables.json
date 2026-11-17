@@ -1041,13 +1041,30 @@
             "writes": ["subscription.status", "domain_event.changes"]
         },
         {
+            "id": "TRANS:B:P0",
+            "machine": "payment",
+            "from": ["*NO_ROW"],
+            "events": ["payment_fact_recorded"],
+            "to": ["PENDING"],
+            "guard": {},
+            "reads": [],
+            "inputs": ["provider:payment_fact"],
+            "writes": ["payment.status", "payment.amount", "payment.subscription_id"]
+        },
+        {
             "id": "TRANS:B:P1",
             "machine": "payment",
             "from": ["PENDING"],
             "events": ["provider_payment_credited"],
             "to": ["SUCCEEDED"],
             "guard": {},
-            "reads": ["payment.status", "payment.refunded_amount"],
+            "reads": [
+                "payment.status",
+                "payment.refunded_amount",
+                "payment.amount",
+                "payment.subscription_id",
+                "payment.addon_instance_id"
+            ],
             "inputs": ["provider:payment_fact"],
             "writes": [
                 "payment.status",
@@ -1077,7 +1094,7 @@
             "events": ["full_refund"],
             "to": ["REFUNDED"],
             "guard": {},
-            "reads": ["payment.status", "payment.refunded_amount"],
+            "reads": ["payment.status", "payment.refunded_amount", "payment.amount"],
             "inputs": ["provider:refund_fact"],
             "writes": ["payment.status", "domain_event.changes"]
         },
@@ -1088,7 +1105,7 @@
             "events": ["partial_refund"],
             "to": ["PARTIALLY_REFUNDED"],
             "guard": {},
-            "reads": ["payment.status", "payment.refunded_amount"],
+            "reads": ["payment.status", "payment.refunded_amount", "payment.amount"],
             "inputs": ["provider:refund_fact"],
             "writes": ["payment.status", "domain_event.changes"]
         },
@@ -1099,7 +1116,7 @@
             "events": ["additional_partial_refund"],
             "to": ["PARTIALLY_REFUNDED", "REFUNDED"],
             "guard": {},
-            "reads": ["payment.status", "payment.refunded_amount"],
+            "reads": ["payment.status", "payment.refunded_amount", "payment.amount"],
             "inputs": ["provider:refund_fact"],
             "writes": ["payment.status", "domain_event.changes", "payment.refunded_amount"]
         },
@@ -1349,7 +1366,8 @@
                 "addon_instance.addon_version_id",
                 "addon_instance.owner_id",
                 "addon_instance.target_id",
-                "addon_instance.order_request_id"
+                "addon_instance.order_request_id",
+                "addon_instance.complement_subscription_id"
             ]
         },
         {
@@ -1384,7 +1402,13 @@
             "guard": {},
             "reads": ["addon_instance.status", "addon_instance.provider_order_id"],
             "inputs": ["provider:read_by_id", "contract:order_idempotency"],
-            "writes": ["addon_instance.status", "domain_event.changes"]
+            "writes": [
+                "addon_instance.status",
+                "domain_event.changes",
+                "addon_instance.ends_at",
+                "payment.addon_instance_id",
+                "payment.amount"
+            ]
         },
         {
             "id": "TRANS:B:A3",
@@ -1408,7 +1432,7 @@
             "events": ["addon_end_date_reached"],
             "to": ["EXPIRED"],
             "guard": {},
-            "reads": ["addon_instance.status"],
+            "reads": ["addon_instance.status", "addon_instance.ends_at"],
             "inputs": ["clock:now"],
             "writes": ["addon_instance.status", "domain_event.changes"]
         },
@@ -1423,7 +1447,8 @@
                 "addon_instance.status",
                 "addon_instance.target_id",
                 "addon_instance.owner_id",
-                "addon_instance.product_id"
+                "addon_instance.product_id",
+                "addon_instance.complement_subscription_id"
             ],
             "inputs": ["provider:read_by_id", "catalog:addon_orphan_rule"],
             "writes": ["addon_instance.status", "domain_event.changes"]
