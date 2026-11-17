@@ -3536,6 +3536,30 @@
             "min": "El slug debe tener al menos {{min}} caracteres"
         }
     },
+    "hostTradeCategory": {
+        "slug": {
+            "required": "Slug is required",
+            "min": "Slug must be at least {{min}} characters",
+            "max": "Slug must be at most {{max}} characters",
+            "pattern": "Slug may only contain lowercase letters, numbers and hyphens"
+        },
+        "nameI18n": {
+            "esRequired": "The Spanish name is required"
+        },
+        "displayWeight": {
+            "required": "Order is required",
+            "int": "Order must be a whole number",
+            "min": "Order must be at least {{min}}",
+            "max": "Order must be at most {{max}}"
+        },
+        "keywordsI18n": {
+            "required": "Related word is required",
+            "min": "Related word cannot be empty",
+            "max": "Each related word can be at most {{max}} characters",
+            "lowercase": "Related words must be lowercase",
+            "tooMany": "Up to {{max}} related words per language"
+        }
+    },
     "hostTradeReview": {
         "content": {
             "max": "The review cannot exceed {{max}} characters",

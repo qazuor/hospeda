@@ -3536,6 +3536,30 @@
             "min": "El slug debe tener al menos {{min}} caracteres"
         }
     },
+    "hostTradeCategory": {
+        "slug": {
+            "required": "El slug es obligatorio",
+            "min": "El slug debe tener al menos {{min}} caracteres",
+            "max": "El slug no puede superar los {{max}} caracteres",
+            "pattern": "El slug sólo admite minúsculas, números y guiones"
+        },
+        "nameI18n": {
+            "esRequired": "El nombre en español es obligatorio"
+        },
+        "displayWeight": {
+            "required": "El orden es obligatorio",
+            "int": "El orden debe ser un número entero",
+            "min": "El orden debe ser al menos {{min}}",
+            "max": "El orden no puede superar {{max}}"
+        },
+        "keywordsI18n": {
+            "required": "La palabra relacionada es obligatoria",
+            "min": "La palabra relacionada no puede estar vacía",
+            "max": "Cada palabra relacionada puede tener hasta {{max}} caracteres",
+            "lowercase": "Las palabras relacionadas van en minúsculas",
+            "tooMany": "Puede haber hasta {{max}} palabras relacionadas por idioma"
+        }
+    },
     "hostTradeReview": {
         "content": {
             "max": "El comentario no puede superar los {{max}} caracteres",
