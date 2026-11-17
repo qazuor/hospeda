@@ -1049,12 +1049,7 @@
             "guard": {},
             "reads": [],
             "inputs": ["provider:payment_fact"],
-            "writes": [
-                "payment.status",
-                "payment.amount",
-                "payment.subscription_id",
-                "payment.addon_instance_id"
-            ]
+            "writes": ["payment.status", "payment.amount", "payment.subscription_id"]
         },
         {
             "id": "TRANS:B:P1",
@@ -1407,7 +1402,13 @@
             "guard": {},
             "reads": ["addon_instance.status", "addon_instance.provider_order_id"],
             "inputs": ["provider:read_by_id", "contract:order_idempotency"],
-            "writes": ["addon_instance.status", "domain_event.changes", "addon_instance.ends_at"]
+            "writes": [
+                "addon_instance.status",
+                "domain_event.changes",
+                "addon_instance.ends_at",
+                "payment.addon_instance_id",
+                "payment.amount"
+            ]
         },
         {
             "id": "TRANS:B:A3",
