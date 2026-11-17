@@ -5,8 +5,10 @@
  * depending on where the throw is caught (`handleRouteError` inside the route
  * factory, `createErrorHandler` as the global `onError`):
  *
- * - a response whose HTTP status is >= 500 carries the generic message, no
- *   `details` and no `reason` (the `code` is kept);
+ * - a response whose HTTP status is >= 500 carries the generic message and no
+ *   `details` (the `code` is kept). `reason` follows each formatter's existing
+ *   policy: `handleRouteError` keeps it (the web app branches on it for 503/502),
+ *   the global handler masks it;
  * - a response below 500 keeps its own message and details unchanged (HOS-700:
  *   the web app reads `details.limitKey` off `LIMIT_REACHED`);
  * - `HOSPEDA_API_DEBUG_ERRORS` lifts the masking.
@@ -105,13 +107,13 @@ const viaGlobalHandler = async (error: unknown) => {
  * built from the class it actually tests `instanceof` against.
  */
 const formatters = [
-    ['handleRouteError', async (e: unknown) => viaHandleRouteError(e), ServiceError],
-    ['createErrorHandler', viaGlobalHandler, GlobalHandlerServiceError]
+    ['handleRouteError', async (e: unknown) => viaHandleRouteError(e), ServiceError, true],
+    ['createErrorHandler', viaGlobalHandler, GlobalHandlerServiceError, false]
 ] as const;
 
 describe.each(
     formatters
-)('%s: 5xx never echoes internals (HOS-2296)', (_name, run, ServiceError) => {
+)('%s: 5xx never echoes internals (HOS-2296)', (_name, run, ServiceError, keepsReason) => {
     beforeEach(() => {
         vi.clearAllMocks();
         env.HOSPEDA_API_DEBUG_ERRORS = false;
@@ -125,7 +127,7 @@ describe.each(
         [ServiceErrorCode.PROVIDER_ERROR, 502],
         [ServiceErrorCode.PROVIDER_TIMEOUT, 504],
         [ServiceErrorCode.NOT_IMPLEMENTED, 501]
-    ])('%s (%i) answers the generic message with no details or reason', async (code, status) => {
+    ])('%s (%i) answers the generic message with no details', async (code, status) => {
         const error = new ServiceError(code, INTERNAL_MESSAGE, INTERNAL_DETAILS, 'SECRET_REASON');
 
         const result = await run(error);
@@ -134,8 +136,9 @@ describe.each(
         expect(result.error.code).toBe(code);
         expect(result.error.message).toBe(GENERIC);
         expect(result.error.details).toBeUndefined();
-        expect(result.error.reason).toBeUndefined();
+        expect(result.error.reason).toBe(keepsReason ? 'SECRET_REASON' : undefined);
         expect(JSON.stringify(result.error)).not.toContain('ECONNREFUSED');
+        expect(JSON.stringify(result.error)).not.toContain('select * from users');
     });
 
     it('answers the generic message for a ServiceError code with no mapping (defaults to 500)', async () => {

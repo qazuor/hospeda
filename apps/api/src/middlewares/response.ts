@@ -22,7 +22,7 @@ import { resolveErrorCodeForStatus } from '../utils/http-error-codes';
 import { resolveHttpStatusLogLevel } from '../utils/http-status-log-level';
 import { apiLogger } from '../utils/logger';
 import { RefinedBodyValidationError } from '../utils/refined-body';
-import { maskServerErrorPayload } from '../utils/server-error-masking';
+import { maskServerErrorPayload, shouldMaskServerError } from '../utils/server-error-masking';
 
 /**
  * Centralized mapping from ServiceErrorCode to HTTP status codes
@@ -521,23 +521,27 @@ export const createErrorHandler = () => {
             statusCode = 500;
         }
 
-        // HOS-2296: whatever ends up >= 500 never echoes the error's own message,
-        // details or reason, in ANY environment (it used to be production only, so
-        // staging and dev leaked what production hid). `reason` is masked on the
-        // same terms: it names an internal failure mode (`BULLMQ_NOT_CONFIGURED`,
-        // ...). Same rule, same helper as `handleRouteError`; the real error was
-        // logged above. HOSPEDA_API_DEBUG_ERRORS=true lifts it (the env schema
-        // refuses that flag in production).
-        const {
-            message: safeMessage,
-            details: safeDetails,
-            reason: safeReason
-        } = maskServerErrorPayload({
+        // HOS-2296: whatever ends up >= 500 never echoes the error's own message
+        // or details, in ANY environment (it used to be production only, so staging
+        // and dev leaked what production hid). Same rule, same helper as
+        // `handleRouteError`; the real error was logged above.
+        // HOSPEDA_API_DEBUG_ERRORS=true lifts it (the env schema refuses that
+        // flag in production).
+        const { message: safeMessage, details: safeDetails } = maskServerErrorPayload({
             statusCode,
             debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
             genericMessage: responseConfig.errorMessage,
-            payload: { message: errorMessage, details: errorDetails, reason: errorReason }
+            payload: { message: errorMessage, details: errorDetails }
         });
+        // `reason` is masked on the same terms here: it names an internal failure
+        // mode (`BULLMQ_NOT_CONFIGURED`, ...), so leaving it on a masked 5xx would
+        // hand back exactly what the masking hides.
+        const safeReason = shouldMaskServerError({
+            statusCode,
+            debugErrors: env.HOSPEDA_API_DEBUG_ERRORS
+        })
+            ? undefined
+            : errorReason;
 
         const requestId = c.get('requestId');
         const formattedError = formatErrorResponse(

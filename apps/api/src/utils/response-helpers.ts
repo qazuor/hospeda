@@ -712,12 +712,19 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     error.reason === BUSINESS_LINES_INVALID_REASON ||
                     error.reason === PARTNER_APPLICATION_WAIT_ACTIVE
                         ? error.details
-                        : undefined,
-                reason: error.reason
+                        : undefined
             }
         });
 
-        return createErrorResponse({ code: error.code, ...safe }, c, statusCode, retryAfterHeaders);
+        // `reason` is a machine identifier the web app branches on even for a
+        // 5xx (HOS-1968 transient provider reasons, CREATION_NOT_APPLIED), and
+        // `createErrorResponse` documents it as unconditional: it is not masked.
+        return createErrorResponse(
+            { code: error.code, ...safe, reason: error.reason },
+            c,
+            statusCode,
+            retryAfterHeaders
+        );
     }
 
     // Check for Hono HTTPException (thrown by route handlers for known errors)
@@ -752,14 +759,18 @@ export const handleRouteError = (error: unknown, c: Context) => {
         const safe = maskServerErrorPayload({
             statusCode,
             debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
-            payload: {
-                message,
-                details: entitlementCause.details,
-                ...(entitlementCause.reason ? { reason: entitlementCause.reason } : {})
-            }
+            payload: { message, details: entitlementCause.details }
         });
 
-        return createErrorResponse({ code, ...safe }, c, statusCode);
+        return createErrorResponse(
+            {
+                code,
+                ...safe,
+                ...(entitlementCause.reason ? { reason: entitlementCause.reason } : {})
+            },
+            c,
+            statusCode
+        );
     }
 
     // HOS-1174: a driver-reported constraint violation is an EXPECTED
