@@ -713,6 +713,24 @@ describe('OpenAiAdapter', () => {
         // The set is empty since HOS-2294: `accommodation_import` and `search` both
         // send a required + nullable schema and run strict.
 
+        it('HOS-2294: extractIntent opts out of strict per call while search stays strict', async () => {
+            // Arrange: AiIntentSchema (open entities record) is not expressible in strict mode.
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            mockGenerateObject.mockResolvedValue({
+                object: { kind: 'search', confidence: 0.9, entities: {}, rawQuery: 'q' },
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.extractIntent({ query: 'q', locale: 'es' });
+
+            // Assert
+            const call = mockGenerateObject.mock.calls.at(-1)?.[0] as { providerOptions?: unknown };
+            expect(call?.providerOptions).toEqual({ openai: { strictJsonSchema: false } });
+            expect(FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has('search')).toBe(false);
+        });
+
         it('HOS-2294: search runs strict (required + nullable schema, no opt-out)', async () => {
             // Arrange: the lenient mode let the model rename filter keys, silently dropped.
             const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
