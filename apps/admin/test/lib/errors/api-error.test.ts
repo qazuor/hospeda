@@ -13,6 +13,38 @@ import {
 
 describe('ApiError', () => {
     describe('constructor', () => {
+        describe('server errors (HOS-2312)', () => {
+            it.each([
+                500, 502, 503
+            ])('replaces the API message with a localized text on %i', (status) => {
+                const error = new ApiError('An unexpected error occurred', {
+                    status,
+                    code: 'INTERNAL_ERROR' as never
+                });
+                expect(error.message).not.toBe('An unexpected error occurred');
+                expect(error.message).toBe('Error del servidor. Intente de nuevo más tarde.');
+                expect(error.serverMessage).toBe('An unexpected error occurred');
+                expect(error.status).toBe(status);
+            });
+
+            it.each([400, 403, 404, 409, 422])('keeps the API message on %i', (status) => {
+                const error = new ApiError('Specific business message', { status });
+                expect(error.message).toBe('Specific business message');
+                expect(error.serverMessage).toBeUndefined();
+            });
+
+            it('keeps code and body so code/reason branches still work', () => {
+                const body = { error: { code: 'SERVICE_UNAVAILABLE', reason: 'X' } };
+                const error = new ApiError('An error occurred', {
+                    status: 503,
+                    code: 'SERVICE_UNAVAILABLE',
+                    body
+                });
+                expect(error.code).toBe('SERVICE_UNAVAILABLE');
+                expect(error.body).toBe(body);
+            });
+        });
+
         it('should create an ApiError with message and config', () => {
             const error = new ApiError('Not found', { status: 404 });
             expect(error.message).toBe('Not found');

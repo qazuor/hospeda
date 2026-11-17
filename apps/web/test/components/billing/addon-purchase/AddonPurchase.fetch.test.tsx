@@ -70,3 +70,33 @@ describe('AC:B10:11 browser API composition', () => {
         ]);
     });
 });
+
+describe('HOS-2312 server errors', () => {
+    it.each([
+        [500, 'An unexpected error occurred', true],
+        [503, 'An error occurred', true],
+        [409, 'Specific business message', false]
+    ])('on %i the offers error shows %s only for 4xx', async (status, message, masked) => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(async () => ({
+                ok: false,
+                status,
+                json: async () => ({ success: false, error: { code: 'X', message } })
+            }))
+        );
+        render(
+            <AddonPurchase
+                locale="es"
+                returnOrderRequestId={null}
+                accountEmail="payer@example.test"
+            />
+        );
+        if (masked) {
+            expect(await screen.findByText('No pudimos cargar los complementos.')).toBeTruthy();
+            expect(screen.queryByText(message)).toBeNull();
+        } else {
+            expect(await screen.findByText(message)).toBeTruthy();
+        }
+    });
+});

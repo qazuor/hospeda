@@ -138,7 +138,7 @@ describe('triggerCronJob', () => {
     });
 
     it('rethrows any other error', async () => {
-        fetchApiMock.mockRejectedValue(new ApiError('boom', { status: 500 }));
+        fetchApiMock.mockRejectedValue(new ApiError('boom', { status: 418 }));
 
         await expect(triggerCronJob({ jobName: JOB.name })).rejects.toThrow('boom');
     });

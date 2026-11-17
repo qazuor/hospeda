@@ -41,6 +41,7 @@ import {
 } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
 import type { TranslationFn } from '@/lib/api-errors';
+import { visibleApiMessage } from '@/lib/api-errors';
 import {
     type AuthMeSnapshot,
     fetchAuthMe,
@@ -424,7 +425,7 @@ export function AllianceLead({
                     error?: { message?: string };
                 };
                 throw new Error(
-                    body.error?.message ??
+                    visibleApiMessage({ error: body.error, status: res.status }) ??
                         t(
                             'alliance-leads.form.error',
                             'Ocurrió un error al enviar la solicitud. Por favor, intentá de nuevo.'

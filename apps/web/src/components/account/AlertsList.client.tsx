@@ -36,6 +36,7 @@ import { BellIcon } from '@repo/icons';
 import type { PriceAlertListItem } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -201,7 +202,9 @@ export function AlertsList({ locale, apiUrl, userId: _userId }: AlertsListProps)
                     let message = deleteErrorMsg;
                     try {
                         const body = (await res.json()) as ErrorResponse;
-                        message = body.error?.message ?? deleteErrorMsg;
+                        message =
+                            visibleApiMessage({ error: body.error, status: res.status }) ??
+                            deleteErrorMsg;
                     } catch {
                         // Non-JSON error body — keep the generic message.
                     }

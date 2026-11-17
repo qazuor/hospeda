@@ -865,10 +865,10 @@ describe('AllianceLead', () => {
             });
         });
 
-        it('shows generic error on non-ok response', async () => {
+        it('shows the API message on a 4xx non-ok response', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: false,
-                status: 500,
+                status: 409,
                 json: async () => ({ error: { message: 'Server error' } })
             } as Response);
 
@@ -884,6 +884,29 @@ describe('AllianceLead', () => {
                 const serverAlert = alerts.find((el) => el.textContent?.includes('Server error'));
                 expect(serverAlert).toBeDefined();
             });
+        });
+
+        it('hides the API message and shows the localized error on a 5xx (HOS-2312)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                json: async () => ({ error: { message: 'Server error' } })
+            } as Response);
+
+            renderForm('editor');
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^topics/i), {
+                target: { value: 'Gastronomía regional' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                const alerts = screen.getAllByRole('alert');
+                expect(
+                    alerts.find((el) => el.textContent?.includes('Ocurrió un error'))
+                ).toBeDefined();
+            });
+            expect(screen.queryByText('Server error')).toBeNull();
         });
 
         it('shows generic error when fetch throws', async () => {

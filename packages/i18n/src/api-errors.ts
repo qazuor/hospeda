@@ -105,6 +105,19 @@ const HTTP_STATUS_MESSAGE_KEY: Readonly<Record<number, string>> = Object.freeze(
 });
 
 /**
+ * Whether the failed request was a server error (HTTP >= 500).
+ *
+ * The API answers every 5xx with a fixed English generic message (HOS-2296),
+ * never meant for end users, so the UI must not display it (HOS-2312).
+ *
+ * @param error - The API error payload.
+ * @returns `true` when the payload carries a 5xx `status`.
+ */
+function isServerError(error: ApiErrorShape | null | undefined): boolean {
+    return typeof error?.status === 'number' && error.status >= 500;
+}
+
+/**
  * Signature of a translation function accepted by `translateApiError`.
  *
  * Compatible with:
@@ -212,7 +225,10 @@ export function translateApiErrorWithT(params: {
 }): string {
     const { error, t, fallback } = params;
 
-    const apiMessage = error?.message ?? '';
+    // On a 5xx the API `message` is a fixed English generic (HOS-2296): never
+    // surface it. A translated `reason` / `code` still wins; otherwise the
+    // caller's localized fallback (or the generic text) is used (HOS-2312).
+    const apiMessage = isServerError(error) ? '' : (error?.message ?? '');
     const interpolation = toInterpolationParams(error?.details);
     const genericFallback =
         fallback ?? t('common.apiError.GENERIC', 'Algo salió mal. Intentá de nuevo en un momento.');
@@ -299,8 +315,13 @@ export function translateApiError(params: {
             : undefined);
 
     if (!t) {
-        // No translation context — return the most useful raw value.
-        return error?.message ?? fallback ?? 'Something went wrong. Please try again.';
+        // No translation context — return the most useful raw value. A 5xx
+        // message is never shown (HOS-2312).
+        return (
+            (isServerError(error) ? undefined : error?.message) ??
+            fallback ??
+            'Something went wrong. Please try again.'
+        );
     }
 
     return translateApiErrorWithT({ error, t, fallback });

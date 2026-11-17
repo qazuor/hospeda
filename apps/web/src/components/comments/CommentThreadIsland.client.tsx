@@ -13,6 +13,7 @@ import { type FormEvent, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -163,7 +164,7 @@ export function CommentThreadIsland({
                     error?: { message?: string };
                 };
                 throw new Error(
-                    body.error?.message ??
+                    visibleApiMessage({ error: body.error, status: res.status }) ??
                         t(
                             'comments.form.errorNetwork',
                             'No se pudo enviar tu comentario. Intentá de nuevo.'

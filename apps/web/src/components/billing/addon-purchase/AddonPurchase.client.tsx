@@ -7,6 +7,7 @@ import {
     publishApi
 } from '@/lib/api/endpoints-protected';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
+import { visibleApiMessage } from '@/lib/api-errors';
 import {
     type AddonSubscriptionTarget,
     eligibleSubscriptionTargets,
@@ -80,7 +81,11 @@ export function AddonPurchase(input: {
                 if (result.ok) {
                     setOffers(purchasableOffers(result.data.items));
                     if (!input.returnOrderRequestId) setView('OFFERS');
-                } else setError(result.error.message);
+                } else
+                    setError(
+                        visibleApiMessage({ error: result.error }) ??
+                            t('billing.addonPurchase.loadError')
+                    );
             })
             .catch((cause: unknown) => {
                 if (alive)
@@ -112,7 +117,11 @@ export function AddonPurchase(input: {
                         const state = purchaseStateFrom({ read: result.data });
                         if (state === 'ACTIVE') setView('ACTIVE');
                         else if (state === 'CLOSED') setView('CLOSED');
-                    } else setError(result.error.message);
+                    } else
+                        setError(
+                            visibleApiMessage({ error: result.error }) ??
+                                t('billing.addonPurchase.loadError')
+                        );
                     setPollAttempt((attempt) => attempt + 1);
                 })
                 .catch((cause: unknown) => {
@@ -143,7 +152,11 @@ export function AddonPurchase(input: {
             setView('LOADING');
             try {
                 const result = await billingSubscriptionApi.listMine({});
-                if (!result.ok) throw new Error(result.error.message);
+                if (!result.ok)
+                    throw new Error(
+                        visibleApiMessage({ error: result.error }) ??
+                            t('billing.addonPurchase.loadError')
+                    );
                 const items = eligibleSubscriptionTargets({
                     subscriptions: result.data.subscriptions,
                     compatibleVerticals: selected.compatibleVerticals
@@ -174,7 +187,11 @@ export function AddonPurchase(input: {
             const reads = await Promise.all(
                 verticals.map(async (vertical) => {
                     const result = await publishApi.listingNotices({ vertical });
-                    if (!result.ok) throw new Error(result.error.message);
+                    if (!result.ok)
+                        throw new Error(
+                            visibleApiMessage({ error: result.error }) ??
+                                t('billing.addonPurchase.loadError')
+                        );
                     return result.data.items.map((item) => ({ ...item, vertical }));
                 })
             );
@@ -218,7 +235,11 @@ export function AddonPurchase(input: {
             if (free) {
                 const result = await billingAddonApi.chooseFree({ body });
                 if (result.ok) setView('ACTIVE');
-                else setError(result.error.message);
+                else
+                    setError(
+                        visibleApiMessage({ error: result.error }) ??
+                            t('billing.addonPurchase.loadError')
+                    );
             } else if (offer.chargeKind === 'PERIODICO') {
                 const email = z.email().safeParse(payerEmail);
                 if (!email.success) {
@@ -239,7 +260,11 @@ export function AddonPurchase(input: {
                     else if (state === 'PROCESSING') setView('PROCESSING');
                     else setView('CLOSED');
                 } else if (result.error.code === 'ADDON_PURCHASES_FROZEN') setPurchasesPaused(true);
-                else setError(result.error.message);
+                else
+                    setError(
+                        visibleApiMessage({ error: result.error }) ??
+                            t('billing.addonPurchase.loadError')
+                    );
             }
         } catch (cause) {
             setError(cause instanceof Error ? cause.message : t('billing.addonPurchase.loadError'));

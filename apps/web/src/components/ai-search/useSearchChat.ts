@@ -37,6 +37,7 @@ import {
     streamSearchChat
 } from '@/lib/api/search-chat-stream';
 import type { PaginatedResponse } from '@/lib/api/types';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { createTranslations } from '@/lib/i18n';
 
@@ -327,11 +328,13 @@ export function useSearchChat(params: UseSearchChatParams): UseSearchChatReturn 
                 setState((prev) => ({
                     ...prev,
                     resultsLoading: false,
-                    error: result.error.message
+                    error:
+                        visibleApiMessage({ error: result.error }) ??
+                        createTranslations(locale).t('common.apiError.GENERIC')
                 }));
             }
         },
-        []
+        [locale]
     );
 
     // ─── send ────────────────────────────────────────────────────────────────

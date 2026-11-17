@@ -4,7 +4,11 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { isRetryableApiError, translateApiError } from '../../src/lib/api-errors';
+import {
+    isRetryableApiError,
+    translateApiError,
+    visibleApiMessage
+} from '../../src/lib/api-errors';
 
 describe('translateApiError', () => {
     it('returns the localized message for a known error code', () => {
@@ -239,13 +243,20 @@ describe('translateApiError', () => {
             expect(message).toMatch(/servicio no está disponible/i);
         });
 
-        it('falls through to the raw/generic message for an unmapped code-less status', () => {
-            // 500 is intentionally NOT mapped (minimal policy) → keeps prior behaviour.
+        it('falls through to the raw message for an unmapped code-less 4xx status', () => {
+            const message = translateApiError({
+                error: { status: 418, message: 'API request failed with status 418' },
+                locale: 'es'
+            });
+            expect(message).toBe('API request failed with status 418');
+        });
+
+        it('hides the raw message for a code-less 5xx status (HOS-2312)', () => {
             const message = translateApiError({
                 error: { status: 500, message: 'API request failed with status 500' },
                 locale: 'es'
             });
-            expect(message).toBe('API request failed with status 500');
+            expect(message).toBe('Algo salió mal. Intentá de nuevo en un momento.');
         });
     });
 });
@@ -270,5 +281,45 @@ describe('isRetryableApiError', () => {
         expect(isRetryableApiError(null)).toBe(true);
         expect(isRetryableApiError(undefined)).toBe(true);
         expect(isRetryableApiError({})).toBe(true);
+    });
+});
+
+describe('visibleApiMessage (HOS-2312)', () => {
+    it.each([500, 502, 503])('hides the API message on %i', (status) => {
+        expect(
+            visibleApiMessage({ error: { status, message: 'An unexpected error occurred' } })
+        ).toBeUndefined();
+    });
+
+    it('uses the explicit status when the error carries none', () => {
+        expect(
+            visibleApiMessage({ error: { message: 'An error occurred' }, status: 500 })
+        ).toBeUndefined();
+    });
+
+    it.each([400, 403, 404, 409, 422])('keeps the API message on %i', (status) => {
+        expect(visibleApiMessage({ error: { status, message: 'Specific message' } })).toBe(
+            'Specific message'
+        );
+    });
+
+    it('returns undefined without an error or message', () => {
+        expect(visibleApiMessage({ error: undefined })).toBeUndefined();
+        expect(visibleApiMessage({ error: { status: 400, message: '' } })).toBeUndefined();
+    });
+
+    it('translateApiError hides the message on 5xx and keeps it on 4xx', () => {
+        expect(
+            translateApiError({
+                error: { status: 503, code: 'UNMAPPED', message: 'An error occurred' },
+                locale: 'es'
+            })
+        ).toBe('Algo salió mal. Intentá de nuevo en un momento.');
+        expect(
+            translateApiError({
+                error: { status: 409, code: 'UNMAPPED', message: 'Specific message' },
+                locale: 'es'
+            })
+        ).toBe('Specific message');
     });
 });

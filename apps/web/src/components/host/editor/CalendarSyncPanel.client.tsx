@@ -38,6 +38,7 @@ import type {
     CalendarProviderToken
 } from '@/lib/api/endpoints-protected';
 import { accommodationCalendarSyncApi } from '@/lib/api/endpoints-protected';
+import { visibleApiMessage } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -228,7 +229,7 @@ export function CalendarSyncPanel({ locale, accommodationId }: CalendarSyncPanel
                 setRowError((prev) => ({
                     ...prev,
                     [provider]:
-                        result.error.message ||
+                        visibleApiMessage({ error: result.error }) ||
                         t(
                             'host.properties.editor.calendarSync.connectIcalError',
                             'No pudimos conectar ese calendario. Revisá la URL e intentá de nuevo.'

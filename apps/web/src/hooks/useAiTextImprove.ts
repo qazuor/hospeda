@@ -42,6 +42,7 @@
 
 import type { AiTextImprove, AiTextImproveFieldType, LanguageEnum } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
 
 // ---------------------------------------------------------------------------
@@ -392,7 +393,8 @@ export function useAiTextImprove(): UseAiTextImproveReturn {
                 setError({
                     code: normaliseErrorCode(rawCode),
                     message:
-                        errorBody.error?.message ?? `Request failed with status ${response.status}`,
+                        visibleApiMessage({ error: errorBody.error, status: response.status }) ??
+                        `Request failed with status ${response.status}`,
                     httpStatus: response.status
                 });
                 return;

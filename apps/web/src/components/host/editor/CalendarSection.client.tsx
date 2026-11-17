@@ -37,6 +37,7 @@ import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
 import type { AccommodationOccupancy } from '@repo/schemas';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { accommodationOccupancyApi } from '@/lib/api/endpoints-protected';
+import { visibleApiMessage } from '@/lib/api-errors';
 import {
     buildOccupancyEvents,
     layoutWeekBars,
@@ -283,7 +284,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 setNote('');
             } else {
                 setSubmitError(
-                    result.error.message ||
+                    visibleApiMessage({ error: result.error }) ||
                         t(
                             'host.properties.editor.calendar.applyError',
                             'No pudimos actualizar el calendario. Intentá de nuevo.'
@@ -324,7 +325,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 setReloadKey((k) => k + 1);
             } else {
                 setEditError(
-                    result.error.message ||
+                    visibleApiMessage({ error: result.error }) ||
                         t(
                             'host.properties.editor.calendar.editEvent.saveError',
                             'No pudimos guardar los cambios. Intentá de nuevo.'
@@ -357,7 +358,7 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
             setReloadKey((k) => k + 1);
         } else {
             setEditError(
-                result.error.message ||
+                visibleApiMessage({ error: result.error }) ||
                     t(
                         'host.properties.editor.calendar.editEvent.deleteError',
                         'No pudimos eliminar el bloqueo. Intentá de nuevo.'
