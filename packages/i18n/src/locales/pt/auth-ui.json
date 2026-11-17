@@ -35,6 +35,12 @@
                 "oauth_state_mismatch": "Sua sessão expirou durante o login. Tente novamente.",
                 "unknown": "Não foi possível completar o login com {{provider}}. Tente novamente mais tarde."
             }
+        },
+        "activeSession": {
+            "message": "Você já iniciou sessão como {{email}}",
+            "continue": "Prosseguir",
+            "useOtherAccount": "Usar outra conta",
+            "signOutError": "Não foi possível encerrar a sessão. Tente novamente."
         }
     },
     "signUp": {

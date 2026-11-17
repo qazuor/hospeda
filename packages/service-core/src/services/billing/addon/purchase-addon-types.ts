@@ -23,7 +23,8 @@ export const PURCHASE_ADDON_REFUSAL_REASONS = [
     'ADDON_VERSION_NOT_CURRENT',
     'ALREADY_ACTIVE',
     'FREE_UNDER_GRANT',
-    'ORDER_REQUEST_REUSED'
+    'ORDER_REQUEST_REUSED',
+    'ORDER_REQUEST_ABANDONED'
 ] as const;
 
 /** One closed A1 refusal reason. */

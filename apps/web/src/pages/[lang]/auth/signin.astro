@@ -10,10 +10,11 @@
  * `resolveAuthTabsRedirectConfig` helper — see that file's header doc for
  * why a single-tab computation would not be enough.
  *
- * Authenticated users are immediately redirected — to a validated
- * `callbackUrl` (SPEC-182) when present, otherwise to the post-login
- * destination from a safe `returnUrl`/`redirect` query param, otherwise to
- * /mi-cuenta/.
+ * Authenticated visitors see an "already signed in as {email}" interstitial
+ * (BETA-216) with "Continuar" (a validated `callbackUrl` (SPEC-182) when
+ * present, otherwise the destination from a safe `returnUrl`/`redirect` query
+ * param, otherwise /mi-cuenta/) and "Usar otra cuenta". Signed OAuth requests
+ * still redirect silently; `?verified=1` does not.
  *
  * Both `returnUrl` and `redirect` are accepted as query param names so older
  * callsites that built links with `?redirect=...` keep working. `returnUrl`
@@ -28,6 +29,7 @@ import { resolveAuthTabsRedirectConfig } from '@/lib/auth-tabs-config';
 import { getAdminUrl, getSiteUrl, isProduction } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { resolveAuthenticatedSigninAction } from '@/lib/signin-session-gate';
 import { buildUrl } from '@/lib/urls';
 import AuthLayout from '@/layouts/AuthLayout.astro';
 import { HomeIcon, LocationIcon } from '@repo/icons';
@@ -52,14 +54,23 @@ const { returnPath, validatedCallbackUrl, signInConfig, signUpConfig } = resolve
     }
 );
 
-// Redirect authenticated users to the requested destination (or the account
-// dashboard when no safe destination was provided). Without honoring the
-// param here, callsites that link to /auth/signin?...=<path> would silently
-// land on /mi-cuenta whenever the session is already valid — defeating the
-// purpose of the redirect query. A valid callbackUrl takes precedence.
+// BETA-216: an authenticated visitor is NOT bounced silently any more — that
+// dropped people into the wrong account (e.g. after resetting another
+// account's password in the same browser). They get an interstitial naming the
+// account, with "Continuar" (the destination the redirect used to pick: a
+// valid callbackUrl first, then the safe returnUrl/redirect, else /mi-cuenta/)
+// and "Usar otra cuenta". The silent redirect stays only for machine-driven
+// flow (a signed OAuth request; `?verified=1` is NOT exempt) — see signin-session-gate.ts.
+// This page is session-aware by design (exempt in the session-blind guard).
+const continueUrl = validatedCallbackUrl ?? returnPath;
 if (Astro.locals.user) {
-    return Astro.redirect(validatedCallbackUrl ?? returnPath);
+    if (resolveAuthenticatedSigninAction({ search: Astro.url.search }) === 'redirect') {
+        return Astro.redirect(continueUrl);
+    }
 }
+const activeSession = Astro.locals.user
+    ? { email: Astro.locals.user.email, continueUrl }
+    : undefined;
 
 const t = createT(locale);
 
@@ -145,6 +156,7 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
                 signInConfig={signInConfig}
                 signUpConfig={signUpConfig}
                 initialOAuthError={initialOAuthError}
+                activeSession={activeSession}
             />
 
             <div class="auth-page__links">

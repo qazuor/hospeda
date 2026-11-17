@@ -33,7 +33,8 @@ vi.mock('../../../src/lib/i18n', () => {
 
 const resetPasswordMock = vi.fn();
 vi.mock('../../../src/lib/auth-client', () => ({
-    resetPassword: (...args: unknown[]) => resetPasswordMock(...args)
+    resetPassword: (...args: unknown[]) => resetPasswordMock(...args),
+    useSession: () => ({ data: null })
 }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
