@@ -30,7 +30,8 @@ export const PlatformSettingsKeySchema = z.enum([
     'maintenance.mode',
     'announcements.global',
     'billing.paidSignupsFreeze',
-    'billing.addonPurchasesFreeze'
+    'billing.addonPurchasesFreeze',
+    'billing.providerWatchAuthorization'
 ]);
 
 /** TypeScript type for the supported key set. */
@@ -162,6 +163,26 @@ export const AddonPurchasesFreezeValueSchema = z.object({ frozen: z.boolean() })
 /** Parsed value of the global addon purchase freeze setting. */
 export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValueSchema>;
 
+/**
+ * Value shape for `billing.providerWatchAuthorization` (HOS-1512, AC:B1:15, AC:B1:20).
+ *
+ * The owner's monthly authorization for the provider watch battery to run against
+ * PRODUCTION and to move money. The production run refuses unless `month` is the current
+ * month on the market clock; the budget guard aborts any money-moving measurement whose
+ * maximum charge is not EXACTLY `maxChargeMinor`. An absent row means "not authorized".
+ *
+ * Money is an integer in minor units (ARS centavos), like every amount in the repo.
+ */
+export const ProviderWatchAuthorizationValueSchema = z.object({
+    /** Market-time month the authorization covers, `YYYY-MM`. */
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM'),
+    /** The exact maximum a money-moving measurement may charge, in ARS centavos. */
+    maxChargeMinor: z.number().int().positive()
+});
+
+/** Inferred type for the `billing.providerWatchAuthorization` value. */
+export type ProviderWatchAuthorizationValue = z.infer<typeof ProviderWatchAuthorizationValueSchema>;
+
 // ---------------------------------------------------------------------------
 // Discriminated union response
 // ---------------------------------------------------------------------------
@@ -200,6 +221,12 @@ export const PlatformSettingsResponseSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema,
+        updatedAt: z.string().datetime({ offset: true }),
+        updatedBy: z.string().uuid()
+    }),
+    z.object({
+        key: z.literal('billing.providerWatchAuthorization'),
+        value: ProviderWatchAuthorizationValueSchema,
         updatedAt: z.string().datetime({ offset: true }),
         updatedBy: z.string().uuid()
     })

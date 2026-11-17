@@ -9,6 +9,8 @@ import {
     PermissionEnum,
     type PlatformSettingsKey,
     PlatformSettingsKeySchema,
+    type ProviderWatchAuthorizationValue,
+    ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -34,6 +36,9 @@ import { ServiceError } from '../../types';
  *   - `billing.paidSignupsFreeze` write → `BILLING_SETTINGS_WRITE`
  *   - `billing.addonPurchasesFreeze` read → `BILLING_SETTINGS_VIEW`
  *   - `billing.addonPurchasesFreeze` write → `BILLING_SETTINGS_WRITE`
+ *   - `billing.providerWatchAuthorization` read → `BILLING_SETTINGS_VIEW`
+ *   - `billing.providerWatchAuthorization` write → `MAINTENANCE_MODE_WRITE` (SUPER_ADMIN-only: it
+ *     authorizes real money to move at the provider, and the owner custodies it, HOS-1512)
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -63,6 +68,10 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema
+    }),
+    z.object({
+        key: z.literal('billing.providerWatchAuthorization'),
+        value: ProviderWatchAuthorizationValueSchema
     })
 ]);
 
@@ -79,6 +88,7 @@ function requiredReadPermission(key: PlatformSettingsKey): PermissionEnum {
             return PermissionEnum.MAINTENANCE_MODE_WRITE;
         case 'billing.paidSignupsFreeze':
         case 'billing.addonPurchasesFreeze':
+        case 'billing.providerWatchAuthorization':
             return PermissionEnum.BILLING_SETTINGS_VIEW;
         default: {
             const exhaustive: never = key;
@@ -97,6 +107,8 @@ function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
         case 'billing.paidSignupsFreeze':
         case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_WRITE;
+        case 'billing.providerWatchAuthorization':
+            return PermissionEnum.MAINTENANCE_MODE_WRITE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -272,6 +284,34 @@ export class PlatformSettingsService extends BaseService {
             return false;
         }
         return parsed.data.frozen;
+    }
+
+    /**
+     * The owner's monthly authorization for the provider watch battery (HOS-1512).
+     *
+     * **Why this method instead of `get`**: the caller is a cron job with no admin actor.
+     *
+     * **Read on every run, never cached**: the authorization is renewed every month and the
+     * production run must see the month in force NOW.
+     *
+     * Fails closed: a missing row or a value that fails the schema answers `null`, which means
+     * "not authorized" (the production run refuses, a money-moving measurement aborts). A read
+     * error is NOT swallowed.
+     *
+     * @returns The authorization, or `null` when none is in force.
+     */
+    async getProviderWatchAuthorization(): Promise<ProviderWatchAuthorizationValue | null> {
+        const row = await this.model.findByKey('billing.providerWatchAuthorization');
+        if (!row) return null;
+        const parsed = ProviderWatchAuthorizationValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored billing.providerWatchAuthorization value failed schema validation — treated as not authorized'
+            );
+            return null;
+        }
+        return parsed.data;
     }
 
     /**

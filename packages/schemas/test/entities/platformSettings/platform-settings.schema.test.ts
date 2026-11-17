@@ -23,6 +23,7 @@ import {
     PaidSignupsFreezeValueSchema,
     PlatformSettingsKeySchema,
     PlatformSettingsResponseSchema,
+    ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema
 } from '../../../src/entities/platformSettings/platform-settings.schema';
 
@@ -31,13 +32,14 @@ const VALID_ACTOR_UUID = '22222222-2222-4222-8222-222222222222';
 const VALID_TIMESTAMP = '2026-05-28T12:34:56.000Z';
 
 describe('PlatformSettingsKeySchema', () => {
-    it('accepts each of the 4 supported keys', () => {
+    it('accepts each of the 6 supported keys', () => {
         for (const key of [
             'seo.defaults',
             'maintenance.mode',
             'announcements.global',
             'billing.paidSignupsFreeze',
-            'billing.addonPurchasesFreeze'
+            'billing.addonPurchasesFreeze',
+            'billing.providerWatchAuthorization'
         ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
@@ -380,6 +382,57 @@ describe('PlatformSettingsResponseSchema (discriminated union)', () => {
             key: 'unknown.key',
             value: { whatever: true },
             ...baseEnvelope
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1512 ProviderWatchAuthorizationValueSchema', () => {
+    it('accepts a month and an integer maximum charge in minor units', () => {
+        const result = ProviderWatchAuthorizationValueSchema.safeParse({
+            month: '2026-11',
+            maxChargeMinor: 150000
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it.each([
+        '2026-13',
+        '2026-00',
+        '2026-1',
+        '26-11',
+        '2026/11',
+        '2026-11-01',
+        ''
+    ])('rejects the month %j', (month) => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month, maxChargeMinor: 100 }).success
+        ).toBe(false);
+    });
+
+    it.each([0, -1, 1.5, Number.NaN, '100'])('rejects the maximum charge %j', (maxChargeMinor) => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor })
+                .success
+        ).toBe(false);
+    });
+
+    it('is a member of the discriminated response union', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.providerWatchAuthorization',
+            value: { month: '2026-11', maxChargeMinor: 150000 },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects the value of another key under this key', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.providerWatchAuthorization',
+            value: { frozen: true },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
         });
         expect(result.success).toBe(false);
     });
