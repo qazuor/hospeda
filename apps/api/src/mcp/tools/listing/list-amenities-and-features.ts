@@ -79,7 +79,7 @@ export const listAmenitiesAndFeaturesTool = defineTool({
     name: 'list_amenities_and_features',
     title: 'Comodidades y características disponibles',
     description:
-        'Lists the amenities and features a listing of one vertical (accommodation, venue or experience) can have, each with its id, slug and Spanish name, sorted by name. Use these ids in the amenityIds and featureIds of update_listing_basic. That tool REPLACES the whole set, so to add one, read the listing current ids with get_listing, merge the new id into them and send the complete list; sending only the new id removes all the others.',
+        'Lists the amenities and features a listing of one vertical (accommodation, venue or experience) can have, each with its id, slug and Spanish name, sorted by name. Use these ids in the amenityIds and featureIds of update_listing_basic. That tool REPLACES the whole set, so to add one, read the listing current ids with get_listing, merge the new id into them and send the complete list; sending only the new id removes all the others. To work category by category, or to add and remove items without replacing the set, use get_listing_amenities and update_listing_amenities instead.',
     inputSchema: ListAmenitiesAndFeaturesInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',

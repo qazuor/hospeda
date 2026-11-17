@@ -15,6 +15,7 @@ import { getListingStatsTool } from './listing/get-listing-stats';
 import { listAmenitiesAndFeaturesTool } from './listing/list-amenities-and-features';
 import { listMyListingsTool } from './listing/list-my-listings';
 import { setListingPublicationTool } from './listing/set-listing-publication';
+import { updateListingAmenitiesTool } from './listing/update-listing-amenities';
 import { updateListingBasicTool } from './listing/update-listing-basic';
 import type { ToolDefinition } from './tool-definition';
 
@@ -24,6 +25,7 @@ export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     getListingTool,
     updateListingBasicTool,
     getListingAmenitiesTool,
+    updateListingAmenitiesTool,
     setListingPublicationTool,
     listAmenitiesAndFeaturesTool,
     getListingStatsTool,

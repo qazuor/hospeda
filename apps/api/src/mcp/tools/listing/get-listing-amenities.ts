@@ -28,7 +28,8 @@ import {
     ALL_CATALOG_CATEGORIES,
     type CatalogKind,
     CatalogKindSchema,
-    categoriesOf
+    categoriesOf,
+    kindCategoryIssue
 } from './catalog-categories';
 import { type AmenityGroup, buildCatalogGroups } from './catalog-groups';
 import { readVerticalCatalog } from './catalog-reader';
@@ -83,18 +84,12 @@ export const GetListingAmenitiesInputSchema = z
     })
     .strict()
     .superRefine((input, ctx) => {
-        if (
-            input.kind !== undefined &&
-            input.category !== undefined &&
-            !categoriesOf({ kind: input.kind }).includes(input.category)
-        ) {
-            ctx.addIssue({
-                code: 'custom',
-                path: ['category'],
-                message: `la categoría «${input.category}» no es de ${
-                    input.kind === 'amenity' ? 'comodidades' : 'características'
-                }`
-            });
+        const issue =
+            input.kind !== undefined && input.category !== undefined
+                ? kindCategoryIssue({ kind: input.kind, category: input.category })
+                : undefined;
+        if (issue !== undefined) {
+            ctx.addIssue({ code: 'custom', path: ['category'], message: issue });
         }
     });
 

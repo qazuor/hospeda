@@ -41,10 +41,10 @@ export const FEATURE_CATEGORIES: readonly FeatureCategoryEnum[] =
     Object.values(FeatureCategoryEnum);
 
 /** Every category value of either kind (the two enums share no value). */
-export const ALL_CATALOG_CATEGORIES: readonly [string, ...string[]] = [
+export const ALL_CATALOG_CATEGORIES = [
     ...AMENITY_CATEGORIES,
     ...FEATURE_CATEGORIES
-];
+] as unknown as readonly [string, ...string[]]; // never empty: both enums have members, and `z.enum` needs a non-empty tuple
 
 /**
  * The categories of one kind, in wizard order.
@@ -93,4 +93,23 @@ export function categoryLabel(args: {
 }): string {
     const { label } = translateCatalogKey({ key: categoryLabelKey(args), locale: LABEL_LOCALE });
     return label ?? humanizeCode({ code: args.category }).label;
+}
+
+/**
+ * Tells when a category does not belong to the kind it is paired with (an amenity
+ * `type` given with `kind: 'feature'`, or the reverse).
+ *
+ * @param args - The kind and category of a call
+ * @returns The Spanish problem, or `undefined` when they match
+ */
+export function kindCategoryIssue(args: {
+    readonly kind: CatalogKind;
+    readonly category: string;
+}): string | undefined {
+    if (categoriesOf({ kind: args.kind }).includes(args.category)) {
+        return undefined;
+    }
+    return `la categoría «${args.category}» no es de ${
+        args.kind === 'amenity' ? 'comodidades' : 'características'
+    }`;
 }
