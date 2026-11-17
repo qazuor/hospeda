@@ -60,7 +60,9 @@ export function translateApiError(params: {
 
     if (!resolvedT) {
         // No translation context — return the most useful raw value.
-        return error?.message ?? fallback ?? 'Something went wrong. Please try again.';
+        // A 5xx message is never shown (HOS-2312).
+        const message = error?.status != null && error.status >= 500 ? undefined : error?.message;
+        return message ?? fallback ?? 'Something went wrong. Please try again.';
     }
 
     return translateApiErrorWithT({ error, t: resolvedT, fallback });
