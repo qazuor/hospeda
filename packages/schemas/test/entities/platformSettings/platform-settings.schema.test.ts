@@ -23,6 +23,7 @@ import {
     PaidSignupsFreezeValueSchema,
     PlatformSettingsKeySchema,
     PlatformSettingsResponseSchema,
+    ProviderWatchAuthorizationInputSchema,
     ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema
 } from '../../../src/entities/platformSettings/platform-settings.schema';
@@ -435,5 +436,60 @@ describe('HOS-1512 ProviderWatchAuthorizationValueSchema', () => {
             updatedBy: VALID_ACTOR_UUID
         });
         expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1512 provider watch authorization input and consumption', () => {
+    const input = { month: '2026-11', maxChargeMinor: 150000, accountId: '100000001' };
+
+    it('accepts the input with a numeric account id and an optional nickname', () => {
+        expect(ProviderWatchAuthorizationInputSchema.safeParse(input).success).toBe(true);
+        expect(
+            ProviderWatchAuthorizationInputSchema.safeParse({
+                ...input,
+                accountNickname: 'HOSPEDA'
+            }).success
+        ).toBe(true);
+    });
+
+    it.each([
+        '',
+        'abc',
+        '12 34',
+        '-5',
+        '1'.repeat(21)
+    ])('rejects the account id %j', (accountId) => {
+        expect(
+            ProviderWatchAuthorizationInputSchema.safeParse({ ...input, accountId }).success
+        ).toBe(false);
+    });
+
+    it('requires the account id in the input', () => {
+        const { accountId: _omitted, ...withoutId } = input;
+        expect(ProviderWatchAuthorizationInputSchema.safeParse(withoutId).success).toBe(false);
+    });
+
+    it('strips the consumption fields from the input: a new authorization is never consumed', () => {
+        const parsed = ProviderWatchAuthorizationInputSchema.parse({
+            ...input,
+            consumedAt: '2026-11-01T00:00:00.000Z',
+            consumedByRunId: VALID_UUID
+        });
+        expect(parsed).not.toHaveProperty('consumedAt');
+        expect(parsed).not.toHaveProperty('consumedByRunId');
+    });
+
+    it('lets the stored value carry the consumption and tolerates a missing account id', () => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({
+                ...input,
+                consumedAt: '2026-11-01T00:00:00.000Z',
+                consumedByRunId: VALID_UUID
+            }).success
+        ).toBe(true);
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor: 1 })
+                .success
+        ).toBe(true);
     });
 });

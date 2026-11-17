@@ -164,20 +164,42 @@ export const AddonPurchasesFreezeValueSchema = z.object({ frozen: z.boolean() })
 export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValueSchema>;
 
 /**
- * Value shape for `billing.providerWatchAuthorization` (HOS-1512, AC:B1:15, AC:B1:20).
+ * What the owner submits to authorize the provider watch battery (HOS-1512, AC:B1:15, AC:B1:20).
  *
- * The owner's monthly authorization for the provider watch battery to run against
- * PRODUCTION and to move money. The production run refuses unless `month` is the current
- * month on the market clock; the budget guard aborts any money-moving measurement whose
- * maximum charge is not EXACTLY `maxChargeMinor`. An absent row means "not authorized".
+ * The production run refuses unless `month` is the current month on the market clock; the budget
+ * guard aborts any money-moving measurement whose maximum charge is not EXACTLY `maxChargeMinor`;
+ * the environment guard aborts, sending nothing, when `GET /users/me` answers another account id.
+ * An absent row means "not authorized". Money is an integer in minor units (ARS centavos).
  *
- * Money is an integer in minor units (ARS centavos), like every amount in the repo.
+ * The consumption fields are NOT part of the input: a new authorization is always unconsumed.
  */
-export const ProviderWatchAuthorizationValueSchema = z.object({
+export const ProviderWatchAuthorizationInputSchema = z.object({
     /** Market-time month the authorization covers, `YYYY-MM`. */
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM'),
     /** The exact maximum a money-moving measurement may charge, in ARS centavos. */
-    maxChargeMinor: z.number().int().positive()
+    maxChargeMinor: z.number().int().positive(),
+    /** The Mercado Pago account id the owner confirmed (read by the API, never typed). */
+    accountId: z.string().regex(/^\d{1,20}$/, 'Expected a numeric Mercado Pago account id'),
+    /** Nickname of that account, kept for the owner to recognize it. */
+    accountNickname: z.string().max(255).optional()
+});
+
+/** Input type of the provider watch authorization. */
+export type ProviderWatchAuthorizationInput = z.infer<typeof ProviderWatchAuthorizationInputSchema>;
+
+/**
+ * Value shape for `billing.providerWatchAuthorization`: the input plus the one-shot consumption
+ * state. One authorization allows ONE run within its month; the run that STARTS consumes it,
+ * atomically, and a re-run needs a new authorization. `accountId` is optional here only so a
+ * hand-edited row without it still parses: the run refuses it.
+ */
+export const ProviderWatchAuthorizationValueSchema = ProviderWatchAuthorizationInputSchema.partial({
+    accountId: true
+}).extend({
+    /** When the authorization was consumed (ISO-8601). Absent while unconsumed. */
+    consumedAt: z.string().datetime({ offset: true }).optional(),
+    /** The run that consumed it. Absent while unconsumed. */
+    consumedByRunId: z.string().uuid().optional()
 });
 
 /** Inferred type for the `billing.providerWatchAuthorization` value. */
