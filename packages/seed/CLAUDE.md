@@ -113,7 +113,7 @@ dual-write rule:
   `src/required/hostTradeCategories.seed.ts`. Ids are deterministic UUIDv5 derived from
   the immutable slug (`hostTradeCategoryGroup:<slug>` / `hostTradeCategory:<slug>`), so
   baseline and data-migration produce the same id.
-- **Data-migration** (live DBs): `src/data-migrations/0179-hos919-host-trade-category-catalog.ts`
+- **Data-migration** (live DBs): `src/data-migrations/0180-hos919-host-trade-category-catalog.ts`
   upserts the catalog by slug (`ON CONFLICT (slug) DO NOTHING`, so an admin-renamed,
   deactivated or deleted row is never touched), backfills the legacy single-category
   columns into `r_host_trade_category` / `alliance_leads.category_slugs`, and grants the

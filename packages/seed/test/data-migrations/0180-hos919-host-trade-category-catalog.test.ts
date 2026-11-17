@@ -1,16 +1,16 @@
 /**
  * @fileoverview
- * Unit coverage for data-migration 0179 (HOS-919): its static contract (meta,
+ * Unit coverage for data-migration 0180 (HOS-919): its static contract (meta,
  * legacy map, permission grants) and the no-drift guarantee against the seed
  * baseline. The behaviour against a real database lives in
- * `0179-hos919-host-trade-category-catalog.integration.test.ts`.
+ * `0180-hos919-host-trade-category-catalog.integration.test.ts`.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { HostTradeCategoryEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0179-hos919-host-trade-category-catalog.js';
+import * as migration from '../../src/data-migrations/0180-hos919-host-trade-category-catalog.js';
 import requiredManifest from '../../src/manifest-required.json';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -35,9 +35,9 @@ const CATEGORY_PERMISSIONS = [
     PermissionEnum.HOST_TRADE_CATEGORY_RESTORE
 ];
 
-describe('0179 meta', () => {
+describe('0180 meta', () => {
     it('is a required, non-destructive migration', () => {
-        expect(migration.meta.name).toBe('0179-hos919-host-trade-category-catalog');
+        expect(migration.meta.name).toBe('0180-hos919-host-trade-category-catalog');
         expect(migration.meta.group).toBe('required');
         expect(migration.meta.destructive).toBe(false);
     });
@@ -50,7 +50,7 @@ describe('0179 meta', () => {
     });
 });
 
-describe('0179 legacy category map (spec 5.5)', () => {
+describe('0180 legacy category map (spec 5.5)', () => {
     it('covers every value of the legacy enum, and nothing else', () => {
         expect(Object.keys(migration.LEGACY_CATEGORY_TO_SLUGS).sort()).toEqual(
             Object.values(HostTradeCategoryEnum).sort()
@@ -75,7 +75,7 @@ describe('0179 legacy category map (spec 5.5)', () => {
     });
 });
 
-describe('0179 permission grants', () => {
+describe('0180 permission grants', () => {
     it('grants the five category permissions to SUPER_ADMIN and ADMIN only', () => {
         expect(migration.GRANTS).toHaveLength(10);
         for (const role of [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]) {

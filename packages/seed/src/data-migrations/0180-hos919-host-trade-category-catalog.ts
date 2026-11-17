@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0179-hos919-host-trade-category-catalog
+ * Data migration: 0180-hos919-host-trade-category-catalog
  *
  * Dual-write counterpart (HOS-25) of the HOS-919 baseline seed. The structural
  * migration `0229_hos919_provider_trade_categories.sql` creates the catalog
@@ -64,7 +64,7 @@ import { logger } from '../utils/logger.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0179-hos919-host-trade-category-catalog',
+    name: '0180-hos919-host-trade-category-catalog',
     group: 'required',
     destructive: false,
     requiresColumns: [
@@ -179,7 +179,7 @@ async function backfillTradeLinks(
         if (!slugs) {
             unknownLegacyValues += 1;
             logger.warn(
-                `[0179] host_trades ${row.id}: unknown legacy category "${row.category}", skipped`
+                `[0180] host_trades ${row.id}: unknown legacy category "${row.category}", skipped`
             );
             continue;
         }
@@ -215,7 +215,7 @@ async function backfillLeadSlugs(
         if (!slugs) {
             unknownLegacyValues += 1;
             logger.warn(
-                `[0179] alliance_leads ${row.id}: unknown legacy category "${row.category}", skipped`
+                `[0180] alliance_leads ${row.id}: unknown legacy category "${row.category}", skipped`
             );
             continue;
         }

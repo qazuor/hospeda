@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * PostgreSQL integration coverage for data-migration 0179 (HOS-919): catalog
+ * PostgreSQL integration coverage for data-migration 0180 (HOS-919): catalog
  * upsert (step A), legacy backfill (step B) and permission grants (step C).
  *
  * Every case runs inside a transaction that is always rolled back, so the
@@ -15,7 +15,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0179-hos919-host-trade-category-catalog.js';
+import * as migration from '../../src/data-migrations/0180-hos919-host-trade-category-catalog.js';
 import { assertRequiredColumns } from '../../src/data-migrations/columnDependencyGuard.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { hostTradeCategoryIdFor } from '../../src/required/hostTradeCategories.seed.js';
@@ -103,7 +103,7 @@ const leadSlugs = async (tx: DrizzleClient, leadId: string): Promise<string[] | 
     return (result.rows[0] as { category_slugs: string[] | null }).category_slugs;
 };
 
-describe('HOS-919: 0179 catalog upsert, backfill and grants (integration)', () => {
+describe('HOS-919: 0180 catalog upsert, backfill and grants (integration)', () => {
     beforeAll(() => {
         if (!process.env.HOSPEDA_DATABASE_URL)
             throw new Error('HOSPEDA_DATABASE_URL is not set in this worktree');
