@@ -2,12 +2,32 @@ import { addonInstances, eq, getDb, idempotencyKeys, subscriptions } from '@repo
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
+import { abandonRefusedComplement } from '../../../src/services/billing/addon/purchase-addon-rejection';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import {
     principalFixture,
     purchaseFixture,
     retirePurchaseFixtures
 } from './support/addon-purchase-fixtures';
+
+const { loggerError } = vi.hoisted(() => ({ loggerError: vi.fn() }));
+vi.mock('@repo/logger', async (importOriginal) => {
+    const original = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...original,
+        createLogger: (name: string) =>
+            name === 'addon-purchase'
+                ? { ...original.createLogger(name), error: loggerError }
+                : original.createLogger(name)
+    };
+});
+vi.mock('../../../src/services/billing/addon/purchase-addon-rejection', async (importOriginal) => {
+    const original =
+        await importOriginal<
+            typeof import('../../../src/services/billing/addon/purchase-addon-rejection')
+        >();
+    return { ...original, abandonRefusedComplement: vi.fn(original.abandonRefusedComplement) };
+});
 
 const skip = !isServiceTestDbAvailable();
 afterEach(async () => {
@@ -132,19 +152,42 @@ describe('HOS-2321 recurring addon purchase rejected by the provider', () => {
         const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
         await principalFixture({ ownerId: f.ownerId, credited: true });
         vi.spyOn(f.fake, 'authorize').mockRejectedValueOnce(providerFailure({ code: 'REJECTED' }));
-        const db = getDb();
-        const original = db.transaction.bind(db);
-        let calls = 0;
-        vi.spyOn(db, 'transaction').mockImplementation(((...args: Parameters<typeof original>) => {
-            calls += 1;
-            // The first transaction creates the pending pair; the second is the abandonment.
-            if (calls === 2) return Promise.reject(new Error('abandon exploded'));
-            return original(...args);
-        }) as typeof db.transaction);
+        vi.mocked(abandonRefusedComplement).mockRejectedValueOnce(new Error('abandon exploded'));
+        loggerError.mockClear();
 
         await expect(purchaseAddon(f.input(), f.ports)).rejects.toMatchObject({
             code: 'REJECTED'
         });
-        expect(calls).toBeGreaterThanOrEqual(2);
+
+        expect((await state(f.ownerId)).instances).toMatchObject([
+            { status: 'PENDING_AUTHORIZATION' }
+        ]);
+        expect(loggerError).toHaveBeenCalledTimes(1);
+        expect(loggerError.mock.calls[0]?.[1]).toContain('failed to abandon');
     });
+
+    it.skipIf(skip)(
+        'refuses an abandoned order found through the unique-violation path',
+        async () => {
+            const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
+            await principalFixture({ ownerId: f.ownerId, credited: true });
+            vi.spyOn(f.fake, 'authorize').mockRejectedValueOnce(
+                providerFailure({ code: 'REJECTED' })
+            );
+            const orderRequestId = crypto.randomUUID();
+            await expect(purchaseAddon(f.input(orderRequestId), f.ports)).rejects.toMatchObject({
+                code: 'REJECTED'
+            });
+
+            // A concurrent insert lost the race: the driver reports the order-id unique violation.
+            const db = getDb();
+            vi.spyOn(db, 'transaction').mockRejectedValueOnce({
+                cause: { code: '23505', constraint: 'uq_addon_instance_order_request' }
+            });
+            expect(await purchaseAddon(f.input(orderRequestId), f.ports)).toEqual({
+                outcome: 'REFUSED',
+                reason: 'ORDER_REQUEST_ABANDONED'
+            });
+        }
+    );
 });
