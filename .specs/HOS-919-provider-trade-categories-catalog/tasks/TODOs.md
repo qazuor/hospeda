@@ -65,7 +65,7 @@
   - Blocked by: T-002, T-003, T-006, T-007, T-009
   - Blocks: T-012, T-018, T-021, T-024
 
-- [ ] **T-011** (complexity: 1) - Add CACHE_TAG_HOST_TRADE_CATEGORIES to @repo/cache-tags
+- [x] **T-011** (complexity: 1) - Add CACHE_TAG_HOST_TRADE_CATEGORIES to @repo/cache-tags
   - Add the constant CACHE_TAG_HOST_TRADE_CATEGORIES to packages/cache-tags/src (follow the existing tag...
   - Blocked by: none
   - Blocks: T-027, T-028, T-029, T-041

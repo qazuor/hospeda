@@ -374,31 +374,31 @@
             "id": "T-011",
             "title": "Add CACHE_TAG_HOST_TRADE_CATEGORIES to @repo/cache-tags",
             "description": "Add the constant CACHE_TAG_HOST_TRADE_CATEGORIES to packages/cache-tags/src (follow the existing tag vocabulary file and its naming), export it, register it in any tag inventory/registry the package keeps.\nACs: AC-3.2, AC-6.1.\nTests (packages/cache-tags/test/*): the tag is exported, is a non-empty string, is unique among tags, and matches the package's naming-format guard.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-027", "T-028", "T-029", "T-041"],
             "subtasks": [
                 {
                     "title": "Add constant and export",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update inventory/guard tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cache", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T18:25:24Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 52,
+        "pending": 51,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.5
     }
