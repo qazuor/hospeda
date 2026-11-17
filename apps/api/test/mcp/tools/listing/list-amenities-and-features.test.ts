@@ -28,6 +28,10 @@ interface Row {
     readonly id: string;
     readonly slug: string;
     readonly applicableVerticals: readonly string[];
+    /** Amenity `type`. */
+    readonly type?: string;
+    /** Feature `category`. */
+    readonly category?: string;
 }
 
 const AMENITIES: readonly Row[] = [
@@ -44,7 +48,8 @@ const AMENITIES: readonly Row[] = [
     {
         id: 'a0000000-0000-4000-8000-000000000003',
         slug: 'zz_unknown_amenity',
-        applicableVerticals: ['experience']
+        applicableVerticals: ['experience'],
+        type: 'OUTDOORS'
     }
 ];
 const FEATURES: readonly Row[] = [
@@ -56,7 +61,8 @@ const FEATURES: readonly Row[] = [
     {
         id: 'f0000000-0000-4000-8000-000000000002',
         slug: 'river_view',
-        applicableVerticals: ['accommodation', 'experience']
+        applicableVerticals: ['accommodation', 'experience'],
+        category: 'VIEW'
     }
 ];
 
@@ -163,7 +169,8 @@ describe('list_amenities_and_features', () => {
             {
                 id: 'a0000000-0000-4000-8000-000000000003',
                 slug: 'zz_unknown_amenity',
-                name: 'Zz unknown amenity'
+                name: 'Zz unknown amenity',
+                category: 'OUTDOORS'
             }
         ]);
         const accommodation = await runTool({
@@ -178,6 +185,20 @@ describe('list_amenities_and_features', () => {
         expect(names).toContain('Pileta');
         expect(names).not.toContain('wifi');
         expect(names).not.toContain('pool');
+    });
+
+    it('adds the category of each entry: type for amenities, category for features', async () => {
+        // Act
+        const outcome = await runTool({
+            definition: listAmenitiesAndFeaturesTool,
+            actor,
+            input: { vertical: 'experience' },
+            context
+        });
+
+        // Assert
+        expect(outcome.ok && outcome.data.amenities.map((a) => a.category)).toEqual(['OUTDOORS']);
+        expect(outcome.ok && outcome.data.features.map((f) => f.category)).toEqual(['VIEW']);
     });
 
     it('reads every page of a catalog larger than one page', async () => {
