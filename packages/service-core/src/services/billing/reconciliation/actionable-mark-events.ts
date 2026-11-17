@@ -106,7 +106,7 @@ export async function readReconciliationMarkEvents(input: { readonly markId: str
                     )
                 )
             )
-            .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.id));
+            .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
         const parsedEvents = events.map((event): ReconciliationMarkEventEntry => {
             const outcome = fieldValue(event.changes, OUTCOME_FIELD);
             const condition = fieldValue(event.changes, LATE_PAYMENT_FAILED_CONDITION_FIELD);

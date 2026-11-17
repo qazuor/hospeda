@@ -322,7 +322,7 @@ export const listingNoticesModel = {
                     inArray(domainEvent.entityId, ids)
                 )
             )
-            .orderBy(asc(domainEvent.occurredAt));
+            .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
         const open = await client
             .select()
             .from(fixRequests)
@@ -349,7 +349,7 @@ export const listingNoticesModel = {
                     sql`${domainEvent.changes} @> ${JSON.stringify([{ field: 'businessLines' }])}::jsonb`
                 )
             )
-            .orderBy(asc(domainEvent.occurredAt));
+            .orderBy(asc(domainEvent.occurredAt), asc(domainEvent.seq));
         return assembleListingNoticeRows({
             listings,
             events,
