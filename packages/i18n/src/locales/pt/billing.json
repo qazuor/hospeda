@@ -96,7 +96,10 @@
         "freeAlreadyActive": "Este complemento já está ativo para você.",
         "freePendingElsewhere": "Outra compra deste complemento está em andamento.",
         "freeOrderRequestReused": "Esse pedido já foi usado para outra escolha.",
-        "freeUnderGrant": "Este complemento está incluído grátis no seu benefício. Escolha sem pagar."
+        "freeUnderGrant": "Este complemento está incluído grátis no seu benefício. Escolha sem pagar.",
+        "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo.",
+        "providerBusy": "O Mercado Pago está com muita demanda neste momento. Aguarde um minuto e tente de novo.",
+        "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos."
     },
     "payment": {
         "title": "Métodos de pagamento",

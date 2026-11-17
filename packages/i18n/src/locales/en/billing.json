@@ -96,7 +96,10 @@
         "freeAlreadyActive": "This addon is already active for you.",
         "freePendingElsewhere": "Another purchase of this addon is in progress.",
         "freeOrderRequestReused": "That request was already used for another choice.",
-        "freeUnderGrant": "This addon is included for free in your benefit. Choose it without paying."
+        "freeUnderGrant": "This addon is included for free in your benefit. Choose it without paying.",
+        "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
+        "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
+        "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes."
     },
     "payment": {
         "title": "Payment methods",

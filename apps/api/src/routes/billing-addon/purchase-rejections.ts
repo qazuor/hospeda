@@ -18,7 +18,10 @@ type AddonPurchaseCopyKey =
     | 'freeAlreadyActive'
     | 'freePendingElsewhere'
     | 'freeOrderRequestReused'
-    | 'freeUnderGrant';
+    | 'freeUnderGrant'
+    | 'providerRejected'
+    | 'providerBusy'
+    | 'providerUnavailable';
 
 /** Reads API copy in the request locale, failing if a catalog entry is missing. */
 export function readAddonPurchaseCopy(ctx: Context, key: AddonPurchaseCopyKey): string {
@@ -71,7 +74,7 @@ export function answerAddonProviderError(input: {
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: 'The payment provider rejected the payment details',
+                    message: readAddonPurchaseCopy(ctx, 'providerRejected'),
                     reason: 'PROVIDER_REJECTED'
                 },
                 ctx,
@@ -85,7 +88,10 @@ export function answerAddonProviderError(input: {
                         kind === 'RATE_LIMITED'
                             ? ServiceErrorCode.PROVIDER_RATE_LIMITED
                             : ServiceErrorCode.SERVICE_UNAVAILABLE,
-                    message: 'The payment provider is busy; try again in a minute',
+                    message: readAddonPurchaseCopy(
+                        ctx,
+                        kind === 'RATE_LIMITED' ? 'providerBusy' : 'providerUnavailable'
+                    ),
                     reason: kind === 'RATE_LIMITED' ? 'PROVIDER_BUSY' : 'PROVIDER_UNAVAILABLE',
                     ...(retryAfterSeconds === undefined
                         ? {}
