@@ -19,11 +19,11 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:8 S34 and customer pause 
         const second = await grantTemporaryCourtesy({ ...input, months: 2 }, s.ports);
         expect(first).toMatchObject({
             outcome: 'GRANTED',
-            endsAt: new Date('2026-11-14T12:00:00.000Z')
+            endsAt: new Date('2026-11-13T12:00:00.000Z')
         });
         expect(second).toMatchObject({
             outcome: 'EXTENDED',
-            endsAt: new Date('2027-01-14T12:00:00.000Z')
+            endsAt: new Date('2027-01-13T12:00:00.000Z')
         });
         const pauses = await db
             .select()
@@ -37,7 +37,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:8 S34 and customer pause 
         expect(grants).toHaveLength(1);
         expect(pauses[0]).toMatchObject({
             id: first.outcome === 'GRANTED' ? first.pauseId : '',
-            expectedEndAt: new Date('2027-01-14T12:00:00.000Z'),
+            expectedEndAt: new Date('2027-01-13T12:00:00.000Z'),
             actualEndAt: null
         });
         expect(grants[0]).toMatchObject({

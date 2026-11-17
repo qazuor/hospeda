@@ -11,12 +11,18 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { BILLING_CYCLE_MONTHS } from '@repo/schemas';
-import { addCalendarMonths } from '@repo/utils';
 import { z } from 'zod';
 import { hasLivePermanentGrantAnchor } from '../grant/permanent-grant-live-anchors.js';
 import { computeCourtesyBalanceMonths } from './courtesy-balance.js';
 import type { TemporaryCourtesyRefusalReason } from './grant-temporary-courtesy.service.js';
+import {
+    computeTemporaryCourtesyWindow,
+    resolveCourtesyAnchor
+} from './temporary-courtesy-window.js';
+
+const logger = createLogger('temporary-courtesy-preview');
 
 const grantInputSchema = z.strictObject({ subscriptionId: z.uuid(), months: z.number() });
 const revokeInputSchema = z.strictObject({ subscriptionId: z.uuid() });
@@ -70,8 +76,9 @@ async function readBase(subscriptionId: string, now: Date) {
     const [grant] = await db
         .select({
             id: courtesyGrants.id,
+            endsAt: courtesyGrants.endsAt,
             startsAt: courtesyGrants.startsAt,
-            endsAt: courtesyGrants.endsAt
+            months: courtesyGrants.months
         })
         .from(courtesyGrants)
         .where(
@@ -100,7 +107,13 @@ async function readBase(subscriptionId: string, now: Date) {
         cycle: cycle.success ? cycle.data : null,
         liveCourtesy
     };
-    return { db, subscription, pause, base };
+    return {
+        db,
+        subscription,
+        pause,
+        base,
+        liveGrantWindow: grant ? { startsAt: grant.startsAt, months: grant.months } : null
+    };
 }
 
 /** Read the result that S9 or S34 would offer without changing billing state. */
@@ -110,12 +123,27 @@ export async function previewTemporaryCourtesyGrant(
 ) {
     const { subscriptionId, months } = grantInputSchema.parse(input);
     const now = ports.clock.now();
-    const { db, subscription, pause, base } = await readBase(subscriptionId, now);
-    const endsAt = addCalendarMonths({
-        from: base.liveCourtesy?.endsAt ?? now,
-        months: Math.max(1, Number.isInteger(months) ? months : 1),
-        dayOverflow: 'clamp'
-    });
+    const { db, subscription, pause, base, liveGrantWindow } = await readBase(subscriptionId, now);
+    const safeMonths = Math.max(1, Number.isInteger(months) ? months : 1);
+    let endsAt: Date;
+    if (base.status === 'PAUSED' && base.liveCourtesy && liveGrantWindow) {
+        endsAt = computeTemporaryCourtesyWindow({
+            anchor: liveGrantWindow.startsAt,
+            months: liveGrantWindow.months + safeMonths
+        }).endsAt;
+    } else {
+        if (!subscription?.nextChargeAt)
+            logger.warn(
+                { subscriptionId },
+                'Courtesy preview has no next charge date; anchoring at now'
+            );
+        const anchor = resolveCourtesyAnchor({
+            nextChargeAt: subscription?.nextChargeAt ?? null,
+            now,
+            cycleMonths: 1
+        });
+        endsAt = computeTemporaryCourtesyWindow({ anchor, months: safeMonths }).endsAt;
+    }
     let reason: TemporaryCourtesyRefusalReason | undefined;
     if (!Number.isInteger(months) || months < 1) reason = 'MONTHS_INVALID';
     else if (subscription?.class !== 'PRINCIPAL') reason = 'NOT_PRINCIPAL';
@@ -162,17 +190,20 @@ export async function previewTemporaryCourtesyRevoke(
 ) {
     const { subscriptionId } = revokeInputSchema.parse(input);
     const now = ports.clock.now();
-    const { subscription, pause, base } = await readBase(subscriptionId, now);
+    const { subscription, pause, base, liveGrantWindow } = await readBase(subscriptionId, now);
     const inForce =
         base.status === 'PAUSED' && pause?.reason === 'COURTESY' && base.liveCourtesy !== null;
-    let predictedNextChargeAt = subscription?.nextChargeAt ?? base.liveCourtesy?.endsAt ?? null;
-    if (base.cycle) {
-        while (predictedNextChargeAt && predictedNextChargeAt <= now) {
-            const advanced = new Date(predictedNextChargeAt);
-            advanced.setUTCMonth(advanced.getUTCMonth() + BILLING_CYCLE_MONTHS[base.cycle]);
-            predictedNextChargeAt = advanced;
-        }
-    }
+    let predictedNextChargeAt =
+        subscription?.nextChargeAt ??
+        liveGrantWindow?.startsAt ??
+        base.liveCourtesy?.endsAt ??
+        null;
+    if (predictedNextChargeAt && base.cycle)
+        predictedNextChargeAt = resolveCourtesyAnchor({
+            nextChargeAt: predictedNextChargeAt,
+            now,
+            cycleMonths: BILLING_CYCLE_MONTHS[base.cycle]
+        });
     return {
         subscriptionId,
         status: base.status,
