@@ -85,36 +85,36 @@
         {
             "id": "T-003",
             "title": "Add HOST_TRADE_CATEGORY_* permissions and re-count frozen guards",
-            "description": "Add HOST_TRADE_CATEGORY_VIEW|CREATE|UPDATE|DELETE|RESTORE to PermissionEnum (packages/schemas/src/enums/permission.enum.ts) with values hostTradeCategory.view|create|update|delete|restore (camelCase like poiCategory.*). Same set gates groups. Adding values trips frozen guards in 3 packages: RE-COUNT each (do not bump by one blindly) and list the guards touched in the PR: packages/schemas/test/enums/permission-naming-convention.guard.test.ts, the permission enum count/inventory tests in packages/schemas, packages/seed/test/role-permission-audit.test.ts and any inventory/mocks in packages/service-core or apps/api (rg for the current permission total to find them).\nACs: AC-3.6.\nTests: permission-naming guard still passes and asserts the 5 new values use the camelCase family convention; enum-count guard equals the freshly counted total.",
-            "status": "pending",
+            "description": "Add HOST_TRADE_CATEGORY_VIEW|CREATE|UPDATE|DELETE|RESTORE to PermissionEnum (packages/schemas/src/enums/permission.enum.ts) with values hostTradeCategory.view|create|update|delete|restore (camelCase like poiCategory.*). Same set gates groups. Adding values trips frozen guards in 3 packages: RE-COUNT each (do not bump by one blindly) and list the guards touched in the PR: packages/schemas/test/enums/permission-naming-convention.guard.test.ts, the permission enum count/inventory tests in packages/schemas, packages/seed/test/role-permission-audit.test.ts and any inventory/mocks in packages/service-core or apps/api (rg for the current permission total to find them).\nACs: AC-3.6.\nTests: permission-naming guard still passes and asserts the 5 new values use the camelCase family convention; enum-count guard equals the freshly counted total.\nDONE NOTE: no frozen total-permission count exists; only the HOST_TRADE category count (12 -> 17) in test/enums/host-trade-hos376.permissions.test.ts. Grouped under the existing HOST_TRADE category.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-010", "T-016", "T-018", "T-049"],
             "subtasks": [
                 {
                     "title": "Add enum values",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Re-count and update frozen guards in schemas/seed/service-core",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "List guards touched for PR body",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "permissions", "guards"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:18:55Z",
+                "completed": "2026-11-17T18:21:11Z"
             }
         },
         {
@@ -155,7 +155,7 @@
         {
             "id": "T-005",
             "title": "Create r_host_trade_category join and alter host_trades and alliance_leads dbschemas",
-            "description": "Create packages/db/src/schemas/host-trade/r_host_trade_category.dbschema.ts (host_trade_id FK -> host_trades.id cascade, category_id FK -> host_trade_categories.id RESTRICT, PK (host_trade_id, category_id), index on category_id) modelled on r_poi_category.dbschema.ts without isPrimary; add relations. Edit host_trade.dbschema.ts: category becomes NULLABLE (keep column, indexes hostTrades_category_idx and hostTrades_destinationId_category_idx untouched; expand step, nothing reads/writes it after this release). Edit packages/db/src/schemas/alliance/alliance_lead.dbschema.ts: add category_slugs text[] nullable; keep category varchar.\nACs: AC-3.4, AC-4.2 (DB side).\nTests (packages/db/test/schemas/host-trade/r_host_trade_category.dbschema.test.ts + update host_trade.dbschema.test.ts and an alliance_lead dbschema test): PK composite, FK actions (cascade/restrict), host_trades.category notNull === false, alliance_leads.category_slugs is array nullable.",
+            "description": "Create packages/db/src/schemas/host-trade/r_host_trade_category.dbschema.ts (host_trade_id FK -> host_trades.id cascade, category_id FK -> host_trade_categories.id RESTRICT, PK (host_trade_id, category_id), index on category_id) modelled on r_poi_category.dbschema.ts without isPrimary; add relations. Edit host_trade.dbschema.ts: category becomes NULLABLE (keep column, indexes hostTrades_category_idx and hostTrades_destinationId_category_idx untouched; expand step, nothing reads/writes it after this release). Edit packages/db/src/schemas/alliance/alliance_lead.dbschema.ts: add category_slugs text[] nullable; keep category varchar.\nACs: AC-3.4, AC-4.2 (DB side).\nTests (packages/db/test/schemas/host-trade/r_host_trade_category.dbschema.test.ts + update host_trade.dbschema.test.ts and an alliance_lead dbschema test): PK composite, FK actions (cascade/restrict), host_trades.category notNull === false, alliance_leads.category_slugs is array nullable.\nNOTE (from T-003): permissions are a Postgres enum in the DB (see 0126_cool_captain_flint.sql), so db:generate MUST also emit ALTER TYPE ADD VALUE for the 5 hostTradeCategory.* permissions.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-004"],
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 53,
+        "pending": 52,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.5
     }

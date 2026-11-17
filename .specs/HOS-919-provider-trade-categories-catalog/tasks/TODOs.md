@@ -23,7 +23,7 @@
   - Blocked by: T-001
   - Blocks: T-010, T-023, T-033
 
-- [ ] **T-003** (complexity: 2) - Add HOST_TRADE_CATEGORY_* permissions and re-count frozen guards
+- [x] **T-003** (complexity: 2) - Add HOST_TRADE_CATEGORY_* permissions and re-count frozen guards
   - Add HOST_TRADE_CATEGORY_VIEW|CREATE|UPDATE|DELETE|RESTORE to PermissionEnum (packages/schemas/src/en...
   - Blocked by: none
   - Blocks: T-010, T-016, T-018, T-049
