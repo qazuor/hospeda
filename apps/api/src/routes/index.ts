@@ -119,6 +119,8 @@ import { mediaHealthRoutes } from './health/media';
 import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
+import { adminHostTradeCategoryRoutes, publicHostTradeCategoryRoutes } from './host-trade-category';
+import { adminHostTradeCategoryGroupRoutes } from './host-trade-category-group';
 import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
@@ -378,6 +380,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/points-of-interest', publicPointOfInterestRoutes);
         // POI category catalog: public read tier for the thematic filter UI (HOS-147)
         app.route('/api/v1/public/poi-categories', publicPoiCategoryRoutes);
+        // Provider trade catalog: public read tier for the selectors (HOS-919)
+        app.route('/api/v1/public/host-trade-categories', publicHostTradeCategoryRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
@@ -638,6 +642,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Host-trade directory (SPEC-241) — admin-curated; host read perk
         app.route('/api/v1/admin/host-trades', adminHostTradeRoutes);
+        // Provider trade catalog: one set of permissions gates groups and categories (HOS-919)
+        app.route('/api/v1/admin/host-trade-category-groups', adminHostTradeCategoryGroupRoutes);
+        app.route('/api/v1/admin/host-trade-categories', adminHostTradeCategoryRoutes);
 
         // User-tag admin routes (SPEC-086 T-025..T-028)
         // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE
