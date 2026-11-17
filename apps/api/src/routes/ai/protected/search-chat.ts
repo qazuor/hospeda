@@ -83,9 +83,6 @@ import {
     type AttractionLocationConflict,
     type NearbyDestinationSummary,
     type SearchIntentEntities,
-    SearchIntentEntitiesSchema,
-    type SearchIntentOutput,
-    SearchIntentOutputSchema,
     VerticalEnum
 } from '@repo/schemas';
 import { DEFAULT_POI_PROXIMITY_RADIUS_KM, DestinationService } from '@repo/service-core';
@@ -105,6 +102,10 @@ import {
 import { resolveAttractionConstraint } from './attraction-resolver.js';
 import { matchPoiTerms } from './poi-allowlist.js';
 import { resolvePoiConstraint } from './poi-resolver.js';
+import {
+    normalizeSearchModelOutput,
+    SearchIntentModelOutputSchema
+} from './search-chat.model-output.js';
 import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {
     buildConversationalSearchPrompt,
@@ -487,9 +488,11 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
  * 1. Parse the validated body: messages, optional currentFilters, locale, conversationId.
  * 2. Derive `message` (last user turn) and `history` (all prior messages).
  * 3. Build the per-request slot-extraction prompt via `buildConversationalSearchPrompt`.
- * 4. Call `aiService.generateObject` with `SearchIntentOutputSchema` to extract
- *    the full updated entity set. Mirrors search-intent.ts (same Zod-cast pattern).
- * 5. Safe-parse returned entities; fall back to `{}` on failure.
+ * 4. Call `aiService.generateObject` with `SearchIntentModelOutputSchema` (strict:
+ *    every field required and nullable, HOS-2294) to extract the full updated
+ *    entity set.
+ * 5. Normalize the answer (`null` -> absent) and validate each slot against
+ *    `SearchIntentEntitiesSchema`; an invalid slot is dropped, never the whole bag.
  * 5.5. HOS-551 / H-71: drop boolean-amenity / slug carryover that looks like
  *    unmentioned state from the PRIOR turn, when this turn's entities name a
  *    genuinely different destination (see `dropStaleAmenitiesOnNewSearch`).
@@ -583,15 +586,17 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
 
         // Step 4: Extract the full updated filter set via generateObject.
         //
-        // Cast SearchIntentOutputSchema to the parameter type that ai-service's
-        // generateObject expects. Mirrors the exact cast used in search-intent.ts
-        // (lines 257-263): both @repo/schemas and @repo/ai-core pin zod ^4.0.8,
-        // but pnpm may resolve them to slightly different patch versions, producing
-        // a nominal ZodType mismatch that is safe to bypass — the runtime schemas
-        // are identical and the structural contract is enforced by the safeParse below.
+        // The model gets the STRICT schema (every field required and nullable,
+        // HOS-2294): strict mode pins the key names, so a renamed key can no
+        // longer be silently dropped by the lenient parse below.
+        //
+        // The cast bypasses a nominal ZodType mismatch: both @repo/schemas and
+        // @repo/ai-core pin zod ^4.0.8, but pnpm may resolve them to slightly
+        // different patch versions. The runtime schemas are identical and the
+        // normalizer below enforces the contract.
         const aiService = await createConfiguredAiService();
         type GenerateObjectSchema = Parameters<AiService['generateObject']>[1];
-        const outputSchema = SearchIntentOutputSchema as unknown as GenerateObjectSchema; // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to different Zod patch versions (4.3.x vs 4.4.x), causing a nominal ZodType mismatch; the runtime schemas are structurally identical and the safeParse enforces the contract.
+        const outputSchema = SearchIntentModelOutputSchema as unknown as GenerateObjectSchema; // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to different Zod patch versions (4.3.x vs 4.4.x), causing a nominal ZodType mismatch; the runtime schemas are structurally identical and the normalizer enforces the contract.
         const result = await aiService.generateObject(
             { feature: 'search', prompt, locale },
             outputSchema
@@ -604,24 +609,19 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // the full request and not just its second half.
         const intentUsage = result.usage;
 
-        // Step 5: Safe-parse entities; fall back to empty on model output failure.
+        // Step 5: Normalize the answer (`null` -> absent) and validate every slot.
         //
         // `result.object` is typed as `unknown` because the Zod-version cast above
-        // loses the generic type parameter. Re-assert as `SearchIntentOutput` —
-        // the safeParse provides the actual runtime safety guarantee.
-        const typedObject = result.object as SearchIntentOutput;
-        const rawEntities = typedObject.entities;
-
-        const entitiesParse = SearchIntentEntitiesSchema.safeParse(rawEntities);
-        let validatedEntities: SearchIntentEntities;
-        if (entitiesParse.success) {
-            validatedEntities = entitiesParse.data;
-        } else {
+        // loses the generic type parameter. An invalid slot (out of range, bad
+        // UUID) is dropped on its own; the rest of the filter set survives, and
+        // the search never fails whole on one bad value (HOS-207, HOS-2294).
+        const normalized = normalizeSearchModelOutput({ value: result.object });
+        let validatedEntities: SearchIntentEntities = normalized.entities;
+        if (normalized.droppedFields.length > 0) {
             apiLogger.warn(
-                { locale, issues: entitiesParse.error.issues },
-                'search-chat: entities safeParse failed — falling back to empty entities'
+                { locale, droppedFields: normalized.droppedFields },
+                'search-chat: dropped invalid model-emitted entity slots (kept the rest)'
             );
-            validatedEntities = {};
         }
 
         // HOS-298: drop an unusable destination id before anything downstream
@@ -690,7 +690,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // Passed through verbatim, NOT coerced: `undefined` (the model said
         // nothing) must stay distinguishable from an explicit `false`, or the
         // fallback silently disappears.
-        const modelSaysNewSearch = typedObject.isNewSearch;
+        const modelSaysNewSearch = normalized.isNewSearch;
 
         // Logged unconditionally so the classification is auditable: this is the
         // one signal that says how often the model gets refine-vs-new right, and
@@ -1314,7 +1314,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             filters: {
                 params,
                 intent: validatedEntities,
-                confidence: typedObject.confidence,
+                confidence: normalized.confidence,
                 // HOS-111 T-013: only present when this turn actually expanded
                 // to nearby destinations (absent, not empty-array, otherwise —
                 // see AiSearchChatFiltersEventSchema JSDoc).
