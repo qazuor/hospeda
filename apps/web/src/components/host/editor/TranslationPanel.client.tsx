@@ -40,6 +40,7 @@
 
 import { useCallback, useState } from 'react';
 import type { AccommodationTranslationData } from '@/lib/api/types';
+import { visibleApiMessage } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { TranslationFieldRow } from './TranslationFieldRow.client';
@@ -223,7 +224,7 @@ export function TranslationPanel({ locale, accommodationId, translations }: Tran
                               'host.properties.editor.translation.allFailed',
                               'No se pudo generar ninguna traducción. Revisá el detalle por campo e intentá de nuevo.'
                           )
-                        : result.error.message ||
+                        : visibleApiMessage({ error: result.error }) ||
                               t(
                                   'host.properties.editor.translation.errorGeneric',
                                   'No se pudieron generar las traducciones. Intentá de nuevo.'

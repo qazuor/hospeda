@@ -41,6 +41,7 @@ import type {
     MarketComparisonData,
     ResponseRateData
 } from '@/lib/api/types';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -255,13 +256,21 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                               'Error al cargar tiempo de respuesta'
                           )
                         : responseRateResult.status === 'fulfilled' && !responseRateResult.value.ok
-                          ? responseRateResult.value.error.message
+                          ? (visibleApiMessage({ error: responseRateResult.value.error }) ??
+                            t(
+                                'host.dashboard.analytics.responseRate.error',
+                                'Error al cargar tiempo de respuesta'
+                            ))
                           : null,
                 inquiries:
                     inquiriesResult.status === 'rejected'
                         ? t('host.dashboard.analytics.inquiries.error', 'Error al cargar consultas')
                         : inquiriesResult.status === 'fulfilled' && !inquiriesResult.value.ok
-                          ? inquiriesResult.value.error.message
+                          ? (visibleApiMessage({ error: inquiriesResult.value.error }) ??
+                            t(
+                                'host.dashboard.analytics.inquiries.error',
+                                'Error al cargar consultas'
+                            ))
                           : null,
                 marketComparison: hasAdvanced
                     ? marketResult.status === 'rejected'
@@ -270,20 +279,29 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                               'Error al cargar comparación de mercado'
                           )
                         : marketResult.status === 'fulfilled' && !marketResult.value.ok
-                          ? marketResult.value.error.message
+                          ? (visibleApiMessage({ error: marketResult.value.error }) ??
+                            t(
+                                'host.dashboard.analytics.marketComparison.error',
+                                'Error al cargar comparación de mercado'
+                            ))
                           : null
                     : null,
                 views:
                     viewsResult.status === 'rejected'
                         ? t('host.dashboard.analytics.views.error', 'Error al cargar vistas')
                         : viewsResult.status === 'fulfilled' && !viewsResult.value.ok
-                          ? viewsResult.value.error.message
+                          ? (visibleApiMessage({ error: viewsResult.value.error }) ??
+                            t('host.dashboard.analytics.views.error', 'Error al cargar vistas'))
                           : null,
                 favorites: hasAdvanced
                     ? favoritesResult.status === 'rejected'
                         ? t('host.dashboard.analytics.favorites.error', 'Error al cargar favoritos')
                         : favoritesResult.status === 'fulfilled' && !favoritesResult.value.ok
-                          ? favoritesResult.value.error.message
+                          ? (visibleApiMessage({ error: favoritesResult.value.error }) ??
+                            t(
+                                'host.dashboard.analytics.favorites.error',
+                                'Error al cargar favoritos'
+                            ))
                           : null
                     : null
             };
@@ -365,7 +383,8 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             ) {
                 const msg =
                     viewsResult.status === 'fulfilled' && !viewsResult.value.ok
-                        ? viewsResult.value.error.message
+                        ? (visibleApiMessage({ error: viewsResult.value.error }) ??
+                          t('host.dashboard.analytics.views.error', 'Error al cargar vistas'))
                         : t('host.dashboard.analytics.views.error', 'Error al cargar vistas');
                 setErrors((prev) => ({ ...prev, views: msg }));
             } else {

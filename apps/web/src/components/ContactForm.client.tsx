@@ -14,6 +14,7 @@ import { CheckCircleIcon } from '@repo/icons';
 import type { ContactSubmitInput } from '@repo/schemas';
 import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -188,7 +189,7 @@ export function ContactForm({ locale }: ContactFormProps) {
                     error?: { message?: string };
                 };
                 throw new Error(
-                    body.error?.message ??
+                    visibleApiMessage({ error: body.error, status: res.status }) ??
                         t('contact.form.errorGeneral', 'Ha ocurrido un error. Intentá de nuevo.')
                 );
             }

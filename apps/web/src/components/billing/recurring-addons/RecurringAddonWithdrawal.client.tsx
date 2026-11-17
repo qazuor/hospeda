@@ -6,6 +6,7 @@ import {
 } from '@repo/schemas';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import styles from './RecurringAddonWithdrawal.module.css';
@@ -65,7 +66,11 @@ export function RecurringAddonWithdrawal({
                     const parsed = OwnerRecurringAddonsResponseSchema.safeParse(result.data);
                     if (parsed.success) setItems(parsed.data.items);
                     else setError(t('billing.addonPurchase.recurringAddons.loadError'));
-                } else setError(result.error.message);
+                } else
+                    setError(
+                        visibleApiMessage({ error: result.error }) ??
+                            t('billing.addonPurchase.recurringAddons.loadError')
+                    );
                 setLoading(false);
             })
             .catch(() => {

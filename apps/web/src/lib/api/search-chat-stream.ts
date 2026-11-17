@@ -17,6 +17,7 @@ import type {
     AiSearchChatFiltersEvent,
     AiSearchChatRequest
 } from '@repo/schemas';
+import { visibleApiMessage } from '@/lib/api-errors';
 
 // ─── Public event union ────────────────────────────────────────────────────────
 
@@ -134,8 +135,10 @@ export async function streamSearchChat(params: StreamSearchChatParams): Promise<
             params.onEvent({
                 type: 'stream_error',
                 error: new Error(
-                    (errBody as { error?: { message?: string } })?.error?.message ??
-                        `HTTP ${response.status}`
+                    visibleApiMessage({
+                        error: (errBody as { error?: { message?: string } })?.error,
+                        status: response.status
+                    }) ?? `HTTP ${response.status}`
                 ),
                 status: response.status
             });

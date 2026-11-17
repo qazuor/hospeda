@@ -272,6 +272,28 @@ describe('ContactForm', () => {
             });
         });
 
+        it('shows the localized fallback, not the API message, on a 5xx (HOS-2312)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                json: async () => ({
+                    error: { code: 'INTERNAL_ERROR', message: 'An unexpected error occurred' }
+                })
+            } as Response);
+
+            renderContactForm();
+            await fillForm();
+            fireEvent.click(screen.getByRole('button', { name: /enviar/i }));
+
+            await waitFor(() => {
+                const alerts = screen.getAllByRole('alert');
+                expect(
+                    alerts.find((el) => el.textContent?.includes('Ha ocurrido un error'))
+                ).toBeDefined();
+            });
+            expect(screen.queryByText(/An unexpected error occurred/)).toBeNull();
+        });
+
         it('shows generic error when fetch throws', async () => {
             vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'));
 

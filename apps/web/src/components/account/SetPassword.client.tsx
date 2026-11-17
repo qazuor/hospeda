@@ -20,6 +20,7 @@ import {
     DialogFooter,
     DialogHeader
 } from '@/components/shared/ui/Dialog.client';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -183,7 +184,7 @@ export function SetPassword({
                     error?: { message?: string };
                 };
                 setGlobalError(
-                    errorData?.error?.message ??
+                    visibleApiMessage({ error: errorData?.error, status: response.status }) ??
                         t(
                             'account.setPassword.errors.submitFailed',
                             'No se pudo establecer la contraseña. Intentá nuevamente.'
@@ -239,7 +240,7 @@ export function SetPassword({
                     error?: { message?: string };
                 };
                 setGlobalError(
-                    errorData?.error?.message ??
+                    visibleApiMessage({ error: errorData?.error, status: response.status }) ??
                         t(
                             'account.setPassword.errors.skipFailed',
                             'No se pudo saltar el paso. Intentá nuevamente.'

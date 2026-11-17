@@ -55,6 +55,7 @@ import {
     type ContentMediaRow,
     contentMediaApi
 } from '@/lib/api/endpoints-protected';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -382,7 +383,7 @@ export function ContentMediaSection({
 
                 if (!addResult.ok) {
                     reportError(
-                        addResult.error.message ??
+                        visibleApiMessage({ error: addResult.error }) ??
                             t(
                                 'account.myContent.editor.media.persistFailed',
                                 'No se pudo guardar la imagen en la base de datos'
@@ -401,7 +402,7 @@ export function ContentMediaSection({
 
                 if (!featuredResult.ok) {
                     reportError(
-                        featuredResult.error.message ??
+                        visibleApiMessage({ error: featuredResult.error }) ??
                             t(
                                 'account.myContent.editor.media.featuredFailed',
                                 'No se pudo marcar la imagen como principal'
@@ -449,7 +450,7 @@ export function ContentMediaSection({
             setFeaturedItem(null);
         } else {
             reportError(
-                result.error.message ??
+                visibleApiMessage({ error: result.error }) ??
                     t(
                         'account.myContent.editor.media.removeFailed',
                         'No se pudo eliminar la imagen'
@@ -512,7 +513,7 @@ export function ContentMediaSection({
 
                 if (!addResult.ok) {
                     reportError(
-                        addResult.error.message ??
+                        visibleApiMessage({ error: addResult.error }) ??
                             t(
                                 'account.myContent.editor.media.persistFailed',
                                 'No se pudo guardar la imagen en la base de datos'
@@ -566,7 +567,7 @@ export function ContentMediaSection({
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
                 reportError(
-                    result.error.message ??
+                    visibleApiMessage({ error: result.error }) ??
                         t(
                             'account.myContent.editor.media.removeFailed',
                             'No se pudo eliminar la imagen'
@@ -614,7 +615,7 @@ export function ContentMediaSection({
 
             if (!result.ok) {
                 reportError(
-                    result.error.message ??
+                    visibleApiMessage({ error: result.error }) ??
                         t(
                             'account.myContent.editor.media.metadataSaveFailed',
                             'No se pudieron guardar los datos de la foto'
