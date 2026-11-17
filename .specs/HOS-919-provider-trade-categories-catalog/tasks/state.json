@@ -1261,35 +1261,35 @@
             "id": "T-036",
             "title": "Retype web endpoint responses and add getHostTradeCatalog()",
             "description": "Edit apps/web/src/lib/api/endpoints-protected.ts and endpoints-public.ts: retype the 3 host-trade response types (directory list, detail, benefit usage provider ref) from category to categories: HostTradeCategoryRef[]; add getHostTradeCatalog() to endpoints-public.ts calling GET /api/v1/public/host-trade-categories (public tier only; web never calls /admin/) and returning typed PublicHostTradeCatalog.\nACs: AC-1.1, AC-5.1, AC-6.1.\nTests (apps/web/test/lib/api/*.test.ts): getHostTradeCatalog hits the public URL and returns parsed groups; error status yields a typed failure result (used by AC-6.2 fallback); types compile (typecheck with CI=true).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-033"],
             "blocks": ["T-037", "T-038", "T-039", "T-041"],
             "subtasks": [
                 {
                     "title": "Retype 3 responses",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "getHostTradeCatalog",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "api-client"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:14:36Z",
+                "completed": "2026-11-17T20:14:36Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 35,
+        "completed": 36,
         "blocked": 0,
         "averageComplexity": 2.5
     }

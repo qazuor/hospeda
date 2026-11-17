@@ -192,7 +192,7 @@
   - Blocked by: T-034, T-033
   - Blocks: T-037
 
-- [ ] **T-036** (complexity: 2) - Retype web endpoint responses and add getHostTradeCatalog()
+- [x] **T-036** (complexity: 2) - Retype web endpoint responses and add getHostTradeCatalog()
   - Edit apps/web/src/lib/api/endpoints-protected.ts and endpoints-public.ts: retype the 3 host-trade re...
   - Blocked by: T-033
   - Blocks: T-037, T-038, T-039, T-041
