@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * Config-level tests for the host-trades feature (T-019 — SPEC-241).
  *
@@ -8,6 +9,7 @@
  */
 
 import { CreateHostTradeSchema } from '@repo/schemas';
+import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { createHostTradeConsolidatedConfig } from '../config/host-trade-consolidated.config';
 import { createHostTradesColumns } from '../config/host-trades.columns';
@@ -26,7 +28,7 @@ describe('createHostTradesColumns', () => {
     it('returns at least the required columns', () => {
         const ids = columns.map((c) => c.id);
         expect(ids).toContain('name');
-        expect(ids).toContain('category');
+        expect(ids).toContain('categories');
         expect(ids).toContain('contact');
         expect(ids).toContain('is24h');
         expect(ids).toContain('isActive');
@@ -44,30 +46,53 @@ describe('createHostTradesColumns', () => {
         expect((link?.params as { id: string })?.id).toBe('uuid-1');
     });
 
-    it('category column has badge options covering all enum values', () => {
-        const catCol = columns.find((c) => c.id === 'category');
-        expect(catCol?.badgeOptions).toBeDefined();
-        expect((catCol?.badgeOptions?.length ?? 0) >= 13).toBe(true);
+    it('exposes the categories column and no legacy category column', () => {
+        const ids = columns.map((c) => c.id);
+        expect(ids).toContain('categories');
+        expect(ids).not.toContain('category');
     });
 
     /**
-     * The category badge is the one cell whose text is DATA, not a header, and
-     * it was the last hardcoded Spanish in this feature (HOS-376 T-054). Three
-     * of the thirteen literals had already drifted from the shared dictionary —
-     * the admin said "Plagas" where the directory said "Control de plagas" —
-     * which is what a second copy of the same words always ends up doing.
-     *
-     * The stub returns the key it is given, so a label that went through `t()`
-     * IS the key. A literal would not match.
+     * One badge per category, labelled from the category's own nameI18n (HOS-919
+     * AC-4.4). The cell is data, not a header, so a hardcoded label would be a
+     * second copy of words the catalog owns.
      */
-    it('labels every category through i18n rather than a hardcoded literal', () => {
-        const catCol = columns.find((c) => c.id === 'category');
-        const labels = (catCol?.badgeOptions ?? []).map((option) => option.label);
+    it('renders one badge per category, labelled from nameI18n', () => {
+        const column = columns.find((c) => c.id === 'categories');
+        const row = {
+            id: 'h-1',
+            categories: [
+                { id: 'c-1', slug: 'plomeria', nameI18n: { es: 'Plomería', en: 'P', pt: 'P' } },
+                { id: 'c-2', slug: 'gas', nameI18n: { es: 'Gas', en: 'G', pt: 'G' } },
+                { id: 'c-3', slug: 'sin-es', nameI18n: { es: '', en: 'English only', pt: '' } }
+            ]
+        } as unknown as Parameters<NonNullable<typeof column>['widgetRenderer'] & object>[0];
 
-        expect(labels.length).toBeGreaterThanOrEqual(13);
-        for (const label of labels) {
-            expect(label).toMatch(/^host-trades\.categories\./);
-        }
+        const { container } = render(
+            (column?.widgetRenderer as (r: typeof row) => React.ReactElement)(row)
+        );
+
+        const badges = container.querySelectorAll('[data-testid="provider-category-badge"]');
+        expect(Array.from(badges).map((badge) => badge.textContent)).toEqual([
+            'Plomería',
+            'Gas',
+            'English only'
+        ]);
+    });
+
+    it('renders no badge for a provider without categories', () => {
+        const column = columns.find((c) => c.id === 'categories');
+        const row = { id: 'h-1', categories: [] } as unknown as Parameters<
+            NonNullable<typeof column>['widgetRenderer'] & object
+        >[0];
+
+        const { container } = render(
+            (column?.widgetRenderer as (r: typeof row) => React.ReactElement)(row)
+        );
+
+        expect(container.querySelectorAll('[data-testid="provider-category-badge"]')).toHaveLength(
+            0
+        );
     });
 });
 
@@ -82,10 +107,39 @@ describe('hostTradesConfig', () => {
 
     it('defines the expected filter params', () => {
         const paramKeys = (hostTradesConfig.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
-        expect(paramKeys).toContain('category');
+        expect(paramKeys).toContain('categories');
+        expect(paramKeys).not.toContain('category');
         expect(paramKeys).toContain('isActive');
         expect(paramKeys).toContain('is24h');
         expect(paramKeys).toContain('includeDeleted');
+    });
+
+    it('category filter is a catalog-driven multi-select that sends `categories`', () => {
+        const filter = hostTradesConfig.filterBarConfig?.filters.find(
+            (f) => f.paramKey === 'categories'
+        );
+
+        expect(filter?.type).toBe('multi-select');
+    });
+
+    it('options come from the catalog, not from hardcoded entries', () => {
+        const filter = hostTradesConfig.filterBarConfig?.filters.find(
+            (f) => f.paramKey === 'categories'
+        ) as { options?: unknown; loadOptions?: unknown } | undefined;
+
+        expect(filter?.options).toBeUndefined();
+        expect(typeof filter?.loadOptions).toBe('function');
+    });
+
+    it('does not keep the retired enum-based filter labels', () => {
+        const serialized = JSON.stringify(
+            (hostTradesConfig.filterBarConfig?.filters ?? []).map((f) => ({
+                paramKey: f.paramKey,
+                labelKey: f.labelKey
+            }))
+        );
+
+        expect(serialized).not.toContain('hostTradeCategory');
     });
 
     it('uses the correct entity type', () => {

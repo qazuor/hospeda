@@ -3,9 +3,16 @@
  * - 'select' and 'boolean' were implemented in SPEC-054.
  * - 'number-range' and 'date-range' were added in SPEC-185 Phase 1.
  * - 'text' (debounced free-input) was added alongside SPEC-185 (PR #1431).
+ * - 'multi-select' (any-of, options loaded at runtime) was added for HOS-919.
  * - 'relation' remains deferred to a future spec.
  */
-export type FilterControlType = 'select' | 'boolean' | 'number-range' | 'date-range' | 'text';
+export type FilterControlType =
+    | 'select'
+    | 'boolean'
+    | 'number-range'
+    | 'date-range'
+    | 'text'
+    | 'multi-select';
 
 /**
  * Base configuration shared by all filter control types.
@@ -144,6 +151,22 @@ export type TextFilterConfig = BaseFilterConfig & {
 };
 
 /**
+ * Configuration for an any-of multi-select filter whose options are loaded at
+ * runtime (HOS-919). The active value is a comma-separated string in the URL
+ * param, which is the shape the API's list filters accept.
+ */
+export type MultiSelectFilterConfig = BaseFilterConfig & {
+    /** Discriminant: multi-select filter type */
+    readonly type: 'multi-select';
+    /** Loads the options. Values are what is sent to the API; labels are display text. */
+    readonly loadOptions: () => Promise<
+        ReadonlyArray<{ readonly value: string; readonly label: string }>
+    >;
+    /** Query key under which the loaded options are cached. */
+    readonly optionsQueryKey: readonly string[];
+};
+
+/**
  * Configuration for a single filter control in the filter bar.
  * Discriminated union on the `type` field.
  */
@@ -152,7 +175,8 @@ export type FilterControlConfig =
     | BooleanFilterConfig
     | NumberRangeFilterConfig
     | DateRangeFilterConfig
-    | TextFilterConfig;
+    | TextFilterConfig
+    | MultiSelectFilterConfig;
 
 /** Sentinel value used for the "All" option in Radix Select, which does not support empty strings. */
 export const FILTER_ALL_VALUE = '__all__' as const;

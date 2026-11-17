@@ -97,6 +97,32 @@ export const loadAllHostTradeCategories = async (): Promise<SelectOption[]> => {
 };
 
 /**
+ * Loads every category as `{ value: slug, label }` for the host-trades list
+ * filter, which sends comma-separated SLUGS (`categories=plomeria,gas`).
+ *
+ * All lifecycle states are included on purpose: an admin must be able to find
+ * the providers that still carry a deactivated category.
+ *
+ * @returns Options labelled from `nameI18n`, or an empty list on failure.
+ */
+export const loadHostTradeCategoryFilterOptions = async (): Promise<
+    ReadonlyArray<{ readonly value: string; readonly label: string }>
+> => {
+    try {
+        return (await fetchAllRows({ activeOnly: false })).map((row) => ({
+            value: row.slug,
+            label: resolveI18nText(row.nameI18n) || row.slug
+        }));
+    } catch (error) {
+        adminLogger.error(
+            'Error loading host trade category filter options:',
+            error instanceof Error ? error.message : String(error)
+        );
+        return [];
+    }
+};
+
+/**
  * Resolves options for known ids across every lifecycle state, so categories a
  * provider already has keep a label even when inactive.
  *

@@ -230,6 +230,9 @@
     "is24h": {
         "label": "Disponible 24h"
     },
+    "hostTradeCategories": {
+        "label": "Categorías"
+    },
     "hostTradeCategory": {
         "label": "Categoría",
         "cerrajeria": "Cerrajería",

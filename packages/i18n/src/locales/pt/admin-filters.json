@@ -230,6 +230,9 @@
     "is24h": {
         "label": "Disponível 24h"
     },
+    "hostTradeCategories": {
+        "label": "Categorias"
+    },
     "hostTradeCategory": {
         "label": "Categoria",
         "cerrajeria": "Serralheiro",

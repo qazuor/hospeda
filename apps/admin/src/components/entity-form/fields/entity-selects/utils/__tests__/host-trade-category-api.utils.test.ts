@@ -14,7 +14,8 @@ vi.mock('@/utils/logger', () => ({ adminLogger: { error: vi.fn() } }));
 import { fetchApi } from '@/lib/api/client';
 import {
     loadAllHostTradeCategories,
-    loadHostTradeCategoriesByIds
+    loadHostTradeCategoriesByIds,
+    loadHostTradeCategoryFilterOptions
 } from '../host-trade-category-api.utils';
 
 const mockFetch = vi.mocked(fetchApi);
@@ -75,6 +76,19 @@ describe('host trade category loaders', () => {
         const path = mockFetch.mock.calls[0]?.[0].path ?? '';
         expect(path).not.toContain('lifecycleState=');
         expect(options.map((option) => option.label)).toEqual(['Telegrafía']);
+    });
+
+    it('offers every category by slug to the list filter, inactive ones included', async () => {
+        mockFetch.mockResolvedValue(page([ACTIVE, INACTIVE]));
+
+        const options = await loadHostTradeCategoryFilterOptions();
+
+        const path = mockFetch.mock.calls[0]?.[0].path ?? '';
+        expect(path).not.toContain('lifecycleState=');
+        expect(options).toEqual([
+            { value: 'plomeria', label: 'Plomería' },
+            { value: 'telegrafia', label: 'Telegrafía' }
+        ]);
     });
 
     it('does not call the API for an empty id list', async () => {
