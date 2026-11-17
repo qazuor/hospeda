@@ -1,7 +1,7 @@
 import en from '@repo/i18n/locales/en/admin-billing.json';
 import es from '@repo/i18n/locales/es/admin-billing.json';
 import pt from '@repo/i18n/locales/pt/admin-billing.json';
-import { PermissionEnum, ProviderWatchAuthorizationValueSchema } from '@repo/schemas';
+import { PermissionEnum, ProviderWatchAuthorizeInputSchema } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import {
@@ -19,9 +19,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePlatformSetting, useUpdatePlatformSetting } from '@/hooks/use-platform-setting';
+import { usePlatformSetting } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { useAuthorizeProviderWatch, useProviderWatchAccount } from '../hooks';
 
 const COPY_BY_LOCALE = { es, en, pt };
 
@@ -45,36 +46,39 @@ function formatArs(minor: number): string {
 }
 
 type FormValues = { month: string; maxChargeMinor: string };
-
 type Translate = (
     key: keyof typeof es.settings.providerWatchAuthorization,
     values?: Readonly<Record<string, string>>
 ) => string;
+type Pending = { month: string; maxChargeMinor: number };
 
 /** The month and maximum-charge fields. Validated with the shared schema on submit. */
 function AuthorizationForm(props: {
     readonly stored: { readonly month: string; readonly maxChargeMinor: number } | null;
     readonly disabled: boolean;
     readonly translate: Translate;
-    readonly onValid: (value: { month: string; maxChargeMinor: number }) => void;
+    readonly confirmedAccountId: string;
+    readonly onValid: (value: Pending) => void;
     readonly onInvalid: () => void;
 }) {
-    const { stored, disabled, translate, onValid, onInvalid } = props;
+    const { stored, disabled, translate, confirmedAccountId, onValid, onInvalid } = props;
     const form = useForm<FormValues>({
         defaultValues: {
             month: stored?.month ?? currentMarketMonth(),
             maxChargeMinor: stored ? String(stored.maxChargeMinor) : ''
         },
         onSubmit: ({ value }) => {
-            const parsed = ProviderWatchAuthorizationValueSchema.safeParse({
+            const parsed = ProviderWatchAuthorizeInputSchema.safeParse({
                 month: value.month.trim(),
                 // Digits only: `Number()` would also accept '1e3' or '0x10'.
                 maxChargeMinor: /^\d+$/.test(value.maxChargeMinor.trim())
                     ? Number(value.maxChargeMinor.trim())
-                    : Number.NaN
+                    : Number.NaN,
+                confirmedAccountId
             });
-            if (parsed.success) onValid(parsed.data);
-            else onInvalid();
+            if (parsed.success) {
+                onValid({ month: parsed.data.month, maxChargeMinor: parsed.data.maxChargeMinor });
+            } else onInvalid();
         }
     });
     return (
@@ -135,17 +139,19 @@ function AuthorizationForm(props: {
 }
 
 /**
- * Shows and sets the monthly authorization of the provider watch battery (HOS-1512): the month
- * its production run is allowed in and the exact maximum charge a money-moving measurement may
- * have. Writing is SUPER_ADMIN-only; the owner renews it every month.
+ * Shows and sets the one-run authorization of the provider watch battery (HOS-1512): the month its
+ * production run is allowed in, the exact maximum charge, and the provider account the owner
+ * CONFIRMS (read by the API, never typed). It shows whether the authorization was consumed and by
+ * which run. Writing needs `PROVIDER_WATCH_MANAGE`, held only by SUPER_ADMIN.
  */
 export function ProviderWatchAuthorizationCard() {
     const { locale } = useTranslations();
     const permissions = useUserPermissions();
-    const canWrite = permissions.includes(PermissionEnum.MAINTENANCE_MODE_WRITE);
+    const canWrite = permissions.includes(PermissionEnum.PROVIDER_WATCH_MANAGE);
     const query = usePlatformSetting({ key: 'billing.providerWatchAuthorization' });
-    const mutation = useUpdatePlatformSetting({ key: 'billing.providerWatchAuthorization' });
-    const [pending, setPending] = useState<{ month: string; maxChargeMinor: number } | null>(null);
+    const account = useProviderWatchAccount({ enabled: canWrite });
+    const mutation = useAuthorizeProviderWatch();
+    const [pending, setPending] = useState<Pending | null>(null);
     const [invalid, setInvalid] = useState(false);
     const selectedLocale = locale === 'en' || locale === 'pt' ? locale : 'es';
     const copy = COPY_BY_LOCALE[selectedLocale].settings.providerWatchAuthorization;
@@ -156,13 +162,29 @@ export function ProviderWatchAuthorizationCard() {
         );
 
     const stored = query.data?.row?.value ?? null;
+    const month = currentMarketMonth();
+    const consumedBy = stored?.consumedByRunId;
     const status =
         stored === null
             ? translate('statusNone')
-            : stored.month === currentMarketMonth()
-              ? translate('statusActive', { month: stored.month })
-              : translate('statusStale', { month: stored.month });
-    const isActive = stored !== null && stored.month === currentMarketMonth();
+            : consumedBy
+              ? translate('statusConsumed', { runId: consumedBy })
+              : stored.month === month
+                ? translate('statusActive', { month: stored.month })
+                : translate('statusStale', { month: stored.month });
+    const usable = stored !== null && !consumedBy && stored.month === month;
+    const accountLabel = account.data
+        ? translate('accountValue', {
+              nickname: account.data.nickname ?? '-',
+              id: account.data.id
+          })
+        : '';
+    const storedAccount = stored?.accountId
+        ? translate('accountValue', {
+              nickname: stored.accountNickname ?? '-',
+              id: stored.accountId
+          })
+        : null;
 
     return (
         <Card data-testid="provider-watch-authorization-card">
@@ -173,28 +195,56 @@ export function ProviderWatchAuthorizationCard() {
                 <p className="text-muted-foreground text-sm">{translate('description')}</p>
                 <div className="flex items-center gap-2">
                     <Badge
-                        variant={isActive ? 'default' : 'destructive'}
+                        variant={usable ? 'default' : 'destructive'}
                         data-testid="provider-watch-authorization-status"
                     >
                         {status}
                     </Badge>
                 </div>
                 {stored && (
-                    <p
-                        className="text-sm"
+                    <div
+                        className="space-y-1 text-sm"
                         data-testid="provider-watch-authorization-current"
                     >
-                        {translate('currentValue', {
-                            amount: formatArs(stored.maxChargeMinor),
-                            minor: String(stored.maxChargeMinor)
-                        })}
-                    </p>
+                        <p>
+                            {translate('currentValue', {
+                                amount: formatArs(stored.maxChargeMinor),
+                                minor: String(stored.maxChargeMinor)
+                            })}
+                        </p>
+                        {storedAccount && (
+                            <p>{translate('currentAccount', { account: storedAccount })}</p>
+                        )}
+                        {stored.consumedAt && (
+                            <p data-testid="provider-watch-authorization-consumed">
+                                {translate('consumedAt', {
+                                    date: new Date(stored.consumedAt).toLocaleString(locale)
+                                })}
+                            </p>
+                        )}
+                    </div>
                 )}
                 <p className="text-muted-foreground text-sm">{translate('hint')}</p>
                 {!canWrite && (
                     <p className="text-muted-foreground text-sm">
                         {translate('noWritePermission')}
                     </p>
+                )}
+                {canWrite && (
+                    <div className="space-y-1 text-sm">
+                        <p className="font-medium">{translate('accountTitle')}</p>
+                        {account.isLoading && <p>{translate('accountLoading')}</p>}
+                        {account.isError && (
+                            <p
+                                className="text-destructive"
+                                role="alert"
+                                data-testid="provider-watch-account-error"
+                            >
+                                {translate('accountError')}
+                            </p>
+                        )}
+                        {account.data && <p data-testid="provider-watch-account">{accountLabel}</p>}
+                    </div>
                 )}
                 {invalid && (
                     <p
@@ -215,8 +265,9 @@ export function ProviderWatchAuthorizationCard() {
                 {!query.isLoading && (
                     <AuthorizationForm
                         stored={stored}
-                        disabled={!canWrite || mutation.isPending}
+                        disabled={!canWrite || !account.data || mutation.isPending}
                         translate={translate}
+                        confirmedAccountId={account.data?.id ?? ''}
                         onValid={(value) => {
                             setInvalid(false);
                             setPending(value);
@@ -237,6 +288,7 @@ export function ProviderWatchAuthorizationCard() {
                                 {pending
                                     ? translate('confirmSave', {
                                           month: pending.month,
+                                          account: accountLabel,
                                           amount: formatArs(pending.maxChargeMinor)
                                       })
                                     : ''}
@@ -245,9 +297,14 @@ export function ProviderWatchAuthorizationCard() {
                         <AlertDialogFooter>
                             <AlertDialogCancel>{translate('cancel')}</AlertDialogCancel>
                             <AlertDialogAction
-                                disabled={mutation.isPending}
+                                disabled={mutation.isPending || !account.data}
                                 onClick={() => {
-                                    if (pending) mutation.mutate(pending);
+                                    if (pending && account.data) {
+                                        mutation.mutate({
+                                            ...pending,
+                                            confirmedAccountId: account.data.id
+                                        });
+                                    }
                                 }}
                             >
                                 {translate('save')}
