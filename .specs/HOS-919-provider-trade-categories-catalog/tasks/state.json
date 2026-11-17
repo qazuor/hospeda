@@ -1335,74 +1335,74 @@
             "id": "T-038",
             "title": "Update TradesDirectory.client.tsx to any-of multi-category filter",
             "description": "Edit apps/web/src/components/**/TradesDirectory.client.tsx (lines ~48-149): active filter becomes ReadonlySet<string> of slugs; pills derived from the union of categories in the result set, ordered by catalog order (group weight, category weight); any-of semantics, a provider with 2 matching categories listed once; keep toggle-to-clear and empty-state; badges per provider in catalog order; no longer sorted by category.\nACs: AC-5.1, AC-5.2, AC-5.3.\nTests (apps/web/test/components/TradesDirectory.test.tsx): selecting 2 pills shows the union with no duplicates; pill order follows catalog order; clicking an active pill clears it; empty-state shown when none match; providers keep name ordering.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-036"],
             "blocks": ["T-042", "T-050"],
             "subtasks": [
                 {
                     "title": "Set-based filter state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pills from result set",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:26:18Z",
+                "completed": "2026-11-17T20:26:18Z"
             }
         },
         {
             "id": "T-039",
             "title": "Render category badges in TradeCard and BenefitUsageCard",
             "description": "Create apps/web/src/lib/trade-category-labels.ts (RO-RO helper: label = nameI18n[locale] ?? nameI18n.es; split into visible first 3 and overflow count). Edit apps/web/src/components/**/TradeCard.tsx (~line 107) and BenefitUsageCard.tsx (~line 96) to render one badge per category, max 3 plus '+N'; styles in the existing CSS modules (no Tailwind).\nACs: AC-5.1.\nTests (apps/web/test/lib/trade-category-labels.test.ts and component tests for both cards): locale label and es fallback; 5 categories -> 3 badges plus '+2'; 1 category -> 1 badge and no '+N'; order preserved.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-036"],
             "blocks": ["T-040", "T-042"],
             "subtasks": [
                 {
                     "title": "Label helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "TradeCard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "BenefitUsageCard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:26:19Z",
+                "completed": "2026-11-17T20:26:19Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 17,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 37,
+        "completed": 39,
         "blocked": 0,
         "averageComplexity": 2.5
     }

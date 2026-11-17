@@ -202,12 +202,12 @@
   - Blocked by: T-035, T-036
   - Blocks: T-042
 
-- [ ] **T-038** (complexity: 3) - Update TradesDirectory.client.tsx to any-of multi-category filter
+- [x] **T-038** (complexity: 3) - Update TradesDirectory.client.tsx to any-of multi-category filter
   - Edit apps/web/src/components/**/TradesDirectory.client.tsx (lines ~48-149): active filter becomes Re...
   - Blocked by: T-036
   - Blocks: T-042, T-050
 
-- [ ] **T-039** (complexity: 3) - Render category badges in TradeCard and BenefitUsageCard
+- [x] **T-039** (complexity: 3) - Render category badges in TradeCard and BenefitUsageCard
   - Create apps/web/src/lib/trade-category-labels.ts (RO-RO helper: label = nameI18n[locale] ?? nameI18n...
   - Blocked by: T-036
   - Blocks: T-040, T-042
