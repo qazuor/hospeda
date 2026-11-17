@@ -214,7 +214,7 @@ describe('useMediaUpload — HTTP error surfaces (413 / 422 / 503)', () => {
         });
 
         await expect(result.current.uploadEntityImage.mutateAsync(validInput)).rejects.toThrow(
-            /Request failed \(503\)/
+            /Error del servidor/
         );
     });
 });

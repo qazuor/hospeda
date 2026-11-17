@@ -21,6 +21,32 @@
  * ```
  */
 
+import { defaultLocale, trans } from '@repo/i18n';
+
+/**
+ * Localized text shown instead of the API `message` on a server error.
+ *
+ * The API answers every 5xx with a fixed English generic message (HOS-2296)
+ * that is not meant for people, so `ApiError.message` carries this text for
+ * status >= 500 (HOS-2312). The original is kept in `serverMessage`.
+ */
+const SERVER_ERROR_MESSAGE_KEY = 'admin-common.toastErrors.api.serverError';
+
+/**
+ * Resolve the localized server-error text. Never throws: the catalog lookup is
+ * guarded so a partially mocked or unavailable catalog degrades to English.
+ */
+function localizedServerErrorMessage(): string {
+    try {
+        return (
+            trans[defaultLocale]?.[SERVER_ERROR_MESSAGE_KEY] ??
+            'Something went wrong on our side. Please try again later.'
+        );
+    } catch {
+        return 'Something went wrong on our side. Please try again later.';
+    }
+}
+
 /**
  * Standard API error codes matching backend ServiceErrorCode
  */
@@ -72,9 +98,16 @@ export class ApiError extends Error {
     public readonly method?: string;
     /** Timestamp when error occurred */
     public readonly timestamp: Date;
+    /**
+     * The message the API sent, kept for logs and error reports when `message`
+     * was replaced by the localized server-error text (status >= 500).
+     */
+    public readonly serverMessage?: string;
 
     constructor(message: string, config: ApiErrorConfig) {
-        super(message);
+        const masked = config.status >= 500;
+        super(masked ? localizedServerErrorMessage() : message);
+        if (masked) this.serverMessage = message;
         this.name = 'ApiError';
         this.status = config.status;
         this.code = config.code ?? mapStatusToCode(config.status);
@@ -194,6 +227,7 @@ export class ApiError extends Error {
         return {
             name: this.name,
             message: this.message,
+            serverMessage: this.serverMessage,
             status: this.status,
             code: this.code,
             details: this.details,

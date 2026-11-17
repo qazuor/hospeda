@@ -19,6 +19,76 @@ const sent: AuthorizeInput = {
 };
 
 describe('TEST:B3:44 creation confirmation', () => {
+    it('accepts the provider truncating a sent first charge to its whole second (RP17, EX-60)', async () => {
+        const provider = new FakePaymentProvider({
+            clock,
+            honestAbout: [
+                { lie: 'M1', why: 'isolate the provider first-charge precision rule' },
+                { lie: 'M9', why: 'isolate the provider first-charge precision rule' }
+            ]
+        });
+        const preciseSent = { ...sent, firstChargeAt: '2026-11-21T01:05:59.318Z' };
+        const { authorizationId } = await provider.authorize(preciseSent);
+        const truncatedProvider = {
+            readAuthorization: async (input: { readonly authorizationId: string }) => {
+                const read = await provider.readAuthorization(input);
+                return {
+                    ...read,
+                    snapshot: {
+                        ...read.snapshot,
+                        firstChargeAt: '2026-11-20T21:05:59.000-04:00'
+                    }
+                };
+            }
+        };
+
+        const result = await confirmAuthorizationCreation({
+            provider: truncatedProvider,
+            authorizationId,
+            sent: preciseSent
+        });
+
+        expect(result.outcome).toBe('applied');
+    });
+
+    it.each([
+        '2026-11-21T01:06:00.000Z',
+        '2026-11-21T01:05:58.000Z'
+    ])('rejects a first charge readback outside the exact sent second: %s', async (firstChargeAt) => {
+        const provider = new FakePaymentProvider({
+            clock,
+            honestAbout: [
+                {
+                    lie: 'M1',
+                    why: 'isolate the first-charge mismatch from provider cadence behavior'
+                },
+                {
+                    lie: 'M9',
+                    why: 'isolate the first-charge mismatch from provider-added free period'
+                }
+            ]
+        });
+        const preciseSent = { ...sent, firstChargeAt: '2026-11-21T01:05:59.318Z' };
+        const { authorizationId } = await provider.authorize(preciseSent);
+        const alteredProvider = {
+            readAuthorization: async (input: { readonly authorizationId: string }) => {
+                const read = await provider.readAuthorization(input);
+                return { ...read, snapshot: { ...read.snapshot, firstChargeAt } };
+            }
+        };
+
+        const result = await confirmAuthorizationCreation({
+            provider: alteredProvider,
+            authorizationId,
+            sent: preciseSent
+        });
+
+        expect(result.outcome).toBe('notApplied');
+        if (result.outcome === 'notApplied') {
+            expect(result.unapplied.map(({ field }) => field)).toEqual(['firstChargeAt']);
+        }
+    });
+
     it('keeps the authorization input strict and requires an ISO first charge instant', () => {
         expect(AuthorizeInputSchema.safeParse(sent).success).toBe(true);
         expect(AuthorizeInputSchema.safeParse({ ...sent, firstChargeAt: 'tomorrow' }).success).toBe(

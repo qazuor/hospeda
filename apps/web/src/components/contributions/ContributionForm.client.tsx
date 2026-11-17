@@ -27,6 +27,7 @@ import { ContactSubmitSchema } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, type ReactNode, useEffect, useState } from 'react';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/umami-client';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -193,7 +194,7 @@ export function ContributionForm({ presetType, locale, children }: ContributionF
                     error?: { message?: string };
                 };
                 throw new Error(
-                    body.error?.message ??
+                    visibleApiMessage({ error: body.error, status: res.status }) ??
                         t(
                             'contributions.form.errorGeneral',
                             'Ha ocurrido un error. Intentá de nuevo.'

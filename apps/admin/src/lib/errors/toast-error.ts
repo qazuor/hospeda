@@ -225,7 +225,10 @@ function getApiErrorMessage(
         default:
             return {
                 title: tt('generic.title'),
-                description: error.message || tt('generic.description')
+                description:
+                    error.status >= 500
+                        ? tt('api.serverError')
+                        : error.message || tt('generic.description')
             };
     }
 }

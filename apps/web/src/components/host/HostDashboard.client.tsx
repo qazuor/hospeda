@@ -17,6 +17,7 @@ import { type JSX, useCallback, useEffect, useState } from 'react';
 import { hostDashboardApi, publishApi } from '@/lib/api/endpoints-protected';
 import { transformHostDashboard } from '@/lib/api/transforms';
 import type { HostDashboardData } from '@/lib/api/types';
+import { visibleApiMessage } from '@/lib/api-errors';
 import {
     resolveDashboardFreeCard,
     resolveDashboardTrialStat
@@ -123,7 +124,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                 setState({
                     status: 'error',
                     message:
-                        result.error.message ??
+                        visibleApiMessage({ error: result.error }) ??
                         t('host.dashboard.error', 'Error al cargar el panel')
                 });
                 return;

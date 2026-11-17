@@ -8,6 +8,7 @@
  */
 
 import type { AiChatEntityType } from '@repo/schemas';
+import { visibleApiMessage } from '@/lib/api-errors';
 
 /** SSE event types emitted by the chat stream. */
 export type SseEvent =
@@ -69,7 +70,7 @@ export async function streamChat(params: StreamChatParams): Promise<void> {
                 error?: { code?: string; message?: string };
             };
             const code = errBody.error?.code;
-            const message = errBody.error?.message;
+            const message = visibleApiMessage({ error: errBody.error, status: response.status });
 
             // Emit the structured shape whenever the API sent one. Collapsing
             // it into a bare `Error` used to discard `code`, leaving the UI

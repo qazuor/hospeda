@@ -212,10 +212,10 @@ describe('ChangePasswordForm', () => {
     // ── 5. Shows API error message on failure ─────────────────────────────────
 
     describe('API error handling', () => {
-        it('shows API error message from response body on 500', async () => {
+        it('shows API error message from response body on a 4xx', async () => {
             vi.mocked(global.fetch).mockResolvedValueOnce({
                 ok: false,
-                status: 500,
+                status: 409,
                 json: async () => ({ error: { message: 'Internal server error' } })
             } as Response);
 
@@ -230,6 +230,26 @@ describe('ChangePasswordForm', () => {
                 );
                 expect(serverAlert).toBeDefined();
             });
+        });
+
+        it('hides the API message and shows the localized fallback on a 5xx (HOS-2312)', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                json: async () => ({ error: { message: 'Internal server error' } })
+            } as Response);
+
+            renderForm();
+            fillFields();
+            fireEvent.click(screen.getByRole('button', { name: /cambiar contraseña/i }));
+
+            await waitFor(() => {
+                const alerts = screen.getAllByRole('alert');
+                expect(
+                    alerts.find((el) => el.textContent?.includes('Ocurrió un error'))
+                ).toBeDefined();
+            });
+            expect(screen.queryByText(/Internal server error/)).toBeNull();
         });
 
         it('shows fallback error message when response body has no message', async () => {

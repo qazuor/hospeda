@@ -21,6 +21,7 @@
 import { ChangePasswordInputSchema } from '@repo/schemas';
 import { type FormEvent, useEffect, useRef, useState } from 'react';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -200,7 +201,7 @@ export function ChangePasswordForm({ locale, accountEmail, returnUrl }: ChangePa
                     return;
                 }
                 throw new Error(
-                    body.error?.message ??
+                    visibleApiMessage({ error: body.error, status: res.status }) ??
                         t(
                             'account.changePassword.error',
                             'Ocurrió un error al actualizar la contraseña. Por favor, intentá de nuevo.'

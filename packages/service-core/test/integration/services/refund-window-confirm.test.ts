@@ -1,8 +1,17 @@
 import { PaymentProviderError } from '@repo/payments';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { refundFailFixture, refundFailRows } from './support/refund-fail-fixtures.js';
+
+const { warn } = vi.hoisted(() => ({ warn: vi.fn() }));
+vi.mock('@repo/logger', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...actual,
+        createLogger: () => ({ warn, error: vi.fn(), info: vi.fn(), debug: vi.fn() })
+    };
+});
 
 afterAll(closeServiceTestPool);
 const skip = !isServiceTestDbAvailable();
@@ -72,6 +81,7 @@ describe('TEST:B6:5 AC:B6:7 provider refund deadline and definitive refusal', ()
     it.skipIf(skip)(
         'fails an answered non-2084 refusal and records its key without moving payment',
         async () => {
+            warn.mockClear();
             // Arrange
             const seeded = await refundFailFixture();
             const before = await refundFailRows({
@@ -86,7 +96,11 @@ describe('TEST:B6:5 AC:B6:7 provider refund deadline and definitive refusal', ()
                             throw new PaymentProviderError({
                                 code: 'REJECTED',
                                 capability: 'refund',
-                                message: 'refund rejected'
+                                message: 'Mercado Pago request failed (401)',
+                                cause: {
+                                    status: 401,
+                                    body: { message: 'Unauthorized use of live credentials' }
+                                }
                             });
                         };
                     return Reflect.get(target, property, receiver);
@@ -109,7 +123,25 @@ describe('TEST:B6:5 AC:B6:7 provider refund deadline and definitive refusal', ()
             expect(after.refund?.status).toBe('FAILED');
             expect(after.calls).toHaveLength(1);
             expect(after.keys).toHaveLength(1);
-            expect(after.keys[0]?.result).toEqual({ outcome: 'REJECTED', code: 'REJECTED' });
+            expect(after.keys[0]?.result).toMatchObject({
+                outcome: 'REJECTED',
+                code: 'REJECTED',
+                message: 'Mercado Pago request failed (401)',
+                cause: {
+                    httpStatus: 401,
+                    message: 'Unauthorized use of live credentials'
+                }
+            });
+            expect(warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    refundId: seeded.refundId,
+                    key: expect.any(String),
+                    code: 'REJECTED',
+                    message: 'Mercado Pago request failed (401)',
+                    cause: expect.objectContaining({ httpStatus: 401 })
+                }),
+                'Provider rejected refund'
+            );
             expect(after.payment).toEqual(before.payment);
             expect(after.notices).toHaveLength(1);
         }

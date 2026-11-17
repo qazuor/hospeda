@@ -70,6 +70,37 @@ describe('HOS-1553 AC:B6:8 TEST:B6:6 Mercado Pago order refunds', () => {
         ).rejects.toMatchObject({ code, refundRefusal: refusal });
     });
 
+    it('keeps the status and sanitized provider body on rejected order refunds', async () => {
+        const { provider } = setup({
+            status: 401,
+            body: {
+                message: 'Unauthorized for person@example.com',
+                error: 'unauthorized',
+                cause: [{ code: 4010, description: 'Invalid token for person@example.com' }]
+            }
+        });
+        let error: (Error & { code: string; cause: unknown }) | undefined;
+        try {
+            await provider.refundOrder({
+                orderId: 'ORD1',
+                reference: 'key',
+                scope: { kind: 'total' }
+            });
+        } catch (caught) {
+            error = caught as Error & { code: string; cause: unknown };
+        }
+        expect(error).toBeDefined();
+        if (!error) throw new Error('Expected rejected order refund');
+        expect(error).toMatchObject({ code: 'REJECTED' });
+        expect(error.cause).toMatchObject({
+            status: 401,
+            body: {
+                message: 'Unauthorized for [REDACTED_EMAIL]',
+                cause: [{ description: 'Invalid token for [REDACTED_EMAIL]' }]
+            }
+        });
+    });
+
     it('refuses malformed refund amounts and unexpected success statuses', async () => {
         const malformed = setup({
             status: 201,

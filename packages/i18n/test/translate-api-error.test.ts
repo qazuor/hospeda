@@ -495,3 +495,66 @@ describe('translateApiError', () => {
         });
     });
 });
+
+// ─── HOS-2312: 5xx messages are never shown ─────────────────────────────────
+
+describe('translateApiError on server errors (HOS-2312)', () => {
+    const ENGLISH = 'An unexpected error occurred';
+
+    it.each([
+        ['es', 'Algo salió mal. Intentá de nuevo en un momento.'],
+        ['en', 'Something went wrong. Please try again in a moment.'],
+        ['pt', 'Algo deu errado. Tente novamente em instantes.']
+    ] as const)('replaces the API message with the generic text (%s)', (locale, expected) => {
+        for (const status of [500, 502, 503]) {
+            const message = translateApiError({
+                error: { status, code: 'SOME_UNMAPPED_CODE', message: ENGLISH },
+                locale
+            });
+            expect(message).toBe(expected);
+        }
+    });
+
+    it('prefers the caller fallback over the API message on 5xx', () => {
+        const message = translateApiError({
+            error: { status: 500, message: ENGLISH },
+            locale: 'es',
+            fallback: 'No pudimos completar la compra.'
+        });
+        expect(message).toBe('No pudimos completar la compra.');
+    });
+
+    it('still resolves a translated code or reason on 5xx', () => {
+        expect(
+            translateApiError({
+                error: { status: 503, code: 'SERVICE_UNAVAILABLE', message: ENGLISH },
+                locale: 'es'
+            })
+        ).toMatch(/no está disponible temporalmente/i);
+        expect(
+            translateApiError({
+                error: {
+                    status: 503,
+                    code: 'SERVICE_UNAVAILABLE',
+                    reason: 'NEWSLETTER_NOT_CONFIGURED',
+                    message: ENGLISH
+                },
+                locale: 'es'
+            })
+        ).toMatch(/newsletter no está disponible/i);
+    });
+
+    it('never returns the API message without a translation context on 5xx', () => {
+        const message = translateApiError({ error: { status: 500, message: ENGLISH } });
+        expect(message).not.toBe(ENGLISH);
+        expect(message).toBe('Something went wrong. Please try again.');
+    });
+
+    it.each([400, 403, 404, 409, 422])('keeps the API message on %i', (status) => {
+        const message = translateApiError({
+            error: { status, code: 'SOME_UNMAPPED_CODE', message: 'Specific business message' },
+            locale: 'es'
+        });
+        expect(message).toBe('Specific business message');
+    });
+});

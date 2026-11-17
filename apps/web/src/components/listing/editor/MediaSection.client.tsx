@@ -43,6 +43,7 @@ import { PhotoMetadataEditor } from '@/components/host/editor/PhotoMetadataEdito
 import type { PhotoMetadataUpdateBody } from '@/components/host/editor/photo-section-helpers';
 import { type ListingMediaRow, listingMediaApi } from '@/lib/api/endpoints-protected';
 import type { ApiError } from '@/lib/api/types';
+import { visibleApiMessage } from '@/lib/api-errors';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -433,7 +434,7 @@ export function MediaSection({
 
                 if (!featuredResult.ok) {
                     reportError(
-                        featuredResult.error.message ??
+                        visibleApiMessage({ error: featuredResult.error }) ??
                             t('listing.owner.editor.media.persistFailed')
                     );
                     return;
@@ -474,7 +475,10 @@ export function MediaSection({
         if (result.ok) {
             setFeaturedItem(null);
         } else {
-            reportError(result.error.message ?? t('listing.owner.editor.media.removeFailed'));
+            reportError(
+                visibleApiMessage({ error: result.error }) ??
+                    t('listing.owner.editor.media.removeFailed')
+            );
         }
         setOpLoading(false);
     }, [featuredItem, vertical, listingId, t, reportError]);
@@ -587,7 +591,8 @@ export function MediaSection({
 
                     if (!addResult.ok) {
                         reportError(
-                            addResult.error.message ?? t('listing.owner.editor.media.persistFailed')
+                            visibleApiMessage({ error: addResult.error }) ??
+                                t('listing.owner.editor.media.persistFailed')
                         );
                         // The cap was hit: every remaining file in the batch
                         // would fail identically, so stop instead of firing
@@ -634,7 +639,10 @@ export function MediaSection({
             if (result.ok) {
                 setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
             } else {
-                reportError(result.error.message ?? t('listing.owner.editor.media.removeFailed'));
+                reportError(
+                    visibleApiMessage({ error: result.error }) ??
+                        t('listing.owner.editor.media.removeFailed')
+                );
             }
             setOpLoading(false);
         },
@@ -676,7 +684,7 @@ export function MediaSection({
 
             if (!result.ok) {
                 reportError(
-                    result.error.message ??
+                    visibleApiMessage({ error: result.error }) ??
                         t(
                             'listing.owner.editor.media.metadataSaveFailed',
                             'No se pudieron guardar los datos de la foto'

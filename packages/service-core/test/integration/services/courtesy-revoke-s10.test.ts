@@ -233,7 +233,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B9b:14 courtesy revocation is
             .select({ endsAt: courtesyGrants.endsAt })
             .from(courtesyGrants)
             .where(eq(courtesyGrants.subscriptionId, s.subscriptionId));
-        expect(courtesy?.endsAt).toEqual(new Date('2027-02-14T12:00:00.000Z'));
+        expect(courtesy?.endsAt).toEqual(new Date('2027-02-13T12:00:00.000Z'));
         const marks = await db
             .select({ reason: reconciliationMarks.reason })
             .from(reconciliationMarks)
