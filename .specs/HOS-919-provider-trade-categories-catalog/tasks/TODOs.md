@@ -264,7 +264,7 @@
   - Blocked by: T-003, T-017, T-030, T-041, T-042, T-047
   - Blocks: T-050
 
-- [ ] **T-050** (complexity: 1) - Apply status-needs-smoke-staging label and prepare smoke checklist
+- [x] **T-050** (complexity: 1) - Apply status-needs-smoke-staging label and prepare smoke checklist
   - When the final PR for this spec is opened (PR body must follow the HOS-919 magic-word rules: only th...
   - Blocked by: T-049, T-031, T-032, T-038, T-044, T-046
   - Blocks: T-053
@@ -276,7 +276,7 @@
   - Blocked by: T-017, T-030
   - Blocks: T-052
 
-- [ ] **T-052** (complexity: 1) - Draft What's New entry candidate in the PR description
+- [x] **T-052** (complexity: 1) - Draft What's New entry candidate in the PR description
   - Draft (do NOT commit to apps/api/src/data/whats-new/whats-new.ts, that is written at smoke sign-off ...
   - Blocked by: T-051
   - Blocks: T-053

@@ -1795,18 +1795,18 @@
             "id": "T-050",
             "title": "Apply status-needs-smoke-staging label and prepare smoke checklist",
             "description": "When the final PR for this spec is opened (PR body must follow the HOS-919 magic-word rules: only the completing PR carries 'Closes HOS-919'), apply the label status-needs-smoke-staging to the issue/PR per the smoke-gate convention (spec §10 manual smoke) and paste the 4-step checklist into the PR description: (1) create a category in admin, see it on /sumate/proveedor and the marketing page after the purge; (2) deactivate it, it disappears from both but stays on a provider that has it; (3) submit a lead with 3 categories, approve it, check the provider row; (4) filter the directory by 2 categories. Do NOT mark the issue Done while the label exists; the smoke is signed off through /smoke or smoke-tanda.\nACs: AC-1.1, AC-2.1, AC-3.2, AC-3.3, AC-5.2.\nTests: label present on the issue; PR body contains the 4 scenarios; no premature close.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-049", "T-031", "T-032", "T-038", "T-044", "T-046"],
             "blocks": ["T-053"],
             "subtasks": [
                 {
                     "title": "Apply label",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Paste smoke checklist in PR",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["smoke", "release"],
@@ -1819,7 +1819,7 @@
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T23:01:28Z"
             }
         },
         {
@@ -1861,18 +1861,18 @@
             "id": "T-052",
             "title": "Draft What's New entry candidate in the PR description",
             "description": "Draft (do NOT commit to apps/api/src/data/whats-new/whats-new.ts, that is written at smoke sign-off by the smoke-tanda flow with publishedAt 'on-promotion') the Spanish text for a novelty candidate: providers can now be listed under several categories and admins manage the catalog. Include it in the PR description so the sign-off flow can pick it up; label the PR whats-new-done or whats-new-none per the HOS-1214 decision.\nACs: n/a.\nTests: PR carries exactly one of the two whats-new labels.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-051"],
             "blocks": ["T-053"],
             "subtasks": [
                 {
                     "title": "Draft es text",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Choose whats-new label",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "whats-new"],
@@ -1885,7 +1885,7 @@
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T23:01:28Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 4,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 50,
+        "completed": 52,
         "blocked": 0,
         "averageComplexity": 2.5
     }
