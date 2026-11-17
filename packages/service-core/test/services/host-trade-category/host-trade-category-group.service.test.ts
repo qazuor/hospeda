@@ -39,6 +39,18 @@ const actorDelete = createActor({ permissions: [PermissionEnum.HOST_TRADE_CATEGO
 const actorRestore = createActor({ permissions: [PermissionEnum.HOST_TRADE_CATEGORY_RESTORE] });
 const actorView = createActor({ permissions: [PermissionEnum.HOST_TRADE_CATEGORY_VIEW] });
 
+const TX = { __tx: true };
+const txState = vi.hoisted(() => ({ calls: 0 }));
+
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (fn: (ctx: unknown) => Promise<unknown>, baseCtx?: { hookState?: object }) => {
+            txState.calls += 1;
+            return fn({ ...baseCtx, tx: TX, hookState: baseCtx?.hookState ?? {} });
+        }
+    )
+}));
+
 describe('HostTradeCategoryGroupService', () => {
     let service: HostTradeCategoryGroupService;
     let model: HostTradeCategoryGroupModel;
@@ -53,10 +65,13 @@ describe('HostTradeCategoryGroupService', () => {
             'restore',
             'findAll',
             'count',
-            'countActiveChildren'
+            'countActiveChildren',
+            'lockForUpdate'
         ]);
+        txState.calls = 0;
         service = new HostTradeCategoryGroupService({ logger: createLoggerMock() }, model);
         vi.clearAllMocks();
+        asMock(model.lockForUpdate).mockResolvedValue(true);
     });
 
     describe('permissions', () => {
@@ -208,6 +223,22 @@ describe('HostTradeCategoryGroupService', () => {
 
             expect(result.error?.code).toBe(ServiceErrorCode.CATEGORY_IN_USE);
             expect(model.softDelete).not.toHaveBeenCalled();
+        });
+
+        it('should lock the group row, count and delete in ONE transaction', async () => {
+            asMock(model.findById).mockResolvedValue(group);
+            asMock(model.countActiveChildren).mockResolvedValue(0);
+            asMock(model.softDelete).mockResolvedValue(1);
+
+            await service.softDelete(actorDelete, groupId);
+
+            expect(txState.calls).toBe(1);
+            expect(model.lockForUpdate).toHaveBeenCalledWith(groupId, TX);
+            expect(model.countActiveChildren).toHaveBeenCalledWith(groupId, TX);
+            expect(asMock(model.softDelete).mock.calls[0]?.[2]).toBe(TX);
+            const lockOrder = asMock(model.lockForUpdate).mock.invocationCallOrder[0] ?? 0;
+            const countOrder = asMock(model.countActiveChildren).mock.invocationCallOrder[0] ?? 0;
+            expect(lockOrder).toBeLessThan(countOrder);
         });
 
         it('should soft delete an empty group', async () => {

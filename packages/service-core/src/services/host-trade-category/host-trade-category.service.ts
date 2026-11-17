@@ -131,12 +131,14 @@ export class HostTradeCategoryService extends BaseCrudService<
     }
 
     /**
-     * Asserts that `groupId` points to an existing, non-deleted group.
+     * Asserts that `groupId` points to an existing, non-deleted group, reading it
+     * `FOR SHARE` so the group cannot be soft-deleted before the calling write
+     * commits (the group delete takes `FOR UPDATE`). Callers run on a transaction.
      *
      * @throws {ServiceError} VALIDATION_ERROR naming the `groupId` field.
      */
     private async assertGroupUsable(groupId: string, ctx: ServiceContext): Promise<void> {
-        const group = await this.groupModel.findById(groupId, ctx?.tx);
+        const group = await this.groupModel.findByIdForShare(groupId, ctx?.tx);
         if (!group || group.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
@@ -165,6 +167,38 @@ export class HostTradeCategoryService extends BaseCrudService<
             );
         }
         return data;
+    }
+
+    /**
+     * Create, update and restore run in ONE transaction (the caller's when
+     * `ctx.tx` is set): the group is read `FOR SHARE` inside it, and that lock
+     * is only held until the end of the transaction.
+     */
+    public override async create(
+        actor: Actor,
+        data: HostTradeCategoryCreateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostTradeCategory>> {
+        return runInServiceTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
+    }
+
+    /** @see {@link create} for why this runs in a transaction. */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: HostTradeCategoryUpdateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostTradeCategory>> {
+        return runInServiceTransaction(ctx, (txCtx) => super.update(actor, id, data, txCtx));
+    }
+
+    /** @see {@link create} for why this runs in a transaction. */
+    public override async restore(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
+        return runInServiceTransaction(ctx, (txCtx) => super.restore(actor, id, txCtx));
     }
 
     /** Moving a category to another group requires that group to be usable. */

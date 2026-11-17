@@ -21,6 +21,7 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../../types';
+import { runInServiceTransaction } from '../../utils/service-transaction';
 import {
     checkCanCreateHostTradeCatalog,
     checkCanDeleteHostTradeCatalog,
@@ -136,8 +137,26 @@ export class HostTradeCategoryGroupService extends BaseCrudService<
     }
 
     /**
+     * Soft-deletes a group inside ONE transaction (the caller's when `ctx.tx` is
+     * set), so the child check in {@link _beforeSoftDelete} and the delete
+     * itself cannot be interleaved with a concurrent category write.
+     */
+    public override async softDelete(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
+        return runInServiceTransaction(ctx, (txCtx) => super.softDelete(actor, id, txCtx));
+    }
+
+    /**
      * Blocks deleting a group that still has non-deleted categories (AC-3.4).
      * Deactivating is the supported way to retire a group with children.
+     *
+     * Locks the group row first (`SELECT ... FOR UPDATE`). Category writes
+     * validate their group with `FOR SHARE` (`findByIdForShare`), which
+     * conflicts with it, so a concurrent category create, move or restore and
+     * this delete serialize: the second one sees the first one's result.
      *
      * @throws {ServiceError} `CATEGORY_IN_USE` when any non-deleted child exists.
      */
@@ -146,6 +165,7 @@ export class HostTradeCategoryGroupService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<string> {
+        await this.model.lockForUpdate(id, ctx?.tx);
         const children = await this.model.countActiveChildren(id, ctx?.tx);
         if (children > 0) {
             throw new ServiceError(

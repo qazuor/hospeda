@@ -61,6 +61,75 @@ export class HostTradeCategoryGroupModel extends BaseModelImpl<HostTradeCategory
             throw new DbError(this.entityName, 'countActiveChildren', logContext, err.message, err);
         }
     }
+
+    /**
+     * Loads a group with `SELECT ... FOR SHARE`, holding a row lock until the
+     * transaction ends. A category create, move or restore calls this to check
+     * the group is usable: the lock conflicts with the `FOR UPDATE` of
+     * {@link lockForUpdate} (the group delete), so a group cannot be deleted
+     * between the check and the write that depends on it. The later transaction
+     * sees the earlier one's committed result.
+     *
+     * Must run on a transaction client to be meaningful.
+     *
+     * @param groupId - Group UUID.
+     * @param tx - Transaction client holding the lock.
+     * @returns The group (possibly soft-deleted, the caller checks), or `null`.
+     * @throws DbError if the database query fails.
+     */
+    async findByIdForShare(
+        groupId: string,
+        tx?: DrizzleClient
+    ): Promise<HostTradeCategoryGroup | null> {
+        const db = this.getClient(tx);
+        const logContext = { groupId };
+        try {
+            const rows = await db
+                .select()
+                .from(hostTradeCategoryGroups)
+                .where(eq(hostTradeCategoryGroups.id, groupId))
+                .for('share');
+            return (rows[0] as HostTradeCategoryGroup | undefined) ?? null;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findByIdForShare', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findByIdForShare', logContext, err.message, err);
+        }
+    }
+
+    /**
+     * Locks the group row (`SELECT ... FOR UPDATE`) for the rest of the
+     * transaction, so the child count that follows and the soft delete cannot
+     * be overtaken by a category write that validated the group with
+     * {@link findByIdForShare}.
+     *
+     * Must run on a transaction client to be meaningful.
+     *
+     * @param groupId - Group UUID.
+     * @param tx - Transaction client holding the lock.
+     * @returns `true` when the row exists (and is now locked).
+     * @throws DbError if the database query fails.
+     */
+    async lockForUpdate(groupId: string, tx?: DrizzleClient): Promise<boolean> {
+        const db = this.getClient(tx);
+        const logContext = { groupId };
+        try {
+            const rows = await db
+                .select({ id: hostTradeCategoryGroups.id })
+                .from(hostTradeCategoryGroups)
+                .where(eq(hostTradeCategoryGroups.id, groupId))
+                .for('update');
+            return rows.length > 0;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'lockForUpdate', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'lockForUpdate', logContext, err.message, err);
+        }
+    }
 }
 
 /** Singleton instance of HostTradeCategoryGroupModel for use across the application. */

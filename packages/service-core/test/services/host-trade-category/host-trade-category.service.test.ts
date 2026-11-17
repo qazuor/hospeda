@@ -92,7 +92,7 @@ describe('HostTradeCategoryService', () => {
             'getTable'
         ]);
         asMock(model.getTable).mockReturnValue(hostTradeCategories);
-        groupModel = createTypedModelMock(HostTradeCategoryGroupModel, ['findById']);
+        groupModel = createTypedModelMock(HostTradeCategoryGroupModel, ['findByIdForShare']);
         service = new HostTradeCategoryService({ logger: createLoggerMock() }, model, groupModel);
         vi.clearAllMocks();
         txState.calls = 0;
@@ -126,7 +126,7 @@ describe('HostTradeCategoryService', () => {
 
     describe('create', () => {
         it('should create a category under an active group', async () => {
-            asMock(groupModel.findById).mockResolvedValue(group);
+            asMock(groupModel.findByIdForShare).mockResolvedValue(group);
             asMock(model.findOne).mockResolvedValue(null);
             asMock(model.create).mockResolvedValue(category);
 
@@ -136,8 +136,28 @@ describe('HostTradeCategoryService', () => {
             expect(result.data?.slug).toBe('plomeria');
         });
 
+        it('should validate the group FOR SHARE on one write transaction (create, update, restore)', async () => {
+            asMock(groupModel.findByIdForShare).mockResolvedValue(group);
+            asMock(model.findOne).mockResolvedValue(null);
+            asMock(model.create).mockResolvedValue(category);
+            asMock(model.findById).mockResolvedValue({ ...category, deletedAt: new Date() });
+            asMock(model.update).mockResolvedValue(category);
+            asMock(model.restore).mockResolvedValue(1);
+
+            await service.create(actorCreate, createInput);
+            await service.update(actorUpdate, categoryId, { groupId: otherGroupId });
+            await service.restore(actorRestore, categoryId);
+
+            expect(txState.calls).toBe(3);
+            expect(asMock(groupModel.findByIdForShare).mock.calls).toEqual([
+                [groupId, TX],
+                [otherGroupId, TX],
+                [groupId, TX]
+            ]);
+        });
+
         it('should fail with VALIDATION_ERROR on groupId when the group does not exist', async () => {
-            asMock(groupModel.findById).mockResolvedValue(null);
+            asMock(groupModel.findByIdForShare).mockResolvedValue(null);
 
             const result = await service.create(actorCreate, createInput);
 
@@ -147,7 +167,10 @@ describe('HostTradeCategoryService', () => {
         });
 
         it('should fail with VALIDATION_ERROR on groupId when the group is soft-deleted', async () => {
-            asMock(groupModel.findById).mockResolvedValue({ ...group, deletedAt: new Date() });
+            asMock(groupModel.findByIdForShare).mockResolvedValue({
+                ...group,
+                deletedAt: new Date()
+            });
 
             const result = await service.create(actorCreate, createInput);
 
@@ -156,7 +179,7 @@ describe('HostTradeCategoryService', () => {
         });
 
         it('should fail with ALREADY_EXISTS when the slug belongs to a soft-deleted category', async () => {
-            asMock(groupModel.findById).mockResolvedValue(group);
+            asMock(groupModel.findByIdForShare).mockResolvedValue(group);
             asMock(model.findOne).mockResolvedValue({ ...category, deletedAt: new Date() });
 
             const result = await service.create(actorCreate, createInput);
@@ -205,7 +228,10 @@ describe('HostTradeCategoryService', () => {
 
         it('should reject moving a category to a deleted group', async () => {
             asMock(model.findById).mockResolvedValue(category);
-            asMock(groupModel.findById).mockResolvedValue({ ...group, deletedAt: new Date() });
+            asMock(groupModel.findByIdForShare).mockResolvedValue({
+                ...group,
+                deletedAt: new Date()
+            });
 
             const result = await service.update(actorUpdate, categoryId, { groupId: otherGroupId });
 
@@ -257,7 +283,7 @@ describe('HostTradeCategoryService', () => {
         it('should restore a soft-deleted category', async () => {
             asMock(model.findById).mockResolvedValue({ ...category, deletedAt: new Date() });
             asMock(model.restore).mockResolvedValue(1);
-            asMock(groupModel.findById).mockResolvedValue(group);
+            asMock(groupModel.findByIdForShare).mockResolvedValue(group);
 
             const result = await service.restore(actorRestore, categoryId);
 
@@ -266,7 +292,10 @@ describe('HostTradeCategoryService', () => {
 
         it('should refuse to restore a category whose group is soft-deleted', async () => {
             asMock(model.findById).mockResolvedValue({ ...category, deletedAt: new Date() });
-            asMock(groupModel.findById).mockResolvedValue({ ...group, deletedAt: new Date() });
+            asMock(groupModel.findByIdForShare).mockResolvedValue({
+                ...group,
+                deletedAt: new Date()
+            });
 
             const result = await service.restore(actorRestore, categoryId);
 
