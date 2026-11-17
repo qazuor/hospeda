@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4392
+    {
+        id: '2026-11-17-partner-claim-only-with-application-email',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['SPONSOR', 'ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Un Partner sólo se reclama con la cuenta del correo de la solicitud',
+            en: 'A Partner can only be claimed with the account for the application email',
+            pt: 'Um Partner só pode ser reivindicado com a conta do e-mail da solicitação'
+        },
+        body: {
+            es: 'El link para reclamar un Partner aprobado ahora funciona sólo con la cuenta del correo con el que se hizo la solicitud. Si lo abrís con otra cuenta, la pantalla te dice con qué cuenta iniciaste sesión y que entres con la correcta, o que escribas a Hospeda si querés administrarlo con otro correo.',
+            en: 'The link to claim an approved Partner now works only with the account for the email address used in the application. If you open it with another account, the screen tells you which account you are signed in with and asks you to sign in with the right one, or to contact Hospeda if you want to manage it with a different email address.',
+            pt: 'O link para reivindicar um Partner aprovado agora funciona só com a conta do e-mail usado na solicitação. Se você abrir com outra conta, a tela mostra com qual conta você entrou e pede para entrar com a conta certa, ou para falar com a Hospeda se quiser administrá-lo com outro e-mail.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4316
     {
         id: '2026-11-12-grace-emails-mention-scheduled-plan-change',
