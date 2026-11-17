@@ -91,3 +91,33 @@ export function isRetryableApiError(
     if (status == null) return true;
     return status === 0 || status === 408 || status === 429 || status >= 500;
 }
+
+/**
+ * The API `message` of a failed request, when it is safe to show the user.
+ *
+ * The API answers every 5xx with a fixed English generic message (HOS-2296),
+ * never meant for end users, so a server error yields `undefined` and the
+ * caller falls back to its own localized text (HOS-2312). 4xx messages are
+ * returned unchanged.
+ *
+ * @param params.error - The API error (`message` + optional `status`), or `null` / `undefined`.
+ * @param params.status - HTTP status when it is not carried by `error` (raw `fetch` bodies).
+ * @returns The message to display, or `undefined` when the caller must use its fallback.
+ *
+ * @example
+ * ```ts
+ * setError(visibleApiMessage({ error: result.error }) ?? t('common.apiError.GENERIC'));
+ * ```
+ */
+export function visibleApiMessage(params: {
+    readonly error:
+        | { readonly message?: string | null; readonly status?: number | null }
+        | null
+        | undefined;
+    readonly status?: number | null;
+}): string | undefined {
+    const { error, status } = params;
+    const effectiveStatus = status ?? error?.status;
+    if (effectiveStatus != null && effectiveStatus >= 500) return undefined;
+    return error?.message || undefined;
+}
