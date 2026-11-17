@@ -156,39 +156,39 @@
             "id": "T-005",
             "title": "Create r_host_trade_category join and alter host_trades and alliance_leads dbschemas",
             "description": "Create packages/db/src/schemas/host-trade/r_host_trade_category.dbschema.ts (host_trade_id FK -> host_trades.id cascade, category_id FK -> host_trade_categories.id RESTRICT, PK (host_trade_id, category_id), index on category_id) modelled on r_poi_category.dbschema.ts without isPrimary; add relations. Edit host_trade.dbschema.ts: category becomes NULLABLE (keep column, indexes hostTrades_category_idx and hostTrades_destinationId_category_idx untouched; expand step, nothing reads/writes it after this release). Edit packages/db/src/schemas/alliance/alliance_lead.dbschema.ts: add category_slugs text[] nullable; keep category varchar.\nACs: AC-3.4, AC-4.2 (DB side).\nTests (packages/db/test/schemas/host-trade/r_host_trade_category.dbschema.test.ts + update host_trade.dbschema.test.ts and an alliance_lead dbschema test): PK composite, FK actions (cascade/restrict), host_trades.category notNull === false, alliance_leads.category_slugs is array nullable.\nNOTE (from T-003): permissions are a Postgres enum in the DB (see 0126_cool_captain_flint.sql), so db:generate MUST also emit ALTER TYPE ADD VALUE for the 5 hostTradeCategory.* permissions.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-006", "T-007", "T-008"],
             "subtasks": [
                 {
                     "title": "Join table + relations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "host_trades.category nullable",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "alliance_leads.category_slugs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "dbschema tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:38:47Z",
+                "completed": "2026-11-17T18:38:47Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 48,
+        "pending": 47,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.5
     }

@@ -35,7 +35,7 @@
   - Blocked by: T-001
   - Blocks: T-005
 
-- [ ] **T-005** (complexity: 3) - Create r_host_trade_category join and alter host_trades and alliance_leads dbschemas
+- [x] **T-005** (complexity: 3) - Create r_host_trade_category join and alter host_trades and alliance_leads dbschemas
   - Create packages/db/src/schemas/host-trade/r_host_trade_category.dbschema.ts (host_trade_id FK -> hos...
   - Blocked by: T-004
   - Blocks: T-006, T-007, T-008
