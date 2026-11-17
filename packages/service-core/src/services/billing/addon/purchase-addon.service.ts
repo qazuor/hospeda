@@ -13,6 +13,7 @@ import {
     type SelectAddonInstance,
     type SelectAddonProduct
 } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
@@ -23,10 +24,16 @@ import { authorizePendingComplement, insertPendingComplement } from './purchase-
 import { resolvePurchaseTitle } from './purchase-addon-eligibility';
 import type { PurchaseAddonPorts } from './purchase-addon-ports';
 import {
+    abandonRefusedComplement,
+    isCreationRefusedBeforeExisting
+} from './purchase-addon-rejection';
+import {
     type PurchaseAddonInput,
     PurchaseAddonInputSchema,
     type PurchaseAddonResult
 } from './purchase-addon-types';
+
+const logger = createLogger('addon-purchase');
 
 function chargeKindOf(product: SelectAddonProduct): 'UNA_VEZ' | 'PERIODICO' {
     if (product.chargeKind === 'UNA_VEZ' || product.chargeKind === 'PERIODICO')
@@ -70,6 +77,8 @@ async function resolveExisting(
 ): Promise<PurchaseAddonResult> {
     if (!sameIdentity(instance, input))
         return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_REUSED' };
+    if (instance.status === 'ABANDONED')
+        return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' };
     return {
         outcome: 'EXISTING',
         instanceId: instance.id,
@@ -137,6 +146,11 @@ export async function purchaseAddon(
             if (existing) {
                 if (!sameIdentity(existing, request))
                     return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_REUSED' };
+                // HOS-2321: the order id is unique per instance, so an abandoned attempt can never
+                // be retried under it. Tell the client to mint a new id instead of replaying a
+                // checkout that no longer exists.
+                if (existing.status === 'ABANDONED')
+                    return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' };
                 const [key] = existing.complementSubscriptionId
                     ? await tx
                           .select({ result: idempotencyKeys.result })
@@ -225,17 +239,49 @@ export async function purchaseAddon(
         });
         if (result.outcome !== 'CREATED' || !created?.complementId || !created.idempotencyKey)
             return result;
-        const authorization = await authorizePendingComplement(
-            {
-                complementId: created.complementId,
-                idempotencyKey: created.idempotencyKey,
-                product,
-                payerEmail: request.payerEmail,
-                returnUrl: request.returnUrl,
-                reason: request.reason
-            },
-            { provider: ports.provider, clock: ports.clock }
-        );
+        let authorization: Awaited<ReturnType<typeof authorizePendingComplement>>;
+        try {
+            authorization = await authorizePendingComplement(
+                {
+                    complementId: created.complementId,
+                    idempotencyKey: created.idempotencyKey,
+                    product,
+                    payerEmail: request.payerEmail,
+                    returnUrl: request.returnUrl,
+                    reason: request.reason
+                },
+                { provider: ports.provider, clock: ports.clock }
+            );
+        } catch (error) {
+            // HOS-2321: a refusal proves nothing exists at the provider, so release the identity
+            // instead of leaving a pending row that blocks the owner's retry for the whole window.
+            if (isCreationRefusedBeforeExisting(error)) {
+                try {
+                    await abandonRefusedComplement({
+                        instanceId: created.instanceId,
+                        complementId: created.complementId,
+                        idempotencyKey: created.idempotencyKey,
+                        rateLimited: error.transient?.kind === 'RATE_LIMITED',
+                        now: ports.clock.now()
+                    });
+                } catch (abandonError) {
+                    // The provider refusal is the answer the owner needs; the sweep and the window
+                    // expiry still resolve the pending pair, so a failed release must not mask it.
+                    logger.error(
+                        {
+                            instanceId: created.instanceId,
+                            complementId: created.complementId,
+                            error:
+                                abandonError instanceof Error
+                                    ? abandonError.message
+                                    : String(abandonError)
+                        },
+                        'HOS-2321: failed to abandon a provider-refused addon complement'
+                    );
+                }
+            }
+            throw error;
+        }
         return { ...result, checkoutUrl: authorization.checkoutUrl };
     } catch (error) {
         const cause = extractPostgresErrorCause(error);

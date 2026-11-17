@@ -13,6 +13,7 @@ import {
     eligibleSubscriptionTargets,
     eligibleTargets,
     mintOrderRequestId,
+    orderIdentityReleased,
     purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
@@ -260,11 +261,18 @@ export function AddonPurchase(input: {
                     else if (state === 'PROCESSING') setView('PROCESSING');
                     else setView('CLOSED');
                 } else if (result.error.code === 'ADDON_PURCHASES_FROZEN') setPurchasesPaused(true);
-                else
+                else {
+                    // HOS-2321: the server released this order identity, so the next click must
+                    // be a new order or it would replay the abandoned attempt.
+                    if (orderIdentityReleased({ error: result.error }))
+                        setOrderRequestId(mintOrderRequestId());
                     setError(
-                        visibleApiMessage({ error: result.error }) ??
-                            t('billing.addonPurchase.loadError')
+                        result.error.code === 'ADDON_ORDER_REQUEST_ABANDONED'
+                            ? t('billing.addonPurchase.attemptExpired')
+                            : (visibleApiMessage({ error: result.error }) ??
+                                  t('billing.addonPurchase.loadError'))
                     );
+                }
             }
         } catch (cause) {
             setError(cause instanceof Error ? cause.message : t('billing.addonPurchase.loadError'));

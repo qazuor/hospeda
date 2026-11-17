@@ -228,6 +228,62 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
         await waitFor(() => expect(purchase).toHaveBeenCalled());
         expect(crypto.randomUUID).toHaveBeenCalledTimes(1);
     });
+    it.each([
+        ['PROVIDER_REJECTED', 'VALIDATION_ERROR', 422],
+        ['PROVIDER_BUSY', 'PROVIDER_RATE_LIMITED', 503],
+        ['ORDER_REQUEST_ABANDONED', 'ADDON_ORDER_REQUEST_ABANDONED', 409]
+    ])('mints a new order id after a %s answer so the retry is a new order', async (reason, code, status) => {
+        const ids = [orderId, '123e4567-e89b-42d3-a456-426614174099'];
+        vi.stubGlobal('crypto', { randomUUID: vi.fn(() => ids.shift() ?? orderId) });
+        await selectListing('PUBLISHED');
+        purchase.mockResolvedValueOnce({
+            ok: false,
+            error: { status, code, reason, message: 'refused' }
+        });
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        await screen.findByRole('alert');
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        await waitFor(() => expect(purchase).toHaveBeenCalledTimes(2));
+        const sent = purchase.mock.calls.map(([call]) => call.body.orderRequestId);
+        expect(sent).toEqual([orderId, '123e4567-e89b-42d3-a456-426614174099']);
+    });
+    it('shows the dedicated expired-attempt copy for an abandoned order', async () => {
+        await selectListing('PUBLISHED');
+        purchase.mockResolvedValueOnce({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ADDON_ORDER_REQUEST_ABANDONED',
+                reason: 'ORDER_REQUEST_ABANDONED',
+                message: 'ORDER_REQUEST_ABANDONED'
+            }
+        });
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        const alert = await screen.findByRole('alert');
+        expect(alert.textContent).not.toContain('ORDER_REQUEST_ABANDONED');
+        expect(alert.textContent).not.toBe('billing.addonPurchase.loadError');
+        expect(alert.textContent).toMatch(/intento|attempt|tentativa/i);
+    });
+    it('keeps the same order id after a failure that does not release it', async () => {
+        await selectListing('PUBLISHED');
+        purchase.mockResolvedValueOnce({
+            ok: false,
+            error: {
+                status: 503,
+                code: 'SERVICE_UNAVAILABLE',
+                reason: 'PROVIDER_UNAVAILABLE',
+                message: 'down'
+            }
+        });
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        await screen.findByRole('alert');
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        await waitFor(() => expect(purchase).toHaveBeenCalledTimes(2));
+        expect(purchase.mock.calls.map(([call]) => call.body.orderRequestId)).toEqual([
+            orderId,
+            orderId
+        ]);
+    });
     it('redirects a recurring purchase to checkout', async () => {
         const assign = vi.fn();
         listingNotices.mockResolvedValue({

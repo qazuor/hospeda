@@ -6,165 +6,215 @@
             "type": "object",
             "properties": {
                 "confidence": {
-                    "default": 0,
-                    "type": "number",
-                    "minimum": 0,
-                    "maximum": 1
+                    "type": ["number", "null"]
                 },
                 "isNewSearch": {
-                    "type": "boolean"
+                    "type": ["boolean", "null"]
                 },
                 "entities": {
                     "type": "object",
                     "properties": {
                         "locationType": {
-                            "type": "string",
-                            "enum": ["city", "geo", "destinationId"]
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "enum": ["city", "geo", "destinationId"]
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "city": {
-                            "type": "string",
-                            "maxLength": 100
+                            "type": ["string", "null"]
                         },
                         "destinationId": {
-                            "type": "string",
-                            "format": "uuid",
-                            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                            "type": ["string", "null"]
                         },
                         "latitude": {
-                            "type": "number",
-                            "minimum": -90,
-                            "maximum": 90
+                            "type": ["number", "null"]
                         },
                         "longitude": {
-                            "type": "number",
-                            "minimum": -180,
-                            "maximum": 180
+                            "type": ["number", "null"]
                         },
                         "radius": {
-                            "type": "number",
-                            "minimum": 0,
-                            "maximum": 500
+                            "type": ["number", "null"]
                         },
                         "expandToNearby": {
-                            "type": "boolean"
+                            "type": ["boolean", "null"]
                         },
                         "accommodationType": {
-                            "type": "string",
-                            "enum": [
-                                "APARTMENT",
-                                "HOUSE",
-                                "COUNTRY_HOUSE",
-                                "CABIN",
-                                "HOTEL",
-                                "HOSTEL",
-                                "CAMPING",
-                                "ROOM",
-                                "MOTEL",
-                                "RESORT",
-                                "APART_HOTEL",
-                                "ESTANCIA",
-                                "BED_AND_BREAKFAST"
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "enum": [
+                                        "APARTMENT",
+                                        "HOUSE",
+                                        "COUNTRY_HOUSE",
+                                        "CABIN",
+                                        "HOTEL",
+                                        "HOSTEL",
+                                        "CAMPING",
+                                        "ROOM",
+                                        "MOTEL",
+                                        "RESORT",
+                                        "APART_HOTEL",
+                                        "ESTANCIA",
+                                        "BED_AND_BREAKFAST"
+                                    ]
+                                },
+                                {
+                                    "type": "null"
+                                }
                             ]
                         },
                         "minGuests": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 50
+                            "type": ["number", "null"]
                         },
                         "maxGuests": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 50
+                            "type": ["number", "null"]
                         },
                         "minBedrooms": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 50
+                            "type": ["number", "null"]
                         },
                         "maxBedrooms": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 50
+                            "type": ["number", "null"]
                         },
                         "minBathrooms": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 50
+                            "type": ["number", "null"]
                         },
                         "maxBathrooms": {
-                            "type": "integer",
-                            "minimum": 0,
-                            "maximum": 50
+                            "type": ["number", "null"]
                         },
                         "minPrice": {
-                            "type": "number",
-                            "minimum": 0
+                            "type": ["number", "null"]
                         },
                         "maxPrice": {
-                            "type": "number",
-                            "minimum": 0
+                            "type": ["number", "null"]
                         },
                         "currency": {
-                            "type": "string",
-                            "enum": ["ARS", "USD", "BRL"]
+                            "anyOf": [
+                                {
+                                    "type": "string",
+                                    "enum": ["ARS", "USD", "BRL"]
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "minRating": {
-                            "type": "number",
-                            "minimum": 0,
-                            "maximum": 5
+                            "type": ["number", "null"]
                         },
                         "maxRating": {
-                            "type": "number",
-                            "minimum": 0,
-                            "maximum": 5
+                            "type": ["number", "null"]
                         },
                         "hasPool": {
-                            "type": "boolean"
+                            "type": ["boolean", "null"]
                         },
                         "hasWifi": {
-                            "type": "boolean"
+                            "type": ["boolean", "null"]
                         },
                         "allowsPets": {
-                            "type": "boolean"
+                            "type": ["boolean", "null"]
                         },
                         "hasParking": {
-                            "type": "boolean"
+                            "type": ["boolean", "null"]
                         },
                         "amenitySlugs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "featureSlugs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "attractionSlugs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "poiSlugs": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                            "anyOf": [
+                                {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ]
                         },
                         "checkIn": {
-                            "type": "string"
+                            "type": ["string", "null"]
                         },
                         "checkOut": {
-                            "type": "string"
+                            "type": ["string", "null"]
                         }
                     },
+                    "required": [
+                        "locationType",
+                        "city",
+                        "destinationId",
+                        "latitude",
+                        "longitude",
+                        "radius",
+                        "expandToNearby",
+                        "accommodationType",
+                        "minGuests",
+                        "maxGuests",
+                        "minBedrooms",
+                        "maxBedrooms",
+                        "minBathrooms",
+                        "maxBathrooms",
+                        "minPrice",
+                        "maxPrice",
+                        "currency",
+                        "minRating",
+                        "maxRating",
+                        "hasPool",
+                        "hasWifi",
+                        "allowsPets",
+                        "hasParking",
+                        "amenitySlugs",
+                        "featureSlugs",
+                        "attractionSlugs",
+                        "poiSlugs",
+                        "checkIn",
+                        "checkOut"
+                    ],
                     "additionalProperties": false
                 }
             },
-            "required": ["entities"],
+            "required": ["confidence", "isNewSearch", "entities"],
             "additionalProperties": false
         },
         "accommodation_import": {

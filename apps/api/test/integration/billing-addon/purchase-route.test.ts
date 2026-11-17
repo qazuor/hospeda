@@ -196,4 +196,39 @@ describe('AC:B10:1 AC:B10:2 protected addon purchase route', () => {
         expect(await response.json()).toMatchObject({ error: { reason } });
         if (status === 503) expect(response.headers.get('Retry-After')).toBe('42');
     });
+    it('HOS-2321/HOS-2322: a rejected creation leaves no blocker and answers in the request locale', async () => {
+        const fixture = await purchaseCatalog({ chargeKind: 'PERIODICO' });
+        const { app, fake } = purchaseApp();
+        await makePayingPrincipal({
+            ownerId: fixture.ownerId,
+            payerEmail: fixture.payerEmail,
+            fake
+        });
+        vi.spyOn(fake, 'authorize').mockRejectedValueOnce(
+            new PaymentProviderError({
+                code: 'REJECTED',
+                capability: 'authorize',
+                message: 'Rejected'
+            })
+        );
+        const rejected = await app.request(path, {
+            method: 'POST',
+            headers: { ...ownerHeaders(fixture.ownerId), 'x-client-locale': 'en' },
+            body: JSON.stringify(fixture.request())
+        });
+        expect(rejected.status).toBe(422);
+        const { error } = await rejected.json();
+        expect(error).toMatchObject({ reason: 'PROVIDER_REJECTED' });
+        expect(error.message).toContain('Mercado Pago');
+        expect(error.message).not.toBe('The payment provider rejected the payment details');
+        expect(await ownerInstances(fixture.ownerId)).toMatchObject([{ status: 'ABANDONED' }]);
+
+        const retry = await post(app, fixture.ownerId, fixture.request());
+        expect(retry.status).toBe(201);
+        expect((await retry.json()).data).toMatchObject({
+            outcome: 'CREATED',
+            processing: false,
+            checkoutUrl: expect.any(String)
+        });
+    });
 });
