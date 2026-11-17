@@ -88,3 +88,61 @@ export function buildGroupPayload({
     };
     return mode === 'create' ? { slug: values.slug.trim(), ...common } : common;
 }
+
+/** Related words per locale held by the category dialog. */
+export interface CategoryKeywordsValue {
+    readonly es: readonly string[];
+    readonly en: readonly string[];
+    readonly pt: readonly string[];
+}
+
+/** Everything the category dialog edits besides the shared fields. */
+export interface CategoryExtraValues {
+    readonly groupId: string;
+    readonly keywords: CategoryKeywordsValue;
+}
+
+/**
+ * Builds the dialog values a category adds on top of the shared fields.
+ *
+ * @param input - The category being edited, or nothing when creating.
+ */
+export function toCategoryExtraValues({
+    row
+}: {
+    readonly row?: HostTradeCategoryAdmin;
+}): CategoryExtraValues {
+    return {
+        groupId: row?.groupId ?? '',
+        keywords: {
+            es: row?.keywordsI18n?.es ?? [],
+            en: row?.keywordsI18n?.en ?? [],
+            pt: row?.keywordsI18n?.pt ?? []
+        }
+    };
+}
+
+/**
+ * Builds the category body: slug on create, never on update.
+ *
+ * @param input - Dialog mode and values.
+ */
+export function buildCategoryPayload({
+    mode,
+    values,
+    extra
+}: {
+    readonly mode: 'create' | 'edit';
+    readonly values: CatalogBasicValues;
+    readonly extra: CategoryExtraValues;
+}): Record<string, unknown> {
+    return {
+        ...buildGroupPayload({ mode, values }),
+        groupId: extra.groupId,
+        keywordsI18n: {
+            es: [...extra.keywords.es],
+            en: [...extra.keywords.en],
+            pt: [...extra.keywords.pt]
+        }
+    };
+}
