@@ -11,6 +11,7 @@ import { AmbiguousRefundAnswerError } from './ambiguous-refund-answer.error';
 import { rereadOrderForRefund } from './refund-order-reread';
 import { completeCall, persistCall } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
+import { describeProviderRejection } from './refund-provider-rejection-reason';
 
 const logger = createLogger('refund-order-call');
 const HELD_CONSTRAINT = 'uq_refund_call_order_awaiting_id';
@@ -85,11 +86,16 @@ export async function sendOrderRefundCall(input: {
             return { outcome: 'PROVIDER_KEY_CONFLICT', calls: [unanswered] };
         }
         if (error.code === 'REJECTED' || error.code === 'NOT_FOUND') {
+            const rejection = describeProviderRejection({ error });
+            logger.warn(
+                { refundId: refund.id, key, code: error.code, ...rejection },
+                'Provider rejected refund'
+            );
             await getDb().transaction(async (tx) => {
                 await tx
                     .update(idempotencyKeys)
                     .set({
-                        result: { outcome: 'REJECTED', code: error.code },
+                        result: { outcome: 'REJECTED', code: error.code, ...rejection },
                         completedAt: clock.now()
                     })
                     .where(eq(idempotencyKeys.key, key));

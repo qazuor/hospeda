@@ -6,6 +6,15 @@ import { requestRefund } from '../../../src/services/billing/refund/request-refu
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { orderRefundRows, refundOrderFixture } from './support/refund-order-fixtures.js';
 
+const { warn } = vi.hoisted(() => ({ warn: vi.fn() }));
+vi.mock('@repo/logger', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/logger')>();
+    return {
+        ...actual,
+        createLogger: () => ({ warn, error: vi.fn(), info: vi.fn(), debug: vi.fn() })
+    };
+});
+
 afterAll(closeServiceTestPool);
 const skip = !isServiceTestDbAvailable();
 
@@ -134,6 +143,7 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
     });
 
     it.skipIf(skip)('frees the order after definitive rejection', async () => {
+        warn.mockClear();
         const seeded = await refundOrderFixture({ refundAmount: 4000 });
         const rejectedProvider = new Proxy(seeded.fixture.provider as PaymentProvider, {
             get(target, property, receiver) {
@@ -142,7 +152,11 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
                           throw new PaymentProviderError({
                               code: 'REJECTED',
                               capability: 'refund',
-                              message: 'declined'
+                              message: 'Mercado Pago order refund failed (401)',
+                              cause: {
+                                  status: 401,
+                                  body: { message: 'Unauthorized use of live credentials' }
+                              }
                           });
                       }
                     : Reflect.get(target, property, receiver);
@@ -170,7 +184,27 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
         expect(rows.refund?.status).toBe('FAILED');
         expect(rows.calls).toHaveLength(0);
         expect(rows.keys).toHaveLength(1);
-        expect(rows.keys[0]).toMatchObject({ result: { outcome: 'REJECTED', code: 'REJECTED' } });
+        expect(rows.keys[0]).toMatchObject({
+            result: {
+                outcome: 'REJECTED',
+                code: 'REJECTED',
+                message: 'Mercado Pago order refund failed (401)',
+                cause: expect.objectContaining({
+                    httpStatus: 401,
+                    message: 'Unauthorized use of live credentials'
+                })
+            }
+        });
+        expect(warn).toHaveBeenCalledWith(
+            expect.objectContaining({
+                refundId: seeded.refundId,
+                key: expect.any(String),
+                code: 'REJECTED',
+                message: 'Mercado Pago order refund failed (401)',
+                cause: expect.objectContaining({ httpStatus: 401 })
+            }),
+            'Provider rejected refund'
+        );
         expect(rows.keys[0]?.completedAt).toBeInstanceOf(Date);
     });
 
