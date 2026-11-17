@@ -82,6 +82,25 @@ export function mintOrderRequestId(): string {
     return crypto.randomUUID();
 }
 
+/** Reasons after which the server has released the order identity: retry needs a new one. */
+const ORDER_RELEASED_REASONS: readonly string[] = ['PROVIDER_REJECTED', 'PROVIDER_BUSY'];
+
+/**
+ * HOS-2321: whether a failed purchase answer means the order identity is spent. The provider
+ * refused the creation (or the server says the id was abandoned), so replaying the same
+ * `orderRequestId` can only return the abandoned attempt and never a fresh checkout.
+ */
+export function orderIdentityReleased(input: {
+    readonly error: { readonly code?: string; readonly reason?: string } | null | undefined;
+}): boolean {
+    const { error } = input;
+    if (!error) return false;
+    return (
+        error.code === 'ADDON_ORDER_REQUEST_ABANDONED' ||
+        (error.reason !== undefined && ORDER_RELEASED_REASONS.includes(error.reason))
+    );
+}
+
 /** One screen decision from a purchase response or a fresh owner-only read. */
 export function purchaseStateFrom(input: {
     readonly response?: z.infer<typeof AddonPurchaseResponseSchema>;

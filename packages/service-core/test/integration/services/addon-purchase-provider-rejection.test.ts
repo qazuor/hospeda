@@ -1,4 +1,4 @@
-import { addonInstances, eq, idempotencyKeys, subscriptions } from '@repo/db';
+import { addonInstances, eq, getDb, idempotencyKeys, subscriptions } from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
@@ -102,4 +102,49 @@ describe('HOS-2321 recurring addon purchase rejected by the provider', () => {
             ]);
         }
     );
+
+    it.skipIf(skip)(
+        'refuses a retry under the same order id with a typed abandoned reason',
+        async () => {
+            const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
+            await principalFixture({ ownerId: f.ownerId, credited: true });
+            vi.spyOn(f.fake, 'authorize').mockRejectedValueOnce(
+                providerFailure({ code: 'REJECTED' })
+            );
+            const orderRequestId = crypto.randomUUID();
+            await expect(purchaseAddon(f.input(orderRequestId), f.ports)).rejects.toMatchObject({
+                code: 'REJECTED'
+            });
+
+            // The unique order id cannot be reused: the client must mint a new one.
+            expect(await purchaseAddon(f.input(orderRequestId), f.ports)).toEqual({
+                outcome: 'REFUSED',
+                reason: 'ORDER_REQUEST_ABANDONED'
+            });
+            expect(await purchaseAddon(f.input(), f.ports)).toMatchObject({
+                outcome: 'CREATED',
+                checkoutUrl: expect.any(String)
+            });
+        }
+    );
+
+    it.skipIf(skip)('still surfaces the provider refusal when the abandonment fails', async () => {
+        const f = await purchaseFixture({ chargeKind: 'PERIODICO' });
+        await principalFixture({ ownerId: f.ownerId, credited: true });
+        vi.spyOn(f.fake, 'authorize').mockRejectedValueOnce(providerFailure({ code: 'REJECTED' }));
+        const db = getDb();
+        const original = db.transaction.bind(db);
+        let calls = 0;
+        vi.spyOn(db, 'transaction').mockImplementation(((...args: Parameters<typeof original>) => {
+            calls += 1;
+            // The first transaction creates the pending pair; the second is the abandonment.
+            if (calls === 2) return Promise.reject(new Error('abandon exploded'));
+            return original(...args);
+        }) as typeof db.transaction);
+
+        await expect(purchaseAddon(f.input(), f.ports)).rejects.toMatchObject({
+            code: 'REJECTED'
+        });
+        expect(calls).toBeGreaterThanOrEqual(2);
+    });
 });
