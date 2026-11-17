@@ -60,12 +60,30 @@ function concreteTypes(types: string): readonly string[] {
     return types.split('|').filter((type) => type !== 'null');
 }
 
+const CONTAINER_TYPES = ['object', 'array'] as const;
+
+function isContainer(types: string): boolean {
+    return concreteTypes(types).some((type) =>
+        (CONTAINER_TYPES as readonly string[]).includes(type)
+    );
+}
+
+function isOnlyNull(types: string): boolean {
+    return concreteTypes(types).length === 0;
+}
+
+function isChildOf(args: { readonly path: string; readonly parent: string }): boolean {
+    return args.path.startsWith(`${args.parent}.`) || args.path.startsWith(`${args.parent}[]`);
+}
+
 /**
  * Compares two shapes of the same response.
  *
- * A field that only goes between `null` and a concrete type is NOT a change:
- * the provider sends `null` for absent fields. Everything else is: a path that
- * disappeared, a path that appeared (a rename shows as both) or a retyped path.
+ * A field that only goes between `null` and a scalar type is NOT a change: the provider sends
+ * `null` for absent fields. A field that goes between `null` and an object or an array IS one,
+ * reported as ONE line for the field; its children are not listed as added or removed one by one.
+ * Everything else is a change too: a path that disappeared, a path that appeared (a rename shows
+ * as both) or a retyped path.
  *
  * @param args.previous - The shape of the previous run
  * @param args.current - The shape of this run
@@ -77,12 +95,25 @@ export function diffShapes(args: {
 }): readonly string[] {
     const { previous, current } = args;
     const lines: string[] = [];
+    const expanded: string[] = [];
+    const collapsed: string[] = [];
     for (const path of Object.keys(previous).sort()) {
         const before = previous[path];
         const after = current[path];
         if (before === undefined) continue;
+        if (collapsed.some((parent) => isChildOf({ path, parent }))) continue;
         if (after === undefined) {
             lines.push(`removed: ${path} (${before})`);
+            continue;
+        }
+        if (isContainer(before) && isOnlyNull(after)) {
+            lines.push(`collapsed: ${path} (${before} -> ${after})`);
+            collapsed.push(path);
+            continue;
+        }
+        if (isOnlyNull(before) && isContainer(after)) {
+            lines.push(`expanded: ${path} (${before} -> ${after})`);
+            expanded.push(path);
             continue;
         }
         const beforeTypes = concreteTypes(before);
@@ -94,6 +125,7 @@ export function diffShapes(args: {
     }
     for (const path of Object.keys(current).sort()) {
         const after = current[path];
+        if (expanded.some((parent) => isChildOf({ path, parent }))) continue;
         if (previous[path] === undefined && after !== undefined) {
             lines.push(`added: ${path} (${after})`);
         }

@@ -48,7 +48,40 @@ describe('diffShapes', () => {
         ]);
     });
 
-    it('does not count a field going between null and a concrete type as a change', () => {
+    it('reports a field going from null to an object as ONE change, not one per child', () => {
+        const before = shapeOf({ body: { id: 'a', payer: null } });
+        const after = shapeOf({ body: { id: 'a', payer: { email: 'x', name: 'y', ids: [1] } } });
+        expect(diffShapes({ previous: before, current: after })).toEqual([
+            'expanded: payer (null -> object)'
+        ]);
+    });
+
+    it('reports a field going from null to an array as ONE change', () => {
+        const before = shapeOf({ body: { items: null } });
+        const after = shapeOf({ body: { items: [{ a: 1 }] } });
+        expect(diffShapes({ previous: before, current: after })).toEqual([
+            'expanded: items (null -> array)'
+        ]);
+    });
+
+    it('reports a field going from an object back to null as ONE change', () => {
+        const before = shapeOf({ body: { payer: { email: 'x', name: 'y' } } });
+        const after = shapeOf({ body: { payer: null } });
+        expect(diffShapes({ previous: before, current: after })).toEqual([
+            'collapsed: payer (object -> null)'
+        ]);
+    });
+
+    it('still reports a genuinely new sibling next to an expanded field', () => {
+        const before = shapeOf({ body: { payer: null } });
+        const after = shapeOf({ body: { payer: { a: 1 }, extra: true } });
+        expect(diffShapes({ previous: before, current: after })).toEqual([
+            'expanded: payer (null -> object)',
+            'added: extra (boolean)'
+        ]);
+    });
+
+    it('does not count a field going between null and a scalar type as a change', () => {
         const withNull = shapeOf({ body: { id: 'a', payer_email: null, n: 1 } });
         expect(diffShapes({ previous: base, current: withNull })).toEqual([]);
         expect(diffShapes({ previous: withNull, current: base })).toEqual([]);
