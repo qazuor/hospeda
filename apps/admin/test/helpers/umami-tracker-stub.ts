@@ -2,11 +2,11 @@
  * @file umami-tracker-stub.ts
  * @description A `window.umami` stub that behaves like the Umami 3.5.0 tracker
  * where the admin identify order depends on it (HOS-2119, OQ-5). Mirrors
- * `apps/web/test/helpers/umami-tracker-stub.ts`, adapted to the admin, which
- * keeps the tracker's own auto pageview:
+ * `apps/web/test/helpers/umami-tracker-stub.ts`, simplified:
  *
- * - The auto pageview is internal to the tracker (never a `window.umami.track`
- *   call), so the test answers it with `answerPageview`.
+ * - `track` resolves at once; the test decides when Umami answered a pageview
+ *   with `answerPageview` (the admin sends pageviews itself through
+ *   `trackPageview`, the tracker's auto pageview is off).
  * - Answering stores the `x-umami-cache` token, exposed through `getSession()`,
  *   as the tracker does with `data.cache`. A failed request
  *   (`answerPageview({ ok: false })`) leaves no token.
@@ -28,7 +28,7 @@ export interface UmamiTrackerStub {
     readonly track: ReturnType<typeof vi.fn>;
     /** Spy of `umami.identify`. */
     readonly identify: ReturnType<typeof vi.fn>;
-    /** Answers the tracker's auto pageview. */
+    /** Answers a pageview: the tracker now holds the cache token. */
     readonly answerPageview: (input?: AnswerPageviewInput) => void;
     /** Cache token held when each `identify` call was made (`undefined` = none). */
     readonly identifyCaches: readonly (string | undefined)[];

@@ -24,10 +24,20 @@
  * the shared `hasUmamiCacheToken`): with the token Umami would claim the
  * fingerprint session. So the identify is sent as soon as the tracker script is
  * present and SKIPPED (never delayed) when the tracker already holds a token:
- * that document stays anonymous. The admin keeps the tracker's own auto
- * pageview and its session resolves asynchronously, so a slow session fetch
- * loses the race and that document is not identified (fail-closed). Nothing
- * is persisted: every document identifies again.
+ * that document stays anonymous. Nothing is persisted: every document
+ * identifies again.
+ *
+ * Pageviews: the tracker renders with `data-auto-pageview="false"` and the
+ * router sends them through {@link trackPageview} (`UmamiPageviews`), because
+ * the tracker's own pageview went out before the session resolved and its
+ * answer left the token that made the identify skip. The FIRST pageview of a
+ * document under the authenticated layout is held until the identity settles:
+ * identify sent (or skipped), `markVisitorAnonymous`, or
+ * {@link FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS} elapsed (then it goes out
+ * anonymously and the token guard still applies). Later pageviews are not
+ * held; one counted meanwhile queues behind the first. `data-auto-pageview`,
+ * not `data-auto-track`: with auto-track off the tracker stops following
+ * `pushState`, so every custom event would carry the landing page URL.
  *
  * @example
  * ```ts
@@ -40,7 +50,8 @@
 import type {
     AnalyticsEventName,
     AnalyticsEventProperties,
-    BrowserAnalyticsDiagnostics
+    BrowserAnalyticsDiagnostics,
+    UmamiTracker
 } from '@repo/analytics';
 import {
     createBrowserAnalytics,
@@ -62,9 +73,91 @@ let pendingUserId: string | null = null;
 /** User id already identified in this document (the tracker keeps it in memory). */
 let identifiedUserId: string | null = null;
 
+/** How long the first pageview waits for the identity before going out anonymously. */
+export const FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS = 3000;
+
+/** Input of {@link trackPageview}. */
+export interface TrackPageviewInput {
+    /** Absolute URL of the page being counted. */
+    readonly url: string;
+    /** Title of the page being counted. */
+    readonly title: string;
+    /** Referrer to send; omitted keeps the tracker's own (`document.referrer`). */
+    readonly referrer?: string;
+    /**
+     * Whether the page lives under the authenticated layout, whose
+     * `AuthProvider` settles the identity. Only the document's first pageview
+     * reads it.
+     */
+    readonly awaitIdentity: boolean;
+}
+
+/** Whether the identity of this document settled (see the file header). */
+let identitySettled = false;
+/** Whether this document already counted its first page. */
+let firstPageCounted = false;
+/** Pageviews waiting for the identity or the tracker script, in page order. */
+let pendingPageviews: TrackPageviewInput[] = [];
+/** Bounded wait of the first pageview, while one is pending. */
+let firstPageviewTimer: ReturnType<typeof setTimeout> | null = null;
+/** The tracker script failed to load (ad blocker): pageviews are dropped. */
+let trackerFailed = false;
+
+function getTracker(): UmamiTracker | undefined {
+    const candidate: unknown = Reflect.get(window, 'umami');
+    if (typeof candidate !== 'object' || candidate === null) return undefined;
+    const hasMethods =
+        typeof Reflect.get(candidate, 'track') === 'function' &&
+        typeof Reflect.get(candidate, 'identify') === 'function';
+    return hasMethods ? (candidate as UmamiTracker) : undefined;
+}
+
 /** Whether the tracker script is present (it loads deferred, or never when blocked). */
 function isTrackerPresent(): boolean {
     return typeof Reflect.get(Reflect.get(window, 'umami') ?? {}, 'identify') === 'function';
+}
+
+function sendPageview({ url, title, referrer }: TrackPageviewInput, tracker: UmamiTracker): void {
+    try {
+        tracker.track((defaults) => ({
+            ...defaults,
+            url,
+            title,
+            ...(referrer === undefined ? {} : { referrer })
+        }));
+    } catch {
+        // Best-effort: analytics must never break the page.
+    }
+}
+
+/** Sends every queued pageview once the identity settled and the tracker is present. */
+function flushPageviews(): void {
+    if (!identitySettled) return;
+    const tracker = getTracker();
+    if (!tracker) return;
+    const queue = pendingPageviews;
+    pendingPageviews = [];
+    for (const pageview of queue) sendPageview(pageview, tracker);
+}
+
+/** The identity is settled for this document: releases the held pageviews. */
+function settleIdentity(): void {
+    if (firstPageviewTimer !== null) {
+        clearTimeout(firstPageviewTimer);
+        firstPageviewTimer = null;
+    }
+    identitySettled = true;
+    flushPageviews();
+}
+
+/** The tracker script could not load: nothing will ever be sent. */
+function dropPageviews(): void {
+    trackerFailed = true;
+    pendingPageviews = [];
+    if (firstPageviewTimer !== null) {
+        clearTimeout(firstPageviewTimer);
+        firstPageviewTimer = null;
+    }
 }
 
 /**
@@ -74,19 +167,24 @@ function isTrackerPresent(): boolean {
  */
 function identifyNow(userId: string): void {
     pendingUserId = null;
-    if (identifiedUserId === userId) return;
-    if (hasUmamiCacheToken({ tracker: Reflect.get(window, 'umami') })) {
-        adminLogger.debug('[analytics] identify skipped: tracker already holds a session token');
-        return;
+    if (identifiedUserId !== userId) {
+        if (hasUmamiCacheToken({ tracker: Reflect.get(window, 'umami') })) {
+            adminLogger.debug(
+                '[analytics] identify skipped: tracker already holds a session token'
+            );
+        } else {
+            identifiedUserId = userId;
+            analytics.identify(userId);
+        }
     }
-    identifiedUserId = userId;
-    analytics.identify(userId);
+    // Sent or skipped: the first pageview may go now.
+    settleIdentity();
 }
 
-/** The tracker script loaded: delivers the pending identity, if any. */
-function flushPendingIdentity(): void {
-    if (pendingUserId === null) return;
-    identifyNow(pendingUserId);
+/** The tracker script loaded: delivers the pending identity, then the pageviews. */
+function onTrackerLoaded(): void {
+    if (pendingUserId !== null) identifyNow(pendingUserId);
+    flushPageviews();
 }
 
 const umamiClient = createUmamiBrowserClient();
@@ -161,7 +259,9 @@ export function initUmami(): void {
     if (nonce) {
         script.nonce = nonce;
     }
-    script.addEventListener('load', flushPendingIdentity);
+    script.setAttribute('data-auto-pageview', 'false');
+    script.addEventListener('load', onTrackerLoaded);
+    script.addEventListener('error', dropPageviews);
     document.head.appendChild(script);
 
     isInitialized = true;
@@ -213,6 +313,44 @@ export function identifyUser(userId: string): void {
 }
 
 /**
+ * Declare that the auth state resolved without a signed-in user. Releases the
+ * document's first pageview, which waits for the identity (see the file
+ * header). A signed-in user goes through {@link identifyUser} instead.
+ */
+export function markVisitorAnonymous(): void {
+    if (typeof window === 'undefined') return;
+    settleIdentity();
+}
+
+/**
+ * Count a page. Called by the router (`UmamiPageviews`) on the initial load and
+ * after every navigation. The document's first pageview waits, when
+ * `awaitIdentity` is set, until the identity settles or
+ * {@link FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS} elapses; later ones go out as soon
+ * as the tracker is present (behind a still-held first one). No-op on the
+ * server, before init and once the tracker script failed to load.
+ *
+ * @param input - URL, title and referrer of the page, and whether it may wait.
+ */
+export function trackPageview(input: TrackPageviewInput): void {
+    if (typeof window === 'undefined') return;
+    if (!isInitialized || trackerFailed) return;
+    pendingPageviews.push(input);
+    if (!firstPageCounted) {
+        firstPageCounted = true;
+        if (!input.awaitIdentity) {
+            identitySettled = true;
+        } else if (!identitySettled) {
+            firstPageviewTimer = setTimeout(() => {
+                firstPageviewTimer = null;
+                settleIdentity();
+            }, FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS);
+        }
+    }
+    flushPageviews();
+}
+
+/**
  * Clear the identified user on sign-out: drops a pending identify and lets a
  * later login identify again. Umami derives sessions server-side and has no
  * reset API, so the tracker itself is left untouched.
@@ -221,6 +359,7 @@ export function resetUser(): void {
     if (typeof window === 'undefined') return;
     pendingUserId = null;
     identifiedUserId = null;
+    settleIdentity();
     if (!isInitialized) return;
     analytics.reset();
 }
