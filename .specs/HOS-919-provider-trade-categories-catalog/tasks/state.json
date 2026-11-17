@@ -1487,7 +1487,7 @@
             "id": "T-042",
             "title": "Web i18n cleanup: remove host-trades.categories, update baseline and zod-keys inventory",
             "description": "packages/i18n: remove host-trades.categories.* from es, en and pt locale files (only after all web consumers are migrated); add zodError.allianceLead.categorySlugs.requiredForServiceProvider (es/en/pt) and drop the old category key; regenerate typed keys if the package generates them. Update packages/i18n/test/untranslated-spanish.baseline.json for the removed keys (and the new keys if they trigger it), and scripts/zod-keys-inventory.json for the moved Zod message key. Rebuild @repo/i18n afterwards.\nACs: AC-1.5.\nTests: i18n key-parity guard (es/en/pt same keys); untranslated-spanish baseline test green; scripts/zod-keys-inventory check passes; rg confirms no remaining reference to host-trades.categories in apps/web.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 3,
             "blockedBy": ["T-037", "T-038", "T-039", "T-040", "T-041"],
             "blocks": ["T-049"],
@@ -1498,19 +1498,19 @@
                 },
                 {
                     "title": "Add zodError key",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update untranslated baseline",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update zod-keys-inventory.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Rebuild i18n",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "web", "guards"],
@@ -1522,7 +1522,7 @@
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
+                "started": "2026-11-17T20:33:35Z",
                 "completed": null
             }
         },
@@ -1965,8 +1965,8 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 13,
-        "inProgress": 0,
+        "pending": 12,
+        "inProgress": 1,
         "completed": 41,
         "blocked": 0,
         "averageComplexity": 2.5
