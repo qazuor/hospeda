@@ -135,6 +135,20 @@ describe('provisionServiceProviderListing — categories (HOS-919)', () => {
             expect(hostTradeModel.create).not.toHaveBeenCalled();
         });
 
+        it.each([
+            'constructor',
+            'toString',
+            '__proto__'
+        ])('should skip a legacy value that is an Object.prototype member (%s)', async (key) => {
+            const result = await run(lead({ category: key as never, categorySlugs: null }));
+
+            expect(result).toMatchObject({
+                provisioned: false,
+                reason: 'legacy-lead-without-typed-fields'
+            });
+            expect(findActiveBySlugs).not.toHaveBeenCalled();
+        });
+
         it('should skip when there is neither categorySlugs nor a legacy category', async () => {
             const result = await run(lead({ category: null, categorySlugs: null }));
 

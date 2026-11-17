@@ -229,6 +229,17 @@ describe('HOS-919: 0180 catalog upsert, backfill and grants (integration)', () =
             });
         });
 
+        it('skips a legacy value that is an Object.prototype member', async () => {
+            await withRollback(async (tx) => {
+                const proto = await insertLead(tx, { category: 'constructor' });
+
+                const result = await migration.up(buildCtx(tx));
+
+                expect(await leadSlugs(tx, proto)).toBeNull();
+                expect(result.counts).toMatchObject({ unknownLegacyValues: 1 });
+            });
+        });
+
         it('creates no duplicate link on a second run', async () => {
             await withRollback(async (tx) => {
                 await insertTrade(tx, { slug: 't-pool', category: 'PILETA_JARDIN' });

@@ -53,7 +53,12 @@ import {
     rolePermission,
     sql
 } from '@repo/db';
-import { LEGACY_CATEGORY_TO_SLUGS, PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    LEGACY_CATEGORY_TO_SLUGS,
+    PermissionEnum,
+    RoleEnum,
+    resolveLegacyCategorySlugs
+} from '@repo/schemas';
 import requiredManifest from '../manifest-required.json';
 import {
     normalizeHostTradeCategoryGroupSeedItem,
@@ -159,7 +164,7 @@ async function backfillTradeLinks(
     let tradeLinksCreated = 0;
     let unknownLegacyValues = 0;
     for (const row of result.rows as unknown as LegacyRow[]) {
-        const slugs = LEGACY_CATEGORY_TO_SLUGS[row.category];
+        const slugs = resolveLegacyCategorySlugs(row.category);
         if (!slugs) {
             unknownLegacyValues += 1;
             logger.warn(
@@ -195,7 +200,7 @@ async function backfillLeadSlugs(
     let leadsConverted = 0;
     let unknownLegacyValues = 0;
     for (const row of result.rows as unknown as LegacyRow[]) {
-        const slugs = LEGACY_CATEGORY_TO_SLUGS[row.category];
+        const slugs = resolveLegacyCategorySlugs(row.category);
         if (!slugs) {
             unknownLegacyValues += 1;
             logger.warn(

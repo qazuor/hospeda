@@ -3,7 +3,7 @@ import type { ILogger } from '@repo/logger';
 import {
     type HostTradeBenefitTypeEnum,
     HostTradeBenefitTypeEnumSchema,
-    LEGACY_CATEGORY_TO_SLUGS
+    resolveLegacyCategorySlugs
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 
@@ -100,7 +100,7 @@ export const resolveProvisionPlan = (lead: SelectAllianceLead): ProvisionPlan =>
     const categorySlugs =
         lead.categorySlugs && lead.categorySlugs.length > 0
             ? lead.categorySlugs
-            : (LEGACY_CATEGORY_TO_SLUGS[lead.category ?? ''] ?? []);
+            : (resolveLegacyCategorySlugs(lead.category) ?? []);
     const benefitType = HostTradeBenefitTypeEnumSchema.nullish().safeParse(lead.benefitType);
 
     if (

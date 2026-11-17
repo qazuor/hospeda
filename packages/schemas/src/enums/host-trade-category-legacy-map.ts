@@ -29,3 +29,29 @@ export const LEGACY_CATEGORY_TO_SLUGS: Readonly<Record<string, readonly string[]
     INTERNET: ['internet-tv'],
     ALBANILERIA: ['albanileria']
 };
+
+/**
+ * Looks a legacy category up in {@link LEGACY_CATEGORY_TO_SLUGS} by OWN key.
+ *
+ * A plain `MAP[key]` would resolve `'constructor'`, `'toString'` or
+ * `'__proto__'` to an `Object.prototype` member, which is truthy and not a slug
+ * list. The legacy value comes from a varchar column, so it is not guaranteed
+ * to be an enum member.
+ *
+ * @param category - The legacy `category` column value.
+ * @returns The catalog slugs, or `undefined` when the value is absent or unknown.
+ *
+ * @example
+ * ```ts
+ * resolveLegacyCategorySlugs('GAS') // ['gas-instalacion']
+ * resolveLegacyCategorySlugs('constructor') // undefined
+ * ```
+ */
+export function resolveLegacyCategorySlugs(
+    category: string | null | undefined
+): readonly string[] | undefined {
+    if (typeof category !== 'string') return undefined;
+    return Object.hasOwn(LEGACY_CATEGORY_TO_SLUGS, category)
+        ? LEGACY_CATEGORY_TO_SLUGS[category]
+        : undefined;
+}
