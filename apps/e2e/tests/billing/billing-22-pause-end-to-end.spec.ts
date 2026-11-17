@@ -134,11 +134,9 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
                 'Tu ficha sale del sitio público hoy. Vuelve sola al reanudar si el cupo del plan alcanza. Durante la pausa no se archiva, no se borra ni recibe avisos de retención; el reloj se detiene y arranca de cero al volver.'
             );
             await expect(
-                confirmation.locator('p').nth(2),
-                `TEST:B8b:26 ${step}: recurrent addon consequence.`
-            ).toHaveText(
-                'Los addons recurrentes de esta vertical se pausan por los mismos meses y vuelven con el plan:'
-            );
+                confirmation.getByText('Los addons recurrentes de esta vertical', { exact: false }),
+                `TEST:B8b:26 ${step}: no orphan vertical addon heading without addons.`
+            ).toHaveCount(0);
             await expect(
                 confirmation.locator('button'),
                 `TEST:B8b:26 ${step}: complete confirmation controls.`
@@ -149,10 +147,12 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
                 count - 1
             );
             await confirmation.getByRole('button', { name: 'Confirmar pausa' }).click();
+            const pausedReloaded = page.waitForEvent('load', { timeout: 15_000 });
             await expect(
                 article.getByRole('status'),
                 `TEST:B8b:26 ${step}: pause response arrived.`
             ).toBeVisible();
+            const pauseStatusText = await article.getByRole('status').textContent();
             const rows = await pauses();
             const current = rows[count - 1];
             expect(current, `TEST:B8b:26 ${step}: pause row exists.`).toBeDefined();
@@ -169,10 +169,10 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
             ).toBe(
                 `Si confirmás, tu suscripción queda pausada hasta el ${formatMarketDate(current.expected_end_at)}.`
             );
-            await expect(
-                article.getByRole('status'),
+            expect(
+                pauseStatusText,
                 `TEST:B8b:26 ${step}: paused row reports customer's end date.`
-            ).toHaveText(
+            ).toBe(
                 `Tu suscripción quedó pausada hasta el ${formatMarketDate(current.expected_end_at)}.`
             );
             const sent = mutations('paused').slice(before);
@@ -180,7 +180,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
                 sent,
                 `TEST:B8b:26 ${step}: one provider pause after confirmation.`
             ).toHaveLength(1);
-            await page.reload();
+            await pausedReloaded;
             await expect(
                 article.getByText('Pausada', { exact: true }),
                 `TEST:B8b:26 ${step}: subscription row displays PAUSED.`
@@ -249,10 +249,12 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
                 'TEST:B8b:26 early: only the expiry job resumed the provider so far.'
             ).toBe(1);
             await confirmation.getByRole('button', { name: 'Confirmar reanudación' }).click();
+            const resumedReloaded = page.waitForEvent('load', { timeout: 15_000 });
             await expect(
                 article.getByTestId('resume-result'),
                 'TEST:B8b:26 early: resume response arrived.'
             ).toBeVisible();
+            const resumeResultText = await article.getByTestId('resume-result').textContent();
             const [subscription] = await execSQL<{
                 status: string;
                 next_charge_at: Date | null;
@@ -273,10 +275,10 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
             }).format(Number(subscription.amount) / 100);
-            await expect(
-                article.getByTestId('resume-result'),
+            expect(
+                resumeResultText,
                 'TEST:B8b:26 early: whole result contains only the next charge and amount.'
-            ).toHaveText(
+            ).toBe(
                 `Te vamos a cobrar el ${formatMarketDate(subscription.next_charge_at)}: ${amount}.`
             );
             const rows = await pauses();
@@ -288,7 +290,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
             expect(sent, 'TEST:B8b:26 early: provider resumed after UI confirmation.').toHaveLength(
                 1
             );
-            await page.reload();
+            await resumedReloaded;
             await expect(
                 article.getByText('Activa', { exact: true }),
                 'TEST:B8b:26 early: subscription row displays ACTIVE.'
