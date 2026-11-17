@@ -23,6 +23,7 @@ export async function planMigrationRowPricing(args: {
     readonly newAmount: number | null;
     readonly currency: string;
     readonly losesPromo: boolean;
+    readonly keepsPromo: boolean;
 }> {
     const db = args.tx ?? getDb();
     const [option] = await db
@@ -65,13 +66,15 @@ export async function planMigrationRowPricing(args: {
                   }).amountMinor
                 : null,
             currency: option.currency,
-            losesPromo: false
+            losesPromo: false,
+            keepsPromo: promos.length > 0
         };
     }
     return {
         currentAmount,
         newAmount: targetOption?.amount ?? null,
         currency: option.currency,
-        losesPromo: promos.length > 0
+        losesPromo: promos.length > 0,
+        keepsPromo: false
     };
 }

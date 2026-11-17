@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors/api-error';
 import { PromoCodeCreateDialog } from '../PromoCodeCreateDialog';
+import { initialPromoCodeFormValues, makePromoCodeCreateRequest } from '../promo-code-form-values';
 
 const fetchApi = vi.hoisted(() => vi.fn());
 const addToast = vi.hoisted(() => vi.fn());
@@ -121,6 +122,21 @@ describe('AC:B9b:9 HOS-1591 PromoCodeCreateDialog TEST:B9b:9 (support)', () => {
             'Ese código ya existe. Elegí otro código.'
         );
         expect(screen.getByTestId('promo-code-confirmation')).toBeInTheDocument();
+    });
+});
+
+describe('HOS-2306 promo validity date conversion', () => {
+    it('uses the end of the selected Argentina date and preserves an empty end date as null', () => {
+        const request = makePromoCodeCreateRequest({
+            ...initialPromoCodeFormValues,
+            validFrom: '2026-06-30',
+            validUntil: '2026-06-30'
+        });
+        const emptyRequest = makePromoCodeCreateRequest(initialPromoCodeFormValues);
+
+        expect(request.validUntil).toBe('2026-07-01T02:59:59.999Z');
+        expect(request.validFrom).toBe('2026-06-30T03:00:00.000Z');
+        expect(emptyRequest.validUntil).toBeNull();
     });
 });
 
