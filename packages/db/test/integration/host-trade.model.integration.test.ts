@@ -350,6 +350,49 @@ describe('HostTradeModel categories any-of EXISTS condition', () => {
     });
 });
 
+describe('HostTradeModel.findForHost categories filter (HOS-919 T-031)', () => {
+    const model = new HostTradeModel();
+
+    it('EXCLUDES providers without a requested category and returns a multi-match once', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 3);
+            const [a, b, c] = seed.categories as [CatRef, CatRef, CatRef];
+            const both = await insertTrade(tx, seed.destinationId, 'Both');
+            const onlyC = await insertTrade(tx, seed.destinationId, 'OnlyC');
+            await link(tx, both, [a.id, b.id]);
+            await link(tx, onlyC, [c.id]);
+
+            const rows = await model.findForHost([seed.destinationId], tx, [a.slug, b.slug]);
+
+            expect(rows.map((t) => t.id)).toEqual([both]);
+        });
+    });
+
+    it('returns an empty list when every requested slug is unknown', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 1);
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [(seed.categories[0] as CatRef).id]);
+
+            expect(await model.findForHost([seed.destinationId], tx, ['nope'])).toEqual([]);
+        });
+    });
+
+    it('applies no category filter when the slug list is empty or absent', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 1);
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [(seed.categories[0] as CatRef).id]);
+
+            const none = await model.findForHost([seed.destinationId], tx);
+            const empty = await model.findForHost([seed.destinationId], tx, []);
+
+            expect(none.map((t) => t.id)).toEqual([trade]);
+            expect(empty.map((t) => t.id)).toEqual([trade]);
+        });
+    });
+});
+
 describe('HostTradeModel.hydrateCategories', () => {
     const model = new HostTradeModel();
 

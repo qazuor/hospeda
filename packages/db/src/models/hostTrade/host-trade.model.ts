@@ -39,10 +39,18 @@ export class HostTradeModel extends BaseModelImpl<HostTrade> {
      * @param destinationIds - Array of destination UUIDs to filter by.
      * @param tx - Optional transaction client. When supplied, the query
      *   executes within the caller's transaction.
+     * @param categorySlugs - Optional any-of category filter (HOS-919). A
+     *   non-empty list keeps only providers holding at least one of those
+     *   categories (each once); unknown slugs match nothing. Absent or empty
+     *   means "no filter".
      * @returns Promise resolving to an array of matching HostTrade rows.
      * @throws DbError if the database query fails.
      */
-    async findForHost(destinationIds: string[], tx?: DrizzleClient): Promise<HostTrade[]> {
+    async findForHost(
+        destinationIds: string[],
+        tx?: DrizzleClient,
+        categorySlugs?: readonly string[]
+    ): Promise<HostTrade[]> {
         if (destinationIds.length === 0) return [];
 
         const db = this.getClient(tx);
@@ -56,7 +64,10 @@ export class HostTradeModel extends BaseModelImpl<HostTrade> {
                     and(
                         inArray(hostTrades.destinationId, destinationIds),
                         eq(hostTrades.isActive, true),
-                        isNull(hostTrades.deletedAt)
+                        isNull(hostTrades.deletedAt),
+                        categorySlugs && categorySlugs.length > 0
+                            ? this.buildCategoriesFilterCondition({ categorySlugs })
+                            : undefined
                     )
                 )
                 .orderBy(asc(hostTrades.name));
