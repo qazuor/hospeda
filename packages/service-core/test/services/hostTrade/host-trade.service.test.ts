@@ -94,7 +94,7 @@ function buildService(
         ...modelOverrides
     };
     const categoryModel = {
-        findByIds: vi
+        findByIdsForShare: vi
             .fn()
             .mockResolvedValue([{ id: CAT_ID, lifecycleState: 'ACTIVE', deletedAt: null }]),
         findIdsInDeletedGroups: vi.fn().mockResolvedValue([])

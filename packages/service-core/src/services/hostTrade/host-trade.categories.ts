@@ -40,7 +40,8 @@ export async function assertCategoryIdsAssignable(input: {
 }): Promise<void> {
     const { categoryIds, hostTradeId, categoryModel, hostTradeModel, tx } = input;
 
-    const found = await categoryModel.findByIds(categoryIds, tx);
+    // FOR SHARE: serializes with the category soft delete (see `findByIdsForShare`).
+    const found = await categoryModel.findByIdsForShare(categoryIds, tx);
     const byId = new Map(found.map((category) => [category.id as string, category]));
 
     const idsInDeletedGroups = new Set(await categoryModel.findIdsInDeletedGroups(categoryIds, tx));

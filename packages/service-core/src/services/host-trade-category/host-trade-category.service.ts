@@ -212,10 +212,13 @@ export class HostTradeCategoryService extends BaseCrudService<
     /**
      * Blocks deleting a category that a live provider still uses (AC-3.4).
      *
-     * Locks the category row first (`SELECT ... FOR UPDATE`): a concurrent
-     * insert into `r_host_trade_category` takes a KEY SHARE lock on that row
-     * through its foreign key and therefore waits until this transaction ends,
-     * after which it fails the FK because the category is deleted.
+     * Locks the category row first (`SELECT ... FOR UPDATE`). Provider writes
+     * validate their category ids with `FOR SHARE` (`findByIdsForShare`), which
+     * conflicts with it, so a concurrent link and this delete serialize: the
+     * second one sees the first one's result (a new link makes the count below
+     * non-zero; a committed delete makes the write refuse the category). The
+     * join table's foreign key does NOT cover this, a soft delete leaves the row
+     * in place.
      *
      * @throws {ServiceError} `CATEGORY_IN_USE` when a non-deleted provider links it.
      */

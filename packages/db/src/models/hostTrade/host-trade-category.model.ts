@@ -215,11 +215,57 @@ export class HostTradeCategoryModel extends BaseModelImpl<HostTradeCategory> {
     }
 
     /**
+     * Loads categories by id with `SELECT ... FOR SHARE`, holding a row lock until
+     * the transaction ends. A provider write calls this to validate the ids it is
+     * about to link: the lock conflicts with the `FOR UPDATE` that
+     * {@link lockForUpdate} takes in the category delete, so the two serialize and
+     * the later one sees the earlier one's committed result (a link written before
+     * the delete makes the delete answer CATEGORY_IN_USE; a delete committed first
+     * makes this read return `deletedAt`, so the link is refused).
+     *
+     * The foreign key on the join table does NOT protect against this: a soft
+     * delete only sets `deleted_at` and leaves the row in place, so the foreign
+     * key is still satisfied. Soft-deleted and inactive rows are returned, the
+     * caller validates them.
+     *
+     * Must run on a transaction client to be meaningful.
+     *
+     * @param categoryIds - Category UUIDs to load and lock.
+     * @param tx - Transaction client holding the lock.
+     * @returns The matching rows.
+     * @throws DbError if the database query fails.
+     */
+    async findByIdsForShare(
+        categoryIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<HostTradeCategory[]> {
+        if (categoryIds.length === 0) return [];
+        const db = this.getClient(tx);
+        const logContext = { categoryIds };
+        try {
+            const rows = await db
+                .select()
+                .from(hostTradeCategories)
+                .where(inArray(hostTradeCategories.id, [...categoryIds]))
+                .for('share');
+            return rows as HostTradeCategory[];
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findByIdsForShare', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findByIdsForShare', logContext, err.message, err);
+        }
+    }
+
+    /**
      * Locks the category row (`SELECT ... FOR UPDATE`) for the rest of the
-     * transaction. A concurrent insert into `r_host_trade_category` takes a
-     * KEY SHARE lock on this row through its foreign key, so it waits here: the
-     * "no live provider uses it" check and the soft delete that follows cannot
-     * be overtaken by a new link.
+     * transaction. It serializes the category delete with every provider write
+     * that validates its ids through {@link findByIdsForShare} (`FOR UPDATE`
+     * conflicts with `FOR SHARE`): whichever transaction comes second waits and
+     * then sees the first one's committed result. The foreign key on the join
+     * table is NOT what protects this, because a soft delete leaves the row in
+     * place and the key stays satisfied.
      *
      * Must run on a transaction client to be meaningful.
      *

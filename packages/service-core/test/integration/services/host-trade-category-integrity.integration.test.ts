@@ -63,6 +63,18 @@ async function settleCode(
     }
 }
 
+/** Collects every `code` found along an error's `cause`/`originalError` chain. */
+function errorChainCodes(error: unknown): string[] {
+    const codes: string[] = [];
+    let current: unknown = error;
+    for (let depth = 0; depth < 6 && current && typeof current === 'object'; depth++) {
+        const node = current as { code?: unknown; cause?: unknown; originalError?: unknown };
+        if (typeof node.code === 'string') codes.push(node.code);
+        current = node.cause ?? node.originalError;
+    }
+    return codes;
+}
+
 async function insertGroup(tx: DrizzleClient, input: { slug: string; deleted?: boolean }) {
     const id = crypto.randomUUID();
     await tx.insert(hostTradeCategoryGroups).values({
@@ -218,7 +230,7 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
             await db.delete(destinations).where(eq(destinations.id, committed.destinationId));
         });
 
-        it('makes a concurrent link insert wait while the delete transaction is open', async () => {
+        it('serializes the category delete with a provider write that holds the FOR SHARE read', async () => {
             const db = getServiceTestDb();
             committed.groupId = await insertGroup(db, { slug: 'lock' });
             committed.categoryId = await insertCategory(db, {
@@ -237,28 +249,33 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
             } as typeof hostTrades.$inferInsert);
 
             const pool = getServiceTestPool();
+            const writer = await pool.connect();
             const deleter = await pool.connect();
-            const linker = await pool.connect();
             try {
-                await deleter.query('BEGIN');
-                const deleterTx = drizzle({ client: deleter, schema }) as unknown as DrizzleClient;
-                expect(await categoryModel.lockForUpdate(committed.categoryId, deleterTx)).toBe(
-                    true
+                // A provider write validates its ids with FOR SHARE and keeps the lock.
+                await writer.query('BEGIN');
+                const writerTx = drizzle({ client: writer, schema }) as unknown as DrizzleClient;
+                const loaded = await categoryModel.findByIdsForShare(
+                    [committed.categoryId],
+                    writerTx
                 );
+                expect(loaded.map((row) => row.id)).toEqual([committed.categoryId]);
 
-                await linker.query('BEGIN');
-                await linker.query("SET LOCAL lock_timeout = '400ms'");
-                await expect(
-                    linker.query(
-                        'INSERT INTO r_host_trade_category (host_trade_id, category_id) VALUES ($1, $2)',
-                        [committed.providerId, committed.categoryId]
-                    )
-                ).rejects.toMatchObject({ code: '55P03' });
+                // The category delete (FOR UPDATE) cannot overtake it: it must wait.
+                await deleter.query('BEGIN');
+                await deleter.query("SET LOCAL lock_timeout = '400ms'");
+                const deleterTx = drizzle({ client: deleter, schema }) as unknown as DrizzleClient;
+                const failure = await categoryModel
+                    .lockForUpdate(committed.categoryId, deleterTx)
+                    .then(() => null)
+                    .catch((error: unknown) => error);
+                expect(failure).not.toBeNull();
+                expect(errorChainCodes(failure)).toContain('55P03');
             } finally {
-                await linker.query('ROLLBACK');
                 await deleter.query('ROLLBACK');
-                linker.release();
+                await writer.query('ROLLBACK');
                 deleter.release();
+                writer.release();
             }
         });
     });

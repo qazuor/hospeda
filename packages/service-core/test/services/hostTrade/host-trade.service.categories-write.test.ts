@@ -86,7 +86,7 @@ describe('HostTradeService category writes', () => {
             'hydrateCategories'
         ]);
         categoryModel = createTypedModelMock(HostTradeCategoryModel, [
-            'findByIds',
+            'findByIdsForShare',
             'findIdsInDeletedGroups'
         ]);
         asMock(categoryModel.findIdsInDeletedGroups).mockResolvedValue([]);
@@ -114,7 +114,10 @@ describe('HostTradeService category writes', () => {
 
     describe('create', () => {
         it('should write the row and replace categories on the SAME transaction', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A), category(CAT_B)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
+                category(CAT_A),
+                category(CAT_B)
+            ]);
 
             const result = await service.create(creator, createInput([CAT_A, CAT_B]) as never);
 
@@ -128,8 +131,16 @@ describe('HostTradeService category writes', () => {
             });
         });
 
+        it('should validate the ids with the FOR SHARE read on the write transaction', async () => {
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
+
+            await service.create(creator, createInput([CAT_A]) as never);
+
+            expect(categoryModel.findByIdsForShare).toHaveBeenCalledWith([CAT_A], TX);
+        });
+
         it('should not send categoryIds to the row insert', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
 
             await service.create(creator, createInput([CAT_A]) as never);
 
@@ -139,7 +150,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should reject an unknown id naming categoryIds, without writing', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
 
             const result = await service.create(creator, createInput([CAT_A, CAT_B]) as never);
 
@@ -150,7 +161,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should reject a soft-deleted category', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
                 category(CAT_A, { deletedAt: new Date() })
             ]);
 
@@ -161,7 +172,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should reject a category whose group is soft-deleted', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
             asMock(categoryModel.findIdsInDeletedGroups).mockResolvedValue([CAT_A]);
 
             const result = await service.create(creator, createInput([CAT_A]) as never);
@@ -175,7 +186,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should reject an INACTIVE category on create (nothing is linked yet)', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
                 category(CAT_A, { lifecycleState: LifecycleStatusEnum.INACTIVE })
             ]);
 
@@ -199,7 +210,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should roll the transaction back and answer an error when the category write fails', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
             asMock(model.replaceCategories).mockRejectedValue(new Error('insert failed'));
 
             const result = await service.create(creator, createInput([CAT_A]) as never);
@@ -210,7 +221,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should join the caller transaction instead of opening a new one', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
             const callerTx = { __caller: true };
 
             await service.create(creator, createInput([CAT_A]) as never, {
@@ -227,7 +238,10 @@ describe('HostTradeService category writes', () => {
 
     describe('update', () => {
         it('should replace the set on the same transaction as the row update', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A), category(CAT_C)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
+                category(CAT_A),
+                category(CAT_C)
+            ]);
 
             const result = await service.update(updater, HT_ID, { categoryIds: [CAT_A, CAT_C] });
 
@@ -245,11 +259,11 @@ describe('HostTradeService category writes', () => {
 
             expect(result.error).toBeUndefined();
             expect(model.replaceCategories).not.toHaveBeenCalled();
-            expect(categoryModel.findByIds).not.toHaveBeenCalled();
+            expect(categoryModel.findByIdsForShare).not.toHaveBeenCalled();
         });
 
         it('should accept an INACTIVE category the provider already has', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
                 category(CAT_A, { lifecycleState: LifecycleStatusEnum.INACTIVE })
             ]);
             asMock(model.hydrateCategories).mockResolvedValue(
@@ -265,7 +279,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should reject an INACTIVE category the provider does not have', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
                 category(CAT_B, { lifecycleState: LifecycleStatusEnum.INACTIVE })
             ]);
 
@@ -277,7 +291,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should reject unknown and deleted ids', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([
                 category(CAT_A, { deletedAt: new Date() })
             ]);
 
@@ -287,7 +301,7 @@ describe('HostTradeService category writes', () => {
         });
 
         it('should propagate a category write failure and roll back', async () => {
-            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findByIdsForShare).mockResolvedValue([category(CAT_A)]);
             asMock(model.replaceCategories).mockRejectedValue(new Error('boom'));
 
             const result = await service.update(updater, HT_ID, { categoryIds: [CAT_A] });
