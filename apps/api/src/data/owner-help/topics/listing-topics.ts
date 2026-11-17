@@ -38,7 +38,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             `Abrí el editor de la publicación: desde «${ACCOMMODATION_LIST_LABEL}» (alojamientos) o «${COMMERCE_LIST_LABEL}» (comercios y experiencias), tocá «Editar» en su tarjeta.`,
             'Entrá a la sección «Fotos».',
             'Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.',
-            'Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG o WebP y pesar hasta 10 MB.',
+            'Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.',
             'El editor te avisa cuántas fotos entran en la galería. En alojamientos ese tope depende de tu plan.',
             'No hace falta guardar: cada foto que agregás, quitás o cambiás se guarda al instante.',
             'En alojamientos también podés reordenar la galería y elegir cuál es la portada.'
@@ -60,14 +60,15 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         audience: 'any',
         title: 'Crear una publicación nueva',
         keywords: [
-            'crear',
+            'crear publicacion',
+            'crear alojamiento',
             'nueva publicacion',
             'publicar',
-            'alta',
+            'dar de alta',
             'agregar alojamiento',
             'agregar comercio',
             'agregar experiencia',
-            'empezar',
+            'empezar a publicar',
             'borrador'
         ],
         steps: [
@@ -93,8 +94,8 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             'requisitos',
             'no puedo publicar',
             'no me deja publicar',
-            'falta',
-            'faltan',
+            'faltan datos',
+            'falta completar',
             'publicar',
             'incompleta',
             'incompleto',
@@ -103,7 +104,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         steps: [
             'Alojamientos: hace falta la descripción, la cantidad de huéspedes, las noches mínimas, las habitaciones, los baños y la foto principal.',
-            'Comercios y experiencias: nombre, resumen (mínimo 10 caracteres), descripción (mínimo 20), ciudad o destino, categoría, foto principal y un teléfono o email de contacto.',
+            'Comercios y experiencias: nombre, resumen (mínimo 10 caracteres), descripción (mínimo 20), ciudad o destino, categoría, foto principal y un canal de contacto. En comercios cuenta cualquier teléfono, WhatsApp o email; en experiencias solo el teléfono de trabajo, el celular o el email de trabajo (el WhatsApp no cuenta).',
             'Los comercios además necesitan horarios (al menos un día con un turno) y un rango de precios. Las experiencias, un precio «desde» mayor a cero o marcar «Precio a consultar».',
             'Lo que falta se ve en el editor, que marca cada sección, y en la tarjeta de la publicación. Si publicás con datos faltantes, el sitio te lista cuáles y el botón «Completar en el editor» te lleva a arreglarlos.',
             'Publicar también requiere un plan activo. Si te corresponde la prueba gratis, arranca al publicar; si no, el botón te lleva a elegir un plan.',
@@ -144,7 +145,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             'reanudar',
             'volver a publicar',
             'publicar de nuevo',
-            'temporada'
+            'pausar por temporada'
         ],
         steps: [
             `Entrá a «${ACCOMMODATION_LIST_LABEL}» y buscá la tarjeta de la propiedad publicada.`,
@@ -156,6 +157,8 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'experience', label: COMMERCE_LIST_LABEL },
             { kind: 'addons', label: 'Complementos' }
         ],
         faqKey: 'owners.pause',
@@ -182,6 +185,8 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'experience', label: COMMERCE_LIST_LABEL },
             { kind: 'contact' }
         ],
         reviewedAt: '2026-11-17'
@@ -191,8 +196,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         audience: 'any',
         title: 'Editar los servicios y comodidades',
         keywords: [
-            'servicios',
-            'servicio',
+            'servicios y comodidades',
             'comodidades',
             'comodidad',
             'amenities',
@@ -252,11 +256,12 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             'El aviso puede traer una fecha sugerida para corregirlo. Tu publicación sigue a la vista mientras tanto.',
             'Corregí lo que se pidió desde el editor.',
             'Tocá «Ya lo corregí» para avisar a Hospeda. Eso no cierra el pedido ni publica nada: lo revisa el equipo.',
-            'Si la publicación quedó moderada («Ficha moderada»), no se ve en el sitio hasta que un administrador levante la moderación. Mientras tanto podés verla, exportarla, editarla y borrarla, pero no publicarla.'
+            'Si la publicación quedó moderada («Ficha moderada»), no se ve en el sitio hasta que un administrador levante la moderación. Mientras tanto podés verla, exportarla y editarla, pero no publicarla. En alojamientos también podés borrarla; en comercios y experiencias el portal no tiene el botón «Eliminar».'
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
             { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'experience', label: COMMERCE_LIST_LABEL },
             { kind: 'contact' }
         ],
         reviewedAt: '2026-11-17'

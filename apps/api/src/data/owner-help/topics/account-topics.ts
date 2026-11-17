@@ -18,10 +18,10 @@ export const ACCOUNT_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         audience: 'any',
         title: 'Cambiar de plan',
         keywords: [
-            'plan',
-            'planes',
+            'mi plan',
             'cambiar de plan',
             'cambiar plan',
+            'planes y precios',
             'suscripcion',
             'upgrade',
             'mejorar plan',
