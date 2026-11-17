@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-router';
 import type * as React from 'react';
 import { useEffect, useState } from 'react';
+import { UmamiPageviews } from '@/components/analytics/UmamiPageviews';
 import { BrowserGateBanner } from '@/components/BrowserGateBanner';
 import { DevtoolsGate } from '@/components/DevtoolsGate';
 import { AdminFeedbackHeadlessHost } from '@/components/feedback/AdminFeedbackHeadlessHost';
@@ -238,6 +239,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </head>
             <body>
                 <DocumentTitle />
+                {/* HOS-2119: router-driven Umami pageviews; after DocumentTitle so the title is current. */}
+                <UmamiPageviews />
                 {/*
                  * SPEC-176 T-008 — Browser-gate banner. First visible child of
                  * the body so it sits above ALL admin content (including the
