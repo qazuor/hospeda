@@ -342,7 +342,7 @@ sub-field to null when the query does not state it. Never invent or rename a fie
     maxBathrooms: integer >= 0
     minPrice: number >= 0 (price per night)
     maxPrice: number >= 0 (price per night)
-    currency: "ARS" | "USD"
+    currency: "ARS" | "USD" | "BRL"
     minRating: 0–5
     maxRating: 0–5
     hasPool: boolean
