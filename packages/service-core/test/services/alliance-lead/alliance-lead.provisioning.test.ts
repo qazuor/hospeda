@@ -1,5 +1,5 @@
 import type { SelectAllianceLead } from '@repo/db';
-import { HostTradeBenefitTypeEnum, HostTradeCategoryEnum } from '@repo/schemas';
+import { HostTradeBenefitTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { resolveProvisionPlan } from '../../../src/services/alliance-lead/alliance-lead.provisioning';
 
@@ -23,7 +23,8 @@ const providerLead = (overrides: Partial<SelectAllianceLead> = {}): SelectAllian
         claimToken: null,
         claimExpiresAt: null,
         businessName: 'Plomería Acme',
-        category: HostTradeCategoryEnum.PLOMERIA,
+        category: null,
+        categorySlugs: ['plomeria', 'destapaciones-desagotes'],
         destinationId: '00000000-0000-4000-a000-000000000002',
         benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
         benefitValue: 15,
@@ -50,7 +51,7 @@ describe('resolveProvisionPlan', () => {
         expect(plan.kind).toBe('provision');
         if (plan.kind === 'provision') {
             expect(plan.businessName).toBe('Plomería Acme');
-            expect(plan.category).toBe(HostTradeCategoryEnum.PLOMERIA);
+            expect(plan.categorySlugs).toEqual(['plomeria', 'destapaciones-desagotes']);
             expect(plan.destinationId).toBe('00000000-0000-4000-a000-000000000002');
             expect(plan.benefitType).toBe(HostTradeBenefitTypeEnum.PERCENTAGE);
         }
@@ -87,7 +88,7 @@ describe('resolveProvisionPlan', () => {
 
     it.each([
         'businessName',
-        'category',
+        'categorySlugs',
         'destinationId'
     ] as const)('should skip a legacy lead with no %s instead of failing the approval', (field) => {
         // Arrange — leads submitted under HOS-277 NG-3 kept their answers
@@ -105,20 +106,26 @@ describe('resolveProvisionPlan', () => {
         });
     });
 
-    it('should skip a lead whose category is not a value the listing enum accepts', () => {
-        // Arrange — the lead stores category as varchar while `host_trades`
-        // uses a real Postgres enum. Without narrowing, a value like this
-        // would reach the INSERT and fail there, mid-approval.
-        const lead = providerLead({ category: 'NOT_A_REAL_CATEGORY' });
+    it('should skip a lead with an empty categorySlugs array', () => {
+        const plan = resolveProvisionPlan(providerLead({ categorySlugs: [] }));
+
+        expect(plan).toEqual({ kind: 'skip', reason: 'legacy-lead-without-typed-fields' });
+    });
+
+    it('should treat a lead with only the legacy category as legacy and never read it (HOS-919)', () => {
+        // Arrange — `category` throws if touched: the plan must not read it.
+        const lead = providerLead({ categorySlugs: null });
+        Object.defineProperty(lead, 'category', {
+            get() {
+                throw new Error('legacy category must not be read');
+            }
+        });
 
         // Act
         const plan = resolveProvisionPlan(lead);
 
         // Assert
-        expect(plan).toEqual({
-            kind: 'skip',
-            reason: 'legacy-lead-without-typed-fields'
-        });
+        expect(plan).toEqual({ kind: 'skip', reason: 'legacy-lead-without-typed-fields' });
     });
 
     it('should skip a lead whose benefitType is not a value the listing enum accepts', () => {

@@ -30,7 +30,13 @@
  */
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { AllianceLeadModel, HostTradeModel, PartnerModel, type SelectAllianceLead } from '@repo/db';
+import {
+    AllianceLeadModel,
+    HostTradeCategoryModel,
+    HostTradeModel,
+    PartnerModel,
+    type SelectAllianceLead
+} from '@repo/db';
 import {
     type AllianceLead,
     AllianceLeadAdminListQuerySchema,
@@ -479,6 +485,7 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
 export class AllianceLeadService extends BaseService {
     private readonly _model: AllianceLeadModel;
     private readonly _hostTradeModel: HostTradeModel;
+    private readonly _categoryModel: HostTradeCategoryModel;
     private readonly _partnerModel: PartnerModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
     private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
@@ -497,6 +504,7 @@ export class AllianceLeadService extends BaseService {
         // demand HOST_TRADE_CREATE from an admin whose permission to approve
         // this lead is not in question.
         this._hostTradeModel = new HostTradeModel();
+        this._categoryModel = new HostTradeCategoryModel();
         // Same reasoning as `_hostTradeModel` above: provisioning is an effect
         // of ALLIANCE_LEAD_MANAGE, and going through PartnerService would
         // additionally demand PARTNER_MANAGE from an admin whose permission to
@@ -1064,6 +1072,7 @@ export class AllianceLeadService extends BaseService {
                             ? await provisionServiceProviderListing({
                                   lead: existing,
                                   hostTradeModel: this._hostTradeModel,
+                                  categoryModel: this._categoryModel,
                                   actorId: a.id,
                                   logger: this.logger,
                                   tx: txCtx?.tx
