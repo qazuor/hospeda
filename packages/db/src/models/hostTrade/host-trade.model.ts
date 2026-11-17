@@ -1,5 +1,5 @@
 import type { HostTrade, HostTradeCategoryRef } from '@repo/schemas';
-import { and, asc, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, notInArray, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTrades } from '../../schemas/host-trade/host_trade.dbschema.ts';
 import { hostTradeCategories } from '../../schemas/host-trade/host-trade-category.dbschema.ts';
@@ -187,6 +187,77 @@ export class HostTradeModel extends BaseModelImpl<HostTrade> {
                 logError(this.entityName, 'hydrateCategories', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'hydrateCategories', logContext, err.message, err);
+        }
+    }
+
+    /**
+     * Makes the provider's category links equal `categoryIds`: deletes the
+     * links not in the set and inserts the missing ones (HOS-919 AC-4.2).
+     *
+     * Both statements run on the CALLER's transaction, so the replacement is
+     * atomic with whatever else the caller writes there (typically the
+     * provider row). `tx` is required on purpose: without it the delete and
+     * the insert would not be atomic. Duplicate ids are collapsed; an unchanged
+     * set deletes and inserts nothing. An empty set removes every link (the
+     * 1..10 bound is the service's rule, not the model's).
+     *
+     * Existence, lifecycle and size of `categoryIds` are NOT validated here: an
+     * unknown id fails the foreign key and throws, which rolls the caller's
+     * transaction back.
+     *
+     * @param input.hostTradeId - Host-trade UUID.
+     * @param input.categoryIds - The complete desired category set.
+     * @param input.tx - The caller's transaction client.
+     * @returns The ids that were added and removed.
+     * @throws DbError if a statement fails (including an FK violation).
+     */
+    async replaceCategories(input: {
+        readonly hostTradeId: string;
+        readonly categoryIds: readonly string[];
+        readonly tx: DrizzleClient;
+    }): Promise<{ added: string[]; removed: string[] }> {
+        const { hostTradeId, tx } = input;
+        const categoryIds = [...new Set(input.categoryIds)];
+        const logContext = { hostTradeId, categoryIds };
+
+        try {
+            const deleteWhere =
+                categoryIds.length === 0
+                    ? eq(rHostTradeCategory.hostTradeId, hostTradeId)
+                    : and(
+                          eq(rHostTradeCategory.hostTradeId, hostTradeId),
+                          notInArray(rHostTradeCategory.categoryId, categoryIds)
+                      );
+            const removedRows = await tx
+                .delete(rHostTradeCategory)
+                .where(deleteWhere)
+                .returning({ categoryId: rHostTradeCategory.categoryId });
+
+            const addedRows =
+                categoryIds.length === 0
+                    ? []
+                    : await tx
+                          .insert(rHostTradeCategory)
+                          .values(categoryIds.map((categoryId) => ({ hostTradeId, categoryId })))
+                          .onConflictDoNothing()
+                          .returning({ categoryId: rHostTradeCategory.categoryId });
+
+            const outcome = {
+                added: addedRows.map((r) => r.categoryId),
+                removed: removedRows.map((r) => r.categoryId)
+            };
+
+            try {
+                logQuery(this.entityName, 'replaceCategories', logContext, outcome);
+            } catch {}
+
+            return outcome;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'replaceCategories', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'replaceCategories', logContext, err.message, err);
         }
     }
 }

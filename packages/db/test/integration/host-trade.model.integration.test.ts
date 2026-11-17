@@ -182,6 +182,7 @@ describe('HostTradeModel.findForHost', () => {
 const uid = () => crypto.randomUUID().slice(0, 8);
 
 const eqCategoryId = (id: string) => eq(hostTradeCategories.id, id);
+const eqTradeId = (id: string) => eq(hostTrades.id, id);
 
 type CatRef = { id: string; slug: string };
 
@@ -244,6 +245,14 @@ async function link(tx: DrizzleClient, hostTradeId: string, categoryIds: string[
     await tx
         .insert(rHostTradeCategory)
         .values(categoryIds.map((categoryId) => ({ hostTradeId, categoryId })));
+}
+
+async function linkedIds(tx: DrizzleClient, hostTradeId: string): Promise<string[]> {
+    const rows = await tx.select().from(rHostTradeCategory);
+    return rows
+        .filter((r) => r.hostTradeId === hostTradeId)
+        .map((r) => r.categoryId)
+        .sort();
 }
 
 describe('HostTradeModel categories any-of EXISTS condition', () => {
@@ -449,5 +458,118 @@ describe('HostTradeModel.hydrateCategories', () => {
         } catch (error) {
             if (!(error instanceof Rollback)) throw error;
         }
+    });
+});
+
+describe('HostTradeModel.replaceCategories', () => {
+    const model = new HostTradeModel();
+
+    it('replacing [a,b] with [b,c] leaves exactly {b,c}', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 3);
+            const [a, b, c] = seed.categories as [CatRef, CatRef, CatRef];
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [a.id, b.id]);
+
+            const result = await model.replaceCategories({
+                hostTradeId: trade,
+                categoryIds: [b.id, c.id],
+                tx
+            });
+
+            expect(await linkedIds(tx, trade)).toEqual([b.id, c.id].sort());
+            expect(result).toEqual({ added: [c.id], removed: [a.id] });
+        });
+    });
+
+    it('is a no-op when the set is unchanged (order and duplicates ignored)', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 2);
+            const [a, b] = seed.categories as [CatRef, CatRef];
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [a.id, b.id]);
+
+            const result = await model.replaceCategories({
+                hostTradeId: trade,
+                categoryIds: [b.id, a.id, b.id],
+                tx
+            });
+
+            expect(result).toEqual({ added: [], removed: [] });
+            expect(await linkedIds(tx, trade)).toEqual([a.id, b.id].sort());
+        });
+    });
+
+    it('does not touch the links of another provider', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 2);
+            const [a, b] = seed.categories as [CatRef, CatRef];
+            const mine = await insertTrade(tx, seed.destinationId, 'Mine');
+            const other = await insertTrade(tx, seed.destinationId, 'Other');
+            await link(tx, other, [a.id]);
+
+            await model.replaceCategories({ hostTradeId: mine, categoryIds: [b.id], tx });
+
+            expect(await linkedIds(tx, other)).toEqual([a.id]);
+            expect(await linkedIds(tx, mine)).toEqual([b.id]);
+        });
+    });
+
+    it('rolls back to the OLD set when the insert fails (atomic delete + insert)', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 2);
+            const [a, b] = seed.categories as [CatRef, CatRef];
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [a.id, b.id]);
+
+            // A savepoint stands in for the service's transaction: the failed
+            // insert must undo the delete that ran before it in the same unit.
+            await expect(
+                tx.transaction(async (inner) => {
+                    await model.replaceCategories({
+                        hostTradeId: trade,
+                        categoryIds: [crypto.randomUUID()],
+                        tx: inner as unknown as DrizzleClient
+                    });
+                })
+            ).rejects.toThrow();
+
+            expect(await linkedIds(tx, trade)).toEqual([a.id, b.id].sort());
+        });
+    });
+});
+
+describe('r_host_trade_category delete rules', () => {
+    it('FK RESTRICT blocks hard-deleting a category that is still linked', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 1);
+            const cat = seed.categories[0] as CatRef;
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(tx, trade, [cat.id]);
+
+            await expect(
+                tx.transaction(async (inner) => {
+                    await inner.delete(hostTradeCategories).where(eqCategoryId(cat.id));
+                })
+            ).rejects.toThrow();
+
+            expect(await linkedIds(tx, trade)).toEqual([cat.id]);
+        });
+    });
+
+    it('deleting a host trade cascades its links', async () => {
+        await withTestTransaction(async (tx) => {
+            const seed = await seedCatalog(tx, 2);
+            const trade = await insertTrade(tx, seed.destinationId, 'T');
+            await link(
+                tx,
+                trade,
+                seed.categories.map((c) => c.id)
+            );
+
+            await tx.delete(hostTrades).where(eqTradeId(trade));
+
+            expect(await linkedIds(tx, trade)).toEqual([]);
+        });
     });
 });
