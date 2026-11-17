@@ -30,6 +30,7 @@ import {
 } from './start-subscription.service.js';
 import { SUCCESSION_CHECKOUT_OPEN_STATUS } from './succession-in-progress.js';
 import { claimRecreatableSuccessor } from './succession-recreate.js';
+import { replaceUnappliedSuccessor } from './succession-replace-unapplied.js';
 import { resolveSuccessorWindow } from './successor-window.js';
 import {
     readHasCreditedCharge,
@@ -195,6 +196,15 @@ export async function startSuccession(
         });
         return { ...recreated, predecessorId: admitted.predecessorId, basis: admitted.basis };
     }
+
+    await replaceUnappliedSuccessor(
+        {
+            predecessorId: admitted.predecessorId,
+            billingOptionId: choice.id,
+            userId: input.userId
+        },
+        ports
+    );
 
     const deadlines = await getCurrentBillingDeadlines();
     const { cycleDeadlines, credit } = await getDb().transaction(async (tx) => ({

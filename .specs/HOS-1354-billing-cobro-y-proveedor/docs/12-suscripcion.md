@@ -1151,8 +1151,16 @@ staging, 15 y 16/11/2026). Decisión del owner (delegada, 2026-11-16):
   `provider_link`, con la última clave de creación rechazada (o limitada, 429) y la ventana
   abierta, el reintento acuña una clave nueva sobre **esa** fila
   (`mintKeyAfterRejectedCreation`). Guarda el correo recién declarado y vuelve a autorizar con el
-  primer cobro que la fila ya tenía. No toca la predecesora ni su `succeeded_by_id`. Cualquier
-  otra sucesora viva sigue respondiendo `SUCCESSION_IN_PROGRESS`.
+  primer cobro que la fila ya tenía. No toca la predecesora ni su `succeeded_by_id`. **Una
+  creación que no aplicó tampoco traba la sucesión** (S39, HOS-2218): si la sucesora
+  `PENDING_AUTHORIZATION` pertenece a la predecesora recién admitida, es de la misma billing
+  option, la clave `PREAPPROVAL_CREATE` más nueva está completada con `applied:false`, coincide
+  con el `provider_link`, la ventana sigue abierta y la relectura por id devuelve la misma
+  referencia con estado `pending` o `cancelled`, se abandona y cancela la autorización antes de
+  crear otra. Clave en vuelo, checkout aplicado, link inconsistente, otra opción, ventana vencida
+  o reread autorizado siguen respondiendo `SUCCESSION_IN_PROGRESS`. Cualquier otra sucesora viva
+  (checkout vivo, creación en vuelo, autorizada al releer) sigue respondiendo
+  `SUCCESSION_IN_PROGRESS`.
 
 El primer cobro de una sucesora se redondea al segundo antes de guardarlo y mandarlo (RP17, EX-60). En una sucesión, MP convierte por su cuenta el `start_date` futuro en `free_trial` (EX-38): ese es el punto ciego que declara G11 (DEC-SUB-006); la confirmación lo deja fuera del veredicto (D12), y eso es lo que se busca.
 
