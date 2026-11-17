@@ -24,11 +24,31 @@ const { tables, findAllSpy } = vi.hoisted(() => {
     return { tables, findAllSpy: vi.fn() };
 });
 
+/** The columns of a review row a `where` may name. */
+const KNOWN_COLUMNS: Record<string, true> = Object.fromEntries(
+    [
+        'id',
+        'accommodationId',
+        'venueId',
+        'experienceId',
+        'userId',
+        'averageRating',
+        'lifecycleState',
+        'moderationState',
+        'deletedAt',
+        'createdAt'
+    ].map((column) => [column, true])
+);
+
 /** `buildWhereClause`'s semantics over one row. */
 function matches(row: Row, where: Row): boolean {
     return Object.entries(where).every(([key, expected]) => {
         if (expected === undefined) {
             return true;
+        }
+        const column = key.replace(/_(gte|lte)$/, '');
+        if (!(column in KNOWN_COLUMNS)) {
+            throw new Error(`the fake model got an unknown where key: ${key}`);
         }
         if (key.endsWith('_gte')) {
             return (row[key.slice(0, -4)] as number | Date) >= (expected as number | Date);
