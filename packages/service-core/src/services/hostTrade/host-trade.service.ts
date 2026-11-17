@@ -1000,7 +1000,7 @@ export class HostTradeService extends BaseCrudService<
                 // whoever pressed the button second, quietly rewriting the
                 // audit trail this whole mechanism exists to keep.
                 if (existing.revokedAt) {
-                    return { trade: existing };
+                    return { trade: await this.attachCategoriesToOne(existing, ctx) };
                 }
 
                 const updated = await this.model.update(
@@ -1060,7 +1060,7 @@ export class HostTradeService extends BaseCrudService<
                         });
                 }
 
-                return { trade: updated };
+                return { trade: await this.attachCategoriesToOne(updated, ctx) };
             }
         });
     }
@@ -1141,7 +1141,7 @@ export class HostTradeService extends BaseCrudService<
                     );
                 }
 
-                return { trade: updated };
+                return { trade: await this.attachCategoriesToOne(updated, ctx) };
             }
         });
     }

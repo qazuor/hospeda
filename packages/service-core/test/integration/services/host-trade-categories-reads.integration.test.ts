@@ -50,7 +50,8 @@ const actor: Actor = {
         PermissionEnum.HOST_TRADE_VIEW,
         PermissionEnum.HOST_TRADE_VIEW_ALL,
         PermissionEnum.HOST_TRADE_CREATE,
-        PermissionEnum.HOST_TRADE_UPDATE
+        PermissionEnum.HOST_TRADE_UPDATE,
+        PermissionEnum.HOST_TRADE_DELETE
     ]
 };
 
@@ -216,6 +217,46 @@ describe.skipIf(!dbAvailable)('HostTradeService single-entity reads — real DB 
                 hookState: {}
             } as ServiceContext);
             expect(replaced.data?.categories.map((c) => c.slug)).toEqual([second!.slug]);
+        });
+    });
+
+    it('revoke and reviewPendingBenefit return the real categories', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const [first, second] = await insertCategories(tx, ['rev-a', 'rev-b']);
+            const destinationId = await insertDestination(tx);
+            const provider = await insertProvider(tx, {
+                destinationId,
+                categoryIds: [first!.id, second!.id]
+            });
+            const expected = [first!.slug, second!.slug];
+            const ctx = () => ({ tx, hookState: {} }) as ServiceContext;
+
+            const revoked = await service().revoke(
+                actor,
+                { id: provider.id, reason: 'duplicate listing' },
+                ctx()
+            );
+            const again = await service().revoke(
+                actor,
+                { id: provider.id, reason: 'duplicate listing' },
+                ctx()
+            );
+
+            expect(revoked.error).toBeUndefined();
+            expect(revoked.data?.trade.categories.map((c) => c.slug)).toEqual(expected);
+            expect(again.data?.trade.categories.map((c) => c.slug)).toEqual(expected);
+
+            await tx
+                .update(hostTrades)
+                .set({ benefitReviewState: 'PENDING', pendingBenefitText: 'new text' })
+                .where(eq(hostTrades.id, provider.id));
+            const reviewed = await service().reviewPendingBenefit(
+                actor,
+                { id: provider.id, decision: 'reject' },
+                ctx()
+            );
+            expect(reviewed.error).toBeUndefined();
+            expect(reviewed.data?.trade.categories.map((c) => c.slug)).toEqual(expected);
         });
     });
 });

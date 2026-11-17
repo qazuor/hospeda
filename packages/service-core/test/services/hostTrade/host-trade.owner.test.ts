@@ -411,7 +411,8 @@ describe('HostTradeService.revoke — the provider is told (R-4)', () => {
     function buildWithNotifier(trade: ReturnType<typeof makeOwnedTrade>) {
         const notifyRevoked = vi.fn(async () => undefined);
         const model = {
-            ...createModelMock(['findForHost', 'hydrateCategories']),
+            ...createModelMock(['findForHost']),
+            hydrateCategories: vi.fn().mockResolvedValue(new Map()),
             findById: vi.fn(async () => trade),
             update: vi.fn(async () => trade)
         };
@@ -466,7 +467,8 @@ describe('HostTradeService.revoke — the provider is told (R-4)', () => {
             throw new Error('smtp down');
         });
         const model = {
-            ...createModelMock(['findForHost', 'hydrateCategories']),
+            ...createModelMock(['findForHost']),
+            hydrateCategories: vi.fn().mockResolvedValue(new Map()),
             findById: vi.fn(async () => trade),
             update: vi.fn(async () => trade)
         };
@@ -530,7 +532,8 @@ describe('HostTradeService.revoke — the notice must not block the admin', () =
         const trade = makeOwnedTrade(providerActor.id);
         const notifyRevoked = vi.fn(() => new Promise<void>(() => undefined));
         const model = {
-            ...createModelMock(['findForHost', 'hydrateCategories']),
+            ...createModelMock(['findForHost']),
+            hydrateCategories: vi.fn().mockResolvedValue(new Map()),
             findById: vi.fn(async () => trade),
             update: vi.fn(async () => trade)
         };
