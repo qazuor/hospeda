@@ -155,7 +155,7 @@ describe('attachRefusalAction', () => {
 
         it('drops a link the handler set on a transient failure, and its help topic', () => {
             const payload = error(ServiceErrorCode.SERVICE_UNAVAILABLE, {
-                action: { url: `${SITE}/es/x/`, label: 'x' },
+                link: EDITOR_LINK,
                 helpTopicId: 'topic'
             });
 
@@ -226,27 +226,58 @@ describe('attachRefusalAction', () => {
         });
     });
 
-    describe('a link set by the handler', () => {
-        const handlerAction = { url: `${SITE}/es/mi-cuenta/suscripcion/`, label: 'Suscripción' };
+    describe('a link set by the handler is a destination, never a URL', () => {
+        const SUBSCRIPTION_LINK: ToolRefusalLink = { destination: { kind: 'subscription' } };
 
-        it('wins over the tool refusalAction', () => {
+        it('is built into a URL by the executor and wins over the tool refusalAction', () => {
             const { definition, refusalAction } = toolAnswering(EDITOR_LINK);
 
             const failure = attach({
-                error: error(ServiceErrorCode.ENTITLEMENT_REQUIRED, { action: handlerAction }),
+                error: error(ServiceErrorCode.ENTITLEMENT_REQUIRED, { link: SUBSCRIPTION_LINK }),
                 definition
             });
 
-            expect(failure.action).toEqual(handlerAction);
+            expect(failure.action?.url).toBe(`${SITE}/es/mi-cuenta/suscripcion/`);
             expect(refusalAction).not.toHaveBeenCalled();
         });
 
-        it('is dropped on a not-found answer, where it cannot be checked', () => {
-            const failure = attach({
-                error: error(ServiceErrorCode.NOT_FOUND, { action: handlerAction })
+        it('cannot emit an off-origin URL: a raw `action` on the payload is ignored', () => {
+            const evil = { url: 'https://evil.example/phish', label: 'Entrá acá' };
+            const payload = { ...error(ServiceErrorCode.FORBIDDEN), action: evil };
+
+            const failure = attach({ error: payload });
+            const withLink = attach({
+                error: { ...payload, link: SUBSCRIPTION_LINK }
             });
 
             expect(failure.action).toBeUndefined();
+            expect(JSON.stringify(failure)).not.toContain('evil.example');
+            expect(withLink.action?.url).toBe(`${SITE}/es/mi-cuenta/suscripcion/`);
+            expect(JSON.stringify(withLink)).not.toContain('evil.example');
+        });
+
+        it('every emitted URL starts with the configured site origin', () => {
+            const failure = attach({
+                error: error(ServiceErrorCode.FORBIDDEN, { link: EDITOR_LINK })
+            });
+
+            expect(new URL(failure.action?.url ?? '').origin).toBe(new URL(SITE).origin);
+        });
+
+        it('a handler link with an id is dropped on a not-found answer', () => {
+            const failure = attach({
+                error: error(ServiceErrorCode.NOT_FOUND, { link: EDITOR_LINK })
+            });
+
+            expect(failure.action).toBeUndefined();
+        });
+
+        it('a handler link with no id is kept on a not-found answer', () => {
+            const failure = attach({
+                error: error(ServiceErrorCode.NOT_FOUND, { link: LIST_LINK })
+            });
+
+            expect(failure.action?.url).toBe(`${SITE}/es/mi-cuenta/propiedades/`);
         });
 
         it('keeps its help topic', () => {
@@ -287,14 +318,14 @@ describe('attachRefusalAction', () => {
 });
 
 describe('toToolFailure', () => {
-    it('keeps the action and help topic of the payload', () => {
-        const action = { url: `${SITE}/es/mi-cuenta/suscripcion/`, label: 'Suscripción' };
+    it('keeps the help topic of the payload but never copies an action from it', () => {
+        const payload = {
+            ...error(ServiceErrorCode.FORBIDDEN, { helpTopicId: 'topic' }),
+            action: { url: 'https://evil.example/', label: 'x' }
+        };
+        const failure = toToolFailure({ error: payload });
 
-        const failure = toToolFailure({
-            error: error(ServiceErrorCode.FORBIDDEN, { action, helpTopicId: 'topic' })
-        });
-
-        expect(failure.action).toEqual(action);
+        expect(failure).not.toHaveProperty('action');
         expect(failure.helpTopicId).toBe('topic');
     });
 

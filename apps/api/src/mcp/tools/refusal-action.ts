@@ -6,14 +6,14 @@
  * One place applies the rules of a refusal link, so no tool can break them:
  * 1. **No link for what no page fixes.** A transient failure (service
  *    unavailable, rate limit), a reconnect (`UNAUTHORIZED`) and anything
- *    unexpected carry none (AC-C3). A handler-set `action` or `helpTopicId` is
+ *    unexpected carry none (AC-C3). A handler-set `link` or `helpTopicId` is
  *    dropped on those too.
  * 2. **No link that confirms an id.** A not-found answer is uniform for a
  *    missing and a foreign resource, so a link around the asked id would tell
  *    the two apart. It may carry only a destination with no identifier, such as
- *    the owner's listing list (AC-C4). A handler-set `action` is a bare URL that
- *    cannot be checked, so it is dropped on a not-found answer.
- * 3. **The URL is built here**, from the configured site URL, never by a tool.
+ *    the owner's listing list (AC-C4).
+ * 3. **The URL is built here**, from the configured site URL, never by a tool or
+ *    a handler: both only name a destination, so no arbitrary URL can be emitted.
  *
  * Never throws: a broken link must not change the refusal the user reads.
  */
@@ -122,8 +122,8 @@ function withoutLinks(failure: ToolFailure): ToolFailure {
 
 /**
  * Returns the failure with its portal link, applying the rules in the file
- * header. The link comes from the tool's `refusalAction`; a handler-set
- * `action` on the payload wins over it.
+ * header. The destination comes from the payload's `link` when the handler set one,
+ * else from the tool's `refusalAction`.
  *
  * @param args - The failure, the error behind it, the call input and the tool
  * @returns The failure, with `action` set when a link is allowed
@@ -138,11 +138,7 @@ export function attachRefusalAction(args: AttachRefusalActionArgs): ToolFailure 
     if (failure.unexpected || NO_LINK_CODES.has(error.code)) {
         return withoutLinks(failure);
     }
-    const isNotFound = NOT_FOUND_CODES.has(error.code);
-    if (error.action !== undefined) {
-        return isNotFound ? withoutAction(failure) : failure;
-    }
-    const link = readRefusalLink(args);
+    const link = error.link ?? readRefusalLink(args);
     if (link === undefined) {
         return failure;
     }

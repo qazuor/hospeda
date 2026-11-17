@@ -38,12 +38,13 @@ export interface ToolErrorPayload {
     /** Machine-readable reason (`ServiceError.reason`). */
     readonly reason?: string;
     /**
-     * A portal page where the user can resolve the refusal, already resolved to
-     * a URL. Prefer {@link ToolDefinition.refusalAction}, which also applies the
-     * rules of the link (none for transient errors, none that would confirm an
-     * id). A handler-set action is dropped on those same cases.
+     * A portal destination where the user can resolve the refusal. A handler
+     * names a DESTINATION, never a URL: the executor builds the URL from the
+     * configured site URL, so no handler can emit an arbitrary link. Wins over
+     * {@link ToolDefinition.refusalAction}, and is subject to the same rules
+     * (none for transient errors, none that would confirm an id).
      */
-    readonly action?: ToolAction;
+    readonly link?: ToolRefusalLink;
     /** Id of the help topic that explains this refusal (`get_help`, HOS-2333). */
     readonly helpTopicId?: string;
 }

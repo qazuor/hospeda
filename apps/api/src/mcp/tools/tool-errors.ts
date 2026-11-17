@@ -219,8 +219,8 @@ export interface ToToolFailureArgs {
  *
  * Precedence: a matching `reasonMessages` entry, then validation (with field
  * details), then the code's mapping, then the generic unexpected message.
- * The payload's `action` and `helpTopicId` are kept as they are; the executor
- * decides whether the failure may carry them (`refusal-action.ts`).
+ * The payload's `helpTopicId` is kept; the portal `action` is never copied from
+ * the payload: only the executor builds it, from a destination (`refusal-action.ts`).
  *
  * @param args - The error and the tool's reason messages
  * @returns The user-facing failure
@@ -237,7 +237,6 @@ export function toToolFailure({ error, reasonMessages }: ToToolFailureArgs): Too
     const base = {
         code: error.code,
         requiresReauthentication: error.code === ServiceErrorCode.UNAUTHORIZED,
-        ...(error.action === undefined ? {} : { action: error.action }),
         ...(error.helpTopicId === undefined ? {} : { helpTopicId: error.helpTopicId })
     };
 
