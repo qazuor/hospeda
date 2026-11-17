@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4432
+    {
+        id: '2026-11-17-url-import-keeps-capacity-and-address',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Importar desde una URL trae más datos de tu alojamiento',
+            en: 'Importing from a URL brings in more of your property details',
+            pt: 'Importar de uma URL traz mais dados da sua hospedagem'
+        },
+        body: {
+            es: 'Cuando importás tu alojamiento desde la página de tu propio sitio, ahora se completan también la cantidad de huéspedes, la dirección y el teléfono, además del nombre, el tipo y la descripción. Antes esos datos se podían perder sin aviso.',
+            en: 'When you import your property from your own website, the number of guests, the address and the phone number are now filled in too, along with the name, type and description. Before, those details could be lost without warning.',
+            pt: 'Quando você importa a sua hospedagem a partir do seu próprio site, agora também são preenchidos o número de hóspedes, o endereço e o telefone, além do nome, do tipo e da descrição. Antes esses dados podiam se perder sem aviso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4316
     {
         id: '2026-11-12-grace-emails-mention-scheduled-plan-change',
