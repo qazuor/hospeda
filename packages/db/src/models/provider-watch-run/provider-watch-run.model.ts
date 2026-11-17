@@ -1,37 +1,119 @@
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
-    type InsertProviderWatchRun,
     type ProviderWatchAccount,
+    type ProviderWatchOutcome,
     providerWatchRuns,
-    type SelectProviderWatchRun
+    providerWatchShapeBaselines,
+    type SelectProviderWatchRun,
+    type SelectProviderWatchShapeBaseline
 } from '../../schemas/vertical/provider-watch-run.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { platformSettingsModel } from '../platform/platform-settings.model.ts';
 
-/** Persistence of the provider watch battery's runs (HOS-1512). */
+/** Persistence of the provider watch battery's runs and accepted baselines (HOS-1512). */
 export class ProviderWatchRunModel {
     /**
-     * Writes one run.
+     * Opens a run: the row starts as `running`. When `consumeAuthorizationOfMonth` is set (a
+     * production run) the owner's authorization is consumed in the SAME transaction, by a
+     * conditional update, so two runs cannot both consume it.
      *
-     * @param input.run - The run as it ended
-     * @param input.tx - Optional transaction, so the run and its alert mail commit together
-     * @returns The stored row
+     * @param input.account - The account the run targets
+     * @param input.startedAt - The run's instant
+     * @param input.consumeAuthorizationOfMonth - Consume that month's authorization for this run
+     * @param input.tx - Optional enclosing transaction
+     * @returns The run id and whether the authorization was consumed by THIS run. When it was
+     *   wanted and lost, the row is still written (as `running`, for the caller to close as refused).
      */
-    async insert(input: {
-        readonly run: InsertProviderWatchRun;
+    async open(input: {
+        readonly account: ProviderWatchAccount;
+        readonly startedAt: Date;
+        readonly consumeAuthorizationOfMonth?: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
+        const work = async (tx: DrizzleClient) => {
+            const [row] = await tx
+                .insert(providerWatchRuns)
+                .values({
+                    account: input.account,
+                    startedAt: input.startedAt,
+                    outcome: 'running'
+                })
+                .returning({ id: providerWatchRuns.id });
+            if (!row) throw new Error('provider_watch_run insert returned no row');
+            if (input.consumeAuthorizationOfMonth === undefined) {
+                return { runId: row.id, authorizationConsumed: false };
+            }
+            const { consumed } = await platformSettingsModel.consumeProviderWatchAuthorization({
+                month: input.consumeAuthorizationOfMonth,
+                runId: row.id,
+                consumedAt: input.startedAt,
+                tx
+            });
+            return { runId: row.id, authorizationConsumed: consumed };
+        };
+        return input.tx ? work(input.tx) : getDb().transaction((tx) => work(tx as DrizzleClient));
+    }
+
+    /**
+     * Closes a run with how it ended.
+     *
+     * @param input.id - The run id
+     * @param input.finishedAt - When it ended
+     * @param input.outcome - How it ended
+     * @param input.reason - Why it did not complete
+     * @param input.measurements - Per measurement: outcome, values, shapes and provider ids
+     * @param input.alerts - Each alert with the channel it went out on
+     * @param input.tx - Optional transaction, so the closing and its alert mail commit together
+     * @throws When no open run has that id
+     */
+    async close(input: {
+        readonly id: string;
+        readonly finishedAt: Date;
+        readonly outcome: Exclude<ProviderWatchOutcome, 'running'>;
+        readonly reason: string | null;
+        readonly measurements: Record<string, unknown>;
+        readonly alerts: unknown[];
         readonly tx?: DrizzleClient;
     }): Promise<SelectProviderWatchRun> {
         const [row] = await (input.tx ?? getDb())
-            .insert(providerWatchRuns)
-            .values(input.run)
+            .update(providerWatchRuns)
+            .set({
+                finishedAt: input.finishedAt,
+                outcome: input.outcome,
+                reason: input.reason,
+                measurements: input.measurements,
+                alerts: input.alerts
+            })
+            .where(
+                and(eq(providerWatchRuns.id, input.id), eq(providerWatchRuns.outcome, 'running'))
+            )
             .returning();
-        if (!row) throw new Error('provider_watch_run insert returned no row');
+        if (!row) throw new Error(`provider_watch_run ${input.id} is not an open run`);
         return row;
     }
 
     /**
-     * The latest run of an account that completed: its shapes are the baseline the next run
-     * compares to. A failed, aborted or refused run never becomes the baseline.
+     * Finds a run by id.
+     *
+     * @param input.id - The run id
+     * @param input.tx - Optional transaction
+     * @returns The row, or `null`
+     */
+    async findById(input: {
+        readonly id: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<SelectProviderWatchRun | null> {
+        const [row] = await (input.tx ?? getDb())
+            .select()
+            .from(providerWatchRuns)
+            .where(eq(providerWatchRuns.id, input.id))
+            .limit(1);
+        return row ?? null;
+    }
+
+    /**
+     * The latest run of an account that completed: what the owner reviews and may accept.
      *
      * @param input.account - The account the run targeted
      * @param input.tx - Optional transaction
@@ -53,6 +135,69 @@ export class ProviderWatchRunModel {
             .orderBy(desc(providerWatchRuns.finishedAt))
             .limit(1);
         return row ?? null;
+    }
+
+    /**
+     * The shapes the owner accepted for an account.
+     *
+     * @param input.account - The account
+     * @param input.tx - Optional transaction
+     * @returns One row per accepted measurement
+     */
+    async listBaselines(input: {
+        readonly account: ProviderWatchAccount;
+        readonly tx?: DrizzleClient;
+    }): Promise<readonly SelectProviderWatchShapeBaseline[]> {
+        return (input.tx ?? getDb())
+            .select()
+            .from(providerWatchShapeBaselines)
+            .where(eq(providerWatchShapeBaselines.account, input.account));
+    }
+
+    /**
+     * Records that the owner accepted the shapes a run observed for one measurement. This is the
+     * ONLY way a baseline advances.
+     *
+     * @param input.account - The account
+     * @param input.measurementId - The measurement
+     * @param input.shapes - The shapes accepted, as the run recorded them
+     * @param input.sourceRunId - The run that observed them
+     * @param input.acceptedBy - The user accepting
+     * @param input.tx - Optional transaction
+     * @returns The stored baseline
+     */
+    async acceptBaseline(input: {
+        readonly account: ProviderWatchAccount;
+        readonly measurementId: string;
+        readonly shapes: Record<string, Record<string, string>>;
+        readonly sourceRunId: string;
+        readonly acceptedBy: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<SelectProviderWatchShapeBaseline> {
+        const [row] = await (input.tx ?? getDb())
+            .insert(providerWatchShapeBaselines)
+            .values({
+                account: input.account,
+                measurementId: input.measurementId,
+                shapes: input.shapes,
+                sourceRunId: input.sourceRunId,
+                acceptedBy: input.acceptedBy
+            })
+            .onConflictDoUpdate({
+                target: [
+                    providerWatchShapeBaselines.account,
+                    providerWatchShapeBaselines.measurementId
+                ],
+                set: {
+                    shapes: input.shapes,
+                    sourceRunId: input.sourceRunId,
+                    acceptedBy: input.acceptedBy,
+                    acceptedAt: sql`now()`
+                }
+            })
+            .returning();
+        if (!row) throw new Error('provider_watch_shape_baseline upsert returned no row');
+        return row;
     }
 }
 
