@@ -187,7 +187,7 @@
   - Blocked by: T-002, T-027
   - Blocks: T-035, T-036, T-043, T-045
 
-- [ ] **T-035** (complexity: 3) - Create TradeCategoryMultiSelect.client.tsx grouped multi-select combobox
+- [x] **T-035** (complexity: 3) - Create TradeCategoryMultiSelect.client.tsx grouped multi-select combobox
   - Create apps/web/src/components/form/TradeCategoryMultiSelect.client.tsx + TradeCategoryMultiSelect.m...
   - Blocked by: T-034, T-033
   - Blocks: T-037

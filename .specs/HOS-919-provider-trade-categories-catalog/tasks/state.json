@@ -1222,39 +1222,39 @@
             "id": "T-035",
             "title": "Create TradeCategoryMultiSelect.client.tsx grouped multi-select combobox",
             "description": "Create apps/web/src/components/form/TradeCategoryMultiSelect.client.tsx + TradeCategoryMultiSelect.module.css (chips) with .combobox* styles reusing SearchableSelect.client.tsx conventions and CSS tokens (do NOT extend SearchableSelect). Props: catalog groups, value string[] of slugs, onChange, locale, max=10. Uses match-catalog-query. Behaviors: grouped options under group headers ordered by weight; removable chips; Backspace on empty input removes last chip; 11th option disabled with visible reason; empty state + hint 'Si tu oficio no está, escribilo en el mensaje'; ARIA role=combobox aria-expanded, listbox aria-multiselectable=true, option[aria-selected], group headers role=group with aria-labelledby. Add combobox i18n strings (placeholder, empty state, max reached, remove chip) in packages/i18n locales es/en/pt.\nACs: AC-1.1 to AC-1.4, AC-1.6, AC-1.8.\nTests (apps/web/test/components/form/TradeCategoryMultiSelect.test.tsx, testing-library): keyboard flow (ArrowDown/Up, Enter, Escape, Backspace); ARIA attributes asserted; max-10 lock disables the 11th with reason; group hiding while filtering; empty state text; chips removable.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-034", "T-033"],
             "blocks": ["T-037"],
             "subtasks": [
                 {
                     "title": "Component + CSS module",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n combobox strings es/en/pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ARIA + keyboard behaviours",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "a11y"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:12:51Z",
+                "completed": "2026-11-17T20:12:51Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 20,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 34,
+        "completed": 35,
         "blocked": 0,
         "averageComplexity": 2.5
     }
