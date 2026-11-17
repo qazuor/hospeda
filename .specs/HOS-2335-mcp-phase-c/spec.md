@@ -34,7 +34,7 @@ improvements. They share one design, so they ship under this spec:
 |---|---|---|---|
 | HOS-2326 | A portal link on every refusal | cross-cutting | now (plan links: phase B) |
 | HOS-2327 | Amenities and features by category | read + write | now |
-| HOS-2328 | Plan and subscription | read | after HOS-2066 (§6.3, OQ-5) |
+| HOS-2328 | Plan and subscription | read | after HOS-2066 (§6.3, D-5) |
 | HOS-2329 | Create a listing step by step | read + write | now |
 | HOS-2330 | Read the reviews of my listings | read | now |
 | HOS-2331 | Owner summary | read | listings now, subscription after HOS-2328 |
@@ -42,7 +42,13 @@ improvements. They share one design, so they ship under this spec:
 | HOS-2333 | Client help ("how do I do X") | read | now |
 
 The design is defined once in §5: portal links, the step pattern, aggregate
-reads and the help source. §6 has one section per child.
+reads, the help source and the Google Maps link resolver. §6 has one section per
+child. The owner decided every open question on 2026-11-17 (§10).
+
+**Blockers.** The HOS-1352 umbrella is NOT a blocker: `epic/HOS-1352-post-mvp`
+merged into `staging` on 2026-11-15 (PR #4353, merge `96756adfc4`). The only
+blocker in this spec is **HOS-2066** (Backlog). It gates HOS-2328 and the
+subscription block of HOS-2331.
 
 ## 2. Problem
 
@@ -64,7 +70,8 @@ Phase A works, but the smoke showed four gaps.
 - G-3: An owner creates a DRAFT listing in any of the three verticals from the
   chat. It goes through the same services, access checks and side effects as the
   portal. It never publishes on its own.
-- G-4: Read-only reviews of the owner's listings across the three verticals.
+- G-4: Read-only reviews of the owner's listings across the three verticals, in
+  every moderation state (D-7).
 - G-5: One call answers "how am I doing", within the client's response budget.
 - G-6: Hosts search the provider directory. Both hosts and providers list their
   benefit usages and confirm or reject them in two steps, with the HOS-376 rules
@@ -79,8 +86,10 @@ Phase A works, but the smoke showed four gaps.
 - NG-1: Replying to reviews. No owner-reply model exists for listing reviews:
   `accommodation_reviews`, `venue_reviews` and `experience_reviews` have no reply
   column or table. Replies exist only for host-trade reviews.
-- NG-2: Photos, prices, address and map location stay out, as in HOS-2184 NG-3.
-  The create wizard links to the editor for them (but see OQ-4 for location).
+- NG-2: Photos and prices stay out, as in HOS-2184 NG-3. The create wizard links
+  to the editor for them. Location is the one exception: D-4 adds it to the
+  create wizard ONLY, through a Google Maps link (§5.5). Editing the location of
+  an existing listing stays out of scope.
 - NG-3: Publishing from the create wizard. Publishing stays an explicit
   `set_listing_publication` call or a portal action.
 - NG-4: Tourist help (HOS-2333 scope).
@@ -88,6 +97,8 @@ Phase A works, but the smoke showed four gaps.
   only; changes are done through a portal link.
 - NG-6: A server-side wizard-state store. §5.2 explains why none is needed.
 - NG-7: MCP elicitation, as in HOS-2184 NG-5.
+- NG-8: Declaring a new benefit usage from the chat (D-10). The tools only read
+  and answer usages.
 
 ## 5. Shared design
 
@@ -152,11 +163,36 @@ All path knowledge lives in `apps/web`, which `apps/api` cannot import:
 Neither the user row nor the actor stores a locale. Links use `es`, the same
 choice phase A makes for public URLs (`GET_LISTING_PUBLIC_URL_LOCALE`).
 
-**Design.**
+**Design (owner decision D-1: an API-local route map plus a CI guard).**
 
-- `buildPortalUrl({ destination, locale = 'es', siteUrl })` returns an absolute,
-  trailing-slashed URL. `destination` is a closed discriminated union (TS-only,
-  never published as a schema), for example:
+- **The map lives in the API** at `apps/api/src/mcp/portal/portal-routes.ts`. It
+  is the API's own copy of the web paths. The web is not refactored, and no
+  shared module is added. It holds:
+  - `PORTAL_ROUTE_TEMPLATES`: one path template per destination kind, using the
+    web's dynamic-segment names, for example
+    `mi-cuenta/propiedades/[id]/editar/[section]`;
+  - `EDITOR_SECTION_SLUGS`: per vertical, a map from `LISTING_SECTIONS` id
+    (`packages/schemas/src/catalog/listing-sections.ts`, already shared) to the
+    URL slug (`datos`, `servicios`, `fotos`, `ubicacion`, …).
+- **The CI guard** is `scripts/check-portal-routes.ts`. It runs as its own step
+  in the CI `Guards` job (`.github/workflows/ci.yml`) and is also chained into
+  `pnpm check:guards`. Being in `check:guards` alone does not run it in CI.
+  - For every template it checks that a page exists under
+    `apps/web/src/pages/[lang]/` as `<path>.astro` or `<path>/index.astro`, with
+    dynamic segments matched by name (`[id]`, `[vertical]`, `[slug]`,
+    `[conversationId]`). For `comercio/[vertical]` it also checks both values,
+    `venue` and `experience`.
+  - For every `EDITOR_SECTION_SLUGS` entry it checks that the section's editor
+    page file exists for that vertical, for example
+    `propiedades/[id]/editar/servicios.astro`.
+  - Its header lists what it cannot see: a page that exists but redirects, or a
+    route a middleware rewrites.
+  - A renamed or deleted web page makes it fail. Fixing it means updating the
+    API map in the same PR.
+- `buildPortalUrl({ destination, locale = 'es', siteUrl })` resolves a
+  destination through the map and returns an absolute, trailing-slashed URL.
+  `destination` is a closed discriminated union (TS-only, never published as a
+  schema), for example:
   - `{ kind: 'listingEditor', vertical, id, section? }`, where `section` is a
     `LISTING_SECTIONS` id;
   - `{ kind: 'ownerListings', vertical }`, `{ kind: 'createListing', vertical }`;
@@ -165,10 +201,6 @@ choice phase A makes for public URLs (`GET_LISTING_PUBLIC_URL_LOCALE`).
   - `{ kind: 'providerDirectory', slug? }`, `{ kind: 'benefitUsages' }`,
     `{ kind: 'providerPanel' }`;
   - `{ kind: 'aiAssistants' }`.
-- Where the path vocabulary lives is **OQ-1**. Either a shared module that the
-  web also imports, or an API-local map with a cross-app guard test. Either way,
-  a guard test resolves every destination kind to an existing
-  `apps/web/src/pages/[lang]/...` file.
 - **Error payload.** `ToolErrorPayload` and `ToolFailure` gain an optional
   `action?: { url: string; label: string }` and an optional `helpTopicId`.
   - `toToolFailure` keeps them.
@@ -216,7 +248,7 @@ itself creates a draft from a minimal payload and continues in the editor.
 | New infrastructure | generalize the existing store | none | none if the draft is the listing; a table if not |
 | Fit | irreversible or costly single writes | collecting inputs | multi-session editing |
 
-**Decision proposed (OQ-2 confirms):** a hybrid with no new state store.
+**Owner decision D-2:** a hybrid with no new state store.
 
 1. **Collect in the conversation (P2)**, guided by a read tool that returns what
    each step needs (types, destinations, field limits). Validation is
@@ -285,8 +317,13 @@ payload with the same values matches.
 - **There is no task-oriented client help with links.** HOS-2333 has to create
   one.
 
-**Proposed design (OQ-3 picks the location and the owner):**
+**Owner decision D-3:** a TS catalog in the API, es only.
 
+- Location: `apps/api/src/data/owner-help/owner-help.ts`, the same style as
+  `whats-new.ts`.
+- It moves to shared `@repo/i18n` (a topic registry in a shared package plus
+  the text under `ownerHelp.*`) when the web gets a help page. That move, and the
+  en/pt text, are a follow-up and not in this spec.
 - A typed catalog of `OwnerHelpTopic`:
   - `id` and `audience` (`host | venue | experience | provider | any`);
   - `keywords` (es), `title` (es) and `steps` (es, ≤ 8);
@@ -301,7 +338,8 @@ payload with the same values matches.
   - edit amenities, the fix request after moderation, connect or disconnect an
     AI assistant, change the email/password, delete a listing.
 - **Staleness controls** (help that is never updated is worse than none):
-  - a guard test fails when a destination no longer resolves (§5.1);
+  - a guard fails when a destination no longer resolves (§5.1,
+    `check-portal-routes`);
   - a guard test fails when a `faqKey` no longer exists in i18n;
   - a test warns (not fails) on topics with `reviewedAt` older than 180 days, in
     the `pnpm check:guards` output;
@@ -309,6 +347,92 @@ payload with the same values matches.
     topic".
 - **Search.** A normalized keyword match: lowercase, accents stripped, scored on
   keyword hits plus title tokens, top 3. No embeddings (start small, HOS-2333).
+- **Maintainer.** Whoever changes a portal flow updates its topic in the same
+  PR. The `reviewedAt` warning catches topics that rot anyway.
+
+### 5.5 Google Maps link resolver (owner decision D-4)
+
+**Use.** Only the create wizard (§6.4) uses it. The assistant asks the user to
+paste a Google Maps link to the place. The server extracts the coordinates, and
+the address when the link carries one. It shows them in the preview before
+anything is created.
+
+**Module.** `apps/api/src/mcp/tools/listing/google-maps-link.ts` exports
+`resolveGoogleMapsLink({ url }) → { lat, lng, addressHint?, placeName? } | { error: reason }`.
+It is pure parsing plus one guarded fetch path.
+
+**Accepted forms.** Each is parsed in this order; the first match wins:
+
+1. `…/@<lat>,<lng>,<zoom>z…`: the map viewport. Used only when no place pin
+   (form 2) exists, because the viewport can be off the pin.
+2. `…!3d<lat>!4d<lng>…`: the pin inside the `data=` blob. It wins over form 1.
+3. `?q=<lat>,<lng>`, `?query=<lat>,<lng>`, `?ll=<lat>,<lng>` and
+   `/maps/search/<lat>,<lng>`.
+4. `/maps/place/<name-or-address>/…`. The URL-decoded segment becomes
+   `addressHint`/`placeName`. Coordinates still come from forms 1-3 of the same
+   URL. A `/place/` URL with no coordinates is unparseable.
+5. **Short links**: `maps.app.goo.gl/<id>` and `goo.gl/maps/<id>`. They are
+   resolved server side by following redirects, and the final URL is parsed with
+   forms 1-4.
+
+**Validation.** Coordinates must be finite numbers inside the lat/lng ranges and
+inside a configured bounding box for the service region (Argentina). A point
+outside it is refused as "parece fuera de la zona". It is not silently accepted.
+
+**SSRF guard (short links only; full URLs are never fetched):**
+
+- The URL must be `https:`, with no userinfo and no explicit port.
+- Host allowlist, exact match after lowercasing, with no suffix wildcard:
+  `maps.app.goo.gl`, `goo.gl` (path must start with `/maps/`), `www.google.com`,
+  `google.com`, `maps.google.com` and `www.google.com.ar`/`google.com.ar`.
+  Every redirect hop is re-checked against the same list before it is followed.
+- Redirects are followed manually (`redirect: 'manual'`), at most 5 hops.
+- `HEAD`, falling back to `GET` on a 405. No body is read beyond the headers,
+  and no cookies or credentials are sent.
+- Each hop has a 3 s timeout (`AbortSignal.timeout`), and the whole resolution
+  has 5 s.
+- The resolved IP of every hop must not be private, loopback, link-local or
+  metadata (`169.254.169.254`) space. The lookup is done before connecting, to
+  stop a DNS-rebinding allowlist bypass.
+- No other fetch happens anywhere in the resolver. The only outbound call is to
+  allowlisted Google hosts.
+- Limits come from constants, not literals. A failure is logged with the reason
+  and the host, never with the full user URL.
+
+**Address.**
+
+- `addressHint` is display text from the `/place/` segment. It is never parsed
+  into structured fields silently.
+- The preview shows the coordinates, a `https://www.google.com/maps?q=<lat>,<lng>`
+  check link, and the hint when there is one.
+- The user confirms the street and number in the conversation. Those are what
+  the create payload carries.
+- No reverse geocoding is done. It would be another outbound fetch, which D-4's
+  "no other fetch" excludes.
+
+**Interaction with `location_key` dedup (HOS-1810, one-address rule).**
+
+- `location_key` is built by `buildLocationKey` (`packages/utils/src/location-key.ts:156`)
+  from `street` + `number` (+ floor, apartment) + `destinationId`. Coordinates
+  are NOT part of it. The service hooks write it; a request body never does.
+- Consequences:
+  - coordinates alone ⇒ `location_key` NULL ⇒ the listing is "not comparable"
+    and dedup does not apply;
+  - street + number confirmed ⇒ the hooks compute the key at create, exactly as
+    for the portal;
+  - the duplicate check fires at publication as `DUPLICATE_LOCATION` (link to
+    `ubicacion`, §5.1). It is never bypassed.
+- The preview runs the same duplicate lookup the publication step uses, if the
+  service exposes it as a read. It then warns, without blocking, "ya tenés otra
+  publicación en esa dirección". If no read exists, the warning is skipped and
+  publication stays the gate (§11 U-6).
+
+**Fallback.** On an unparseable link, a disallowed host, a timeout or an
+out-of-region point, the tool returns VALIDATION_ERROR on field `mapsUrl`, with
+a Spanish reason. The model re-asks once. If the user cannot or will not give a
+link, the listing is created without location, and `nextSteps` links to the
+editor's location section: `ubicacion`, or `punto-de-encuentro` for
+experiences.
 
 ## 6. Per-child design
 
@@ -326,7 +450,9 @@ Spanish.
   and `ToolDefinition.refusalAction`.
 - `tool-errors.ts` and `run-tool.ts`: carry them through.
 - `bind-tool.ts`: render them.
-- The new portal-links module and its guard.
+- The new API route map (`mcp/portal/portal-routes.ts`) and
+  `scripts/check-portal-routes.ts`, wired into the CI `Guards` job and into
+  `pnpm check:guards`.
 
 **Acceptance criteria:**
 
@@ -343,8 +469,10 @@ Spanish.
 - AC-C4: Given a foreign or missing listing, then the not-found result carries
   at most the owner-listings link, never the foreign id's editor URL. The link
   must not confirm that the id exists.
-- AC-C5: A guard test resolves every `PortalDestination` kind to an existing page
-  file under `apps/web/src/pages/[lang]/`. Renaming a page makes it fail.
+- AC-C5: `check-portal-routes` resolves every `PORTAL_ROUTE_TEMPLATES` entry
+  and every `EDITOR_SECTION_SLUGS` entry to an existing page file under
+  `apps/web/src/pages/[lang]/`, and it runs as a step of the CI `Guards` job.
+  Renaming any one of those pages makes CI fail; a mutation test proves it.
 - AC-C6: `structuredContent.action.url` equals the URL in the text.
 
 ### 6.2 HOS-2327 — amenities and features by category
@@ -423,8 +551,9 @@ umbrella (`epic/HOS-1352-post-mvp`) was **merged into `staging` on 2026-11-15**
 (PR #4353, merge `96756adfc4`). `routes/billing-subscription/read-mine.ts`
 (`GET /api/v1/protected/billing-subscription/`, `BILLING_VIEW_OWN`,
 `READ_OWN`), `routes/trial/` and `routes/plan-catalog/public/` exist on staging.
-**HOS-2066 is still Backlog.** The owner rule is that HOS-2066 goes first after
-the umbrella merge, so this child stays gated on HOS-2066 (OQ-5).
+The umbrella blocks nothing. **HOS-2066 (Backlog) is the only gate.** By owner
+decision D-5 it goes first after the umbrella, so this child is built after
+HOS-2066.
 
 **Tool** `get_my_plan` (read, `READ_OWN`, requires `BILLING_VIEW_OWN` as the
 route does).
@@ -444,8 +573,9 @@ route does).
   `readOwnDeferredCourtesies`), extracted into a service-level reader (C-6). The
   trial comes from the trial read route's service and `includes` from
   `packages/verticals/src/effective-set/`. Raw tables are never read in the tool.
-- HOS-2184 phase B AC-16 ("stats include plan status") reuses this reader. It is
-  not a separate implementation (OQ-5).
+- It is a separate tool (D-5). Its reader is reused by HOS-2184 phase B AC-16
+  ("stats include plan status") and by the `subscription` block of
+  `get_owner_summary` (§6.6). Neither one has a second implementation.
 
 **Acceptance criteria (after HOS-2066):**
 
@@ -456,6 +586,9 @@ route does).
   `includes` with no code change. The test edits the catalog fixture.
 - AC-C15: Given an owner with no title, the result is empty with a link to
   plans. It is not an error.
+- AC-C15b: HOS-2184 AC-16 and the `get_owner_summary` subscription block call
+  the same reader as `get_my_plan`. A test asserts they import the same
+  function, with no copy.
 
 ### 6.4 HOS-2329 — create a listing step by step
 
@@ -487,11 +620,21 @@ The limit is enforced at publish as `LISTING_LIMIT_REACHED`. The older header of
 `max_accommodations`. The implementer verifies which one the code enforces
 (§11 U-2) before writing AC-C19.
 
-**Location.** It is not part of the venue/experience create payload and is
-optional on the accommodation draft. `location_key` deduplication
-(HOS-1810, the one-address rule) bites at publication as `DUPLICATE_LOCATION`.
-`GeocodingService` exists in service-core. Whether the wizard collects location
-is OQ-4.
+**Location (owner decision D-4: a Google Maps link, §5.5).** Where each
+vertical stores it:
+
+| Vertical | Where it is stored |
+|---|---|
+| Accommodation | draft fields `latitude`, `longitude`, `street` and `number` (all optional in `AccommodationCreateDraftHttpSchema`) |
+| Venue | `location: PostalAddressSchema` (`coordinates`, `street`, `number`, …) on `VenueSchema` (`venue.schema.ts:174`). The owner create schema is a `.omit()` of it, so it accepts `location`, but the web form does not send it today |
+| Experience | `meetingPoint` / `meetingPointLat` / `meetingPointLong` (editor section `punto-de-encuentro`) |
+
+The tool maps the resolved point (plus the street and number the user
+confirmed) into those fields. If a vertical's owner create schema refuses them
+at create, the tool creates first and then writes the location through that
+vertical's owner PATCH path, in the same commit call. The PATCH runs its own
+listing-access section step and side effects (C-1). Which path applies is
+verified in code (§11 U-7). `location_key` follows §5.5.
 
 **Tools:**
 
@@ -511,24 +654,33 @@ is OQ-4.
 2. `create_listing` (write, two-step P1).
    - Input: one flat object, `{ vertical, name, type, summary, description?,
      destinationId, priceFrom?, priceUnit?, isPriceOnRequest?, businessLines?,
-     maxGuests?, bedrooms?, bathrooms?, beds?, confirmationToken? }`. A
+     maxGuests?, bedrooms?, bathrooms?, beds?, mapsUrl?, street?, number?,
+     confirmationToken? }`. A
      `superRefine` validates against that vertical's route schema, with
      `.strict()` per vertical as in `update_listing_basic`.
    - **Preview call (no token):**
      - run the route's validation and its CREATE listing-access step (dry run,
        nothing written);
      - for accommodation, run the precheck;
+     - when `mapsUrl` is present, resolve it (§5.5). The preview shows the
+       resolved coordinates, the map check link, the address hint, the confirmed
+       street and number, and the non-blocking duplicate-address warning;
      - return a Spanish preview of exactly what will be created, plus a token
-       bound to `(user, client, 'create_listing', vertical, sha256(payload))`.
+       bound to `(user, client, 'create_listing', vertical,
+       sha256(payload + resolved lat/lng))`. Binding the resolved point means
+       the commit cannot write coordinates the user did not see;
+     - the commit does NOT resolve the link again. It uses the point that the
+       preview stored alongside the token, so a short link that changes target
+       between the two calls has no effect.
    - **Commit call (same payload + token):**
      - consume the token, then call the **same service the portal route calls**:
-       accommodation via the host-onboarding path (OQ-6), venue/experience via
-       `createForOwner`;
+       accommodation via host-onboarding (`createForOnboarding`, D-6, after the
+       same precheck), venue/experience via `createForOwner`;
      - reproduce the side effects (C-1);
      - return `{ id, vertical, publicationStatus: 'DRAFT', editorUrl, nextSteps }`.
-       `nextSteps` lists amenities (§6.2), photos (editor `fotos` link), location
-       (`ubicacion` link, per OQ-4) and "publish when ready"
-       (`set_listing_publication` or a portal link).
+       `nextSteps` lists amenities (§6.2), photos (editor `fotos` link), the
+       location section link when no location was set (§5.5 fallback) and
+       "publish when ready" (`set_listing_publication` or a portal link).
    - On a validation failure, the error names only the failed fields, so the
      model re-asks only that step (HOS-2329).
    - Hints: `destructiveHint: false`, `idempotentHint: false`. Audit target is
@@ -558,6 +710,36 @@ is OQ-4.
   For venues, the listing-access step receives `businessLines` derived from the
   body, as the route does.
 - AC-C23: Preview and commit each leave one audit row with `step`.
+- AC-C23a (Maps parsing): each accepted form resolves to the expected
+  coordinates, from a table of fixture URLs. `@lat,lng`, `!3d…!4d…`,
+  `?q=lat,lng` and `/place/<name>/…@lat,lng` are all covered, and `!3d!4d`
+  wins over `@`. Short links `maps.app.goo.gl` and `goo.gl/maps` are covered
+  through a stubbed redirect chain.
+- AC-C23b (preview): given a valid link, the preview shows the coordinates, the
+  check link and the address hint, and nothing is written. The commit stores
+  exactly the previewed point. A commit whose payload changes `mapsUrl`, `street`
+  or `number` is refused, and the token is burnt.
+- AC-C23c (fallback): given an unparseable link, an out-of-region point or a
+  resolver timeout, then VALIDATION_ERROR on `mapsUrl` with a Spanish reason.
+  When the wizard goes on without location, the draft is created with no
+  location and `nextSteps` carries the `ubicacion` (or `punto-de-encuentro`)
+  link.
+- AC-C23d (SSRF): the resolver makes no request when:
+  - the host is not allowlisted, including look-alikes such as
+    `maps.app.goo.gl.evil.com`, `evilgoogle.com` and
+    `google.com@169.254.169.254`;
+  - the scheme is not `https`;
+  - the URL has an explicit port;
+  - a hop resolves to a private, loopback or link-local IP.
+- AC-C23e (SSRF): it also stops when a redirect hop leaves the allowlist, after
+  more than 5 hops, or after the 3 s per-hop or 5 s total timeout. It never reads
+  a response body. Full (non-short) URLs cause zero network calls. A test asserts
+  the fetch spy count is 0.
+- AC-C23f (dedup): given a confirmed street + number equal to another active
+  listing of the same owner in the same destination, then the draft gets the
+  same `location_key` (written by the service hooks). The preview warns, and a
+  later publish is refused with `DUPLICATE_LOCATION` plus the `ubicacion` link.
+  Given coordinates only, `location_key` is NULL.
 
 ### 6.5 HOS-2330 — read reviews
 
@@ -580,14 +762,29 @@ is OQ-4.
 
 - Input: `{ vertical?, listingId?, minRating?, maxRating?, since?, page?, pageSize? }`.
   `listingId` requires `vertical`, and `pageSize` is ≤ 20.
+- Input also takes `moderationState?: 'APPROVED'|'PENDING'|'REJECTED'`. Without
+  it, all three states are returned.
 - Output: `{ items: [{ id, listing: {vertical,id,name}, rating, title, text
-  (untrusted, excerpt), createdAt, reviewer: {displayName} }], total, hasMore }`.
+  (untrusted, excerpt), createdAt, moderationState, reviewer: {displayName} }],
+  total, hasMore, countsByState: { APPROVED, PENDING, REJECTED } }`.
+  - `moderationReason` is not returned. It is staff-written moderation detail
+    and the owner did not ask for it (§11 U-8).
+  - There is no "already replied" field, because the feature does not exist
+    (NG-1).
 - Implementation:
   - extend `listing-stats-readers.ts` into a paginated, filtered owner-wide
     reader: one query per vertical, joined on the owner's listing ids, merged
     and sorted by `createdAt` desc;
-  - the visibility default equals the public lists (OQ-7);
-  - reviewer data equals the public projection minus `image` (OQ-8).
+  - **visibility (owner decision D-7):** every moderation state, including the
+    text of PENDING and REJECTED reviews. Soft-deleted reviews and non-ACTIVE
+    lifecycle rows stay excluded;
+  - this reader is NOT the public one. `get_listing_stats`, the public lists and
+    `reviewsCount` keep `ACTIVE` + `APPROVED`. The two readers are separate
+    named functions, so an owner read can never leak into a public path;
+  - reviewer data (D-8): the public projection minus `image`, which is the
+    display name only.
+- Every review's `title` and `text` are wrapped as untrusted data (C-5), in every
+  state.
 - A foreign `listingId` ⇒ not found. An owner with no listings gets an empty
   list.
 
@@ -597,10 +794,15 @@ is OQ-4.
   experience, then `list_reviews` with no filters returns all three, newest
   first, paginated, with `total`.
 - AC-C25: Filters by vertical, listing, rating range and `since` combine.
-- AC-C26: PENDING, REJECTED, soft-deleted and non-ACTIVE reviews follow the OQ-7
-  decision. By default they are excluded, matching public counts.
-- AC-C27: Review text is wrapped as untrusted data and the description carries
-  the notice (C-5).
+- AC-C26: Given an owner whose listings have one APPROVED, one PENDING and one
+  REJECTED review, then `list_reviews` returns all three, each with its
+  `moderationState` and its text, and `countsByState` is `{1,1,1}`.
+  `moderationState` filters work. Soft-deleted and non-ACTIVE rows never appear.
+- AC-C26b: Under that same data, the public review list, `get_listing_stats`
+  latest reviews and `reviewsCount` still show only the APPROVED review. This is
+  a regression guard on the reader split.
+- AC-C27: Review text, including PENDING and REJECTED text, is wrapped as
+  untrusted data, and the description carries the notice (C-5).
 - AC-C28: A foreign `listingId` ⇒ not found. No reviewer email, user id or image
   appears in the output.
 
@@ -614,8 +816,15 @@ guidance, because the alternative is N calls to `get_listing_stats`.
   - `listings`: `{ [vertical]: { total, byStatus: { DRAFT, PUBLISHED, UNPUBLISHED_BY_BILLING, ARCHIVED, MODERATED } } }`.
     It comes from one grouped count per vertical, and `PURGED` is excluded.
   - `metrics`, gated exactly like `get_listing_stats` (`view_basic_stats`, and
-    `view_advanced_stats` for favorites). When ungated, the block is omitted with
-    `{ omitted: 'NO_STATS_ENTITLEMENT', action }` (OQ-9). It contains:
+    `view_advanced_stats` for favorites). Owner decision D-9: without
+    `view_basic_stats`, only this block is hidden. It is replaced by
+    `{ omitted: 'NO_STATS_ENTITLEMENT', note, action }`:
+    - `note` names the plans that include the entitlement, read from the
+      catalog (`plan_version_entitlement` rows), never hardcoded (HOS-1967 rule).
+      Until HOS-2066 it says "incluido en los planes que muestran estadísticas"
+      with no names;
+    - `action` links to the plans page.
+    The block contains:
     - views from `EntityViewService.getStatsForOwnListings`;
     - accommodation inquiries and response time from `ConversationService`;
     - unanswered inquiries, from the same unread count the host dashboard uses;
@@ -626,7 +835,10 @@ guidance, because the alternative is N calls to `get_listing_stats`.
     - `open_fix_request` (from `fix_request` open rows; editor hub);
     - `incomplete` (`resolveListingCompleteness` on drafts; first missing
       section);
-    - `missing_photos` (editor `fotos`).
+    - `missing_photos` (editor `fotos`);
+    - `pending_benefit_usages` (D-11). It comes from `countPendingForHost`, plus
+      the provider-side pending count when `getOwn` finds a provider listing,
+      and links to `usos-de-beneficio`. It is omitted when zero.
     It is capped at 10 entries with a `more` count.
   - `subscription`: present only after HOS-2328, built from the `get_my_plan`
     reader.
@@ -638,10 +850,12 @@ guidance, because the alternative is N calls to `get_listing_stats`.
 - AC-C29: Given an owner with listings in two verticals, then the counts per
   status match `list_my_listings` totals.
 - AC-C30: Given an owner without `view_basic_stats`, then `listings` and
-  `attention` are returned, and `metrics` is omitted with the plans link. It is
-  never zeroed.
-- AC-C31: Given unanswered inquiries and an open fix request, then both appear
-  in `attention`, each with the correct portal URL.
+  `attention` are returned. `metrics` is replaced by the `NO_STATS_ENTITLEMENT`
+  note naming the including plans (from the catalog) and the plans link. No
+  metric is ever zeroed.
+- AC-C31: Given unanswered inquiries, an open fix request and two benefit usages
+  pending the owner's answer, then all three appear in `attention`, each with
+  the correct portal URL. With zero pending usages that item is absent.
 - AC-C32: Given the largest seeded owner, the serialized result is under
   `MCP_RESULT_MAX_CHARS`, and the handler issues a bounded number of queries
   independent of the listing count. A test asserts the query count.
@@ -704,8 +918,10 @@ guidance, because the alternative is N calls to `get_listing_stats`.
    - The note is optional (rejecting is cheap on purpose).
 4. `undo_benefit_rejection`: one step, because the action itself is the undo. It
    fires no notification, matching the route.
-5. Declaring a new usage from the chat is **OQ-10**. The recommendation is to
-   leave it out of this spec.
+5. Declaring a new usage from the chat is out of scope (owner decision D-10,
+   NG-8). `declareAsHost`/`declareAsProvider` get no tool. A user who asks is
+   linked to `directorio-proveedores/{slug}/registrar-uso` or the provider
+   panel.
 
 **Acceptance criteria:**
 
@@ -753,15 +969,19 @@ guidance, because the alternative is N calls to `get_listing_stats`.
 
 ## 7. Data model, contracts, configuration
 
-- **No new tables and no migrations.** Confirmation tokens stay in Redis. Help
-  is a typed catalog in code (or in i18n, per OQ-3).
+- **No new tables and no migrations.** Confirmation tokens stay in Redis. For
+  `create_listing` the token entry also stores the resolved point. Help is a
+  typed catalog in code (D-3).
 - **Contract changes (additive):**
   - `ToolErrorPayload.action` and `.helpTopicId`;
   - `ToolDefinition.refusalAction`;
   - the new `structuredContent.action` in failure results;
   - `list_amenities_and_features` entries gain `category`.
-- **Constants (not env):** `MCP_RESULT_MAX_CHARS`, `MCP_TEXT_EXCERPT_CHARS` and
-  `CONFIRMATION_TOKEN_TTL_SECONDS` (unchanged).
+- **Constants (not env):** `MCP_RESULT_MAX_CHARS`, `MCP_TEXT_EXCERPT_CHARS`,
+  `CONFIRMATION_TOKEN_TTL_SECONDS` (unchanged), the Maps resolver's
+  `MAPS_LINK_HOST_ALLOWLIST`, `MAPS_LINK_MAX_REDIRECTS = 5`,
+  `MAPS_LINK_HOP_TIMEOUT_MS = 3000`, `MAPS_LINK_TOTAL_TIMEOUT_MS = 5000` and the
+  service-region bounding box.
 - **No new env vars.** Links reuse `HOSPEDA_SITE_URL`.
 - **Consent copy.** The consent screen and the "Asistentes de IA" panel list what
   a connected assistant can do (HOS-2184 §8). Add "crear borradores de
@@ -771,233 +991,75 @@ guidance, because the alternative is N calls to `get_listing_stats`.
 
 ## 8. Phasing and PR split
 
-Each child closes with its own PR carrying `Closes HOS-23xx`. The last PR of the
-spec also carries `Closes HOS-2335`. PR titles carry `[HOS-23xx]`, and the
-Linear title automation is spot-checked (CLAUDE.md).
+Each child closes with its own PR (`Closes HOS-23xx`); the last also carries `Closes HOS-2335`. Titles carry `[HOS-23xx]`; spot-check the Linear title automation on open and on merge (CLAUDE.md).
 
 | PR | Content | Depends on | When |
 |---|---|---|---|
-| PR-1 | §5.1 portal links + error-payload plumbing + guard; HOS-2326 for the 9 phase A tools | — | now |
-| PR-2 | §5.2 generalized confirmation store (`reply_inquiry` migrated, tests unchanged) + §5.3 budget constants and helpers | — | now |
+| PR-1 | §5.1 API route map + `check-portal-routes` CI guard + error-payload plumbing; HOS-2326 for the 9 phase A tools | — | now |
+| PR-2 | §5.2 generalized confirmation store (`reply_inquiry` migrated, tests unchanged) + §5.3 budget constants | — | now |
 | PR-3 | HOS-2327 amenities by category | PR-1 | now |
-| PR-4 | HOS-2330 reviews + the owner-wide review reader | PR-1 | now |
+| PR-4 | HOS-2330 reviews (owner reader, all states) | PR-1 | now |
 | PR-5 | HOS-2333 help catalog + `get_help` | PR-1 | now |
-| PR-6 | HOS-2329 create wizard | PR-1, PR-2, PR-3 | now |
+| PR-6 | §5.5 Maps resolver + HOS-2329 create wizard | PR-1, PR-2, PR-3 | now |
 | PR-7 | HOS-2332 providers + usages | PR-1, PR-2 | now |
-| PR-8 | HOS-2331 summary (no subscription block) | PR-1, PR-4 | now |
-| PR-9 | HOS-2328 `get_my_plan` + HOS-2331 subscription block + plan links for HOS-2184 phase B refusals | HOS-2066 (and HOS-2184 phase B for the entitlement gate) | after HOS-2066 |
+| PR-8 | HOS-2331 summary without the subscription block (no magic word) | PR-1, PR-4, PR-7 | now |
+| PR-9 | HOS-2328 `get_my_plan` + HOS-2331 subscription block + plan links for HOS-2184 phase B refusals | HOS-2066 | after HOS-2066 |
 
-HOS-2331 closes with PR-9, not PR-8, because its subscription part is in scope.
-PR-8 must not carry a magic word.
+PR-6 may split the resolver into its own PR first (it is self-contained and carries the SSRF ACs).
 
 ## 9. Risks
 
-- **R-1: A route side effect is missed again (C-1).** Mitigation:
-  - the C-1 list in each PR description;
-  - one test per side effect;
-  - the reviewer greps the route file for `void `, `notify`, `invalidate` and
-    `app.use` scopes.
-- **R-2: Portal paths drift from the web.** Mitigation: the AC-C5 guard, and
-  the OQ-1 shared module.
-- **R-3: The model rewrites `create_listing` values between preview and commit.**
-  The token is bound to the payload hash. A mismatch burns the token and asks for
-  a new preview (AC-C17).
-- **R-4: Duplicate drafts from retries or lost conversations.** The single-use
-  token stops retries. A lost conversation leaves one draft, which the precheck
-  surfaces next time (accommodation). Venue and experience have no precheck
-  (§11 U-3).
-- **R-5: Prompt injection through reviews and provider text.** C-5. No tool acts
-  on returned text.
-- **R-6: Aggregate cost of the summary on large owners.** Query-count and size
-  tests (AC-C32).
-- **R-7: HOS-376 invariants broken by convenience.** Role-blind tools, uniform
-  404 and a static guard (AC-C36, AC-C39).
-- **R-8: Help content goes stale.** The §5.4 guards. The `reviewedAt` warning
-  only reports; the owner decides who acts on it (OQ-3).
-- **R-9: The client response budget is unknown.** Constants plus the smoke
-  (§11 U-1).
+- **R-1 Missed route side effect (C-1):** each PR lists its route's side effects; one test each; reviewer greps the route for `void `, `notify`, `invalidate`, router `app.use`.
+- **R-2 Portal paths drift:** the API map is a copy by decision D-1; `check-portal-routes` in the CI `Guards` job is the only thing keeping it honest, so its own mutation test is mandatory (AC-C5).
+- **R-3 Model alters `create_listing` between calls:** token bound to payload hash + resolved point; mismatch burns it (AC-C17, AC-C23b).
+- **R-4 Duplicate drafts:** single-use token stops retries; accommodation precheck surfaces open drafts; venue/experience have none (U-3).
+- **R-5 Prompt injection** via reviews, provider text, and the `/place/` segment of a Maps URL: all wrapped as untrusted (C-5); no tool acts on returned text.
+- **R-6 SSRF through the Maps resolver:** exact-host allowlist re-checked per hop, https only, no port/userinfo, private-IP check after DNS, manual redirects ≤ 5, timeouts, headers only (AC-C23d/e). Residual risk: Google changing short-link redirect hosts breaks resolution (fails closed to the fallback, never opens).
+- **R-7 Maps URL format drift:** Google can change URL shapes; parsing is fixture-tested and failure falls back to the editor link, never to a wrong point. The region bounding box catches gross mis-parses.
+- **R-8 Rejected review text shown to the owner (decision D-7):** REJECTED reviews may be abusive, defamatory or carry personal data; by owner decision their text is shown to the listing owner anyway. Mitigations: state label on every item, untrusted wrapping, no `moderationReason`, and the public/owner reader split (AC-C26b) so it never leaks publicly. The owner accepted this exposure; a later legal or moderation review may revisit it.
+- **R-9 Summary cost:** query-count and size tests (AC-C32).
+- **R-10 HOS-376 invariants:** role-blind tools, uniform 404, static guard (AC-C36, AC-C39).
+- **R-11 Help staleness:** §5.4 guards; `reviewedAt` only warns.
+- **R-12 Unknown client budget:** constants + smoke (U-1).
 
-## 10. Open questions for the owner
+## 10. Owner decisions (2026-11-17)
 
-Each question has options, pros and cons, and a recommendation. None is decided
-here.
+| # | Question | Decision | Where it lands |
+|---|---|---|---|
+| D-1 | Where portal routes live | Route map **in the API** + CI guard that every target exists as a page in `apps/web` (not a shared module) | §5.1, §6.1, AC-C5 |
+| D-2 | Step pattern | Hybrid: collect in chat, commit costly writes with a P1 token, the draft holds later state | §5.2, §6.4, §6.7 |
+| D-3 | Help source | TS catalog in the API, es only, ~15 topics (steps, links, `reviewedAt`), guards for broken links and staleness; moves to shared i18n when the web gets a help page | §5.4, §6.8 |
+| D-4 | Location in the create wizard | Ask for a **Google Maps link**; extract coordinates (and address if present); short links resolved server side under an SSRF guard; preview before create; re-ask, then fall back to the editor's location link | §5.5, §6.4, AC-C23a–f |
+| D-5 | Plan tool | Separate `get_my_plan`, after HOS-2066, reused by HOS-2184 AC-16 and by the summary | §6.3, §6.6, AC-C15b |
+| D-6 | Accommodation create path | Host-onboarding (`createForOnboarding`) after its precheck | §6.4 |
+| D-7 | Reviews visible to the owner | **All** reviews of their listings with moderation state (approved, pending, rejected), text included; no "already replied"; text untrusted | §6.5, AC-C26, R-8 |
+| D-8 | Review author | Public projection without image (display name) | §6.5, AC-C28 |
+| D-9 | Summary gate | `view_basic_stats` hides only the metrics block, replaced by an "included in plans …" note + plans link | §6.6, AC-C30 |
+| D-10 | Declaring a usage from chat | Out of scope for now | §6.7, NG-8 |
+| D-11 | Pending usages in the summary | Yes, in `attention` | §6.6, AC-C31 |
 
-**OQ-1 — Where the portal path vocabulary lives (§5.1).**
+Correction recorded with these decisions: the HOS-1352 umbrella merged into `staging` on 2026-11-15 (PR #4353) and blocks nothing; HOS-2066 is the only gate (HOS-2328 and the summary's subscription block).
 
-1. **A shared module in an existing package** (for example
-   `packages/utils/src/portal-routes/`). The web's `listing-section-presentation.ts`
-   slugs, `publish-page-paths.ts` and the editor hub paths import from it.
-   - Pros: one source of truth, as the CLAUDE.md SSOT rule asks.
-   - Cons: touches about 6 web files, and a web refactor rides along.
-2. **An API-local map plus a cross-app guard test.**
-   - Pros: no web change; small PR.
-   - Cons: two copies, kept honest only by the guard.
+## 11. Not determined (implementer resolves from code or smoke)
 
-*Recommended: 1.* The repo rule is explicit, and the guard is still added.
-
-**OQ-2 — The step pattern (§5.2).**
-
-1. **The hybrid**: collect in the chat, commit with a token, and the created
-   draft holds later state.
-2. **Pure P3**: create a draft at step 1 and patch it.
-3. **Pure P2**: no token.
-
-*Recommended: 1.* It reuses the portal's own draft model, stops duplicates, and
-adds no state store. Option 2 creates drafts on abandoned chats. Option 3 lets
-model retries duplicate rows.
-
-**OQ-3 — Help catalog location and maintainer (§5.4).**
-
-1. **A typed TS catalog in `apps/api/src/data/owner-help/`**, es only, in the
-   style of whats-new.
-   - Pros: simplest; guards are easy.
-   - Cons: the web cannot render it without moving it later.
-2. **Topic registry in a shared package, text in `@repo/i18n` (`ownerHelp.*`).**
-   - Pros: a future web help page and en/pt reuse it, and the i18n parity guards
-     apply.
-   - Cons: more structure now (YAGNI risk).
-3. **A DB table with admin editing.**
-   - Pros: non-developers edit it.
-   - Cons: new CRUD and migrations; overkill for about 15 topics.
-
-*Recommended: 1 now, 2 when a web help page is planned.* The owner must also
-name who keeps it updated: whoever changes a portal flow (the PR checklist), or
-a periodic content owner.
-
-**OQ-4 — Location in the create wizard.**
-
-1. **Leave location out.** `nextSteps` links to the editor's `ubicacion` section.
-   - Pros: keeps HOS-2184 NG-3, no geocoding ambiguity, and the
-     `location_key`/duplicate checks stay in the portal.
-   - Cons: one more portal visit before publishing.
-2. **Free text → `GeocodingService` → show the match → accommodation fields
-   `street`/`number`/`latitude`/`longitude`.**
-   - Pros: the draft is more complete.
-   - Cons: reverses NG-3; geocoding errors become wrong addresses; only
-     accommodation accepts location at create.
-
-*Recommended: 1.*
-
-**OQ-5 — Plan tool timing and shape (HOS-2328).** The umbrella is already on
-staging (PR #4353, 2026-11-15) and HOS-2066 is Backlog.
-
-1. Wait for HOS-2066, then build `get_my_plan` as a separate tool that HOS-2184
-   phase B AC-16 reuses.
-2. Build now on staging data, ignoring HOS-2066.
-3. Fold it into HOS-2184 phase B only, with no separate tool.
-
-*Recommended: 1.* It follows the standing owner rule that HOS-2066 goes first
-after the umbrella. A separate tool answers "what plan do I have" directly, and
-the reader is shared with AC-16.
-
-**OQ-6 — Accommodation create path.**
-
-1. **The host-onboarding precheck + start** that the portal uses
-   (`createForOnboarding`).
-   - Pros: parity with the portal; a USER becomes HOST, as venue and experience
-     do; resumes existing drafts.
-   - Cons: the onboarding-specific semantics (BETA-197) come along.
-2. **`POST /protected/accommodations` (`create`).**
-   - Pros: the generic path.
-   - Cons: requires `ACCOMMODATION_CREATE`, so a USER cannot start hosting from
-     the chat.
-
-*Recommended: 1.*
-
-**OQ-7 — Which reviews an owner sees.**
-
-1. **Only ACTIVE + APPROVED**, what the public sees.
-   - Pros: no new exposure; matches `reviewsCount`.
-   - Cons: the owner never learns about pending ones.
-2. **Also PENDING, flagged.**
-   - Pros: early warning.
-   - Cons: shows unmoderated text that may be removed, and no portal page shows
-     it today.
-3. **APPROVED, plus a pending count with no text.**
-
-*Recommended: 3.* It gives the useful signal without exposing unmoderated text.
-
-**OQ-8 — Reviewer identity in `list_reviews`.**
-
-1. The public projection minus the image (display name).
-2. First name + last initial.
-3. Anonymous.
-
-*Recommended: 1.* It is already public on the listing page, so it adds no
-exposure.
-
-**OQ-9 — Gating the owner summary.**
-
-1. Gate only the metrics block with `view_basic_stats`, as `get_listing_stats`
-   does. Counts and attention items are always returned.
-2. Gate the whole tool.
-
-*Recommended: 1.* Counts and attention items are not stats. The owner can see
-them in the portal without that entitlement.
-
-**OQ-10 — Declaring a benefit usage from the chat.**
-
-1. **Out of scope for this spec.**
-   - Pros: declarations usually happen on site (QR); a chat declaration lowers
-     the friction for false declarations, which only the counterpart's rejection
-     catches.
-   - Cons: the portal already allows it, so this is not parity.
-2. **Include** `declare_benefit_usage` (two-step; host via `declareAsHost` with
-   `HOST_TRADE_VIEW`, provider via `declareAsProvider`; fires
-   `notifyUsageDeclared`).
-
-*Recommended: 1.* Revisit once usage data shows demand.
-
-**OQ-11 — Pending usages in the owner summary.** Add `pending_benefit_usages`
-to `attention`.
-
-- Pros: one more actionable item.
-- Cons: it mixes the provider domain into a listings summary.
-
-*Recommended: yes.* `countPendingForHost` is cheap.
-
-## 11. Things this spec could not determine (implementer resolves from code or smoke)
-
-- **U-1: The exact tool-result size and time limits of Claude connectors and
-  ChatGPT apps.** They are not documented. Measure them in the staging smoke and
-  tune §5.3.
-- **U-2: Whether accommodation drafts count against `max_accommodations` at
-  creation.** The create routes (V6.1) and the host-onboarding header (BETA-197)
-  disagree. Read the `quota` step that `resolveListingAccess` runs for `CREATE`.
-- **U-3: Whether venues and experiences have an equivalent of the accommodation
-  precheck** (resume an open draft). None was found.
-- **U-4: The exact `requiredPermissions`/`emailUnverifiedOperation` of
-  `host-trade/protected/usage-transitions.ts` and `mine-usages.ts` reads.** Copy
-  them verbatim (C-4).
-- **U-5: Whether a persisted user locale exists elsewhere** (for example
-  settings JSON). None was found in `packages/db/src/schemas/user/`. Links
-  default to `es`.
+- **U-1** Claude/ChatGPT tool-result size and time limits — undocumented; measure in smoke, tune §5.3.
+- **U-2** Whether accommodation drafts count against `max_accommodations` at create: create routes (V6.1) and the host-onboarding header (BETA-197) disagree; read the `quota` step `resolveListingAccess` runs for `CREATE`.
+- **U-3** Whether venue/experience have an open-draft precheck like accommodation. None found.
+- **U-4** Exact `requiredPermissions`/`emailUnverifiedOperation` of the host-trade usage reads and transitions — copy verbatim (C-4).
+- **U-5** Persisted user locale — none found in `packages/db/src/schemas/user/`; links default to `es`.
+- **U-6** Whether the one-address duplicate lookup is exposed as a read the preview can call (`packages/service-core/src/services/listing/listing-location-key.ts`); if not, skip the warning, publication stays the gate.
+- **U-7** Whether `VenueOwnerCreateInputSchema` and `ExperienceOwnerCreateInputCheckedSchema` accept `location` / `meetingPoint*` at create (and what the venue create's `listingSection` step requires for it); otherwise write it through the owner PATCH in the same commit.
+- **U-8** Whether showing `moderationReason` to owners is wanted — not asked; excluded until the owner says otherwise.
 
 ## 12. Implementation notes
 
-- **Smoke label:** `status-needs-smoke-staging`, with a real Claude + ChatGPT
-  connection. PR-9 touches billing reads, so follow `docs/billing/smoke-checklist.md`
-  (staging section).
-- **Release:** no migrations. A seed change happens only if the help catalog
-  goes to i18n (OQ-3 option 2). That is not seed data, so dual-write does not
-  apply.
-- **Branching:** each PR is cut from `staging` and targets `staging`.
-- **HOS-2185 reuse:** keep every new tool a plain `(actor, input, context)`
-  function. The confirmation store and the portal links stay transport-agnostic
-  (no MCP imports outside `lib/mcp/`).
-- **Tests:**
-  - per tool: the authorization matrix (owner, foreign, missing, unverified
-    email), the C-1 side effects, the C-2 schema shape, and the C-3 audit;
-  - HOS-376: the seeded dual-role account;
-  - mutation-check the central guards (foreign → not found, token binding,
-    category isolation).
+- **Smoke:** `status-needs-smoke-staging` — real Claude + ChatGPT, including pasting a real `maps.app.goo.gl` short link and a full URL. PR-9 reads billing: follow `docs/billing/smoke-checklist.md` (staging).
+- **Release:** no migrations, no seed data, no env vars (links reuse `HOSPEDA_SITE_URL`).
+- **Branching:** each PR cut from `staging`, targeting `staging`.
+- **HOS-2185 reuse:** tools stay plain `(actor, input, context)` functions; the confirmation store, portal links and Maps resolver import nothing from `lib/mcp/`.
+- **Consent copy (es/en/pt):** add "crear borradores de publicaciones", "ver todas las reseñas de tus publicaciones" and "confirmar o rechazar usos de beneficios".
+- **Tests:** per tool the authorization matrix (owner, foreign, missing, unverified email), C-1 side effects, C-2 schema shape, C-3 audit; HOS-376 with `host-provider@local.test`; mutation-check the central guards (foreign → not found, token binding, category isolation, host allowlist, public/owner review split).
 
 ## 13. Linear
 
-- **Canonical:** HOS-2335.
-- **Children:** HOS-2326, HOS-2327, HOS-2328, HOS-2329, HOS-2330, HOS-2331,
-  HOS-2332 and HOS-2333.
-- **Parent feature:** HOS-2184.
-- **Blocked on (partially):** HOS-2066 (HOS-2328 and the subscription part of
-  HOS-2331).
-- **Related:** HOS-1352, HOS-2323, HOS-376 and HOS-1967.
+Canonical HOS-2335. Children HOS-2326…HOS-2333. Parent feature HOS-2184. Gated on HOS-2066 (HOS-2328, HOS-2331 subscription block). Related HOS-1352 (merged), HOS-2323, HOS-376, HOS-1810, HOS-1967.
