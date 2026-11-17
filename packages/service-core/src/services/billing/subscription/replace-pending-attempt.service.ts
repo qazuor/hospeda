@@ -13,7 +13,11 @@ const logger = createLogger('replace-pending-attempt');
 
 /** Replace an eligible pending signup after a fresh provider read and locked S39 transition. */
 export async function replacePendingAttempt(
-    input: { readonly commitment: LiveCommitment; readonly userId: string },
+    input: {
+        readonly commitment: LiveCommitment;
+        readonly userId: string;
+        readonly predecessorId?: string;
+    },
     ports: {
         readonly provider: PaymentProvider;
         readonly clock: Clock;
@@ -49,7 +53,8 @@ export async function replacePendingAttempt(
         const changed = await subscriptionModel.abandonReplacedPendingAuthorization({
             subscriptionId: input.commitment.subscription.id,
             now,
-            tx
+            tx,
+            ...(input.predecessorId === undefined ? {} : { predecessorId: input.predecessorId })
         });
         if (!changed.wrote) return false;
         await recordProviderCancellationDecided({

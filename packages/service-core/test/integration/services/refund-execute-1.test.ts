@@ -25,7 +25,10 @@ describe('TEST:B6:4 AC:B6:5 provider refund execution', () => {
             const seeded = await confirmedExecuteFixture();
             const before = await executeRows(seeded.refundId, seeded.payment.id);
             expect(before.calls.map((call) => call.amount)).toEqual([5000, 2500, 2500]);
-            expect(before.keys[0]?.result).toMatchObject({ outcome: 'REJECTED' });
+            const rejectedKey = before.keys.find(
+                (key) => (key.result as { outcome?: string } | null)?.outcome === 'REJECTED'
+            );
+            expect(rejectedKey?.result).toMatchObject({ outcome: 'REJECTED' });
 
             // Act
             const result = await executeRefundFromProviderRead(

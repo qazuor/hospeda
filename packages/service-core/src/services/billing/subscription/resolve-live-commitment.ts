@@ -24,6 +24,11 @@ const NotAppliedAuthorizationResultSchema = z.object({
     applied: z.literal(false)
 });
 
+/** Whether a completed provider creation explicitly did not apply. */
+export function isNotAppliedCreationResult(result: unknown): boolean {
+    return NotAppliedAuthorizationResultSchema.safeParse(result).success;
+}
+
 const RejectedCreationResultSchema = z.object({
     outcome: z.literal('REJECTED_BY_PROVIDER'),
     code: z.literal('REJECTED')
