@@ -14,6 +14,7 @@
 
 import {
     type AccommodationModel,
+    type HostTradeCategoryModel,
     type HostTradeModel,
     hostTrades,
     isNotNull,
@@ -28,6 +29,15 @@ import { ActorFactoryBuilder, createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
+// Writes run in a transaction (HOS-919); unit tests have no DB, so the wrapper
+// just runs its callback with a stub `tx`.
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (fn: (ctx: unknown) => Promise<unknown>, baseCtx?: { hookState?: object }) =>
+            fn({ ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} })
+    )
+}));
+
 const mockLogger = createLoggerMock();
 
 // Deterministic UUIDs for tests
@@ -36,6 +46,7 @@ const DEST_ID_1 = getMockId('destination', 'dest-1');
 const DEST_ID_2 = getMockId('destination', 'dest-2');
 const ACC_ID = getMockId('accommodation', 'acc-1');
 const USER_ID = getMockId('user', 'owner-1');
+const CAT_ID = getMockId('hostTradeCategory', 'cat-1');
 
 /** Minimal valid HostTrade row returned by model mocks */
 const makeHostTrade = (overrides: Record<string, unknown> = {}) => ({
@@ -79,14 +90,23 @@ function buildService(
         ...createModelMock(['findForHost']),
         // HOS-919: list reads hydrate categories in one batched call.
         hydrateCategories: vi.fn().mockResolvedValue(new Map()),
+        replaceCategories: vi.fn().mockResolvedValue({ added: [], removed: [] }),
         ...modelOverrides
+    };
+    const categoryModel = {
+        findByIds: vi
+            .fn()
+            .mockResolvedValue([{ id: CAT_ID, lifecycleState: 'ACTIVE', deletedAt: null }])
     };
     const accommodationModel = { ...createModelMock(), ...accommodationModelOverrides };
 
     const service = new HostTradeService(
         { logger: mockLogger },
         model as unknown as HostTradeModel,
-        accommodationModel as unknown as AccommodationModel
+        accommodationModel as unknown as AccommodationModel,
+        undefined,
+        undefined,
+        categoryModel as unknown as HostTradeCategoryModel
     );
 
     return { service, model, accommodationModel };
@@ -126,7 +146,7 @@ describe('HostTradeService', () => {
 
             const result = await service.create(actorWithCreate, {
                 name: 'Plomero Centro',
-                category: 'PLOMERIA',
+                categoryIds: [CAT_ID],
                 contact: '+54 3442 123456',
                 benefit: '10% descuento',
                 destinationId: DEST_ID_1,
@@ -142,7 +162,7 @@ describe('HostTradeService', () => {
 
             const result = await service.create(actorNoPerms, {
                 name: 'Plomero',
-                category: 'PLOMERIA',
+                categoryIds: [CAT_ID],
                 contact: '123',
                 benefit: 'desc',
                 destinationId: DEST_ID_1,
@@ -165,7 +185,7 @@ describe('HostTradeService', () => {
             const result = await service.create(actorWithCreate, {
                 name: 'Plomero Norte',
                 slug: 'plomero-centro', // collides
-                category: 'PLOMERIA',
+                categoryIds: [CAT_ID],
                 contact: '123',
                 benefit: 'desc',
                 destinationId: DEST_ID_1,
@@ -196,7 +216,7 @@ describe('HostTradeService', () => {
 
             const result = await service.create(actorWithCreate, {
                 name: 'Plomero',
-                category: 'PLOMERIA',
+                categoryIds: [CAT_ID],
                 contact: '123',
                 benefit: 'desc',
                 destinationId: DEST_ID_1,

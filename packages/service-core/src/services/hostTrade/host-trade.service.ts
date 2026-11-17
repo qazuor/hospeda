@@ -1,5 +1,6 @@
 import {
     AccommodationModel,
+    HostTradeCategoryModel,
     HostTradeModel,
     hostTrades,
     isNotNull,
@@ -37,7 +38,13 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { withServiceTransaction } from '../../utils/transaction';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import {
+    assertCategoryIdsAssignable,
+    CATEGORY_IDS_HOOK_KEY,
+    HOST_TRADE_ID_HOOK_KEY
+} from './host-trade.categories';
 import {
     checkCanAdminListHostTrades,
     checkCanCreateHostTrade,
@@ -66,6 +73,16 @@ import {
  * to `keyof SelectHostTrade` turns that runtime footgun into a build error.
  */
 const OWNER_SCOPE_KEY: keyof SelectHostTrade = 'ownerUserId';
+
+/**
+ * Neutralises `categoryIds` in a write payload: it is not a column (the join
+ * rows are written by `_afterCreate`/`_afterUpdate`). The base class merges the
+ * hook result OVER the normalized input, so the key cannot be deleted, only
+ * overwritten with `undefined`, which the model layer ignores.
+ */
+const withoutCategoryIds = <T extends { categoryIds?: unknown }>(
+    data: T
+): Omit<T, 'categoryIds'> & { categoryIds: undefined } => ({ ...data, categoryIds: undefined });
 
 /** The only value `benefit_review_state` ever holds while an edit is waiting. */
 const HOST_TRADE_BENEFIT_REVIEW_PENDING = 'pending';
@@ -214,18 +231,23 @@ export class HostTradeService extends BaseCrudService<
      */
     private readonly qrCodeService: QrCodeService;
 
+    /** Category catalog model, used to validate the `categoryIds` of a write (HOS-919). */
+    private readonly categoryModel: HostTradeCategoryModel;
+
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeModel,
         accommodationModel?: AccommodationModel,
         revokeNotifier?: HostTradeRevokeNotifyPort | null,
-        qrCodeService?: QrCodeService
+        qrCodeService?: QrCodeService,
+        categoryModel?: HostTradeCategoryModel
     ) {
         super(ctx, HostTradeService.ENTITY_NAME);
         this.model = model ?? new HostTradeModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
         this.revokeNotifier = revokeNotifier ?? null;
         this.qrCodeService = qrCodeService ?? new QrCodeService(ctx);
+        this.categoryModel = categoryModel ?? new HostTradeCategoryModel();
     }
 
     // --- Permission hooks ---
@@ -323,8 +345,9 @@ export class HostTradeService extends BaseCrudService<
     protected async _beforeCreate(
         data: CreateHostTrade,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<HostTrade>> {
+        await this.stageCategoryIds({ categoryIds: data.categoryIds, hostTradeId: undefined, ctx });
         const providedSlug = (data as { slug?: string }).slug;
 
         if (providedSlug) {
@@ -336,7 +359,7 @@ export class HostTradeService extends BaseCrudService<
                     `Slug "${providedSlug}" is already taken by another host trade entry`
                 );
             }
-            return { ...data, slug: providedSlug };
+            return { ...withoutCategoryIds(data), slug: providedSlug };
         }
 
         // Auto-generate a unique slug from the name
@@ -345,7 +368,7 @@ export class HostTradeService extends BaseCrudService<
             return !!exists;
         });
 
-        return { ...data, slug };
+        return { ...withoutCategoryIds(data), slug };
     }
 
     /**
@@ -358,13 +381,20 @@ export class HostTradeService extends BaseCrudService<
     protected async _beforeUpdate(
         data: UpdateHostTrade,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<HostTrade>> {
         const newSlug = (data as { slug?: string; id?: string }).slug;
         const entityId = (data as { id?: string }).id;
 
+        const hostTradeId = ctx?.hookState?.[HOST_TRADE_ID_HOOK_KEY];
+        await this.stageCategoryIds({
+            categoryIds: data.categoryIds,
+            hostTradeId: typeof hostTradeId === 'string' ? hostTradeId : undefined,
+            ctx
+        });
+
         if (!newSlug) {
-            return { ...data };
+            return { ...withoutCategoryIds(data) };
         }
 
         // Check if slug is taken by a DIFFERENT row
@@ -376,7 +406,126 @@ export class HostTradeService extends BaseCrudService<
             );
         }
 
-        return { ...data, slug: newSlug };
+        return { ...withoutCategoryIds(data), slug: newSlug };
+    }
+
+    // --- Category writes (HOS-919) ---
+
+    /**
+     * Validates the requested `categoryIds` and parks them in `hookState` so
+     * the `_after*` hook can write the join rows in the same transaction as the
+     * row. No-op when the key is absent: an update without `categoryIds`
+     * leaves the provider's set untouched.
+     */
+    private async stageCategoryIds(input: {
+        readonly categoryIds: readonly string[] | undefined;
+        readonly hostTradeId: string | undefined;
+        readonly ctx: ServiceContext;
+    }): Promise<void> {
+        const { categoryIds, hostTradeId, ctx } = input;
+        if (categoryIds === undefined) return;
+
+        await assertCategoryIdsAssignable({
+            categoryIds,
+            hostTradeId,
+            categoryModel: this.categoryModel,
+            hostTradeModel: this.model,
+            tx: ctx?.tx
+        });
+        ctx.hookState = { ...ctx.hookState, [CATEGORY_IDS_HOOK_KEY]: [...categoryIds] };
+    }
+
+    /**
+     * Replaces the provider's category set with the ids staged by `_beforeX`.
+     * Runs on the caller's transaction, so a failure rolls the row back too.
+     * Does nothing when no ids were staged.
+     */
+    private async persistStagedCategoryIds(input: {
+        readonly hostTradeId: string;
+        readonly ctx: ServiceContext;
+    }): Promise<void> {
+        const { hostTradeId, ctx } = input;
+        const staged = ctx?.hookState?.[CATEGORY_IDS_HOOK_KEY];
+        if (!Array.isArray(staged)) return;
+        if (!ctx.tx) {
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'Category writes require a transaction'
+            );
+        }
+        await this.model.replaceCategories({
+            hostTradeId,
+            categoryIds: staged as string[],
+            tx: ctx.tx
+        });
+    }
+
+    /**
+     * Runs a create/update inside ONE transaction (the caller's when `ctx.tx`
+     * is set, a new one otherwise). Once a transaction is present the base
+     * write methods RE-THROW their errors, which is what rolls the row back
+     * together with a failed category write; on the transaction this method
+     * opened, that rejection is converted back into the usual result.
+     */
+    private async runInTransaction<T>(
+        ctx: ServiceContext | undefined,
+        run: (txCtx: ServiceContext) => Promise<ServiceOutput<T>>
+    ): Promise<ServiceOutput<T>> {
+        if (ctx?.tx) return run(ctx);
+        try {
+            return await withServiceTransaction(run, ctx);
+        } catch (error) {
+            if (error instanceof ServiceError) return { error };
+            throw error;
+        }
+    }
+
+    /**
+     * Creates a provider and its category links atomically.
+     *
+     * @param actor - The actor performing the action.
+     * @param data - Validated create input, including `categoryIds`.
+     * @param ctx - Optional context; a supplied `tx` is joined, never replaced.
+     */
+    public override async create(
+        actor: Actor,
+        data: z.infer<typeof CreateHostTradeSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostTrade>> {
+        return this.runInTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
+    }
+
+    /**
+     * Updates a provider; when `categoryIds` is present its category set is
+     * replaced in the same transaction, when absent the set is untouched.
+     *
+     * @param actor - The actor performing the action.
+     * @param id - The provider id.
+     * @param data - Validated update input.
+     * @param ctx - Optional context; a supplied `tx` is joined, never replaced.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<typeof UpdateHostTradeSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostTrade>> {
+        return this.runInTransaction(ctx, (txCtx) =>
+            super.update(actor, id, data, {
+                ...txCtx,
+                hookState: { ...txCtx.hookState, [HOST_TRADE_ID_HOOK_KEY]: id }
+            })
+        );
+    }
+
+    /** Writes the staged category links right after the row is created. */
+    protected override async _afterCreate(
+        entity: HostTrade,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTrade> {
+        await this.persistStagedCategoryIds({ hostTradeId: entity.id, ctx });
+        return entity;
     }
 
     /**
@@ -421,6 +570,10 @@ export class HostTradeService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ): Promise<HostTrade> {
+        // Outside the try below on purpose: a failed category write must
+        // surface (and roll the transaction back), unlike the QR repoint.
+        await this.persistStagedCategoryIds({ hostTradeId: entity.id, ctx });
+
         try {
             const found = await this.qrCodeService.findLiveCodeForEntity({
                 actor,

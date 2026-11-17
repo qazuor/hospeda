@@ -47,6 +47,8 @@ const actor = createActor({
     ]
 });
 
+const PAGE = { page: 1, pageSize: 10 } as const;
+
 const PREDICATE = sql`/* categories predicate */ true`;
 
 describe('HostTradeService categories filter and hydration', () => {
@@ -75,7 +77,10 @@ describe('HostTradeService categories filter and hydration', () => {
         it('should translate categories into the model predicate and not into the where map', async () => {
             asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
 
-            const result = await service.search(actor, { categories: 'plomeria,pintura' });
+            const result = await service.search(actor, {
+                ...PAGE,
+                categories: ['plomeria', 'pintura']
+            });
 
             expect(result.error).toBeUndefined();
             expect(model.buildCategoriesFilterCondition).toHaveBeenCalledWith({
@@ -94,7 +99,7 @@ describe('HostTradeService categories filter and hydration', () => {
         it('should ignore the deprecated single category param', async () => {
             asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
 
-            await service.search(actor, { category: 'PLOMERIA' });
+            await service.search(actor, { ...PAGE, category: 'PLOMERIA' as never });
 
             const [where] = asMock(model.findAll).mock.calls[0] as [Record<string, unknown>];
             expect(where).not.toHaveProperty('category');
@@ -103,7 +108,7 @@ describe('HostTradeService categories filter and hydration', () => {
         it('should add no condition when the filter is absent', async () => {
             asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
 
-            await service.search(actor, { destinationId: DEST_ID });
+            await service.search(actor, { ...PAGE, destinationId: DEST_ID });
 
             expect(model.buildCategoriesFilterCondition).not.toHaveBeenCalled();
             const [where, , conditions] = asMock(model.findAll).mock.calls[0] as [
@@ -118,7 +123,7 @@ describe('HostTradeService categories filter and hydration', () => {
         it('should treat an empty categories value as no filter (not as match-nothing)', async () => {
             asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
 
-            await service.search(actor, { categories: '' });
+            await service.search(actor, { ...PAGE, categories: [] });
 
             expect(model.buildCategoriesFilterCondition).not.toHaveBeenCalled();
         });
@@ -126,7 +131,7 @@ describe('HostTradeService categories filter and hydration', () => {
         it('should return an empty page without hydrating when only unknown slugs match nothing', async () => {
             asMock(model.findAll).mockResolvedValue({ items: [], total: 0 });
 
-            const result = await service.search(actor, { categories: 'no-existe' });
+            const result = await service.search(actor, { ...PAGE, categories: ['no-existe'] });
 
             expect(result.data?.items).toEqual([]);
             expect(model.hydrateCategories).not.toHaveBeenCalled();
@@ -141,7 +146,7 @@ describe('HostTradeService categories filter and hydration', () => {
                 new Map([[HT_A, [ref('plomeria'), ref('gas')]]])
             );
 
-            const result = await service.search(actor, {});
+            const result = await service.search(actor, { ...PAGE });
 
             expect(model.hydrateCategories).toHaveBeenCalledTimes(1);
             expect(model.hydrateCategories).toHaveBeenCalledWith(
@@ -157,7 +162,10 @@ describe('HostTradeService categories filter and hydration', () => {
         it('should apply the same categories predicate as the list', async () => {
             asMock(model.count).mockResolvedValue(3);
 
-            const result = await service.count(actor, { categories: 'plomeria,pintura' });
+            const result = await service.count(actor, {
+                ...PAGE,
+                categories: ['plomeria', 'pintura']
+            });
 
             expect(result.data?.count).toBe(3);
             expect(model.buildCategoriesFilterCondition).toHaveBeenCalledWith({
@@ -176,8 +184,8 @@ describe('HostTradeService categories filter and hydration', () => {
             asMock(model.findAll).mockResolvedValue({ items, total: items.length });
             asMock(model.count).mockResolvedValue(items.length);
 
-            const list = await service.search(actor, { categories: 'plomeria' });
-            const count = await service.count(actor, { categories: 'plomeria' });
+            const list = await service.search(actor, { ...PAGE, categories: ['plomeria'] });
+            const count = await service.count(actor, { ...PAGE, categories: ['plomeria'] });
 
             expect(count.data?.count).toBe(list.data?.items.length);
         });
@@ -191,8 +199,8 @@ describe('HostTradeService categories filter and hydration', () => {
             });
 
             const result = await service.adminList(actor, {
-                categories: 'plomeria',
-                category: 'PLOMERIA'
+                categories: ['plomeria'],
+                category: 'PLOMERIA' as never
             });
 
             expect(result.error).toBeUndefined();
