@@ -73,3 +73,41 @@ describe('postal address validation copy (HOS-2317)', () => {
         expect(street.min).toBe('La calle debe tener al menos {{min}} caracteres');
     });
 });
+
+/** Raw English field identifiers that must never follow a Spanish article in `es` copy. */
+const RAW_TOKEN_AFTER_ARTICLE_RE =
+    /^(El|La|Los|Las) (street|number|floor|apartment|lat|lng|long|neighborhood|department|placeName|place name)\b/;
+
+/** Key paths that belong to postal-address / coordinate copy. */
+const LOCATION_KEY_RE =
+    /(^|\.)(location|eventLocation|approximateLocation|coordinates|lat|lng|long)(\.|$)/;
+
+describe('whole-file scan of validation.json (HOS-2317)', () => {
+    const all = (locale: string) => collect({ node: load(locale), prefix: '' });
+
+    it('es: no entry puts a raw English field token after an article', () => {
+        const offenders = all('es').filter(([, v]) => RAW_TOKEN_AFTER_ARTICLE_RE.test(v));
+        expect(offenders).toEqual([]);
+    });
+
+    for (const locale of ['en', 'pt'] as const) {
+        it(`${locale}: location and coordinate entries carry no Spanish article copy`, () => {
+            const offenders = all(locale).filter(
+                ([key, v]) => LOCATION_KEY_RE.test(key) && /^(El|La|Los|Las) /.test(v)
+            );
+            expect(offenders).toEqual([]);
+        });
+    }
+
+    it('keeps {{placeholders}} identical across locales for coordinate entries', () => {
+        const ph = (v: string) => (v.match(/\{\{\w+\}\}/g) ?? []).sort().join(',');
+        const es = new Map(all('es'));
+        for (const locale of ['en', 'pt'] as const) {
+            const bad = all(locale).filter(
+                ([key, v]) =>
+                    LOCATION_KEY_RE.test(key) && es.has(key) && ph(v) !== ph(es.get(key) ?? '')
+            );
+            expect(bad).toEqual([]);
+        }
+    });
+});

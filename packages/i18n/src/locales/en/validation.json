@@ -126,12 +126,12 @@
             },
             "coordinates": {
                 "lat": {
-                    "max": "La latitud no puede superar los {{max}}",
-                    "min": "La latitud no puede ser menor a {{min}}"
+                    "max": "The latitude cannot exceed {{max}}",
+                    "min": "The latitude cannot be less than {{min}}"
                 },
                 "long": {
-                    "max": "La longitud no puede superar los {{max}}",
-                    "min": "La longitud no puede ser menor a {{min}}"
+                    "max": "The longitude cannot exceed {{max}}",
+                    "min": "The longitude cannot be less than {{min}}"
                 }
             },
             "floor": {
@@ -1240,7 +1240,6 @@
                 "invalidType": "El trial enabled tiene un tipo de dato inválido"
             }
         },
-
         "subscriptionEvent": {
             "createdAt": {
                 "invalid": "La fecha de creación no es válida",
@@ -1469,19 +1468,19 @@
         },
         "approximateLocation": {
             "lat": {
-                "max": "El lat no puede superar los {{max}} caracteres",
-                "min": "El lat debe tener al menos {{min}} caracteres",
-                "required": "El lat es obligatorio"
+                "max": "The latitude cannot exceed {{max}} characters",
+                "min": "The latitude must be at least {{min}} characters",
+                "required": "The latitude is required"
             },
             "lng": {
-                "max": "El lng no puede superar los {{max}} caracteres",
-                "min": "El lng debe tener al menos {{min}} caracteres",
-                "required": "El lng es obligatorio"
+                "max": "The longitude cannot exceed {{max}} characters",
+                "min": "The longitude must be at least {{min}} characters",
+                "required": "The longitude is required"
             },
             "radiusMeters": {
-                "int": "El radius meters debe ser un número entero",
-                "positive": "El radius meters debe ser positivo",
-                "required": "El radius meters es obligatorio"
+                "int": "The radius in meters must be an integer",
+                "positive": "The radius in meters must be positive",
+                "required": "The radius in meters is required"
             }
         },
         "checkIn": {
@@ -1652,12 +1651,12 @@
         },
         "geolocation": {
             "lat": {
-                "max_value": "La latitud no puede ser mayor a {{max}}",
-                "min_value": "La latitud debe ser al menos {{min}}"
+                "max_value": "The latitude cannot be greater than {{max}}",
+                "min_value": "The latitude must be at least {{min}}"
             },
             "lng": {
-                "max_value": "La longitud no puede ser mayor a {{max}}",
-                "min_value": "La longitud debe ser al menos {{min}}"
+                "max_value": "The longitude cannot be greater than {{max}}",
+                "min_value": "The longitude must be at least {{min}}"
             },
             "radius": {
                 "max_value": "El radius no puede ser mayor a {{max}}",
@@ -1731,24 +1730,24 @@
                 "required": "The apartment is required"
             },
             "city": {
-                "max": "La ciudad no puede superar los {{max}} caracteres",
-                "min": "La ciudad debe tener al menos {{min}} caracteres",
-                "required": "La ciudad es obligatoria"
+                "max": "The city cannot exceed {{max}} characters",
+                "min": "The city must be at least {{min}} characters",
+                "required": "The city is required"
             },
             "coordinates": {
                 "lat": {
-                    "invalidValue": "La latitud no es válida",
-                    "required": "La latitud es obligatoria"
+                    "invalidValue": "The latitude is not valid",
+                    "required": "The latitude is required"
                 },
                 "long": {
-                    "invalidValue": "El long no es válido",
-                    "required": "El long es obligatorio"
+                    "invalidValue": "The longitude is not valid",
+                    "required": "The longitude is required"
                 }
             },
             "country": {
-                "max": "El país no puede superar los {{max}} caracteres",
-                "min": "El país debe tener al menos {{min}} caracteres",
-                "required": "El país es obligatorio"
+                "max": "The country cannot exceed {{max}} characters",
+                "min": "The country must be at least {{min}} characters",
+                "required": "The country is required"
             },
             "department": {
                 "max": "The department cannot exceed {{max}} characters",
@@ -1780,9 +1779,9 @@
                 "required": "The region is required"
             },
             "state": {
-                "max": "El estado/provincia no puede superar los {{max}} caracteres",
-                "min": "El estado/provincia debe tener al menos {{min}} caracteres",
-                "required": "El estado/provincia es obligatorio"
+                "max": "The state/province cannot exceed {{max}} characters",
+                "min": "The state/province must be at least {{min}} characters",
+                "required": "The state/province is required"
             },
             "street": {
                 "max": "The street cannot exceed {{max}} characters",
@@ -1790,9 +1789,9 @@
                 "required": "The street is required"
             },
             "zipCode": {
-                "max": "El código postal no puede superar los {{max}} caracteres",
-                "min": "El código postal debe tener al menos {{min}} caracteres",
-                "required": "El código postal es obligatorio"
+                "max": "The postal code cannot exceed {{max}} characters",
+                "min": "The postal code must be at least {{min}} characters",
+                "required": "The postal code is required"
             }
         },
         "longitude": {
@@ -2754,19 +2753,19 @@
             "required": "The apartment is required"
         },
         "city": {
-            "max": "La ciudad no puede superar los {{max}} caracteres",
-            "min": "La ciudad debe tener al menos {{min}} caracteres",
-            "required": "La ciudad es obligatoria"
+            "max": "The city cannot exceed {{max}} characters",
+            "min": "The city must be at least {{min}} characters",
+            "required": "The city is required"
         },
         "delete": {
             "deletedAt": {
-                "invalidType": "La fecha de eliminación debe ser una fecha válida"
+                "invalidType": "The deletion date must be a valid date"
             },
             "force": {
-                "invalidType": "El valor de forzar debe ser un booleano"
+                "invalidType": "The force value must be a boolean"
             },
             "success": {
-                "required": "El resultado exitoso es obligatorio"
+                "required": "The success result is required"
             }
         },
         "department": {
@@ -2793,10 +2792,10 @@
             "required": "The place name is required"
         },
         "slug": {
-            "format": "El formato del slug no es válido",
-            "max": "El slug no puede superar los {{max}} caracteres",
-            "min": "El slug debe tener al menos {{min}} caracteres",
-            "required": "El slug es obligatorio"
+            "format": "The slug format is not valid",
+            "max": "The slug cannot exceed {{max}} characters",
+            "min": "The slug must be at least {{min}} characters",
+            "required": "The slug is required"
         },
         "street": {
             "max": "The street cannot exceed {{max}} characters",
@@ -3573,57 +3572,57 @@
     },
     "location": {
         "bbox": {
-            "invalidType": "El bbox tiene un tipo de dato inválido",
-            "length": "El bbox no es válido"
+            "invalidType": "The bounding box (bbox) has an invalid data type",
+            "length": "The bounding box (bbox) is not valid"
         },
         "city": {
-            "invalidType": "La ciudad tiene un tipo de dato inválido",
-            "max": "La ciudad no puede superar los {{max}} caracteres",
-            "min": "La ciudad debe tener al menos {{min}} caracteres"
+            "invalidType": "The city has an invalid data type",
+            "max": "The city cannot exceed {{max}} characters",
+            "min": "The city must be at least {{min}} characters"
         },
-        "coordinatesRequired": "La ubicación no es válida",
+        "coordinatesRequired": "The location is not valid",
         "country": {
-            "invalidType": "El país tiene un tipo de dato inválido",
-            "max": "El país no puede superar los {{max}} caracteres",
-            "min": "El país debe tener al menos {{min}} caracteres"
+            "invalidType": "The country has an invalid data type",
+            "max": "The country cannot exceed {{max}} characters",
+            "min": "The country must be at least {{min}} characters"
         },
         "latitude": {
-            "invalidType": "La latitud tiene un tipo de dato inválido",
-            "max": "La latitud no puede superar los {{max}} caracteres",
-            "min": "La latitud debe tener al menos {{min}} caracteres"
+            "invalidType": "The latitude has an invalid data type",
+            "max": "The latitude cannot exceed {{max}} characters",
+            "min": "The latitude must be at least {{min}} characters"
         },
         "longitude": {
-            "invalidType": "La longitud tiene un tipo de dato inválido",
-            "max": "La longitud no puede superar los {{max}} caracteres",
-            "min": "La longitud debe tener al menos {{min}} caracteres"
+            "invalidType": "The longitude has an invalid data type",
+            "max": "The longitude cannot exceed {{max}} characters",
+            "min": "The longitude must be at least {{min}} characters"
         },
         "near": {
-            "invalidType": "El near tiene un tipo de dato inválido",
-            "max": "El near no puede superar los {{max}} caracteres",
-            "min": "El near debe tener al menos {{min}} caracteres"
+            "invalidType": "The proximity filter has an invalid data type",
+            "max": "The proximity filter cannot exceed {{max}} characters",
+            "min": "The proximity filter must be at least {{min}} characters"
         },
         "radius": {
-            "invalidType": "El radius tiene un tipo de dato inválido",
-            "max": "El radius no puede superar los {{max}} caracteres",
-            "min": "El radius debe tener al menos {{min}} caracteres"
+            "invalidType": "The radius has an invalid data type",
+            "max": "The radius cannot exceed {{max}} characters",
+            "min": "The radius must be at least {{min}} characters"
         },
         "radiusUnit": {
-            "enum": "El radius unit debe ser uno de los valores permitidos"
+            "enum": "The radius unit must be one of the allowed values"
         },
         "region": {
-            "invalidType": "El region tiene un tipo de dato inválido",
-            "max": "El region no puede superar los {{max}} caracteres",
-            "min": "El region debe tener al menos {{min}} caracteres"
+            "invalidType": "The region has an invalid data type",
+            "max": "The region cannot exceed {{max}} characters",
+            "min": "The region must be at least {{min}} characters"
         },
         "state": {
-            "invalidType": "El estado/provincia tiene un tipo de dato inválido",
-            "max": "El estado/provincia no puede superar los {{max}} caracteres",
-            "min": "El estado/provincia debe tener al menos {{min}} caracteres"
+            "invalidType": "The state/province has an invalid data type",
+            "max": "The state/province cannot exceed {{max}} characters",
+            "min": "The state/province must be at least {{min}} characters"
         },
         "within": {
-            "invalidType": "El within tiene un tipo de dato inválido",
-            "max": "El within no puede superar los {{max}} caracteres",
-            "min": "El within debe tener al menos {{min}} caracteres"
+            "invalidType": "The area filter has an invalid data type",
+            "max": "The area filter cannot exceed {{max}} characters",
+            "min": "The area filter must be at least {{min}} characters"
         }
     },
     "newsletter": {
@@ -3870,9 +3869,9 @@
             "max": "No se pueden superar las {{max}} palabras clave"
         },
         "lat": {
-            "max": "El lat no puede superar los {{max}} caracteres",
-            "min": "El lat debe tener al menos {{min}} caracteres",
-            "required": "El lat es obligatorio"
+            "max": "The latitude cannot exceed {{max}} characters",
+            "min": "The latitude must be at least {{min}} characters",
+            "required": "The latitude is required"
         },
         "listItem": {
             "destinationCount": {
@@ -3881,9 +3880,9 @@
             }
         },
         "long": {
-            "max": "El long no puede superar los {{max}} caracteres",
-            "min": "El long debe tener al menos {{min}} caracteres",
-            "required": "El long es obligatorio"
+            "max": "The longitude cannot exceed {{max}} characters",
+            "min": "The longitude must be at least {{min}} characters",
+            "required": "The longitude is required"
         },
         "nearby": {
             "limit": {
