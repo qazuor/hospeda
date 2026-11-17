@@ -148,10 +148,11 @@ describe('umami-client (admin)', () => {
 
     describe('trackEvent', () => {
         it('forwards a valid catalog event to window.umami.track', async () => {
-            // Arrange
+            // Arrange: identity settled, so the event is not held (HOS-2119)
             const tracker = installTracker();
             const mod = await loadFreshModule();
             mod.initUmami();
+            mod.markVisitorAnonymous();
 
             // Act
             mod.trackEvent('admin_tour_completed', { role: null, tour_id: 'welcome' });
@@ -170,6 +171,7 @@ describe('umami-client (admin)', () => {
             const tracker = installTracker();
             const mod = await loadFreshModule();
             mod.initUmami();
+            mod.markVisitorAnonymous();
 
             // Act
             expect(() => mod.trackEvent('not_a_real_event' as never, {} as never)).not.toThrow();

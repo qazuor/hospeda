@@ -91,7 +91,7 @@ describe('first pageview waits for the staff identity', () => {
         const umami = loadTrackerScript();
         mod.trackPageview({ url: `${ORIGIN}/dashboard`, title: 'Panel', awaitIdentity: true });
         // Had the pageview gone out, Umami answers it now and the tracker holds a token.
-        if (umami.track.mock.calls.length > 0) umami.answerPageview();
+        umami.respond();
 
         // Act: AuthProvider resolves the session
         mod.identifyUser('staff-1');
@@ -243,5 +243,79 @@ describe('later pageviews', () => {
 
         // Assert
         expect(umami.track).not.toHaveBeenCalled();
+    });
+});
+
+describe('custom events fired during the hold', () => {
+    it('should queue an on-mount event behind the identify and the pageview, so the identify is not skipped', async () => {
+        // Arrange: a child fires its event before the router counted the page
+        const mod = await loadFreshModule();
+        mod.initUmami();
+        const umami = loadTrackerScript();
+        mod.trackEvent('admin_tour_shown', { role: null, source: null, tour_id: 'welcome' });
+        mod.trackPageview({ url: `${ORIGIN}/dashboard`, title: 'Panel', awaitIdentity: true });
+        // Had the event gone out, Umami answers it now and the tracker holds a token.
+        umami.respond();
+        await Promise.resolve();
+
+        // Act
+        mod.identifyUser('staff-1');
+
+        // Assert
+        expect(umami.identifyCaches).toEqual([undefined]);
+        expect(umami.track).toHaveBeenCalledTimes(2);
+        expect(umami.track.mock.calls[0]?.[0]).toBe('admin_tour_shown');
+        expect(typeof umami.track.mock.calls[1]?.[0]).toBe('function');
+        expect(order(umami.identify)).toBeLessThan(order(umami.track));
+    });
+
+    it('should release events at once when the first page does not wait for the identity', async () => {
+        // Arrange
+        const mod = await loadFreshModule();
+        mod.initUmami();
+        const umami = loadTrackerScript();
+        mod.trackEvent('admin_tour_shown', { role: null, source: null, tour_id: 'welcome' });
+        expect(umami.track).not.toHaveBeenCalled();
+
+        // Act
+        mod.trackPageview({
+            url: `${ORIGIN}/auth/change-password`,
+            title: 'x',
+            awaitIdentity: false
+        });
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(2);
+    });
+
+    it('should release a queued event after the timeout and leave no timer', async () => {
+        // Arrange
+        vi.useFakeTimers();
+        const mod = await loadFreshModule();
+        mod.initUmami();
+        const umami = loadTrackerScript();
+        mod.trackEvent('admin_tour_shown', { role: null, source: null, tour_id: 'welcome' });
+        expect(umami.track).not.toHaveBeenCalled();
+
+        // Act
+        vi.advanceTimersByTime(mod.FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS);
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(1);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('should send events at once once the identity settled', async () => {
+        // Arrange
+        const mod = await loadFreshModule();
+        mod.initUmami();
+        const umami = loadTrackerScript();
+        mod.identifyUser('staff-1');
+
+        // Act
+        mod.trackEvent('admin_tour_shown', { role: null, source: null, tour_id: 'welcome' });
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(1);
     });
 });

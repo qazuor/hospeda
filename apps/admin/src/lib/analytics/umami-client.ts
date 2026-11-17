@@ -35,7 +35,8 @@
  * identify sent (or skipped), `markVisitorAnonymous`, or
  * {@link FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS} elapsed (then it goes out
  * anonymously and the token guard still applies). Later pageviews are not
- * held; one counted meanwhile queues behind the first. `data-auto-pageview`,
+ * held; one counted meanwhile queues behind the first. Custom events issued
+ * before the identity settles wait in the same queue (see `trackEvent`). `data-auto-pageview`,
  * not `data-auto-track`: with auto-track off the tracker stops following
  * `pushState`, so every custom event would carry the landing page URL.
  *
@@ -96,11 +97,14 @@ export interface TrackPageviewInput {
 let identitySettled = false;
 /** Whether this document already counted its first page. */
 let firstPageCounted = false;
-/** Pageviews waiting for the identity or the tracker script, in page order. */
-let pendingPageviews: TrackPageviewInput[] = [];
-/** Bounded wait of the first pageview, while one is pending. */
+/**
+ * Pageviews and custom events waiting for the identity (or, for pageviews, the
+ * tracker script), in the order they were issued.
+ */
+let pendingSends: Array<(tracker: UmamiTracker) => void> = [];
+/** Bounded wait for the identity, while one is pending. */
 let firstPageviewTimer: ReturnType<typeof setTimeout> | null = null;
-/** The tracker script failed to load (ad blocker): pageviews are dropped. */
+/** The tracker script failed to load (ad blocker): queued sends are dropped. */
 let trackerFailed = false;
 
 function getTracker(): UmamiTracker | undefined {
@@ -130,14 +134,23 @@ function sendPageview({ url, title, referrer }: TrackPageviewInput, tracker: Uma
     }
 }
 
-/** Sends every queued pageview once the identity settled and the tracker is present. */
+/** Sends everything queued once the identity settled and the tracker is present. */
 function flushPageviews(): void {
     if (!identitySettled) return;
     const tracker = getTracker();
     if (!tracker) return;
-    const queue = pendingPageviews;
-    pendingPageviews = [];
-    for (const pageview of queue) sendPageview(pageview, tracker);
+    const queue = pendingSends;
+    pendingSends = [];
+    for (const send of queue) send(tracker);
+}
+
+/** Starts the bounded wait for the identity, once. */
+function armIdentityTimeout(): void {
+    if (identitySettled || firstPageviewTimer !== null) return;
+    firstPageviewTimer = setTimeout(() => {
+        firstPageviewTimer = null;
+        settleIdentity();
+    }, FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS);
 }
 
 /** The identity is settled for this document: releases the held pageviews. */
@@ -153,7 +166,7 @@ function settleIdentity(): void {
 /** The tracker script could not load: nothing will ever be sent. */
 function dropPageviews(): void {
     trackerFailed = true;
-    pendingPageviews = [];
+    pendingSends = [];
     if (firstPageviewTimer !== null) {
         clearTimeout(firstPageviewTimer);
         firstPageviewTimer = null;
@@ -278,7 +291,15 @@ export function isUmamiInitialized(): boolean {
 /**
  * Capture a catalog analytics event. Validated by the shared analytics
  * package; invalid events are dropped, never thrown. No-op on the server,
- * before init, or while the tracker script has not loaded.
+ * before init, or once the tracker script failed to load.
+ *
+ * Until the identity of the document settles (see the file header) the event
+ * waits in the same queue as the held first pageview, in issue order: an
+ * on-mount event (a tour or What's New modal shown) can fire before the router
+ * counted the page and before `AuthProvider` identified, and its answer would
+ * hand the tracker the token that makes the identify skip. The wait is bounded
+ * by {@link FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS}. After that it is sent at once
+ * (and dropped when the tracker has not loaded, as before).
  *
  * @param name - Catalog event name.
  * @param props - Event properties for that event.
@@ -288,8 +309,13 @@ export function trackEvent<TName extends AnalyticsEventName>(
     props: AnalyticsEventProperties<TName>
 ): void {
     if (typeof window === 'undefined') return;
-    if (!isInitialized) return;
-    analytics.capture(name, props);
+    if (!isInitialized || trackerFailed) return;
+    if (identitySettled) {
+        analytics.capture(name, props);
+        return;
+    }
+    pendingSends.push(() => analytics.capture(name, props));
+    armIdentityTimeout();
 }
 
 /**
@@ -335,17 +361,14 @@ export function markVisitorAnonymous(): void {
 export function trackPageview(input: TrackPageviewInput): void {
     if (typeof window === 'undefined') return;
     if (!isInitialized || trackerFailed) return;
-    pendingPageviews.push(input);
+    pendingSends.push((tracker) => sendPageview(input, tracker));
     if (!firstPageCounted) {
         firstPageCounted = true;
         if (!input.awaitIdentity) {
-            identitySettled = true;
-        } else if (!identitySettled) {
-            firstPageviewTimer = setTimeout(() => {
-                firstPageviewTimer = null;
-                settleIdentity();
-            }, FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS);
+            settleIdentity();
+            return;
         }
+        armIdentityTimeout();
     }
     flushPageviews();
 }
