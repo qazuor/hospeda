@@ -50,7 +50,7 @@ export const listingModerationModel = {
                     sql`EXISTS (SELECT 1 FROM ${sql.identifier(tableName)} WHERE id = ${args.listingId}::uuid)`
                 )
             )
-            .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id))
+            .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.seq))
             .limit(1);
         const event = rows[0];
         if (!event) return null;

@@ -97,11 +97,13 @@ describe('TEST:U2:11 domain_event after db:migrate from empty', () => {
             'event_type',
             'id',
             'occurred_at',
-            'reason'
+            'reason',
+            'seq'
         ]);
         expect(byName.deleted_at).toBeUndefined();
         expect(byName.updated_at).toBeUndefined();
         expect(byName.occurred_at?.data_type).toBe('timestamp with time zone');
+        expect(byName.seq).toMatchObject({ data_type: 'bigint', is_nullable: 'NO' });
         expect(byName.correlation_id).toMatchObject({ data_type: 'uuid', is_nullable: 'NO' });
         expect(byName.actor_id).toMatchObject({ data_type: 'uuid', is_nullable: 'YES' });
         expect(byName.changes?.data_type).toBe('jsonb');
@@ -128,12 +130,14 @@ describe('TEST:U2:11 domain_event after db:migrate from empty', () => {
             { conname: 'domain_event_changes_array_check', contype: 'c' },
             { conname: 'domain_event_event_type_check', contype: 'c' },
             { conname: 'domain_event_person_actor_check', contype: 'c' },
-            { conname: 'domain_event_pkey', contype: 'p' }
+            { conname: 'domain_event_pkey', contype: 'p' },
+            { conname: 'domain_event_seq_unique', contype: 'u' }
         ]);
         expect(indexes.rows.map((r) => r.indexname)).toEqual([
             'domain_event_correlation_idx',
             'domain_event_entity_idx',
             'domain_event_pkey',
+            'domain_event_seq_unique',
             'domain_event_type_idx'
         ]);
         expect(triggers.rows.map((r) => r.tgname)).toEqual(['domain_event_append_only']);
