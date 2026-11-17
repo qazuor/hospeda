@@ -139,6 +139,7 @@ function buildService(input: {
 
     const model = {
         ...createModelMock(['findForHost']),
+        hydrateCategories: vi.fn().mockResolvedValue(new Map()),
         findById: vi.fn().mockResolvedValue(existing),
         // The `_beforeUpdate` collision check: the new slug is free.
         findOne: vi.fn().mockResolvedValue(null),

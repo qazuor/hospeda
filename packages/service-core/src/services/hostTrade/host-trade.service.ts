@@ -38,12 +38,13 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
-import { withServiceTransaction } from '../../utils/transaction';
 import { QrCodeService } from '../qr-code/qr-code.service';
 import {
-    assertCategoryIdsAssignable,
-    CATEGORY_IDS_HOOK_KEY,
-    HOST_TRADE_ID_HOOK_KEY
+    attachCategories,
+    HOST_TRADE_ID_HOOK_KEY,
+    persistStagedCategoryIds,
+    runInTransaction,
+    stageCategoryIds
 } from './host-trade.categories';
 import {
     checkCanAdminListHostTrades,
@@ -411,73 +412,23 @@ export class HostTradeService extends BaseCrudService<
 
     // --- Category writes (HOS-919) ---
 
-    /**
-     * Validates the requested `categoryIds` and parks them in `hookState` so
-     * the `_after*` hook can write the join rows in the same transaction as the
-     * row. No-op when the key is absent: an update without `categoryIds`
-     * leaves the provider's set untouched.
-     */
-    private async stageCategoryIds(input: {
+    private stageCategoryIds(input: {
         readonly categoryIds: readonly string[] | undefined;
         readonly hostTradeId: string | undefined;
         readonly ctx: ServiceContext;
     }): Promise<void> {
-        const { categoryIds, hostTradeId, ctx } = input;
-        if (categoryIds === undefined) return;
-
-        await assertCategoryIdsAssignable({
-            categoryIds,
-            hostTradeId,
+        return stageCategoryIds({
+            ...input,
             categoryModel: this.categoryModel,
-            hostTradeModel: this.model,
-            tx: ctx?.tx
+            hostTradeModel: this.model
         });
-        ctx.hookState = { ...ctx.hookState, [CATEGORY_IDS_HOOK_KEY]: [...categoryIds] };
     }
 
-    /**
-     * Replaces the provider's category set with the ids staged by `_beforeX`.
-     * Runs on the caller's transaction, so a failure rolls the row back too.
-     * Does nothing when no ids were staged.
-     */
-    private async persistStagedCategoryIds(input: {
+    private persistStagedCategoryIds(input: {
         readonly hostTradeId: string;
         readonly ctx: ServiceContext;
     }): Promise<void> {
-        const { hostTradeId, ctx } = input;
-        const staged = ctx?.hookState?.[CATEGORY_IDS_HOOK_KEY];
-        if (!Array.isArray(staged)) return;
-        if (!ctx.tx) {
-            throw new ServiceError(
-                ServiceErrorCode.INTERNAL_ERROR,
-                'Category writes require a transaction'
-            );
-        }
-        await this.model.replaceCategories({
-            hostTradeId,
-            categoryIds: staged as string[],
-            tx: ctx.tx
-        });
-    }
-
-    /**
-     * Runs a create/update inside ONE transaction (the caller's when `ctx.tx`
-     * is set, a new one otherwise). Once a transaction is present the base
-     * write methods RE-THROW their errors, which is what rolls the row back
-     * together with a failed category write; on the transaction this method
-     * opened, that rejection is converted back into the usual result.
-     */
-    private async runInTransaction<T>(
-        ctx: ServiceContext | undefined,
-        run: (txCtx: ServiceContext) => Promise<ServiceOutput<T>>
-    ): Promise<ServiceOutput<T>> {
-        if (ctx?.tx) return run(ctx);
-        try {
-            return await withServiceTransaction(run, ctx);
-        } catch (error) {
-            if (error instanceof ServiceError) return { error };
-            throw error;
-        }
+        return persistStagedCategoryIds({ ...input, hostTradeModel: this.model });
     }
 
     /**
@@ -492,7 +443,7 @@ export class HostTradeService extends BaseCrudService<
         data: z.infer<typeof CreateHostTradeSchema>,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<HostTrade>> {
-        return this.runInTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
+        return runInTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
     }
 
     /**
@@ -510,7 +461,7 @@ export class HostTradeService extends BaseCrudService<
         data: z.infer<typeof UpdateHostTradeSchema>,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<HostTrade>> {
-        return this.runInTransaction(ctx, (txCtx) =>
+        return runInTransaction(ctx, (txCtx) =>
             super.update(actor, id, data, {
                 ...txCtx,
                 hookState: { ...txCtx.hookState, [HOST_TRADE_ID_HOOK_KEY]: id }
@@ -525,7 +476,16 @@ export class HostTradeService extends BaseCrudService<
         ctx: ServiceContext
     ): Promise<HostTrade> {
         await this.persistStagedCategoryIds({ hostTradeId: entity.id, ctx });
-        return entity;
+        return this.attachCategoriesToOne(entity, ctx);
+    }
+
+    /** Hydrates the catalog refs: a single-entity read must not return the schema default `[]`. */
+    protected override async _afterGetByField(
+        entity: HostTrade | null,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTrade | null> {
+        return this.attachCategoriesToOne(entity, ctx);
     }
 
     /**
@@ -573,6 +533,7 @@ export class HostTradeService extends BaseCrudService<
         // Outside the try below on purpose: a failed category write must
         // surface (and roll the transaction back), unlike the QR repoint.
         await this.persistStagedCategoryIds({ hostTradeId: entity.id, ctx });
+        const hydrated = await this.attachCategoriesToOne(entity, ctx);
 
         try {
             const found = await this.qrCodeService.findLiveCodeForEntity({
@@ -587,7 +548,7 @@ export class HostTradeService extends BaseCrudService<
             // Codes are created when somebody first asks to SEE one, so minting
             // here would burn a permanent slug during an unrelated edit.
             const code = found.data;
-            if (!code) return entity;
+            if (!code) return hydrated;
 
             const siteUrl = resolveSiteUrlFromTargetUrl({ targetUrl: code.targetUrl });
             if (!siteUrl) {
@@ -595,7 +556,7 @@ export class HostTradeService extends BaseCrudService<
                     { hostTradeId: entity.id, qrCodeId: code.id },
                     'QR target URL is not a parseable absolute URL; cannot repoint it'
                 );
-                return entity;
+                return hydrated;
             }
 
             await this.qrCodeService.setEntityTargetUrl({
@@ -616,7 +577,7 @@ export class HostTradeService extends BaseCrudService<
             );
         }
 
-        return entity;
+        return hydrated;
     }
 
     // --- Search / count ---
@@ -691,20 +652,21 @@ export class HostTradeService extends BaseCrudService<
         return [this.model.buildCategoriesFilterCondition({ categorySlugs: categories })];
     }
 
-    /**
-     * Fills `categories` on a page of providers with ONE batched model call
-     * (no N+1). A provider without categories gets `[]`.
-     */
-    private async attachCategories(
+    private attachCategories(
         items: HostTrade[],
         ctx: ServiceContext | undefined
     ): Promise<HostTrade[]> {
-        if (items.length === 0) return items;
-        const byProvider = await this.model.hydrateCategories({
-            hostTradeIds: items.map((item) => item.id),
-            tx: ctx?.tx
-        });
-        return items.map((item) => ({ ...item, categories: byProvider.get(item.id) ?? [] }));
+        return attachCategories({ items, ctx, hostTradeModel: this.model });
+    }
+
+    /** Single-entity variant of {@link attachCategories}: one query, `null` stays `null`. */
+    private async attachCategoriesToOne<T extends HostTrade | null>(
+        entity: T,
+        ctx: ServiceContext | undefined
+    ): Promise<T> {
+        if (!entity) return entity;
+        const [hydrated] = await this.attachCategories([entity], ctx);
+        return (hydrated ?? entity) as T;
     }
 
     /**
@@ -886,7 +848,7 @@ export class HostTradeService extends BaseCrudService<
 
                 const trade = await this.model.findOne({ [OWNER_SCOPE_KEY]: ownerUserId }, ctx?.tx);
 
-                return { trade: trade ?? null };
+                return { trade: await this.attachCategoriesToOne(trade ?? null, ctx) };
             }
         });
     }
@@ -980,7 +942,7 @@ export class HostTradeService extends BaseCrudService<
                     );
                 }
 
-                return { trade: updated };
+                return { trade: await this.attachCategoriesToOne(updated, ctx) };
             }
         });
     }
