@@ -320,7 +320,7 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
     const { data, warnings } = flattenForUmami({ properties: input.properties });
     const userId = isRealUserId(input.distinctId) ? input.distinctId : undefined;
     if (userId !== undefined) {
-        data['user_id'] = truncate({ value: input.distinctId, max: UMAMI_LIMITS.stringValue });
+        data['user_id'] = truncate({ value: userId, max: UMAMI_LIMITS.stringValue });
     }
     if (input.uuid !== undefined) {
         data['event_uuid'] = truncate({ value: input.uuid, max: UMAMI_LIMITS.stringValue });
