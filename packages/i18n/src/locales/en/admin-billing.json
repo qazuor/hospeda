@@ -2018,15 +2018,24 @@
             "success": {
                 "closed": "Refund recorded: request {{refundId}} is now executed ({{status}}).",
                 "separate": "Refund recorded separately as {{refundId}} ({{status}}). Request {{requestedRefundId}} stays open."
+            },
+            "failed": {
+                "title": "Record the rejected refund",
+                "intro": "Request {{refundId}} was rejected and will not reopen: this settlement creates a new refund row.",
+                "success": "Refund recorded as {{refundId}} ({{status}}), answering rejected request {{failedRefundId}}."
             }
         },
         "openRefunds": {
             "title": "Open refund requests",
-            "intro": "Refund requests still open on this subscription's payments. Refund each one from the Mercado Pago panel and record it here with that refund's reference.",
+            "intro": "Open refund requests and Mercado Pago rejections on this subscription's payments. Refund each one from the Mercado Pago panel and record it here with that refund's reference.",
             "loading": "Looking for open refund requests…",
             "empty": "This subscription has no open refund requests.",
             "loadError": "We could not read the open refund requests. Reload the page to try again.",
-            "noPermission": "Another team member with the permissions to inspect subscriptions and record out-of-flow settlements reviews and records these refund requests."
+            "noPermission": "Another team member with the permissions to inspect subscriptions and record out-of-flow settlements reviews and records these refund requests.",
+            "failed": {
+                "notice": "Mercado Pago rejected refund {{refundId}} on {{at}}: {{message}}. Detail: {{detail}}. It will not retry automatically: refund it from the Mercado Pago panel or by bank transfer, then record it here.",
+                "noDetail": "no additional detail"
+            }
         }
     },
     "reconciliationMarks": {

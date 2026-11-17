@@ -19,7 +19,7 @@ export interface ExternalRefundSettlementPayment {
 }
 
 /** Props for {@link ExternalRefundSettlementForm}. RO-RO. */
-export interface ExternalRefundSettlementFormProps {
+interface ExternalRefundSettlementFormBaseProps {
     /** Suffix of the element ids (`action14-payment-<idSuffix>` ...). */
     readonly idSuffix: string;
     /** `data-testid` of the section; the confirmation is `<testId>-confirmation`. */
@@ -28,12 +28,28 @@ export interface ExternalRefundSettlementFormProps {
     readonly dataReason?: string;
     readonly payments: readonly ExternalRefundSettlementPayment[];
     readonly defaultChannel: 'BANK_TRANSFER' | 'PROVIDER_PANEL';
-    /** The open RF1 this settlement closes (AC:B5:41); absent on the mark path. */
-    readonly requestedRefund?: { readonly refundId: string; readonly amountMinor: number };
     readonly describeSuccess: (input: {
         readonly response: ExternalRefundSettlementResponse;
     }) => string;
 }
+
+/** Exactly one settlement reference kind may be supplied. */
+export type ExternalRefundSettlementFormProps = ExternalRefundSettlementFormBaseProps &
+    (
+        | {
+              /** The open RF1 this settlement closes (AC:B5:41); absent on the mark path. */
+              readonly requestedRefund?: {
+                  readonly refundId: string;
+                  readonly amountMinor: number;
+              };
+              readonly failedRefund?: never;
+          }
+        | {
+              readonly requestedRefund?: never;
+              /** Provider-rejected refund answered by a new RF4 row. */
+              readonly failedRefund: { readonly refundId: string };
+          }
+    );
 
 /** Renders the shared action 14 refund settlement form. */
 export function ExternalRefundSettlementForm({
@@ -43,6 +59,7 @@ export function ExternalRefundSettlementForm({
     payments,
     defaultChannel,
     requestedRefund,
+    failedRefund,
     describeSuccess
 }: ExternalRefundSettlementFormProps) {
     const { t } = useTranslations();
@@ -75,6 +92,7 @@ export function ExternalRefundSettlementForm({
         reason: source === 'PAYMENT' ? 'OUT_OF_FLOW_REFUND' : 'MANUAL_PAYMENT_REFUND',
         ...(note.trim() ? { note: note.trim() } : {}),
         ...(requestedRefund ? { refundId: requestedRefund.refundId } : {}),
+        ...(failedRefund ? { refundId: failedRefund.refundId } : {}),
         ...(differs && choice ? { onAmountMismatch: choice } : {})
     };
     const valid = ExternalRefundSettlementRequestSchema.safeParse(body).success;

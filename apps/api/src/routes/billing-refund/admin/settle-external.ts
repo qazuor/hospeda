@@ -123,6 +123,7 @@ export const adminSettleExternalRefundRoute = createAdminRoute({
                     reference: input.reference,
                     reason: input.reason,
                     closedRequestedRefundId: result.closedRequestedRefundId,
+                    settledFailedRefundId: result.settledFailedRefundId,
                     paymentOutcome: result.paymentOutcome,
                     coverageReleased: result.coverageReleased,
                     ...(input.note ? { note: input.note } : {})

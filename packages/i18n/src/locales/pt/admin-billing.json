@@ -2018,15 +2018,24 @@
             "success": {
                 "closed": "Devolução registrada: o pedido {{refundId}} ficou executado ({{status}}).",
                 "separate": "Devolução registrada à parte como {{refundId}} ({{status}}). O pedido {{requestedRefundId}} continua aberto."
+            },
+            "failed": {
+                "title": "Registrar a devolução rejeitada",
+                "intro": "O pedido {{refundId}} foi rejeitado e não será reaberto: o registro cria uma nova devolução.",
+                "success": "Devolução registrada como {{refundId}} ({{status}}), em resposta ao pedido rejeitado {{failedRefundId}}."
             }
         },
         "openRefunds": {
             "title": "Pedidos de devolução abertos",
-            "intro": "Pedidos de devolução ainda abertos sobre os pagamentos desta assinatura. Devolva cada um pelo painel do Mercado Pago e registre-o aqui com a referência dessa devolução.",
+            "intro": "Pedidos de devolução abertos e rejeições do Mercado Pago nos pagamentos desta assinatura. Devolva cada um pelo painel do Mercado Pago e registre-o aqui com a referência dessa devolução.",
             "loading": "Buscando pedidos de devolução abertos…",
             "empty": "Esta assinatura não tem pedidos de devolução abertos.",
             "loadError": "Não conseguimos ler os pedidos de devolução abertos. Recarregue a página para tentar de novo.",
-            "noPermission": "Outra pessoa da equipe com as permissões para inspecionar assinaturas e registrar o que aconteceu por fora vê e registra estes pedidos de devolução."
+            "noPermission": "Outra pessoa da equipe com as permissões para inspecionar assinaturas e registrar o que aconteceu por fora vê e registra estes pedidos de devolução.",
+            "failed": {
+                "notice": "O Mercado Pago rejeitou a devolução {{refundId}} em {{at}}: {{message}}. Detalhe: {{detail}}. Ela não será tentada novamente automaticamente: devolva pelo painel do Mercado Pago ou por transferência e registre aqui.",
+                "noDetail": "sem detalhes adicionais"
+            }
         }
     },
     "reconciliationMarks": {
