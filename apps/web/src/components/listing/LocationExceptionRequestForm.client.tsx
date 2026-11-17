@@ -66,10 +66,12 @@ export function LocationExceptionRequestForm({
 
     const busy = form.phase === 'submitting';
     return (
-        <form
+        // Not a <form>: this component is mounted inside the listing editor's own
+        // <form>, and nested forms are invalid HTML (the browser drops the inner one
+        // and its submit button submits the OUTER editor form). The textarea is
+        // multi-line, so Enter never submitted anyway.
+        <div
             className={styles.form}
-            onSubmit={form.onSubmit}
-            noValidate
             data-testid="location-exception-form"
         >
             <p className={styles.title}>
@@ -139,8 +141,9 @@ export function LocationExceptionRequestForm({
             )}
             <div className={styles.actions}>
                 <button
-                    type="submit"
+                    type="button"
                     className={`${styles.button} ${styles.primary}`}
+                    onClick={form.onSubmit}
                     disabled={busy}
                     aria-busy={busy}
                 >
@@ -159,6 +162,6 @@ export function LocationExceptionRequestForm({
                     </button>
                 )}
             </div>
-        </form>
+        </div>
     );
 }
