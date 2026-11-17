@@ -1,6 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { setDb } from '../../src/client.ts';
 import { DomainEventModel } from '../../src/models/domain-event/domain-event.model.ts';
@@ -55,9 +56,13 @@ describe('TEST:HOS-2314:c5 domain_event total write order', () => {
         );
         expect(physicalOrder.rows.map((row) => row.reason)).toEqual(['X', 'Y', 'Z']);
 
-        expect(
-            (await events.findByEntity({ entityType: 'test', entityId })).map((row) => row.reason)
-        ).toEqual(['Y', 'Z', 'X']);
+        const entityEvents = await getTestDb().transaction(async (tx) => {
+            await tx.execute(sql`SET LOCAL enable_indexscan = off`);
+            await tx.execute(sql`SET LOCAL enable_bitmapscan = off`);
+            await tx.execute(sql`SET LOCAL enable_indexonlyscan = off`);
+            return events.findByEntity({ entityType: 'test', entityId, tx });
+        });
+        expect(entityEvents.map((row) => row.reason)).toEqual(['Y', 'Z', 'X']);
         expect(
             (await events.findByCorrelationId({ correlationId })).map((row) => row.reason)
         ).toEqual(['Y', 'Z', 'X']);

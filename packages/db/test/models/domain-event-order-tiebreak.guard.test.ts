@@ -53,18 +53,24 @@ describe('domain_event chronological ordering has seq tie-breaks', () => {
 
         for (const root of roots) {
             for (const path of sourceFiles(root)) {
+                if (relative(REPO_ROOT, path).startsWith('packages/db/src/migrations/')) continue;
                 const source = readFileSync(path, 'utf8');
                 const name = relative(REPO_ROOT, path).replaceAll('\\', '/');
-                const callPattern = /\.orderBy\s*\(/g;
+                const callPattern = /(\.orderBy|selectDistinctOn)\s*\(/g;
                 for (const match of source.matchAll(callPattern)) {
                     const openParen = (match.index ?? 0) + match[0].lastIndexOf('(');
-                    const clause = source.slice(openParen, endOfCall(source, openParen));
+                    const call = source.slice(openParen, endOfCall(source, openParen));
+                    const clause =
+                        match[1] === 'selectDistinctOn'
+                            ? (call.slice(1).split(',', 1)[0] ?? '')
+                            : call;
                     if (
                         clause.includes('domainEvent.occurredAt') &&
                         !clause.includes('domainEvent.seq')
                     ) {
+                        const line = source.slice(0, match.index ?? 0).split('\n').length;
                         violations.push(
-                            `${name}: ${match[1]} domainEvent.occurredAt without domainEvent.seq`
+                            `${name}:${line}: ${match[1]} domainEvent.occurredAt without domainEvent.seq`
                         );
                     }
                 }

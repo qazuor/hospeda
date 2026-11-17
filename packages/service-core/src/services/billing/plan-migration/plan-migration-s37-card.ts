@@ -103,7 +103,8 @@ export async function applyS37ClosureInTx(input: {
         .where(eq(planMigrationSubscriptions.id, input.scopeId))
         .limit(1)
         .for('update', { of: [planMigrationSubscriptions, subscriptions] });
-    if (!row?.nextChargeAt || !row.billingOptionId) return { kind: 'ROW_LEFT' };
+    if (!row) return { kind: 'ROW_LEFT' };
+    if (!row.nextChargeAt || !row.billingOptionId) return { kind: 'ROW_LEFT' };
     if (row.scopeStatus !== 'PENDIENTE' || migration.cancelledAt !== null)
         return { kind: 'ROW_LEFT' };
 
