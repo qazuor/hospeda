@@ -54,6 +54,9 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
+/** The generic text the mocked response config serves for a masked 5xx (HOS-2296). */
+const GENERIC_5XX_MESSAGE = 'Internal server error';
+
 describe('Response Middleware', () => {
     let app: Hono;
 
@@ -211,7 +214,8 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('NOT_IMPLEMENTED');
-            expect(data.error.message).toBe('Not implemented');
+            // HOS-2296: a 5xx never echoes the real message (the mocked response config's generic text).
+            expect(data.error.message).toBe(GENERIC_5XX_MESSAGE);
         });
 
         it('should format LIMIT_REACHED ServiceError with details preserved (regression: SPEC-143 Finding #10)', async () => {
@@ -298,7 +302,8 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('PROVIDER_ERROR');
-            expect(data.error.message).toBe('Payment provider returned an unexpected error');
+            // HOS-2296: a 5xx never echoes the real message (the mocked response config's generic text).
+            expect(data.error.message).toBe(GENERIC_5XX_MESSAGE);
         });
 
         it('should map PROVIDER_RATE_LIMITED to HTTP 503 with correct code', async () => {
@@ -319,7 +324,8 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('PROVIDER_RATE_LIMITED');
-            expect(data.error.message).toBe('Payment provider is throttling requests');
+            // HOS-2296: a 5xx never echoes the real message (the mocked response config's generic text).
+            expect(data.error.message).toBe(GENERIC_5XX_MESSAGE);
         });
 
         it('should emit Retry-After header for PROVIDER_RATE_LIMITED with retryAfter detail (SPEC-149)', async () => {
@@ -397,7 +403,8 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('PROVIDER_TIMEOUT');
-            expect(data.error.message).toBe('Payment provider did not respond in time');
+            // HOS-2296: a 5xx never echoes the real message (the mocked response config's generic text).
+            expect(data.error.message).toBe(GENERIC_5XX_MESSAGE);
         });
 
         it('should map PLAN_DISABLED to HTTP 410 with correct code (SPEC-148 T-003)', async () => {
@@ -613,7 +620,8 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
-            expect(data.error.message).toBe('Database temporarily unavailable — please retry');
+            // HOS-2296: a 5xx never echoes the real message (the mocked response config's generic text).
+            expect(data.error.message).toBe(GENERIC_5XX_MESSAGE);
         });
 
         it('should map postgres max_connections message to HTTP 503 with SERVICE_UNAVAILABLE code', async () => {
@@ -630,7 +638,8 @@ describe('Response Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('SERVICE_UNAVAILABLE');
-            expect(data.error.message).toBe('Database temporarily unavailable — please retry');
+            // HOS-2296: a 5xx never echoes the real message (the mocked response config's generic text).
+            expect(data.error.message).toBe(GENERIC_5XX_MESSAGE);
         });
 
         it('should map "connection timeout" message to HTTP 503', async () => {

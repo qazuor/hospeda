@@ -27,6 +27,7 @@ import { resolveErrorCodeForStatus } from './http-error-codes';
 import { resolveHttpStatusLogLevel } from './http-status-log-level';
 import { apiLogger } from './logger';
 import { RefinedBodyValidationError } from './refined-body';
+import { maskServerErrorPayload } from './server-error-masking';
 
 /**
  * Interface for pagination metadata
@@ -695,9 +696,12 @@ export const handleRouteError = (error: unknown, c: Context) => {
             }
         }
 
-        return createErrorResponse(
-            {
-                code: error.code,
+        // HOS-2296: whatever ends up >= 500 never echoes the service's own
+        // message, details or reason (the real error was logged above).
+        const safe = maskServerErrorPayload({
+            statusCode,
+            debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
+            payload: {
                 message: error.message,
                 details:
                     env.HOSPEDA_API_DEBUG_ERRORS ||
@@ -708,9 +712,15 @@ export const handleRouteError = (error: unknown, c: Context) => {
                     error.reason === BUSINESS_LINES_INVALID_REASON ||
                     error.reason === PARTNER_APPLICATION_WAIT_ACTIVE
                         ? error.details
-                        : undefined,
-                reason: error.reason
-            },
+                        : undefined
+            }
+        });
+
+        // `reason` is a machine identifier the web app branches on even for a
+        // 5xx (HOS-1968 transient provider reasons, CREATION_NOT_APPLIED), and
+        // `createErrorResponse` documents it as unconditional: it is not masked.
+        return createErrorResponse(
+            { code: error.code, ...safe, reason: error.reason },
             c,
             statusCode,
             retryAfterHeaders
@@ -746,11 +756,16 @@ export const handleRouteError = (error: unknown, c: Context) => {
         // customer is the wrong remedy, i.e. the very bug being fixed.
         const entitlementCause = readEntitlementCause(error);
 
+        const safe = maskServerErrorPayload({
+            statusCode,
+            debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
+            payload: { message, details: entitlementCause.details }
+        });
+
         return createErrorResponse(
             {
                 code,
-                message,
-                details: entitlementCause.details,
+                ...safe,
                 ...(entitlementCause.reason ? { reason: entitlementCause.reason } : {})
             },
             c,
@@ -892,15 +907,15 @@ export const handleRouteError = (error: unknown, c: Context) => {
             };
 
             const statusCode = statusCodeMap[code] ?? 500;
-            return createErrorResponse(
-                {
-                    code,
+            const safe = maskServerErrorPayload({
+                statusCode,
+                debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
+                payload: {
                     message,
                     details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
-                },
-                c,
-                statusCode
-            );
+                }
+            });
+            return createErrorResponse({ code, ...safe }, c, statusCode);
         }
 
         // Check for foreign key constraint violations (client errors, not server errors)

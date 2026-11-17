@@ -247,6 +247,21 @@ resolve the code through the single table in
 [`utils/http-error-codes.ts`](../src/utils/http-error-codes.ts); an unlisted
 status falls back by class, never to `INTERNAL_ERROR` for a 4xx.
 
+### R1b — a 5xx never echoes the error's own message (HOS-2296)
+
+Whatever status a formatter computes at 500 or above answers the generic text
+(`An unexpected error occurred` from `handleRouteError`, the configured
+`API_RESPONSE_ERROR_MESSAGE` from the global handler) with no `details`. The
+`code` stays. The real message is in the log: both formatters log the original
+error before responding. The rule keys on the COMPUTED status, never on a list
+of codes, so a code added to either status table is covered
+([`utils/server-error-masking.ts`](../src/utils/server-error-masking.ts)). A
+status below 500 keeps its message and details untouched (HOS-700).
+`HOSPEDA_API_DEBUG_ERRORS` lifts the masking in any environment where it may be
+set; the env schema refuses it in production. `reason` is outside this rule:
+`handleRouteError` keeps it (the web app branches on it for some 502/503), the
+global handler masks it, as before.
+
 ### R2 — 401 before 403, always
 
 A permission guard never runs ahead of the session guard. 401 means "I don't
