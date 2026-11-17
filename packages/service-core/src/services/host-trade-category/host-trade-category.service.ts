@@ -25,6 +25,7 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../../types';
+import { runInTransaction } from '../hostTrade/host-trade.categories';
 import {
     checkCanCreateHostTradeCatalog,
     checkCanDeleteHostTradeCatalog,
@@ -196,7 +197,25 @@ export class HostTradeCategoryService extends BaseCrudService<
     }
 
     /**
+     * Soft-deletes a category inside ONE transaction (the caller's when `ctx.tx`
+     * is set), so the in-use check in {@link _beforeSoftDelete} and the delete
+     * itself cannot be interleaved with a concurrent link insert.
+     */
+    public override async softDelete(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
+        return runInTransaction(ctx, (txCtx) => super.softDelete(actor, id, txCtx));
+    }
+
+    /**
      * Blocks deleting a category that a live provider still uses (AC-3.4).
+     *
+     * Locks the category row first (`SELECT ... FOR UPDATE`): a concurrent
+     * insert into `r_host_trade_category` takes a KEY SHARE lock on that row
+     * through its foreign key and therefore waits until this transaction ends,
+     * after which it fails the FK because the category is deleted.
      *
      * @throws {ServiceError} `CATEGORY_IN_USE` when a non-deleted provider links it.
      */
@@ -205,6 +224,7 @@ export class HostTradeCategoryService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<string> {
+        await this.model.lockForUpdate(id, ctx?.tx);
         const linked = await this.model.countLinkedHostTrades(id, ctx?.tx);
         if (linked > 0) {
             throw new ServiceError(

@@ -10,6 +10,18 @@ import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
+const TX = { __tx: true };
+const txState = vi.hoisted(() => ({ calls: 0 }));
+
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (fn: (ctx: unknown) => Promise<unknown>, baseCtx?: { hookState?: object }) => {
+            txState.calls += 1;
+            return fn({ ...baseCtx, tx: TX, hookState: baseCtx?.hookState ?? {} });
+        }
+    )
+}));
+
 const groupId = getMockId('hostTradeCategoryGroup', 'group-1');
 const otherGroupId = getMockId('hostTradeCategoryGroup', 'group-2');
 const categoryId = getMockId('hostTradeCategory', 'cat-1');
@@ -75,6 +87,7 @@ describe('HostTradeCategoryService', () => {
             'count',
             'countLinkedHostTrades',
             'findIdsInDeletedGroups',
+            'lockForUpdate',
             'findPublicCatalog',
             'getTable'
         ]);
@@ -82,6 +95,8 @@ describe('HostTradeCategoryService', () => {
         groupModel = createTypedModelMock(HostTradeCategoryGroupModel, ['findById']);
         service = new HostTradeCategoryService({ logger: createLoggerMock() }, model, groupModel);
         vi.clearAllMocks();
+        txState.calls = 0;
+        asMock(model.lockForUpdate).mockResolvedValue(true);
     });
 
     describe('permissions', () => {
@@ -219,7 +234,22 @@ describe('HostTradeCategoryService', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.count).toBe(1);
-            expect(model.countLinkedHostTrades).toHaveBeenCalledWith(categoryId, undefined);
+            expect(model.countLinkedHostTrades).toHaveBeenCalledWith(categoryId, TX);
+        });
+
+        it('should lock the category row, count and delete in ONE transaction', async () => {
+            asMock(model.findById).mockResolvedValue(category);
+            asMock(model.countLinkedHostTrades).mockResolvedValue(0);
+            asMock(model.softDelete).mockResolvedValue(1);
+
+            await service.softDelete(actorDelete, categoryId);
+
+            expect(txState.calls).toBe(1);
+            expect(model.lockForUpdate).toHaveBeenCalledWith(categoryId, TX);
+            expect(asMock(model.softDelete).mock.calls[0]?.[2]).toBe(TX);
+            const lockOrder = asMock(model.lockForUpdate).mock.invocationCallOrder[0] ?? 0;
+            const countOrder = asMock(model.countLinkedHostTrades).mock.invocationCallOrder[0] ?? 0;
+            expect(lockOrder).toBeLessThan(countOrder);
         });
     });
 
