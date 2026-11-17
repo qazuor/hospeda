@@ -66,7 +66,12 @@ const option = (
     current,
     direction: current ? 'NONE' : direction
 });
-function setup(result: object, optionsError?: Error, targetDirection: 'UP' | 'DOWN' = 'DOWN') {
+function setup(
+    result: object,
+    optionsError?: Error,
+    targetDirection: 'UP' | 'DOWN' = 'DOWN',
+    inspectionOverride: object = inspection
+) {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
         if (method === 'POST') return Promise.resolve({ data: { data: result } });
         if (path === planChangeOptionsPath(id) && optionsError) return Promise.reject(optionsError);
@@ -85,7 +90,7 @@ function setup(result: object, optionsError?: Error, targetDirection: 'UP' | 'DO
                     }
                 }
             });
-        return Promise.resolve({ data: { data: inspection } });
+        return Promise.resolve({ data: { data: inspectionOverride } });
     });
     render(
         <QueryClientProvider
@@ -255,6 +260,31 @@ describe('ACC_10 admin plan change screen', () => {
             error = caught;
         }
         expect(isRedirect(error)).toBe(true);
+    });
+    it('does not submit a plan change when the subscription is no longer ACTIVE', async () => {
+        const mutableInspection = {
+            status: 'ACTIVE',
+            billingOptionId: currentId,
+            subject: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', displayName: 'Cliente Uno' },
+            currentPlan: { planName: 'Professional', planSlug: 'owner-pro', cycle: 'monthly' }
+        };
+        setup({ outcome: 'REGRET', amountMinor: 0 }, undefined, 'DOWN', mutableInspection);
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        expect(screen.getByTestId('billing-plan-change-confirmation')).toBeTruthy();
+        // The subscription leaves ACTIVE after the preview rendered but before the
+        // operator confirms: the submit guard must read the current status and stop.
+        mutableInspection.status = 'PAST_DUE';
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        expect(
+            fetchApi.mock.calls.filter(
+                ([input]) => (input as { method?: string }).method === 'POST'
+            )
+        ).toHaveLength(0);
     });
 });
 
