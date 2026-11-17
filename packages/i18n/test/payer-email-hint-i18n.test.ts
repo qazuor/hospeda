@@ -21,6 +21,12 @@ const DECLARED_CLAUSE = {
 
 type Locale = keyof typeof OWNER_PHRASE;
 
+const OWNER_OPENING: Record<Locale, string> = {
+    es: 'Es el correo con el que vas a pagar en Mercado Pago',
+    en: 'It is the email you will pay with on Mercado Pago',
+    pt: 'É o e-mail com o qual você vai pagar no Mercado Pago'
+};
+
 const signupHint: Record<Locale, string> = {
     es: spanishBilling.checkout.signup.payerEmail.hint,
     en: englishBilling.checkout.signup.payerEmail.hint,
@@ -45,6 +51,7 @@ describe('payer email hint copy — HOS-2308', () => {
         ['en', signupHint.en],
         ['pt', signupHint.pt]
     ])('signup checkout hint opens with the owner phrase in %s', (locale, hint) => {
+        expect(hint.startsWith(OWNER_OPENING[locale as Locale])).toBe(true);
         expect(hint).toMatch(OWNER_PHRASE[locale as Locale]);
     });
 
@@ -53,6 +60,7 @@ describe('payer email hint copy — HOS-2308', () => {
         ['en', planChangeHint.en],
         ['pt', planChangeHint.pt]
     ])('plan change hint opens with the owner phrase in %s', (locale, hint) => {
+        expect(hint.startsWith(OWNER_OPENING[locale as Locale])).toBe(true);
         expect(hint).toMatch(OWNER_PHRASE[locale as Locale]);
         expect(hint).toMatch(DECLARED_CLAUSE[locale as Locale]);
     });
@@ -62,6 +70,7 @@ describe('payer email hint copy — HOS-2308', () => {
         ['en', addonHint.en],
         ['pt', addonHint.pt]
     ])('addon purchase hint opens with the owner phrase in %s', (locale, hint) => {
+        expect(hint.startsWith(OWNER_OPENING[locale as Locale])).toBe(true);
         expect(hint).toMatch(OWNER_PHRASE[locale as Locale]);
         expect(hint).toMatch(DECLARED_CLAUSE[locale as Locale]);
     });
