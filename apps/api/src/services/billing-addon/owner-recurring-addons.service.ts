@@ -23,6 +23,7 @@ export async function readOwnerRecurringAddons(input: {
     const rows = await getDb()
         .select({
             addonInstanceId: addonInstances.id,
+            slug: addons.slug,
             name: addons.name,
             chargeKind: addonProducts.chargeKind,
             cycle: addonProducts.cycle,
@@ -76,6 +77,7 @@ export async function readOwnerRecurringAddons(input: {
     return {
         items: rows.map((row) => ({
             addonInstanceId: row.addonInstanceId,
+            slug: row.slug,
             name: row.name,
             chargeKind: 'PERIODICO',
             cycle: row.cycle as 'monthly' | 'quarterly' | 'semiannual' | 'annual',
