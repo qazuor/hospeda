@@ -63,6 +63,12 @@ const VISITOR = { ip: '203.0.113.7', userAgent: 'Mozilla/5.0 (Test) Browser/1.0'
 /** Globals `createServerAnalytics` adds to every validated event (api, production env). */
 const GLOBALS = { app: 'api', environment: 'production' } as const;
 
+/**
+ * IP of the mapper's synthetic visitor (`UMAMI_SYNTHETIC_IP` in
+ * `packages/analytics/src/providers/umami-payload.ts`, not part of the public API).
+ */
+const SYNTHETIC_VISITOR_IP = '127.0.0.1';
+
 interface PostedItem {
     readonly type: string;
     readonly payload: {
@@ -127,7 +133,9 @@ function catalogKeys(name: string): Set<string> | undefined {
 
 /**
  * Flushes the singleton client and returns what reached `/api/batch`, after applying the
- * checks that hold for EVERY event: catalog membership, website id, no `payload.id`.
+ * checks that hold for EVERY event: catalog membership, website id, and `payload.id`
+ * only for a real user WITH a visitor (equal to `data.user_id`); a user event without a
+ * visitor (synthetic identity) and every anonymous/system event carry no `id` (HOS-2119).
  * For events that went through catalog validation, data keys must be a subset of the
  * catalog properties plus the documented globals/identity extras.
  */
@@ -146,7 +154,13 @@ async function drain(
         expect(item.payload.website).toBe(WEB_ID);
         expect(item.payload.hostname).toBe('hospeda.com.ar');
         expect(item.payload.url).toBe(`/_server/${item.payload.name}`);
-        expect(item.payload).not.toHaveProperty('id');
+        const joinsVisitorSession =
+            item.payload.data['user_id'] !== undefined && item.payload.ip !== SYNTHETIC_VISITOR_IP;
+        if (joinsVisitorSession) {
+            expect(item.payload.id).toBe(item.payload.data['user_id']);
+        } else {
+            expect(item.payload).not.toHaveProperty('id');
+        }
         if (options.validated ?? true) {
             const allowed = new Set([
                 ...(catalogKeys(item.payload.name) ?? []),

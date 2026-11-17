@@ -3,10 +3,14 @@
  * (HOS-2119, T-018). No network, no I/O.
  *
  * Rules measured on Umami 3.5.0 (spec HOS-2119 §5.5, §6.2):
- * - `payload.id` (Umami's distinct id) is emitted ONLY for a real user id, so the
- *   event lands in the same per-user session `uuid(…, id)` as that user's browser
+ * - `payload.id` (Umami's distinct id) is emitted ONLY for a real user id WITH a
+ *   visitor context (the request's IP and User-Agent), so a request-scoped event
+ *   lands in the same per-user session `uuid(…, id)` as that user's browser
  *   (revised 2026-11-17: a claimed anonymous fingerprint session leaked across
- *   accounts on a shared device). Anonymous and system events carry no `id`.
+ *   accounts on a shared device). Without a visitor (webhooks, crons) an `id`
+ *   would open a stray per-user session from the api's IP + UA, so those events
+ *   keep the synthetic identity and no `id`; the user stays in `data.user_id`.
+ *   Anonymous, guest and system events carry no `id`.
  * - Umami truncates over-limit values silently (HTTP 200) and rejects the WHOLE
  *   event for numbers with `|n| >= 1e15`, so everything is bounded here.
  */
@@ -64,6 +68,14 @@ function isUmamiDroppedUserAgent(userAgent: string): boolean {
 const ANONYMOUS_DISTINCT_ID_PREFIX = 'anon:';
 /** Distinct id used by events with no user, never forwarded. */
 const SERVER_DISTINCT_ID = 'api-server';
+
+/**
+ * Id of the api's guest actor (anonymous request). Mirrors the literal in
+ * `apps/api/src/utils/actor.ts` (`createGuestActor` / `isGuestActor`): no
+ * shared package exports it and `@repo/analytics` depends on no other
+ * workspace package, so it is defined here once. Keep both in sync.
+ */
+export const UMAMI_GUEST_ACTOR_ID = '00000000-0000-4000-8000-000000000000';
 
 /** Zod schema of one Umami batch item (`type: 'event'`). */
 export const UmamiBatchItemSchema = z.object({
@@ -260,7 +272,10 @@ export interface MapToUmamiBatchItemInput {
     readonly event: string;
     /** Properties already sanitized by `prepareAnalyticsEvent`. */
     readonly properties: Readonly<Record<string, unknown>>;
-    /** Hospeda distinct id; only a real user id is forwarded, as `data.user_id` and `payload.id`. */
+    /**
+     * Hospeda distinct id. A real user id is forwarded as `data.user_id`, and as
+     * `payload.id` only together with a `visitor`.
+     */
     readonly distinctId?: string;
     /** Dedup uuid, forwarded as `data.event_uuid`. */
     readonly uuid?: string;
@@ -289,6 +304,7 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
         distinctId !== undefined &&
         distinctId.length > 0 &&
         distinctId !== SERVER_DISTINCT_ID &&
+        distinctId !== UMAMI_GUEST_ACTOR_ID &&
         !distinctId.startsWith(ANONYMOUS_DISTINCT_ID_PREFIX)
     );
 }
@@ -296,7 +312,8 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
 /**
  * Maps one sanitized analytics event to a validated Umami batch item.
  *
- * Emits `payload.id` only for a real user id (anonymous and system ids never).
+ * Emits `payload.id` only for a real user id with a visitor context (anonymous,
+ * guest and system ids never; a user without a visitor only in `data.user_id`).
  * See the module docs for the measured rules.
  *
  * @param input - Event, sanitized properties and delivery context.
@@ -341,7 +358,11 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
 
     const rawIp = input.visitor?.ip;
     const rawUserAgent = input.visitor?.userAgent;
-    const visitorIp = rawIp !== undefined && !isBlank(rawIp) ? rawIp : UMAMI_SYNTHETIC_IP;
+    const hasVisitorIp = rawIp !== undefined && !isBlank(rawIp);
+    const hasVisitorUserAgent = rawUserAgent !== undefined && !isBlank(rawUserAgent);
+    const visitorIp = hasVisitorIp ? rawIp : UMAMI_SYNTHETIC_IP;
+    // The per-user session only exists when the event joins the visitor's browser.
+    const sessionUserId = hasVisitorIp && hasVisitorUserAgent ? userId : undefined;
     const visitorUserAgent =
         rawUserAgent !== undefined &&
         !isBlank(rawUserAgent) &&
@@ -353,9 +374,9 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
         type: 'event',
         payload: {
             website: input.websiteId,
-            ...(userId === undefined
+            ...(sessionUserId === undefined
                 ? {}
-                : { id: truncate({ value: userId, max: UMAMI_LIMITS.distinctId }) }),
+                : { id: truncate({ value: sessionUserId, max: UMAMI_LIMITS.distinctId }) }),
             hostname: truncate({ value: input.hostname, max: UMAMI_LIMITS.hostname }),
             url: truncate({
                 value:

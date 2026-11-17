@@ -80,8 +80,9 @@ describe('createUmamiServerClient', () => {
                 {
                     type: 'event',
                     payload: {
+                        // No visitor: synthetic identity and no payload.id (no stray
+                        // per-user session from the api IP + UA); user stays in data.
                         website: WEBSITE,
-                        id: 'user-1',
                         hostname: HOSTNAME,
                         url: '/_server/ai_feature_used',
                         name: 'ai_feature_used',
@@ -94,9 +95,15 @@ describe('createUmamiServerClient', () => {
             ]);
         });
 
-        it('should send the user id as payload.id only when the event has one', async () => {
+        it('should send the user id as payload.id only for a real user with a visitor', async () => {
             const { client, fetchMock } = setup();
             const capture = client.capture as (i: unknown) => void;
+            capture({
+                distinctId: 'user-1',
+                event: 'ai_feature_used',
+                properties: {},
+                visitor: { ip: '203.0.113.9', userAgent: 'Mozilla/5.0 Firefox/130.0' }
+            });
             capture({ distinctId: 'user-1', event: 'ai_feature_used', properties: {} });
             capture({ distinctId: 'api-server', event: 'ai_feature_used', properties: {} });
             capture({ distinctId: 'anon:abc', event: 'ai_feature_used', properties: {} });
@@ -109,9 +116,13 @@ describe('createUmamiServerClient', () => {
             await client.flush();
 
             const items = sentBodies(fetchMock)[0] as { payload: Record<string, unknown> }[];
-            expect(items).toHaveLength(4);
+            expect(items).toHaveLength(5);
             expect(items[0]?.payload['id']).toBe('user-1');
             expect((items[0]?.payload['data'] as Record<string, unknown>)['user_id']).toBe(
+                'user-1'
+            );
+            // Same user without a visitor (webhook/cron): user_id kept, no id.
+            expect((items[1]?.payload['data'] as Record<string, unknown>)['user_id']).toBe(
                 'user-1'
             );
             for (const item of items.slice(1)) expect('id' in item.payload).toBe(false);
