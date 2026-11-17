@@ -195,35 +195,35 @@
             "id": "T-006",
             "title": "Generate and review structural migration (expand step)",
             "description": "Run pnpm db:generate to produce the versioned migration in packages/db/src/migrations/ (carril 1): create the 3 tables, add alliance_leads.category_slugs, DROP NOT NULL on host_trades.category. Review the SQL by hand: it MUST NOT drop category, its indexes or the pgEnum (those are release N+1). Commit the migration plus drizzle meta snapshot. Verify the drift guard passes (schema vs migration) and the migration applies on a scratch DB via pnpm db:migrate (never db:fresh-dev inside a worktree).\nACs: AC-3.4 (restrict at DB level).\nTests: drift guard clean; apply the migration on a throwaway DB and assert via psql/information_schema that host_trades.category is nullable, r_host_trade_category FKs have the expected delete rules, and no DROP statements exist in the generated file.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "db:generate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Manual SQL review (no drops)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apply on scratch DB and run drift guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:40:36Z",
+                "completed": "2026-11-17T18:40:36Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 47,
+        "pending": 46,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.5
     }

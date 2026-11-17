@@ -40,7 +40,7 @@
   - Blocked by: T-004
   - Blocks: T-006, T-007, T-008
 
-- [ ] **T-006** (complexity: 2) - Generate and review structural migration (expand step)
+- [x] **T-006** (complexity: 2) - Generate and review structural migration (expand step)
   - Run pnpm db:generate to produce the versioned migration in packages/db/src/migrations/ (carril 1): c...
   - Blocked by: T-005
   - Blocks: T-010
