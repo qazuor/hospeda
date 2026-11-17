@@ -56,6 +56,8 @@ const mocks = vi.hoisted(() => ({
     effectiveKeys: vi.fn(),
     record: vi.fn(),
     latestReviews: vi.fn(),
+    ownerReviews: vi.fn(),
+    reviewerNames: vi.fn(),
     statsExtras: vi.fn(),
     readOwnerIds: vi.fn(),
     readListContext: vi.fn(),
@@ -80,6 +82,12 @@ vi.mock('../../../src/utils/listing-access/user-gate', () => ({
 vi.mock('../../../src/lib/mcp/record-tool-call', () => ({ recordMcpToolCall: mocks.record }));
 vi.mock('../../../src/mcp/tools/listing/listing-stats-readers', () => ({
     readLatestListingReviews: mocks.latestReviews
+}));
+vi.mock('../../../src/mcp/tools/review/owner-review-reader', () => ({
+    readOwnerListingReviews: mocks.ownerReviews
+}));
+vi.mock('../../../src/mcp/tools/review/reviewer-names', () => ({
+    readReviewerDisplayNames: mocks.reviewerNames
 }));
 vi.mock('../../../src/mcp/tools/listing/get-listing-stats.accommodation', () => ({
     readAccommodationStatsExtras: mocks.statsExtras
@@ -319,6 +327,12 @@ function arrange(world: World) {
     mocks.effectiveKeys.mockResolvedValue({ view_advanced_stats: plan === 'full' });
     mocks.statsExtras.mockResolvedValue({ extras: { favorites: 0 } });
     mocks.latestReviews.mockResolvedValue([]);
+    mocks.ownerReviews.mockResolvedValue({
+        rows: [],
+        total: 0,
+        countsByState: { APPROVED: 0, PENDING: 0, REJECTED: 0 }
+    });
+    mocks.reviewerNames.mockResolvedValue(new Map());
     mocks.catalog.mockResolvedValue([]);
 
     // Inquiries: what `findOwnedConversation`'s SQL answers for a conversation
@@ -411,6 +425,7 @@ const ID_TOOL_CASES: readonly IdToolCase[] = [
         )
     ),
     ...listingCases('get_listing_stats', (vertical) => ({ vertical, listingId: LISTING_ID })),
+    ...listingCases('list_reviews', (vertical) => ({ vertical, listingId: LISTING_ID })),
     {
         tool: 'get_inquiry',
         variant: 'inquiry',
@@ -653,6 +668,8 @@ describe('cross-user not found, tool by tool', () => {
                             expect(mocks.consumeToken).not.toHaveBeenCalled();
                             expect(mocks.catalog).not.toHaveBeenCalled();
                             expect(mocks.latestReviews).not.toHaveBeenCalled();
+                            expect(mocks.ownerReviews).not.toHaveBeenCalled();
+                            expect(mocks.reviewerNames).not.toHaveBeenCalled();
                             expect(mocks.statsExtras).not.toHaveBeenCalled();
                             expect(mocks.readThreadContext).not.toHaveBeenCalled();
 

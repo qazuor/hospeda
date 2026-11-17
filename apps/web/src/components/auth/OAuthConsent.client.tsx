@@ -83,7 +83,7 @@ export interface OAuthConsentProps {
 }
 
 /** Capabilities the MCP connection grants (spec HOS-2184 section 8). */
-const CAPABILITY_KEYS = ['read', 'edit', 'pause', 'reply'] as const;
+const CAPABILITY_KEYS = ['read', 'edit', 'pause', 'reply', 'reviews'] as const;
 
 /**
  * Consent screen for an OAuth authorization request.
@@ -467,7 +467,8 @@ const CAPABILITY_FALLBACKS: Readonly<Record<(typeof CAPABILITY_KEYS)[number], st
     read: 'Ver tus publicaciones y sus estadísticas',
     edit: 'Editar datos básicos (descripción, contacto, horarios, servicios)',
     pause: 'Pausar o reanudar tus publicaciones',
-    reply: 'Responder consultas de tus alojamientos'
+    reply: 'Responder consultas de tus alojamientos',
+    reviews: 'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas'
 };
 
 /** Spanish fallbacks for the known scopes (the locale files are the source). */
