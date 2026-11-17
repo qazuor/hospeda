@@ -392,6 +392,14 @@ const ID_TOOL_CASES: readonly IdToolCase[] = [
         id: LISTING_ID,
         description: 'Texto nuevo de la publicación.'
     })),
+    ...listingCases('update_listing_amenities', (vertical) => ({
+        vertical,
+        id: LISTING_ID,
+        kind: 'amenity',
+        category: 'KITCHEN',
+        add: ['a0000001-0000-4000-8000-000000000000']
+    })),
+    ...listingCases('get_listing_amenities', (vertical) => ({ vertical, id: LISTING_ID })),
     ...(['pause', 'resume'] as const).flatMap((action) =>
         VERTICALS.map(
             (vertical): IdToolCase => ({
