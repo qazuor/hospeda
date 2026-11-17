@@ -9,6 +9,8 @@ import {
     PermissionEnum,
     type PlatformSettingsKey,
     PlatformSettingsKeySchema,
+    type ProviderWatchAuthorizationInput,
+    ProviderWatchAuthorizationInputSchema,
     type ProviderWatchAuthorizationValue,
     ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema,
@@ -37,8 +39,10 @@ import { ServiceError } from '../../types';
  *   - `billing.addonPurchasesFreeze` read → `BILLING_SETTINGS_VIEW`
  *   - `billing.addonPurchasesFreeze` write → `BILLING_SETTINGS_WRITE`
  *   - `billing.providerWatchAuthorization` read → `BILLING_SETTINGS_VIEW`
- *   - `billing.providerWatchAuthorization` write → `MAINTENANCE_MODE_WRITE` (SUPER_ADMIN-only: it
- *     authorizes real money to move at the provider, and the owner custodies it, HOS-1512)
+ *   - `billing.providerWatchAuthorization` write → `PROVIDER_WATCH_MANAGE` (SUPER_ADMIN-only: it
+ *     authorizes real money to move at the provider, and the owner custodies it, HOS-1512). It is
+ *     written ONLY by {@link PlatformSettingsService.setProviderWatchAuthorization}: the API
+ *     reads the provider account first, so the generic `upsert` refuses this key.
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -68,11 +72,9 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema
-    }),
-    z.object({
-        key: z.literal('billing.providerWatchAuthorization'),
-        value: ProviderWatchAuthorizationValueSchema
     })
+    // `billing.providerWatchAuthorization` is deliberately absent: it is written only through
+    // `setProviderWatchAuthorization`, after the API confirmed the provider account (HOS-1512 D5).
 ]);
 
 // ---------------------------------------------------------------------------
@@ -108,7 +110,7 @@ function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
         case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_WRITE;
         case 'billing.providerWatchAuthorization':
-            return PermissionEnum.MAINTENANCE_MODE_WRITE;
+            return PermissionEnum.PROVIDER_WATCH_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -312,6 +314,37 @@ export class PlatformSettingsService extends BaseService {
             return null;
         }
         return parsed.data;
+    }
+
+    /**
+     * Writes the owner's monthly authorization for the provider watch battery (HOS-1512). Always a
+     * NEW authorization: the consumption fields are never accepted, so it is unconsumed. Requires
+     * `PROVIDER_WATCH_MANAGE`. The caller (the admin route) has already read the provider account
+     * and confirmed `accountId` with the owner.
+     *
+     * @param input.actor - The owner
+     * @param input.value - Month, exact maximum charge and the confirmed account id
+     * @returns The stored row
+     */
+    async setProviderWatchAuthorization(
+        input: { actor: Actor; value: ProviderWatchAuthorizationInput },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PlatformSettingRecord>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setProviderWatchAuthorization',
+            input,
+            schema: z.object({ value: ProviderWatchAuthorizationInputSchema }),
+            ctx,
+            execute: async (data, actor, resolvedCtx) => {
+                this.checkWritePermission(actor, 'billing.providerWatchAuthorization');
+                return this.model.upsertByKey(
+                    'billing.providerWatchAuthorization',
+                    data.value,
+                    actor.id,
+                    resolvedCtx.tx
+                );
+            }
+        });
     }
 
     /**

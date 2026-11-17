@@ -19,7 +19,7 @@ import { asMock } from '../../utils/test-utils.js';
 
 const VALID_UUID = '11111111-1111-4111-8111-111111111111';
 const KEY = 'billing.providerWatchAuthorization' as const;
-const VALUE = { month: '2026-11', maxChargeMinor: 150000 };
+const VALUE = { month: '2026-11', maxChargeMinor: 150000, accountId: '100000001' };
 const ROW = {
     key: KEY,
     value: VALUE,
@@ -47,31 +47,64 @@ describe('PlatformSettingsService provider watch authorization', () => {
             expect(result.data).toMatchObject({ key: KEY, value: VALUE });
         });
 
-        it('writes with MAINTENANCE_MODE_WRITE, the SUPER_ADMIN-only critical permission', async () => {
+        it('writes with PROVIDER_WATCH_MANAGE, the dedicated SUPER_ADMIN-only permission', async () => {
             asMock(modelMock.upsertByKey).mockResolvedValue(ROW);
             const actor = createActor({
                 id: VALID_UUID,
-                permissions: [PermissionEnum.MAINTENANCE_MODE_WRITE]
+                permissions: [PermissionEnum.PROVIDER_WATCH_MANAGE]
             });
-            const result = await service.upsert({ actor, key: KEY, value: VALUE });
+            const result = await service.setProviderWatchAuthorization({ actor, value: VALUE });
             expectSuccess(result);
             expect(modelMock.upsertByKey).toHaveBeenCalledWith(KEY, VALUE, VALID_UUID, undefined);
         });
 
-        it('refuses a write with BILLING_SETTINGS_WRITE alone: an ADMIN cannot authorize spending', async () => {
-            const actor = createActor({ permissions: [PermissionEnum.BILLING_SETTINGS_WRITE] });
-            const result = await service.upsert({ actor, key: KEY, value: VALUE });
+        it.each([
+            PermissionEnum.BILLING_SETTINGS_WRITE,
+            PermissionEnum.MAINTENANCE_MODE_WRITE
+        ])('refuses a write with %s alone', async (permission) => {
+            const actor = createActor({ permissions: [permission] });
+            const result = await service.setProviderWatchAuthorization({ actor, value: VALUE });
             expectForbiddenError(result);
             expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
         });
 
-        it('rejects a value that is not a month and an integer maximum charge', async () => {
-            const actor = createActor({ permissions: [PermissionEnum.MAINTENANCE_MODE_WRITE] });
-            const result = await service.upsert({
-                actor,
-                key: KEY,
-                value: { month: '2026-11', maxChargeMinor: 1.5 }
+        it('rejects a value without a numeric account id or with a decimal maximum charge', async () => {
+            const actor = createActor({ permissions: [PermissionEnum.PROVIDER_WATCH_MANAGE] });
+            for (const value of [
+                { month: '2026-11', maxChargeMinor: 150000 },
+                { ...VALUE, maxChargeMinor: 1.5 },
+                { ...VALUE, accountId: 'abc' }
+            ]) {
+                const result = await service.setProviderWatchAuthorization({
+                    actor,
+                    value: value as never
+                });
+                expectValidationError(result);
+            }
+            expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
+        });
+
+        it('never stores the consumption fields: a new authorization is unconsumed', async () => {
+            asMock(modelMock.upsertByKey).mockResolvedValue(ROW);
+            const actor = createActor({
+                id: VALID_UUID,
+                permissions: [PermissionEnum.PROVIDER_WATCH_MANAGE]
             });
+            await service.setProviderWatchAuthorization({
+                actor,
+                value: { ...VALUE, consumedByRunId: VALID_UUID } as never
+            });
+            expect(modelMock.upsertByKey).toHaveBeenCalledWith(KEY, VALUE, VALID_UUID, undefined);
+        });
+
+        it('refuses to write this key through the generic upsert', async () => {
+            const actor = createActor({
+                permissions: [
+                    PermissionEnum.PROVIDER_WATCH_MANAGE,
+                    PermissionEnum.BILLING_SETTINGS_WRITE
+                ]
+            });
+            const result = await service.upsert({ actor, key: KEY, value: VALUE });
             expectValidationError(result);
             expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
         });
@@ -82,6 +115,16 @@ describe('PlatformSettingsService provider watch authorization', () => {
             asMock(modelMock.findByKey).mockResolvedValue(ROW);
             await expect(service.getProviderWatchAuthorization()).resolves.toEqual(VALUE);
             expect(modelMock.findByKey).toHaveBeenCalledWith(KEY);
+        });
+
+        it('returns the consumption state the run wrote', async () => {
+            const consumed = {
+                ...VALUE,
+                consumedAt: '2026-11-02T10:00:00.000Z',
+                consumedByRunId: VALID_UUID
+            };
+            asMock(modelMock.findByKey).mockResolvedValue({ ...ROW, value: consumed });
+            await expect(service.getProviderWatchAuthorization()).resolves.toEqual(consumed);
         });
 
         it('returns null when no row exists', async () => {
