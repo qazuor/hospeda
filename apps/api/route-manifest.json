@@ -1259,6 +1259,54 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/host-trade-categories"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/host-trade-categories"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/host-trade-categories/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/host-trade-categories/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/host-trade-categories/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/host-trade-categories/:id/restore"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/host-trade-category-groups"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/host-trade-category-groups"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/host-trade-category-groups/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/host-trade-category-groups/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/host-trade-category-groups/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/host-trade-category-groups/:id/restore"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/host-trades"
         },
         {
@@ -4156,6 +4204,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/health/media"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/host-trade-categories"
         },
         {
             "method": "POST",
