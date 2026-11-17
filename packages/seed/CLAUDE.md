@@ -103,6 +103,27 @@ applied, permanently. Split the release (backfill in N, `DROP COLUMN` in N+1, th
 expand/contract rule the structural carril already follows) and declare
 `meta.requiresColumns` so the runner refuses instead of succeeding emptily.
 
+## Provider trade category catalog (HOS-919)
+
+The provider category catalog is seed data in a live environment, so it follows the
+dual-write rule:
+
+- **Baseline** (fresh DBs): `src/data/hostTradeCategoryGroup/` (5 groups) and
+  `src/data/hostTradeCategory/` (29 categories), loaded by
+  `src/required/hostTradeCategories.seed.ts`. Ids are deterministic UUIDv5 derived from
+  the immutable slug (`hostTradeCategoryGroup:<slug>` / `hostTradeCategory:<slug>`), so
+  baseline and data-migration produce the same id.
+- **Data-migration** (live DBs): `src/data-migrations/0179-hos919-host-trade-category-catalog.ts`
+  upserts the catalog by slug (`ON CONFLICT (slug) DO NOTHING`, so an admin-renamed,
+  deactivated or deleted row is never touched), backfills the legacy single-category
+  columns into `r_host_trade_category` / `alliance_leads.category_slugs`, and grants the
+  five `hostTradeCategory.*` permissions to `SUPER_ADMIN` and `ADMIN`. It declares
+  `meta.requiresColumns` for the legacy columns, which the contract release drops
+  (backfill in N, `DROP COLUMN` in N+1).
+- **Fixtures** (`src/data/hostTrade/*.json`) reference categories with
+  `categorySlugs: ["plomeria", ...]`, never with a single `category` value. The
+  `hostTradeCategory.*` grants are also in the role-permission baseline.
+
 ## Re-running `--required` (HOS-735)
 
 `--required` is additive: it is how an already-populated database gets a catalog that grew.
