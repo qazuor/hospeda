@@ -12,6 +12,7 @@ import type {
 import { UserMenu } from '../../../../src/components/shared/navigation/UserMenu.client';
 import {
     identifyUser,
+    markVisitorAnonymous,
     resetUser,
     setPersonProperties
 } from '../../../../src/lib/analytics/umami-client';
@@ -24,6 +25,7 @@ vi.mock('../../../../src/lib/auth-client', () => ({
 
 vi.mock('../../../../src/lib/analytics/umami-client', () => ({
     identifyUser: vi.fn(),
+    markVisitorAnonymous: vi.fn(),
     resetUser: vi.fn(),
     setPersonProperties: vi.fn()
 }));
@@ -731,6 +733,48 @@ describe('UserMenu — Umami identify/reset', () => {
             />
         );
         expect(identifyUser).not.toHaveBeenCalled();
+    });
+
+    it('declares a resolved guest anonymous so the first pageview is released', async () => {
+        // Arrange
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: { actor: null, isAuthenticated: false } })
+        }) as unknown as typeof fetch;
+
+        // Act
+        render(
+            <UserMenu
+                initialUser={null}
+                locale="es"
+                currentPath="/es/"
+                adminPanelUrl="https://admin.test"
+            />
+        );
+
+        // Assert
+        await waitFor(() => expect(markVisitorAnonymous).toHaveBeenCalledTimes(1));
+        expect(identifyUser).not.toHaveBeenCalled();
+    });
+
+    it('does NOT declare a guest from the SSR hint alone (SSG pages pass null for everyone)', async () => {
+        // Arrange: SSG page, the visitor is in fact logged in
+        render(
+            <UserMenu
+                initialUser={null}
+                locale="es"
+                currentPath="/es/"
+                adminPanelUrl="https://admin.test"
+            />
+        );
+
+        // Act: /auth/me answers with the user
+        await waitFor(() =>
+            expect(identifyUser).toHaveBeenCalledWith('user-1', expect.any(Object))
+        );
+
+        // Assert
+        expect(markVisitorAnonymous).not.toHaveBeenCalled();
     });
 
     it('sets the locale person property for an authenticated visitor', async () => {
