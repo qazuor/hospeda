@@ -304,35 +304,35 @@
             "id": "T-009",
             "title": "Add transactional replaceCategories to HostTradeModel",
             "description": "In packages/db/src/models/hostTrade/host-trade.model.ts add replaceCategories({hostTradeId, categoryIds, tx}) that deletes the links not in categoryIds and inserts the missing ones inside the caller-provided transaction (delete-missing + insert-new atomic, AC-4.2). Idempotent when the set is unchanged.\nACs: AC-4.2.\nTests (packages/db/test/integration/host-trade.model.integration.test.ts): replacing [a,b] with [b,c] leaves exactly {b,c}; unchanged set is a no-op; forced failure on insert (invalid category id) rolls back and the OLD set remains; deleting a category with links fails on the FK RESTRICT while deleting a host_trade cascades its links.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-010", "T-022", "T-024"],
             "subtasks": [
                 {
                     "title": "replaceCategories implementation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Atomicity test with forced failure",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "FK restrict/cascade test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:49:03Z",
+                "completed": "2026-11-17T18:49:03Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 44,
+        "pending": 43,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5
     }

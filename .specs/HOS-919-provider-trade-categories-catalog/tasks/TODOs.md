@@ -55,7 +55,7 @@
   - Blocked by: T-005
   - Blocks: T-009, T-021
 
-- [ ] **T-009** (complexity: 3) - Add transactional replaceCategories to HostTradeModel
+- [x] **T-009** (complexity: 3) - Add transactional replaceCategories to HostTradeModel
   - In packages/db/src/models/hostTrade/host-trade.model.ts add replaceCategories({hostTradeId, category...
   - Blocked by: T-008
   - Blocks: T-010, T-022, T-024
