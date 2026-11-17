@@ -15,7 +15,7 @@
  * `getTableConfig`.
  */
 import { createTableRelationsHelpers, extractTablesRelationalConfig } from 'drizzle-orm';
-import { getTableConfig } from 'drizzle-orm/pg-core';
+import { getTableConfig, type PgTable } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 
 import { hostTrades } from '../../../src/schemas/host-trade/host_trade.dbschema.ts';
@@ -24,7 +24,8 @@ import * as schemasBarrel from '../../../src/schemas/index.ts';
 function getColumnConfig(sqlName: string): Record<string, unknown> | undefined {
     const { columns } = getTableConfig(hostTrades);
     const col = columns.find((c) => c.name === sqlName);
-    return col?.config as Record<string, unknown> | undefined;
+    // `config` is protected in drizzle's Column type but readable at runtime.
+    return (col as unknown as { config?: Record<string, unknown> } | undefined)?.config;
 }
 
 describe('host_trades table meta (post HOS-376 T-009)', () => {
@@ -85,7 +86,7 @@ describe('host_trades declaration-suspension columns', () => {
             f.reference().columns.some((c) => c.name === 'declaration_suspended_by_id')
         );
         expect(fk).toBeDefined();
-        expect(fk?.reference().foreignTable[Symbol.for('drizzle:Name')]).toBe('users');
+        expect(getTableConfig(fk?.reference().foreignTable as PgTable).name).toBe('users');
         expect(fk?.onDelete).toBe('set null');
     });
 });
