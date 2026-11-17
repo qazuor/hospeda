@@ -3105,7 +3105,7 @@ export const publishApi = {
      *
      * @param params.vertical - Which vertical to read.
      * @param params.cookieHeader - Optional SSR cookie header.
-     * @returns `{ trialRunning, items: { listingId, publicationStatus, recurringListingAddons, notices }[] }`.
+     * @returns `{ trialRunning, items: { listingId, name, publicationStatus, recurringListingAddons, notices }[] }`.
      *
      * @example
      * ```ts

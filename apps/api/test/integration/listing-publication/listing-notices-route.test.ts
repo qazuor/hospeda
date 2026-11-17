@@ -187,6 +187,7 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
         expect(response.data?.items).toEqual([
             {
                 listingId: id,
+                name: 'Matrix listing',
                 publicationStatus: PublicationStatusEnum.PURGED,
                 recurringListingAddons: 0,
                 recurringListingAddonItems: [],
@@ -347,6 +348,7 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
         expect(covered.data?.items).toEqual([
             {
                 listingId: surplus,
+                name: 'Matrix listing',
                 publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
                 recurringListingAddons: 1,
                 recurringListingAddonItems: [
@@ -358,6 +360,7 @@ describe.each(verticals)('HOS-1492 listing notices read — %s', (vertical) => {
         expect(uncovered.data?.items).toEqual([
             {
                 listingId: lost,
+                name: 'Matrix listing',
                 publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
                 recurringListingAddons: 0,
                 recurringListingAddonItems: [],
