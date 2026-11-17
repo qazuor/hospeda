@@ -267,10 +267,10 @@ export function AddonPurchase(input: {
                     if (orderIdentityReleased({ error: result.error }))
                         setOrderRequestId(mintOrderRequestId());
                     setError(
-                        (result.error.code === 'ADDON_ORDER_REQUEST_ABANDONED'
-                            ? undefined
-                            : visibleApiMessage({ error: result.error })) ??
-                            t('billing.addonPurchase.loadError')
+                        result.error.code === 'ADDON_ORDER_REQUEST_ABANDONED'
+                            ? t('billing.addonPurchase.attemptExpired')
+                            : (visibleApiMessage({ error: result.error }) ??
+                                  t('billing.addonPurchase.loadError'))
                     );
                 }
             }

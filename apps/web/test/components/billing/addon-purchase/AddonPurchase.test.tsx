@@ -247,6 +247,23 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
         const sent = purchase.mock.calls.map(([call]) => call.body.orderRequestId);
         expect(sent).toEqual([orderId, '123e4567-e89b-42d3-a456-426614174099']);
     });
+    it('shows the dedicated expired-attempt copy for an abandoned order', async () => {
+        await selectListing('PUBLISHED');
+        purchase.mockResolvedValueOnce({
+            ok: false,
+            error: {
+                status: 409,
+                code: 'ADDON_ORDER_REQUEST_ABANDONED',
+                reason: 'ORDER_REQUEST_ABANDONED',
+                message: 'ORDER_REQUEST_ABANDONED'
+            }
+        });
+        fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
+        const alert = await screen.findByRole('alert');
+        expect(alert.textContent).not.toContain('ORDER_REQUEST_ABANDONED');
+        expect(alert.textContent).not.toBe('billing.addonPurchase.loadError');
+        expect(alert.textContent).toMatch(/intento|attempt|tentativa/i);
+    });
     it('keeps the same order id after a failure that does not release it', async () => {
         await selectListing('PUBLISHED');
         purchase.mockResolvedValueOnce({
