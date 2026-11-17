@@ -60,6 +60,8 @@ export { matchAcceptLanguage, resolveDisplayLocale } from './locale-resolution';
 export { isMissingTranslation, MISSING_TRANSLATION_MARKER } from './missing-translation';
 // Pluralization (no admin dependency — safe to share)
 export { pluralize } from './pluralization';
+// Render-time labels for the AI chat PII redaction markers (HOS-2320)
+export { localizeRedactionTokens } from './redaction-labels';
 // Validation message resolver (no admin dependency)
 export { resolveValidationMessage } from './utils/resolve-validation-message';
 

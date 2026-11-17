@@ -80,6 +80,39 @@ describe('AiQuestionsPanel', () => {
         });
     });
 
+    it('shows a translated label instead of the raw redaction markers (HOS-2320)', async () => {
+        // Arrange
+        mockGetProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                items: [
+                    item(
+                        '22222222-2222-4222-8222-222222222222',
+                        'Llamenme al [REDACTED_PHONE] o a [REDACTED_EMAIL]',
+                        'unanswered'
+                    )
+                ],
+                total: 1,
+                unansweredCount: 1,
+                truncated: false,
+                dismissed: [],
+                dismissedCount: 0,
+                othersNextCursor: null
+            }
+        });
+
+        // Act
+        const { container } = renderPanel();
+
+        // Assert
+        expect(
+            await screen.findByText('Llamenme al [teléfono oculto] o a [email oculto]')
+        ).toBeInTheDocument();
+        expect(container.innerHTML).not.toContain('REDACTED');
+        const link = container.querySelector('a[href*="preguntas"]');
+        expect(decodeURIComponent(link?.getAttribute('href') ?? '')).not.toContain('REDACTED');
+    });
+
     it('shows unanswered questions first, with the counter and the FAQ shortcut', async () => {
         // Arrange
         mockGetProtected.mockResolvedValue({
