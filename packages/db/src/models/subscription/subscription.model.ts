@@ -3,6 +3,7 @@ import {
     and,
     desc,
     eq,
+    gt,
     inArray,
     isNotNull,
     isNull,
@@ -28,6 +29,7 @@ import {
     providerLinks,
     type SelectProviderLink
 } from '../../schemas/vertical/provider-link.dbschema.ts';
+import { subscriptionScheduledChanges } from '../../schemas/vertical/scheduled-change.dbschema.ts';
 import {
     LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
@@ -358,29 +360,51 @@ export class SubscriptionModel {
      * provider can still report the first-charge instant (PA-3), and copying it would undo the
      * date P1 advanced. A later date, or an earlier one still in the future (the provider
      * correcting its own anchor), keeps winning: the sweep still aligns the row with MP.
+     *
+     * HOS-2310: when the sweep writes, a not-yet-due migration-born queued change
+     * (`plan_migration_subscription_id` set, `effective_at > now`) is realigned to the new
+     * next charge date inside the same transaction, so it still applies at the new charge
+     * instant. Elapsed changes and client-initiated changes stay untouched, and when the
+     * write loses the race the queue is left exactly as it was.
      */
     async syncNextChargeAt(input: SyncNextChargeAtInput): Promise<boolean> {
-        const db = input.tx ?? getDb();
-        const providerDateIsFuture = input.nextChargeAt.getTime() > input.now.getTime();
-        const rows = await db
-            .update(subscriptions)
-            // Same shape as the other writers here; the global updated_at trigger
-            // (extras/002) replaces the value with NOW() on every real write.
-            .set({ nextChargeAt: input.nextChargeAt, updatedAt: input.now })
-            .where(
-                and(
-                    eq(subscriptions.id, input.subscriptionId),
-                    eq(subscriptions.status, 'ACTIVE'),
-                    or(
-                        isNull(subscriptions.nextChargeAt),
-                        providerDateIsFuture
-                            ? ne(subscriptions.nextChargeAt, input.nextChargeAt)
-                            : lt(subscriptions.nextChargeAt, input.nextChargeAt)
+        const write = async (db: DrizzleClient): Promise<boolean> => {
+            const providerDateIsFuture = input.nextChargeAt.getTime() > input.now.getTime();
+            const rows = await db
+                .update(subscriptions)
+                // Same shape as the other writers here; the global updated_at trigger
+                // (extras/002) replaces the value with NOW() on every real write.
+                .set({ nextChargeAt: input.nextChargeAt, updatedAt: input.now })
+                .where(
+                    and(
+                        eq(subscriptions.id, input.subscriptionId),
+                        eq(subscriptions.status, 'ACTIVE'),
+                        or(
+                            isNull(subscriptions.nextChargeAt),
+                            providerDateIsFuture
+                                ? ne(subscriptions.nextChargeAt, input.nextChargeAt)
+                                : lt(subscriptions.nextChargeAt, input.nextChargeAt)
+                        )
                     )
                 )
-            )
-            .returning({ id: subscriptions.id });
-        return rows.length > 0;
+                .returning({ id: subscriptions.id });
+            if (rows.length === 0) return false;
+            // Realignment only after the row actually moved: only migration-born changes
+            // that are still ahead of `now` and currently anchored to another instant.
+            await db
+                .update(subscriptionScheduledChanges)
+                .set({ effectiveAt: input.nextChargeAt })
+                .where(
+                    and(
+                        eq(subscriptionScheduledChanges.subscriptionId, input.subscriptionId),
+                        isNotNull(subscriptionScheduledChanges.planMigrationSubscriptionId),
+                        gt(subscriptionScheduledChanges.effectiveAt, input.now),
+                        ne(subscriptionScheduledChanges.effectiveAt, input.nextChargeAt)
+                    )
+                );
+            return true;
+        };
+        return input.tx ? write(input.tx) : getDb().transaction(write);
     }
 
     /** S3 persistence: abandons only a pending row, closes its awaiting manual payment, and closes a deferred courtesy in the same transaction. */
