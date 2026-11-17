@@ -9,6 +9,7 @@ import {
     type PaymentProvider
 } from '@repo/payments';
 import { z } from 'zod';
+import { liftOpenMarkOnConfirmation } from '../reconciliation/lift-open-mark-on-confirmation.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { selectComplementTargets } from './complement-selection.js';
@@ -264,12 +265,24 @@ async function writeComplementResume(input: {
                 { complementSubscriptionId: input.complementSubscriptionId },
                 'S33 resumed a PAUSED complement without an open pause'
             );
+            await liftOpenMarkOnConfirmation({
+                tx,
+                subscriptionId: input.complementSubscriptionId,
+                reason: 'REANUDACION_NO_APLICADA',
+                now: input.now
+            });
             return 'REACTIVATED';
         }
         await tx
             .update(subscriptionPauses)
             .set({ actualEndAt: input.now })
             .where(eq(subscriptionPauses.id, pause.id));
+        await liftOpenMarkOnConfirmation({
+            tx,
+            subscriptionId: input.complementSubscriptionId,
+            reason: 'REANUDACION_NO_APLICADA',
+            now: input.now
+        });
         return 'REACTIVATED';
     });
 }

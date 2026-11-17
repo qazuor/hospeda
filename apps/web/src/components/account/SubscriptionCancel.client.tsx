@@ -1,6 +1,7 @@
 import { CancellationReasonEnum } from '@repo/schemas';
 import { useState } from 'react';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import { scheduleSubscriptionRefresh } from '@/lib/billing/refresh-subscription-card';
 import {
     ADDON_LINE_KEY,
     END_LINE_KEY,
@@ -82,6 +83,7 @@ export function SubscriptionCancel({
                     : null
             );
             setState('done');
+            scheduleSubscriptionRefresh({});
         } catch {
             setState('actError');
         }

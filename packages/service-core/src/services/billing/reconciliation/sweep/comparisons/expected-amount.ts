@@ -101,7 +101,7 @@ async function migrationDecidedDestination(input: {
                 eq(domainEvent.reason, 'S37')
             )
         )
-        .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id))
+        .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.seq))
         .limit(1);
     if (!decision) return null;
     const pending = await input.executor

@@ -594,7 +594,7 @@
                 "confirmCheckout": "If authorization is needed, you'll go to Mercado Pago checkout; your current plan continues until you authorize.",
                 "confirmScheduled": "If the change is scheduled, you'll see the exact date when the new plan starts.",
                 "payerEmailLabel": "Payer email on Mercado Pago",
-                "payerEmailHint": "You declare it: it is the Mercado Pago account that will authorize the change. The provider does not confirm it.",
+                "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
                 "payerEmailInvalid": "Enter a valid payer email.",
                 "confirm": "Confirm change",
                 "back": "Back",

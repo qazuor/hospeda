@@ -202,7 +202,7 @@ export async function readPausedCancellationIdempotency(input: {
                 eq(domainEvent.eventType, 'subscription.provider_cancellation_decided')
             )
         )
-        .orderBy(desc(domainEvent.occurredAt))
+        .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.seq))
         .limit(1);
     if (
         decision?.changes.some((change) => change.field === 'status' && change.old === 'PAUSED') &&

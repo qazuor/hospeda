@@ -1,5 +1,5 @@
 /** Exact subscription scoping and ordering of open RF1 requests (AC:1711:10). */
-import { and, eq, getDb, refunds } from '@repo/db';
+import { and, eq, getDb, idempotencyKeys, refunds } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -87,6 +87,8 @@ async function expectedItem(
         refundId,
         refundAmount: row.amount,
         reason: row.reason,
+        status: 'REQUESTED',
+        providerRejection: null,
         requestedAt: row.createdAt.toISOString(),
         payment,
         providerRefundWindow:
@@ -149,6 +151,8 @@ describe('TEST:1711:10 AC:1711:10 subscription open-refunds contents', () => {
                     refundId,
                     refundAmount: OPTION_AMOUNT,
                     reason: 'REVOCATION',
+                    status: 'REQUESTED',
+                    providerRejection: null,
                     requestedAt: created.createdAt.toISOString(),
                     payment: { source: 'PAYMENT', id: seeded.paymentId },
                     providerRefundWindow: {
@@ -158,6 +162,80 @@ describe('TEST:1711:10 AC:1711:10 subscription open-refunds contents', () => {
                 }
             ]
         });
+    });
+
+    it('lists a provider-rejected FAILED refund until action 14 settles it', async () => {
+        const seeded = await seedRevocable();
+        const refundId = await seedRefund({ paymentId: seeded.paymentId, status: 'FAILED' });
+        const rejectedAt = new Date('2026-10-05T11:30:00.000Z');
+        await getDb()
+            .insert(idempotencyKeys)
+            .values({
+                key: `refund:${refundId}:1`,
+                operation: 'REFUND_CREATE',
+                subjectId: refundId,
+                result: {
+                    outcome: 'REJECTED',
+                    code: 'REJECTED',
+                    message: 'Mercado Pago request failed (401)',
+                    cause: { httpStatus: 401, message: 'Unauthorized use of live credentials' }
+                },
+                completedAt: rejectedAt
+            });
+
+        try {
+            const response = await read(seeded.subscriptionId);
+            expect(response.status).toBe(200);
+            expect((await response.json()).data.items).toContainEqual(
+                expect.objectContaining({
+                    refundId,
+                    status: 'FAILED',
+                    providerRejection: {
+                        code: 'REJECTED',
+                        message: 'Mercado Pago request failed (401)',
+                        detail: 'HTTP 401 · Unauthorized use of live credentials',
+                        rejectedAt: rejectedAt.toISOString()
+                    }
+                })
+            );
+
+            const settlePart = (amount: number, reference: string) =>
+                app.request('/api/v1/admin/billing-refunds/external', {
+                    method: 'POST',
+                    headers: actorHeaders({
+                        id: revokerId,
+                        role: 'SUPER_ADMIN',
+                        permissions: [
+                            PermissionEnum.ACCESS_PANEL_ADMIN,
+                            PermissionEnum.BILLING_SETTLE_EXTERNAL
+                        ]
+                    }),
+                    body: JSON.stringify({
+                        paymentId: seeded.paymentId,
+                        refundId,
+                        amount,
+                        channel: 'PROVIDER_PANEL',
+                        reference,
+                        reason: 'OUT_OF_FLOW_REFUND'
+                    })
+                });
+            const partial = await settlePart(5000, `panel-${crypto.randomUUID()}`);
+            expect(partial.status).toBe(200);
+            await expect((await read(seeded.subscriptionId)).json()).resolves.toMatchObject({
+                data: { items: [expect.objectContaining({ refundId, status: 'FAILED' })] }
+            });
+            const settled = await settlePart(5000, `panel-${crypto.randomUUID()}`);
+            expect(settled.status).toBe(200);
+            expect((await settled.json()).data).toMatchObject({
+                status: 'EXECUTED',
+                closedRequestedRefund: false
+            });
+            const after = await read(seeded.subscriptionId);
+            expect(after.status).toBe(200);
+            expect((await after.json()).data.items).toEqual([]);
+        } finally {
+            await getDb().delete(idempotencyKeys).where(eq(idempotencyKeys.subjectId, refundId));
+        }
     });
 
     it('TEST:1711:10 AC:1711:10 lists a requested manual-payment refund', async () => {

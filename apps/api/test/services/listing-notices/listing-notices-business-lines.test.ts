@@ -16,6 +16,7 @@ function row(args: {
 }): ListingNoticeRow {
     return {
         id: ID,
+        name: 'Ficha de prueba',
         publicationStatus: args.status ?? S.PUBLISHED,
         deletionAnnouncedAt: null,
         enteredCurrentStatus: null,

@@ -126,7 +126,7 @@ export const listingPublicationModel = {
                       AND e.event_type = 'listing.status_changed'
                       AND change->>'field' = 'publicationStatus'
                       AND change->>'new' = 'ARCHIVED'
-                    ORDER BY e.occurred_at DESC, e.id DESC LIMIT 1
+                    ORDER BY e.occurred_at DESC, e.seq DESC LIMIT 1
                 ) latest WHERE origin IN ('PUBLISHED', 'UNPUBLISHED_BY_BILLING')
             ))::text AS "archivedReturnable"
           FROM ${table(args.vertical)} AS l

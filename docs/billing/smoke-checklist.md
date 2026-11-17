@@ -58,6 +58,21 @@ Each step carries one **Coverage** line with one of these marks:
 The marks come from reading each spec in full, not from test names. A spec that only covers part
 of a step is listed with what it misses.
 
+## Refunds are smoked in production only (HOS-2302)
+
+Every refund against the provider is executed **only** in Part 2 (production), by owner decision:
+the refund of the S36 / DEC-RF-001 admin revocation, the confirmed refund (action 13 of B6), and
+addon refunds.
+
+Why: on staging, `POST /v1/payments/<id>/refunds` answers
+`401 "Unauthorized use of live credentials"` with the `hospeda-api-staging` token. The sandbox
+payment is approved, but the refund is rejected. Measured 2026-11-17 01:48Z on payment
+190060396686. The owner decided not to change the staging credentials.
+
+What staging still verifies: the refund up to `REQUESTED` (the refund is requested) and the e2e
+(`billing-10-admin-revocation.spec.ts`). A 401 at that step on staging is expected, not a failure,
+and is not reported as a bug.
+
 ## Part 1 — Staging (cutover rehearsal)
 
 Executed inside the cutover rehearsal on `staging`, with MP sandbox, before merging any billing
@@ -472,6 +487,7 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 
 - **Preconditions:** Staging has the Phase 3 epic deployed, Mercado Pago sandbox, a paying owner with a published listing, and an approved recurring addon amount.
 - **Steps:** Buy a recurring listing boost from `/es/mi-cuenta/complementos/` and authorize its own sandbox checkout; verify the instance is `ACTIVE`. Open listing deletion and read which addon is lost and its price before confirming. Purge the listing; observe our email before the addon preapproval is cancelled. Under Q1 option 3, the one-time order and its refund are deferred to HOS-2094 and are outside the web flow.
+- Refund at the provider: moved to P2 / P12 (HOS-2302); staging answers 401.
 - **Expected:** The addon has its own preapproval; the principal amount stays unchanged. The purge closes the instance and complement once, after our email, and the exit suites cover all LISTA:B10 clauses on real A1 rows where required.
 - **Evidence:** Purchase screen and purge preview captures; read-only addon, complement, principal and outbox rows; sandbox preapproval and cancellation records; B10 integration and E2E P0 CI results.
 - **Covers:** AC:B10:9, AC:B10:10, AC:B10:14; TEST:B10:10, TEST:B10:11, TEST:B10:12, TEST:B10:16.
@@ -545,19 +561,26 @@ This part is TEST:B13a:15 and TEST:U1:20.
 - **Coverage:**
   - The owner's real card and checkout: `sólo MP real`. The simulated counterpart of `ACTIVE` is S1 step 3. `provider_notification`: `hueco` (see S1).
 
-### P2 — Refund (revocation from the admin panel)
+### P2 — Refund (revocation, confirmed refund and addon refund)
 
 - **Preconditions:** P1 completed successfully; an active subscription exists.
 - **Steps:**
   1. Open the subscription in the admin panel.
   2. Trigger the revocation (S36, total refund + cancellation in one act, DEC-RF-001).
   3. Re-read the subscription and the payment.
+  4. Confirm the refund (action 13 of B6) on the payment from P1 and read the `refund` move from
+     `REQUESTED` to its final state.
+  5. If a recurring addon was purchased (P9/P12), refund the addon charge and read that the refund
+     of the addon payment reaches its final state. The one-time order and its refund stay deferred
+     to HOS-2094.
 - **Expected:** The subscription is cancelled; the payment shows a full refund.
 - **Evidence:** Read-only query on `subscriptions`, `payments`, and `payment_refunds`.
 - **Covers:** H-11 (return via admin panel revocation).
+- **Nota:** Why here: staging cannot do this (401 "Unauthorized use of live credentials",
+  HOS-2302).
 - **Coverage:**
   - Steps 1–2, the revocation cancels and creates a full refund request: `e2e: billing/billing-10-admin-revocation.spec.ts:ACTIVE revocation shows the full refund and sends our notice before provider cancellation (PR)`.
-  - Step 3, the refund executed at the provider: `sólo MP real` (e2e stops at `REQUESTED`, or settles it as an external refund). The refund from the admin end to end: `en curso: HOS-2153`.
+  - Steps 4–5, the refunds executed at the provider (confirmed refund and addon refund): `sólo MP real, HOS-2302` (e2e stops at `REQUESTED`, or settles it as an external refund). The refund from the admin end to end: `en curso: HOS-2153`.
 
 ### P3 — Mercado Pago email
 

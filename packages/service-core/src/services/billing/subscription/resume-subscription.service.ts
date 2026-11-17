@@ -17,6 +17,7 @@ import { BILLING_CYCLE_MONTHS } from '@repo/schemas';
 import { z } from 'zod';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
 import { pendingIncreaseAmountForCharge } from '../plan-migration/plan-migration-increase-on-resume.js';
+import { liftOpenMarkOnConfirmation } from '../reconciliation/lift-open-mark-on-confirmation.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
 import {
     createCutExpectedAmountPolicy,
@@ -200,6 +201,12 @@ export async function resumeSubscription(
             .update(subscriptionPauses)
             .set({ actualEndAt: now })
             .where(eq(subscriptionPauses.id, pause.id));
+        await liftOpenMarkOnConfirmation({
+            tx,
+            subscriptionId: locked.id,
+            reason: 'REANUDACION_NO_APLICADA',
+            now
+        });
         let courtesyGrantId: string | undefined;
         if (value.cause === 'COURTESY_REVOKED') {
             const [grant] = await tx

@@ -2,6 +2,7 @@ import { PermissionEnum } from '@repo/schemas';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasAllPermissions } from '@/hooks/use-user-permissions';
 import { useSubscriptionOpenRefunds } from '../hooks/useSubscriptionOpenRefunds';
+import { formatRevocationInstant } from '../revocation-format';
 import { RevocationRefundSettlement } from './RevocationRefundSettlement';
 
 /** Props for {@link RevocationOpenRefunds}. RO-RO. */
@@ -16,7 +17,7 @@ export interface RevocationOpenRefundsProps {
  * stays outside `billing-reconciliation` so settlement invalidation preserves success.
  */
 export function RevocationOpenRefunds({ subscriptionId }: RevocationOpenRefundsProps) {
-    const { t } = useTranslations();
+    const { locale, t } = useTranslations();
     const allowed = useHasAllPermissions([
         PermissionEnum.BILLING_SUBSCRIPTION_INSPECT,
         PermissionEnum.BILLING_SETTLE_EXTERNAL
@@ -57,7 +58,34 @@ export function RevocationOpenRefunds({ subscriptionId }: RevocationOpenRefundsP
                             data-refund-id={item.refundId}
                             key={item.refundId}
                         >
-                            <RevocationRefundSettlement result={item} />
+                            {item.status === 'FAILED' && item.providerRejection ? (
+                                <div
+                                    role="status"
+                                    data-testid="subscription-revocation-failed-refund"
+                                    data-refund-id={item.refundId}
+                                >
+                                    {t(
+                                        'admin-billing.subscriptionRevocation.openRefunds.failed.notice',
+                                        {
+                                            refundId: item.refundId,
+                                            at: formatRevocationInstant({
+                                                iso: item.providerRejection.rejectedAt,
+                                                locale
+                                            }),
+                                            message: item.providerRejection.message,
+                                            detail:
+                                                item.providerRejection.detail ??
+                                                t(
+                                                    'admin-billing.subscriptionRevocation.openRefunds.failed.noDetail'
+                                                )
+                                        }
+                                    )}
+                                </div>
+                            ) : null}
+                            <RevocationRefundSettlement
+                                result={item}
+                                failedRefund={item.status === 'FAILED'}
+                            />
                         </li>
                     ))}
                 </ul>

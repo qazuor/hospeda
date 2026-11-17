@@ -34,6 +34,24 @@ function event(args: {
 }
 
 describe('TEST:V8a:7 assembleListingNoticeRows (HOS-1492, H2)', () => {
+    it('propagates the listing name', () => {
+        const [row] = assembleListingNoticeRows({
+            listings: [
+                {
+                    id: ID,
+                    name: 'Cabaña del Río',
+                    publicationStatus: S.PUBLISHED,
+                    deletionAnnouncedAt: null
+                } as Parameters<typeof assembleListingNoticeRows>[0]['listings'][number]
+            ],
+            events: [],
+            fixRequests: [],
+            businessLinesChanges: []
+        });
+
+        expect(row?.name).toBe('Cabaña del Río');
+    });
+
     it('keeps the transition into the current status and the archive origin', () => {
         // Arrange
         const events = [

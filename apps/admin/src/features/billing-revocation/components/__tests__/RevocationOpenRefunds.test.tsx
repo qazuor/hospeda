@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import es from '@repo/i18n/locales/es/admin-billing.json';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, type SubscriptionOpenRefund } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -46,12 +46,14 @@ const REFUND_IDS = ['cccccccc-cccc-4ccc-8ccc-cccccccccccc', 'dddddddd-dddd-4ddd-
 const items = REFUND_IDS.map((refundId) => ({
     refundId,
     refundAmount: 1800000,
+    status: 'REQUESTED' as const,
+    providerRejection: null,
     reason: 'REVOCATION',
     requestedAt: '2026-10-05T12:00:00.000Z',
     payment: { source: 'PAYMENT' as const, id: PAYMENT_ID },
     providerRefundWindow: { open: true, closesAt: '2027-04-03T12:00:00.000Z' }
 }));
-const readResult = (listedItems: typeof items) => ({
+const readResult = (listedItems: readonly SubscriptionOpenRefund[]) => ({
     data: { data: { items: listedItems } },
     status: 200
 });
@@ -97,6 +99,48 @@ beforeEach(() => {
 });
 
 describe('TEST:1711:11 AC:1711:11 RevocationOpenRefunds', () => {
+    it('shows a provider rejection and sends its FAILED refund id without mismatch options', async () => {
+        const failedRefundId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+        const failed = {
+            ...items[0],
+            refundId: failedRefundId,
+            status: 'FAILED' as const,
+            providerRejection: {
+                code: 'REJECTED',
+                message: 'Mercado Pago request failed (401)',
+                detail: 'Unauthorized use of live credentials',
+                rejectedAt: '2026-10-05T12:00:00.000Z'
+            }
+        };
+        state.fetchApi.mockImplementation((input: { method?: string }) =>
+            Promise.resolve(input.method === 'POST' ? settlementResult : readResult([failed]))
+        );
+        renderList();
+
+        const notice = await screen.findByTestId('subscription-revocation-failed-refund');
+        expect(notice).toHaveAttribute('data-refund-id', failedRefundId);
+        expect(notice).toHaveTextContent('Mercado Pago request failed (401)');
+        expect(notice).toHaveTextContent('Unauthorized use of live credentials');
+
+        const row = screen.getByTestId('subscription-revocation-open-refund');
+        const settlement = within(row).getByTestId('subscription-revocation-settlement');
+        fireEvent.change(within(settlement).getByLabelText('Comprobante o referencia'), {
+            target: { value: 'provider-ref-failed' }
+        });
+        fireEvent.change(within(settlement).getByLabelText('Monto en pesos'), {
+            target: { value: '12' }
+        });
+        fireEvent.click(within(settlement).getByRole('button', { name: /revisar/i }));
+        fireEvent.click(within(settlement).getByRole('button', { name: /asentar/i }));
+
+        await waitFor(() => expect(state.fetchApi).toHaveBeenCalledTimes(2));
+        expect(state.fetchApi.mock.calls[1]?.[0]).toMatchObject({
+            method: 'POST',
+            body: expect.objectContaining({ refundId: failedRefundId })
+        });
+        expect(state.fetchApi.mock.calls[1]?.[0].body).not.toHaveProperty('onAmountMismatch');
+    });
+
     it('TEST:1711:11 AC:1711:11 loads each request and retains the second request success without refetching the list', async () => {
         let listReads = 0;
         state.fetchApi.mockImplementation((input: { path: string; method?: string }) => {

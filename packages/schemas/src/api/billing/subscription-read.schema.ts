@@ -24,6 +24,7 @@ export const SubscriptionReadSchema = z.object({
     currentPlan: z
         .object({
             planName: z.string(),
+            planSlug: z.string(),
             versionLabel: z.string().optional(),
             cycle: z.string()
         })

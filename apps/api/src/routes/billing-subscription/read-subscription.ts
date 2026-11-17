@@ -18,6 +18,7 @@ export async function readSubscription(subscriptionId: string) {
             subjectName: users.displayName,
             subjectEmail: users.email,
             planName: plans.name,
+            planSlug: plans.slug,
             planId: plans.id,
             planVersionId: planVersions.id,
             cycle: billingOptions.cycle,
@@ -36,6 +37,7 @@ export async function readSubscription(subscriptionId: string) {
         subjectName,
         subjectEmail,
         planName,
+        planSlug,
         planId,
         planVersionId,
         cycle,
@@ -44,7 +46,7 @@ export async function readSubscription(subscriptionId: string) {
         ...row
     } = found;
     return {
-        row,
+        row: { ...row, planVersionId },
         subjectId: row.userId,
         subject: row.userId
             ? {
@@ -53,10 +55,11 @@ export async function readSubscription(subscriptionId: string) {
                   ...(subjectEmail ? { email: subjectEmail } : {})
               }
             : undefined,
-        currentPlan: planName && cycle ? { planName, cycle } : undefined,
+        currentPlan: planName && planSlug && cycle ? { planName, planSlug, cycle } : undefined,
         currentBillingOption:
             row.billingOptionId &&
             planName &&
+            planSlug &&
             planId &&
             planVersionId &&
             cycle &&
@@ -66,6 +69,7 @@ export async function readSubscription(subscriptionId: string) {
                       billingOptionId: row.billingOptionId,
                       planId,
                       planName,
+                      planSlug,
                       planVersionId,
                       cycle,
                       amountMinor,

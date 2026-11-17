@@ -269,6 +269,7 @@ export function buildListingNoticeItems(input: {
         }).items;
         return {
             listingId: row.id,
+            name: row.name,
             publicationStatus: row.publicationStatus,
             recurringListingAddons: recurringListingAddonItems.length,
             recurringListingAddonItems: [...recurringListingAddonItems],

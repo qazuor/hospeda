@@ -97,6 +97,7 @@ describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
             items: [
                 {
                     listingId: LISTING_ID,
+                    name: 'Cabaña del Río',
                     publicationStatus: 'PURGED',
                     recurringListingAddons: 0,
                     recurringListingAddonItems: [],
@@ -110,6 +111,23 @@ describe('TEST:V8a:7 listing notices contract (HOS-1492, H2)', () => {
 
         // Assert
         expect(result.success).toBe(true);
+    });
+
+    it('requires a listing name', () => {
+        const result = ListingNoticesResponseSchema.safeParse({
+            trialRunning: false,
+            items: [
+                {
+                    listingId: LISTING_ID,
+                    publicationStatus: 'DRAFT',
+                    recurringListingAddons: 0,
+                    recurringListingAddonItems: [],
+                    notices: []
+                }
+            ]
+        });
+
+        expect(result.success).toBe(false);
     });
 
     it('rejects a negative recurringListingAddons', () => {
