@@ -7,6 +7,7 @@
  * - Consolidated config contains the required sections and fields.
  */
 
+import { CreateHostTradeSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { createHostTradeConsolidatedConfig } from '../config/host-trade-consolidated.config';
 import { createHostTradesColumns } from '../config/host-trades.columns';
@@ -111,12 +112,48 @@ describe('createHostTradeConsolidatedConfig', () => {
     it('basic-info section contains required fields', () => {
         const fieldIds = config.sections[0]?.fields.map((f) => f.id) ?? [];
         expect(fieldIds).toContain('name');
-        expect(fieldIds).toContain('category');
+        expect(fieldIds).toContain('categoryIds');
+        expect(fieldIds).not.toContain('category');
         expect(fieldIds).toContain('contact');
         expect(fieldIds).toContain('benefit');
         expect(fieldIds).toContain('destinationId');
         expect(fieldIds).toContain('is24h');
         expect(fieldIds).toContain('isActive');
+    });
+
+    it('categoryIds is a required catalog multi-select limited to 1..10', () => {
+        const field = config.sections[0]?.fields.find((f) => f.id === 'categoryIds');
+        const typeConfig = field?.typeConfig as
+            | {
+                  multiple?: boolean;
+                  minItems?: number;
+                  maxItems?: number;
+                  loadAllFn?: unknown;
+                  loadByIdsFn?: unknown;
+              }
+            | undefined;
+
+        expect(field?.type).toBe('ENTITY_MULTISELECT');
+        expect(field?.required).toBe(true);
+        expect(typeConfig?.multiple).toBe(true);
+        expect(typeConfig?.minItems).toBe(1);
+        expect(typeConfig?.maxItems).toBe(10);
+        expect(typeof typeConfig?.loadAllFn).toBe('function');
+        expect(typeof typeConfig?.loadByIdsFn).toBe('function');
+    });
+
+    it('the create schema accepts a payload that carries categoryIds', () => {
+        const result = CreateHostTradeSchema.safeParse({
+            name: 'Plomero',
+            contact: '+54 9 3442 123456',
+            benefit: '10 %',
+            destinationId: '11111111-1111-4111-8111-111111111111',
+            categoryIds: ['22222222-2222-4222-8222-222222222222'],
+            is24h: false,
+            isActive: true
+        });
+
+        expect(result.success).toBe(true);
     });
 
     it('destinationId field uses DESTINATION_SELECT type', () => {

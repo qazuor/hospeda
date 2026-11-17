@@ -6,6 +6,7 @@ import { filterSectionsByMode } from '@/components/entity-form/utils/section-fil
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { createHostTradeConsolidatedConfig } from '../config/host-trade-consolidated.config';
+import { withCategoryIds } from '../lib/category-ids';
 import { useHostTradeQuery, useUpdateHostTradeMutation } from './useHostTradeQuery';
 
 /**
@@ -23,6 +24,12 @@ export const useHostTradePage = (entityId: string) => {
 
     const query = useHostTradeQuery(entityId);
     const updateMutation = useUpdateHostTradeMutation(entityId);
+
+    // The read shape carries `categories`; the picker is keyed `categoryIds`.
+    const enrichedEntity = useMemo(
+        () => (query.data ? withCategoryIds({ entity: query.data }) : undefined),
+        [query.data]
+    );
 
     const entityConfig = useMemo(() => {
         const consolidatedConfig = createHostTradeConsolidatedConfig(t);
@@ -71,7 +78,7 @@ export const useHostTradePage = (entityId: string) => {
         activeSection,
         setActiveSection,
 
-        entity: query.data,
+        entity: enrichedEntity,
         isLoading: query.isLoading,
         error: query.error,
 

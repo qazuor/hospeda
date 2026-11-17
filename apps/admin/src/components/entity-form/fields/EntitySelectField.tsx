@@ -340,6 +340,15 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
 
             if (isMultiple) {
                 const currentValues = Array.isArray(value) ? value : [];
+                const maxItems = entityConfig?.maxItems;
+                // Removing is always allowed; adding stops at the configured cap.
+                if (
+                    maxItems !== undefined &&
+                    !currentValues.includes(selectedValue) &&
+                    currentValues.length >= maxItems
+                ) {
+                    return;
+                }
                 const updatedValues = currentValues.includes(selectedValue)
                     ? currentValues.filter((v) => v !== selectedValue)
                     : [...currentValues, selectedValue];

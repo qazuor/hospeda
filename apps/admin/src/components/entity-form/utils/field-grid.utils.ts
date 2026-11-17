@@ -33,7 +33,8 @@ export function getFieldColSpanClass(type: FieldTypeEnum): 'col-span-2' | 'col-s
         FieldTypeEnum.I18N_TEXTAREA,
         // Catalog multi-select chip fields need full width so chips wrap naturally
         FieldTypeEnum.AMENITY_SELECT,
-        FieldTypeEnum.FEATURE_SELECT
+        FieldTypeEnum.FEATURE_SELECT,
+        FieldTypeEnum.ENTITY_MULTISELECT
     ]);
 
     return fullWidthTypes.has(type) ? 'col-span-2' : 'col-span-1';
