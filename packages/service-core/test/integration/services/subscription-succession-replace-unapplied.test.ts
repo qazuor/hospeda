@@ -300,6 +300,171 @@ describe('HOS-2218: replace unapplied successor', () => {
         ).toBe(false);
     });
 
+    it('does not replace when the latest create key already applied a checkout', async () => {
+        const choice = await seedSuccessionChoice();
+        const seeded = await seedPredecessor({
+            userId: choice.user.id,
+            planVersionId: choice.planVersionId,
+            billingOptionId: choice.predecessorBillingOptionId,
+            status: 'ACTIVE',
+            providerState: 'active',
+            honestAboutM1: true
+        });
+        seeded.fake.restoreLie({ lie: 'M1' });
+        const request = {
+            userId: choice.user.id,
+            predecessorSubscriptionId: seeded.predecessor.id,
+            billingOptionId: choice.targetBillingOptionId,
+            returnUrl: successionReturnUrl
+        };
+        await expect(
+            startSuccession(request, successionPorts(seeded.provider))
+        ).rejects.toMatchObject({
+            reason: 'CREATION_NOT_APPLIED'
+        });
+        const [old] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.succeedsId, seeded.predecessor.id));
+        const [oldLink] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, old!.id));
+        if (!oldLink) throw new Error('Old successor provider link is missing');
+        await getServiceTestDb()
+            .update(idempotencyKeys)
+            .set({
+                result: {
+                    authorizationId: oldLink.providerId,
+                    applied: true,
+                    checkoutUrl: 'https://checkout.example/pay'
+                }
+            })
+            .where(eq(idempotencyKeys.subjectId, old!.id));
+        const cancel = vi.spyOn(seeded.fake, 'cancel');
+        await expect(
+            startSuccession(request, successionPorts(seeded.provider))
+        ).rejects.toMatchObject({
+            reason: 'SUCCESSION_IN_PROGRESS'
+        });
+        const [unchanged] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, old!.id));
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: old!.id
+        });
+        expect(unchanged?.status).toBe('PENDING_AUTHORIZATION');
+        expect(events.some((event) => event.reason === 'S39')).toBe(false);
+        expect(cancel).not.toHaveBeenCalled();
+    });
+
+    it('does not replace once the successor authorization window has expired', async () => {
+        const choice = await seedSuccessionChoice();
+        const seeded = await seedPredecessor({
+            userId: choice.user.id,
+            planVersionId: choice.planVersionId,
+            billingOptionId: choice.predecessorBillingOptionId,
+            status: 'ACTIVE',
+            providerState: 'active',
+            honestAboutM1: true
+        });
+        seeded.fake.restoreLie({ lie: 'M1' });
+        const request = {
+            userId: choice.user.id,
+            predecessorSubscriptionId: seeded.predecessor.id,
+            billingOptionId: choice.targetBillingOptionId,
+            returnUrl: successionReturnUrl
+        };
+        await expect(
+            startSuccession(request, successionPorts(seeded.provider))
+        ).rejects.toMatchObject({
+            reason: 'CREATION_NOT_APPLIED'
+        });
+        const [old] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.succeedsId, seeded.predecessor.id));
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ authorizationWindowEndsAt: new Date('2026-10-01T00:00:00.000Z') })
+            .where(eq(subscriptions.id, old!.id));
+        const cancel = vi.spyOn(seeded.fake, 'cancel');
+        await expect(
+            startSuccession(request, successionPorts(seeded.provider))
+        ).rejects.toMatchObject({
+            reason: 'SUCCESSION_IN_PROGRESS'
+        });
+        const [unchanged] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, old!.id));
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: old!.id
+        });
+        expect(unchanged?.status).toBe('PENDING_AUTHORIZATION');
+        expect(events.some((event) => event.reason === 'S39')).toBe(false);
+        expect(cancel).not.toHaveBeenCalled();
+    });
+
+    it('does not replace when the provider link does not match the create key', async () => {
+        const choice = await seedSuccessionChoice();
+        const seeded = await seedPredecessor({
+            userId: choice.user.id,
+            planVersionId: choice.planVersionId,
+            billingOptionId: choice.predecessorBillingOptionId,
+            status: 'ACTIVE',
+            providerState: 'active',
+            honestAboutM1: true
+        });
+        seeded.fake.restoreLie({ lie: 'M1' });
+        const request = {
+            userId: choice.user.id,
+            predecessorSubscriptionId: seeded.predecessor.id,
+            billingOptionId: choice.targetBillingOptionId,
+            returnUrl: successionReturnUrl
+        };
+        await expect(
+            startSuccession(request, successionPorts(seeded.provider))
+        ).rejects.toMatchObject({
+            reason: 'CREATION_NOT_APPLIED'
+        });
+        const [old] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.succeedsId, seeded.predecessor.id));
+        const [oldLink] = await getServiceTestDb()
+            .select()
+            .from(providerLinks)
+            .where(eq(providerLinks.subscriptionId, old!.id));
+        if (!oldLink) throw new Error('Old successor provider link is missing');
+        await getServiceTestDb()
+            .update(providerLinks)
+            .set({ providerId: crypto.randomUUID() })
+            .where(eq(providerLinks.subscriptionId, old!.id));
+        const read = vi.spyOn(seeded.fake, 'readAuthorization');
+        await expect(
+            startSuccession(request, successionPorts(seeded.provider))
+        ).rejects.toMatchObject({
+            reason: 'SUCCESSION_IN_PROGRESS'
+        });
+        const [unchanged] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, old!.id));
+        const events = await domainEventModel.findByEntity({
+            entityType: 'subscription',
+            entityId: old!.id
+        });
+        expect(unchanged?.status).toBe('PENDING_AUTHORIZATION');
+        expect(events.some((event) => event.reason === 'S39')).toBe(false);
+        expect(
+            read.mock.calls.some(([input]) => input.authorizationId === oldLink.providerId)
+        ).toBe(false);
+    });
+
     it('does not replace for a different requested billing option', async () => {
         const choice = await seedSuccessionChoice();
         const alternativePlanId = (
