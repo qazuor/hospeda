@@ -212,7 +212,11 @@ describe('HOS-2081 CA-1 un admin con permiso encuentra una suscripción por el e
                 displayName: seeded.displayName,
                 email: seeded.email
             },
-            currentPlan: { planName: BROWSE_PLAN_NAME, cycle: 'monthly' }
+            currentPlan: {
+                planName: BROWSE_PLAN_NAME,
+                planSlug: expect.stringMatching(/^browse-/),
+                cycle: 'monthly'
+            }
         });
     });
 });
