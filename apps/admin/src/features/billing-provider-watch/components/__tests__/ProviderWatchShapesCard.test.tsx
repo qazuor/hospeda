@@ -57,7 +57,7 @@ describe('HOS-1512 the owner reviews and accepts provider response shapes', () =
     beforeEach(() => {
         fetchApi.mockReset();
         permissions.mockReset();
-        permissions.mockReturnValue([PermissionEnum.PROVIDER_WATCH_MANAGE]);
+        permissions.mockReturnValue([PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]);
     });
 
     it('lists what changed per measurement, with the differences', async () => {

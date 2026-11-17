@@ -31,13 +31,15 @@ describe('HOS-1512 provider watch permission seed grant', () => {
             destructive: false
         });
         expect(migration.GRANTS).toEqual([
-            { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.PROVIDER_WATCH_MANAGE }
+            { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE }
         ]);
     });
 
     it('keeps the baseline in step: only SUPER_ADMIN holds the permission', () => {
         const holders = Object.entries(ROLE_PERMISSIONS)
-            .filter(([, permissions]) => permissions.includes(PermissionEnum.PROVIDER_WATCH_MANAGE))
+            .filter(([, permissions]) =>
+                permissions.includes(PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE)
+            )
             .map(([role]) => role);
         expect(holders).toEqual([RoleEnum.SUPER_ADMIN]);
     });

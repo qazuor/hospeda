@@ -27,10 +27,12 @@ function slice(name: string): string {
     return SOURCE.slice(start, next === -1 ? routerStart : Math.min(next, routerStart));
 }
 
-describe('provider watch admin routes are gated by PROVIDER_WATCH_MANAGE', () => {
-    it.each(ROUTES)('%s requires exactly PROVIDER_WATCH_MANAGE', (name) => {
+describe('provider watch admin routes are gated by BILLING_PROVIDER_WATCH_MANAGE', () => {
+    it.each(ROUTES)('%s requires exactly BILLING_PROVIDER_WATCH_MANAGE', (name) => {
         const block = slice(name);
-        expect(block).toContain('requiredPermissions: [PermissionEnum.PROVIDER_WATCH_MANAGE]');
+        expect(block).toContain(
+            'requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]'
+        );
         expect(block).not.toContain('MAINTENANCE_MODE_WRITE');
         expect(block).not.toContain('BILLING_SETTINGS');
     });

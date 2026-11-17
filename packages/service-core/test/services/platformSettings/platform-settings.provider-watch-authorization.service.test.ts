@@ -47,11 +47,11 @@ describe('PlatformSettingsService provider watch authorization', () => {
             expect(result.data).toMatchObject({ key: KEY, value: VALUE });
         });
 
-        it('writes with PROVIDER_WATCH_MANAGE, the dedicated SUPER_ADMIN-only permission', async () => {
+        it('writes with BILLING_PROVIDER_WATCH_MANAGE, the dedicated SUPER_ADMIN-only permission', async () => {
             asMock(modelMock.upsertByKey).mockResolvedValue(ROW);
             const actor = createActor({
                 id: VALID_UUID,
-                permissions: [PermissionEnum.PROVIDER_WATCH_MANAGE]
+                permissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]
             });
             const result = await service.setProviderWatchAuthorization({ actor, value: VALUE });
             expectSuccess(result);
@@ -69,7 +69,9 @@ describe('PlatformSettingsService provider watch authorization', () => {
         });
 
         it('rejects a value without a numeric account id or with a decimal maximum charge', async () => {
-            const actor = createActor({ permissions: [PermissionEnum.PROVIDER_WATCH_MANAGE] });
+            const actor = createActor({
+                permissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]
+            });
             for (const value of [
                 { month: '2026-11', maxChargeMinor: 150000 },
                 { ...VALUE, maxChargeMinor: 1.5 },
@@ -88,7 +90,7 @@ describe('PlatformSettingsService provider watch authorization', () => {
             asMock(modelMock.upsertByKey).mockResolvedValue(ROW);
             const actor = createActor({
                 id: VALID_UUID,
-                permissions: [PermissionEnum.PROVIDER_WATCH_MANAGE]
+                permissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]
             });
             await service.setProviderWatchAuthorization({
                 actor,
@@ -100,7 +102,7 @@ describe('PlatformSettingsService provider watch authorization', () => {
         it('refuses to write this key through the generic upsert', async () => {
             const actor = createActor({
                 permissions: [
-                    PermissionEnum.PROVIDER_WATCH_MANAGE,
+                    PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE,
                     PermissionEnum.BILLING_SETTINGS_WRITE
                 ]
             });

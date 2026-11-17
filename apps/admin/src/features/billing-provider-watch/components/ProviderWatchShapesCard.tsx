@@ -25,12 +25,12 @@ const COPY_BY_LOCALE = { es, en, pt };
 /**
  * Lets the owner review what changed in the shape of the provider's responses and accept it
  * (HOS-1512). The baseline advances ONLY here: until a shape is accepted, its change keeps
- * alerting on every run. Needs `PROVIDER_WATCH_MANAGE`, held only by SUPER_ADMIN.
+ * alerting on every run. Needs `BILLING_PROVIDER_WATCH_MANAGE`, held only by SUPER_ADMIN.
  */
 export function ProviderWatchShapesCard() {
     const { locale } = useTranslations();
     const permissions = useUserPermissions();
-    const canManage = permissions.includes(PermissionEnum.PROVIDER_WATCH_MANAGE);
+    const canManage = permissions.includes(PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE);
     const shapes = useProviderWatchShapes({ enabled: canManage });
     const accept = useAcceptProviderWatchShape();
     const [target, setTarget] = useState<ProviderWatchShapeReview | null>(null);

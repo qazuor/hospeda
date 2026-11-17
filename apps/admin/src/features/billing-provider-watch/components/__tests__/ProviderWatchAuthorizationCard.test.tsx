@@ -65,7 +65,7 @@ function renderCard() {
 }
 
 const posts = () => fetchApi.mock.calls.filter(([call]) => call.method === 'POST');
-const MANAGER = [PermissionEnum.PROVIDER_WATCH_MANAGE];
+const MANAGER = [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE];
 
 describe('HOS-1512 the billing settings card authorizes one provider watch run', () => {
     beforeEach(() => {

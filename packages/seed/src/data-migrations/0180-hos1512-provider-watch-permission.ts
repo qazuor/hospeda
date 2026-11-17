@@ -11,7 +11,7 @@ export const meta = {
 
 /** The provider watch permission is granted only to SUPER_ADMIN. */
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = [
-    { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.PROVIDER_WATCH_MANAGE }
+    { role: RoleEnum.SUPER_ADMIN, permission: PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE }
 ];
 
 /** Inserts the additive grant without changing existing role assignments. */

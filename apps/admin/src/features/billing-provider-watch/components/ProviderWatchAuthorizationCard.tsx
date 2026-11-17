@@ -142,12 +142,12 @@ function AuthorizationForm(props: {
  * Shows and sets the one-run authorization of the provider watch battery (HOS-1512): the month its
  * production run is allowed in, the exact maximum charge, and the provider account the owner
  * CONFIRMS (read by the API, never typed). It shows whether the authorization was consumed and by
- * which run. Writing needs `PROVIDER_WATCH_MANAGE`, held only by SUPER_ADMIN.
+ * which run. Writing needs `BILLING_PROVIDER_WATCH_MANAGE`, held only by SUPER_ADMIN.
  */
 export function ProviderWatchAuthorizationCard() {
     const { locale } = useTranslations();
     const permissions = useUserPermissions();
-    const canWrite = permissions.includes(PermissionEnum.PROVIDER_WATCH_MANAGE);
+    const canWrite = permissions.includes(PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE);
     const query = usePlatformSetting({ key: 'billing.providerWatchAuthorization' });
     const account = useProviderWatchAccount({ enabled: canWrite });
     const mutation = useAuthorizeProviderWatch();

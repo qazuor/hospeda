@@ -1,6 +1,6 @@
 /**
  * Admin routes of the provider watch battery (HOS-1512). Mounted at
- * `/api/v1/admin/provider-watch`. Every route needs `PROVIDER_WATCH_MANAGE`, which only SUPER_ADMIN
+ * `/api/v1/admin/provider-watch`. Every route needs `BILLING_PROVIDER_WATCH_MANAGE`, which only SUPER_ADMIN
  * holds: they read the provider account, write the monthly authorization and accept changed
  * response shapes.
  */
@@ -69,7 +69,7 @@ export const adminGetProviderWatchAccountRoute = createAdminRoute({
     description:
         'Reads GET /users/me with the environment token and answers the account id and nickname the owner confirms before authorizing the watch battery.',
     tags: ['Provider watch'],
-    requiredPermissions: [PermissionEnum.PROVIDER_WATCH_MANAGE],
+    requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
     responseSchema: ProviderWatchAccountSchema,
     handler: async () => readConfirmedAccount(environmentAccount())
 });
@@ -85,7 +85,7 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
     description:
         'Writes the one-run authorization: the month, the exact maximum charge in centavos and the provider account the owner confirmed.',
     tags: ['Provider watch'],
-    requiredPermissions: [PermissionEnum.PROVIDER_WATCH_MANAGE],
+    requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
     requestBody: ProviderWatchAuthorizeInputSchema,
     responseSchema: z.object({
         month: z.string(),
@@ -137,7 +137,7 @@ export const adminListProviderWatchShapesRoute = createAdminRoute({
     description:
         'Lists, per measurement, the shapes the owner accepted, the ones the latest completed run observed and their differences.',
     tags: ['Provider watch'],
-    requiredPermissions: [PermissionEnum.PROVIDER_WATCH_MANAGE],
+    requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
     responseSchema: z.object({ items: z.array(ProviderWatchShapeReviewSchema) }),
     handler: async () => ({
         items: [...(await listShapeReviews({ account: environmentAccount() }))]
@@ -155,7 +155,7 @@ export const adminAcceptProviderWatchShapeRoute = createAdminRoute({
     description:
         'Makes the shapes observed by the given completed run the accepted baseline of the measurement, recording who accepted and when.',
     tags: ['Provider watch'],
-    requiredPermissions: [PermissionEnum.PROVIDER_WATCH_MANAGE],
+    requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
     requestParams: { measurementId: z.string().regex(/^(?:M|RP)\d{1,2}$/) },
     requestBody: ProviderWatchAcceptShapeInputSchema,
     responseSchema: z.object({ acceptedAt: z.string().datetime({ offset: true }) }),
