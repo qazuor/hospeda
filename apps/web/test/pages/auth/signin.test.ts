@@ -89,6 +89,12 @@ describe('signin.astro', () => {
             expect(src.match(/Astro\.redirect\(/g)).toHaveLength(1);
         });
 
+        it('only evaluates the redirect inside the authenticated branch, so a guest never redirects', () => {
+            expect(src).toMatch(
+                /if\s*\(Astro\.locals\.user\)\s*\{\s*if\s*\(\s*resolveAuthenticatedSigninAction/
+            );
+        });
+
         it('hands the open session and the validated destination to the island', () => {
             expect(src).toMatch(/email:\s*Astro\.locals\.user\.email,\s*continueUrl/);
             expect(src).toContain('activeSession={activeSession}');

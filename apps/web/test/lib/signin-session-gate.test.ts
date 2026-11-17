@@ -23,8 +23,11 @@ describe('resolveAuthenticatedSigninAction', () => {
         expect(resolveAuthenticatedSigninAction({ search })).toBe('redirect');
     });
 
-    it('keeps the silent redirect for the post-verification landing', () => {
-        expect(resolveAuthenticatedSigninAction({ search: '?verified=1' })).toBe('redirect');
+    it.each([
+        ['a verified landing', '?verified=1'],
+        ['a verified landing with an expired-token error', '?verified=1&error=TOKEN_EXPIRED']
+    ])('shows the interstitial for %s (no session is guaranteed)', (_label, search) => {
+        expect(resolveAuthenticatedSigninAction({ search })).toBe('interstitial');
     });
 
     it('does not treat a half-signed OAuth query as a signed request', () => {

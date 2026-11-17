@@ -14,7 +14,7 @@
  * (BETA-216) with "Continuar" (a validated `callbackUrl` (SPEC-182) when
  * present, otherwise the destination from a safe `returnUrl`/`redirect` query
  * param, otherwise /mi-cuenta/) and "Usar otra cuenta". Signed OAuth requests
- * and `?verified=1` still redirect silently.
+ * still redirect silently; `?verified=1` does not.
  *
  * Both `returnUrl` and `redirect` are accepted as query param names so older
  * callsites that built links with `?redirect=...` keep working. `returnUrl`
@@ -60,7 +60,7 @@ const { returnPath, validatedCallbackUrl, signInConfig, signUpConfig } = resolve
 // account, with "Continuar" (the destination the redirect used to pick: a
 // valid callbackUrl first, then the safe returnUrl/redirect, else /mi-cuenta/)
 // and "Usar otra cuenta". The silent redirect stays only for machine-driven
-// flows (signed OAuth request, `?verified=1`) — see signin-session-gate.ts.
+// flow (a signed OAuth request; `?verified=1` is NOT exempt) — see signin-session-gate.ts.
 // This page is session-aware by design (exempt in the session-blind guard).
 const continueUrl = validatedCallbackUrl ?? returnPath;
 if (Astro.locals.user) {
