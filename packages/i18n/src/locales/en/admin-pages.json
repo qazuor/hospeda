@@ -1940,6 +1940,108 @@
             }
         }
     },
+    "hostTradeCategories": {
+        "title": "Provider categories",
+        "subtitle": "Catalog of trades that providers can offer, grouped under headings.",
+        "tabs": {
+            "groups": "Groups",
+            "categories": "Categories"
+        },
+        "state": {
+            "active": "Active",
+            "inactive": "Inactive"
+        },
+        "loading": "Loading…",
+        "error": "The catalog could not be loaded.",
+        "empty": "There is nothing here yet.",
+        "columns": {
+            "name": "Name",
+            "slug": "Identifier",
+            "group": "Group",
+            "weight": "Weight",
+            "state": "Status",
+            "actions": "Actions"
+        },
+        "actions": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "cancel": "Cancel",
+            "save": "Save"
+        },
+        "groups": {
+            "add": "New group",
+            "dialog": {
+                "createTitle": "New group",
+                "editTitle": "Edit group",
+                "nameLabel": "Name",
+                "slugLabel": "Identifier",
+                "slugHint": "Set on creation and cannot be changed afterwards.",
+                "weightLabel": "Sort weight",
+                "weightHint": "Lower values are shown first.",
+                "activeLabel": "Active",
+                "activeHint": "An inactive group stops being offered, but its data is kept."
+            },
+            "deleteDialog": {
+                "title": "Delete group",
+                "message": "You are about to delete the group \"{{name}}\". This removes it from the catalog.",
+                "confirm": "Delete group"
+            },
+            "messages": {
+                "created": "Group created.",
+                "updated": "Group updated.",
+                "deleted": "Group deleted.",
+                "saveError": "The group could not be saved.",
+                "deleteError": "The group could not be deleted.",
+                "inUse": "It cannot be deleted: the group still has categories. Deactivate it to stop offering it, or move its categories first."
+            }
+        },
+        "categories": {
+            "add": "New category",
+            "filters": {
+                "search": "Search by name or identifier",
+                "group": "Group",
+                "allGroups": "All groups",
+                "state": "Status",
+                "allStates": "All statuses"
+            },
+            "dialog": {
+                "createTitle": "New category",
+                "editTitle": "Edit category",
+                "nameLabel": "Name",
+                "slugLabel": "Identifier",
+                "slugHint": "Set on creation and cannot be changed afterwards.",
+                "groupLabel": "Group",
+                "groupPlaceholder": "Choose a group",
+                "weightLabel": "Sort weight",
+                "weightHint": "Lower values are shown first.",
+                "activeLabel": "Active",
+                "activeHint": "An inactive category stops being offered, but providers that already have it keep it."
+            },
+            "keywords": {
+                "label": "Related words",
+                "hint": "They help find the category when searching (for example \"septic\"). Lowercase, up to {{maxCount}} per language and {{maxLength}} characters each.",
+                "placeholder": "Type a word and press Enter",
+                "add": "Add",
+                "remove": "Remove {{keyword}}",
+                "count": "{{count}} of {{max}}",
+                "tooMany": "You already added the maximum number of words for this language.",
+                "tooLong": "The word is longer than {{max}} characters."
+            },
+            "deleteDialog": {
+                "title": "Delete category",
+                "message": "You are about to delete the category \"{{name}}\". This removes it from the catalog.",
+                "confirm": "Delete category"
+            },
+            "messages": {
+                "created": "Category created.",
+                "updated": "Category updated.",
+                "deleted": "Category deleted.",
+                "saveError": "The category could not be saved.",
+                "deleteError": "The category could not be deleted.",
+                "inUse": "It cannot be deleted: providers use this category. Deactivate it to stop offering it; providers that already have it keep it."
+            }
+        }
+    },
     "locationDuplicates": {
         "title": "Repeated addresses",
         "description": "Published listings that share an address. A duplicate between different owners does not block publishing: it is reviewed here. An exception lets a listing share an address (cabin complex, food court, hotel restaurant).",

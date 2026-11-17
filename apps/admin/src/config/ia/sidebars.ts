@@ -944,6 +944,18 @@ const plataformaSidebar: SidebarInput = {
             route: '/platform/host-trades/usages',
             permissions: ['HOST_TRADE_USAGE_VIEW_ALL']
         },
+        {
+            type: 'link',
+            id: 'host-trade-categories',
+            label: {
+                es: 'Categorías de proveedores',
+                en: 'Provider categories',
+                pt: 'Categorias de fornecedores'
+            },
+            icon: 'OffersIcon',
+            route: '/content/host-trade-categories',
+            permissions: ['HOST_TRADE_CATEGORY_VIEW']
+        },
         { type: 'separator', id: 'sep-ai' },
         // ── Inteligencia Artificial ────────────────────────────────────────
         {
