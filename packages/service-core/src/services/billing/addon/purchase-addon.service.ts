@@ -23,6 +23,10 @@ import { authorizePendingComplement, insertPendingComplement } from './purchase-
 import { resolvePurchaseTitle } from './purchase-addon-eligibility';
 import type { PurchaseAddonPorts } from './purchase-addon-ports';
 import {
+    abandonRefusedComplement,
+    isCreationRefusedBeforeExisting
+} from './purchase-addon-rejection';
+import {
     type PurchaseAddonInput,
     PurchaseAddonInputSchema,
     type PurchaseAddonResult
@@ -225,17 +229,32 @@ export async function purchaseAddon(
         });
         if (result.outcome !== 'CREATED' || !created?.complementId || !created.idempotencyKey)
             return result;
-        const authorization = await authorizePendingComplement(
-            {
-                complementId: created.complementId,
-                idempotencyKey: created.idempotencyKey,
-                product,
-                payerEmail: request.payerEmail,
-                returnUrl: request.returnUrl,
-                reason: request.reason
-            },
-            { provider: ports.provider, clock: ports.clock }
-        );
+        let authorization: Awaited<ReturnType<typeof authorizePendingComplement>>;
+        try {
+            authorization = await authorizePendingComplement(
+                {
+                    complementId: created.complementId,
+                    idempotencyKey: created.idempotencyKey,
+                    product,
+                    payerEmail: request.payerEmail,
+                    returnUrl: request.returnUrl,
+                    reason: request.reason
+                },
+                { provider: ports.provider, clock: ports.clock }
+            );
+        } catch (error) {
+            // HOS-2321: a refusal proves nothing exists at the provider, so release the identity
+            // instead of leaving a pending row that blocks the owner's retry for the whole window.
+            if (isCreationRefusedBeforeExisting(error))
+                await abandonRefusedComplement({
+                    instanceId: created.instanceId,
+                    complementId: created.complementId,
+                    idempotencyKey: created.idempotencyKey,
+                    rateLimited: error.code !== 'REJECTED',
+                    now: ports.clock.now()
+                });
+            throw error;
+        }
         return { ...result, checkoutUrl: authorization.checkoutUrl };
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
