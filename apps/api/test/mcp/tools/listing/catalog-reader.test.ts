@@ -25,7 +25,7 @@ describe('readVerticalCatalog', () => {
         VerticalEnum.ACCOMMODATION,
         VerticalEnum.VENUE,
         VerticalEnum.EXPERIENCE
-    ])('asks the amenity service for the %s rows only', async (vertical) => {
+    ] as const)('asks the amenity service for the %s rows only', async (vertical) => {
         // Arrange
         const search = vi
             .spyOn(AmenityService.prototype, 'search')

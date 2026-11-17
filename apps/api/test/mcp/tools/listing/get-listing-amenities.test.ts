@@ -333,7 +333,7 @@ describe('get_listing_amenities', () => {
             VerticalEnum.ACCOMMODATION,
             VerticalEnum.VENUE,
             VerticalEnum.EXPERIENCE
-        ])("answers another user's %s as not found, without reading the catalog", async (vertical) => {
+        ] as const)("answers another user's %s as not found, without reading the catalog", async (vertical) => {
             // Arrange
             const { amenitySearch, featureSearch } = givenCatalog({
                 amenities: AMENITIES,
@@ -514,7 +514,11 @@ describe('get_listing_amenities', () => {
                 selected: false
             }))
         });
-        const listing = { vertical: 'accommodation', id: LISTING_ID, name: 'X' } as const;
+        const listing = {
+            vertical: VerticalEnum.ACCOMMODATION,
+            id: LISTING_ID,
+            name: 'X'
+        } as const;
 
         it('fitGroupsToBudget keeps leading groups while they fit and omits the rest with counts', () => {
             // Arrange
