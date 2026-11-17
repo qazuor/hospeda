@@ -438,6 +438,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Purge provider delivery log entries beyond the retention window.'
     },
     {
+        name: 'provider-watch-battery',
+        displayName: 'Batería de vigilancia del proveedor',
+        category: 'billing',
+        schedule: '17 7 * * 1',
+        description:
+            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Weekly on the sandbox test account (staging), monthly on production, manual on either (HOS-1512, AC:B1:15).'
+    },
+    {
         name: 'social-publish-dispatch',
         displayName: 'Despacho de publicaciones sociales',
         category: 'content',
