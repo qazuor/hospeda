@@ -6,9 +6,13 @@ import {
     manualPayments,
     payments,
     reconciliationMarks,
+    SYSTEM_USER_EMAIL,
+    SYSTEM_USER_ID,
     subscriptionPauses,
-    subscriptions
+    subscriptions,
+    users
 } from '@repo/db';
+import type { PaymentProvider } from '@repo/payments';
 import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import type { ComplementPolicyPorts } from '../../../src/services/billing/subscription/complement-ports.js';
@@ -64,6 +68,27 @@ const row = async (subscriptionId: string) => {
         .where(eq(subscriptionPauses.subscriptionId, subscriptionId));
     return { subscription, pauseRow };
 };
+const ensureSystemUser = async () => {
+    await db()
+        .insert(users)
+        .values({
+            id: SYSTEM_USER_ID,
+            slug: 'system-user',
+            email: SYSTEM_USER_EMAIL,
+            displayName: 'System',
+            emailVerified: true,
+            lifecycleState: 'ACTIVE',
+            isSystemAccount: true
+        })
+        .onConflictDoNothing();
+};
+const honestProvider = (harness: ReturnType<typeof adjustablePauseHarness>) =>
+    new Proxy(harness.fake as PaymentProvider, {
+        get(target, property, receiver) {
+            const value = Reflect.get(target, property, receiver);
+            return typeof value === 'function' ? value.bind(target) : value;
+        }
+    });
 
 afterEach(async () => {
     await retireComplementRows();
@@ -188,6 +213,86 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:3 S10 principal return', 
         expect(actual.subscription?.status).toBe('PAUSED');
         expect(actual.pauseRow?.actualEndAt).toBeNull();
         expect(marks).toEqual([{ reason: 'REANUDACION_NO_APLICADA' }]);
+    });
+
+    it('lifts the open resume mark in the same transaction when the retry confirms', async () => {
+        await ensureSystemUser();
+        const harness = adjustablePauseHarness({ resumeAcknowledgesOnly: true });
+        const principal = await seedPausePrincipal({ harness });
+        expect((await pause(harness, principal.subscriptionId, 2)).outcome).toBe('PAUSED');
+        const failed = await resumeSubscription(
+            { subscriptionId: principal.subscriptionId, cause: 'EARLY' },
+            ports(harness)
+        );
+        expect(failed.outcome).toBe('NOT_APPLIED');
+        const open = await db()
+            .select()
+            .from(reconciliationMarks)
+            .where(
+                and(
+                    eq(reconciliationMarks.subscriptionId, principal.subscriptionId),
+                    eq(reconciliationMarks.reason, 'REANUDACION_NO_APLICADA'),
+                    isNull(reconciliationMarks.liftedAt)
+                )
+            );
+        expect(open).toHaveLength(1);
+        const resumed = await resumeSubscription(
+            { subscriptionId: principal.subscriptionId, cause: 'EARLY' },
+            {
+                provider: honestProvider(harness),
+                clock: harness.clock,
+                complements: emptyComplements
+            }
+        );
+        const marks = await db()
+            .select()
+            .from(reconciliationMarks)
+            .where(
+                and(
+                    eq(reconciliationMarks.subscriptionId, principal.subscriptionId),
+                    eq(reconciliationMarks.reason, 'REANUDACION_NO_APLICADA')
+                )
+            );
+        const actual = await row(principal.subscriptionId);
+        expect(resumed.outcome).toBe('RESUMED');
+        expect(actual.subscription?.status).toBe('ACTIVE');
+        expect(actual.pauseRow?.actualEndAt).toEqual(harness.clock.now());
+        expect(marks).toHaveLength(1);
+        expect(marks[0]?.liftedAt).toEqual(harness.clock.now());
+        expect(marks[0]?.liftedBy).toBe(SYSTEM_USER_ID);
+        expect(marks[0]?.version).toBe((open[0]?.version ?? 0) + 1);
+    });
+
+    it('lifts only the resume reason and leaves another open reason untouched', async () => {
+        await ensureSystemUser();
+        const harness = adjustablePauseHarness();
+        const principal = await seedPausePrincipal({ harness });
+        expect((await pause(harness, principal.subscriptionId, 2)).outcome).toBe('PAUSED');
+        const placedAt = harness.clock.now();
+        await db()
+            .insert(reconciliationMarks)
+            .values([
+                {
+                    subscriptionId: principal.subscriptionId,
+                    reason: 'REANUDACION_NO_APLICADA',
+                    placedAt
+                },
+                { subscriptionId: principal.subscriptionId, reason: 'PAUSA_NO_APLICADA', placedAt }
+            ]);
+        const result = await resumeSubscription(
+            { subscriptionId: principal.subscriptionId, cause: 'EARLY' },
+            ports(harness)
+        );
+        const marks = await db()
+            .select()
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.subscriptionId, principal.subscriptionId));
+        const byReason = new Map(marks.map((mark) => [mark.reason, mark]));
+        expect(result.outcome).toBe('RESUMED');
+        expect(byReason.get('REANUDACION_NO_APLICADA')?.liftedAt).toEqual(harness.clock.now());
+        expect(byReason.get('REANUDACION_NO_APLICADA')?.liftedBy).toBe(SYSTEM_USER_ID);
+        expect(byReason.get('PAUSA_NO_APLICADA')?.liftedAt).toBeNull();
+        expect(byReason.get('PAUSA_NO_APLICADA')?.liftedBy).toBeNull();
     });
 
     it('advances every expired manual cycle without calling the provider or opening a payment', async () => {
