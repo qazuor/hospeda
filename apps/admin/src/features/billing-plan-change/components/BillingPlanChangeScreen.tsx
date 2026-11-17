@@ -236,6 +236,13 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                                             }
                                                         )}
                                                     </>
+                                                ) : preview?.mode === 'AT_CYCLE_END' ? (
+                                                    <>
+                                                        {' '}
+                                                        {t(
+                                                            'admin-billing.subscriptionPlanChange.previewAtCycleEndNoDate' as TranslationKey
+                                                        )}
+                                                    </>
                                                 ) : (
                                                     <>
                                                         {' '}

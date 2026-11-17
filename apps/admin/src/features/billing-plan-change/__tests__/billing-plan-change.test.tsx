@@ -70,7 +70,8 @@ function setup(
     result: object,
     optionsError?: Error,
     targetDirection: 'UP' | 'DOWN' = 'DOWN',
-    inspectionOverride: object = inspection
+    inspectionOverride: object = inspection,
+    nextChargeAt: string | null = '2026-12-01T03:00:00.000Z'
 ) {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
         if (method === 'POST') return Promise.resolve({ data: { data: result } });
@@ -81,7 +82,8 @@ function setup(
                     data: {
                         subscriptionId: id,
                         vertical: 'accommodation',
-                        nextChargeAt: '2026-12-01T03:00:00.000Z',
+                        nextChargeAt,
+
                         currentCycle: 'monthly',
                         options: [
                             option(currentId, 'Professional', true, 'owner-pro'),
@@ -186,6 +188,32 @@ describe('ACC_10 admin plan change screen', () => {
         expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
             es.subscriptionPlanChange.previewNeedsCheckout
         );
+    });
+    it('keeps the end-of-cycle message when the next charge date is unknown', async () => {
+        setup(
+            {
+                outcome: 'DOWNGRADE',
+                effectiveAt: null,
+                amountMinor: 0,
+                surplus: { applicable: false }
+            },
+            undefined,
+            'DOWN',
+            inspection,
+            null
+        );
+        await screen.findByText('Cliente: Cliente Uno');
+        fireEvent.change(screen.getByLabelText(es.subscriptionPlanChange.destination), {
+            target: { value: targetId }
+        });
+        fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
+        const confirmation =
+            screen.getByTestId('billing-plan-change-confirmation').textContent ?? '';
+        // A same-cycle downgrade is always applied at the end of the cycle, even when the
+        // subscription exposes no next charge date: it never requires a new checkout.
+        expect(confirmation).toContain('cierre del ciclo actual');
+        expect(confirmation).not.toContain(es.subscriptionPlanChange.previewNeedsCheckout);
+        expect(confirmation).toContain('Próximo cobro:');
     });
     it.each([
         [

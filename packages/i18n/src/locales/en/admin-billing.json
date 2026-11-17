@@ -2325,6 +2325,7 @@
         "note": "Note (optional)",
         "confirmation": "Confirm the change for {customer}: from {current} to {destination}.",
         "previewAtCycleEnd": "It takes effect at the end of the billing cycle, on {date}. The new amount applies in Mercado Pago as soon as you confirm.",
+        "previewAtCycleEndNoDate": "It takes effect at the end of the current billing cycle. The new amount applies in Mercado Pago as soon as you confirm.",
         "previewNeedsCheckout": "The customer must authorize a new checkout; the current plan continues until then.",
         "previewNextCharge": "Next charge: {amount}",
         "review": "Review change",
