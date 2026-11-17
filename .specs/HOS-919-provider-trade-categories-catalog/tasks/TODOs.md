@@ -212,7 +212,7 @@
   - Blocked by: T-036
   - Blocks: T-040, T-042
 
-- [ ] **T-040** (complexity: 3) - Render all category badges on edit form and mi-cuenta detail pages
+- [x] **T-040** (complexity: 3) - Render all category badges on edit form and mi-cuenta detail pages
   - Edit apps/web/src/components/account/HostTradeEditForm.client.tsx (~line 224, read-only badges, cate...
   - Blocked by: T-039
   - Blocks: T-042

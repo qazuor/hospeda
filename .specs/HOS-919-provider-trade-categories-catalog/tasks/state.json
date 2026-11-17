@@ -1409,39 +1409,39 @@
             "id": "T-040",
             "title": "Render all category badges on edit form and mi-cuenta detail pages",
             "description": "Edit apps/web/src/components/account/HostTradeEditForm.client.tsx (~line 224, read-only badges, categoryIds NOT editable), apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/index.astro (~line 140) and apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro (~line 158): show ALL categories as badges using the shared helper. Pages must stay session-blind.\nACs: AC-5.1, D3.\nTests (apps/web/test/components/HostTradeEditForm.test.tsx and astro page tests where present): all categories rendered (no '+N' cap); the form has no editable category input and does not send categoryIds; cacheable-pages-are-session-blind.guard.test.ts still green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-039"],
             "blocks": ["T-042"],
             "subtasks": [
                 {
                     "title": "HostTradeEditForm read-only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Detail page",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "registrar-uso page",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:28:55Z",
+                "completed": "2026-11-17T20:28:55Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 39,
+        "completed": 40,
         "blocked": 0,
         "averageComplexity": 2.5
     }
