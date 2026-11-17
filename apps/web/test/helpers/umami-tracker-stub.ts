@@ -1,7 +1,7 @@
 /**
  * @file umami-tracker-stub.ts
  * @description A `window.umami` stub that behaves like the Umami 3.5.0 tracker
- * where the browser-to-server session join depends on it (HOS-2119):
+ * where the per-user session depends on it (HOS-2119):
  *
  * - `track()` returns a promise that settles only when the test answers the
  *   request (`respond`), like the tracker's `send()` awaiting `fetch`.
@@ -10,10 +10,12 @@
  *   (`respond({ ok: false })`) resolves too, because the tracker swallows
  *   errors, but leaves no token.
  * - `identify()` records whether the tracker held a token when it was called:
- *   an identify without it opens a separate `uuid(…, id)` session in Umami.
+ *   an identify WITH it claims the anonymous fingerprint session (the leak the
+ *   2026-11-17 revision removed); one without it opens `uuid(…, id)`.
  */
 
 import { vi } from 'vitest';
+import { resetVisitorIdentityGate } from '@/lib/analytics/umami-identity-gate';
 import {
     type StartUmamiPageviewsResult,
     startUmamiPageviews
@@ -93,21 +95,35 @@ export async function flushMicrotasks(): Promise<void> {
 export interface PageOptions {
     /** Whether the page renders `<ClientRouter />` (soft navigation). */
     readonly clientRouter?: boolean;
+    /**
+     * Whether the page mounts an auth-aware island, so `UmamiScript.astro`
+     * renders the `umami-await-identity` meta (BaseLayout).
+     */
+    readonly awaitIdentity?: boolean;
 }
 
 let pageviews: StartUmamiPageviewsResult | null = null;
 
 /**
- * Renders the element `UmamiScript.astro` emits, plus the ClientRouter meta
- * when asked.
+ * Renders the element `UmamiScript.astro` emits, plus the ClientRouter and
+ * await-identity metas when asked.
  *
  * @param options - Page options.
  */
-export function renderTrackerElement({ clientRouter = false }: PageOptions = {}): void {
+export function renderTrackerElement({
+    clientRouter = false,
+    awaitIdentity = false
+}: PageOptions = {}): void {
     document.head.insertAdjacentHTML(
         'beforeend',
         '<script data-website-id="site-id" data-auto-pageview="false"></script>'
     );
+    if (awaitIdentity) {
+        document.head.insertAdjacentHTML(
+            'beforeend',
+            '<meta name="umami-await-identity" content="true">'
+        );
+    }
     if (clientRouter) {
         document.head.insertAdjacentHTML(
             'beforeend',
@@ -138,7 +154,7 @@ export function loadPage({ clientRouter = false }: PageOptions = {}): UmamiTrack
 
 /**
  * A loaded document whose pageview Umami already answered, so the tracker
- * holds the cache token.
+ * holds the cache token (an identify now would claim the anonymous session).
  *
  * @returns The tracker stub.
  */
@@ -149,10 +165,14 @@ export async function acknowledgedPage(): Promise<UmamiTrackerStub> {
     return umami;
 }
 
-/** Undoes the page helpers: stops the pageview module and clears the head. */
+/**
+ * Undoes the page helpers: stops the pageview module, re-arms the identity
+ * gate and clears the head.
+ */
 export function unloadPage(): void {
     pageviews?.stop();
     pageviews = null;
+    resetVisitorIdentityGate();
     document.head.innerHTML = '';
     window.history.replaceState({}, '', '/');
 }

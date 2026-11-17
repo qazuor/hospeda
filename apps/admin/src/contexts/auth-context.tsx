@@ -9,7 +9,7 @@
  */
 
 import { createContext, type ReactNode, useCallback, useEffect, useState } from 'react';
-import { identifyUser, resetUser } from '@/lib/analytics/umami-client';
+import { identifyUser, markVisitorAnonymous, resetUser } from '@/lib/analytics/umami-client';
 import { fetchApi } from '@/lib/api/client';
 import { signOut as authSignOut, useSession } from '@/lib/auth-client';
 import type { AuthState as ServerAuthState } from '@/lib/auth-session';
@@ -426,12 +426,19 @@ export function AuthProvider({ children, initialAuthState }: AuthProviderProps) 
      * domain or roles. The counterpart `resetUser()` call lives in
      * `handleSignOut`, not here, so this effect never needs to distinguish
      * "not yet loaded" from "signed out".
+     *
+     * The document's first Umami pageview waits for this effect (HOS-2119,
+     * `UmamiPageviews`): `identifyUser` releases it once the identify went
+     * out, and a session that resolved without a user releases it through
+     * `markVisitorAnonymous`, so it never waits for the timeout.
      */
     useEffect(() => {
         if (authState.isAuthenticated && authState.user) {
             identifyUser(authState.user.id);
+            return;
         }
-    }, [authState.isAuthenticated, authState.user]);
+        if (!authState.isLoading) markVisitorAnonymous();
+    }, [authState.isAuthenticated, authState.isLoading, authState.user]);
 
     const contextValue: AuthContextValue = {
         ...authState,
