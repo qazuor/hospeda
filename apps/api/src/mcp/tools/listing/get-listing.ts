@@ -52,6 +52,7 @@ import {
     fetchVenueFeatures
 } from '../../../utils/listing-catalog-relations';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
+import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import {
     type ListingToolVertical,
     ListingToolVerticalSchema,
@@ -331,6 +332,10 @@ export const getListingTool = defineTool({
     inputSchema: GetListingInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
+    refusalAction: ({ error, input }) => {
+        const ref = readListingRef({ input });
+        return ref === undefined ? undefined : listingRefusalLink({ error, ref });
+    },
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> =>
         readOwnListingDetail({ actor, vertical: input.vertical, id: input.id })
 });

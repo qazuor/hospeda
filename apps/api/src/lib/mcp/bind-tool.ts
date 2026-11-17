@@ -22,7 +22,9 @@
  * 5. audits write tools with `recordMcpToolCall` (success, denied or error),
  *    malformed calls included (AC-12: every write call leaves a record);
  * 6. renders the outcome as an MCP result: text content on success,
- *    `isError: true` with the Spanish message on failure, plus
+ *    `isError: true` with the Spanish message on failure (and, when the
+ *    refusal has a portal page, its URL on a last line of the text and in
+ *    `structuredContent.action`, HOS-2326), plus
  *    `_meta['mcp/www_authenticate']` when the user must reconnect (spec
  *    §6.3; ChatGPT shows its linking UI on it).
  *
@@ -160,15 +162,42 @@ function buildRateLimitFailure(): ToolFailure {
     });
 }
 
+/**
+ * Line that introduces the portal link in a refusal's text. The text is
+ * authoritative: some clients ignore `structuredContent` when a tool has no
+ * `outputSchema`, so the URL must be readable from `content` alone.
+ */
+export const REFUSAL_ACTION_LINE_PREFIX = 'Podés hacerlo acá:';
+
+/** The text of a failure: its message, plus the portal link on its own last line. */
+function renderFailureText(failure: ToolFailure): string {
+    return failure.action
+        ? `${failure.message}\n${REFUSAL_ACTION_LINE_PREFIX} ${failure.action.url}`
+        : failure.message;
+}
+
+/** The machine-readable twin of the failure's link and help topic, when it has either. */
+function renderFailureStructuredContent(failure: ToolFailure): CallToolResult['structuredContent'] {
+    if (failure.action === undefined && failure.helpTopicId === undefined) {
+        return undefined;
+    }
+    return {
+        ...(failure.action === undefined ? {} : { action: failure.action }),
+        ...(failure.helpTopicId === undefined ? {} : { helpTopicId: failure.helpTopicId })
+    };
+}
+
 /** Renders a run outcome as an MCP tool result. */
 function renderOutcome<TData>(outcome: ToolRunOutcome<TData>): CallToolResult {
     if (outcome.ok) {
         return renderSuccess(outcome.data);
     }
     const { failure } = outcome;
+    const structuredContent = renderFailureStructuredContent(failure);
     return {
-        content: [{ type: 'text', text: failure.message }],
+        content: [{ type: 'text', text: renderFailureText(failure) }],
         isError: true,
+        ...(structuredContent === undefined ? {} : { structuredContent }),
         ...(failure.requiresReauthentication
             ? {
                   _meta: {

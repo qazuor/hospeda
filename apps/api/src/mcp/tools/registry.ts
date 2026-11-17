@@ -10,10 +10,12 @@ import { getInquiryTool } from './inquiry/get-inquiry';
 import { listInquiriesTool } from './inquiry/list-inquiries';
 import { replyInquiryTool } from './inquiry/reply-inquiry';
 import { getListingTool } from './listing/get-listing';
+import { getListingAmenitiesTool } from './listing/get-listing-amenities';
 import { getListingStatsTool } from './listing/get-listing-stats';
 import { listAmenitiesAndFeaturesTool } from './listing/list-amenities-and-features';
 import { listMyListingsTool } from './listing/list-my-listings';
 import { setListingPublicationTool } from './listing/set-listing-publication';
+import { updateListingAmenitiesTool } from './listing/update-listing-amenities';
 import { updateListingBasicTool } from './listing/update-listing-basic';
 import type { ToolDefinition } from './tool-definition';
 
@@ -22,6 +24,8 @@ export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     listMyListingsTool,
     getListingTool,
     updateListingBasicTool,
+    getListingAmenitiesTool,
+    updateListingAmenitiesTool,
     setListingPublicationTool,
     listAmenitiesAndFeaturesTool,
     getListingStatsTool,

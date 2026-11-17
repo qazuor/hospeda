@@ -407,6 +407,13 @@ jobs:
       # why (b). Its message names which predicate failed.
       - name: Check the fake provider lies only from its closed list (GUARD:G15)
         run: pnpm check:fake-lies
+      # HOS-2326 (spec HOS-2335 AC-C5, owner decision D-1). Its own step, like every guard here.
+      # The API keeps its own copy of the owner portal's paths for the links on assistant
+      # refusals; this fails when a page the copy points at is renamed or deleted in
+      # apps/web, or an editor section slug stops having its page. Fix: update
+      # apps/api/src/mcp/portal/portal-routes.ts in the same PR.
+      - name: Check the assistant's portal links still resolve to web pages (HOS-2326)
+        run: pnpm check:portal-routes
       # Drizzle skips, without an error, any migration whose `when` is not above the
       # last applied one. Rule 1 (monotonic journal) always runs; rule 2 (new entries
       # above origin/<base>) only on a PR to staging or main. On `push` base_ref is

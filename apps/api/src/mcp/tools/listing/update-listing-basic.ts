@@ -46,35 +46,33 @@ import {
     AccommodationUpdateHttpSchema,
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
-    httpToDomainAccommodationUpdate,
+    ServiceErrorCode,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { type Actor, entityNotFoundError } from '@repo/service-core';
 import { z } from 'zod';
-import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../middlewares/accommodation-cache-invalidation';
-import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
-import {
-    decideListingAccess,
-    type ListingAccessWithSections,
-    throwListingAccessRefusal
-} from '../../../middlewares/listing-access';
-import {
-    experienceOwnerEditSections,
-    experienceOwnerEditSectionTraits,
-    venueOwnerEditSections
-} from '../../../utils/listing-access/owner-edit-listing-access';
 import { SPANISH_PARSE_PARAMS } from '../run-tool';
-import { defineTool, type ToolHandlerResult } from '../tool-definition';
+import {
+    defineTool,
+    type ToolErrorPayload,
+    type ToolHandlerResult,
+    type ToolRefusalLink
+} from '../tool-definition';
 import { type ListingDetail, readOwnListingDetail } from './get-listing';
 import {
-    LISTING_TOOL_VERTICALS,
-    type ListingToolVertical,
-    listingToolAccommodationService,
-    listingToolExperienceService,
-    listingToolVenueService
-} from './listing-services';
+    authorizeOwnerEdit,
+    writeAccommodationPatch,
+    writeScheduledPatch
+} from './listing-owner-write';
+import {
+    editorLink,
+    type ListingRef,
+    listingRefusalLink,
+    readListingRef,
+    sectionForField
+} from './listing-refusal-actions';
+import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from './listing-services';
 
 /** The fields venues and experiences accept, in the order they are documented. */
 const SCHEDULED_BASIC_FIELDS = {
@@ -112,9 +110,6 @@ const UPDATE_LISTING_BASIC_VERTICALS = LISTING_TOOL_VERTICALS;
 
 /** One of {@link UPDATE_LISTING_BASIC_VERTICALS}. */
 type UpdateListingBasicVertical = ListingToolVertical;
-
-/** A vertical whose listings have opening hours (venue, experience). */
-type ScheduledVertical = Exclude<UpdateListingBasicVertical, VerticalEnum.ACCOMMODATION>;
 
 /** Per vertical: its allowlist schema and the Spanish name used in messages. */
 const VERTICAL_PATCH: Readonly<
@@ -259,115 +254,64 @@ export const UpdateListingBasicInputSchema = z
 /** Validated input of `update_listing_basic`. */
 export type UpdateListingBasicInput = z.output<typeof UpdateListingBasicInputSchema>;
 
-/** The uniform not-found error, whatever the vertical. */
-function notFound(): ToolHandlerResult<never> {
-    const error = entityNotFoundError({ entityName: 'listing' });
-    return { error: { code: error.code, message: error.message } };
-}
-
-/** The owner PATCH route's listing-access declaration for a vertical. */
-function ownerEditDeclaration(vertical: UpdateListingBasicVertical): ListingAccessWithSections {
-    if (vertical === VerticalEnum.ACCOMMODATION) {
-        return { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' };
-    }
-    if (vertical === VerticalEnum.VENUE) {
-        return {
-            vertical: VerticalEnum.VENUE,
-            operation: 'EDIT',
-            idParam: 'id',
-            listingSection: venueOwnerEditSections
-        };
-    }
-    return {
-        vertical: VerticalEnum.EXPERIENCE,
-        operation: 'EDIT',
-        idParam: 'id',
-        listingSection: experienceOwnerEditSections,
-        sectionTraits: experienceOwnerEditSectionTraits
-    };
-}
-
-/**
- * Runs the route's listing-access step, owner-only. Resolves to `undefined`
- * when allowed, to the not-found error for a foreign or missing listing;
- * every other refusal is thrown as the route throws it (a `ServiceError`,
- * mapped by the tool executor).
- */
-async function authorizeOwnerEdit(input: {
-    readonly actor: Actor;
-    readonly vertical: UpdateListingBasicVertical;
-    readonly id: string;
-    readonly patch: Record<string, unknown>;
-}): Promise<ToolHandlerResult<never> | undefined> {
-    const config = ownerEditDeclaration(input.vertical);
-    const decision = await decideListingAccess({
-        actor: input.actor,
-        listingId: input.id,
-        config,
-        tier: 'protected',
-        body: input.patch,
-        ownerOnly: true
-    });
-    if (decision === null) {
-        return notFound(); // never for EDIT; fail closed
-    }
-    const { result, subjectId, ports } = decision;
-    if (result.allowed) {
-        return undefined;
-    }
-    if (result.reason === 'NOT_FOUND') {
-        return notFound();
-    }
-    return throwListingAccessRefusal({ config, result, subjectId, ports });
-}
-
-/**
- * Converts the flat patch and calls `AccommodationService.update`, as the
- * accommodation owner PATCH route does.
- */
-async function updateAccommodation(input: {
-    readonly actor: Actor;
-    readonly id: string;
-    readonly patch: AccommodationUpdateHttp;
-}): Promise<ToolHandlerResult<never> | undefined> {
-    const result = await listingToolAccommodationService.update(
-        input.actor,
-        input.id,
-        httpToDomainAccommodationUpdate(input.patch)
-    );
-    if (result.error) {
-        return { error: result.error };
-    }
-    // The route's HTTP-level eviction (HOS-2063) does not wrap a tool call.
-    for (const pathPrefix of ACCOMMODATION_CACHE_INVALIDATION_PREFIXES) {
-        invalidateCacheByPathPrefix({ pathPrefix });
-    }
-    return undefined;
-}
-
-/** Calls the vertical's `updateOwn`, as the owner PATCH route does. */
-async function updateScheduled(input: {
-    readonly actor: Actor;
-    readonly vertical: ScheduledVertical;
-    readonly id: string;
-    readonly patch: VenueOwnerUpdateInput & ExperienceOwnerUpdateInput;
-}): Promise<ToolHandlerResult<never> | undefined> {
-    const { actor, vertical, id, patch } = input;
-    const result =
-        vertical === VerticalEnum.VENUE
-            ? await listingToolVenueService.updateOwn(id, patch, actor)
-            : await listingToolExperienceService.updateOwn(id, patch, actor);
-    if (result.error) {
-        return { error: result.error };
-    }
-    return undefined;
-}
-
 /** Spanish messages for refusal reasons the route can return. */
 const UPDATE_LISTING_BASIC_REASON_MESSAGES: Readonly<Record<string, string>> = {
     SECTION_ABSENT:
         'Esa sección no existe para el tipo de publicación. Revisá los campos que querés cambiar.'
 };
+
+/** Keys every call carries that are never a field to edit. */
+const NON_FIELD_KEYS: ReadonlySet<string> = new Set(['vertical', 'id']);
+
+/**
+ * The first key of a call's RAW input that the vertical's allowlist refuses:
+ * an unknown key (`name`, `images`, `price`) or a known field of another
+ * vertical. Read from the input rather than from the zod issues, which spell
+ * the two cases differently (`unrecognized_keys` vs a custom issue).
+ */
+function firstForeignField(input: {
+    readonly vertical: string;
+    readonly raw: unknown;
+}): string | undefined {
+    const vertical = UPDATE_LISTING_BASIC_VERTICALS.find((v) => v === input.vertical);
+    if (vertical === undefined || typeof input.raw !== 'object' || input.raw === null) {
+        return undefined;
+    }
+    const editable = Object.keys(VERTICAL_PATCH[vertical].schema.shape);
+    return Object.keys(input.raw).find(
+        (key) => !NON_FIELD_KEYS.has(key) && !editable.includes(key)
+    );
+}
+
+/**
+ * Where a refusal points (HOS-2326, AC-C1). A field the tool does not edit goes
+ * to the editor section that does (`name` → `datos`, a photo field → `fotos`, a
+ * price → `precio`/`capacidad-precio`, a location field → `ubicacion`), and a
+ * field with no section to the editor hub. The link is built from the call's own
+ * input before any lookup, so it is the same whether or not the listing exists.
+ * Anything else falls back to the shared listing links.
+ */
+function refusalActionFor(args: {
+    readonly error: ToolErrorPayload;
+    readonly input: unknown;
+}): ToolRefusalLink | undefined {
+    const ref: ListingRef | undefined = readListingRef({ input: args.input });
+    if (ref === undefined) {
+        return undefined;
+    }
+    if (args.error.code === ServiceErrorCode.VALIDATION_ERROR) {
+        const field = firstForeignField({ vertical: ref.vertical, raw: args.input });
+        return field === undefined
+            ? undefined
+            : {
+                  destination: editorLink({
+                      ref,
+                      section: sectionForField({ vertical: ref.vertical, field })
+                  })
+              };
+    }
+    return listingRefusalLink({ error: args.error, ref });
+}
 
 /**
  * `update_listing_basic`: a write that changes only what the owner PATCH
@@ -377,11 +321,12 @@ export const updateListingBasicTool = defineTool({
     name: 'update_listing_basic',
     title: 'Editar datos básicos de una publicación',
     description:
-        'Changes the basic data of one listing the connected Hospeda user owns. Accommodations accept summary, description, phone, website, amenityIds and featureIds (they have no opening hours). Venues and experiences accept description, openingHours, contactInfo, amenityIds and featureIds. Send only the fields to change, with at least one; any other field is rejected. amenityIds and featureIds REPLACE the whole set (not a delta; [] clears it): to add an amenity, send the listing current ids plus the new one, taken from get_listing, and look up valid ids with list_amenities_and_features. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings, and read the current values with get_listing first. Answers with the listing as stored after the change.',
+        'Changes the basic data of one listing the connected Hospeda user owns. Accommodations accept summary, description, phone, website, amenityIds and featureIds (they have no opening hours). Venues and experiences accept description, openingHours, contactInfo, amenityIds and featureIds. Send only the fields to change, with at least one; any other field is rejected. amenityIds and featureIds REPLACE the whole set (not a delta; [] clears it) and are for replacing it as a whole: to add or remove items of one category use update_listing_amenities, which leaves the rest alone. If you do replace the set, send the listing current ids plus the changes, taken from get_listing, and look up valid ids with list_amenities_and_features. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings, and read the current values with get_listing first. Answers with the listing as stored after the change.',
     inputSchema: UpdateListingBasicInputSchema,
     isWrite: true,
     hints: { destructiveHint: false, idempotentHint: true },
     reasonMessages: UPDATE_LISTING_BASIC_REASON_MESSAGES,
+    refusalAction: refusalActionFor,
     auditTarget: ({ input }) => ({ type: input.vertical, id: input.id }),
     auditContentLength: ({ input }) => input.description?.length,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> => {
@@ -401,7 +346,7 @@ export const updateListingBasicTool = defineTool({
             if (refused) {
                 return refused;
             }
-            const failed = await updateAccommodation({ actor, id, patch });
+            const failed = await writeAccommodationPatch({ actor, id, patch });
             if (failed) {
                 return failed;
             }
@@ -421,7 +366,7 @@ export const updateListingBasicTool = defineTool({
         if (refused) {
             return refused;
         }
-        const failed = await updateScheduled({ actor, vertical, id, patch });
+        const failed = await writeScheduledPatch({ actor, vertical, id, patch });
         if (failed) {
             return failed;
         }

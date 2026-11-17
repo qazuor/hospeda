@@ -197,17 +197,19 @@ failure to write the record is logged and swallowed.
 
 ## Tool catalog
 
-Nine tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
+Eleven tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
 | `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. |
 | `get_listing` | read | read-only | Editable fields, amenities and features as `{ id, slug }`. |
-| `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. |
+| `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. Each entry carries its `category`. |
+| `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
 | `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. |
 | `list_inquiries` | read | read-only | Filters: `status`, `listingId`, paging. Accommodations only. |
 | `get_inquiry` | read | read-only | Never marks the inquiry read. |
 | `update_listing_basic` | write | idempotent, not destructive | Accommodation, venue, experience. |
+| `update_listing_amenities` | write | idempotent, not destructive | Adds or removes the items of ONE category; the rest of the set is untouched. No confirmation token. |
 | `set_listing_publication` | write | **destructive**, not idempotent | `pause` or `resume`. |
 | `reply_inquiry` | write | open-world, not destructive, not idempotent | Two-step, see below. |
 
@@ -234,7 +236,14 @@ Tool-specific rules:
   only), inquiries of this listing, and owner-wide inquiry figures. Metrics a
   vertical does not have are omitted, never zero.
 - `update_listing_basic`: `amenityIds` and `featureIds` **replace** the whole set
-  (`[]` clears it). To add one, send the current ids plus the new one.
+  (`[]` clears it). To add or remove items of one category, use
+  `update_listing_amenities`.
+- `update_listing_amenities`: sends `(current minus remove) plus add` for the one kind
+  named, so other categories and the other kind are carried over untouched. Every id
+  must be a catalog row of that kind and category that applies to the listing's
+  vertical (`applicable_verticals`), otherwise a validation error names the id and
+  nothing is written. It runs the owner PATCH route's listing access and service
+  call, and evicts the public accommodation cache after a write (HOS-2323).
 - `set_listing_publication`: resuming an **archived** listing is two steps. The
   first `resume` returns it to draft, the second puts it online. Going online needs
   an active plan or the free trial and a free slot. Refusals map to Spanish reasons

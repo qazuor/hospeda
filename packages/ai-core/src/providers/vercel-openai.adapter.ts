@@ -86,16 +86,20 @@ const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
  * ... Missing '<field>'"`.
  *
  * These features opt OUT of strict JSON schema (`strictJsonSchema: false`) so the
- * model may omit slots. The result is still validated downstream (search-chat
- * re-parses the entity bag and falls back to `{}`), but relaxing the
- * provider-side contract has a cost: without strict mode the model may rename
- * keys, and a lenient downstream parse silently drops the renamed ones.
+ * model may omit slots. Relaxing the provider-side contract has a cost: without
+ * strict mode the model may rename keys, and a lenient downstream parse
+ * silently drops the renamed ones.
+ *
+ * The list is EMPTY since HOS-2294: both former members (`accommodation_import`,
+ * HOS-2250, and `search`, HOS-2294) now send a strict schema.
  *
  * Prefer strict mode for a new feature: send a schema whose every field is
  * required and nullable, and map `null` back to absent after the call. That is
  * what `accommodation_import` does since HOS-2250 (it left this list after the
  * model renamed `capacity`/`price`/`amenityNames`/`street` and imports lost
- * them; see `apps/api/src/routes/accommodation/protected/import-from-url.ai.ts`).
+ * them; see `apps/api/src/routes/accommodation/protected/import-from-url.ai.ts`)
+ * and `search` since HOS-2294 (see
+ * `apps/api/src/routes/ai/protected/search-chat.model-output.ts`).
  *
  * This list is intentionally OpenAI-specific: the Anthropic adapter does not
  * suffer this constraint. If you add a NEW `generateObject` feature whose output
@@ -106,7 +110,7 @@ const MODERATION_ENDPOINT = 'https://api.openai.com/v1/moderations' as const;
  * Exported (not re-exported from the package barrel) so the AI model sweep
  * (`scripts/ai-sweep`, HOS-2217) sends the same strict flag production sends.
  */
-export const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set(['search']);
+export const FEATURES_WITHOUT_STRICT_JSON_SCHEMA: ReadonlySet<AiFeature> = new Set<AiFeature>();
 
 // ---------------------------------------------------------------------------
 // Constructor input
@@ -375,11 +379,16 @@ export class OpenAiAdapter implements AiProvider {
      * @param input - Request envelope with prompt, feature key, and optional
      *   model/param overrides.
      * @param outputSchema - Zod schema for the target type `T`.
+     * @param options - Per-call override. `strictJsonSchema: false` runs this call
+     *   without OpenAI strict structured outputs even when the feature is not in
+     *   {@link FEATURES_WITHOUT_STRICT_JSON_SCHEMA}. Used by `extractIntent`, whose
+     *   open-ended `AiIntentSchema` cannot be expressed in strict mode (HOS-2294).
      * @returns The generated typed `object` merged with usage metadata.
      */
     async generateObject<T>(
         input: GenerateObjectRequest,
-        outputSchema: ZodType<T>
+        outputSchema: ZodType<T>,
+        options?: { readonly strictJsonSchema?: boolean }
     ): Promise<{ object: T } & GenerateObjectResponseMeta> {
         const model = resolveModel(input.model, DEFAULT_MODEL);
         const languageModel = this.resolveLanguageModel(model);
@@ -395,7 +404,9 @@ export class OpenAiAdapter implements AiProvider {
         // output schema with optional/default properties. Features that extract
         // partial slots (see FEATURES_WITHOUT_STRICT_JSON_SCHEMA) opt out so the
         // model may omit fields; callers still safeParse the result downstream.
-        const relaxStrictJsonSchema = FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has(input.feature);
+        const relaxStrictJsonSchema =
+            FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has(input.feature) ||
+            options?.strictJsonSchema === false;
 
         const sdkResult = await generateObject({
             model: languageModel,
@@ -460,6 +471,14 @@ export class OpenAiAdapter implements AiProvider {
      * output schema. The prompt instructs the model to produce the base intent
      * shape (kind, confidence, entities, rawQuery).
      *
+     * Runs WITHOUT strict structured outputs (HOS-2294). `AiIntentSchema` has an
+     * open `entities` record that serializes with `additionalProperties`,
+     * `propertyNames` and `minLength`/`minimum`/`maximum`, which OpenAI strict
+     * mode rejects with a 400. The `search` feature itself is strict now, so the
+     * opt-out is an explicit per-call override instead of a feature-wide entry.
+     * No production route calls `extractIntent` today (search-chat uses
+     * `generateObject` with `SearchIntentModelOutputSchema`).
+     *
      * @param input - Request containing the raw query and an optional locale hint.
      * @returns A validated `AiIntent` with kind, confidence, entities, and rawQuery.
      */
@@ -481,7 +500,8 @@ export class OpenAiAdapter implements AiProvider {
                 locale: input.locale ?? 'es',
                 prompt
             },
-            AiIntentSchema as unknown as ZodType<AiIntent>
+            AiIntentSchema as unknown as ZodType<AiIntent>,
+            { strictJsonSchema: false }
         );
 
         // result.object is non-undefined here: generateObject() throws if the

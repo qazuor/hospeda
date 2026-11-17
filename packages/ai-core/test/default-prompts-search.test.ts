@@ -89,7 +89,7 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-212 conversational refinement frami
     });
 
     it('explains how to drop a filter the user removes', () => {
-        expect(prompt).toMatch(/DROP \(omit\) only the/);
+        expect(prompt).toMatch(/DROP \(set to null\) only the/);
     });
 
     it('scopes the single-turn omit rule to when no current filter set is provided', () => {
