@@ -14,7 +14,7 @@ vi.mock('@repo/db', async () => ({
 
 import {
     AI_CONVERSATION_PREVIEW_MAX,
-    CONVERSATION_LIST_SELECT,
+    buildConversationListSelect,
     toConversationDetail,
     toConversationListItems
 } from '../../src/services/ai-conversations-admin.service.js';
@@ -108,13 +108,16 @@ describe('toConversationDetail', () => {
     });
 });
 
-describe('CONVERSATION_LIST_SELECT (HOS-2319)', () => {
+describe('buildConversationListSelect (HOS-2319)', () => {
     it('correlates the message subqueries to the OUTER conversation id', () => {
         // Arrange
         const db = drizzle.mock();
 
         // Act
-        const { sql: text } = db.select(CONVERSATION_LIST_SELECT).from(aiConversations).toSQL();
+        const { sql: text } = db
+            .select(buildConversationListSelect())
+            .from(aiConversations)
+            .toSQL();
 
         // Assert: a bare "id" would resolve to the inner ai_messages.id.
         const correlations = text.match(/m\.conversation_id = ([^ )]+)/g) ?? [];
