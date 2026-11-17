@@ -623,311 +623,311 @@
             "id": "T-018",
             "title": "Create HostTradeCategoryGroupService with permissions and CATEGORY_IN_USE error",
             "description": "Create packages/service-core/src/services/host-trade-category/host-trade-category-group.service.ts extending BaseCrudService, plus host-trade-category.permissions.ts mirroring poi-category.permissions.ts (PermissionEnum only, never roles), index exports. Add the business error code CATEGORY_IN_USE to the service error map (FIRST check the map for a colliding name; spec open point) mapped to HTTP 409. Rules: create/update (update schema rejects slug), deactivate always allowed, soft delete blocked with CATEGORY_IN_USE if any non-deleted category exists in the group, restore allowed, deleted slug cannot be reused. Return Result<T>.\nACs: AC-3.1, AC-3.3, AC-3.4, AC-3.5, AC-3.6.\nTests (packages/service-core/test/services/host-trade-category/host-trade-category-group.service.test.ts): without permission -> FORBIDDEN; delete with active child -> CATEGORY_IN_USE; delete empty group ok; restore ok; deactivate with children ok; update with slug rejected; creating with a deleted slug fails.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-010", "T-003"],
             "blocks": ["T-019", "T-028"],
             "subtasks": [
                 {
                     "title": "Service + permissions file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CATEGORY_IN_USE in error map",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-019",
             "title": "Create HostTradeCategoryService with in-use delete semantics",
             "description": "Create packages/service-core/src/services/host-trade-category/host-trade-category.service.ts extending BaseCrudService. Create requires an existing, non-deleted group (group_id), nameI18n.es, kebab slug; update rejects slug; admin list filters groupId, lifecycleState, q (name/keywords via safeIlike, never raw ilike); soft delete returns CATEGORY_IN_USE (409) if any non-deleted host_trades row links it (model.countLinkedHostTrades); deactivate always allowed; restore allowed.\nACs: AC-3.1, AC-3.3, AC-3.4, AC-3.5, AC-3.6.\nTests (.../host-trade-category.service.test.ts): create under missing/deleted group fails; delete with linked live provider -> CATEGORY_IN_USE; delete when only a soft-deleted provider links it succeeds at service level; INACTIVE patch ok even in use; q filter escapes % and _.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018"],
             "blocks": ["T-020", "T-029"],
             "subtasks": [
                 {
                     "title": "Service implementation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "In-use delete",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-020",
             "title": "Implement getPublicCatalog() in the category services",
             "description": "Add getPublicCatalog() to packages/service-core/src/services/host-trade-category/ returning PublicHostTradeCatalogSchema shape in one query via HostTradeCategoryModel.findPublicCatalog (no permission, guest allowed). Groups with zero active categories omitted. Output validated with the Zod schema.\nACs: AC-1.1, AC-3.3, AC-6.1.\nTests (.../host-trade-category.public-catalog.test.ts, models mocked per package conventions): inactive category hidden, inactive group hides all its categories, deleted rows hidden, empty groups omitted, order by group weight then category weight then name, output passes PublicHostTradeCatalogSchema.parse.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": ["T-025", "T-027"],
             "subtasks": [
                 {
                     "title": "getPublicCatalog implementation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-021",
             "title": "Update HostTradeService search, count and admin search for the categories filter",
             "description": "Edit packages/service-core/src/services/hostTrade/host-trade.service.ts (_executeSearch, _executeCount near lines 487/508 and the admin search): stop building where.category; translate the categories: string[] param into the model EXISTS predicate (task 8) so it also applies in count; hydrate categories for every returned page with ONE batched model call (hydrateCategories); drop any use of the removed category field.\nACs: AC-4.4, AC-5.1, AC-5.2, AC-5.4.\nTests (packages/service-core/test/services/hostTrade/host-trade.service.categories.test.ts): categories ['plomeria','pintura'] calls the predicate method and NOT the where map; count uses the same predicate (count equals list length); unknown-only slugs -> empty list; hydration invoked once per page; page items carry categories refs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-010"],
             "blocks": ["T-022", "T-026", "T-031", "T-048"],
             "subtasks": [
                 {
                     "title": "Search and count predicate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Admin search",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Page hydration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-022",
             "title": "Add categoryIds validation and atomic set replacement to HostTradeService create/update",
             "description": "Edit host-trade.service.ts create/update: with categoryIds validate every id exists and is not deleted; an INACTIVE id is allowed only if already linked to that provider (AC-4.3), otherwise ValidationError naming categoryIds; require 1..10 unique ids; write the row and call replaceCategories in the SAME transaction (use the transaction pattern used elsewhere in this service). Update without categoryIds leaves the set untouched.\nACs: AC-4.1, AC-4.2, AC-4.3.\nTests (.../host-trade.service.categories-write.test.ts): unknown id -> 400-class error; deleted id rejected; inactive new id rejected; inactive already-linked id accepted; 0 and 11 ids rejected; update without categoryIds keeps the set; replaceCategories receives the same tx as the row update; failure inside tx propagates (no partial write).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021", "T-009", "T-007"],
             "blocks": ["T-031", "T-048"],
             "subtasks": [
                 {
                     "title": "Validation rules",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Transactional replace",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-023",
             "title": "Update HOST_TRADE_OWNER_FORBIDDEN_FIELDS for categoryIds",
             "description": "Edit packages/schemas/src/entities/host-trade/host-trade-managed-fields.ts: add categoryIds and remove category from HOST_TRADE_OWNER_FORBIDDEN_FIELDS (D3: providers never edit categories). Update packages/schemas/src/entities/host-trade/__tests__/host-trade-managed-fields.guard.test.ts and host-trade.owner.schema.test.ts. Check host-trade.owner.schema.ts (owner update schema) does not accept categoryIds.\nACs: AC-4.1 (admin-only editing), D3.\nTests: owner update payload containing categoryIds is rejected / stripped per the existing strictness; the guard test lists categoryIds and no longer lists category; owner schema keys do not intersect the forbidden list.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002"],
             "blocks": ["T-031"],
             "subtasks": [
                 {
                     "title": "Edit forbidden fields constant",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update guard + owner schema tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "security"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-024",
             "title": "Update alliance-lead provisioning to resolve categorySlugs",
             "description": "Edit the alliance-lead provisioning (alliance-lead.provisioning.ts in packages/service-core/src/services/alliance-lead/; ~line 90 currently safeParse(lead.category)): resolve lead.categorySlugs to ACTIVE category ids via HostTradeCategoryModel.findActiveBySlugs; keep active ones; if none active return skip: 'no-active-category'; otherwise insert join rows inside the provisioning transaction. Never read lead.category.\nACs: AC-2.1, AC-2.2, AC-2.3.\nTests (service-core test next to the provisioning tests): [plomeria, destapaciones-desagotes] all active -> exactly two join rows; one deactivated -> only the active one; none active -> skip 'no-active-category' and no host_trade row; lead with only legacy category (categorySlugs null) never reads category; join insert runs in the same tx.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-007", "T-010"],
             "blocks": ["T-032", "T-048"],
             "subtasks": [
                 {
                     "title": "Slug resolution",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Skip reason",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Join insert in tx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-025",
             "title": "Validate lead categorySlugs against the active catalog on create",
             "description": "In the alliance-lead create path of packages/service-core/src/services/allianceLead/ (service create/_beforeCreate) validate categorySlugs against the active catalog: unknown, inactive or deleted slug -> ValidationError naming field categorySlugs; 1..10 slugs required when type is service_provider; de-duplicate. Anonymous form, so this is the only gate.\nACs: AC-1.5, AC-1.6, AC-1.7.\nTests: stale (inactive) slug -> error with field 'categorySlugs'; empty array for provider -> error; 11 slugs -> error; duplicates collapsed; valid active slugs persisted to category_slugs and legacy category not written.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": ["T-032"],
             "subtasks": [
                 {
                     "title": "Catalog validation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Persist categorySlugs only",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
             "id": "T-026",
             "title": "Hydrate categories in benefit-usage provider refs",
             "description": "Where HostTradeUsage provider refs are built (host-trade benefit usage service in packages/service-core/src/services/hostTrade/ and the db model packages/db/src/models/hostTrade/host-trade-benefit-usage.model.ts), replace category by categories: HostTradeCategoryRef[] using the batched hydrateCategories (one query per page).\nACs: AC-5.1.\nTests: usage list returns provider.categories in catalog order for a provider with 2 categories; no per-row queries (assert hydrate called once); contract matches HostTradeUsageProviderRefSchema.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-048"],
             "subtasks": [
                 {
                     "title": "Hydrate provider refs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["services", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T19:27:23Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 42,
+        "pending": 33,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.5
     }

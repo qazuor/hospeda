@@ -100,47 +100,47 @@
   - Blocked by: T-013, T-016
   - Blocks: T-049, T-051
 
-- [ ] **T-018** (complexity: 3) - Create HostTradeCategoryGroupService with permissions and CATEGORY_IN_USE error
+- [x] **T-018** (complexity: 3) - Create HostTradeCategoryGroupService with permissions and CATEGORY_IN_USE error
   - Create packages/service-core/src/services/host-trade-category/host-trade-category-group.service.ts e...
   - Blocked by: T-007, T-010, T-003
   - Blocks: T-019, T-028
 
-- [ ] **T-019** (complexity: 3) - Create HostTradeCategoryService with in-use delete semantics
+- [x] **T-019** (complexity: 3) - Create HostTradeCategoryService with in-use delete semantics
   - Create packages/service-core/src/services/host-trade-category/host-trade-category.service.ts extendi...
   - Blocked by: T-018
   - Blocks: T-020, T-029
 
-- [ ] **T-020** (complexity: 2) - Implement getPublicCatalog() in the category services
+- [x] **T-020** (complexity: 2) - Implement getPublicCatalog() in the category services
   - Add getPublicCatalog() to packages/service-core/src/services/host-trade-category/ returning PublicHo...
   - Blocked by: T-019
   - Blocks: T-025, T-027
 
-- [ ] **T-021** (complexity: 3) - Update HostTradeService search, count and admin search for the categories filter
+- [x] **T-021** (complexity: 3) - Update HostTradeService search, count and admin search for the categories filter
   - Edit packages/service-core/src/services/hostTrade/host-trade.service.ts (_executeSearch,_executeCou...
   - Blocked by: T-008, T-010
   - Blocks: T-022, T-026, T-031, T-048
 
-- [ ] **T-022** (complexity: 3) - Add categoryIds validation and atomic set replacement to HostTradeService create/update
+- [x] **T-022** (complexity: 3) - Add categoryIds validation and atomic set replacement to HostTradeService create/update
   - Edit host-trade.service.ts create/update: with categoryIds validate every id exists and is not delet...
   - Blocked by: T-021, T-009, T-007
   - Blocks: T-031, T-048
 
-- [ ] **T-023** (complexity: 1) - Update HOST_TRADE_OWNER_FORBIDDEN_FIELDS for categoryIds
+- [x] **T-023** (complexity: 1) - Update HOST_TRADE_OWNER_FORBIDDEN_FIELDS for categoryIds
   - Edit packages/schemas/src/entities/host-trade/host-trade-managed-fields.ts: add categoryIds and remo...
   - Blocked by: T-002
   - Blocks: T-031
 
-- [ ] **T-024** (complexity: 3) - Update alliance-lead provisioning to resolve categorySlugs
+- [x] **T-024** (complexity: 3) - Update alliance-lead provisioning to resolve categorySlugs
   - Edit the alliance-lead provisioning (alliance-lead.provisioning.ts in packages/service-core/src/serv...
   - Blocked by: T-009, T-007, T-010
   - Blocks: T-032, T-048
 
-- [ ] **T-025** (complexity: 2) - Validate lead categorySlugs against the active catalog on create
+- [x] **T-025** (complexity: 2) - Validate lead categorySlugs against the active catalog on create
   - In the alliance-lead create path of packages/service-core/src/services/allianceLead/ (service create...
   - Blocked by: T-020
   - Blocks: T-032
 
-- [ ] **T-026** (complexity: 2) - Hydrate categories in benefit-usage provider refs
+- [x] **T-026** (complexity: 2) - Hydrate categories in benefit-usage provider refs
   - Where HostTradeUsage provider refs are built (host-trade benefit usage service in packages/service-c...
   - Blocked by: T-021
   - Blocks: T-048
