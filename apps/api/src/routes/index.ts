@@ -142,7 +142,8 @@ import {
 import { adminPartnerApplicationRoutes } from './partner-application';
 import {
     protectedPartnerClaimRoutes,
-    publicPartnerApplicationRoutes
+    publicPartnerApplicationRoutes,
+    publicPartnerClaimRoutes
 } from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
 import {
@@ -357,6 +358,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Alliance lead intake — public "aliados" acquisition forms (HOS-277)
         app.route('/api/v1/public/alliance', publicAllianceRoutes);
         app.route('/api/v1/public/partner-applications', publicPartnerApplicationRoutes);
+        app.route('/api/v1/public/partner-claims', publicPartnerClaimRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
 

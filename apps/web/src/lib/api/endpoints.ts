@@ -1823,6 +1823,25 @@ export const partnerApplicationApi = {
     }
 };
 
+/** Token-bound public Partner claim entry API. */
+export const partnerClaimsPublicApi = {
+    /** Looks up the mailbox for a valid Partner claim link. */
+    lookup(body: {
+        readonly partnerId: string;
+        readonly secret: string;
+    }): Promise<ApiResult<{ email: string; accountExists: boolean }>> {
+        return apiClient.post({ path: `${BASE}/partner-claims/lookup`, body });
+    },
+    /** Creates a verified mailbox account and claims its Partner. */
+    signUp(body: {
+        readonly partnerId: string;
+        readonly secret: string;
+        readonly password: string;
+    }): Promise<ApiResult<{ claimed: true; partnerId: string; email: string }>> {
+        return apiClient.post({ path: `${BASE}/partner-claims/signup`, body });
+    }
+};
+
 // --- Owner Promotions (SPEC-285) ---
 
 /**

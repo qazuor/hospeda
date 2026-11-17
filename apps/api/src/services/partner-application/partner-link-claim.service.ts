@@ -14,6 +14,38 @@ import { writePartnerClaim } from './partner-claim.service';
 
 const NOT_FOUND_MESSAGE = 'Partner not found';
 
+/** Verifies a claim secret and returns its server-stored mailbox without consuming it. */
+export async function verifyPartnerClaimLink(input: {
+    readonly tx: DrizzleClient;
+    readonly partnerId: string;
+    readonly secret: string;
+}): Promise<{ readonly partnerId: string; readonly claimEmail: string }> {
+    const partner = await partnerApplicationModel.lockPartnerForLinkClaim({
+        tx: input.tx,
+        partnerId: input.partnerId
+    });
+    const storedHex = partner?.claimSecretHash;
+    const safeStoredHex =
+        storedHex && /^[0-9a-f]{64}$/i.test(storedHex) ? storedHex : '0'.repeat(64);
+    const expected = Buffer.from(hashPartnerClaimSecret({ secret: input.secret }), 'hex');
+    const actual = Buffer.from(safeStoredHex, 'hex');
+    const matches = expected.length === actual.length && timingSafeEqual(expected, actual);
+    if (!partner || !storedHex || !/^[0-9a-f]{64}$/i.test(storedHex) || !matches) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
+    }
+    if (partner.ownerUserId !== null) {
+        throw new ServiceError(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Partner already claimed',
+            undefined,
+            PARTNER_ALREADY_CLAIMED
+        );
+    }
+    const claimEmail = partner.claimEmail?.trim();
+    if (!claimEmail) throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
+    return { partnerId: partner.partnerId, claimEmail };
+}
+
 /**
  * Compares the signed-in account email with the Partner's claim mailbox,
  * trimmed and case-insensitively. A missing or blank claim email never matches.
@@ -38,33 +70,16 @@ export async function claimPartnerByLink(input: {
     readonly partnerId: string;
     readonly emailVerified: boolean;
 }> {
-    const computedHex = hashPartnerClaimSecret({ secret: input.secret });
     let verifiedDuringClaim = false;
     let accountAlreadyOwns = false;
     try {
         const result = await getDb().transaction(async (rawTx) => {
             const tx = rawTx as DrizzleClient;
-            const partner = await partnerApplicationModel.lockPartnerForLinkClaim({
+            const verifiedLink = await verifyPartnerClaimLink({
                 tx,
-                partnerId: input.partnerId
+                partnerId: input.partnerId,
+                secret: input.secret
             });
-            const storedHex = partner?.claimSecretHash;
-            const safeStoredHex =
-                storedHex && /^[0-9a-f]{64}$/i.test(storedHex) ? storedHex : '0'.repeat(64);
-            const expected = Buffer.from(computedHex, 'hex');
-            const actual = Buffer.from(safeStoredHex, 'hex');
-            const matches = expected.length === actual.length && timingSafeEqual(expected, actual);
-            if (!partner || !storedHex || !/^[0-9a-f]{64}$/i.test(storedHex) || !matches) {
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
-            }
-            if (partner.ownerUserId !== null) {
-                throw new ServiceError(
-                    ServiceErrorCode.ALREADY_EXISTS,
-                    'Partner already claimed',
-                    undefined,
-                    PARTNER_ALREADY_CLAIMED
-                );
-            }
             const account = await partnerApplicationModel.readAccountForClaim({
                 tx,
                 userId: input.actorUserId
@@ -78,7 +93,7 @@ export async function claimPartnerByLink(input: {
             if (
                 !isSameClaimEmail({
                     accountEmail: account.email,
-                    claimEmail: partner.claimEmail
+                    claimEmail: verifiedLink.claimEmail
                 }).matches
             ) {
                 throw new ServiceError(

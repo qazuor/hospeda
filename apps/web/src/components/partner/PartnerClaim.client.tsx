@@ -6,13 +6,16 @@
 import type { FC } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { partnerClaimsPublicApi } from '@/lib/api/endpoints';
 import { partnersApi } from '@/lib/api/endpoints-protected';
-import { refreshBetterAuthSession, resendVerificationEmail } from '@/lib/auth-client';
+import { refreshBetterAuthSession, signOut } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { savePendingAction, takePendingAction } from '@/lib/pending-action';
 import { buildUrl } from '@/lib/urls';
 import styles from './PartnerClaim.module.css';
+import { PartnerClaimSignInForm } from './PartnerClaimSignInForm.client';
+import { PartnerClaimSignUpForm } from './PartnerClaimSignUpForm.client';
 
 /** Props for the Partner claim island. */
 export interface PartnerClaimProps {
@@ -23,6 +26,7 @@ export interface PartnerClaimProps {
 type ClaimState =
     | 'loading'
     | 'sign-in'
+    | 'sign-up'
     | 'confirm'
     | 'claiming'
     | 'success'
@@ -30,9 +34,7 @@ type ClaimState =
     | 'already-claimed'
     | 'account-already-owns'
     | 'email-mismatch'
-    | 'verify-email-first'
     | 'error';
-type ResendState = 'idle' | 'sending' | 'sent' | 'error';
 
 interface ClaimLink {
     readonly partnerId: string;
@@ -41,27 +43,20 @@ interface ClaimLink {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * Reads and consumes the emailed claim link, then asks the signed-in account
- * to confirm before changing Partner ownership.
- *
- * @param props - The current page locale.
- * @returns The claim flow's current prompt or result.
- */
+/** Reads an emailed claim link and guides its mailbox owner through account entry and claim. */
 export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
     const { t } = createTranslations(locale);
     const { user, permissions } = useAccountPermissions();
     const [claimLink, setClaimLink] = useState<ClaimLink | null>(null);
+    const [claimEmail, setClaimEmail] = useState<string | null>(null);
     const [state, setState] = useState<ClaimState>('loading');
-    const [resendState, setResendState] = useState<ResendState>('idle');
-    const claimStartedRef = useRef<boolean>(false);
-    const resendInFlightRef = useRef<boolean>(false);
-    const accountEmail = user?.email ? user.email : null;
+    const [needsSignInLink, setNeedsSignInLink] = useState(false);
+    const claimStartedRef = useRef(false);
+    const accountEmail = user?.email ?? null;
 
     useEffect(() => {
         const fragment = window.location.hash;
         let nextLink: ClaimLink | null = null;
-
         if (fragment) {
             const params = new URLSearchParams(fragment.slice(1));
             const partnerId = params.get('partner');
@@ -73,22 +68,48 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                 path: window.location.pathname,
                 matches: (action) => action.kind === 'partner-claim'
             });
-            if (pending?.kind === 'partner-claim') {
+            if (pending?.kind === 'partner-claim')
                 nextLink = { partnerId: pending.partnerId, secret: pending.secret };
-            }
         }
-
         if (!nextLink || !UUID_PATTERN.test(nextLink.partnerId) || !nextLink.secret) {
             setState('not-found');
             return;
         }
-
         setClaimLink(nextLink);
     }, []);
 
     useEffect(() => {
         if (!claimLink || permissions === null) return;
-        setState(user ? 'confirm' : 'sign-in');
+        if (user) {
+            setState('confirm');
+            return;
+        }
+        let active = true;
+        setState('loading');
+        void partnerClaimsPublicApi
+            .lookup(claimLink)
+            .then((result) => {
+                if (!active) return;
+                if (!result.ok) {
+                    if (result.error.status === 400 || result.error.status === 404)
+                        setState('not-found');
+                    else if (
+                        result.error.status === 409 &&
+                        result.error.reason === 'PARTNER_ALREADY_CLAIMED'
+                    )
+                        setState('already-claimed');
+                    else setState('error');
+                    return;
+                }
+                setClaimEmail(result.data.email);
+                setState(result.data.accountExists ? 'sign-in' : 'sign-up');
+            })
+            .catch(() => {
+                if (active) setState('error');
+            });
+        return () => {
+            active = false;
+        };
     }, [claimLink, permissions, user]);
 
     const saveClaimAction = (): void => {
@@ -103,7 +124,7 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
         });
     };
 
-    const signIn = (): void => {
+    const signInAnotherWay = (): void => {
         saveClaimAction();
         const returnUrl = encodeURIComponent(window.location.pathname);
         window.location.assign(`/${locale}/auth/signin/?returnUrl=${returnUrl}`);
@@ -119,7 +140,6 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
             setState('success');
             return;
         }
-
         const { status, reason } = result.error;
         if (status === 404 || status === 400) setState('not-found');
         else if (status === 409 && reason === 'PARTNER_ALREADY_CLAIMED')
@@ -128,50 +148,33 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
             setState('account-already-owns');
         else if (status === 403 && reason === 'PARTNER_CLAIM_EMAIL_MISMATCH')
             setState('email-mismatch');
-        else if (status === 403 && reason === 'EMAIL_NOT_VERIFIED') setState('verify-email-first');
         else if (status === 401) {
             saveClaimAction();
             setState('sign-in');
         } else setState('error');
     };
 
-    const resendVerification = async (): Promise<void> => {
-        if (!accountEmail || resendInFlightRef.current) return;
-        resendInFlightRef.current = true;
-        setResendState('sending');
-        // Same-tab return within the pending-action TTL resumes the claim on its own;
-        // from another tab the person reopens the emailed claim link (D-2).
+    const signOutAndContinue = async (): Promise<void> => {
         saveClaimAction();
-        try {
-            const callbackURL = new URL(
-                buildUrl({ locale, path: 'partners/reclamar' }),
-                window.location.origin
-            ).href;
-            const result = await resendVerificationEmail({ email: accountEmail, callbackURL });
-            setResendState(result.error ? 'error' : 'sent');
-        } catch {
-            setResendState('error');
-        } finally {
-            resendInFlightRef.current = false;
-        }
+        await signOut();
+        window.location.reload();
     };
 
     const promptByState: Partial<Record<ClaimState, string>> = {
         'sign-in': t('partners.claim.signInPrompt'),
+        'sign-up': t('partners.claim.signUpPrompt'),
         confirm: t('partners.claim.confirmPrompt'),
         success: t('partners.claim.success'),
         'not-found': t('partners.claim.notFound'),
         'already-claimed': t('partners.claim.alreadyClaimed'),
         'account-already-owns': t('partners.claim.accountAlreadyOwns'),
         'email-mismatch': t('partners.claim.emailMismatch'),
-        'verify-email-first': t('partners.claim.verifyEmailFirst'),
         error: t('partners.claim.genericError')
     };
     const supportState =
         state === 'already-claimed' ||
         state === 'account-already-owns' ||
-        state === 'email-mismatch' ||
-        state === 'verify-email-first';
+        state === 'email-mismatch';
 
     return (
         <section
@@ -202,14 +205,26 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                     {promptByState[state]}
                 </p>
             )}
-            {state === 'sign-in' && (
-                <button
-                    className={styles.button}
-                    type="button"
-                    onClick={signIn}
-                >
-                    {t('partners.claim.signInCta')}
-                </button>
+            {state === 'sign-up' && claimLink && claimEmail && (
+                <PartnerClaimSignUpForm
+                    partnerId={claimLink.partnerId}
+                    secret={claimLink.secret}
+                    email={claimEmail}
+                    locale={locale}
+                    onSuccess={(signedIn) => {
+                        setNeedsSignInLink(!signedIn);
+                        setState('success');
+                    }}
+                    onAccountExists={() => setState('sign-in')}
+                />
+            )}
+            {state === 'sign-in' && claimEmail && (
+                <PartnerClaimSignInForm
+                    email={claimEmail}
+                    locale={locale}
+                    onSuccess={() => setState('confirm')}
+                    onOtherMethods={signInAnotherWay}
+                />
             )}
             {state === 'confirm' && (
                 <button
@@ -220,6 +235,22 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                     {t('partners.claim.confirmCta')}
                 </button>
             )}
+            {state === 'email-mismatch' && accountEmail !== null && (
+                <>
+                    <p className={styles.message}>
+                        {t('partners.claim.emailMismatchSignedInAs', undefined, {
+                            email: accountEmail
+                        })}
+                    </p>
+                    <button
+                        className={styles.button}
+                        type="button"
+                        onClick={signOutAndContinue}
+                    >
+                        {t('partners.claim.signOutAndContinue')}
+                    </button>
+                </>
+            )}
             {state === 'claiming' && (
                 <button
                     className={styles.button}
@@ -229,6 +260,14 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                     {t('partners.claim.claiming')}
                 </button>
             )}
+            {state === 'success' && needsSignInLink && (
+                <a
+                    className={styles.link}
+                    href={buildUrl({ locale, path: 'auth/signin' })}
+                >
+                    {t('partners.claim.signInCta')}
+                </a>
+            )}
             {state === 'success' && (
                 <a
                     className={styles.link}
@@ -236,48 +275,6 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
                 >
                     {t('partners.claim.successCta')}
                 </a>
-            )}
-            {state === 'email-mismatch' && accountEmail !== null && (
-                <p className={styles.message}>
-                    {t('partners.claim.emailMismatchSignedInAs', undefined, {
-                        email: accountEmail
-                    })}
-                </p>
-            )}
-            {state === 'verify-email-first' && (
-                <>
-                    {resendState === 'sent' ? (
-                        <p
-                            className={styles.message}
-                            role="status"
-                        >
-                            {t('partners.claim.verificationResent')}
-                        </p>
-                    ) : (
-                        <>
-                            {resendState === 'error' && (
-                                <p
-                                    className={styles.error}
-                                    role="alert"
-                                >
-                                    {t('partners.claim.resendVerificationError')}
-                                </p>
-                            )}
-                            {accountEmail !== null && (
-                                <button
-                                    type="button"
-                                    className={styles.button}
-                                    disabled={resendState === 'sending'}
-                                    onClick={resendVerification}
-                                >
-                                    {resendState === 'sending'
-                                        ? t('partners.claim.resendingVerification')
-                                        : t('partners.claim.resendVerification')}
-                                </button>
-                            )}
-                        </>
-                    )}
-                </>
             )}
             {supportState && (
                 <a
