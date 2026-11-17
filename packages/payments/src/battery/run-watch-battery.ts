@@ -3,11 +3,16 @@
  *
  * It runs the catalog's measurements against one account, applies both guards,
  * compares what it read with the fake's expected value and the shape of every response
- * with the previous run's, writes the run, and reports what changed. It never adjusts
+ * with the ACCEPTED baseline, writes the run, and reports what changed. It never adjusts
  * anything and it never reports green over a run that measured nothing.
  *
- * Ports only: the transport, the clock, the previous shapes and the run record come in
- * from the caller, so this module knows no database, no cron and no mailer.
+ * Lifecycle: every run is a row from the moment it starts. A production run consumes the
+ * owner's authorization atomically with that row (one authorization, one run); everything that
+ * can refuse the run (no authorization, wrong month, wrong account id, a bad or empty catalog)
+ * is checked BEFORE it starts, so a refusal never burns the authorization.
+ *
+ * Ports only: the transport, the clock, the baseline and the run record come in from the
+ * caller, so this module knows no database, no cron and no mailer.
  *
  * @module battery/run-watch-battery
  */
@@ -48,16 +53,37 @@ export interface RunWatchBatteryInput {
     /** The monthly authorization the owner custodies, if one is set. */
     readonly authorization: WatchAuthorization | null;
     readonly clock: Clock;
-    /** Shapes of the previous completed run of this account; `null` when there is none yet. */
-    readonly readPreviousShapes: (args: {
+    /** Cooperative cancellation: no measurement starts once it is aborted. */
+    readonly signal?: AbortSignal | undefined;
+    /** No measurement starts at or after this instant. */
+    readonly deadlineAt?: Date | undefined;
+    /**
+     * The shapes the owner ACCEPTED for this account; `null` when none was accepted yet. A shape
+     * that differs from it alerts on EVERY run until the owner accepts the new one.
+     */
+    readonly readBaseline: (args: {
         readonly account: WatchAccount;
     }) => Promise<WatchShapeBaseline | null>;
-    /** Writes the run. It is part of the run: when it rejects, the run rejects. */
-    readonly recordRun: (args: { readonly run: WatchRunRecord }) => Promise<void>;
+    /**
+     * Opens the run's row. For a production run that passed every pre-flight check
+     * (`consumeAuthorizationOfMonth` set) it ALSO consumes the authorization, atomically with the
+     * insert; `authorizationConsumed` is false when another run consumed it first.
+     */
+    readonly startRun: (args: {
+        readonly account: WatchAccount;
+        readonly startedAt: Date;
+        readonly consumeAuthorizationOfMonth?: string;
+    }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
+    /** Writes the end of the run. It is part of the run: when it rejects, the run rejects. */
+    readonly finishRun: (args: {
+        readonly runId: string;
+        readonly run: WatchRunRecord;
+    }) => Promise<void>;
 }
 
 /** What {@link runWatchBattery} returns. */
 export interface RunWatchBatteryResult {
+    readonly runId: string;
     readonly run: WatchRunRecord;
     /**
      * Whether the run may be reported to the external watchdog: it completed AND measured at
@@ -75,8 +101,9 @@ function buildContext(args: {
     readonly entry: WatchEntry;
     readonly transport: WatchTransport;
     readonly shapes: Record<string, ShapeMap>;
+    readonly providerIds: string[];
 }): WatchContext {
-    const { entry, transport, shapes } = args;
+    const { entry, transport, shapes, providerIds } = args;
     let chargedMinor = 0;
     return {
         send: async ({ label, request, chargeMinor }) => {
@@ -122,6 +149,15 @@ function buildContext(args: {
             }
             const response = await transport(request);
             shapes[label] = shapeOf({ body: response.body });
+            if (request.method !== 'GET') {
+                const id =
+                    typeof response.body === 'object' &&
+                    response.body !== null &&
+                    'id' in response.body
+                        ? (response.body as { readonly id: unknown }).id
+                        : undefined;
+                if (typeof id === 'string' || typeof id === 'number') providerIds.push(String(id));
+            }
             return response;
         }
     };
@@ -156,19 +192,27 @@ async function measureEntry(args: {
     readonly entry: WatchEntry;
     readonly input: RunWatchBatteryInput;
     readonly baseline: WatchShapeBaseline | null;
+    /** Filled while the measurement runs, so a guard that aborts it midway keeps what it saw. */
+    readonly sink: { readonly shapes: Record<string, ShapeMap>; readonly providerIds: string[] };
 }): Promise<{ readonly record: WatchMeasurementRecord; readonly alerts: readonly WatchAlert[] }> {
-    const { entry, input, baseline } = args;
+    const { entry, input, baseline, sink } = args;
     // The guards open the measurement: nothing is sent before they pass.
     if (entry.effect === 'moves-money') {
         assertBudgetMatches({ entry, authorization: input.authorization });
     }
     if (entry.effect !== 'read') {
-        await assertAccountMatches({ account: input.account, transport: input.transport });
+        await assertAccountMatches({
+            account: input.account,
+            transport: input.transport,
+            expectedAccountId: input.authorization?.accountId
+        });
     }
-    const shapes: Record<string, ShapeMap> = {};
+    const { shapes, providerIds } = sink;
     let obtained: JsonValue;
     try {
-        obtained = await entry.measure(buildContext({ entry, transport: input.transport, shapes }));
+        obtained = await entry.measure(
+            buildContext({ entry, transport: input.transport, shapes, providerIds })
+        );
     } catch (error) {
         if (error instanceof WatchGuardError) throw error;
         return {
@@ -177,6 +221,7 @@ async function measureEntry(args: {
                 expected: entry.expected,
                 obtained: null,
                 shapes,
+                providerIds,
                 error: describeError(error)
             },
             alerts: []
@@ -199,32 +244,43 @@ async function measureEntry(args: {
             outcome: matches ? 'matched' : 'changed',
             expected: entry.expected,
             obtained,
-            shapes
+            shapes,
+            providerIds
         },
         alerts
     };
 }
 
+/** Why no measurement may start now, or `null` when one may. */
+function stopReason(input: RunWatchBatteryInput): string | null {
+    if (input.signal?.aborted) return 'TIMED_OUT: the run was cancelled before it finished';
+    if (input.deadlineAt && input.clock.now().getTime() >= input.deadlineAt.getTime()) {
+        return 'TIMED_OUT: the run reached its deadline before it finished';
+    }
+    return null;
+}
+
 /**
  * Runs the battery once against one account and records the run.
  *
- * Sequence: production needs the authorization of the current month before anything is
- * sent; the catalog must be valid and have entries for the account; each measurement opens
- * with its guards; the run (measurements, alerts, outcome) is written before the result is
- * returned, and a write that fails fails the run.
+ * Sequence: pre-flight (the production authorization of the current month, unconsumed, with
+ * its account id; the account the token belongs to; a valid catalog with entries for the
+ * account), then the run row opens (consuming the authorization for production), each
+ * measurement opens with its guards, and the run is written whole when it ends.
  *
- * A guard that trips ends the run as `aborted`; the measurements already read stay in the
- * record. A measurement that cannot be read ends the run as `failed` after the others ran.
+ * A guard that trips ends the run as `aborted`; what was read stays in the record. A
+ * measurement that cannot be read, or a run cut short by its signal or deadline, ends as
+ * `failed`. No measurement starts once the run is cancelled or past its deadline.
  *
  * @param input - See {@link RunWatchBatteryInput}
  * @returns The recorded run and whether the watchdog may be pinged
- * @throws When reading the previous shapes or writing the run fails
+ * @throws When reading the baseline, opening the run or writing it fails
  *
  * @example
  * ```ts
  * const { run, mayPingWatchdog } = await runWatchBattery({
  *   account: 'sandbox', catalog: WATCH_CATALOG, transport, authorization: null,
- *   clock, readPreviousShapes, recordRun
+ *   clock, readBaseline, startRun, finishRun
  * });
  * ```
  */
@@ -238,6 +294,7 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
     const entries = input.catalog.filter((entry) => entry.accounts.includes(input.account));
     const { problems } = validateWatchCatalog({ catalog: input.catalog });
 
+    // Pre-flight: everything that can refuse the run, before it can burn the authorization.
     try {
         if (input.account === 'production') {
             assertProductionAuthorized({ authorization: input.authorization, now: startedAt });
@@ -246,7 +303,6 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         outcome = 'refused';
         reason = describeError(error);
     }
-
     if (outcome === 'completed' && problems.length > 0) {
         outcome = 'failed';
         reason = `Invalid catalog: ${problems.join('; ')}`;
@@ -254,12 +310,44 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         outcome = 'failed';
         reason = `The catalog has no measurement for the ${input.account} account: a run that measures nothing is a failure`;
     }
+    if (outcome === 'completed' && input.account === 'production') {
+        try {
+            await assertAccountMatches({
+                account: input.account,
+                transport: input.transport,
+                expectedAccountId: input.authorization?.accountId
+            });
+        } catch (error) {
+            outcome = error instanceof WatchGuardError ? 'aborted' : 'failed';
+            reason = describeError(error);
+        }
+    }
+
+    const preflightPassed = outcome === 'completed';
+    const started = await input.startRun({
+        account: input.account,
+        startedAt,
+        ...(preflightPassed && input.account === 'production' && input.authorization
+            ? { consumeAuthorizationOfMonth: input.authorization.month }
+            : {})
+    });
+    if (preflightPassed && input.account === 'production' && !started.authorizationConsumed) {
+        outcome = 'refused';
+        reason = 'AUTHORIZATION_CONSUMED: another run consumed the production authorization first';
+    }
 
     if (outcome === 'completed') {
-        const baseline = await input.readPreviousShapes({ account: input.account });
+        const baseline = await input.readBaseline({ account: input.account });
         for (const entry of entries) {
+            const stopped = stopReason(input);
+            if (stopped !== null) {
+                outcome = 'failed';
+                reason = stopped;
+                break;
+            }
+            const sink = { shapes: {} as Record<string, ShapeMap>, providerIds: [] as string[] };
             try {
-                const measured = await measureEntry({ entry, input, baseline });
+                const measured = await measureEntry({ entry, input, baseline, sink });
                 measurements[entry.id] = measured.record;
                 alerts.push(...measured.alerts);
                 if (measured.record.outcome === 'errored' && outcome === 'completed') {
@@ -267,8 +355,15 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
                     reason = `${entry.id} could not be read: ${measured.record.error ?? 'unknown error'}`;
                 }
             } catch (error) {
-                if (!(error instanceof WatchGuardError)) throw error;
-                outcome = 'aborted';
+                measurements[entry.id] = {
+                    outcome: 'errored',
+                    expected: entry.expected,
+                    obtained: null,
+                    shapes: sink.shapes,
+                    providerIds: sink.providerIds,
+                    error: describeError(error)
+                };
+                outcome = error instanceof WatchGuardError ? 'aborted' : 'failed';
                 reason = describeError(error);
                 break;
             }
@@ -284,9 +379,13 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         measurements,
         alerts
     };
-    await input.recordRun({ run });
+    await input.finishRun({ runId: started.runId, run });
     return {
+        runId: started.runId,
         run,
-        mayPingWatchdog: outcome === 'completed' && Object.keys(measurements).length > 0
+        mayPingWatchdog:
+            outcome === 'completed' &&
+            Object.keys(measurements).length > 0 &&
+            input.signal?.aborted !== true
     };
 }

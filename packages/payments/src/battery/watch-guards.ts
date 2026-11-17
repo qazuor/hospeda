@@ -45,14 +45,26 @@ export function marketMonthOf(args: { readonly at: Date }): string {
  * Environment guard: reads `GET /users/me` and aborts when the token belongs to the
  * wrong kind of account for this run.
  *
+ * A production run is also pinned to the account id the owner confirmed in the authorization:
+ * another id, or no id at all, aborts. The test-account tag check stays as it is.
+ *
  * @param args.account - The account the run targets
  * @param args.transport - The transport the run sends through
- * @throws {WatchGuardError} `UNREADABLE_ACCOUNT` or `WRONG_ACCOUNT`
+ * @param args.expectedAccountId - The confirmed account id (required for a production run)
+ * @throws {WatchGuardError} `UNREADABLE_ACCOUNT`, `WRONG_ACCOUNT`, `ACCOUNT_ID_MISSING` or
+ *   `ACCOUNT_ID_MISMATCH`
  */
 export async function assertAccountMatches(args: {
     readonly account: WatchAccount;
     readonly transport: WatchTransport;
+    readonly expectedAccountId?: string | undefined;
 }): Promise<void> {
+    if (args.account === 'production' && !args.expectedAccountId) {
+        throw new WatchGuardError({
+            code: 'ACCOUNT_ID_MISSING',
+            message: 'The production authorization carries no account id; nothing was sent'
+        });
+    }
     const response = await args.transport({ method: 'GET', path: '/users/me' });
     const body = response.body;
     if (
@@ -86,6 +98,16 @@ export async function assertAccountMatches(args: {
             code: 'WRONG_ACCOUNT',
             message: 'A production run reached a test account token; nothing was sent'
         });
+    }
+    if (args.account === 'production') {
+        const id = 'id' in body ? (body as { readonly id: unknown }).id : undefined;
+        if (id === undefined || id === null || String(id) !== args.expectedAccountId) {
+            throw new WatchGuardError({
+                code: 'ACCOUNT_ID_MISMATCH',
+                message:
+                    'GET /users/me answered another account than the one the owner confirmed; nothing was sent'
+            });
+        }
     }
 }
 
@@ -127,7 +149,8 @@ export function assertBudgetMatches(args: {
  *
  * @param args.authorization - The authorization in force, if any
  * @param args.now - The run's instant
- * @throws {WatchGuardError} `AUTHORIZATION_MISSING` or `AUTHORIZATION_STALE`
+ * @throws {WatchGuardError} `AUTHORIZATION_MISSING`, `AUTHORIZATION_CONSUMED`, `ACCOUNT_ID_MISSING`
+ *   or `AUTHORIZATION_STALE`
  */
 export function assertProductionAuthorized(args: {
     readonly authorization: WatchAuthorization | null;
@@ -137,6 +160,18 @@ export function assertProductionAuthorized(args: {
         throw new WatchGuardError({
             code: 'AUTHORIZATION_MISSING',
             message: 'The production run has no monthly authorization; it did not start'
+        });
+    }
+    if (args.authorization.consumedByRunId !== undefined) {
+        throw new WatchGuardError({
+            code: 'AUTHORIZATION_CONSUMED',
+            message: `The production authorization was consumed by run ${args.authorization.consumedByRunId}; a new run needs a new authorization`
+        });
+    }
+    if (!args.authorization.accountId) {
+        throw new WatchGuardError({
+            code: 'ACCOUNT_ID_MISSING',
+            message: 'The production authorization carries no account id; it did not start'
         });
     }
     const month = marketMonthOf({ at: args.now });

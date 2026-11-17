@@ -11,8 +11,7 @@ import {
     runWatchBattery,
     type WatchAccount,
     type WatchAuthorization,
-    type WatchEntry,
-    type WatchRunRecord
+    type WatchEntry
 } from '../src/battery/index';
 import { FakePaymentProvider } from '../src/fake/index';
 import {
@@ -20,6 +19,7 @@ import {
     type FakeProviderServer,
     startFakeProviderServer
 } from '../src/fake-server';
+import { memoryRunStore } from './watch-battery-fixtures';
 
 const NOW = new Date('2026-11-17T12:00:00.000Z');
 const AUTHORIZED = 150000;
@@ -80,22 +80,19 @@ async function run(args: {
     readonly clock: ReturnType<typeof createAdjustableClock>;
     readonly authorization?: WatchAuthorization | null;
 }) {
-    const recorded: WatchRunRecord[] = [];
+    const store = memoryRunStore();
     const result = await runWatchBattery({
         account: args.account,
         catalog: args.catalog,
         transport: args.transport,
         authorization:
             args.authorization === undefined
-                ? { month: '2026-11', maxChargeMinor: AUTHORIZED }
+                ? { month: '2026-11', maxChargeMinor: AUTHORIZED, accountId: '100000001' }
                 : args.authorization,
         clock: args.clock,
-        readPreviousShapes: async () => null,
-        recordRun: async ({ run: record }) => {
-            recorded.push(record);
-        }
+        ...store.ports
     });
-    return { ...result, recorded };
+    return { ...result, store };
 }
 
 const mutatingRequests = (server: FakeProviderServer) =>
@@ -283,7 +280,7 @@ describe('TEST:B1:19 budget guard', () => {
             clock
         });
         expect(result.run.reason).toContain('BUDGET_MISMATCH');
-        expect(server.requests()).toEqual([]);
+        expect(mutatingRequests(server)).toEqual([]);
     });
 
     it('stops a measurement that charges above what it declared', async () => {
@@ -528,5 +525,99 @@ describe('the budget guard reads the charge from the request, not from the decla
         });
         const result = await run({ account: 'sandbox', catalog: [reader], transport, clock });
         expect(result.run.outcome).toBe('completed');
+    });
+});
+
+describe('TEST:B1:19 the production run is pinned to the account the owner confirmed', () => {
+    const catalog = () => [entry({ effect: 'mutates' })];
+    const auth = (accountId?: string) => ({
+        month: '2026-11',
+        maxChargeMinor: AUTHORIZED,
+        ...(accountId === undefined ? {} : { accountId })
+    });
+
+    it('aborts, sending nothing, when GET /users/me answers a different account id', async () => {
+        const { server, transport, clock } = await fakeAs('production');
+        const result = await run({
+            account: 'production',
+            catalog: catalog(),
+            transport,
+            clock,
+            authorization: auth('999999999')
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('ACCOUNT_ID_MISMATCH');
+        expect(mutatingRequests(server)).toEqual([]);
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('refuses, sending nothing, when the authorization carries no account id', async () => {
+        const { server, transport, clock } = await fakeAs('production');
+        const result = await run({
+            account: 'production',
+            catalog: catalog(),
+            transport,
+            clock,
+            authorization: auth()
+        });
+        expect(result.run.outcome).toBe('refused');
+        expect(result.run.reason).toContain('ACCOUNT_ID_MISSING');
+        expect(server.requests()).toEqual([]);
+    });
+
+    it('does not burn the authorization when the account id does not match', async () => {
+        const { transport, clock } = await fakeAs('production');
+        const result = await run({
+            account: 'production',
+            catalog: catalog(),
+            transport,
+            clock,
+            authorization: auth('999999999')
+        });
+        expect(result.store.consumedBy()).toBeUndefined();
+        expect(result.store.started[0]?.consume).toBeUndefined();
+    });
+
+    it('runs, and consumes the authorization, with the confirmed id and the test tag absent', async () => {
+        const { server, transport, clock } = await fakeAs('production');
+        const result = await run({
+            account: 'production',
+            catalog: catalog(),
+            transport,
+            clock,
+            authorization: auth('100000001')
+        });
+        expect(result.run.outcome).toBe('completed');
+        expect(result.store.consumedBy()).toBe(result.runId);
+        expect(mutatingRequests(server)).toHaveLength(1);
+    });
+
+    it('keeps checking the tag: a test account answering the confirmed id still aborts', async () => {
+        const { clock } = await fakeAs('sandbox');
+        const transport = async () => ({
+            status: 200,
+            body: { id: 100000001, tags: ['test_user'] }
+        });
+        const result = await run({
+            account: 'production',
+            catalog: catalog(),
+            transport,
+            clock,
+            authorization: auth('100000001')
+        });
+        expect(result.run.reason).toContain('WRONG_ACCOUNT');
+    });
+
+    it('does not ask a sandbox run for an account id', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: catalog(),
+            transport,
+            clock,
+            authorization: auth()
+        });
+        expect(result.run.outcome).toBe('completed');
+        expect(result.store.started[0]?.consume).toBeUndefined();
     });
 });

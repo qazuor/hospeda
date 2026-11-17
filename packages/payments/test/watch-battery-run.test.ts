@@ -19,17 +19,25 @@ import {
     type WatchShapeBaseline,
     type WatchTransport
 } from '../src/battery/index';
+import { type MemoryRunStore, memoryRunStore } from './watch-battery-fixtures';
 
 const NOW = new Date('2026-11-17T12:00:00.000Z');
 const clock = createAdjustableClock({ start: NOW });
 
-function scripted(body: unknown): { transport: WatchTransport; sent: string[] } {
+const SANDBOX_ME = { id: 900000001, tags: ['test_user'] };
+const PRODUCTION_ME = { id: 100000001, tags: ['normal'] };
+const AUTHORIZED = { month: '2026-11', maxChargeMinor: 100, accountId: '100000001' };
+
+function scripted(
+    body: unknown,
+    me: unknown = SANDBOX_ME
+): { transport: WatchTransport; sent: string[] } {
     const sent: string[] = [];
     return {
         sent,
         transport: async (request) => {
             sent.push(`${request.method} ${request.path}`);
-            if (request.path === '/users/me') return { status: 200, body: { tags: ['test_user'] } };
+            if (request.path === '/users/me') return { status: 200, body: me };
             return { status: 200, body };
         }
     };
@@ -56,23 +64,25 @@ async function run(args: {
     readonly transport: WatchTransport;
     readonly authorization?: WatchAuthorization | null;
     readonly previous?: WatchShapeBaseline | null;
-    readonly recordRun?: (args: { run: WatchRunRecord }) => Promise<void>;
+    readonly finishRun?: (args: { runId: string; run: WatchRunRecord }) => Promise<void>;
+    readonly store?: MemoryRunStore;
+    readonly signal?: AbortSignal;
+    readonly deadlineAt?: Date;
+    readonly clock?: Parameters<typeof runWatchBattery>[0]['clock'];
 }) {
-    const recorded: WatchRunRecord[] = [];
+    const store = args.store ?? memoryRunStore({ baseline: args.previous ?? null });
     const result = await runWatchBattery({
         account: args.account ?? 'sandbox',
         catalog: args.catalog,
         transport: args.transport,
         authorization: args.authorization ?? null,
-        clock,
-        readPreviousShapes: async () => args.previous ?? null,
-        recordRun:
-            args.recordRun ??
-            (async ({ run: record }) => {
-                recorded.push(record);
-            })
+        clock: args.clock ?? clock,
+        ...(args.signal ? { signal: args.signal } : {}),
+        ...(args.deadlineAt ? { deadlineAt: args.deadlineAt } : {}),
+        ...store.ports,
+        ...(args.finishRun ? { finishRun: args.finishRun } : {})
     });
-    return { ...result, recorded };
+    return { ...result, store, recorded: store.finished.map((entry) => entry.run) };
 }
 
 describe('the shipped catalog', () => {
@@ -137,7 +147,7 @@ describe('the production run needs the authorization of the current month', () =
     const catalog = [readEntry()];
 
     it('is refused without any authorization, sending nothing', async () => {
-        const { transport, sent } = scripted({ id: 'x' });
+        const { transport, sent } = scripted({ id: 'x' }, PRODUCTION_ME);
         const result = await run({ account: 'production', catalog, transport });
         expect(result.run.outcome).toBe('refused');
         expect(result.run.reason).toContain('AUTHORIZATION_MISSING');
@@ -147,12 +157,12 @@ describe('the production run needs the authorization of the current month', () =
     });
 
     it('is refused with the authorization of another month', async () => {
-        const { transport, sent } = scripted({ id: 'x' });
+        const { transport, sent } = scripted({ id: 'x' }, PRODUCTION_ME);
         const result = await run({
             account: 'production',
             catalog,
             transport,
-            authorization: { month: '2026-10', maxChargeMinor: 100 }
+            authorization: { ...AUTHORIZED, month: '2026-10' }
         });
         expect(result.run.outcome).toBe('refused');
         expect(result.run.reason).toContain('AUTHORIZATION_STALE');
@@ -163,26 +173,24 @@ describe('the production run needs the authorization of the current month', () =
         const lateOnTheThirtieth = createAdjustableClock({
             start: new Date('2026-12-01T01:30:00.000Z')
         });
-        const { transport } = scripted({ id: 'x' });
-        const result = await runWatchBattery({
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        const result = await run({
             account: 'production',
             catalog,
             transport,
-            authorization: { month: '2026-11', maxChargeMinor: 100 },
-            clock: lateOnTheThirtieth,
-            readPreviousShapes: async () => null,
-            recordRun: async () => undefined
+            authorization: AUTHORIZED,
+            clock: lateOnTheThirtieth
         });
         expect(result.run.outcome).toBe('completed');
     });
 
     it('runs with the authorization of the current month', async () => {
-        const { transport } = scripted({ id: 'x' });
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
         const result = await run({
             account: 'production',
             catalog,
             transport,
-            authorization: { month: '2026-11', maxChargeMinor: 100 }
+            authorization: AUTHORIZED
         });
         expect(result.run.outcome).toBe('completed');
         expect(result.mayPingWatchdog).toBe(true);
@@ -287,7 +295,7 @@ describe('comparison and alerts', () => {
         });
         expect(result.run.outcome).toBe('aborted');
         expect(result.run.measurements.RP7?.outcome).toBe('matched');
-        expect(result.run.measurements.RP8).toBeUndefined();
+        expect(result.run.measurements.RP8).toMatchObject({ outcome: 'errored' });
     });
 });
 
@@ -298,15 +306,16 @@ describe('the run is written as part of the run', () => {
             run({
                 catalog: [readEntry()],
                 transport,
-                recordRun: async () => {
+                finishRun: async () => {
                     throw new Error('db down');
                 }
             })
         ).rejects.toThrow('db down');
     });
 
-    it('rejects when the previous shapes cannot be read', async () => {
+    it('rejects when the accepted baseline cannot be read', async () => {
         const { transport } = scripted({ id: 'x' });
+        const store = memoryRunStore();
         await expect(
             runWatchBattery({
                 account: 'sandbox',
@@ -314,10 +323,10 @@ describe('the run is written as part of the run', () => {
                 transport,
                 authorization: null,
                 clock,
-                readPreviousShapes: async () => {
+                ...store.ports,
+                readBaseline: async () => {
                     throw new Error('db down');
-                },
-                recordRun: async () => undefined
+                }
             })
         ).rejects.toThrow('db down');
     });
@@ -370,6 +379,22 @@ describe('createWatchTransport', () => {
         });
     });
 
+    it('stops sending when the run signal is aborted', async () => {
+        const controller = new AbortController();
+        const transport = createWatchTransport({
+            baseUrl: 'https://mp.test',
+            accessToken: 'SECRET',
+            signal: controller.signal,
+            fetch: async (_url, init) =>
+                new Promise<Response>((_resolve, reject) => {
+                    init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+                })
+        });
+        const pending = transport({ method: 'GET', path: '/a' });
+        controller.abort();
+        await expect(pending).rejects.toThrow('aborted');
+    });
+
     it('rejects on a network failure without the token in the message', async () => {
         const transport = createWatchTransport({
             baseUrl: 'https://mp.test',
@@ -379,5 +404,235 @@ describe('createWatchTransport', () => {
             }
         });
         await expect(transport({ method: 'GET', path: '/a' })).rejects.toThrow('fetch failed');
+    });
+});
+
+describe('one authorization, one production run (HOS-1512 D3)', () => {
+    const catalog = [readEntry()];
+    const production = (store: MemoryRunStore) => {
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        return run({ account: 'production', catalog, transport, authorization: AUTHORIZED, store });
+    };
+
+    it('consumes the authorization when the run starts and records which run consumed it', async () => {
+        const store = memoryRunStore();
+        const result = await production(store);
+        expect(result.run.outcome).toBe('completed');
+        expect(store.started).toEqual([{ runId: result.runId, consume: '2026-11' }]);
+        expect(store.consumedBy()).toBe(result.runId);
+    });
+
+    it('refuses a second run once the authorization is consumed, sending nothing', async () => {
+        const store = memoryRunStore({ consumedBy: 'run-1' });
+        const { transport, sent } = scripted({ id: 'x' }, PRODUCTION_ME);
+        const result = await run({
+            account: 'production',
+            catalog,
+            transport,
+            authorization: { ...AUTHORIZED, consumedByRunId: 'run-1' },
+            store
+        });
+        expect(result.run.outcome).toBe('refused');
+        expect(result.run.reason).toContain('AUTHORIZATION_CONSUMED');
+        expect(result.run.reason).toContain('run-1');
+        expect(sent).toEqual([]);
+        expect(store.started[0]?.consume).toBeUndefined();
+        expect(store.consumedBy()).toBe('run-1');
+    });
+
+    it('lets only one of two concurrent runs consume the same authorization', async () => {
+        const store = memoryRunStore();
+        const [first, second] = await Promise.all([production(store), production(store)]);
+        const outcomes = [first.run.outcome, second.run.outcome].sort();
+        expect(outcomes).toEqual(['completed', 'refused']);
+        const loser = first.run.outcome === 'refused' ? first : second;
+        expect(loser.run.reason).toContain('AUTHORIZATION_CONSUMED');
+        expect(loser.mayPingWatchdog).toBe(false);
+        expect(Object.keys(loser.run.measurements)).toEqual([]);
+        expect(store.consumedBy()).toBe(
+            first.run.outcome === 'completed' ? first.runId : second.runId
+        );
+    });
+
+    it('does not burn the authorization on an empty or invalid catalog', async () => {
+        const store = memoryRunStore();
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        const empty = await run({
+            account: 'production',
+            catalog: [],
+            transport,
+            authorization: AUTHORIZED,
+            store
+        });
+        expect(empty.run.outcome).toBe('failed');
+        expect(store.consumedBy()).toBeUndefined();
+    });
+
+    it('keeps the authorization consumed when the run it started later fails', async () => {
+        const store = memoryRunStore();
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        const broken = readEntry({
+            measure: async () => {
+                throw new Error('socket hang up');
+            }
+        });
+        const result = await run({
+            account: 'production',
+            catalog: [broken],
+            transport,
+            authorization: AUTHORIZED,
+            store
+        });
+        expect(result.run.outcome).toBe('failed');
+        expect(store.consumedBy()).toBe(result.runId);
+    });
+
+    it('does not consume anything in a sandbox run', async () => {
+        const store = memoryRunStore();
+        const { transport } = scripted({ id: 'x' });
+        await run({ catalog, transport, authorization: AUTHORIZED, store });
+        expect(store.consumedBy()).toBeUndefined();
+    });
+});
+
+describe('the accepted baseline (HOS-1512 D1)', () => {
+    const previous: WatchShapeBaseline = {
+        RP7: { get: shapeOf({ body: { id: 'x', payer_email: 'a' } }) }
+    };
+
+    it('alerts on EVERY run while the owner has not accepted the new shape', async () => {
+        const store = memoryRunStore({ baseline: previous });
+        const { transport } = scripted({ id: 'x', payer_mail: 'a' });
+        const first = await run({ catalog: [readEntry()], transport, store });
+        const second = await run({ catalog: [readEntry()], transport, store });
+        expect(first.run.alerts).toHaveLength(1);
+        expect(second.run.alerts).toHaveLength(1);
+        expect(second.run.alerts[0]?.kind).toBe('shape_changed');
+    });
+
+    it('stops alerting once the new shape is the accepted baseline', async () => {
+        const accepted: WatchShapeBaseline = {
+            RP7: { get: shapeOf({ body: { id: 'x', payer_mail: 'a' } }) }
+        };
+        const store = memoryRunStore({ baseline: accepted });
+        const { transport } = scripted({ id: 'x', payer_mail: 'a' });
+        const result = await run({ catalog: [readEntry()], transport, store });
+        expect(result.run.alerts).toEqual([]);
+    });
+});
+
+describe('cancellation and the deadline (HOS-1512)', () => {
+    const entry = (id: string, calls: string[]): WatchEntry =>
+        readEntry({
+            id,
+            measure: async (ctx) => {
+                calls.push(id);
+                await ctx.send({
+                    label: 'get',
+                    request: { method: 'GET', path: '/preapproval/abc' }
+                });
+                return { found: true };
+            }
+        });
+    const { transport } = scripted({ id: 'x' });
+
+    it('never starts a measurement once the signal is aborted, and records the run as failed', async () => {
+        const calls: string[] = [];
+        const controller = new AbortController();
+        const first: WatchEntry = readEntry({
+            id: 'RP7',
+            measure: async () => {
+                calls.push('RP7');
+                controller.abort();
+                return { found: true };
+            }
+        });
+        const result = await run({
+            catalog: [first, entry('RP8', calls), entry('RP9', calls)],
+            transport,
+            signal: controller.signal
+        });
+        expect(calls).toEqual(['RP7']);
+        expect(result.run.outcome).toBe('failed');
+        expect(result.run.reason).toContain('TIMED_OUT');
+        expect(result.mayPingWatchdog).toBe(false);
+        expect(result.recorded).toHaveLength(1);
+    });
+
+    it('does not start at all when the signal is already aborted', async () => {
+        const calls: string[] = [];
+        const controller = new AbortController();
+        controller.abort();
+        const result = await run({
+            catalog: [entry('RP7', calls)],
+            transport,
+            signal: controller.signal
+        });
+        expect(calls).toEqual([]);
+        expect(result.run.outcome).toBe('failed');
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('never starts a measurement at or past the deadline', async () => {
+        const calls: string[] = [];
+        const deadlineClock = createAdjustableClock({ start: NOW });
+        const slow: WatchEntry = readEntry({
+            id: 'RP7',
+            measure: async () => {
+                calls.push('RP7');
+                deadlineClock.advance({ ms: 60_000 });
+                return { found: true };
+            }
+        });
+        const result = await run({
+            catalog: [slow, entry('RP8', calls)],
+            transport,
+            clock: deadlineClock,
+            deadlineAt: new Date(NOW.getTime() + 30_000)
+        });
+        expect(calls).toEqual(['RP7']);
+        expect(result.run.outcome).toBe('failed');
+        expect(result.run.reason).toContain('TIMED_OUT');
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('does not report a run aborted at the very end as pingable', async () => {
+        const controller = new AbortController();
+        const last: WatchEntry = readEntry({
+            measure: async () => {
+                controller.abort();
+                return { found: true };
+            }
+        });
+        const result = await run({ catalog: [last], transport, signal: controller.signal });
+        expect(result.run.outcome).toBe('completed');
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+});
+
+describe('provider ids of what a run created', () => {
+    it('keeps the id of every write, including those of a measurement a guard aborted', async () => {
+        const transport: WatchTransport = async (request) =>
+            request.path === '/users/me'
+                ? { status: 200, body: SANDBOX_ME }
+                : { status: 201, body: { id: 'pre-123' } };
+        const writer = readEntry({
+            id: 'RP8',
+            effect: 'mutates',
+            measure: async (ctx) => {
+                await ctx.send({
+                    label: 'a',
+                    request: { method: 'POST', path: '/v1/customers', body: {} }
+                });
+                await ctx.send({
+                    label: 'b',
+                    request: { method: 'POST', path: '/preapproval', body: {} }
+                });
+                return 'unreachable';
+            }
+        });
+        const result = await run({ catalog: [writer], transport });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.measurements.RP8?.providerIds).toEqual(['pre-123']);
     });
 });

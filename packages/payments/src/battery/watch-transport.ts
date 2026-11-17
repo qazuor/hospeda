@@ -19,6 +19,8 @@ const DEFAULT_TIMEOUT_MS = 30_000;
  * @param args.accessToken - The access token of the account the run targets
  * @param args.fetch - Injection point for `fetch`; defaults to the global one
  * @param args.timeoutMs - Per-request timeout; defaults to 30 s
+ * @param args.signal - The run's cancellation signal, combined with the timeout: a cancelled run
+ *   stops sending (HOS-1512)
  * @returns The transport
  */
 export function createWatchTransport(args: {
@@ -26,6 +28,7 @@ export function createWatchTransport(args: {
     readonly accessToken: string;
     readonly fetch?: typeof globalThis.fetch;
     readonly timeoutMs?: number;
+    readonly signal?: AbortSignal | undefined;
 }): WatchTransport {
     const fetchFn = args.fetch ?? globalThis.fetch.bind(globalThis);
     const baseUrl = args.baseUrl.replace(/\/+$/, '');
@@ -39,7 +42,10 @@ export function createWatchTransport(args: {
                 authorization: `Bearer ${args.accessToken}`
             },
             ...(hasBody ? { body: JSON.stringify(request.body) } : {}),
-            signal: AbortSignal.timeout(args.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+            signal: AbortSignal.any([
+                AbortSignal.timeout(args.timeoutMs ?? DEFAULT_TIMEOUT_MS),
+                ...(args.signal ? [args.signal] : [])
+            ])
         });
         const text = await response.text();
         let body: unknown;

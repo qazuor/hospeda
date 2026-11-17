@@ -112,6 +112,13 @@ export interface WatchAuthorization {
     readonly month: string;
     /** The exact maximum a measurement may charge, in minor units (ARS centavos). */
     readonly maxChargeMinor: number;
+    /**
+     * The Mercado Pago account id the owner confirmed. The production run aborts, sending
+     * nothing, when `GET /users/me` answers another id, or when this is absent.
+     */
+    readonly accountId?: string;
+    /** The run that consumed this authorization. One authorization allows ONE run. */
+    readonly consumedByRunId?: string;
 }
 
 /** What went wrong in one measurement. */
@@ -124,6 +131,11 @@ export interface WatchMeasurementRecord {
     /** What the measurement read; `null` when it errored before reading. */
     readonly obtained: JsonValue;
     readonly shapes: MeasurementShapes;
+    /**
+     * Ids the provider answered for every write this measurement sent (preapprovals,
+     * payments, orders): what a human needs to find and refund or cancel them.
+     */
+    readonly providerIds: readonly string[];
     readonly error?: string;
 }
 
@@ -170,6 +182,9 @@ export type WatchGuardCode =
     | 'UNREADABLE_ACCOUNT'
     | 'AUTHORIZATION_MISSING'
     | 'AUTHORIZATION_STALE'
+    | 'AUTHORIZATION_CONSUMED'
+    | 'ACCOUNT_ID_MISSING'
+    | 'ACCOUNT_ID_MISMATCH'
     | 'BUDGET_MISMATCH'
     | 'BUDGET_UNDECLARED'
     | 'BUDGET_EXCEEDED'
