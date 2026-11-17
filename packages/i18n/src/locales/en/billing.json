@@ -882,6 +882,7 @@
         "confirmPurchase": "Confirm purchase",
         "loading": "Loading add-ons…",
         "loadError": "We could not load the add-ons.",
+        "attemptExpired": "That attempt is no longer valid. Please try again.",
         "processing": "Your purchase is being processed.",
         "active": "Active",
         "closed": "The purchase ended without activation.",

@@ -882,6 +882,7 @@
         "confirmPurchase": "Confirmar compra",
         "loading": "Carregando complementos…",
         "loadError": "Não foi possível carregar os complementos.",
+        "attemptExpired": "Essa tentativa não é mais válida. Tente novamente.",
         "processing": "Sua compra está sendo processada.",
         "active": "Ativo",
         "closed": "A compra terminou sem ativação.",
