@@ -19,6 +19,7 @@
  */
 
 import { type PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import type { Actor } from '@repo/service-core';
 import { z } from 'zod';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
 import {
@@ -115,6 +116,75 @@ function readOwn({ read, count }: OwnReadInput): VerticalRead {
 export const ListMyListingsInputSchema = z.object({}).strict();
 
 /**
+ * Reads the caller's own listings across the three verticals with the same
+ * service calls the protected "list own" routes make. Shared by `list_my_listings`
+ * and by the tools that scope a read to the owner's listings (`list_reviews`).
+ *
+ * @param args - The actor
+ * @returns The listings with `total` and `hasMore`, or the service error
+ */
+export async function readMyListings({
+    actor
+}: {
+    readonly actor: Actor;
+}): Promise<ToolHandlerResult<ListMyListingsResult>> {
+    const [accommodations, venues, experiences] = await Promise.all([
+        listingToolAccommodationService.list(actor, {
+            page: 1,
+            pageSize: LIST_MY_LISTINGS_PAGE_SIZE,
+            where: { ownerId: actor.id },
+            sortBy: 'createdAt',
+            sortOrder: 'desc'
+        }),
+        listingToolVenueService.listOwn(actor),
+        listingToolExperienceService.listOwn(actor)
+    ]);
+
+    // `listOwn` reads one fixed page. Only a full page can hide rows, so the
+    // count query runs just then.
+    const [venueTotal, experienceTotal] = await Promise.all([
+        venues.error || (venues.data?.listings.length ?? 0) < LIST_MY_LISTINGS_PAGE_SIZE
+            ? null
+            : listingToolVenueService.countOwn(actor),
+        experiences.error || (experiences.data?.listings.length ?? 0) < LIST_MY_LISTINGS_PAGE_SIZE
+            ? null
+            : listingToolExperienceService.countOwn(actor)
+    ]);
+
+    const reads: readonly (readonly [ListingToolVertical, VerticalRead])[] = [
+        [
+            VerticalEnum.ACCOMMODATION,
+            accommodations.error
+                ? { error: accommodations.error }
+                : {
+                      rows: accommodations.data?.items ?? [],
+                      total: accommodations.data?.total ?? accommodations.data?.items.length ?? 0
+                  }
+        ],
+        [VerticalEnum.VENUE, readOwn({ read: venues, count: venueTotal })],
+        [VerticalEnum.EXPERIENCE, readOwn({ read: experiences, count: experienceTotal })]
+    ];
+
+    const listings: MyListingSummary[] = [];
+    let total = 0;
+    for (const [vertical, read] of reads) {
+        // A partial list would read as "you have no venues": fail the call.
+        if (read.error) {
+            return { error: read.error };
+        }
+        listings.push(...toSummaries({ vertical, rows: read.rows }));
+        total += read.total;
+    }
+    return {
+        data: {
+            listings,
+            total: Math.max(total, listings.length),
+            hasMore: listings.length < total
+        }
+    };
+}
+
+/**
  * `list_my_listings`: read-only, available to an unverified email exactly as
  * the HTTP "list own" routes are (`READ_OWN`).
  */
@@ -126,62 +196,5 @@ export const listMyListingsTool = defineTool({
     inputSchema: ListMyListingsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
-    handler: async ({ actor }): Promise<ToolHandlerResult<ListMyListingsResult>> => {
-        const [accommodations, venues, experiences] = await Promise.all([
-            listingToolAccommodationService.list(actor, {
-                page: 1,
-                pageSize: LIST_MY_LISTINGS_PAGE_SIZE,
-                where: { ownerId: actor.id },
-                sortBy: 'createdAt',
-                sortOrder: 'desc'
-            }),
-            listingToolVenueService.listOwn(actor),
-            listingToolExperienceService.listOwn(actor)
-        ]);
-
-        // `listOwn` reads one fixed page. Only a full page can hide rows, so the
-        // count query runs just then.
-        const [venueTotal, experienceTotal] = await Promise.all([
-            venues.error || (venues.data?.listings.length ?? 0) < LIST_MY_LISTINGS_PAGE_SIZE
-                ? null
-                : listingToolVenueService.countOwn(actor),
-            experiences.error ||
-            (experiences.data?.listings.length ?? 0) < LIST_MY_LISTINGS_PAGE_SIZE
-                ? null
-                : listingToolExperienceService.countOwn(actor)
-        ]);
-
-        const reads: readonly (readonly [ListingToolVertical, VerticalRead])[] = [
-            [
-                VerticalEnum.ACCOMMODATION,
-                accommodations.error
-                    ? { error: accommodations.error }
-                    : {
-                          rows: accommodations.data?.items ?? [],
-                          total:
-                              accommodations.data?.total ?? accommodations.data?.items.length ?? 0
-                      }
-            ],
-            [VerticalEnum.VENUE, readOwn({ read: venues, count: venueTotal })],
-            [VerticalEnum.EXPERIENCE, readOwn({ read: experiences, count: experienceTotal })]
-        ];
-
-        const listings: MyListingSummary[] = [];
-        let total = 0;
-        for (const [vertical, read] of reads) {
-            // A partial list would read as "you have no venues": fail the call.
-            if (read.error) {
-                return { error: read.error };
-            }
-            listings.push(...toSummaries({ vertical, rows: read.rows }));
-            total += read.total;
-        }
-        return {
-            data: {
-                listings,
-                total: Math.max(total, listings.length),
-                hasMore: listings.length < total
-            }
-        };
-    }
+    handler: ({ actor }) => readMyListings({ actor })
 });
