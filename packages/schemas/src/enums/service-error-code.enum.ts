@@ -155,5 +155,13 @@ export enum ServiceErrorCode {
     NEW_PAID_SIGNUPS_FROZEN = 'NEW_PAID_SIGNUPS_FROZEN',
     ADDON_PURCHASES_FROZEN = 'ADDON_PURCHASES_FROZEN',
     /** FAQ draft generation is only available for unanswered or unclassified questions. */
-    FAQ_DRAFT_NOT_ELIGIBLE = 'FAQ_DRAFT_NOT_ELIGIBLE'
+    FAQ_DRAFT_NOT_ELIGIBLE = 'FAQ_DRAFT_NOT_ELIGIBLE',
+    /**
+     * A provider-trade catalog row (group or category) cannot be deleted
+     * because it is still in use (HOS-919): a group with non-deleted
+     * categories, or a category linked to a non-deleted provider. Maps to HTTP
+     * 409. A domain code rather than ALREADY_EXISTS so the admin UI can show
+     * the "deactivate it instead" hint on this exact code.
+     */
+    CATEGORY_IN_USE = 'CATEGORY_IN_USE'
 }
