@@ -1489,6 +1489,11 @@ export function createDbMock() {
         ExchangeRateConfigModel: GenericMockModel,
         FeatureFlagModel: GenericMockModel,
         FeatureModel: GenericMockModel,
+        // HOS-919: the provider trade catalog services (and HostTradeService, which
+        // now takes the category model) are instantiated at module scope by the
+        // catalog and host-trade route trees.
+        HostTradeCategoryGroupModel: GenericMockModel,
+        HostTradeCategoryModel: GenericMockModel,
         HostTradeModel: GenericMockModel,
         NotificationScheduleModel: GenericMockModel,
         // HOS-278 §6.5: AllianceLeadService's constructor now also instantiates
