@@ -120,9 +120,9 @@
         },
         "location": {
             "apartment": {
-                "max": "El apartment no puede superar los {{max}} caracteres",
-                "min": "El apartment debe tener al menos {{min}} caracteres",
-                "required": "El apartment es obligatorio"
+                "max": "O apartamento não pode exceder {{max}} caracteres",
+                "min": "O apartamento deve ter pelo menos {{min}} caracteres",
+                "required": "O apartamento é obrigatório"
             },
             "coordinates": {
                 "lat": {
@@ -135,19 +135,19 @@
                 }
             },
             "floor": {
-                "max": "El floor no puede superar los {{max}} caracteres",
-                "min": "El floor debe tener al menos {{min}} caracteres",
-                "required": "El floor es obligatorio"
+                "max": "O andar não pode exceder {{max}} caracteres",
+                "min": "O andar deve ter pelo menos {{min}} caracteres",
+                "required": "O andar é obrigatório"
             },
             "number": {
-                "max": "El number no puede superar los {{max}} caracteres",
-                "min": "El number debe tener al menos {{min}} caracteres",
-                "required": "El number es obligatorio"
+                "max": "O número não pode exceder {{max}} caracteres",
+                "min": "O número deve ter pelo menos {{min}} caracteres",
+                "required": "O número é obrigatório"
             },
             "street": {
-                "max": "El street no puede superar los {{max}} caracteres",
-                "min": "El street debe tener al menos {{min}} caracteres",
-                "required": "El street es obligatorio"
+                "max": "A rua não pode exceder {{max}} caracteres",
+                "min": "A rua deve ter pelo menos {{min}} caracteres",
+                "required": "A rua é obrigatória"
             }
         },
         "media": {
@@ -2749,9 +2749,9 @@
     },
     "eventLocation": {
         "apartment": {
-            "max": "El apartment no puede superar los {{max}} caracteres",
-            "min": "El apartment debe tener al menos {{min}} caracteres",
-            "required": "El apartment es obligatorio"
+            "max": "O apartamento não pode exceder {{max}} caracteres",
+            "min": "O apartamento deve ter pelo menos {{min}} caracteres",
+            "required": "O apartamento é obrigatório"
         },
         "city": {
             "max": "La ciudad no puede superar los {{max}} caracteres",
@@ -2770,27 +2770,27 @@
             }
         },
         "department": {
-            "max": "El department no puede superar los {{max}} caracteres",
-            "min": "El department debe tener al menos {{min}} caracteres"
+            "max": "O departamento não pode exceder {{max}} caracteres",
+            "min": "O departamento deve ter pelo menos {{min}} caracteres"
         },
         "floor": {
-            "max": "El floor no puede superar los {{max}} caracteres",
-            "min": "El floor debe tener al menos {{min}} caracteres",
-            "required": "El floor es obligatorio"
+            "max": "O andar não pode exceder {{max}} caracteres",
+            "min": "O andar deve ter pelo menos {{min}} caracteres",
+            "required": "O andar é obrigatório"
         },
         "neighborhood": {
-            "max": "El neighborhood no puede superar los {{max}} caracteres",
-            "min": "El neighborhood debe tener al menos {{min}} caracteres"
+            "max": "O bairro não pode exceder {{max}} caracteres",
+            "min": "O bairro deve ter pelo menos {{min}} caracteres"
         },
         "number": {
-            "max": "El number no puede superar los {{max}} caracteres",
-            "min": "El number debe tener al menos {{min}} caracteres",
-            "required": "El number es obligatorio"
+            "max": "O número não pode exceder {{max}} caracteres",
+            "min": "O número deve ter pelo menos {{min}} caracteres",
+            "required": "O número é obrigatório"
         },
         "placeName": {
-            "max": "El place name no puede superar los {{max}} caracteres",
-            "min": "El place name debe tener al menos {{min}} caracteres",
-            "required": "El place name es obligatorio"
+            "max": "O nome do local não pode exceder {{max}} caracteres",
+            "min": "O nome do local deve ter pelo menos {{min}} caracteres",
+            "required": "O nome do local é obrigatório"
         },
         "slug": {
             "format": "El formato del slug no es válido",
@@ -2799,9 +2799,9 @@
             "required": "El slug es obligatorio"
         },
         "street": {
-            "max": "El street no puede superar los {{max}} caracteres",
-            "min": "El street debe tener al menos {{min}} caracteres",
-            "required": "El street es obligatorio"
+            "max": "A rua não pode exceder {{max}} caracteres",
+            "min": "A rua deve ter pelo menos {{min}} caracteres",
+            "required": "A rua é obrigatória"
         }
     },
     "eventOrganizer": {
