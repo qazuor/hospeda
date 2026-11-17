@@ -243,21 +243,25 @@ export async function startSuccession(
             firstChargeAt: bornAt
         };
     } else {
-        const schedule = ports.firstChargeSchedule
+        const requestedSchedule = ports.firstChargeSchedule
             ? await ports.firstChargeSchedule({
                   authorizationWindowEndsAt,
                   bornAt,
                   predecessorId: admitted.predecessorId
               })
             : scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
-        const firstChargeAt = floorToWholeSecond({ at: schedule.firstChargeAt }).at;
-        if (!(firstChargeAt > authorizationWindowEndsAt)) {
+        // HOS-2218: the provider stores start_date truncated to the second (RP17), so the
+        // schedule is truncated before it is sent, stored and checked against the window.
+        const schedule = {
+            firstChargeAt: floorToWholeSecond({ at: requestedSchedule.firstChargeAt }).at
+        };
+        if (!(schedule.firstChargeAt > authorizationWindowEndsAt)) {
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 'Successor first charge must follow its authorization window'
             );
         }
-        providerFirstChargeAt = firstChargeAt.toISOString();
+        providerFirstChargeAt = schedule.firstChargeAt.toISOString();
         values = {
             userId: input.userId,
             vertical: choice.vertical,
@@ -270,7 +274,7 @@ export async function startSuccession(
             authorizationWindowEndsAt,
             succeedsId: admitted.predecessorId,
             declaredPayerEmail,
-            firstChargeAt
+            firstChargeAt: schedule.firstChargeAt
         };
     }
 
