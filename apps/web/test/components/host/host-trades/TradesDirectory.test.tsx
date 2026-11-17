@@ -3,21 +3,23 @@
  * @description Unit tests for the TradesDirectory and TradeCard islands.
  *
  * Coverage:
- * TradesDirectory:
+ * TradesDirectory (HOS-919 AC-5.1 to AC-5.3):
  * - Renders all trades when no filter is active
- * - Selecting a category pill filters visible trades
- * - "Todos" pill resets the filter
- * - Category groups appear sorted by localized label (alphabetical, locale-aware)
- * - Shows empty message when the selected category has no trades
+ * - Pills are the union of the categories in the result set, in catalog order
+ * - Selecting several pills shows the UNION (any-of), each provider once
+ * - Clicking an active pill clears just that pill; "Todos" clears all
+ * - Shows an empty message when the active filter matches nothing
+ * - Provider order (name) is never changed by filtering
  * - Filter pills use aria-pressed for accessibility
  *
  * TradeCard:
  * - Renders name, benefit, contact link
  * - is24h badge rendered only when is24h=true
  * - scheduleText rendered only when present
- * - Category badge uses the localized i18n label
+ * - Category badges (detailed in TradeCard.categories.test.tsx)
  */
 
+import type { HostTradePublic } from '@repo/schemas';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -28,14 +30,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string) => {
-            // Provide localized category labels for sorting tests (locale: 'es')
-            // Map: ALBANILERIA → Albañilería, CERRAJERIA → Cerrajería, PLOMERIA → Plomería
             const labels: Record<string, string> = {
-                'host-trades.categories.ALBANILERIA': 'Albañilería',
-                'host-trades.categories.CERRAJERIA': 'Cerrajería',
-                'host-trades.categories.PLOMERIA': 'Plomería',
-                'host-trades.categories.ELECTRICIDAD': 'Electricidad',
-                'host-trades.categories.LIMPIEZA': 'Limpieza',
                 'host-trades.filter.all': 'Todos',
                 'host-trades.card.is24h': 'Disponible 24hs',
                 'host-trades.card.benefit': 'Beneficio para hosts',
@@ -74,39 +69,59 @@ import { TradesDirectory } from '../../../../src/components/host/host-trades/Tra
 // Test fixtures
 // ---------------------------------------------------------------------------
 
+/** Catalog order of the slugs used below (group weight, then category weight). */
+const CATALOG_ORDER = ['plomeria', 'electricidad', 'cerrajeria', 'albanileria'] as const;
+
+const NAMES: Record<(typeof CATALOG_ORDER)[number], string> = {
+    plomeria: 'Plomería',
+    electricidad: 'Electricidad',
+    cerrajeria: 'Cerrajería',
+    albanileria: 'Albañilería'
+};
+
+const refOf = (slug: (typeof CATALOG_ORDER)[number]) => ({
+    id: `cat-${slug}`,
+    slug,
+    nameI18n: { es: NAMES[slug], en: `${NAMES[slug]} EN`, pt: NAMES[slug] },
+    groupSlug: 'g'
+});
+
+// Cast: the fixtures carry only the fields the directory and the card read; the
+// public aggregates (rating, counts) are irrelevant here and default in the card.
 const makeTrade = (
     overrides: Partial<{
         id: string;
         name: string;
-        category: string;
+        categories: ReadonlyArray<(typeof CATALOG_ORDER)[number]>;
         contact: string;
         benefit: string;
         is24h: boolean;
         scheduleText: string | null | undefined;
     }> = {}
-) => ({
-    id: overrides.id ?? 'trade-uuid-1',
-    slug: 'plomero-juan',
-    name: overrides.name ?? 'Juan Pérez Plomería',
-    category: overrides.category ?? 'PLOMERIA',
-    contact: overrides.contact ?? '+549 11 1234-5678',
-    benefit: overrides.benefit ?? '10% de descuento presentando la app',
-    destinationId: 'dest-uuid-1',
-    is24h: overrides.is24h ?? false,
-    scheduleText: overrides.scheduleText === undefined ? null : overrides.scheduleText
-});
+) =>
+    ({
+        id: overrides.id ?? 'trade-uuid-1',
+        slug: 'plomero-juan',
+        name: overrides.name ?? 'Juan Pérez Plomería',
+        categories: (overrides.categories ?? ['plomeria']).map(refOf),
+        contact: overrides.contact ?? '+549 11 1234-5678',
+        benefit: overrides.benefit ?? '10% de descuento presentando la app',
+        destinationId: 'dest-uuid-1',
+        is24h: overrides.is24h ?? false,
+        scheduleText: overrides.scheduleText === undefined ? null : overrides.scheduleText
+    }) as unknown as HostTradePublic;
 
 const tradePlomeria = makeTrade({
     id: 'trade-1',
     name: 'Juan Plomero',
-    category: 'PLOMERIA',
+    categories: ['plomeria'],
     benefit: 'Descuento 10%'
 });
 
 const tradeCerrajeria = makeTrade({
     id: 'trade-2',
     name: 'María Cerrajera',
-    category: 'CERRAJERIA',
+    categories: ['cerrajeria'],
     benefit: 'Visita sin cargo',
     contact: 'https://wa.me/5491155555555'
 });
@@ -114,19 +129,38 @@ const tradeCerrajeria = makeTrade({
 const tradeAlbanileria = makeTrade({
     id: 'trade-3',
     name: 'Pedro Albañil',
-    category: 'ALBANILERIA',
+    categories: ['albanileria'],
     benefit: 'Presupuesto gratis'
 });
 
 const tradeElectricidad = makeTrade({
     id: 'trade-4',
     name: 'Ana Electricista',
-    category: 'ELECTRICIDAD',
+    categories: ['electricidad'],
     benefit: 'Primera inspección gratis',
     is24h: true
 });
 
+/** Does plumbing AND electrical: must be listed once when both pills are on. */
+const tradeMulti = makeTrade({
+    id: 'trade-5',
+    name: 'Hogar Total',
+    categories: ['plomeria', 'electricidad'],
+    benefit: 'Todo para tu casa'
+});
+
 const allTrades = [tradePlomeria, tradeCerrajeria, tradeAlbanileria, tradeElectricidad];
+
+/** Pill buttons (everything with aria-pressed except «Todos»), as text. */
+const pillLabels = (): string[] =>
+    screen
+        .getAllByRole('button')
+        .filter((btn) => btn.getAttribute('aria-pressed') !== null && btn.textContent !== 'Todos')
+        .map((btn) => btn.textContent ?? '');
+
+/** Names of the provider cards on screen, in DOM order. */
+const cardNames = (): string[] =>
+    screen.getAllByRole('heading', { level: 3 }).map((h) => h.textContent ?? '');
 
 // ---------------------------------------------------------------------------
 // TradesDirectory tests
@@ -134,7 +168,6 @@ const allTrades = [tradePlomeria, tradeCerrajeria, tradeAlbanileria, tradeElectr
 
 describe('TradesDirectory — renders all trades', () => {
     it('renders all trade cards when no category filter is active', () => {
-        // Arrange / Act
         render(
             <TradesDirectory
                 trades={allTrades}
@@ -142,7 +175,6 @@ describe('TradesDirectory — renders all trades', () => {
             />
         );
 
-        // Assert — all trade names are visible
         expect(screen.getByText('Juan Plomero')).toBeInTheDocument();
         expect(screen.getByText('María Cerrajera')).toBeInTheDocument();
         expect(screen.getByText('Pedro Albañil')).toBeInTheDocument();
@@ -150,7 +182,6 @@ describe('TradesDirectory — renders all trades', () => {
     });
 
     it('renders the "Todos" pill as active by default (aria-pressed=true)', () => {
-        // Arrange / Act
         render(
             <TradesDirectory
                 trades={allTrades}
@@ -158,163 +189,139 @@ describe('TradesDirectory — renders all trades', () => {
             />
         );
 
-        // Assert
-        const todosPill = screen.getByRole('button', { name: 'Todos' });
-        expect(todosPill).toHaveAttribute('aria-pressed', 'true');
+        expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
     });
 
-    it('renders filter pills for each unique category present in the data', () => {
-        // Arrange / Act
+    it('renders one pill per distinct category present in the result set', () => {
         render(
             <TradesDirectory
-                trades={allTrades}
+                trades={[...allTrades, tradeMulti]}
                 locale="es"
+                catalogOrder={CATALOG_ORDER}
             />
         );
 
-        // Assert — one pill per category in data (plus Todos)
-        expect(screen.getByRole('button', { name: 'Plomería' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Cerrajería' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Albañilería' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Electricidad' })).toBeInTheDocument();
+        // `tradeMulti` repeats plomeria/electricidad: still one pill each.
+        expect(pillLabels()).toHaveLength(4);
+    });
+
+    it('labels pills in the page locale from the category name', () => {
+        render(
+            <TradesDirectory
+                trades={[tradePlomeria]}
+                locale="en"
+            />
+        );
+
+        expect(screen.getByRole('button', { name: 'Plomería EN' })).toBeInTheDocument();
     });
 });
 
-describe('TradesDirectory — category filter', () => {
+describe('TradesDirectory — pill order follows the catalog (AC-5.2)', () => {
+    it('orders pills by the catalog order given by the page, not by provider order', () => {
+        render(
+            <TradesDirectory
+                trades={[...allTrades].reverse()}
+                locale="es"
+                catalogOrder={CATALOG_ORDER}
+            />
+        );
+
+        expect(pillLabels()).toEqual(['Plomería', 'Electricidad', 'Cerrajería', 'Albañilería']);
+    });
+
+    it('puts categories the catalog order does not know after the known ones', () => {
+        render(
+            <TradesDirectory
+                trades={allTrades}
+                locale="es"
+                catalogOrder={['electricidad']}
+            />
+        );
+
+        expect(pillLabels()[0]).toBe('Electricidad');
+        expect(pillLabels()).toHaveLength(4);
+    });
+
+    it('falls back to first appearance (each provider is already in catalog order) without a catalog', () => {
+        render(
+            <TradesDirectory
+                trades={[tradeMulti, tradeCerrajeria]}
+                locale="es"
+            />
+        );
+
+        expect(pillLabels()).toEqual(['Plomería', 'Electricidad', 'Cerrajería']);
+    });
+});
+
+describe('TradesDirectory — any-of category filter (AC-5.2)', () => {
     it('filters visible trades to the selected category', () => {
-        // Arrange
         render(
             <TradesDirectory
                 trades={allTrades}
                 locale="es"
             />
         );
-        const plomeriaPill = screen.getByRole('button', { name: 'Plomería' });
 
-        // Act
-        fireEvent.click(plomeriaPill);
+        fireEvent.click(screen.getByRole('button', { name: 'Plomería' }));
 
-        // Assert — only Plomería trade visible
         expect(screen.getByText('Juan Plomero')).toBeInTheDocument();
         expect(screen.queryByText('María Cerrajera')).not.toBeInTheDocument();
         expect(screen.queryByText('Pedro Albañil')).not.toBeInTheDocument();
         expect(screen.queryByText('Ana Electricista')).not.toBeInTheDocument();
     });
 
-    it('marks the selected category pill as aria-pressed=true', () => {
-        // Arrange
+    it('shows the UNION when two pills are selected', () => {
         render(
             <TradesDirectory
                 trades={allTrades}
                 locale="es"
             />
         );
-        const cerrajeriaPill = screen.getByRole('button', { name: 'Cerrajería' });
 
-        // Act
-        fireEvent.click(cerrajeriaPill);
+        fireEvent.click(screen.getByRole('button', { name: 'Plomería' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Cerrajería' }));
 
-        // Assert
-        expect(cerrajeriaPill).toHaveAttribute('aria-pressed', 'true');
-    });
-
-    it('"Todos" pill resets the filter and shows all trades', () => {
-        // Arrange
-        render(
-            <TradesDirectory
-                trades={allTrades}
-                locale="es"
-            />
-        );
-        const plomeriaPill = screen.getByRole('button', { name: 'Plomería' });
-        fireEvent.click(plomeriaPill);
-        // Verify filter applied
-        expect(screen.queryByText('María Cerrajera')).not.toBeInTheDocument();
-
-        // Act — click Todos
-        fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
-
-        // Assert — all trades back
         expect(screen.getByText('Juan Plomero')).toBeInTheDocument();
         expect(screen.getByText('María Cerrajera')).toBeInTheDocument();
-        expect(screen.getByText('Pedro Albañil')).toBeInTheDocument();
-        expect(screen.getByText('Ana Electricista')).toBeInTheDocument();
+        expect(screen.queryByText('Pedro Albañil')).not.toBeInTheDocument();
+        expect(screen.queryByText('Ana Electricista')).not.toBeInTheDocument();
     });
 
-    it('clicking the active category pill a second time resets the filter', () => {
-        // Arrange
+    it('lists a provider matching two selected pills exactly once', () => {
         render(
             <TradesDirectory
-                trades={allTrades}
+                trades={[tradePlomeria, tradeMulti, tradeElectricidad]}
                 locale="es"
+                catalogOrder={CATALOG_ORDER}
             />
         );
-        const plomeriaPill = screen.getByRole('button', { name: 'Plomería' });
-        fireEvent.click(plomeriaPill);
-        expect(screen.queryByText('María Cerrajera')).not.toBeInTheDocument();
 
-        // Act — click the same pill again (toggle off)
-        fireEvent.click(plomeriaPill);
+        fireEvent.click(screen.getByRole('button', { name: 'Plomería' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Electricidad' }));
 
-        // Assert — all trades visible again
-        expect(screen.getByText('María Cerrajera')).toBeInTheDocument();
+        expect(cardNames().filter((name) => name === 'Hogar Total')).toHaveLength(1);
+        expect(cardNames()).toEqual(['Juan Plomero', 'Hogar Total', 'Ana Electricista']);
     });
 
-    it('shows an empty message when the selected category has no matching trades', () => {
-        // Arrange — only one trade, select a different category
-        const singleTrade = [tradePlomeria];
+    it('matches a provider through any one of its categories', () => {
         render(
             <TradesDirectory
-                trades={singleTrade}
+                trades={[tradeMulti, tradeCerrajeria]}
                 locale="es"
             />
         );
 
-        // There is no CERRAJERIA trade; inject a pill by using a trade set
-        // that HAS the category then switch. Use two trades and filter to a
-        // third category via a fresh render with trades that have BOTH categories
-        // but select one that has zero items (achieved by having only one trade
-        // and clicking its own category twice to deselect, then the empty state
-        // should NOT appear). Instead, render with two categories and test
-        // that the message appears when we select a category that is NOT in
-        // the data set.
+        fireEvent.click(screen.getByRole('button', { name: 'Electricidad' }));
 
-        // Simpler: render allTrades then remove one and use two specific categories.
-        // The mock i18n covers 'noTrades'. The island shows the message when
-        // activeCategory !== null AND visibleTrades.length === 0. To trigger this
-        // we need a category pill that is present in the data but has NO matching
-        // trades — which is impossible by construction (pills are built from present
-        // categories). So this test instead verifies the message content directly
-        // by checking the island renders it when told to render allTrades but ALL
-        // are filtered by a mismatched category:
-        // The only way to get isFilteredEmpty=true is if a category that WAS
-        // in the original data becomes empty after a re-render. We test this
-        // by rendering ONLY tradePlomeria and CERRAJERIA, then simulating what
-        // happens if the data changes. Since this is React state, the simplest
-        // approach is to test with TWO trades of the same category and verify
-        // the filter works — the empty-message test is better tested with a
-        // category that is NOT in the pillsData by directly setting state, but
-        // since we cannot do that easily, we test the message text IS defined
-        // in the mock i18n and that the filteredEmpty CSS class is assigned when
-        // the status element is rendered. Actually the easiest approach: start
-        // with allTrades, click PLOMERIA, then check ALL OTHERS are gone.
-        // The empty-state is shown when 0 trades match — which would require
-        // removing the plomeria trade after selection. Since we cannot do that
-        // here without state manipulation, we verify the branch by rendering
-        // a set where clicking PLOMERIA would leave 0 (impossible since
-        // pills only show existing categories). The branch IS covered by
-        // the component logic; we test the prose of the message renders.
-        // Skip: we trust component logic + snapshots for this edge case.
-        // Instead assert the i18n key resolves through the mock.
-        expect(screen.getByRole('button', { name: 'Plomería' })).toBeInTheDocument();
+        expect(cardNames()).toEqual(['Hogar Total']);
     });
-});
 
-describe('TradesDirectory — alphabetical category sort by localized label', () => {
-    it('sorts category pills alphabetically by localized label (es locale)', () => {
-        // Arrange — trades with categories: PLOMERIA, CERRAJERIA, ALBANILERIA, ELECTRICIDAD
-        // Localized (es): Plomería, Cerrajería, Albañilería, Electricidad
-        // Alphabetical: Albañilería, Cerrajería, Electricidad, Plomería
+    it('marks every selected pill as aria-pressed=true', () => {
         render(
             <TradesDirectory
                 trades={allTrades}
@@ -322,39 +329,130 @@ describe('TradesDirectory — alphabetical category sort by localized label', ()
             />
         );
 
-        // Act — get all pill buttons (excluding "Todos")
-        const pills = screen
-            .getAllByRole('button')
-            .filter(
-                (btn) => btn.getAttribute('aria-pressed') !== null && btn.textContent !== 'Todos'
-            );
+        fireEvent.click(screen.getByRole('button', { name: 'Cerrajería' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Plomería' }));
 
-        const pillLabels = pills.map((p) => p.textContent ?? '');
-
-        // Assert order is alphabetical by localized label in Spanish
-        expect(pillLabels).toEqual(['Albañilería', 'Cerrajería', 'Electricidad', 'Plomería']);
+        expect(screen.getByRole('button', { name: 'Cerrajería' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+        expect(screen.getByRole('button', { name: 'Plomería' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+        expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute(
+            'aria-pressed',
+            'false'
+        );
     });
 
-    it('renders category pills in a single stable order regardless of trades array order', () => {
-        // Arrange — reverse the order of trades from the default
-        const reversed = [...allTrades].reverse();
+    it('"Todos" pill clears every selected pill and shows all trades', () => {
         render(
             <TradesDirectory
-                trades={reversed}
+                trades={allTrades}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Plomería' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Cerrajería' }));
+        expect(screen.queryByText('Pedro Albañil')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Todos' }));
+
+        expect(cardNames()).toHaveLength(4);
+        expect(screen.getByRole('button', { name: 'Plomería' })).toHaveAttribute(
+            'aria-pressed',
+            'false'
+        );
+    });
+
+    it('clicking an active pill a second time clears just that pill', () => {
+        render(
+            <TradesDirectory
+                trades={allTrades}
+                locale="es"
+            />
+        );
+        const plomeria = screen.getByRole('button', { name: 'Plomería' });
+        fireEvent.click(plomeria);
+        fireEvent.click(screen.getByRole('button', { name: 'Cerrajería' }));
+
+        fireEvent.click(plomeria);
+
+        expect(plomeria).toHaveAttribute('aria-pressed', 'false');
+        expect(cardNames()).toEqual(['María Cerrajera']);
+    });
+
+    it('clearing the last active pill shows every trade again', () => {
+        render(
+            <TradesDirectory
+                trades={allTrades}
+                locale="es"
+            />
+        );
+        const plomeria = screen.getByRole('button', { name: 'Plomería' });
+        fireEvent.click(plomeria);
+        expect(cardNames()).toHaveLength(1);
+
+        fireEvent.click(plomeria);
+
+        expect(cardNames()).toHaveLength(4);
+        expect(screen.getByRole('button', { name: 'Todos' })).toHaveAttribute(
+            'aria-pressed',
+            'true'
+        );
+    });
+
+    it('keeps the provider order of the server (name) whatever the filter', () => {
+        const byName = [tradeElectricidad, tradeMulti, tradePlomeria]; // Ana, Hogar, Juan
+        render(
+            <TradesDirectory
+                trades={byName}
                 locale="es"
             />
         );
 
-        const pills = screen
-            .getAllByRole('button')
-            .filter(
-                (btn) => btn.getAttribute('aria-pressed') !== null && btn.textContent !== 'Todos'
-            );
+        fireEvent.click(screen.getByRole('button', { name: 'Plomería' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Electricidad' }));
 
-        const pillLabels = pills.map((p) => p.textContent ?? '');
+        expect(cardNames()).toEqual(['Ana Electricista', 'Hogar Total', 'Juan Plomero']);
+    });
 
-        // Assert same alphabetical order regardless of input order
-        expect(pillLabels).toEqual(['Albañilería', 'Cerrajería', 'Electricidad', 'Plomería']);
+    it('shows the empty message when the active filter matches nothing', () => {
+        const { rerender } = render(
+            <TradesDirectory
+                trades={allTrades}
+                locale="es"
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Cerrajería' }));
+
+        // The result set changes under an active filter (e.g. a re-render with
+        // fresh data) and nobody has the selected category any more.
+        rerender(
+            <TradesDirectory
+                trades={[tradePlomeria]}
+                locale="es"
+            />
+        );
+
+        expect(
+            screen.getByText('No hay proveedores disponibles para tus destinos por ahora.')
+        ).toBeInTheDocument();
+        expect(screen.queryByText('Juan Plomero')).not.toBeInTheDocument();
+    });
+
+    it('does not show the empty message by default', () => {
+        render(
+            <TradesDirectory
+                trades={[tradePlomeria]}
+                locale="es"
+            />
+        );
+
+        expect(
+            screen.queryByText('No hay proveedores disponibles para tus destinos por ahora.')
+        ).not.toBeInTheDocument();
     });
 });
 
@@ -579,60 +677,27 @@ describe('TradeCard — scheduleText', () => {
     });
 });
 
-describe('TradeCard — category badge', () => {
-    it('renders the localized category label as badge text', () => {
-        // Arrange
+describe('TradeCard — category badges', () => {
+    it('renders one badge per category, in the order received', () => {
         render(
             <TradeCard
-                trade={tradePlomeria}
+                trade={tradeMulti}
                 locale="es"
             />
         );
 
-        // Assert — mock i18n resolves 'host-trades.categories.PLOMERIA' → 'Plomería'
         expect(screen.getByText('Plomería')).toBeInTheDocument();
+        expect(screen.getByText('Electricidad')).toBeInTheDocument();
     });
 
-    it('renders the localized ALBANILERIA label for the badge', () => {
-        // Arrange
+    it('renders the badge label in the page locale', () => {
         render(
             <TradeCard
                 trade={tradeAlbanileria}
-                locale="es"
+                locale="en"
             />
         );
 
-        // Assert — 'Albañilería'
-        expect(screen.getByText('Albañilería')).toBeInTheDocument();
-    });
-});
-
-describe('TradesDirectory — empty category message', () => {
-    it('renders the empty message when no trades match the selected category', () => {
-        // Arrange — render with TWO different categories, filter to one that
-        // has a trade, then switch to the other; we need a scenario where
-        // visibleTrades.length === 0. The only way with the current pill
-        // construction (pills = present categories) is to test with trades
-        // that cover all pills and rely on component state reset. Instead,
-        // render a single trade then select its category twice (toggle off →
-        // Todos reset, which does NOT give empty state). The real empty-filter
-        // scenario requires a category in the pills set but 0 matching trades —
-        // which contradicts how pills are built. However, the test can inject
-        // a second trade of category A, filter to category A, then
-        // programmatically check state. Since we cannot inspect state directly,
-        // we leverage that clicking an ALREADY-ACTIVE pill resets filter (no empty).
-        // The empty-message branch is a defensive guardrail; test it indirectly
-        // by asserting the element does not appear in the default render.
-        render(
-            <TradesDirectory
-                trades={[tradePlomeria]}
-                locale="es"
-            />
-        );
-
-        // Assert — no empty message shown by default (no filter active)
-        expect(
-            screen.queryByText('No hay proveedores disponibles para tus destinos por ahora.')
-        ).not.toBeInTheDocument();
+        expect(screen.getByText('Albañilería EN')).toBeInTheDocument();
     });
 });
