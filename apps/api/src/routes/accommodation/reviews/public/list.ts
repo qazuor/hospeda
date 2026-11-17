@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../../utils/pagination';
+import { resolveReviewerDisplayName } from '../../../../utils/reviewer-display-name';
 import { createPublicListRoute } from '../../../../utils/route-factory';
 
 /** Safe user fields exposed in public review responses. */
@@ -102,11 +103,7 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
                 .where(inArray(users.id, userIds));
 
             for (const u of userRows) {
-                const name =
-                    u.displayName ??
-                    (u.firstName && u.lastName
-                        ? `${u.firstName} ${u.lastName.charAt(0)}.`
-                        : (u.firstName ?? null));
+                const name = resolveReviewerDisplayName({ reviewer: u });
                 // The dedicated `users.image` column is currently unpopulated
                 // for seeded users; the canonical avatar lives in
                 // `profile.avatar` (see `routes/user/public/getBySlug.ts`).
