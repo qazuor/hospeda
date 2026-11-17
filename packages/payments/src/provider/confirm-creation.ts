@@ -30,11 +30,16 @@ const CREATION_FIELDS: readonly AuthorizationCreationField[] = [
     'firstChargeAt'
 ];
 
-/** Whether two ISO 8601 strings name the same instant, whatever offset each is spelled in. */
+/** Whether ISO instants match exactly or by MP's RP17 (EX-60) second truncation. */
 function sameInstant(args: { readonly sent: unknown; readonly read: unknown }): boolean {
     if (typeof args.sent !== 'string' || typeof args.read !== 'string') return false;
     const sent = Date.parse(args.sent);
-    return Number.isFinite(sent) && sent === Date.parse(args.read);
+    const read = Date.parse(args.read);
+    return (
+        Number.isFinite(sent) &&
+        Number.isFinite(read) &&
+        (sent === read || (sent >= 0 && read === Math.floor(sent / 1000) * 1000))
+    );
 }
 
 /** Compare the simple domain values without treating a provider acknowledgement as evidence. */
@@ -43,7 +48,7 @@ function sameField(args: {
     readonly sent: unknown;
     readonly read: unknown;
 }): boolean {
-    // A provider may echo the first charge in its own offset (HOS-1724): compare instants.
+    // MP may truncate its first charge to seconds (RP17, EX-60); compare exact instants or that floor.
     if (args.field === 'firstChargeAt') return sameInstant(args);
     if (typeof args.sent !== 'object' || args.sent === null) return Object.is(args.sent, args.read);
     if (typeof args.read !== 'object' || args.read === null) return false;

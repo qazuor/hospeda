@@ -16,6 +16,7 @@ import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.servi
 import type { MirrorDelegates } from '../notice/provider-notice-ports.js';
 import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
+import { floorToWholeSecond } from './first-charge-precision.js';
 import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
 import {
     assertCardCheckoutVertical,
@@ -249,13 +250,14 @@ export async function startSuccession(
                   predecessorId: admitted.predecessorId
               })
             : scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
-        if (!(schedule.firstChargeAt > authorizationWindowEndsAt)) {
+        const firstChargeAt = floorToWholeSecond({ at: schedule.firstChargeAt }).at;
+        if (!(firstChargeAt > authorizationWindowEndsAt)) {
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 'Successor first charge must follow its authorization window'
             );
         }
-        providerFirstChargeAt = schedule.firstChargeAt.toISOString();
+        providerFirstChargeAt = firstChargeAt.toISOString();
         values = {
             userId: input.userId,
             vertical: choice.vertical,
@@ -268,7 +270,7 @@ export async function startSuccession(
             authorizationWindowEndsAt,
             succeedsId: admitted.predecessorId,
             declaredPayerEmail,
-            firstChargeAt: schedule.firstChargeAt
+            firstChargeAt
         };
     }
 
