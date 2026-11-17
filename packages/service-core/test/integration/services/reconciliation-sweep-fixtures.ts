@@ -154,7 +154,7 @@ async function anchors(
         );
         versionId = (
             await client.query<{ id: string }>(
-                'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, true, true, 0, false) RETURNING id',
+                'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, false, true, 0, false) RETURNING id',
                 [planId, rank.rows[0]?.rank, vertical]
             )
         ).rows[0]?.id;
