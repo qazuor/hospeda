@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { getDb, sql } from '@repo/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { claimPartnerByLink } from '../../../src/services/partner-application/partner-link-claim.service';
 import { issuePartnerClaimSecret } from '../../../src/utils/partner-application/partner-claim-secret';
 import { testDb } from '../../e2e/setup/test-database';
 import { createOwner } from '../listing-publication/publication-routes.helpers';
@@ -151,7 +152,7 @@ describe('public Partner claim signup', () => {
             headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
             body: JSON.stringify({ partnerId, secret, password: 'StrongPass123!' })
         });
-        expect(replay.status).toBe(409);
+        expect(replay.status).toBe(404);
         const extraEmail = await app.request('/api/v1/public/partner-claims/signup', {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
@@ -163,5 +164,68 @@ describe('public Partner claim signup', () => {
             })
         });
         expect(extraEmail.status).toBe(400);
+    });
+
+    it('keeps the HOS-2222 mismatch response when a valid claim link has no claim email', async () => {
+        const owner = await createOwner();
+        users.push(owner.id);
+        const inserted = await getDb().execute(sql`
+            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id)
+            VALUES (${`hos2299-${randomUUID()}`}, 'HOS-2299 missing claim email', 'business', 'ACTIVE', ${owner.id}::uuid, ${owner.id}::uuid)
+            RETURNING id`);
+        const partnerId = String(inserted.rows[0]?.id);
+        partners.push(partnerId);
+        const issued = await issuePartnerClaimSecret({
+            partnerId,
+            email: `hos2299-${randomUUID()}@example.test`
+        });
+        await getDb().execute(
+            sql`UPDATE partners SET claim_email = NULL WHERE id = ${partnerId}::uuid`
+        );
+
+        await expect(
+            claimPartnerByLink({
+                actorUserId: owner.id,
+                currentSessionId: null,
+                partnerId,
+                secret: issued?.secret as string
+            })
+        ).rejects.toMatchObject({
+            code: 'FORBIDDEN',
+            reason: 'PARTNER_CLAIM_EMAIL_MISMATCH'
+        });
+    });
+
+    it('treats a link for an already claimed Partner as unavailable without creating an account', async () => {
+        const owner = await createOwner();
+        users.push(owner.id);
+        const email = `hos2299-${randomUUID()}@example.test`;
+        const inserted = await getDb().execute(sql`
+            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id)
+            VALUES (${`hos2299-${randomUUID()}`}, 'HOS-2299 consumed claim', 'business', 'ACTIVE', ${owner.id}::uuid, ${owner.id}::uuid)
+            RETURNING id`);
+        const partnerId = String(inserted.rows[0]?.id);
+        partners.push(partnerId);
+        const issued = await issuePartnerClaimSecret({ partnerId, email });
+        await getDb().execute(
+            sql`UPDATE partners SET owner_user_id = ${owner.id}::uuid WHERE id = ${partnerId}::uuid`
+        );
+
+        const request = { partnerId, secret: issued?.secret };
+        const lookup = await app.request('/api/v1/public/partner-claims/lookup', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
+            body: JSON.stringify(request)
+        });
+        const signup = await app.request('/api/v1/public/partner-claims/signup', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
+            body: JSON.stringify({ ...request, password: 'StrongPass123!' })
+        });
+        expect([lookup.status, signup.status]).toEqual([404, 404]);
+        expect(
+            (await getDb().execute(sql`SELECT id FROM users WHERE lower(email) = lower(${email})`))
+                .rows
+        ).toHaveLength(0);
     });
 });

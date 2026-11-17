@@ -19,7 +19,8 @@ export async function verifyPartnerClaimLink(input: {
     readonly tx: DrizzleClient;
     readonly partnerId: string;
     readonly secret: string;
-}): Promise<{ readonly partnerId: string; readonly claimEmail: string }> {
+    readonly allowMissingClaimEmail?: boolean;
+}): Promise<{ readonly partnerId: string; readonly claimEmail: string | null }> {
     const partner = await partnerApplicationModel.lockPartnerForLinkClaim({
         tx: input.tx,
         partnerId: input.partnerId
@@ -42,7 +43,8 @@ export async function verifyPartnerClaimLink(input: {
         );
     }
     const claimEmail = partner.claimEmail?.trim();
-    if (!claimEmail) throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
+    if (!claimEmail && !input.allowMissingClaimEmail)
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
     return { partnerId: partner.partnerId, claimEmail };
 }
 
@@ -78,7 +80,8 @@ export async function claimPartnerByLink(input: {
             const verifiedLink = await verifyPartnerClaimLink({
                 tx,
                 partnerId: input.partnerId,
-                secret: input.secret
+                secret: input.secret,
+                allowMissingClaimEmail: true
             });
             const account = await partnerApplicationModel.readAccountForClaim({
                 tx,

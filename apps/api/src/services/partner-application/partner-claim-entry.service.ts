@@ -1,3 +1,4 @@
+import type { DrizzleClient } from '@repo/db';
 import { eq, getDb, partnerApplicationModel, userRole, users } from '@repo/db';
 import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -5,7 +6,10 @@ import { getAuth } from '../../lib/auth';
 import { captureSignupCompleted } from '../../lib/auth-signup-analytics';
 import { grantBaselineUserRole } from '../../lib/auth-signup-baseline-role';
 import { apiLogger } from '../../utils/logger';
-import { PARTNER_CLAIM_ACCOUNT_EXISTS } from './partner-application-errors';
+import {
+    PARTNER_ALREADY_CLAIMED,
+    PARTNER_CLAIM_ACCOUNT_EXISTS
+} from './partner-application-errors';
 import { claimPartnerByLink, verifyPartnerClaimLink } from './partner-link-claim.service';
 
 function accountExistsError(): ServiceError {
@@ -24,14 +28,34 @@ function isAccountAlreadyExists(error: unknown): boolean {
     );
 }
 
+function isPartnerAlreadyClaimed(error: unknown): boolean {
+    return error instanceof ServiceError && error.reason === PARTNER_ALREADY_CLAIMED;
+}
+
+async function verifyEntryClaimLink(input: {
+    readonly tx: DrizzleClient;
+    readonly partnerId: string;
+    readonly secret: string;
+}): Promise<{ readonly claimEmail: string }> {
+    try {
+        const { claimEmail } = await verifyPartnerClaimLink(input);
+        if (!claimEmail) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Partner not found');
+        return { claimEmail };
+    } catch (error) {
+        if (isPartnerAlreadyClaimed(error))
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Partner not found');
+        throw error;
+    }
+}
+
 /** Looks up the account associated with a valid, unused Partner claim link. */
 export async function lookupPartnerClaim(input: {
     readonly partnerId: string;
     readonly secret: string;
 }): Promise<{ readonly email: string; readonly accountExists: boolean }> {
     return getDb().transaction(async (rawTx) => {
-        const tx = rawTx as import('@repo/db').DrizzleClient;
-        const { claimEmail } = await verifyPartnerClaimLink({ ...input, tx });
+        const tx = rawTx as DrizzleClient;
+        const { claimEmail } = await verifyEntryClaimLink({ ...input, tx });
         const account = await partnerApplicationModel.findAccountIdByEmail({
             tx,
             email: claimEmail
@@ -47,8 +71,8 @@ export async function signUpAndClaimPartner(input: {
     readonly password: string;
 }): Promise<{ readonly claimed: true; readonly partnerId: string; readonly email: string }> {
     const { email } = await getDb().transaction(async (rawTx) => {
-        const tx = rawTx as import('@repo/db').DrizzleClient;
-        const { claimEmail } = await verifyPartnerClaimLink({
+        const tx = rawTx as DrizzleClient;
+        const { claimEmail } = await verifyEntryClaimLink({
             tx,
             partnerId: input.partnerId,
             secret: input.secret
