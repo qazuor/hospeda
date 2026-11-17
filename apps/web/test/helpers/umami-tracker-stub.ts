@@ -1,7 +1,7 @@
 /**
  * @file umami-tracker-stub.ts
  * @description A `window.umami` stub that behaves like the Umami 3.5.0 tracker
- * where the browser-to-server session join depends on it (HOS-2119):
+ * where the per-user session depends on it (HOS-2119):
  *
  * - `track()` returns a promise that settles only when the test answers the
  *   request (`respond`), like the tracker's `send()` awaiting `fetch`.
@@ -10,7 +10,8 @@
  *   (`respond({ ok: false })`) resolves too, because the tracker swallows
  *   errors, but leaves no token.
  * - `identify()` records whether the tracker held a token when it was called:
- *   an identify without it opens a separate `uuid(…, id)` session in Umami.
+ *   an identify WITH it claims the anonymous fingerprint session (the leak the
+ *   2026-11-17 revision removed); one without it opens `uuid(…, id)`.
  */
 
 import { vi } from 'vitest';
@@ -138,7 +139,7 @@ export function loadPage({ clientRouter = false }: PageOptions = {}): UmamiTrack
 
 /**
  * A loaded document whose pageview Umami already answered, so the tracker
- * holds the cache token.
+ * holds the cache token (an identify now would claim the anonymous session).
  *
  * @returns The tracker stub.
  */

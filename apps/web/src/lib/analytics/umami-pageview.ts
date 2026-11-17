@@ -47,34 +47,17 @@
  * Pages without `<ClientRouter />` (StandaloneLayout) never get
  * `astro:page-load`; there the pageview is sent once, directly.
  *
- * ## The pageview acknowledgement (OQ-5, revised 2026-11-16)
+ * ## Identify order (OQ-5, revised 2026-11-17)
  *
- * Umami 3.5.0 derives the session as `uuid(website, ip, ua, salt, id)`. An
- * `identify` that carries the tracker's `x-umami-cache` token claims the
- * anonymous fingerprint session (same session id, distinct id attached); one
- * sent without the token opens a separate `uuid(…, id)` session, and a server
- * event (which never carries a distinct id) can no longer join the browser.
- *
- * The tracker stores the token from the answer of each request it sends
- * (`cache = data.cache` in `send()`), keeps it in memory for the life of the
- * document (a `pushState` does not touch it) and exposes it through
- * `getSession()`. Its `send()` swallows every error, so the promise `track()`
- * returns also resolves for a blocked or failed request. A pageview therefore
- * counts as acknowledged only when that promise resolved AND the tracker then
- * holds a token. {@link subscribePageviewAcknowledgement} is what the identify
- * waits on. Module state is per document: a full reload starts unacknowledged.
- *
- * The subscription has no timeout on purpose. With `<ClientRouter />` the
- * initial `astro:page-load` fires on `window.load`, which on a slow page comes
- * long after the islands hydrate (where the identify is requested). A wait
- * bounded from the identify call gave up before the pageview was even sent, so
- * a single-page visit never identified. A subscriber that only waits holds no
- * timer and costs nothing when the acknowledgement never comes.
+ * This module no longer tracks whether a pageview was acknowledged. The
+ * identify (`umami-client.ts`) must be a document's FIRST request, before the
+ * tracker holds an `x-umami-cache` token, so it opens a per-user session
+ * instead of claiming the anonymous one; the client guards that itself by
+ * reading the token with `hasUmamiCacheToken`.
  */
 
 import type { UmamiTracker } from '@repo/analytics';
-import { hasUmamiCacheToken } from '@repo/analytics';
-import { getUmamiTracker, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 
 /** `name` of the per-page `<meta>` carrying the Umami tag (detail pages only). */
 export const UMAMI_TAG_META_NAME = 'umami-tag';
@@ -97,90 +80,6 @@ let softNavFromUrl: string | null = null;
 /** URL of the page counted by the last pageview. */
 let lastPageUrl: string | null = null;
 let started = false;
-/** Whether a pageview of this document was answered and left a cache token. */
-let pageviewAcknowledged = false;
-/** Bumped by `stop`, so an answer to a request of an earlier wiring is ignored. */
-let wiringGeneration = 0;
-/** Subscribers notified on the next acknowledgement. */
-const acknowledgementSubscribers = new Set<() => void>();
-
-/** Whether this document's pageview was acknowledged and the token is still held. */
-function isAcknowledgedNow(): boolean {
-    if (!pageviewAcknowledged) return false;
-    const tracker = getUmamiTracker();
-    return hasUmamiCacheToken({ tracker });
-}
-
-/**
- * Marks the document acknowledged once the pageview request settled and the
- * tracker holds a token, then notifies the waiters.
- */
-async function acknowledgeWhenAnswered({
-    sent,
-    generation
-}: {
-    readonly sent: unknown;
-    readonly generation: number;
-}): Promise<void> {
-    try {
-        await sent;
-    } catch {
-        return;
-    }
-    if (generation !== wiringGeneration) return;
-    const tracker = getUmamiTracker();
-    if (!hasUmamiCacheToken({ tracker })) return;
-    pageviewAcknowledged = true;
-    for (const subscriber of [...acknowledgementSubscribers]) subscriber();
-}
-
-/** Input of {@link subscribePageviewAcknowledgement}. */
-export interface SubscribePageviewAcknowledgementInput {
-    /** Called once when this document's pageview has been acknowledged. */
-    readonly onAcknowledged: () => void;
-}
-
-/** Result of {@link subscribePageviewAcknowledgement}. */
-export interface SubscribePageviewAcknowledgementResult {
-    /** Drops the subscription without calling back. A no-op once it ran. */
-    readonly unsubscribe: () => void;
-}
-
-/**
- * Runs `onAcknowledged` once this document's pageview was answered by Umami
- * and the tracker holds the `x-umami-cache` token: synchronously when that
- * already happened (also after a soft navigation, the token outlives
- * `pushState`), otherwise on the acknowledgement, however late it comes.
- *
- * There is no timeout (see the file header): when the acknowledgement never
- * comes (ad blocker, failed request) the callback simply never runs. The
- * subscription holds no timer, never throws, and lives until it ran, the
- * caller unsubscribes, or the document goes away.
- *
- * @param input - The callback.
- * @returns A handle to drop the subscription.
- */
-export function subscribePageviewAcknowledgement({
-    onAcknowledged
-}: SubscribePageviewAcknowledgementInput): SubscribePageviewAcknowledgementResult {
-    const noop: SubscribePageviewAcknowledgementResult = { unsubscribe: () => undefined };
-    if (typeof window === 'undefined') return noop;
-    if (isAcknowledgedNow()) {
-        onAcknowledged();
-        return noop;
-    }
-
-    const unsubscribe = (): void => {
-        acknowledgementSubscribers.delete(subscriber);
-    };
-    function subscriber(): void {
-        unsubscribe();
-        onAcknowledged();
-    }
-    acknowledgementSubscribers.add(subscriber);
-    return { unsubscribe };
-}
-
 /**
  * Referrer of the page being shown: the previous page's URL after a soft
  * navigation, `document.referrer` on a full page load.
@@ -272,22 +171,16 @@ function countCurrentPage(): void {
     // never reaches its pushState hook), so send the page we came from.
     const referrer = softNavFromUrl === null ? undefined : stripOrigin(softNavFromUrl);
     lastPageUrl = url;
-    const generation = wiringGeneration;
 
     waitForUmamiTracker({
         onReady: (tracker: UmamiTracker) => {
-            let sent: unknown;
             try {
-                // Typed `void` in `@repo/analytics`; the 3.5.0 tracker returns
-                // the promise of its `send()`.
-                sent = tracker.track((defaults) =>
+                tracker.track((defaults) =>
                     buildPageviewPayload({ defaults, url, title, referrer, tag })
                 );
             } catch {
                 // Best-effort: analytics must never break the page.
-                return;
             }
-            void acknowledgeWhenAnswered({ sent, generation });
         }
     });
 }
@@ -301,7 +194,7 @@ function rememberPageBeingLeft(): void {
 /** Result of {@link startUmamiPageviews}. */
 export interface StartUmamiPageviewsResult {
     /**
-     * Removes the listeners and forgets the navigation and acknowledgement
+     * Removes the listeners and forgets the navigation
      * state (used by tests to start each case as a fresh document).
      */
     readonly stop: () => void;
@@ -326,8 +219,6 @@ export function startUmamiPageviews(): StartUmamiPageviewsResult {
         softNavFromUrl = null;
         lastPageUrl = null;
         started = false;
-        pageviewAcknowledged = false;
-        wiringGeneration += 1;
     };
 
     if (!document.querySelector(CLIENT_ROUTER_META_SELECTOR)) {
