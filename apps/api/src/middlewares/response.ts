@@ -63,7 +63,9 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.PROVIDER_REVOKED]: 422,
     // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
     [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
-    [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409
+    [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409,
+    // Provider trade catalog: deleting a group/category still in use (HOS-919)
+    [ServiceErrorCode.CATEGORY_IN_USE]: 409
 };
 
 /**
