@@ -29,9 +29,27 @@ export function resolveWatchAccount(args: {
     return null;
 }
 
+/** Parts of an instant on the market clock. */
+function marketParts(args: { readonly at: Date }): {
+    readonly day: number;
+    readonly weekday: string;
+} {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: MARKET_TIME_ZONE,
+        day: 'numeric',
+        weekday: 'short'
+    }).formatToParts(args.at);
+    return {
+        day: Number(parts.find((part) => part.type === 'day')?.value),
+        weekday: parts.find((part) => part.type === 'weekday')?.value ?? ''
+    };
+}
+
 /**
- * Whether a SCHEDULED tick runs the battery. Every account is ticked weekly; production only
- * runs on the first tick of the month, so it runs monthly. A manual run is always due.
+ * Whether a SCHEDULED tick runs the battery. The job ticks DAILY and the environment picks its
+ * day: the sandbox account runs every Monday (weekly), production runs on the 1st of every
+ * month (monthly). A fixed day, not "the first Monday", keeps the gap between two production
+ * runs under the watchdog's one month plus one day. A manual run is always due.
  *
  * @param args.account - The account the environment targets
  * @param args.now - The tick's instant
@@ -41,12 +59,6 @@ export function isScheduledTickDue(args: {
     readonly account: WatchAccount;
     readonly now: Date;
 }): boolean {
-    if (args.account === 'sandbox') return true;
-    const day = Number(
-        new Intl.DateTimeFormat('en-CA', {
-            timeZone: MARKET_TIME_ZONE,
-            day: 'numeric'
-        }).format(args.now)
-    );
-    return day <= 7;
+    const { day, weekday } = marketParts({ at: args.now });
+    return args.account === 'sandbox' ? weekday === 'Mon' : day === 1;
 }

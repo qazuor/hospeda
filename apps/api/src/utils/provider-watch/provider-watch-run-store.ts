@@ -1,6 +1,7 @@
 /**
- * The watch battery's two database ports (HOS-1512): the shapes of the previous completed
- * run, and the write of the run together with the alert mail it provokes.
+ * The watch battery's database ports (HOS-1512): the shapes the owner ACCEPTED, the opening of a
+ * run (which consumes the production authorization atomically), and the closing of a run together
+ * with the alert mail it provokes.
  *
  * @module utils/provider-watch/provider-watch-run-store
  */
@@ -13,80 +14,98 @@ import {
     PROVIDER_WATCH_ALERT_CHANNEL
 } from './provider-watch-alert-outbox.js';
 
-const baselineSchema = z.record(
-    z.string(),
-    z.object({ shapes: z.record(z.string(), z.record(z.string(), z.string())) })
-);
+const shapesSchema = z.record(z.string(), z.record(z.string(), z.string()));
 
 /**
- * Reads the shapes of the latest completed run of an account: the baseline the next run
- * compares against. A stored run whose shapes cannot be read is logged and treated as no
- * baseline, so one bad row cannot stop the battery for good.
+ * Reads the shapes the owner accepted for an account. A baseline only advances when the owner
+ * accepts a new shape in the admin; a run never moves it. A stored baseline that cannot be read is
+ * logged and treated as absent.
  *
  * @param args.account - The account the run targets
- * @returns The baseline, or `null` when the account has no completed run yet
+ * @returns The accepted shapes by measurement id, or `null` when none was accepted yet
  */
-export async function readPreviousShapes(args: {
+export async function readAcceptedBaseline(args: {
     readonly account: WatchAccount;
 }): Promise<WatchShapeBaseline | null> {
-    const row = await providerWatchRunModel.findLatestCompleted({ account: args.account });
-    if (!row) return null;
-    const parsed = baselineSchema.safeParse(row.measurements);
-    if (!parsed.success) {
-        apiLogger.warn(
-            { runId: row.id, issues: parsed.error.issues.length },
-            'Provider watch: the previous run has unreadable shapes; starting without a baseline'
-        );
-        return null;
+    const rows = await providerWatchRunModel.listBaselines({ account: args.account });
+    if (rows.length === 0) return null;
+    const baseline: Record<string, z.infer<typeof shapesSchema>> = {};
+    for (const row of rows) {
+        const parsed = shapesSchema.safeParse(row.shapes);
+        if (!parsed.success) {
+            apiLogger.warn(
+                { account: args.account, measurementId: row.measurementId },
+                'Provider watch: an accepted baseline is unreadable; that measurement has none'
+            );
+            continue;
+        }
+        baseline[row.measurementId] = parsed.data;
     }
-    return Object.fromEntries(Object.entries(parsed.data).map(([id, m]) => [id, m.shapes]));
+    return baseline;
 }
 
 /**
- * Writes one run and queues its alert mail in a single transaction. The write is part of the
- * run: when it fails, nothing is stored and nothing is mailed, and the error propagates so the
- * run fails.
+ * Opens the run's row. For a production run that passed pre-flight it also consumes the owner's
+ * authorization, atomically, in the same transaction.
  *
- * Alerts with no SUPER_ADMIN to receive them are an error too: a change nobody can be told
- * about must not be stored as if it had been reported.
+ * @param args.account - The account the run targets
+ * @param args.startedAt - The run's instant
+ * @param args.consumeAuthorizationOfMonth - Month of the authorization to consume
+ * @returns The run id and whether this run consumed the authorization
+ */
+export async function openWatchRun(args: {
+    readonly account: WatchAccount;
+    readonly startedAt: Date;
+    readonly consumeAuthorizationOfMonth?: string;
+}): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
+    return providerWatchRunModel.open(args);
+}
+
+/**
+ * Closes the run and queues its alert mail in a single transaction. The write is part of the run:
+ * when it fails, nothing is stored or mailed and the error propagates so the run fails.
  *
+ * Alerts with no SUPER_ADMIN to receive them still persist the run, as FAILED, with its
+ * measurements and the provider ids of what it created (a human needs them to cancel or refund),
+ * and then fail the run: a change nobody can be told about is never stored as if it had been
+ * reported.
+ *
+ * @param args.runId - The run opened by {@link openWatchRun}
  * @param args.run - The run as it ended
  * @param args.correlationId - Correlation of the cron run
- * @returns The stored run id and how many mails were queued
- * @throws When there are alerts and no recipient, or when the database fails
+ * @returns How many mails were queued
+ * @throws When there are alerts and no recipient (after persisting the failed run), or when the
+ *   database fails
  */
-export async function recordWatchRun(args: {
+export async function closeWatchRun(args: {
+    readonly runId: string;
     readonly run: WatchRunRecord;
     readonly correlationId: string;
-}): Promise<{ readonly runId: string; readonly mailsQueued: number }> {
+}): Promise<{ readonly mailsQueued: number }> {
     const { run } = args;
-    return getDb().transaction(async (tx) => {
+    const outcome = await getDb().transaction(async (tx) => {
         const recipients = run.alerts.length > 0 ? await listSuperAdminRecipients({ tx }) : [];
-        if (run.alerts.length > 0 && recipients.length === 0) {
-            throw new Error(
-                'The provider watch run found changes and there is no SUPER_ADMIN to tell'
-            );
-        }
-        const stored = await providerWatchRunModel.insert({
-            run: {
-                account: run.account,
-                startedAt: run.startedAt,
-                finishedAt: run.finishedAt,
-                outcome: run.outcome,
-                reason: run.reason ?? null,
-                measurements: { ...run.measurements },
-                alerts: run.alerts.map((alert) => ({
-                    ...alert,
-                    channel: PROVIDER_WATCH_ALERT_CHANNEL,
-                    recipients: recipients.length
-                }))
-            },
+        const undeliverable = run.alerts.length > 0 && recipients.length === 0;
+        await providerWatchRunModel.close({
+            id: args.runId,
+            finishedAt: run.finishedAt,
+            outcome: undeliverable ? 'failed' : run.outcome,
+            reason: undeliverable
+                ? 'ALERTS_NOT_DELIVERED: the run found changes and there is no SUPER_ADMIN to tell'
+                : (run.reason ?? null),
+            measurements: { ...run.measurements },
+            alerts: run.alerts.map((alert) => ({
+                ...alert,
+                channel: undeliverable ? null : PROVIDER_WATCH_ALERT_CHANNEL,
+                recipients: recipients.length
+            })),
             tx
         });
+        if (undeliverable) return { undeliverable: true as const, mailsQueued: 0 };
         const { queued } =
             run.alerts.length > 0
                 ? await enqueueProviderWatchAlerts({
-                      runId: stored.id,
+                      runId: args.runId,
                       account: run.account,
                       finishedAt: run.finishedAt,
                       alerts: run.alerts,
@@ -95,6 +114,12 @@ export async function recordWatchRun(args: {
                       tx
                   })
                 : { queued: 0 };
-        return { runId: stored.id, mailsQueued: queued };
+        return { undeliverable: false as const, mailsQueued: queued };
     });
+    if (outcome.undeliverable) {
+        throw new Error(
+            `The provider watch run ${args.runId} found changes and there is no SUPER_ADMIN to tell; it was stored as failed`
+        );
+    }
+    return { mailsQueued: outcome.mailsQueued };
 }

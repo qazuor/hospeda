@@ -912,7 +912,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `manual-installment-open` | billing | `13 * * * *` | `apps/api/src/cron/jobs/manual-installment-open.job.ts` (HOS-1541, AC:B5:13, MP5) |
 | `manual-grace-expiry` | billing | `43 * * * *` | `apps/api/src/cron/jobs/manual-grace-expiry.job.ts` (HOS-1542, AC:B5:17, MP3) |
 | `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |
-| `provider-watch-battery` | billing | `17 7 * * 1` | `apps/api/src/cron/jobs/provider-watch-battery.job.ts` |
+| `provider-watch-battery` | billing | `17 7 * * *` | `apps/api/src/cron/jobs/provider-watch-battery.job.ts` |
 | `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
 | `subscription-renewal-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-renewal-notice.job.ts` |
 | `subscription-pause-end` | billing | `47 * * * *` | `apps/api/src/cron/jobs/subscription-pause-end.job.ts` (HOS-1573, AC:B8b:3) |

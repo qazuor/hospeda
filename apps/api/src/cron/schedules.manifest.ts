@@ -36,6 +36,11 @@ export interface CronScheduleEntry {
     readonly schedule: string;
     /** Human-readable summary used in admin dashboards and audit reports. */
     readonly description: string;
+    /**
+     * `false`: the job exists and can be triggered by hand, but the scheduler does not tick it.
+     * Defaults to `true`. Must match the job definition (checked by the manifest sync test).
+     */
+    readonly scheduled?: boolean;
 }
 
 /**
@@ -441,9 +446,10 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'provider-watch-battery',
         displayName: 'Batería de vigilancia del proveedor',
         category: 'billing',
-        schedule: '17 7 * * 1',
+        schedule: '17 7 * * *',
         description:
-            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Weekly on the sandbox test account (staging), monthly on production, manual on either (HOS-1512, AC:B1:15).'
+            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Ticks daily; sandbox runs on Mondays (staging), production on the 1st of the month, manual on either. Ships NOT scheduled until PR 2 adds the measurements (HOS-1512, AC:B1:15).',
+        scheduled: false
     },
     {
         name: 'social-publish-dispatch',

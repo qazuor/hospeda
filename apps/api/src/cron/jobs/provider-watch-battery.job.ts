@@ -17,7 +17,6 @@
  * @module cron/jobs/provider-watch-battery
  */
 import {
-    createWatchTransport,
     runWatchBattery,
     WATCH_CATALOG,
     type WatchAccount,
@@ -33,29 +32,43 @@ import { env } from '../../utils/env.js';
 import { pingHealthchecks } from '../../utils/healthchecks-ping.js';
 import { apiLogger } from '../../utils/logger.js';
 import {
-    readPreviousShapes,
-    recordWatchRun
+    closeWatchRun,
+    openWatchRun,
+    readAcceptedBaseline
 } from '../../utils/provider-watch/provider-watch-run-store.js';
 import {
     isScheduledTickDue,
     PROVIDER_WATCH_JOB_NAME,
     resolveWatchAccount
 } from '../../utils/provider-watch/provider-watch-schedule.js';
+import { buildWatchTransport } from '../../utils/provider-watch/provider-watch-transport.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
-/** Weekly, Monday 07:17 market time. Production runs only the first tick of each month. */
-export const PROVIDER_WATCH_SCHEDULE = '17 7 * * 1';
+/** Daily 07:17 market time; the environment picks its day (sandbox Mondays, production the 1st). */
+export const PROVIDER_WATCH_SCHEDULE = '17 7 * * *';
 
 /** What the job reads and writes; every one is replaceable in tests. */
 export interface ProviderWatchBatteryDeps {
     readonly resolveAccount: () => WatchAccount | null;
     readonly catalog: readonly WatchEntry[];
-    readonly buildTransport: () => WatchTransport;
+    /** Builds the transport; the run's signal is combined with each request's timeout. */
+    readonly buildTransport: (args: {
+        readonly signal?: AbortSignal | undefined;
+    }) => WatchTransport;
     readonly readAuthorization: () => Promise<WatchAuthorization | null>;
-    readonly readPreviousShapes: (args: {
+    /** The shapes the owner accepted. */
+    readonly readBaseline: (args: {
         readonly account: WatchAccount;
     }) => Promise<WatchShapeBaseline | null>;
-    readonly recordRun: (args: {
+    /** Opens the run's row; a production run consumes the authorization atomically with it. */
+    readonly startRun: (args: {
+        readonly account: WatchAccount;
+        readonly startedAt: Date;
+        readonly consumeAuthorizationOfMonth?: string;
+    }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
+    /** Closes the run and queues its alert mail. */
+    readonly finishRun: (args: {
+        readonly runId: string;
         readonly run: WatchRunRecord;
         readonly correlationId: string;
     }) => Promise<unknown>;
@@ -71,22 +84,22 @@ export function createProviderWatchBatteryDeps(): ProviderWatchBatteryDeps {
         resolveAccount: () =>
             resolveWatchAccount({ slugPrefix: env.HOSPEDA_HEALTHCHECKS_SLUG_PREFIX }),
         catalog: WATCH_CATALOG,
-        buildTransport: () => {
-            const accessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
-            if (!accessToken) {
-                throw new Error(
-                    'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN is not set: nothing to measure with'
-                );
-            }
-            return createWatchTransport({
-                baseUrl: env.HOSPEDA_MERCADO_PAGO_API_BASE_URL,
-                accessToken,
-                timeoutMs: env.HOSPEDA_MERCADO_PAGO_TIMEOUT
-            });
+        buildTransport: buildWatchTransport,
+        readAuthorization: async () => {
+            const stored = await settings.getProviderWatchAuthorization();
+            if (!stored) return null;
+            return {
+                month: stored.month,
+                maxChargeMinor: stored.maxChargeMinor,
+                ...(stored.accountId === undefined ? {} : { accountId: stored.accountId }),
+                ...(stored.consumedByRunId === undefined
+                    ? {}
+                    : { consumedByRunId: stored.consumedByRunId })
+            };
         },
-        readAuthorization: () => settings.getProviderWatchAuthorization(),
-        readPreviousShapes,
-        recordRun: recordWatchRun,
+        readBaseline: readAcceptedBaseline,
+        startRun: openWatchRun,
+        finishRun: closeWatchRun,
         now: () => getClock().clock.now(),
         pingWatchdog: () => pingHealthchecks({ job: PROVIDER_WATCH_JOB_NAME, signal: 'success' })
     };
@@ -124,6 +137,9 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
         schedule: PROVIDER_WATCH_SCHEDULE,
         exclusive: true,
         enabled: true,
+        // Ships NOT scheduled (HOS-1512 D4): the catalog is empty until PR 2, so a tick can only fail.
+        // The admin manual trigger keeps working. PR 2 removes this line.
+        scheduled: false,
         timeoutMs: 600_000,
         handler: async (ctx) => {
             const { logger, dryRun } = ctx;
@@ -153,11 +169,11 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                 ctx.executionMode !== 'manual' &&
                 !isScheduledTickDue({ account, now: deps.now() })
             ) {
-                logger.info('Provider watch battery is not due this week', { account });
+                logger.info('Provider watch battery is not due today', { account });
                 return result({
                     ctx,
                     success: true,
-                    message: 'Not due this week',
+                    message: 'Not due today',
                     details: { account, skipped: 'not-due' }
                 });
             }
@@ -165,14 +181,20 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                 const { run, mayPingWatchdog } = await runWatchBattery({
                     account,
                     catalog: deps.catalog,
-                    transport: deps.buildTransport(),
+                    transport: deps.buildTransport({ signal: ctx.signal }),
                     authorization: await deps.readAuthorization(),
                     clock: { now: deps.now },
-                    readPreviousShapes: deps.readPreviousShapes,
-                    recordRun: ({ run: record }) =>
-                        deps
-                            .recordRun({ run: record, correlationId: ctx.correlationId })
-                            .then(() => undefined)
+                    signal: ctx.signal,
+                    deadlineAt: ctx.deadlineAt,
+                    readBaseline: deps.readBaseline,
+                    startRun: deps.startRun,
+                    finishRun: async ({ runId, run: record }) => {
+                        await deps.finishRun({
+                            runId,
+                            run: record,
+                            correlationId: ctx.correlationId
+                        });
+                    }
                 });
                 const details = {
                     account,
@@ -196,7 +218,7 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                         details
                     });
                 }
-                if (mayPingWatchdog) await deps.pingWatchdog();
+                if (mayPingWatchdog && ctx.signal?.aborted !== true) await deps.pingWatchdog();
                 logger.info('Provider watch battery completed', details);
                 return result({
                     ctx,

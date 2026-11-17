@@ -9,7 +9,12 @@ const h = vi.hoisted(() => ({
         HOSPEDA_MERCADO_PAGO_TIMEOUT: 5000
     },
     ping: vi.fn(async () => undefined),
-    authorization: vi.fn(async () => ({ month: '2026-11', maxChargeMinor: 100 }))
+    authorization: vi.fn(async () => ({
+        month: '2026-11',
+        maxChargeMinor: 100,
+        accountId: '100000001',
+        consumedByRunId: undefined as string | undefined
+    }))
 }));
 
 vi.mock('../../src/utils/env.js', () => ({ env: h.env }));
@@ -44,7 +49,7 @@ describe('createProviderWatchBatteryDeps', () => {
 
     it('refuses to build a transport without an access token', () => {
         h.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = undefined;
-        expect(() => createProviderWatchBatteryDeps().buildTransport()).toThrow(
+        expect(() => createProviderWatchBatteryDeps().buildTransport({})).toThrow(
             'is not set: nothing to measure with'
         );
     });
@@ -53,7 +58,7 @@ describe('createProviderWatchBatteryDeps', () => {
         const fetchSpy = vi
             .spyOn(globalThis, 'fetch')
             .mockResolvedValue(new Response('{"tags":[]}', { status: 200 }));
-        const transport = createProviderWatchBatteryDeps().buildTransport();
+        const transport = createProviderWatchBatteryDeps().buildTransport({});
         await transport({ method: 'GET', path: '/users/me' });
         const [url, init] = fetchSpy.mock.calls[0] ?? [];
         expect(String(url)).toBe('https://api.mercadopago.test/users/me');
@@ -67,8 +72,18 @@ describe('createProviderWatchBatteryDeps', () => {
         const deps = createProviderWatchBatteryDeps();
         await expect(deps.readAuthorization()).resolves.toEqual({
             month: '2026-11',
-            maxChargeMinor: 100
+            maxChargeMinor: 100,
+            accountId: '100000001'
         });
+        h.authorization.mockResolvedValueOnce({
+            month: '2026-11',
+            maxChargeMinor: 100,
+            accountId: '100000001',
+            consumedByRunId: 'run-1'
+        });
+        await expect(deps.readAuthorization()).resolves.toMatchObject({ consumedByRunId: 'run-1' });
+        h.authorization.mockResolvedValueOnce(null as never);
+        await expect(deps.readAuthorization()).resolves.toBeNull();
         expect(deps.now().toISOString()).toBe('2026-11-02T10:00:00.000Z');
     });
 
