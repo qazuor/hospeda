@@ -1,6 +1,6 @@
 import { CancellationReasonEnum } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SubscriptionCancel } from '@/components/account/SubscriptionCancel.client';
 import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
 
@@ -8,6 +8,16 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     billingSubscriptionApi: { cancellationPreview: vi.fn(), cancel: vi.fn() }
 }));
 beforeEach(() => vi.clearAllMocks());
+afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+});
+/** Flush the mocked API promise chain under fake timers. */
+async function flushPromises(): Promise<void> {
+    for (let i = 0; i < 10; i++) {
+        await Promise.resolve();
+    }
+}
 
 const id = '123e4567-e89b-42d3-a456-426614174000';
 describe('SubscriptionCancel island', () => {
@@ -441,5 +451,94 @@ describe('SubscriptionCancel island', () => {
         // Assert
         const headings = screen.getAllByTestId('self-cancel-heading');
         expect(headings[0].id).not.toBe(headings[1].id);
+    });
+
+    it('TEST:HOS-2303 reloads the SSR card once 2500 ms after a confirmed cancellation', async () => {
+        const reload = vi.fn();
+        vi.stubGlobal('location', { reload });
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        vi.mocked(billingSubscriptionApi.cancel).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                outcome: 'SCHEDULED',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z'
+            }
+        } as never);
+        vi.useFakeTimers();
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
+            />
+        );
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        await act(async () => {
+            await flushPromises();
+        });
+        fireEvent.click(screen.getByTestId('self-cancel-confirm'));
+        await act(async () => {
+            await flushPromises();
+        });
+        expect(screen.getByTestId('self-cancel-done')).toBeInTheDocument();
+        expect(reload).not.toHaveBeenCalled();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2500);
+        });
+        expect(reload).toHaveBeenCalledTimes(1);
+    });
+
+    it('TEST:HOS-2303 never schedules a reload when the cancellation fails', async () => {
+        const reload = vi.fn();
+        vi.stubGlobal('location', { reload });
+        vi.mocked(billingSubscriptionApi.cancellationPreview).mockResolvedValue({
+            ok: true,
+            data: {
+                subscriptionId: id,
+                vertical: 'accommodation',
+                paymentMethod: 'CARD',
+                origin: 'ACTIVE',
+                serviceEndsAt: '2026-11-05T03:00:00.000Z',
+                addons: []
+            }
+        } as never);
+        vi.mocked(billingSubscriptionApi.cancel).mockResolvedValue({
+            ok: false,
+            error: { status: 500 }
+        } as never);
+        vi.useFakeTimers();
+        render(
+            <SubscriptionCancel
+                subscriptionId={id}
+                locale="es"
+                planName="Básico"
+                verticalLabel="Gastronomía"
+            />
+        );
+        fireEvent.click(screen.getByTestId('self-cancel-open'));
+        await act(async () => {
+            await flushPromises();
+        });
+        fireEvent.click(screen.getByTestId('self-cancel-confirm'));
+        await act(async () => {
+            await flushPromises();
+        });
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(2500);
+        });
+        expect(reload).not.toHaveBeenCalled();
     });
 });
