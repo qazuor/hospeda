@@ -80,11 +80,10 @@ vi.mock('../../../src/utils/listing-access/user-gate', () => ({
     readEffectiveKeys: mocks.effectiveKeys
 }));
 vi.mock('../../../src/lib/mcp/record-tool-call', () => ({ recordMcpToolCall: mocks.record }));
-vi.mock('../../../src/mcp/tools/listing/listing-stats-readers', async (importOriginal) => ({
-    ...(await importOriginal<
-        typeof import('../../../src/mcp/tools/listing/listing-stats-readers')
-    >()),
-    readLatestListingReviews: mocks.latestReviews,
+vi.mock('../../../src/mcp/tools/listing/listing-stats-readers', () => ({
+    readLatestListingReviews: mocks.latestReviews
+}));
+vi.mock('../../../src/mcp/tools/review/owner-review-reader', () => ({
     readOwnerListingReviews: mocks.ownerReviews
 }));
 vi.mock('../../../src/mcp/tools/review/reviewer-names', () => ({

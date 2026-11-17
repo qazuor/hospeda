@@ -25,10 +25,7 @@ const { ownerReviews, reviewerNames } = vi.hoisted(() => ({
     reviewerNames: vi.fn()
 }));
 
-vi.mock('../../../../src/mcp/tools/listing/listing-stats-readers', async (importOriginal) => ({
-    ...(await importOriginal<
-        typeof import('../../../../src/mcp/tools/listing/listing-stats-readers')
-    >()),
+vi.mock('../../../../src/mcp/tools/review/owner-review-reader', () => ({
     readOwnerListingReviews: ownerReviews
 }));
 vi.mock('../../../../src/mcp/tools/review/reviewer-names', () => ({

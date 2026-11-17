@@ -7,7 +7,7 @@
  * `null` as IS NULL, an array as IN, `_gte` / `_lte`), so these tests check
  * what each reader RETURNS over the same seeded rows, not only what it asked.
  *
- * @module test/mcp/tools/listing/listing-stats-readers.owner
+ * @module test/mcp/tools/review/owner-review-reader
  */
 
 import { VerticalEnum } from '@repo/schemas';
@@ -95,10 +95,8 @@ vi.mock('@repo/db', () => ({
     ExperienceReviewModel: fakeModel('experience')
 }));
 
-import {
-    readLatestListingReviews,
-    readOwnerListingReviews
-} from '../../../../src/mcp/tools/listing/listing-stats-readers';
+import { readLatestListingReviews } from '../../../../src/mcp/tools/listing/listing-stats-readers';
+import { readOwnerListingReviews } from '../../../../src/mcp/tools/review/owner-review-reader';
 import { OWNER_REVIEWS_MAX_WINDOW } from '../../../../src/mcp/tools/review/owner-review-window';
 
 const ACC = 'a0000000-0000-4000-8000-000000000001';

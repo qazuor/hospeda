@@ -38,13 +38,6 @@ import {
     ListingToolVerticalSchema
 } from '../listing/listing-services';
 import {
-    type OwnerReviewCountsByState,
-    type OwnerReviewModerationState,
-    type OwnerReviewRow,
-    type OwnerReviewScope,
-    readOwnerListingReviews
-} from '../listing/listing-stats-readers';
-import {
     excerptText,
     MCP_LIST_MAX_PAGE_SIZE,
     MCP_RESULT_MAX_CHARS,
@@ -53,6 +46,13 @@ import {
 } from '../response-budget';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
+import {
+    type OwnerReviewCountsByState,
+    type OwnerReviewModerationState,
+    type OwnerReviewRow,
+    type OwnerReviewScope,
+    readOwnerListingReviews
+} from './owner-review-reader';
 import { OWNER_REVIEWS_MAX_WINDOW } from './owner-review-window';
 import { readReviewerDisplayNames } from './reviewer-names';
 
