@@ -405,39 +405,39 @@
             "id": "T-012",
             "title": "Create seed baseline JSON for catalog groups and categories",
             "description": "Add packages/seed/src/data/hostTradeCategoryGroup/*.json (5 groups) and packages/seed/src/data/hostTradeCategory/*.json (29 categories) with DETERMINISTIC ids, content exactly per spec §11 (slug, nameI18n es/en/pt, displayWeight steps of 10, es keywordsI18n, en/pt keywords empty, group slug -> group id). Register the two entities in the seed manifest/required list and the seed JSON-schema (packages/seed/src/schemas or equivalent), plus seedFactory entries following poiCategory (packages/seed/src/data/poiCategory/).\nACs: AC-1.1, AC-1.2 (keywords incl. 'pozo ciego').\nTests (packages/seed/test/): counts are 5 groups and 29 categories; slugs unique and kebab-case; every category group reference resolves; every es nameI18n present; ids are valid uuids and stable across runs; keywords obey max 30 / 40 chars.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-013", "T-014"],
             "subtasks": [
                 {
                     "title": "5 group JSON files",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "29 category JSON files",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Seed manifest + JSON-schema + factory",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Seed tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:56:32Z",
+                "completed": "2026-11-17T19:56:32Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 27,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.5
     }

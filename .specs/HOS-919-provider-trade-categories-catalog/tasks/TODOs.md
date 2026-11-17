@@ -70,7 +70,7 @@
   - Blocked by: none
   - Blocks: T-027, T-028, T-029, T-041
 
-- [ ] **T-012** (complexity: 3) - Create seed baseline JSON for catalog groups and categories
+- [x] **T-012** (complexity: 3) - Create seed baseline JSON for catalog groups and categories
   - Add packages/seed/src/data/hostTradeCategoryGroup/*.json (5 groups) and packages/seed/src/data/hostT...
   - Blocked by: T-010
   - Blocks: T-013, T-014
