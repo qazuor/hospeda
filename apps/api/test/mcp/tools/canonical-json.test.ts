@@ -36,4 +36,71 @@ describe('canonicalJson', () => {
     it('distinguishes a string from a number', () => {
         expect(canonicalJson({ a: '1' })).not.toBe(canonicalJson({ a: 1 }));
     });
+
+    describe('refuses ambiguous input', () => {
+        it.each([
+            ['NaN', Number.NaN],
+            ['Infinity', Number.POSITIVE_INFINITY],
+            ['-Infinity', Number.NEGATIVE_INFINITY],
+            ['-0', -0],
+            ['nested -0', { a: [-0] }]
+        ])('throws on %s', (_label, value) => {
+            expect(() => canonicalJson(value as never)).toThrow(TypeError);
+        });
+
+        it('keeps +0', () => {
+            expect(canonicalJson(0)).toBe('0');
+        });
+
+        it.each([
+            ['Date', new Date(0)],
+            ['Map', new Map()],
+            [
+                'class instance',
+                new (class Foo {
+                    x = 1;
+                })()
+            ],
+            ['toJSON object', Object.create({ toJSON: () => 1 })],
+            ['bigint', 1n],
+            ['function', () => 1],
+            ['symbol', Symbol('s')],
+            ['nested Date', { a: { b: new Date(0) } }]
+        ])('throws on %s', (_label, value) => {
+            expect(() => canonicalJson(value as never)).toThrow(TypeError);
+        });
+
+        it.each([
+            ['bigint', 1n],
+            ['function', () => 1],
+            ['symbol', Symbol('s')]
+        ])('reports %s as unsupported', (_label, value) => {
+            expect(() => canonicalJson(value as never)).toThrow(/unsupported/);
+        });
+
+        it('throws on a sparse array hole', () => {
+            // biome-ignore lint/suspicious/noSparseArray: the hole is the case under test
+            expect(() => canonicalJson([1, , 3] as never)).toThrow(TypeError);
+        });
+
+        it('accepts null-prototype objects', () => {
+            const o = Object.create(null) as Record<string, number>;
+            o.b = 1;
+            o.a = 2;
+            expect(canonicalJson(o)).toBe('{"a":2,"b":1}');
+        });
+    });
+
+    describe('strings', () => {
+        it('handles unicode and distinguishes lone surrogates', () => {
+            expect(canonicalJson({ t: 'ñ😀' })).toBe('{"t":"ñ😀"}');
+            expect(canonicalJson('\ud800')).toBe('"\\ud800"');
+            expect(canonicalJson('\ud800')).not.toBe(canonicalJson('\udc00'));
+            expect(canonicalJson('\ud800')).not.toBe(canonicalJson('\ufffd'));
+        });
+
+        it('serializes undefined nested in an array as null', () => {
+            expect(canonicalJson({ a: [undefined, 1] })).toBe('{"a":[null,1]}');
+        });
+    });
 });

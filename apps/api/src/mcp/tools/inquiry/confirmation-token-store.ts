@@ -4,10 +4,14 @@
  * (`../confirmation-token-store`, HOS-2335 spec §5.2).
  *
  * Keeps the original `(userId, clientId, conversationId, text)` binding and the
- * original Redis key prefix, so behaviour (refusals, TTL, tokens in flight at
- * deploy) is identical to before the generalization. Only the tool name and the
- * payload shape are fixed here: tool `reply_inquiry`, subject = conversation,
- * payload = the reply text.
+ * original Redis key prefix, so behaviour (refusals, TTL) is identical to before
+ * the generalization. Only the tool name and the payload shape are fixed here:
+ * tool `reply_inquiry`, subject = conversation, payload = the reply text.
+ *
+ * Deploy note: the digest changed (the tool field was added and `canonicalJson`
+ * quotes the text), so a token issued before the deploy becomes `INVALID` once.
+ * It lives at most 600 s and the user simply asks for a new preview. No legacy
+ * digest is kept on purpose.
  */
 
 import {

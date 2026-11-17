@@ -38,6 +38,15 @@ describe('response budget', () => {
             expect(result.text.endsWith('…')).toBe(true);
         });
 
+        it('returns an empty excerpt when maxChars is below 1', () => {
+            expect(excerptText({ text: 'hola', maxChars: 0 })).toEqual({
+                text: '',
+                truncated: true
+            });
+            expect(excerptText({ text: 'hola', maxChars: -5 }).text).toBe('');
+            expect(excerptText({ text: '', maxChars: 0 })).toEqual({ text: '', truncated: false });
+        });
+
         it('never splits a surrogate pair', () => {
             const result = excerptText({ text: `${'a'.repeat(8)}😀😀😀`, maxChars: 10 });
             expect(result.truncated).toBe(true);

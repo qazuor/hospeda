@@ -35,7 +35,7 @@ export interface ExcerptResult {
  * Cuts free text to an excerpt. Never splits a surrogate pair.
  *
  * @param params.text - The full text
- * @param params.maxChars - Limit; defaults to {@link MCP_TEXT_EXCERPT_CHARS}
+ * @param params.maxChars - Limit; defaults to {@link MCP_TEXT_EXCERPT_CHARS}. Below 1 yields `''`
  * @returns The excerpt and whether anything was cut
  *
  * @example
@@ -50,6 +50,9 @@ export function excerptText({
     readonly text: string;
     readonly maxChars?: number;
 }): ExcerptResult {
+    if (maxChars < 1) {
+        return { text: '', truncated: text.length > 0 };
+    }
     if (text.length <= maxChars) {
         return { text, truncated: false };
     }
