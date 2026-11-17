@@ -344,6 +344,45 @@ describe.skipIf(!isServiceTestDbAvailable())(
             expect(marks).toHaveLength(1);
         });
 
+        it('levanta la marca REANUDACION_NO_APLICADA al reanudar PAUSED sin pausa abierta', async () => {
+            await ensureSystemUser();
+            const harness = providerHarness();
+            const seeded = await seedCommittedComplement({
+                fake: harness.fake,
+                principalStatus: 'ACTIVE',
+                scopeType: 'VERTICAL_SUBSCRIPTION',
+                complementStatus: 'PAUSED',
+                openPause: false
+            });
+            if (!seeded.authorizationId) throw new Error('authorization missing');
+            await harness.fake.pause({ authorizationId: seeded.authorizationId });
+            const [open] = await getServiceTestDb()
+                .insert(reconciliationMarks)
+                .values({
+                    subscriptionId: seeded.complementId,
+                    reason: 'REANUDACION_NO_APLICADA',
+                    placedAt: complementNow
+                })
+                .returning();
+            const result = await resumeComplementsS33(
+                { principalSubscriptionId: seeded.principalId, trigger: 'PRINCIPAL_ACTIVE' },
+                { provider: harness.provider, clock, policy: seeded.policy }
+            );
+            const [mark] = await getServiceTestDb()
+                .select()
+                .from(reconciliationMarks)
+                .where(
+                    and(
+                        eq(reconciliationMarks.subscriptionId, seeded.complementId),
+                        eq(reconciliationMarks.reason, 'REANUDACION_NO_APLICADA')
+                    )
+                );
+            expect(result.results[0]).toMatchObject({ outcome: 'REACTIVATED' });
+            expect(mark?.liftedAt).toEqual(complementNow);
+            expect(mark?.liftedBy).toBe(SYSTEM_USER_ID);
+            expect(mark?.version).toBe((open?.version ?? 0) + 1);
+        });
+
         it('reanuda PAUSED inconsistente sin pausa abierta', async () => {
             const harness = providerHarness();
             const seeded = await seedCommittedComplement({
