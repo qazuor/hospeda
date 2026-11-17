@@ -84,7 +84,7 @@ export function usePartnerManualPayments(partnerId: string, ownerUserId: string)
             const response = await fetchApi({
                 path: `/api/v1/admin/billing-subscription/${requireSubscriptionId(list.data?.id)}/manual-payments/${manualPaymentId}/register`,
                 method: 'POST',
-                body: { note }
+                body: { proofRef: note }
             });
             return response.data;
         },
