@@ -80,17 +80,17 @@
   - Blocked by: T-012
   - Blocks: T-017
 
-- [ ] **T-014** (complexity: 3) - Create seed data-migration step A: upsert catalog groups and categories
+- [x] **T-014** (complexity: 3) - Create seed data-migration step A: upsert catalog groups and categories
   - Run pnpm db:seed:make host-trade-category-catalog (carril 3) to create the numbered module in packag...
   - Blocked by: T-012
   - Blocks: T-015
 
-- [ ] **T-015** (complexity: 3) - Add backfill step B to the data-migration with meta.requiresColumns
+- [x] **T-015** (complexity: 3) - Add backfill step B to the data-migration with meta.requiresColumns
   - In the same data-migration module (steps A and B are ONE migration so order is guaranteed): after th...
   - Blocked by: T-014
   - Blocks: T-016
 
-- [ ] **T-016** (complexity: 2) - Add permission grants for HOST_TRADE_CATEGORY_* (baseline and data-migration)
+- [x] **T-016** (complexity: 2) - Add permission grants for HOST_TRADE_CATEGORY_* (baseline and data-migration)
   - Dual-write: (1) baseline: grant the 5 new permissions to the admin roles in the role-permission seed...
   - Blocked by: T-015, T-003
   - Blocks: T-017

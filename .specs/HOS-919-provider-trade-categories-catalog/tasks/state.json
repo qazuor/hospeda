@@ -479,109 +479,109 @@
             "id": "T-014",
             "title": "Create seed data-migration step A: upsert catalog groups and categories",
             "description": "Run pnpm db:seed:make host-trade-category-catalog (carril 3) to create the numbered module in packages/seed/src/data-migrations/. Step A: upsert the 5 groups then 29 categories BY SLUG (same content and the same deterministic ids as the baseline from the baseline JSON; import from the baseline data to stay single-source). Idempotent; never overwrites admin-edited rows beyond what an upsert-by-slug-on-missing implies (insert if missing, do not clobber nameI18n edits on re-run). Satisfies seed dual-write rule together with the baseline task.\nACs: AC-3.1, AC-1.1.\nTests (packages/seed/test/data-migrations/host-trade-category-catalog.test.ts): on empty DB inserts 5 + 29; second run inserts 0 and changes nothing; a pre-renamed nameI18n is preserved on re-run; categories point at the right group.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "db:seed:make scaffold",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Group + category upsert",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Idempotency tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "database", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:04:15Z",
+                "completed": "2026-11-17T20:04:15Z"
             }
         },
         {
             "id": "T-015",
             "title": "Add backfill step B to the data-migration with meta.requiresColumns",
             "description": "In the same data-migration module (steps A and B are ONE migration so order is guaranteed): after the upsert, backfill r_host_trade_category from host_trades.category and alliance_leads.category_slugs from alliance_leads.category using the spec §5.5 map (CERRAJERIA->cerrajeria, PLOMERIA->plomeria, ELECTRICIDAD->electricidad, GAS->gas-instalacion, CLIMATIZACION->climatizacion, LIMPIEZA->limpieza-domicilio, FLETES->fletes, VIDRIERIA->vidrieria, CARPINTERIA->carpinteria, PILETA_JARDIN->piletas AND parque-jardineria, PLAGAS->control-plagas, INTERNET->internet-tv, ALBANILERIA->albanileria). Unknown old value: log and skip, never abort. Insert with ON CONFLICT DO NOTHING. Set meta.requiresColumns: ['host_trades.category','alliance_leads.category'] so the runner aborts loudly if the drop ships in the same release (HOS-433).\nACs: AC-2.3.\nTests (same test file, DB fixture with all 13 old values): expected join rows, PILETA_JARDIN yields 2; leads converted to categorySlugs (PILETA_JARDIN -> both slugs); unknown value 'FOO' skipped with a log and no throw; running twice is idempotent (no duplicates); meta.requiresColumns is exactly the two columns; guard test: runner refuses when the column is missing and the table has rows.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Backfill host_trades",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Backfill alliance_leads",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "meta.requiresColumns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fixture tests incl. idempotency",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "database", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:04:15Z",
+                "completed": "2026-11-17T20:04:15Z"
             }
         },
         {
             "id": "T-016",
             "title": "Add permission grants for HOST_TRADE_CATEGORY_* (baseline and data-migration)",
             "description": "Dual-write: (1) baseline: grant the 5 new permissions to the admin roles in the role-permission seed data (packages/seed/src/data/rolePermission or equivalent, same roles that hold poiCategory.* / hostTrade.*); (2) data-migration step C in the same module as tasks 14/15: insert the same role_permission rows on live envs, idempotent. Update packages/seed/test/role-permission-audit.test.ts expectations (re-counted, not blindly bumped).\nACs: AC-3.6.\nTests: after running the migration SUPER_ADMIN/ADMIN roles have all 5 permissions and non-admin roles none; second run adds 0 rows; the audit test passes with the new total; no permission appears in baseline but not in the migration or vice versa.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-003"],
             "blocks": ["T-017"],
             "subtasks": [
                 {
                     "title": "Baseline role-permission rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Migration step C",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Audit test re-count",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "permissions", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:04:15Z",
+                "completed": "2026-11-17T20:04:15Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 25,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 29,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.5
     }
