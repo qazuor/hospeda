@@ -265,39 +265,39 @@
             "id": "T-008",
             "title": "Add category EXISTS predicate, name ordering and batched hydration to HostTradeModel",
             "description": "Edit packages/db/src/models/hostTrade/host-trade.model.ts: (1) order the directory by name only (was category ASC at ~line 59); (2) add a model method that adds EXISTS (SELECT 1 FROM r_host_trade_category r JOIN host_trade_categories c ON c.id = r.category_id WHERE r.host_trade_id = host_trades.id AND c.slug = ANY($1)) for any-of filtering, usable by search, count and admin search (the key-value where map cannot express it); (3) add hydrateCategories(hostTradeIds) returning Map<hostTradeId, CategoryRef[]> with ONE batched query ordered by group displayWeight, category displayWeight, slug.\nACs: AC-5.2, AC-5.3, AC-5.4, AC-4.4.\nTests (extend packages/db/test/integration/host-trade.model.integration.test.ts): any-of with 2 slugs returns a provider with both categories ONCE; unknown slug ignored; all-unknown yields empty; hydration order; spy on the query executor to assert hydrating 20 providers issues a constant number of queries (no N+1); directory order equals name ASC.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-009", "T-021"],
             "subtasks": [
                 {
                     "title": "Order by name",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "EXISTS predicate method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Batched hydrateCategories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "backend"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T18:48:20Z",
+                "completed": "2026-11-17T18:48:20Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 45,
+        "pending": 44,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.5
     }

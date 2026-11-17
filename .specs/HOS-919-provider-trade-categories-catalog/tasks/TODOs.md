@@ -50,7 +50,7 @@
   - Blocked by: T-005
   - Blocks: T-010, T-018, T-022, T-024
 
-- [ ] **T-008** (complexity: 3) - Add category EXISTS predicate, name ordering and batched hydration to HostTradeModel
+- [x] **T-008** (complexity: 3) - Add category EXISTS predicate, name ordering and batched hydration to HostTradeModel
   - Edit packages/db/src/models/hostTrade/host-trade.model.ts: (1) order the directory by name only (was...
   - Blocked by: T-005
   - Blocks: T-009, T-021
