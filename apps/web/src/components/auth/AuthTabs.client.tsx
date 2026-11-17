@@ -27,6 +27,7 @@ import { signIn as authClientSignIn } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildOAuthErrorCallbackUrl, resolvePostAuthRedirectUrl } from '@/lib/post-auth-redirect';
+import { ActiveSessionNotice } from './ActiveSessionNotice.client';
 import { AuthOAuthButtons, type AuthOAuthProvider } from './AuthOAuthButtons.client';
 import styles from './AuthTabs.module.css';
 import { SignIn } from './SignIn.client';
@@ -101,6 +102,18 @@ export interface AuthTabsOAuthErrorInfo {
     readonly provider?: string;
 }
 
+/**
+ * An already-open session on the sign-in page (BETA-216). When present, the
+ * island shows {@link ActiveSessionNotice} instead of the forms until the
+ * visitor either continues or signs out to use another account.
+ */
+export interface AuthTabsActiveSession {
+    /** Email of the account that owns the session. */
+    readonly email: string;
+    /** Server-validated destination of the "Continuar" action. */
+    readonly continueUrl: string;
+}
+
 /** Props for the AuthTabs component. */
 export interface AuthTabsProps {
     /** Active locale — used for translations. */
@@ -117,6 +130,8 @@ export interface AuthTabsProps {
     readonly signUpConfig: AuthTabsSignUpConfig;
     /** OAuth failure banner content, when the previous round-trip failed. */
     readonly initialOAuthError?: AuthTabsOAuthErrorInfo;
+    /** Open session to surface before the forms (BETA-216). Sign-in page only. */
+    readonly activeSession?: AuthTabsActiveSession;
 }
 
 /**
@@ -158,7 +173,8 @@ export function AuthTabs({
     signUpPath,
     signInConfig,
     signUpConfig,
-    initialOAuthError
+    initialOAuthError,
+    activeSession: initialActiveSession
 }: AuthTabsProps) {
     const { t } = createTranslations(locale);
 
@@ -166,6 +182,7 @@ export function AuthTabs({
     const [email, setEmail] = useState('');
     const [oauthLoading, setOauthLoading] = useState<AuthOAuthProvider | null>(null);
     const [oauthError, setOauthError] = useState<string | null>(null);
+    const [activeSession, setActiveSession] = useState(initialActiveSession);
 
     const signInTabRef = useRef<HTMLButtonElement | null>(null);
     const signUpTabRef = useRef<HTMLButtonElement | null>(null);
@@ -328,6 +345,20 @@ export function AuthTabs({
         activeTab === 'signin'
             ? t('auth-ui.pages.signin.title', 'Ingresar')
             : t('auth-ui.pages.signup.title', 'Registrarse');
+
+    if (activeSession) {
+        return (
+            <div className={styles.authTabs}>
+                <h1 className={styles.heading}>{headingText}</h1>
+                <ActiveSessionNotice
+                    locale={locale}
+                    email={activeSession.email}
+                    continueUrl={activeSession.continueUrl}
+                    onSignedOut={() => setActiveSession(undefined)}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className={styles.authTabs}>

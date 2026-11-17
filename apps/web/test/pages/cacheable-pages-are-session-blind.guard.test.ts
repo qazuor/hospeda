@@ -89,7 +89,11 @@ const SESSION_AWARE_PREFIXES: ReadonlyArray<{
     },
     {
         prefix: '[lang]/auth/',
-        reason: 'Sign-in / sign-up redirect an already-authenticated visitor.'
+        reason:
+            'Sign-in / sign-up redirect an already-authenticated visitor, and sign-in renders ' +
+            'the signed-in email in its "already signed in" interstitial (BETA-216). Safe ' +
+            'because these pages set no cache headers and the Cloudflare cache rule bypasses ' +
+            'requests that carry the session cookie.'
     },
     {
         prefix: '[lang]/feedback/',

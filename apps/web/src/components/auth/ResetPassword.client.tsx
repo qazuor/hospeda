@@ -12,9 +12,10 @@ import { useState } from 'react';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { PasswordField, type PasswordFieldI18n } from '@/components/ui/PasswordField.client';
 import { translateApiError } from '@/lib/api-errors';
-import { resetPassword } from '@/lib/auth-client';
+import { resetPassword, useSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { signOutAndClearClientState } from '@/lib/sign-out';
 import styles from './ResetPassword.module.css';
 
 /** Props for the ResetPassword component. */
@@ -48,6 +49,27 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isComplete, setIsComplete] = useState(false);
+    const [isSigningOut, setIsSigningOut] = useState(false);
+
+    // BETA-216: the reset link can be opened in a browser that already holds a
+    // DIFFERENT account's session. The session is read client-side only so the
+    // page itself stays session-blind (and cacheable).
+    const { data: session } = useSession();
+    const sessionEmail = session?.user?.email;
+
+    /** Ends the open session, then goes to the sign-in page for the new password. */
+    async function handleSignOutAndContinue(): Promise<void> {
+        setIsSigningOut(true);
+        const { ok } = await signOutAndClearClientState();
+        if (ok) {
+            window.location.href = signInUrl;
+            return;
+        }
+        setIsSigningOut(false);
+        setError(
+            t('auth.resetPassword.signOutError', 'No se pudo cerrar la sesión. Probá de nuevo.')
+        );
+    }
 
     /**
      * i18n strings for the shared `PasswordField`. The rule checklist matters
@@ -179,12 +201,48 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                         'Tu contraseña fue actualizada exitosamente. Ya podés iniciar sesión.'
                     )}
                 </p>
-                <a
-                    href={signInUrl}
-                    className={styles.signInLink}
-                >
-                    {t('auth.resetPassword.goToSignIn', 'Iniciar sesión')}
-                </a>
+                {sessionEmail ? (
+                    <>
+                        <p className={styles.successMessage}>
+                            {t(
+                                'auth.resetPassword.activeSessionMessage',
+                                'Iniciaste sesión como {{email}}. Para entrar con la contraseña nueva, cerrá esta sesión.',
+                                { email: sessionEmail }
+                            )}
+                        </p>
+                        <button
+                            type="button"
+                            className={styles.signInLink}
+                            onClick={handleSignOutAndContinue}
+                            disabled={isSigningOut}
+                        >
+                            {t('auth.resetPassword.signOutAndSignIn', 'Cerrar sesión')}
+                        </button>
+                        {error && (
+                            <div
+                                role="alert"
+                                className={styles.error}
+                            >
+                                {error}
+                            </div>
+                        )}
+                        {error && (
+                            <a
+                                href={signInUrl}
+                                className={styles.backLink}
+                            >
+                                {t('auth.resetPassword.goToSignIn', 'Iniciar sesión')}
+                            </a>
+                        )}
+                    </>
+                ) : (
+                    <a
+                        href={signInUrl}
+                        className={styles.signInLink}
+                    >
+                        {t('auth.resetPassword.goToSignIn', 'Iniciar sesión')}
+                    </a>
+                )}
             </output>
         );
     }
