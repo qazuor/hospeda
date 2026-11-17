@@ -27,6 +27,7 @@ import { resolveErrorCodeForStatus } from './http-error-codes';
 import { resolveHttpStatusLogLevel } from './http-status-log-level';
 import { apiLogger } from './logger';
 import { RefinedBodyValidationError } from './refined-body';
+import { maskServerErrorPayload } from './server-error-masking';
 
 /**
  * Interface for pagination metadata
@@ -695,9 +696,12 @@ export const handleRouteError = (error: unknown, c: Context) => {
             }
         }
 
-        return createErrorResponse(
-            {
-                code: error.code,
+        // HOS-2296: whatever ends up >= 500 never echoes the service's own
+        // message, details or reason (the real error was logged above).
+        const safe = maskServerErrorPayload({
+            statusCode,
+            debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
+            payload: {
                 message: error.message,
                 details:
                     env.HOSPEDA_API_DEBUG_ERRORS ||
@@ -710,11 +714,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
                         ? error.details
                         : undefined,
                 reason: error.reason
-            },
-            c,
-            statusCode,
-            retryAfterHeaders
-        );
+            }
+        });
+
+        return createErrorResponse({ code: error.code, ...safe }, c, statusCode, retryAfterHeaders);
     }
 
     // Check for Hono HTTPException (thrown by route handlers for known errors)
@@ -746,16 +749,17 @@ export const handleRouteError = (error: unknown, c: Context) => {
         // customer is the wrong remedy, i.e. the very bug being fixed.
         const entitlementCause = readEntitlementCause(error);
 
-        return createErrorResponse(
-            {
-                code,
+        const safe = maskServerErrorPayload({
+            statusCode,
+            debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
+            payload: {
                 message,
                 details: entitlementCause.details,
                 ...(entitlementCause.reason ? { reason: entitlementCause.reason } : {})
-            },
-            c,
-            statusCode
-        );
+            }
+        });
+
+        return createErrorResponse({ code, ...safe }, c, statusCode);
     }
 
     // HOS-1174: a driver-reported constraint violation is an EXPECTED
@@ -892,15 +896,15 @@ export const handleRouteError = (error: unknown, c: Context) => {
             };
 
             const statusCode = statusCodeMap[code] ?? 500;
-            return createErrorResponse(
-                {
-                    code,
+            const safe = maskServerErrorPayload({
+                statusCode,
+                debugErrors: env.HOSPEDA_API_DEBUG_ERRORS,
+                payload: {
                     message,
                     details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
-                },
-                c,
-                statusCode
-            );
+                }
+            });
+            return createErrorResponse({ code, ...safe }, c, statusCode);
         }
 
         // Check for foreign key constraint violations (client errors, not server errors)
