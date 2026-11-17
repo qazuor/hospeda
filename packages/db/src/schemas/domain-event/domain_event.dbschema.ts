@@ -1,5 +1,15 @@
 import { sql } from 'drizzle-orm';
-import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+    bigint,
+    check,
+    index,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 
 /**
  * The closed catalog of domain event types (NUCLEO/08 §1.2, "qué pasó").
@@ -153,11 +163,17 @@ function sqlInList(values: readonly string[]) {
  * - `entity_id` is text, not uuid: the pieces that write this table may not
  *   alter it, and not every entity is keyed by a uuid.
  * - `occurred_at` is a UTC instant (`timestamptz`, NUCLEO/07 §3).
+ * - `seq` is the write order and breaks ties in `occurred_at`.
  */
 export const domainEvent = pgTable(
     'domain_event',
     {
         id: uuid('id').primaryKey().defaultRandom(),
+        /** Monotonic write order; total tie-breaker for occurred_at. */
+        seq: bigint('seq', { mode: 'number' })
+            .notNull()
+            .generatedAlwaysAsIdentity()
+            .unique('domain_event_seq_unique'),
 
         /** What happened. See {@link DOMAIN_EVENT_TYPES}. */
         eventType: varchar('event_type', { length: 100 }).$type<DomainEventType>().notNull(),
@@ -190,7 +206,8 @@ export const domainEvent = pgTable(
         domain_event_entity_idx: index('domain_event_entity_idx').on(
             table.entityType,
             table.entityId,
-            table.occurredAt
+            table.occurredAt,
+            table.seq
         ),
         domain_event_correlation_idx: index('domain_event_correlation_idx').on(table.correlationId),
         domain_event_type_idx: index('domain_event_type_idx').on(table.eventType, table.occurredAt),

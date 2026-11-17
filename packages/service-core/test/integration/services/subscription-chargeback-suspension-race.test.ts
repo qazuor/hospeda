@@ -211,7 +211,9 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 CREATE FUNCTION test_skip_chargeback_suspension_update()
                 RETURNS trigger LANGUAGE plpgsql AS $$
                 BEGIN
-                    IF NEW.status = 'SUSPENDED' THEN RETURN NULL; END IF;
+                    IF NEW.status = 'SUSPENDED' AND NEW.id = TG_ARGV[0]::uuid THEN
+                        RETURN NULL;
+                    END IF;
                     RETURN NEW;
                 END
                 $$
@@ -219,7 +221,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
             await pool.query(`
                 CREATE TRIGGER test_skip_chargeback_suspension_update
                 BEFORE UPDATE OF status ON subscription
-                FOR EACH ROW EXECUTE FUNCTION test_skip_chargeback_suspension_update()
+                FOR EACH ROW EXECUTE FUNCTION test_skip_chargeback_suspension_update('${fixture.started.subscriptionId}')
             `);
             try {
                 const result = await createChargebackDetection({

@@ -18,10 +18,10 @@
     },
     "partnerApplication": {
         "claimNotice": {
-            "subject": "Claim your Partner on Hospeda",
+            "subject": "Claim the Partner {{partnerName}} on Hospeda",
             "preview": "We approved {{partnerName}}'s application",
             "heading": "We approved {{partnerName}}'s application",
-            "body": "To manage it, open the link below and sign in with the account you want to use. That account will own the Partner.",
+            "body": "To manage it, open the link below and sign in with the account associated with this email. That account will own the Partner.",
             "singleUse": "This personal link can only be used once. If we sent you an earlier one, it no longer works. Do not forward it.",
             "ignore": "If you did not apply to become a Hospeda Partner, you can ignore this email.",
             "cta": "Claim the Partner"
@@ -29,7 +29,7 @@
         "claimNoticeDirect": {
             "preview": "The Hospeda team created the Partner {{partnerName}}",
             "heading": "The Hospeda team created the Partner {{partnerName}}",
-            "body": "To manage it, claim it: open the link below and sign in with the account you want to use. That account will own the Partner.",
+            "body": "To manage it, claim it: open the link below and sign in with the account associated with this email. That account will own the Partner.",
             "ignore": "If you were not expecting this email, you do not need to do anything."
         },
         "rejected": {

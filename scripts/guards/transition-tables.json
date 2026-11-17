@@ -1023,7 +1023,8 @@
                 "subscription.status",
                 "subscription.billing_option_id",
                 "subscription.authorization_window_ends_at",
-                "subscription.declared_payer_email"
+                "subscription.declared_payer_email",
+                "subscription.succeeds_id"
             ],
             "inputs": ["provider:read_by_id"],
             "writes": ["subscription.status", "domain_event.changes"]
