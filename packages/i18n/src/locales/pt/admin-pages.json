@@ -1493,6 +1493,7 @@
         "toResolve": "A resolver",
         "waits": "Aguarda o retorno",
         "losesPromo": "Perde a promoção",
+        "keepsPromo": "Mantém a promoção",
         "excludedBadge": "Excluída",
         "result": "Migração {id}. Linhas gravadas: {rows}. Excluídas: {excluded}.",
         "columns": {

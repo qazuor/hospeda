@@ -38,12 +38,15 @@ describe('AC:B12:2 action 17 preview contracts', () => {
             newAmount: 2000,
             currency: 'ARS',
             losesPromo: false,
+            keepsPromo: true,
             applicationDate: '2026-12-31',
             waits: false,
             outcome: 'PENDIENTE',
             excludedReason: null
         };
-        expect(PlanMigrationPreviewRowSchema.safeParse(row).success).toBe(true);
+        const parsedRow = PlanMigrationPreviewRowSchema.safeParse(row);
+        expect(parsedRow.success).toBe(true);
+        if (parsedRow.success) expect(parsedRow.data.keepsPromo).toBe(true);
         expect(
             PlanMigrationPreviewRowSchema.safeParse({
                 ...row,
