@@ -95,6 +95,11 @@ describe('AiAssistantsPanel', () => {
         expect(screen.getByText(MCP_URL)).toBeTruthy();
         expect(screen.getByText('Ver tus publicaciones y sus estadísticas')).toBeTruthy();
         expect(screen.getByText('Responder consultas de tus alojamientos')).toBeTruthy();
+        expect(
+            screen.getByText(
+                'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas'
+            )
+        ).toBeTruthy();
         expect(screen.getByText('Todavía no conectaste ningún asistente.')).toBeTruthy();
     });
 

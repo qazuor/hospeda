@@ -197,7 +197,7 @@ failure to write the record is logged and swallowed.
 
 ## Tool catalog
 
-Eleven tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
+Twelve tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
@@ -206,6 +206,7 @@ Eleven tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagr
 | `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. Each entry carries its `category`. |
 | `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
 | `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. |
+| `list_reviews` | read | read-only | Reviews received on the user's listings, newest first, every moderation state with its `moderationState`. Filters: `vertical`, `listingId`, `minRating`, `maxRating`, `since`, `moderationState`, paging. Titles, texts and author names are untrusted text. |
 | `list_inquiries` | read | read-only | Filters: `status`, `listingId`, paging. Accommodations only. |
 | `get_inquiry` | read | read-only | Never marks the inquiry read. |
 | `update_listing_basic` | write | idempotent, not destructive | Accommodation, venue, experience. |
@@ -235,6 +236,22 @@ Tool-specific rules:
   views are kept 95 days. Accommodations add a block with favorites (advanced stats
   only), inquiries of this listing, and owner-wide inquiry figures. Metrics a
   vertical does not have are omitted, never zero.
+- `list_reviews`: the OWNER view of the reviews (HOS-2330, owner decisions D-7 and
+  D-8). It returns every review of the user's own listings in every moderation
+  state, `PENDING` and `REJECTED` text included, each labelled with its state.
+  Soft-deleted and non-`ACTIVE` reviews never appear, in the items or in
+  `countsByState`. `moderationReason` is not returned. The author is a display
+  name only (the public rule of `resolveReviewerDisplayName`): no email, no user id,
+  no image. It reads through `readOwnerListingReviews`, a function apart from the
+  public reader (`readLatestListingReviews`) that `get_listing_stats`, the public
+  lists and `reviewsCount` keep using with `ACTIVE` + `APPROVED`. Text is excerpted
+  to the response budget and `textTruncated` says so; when a page of long reviews
+  would overflow the budget the excerpt steps down (600, 300, 150, 60 characters).
+  Paging reaches the newest 200 reviews of a search (the models cap one read at
+  200 and the verticals merge by date); beyond that, narrow with `since`,
+  `vertical` or `listingId`. A foreign or missing `listingId` is the uniform
+  not-found, with a link to the owner's listings. There is no reply field, because
+  the feature does not exist.
 - `update_listing_basic`: `amenityIds` and `featureIds` **replace** the whole set
   (`[]` clears it). To add or remove items of one category, use
   `update_listing_amenities`.
