@@ -27,6 +27,7 @@ import { resolvePersonStateStep } from '@repo/verticals';
 import { z } from 'zod';
 import { isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
+import { attachRefusalAction } from './refusal-action';
 import type { ToolContext, ToolDefinition, ToolErrorPayload } from './tool-definition';
 import {
     formatValidationMessage,
@@ -74,18 +75,22 @@ function logUnexpected(input: {
     }
 }
 
-/** Maps a handler error and logs it when it has no specific mapping. */
+/**
+ * Maps a handler error, logs it when it has no specific mapping, and attaches
+ * the portal link the tool declares for it (`refusal-action.ts`).
+ */
 function failWith(input: {
-    readonly tool: string;
+    readonly definition: Pick<ToolDefinition, 'name' | 'reasonMessages' | 'refusalAction'>;
     readonly error: ToolErrorPayload;
-    readonly reasonMessages?: Readonly<Record<string, string>>;
+    readonly input: unknown;
     readonly cause: unknown;
 }): ToolFailure {
-    const failure = toToolFailure({ error: input.error, reasonMessages: input.reasonMessages });
+    const { definition, error } = input;
+    const failure = toToolFailure({ error, reasonMessages: definition.reasonMessages });
     if (failure.unexpected) {
-        logUnexpected({ tool: input.tool, code: String(input.error.code), error: input.cause });
+        logUnexpected({ tool: definition.name, code: String(error.code), error: input.cause });
     }
-    return failure;
+    return attachRefusalAction({ failure, error, input: input.input, definition });
 }
 
 /**
@@ -107,7 +112,7 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
     input,
     context
 }: ExecuteToolArgs<TSchema, TData>): Promise<ToolRunOutcome<TData>> {
-    const { name, reasonMessages } = definition;
+    const { name } = definition;
 
     if (isGuestActor(actor)) {
         return {
@@ -137,9 +142,9 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
             return {
                 ok: false,
                 failure: failWith({
-                    tool: name,
+                    definition,
                     error: result.error,
-                    reasonMessages,
+                    input,
                     cause: result.error
                 })
             };
@@ -155,7 +160,7 @@ export async function executeTool<TSchema extends z.ZodObject, TData>({
             };
             return {
                 ok: false,
-                failure: failWith({ tool: name, error: payload, reasonMessages, cause: error })
+                failure: failWith({ definition, error: payload, input, cause: error })
             };
         }
         logUnexpected({ tool: name, code: 'UNEXPECTED', error });
@@ -174,15 +179,19 @@ export const SPANISH_PARSE_PARAMS = { error: z.locales.es().localeError } as con
 
 /** Arguments for {@link parseToolInput}. RO-RO. */
 export interface ParseToolInputArgs<TSchema extends z.ZodObject> {
-    /** The tool. */
-    readonly definition: Pick<ToolDefinition<TSchema>, 'inputSchema'>;
+    /** The tool. `name` and `refusalAction` are optional: without them the failure has no link. */
+    readonly definition: Pick<ToolDefinition<TSchema>, 'inputSchema'> &
+        Partial<Pick<ToolDefinition<TSchema>, 'name' | 'refusalAction'>>;
     /** Raw input (e.g. a model's tool-call arguments). */
     readonly input: unknown;
 }
 
 /**
  * Validates raw input against a tool's schema. Field problems are reported
- * in the same Spanish format as a service `VALIDATION_ERROR`.
+ * in the same Spanish format as a service `VALIDATION_ERROR`. The tool's
+ * `refusalAction` runs here too, over the zod issues and the RAW input, so a
+ * field the tool refuses by schema (`update_listing_basic` and `name`) still
+ * points at the page that handles it.
  *
  * @param args - Definition and raw input
  * @returns The parsed input, or a validation failure
@@ -197,15 +206,29 @@ export function parseToolInput<TSchema extends z.ZodObject>({
     if (parsed.success) {
         return { ok: true, input: parsed.data };
     }
+    const error: ToolErrorPayload = {
+        code: ServiceErrorCode.VALIDATION_ERROR,
+        message: 'Invalid tool input',
+        details: parsed.error.issues
+    };
+    const failure: ToolFailure = {
+        kind: 'error',
+        code: ServiceErrorCode.VALIDATION_ERROR,
+        message: formatValidationMessage({ details: parsed.error.issues }),
+        requiresReauthentication: false,
+        unexpected: false
+    };
     return {
         ok: false,
-        failure: {
-            kind: 'error',
-            code: ServiceErrorCode.VALIDATION_ERROR,
-            message: formatValidationMessage({ details: parsed.error.issues }),
-            requiresReauthentication: false,
-            unexpected: false
-        }
+        failure: attachRefusalAction({
+            failure,
+            error,
+            input,
+            definition: {
+                name: definition.name ?? 'unknown_tool',
+                refusalAction: definition.refusalAction
+            }
+        })
     };
 }
 

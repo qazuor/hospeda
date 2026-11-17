@@ -47,6 +47,7 @@ import {
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
     httpToDomainAccommodationUpdate,
+    ServiceErrorCode,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     VerticalEnum
@@ -66,8 +67,20 @@ import {
     venueOwnerEditSections
 } from '../../../utils/listing-access/owner-edit-listing-access';
 import { SPANISH_PARSE_PARAMS } from '../run-tool';
-import { defineTool, type ToolHandlerResult } from '../tool-definition';
+import {
+    defineTool,
+    type ToolErrorPayload,
+    type ToolHandlerResult,
+    type ToolRefusalLink
+} from '../tool-definition';
 import { type ListingDetail, readOwnListingDetail } from './get-listing';
+import {
+    editorLink,
+    type ListingRef,
+    listingRefusalLink,
+    readListingRef,
+    sectionForField
+} from './listing-refusal-actions';
 import {
     LISTING_TOOL_VERTICALS,
     type ListingToolVertical,
@@ -369,6 +382,59 @@ const UPDATE_LISTING_BASIC_REASON_MESSAGES: Readonly<Record<string, string>> = {
         'Esa sección no existe para el tipo de publicación. Revisá los campos que querés cambiar.'
 };
 
+/** Keys every call carries that are never a field to edit. */
+const NON_FIELD_KEYS: ReadonlySet<string> = new Set(['vertical', 'id']);
+
+/**
+ * The first key of a call's RAW input that the vertical's allowlist refuses:
+ * an unknown key (`name`, `images`, `price`) or a known field of another
+ * vertical. Read from the input rather than from the zod issues, which spell
+ * the two cases differently (`unrecognized_keys` vs a custom issue).
+ */
+function firstForeignField(input: {
+    readonly vertical: string;
+    readonly raw: unknown;
+}): string | undefined {
+    const vertical = UPDATE_LISTING_BASIC_VERTICALS.find((v) => v === input.vertical);
+    if (vertical === undefined || typeof input.raw !== 'object' || input.raw === null) {
+        return undefined;
+    }
+    const editable = Object.keys(VERTICAL_PATCH[vertical].schema.shape);
+    return Object.keys(input.raw).find(
+        (key) => !NON_FIELD_KEYS.has(key) && !editable.includes(key)
+    );
+}
+
+/**
+ * Where a refusal points (HOS-2326, AC-C1). A field the tool does not edit goes
+ * to the editor section that does (`name` → `datos`, a photo field → `fotos`, a
+ * price → `precio`/`capacidad-precio`, a location field → `ubicacion`), and a
+ * field with no section to the editor hub. The link is built from the call's own
+ * input before any lookup, so it is the same whether or not the listing exists.
+ * Anything else falls back to the shared listing links.
+ */
+function refusalActionFor(args: {
+    readonly error: ToolErrorPayload;
+    readonly input: unknown;
+}): ToolRefusalLink | undefined {
+    const ref: ListingRef | undefined = readListingRef({ input: args.input });
+    if (ref === undefined) {
+        return undefined;
+    }
+    if (args.error.code === ServiceErrorCode.VALIDATION_ERROR) {
+        const field = firstForeignField({ vertical: ref.vertical, raw: args.input });
+        return field === undefined
+            ? undefined
+            : {
+                  destination: editorLink({
+                      ref,
+                      section: sectionForField({ vertical: ref.vertical, field })
+                  })
+              };
+    }
+    return listingRefusalLink({ error: args.error, ref });
+}
+
 /**
  * `update_listing_basic`: a write that changes only what the owner PATCH
  * changes; repeating it with the same input changes nothing more.
@@ -382,6 +448,7 @@ export const updateListingBasicTool = defineTool({
     isWrite: true,
     hints: { destructiveHint: false, idempotentHint: true },
     reasonMessages: UPDATE_LISTING_BASIC_REASON_MESSAGES,
+    refusalAction: refusalActionFor,
     auditTarget: ({ input }) => ({ type: input.vertical, id: input.id }),
     auditContentLength: ({ input }) => input.description?.length,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> => {

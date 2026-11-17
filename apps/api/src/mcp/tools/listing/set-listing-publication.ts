@@ -67,7 +67,17 @@ import { captureAccommodationPublished } from '../../../services/listing-publica
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
 import { type ListingDetail, readOwnListingDetail } from './get-listing';
+import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import { type ListingToolVertical, ListingToolVerticalSchema } from './listing-services';
+import {
+    LISTING_INCOMPLETE_MESSAGE_PREFIX,
+    LISTING_INCOMPLETE_REASON,
+    LISTING_MODERATED_REASON,
+    missingRequirementsOf,
+    publicationRefusalLink
+} from './publication-refusal-link';
+
+export { LISTING_MODERATED_REASON };
 
 /** What the owner asks for. */
 export const LISTING_PUBLICATION_ACTIONS = ['pause', 'resume'] as const;
@@ -88,9 +98,6 @@ export const PUBLICATION_STEP_OPERATION = {
     PUBLISH: 'PUBLISH',
     REACTIVATE: 'REACTIVATE'
 } as const satisfies Record<ListingPublicationStep, ListingAccessWithSections['operation']>;
-
-/** Tool-local reason: resuming a listing Hospeda moderated. */
-export const LISTING_MODERATED_REASON = 'LISTING_MODERATED';
 
 /** What a call does, decided from the action and the listing's current state. */
 export type ListingPublicationPlan =
@@ -181,9 +188,6 @@ const SUBSCRIPTION_REQUIRED_MESSAGE = 'subscription_required';
 /** The message `ListingPublicationService` uses when PB1/PB6/PB8 lost a race. */
 const STATE_CHANGED_MESSAGE = 'Listing state changed';
 
-/** The message prefix of the venue/experience completeness refusal. */
-const LISTING_INCOMPLETE_MESSAGE_PREFIX = 'Listing incomplete';
-
 /** Reads `details.reason` of a service error, when it carries one. */
 function detailsReason(details: unknown): unknown {
     return typeof details === 'object' && details !== null && 'reason' in details
@@ -216,7 +220,7 @@ export function publicationRefusalReason(error: ServiceError): string | undefine
         case ServiceErrorCode.VALIDATION_ERROR:
             return error.reason?.startsWith(PUBLISH_REQUIREMENTS_MISSING_REASON_PREFIX) ||
                 error.message.startsWith(LISTING_INCOMPLETE_MESSAGE_PREFIX)
-                ? 'LISTING_INCOMPLETE'
+                ? LISTING_INCOMPLETE_REASON
                 : undefined;
         case ServiceErrorCode.ALREADY_EXISTS:
             if (error.reason === DUPLICATE_LOCATION_REASON) return DUPLICATE_LOCATION_REASON;
@@ -228,13 +232,22 @@ export function publicationRefusalReason(error: ServiceError): string | undefine
     }
 }
 
-/** Converts a refusal into the tool error, with its reason when it has one. */
+/**
+ * Converts a refusal into the tool error, with its reason when it has one. A
+ * completeness refusal also carries the unmet requirements in `details`: the
+ * named reason replaces the service's own, which is where an accommodation
+ * keeps them, and `refusalAction` needs them to pick the editor section.
+ */
 function toRefusal(error: ServiceError): ToolHandlerResult<never> {
     const reason = publicationRefusalReason(error) ?? error.reason;
+    const details =
+        reason === LISTING_INCOMPLETE_REASON
+            ? { missing: missingRequirementsOf({ reason: error.reason, message: error.message }) }
+            : error.details;
     const payload: ToolErrorPayload = {
         code: error.code,
         message: error.message,
-        details: error.details,
+        details,
         ...(reason === undefined ? {} : { reason })
     };
     return { error: payload };
@@ -362,6 +375,19 @@ export const setListingPublicationTool = defineTool({
     isWrite: true,
     hints: { destructiveHint: true, idempotentHint: false },
     reasonMessages: SET_LISTING_PUBLICATION_REASON_MESSAGES,
+    refusalAction: ({ error, input }) => {
+        const ref = readListingRef({ input });
+        if (ref === undefined) {
+            return undefined;
+        }
+        const destination = publicationRefusalLink({ error, ref });
+        if (destination !== undefined) {
+            return { destination };
+        }
+        // A refusal the tool names (no plans offered, paid signups paused, a
+        // lost race) has no page that fixes it; only an unnamed one falls back.
+        return error.reason === undefined ? listingRefusalLink({ error, ref }) : undefined;
+    },
     auditTarget: ({ input }) => ({ type: input.vertical, id: input.id }),
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingPublicationResult>> => {
         const { vertical, id, action } = input;

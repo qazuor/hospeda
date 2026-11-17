@@ -15,6 +15,7 @@ import type { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { z } from 'zod';
+import type { PortalDestination } from '../portal/portal-routes';
 
 /**
  * Error code a tool may report. Every {@link ServiceErrorCode}, plus the
@@ -36,6 +37,36 @@ export interface ToolErrorPayload {
     readonly details?: unknown;
     /** Machine-readable reason (`ServiceError.reason`). */
     readonly reason?: string;
+    /**
+     * A portal destination where the user can resolve the refusal. A handler
+     * names a DESTINATION, never a URL: the executor builds the URL from the
+     * configured site URL, so no handler can emit an arbitrary link. Wins over
+     * {@link ToolDefinition.refusalAction}, and is subject to the same rules
+     * (none for transient errors, none that would confirm an id).
+     */
+    readonly link?: ToolRefusalLink;
+    /** Id of the help topic that explains this refusal (`get_help`, HOS-2333). */
+    readonly helpTopicId?: string;
+}
+
+/** A portal page a refusal points the user to. */
+export interface ToolAction {
+    /** Absolute, locale-prefixed URL, built from the configured site URL. */
+    readonly url: string;
+    /** Spanish label of the link. */
+    readonly label: string;
+}
+
+/**
+ * What {@link ToolDefinition.refusalAction} answers: where a refusal should
+ * point. The executor turns the destination into a URL, so a tool never builds
+ * one and the "no id in a not-found answer" rule is enforced in one place.
+ */
+export interface ToolRefusalLink {
+    /** The portal page. */
+    readonly destination: PortalDestination;
+    /** Spanish label; defaults to the destination's own. */
+    readonly label?: string;
 }
 
 /**
@@ -131,6 +162,21 @@ export interface ToolDefinition<TSchema extends z.ZodObject = z.ZodObject, TData
      * `MESSAGE_CONTENT_BLOCKED`), shown instead of the code's default message.
      */
     readonly reasonMessages?: Readonly<Record<string, string>>;
+    /**
+     * Where a refusal should point the user (HOS-2326): maps the failure's
+     * code, reason and offending field to a portal page. Declared next to
+     * {@link reasonMessages}. The executor calls it on every failure, including
+     * a malformed call (then `input` is the RAW arguments, not validated ones, so
+     * read it defensively). Return `undefined` when no page helps.
+     *
+     * The executor, not the tool, drops the link for transient errors
+     * (`SERVICE_UNAVAILABLE`, rate limit, unexpected) and for a not-found answer
+     * unless the destination names no id.
+     */
+    refusalAction?(args: {
+        readonly error: ToolErrorPayload;
+        readonly input: unknown;
+    }): ToolRefusalLink | undefined;
     /** Entity the call targets, for the audit record. Read from validated input. */
     auditTarget?(args: { readonly input: z.output<TSchema> }): ToolTarget | undefined;
     /** Length of user content the call carries (never the content), for the audit record. */

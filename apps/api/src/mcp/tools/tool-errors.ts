@@ -15,7 +15,7 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
-import type { ToolErrorCode, ToolErrorPayload } from './tool-definition';
+import type { ToolAction, ToolErrorCode, ToolErrorPayload } from './tool-definition';
 
 /** Message for a missing or foreign resource. Identical for both on purpose. */
 export const TOOL_NOT_FOUND_MESSAGE =
@@ -46,6 +46,10 @@ export interface ToolFailure {
     readonly requiresReauthentication: boolean;
     /** No specific mapping exists: the failure deserves a server-side log. */
     readonly unexpected: boolean;
+    /** Portal page where the user can resolve it (HOS-2326). Absent when none helps. */
+    readonly action?: ToolAction;
+    /** Id of the help topic that explains it. */
+    readonly helpTopicId?: string;
 }
 
 /** One mapped code: its message and audit classification. */
@@ -215,6 +219,8 @@ export interface ToToolFailureArgs {
  *
  * Precedence: a matching `reasonMessages` entry, then validation (with field
  * details), then the code's mapping, then the generic unexpected message.
+ * The payload's `helpTopicId` is kept; the portal `action` is never copied from
+ * the payload: only the executor builds it, from a destination (`refusal-action.ts`).
  *
  * @param args - The error and the tool's reason messages
  * @returns The user-facing failure
@@ -230,7 +236,8 @@ export function toToolFailure({ error, reasonMessages }: ToToolFailureArgs): Too
     const mapping = CODE_MAPPINGS[error.code];
     const base = {
         code: error.code,
-        requiresReauthentication: error.code === ServiceErrorCode.UNAUTHORIZED
+        requiresReauthentication: error.code === ServiceErrorCode.UNAUTHORIZED,
+        ...(error.helpTopicId === undefined ? {} : { helpTopicId: error.helpTopicId })
     };
 
     const reasonMessage =

@@ -87,8 +87,8 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
-import { TOOL_NOT_FOUND_MESSAGE } from '../../../src/mcp/tools/tool-errors';
 import { env, validateApiEnv } from '../../../src/utils/env';
+import { notFoundWithListLink } from './not-found-text';
 
 const PROTOCOL_VERSION = '2025-06-18';
 
@@ -338,7 +338,14 @@ describe('/mcp inquiry tools (end to end)', () => {
         // Assert
         expect(message.result).toMatchObject({
             isError: true,
-            content: [{ text: TOOL_NOT_FOUND_MESSAGE }]
+            content: [
+                {
+                    text: notFoundWithListLink({
+                        siteUrl: env.HOSPEDA_SITE_URL,
+                        path: 'mi-cuenta/consultas-propietario'
+                    })
+                }
+            ]
         });
         expect(getThread).not.toHaveBeenCalled();
     });
