@@ -1,0 +1,132 @@
+/**
+ * Response shapes: which fields a response has and of which type, so a renamed
+ * or retyped field is noticed without asserting on any value (HOS-1512).
+ *
+ * @module battery/shape
+ */
+import type { JsonValue, ShapeMap } from './types';
+
+const ROOT = '$';
+
+function typeOf(value: unknown): string {
+    if (value === null) return 'null';
+    if (Array.isArray(value)) return 'array';
+    return typeof value === 'object' ? 'object' : typeof value;
+}
+
+function join(args: { readonly parent: string; readonly key: string }): string {
+    return args.parent === ROOT ? args.key : `${args.parent}.${args.key}`;
+}
+
+function walk(args: {
+    readonly value: unknown;
+    readonly path: string;
+    readonly seen: Map<string, Set<string>>;
+}): void {
+    const { value, path, seen } = args;
+    const types = seen.get(path) ?? new Set<string>();
+    types.add(typeOf(value));
+    seen.set(path, types);
+    if (Array.isArray(value)) {
+        for (const item of value) walk({ value: item, path: `${path}[]`, seen });
+    } else if (value !== null && typeof value === 'object') {
+        for (const [key, child] of Object.entries(value)) {
+            walk({ value: child, path: join({ parent: path, key }), seen });
+        }
+    }
+}
+
+/**
+ * Flattens a response body into `path -> types`. Array elements share one path
+ * (`items[]`) and merge their types, so the shape does not depend on how many
+ * elements a response happens to carry.
+ *
+ * @param args.body - The parsed body; `undefined` (not JSON) yields `{ $: 'non-json' }`
+ * @returns The shape
+ */
+export function shapeOf(args: { readonly body: unknown }): ShapeMap {
+    if (args.body === undefined) return { [ROOT]: 'non-json' };
+    const seen = new Map<string, Set<string>>();
+    walk({ value: args.body, path: ROOT, seen });
+    const shape: Record<string, string> = {};
+    for (const path of [...seen.keys()].sort()) {
+        shape[path] = [...(seen.get(path) ?? [])].sort().join('|');
+    }
+    return shape;
+}
+
+/** Types of one path without `null`, which the provider sends for absent fields. */
+function concreteTypes(types: string): readonly string[] {
+    return types.split('|').filter((type) => type !== 'null');
+}
+
+/**
+ * Compares two shapes of the same response.
+ *
+ * A field that only goes between `null` and a concrete type is NOT a change:
+ * the provider sends `null` for absent fields. Everything else is: a path that
+ * disappeared, a path that appeared (a rename shows as both) or a retyped path.
+ *
+ * @param args.previous - The shape of the previous run
+ * @param args.current - The shape of this run
+ * @returns One line per difference; empty when the shapes agree
+ */
+export function diffShapes(args: {
+    readonly previous: ShapeMap;
+    readonly current: ShapeMap;
+}): readonly string[] {
+    const { previous, current } = args;
+    const lines: string[] = [];
+    for (const path of Object.keys(previous).sort()) {
+        const before = previous[path];
+        const after = current[path];
+        if (before === undefined) continue;
+        if (after === undefined) {
+            lines.push(`removed: ${path} (${before})`);
+            continue;
+        }
+        const beforeTypes = concreteTypes(before);
+        const afterTypes = concreteTypes(after);
+        if (beforeTypes.length === 0 || afterTypes.length === 0) continue;
+        if (beforeTypes.join('|') !== afterTypes.join('|')) {
+            lines.push(`retyped: ${path} (${before} -> ${after})`);
+        }
+    }
+    for (const path of Object.keys(current).sort()) {
+        const after = current[path];
+        if (previous[path] === undefined && after !== undefined) {
+            lines.push(`added: ${path} (${after})`);
+        }
+    }
+    return lines;
+}
+
+/**
+ * Structural equality of two JSON values, independent of key order.
+ *
+ * @param args.left - One value
+ * @param args.right - The other value
+ * @returns Whether they are equal
+ */
+export function jsonEqual(args: { readonly left: JsonValue; readonly right: JsonValue }): boolean {
+    const { left, right } = args;
+    if (left === right) return true;
+    if (Array.isArray(left) || Array.isArray(right)) {
+        if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length)
+            return false;
+        return left.every((item, index) =>
+            jsonEqual({ left: item, right: right[index] as JsonValue })
+        );
+    }
+    if (left === null || right === null) return false;
+    if (typeof left !== 'object' || typeof right !== 'object') return false;
+    const leftKeys = Object.keys(left).sort();
+    const rightKeys = Object.keys(right).sort();
+    if (leftKeys.join('\u0000') !== rightKeys.join('\u0000')) return false;
+    return leftKeys.every((key) =>
+        jsonEqual({
+            left: (left as Record<string, JsonValue>)[key] as JsonValue,
+            right: (right as Record<string, JsonValue>)[key] as JsonValue
+        })
+    );
+}
