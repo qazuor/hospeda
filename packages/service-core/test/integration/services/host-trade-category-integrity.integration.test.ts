@@ -14,6 +14,7 @@ import {
     type DrizzleClient,
     destinations,
     eq,
+    HostTradeCategoryGroupModel,
     HostTradeCategoryModel,
     HostTradeModel,
     hostTradeCategories,
@@ -26,9 +27,10 @@ import {
 } from '@repo/db';
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { provisionServiceProviderListing } from '../../../src/services/alliance-lead/alliance-lead.provisioning';
 import { HostTradeCategoryService } from '../../../src/services/host-trade-category/host-trade-category.service';
+import { HostTradeCategoryGroupService } from '../../../src/services/host-trade-category/host-trade-category-group.service';
 import { HostTradeService } from '../../../src/services/hostTrade/host-trade.service';
 import type { Actor, ServiceContext } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -51,18 +53,19 @@ const actor: Actor = {
         PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
         PermissionEnum.HOST_TRADE_CATEGORY_DELETE,
         PermissionEnum.HOST_TRADE_CATEGORY_RESTORE,
+        PermissionEnum.HOST_TRADE_CATEGORY_UPDATE,
         PermissionEnum.HOST_TRADE_CREATE
     ]
 };
 
-/** Code of the error a service call throws (inside a joined transaction) or returns. */
-async function settleCode(
-    call: Promise<{ error?: { code?: string } }>
-): Promise<string | undefined> {
+/** The `ServiceError` a call throws (inside a joined transaction) or returns, if any. */
+async function settleError(
+    call: Promise<{ error?: { code?: string; details?: unknown } }>
+): Promise<{ code?: string; details?: unknown } | undefined> {
     try {
-        return (await call).error?.code;
+        return (await call).error;
     } catch (error) {
-        return (error as { code?: string }).code;
+        return error as { code?: string; details?: unknown };
     }
 }
 
@@ -166,11 +169,12 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
                 });
                 const service = new HostTradeCategoryService({ logger: createLoggerMock() });
 
-                const code = await settleCode(
+                const error = await settleError(
                     service.restore(actor, category, { tx, hookState: {} } as ServiceContext)
                 );
 
-                expect(code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+                expect(error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+                expect(error?.details).toMatchObject({ field: 'groupId', groupId: group });
                 const [row] = await tx
                     .select()
                     .from(hostTradeCategories)
@@ -185,7 +189,7 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
                 const category = await insertCategory(tx, { groupId: group, slug: 'dead-assign' });
                 const destinationId = await insertDestination(tx);
 
-                const code = await settleCode(
+                const error = await settleError(
                     new HostTradeService({ logger: createLoggerMock() }).create(
                         actor,
                         {
@@ -201,7 +205,12 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
                     )
                 );
 
-                expect(code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+                expect(error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+                expect(error?.details).toMatchObject({
+                    field: 'categoryIds',
+                    reason: 'UNKNOWN_CATEGORY',
+                    categoryIds: [category]
+                });
                 expect(await categoryModel.findIdsInDeletedGroups([category], tx)).toEqual([
                     category
                 ]);
@@ -330,6 +339,112 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
                 deleter.release();
                 writer.release();
             }
+        });
+    });
+
+    describe('service-level locking, committed data (re-review 4)', () => {
+        const committed = {
+            groupIds: [] as string[],
+            categoryIds: [] as string[],
+            destinationIds: [] as string[]
+        };
+
+        afterAll(async () => {
+            if (!dbAvailable) return;
+            const db = getServiceTestDb();
+            if (committed.categoryIds.length > 0) {
+                await db
+                    .delete(hostTradeCategories)
+                    .where(inArray(hostTradeCategories.id, committed.categoryIds));
+            }
+            if (committed.groupIds.length > 0) {
+                await db
+                    .delete(hostTradeCategoryGroups)
+                    .where(inArray(hostTradeCategoryGroups.id, committed.groupIds));
+            }
+            if (committed.destinationIds.length > 0) {
+                await db
+                    .delete(destinations)
+                    .where(inArray(destinations.id, committed.destinationIds));
+            }
+        });
+
+        it('category softDelete with NO ctx locks, counts and deletes on ONE transaction; a later provider write is refused FOR SHARE with the id in details', async () => {
+            const db = getServiceTestDb();
+            const groupId = await insertGroup(db, { slug: 'svc-lock' });
+            const categoryId = await insertCategory(db, { groupId, slug: 'svc-lock' });
+            const destinationId = await insertDestination(db);
+            committed.groupIds.push(groupId);
+            committed.categoryIds.push(categoryId);
+            committed.destinationIds.push(destinationId);
+
+            const model = new HostTradeCategoryModel();
+            const lockSpy = vi.spyOn(model, 'lockForUpdate');
+            const countSpy = vi.spyOn(model, 'countLinkedHostTrades');
+            const deleteSpy = vi.spyOn(model, 'softDelete');
+            const service = new HostTradeCategoryService({ logger: createLoggerMock() }, model);
+
+            const deleted = await service.softDelete(actor, categoryId);
+
+            expect(deleted.error).toBeUndefined();
+            const lockTx = lockSpy.mock.calls[0]?.[1];
+            expect(lockTx).toBeDefined();
+            expect(countSpy.mock.calls[0]?.[1]).toBe(lockTx);
+            expect(deleteSpy.mock.calls[0]?.[2]).toBe(lockTx);
+
+            // The delete is committed. A provider write now must be refused, and it must
+            // validate with the FOR SHARE read on its own transaction.
+            const shareModel = new HostTradeCategoryModel();
+            const shareSpy = vi.spyOn(shareModel, 'findByIdsForShare');
+            const result = await new HostTradeService(
+                { logger: createLoggerMock() },
+                undefined,
+                undefined,
+                null,
+                undefined,
+                shareModel
+            ).create(actor, {
+                name: 'After delete',
+                contact: '+54 9 3442 333333',
+                benefit: '10% de descuento',
+                destinationId,
+                is24h: false,
+                isActive: true,
+                categoryIds: [categoryId]
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.details).toMatchObject({
+                field: 'categoryIds',
+                reason: 'UNKNOWN_CATEGORY',
+                categoryIds: [categoryId]
+            });
+            expect(shareSpy).toHaveBeenCalledTimes(1);
+            expect(shareSpy.mock.calls[0]?.[0]).toEqual([categoryId]);
+            expect(shareSpy.mock.calls[0]?.[1]).toBeDefined();
+        });
+
+        it('group softDelete with NO ctx locks, counts and deletes on ONE transaction', async () => {
+            const db = getServiceTestDb();
+            const groupId = await insertGroup(db, { slug: 'svc-group-lock' });
+            committed.groupIds.push(groupId);
+
+            const model = new HostTradeCategoryGroupModel();
+            const lockSpy = vi.spyOn(model, 'lockForUpdate');
+            const countSpy = vi.spyOn(model, 'countActiveChildren');
+            const deleteSpy = vi.spyOn(model, 'softDelete');
+            const service = new HostTradeCategoryGroupService(
+                { logger: createLoggerMock() },
+                model
+            );
+
+            const deleted = await service.softDelete(actor, groupId);
+
+            expect(deleted.error).toBeUndefined();
+            const lockTx = lockSpy.mock.calls[0]?.[1];
+            expect(lockTx).toBeDefined();
+            expect(countSpy.mock.calls[0]?.[1]).toBe(lockTx);
+            expect(deleteSpy.mock.calls[0]?.[2]).toBe(lockTx);
         });
     });
 
