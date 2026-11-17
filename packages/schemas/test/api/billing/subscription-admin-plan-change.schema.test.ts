@@ -1,7 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { AdminSubscriptionPlanChangeRequestSchema } from '../../../src/api/billing/subscription-admin-plan-change.schema.js';
+import {
+    AdminSubscriptionPlanChangeOptionsResponseSchema,
+    AdminSubscriptionPlanChangeRequestSchema
+} from '../../../src/api/billing/subscription-admin-plan-change.schema.js';
 
 describe('AC:B8b:22 administrative plan change request', () => {
+    it('requires the plan identity, direction, and current subscription cycle preview fields', () => {
+        const uuid = crypto.randomUUID();
+        const base = {
+            subscriptionId: crypto.randomUUID(),
+            vertical: 'accommodation',
+            nextChargeAt: null,
+            currentCycle: 'monthly',
+            options: [
+                {
+                    billingOptionId: uuid,
+                    planId: crypto.randomUUID(),
+                    planName: 'Professional',
+                    planSlug: 'owner-pro',
+                    planVersionId: crypto.randomUUID(),
+                    cycle: 'monthly',
+                    amountMinor: 10000,
+                    currency: 'ARS',
+                    current: true,
+                    direction: 'NONE'
+                }
+            ]
+        };
+        expect(AdminSubscriptionPlanChangeOptionsResponseSchema.safeParse(base).success).toBe(true);
+        expect(
+            AdminSubscriptionPlanChangeOptionsResponseSchema.safeParse({
+                ...base,
+                options: [{ ...base.options[0], direction: 'SIDEWAYS' }]
+            }).success
+        ).toBe(false);
+    });
     const body = {
         billingOptionId: crypto.randomUUID(),
         expectedStatus: 'ACTIVE',

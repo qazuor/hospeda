@@ -365,6 +365,12 @@
             "why": "S15 relee levantada_en para decidir el desde."
         },
         {
+            "file": "packages/service-core/src/services/billing/reconciliation/lift-open-mark-on-confirmation.ts",
+            "symbol": "liftOpenMarkOnConfirmation",
+            "row": null,
+            "why": "HOS-2307: el resume confirmado consulta la marca abierta REANUDACION_NO_APLICADA para levantarla en la misma transacción; no relee lifted_at como estado de origen."
+        },
+        {
             "file": "packages/service-core/src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service.ts",
             "symbol": "liftReconciliationMarkByAdmin",
             "row": null,

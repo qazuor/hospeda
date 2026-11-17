@@ -253,7 +253,7 @@
             "submitting": "Preparando o pagamento…",
             "payerEmail": {
                 "label": "Qual email você usa para entrar no Mercado Pago?",
-                "hint": "O Mercado Pago precisa deste email para cobrar e só aceita o pagamento pela conta que o usa. Já preenchemos com o email da sua conta Hospeda; altere apenas se você usa outro no Mercado Pago. Se não coincidir, o pagamento será recusado e nada será cobrado.",
+                "hint": "É o e-mail com o qual você vai pagar no Mercado Pago. Já preenchemos com o e-mail da sua conta Hospeda; altere apenas se você usa outro no Mercado Pago. Se não coincidir, o pagamento será recusado e nada será cobrado.",
                 "invalid": "Informe um e-mail válido."
             },
             "pending": {
@@ -878,7 +878,7 @@
         "chooseFree": "Escolher grátis",
         "payerEmailLabel": "E-mail do pagador",
         "payerEmailInvalid": "Digite um e-mail válido do pagador.",
-        "payerEmailHint": "Você declara este e-mail; ele não foi confirmado pelo provedor.",
+        "payerEmailHint": "É o e-mail com o qual você vai pagar no Mercado Pago. Você o declara; o provedor não o confirma.",
         "confirmPurchase": "Confirmar compra",
         "loading": "Carregando complementos…",
         "loadError": "Não foi possível carregar os complementos.",

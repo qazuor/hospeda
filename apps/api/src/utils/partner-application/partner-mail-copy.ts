@@ -21,9 +21,9 @@ export const resolvePartnerMailCopy: PartnerMailCopyResolver = (input): PartnerM
         if (input.origin === 'direct') {
             const direct = 'notifications.partnerApplication.claimNoticeDirect';
             return {
-                subject: readCopy(
-                    input.locale,
-                    'notifications.partnerApplication.claimNotice.subject'
+                subject: interpolate(
+                    readCopy(input.locale, 'notifications.partnerApplication.claimNotice.subject'),
+                    replacements
                 ),
                 preview: interpolate(readCopy(input.locale, `${direct}.preview`), replacements),
                 heading: interpolate(readCopy(input.locale, `${direct}.heading`), replacements),
@@ -39,7 +39,10 @@ export const resolvePartnerMailCopy: PartnerMailCopyResolver = (input): PartnerM
             };
         }
         return {
-            subject: readCopy(input.locale, 'notifications.partnerApplication.claimNotice.subject'),
+            subject: interpolate(
+                readCopy(input.locale, 'notifications.partnerApplication.claimNotice.subject'),
+                replacements
+            ),
             preview: interpolate(
                 readCopy(input.locale, 'notifications.partnerApplication.claimNotice.preview'),
                 replacements

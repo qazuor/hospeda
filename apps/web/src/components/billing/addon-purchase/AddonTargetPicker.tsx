@@ -29,7 +29,7 @@ export function AddonTargetPicker(input: {
                         data-publication-status={item.publicationStatus}
                         onClick={() => input.onSelect(item)}
                     >
-                        <span>{item.listingId}</span>
+                        <span>{item.name}</span>
                         <span>
                             {input.t(`billing.addonPurchase.status.${item.publicationStatus}`)}
                         </span>

@@ -412,11 +412,11 @@
     "ai": {
         "conversations": {
             "title": "Conversaciones del chat IA",
-            "subtitle": "Lectura anónima de las conversaciones del chat de cada alojamiento. Los datos personales del texto ya están ocultos.",
+            "subtitle": "Lectura anónima de las conversaciones del chat de cada ficha (alojamiento, comer y salir o experiencia). Los datos personales del texto ya están ocultos.",
             "filter": {
                 "vertical": "Vertical",
                 "allVerticals": "Todas las verticales",
-                "listingId": "Alojamiento / ficha (UUID)",
+                "listingId": "Ficha (UUID)",
                 "listingIdPlaceholder": "UUID de la ficha",
                 "from": "Desde",
                 "to": "Hasta",
@@ -424,7 +424,7 @@
             },
             "verticals": {
                 "accommodation": "Alojamiento",
-                "venue": "Espacio",
+                "venue": "Comer y salir",
                 "experience": "Experiencia"
             },
             "table": {
@@ -1493,6 +1493,7 @@
         "toResolve": "A resolver",
         "waits": "Espera a que vuelva",
         "losesPromo": "Pierde la promoción",
+        "keepsPromo": "Conserva la promoción",
         "excludedBadge": "Excluida",
         "result": "Migración {id}. Filas escritas: {rows}. Excluidas: {excluded}.",
         "columns": {

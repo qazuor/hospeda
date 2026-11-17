@@ -79,6 +79,7 @@ const row = {
     newAmount: 150000,
     currency: 'ARS',
     losesPromo: false,
+    keepsPromo: true,
     applicationDate: '2027-01-10',
     waits: false,
     outcome: 'PENDIENTE',
@@ -202,6 +203,9 @@ describe('AC:B12:9 el aumento se lanza por la acción 17 con el motivo «aumento
         await choosePair('PRICE_INCREASE', increaseSource.id, increaseTarget.id);
         fireEvent.click(screen.getByTestId('plan-migration-preview-button'));
         await screen.findByTestId(`plan-migration-row-${subscriptionId}`);
+        expect(screen.getByTestId(`plan-migration-row-${subscriptionId}`)).toHaveTextContent(
+            'Conserva la promoción'
+        );
         expect(bodyOf('/preview')).toEqual({
             sourcePlanVersionId: increaseSource.id,
             targetPlanVersionId: increaseTarget.id,

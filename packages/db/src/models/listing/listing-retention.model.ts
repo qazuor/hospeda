@@ -139,7 +139,7 @@ export async function readArchiveOrigins(args: {
         WHERE e.entity_type = ${args.vertical} AND e.entity_id = ANY(${sql.param([...args.listingIds])}::text[])
           AND e.event_type = 'listing.status_changed' AND change->>'field' = 'publicationStatus'
           AND change->>'new' = 'ARCHIVED'
-        ORDER BY e.entity_id, e.occurred_at DESC, e.id DESC`);
+        ORDER BY e.entity_id, e.occurred_at DESC, e.seq DESC`);
     return new Map<string, PublicationStatusEnum>(
         result.rows.map((row) => [String(row.entityId), row.origin as PublicationStatusEnum])
     );

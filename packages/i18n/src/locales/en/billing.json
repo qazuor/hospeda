@@ -253,7 +253,7 @@
             "submitting": "Preparing your payment…",
             "payerEmail": {
                 "label": "Which email do you use to sign in to Mercado Pago?",
-                "hint": "Mercado Pago needs this email to charge you and only accepts payment from the account that uses it. We’ve filled in your Hospeda email; change it only if you use another one in Mercado Pago. If they don’t match, the payment is rejected and you won’t be charged.",
+                "hint": "It is the email you will pay with on Mercado Pago. We’ve filled in your Hospeda email; change it only if you use another one in Mercado Pago. If they don’t match, the payment is rejected and you won’t be charged.",
                 "invalid": "Enter a valid email."
             },
             "pending": {
@@ -878,7 +878,7 @@
         "chooseFree": "Choose for free",
         "payerEmailLabel": "Payer email",
         "payerEmailInvalid": "Enter a valid payer email.",
-        "payerEmailHint": "You declare this email; the provider has not confirmed it.",
+        "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
         "confirmPurchase": "Confirm purchase",
         "loading": "Loading add-ons…",
         "loadError": "We could not load the add-ons.",

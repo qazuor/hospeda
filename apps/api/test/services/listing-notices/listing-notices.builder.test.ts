@@ -35,6 +35,7 @@ function row(
 ): ListingNoticeRow {
     return {
         id: ID,
+        name: 'Cabaña del Río',
         deletionAnnouncedAt: null,
         enteredCurrentStatus: null,
         lastLift: null,
@@ -380,6 +381,26 @@ describe('TEST:V8a:7 one notice per kind (AC:V8a:6)', () => {
 });
 
 describe('TEST:V8a:7 recurring listing add-ons (H7)', () => {
+    it('includes the listing name in the item', () => {
+        const [item] = buildListingNoticeItems({
+            rows: [
+                {
+                    id: ID,
+                    name: 'Cabaña del Río',
+                    publicationStatus: S.PUBLISHED,
+                    deletionAnnouncedAt: null,
+                    enteredCurrentStatus: null,
+                    lastLift: null,
+                    openFixRequest: null
+                } as ListingNoticeRow
+            ],
+            coverage: UNCOVERED,
+            now: NOW
+        });
+
+        expect(item?.name).toBe('Cabaña del Río');
+    });
+
     it('counts only add-ons on this listing with no known end; one with a date does not count', () => {
         // Arrange
         const coverage = {

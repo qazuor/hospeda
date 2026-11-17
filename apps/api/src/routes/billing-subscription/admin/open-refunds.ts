@@ -8,14 +8,15 @@ import { readSubscription } from '../read-subscription';
 import { readOpenRefunds } from './read-open-refunds';
 
 /**
- * GET /api/v1/admin/billing-subscription/{subscriptionId}/open-refunds — inspect RF1 requests
+ * GET /api/v1/admin/billing-subscription/{subscriptionId}/open-refunds — inspect RF1 requests and provider-rejected FAILED refunds
  * after a reload while B6 is unavailable; requires BILLING_SUBSCRIPTION_INSPECT.
  */
 export const adminSubscriptionOpenRefundsRoute = createAdminRoute({
     method: 'get',
     path: '/{subscriptionId}/open-refunds',
-    summary: 'Read open refund requests of a subscription',
-    description: 'Reads REQUESTED refund requests attached to payments of one subscription.',
+    summary: 'Read open refund requests and rejected refunds of a subscription',
+    description:
+        'Reads REQUESTED and provider-rejected FAILED refunds attached to payments of one subscription.',
     tags: ['Billing subscriptions', 'Admin'],
     requiredPermissions: [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT],
     requestParams: { subscriptionId: z.string().uuid() },

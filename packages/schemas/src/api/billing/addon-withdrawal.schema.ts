@@ -8,6 +8,8 @@ export const OwnerRecurringAddonsQuerySchema = z.object({
 /** One live recurring addon owned by the requesting actor. */
 export const OwnerRecurringAddonSchema = z.object({
     addonInstanceId: z.uuid(),
+    /** Stable catalog key used to resolve the addon's localized display name. */
+    slug: z.string().min(1),
     name: z.string().min(1),
     chargeKind: z.literal('PERIODICO'),
     cycle: z.enum(['monthly', 'quarterly', 'semiannual', 'annual']),

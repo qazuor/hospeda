@@ -3,8 +3,14 @@
  * (HOS-2119, T-018). No network, no I/O.
  *
  * Rules measured on Umami 3.5.0 (spec HOS-2119 §5.5, §6.2):
- * - `payload.id` is NEVER emitted: Umami hashes it into the session id and
- *   would split the visitor from their browser session.
+ * - `payload.id` (Umami's distinct id) is emitted ONLY for a real user id WITH a
+ *   visitor context (the request's IP and User-Agent), so a request-scoped event
+ *   lands in the same per-user session `uuid(…, id)` as that user's browser
+ *   (revised 2026-11-17: a claimed anonymous fingerprint session leaked across
+ *   accounts on a shared device). Without a visitor (webhooks, crons) an `id`
+ *   would open a stray per-user session from the api's IP + UA, so those events
+ *   keep the synthetic identity and no `id`; the user stays in `data.user_id`.
+ *   Anonymous, guest and system events carry no `id`.
  * - Umami truncates over-limit values silently (HTTP 200) and rejects the WHOLE
  *   event for numbers with `|n| >= 1e15`, so everything is bounded here.
  */
@@ -21,6 +27,8 @@ export const UMAMI_LIMITS = {
     dataKey: 500,
     /** Max url length. */
     url: 500,
+    /** Max distinct id length (Umami `payload.id`). */
+    distinctId: 50,
     /** Max hostname length. */
     hostname: 100,
     /** Numbers with an absolute value at or above this reject the whole event. */
@@ -61,11 +69,20 @@ const ANONYMOUS_DISTINCT_ID_PREFIX = 'anon:';
 /** Distinct id used by events with no user, never forwarded. */
 const SERVER_DISTINCT_ID = 'api-server';
 
+/**
+ * Id of the api's guest actor (anonymous request). Mirrors the literal in
+ * `apps/api/src/utils/actor.ts` (`createGuestActor` / `isGuestActor`): no
+ * shared package exports it and `@repo/analytics` depends on no other
+ * workspace package, so it is defined here once. Keep both in sync.
+ */
+export const UMAMI_GUEST_ACTOR_ID = '00000000-0000-4000-8000-000000000000';
+
 /** Zod schema of one Umami batch item (`type: 'event'`). */
 export const UmamiBatchItemSchema = z.object({
     type: z.literal('event'),
     payload: z.object({
         website: z.string().min(1),
+        id: z.string().min(1).max(UMAMI_LIMITS.distinctId).optional(),
         hostname: z.string().min(1).max(UMAMI_LIMITS.hostname),
         url: z.string().min(1).max(UMAMI_LIMITS.url),
         name: z
@@ -255,7 +272,10 @@ export interface MapToUmamiBatchItemInput {
     readonly event: string;
     /** Properties already sanitized by `prepareAnalyticsEvent`. */
     readonly properties: Readonly<Record<string, unknown>>;
-    /** Hospeda distinct id; only a real user id is forwarded, as `data.user_id`. */
+    /**
+     * Hospeda distinct id. A real user id is forwarded as `data.user_id`, and as
+     * `payload.id` only together with a `visitor`.
+     */
     readonly distinctId?: string;
     /** Dedup uuid, forwarded as `data.event_uuid`. */
     readonly uuid?: string;
@@ -284,6 +304,7 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
         distinctId !== undefined &&
         distinctId.length > 0 &&
         distinctId !== SERVER_DISTINCT_ID &&
+        distinctId !== UMAMI_GUEST_ACTOR_ID &&
         !distinctId.startsWith(ANONYMOUS_DISTINCT_ID_PREFIX)
     );
 }
@@ -291,7 +312,9 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
 /**
  * Maps one sanitized analytics event to a validated Umami batch item.
  *
- * Never emits `payload.id`. See the module docs for the measured rules.
+ * Emits `payload.id` only for a real user id with a visitor context (anonymous,
+ * guest and system ids never; a user without a visitor only in `data.user_id`).
+ * See the module docs for the measured rules.
  *
  * @param input - Event, sanitized properties and delivery context.
  * @returns The batch item and any warnings.
@@ -312,8 +335,9 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
  */
 export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmamiBatchItemResult {
     const { data, warnings } = flattenForUmami({ properties: input.properties });
-    if (isRealUserId(input.distinctId)) {
-        data['user_id'] = truncate({ value: input.distinctId, max: UMAMI_LIMITS.stringValue });
+    const userId = isRealUserId(input.distinctId) ? input.distinctId : undefined;
+    if (userId !== undefined) {
+        data['user_id'] = truncate({ value: userId, max: UMAMI_LIMITS.stringValue });
     }
     if (input.uuid !== undefined) {
         data['event_uuid'] = truncate({ value: input.uuid, max: UMAMI_LIMITS.stringValue });
@@ -334,7 +358,11 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
 
     const rawIp = input.visitor?.ip;
     const rawUserAgent = input.visitor?.userAgent;
-    const visitorIp = rawIp !== undefined && !isBlank(rawIp) ? rawIp : UMAMI_SYNTHETIC_IP;
+    const hasVisitorIp = rawIp !== undefined && !isBlank(rawIp);
+    const hasVisitorUserAgent = rawUserAgent !== undefined && !isBlank(rawUserAgent);
+    const visitorIp = hasVisitorIp ? rawIp : UMAMI_SYNTHETIC_IP;
+    // The per-user session only exists when the event joins the visitor's browser.
+    const sessionUserId = hasVisitorIp && hasVisitorUserAgent ? userId : undefined;
     const visitorUserAgent =
         rawUserAgent !== undefined &&
         !isBlank(rawUserAgent) &&
@@ -346,6 +374,9 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
         type: 'event',
         payload: {
             website: input.websiteId,
+            ...(sessionUserId === undefined
+                ? {}
+                : { id: truncate({ value: sessionUserId, max: UMAMI_LIMITS.distinctId }) }),
             hostname: truncate({ value: input.hostname, max: UMAMI_LIMITS.hostname }),
             url: truncate({
                 value:

@@ -8,6 +8,7 @@ import { useHasPermission } from '@/hooks/use-user-permissions';
 export interface RevocationRefundSettlementProps {
     /** The S36 result in memory, or one open request read back after a reload. */
     readonly result: Pick<SubscriptionRevocationResponse, 'refundId' | 'refundAmount' | 'payment'>;
+    readonly failedRefund?: boolean;
 }
 
 /**
@@ -15,7 +16,10 @@ export interface RevocationRefundSettlementProps {
  * closed by recording the refund already made outside the flow. The result
  * lives in memory, so this action is available immediately after revocation.
  */
-export function RevocationRefundSettlement({ result }: RevocationRefundSettlementProps) {
+export function RevocationRefundSettlement({
+    result,
+    failedRefund = false
+}: RevocationRefundSettlementProps) {
     const { t } = useTranslations();
     const allowed = useHasPermission(PermissionEnum.BILLING_SETTLE_EXTERNAL);
     if (!allowed)
@@ -30,12 +34,21 @@ export function RevocationRefundSettlement({ result }: RevocationRefundSettlemen
             className="space-y-3"
         >
             <h3 className="font-semibold">
-                {t('admin-billing.subscriptionRevocation.settlement.title')}
+                {t(
+                    failedRefund
+                        ? 'admin-billing.subscriptionRevocation.settlement.failed.title'
+                        : 'admin-billing.subscriptionRevocation.settlement.title'
+                )}
             </h3>
             <p>
-                {t('admin-billing.subscriptionRevocation.settlement.intro', {
-                    refundId: result.refundId
-                })}
+                {t(
+                    failedRefund
+                        ? 'admin-billing.subscriptionRevocation.settlement.failed.intro'
+                        : 'admin-billing.subscriptionRevocation.settlement.intro',
+                    {
+                        refundId: result.refundId
+                    }
+                )}
             </p>
             <ExternalRefundSettlementForm
                 idSuffix={result.refundId}
@@ -50,18 +63,31 @@ export function RevocationRefundSettlement({ result }: RevocationRefundSettlemen
                 defaultChannel={
                     result.payment.source === 'PAYMENT' ? 'PROVIDER_PANEL' : 'BANK_TRANSFER'
                 }
-                requestedRefund={{ refundId: result.refundId, amountMinor: result.refundAmount }}
+                {...(failedRefund
+                    ? { failedRefund: { refundId: result.refundId } }
+                    : {
+                          requestedRefund: {
+                              refundId: result.refundId,
+                              amountMinor: result.refundAmount
+                          }
+                      })}
                 describeSuccess={({ response }) =>
-                    response.closedRequestedRefund
-                        ? t('admin-billing.subscriptionRevocation.settlement.success.closed', {
-                              refundId: response.refundId,
-                              status: response.status
-                          })
-                        : t('admin-billing.subscriptionRevocation.settlement.success.separate', {
+                    failedRefund
+                        ? t('admin-billing.subscriptionRevocation.settlement.failed.success', {
                               refundId: response.refundId,
                               status: response.status,
-                              requestedRefundId: result.refundId
+                              failedRefundId: result.refundId
                           })
+                        : response.closedRequestedRefund
+                          ? t('admin-billing.subscriptionRevocation.settlement.success.closed', {
+                                refundId: response.refundId,
+                                status: response.status
+                            })
+                          : t('admin-billing.subscriptionRevocation.settlement.success.separate', {
+                                refundId: response.refundId,
+                                status: response.status,
+                                requestedRefundId: result.refundId
+                            })
                 }
             />
         </section>

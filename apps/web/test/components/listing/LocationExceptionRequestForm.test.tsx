@@ -3,8 +3,10 @@
  * @description The owner's "Pedir una excepción" form (HOS-2192): 10-character
  * validation, counter, payload and endpoint per vertical, and the 409/400 mapping.
  */
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const postProtectedMock = vi.hoisted(() => vi.fn());
@@ -98,5 +100,33 @@ describe('LocationExceptionRequestForm', () => {
         expect(await screen.findByTestId('location-exception-error')).toHaveTextContent(
             /entre 10 y 500/i
         );
+    });
+
+    it('sends the request when mounted inside an outer editor <form>, without submitting it', async () => {
+        // Regression (HOS-2192 smoke): a nested <form> is dropped by the browser and its
+        // submit button submitted the OUTER editor form, so no request was ever sent.
+        postProtectedMock.mockResolvedValue({ ok: true, data: { id: 'r1', status: 'PENDING' } });
+        const user = userEvent.setup();
+        const onOuterSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
+        render(
+            <form
+                data-testid="outer-editor-form"
+                onSubmit={onOuterSubmit}
+            >
+                <LocationExceptionRequestForm
+                    locale="es"
+                    vertical="venue"
+                    listingId="listing-1"
+                />
+            </form>
+        );
+        const inner = screen.getByTestId('location-exception-form');
+        expect(inner.tagName).not.toBe('FORM');
+        expect(inner.closest('form')).toBe(screen.getByTestId('outer-editor-form'));
+        await user.type(screen.getByTestId('location-exception-reason'), 'a'.repeat(12));
+        await user.click(screen.getByRole('button', { name: 'Enviar pedido' }));
+        expect(postProtectedMock).toHaveBeenCalledTimes(1);
+        expect(onOuterSubmit).not.toHaveBeenCalled();
+        expect(await screen.findByTestId('location-exception-sent')).toBeInTheDocument();
     });
 });

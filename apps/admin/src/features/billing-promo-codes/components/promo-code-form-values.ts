@@ -1,4 +1,5 @@
 import type { VerticalEnum } from '@repo/schemas';
+import { getUtcInstantForLocalEndOfDay, getUtcInstantForLocalMidnight } from '@repo/utils';
 import { toMinorUnits } from '../promo-code-draft';
 
 export type PromoCodeFormValues = {
@@ -57,8 +58,18 @@ export function makePromoCodeCreateRequest(value: PromoCodeFormValues) {
         allVerticals: value.allVerticals,
         verticals: value.allVerticals ? null : value.verticals,
         totalQuota: value.totalQuota === '' ? null : Number(value.totalQuota),
-        ...(value.validFrom ? { validFrom: value.validFrom } : {}),
-        validUntil: value.validUntil || null,
+        ...(value.validFrom
+            ? {
+                  validFrom: /^\d{4}-\d{2}-\d{2}$/.test(value.validFrom)
+                      ? getUtcInstantForLocalMidnight({ date: value.validFrom }).toISOString()
+                      : value.validFrom
+              }
+            : {}),
+        validUntil: value.validUntil
+            ? /^\d{4}-\d{2}-\d{2}$/.test(value.validUntil)
+                ? getUtcInstantForLocalEndOfDay({ date: value.validUntil }).toISOString()
+                : value.validUntil
+            : null,
         stackable: value.stackable,
         usableWithAnotherActive: value.usableWithAnotherActive
     };

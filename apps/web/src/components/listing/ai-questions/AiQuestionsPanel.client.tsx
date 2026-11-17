@@ -14,6 +14,7 @@
  * @module components/listing/ai-questions/AiQuestionsPanel
  */
 
+import { localizeRedactionTokens } from '@repo/i18n/web';
 import type {
     AiChatEntityType,
     AiListingQuestion,
@@ -109,6 +110,8 @@ export function AiQuestionsPanel({
     faqUrl
 }: AiQuestionsPanelProps): JSX.Element {
     const { t } = createTranslations(locale);
+    /** Stored `[REDACTED_*]` markers are technical: show a label in the page language (HOS-2320). */
+    const visible = (text: string): string => localizeRedactionTokens({ text, locale }).text;
     const [state, setState] = useState<LoadState>({ kind: 'loading' });
     const [mutationError, setMutationError] = useState<string | null>(null);
     const [hasLoadedMore, setHasLoadedMore] = useState(false);
@@ -362,7 +365,7 @@ export function AiQuestionsPanel({
             key={item.id}
             className={withAction ? `${styles.item} ${styles.itemUnanswered}` : styles.item}
         >
-            <p className={styles.question}>{item.question}</p>
+            <p className={styles.question}>{visible(item.question)}</p>
             <div className={styles.answer}>
                 <span className={styles.answerLabel}>
                     {t(
@@ -375,7 +378,7 @@ export function AiQuestionsPanel({
                     // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized via renderChatMarkdown (DOMPurify) before rendering
                     dangerouslySetInnerHTML={{
                         // nosemgrep:typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
-                        __html: renderChatMarkdown({ raw: item.answer })
+                        __html: renderChatMarkdown({ raw: visible(item.answer) })
                     }}
                 />
             </div>
@@ -393,8 +396,8 @@ export function AiQuestionsPanel({
                         href={
                             buildFaqPrefillHref({
                                 faqUrl,
-                                question: item.question,
-                                answer: stripMarkdownPlain(item.answer),
+                                question: visible(item.question),
+                                answer: stripMarkdownPlain(visible(item.answer)),
                                 messageId: item.id,
                                 includeAnswer: item.answerStatus === 'answered'
                             }).href
@@ -508,8 +511,8 @@ export function AiQuestionsPanel({
                                 key={item.id}
                                 className={styles.item}
                             >
-                                <p className={styles.question}>{item.question}</p>
-                                <p>{item.answer}</p>
+                                <p className={styles.question}>{visible(item.question)}</p>
+                                <p>{visible(item.answer)}</p>
                                 <time dateTime={item.askedAt}>
                                     {formatDate({
                                         date: new Date(item.askedAt),
