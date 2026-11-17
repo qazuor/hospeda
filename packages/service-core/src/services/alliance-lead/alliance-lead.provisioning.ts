@@ -3,6 +3,7 @@ import type { ILogger } from '@repo/logger';
 import {
     type HostTradeBenefitTypeEnum,
     HostTradeBenefitTypeEnumSchema,
+    LifecycleStatusEnum,
     resolveLegacyCategorySlugs
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
@@ -23,8 +24,14 @@ export interface ProvisionListingInput {
     readonly lead: SelectAllianceLead;
     /** Model used to look up slugs and insert the listing. */
     readonly hostTradeModel: HostTradeModel;
-    /** Catalog model used to resolve the lead's category slugs to ACTIVE categories. */
-    readonly categoryModel: Pick<HostTradeCategoryModel, 'findActiveBySlugs'>;
+    /**
+     * Catalog model used to resolve the lead's category slugs to ACTIVE categories
+     * and to re-validate them under a row lock before linking them.
+     */
+    readonly categoryModel: Pick<
+        HostTradeCategoryModel,
+        'findActiveBySlugs' | 'findByIdsForShare' | 'findIdsInDeletedGroups'
+    >;
     /** The admin performing the approval — recorded as the listing's creator. */
     readonly actorId: string;
     /** Logger for the skip paths, which are silent by design but not invisible. */
@@ -164,9 +171,12 @@ const composeContact = (lead: SelectAllianceLead): string =>
  *   These keep the pre-HOS-278 behavior: the admin approves, then creates the
  *   listing by hand. Refusing the approval instead would strand every provider
  *   lead already sitting in the inbox. A lead with only the legacy `category`
- *   and no `categorySlugs` is one of these (HOS-919).
+ *   and no `categorySlugs` is NOT one of these when the category maps to the
+ *   catalog (rolling-deploy leads, HOS-919): it is provisioned through
+ *   `LEGACY_CATEGORY_TO_SLUGS`. Only an unmapped legacy value is skipped.
  * - **no-active-category** (HOS-919) — every category the applicant chose was
- *   deactivated or deleted since the submission. No listing is created; the
+ *   deactivated or deleted (or sits in a deleted group) since the submission,
+ *   including a delete that raced this approval (checked FOR SHARE). No listing is created; the
  *   approval stands and the admin creates the listing by hand.
  *
  * @param input - See {@link ProvisionListingInput}.
@@ -213,6 +223,31 @@ export const provisionServiceProviderListing = async ({
         throw new Error('Provisioning a listing with categories requires a transaction');
     }
 
+    // The slug lookup above is a plain read, so an approval can race a category
+    // soft delete (or a group soft delete) and link a category that just went
+    // away. Re-read the resolved ids FOR SHARE on the listing transaction: that
+    // lock conflicts with the delete's FOR UPDATE, so one of the two waits and
+    // sees the other's result. Deleted, inactive and deleted-group categories
+    // are dropped here, the same rules a manual provider write applies.
+    const candidateIds = activeCategories.map((category) => category.id);
+    const locked = await categoryModel.findByIdsForShare(candidateIds, tx);
+    const inDeletedGroups = new Set(await categoryModel.findIdsInDeletedGroups(candidateIds, tx));
+    const linkableIds = locked
+        .filter(
+            (category) =>
+                !category.deletedAt &&
+                category.lifecycleState === LifecycleStatusEnum.ACTIVE &&
+                !inDeletedGroups.has(category.id)
+        )
+        .map((category) => category.id);
+    if (linkableIds.length === 0) {
+        logger.warn(
+            { leadId: lead.id, categorySlugs: plan.categorySlugs },
+            '[alliance-lead] every lead category was deleted or deactivated meanwhile — listing must be created by hand'
+        );
+        return { provisioned: false, reason: 'no-active-category' };
+    }
+
     const slug = await createUniqueSlug(plan.businessName, async (candidate) => {
         const existing = await hostTradeModel.findOne({ slug: candidate });
         return !!existing;
@@ -248,7 +283,7 @@ export const provisionServiceProviderListing = async ({
 
     await hostTradeModel.replaceCategories({
         hostTradeId: created.id,
-        categoryIds: activeCategories.map((category) => category.id),
+        categoryIds: linkableIds,
         tx
     });
 

@@ -31,7 +31,12 @@ const cat = (id: string, slug: string) => ({ id, slug });
 
 describe('provisionServiceProviderListing — categories (HOS-919)', () => {
     let hostTradeModel: HostTradeModel;
-    let categoryModel: Pick<HostTradeCategoryModel, 'findActiveBySlugs'>;
+    let categoryModel: Pick<
+        HostTradeCategoryModel,
+        'findActiveBySlugs' | 'findByIdsForShare' | 'findIdsInDeletedGroups'
+    >;
+    let findByIdsForShare: ReturnType<typeof vi.fn>;
+    let findIdsInDeletedGroups: ReturnType<typeof vi.fn>;
     let logger: ILogger;
     let findActiveBySlugs: ReturnType<typeof vi.fn>;
 
@@ -42,10 +47,16 @@ describe('provisionServiceProviderListing — categories (HOS-919)', () => {
             replaceCategories: vi.fn().mockResolvedValue({ added: [], removed: [] })
         } as unknown as HostTradeModel;
         findActiveBySlugs = vi.fn();
-        categoryModel = { findActiveBySlugs } as unknown as Pick<
-            HostTradeCategoryModel,
-            'findActiveBySlugs'
-        >;
+        // Default: the locked re-read agrees with the slug lookup.
+        findByIdsForShare = vi.fn(async (ids: readonly string[]) =>
+            ids.map((id) => ({ id, lifecycleState: 'ACTIVE', deletedAt: null }))
+        );
+        findIdsInDeletedGroups = vi.fn().mockResolvedValue([]);
+        categoryModel = {
+            findActiveBySlugs,
+            findByIdsForShare,
+            findIdsInDeletedGroups
+        } as unknown as typeof categoryModel;
         logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn() } as unknown as ILogger;
     });
 
@@ -96,6 +107,62 @@ describe('provisionServiceProviderListing — categories (HOS-919)', () => {
         expect(result).toEqual({ provisioned: false, reason: 'no-active-category' });
         expect(hostTradeModel.create).not.toHaveBeenCalled();
         expect(hostTradeModel.replaceCategories).not.toHaveBeenCalled();
+    });
+
+    describe('locked re-validation against a concurrent category delete', () => {
+        it('should re-read the resolved ids FOR SHARE on the listing transaction, before creating', async () => {
+            findActiveBySlugs.mockResolvedValue([cat(CAT_PLOMERIA, 'plomeria')]);
+
+            await run(lead({ categorySlugs: ['plomeria'] }));
+
+            expect(findByIdsForShare).toHaveBeenCalledWith([CAT_PLOMERIA], TX);
+            const lockOrder = findByIdsForShare.mock.invocationCallOrder[0] ?? 0;
+            const createOrder =
+                (hostTradeModel.create as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0] ??
+                0;
+            expect(lockOrder).toBeLessThan(createOrder);
+        });
+
+        it('should not link a category that was soft-deleted after the slug lookup', async () => {
+            findActiveBySlugs.mockResolvedValue([cat(CAT_PLOMERIA, 'plomeria')]);
+            findByIdsForShare.mockResolvedValue([
+                { id: CAT_PLOMERIA, lifecycleState: 'ACTIVE', deletedAt: new Date() }
+            ]);
+
+            const result = await run(lead({ categorySlugs: ['plomeria'] }));
+
+            expect(result).toEqual({ provisioned: false, reason: 'no-active-category' });
+            expect(hostTradeModel.create).not.toHaveBeenCalled();
+        });
+
+        it('should not link a category whose group is soft-deleted', async () => {
+            findActiveBySlugs.mockResolvedValue([cat(CAT_PLOMERIA, 'plomeria')]);
+            findIdsInDeletedGroups.mockResolvedValue([CAT_PLOMERIA]);
+
+            const result = await run(lead({ categorySlugs: ['plomeria'] }));
+
+            expect(result).toEqual({ provisioned: false, reason: 'no-active-category' });
+            expect(hostTradeModel.replaceCategories).not.toHaveBeenCalled();
+        });
+
+        it('should keep the survivors when only one of two categories was deleted', async () => {
+            findActiveBySlugs.mockResolvedValue([
+                cat(CAT_PLOMERIA, 'plomeria'),
+                cat(CAT_DESTAP, 'destapaciones-desagotes')
+            ]);
+            findByIdsForShare.mockResolvedValue([
+                { id: CAT_PLOMERIA, lifecycleState: 'ACTIVE', deletedAt: null },
+                { id: CAT_DESTAP, lifecycleState: 'ACTIVE', deletedAt: new Date() }
+            ]);
+
+            await run(lead());
+
+            expect(hostTradeModel.replaceCategories).toHaveBeenCalledWith({
+                hostTradeId: HT_ID,
+                categoryIds: [CAT_PLOMERIA],
+                tx: TX
+            });
+        });
     });
 
     describe('rolling-deploy lead that only carries the legacy category', () => {

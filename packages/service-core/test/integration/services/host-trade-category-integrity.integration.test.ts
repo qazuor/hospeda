@@ -10,10 +10,12 @@
  * @module host-trade-category-integrity.integration.test
  */
 import {
+    allianceLeads,
     type DrizzleClient,
     destinations,
     eq,
     HostTradeCategoryModel,
+    HostTradeModel,
     hostTradeCategories,
     hostTradeCategoryGroups,
     hostTrades,
@@ -25,6 +27,7 @@ import {
 import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { provisionServiceProviderListing } from '../../../src/services/alliance-lead/alliance-lead.provisioning';
 import { HostTradeCategoryService } from '../../../src/services/host-trade-category/host-trade-category.service';
 import { HostTradeService } from '../../../src/services/hostTrade/host-trade.service';
 import type { Actor, ServiceContext } from '../../../src/types';
@@ -202,6 +205,56 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
                 expect(await categoryModel.findIdsInDeletedGroups([category], tx)).toEqual([
                     category
                 ]);
+            });
+        });
+    });
+
+    describe('lead provisioning (re-review 1)', () => {
+        const provision = async (tx: DrizzleClient, categorySlug: string) => {
+            const destinationId = await insertDestination(tx);
+            const id = crypto.randomUUID();
+            await tx.insert(allianceLeads).values({
+                id,
+                kind: 'service_provider',
+                contactName: 'Lead Contact',
+                email: `lead-${RUN}-${id.slice(0, 6)}@example.com`,
+                message: 'Quiero sumarme',
+                status: 'approved',
+                businessName: `Lead Biz ${RUN} ${id.slice(0, 6)}`,
+                destinationId,
+                categorySlugs: [categorySlug]
+            } as typeof allianceLeads.$inferInsert);
+            const [lead] = await tx.select().from(allianceLeads).where(eq(allianceLeads.id, id));
+            if (!lead) throw new Error('lead not inserted');
+            return provisionServiceProviderListing({
+                lead,
+                hostTradeModel: new HostTradeModel(),
+                categoryModel,
+                actorId: actor.id,
+                logger: createLoggerMock(),
+                tx
+            });
+        };
+
+        it('does not link a category whose group is soft-deleted', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const group = await insertGroup(tx, { slug: 'prov-dead', deleted: true });
+                await insertCategory(tx, { groupId: group, slug: 'prov-dead' });
+
+                const result = await provision(tx, `c-${RUN}-prov-dead`);
+
+                expect(result).toEqual({ provisioned: false, reason: 'no-active-category' });
+            });
+        });
+
+        it('links an ordinary active category', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const group = await insertGroup(tx, { slug: 'prov-ok' });
+                await insertCategory(tx, { groupId: group, slug: 'prov-ok' });
+
+                const result = await provision(tx, `c-${RUN}-prov-ok`);
+
+                expect(result).toMatchObject({ provisioned: true });
             });
         });
     });

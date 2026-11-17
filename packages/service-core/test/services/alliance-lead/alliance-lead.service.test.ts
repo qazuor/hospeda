@@ -187,7 +187,15 @@ function makeActiveCategoryModel() {
     return {
         findActiveBySlugs: vi
             .fn()
-            .mockResolvedValue([{ id: '00000000-0000-4000-a000-0000000000c1', slug: 'plomeria' }])
+            .mockResolvedValue([{ id: '00000000-0000-4000-a000-0000000000c1', slug: 'plomeria' }]),
+        findByIdsForShare: vi.fn().mockResolvedValue([
+            {
+                id: '00000000-0000-4000-a000-0000000000c1',
+                lifecycleState: 'ACTIVE',
+                deletedAt: null
+            }
+        ]),
+        findIdsInDeletedGroups: vi.fn().mockResolvedValue([])
     };
 }
 
