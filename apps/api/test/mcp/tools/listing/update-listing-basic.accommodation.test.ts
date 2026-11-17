@@ -28,7 +28,8 @@ const mocks = vi.hoisted(() => ({
     coverage: vi.fn(),
     effectiveSet: vi.fn(),
     preTrialDraftLimits: vi.fn(),
-    record: vi.fn()
+    record: vi.fn(),
+    invalidateCache: vi.fn()
 }));
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
@@ -39,6 +40,11 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
         preTrialDraftLimits: mocks.preTrialDraftLimits
     })
 }));
+
+vi.mock('../../../../src/middlewares/cache', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../../../src/middlewares/cache')>();
+    return { ...actual, invalidateCacheByPathPrefix: mocks.invalidateCache };
+});
 
 vi.mock('../../../../src/lib/mcp/record-tool-call', () => ({ recordMcpToolCall: mocks.record }));
 
@@ -57,6 +63,7 @@ import {
     TOOL_NOT_FOUND_MESSAGE,
     TOOL_VALIDATION_MESSAGE
 } from '../../../../src/mcp/tools/tool-errors';
+import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../../src/middlewares/accommodation-cache-invalidation';
 import { clearSlidingWindowStore } from '../../../../src/middlewares/rate-limit';
 import { validateApiEnv } from '../../../../src/utils/env';
 
@@ -186,6 +193,33 @@ describe('update_listing_basic (accommodation)', () => {
             LISTING_ID,
             httpToDomainAccommodationUpdate({ [field]: value })
         );
+    });
+
+    it('evicts the public accommodation response cache after a write, as the PATCH route does (HOS-2323)', async () => {
+        // Arrange
+        givenUpdate();
+        givenStoredRow();
+
+        // Act
+        const outcome = await run({ vertical, id: LISTING_ID, description: DESCRIPTION });
+
+        // Assert
+        expect(outcome.ok).toBe(true);
+        expect(mocks.invalidateCache.mock.calls.map(([arg]) => arg.pathPrefix)).toEqual([
+            ...ACCOMMODATION_CACHE_INVALIDATION_PREFIXES
+        ]);
+    });
+
+    it('leaves the public cache alone when the service refuses the write (HOS-2323)', async () => {
+        // Arrange
+        givenUpdate({ error: { code: 'VALIDATION_ERROR', message: 'invalid' } });
+
+        // Act
+        const outcome = await run({ vertical, id: LISTING_ID, description: DESCRIPTION });
+
+        // Assert
+        expect(outcome.ok).toBe(false);
+        expect(mocks.invalidateCache).not.toHaveBeenCalled();
     });
 
     it('stores phone and website inside contactInfo, leaving its other keys alone', async () => {
