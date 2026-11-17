@@ -55,7 +55,19 @@ describe('TEST:B3:44 creation confirmation', () => {
         '2026-11-21T01:06:00.000Z',
         '2026-11-21T01:05:58.000Z'
     ])('rejects a first charge readback outside the exact sent second: %s', async (firstChargeAt) => {
-        const provider = new FakePaymentProvider({ clock });
+        const provider = new FakePaymentProvider({
+            clock,
+            honestAbout: [
+                {
+                    lie: 'M1',
+                    why: 'isolate the first-charge mismatch from provider cadence behavior'
+                },
+                {
+                    lie: 'M9',
+                    why: 'isolate the first-charge mismatch from provider-added free period'
+                }
+            ]
+        });
         const preciseSent = { ...sent, firstChargeAt: '2026-11-21T01:05:59.318Z' };
         const { authorizationId } = await provider.authorize(preciseSent);
         const alteredProvider = {
@@ -72,6 +84,9 @@ describe('TEST:B3:44 creation confirmation', () => {
         });
 
         expect(result.outcome).toBe('notApplied');
+        if (result.outcome === 'notApplied') {
+            expect(result.unapplied.map(({ field }) => field)).toEqual(['firstChargeAt']);
+        }
     });
 
     it('keeps the authorization input strict and requires an ISO first charge instant', () => {
