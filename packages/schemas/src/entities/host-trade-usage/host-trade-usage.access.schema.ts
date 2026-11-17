@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { HostTradeIdSchema } from '../../common/id.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
+import { HostTradeCategoryRefSchema } from '../host-trade-category/host-trade-category.access.schema.js';
 import { HostTradeBenefitUsageSchema } from './host-trade-usage.schema.js';
 
 /**
@@ -54,7 +55,7 @@ export type HostTradeBenefitUsageProtected = z.infer<typeof HostTradeBenefitUsag
 /**
  * The provider's identity, as a host's own usage rows carry it.
  *
- * Four fields and no more: enough to name the provider, link to its QR landing
+ * Four fields plus the category refs (HOS-919), and no more: enough to name the provider, link to its QR landing
  * page and label its trade. Everything else about a listing — the benefit text,
  * the contact, the counters — belongs to the directory read, and duplicating it
  * onto every usage row would make the two drift.
@@ -63,7 +64,14 @@ export const HostTradeUsageProviderRefSchema = z.object({
     id: HostTradeIdSchema,
     slug: z.string().min(1),
     name: z.string().min(1),
-    category: HostTradeCategoryEnumSchema
+    /**
+     * Legacy single category.
+     *
+     * @deprecated HOS-919, removed in the N+1 contract PR (T-054). Use `categories`.
+     */
+    category: HostTradeCategoryEnumSchema.optional(),
+    /** Catalog categories of the provider (HOS-919), in catalog order. */
+    categories: z.array(HostTradeCategoryRefSchema).default([])
 });
 
 /** Inferred type for {@link HostTradeUsageProviderRefSchema}. */

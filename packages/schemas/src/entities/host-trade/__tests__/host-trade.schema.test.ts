@@ -4,6 +4,7 @@ import { HostTradeAdminSearchSchema } from '../host-trade.admin-search.schema.js
 import { CreateHostTradeSchema, UpdateHostTradeSchema } from '../host-trade.crud.schema.js';
 import { HostTradeAdminSchema, HostTradePublicSchema } from '../host-trade.http.schema.js';
 import { HostTradeOwnerViewSchema } from '../host-trade.owner.schema.js';
+import { HostTradeQuerySchema } from '../host-trade.query.schema.js';
 import { HostTradeSchema } from '../host-trade.schema.js';
 
 // ============================================================================
@@ -13,6 +14,7 @@ import { HostTradeSchema } from '../host-trade.schema.js';
 const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
 const DESTINATION_UUID = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
 const USER_UUID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+const CATEGORY_UUID = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
 
 const VALID_FULL_HOST_TRADE = {
     id: VALID_UUID,
@@ -88,10 +90,10 @@ describe('HostTradeSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject when category is missing', () => {
+        it('should accept when the deprecated category is missing (HOS-919)', () => {
             const { category: _c, ...rest } = VALID_FULL_HOST_TRADE;
             const result = HostTradeSchema.safeParse(rest);
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
         it('should reject when contact is missing', () => {
@@ -188,7 +190,7 @@ describe('HostTradeSchema', () => {
 describe('CreateHostTradeSchema', () => {
     const VALID_CREATE = {
         name: 'Electricista García',
-        category: HostTradeCategoryEnum.ELECTRICIDAD,
+        categoryIds: [CATEGORY_UUID],
         contact: 'wa.me/5493442654321',
         benefit: 'Presupuesto gratis para clientes Hospeda',
         destinationId: DESTINATION_UUID,
@@ -241,8 +243,8 @@ describe('CreateHostTradeSchema', () => {
             expect(CreateHostTradeSchema.safeParse(rest).success).toBe(false);
         });
 
-        it('should reject when category is missing', () => {
-            const { category: _c, ...rest } = VALID_CREATE;
+        it('should reject when categoryIds is missing', () => {
+            const { categoryIds: _c, ...rest } = VALID_CREATE;
             expect(CreateHostTradeSchema.safeParse(rest).success).toBe(false);
         });
 
@@ -665,4 +667,147 @@ describe('write shapes — HOS-376 columns', () => {
     ])('UpdateHostTradeSchema does not declare %s', (field) => {
         expect(Object.keys(UpdateHostTradeSchema.shape)).not.toContain(field);
     });
+});
+
+// ============================================================================
+// HOS-919 — multi-category (additive: `category` kept, optional, deprecated)
+// ============================================================================
+
+const uuidN = (n: number): string => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+
+const CATEGORY_REF = {
+    id: CATEGORY_UUID,
+    slug: 'plomeria',
+    nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+    groupSlug: 'hogar'
+};
+
+describe('HostTradeSchema.categories (HOS-919)', () => {
+    it('parses a list of category refs', () => {
+        const result = HostTradeSchema.safeParse({
+            ...VALID_FULL_HOST_TRADE,
+            categories: [CATEGORY_REF]
+        });
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.categories).toEqual([CATEGORY_REF]);
+    });
+
+    it('parses a legacy shape with only `category` (historic rows)', () => {
+        const result = HostTradeSchema.safeParse(VALID_FULL_HOST_TRADE);
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects a ref without groupSlug', () => {
+        const { groupSlug: _g, ...badRef } = CATEGORY_REF;
+        expect(
+            HostTradeSchema.safeParse({ ...VALID_FULL_HOST_TRADE, categories: [badRef] }).success
+        ).toBe(false);
+    });
+
+    it('is exposed on the public and owner read shapes', () => {
+        expect(Object.keys(HostTradePublicSchema.shape)).toContain('categories');
+        expect(Object.keys(HostTradeOwnerViewSchema.shape)).toContain('categories');
+    });
+});
+
+describe('CreateHostTradeSchema.categoryIds (HOS-919)', () => {
+    const base = {
+        name: 'Plomero',
+        contact: '+5493442123456',
+        benefit: 'x',
+        destinationId: DESTINATION_UUID
+    };
+
+    it('rejects 0 entries', () => {
+        expect(CreateHostTradeSchema.safeParse({ ...base, categoryIds: [] }).success).toBe(false);
+    });
+
+    it('accepts 1 and 10 entries', () => {
+        expect(CreateHostTradeSchema.safeParse({ ...base, categoryIds: [uuidN(1)] }).success).toBe(
+            true
+        );
+        const ten = Array.from({ length: 10 }, (_, i) => uuidN(i + 1));
+        expect(CreateHostTradeSchema.safeParse({ ...base, categoryIds: ten }).success).toBe(true);
+    });
+
+    it('rejects 11 entries', () => {
+        const eleven = Array.from({ length: 11 }, (_, i) => uuidN(i + 1));
+        const result = CreateHostTradeSchema.safeParse({ ...base, categoryIds: eleven });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.message).toBe('zodError.hostTrade.categoryIds.max');
+        }
+    });
+
+    it('rejects duplicates', () => {
+        const result = CreateHostTradeSchema.safeParse({
+            ...base,
+            categoryIds: [uuidN(1), uuidN(1)]
+        });
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.message).toBe('zodError.hostTrade.categoryIds.unique');
+        }
+    });
+
+    it('rejects a non-uuid entry', () => {
+        expect(
+            CreateHostTradeSchema.safeParse({ ...base, categoryIds: ['plomeria'] }).success
+        ).toBe(false);
+    });
+
+    it('no longer requires the deprecated `category`', () => {
+        expect(CreateHostTradeSchema.safeParse({ ...base, categoryIds: [uuidN(1)] }).success).toBe(
+            true
+        );
+    });
+
+    it('is optional on update but still validated when present', () => {
+        expect(UpdateHostTradeSchema.safeParse({}).success).toBe(true);
+        expect(UpdateHostTradeSchema.safeParse({ categoryIds: [uuidN(1)] }).success).toBe(true);
+        expect(UpdateHostTradeSchema.safeParse({ categoryIds: [] }).success).toBe(false);
+    });
+
+    it('does not accept `categories` refs as a write field', () => {
+        expect(Object.keys(CreateHostTradeSchema.shape)).not.toContain('categories');
+    });
+});
+
+describe('host-trade `categories` filter (HOS-919)', () => {
+    for (const [name, schema] of [
+        ['HostTradeQuerySchema', HostTradeQuerySchema],
+        ['HostTradeAdminSearchSchema', HostTradeAdminSearchSchema]
+    ] as const) {
+        describe(name, () => {
+            it('splits a comma-separated slug list', () => {
+                const parsed = schema.parse({ categories: 'plomeria,gas' });
+                expect(parsed.categories).toEqual(['plomeria', 'gas']);
+            });
+
+            it('turns an empty string into []', () => {
+                expect(schema.parse({ categories: '' }).categories).toEqual([]);
+            });
+
+            it('leaves it undefined when absent', () => {
+                expect(schema.parse({}).categories).toBeUndefined();
+            });
+
+            it('accepts 30 slugs and rejects 31', () => {
+                const slugs = (n: number) =>
+                    Array.from({ length: n }, (_, i) => `cat-${i}`).join(',');
+                expect(schema.safeParse({ categories: slugs(30) }).success).toBe(true);
+                const result = schema.safeParse({ categories: slugs(31) });
+                expect(result.success).toBe(false);
+                if (!result.success) {
+                    expect(result.error.issues[0]?.message).toBe(
+                        'zodError.hostTrade.categories.max'
+                    );
+                }
+            });
+
+            it('keeps the deprecated `category` filter optional', () => {
+                expect(schema.safeParse({ category: 'PLOMERIA' }).success).toBe(true);
+            });
+        });
+    }
 });

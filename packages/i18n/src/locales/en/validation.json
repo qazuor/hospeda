@@ -615,6 +615,11 @@
         "category": {
             "requiredForServiceProvider": "Elegí la categoría del servicio que ofrecés"
         },
+        "categorySlugs": {
+            "max": "You can choose up to {{max}} categories",
+            "requiredForServiceProvider": "Choose at least one category for the service you offer",
+            "unique": "Do not repeat the same category"
+        },
         "claimExpiresAt": {
             "invalid": "The confirmation expiry date is invalid"
         },
@@ -3521,6 +3526,14 @@
             "positive": "El valor del beneficio debe ser mayor que cero",
             "required": "Indicá el valor del beneficio para el tipo elegido",
             "requiresType": "Elegí un tipo de beneficio antes de indicar su valor"
+        },
+        "categories": {
+            "max": "You cannot filter by more than {{max}} categories at once"
+        },
+        "categoryIds": {
+            "max": "A provider can have up to {{max}} categories",
+            "min": "Choose at least one category",
+            "unique": "Do not repeat the same category"
         },
         "contact": {
             "min": "El contacto debe tener al menos {{min}} caracteres"

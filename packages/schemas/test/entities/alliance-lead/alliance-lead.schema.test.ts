@@ -147,7 +147,7 @@ describe('AllianceLeadCreateInputSchema', () => {
         // impossible to complete.
         const keys = Object.keys(AllianceLeadCreateInputSchema.shape ?? {});
         expect(keys).toContain('businessName');
-        expect(keys).toContain('category');
+        expect(keys).toContain('categorySlugs');
         expect(keys).toContain('destinationId');
         expect(keys).toContain('benefitType');
         expect(keys).toContain('benefitValue');
@@ -293,7 +293,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
         email: 'provider@example.com',
         message: 'Quiero sumar mi servicio al directorio de proveedores.',
         businessName: 'Plomería Acme',
-        category: HostTradeCategoryEnum.PLOMERIA,
+        categorySlugs: ['plomeria'],
         destinationId: faker.string.uuid(),
         benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
         benefitValue: 15,
@@ -306,7 +306,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
 
     it.each([
         'businessName',
-        'category',
+        'categorySlugs',
         'destinationId',
         'benefitType'
     ] as const)('should reject a service_provider submission missing %s', (field) => {
@@ -316,7 +316,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
 
     it.each([
         'businessName',
-        'category',
+        'categorySlugs',
         'destinationId',
         'benefitType'
     ] as const)('should point the %s error at that exact field', (field) => {
@@ -435,7 +435,7 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
         // incomplete provider payload passing HERE is the intended split, with
         // the service as the enforcing choke point.
         const {
-            category: _c,
+            categorySlugs: _c,
             destinationId: _d,
             benefitType: _b,
             ...data
@@ -444,5 +444,89 @@ describe('AllianceLeadSubmissionSchema — per-kind requirement (HOS-278)', () =
         // Act + Assert
         expect(() => AllianceLeadCreateInputSchema.parse(data)).not.toThrow();
         expect(AllianceLeadCreateInputSchema.shape).toBeDefined();
+    });
+});
+
+describe('AllianceLead categorySlugs (HOS-919)', () => {
+    const provider = (overrides: Record<string, unknown> = {}) => ({
+        kind: 'service_provider' as const,
+        contactName: 'Test Provider',
+        email: 'provider@example.com',
+        message: 'Quiero sumar mi servicio al directorio de proveedores.',
+        businessName: 'Plomería Acme',
+        categorySlugs: ['plomeria'],
+        destinationId: faker.string.uuid(),
+        benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
+        benefitValue: 15,
+        ...overrides
+    });
+    const slugs = (n: number) => Array.from({ length: n }, (_, i) => `cat-${i}`);
+
+    it('accepts 1 and 10 slugs for a service_provider', () => {
+        expect(AllianceLeadSubmissionSchema.safeParse(provider()).success).toBe(true);
+        expect(
+            AllianceLeadSubmissionSchema.safeParse(provider({ categorySlugs: slugs(10) })).success
+        ).toBe(true);
+    });
+
+    it.each([[[]], [null]])('rejects categorySlugs=%j for a service_provider', (value) => {
+        const result = AllianceLeadSubmissionSchema.safeParse(provider({ categorySlugs: value }));
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const issue = result.error.issues.find((i) => i.path.join('.') === 'categorySlugs');
+            expect(issue?.message).toBe(
+                'zodError.allianceLead.categorySlugs.requiredForServiceProvider'
+            );
+        }
+    });
+
+    it('rejects 11 slugs', () => {
+        const result = AllianceLeadSubmissionSchema.safeParse(
+            provider({ categorySlugs: slugs(11) })
+        );
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.map((i) => i.message)).toContain(
+                'zodError.allianceLead.categorySlugs.max'
+            );
+        }
+    });
+
+    it('rejects duplicate slugs', () => {
+        const result = AllianceLeadSubmissionSchema.safeParse(
+            provider({ categorySlugs: ['plomeria', 'plomeria'] })
+        );
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a non-kebab slug', () => {
+        const result = AllianceLeadSubmissionSchema.safeParse(
+            provider({ categorySlugs: ['Plomeria Y Gas'] })
+        );
+        expect(result.success).toBe(false);
+    });
+
+    it('no longer requires the deprecated `category` for a service_provider', () => {
+        const data = provider();
+        expect('category' in data).toBe(false);
+        expect(AllianceLeadSubmissionSchema.safeParse(data).success).toBe(true);
+    });
+
+    it('accepts null categorySlugs for a non-provider kind', () => {
+        const result = AllianceLeadSubmissionSchema.safeParse({
+            kind: 'sponsor',
+            contactName: 'Someone',
+            email: 'someone@example.com',
+            message: 'Quiero proponer una alianza distinta a las listadas.',
+            categorySlugs: null
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('still parses a historic row that only carries `category`', () => {
+        expect(
+            AllianceLeadSchema.shape.category.safeParse(HostTradeCategoryEnum.PLOMERIA).success
+        ).toBe(true);
+        expect(AllianceLeadSchema.shape.categorySlugs.safeParse(undefined).success).toBe(true);
     });
 });
