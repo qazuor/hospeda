@@ -5,6 +5,7 @@ import {
     isNull,
     manualPayments,
     payments,
+    reconciliationMarkModel,
     reconciliationMarks,
     SYSTEM_USER_EMAIL,
     SYSTEM_USER_ID,
@@ -14,7 +15,7 @@ import {
 } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { PUBLICATION_LIMIT_KEYS } from '@repo/verticals';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { ComplementPolicyPorts } from '../../../src/services/billing/subscription/complement-ports.js';
 import { endDuePauses } from '../../../src/services/billing/subscription/end-due-pauses.service.js';
 import { readPauseQuota } from '../../../src/services/billing/subscription/pause-quota.js';
@@ -363,12 +364,38 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:3 S10 principal return', 
             reason: 'REANUDACION_NO_APLICADA',
             placedAt: now
         });
-        await expect(
-            resumeSubscription(
-                { subscriptionId: principal.subscriptionId, cause: 'COURTESY_REVOKED' },
-                ports(harness)
-            )
-        ).rejects.toThrow('S10 courtesy grant missing');
+        // Observe the mark from INSIDE the confirming transaction, before the courtesy
+        // grant lookup throws and rolls the whole thing back. Reading through the
+        // injected `tx` proves the lift really ran within the transaction instead of
+        // merely accepting that the mark ends up open (which also holds when no lift
+        // ever happens).
+        const originalLift = reconciliationMarkModel.lift.bind(reconciliationMarkModel);
+        let liftedInsideTransaction: { liftedAt: Date | null; liftedBy: string | null } | null =
+            null;
+        const lift = vi.spyOn(reconciliationMarkModel, 'lift').mockImplementation(async (input) => {
+            const result = await originalLift(input);
+            if (result.outcome === 'LIFTED' && input.tx) {
+                const seen = await reconciliationMarkModel.findById({
+                    markId: input.markId,
+                    tx: input.tx
+                });
+                liftedInsideTransaction = {
+                    liftedAt: seen?.liftedAt ?? null,
+                    liftedBy: seen?.liftedBy ?? null
+                };
+            }
+            return result;
+        });
+        try {
+            await expect(
+                resumeSubscription(
+                    { subscriptionId: principal.subscriptionId, cause: 'COURTESY_REVOKED' },
+                    ports(harness)
+                )
+            ).rejects.toThrow('S10 courtesy grant missing');
+        } finally {
+            lift.mockRestore();
+        }
         const marks = await db()
             .select()
             .from(reconciliationMarks)
@@ -379,6 +406,9 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:3 S10 principal return', 
                 )
             );
         const actual = await row(principal.subscriptionId);
+        // The lift had already happened inside the transaction the throw rolled back...
+        expect(liftedInsideTransaction).toEqual({ liftedAt: now, liftedBy: SYSTEM_USER_ID });
+        // ...and the rollback reopened it: the mark is still open after the failure.
         expect(actual.subscription?.status).toBe('PAUSED');
         expect(actual.pauseRow?.actualEndAt).toBeNull();
         expect(marks).toHaveLength(1);
