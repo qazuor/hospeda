@@ -30,6 +30,7 @@ const isSentryInitializedMock = vi.fn(() => true);
 const setSentryUserMock = vi.fn();
 const mockIdentifyUser = vi.fn();
 const mockResetUser = vi.fn();
+const mockMarkVisitorAnonymous = vi.fn();
 
 vi.mock('@/lib/auth-client', () => ({
     useSession: () => mockUseSession(),
@@ -47,6 +48,7 @@ vi.mock('@/lib/sentry', () => ({
 
 vi.mock('@/lib/analytics/umami-client', () => ({
     identifyUser: (...args: unknown[]) => mockIdentifyUser(...args),
+    markVisitorAnonymous: () => mockMarkVisitorAnonymous(),
     resetUser: () => mockResetUser()
 }));
 
@@ -224,6 +226,35 @@ describe('AuthProvider — Umami identify/reset wiring', () => {
         );
 
         expect(mockIdentifyUser).not.toHaveBeenCalled();
+    });
+
+    it('releases the first Umami pageview as anonymous once the session resolves without a user', async () => {
+        // Arrange
+        mockUseSession.mockReturnValue({ data: null, isPending: false });
+
+        // Act
+        render(
+            <AuthProvider>
+                <div />
+            </AuthProvider>
+        );
+
+        // Assert
+        await waitFor(() => expect(mockMarkVisitorAnonymous).toHaveBeenCalled());
+        expect(mockIdentifyUser).not.toHaveBeenCalled();
+    });
+
+    it('does NOT mark an authenticated staff member anonymous', async () => {
+        // Arrange / Act
+        render(
+            <AuthProvider initialAuthState={AUTHENTICATED_SERVER_STATE}>
+                <div />
+            </AuthProvider>
+        );
+
+        // Assert
+        await waitFor(() => expect(mockIdentifyUser).toHaveBeenCalled());
+        expect(mockMarkVisitorAnonymous).not.toHaveBeenCalled();
     });
 
     it('calls resetUser when signOut() is invoked from the context', async () => {

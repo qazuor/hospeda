@@ -91,7 +91,7 @@ describe('UmamiScript — page tag', () => {
 describe('tag pass-through chain', () => {
     it('BaseLayout accepts analyticsTag and hands it to UmamiScript', () => {
         expect(BASE).toMatch(/readonly analyticsTag\?:\s*string/);
-        expect(BASE).toMatch(/<UmamiScript\s+tag=\{analyticsTag\}\s*\/>/);
+        expect(BASE).toMatch(/<UmamiScript\s+tag=\{analyticsTag\}[^>]*\/>/);
     });
 
     it.each([

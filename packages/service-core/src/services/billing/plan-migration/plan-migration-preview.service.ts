@@ -65,6 +65,7 @@ async function previewRow(args: {
         newAmount: outcome === 'PENDIENTE' ? pricing.newAmount : null,
         currency: pricing.currency,
         losesPromo: pricing.losesPromo,
+        keepsPromo: pricing.keepsPromo,
         applicationDate:
             outcome === 'PENDIENTE'
                 ? computeApplicationDate({

@@ -48,6 +48,7 @@ export const PlanMigrationPreviewRowSchema = z.object({
     newAmount: z.number().int().nonnegative().nullable(),
     currency: z.string().length(3),
     losesPromo: z.boolean(),
+    keepsPromo: z.boolean(),
     applicationDate: LocalDate.nullable(),
     waits: z.boolean(),
     outcome: z.enum(['PENDIENTE', 'PARA_RESOLVER', 'EXCLUDED']),
