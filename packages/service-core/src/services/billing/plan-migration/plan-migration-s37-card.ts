@@ -103,7 +103,7 @@ export async function applyS37ClosureInTx(input: {
         .where(eq(planMigrationSubscriptions.id, input.scopeId))
         .limit(1)
         .for('update', { of: [planMigrationSubscriptions, subscriptions] });
-    if (!row || !row.nextChargeAt || !row.billingOptionId) return { kind: 'ROW_LEFT' };
+    if (!row?.nextChargeAt || !row.billingOptionId) return { kind: 'ROW_LEFT' };
     if (row.scopeStatus !== 'PENDIENTE' || migration.cancelledAt !== null)
         return { kind: 'ROW_LEFT' };
 
@@ -374,7 +374,7 @@ async function latestDecision(input: {
                 eq(domainEvent.reason, 'S37')
             )
         )
-        .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.id));
+        .orderBy(desc(domainEvent.occurredAt), desc(domainEvent.seq));
     for (const decision of decisions) {
         const names = decision.changes.some(
             (change) => change.field === SCOPE_FIELD && change.new === input.input.scopeId
