@@ -500,3 +500,16 @@ describe('Toast Error Utility', () => {
         });
     });
 });
+
+describe('Toast Error Utility on unmapped 5xx (HOS-2312)', () => {
+    it('never shows the API message for a 5xx status without a dedicated case', () => {
+        const toast = vi.fn();
+        setToastFunction(toast);
+        const error = new ApiError('An unexpected error occurred', { status: 501 });
+
+        showErrorToast({ error, report: false });
+
+        const description = toast.mock.calls[0]?.[0]?.description as string;
+        expect(description).toBe('Error del servidor. Intente de nuevo más tarde.');
+    });
+});
