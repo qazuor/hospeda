@@ -11,6 +11,12 @@
  * logged-in visitor stayed anonymous in the browser while their server events
  * went to the per-user session (no AC-12 join).
  *
+ * Custom events have the same problem: an on-mount view tracker island can
+ * fire before UserMenu resolves `/auth/me`, and its answer hands the tracker
+ * the token just like the pageview's. So while the hold is pending (see
+ * {@link shouldHoldForVisitorIdentity}), `umami-client.ts` queues custom
+ * events behind it too, in firing order.
+ *
  * So `umami-pageview.ts` holds the first pageview until this gate settles:
  * - the visitor is known to be anonymous (`markVisitorAnonymous` in
  *   `umami-client.ts`, called by UserMenu once `/auth/me` resolved);
@@ -25,8 +31,16 @@
  * navigation never re-arms it.
  */
 
+import { getConsent } from '@/lib/cookie-consent';
+
 /** How long the first pageview waits for the identity before going out anonymously. */
 export const FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS = 3000;
+
+/**
+ * `name` of the `<meta>` declaring that the page mounts an auth-aware island
+ * which settles the visitor identity (rendered by `UmamiScript.astro`).
+ */
+export const UMAMI_AWAIT_IDENTITY_META_NAME = 'umami-await-identity';
 
 let settled = false;
 const listeners = new Set<() => void>();
@@ -50,6 +64,20 @@ export function settleVisitorIdentity(): void {
  */
 export function isVisitorIdentitySettled(): boolean {
     return settled;
+}
+
+/**
+ * Whether a request sent now must wait for the visitor identity: the identity
+ * is not settled yet, the page mounts an auth-aware island (the
+ * `umami-await-identity` meta) and analytics consent is granted (without it no
+ * identify is sent anyway, AC-5).
+ *
+ * @returns `true` while the first-pageview hold is pending.
+ */
+export function shouldHoldForVisitorIdentity(): boolean {
+    if (settled || typeof document === 'undefined') return false;
+    if (!document.querySelector(`meta[name="${UMAMI_AWAIT_IDENTITY_META_NAME}"]`)) return false;
+    return getConsent()?.analytics === true;
 }
 
 /** Input of {@link waitForVisitorIdentity}. */

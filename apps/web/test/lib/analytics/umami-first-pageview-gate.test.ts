@@ -12,7 +12,13 @@
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { identifyUser, markVisitorAnonymous, resetUser } from '@/lib/analytics/umami-client';
+import {
+    identifyUser,
+    markVisitorAnonymous,
+    resetUser,
+    trackEvent,
+    trackTaggedEvent
+} from '@/lib/analytics/umami-client';
 import { FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS } from '@/lib/analytics/umami-identity-gate';
 import { saveConsent } from '@/lib/cookie-consent';
 import {
@@ -229,5 +235,101 @@ describe('pages and visitors that never wait', () => {
 
         // Assert
         expect(vi.getTimerCount()).toBe(0);
+    });
+});
+
+describe('custom events fired during the hold', () => {
+    const DESTINATION_ID = '3f2b8c1e-5d4a-4c7b-9e1f-0a1b2c3d4e5f';
+
+    function fireDestinationViewed(): void {
+        trackEvent('destination_viewed', {
+            destination_id: DESTINATION_ID,
+            destination_slug: 'colon',
+            locale: 'es',
+            source_page: 'destination_detail'
+        });
+    }
+
+    it('should queue an on-mount event behind the identify and the pageview, so the identify is not skipped', async () => {
+        // Arrange: first pageview held, a view tracker island mounts before UserMenu resolves
+        grantConsent();
+        const umami = loadBaseLayoutPage();
+        fireDestinationViewed();
+        // Had the event gone out, Umami answers it now and the tracker holds a token.
+        umami.respond();
+        await flushMicrotasks();
+
+        // Act: UserMenu resolves /auth/me
+        identifyUser('user-1');
+
+        // Assert
+        expect(umami.identify).toHaveBeenCalledTimes(1);
+        expect(umami.identifyCaches).toEqual([undefined]);
+        expect(umami.track).toHaveBeenCalledTimes(2);
+        const [pageviewCall, eventCall] = umami.track.mock.calls;
+        expect(typeof pageviewCall?.[0]).toBe('function');
+        expect(eventCall?.[0]).toBe('destination_viewed');
+        expect(umami.identify.mock.invocationCallOrder[0] ?? Number.NaN).toBeLessThan(
+            umami.track.mock.invocationCallOrder[0] ?? Number.NaN
+        );
+    });
+
+    it('should queue a tagged event too, after the held pageview', () => {
+        // Arrange
+        grantConsent();
+        const umami = loadBaseLayoutPage();
+        trackTaggedEvent({
+            name: 'listing_internal_entry',
+            properties: { entity_id: DESTINATION_ID, entity_type: 'ACCOMMODATION', locale: 'es' },
+            tag: DESTINATION_ID
+        });
+        expect(umami.track).not.toHaveBeenCalled();
+
+        // Act
+        markVisitorAnonymous();
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(2);
+        expect(typeof umami.track.mock.calls[0]?.[0]).toBe('function');
+    });
+
+    it('should release a queued event anonymously after the timeout', () => {
+        // Arrange
+        vi.useFakeTimers();
+        grantConsent();
+        const umami = loadBaseLayoutPage();
+        fireDestinationViewed();
+        expect(umami.track).not.toHaveBeenCalled();
+
+        // Act
+        vi.advanceTimersByTime(FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS);
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(2);
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('should send events at once without consent', () => {
+        // Arrange
+        const umami = loadBaseLayoutPage();
+
+        // Act
+        fireDestinationViewed();
+
+        // Assert: pageview + event, nothing held
+        expect(umami.track).toHaveBeenCalledTimes(2);
+    });
+
+    it('should send events at once once the identity settled', () => {
+        // Arrange
+        grantConsent();
+        const umami = loadBaseLayoutPage();
+        markVisitorAnonymous();
+
+        // Act
+        fireDestinationViewed();
+
+        // Assert
+        expect(umami.track).toHaveBeenCalledTimes(2);
     });
 });

@@ -68,25 +68,20 @@
  * - analytics consent is granted, since without it no identify is sent
  *   anyway (AC-5).
  * Later pageviews are never held; one counted while the first is still held
- * queues behind it so the order of the pages is kept.
+ * queues behind it so the order of the pages is kept. Custom events fired
+ * during the hold queue behind it as well (`umami-client.ts`).
  */
 
 import type { UmamiTracker } from '@repo/analytics';
 import {
     FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS,
+    shouldHoldForVisitorIdentity,
     waitForVisitorIdentity
 } from '@/lib/analytics/umami-identity-gate';
 import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
-import { getConsent } from '@/lib/cookie-consent';
 
 /** `name` of the per-page `<meta>` carrying the Umami tag (detail pages only). */
 export const UMAMI_TAG_META_NAME = 'umami-tag';
-
-/**
- * `name` of the `<meta>` declaring that the page mounts an auth-aware island
- * which settles the visitor identity (see "Identify order").
- */
-export const UMAMI_AWAIT_IDENTITY_META_NAME = 'umami-await-identity';
 
 /** Meta element `<ClientRouter />` renders; its absence means no soft navigation. */
 const CLIENT_ROUTER_META_SELECTOR = 'meta[name="astro-view-transitions-enabled"]';
@@ -222,19 +217,13 @@ function countCurrentPage(): void {
         heldSends.push(send);
         return;
     }
-    if (firstPageCounted || !shouldHoldFirstPageview()) {
+    if (firstPageCounted || !shouldHoldForVisitorIdentity()) {
         firstPageCounted = true;
         send();
         return;
     }
     firstPageCounted = true;
     holdFirstPageview(send);
-}
-
-/** Whether the first pageview waits for the visitor identity (see "Identify order"). */
-function shouldHoldFirstPageview(): boolean {
-    if (!document.querySelector(`meta[name="${UMAMI_AWAIT_IDENTITY_META_NAME}"]`)) return false;
-    return getConsent()?.analytics === true;
 }
 
 /** Holds `send` (and any page counted meanwhile) until the identity settles. */

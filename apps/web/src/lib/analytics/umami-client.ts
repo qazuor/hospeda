@@ -51,7 +51,11 @@ import {
     prepareAnalyticsEvent,
     validateDistinctId
 } from '@repo/analytics';
-import { settleVisitorIdentity } from '@/lib/analytics/umami-identity-gate';
+import {
+    settleVisitorIdentity,
+    shouldHoldForVisitorIdentity,
+    waitForVisitorIdentity
+} from '@/lib/analytics/umami-identity-gate';
 import { getUmamiTracker, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 import { webLogger } from '@/lib/logger';
@@ -95,7 +99,24 @@ const analytics = createBrowserAnalytics({
 });
 
 /**
- * Capture a catalog event. Cookieless and safe before consent. No-op on the
+ * Runs `send` now, or, while the first-pageview identity hold is pending,
+ * once the identity settles (or its timeout passes). An on-mount event sent
+ * before the identify would hand the tracker the `x-umami-cache` token and the
+ * identify would be skipped for the whole document. Queued sends keep their
+ * firing order, behind a pageview held earlier.
+ */
+function sendAfterIdentityHold(send: () => void): void {
+    if (shouldHoldForVisitorIdentity()) {
+        waitForVisitorIdentity({ onSettled: send });
+        return;
+    }
+    send();
+}
+
+/**
+ * Capture a catalog event. Cookieless and safe before consent. While the
+ * document's first pageview waits for the visitor identity, the event waits
+ * behind it (see `sendAfterIdentityHold`). No-op on the
  * server and when the Umami tracker is absent (ad blocker, not yet loaded).
  * Invalid events (unknown name, bad props, forbidden keys) are dropped, never
  * thrown.
@@ -107,7 +128,7 @@ export function trackEvent<TName extends AnalyticsEventName>(
     name: TName,
     props: AnalyticsEventProperties<TName>
 ): void {
-    analytics.capture(name, props);
+    sendAfterIdentityHold(() => analytics.capture(name, props));
 }
 
 /** Input of {@link trackTaggedEvent}. */
@@ -144,7 +165,9 @@ export function trackTaggedEvent<TName extends AnalyticsEventName>(
             properties: input.properties,
             globalProperties: getGlobalProperties()
         });
-        createUmamiBrowserClient().captureTagged({ name: input.name, data, tag });
+        sendAfterIdentityHold(() =>
+            createUmamiBrowserClient().captureTagged({ name: input.name, data, tag })
+        );
     } catch (error) {
         webLogger.debug('[analytics] tagged capture rejected', {
             name: input.name,
