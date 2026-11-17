@@ -197,7 +197,7 @@
   - Blocked by: T-033
   - Blocks: T-037, T-038, T-039, T-041
 
-- [ ] **T-037** (complexity: 3) - Switch AllianceLead form and message builder to multiselect categorySlugs
+- [x] **T-037** (complexity: 3) - Switch AllianceLead form and message builder to multiselect categorySlugs
   - Edit apps/web/src/components/alliance/AllianceLead.client.tsx and apps/web/src/lib/forms/...
   - Blocked by: T-035, T-036
   - Blocks: T-042

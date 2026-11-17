@@ -1296,39 +1296,39 @@
             "id": "T-037",
             "title": "Switch AllianceLead form and message builder to multiselect categorySlugs",
             "description": "Edit apps/web/src/components/alliance/AllianceLead.client.tsx and apps/web/src/lib/forms/alliance-lead-message.ts: field category -> categorySlugs with new field type multiselect rendered by TradeCategoryMultiSelect, fed by getHostTradeCatalog() client-side (no SSR tag); blocks submit with 0 selected using the existing 'requerido' message; sends categorySlugs[] in the body; message builder keeps excluding typed fields (categorySlugs is not duplicated into the free-text message). Update landing configs for /sumate/proveedor.\nACs: AC-1.1, AC-1.4, AC-1.5.\nTests (apps/web/test/lib/forms/alliance-lead-message.test.ts, alliance-lead-message.optional-error.test.ts, apps/web/test/pages/alliance-lead-landings.test.ts + a component test): message excludes categorySlugs; 0 categories blocks submit showing the required message; submit payload contains categorySlugs array; landing config declares a multiselect field.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-035", "T-036"],
             "blocks": ["T-042"],
             "subtasks": [
                 {
                     "title": "Form field type multiselect",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Message builder",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Landing config",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "forms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:19:11Z",
+                "completed": "2026-11-17T20:19:11Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 36,
+        "completed": 37,
         "blocked": 0,
         "averageComplexity": 2.5
     }
