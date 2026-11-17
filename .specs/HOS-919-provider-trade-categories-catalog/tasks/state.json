@@ -1448,39 +1448,39 @@
             "id": "T-041",
             "title": "Render marketing page chips from the public catalog at SSR",
             "description": "Edit apps/web/src/pages/[lang]/presentacion/proveedores/index.astro (hand-written 17 chips at ~227-248): fetch getHostTradeCatalog() at SSR, render an <h3> per group with the existing .chip spans, labels in page locale (nameI18n[locale] ?? es), active rows only; keep the 'uno o más rubros' copy; on fetch failure render 200 with the chips block omitted but keep the sentence 'Si tu oficio no está…'; emit CACHE_TAG_HOST_TRADE_CATEGORIES on the response using the page cache-tag mechanism. Page must stay session-blind.\nACs: AC-6.1, AC-6.2, AC-6.3.\nTests (apps/web/test/pages/presentacion-proveedores.test.ts + apps/web/test/pages/cacheable-pages-are-session-blind.guard.test.ts): chips grouped under headings from mocked catalog; failure mock -> page renders, no chips block, sentence present; cache tag emitted; session-blind guard stays green; no hardcoded chip labels remain.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-036", "T-011"],
             "blocks": ["T-042", "T-049"],
             "subtasks": [
                 {
                     "title": "SSR fetch + grouped chips",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fallback on failure",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cache tag",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests incl. session-blind guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "cache"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T20:31:41Z",
+                "completed": "2026-11-17T20:31:41Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 40,
+        "completed": 41,
         "blocked": 0,
         "averageComplexity": 2.5
     }

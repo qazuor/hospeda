@@ -217,7 +217,7 @@
   - Blocked by: T-039
   - Blocks: T-042
 
-- [ ] **T-041** (complexity: 3) - Render marketing page chips from the public catalog at SSR
+- [x] **T-041** (complexity: 3) - Render marketing page chips from the public catalog at SSR
   - Edit apps/web/src/pages/[lang]/presentacion/proveedores/index.astro (hand-written 17 chips at ~227-2...
   - Blocked by: T-036, T-011
   - Blocks: T-042, T-049
