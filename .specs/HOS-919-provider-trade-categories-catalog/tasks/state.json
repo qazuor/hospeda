@@ -1187,35 +1187,35 @@
             "id": "T-034",
             "title": "Create pure match-catalog-query search util",
             "description": "Create apps/web/src/lib/search/match-catalog-query.ts (RO-RO, JSDoc): normalizes via NFD, strips \\p{M}, lowercases, collapses whitespace; a category matches when EVERY query token is a prefix of some word in its haystack; haystack = name+keywords in current locale PLUS es name+keywords; ranking name-prefix first, then keyword match, then catalog order; groups with no matching category are removed; empty query returns everything. Define its input types locally (no dependency on the API task).\nACs: AC-1.2, AC-1.3.\nTests (apps/web/test/lib/search/match-catalog-query.test.ts): 'pozo' finds destapaciones-desagotes; 'AIRE' and 'aíre' find climatizacion; multi-token 'aire acond'; prefix vs infix ('ería' does NOT match carpinteria); es fallback on locale en/pt; ranking order; empty query returns all; group with no match hidden; no match returns empty.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-035"],
             "subtasks": [
                 {
                     "title": "Normalizer",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Matcher + ranking",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "frontend", "search"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T18:27:41Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 51,
+        "pending": 50,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.5
     }

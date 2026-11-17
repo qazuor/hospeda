@@ -145,7 +145,7 @@
   - Blocked by: T-021
   - Blocks: T-048
 
-- [ ] **T-034** (complexity: 2) - Create pure match-catalog-query search util
+- [x] **T-034** (complexity: 2) - Create pure match-catalog-query search util
   - Create apps/web/src/lib/search/match-catalog-query.ts (RO-RO, JSDoc): normalizes via NFD, strips \p{...
   - Blocked by: none
   - Blocks: T-035
