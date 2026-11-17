@@ -47,39 +47,39 @@
             "id": "T-002",
             "title": "Update host-trade, alliance-lead and usage-ref schemas to multi-category",
             "description": "packages/schemas: in entities/host-trade/host-trade.schema.ts replace category with categories: HostTradeCategoryRefSchema[] (reads); in host-trade.crud.schema.ts add categoryIds: uuid[] (1..10, unique) for admin writes; host-trade.query.schema.ts and host-trade.admin-search.schema.ts replace category with categories (comma-separated slug list preprocessed to string[], max 30); host-trade.http.schema.ts follows. entities/alliance-lead/alliance-lead.schema.ts and alliance-lead.crud.schema.ts: category -> categorySlugs: string[] | null, required-for-service_provider becomes non-empty array (line ~39), 1..10 entries, message key moves to zodError.allianceLead.categorySlugs.requiredForServiceProvider (the key itself is added to i18n in the web i18n task). host-trade-usage refs: HostTradeUsageProviderRefSchema.category -> categories: HostTradeCategoryRefSchema[]. Do NOT delete HostTradeCategoryEnum yet (contract release).\nACs: AC-1.5, AC-1.6, AC-4.1, AC-5.4.\nTests (existing __tests__ in packages/schemas/src/entities/host-trade/__tests__/host-trade.schema.test.ts, host-trade.admin-search.schema.test.ts and entities/alliance-lead tests): categoryIds with 0, 1, 10, 11 entries and duplicates; categories query 'a,b' -> ['a','b'], empty string -> [], >30 rejected; alliance-lead service_provider with [] or null rejected, 11 slugs rejected, non-provider with null accepted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-010", "T-023", "T-033"],
             "subtasks": [
                 {
                     "title": "host-trade read/write/query schemas",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "alliance-lead schemas",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "usage provider ref",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Schema unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "backend"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-11-17T18:32:14Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 50,
+        "pending": 49,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.5
     }

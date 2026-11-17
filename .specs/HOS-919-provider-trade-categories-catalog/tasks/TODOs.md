@@ -18,7 +18,7 @@
   - Blocked by: none
   - Blocks: T-002, T-004
 
-- [ ] **T-002** (complexity: 3) - Update host-trade, alliance-lead and usage-ref schemas to multi-category
+- [x] **T-002** (complexity: 3) - Update host-trade, alliance-lead and usage-ref schemas to multi-category
   - packages/schemas: in entities/host-trade/host-trade.schema.ts replace category with categories: Host...
   - Blocked by: T-001
   - Blocks: T-010, T-023, T-033
