@@ -13,7 +13,7 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 3) - Create host-trade-category catalog entity schemas
+- [x] **T-001** (complexity: 3) - Create host-trade-category catalog entity schemas
   - Create packages/schemas/src/entities/host-trade-category/ following the poi-category files: host-tra...
   - Blocked by: none
   - Blocks: T-002, T-004
@@ -116,7 +116,7 @@
   - Blocks: T-025, T-027
 
 - [ ] **T-021** (complexity: 3) - Update HostTradeService search, count and admin search for the categories filter
-  - Edit packages/service-core/src/services/hostTrade/host-trade.service.ts (_executeSearch, _executeCou...
+  - Edit packages/service-core/src/services/hostTrade/host-trade.service.ts (_executeSearch,_executeCou...
   - Blocked by: T-008, T-010
   - Blocks: T-022, T-026, T-031, T-048
 
@@ -320,4 +320,3 @@ Level 18: T-054
 ## Suggested Start
 
 Begin with **T-001** (complexity: 3), the head of the critical path (unblocks T-002, T-004). In parallel start **T-003** (permissions + guard re-count), **T-011** (cache tag) and **T-034** (pure search util), none has dependencies.
-
