@@ -1,10 +1,8 @@
 import type { DrizzleClient } from '@repo/db';
-import { eq, getDb, partnerApplicationModel, userRole, users } from '@repo/db';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { eq, getDb, partnerApplicationModel, users } from '@repo/db';
+import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { getAuth } from '../../lib/auth';
-import { captureSignupCompleted } from '../../lib/auth-signup-analytics';
-import { grantBaselineUserRole } from '../../lib/auth-signup-baseline-role';
 import { apiLogger } from '../../utils/logger';
 import {
     PARTNER_ALREADY_CLAIMED,
@@ -101,16 +99,9 @@ export async function signUpAndClaimPartner(input: {
         throw error;
     }
 
-    // `createUser` may bypass Better Auth's database hooks. Measure the baseline role
-    // directly and reproduce the standard signup hook when it did not run.
-    const roleRows = await getDb()
-        .select({ role: userRole.role })
-        .from(userRole)
-        .where(eq(userRole.userId, newUserId));
-    if (!roleRows.some((row) => row.role === RoleEnum.USER)) {
-        await grantBaselineUserRole({ userId: newUserId, email });
-        captureSignupCompleted({ userId: newUserId, context: undefined });
-    }
+    // `createUser` runs Better Auth's `user.create.after` hook (measured in HOS-2299:
+    // the baseline USER role is granted by it), so no manual baseline grant is needed.
+    // `partner-claim-signup.test.ts` pins that the created account holds USER.
 
     try {
         await claimPartnerByLink({

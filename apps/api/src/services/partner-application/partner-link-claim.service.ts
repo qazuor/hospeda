@@ -42,7 +42,7 @@ export async function verifyPartnerClaimLink(input: {
             PARTNER_ALREADY_CLAIMED
         );
     }
-    const claimEmail = partner.claimEmail?.trim();
+    const claimEmail = partner.claimEmail?.trim() || null;
     if (!claimEmail && !input.allowMissingClaimEmail)
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
     return { partnerId: partner.partnerId, claimEmail };

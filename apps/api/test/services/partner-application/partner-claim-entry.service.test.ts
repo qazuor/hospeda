@@ -13,13 +13,10 @@ vi.mock('@repo/db', () => ({
     partnerApplicationModel: {
         findAccountIdByEmail: vi.fn().mockResolvedValue(null)
     },
-    userRole: { role: 'role' },
     users: { id: 'user-id' }
 }));
 
 vi.mock('../../../src/lib/auth', () => ({ getAuth }));
-vi.mock('../../../src/lib/auth-signup-analytics', () => ({ captureSignupCompleted: vi.fn() }));
-vi.mock('../../../src/lib/auth-signup-baseline-role', () => ({ grantBaselineUserRole: vi.fn() }));
 vi.mock('../../../src/utils/logger', () => ({ apiLogger: { error: vi.fn() } }));
 vi.mock('../../../src/services/partner-application/partner-link-claim.service', () => ({
     claimPartnerByLink,
@@ -33,9 +30,6 @@ describe('signUpAndClaimPartner cleanup', () => {
         vi.clearAllMocks();
         getDb.mockReturnValue({
             transaction: vi.fn(async (callback) => callback({})),
-            select: vi.fn(() => ({
-                from: vi.fn(() => ({ where: vi.fn().mockResolvedValue([{ role: 'USER' }]) }))
-            })),
             delete: vi.fn(() => ({ where: vi.fn().mockResolvedValue(undefined) }))
         });
         getAuth.mockReturnValue({
