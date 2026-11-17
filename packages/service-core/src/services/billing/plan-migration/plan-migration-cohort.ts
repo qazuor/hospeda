@@ -9,6 +9,7 @@ import {
     planMigrationSubscriptions,
     planMigrations,
     sql,
+    subscriptionScheduledChanges,
     subscriptions,
     users
 } from '@repo/db';
@@ -33,6 +34,13 @@ export interface PlanMigrationCohortRow {
     readonly cycle: BillingCycle;
     readonly nextChargeAt: Date | null;
     readonly status: (typeof PLAN_MIGRATION_COHORT_STATUSES)[number];
+    /**
+     * True when the subscription is already spoken for by a plan migration: either a
+     * live (non-cancelled) PENDIENTE/PARA_RESOLVER participation, or ANY queued entry in
+     * `subscription_scheduled_change` (HOS-2310). The queue persists after a migration
+     * applies, so the queue check is what keeps an applied migration's customer out of a
+     * re-inclusion and honours a pending client change too.
+     */
     readonly alreadyInMigration: boolean;
 }
 
@@ -58,6 +66,9 @@ export async function readPlanMigrationCohort(args: {
             WHERE pms.subscription_id = ${subscriptions.id}
               AND pms.status IN ('PENDIENTE', 'PARA_RESOLVER')
               AND pm.cancelled_at IS NULL
+        ) OR EXISTS (
+            SELECT 1 FROM ${subscriptionScheduledChanges} ssc
+            WHERE ssc.subscription_id = ${subscriptions.id}
         )`
         })
         .from(subscriptions)

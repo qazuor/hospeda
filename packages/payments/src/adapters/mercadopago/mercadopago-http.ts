@@ -104,7 +104,12 @@ export async function readMercadoPagoErrorBody(response: Response): Promise<unkn
     } catch {
         return undefined;
     }
-    const sanitized = sanitizeErrorBody(body);
+    return sanitizeMercadoPagoErrorBody(body);
+}
+
+/** Sanitizes and bounds an MP error body before it reaches provider error hooks. */
+export function sanitizeMercadoPagoErrorBody(value: unknown): unknown {
+    const sanitized = sanitizeErrorBody(value);
     let serialized: string;
     try {
         serialized = JSON.stringify(sanitized);

@@ -1,11 +1,15 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { SelectPayment, SelectRefund } from '@repo/db';
 import { eq, getDb, idempotencyKeys, refundCalls, refunds } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { type PaymentProvider, PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
+import { describeProviderRejection } from './refund-provider-rejection-reason';
 import { claimedRefundAmount } from './refund-source';
+
+const logger = createLogger('refund-provider-call');
 
 type Attempt = {
     readonly amount: number;
@@ -83,6 +87,8 @@ export async function completeCall(
               readonly outcome: 'REJECTED';
               readonly refusal?: 'AMOUNT_NOT_ACCEPTED';
               readonly code?: string;
+              readonly message?: string;
+              readonly cause?: unknown;
           },
     clock: Clock,
     providerRefundId?: string
@@ -164,11 +170,19 @@ async function callOnce(input: {
         const refusal =
             error.refundRefusal === 'AMOUNT_NOT_ACCEPTED' ? 'AMOUNT_NOT_ACCEPTED' : undefined;
         if (error.code === 'REJECTED' || error.code === 'NOT_FOUND') {
+            const rejection = describeProviderRejection({ error });
+            logger.warn(
+                { refundId: input.refund.id, key, code: error.code, ...rejection },
+                'Provider rejected refund'
+            );
             await completeCall(
                 key,
-                refusal
-                    ? { outcome: 'REJECTED', refusal }
-                    : { outcome: 'REJECTED', code: error.code },
+                {
+                    outcome: 'REJECTED',
+                    code: error.code,
+                    ...rejection,
+                    ...(refusal ? { refusal } : {})
+                },
                 input.clock
             );
             return {
