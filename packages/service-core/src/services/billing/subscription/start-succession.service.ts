@@ -16,6 +16,7 @@ import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.servi
 import type { MirrorDelegates } from '../notice/provider-notice-ports.js';
 import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
 import { admitSuccessionPredecessor } from './admit-succession-predecessor.js';
+import { floorToWholeSecond } from './first-charge-precision.js';
 import { readCycleDeadlines } from './plan-change-cycle-deadlines.js';
 import {
     assertCardCheckoutVertical,
@@ -242,13 +243,18 @@ export async function startSuccession(
             firstChargeAt: bornAt
         };
     } else {
-        const schedule = ports.firstChargeSchedule
+        const requestedSchedule = ports.firstChargeSchedule
             ? await ports.firstChargeSchedule({
                   authorizationWindowEndsAt,
                   bornAt,
                   predecessorId: admitted.predecessorId
               })
             : scheduleSuccessorFirstCharge({ authorizationWindowEndsAt });
+        // HOS-2218: the provider stores start_date truncated to the second (RP17), so the
+        // schedule is truncated before it is sent, stored and checked against the window.
+        const schedule = {
+            firstChargeAt: floorToWholeSecond({ at: requestedSchedule.firstChargeAt }).at
+        };
         if (!(schedule.firstChargeAt > authorizationWindowEndsAt)) {
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,

@@ -65,6 +65,36 @@ async function responseJson(response: Response): Promise<Record<string, any>> {
 }
 
 describe('fake provider HTTP server', () => {
+    it('round trips first-charge dates truncated to the whole second (RP17, EX-60)', async () => {
+        const clock = createAdjustableClock({ start: START });
+        const provider = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [
+                { lie: 'M1', why: 'isolate RP17 start_date precision over HTTP' },
+                { lie: 'M9', why: 'isolate RP17 start_date precision over HTTP' }
+            ]
+        });
+        const http = await startServer({ provider, clock });
+        const created = await responseJson(
+            await postAuthorization(http.url, {
+                ...BASE,
+                auto_recurring: {
+                    ...BASE.auto_recurring,
+                    start_date: '2026-11-21T01:05:59.318Z'
+                }
+            })
+        );
+
+        const read = await responseJson(
+            await fetch(`${http.url}/preapproval/${created.id}`, {
+                headers: { authorization: 'Bearer test-token' }
+            })
+        );
+
+        expect(read.auto_recurring.start_date).toBe('2026-11-21T01:05:59.000Z');
+    });
+
     it('keeps the broken link raw so the caller can sanitize it', async () => {
         // TEST:B3:43 (soporte): el enlace roto cruza HTTP y se sanea en el consumidor.
         const { http } = await server();

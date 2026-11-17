@@ -229,6 +229,12 @@
             "kind": "rule",
             "name": "a declined one-time payment creates a failed order and returns its id",
             "measured": [{ "row": "EX-30", "date": "2026-09-29", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP17",
+            "kind": "rule",
+            "name": "the stored first charge date (`start_date`) is truncated to the whole second",
+            "measured": [{ "row": "EX-60", "date": "2026-11-16", "accounts": ["sandbox"] }]
         }
     ],
     "simulations": [

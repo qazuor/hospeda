@@ -186,7 +186,14 @@ export class FakePaymentProvider implements PaymentProvider {
                         status: 'pending',
                         amount: { ...value.amount },
                         cadence: dropsSentFields ? { everyMonths: 1 } : { ...value.cadence },
-                        firstChargeAt: dropsSentFields ? null : (value.firstChargeAt ?? null),
+                        // RP17 (EX-60): MP stores start_date truncated to a whole second.
+                        firstChargeAt: dropsSentFields
+                            ? null
+                            : value.firstChargeAt
+                              ? new Date(
+                                    Math.floor(Date.parse(value.firstChargeAt) / 1000) * 1000
+                                ).toISOString()
+                              : null,
                         nextChargeAt: null,
                         freePeriodDays: this.addedFreePeriodDays({
                             firstChargeAt: value.firstChargeAt
