@@ -69,7 +69,7 @@ export const HostTradeUsageProviderRefSchema = z.object({
      *
      * @deprecated HOS-919, removed in the N+1 contract PR (T-054). Use `categories`.
      */
-    category: HostTradeCategoryEnumSchema.optional(),
+    category: HostTradeCategoryEnumSchema.nullish(),
     /** Catalog categories of the provider (HOS-919), in catalog order. */
     categories: z.array(HostTradeCategoryRefSchema).default([])
 });

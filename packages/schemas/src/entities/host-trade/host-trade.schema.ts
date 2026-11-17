@@ -37,7 +37,7 @@ export const HostTradeSchema = z.object({
      * catalog still parse (additive-only schema compatibility policy). Read
      * {@link HostTradeSchema.shape.categories} instead.
      */
-    category: HostTradeCategoryEnumSchema.optional(),
+    category: HostTradeCategoryEnumSchema.nullish(),
 
     /**
      * Catalog categories of the provider (HOS-919), in catalog order. Read-only
