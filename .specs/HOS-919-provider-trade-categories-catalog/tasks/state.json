@@ -934,222 +934,222 @@
             "id": "T-027",
             "title": "Add public GET /api/v1/public/host-trade-categories route with cache tag",
             "description": "Create apps/api/src/routes/host-trade-category/public/list.ts + index (createSimpleRoute/createOpenApiRoute pattern, ResponseFactory) returning getPublicCatalog(); response emits CACHE_TAG_HOST_TRADE_CATEGORIES via the existing cache-tag header mechanism; register in the public router and OpenAPI.\nACs: AC-1.1, AC-3.2, AC-3.3, AC-6.1.\nTests (apps/api/test/routes/host-trade-category/public-list.test.ts): 200 without auth; inactive and deleted rows (both levels) absent; ordering; response header carries the cache tag; response validates PublicHostTradeCatalogSchema.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020", "T-011"],
             "blocks": ["T-033"],
             "subtasks": [
                 {
                     "title": "Route + registration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cache tag header",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "API tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:52:03Z",
+                "completed": "2026-11-17T19:52:03Z"
             }
         },
         {
             "id": "T-028",
             "title": "Add admin CRUD routes for host-trade-category-groups",
             "description": "Create apps/api/src/routes/host-trade-category-group/admin/ (list with page+pageSize, getById, create, update (PATCH), delete (DELETE), restore (POST /:id/restore)) using createAdminListRoute/createAdminRoute patterns, permissions HOST_TRADE_CATEGORY_VIEW/CREATE/UPDATE/DELETE/RESTORE, mount at /api/v1/admin/host-trade-category-groups. Error order per apps/api/docs/error-contract.md: 401 -> 403 -> 400 -> 404 -> 409 (permission gate BEFORE row lookup; CATEGORY_IN_USE answers 409, a 4xx is never INTERNAL_ERROR).\nACs: AC-3.1, AC-3.4, AC-3.5, AC-3.6.\nTests (apps/api/test/routes/host-trade-category-group/admin.test.ts): each route 401 without session, 403 without permission, 400 on invalid body and on slug in PATCH, 404 unknown id, 409 CATEGORY_IN_USE with live children, happy paths; pagination uses page/pageSize.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-011"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "List/get routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create/update routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete/restore routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "API tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:52:03Z",
+                "completed": "2026-11-17T19:52:03Z"
             }
         },
         {
             "id": "T-029",
             "title": "Add admin CRUD routes for host-trade-categories",
             "description": "Create apps/api/src/routes/host-trade-category/admin/ (list with filters groupId, lifecycleState, q plus page+pageSize; getById; create; PATCH; DELETE; POST /:id/restore) mounted at /api/v1/admin/host-trade-categories; same permissions and error order as the group routes. DELETE answers 409 CATEGORY_IN_USE when a non-deleted host_trade links it.\nACs: AC-3.1, AC-3.3, AC-3.4, AC-3.5, AC-3.6.\nTests (apps/api/test/routes/host-trade-category/admin.test.ts): 401/403/400/404/409 matrix, happy paths, groupId/lifecycleState/q filters, DELETE of an in-use category -> 409 code CATEGORY_IN_USE, PATCH with slug -> 400, INACTIVE patch allowed on in-use.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-011"],
             "blocks": ["T-030"],
             "subtasks": [
                 {
                     "title": "List/get routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create/update routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete/restore routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "API tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:52:03Z",
+                "completed": "2026-11-17T19:52:03Z"
             }
         },
         {
             "id": "T-030",
             "title": "Purge CACHE_TAG_HOST_TRADE_CATEGORIES on every admin catalog write",
             "description": "Wire the existing purge fan-out (find it with rg for how other admin writes purge cache tags in apps/api/src, e.g. the cache-purge middleware/helper) so create, update, delete and restore on BOTH group and category admin routes purge CACHE_TAG_HOST_TRADE_CATEGORIES. Reads never purge.\nACs: AC-3.2, AC-3.3.\nTests (apps/api/test/routes/host-trade-category/cache-purge.test.ts): spy on the purge function; each of the 8 write routes (4 per table) triggers exactly one purge with the tag; GET routes do not; a failed write (409/400) does not purge.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028", "T-029"],
             "blocks": ["T-049", "T-051"],
             "subtasks": [
                 {
                     "title": "Wire purge for groups",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire purge for categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Purge tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "cache"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:52:03Z",
+                "completed": "2026-11-17T19:52:03Z"
             }
         },
         {
             "id": "T-031",
             "title": "Update host-trade protected and admin routes for categories and categoryIds",
             "description": "Edit the existing host-trade list routes (protected GET /api/v1/protected/host-trades and admin list) so query param categories (comma-separated) is forwarded to the service, and admin create/update accept body categoryIds; remove category handling. Keep the regression intent of apps/api/test (admin.test.ts:246-265) with the param renamed to categories. The base where map can silently drop the filter, so assert rows are EXCLUDED.\nACs: AC-4.1, AC-4.2, AC-4.4, AC-5.4.\nTests (apps/api/test/routes/host-trade/*.test.ts + integration if the suite has DB): categories=plomeria,pintura returns any-of; unknown slug ignored; all-unknown -> 200 with empty list; filter excludes non-matching rows (not just forwarded); admin POST/PATCH with categoryIds 0 or 11 -> 400; owner route with categoryIds rejected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021", "T-022", "T-023"],
             "blocks": ["T-050"],
             "subtasks": [
                 {
                     "title": "Protected list route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Admin list/create/update",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Regression test rename",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "API tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:52:03Z",
+                "completed": "2026-11-17T19:52:03Z"
             }
         },
         {
             "id": "T-032",
             "title": "Update alliance-lead submit and approve routes for categorySlugs",
             "description": "Edit apps/api/src/routes/alliance/public/create-lead.ts to accept categorySlugs (service validates against active catalog); the approve/provision route surfaces skip 'no-active-category' as the existing admin skip notice. Remove category from request/response mapping.\nACs: AC-1.5, AC-1.6, AC-1.7, AC-2.2.\nTests (apps/api/test/routes/alliance/*.test.ts): submit with stale slug, [] and 11 slugs -> 400 VALIDATION_ERROR naming categorySlugs; valid 3-slug submit -> 201 and persisted; approving a lead whose slugs are all inactive returns the skip notice with 'no-active-category'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-024", "T-025"],
             "blocks": ["T-050"],
             "subtasks": [
                 {
                     "title": "create-lead route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Approve skip notice",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "API tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "backend"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-11-17T17:03:53.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-17T19:52:03Z",
+                "completed": "2026-11-17T19:52:03Z"
             }
         },
         {
@@ -1965,9 +1965,9 @@
     ],
     "summary": {
         "total": 54,
-        "pending": 33,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.5
     }

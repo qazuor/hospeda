@@ -152,32 +152,32 @@
 
 ### Integration Phase
 
-- [ ] **T-027** (complexity: 2) - Add public GET /api/v1/public/host-trade-categories route with cache tag
+- [x] **T-027** (complexity: 2) - Add public GET /api/v1/public/host-trade-categories route with cache tag
   - Create apps/api/src/routes/host-trade-category/public/list.ts + index (createSimpleRoute/createOpenA...
   - Blocked by: T-020, T-011
   - Blocks: T-033
 
-- [ ] **T-028** (complexity: 3) - Add admin CRUD routes for host-trade-category-groups
+- [x] **T-028** (complexity: 3) - Add admin CRUD routes for host-trade-category-groups
   - Create apps/api/src/routes/host-trade-category-group/admin/ (list with page+pageSize, getById, creat...
   - Blocked by: T-018, T-011
   - Blocks: T-030
 
-- [ ] **T-029** (complexity: 3) - Add admin CRUD routes for host-trade-categories
+- [x] **T-029** (complexity: 3) - Add admin CRUD routes for host-trade-categories
   - Create apps/api/src/routes/host-trade-category/admin/ (list with filters groupId, lifecycleState, q ...
   - Blocked by: T-019, T-011
   - Blocks: T-030
 
-- [ ] **T-030** (complexity: 2) - Purge CACHE_TAG_HOST_TRADE_CATEGORIES on every admin catalog write
+- [x] **T-030** (complexity: 2) - Purge CACHE_TAG_HOST_TRADE_CATEGORIES on every admin catalog write
   - Wire the existing purge fan-out (find it with rg for how other admin writes purge cache tags in apps...
   - Blocked by: T-028, T-029
   - Blocks: T-049, T-051
 
-- [ ] **T-031** (complexity: 3) - Update host-trade protected and admin routes for categories and categoryIds
+- [x] **T-031** (complexity: 3) - Update host-trade protected and admin routes for categories and categoryIds
   - Edit the existing host-trade list routes (protected GET /api/v1/protected/host-trades and admin list...
   - Blocked by: T-021, T-022, T-023
   - Blocks: T-050
 
-- [ ] **T-032** (complexity: 2) - Update alliance-lead submit and approve routes for categorySlugs
+- [x] **T-032** (complexity: 2) - Update alliance-lead submit and approve routes for categorySlugs
   - Edit apps/api/src/routes/alliance/public/create-lead.ts to accept categorySlugs (service validates a...
   - Blocked by: T-024, T-025
   - Blocks: T-050
