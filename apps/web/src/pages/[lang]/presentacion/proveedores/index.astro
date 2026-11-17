@@ -80,13 +80,15 @@ applyCacheHeaders({
 });
 
 // --- Category chips (HOS-919 US-6) ---
-// Rendered from the public catalog at SSR, grouped, in the page locale. If the
-// call fails the page still renders (200) without the chips block, and the
-// render is marked degraded so the edge does not keep the failure for the whole
-// cache lifetime (HOS-1154).
+// Rendered from the public catalog at SSR, grouped, ALWAYS in Spanish: the
+// page copy is Spanish under every locale by design ("WHY IT IS NOT
+// TRANSLATED" above), so chips in the URL locale would mix languages (owner
+// decision, 2026-11-17). If the call fails the page still renders (200)
+// without the chips block, and the render is marked degraded so the edge does
+// not keep the failure for the whole cache lifetime (HOS-1154).
 const { groups: chipGroups, degraded } = buildProviderCategoryChipGroups({
 	result: await hostTradeCategoryApi.getHostTradeCatalog(),
-	locale
+	locale: 'es'
 });
 if (degraded) {
 	markResponseDegraded({ locals: Astro.locals });

@@ -50,6 +50,15 @@ describe('presentacion/proveedores — chips come from the catalog (AC-6.1)', ()
         }
     });
 
+    // Owner decision (2026-11-17): the page copy is Spanish-only under every
+    // locale BY DESIGN (HOS-978), so the chips are Spanish too. Following the
+    // URL locale mixed English chips into Spanish prose on /en/ and /pt/.
+    it('renders the chips in Spanish whatever the URL locale', () => {
+        const call = src.slice(src.indexOf('buildProviderCategoryChipGroups({'));
+        const args = call.slice(0, call.indexOf('});'));
+        expect(args).toMatch(/locale:\s*'es'/);
+    });
+
     it('keeps the «uno o más rubros» copy (it is true now)', () => {
         expect(src).toContain('elegís uno o más rubros');
     });
