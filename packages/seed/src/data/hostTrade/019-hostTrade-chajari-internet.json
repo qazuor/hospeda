@@ -3,7 +3,7 @@
     "id": "019-hostTrade-chajari-internet",
     "name": "ConectaRed Chajarí",
     "slug": "conectared-chajari",
-    "category": "INTERNET",
+    "categorySlugs": ["internet-tv"],
     "contact": "+54 9 3458 234567",
     "benefit": "Instalación y configuración de router WiFi sin cargo para alojamientos Hospeda. Soporte técnico prioritario.",
     "destinationId": "001-destination-chajari",

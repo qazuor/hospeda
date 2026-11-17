@@ -3,7 +3,7 @@
     "id": "013-hostTrade-concordia-fletes",
     "name": "Fletes y Mudanzas Concordia",
     "slug": "fletes-y-mudanzas-concordia",
-    "category": "FLETES",
+    "categorySlugs": ["fletes"],
     "contact": "https://wa.me/5493454234567",
     "benefit": "Traslado de muebles y electrodomésticos con 15% de descuento para hosts Hospeda. Carga y descarga incluida.",
     "destinationId": "003-destination-concordia",

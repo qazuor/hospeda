@@ -1,6 +1,7 @@
-import { getDb, hostTrades } from '@repo/db';
+import { type DrizzleClient, getDb, hostTrades, rHostTradeCategory } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import exampleManifest from '../manifest-example.json';
+import { hostTradeCategoryIdFor } from '../required/hostTradeCategories.seed.js';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { loadJsonFiles } from '../utils/loadJsonFile.js';
 import { logger } from '../utils/logger.js';
@@ -20,7 +21,8 @@ interface HostTradeSeedData {
     readonly id: string;
     readonly name: string;
     readonly slug?: string;
-    readonly category: string;
+    /** Catalog category slugs (HOS-919); linked through `r_host_trade_category`. */
+    readonly categorySlugs: readonly string[];
     readonly contact: string;
     readonly benefit: string;
     readonly destinationId: string;
@@ -58,10 +60,17 @@ const slugify = (name: string): string =>
  *
  * Ordering constraint: MUST run after destinations and users have been seeded
  * so that the idMapper already holds `destinations.*` and `users.*` mappings.
+ * It must also run after the `required` catalog seeders (HOS-919): every
+ * provider is linked to its categories through `r_host_trade_category`, and the
+ * example group always runs after the required one.
  *
  * @param context - Seed context providing the idMapper and actor
+ * @param overrides - Optional collaborators, for tests only (`db` replaces `getDb()`)
  */
-export async function seedHostTrades(context: SeedContext): Promise<void> {
+export async function seedHostTrades(
+    context: SeedContext,
+    overrides: { readonly db?: DrizzleClient } = {}
+): Promise<void> {
     const entityName = 'HostTrades';
     context.currentEntity = entityName;
 
@@ -85,7 +94,7 @@ export async function seedHostTrades(context: SeedContext): Promise<void> {
         files
     )) as unknown as HostTradeSeedData[];
 
-    const db = getDb();
+    const db = overrides.db ?? getDb();
     let successCount = 0;
     let errorCount = 0;
 
@@ -124,7 +133,6 @@ export async function seedHostTrades(context: SeedContext): Promise<void> {
             const row = {
                 slug,
                 name: item.name,
-                category: item.category as (typeof hostTrades.$inferInsert)['category'],
                 contact: item.contact,
                 benefit: item.benefit,
                 destinationId: realDestinationId,
@@ -143,11 +151,20 @@ export async function seedHostTrades(context: SeedContext): Promise<void> {
             const realId = inserted?.id;
 
             if (realId) {
+                // Link the provider to its catalog categories (HOS-919). Ids are
+                // deterministic, so no lookup is needed; a slug missing from the
+                // catalog fails the FK loudly instead of linking nothing.
+                const links = item.categorySlugs.map((categorySlug) => ({
+                    hostTradeId: realId,
+                    categoryId: hostTradeCategoryIdFor({ slug: categorySlug })
+                }));
+                await db.insert(rHostTradeCategory).values(links).onConflictDoNothing();
+
                 // Register the mapping so downstream seeders can reference this entry
                 context.idMapper.setMapping(entityName.toLowerCase(), item.id, realId, item.name);
 
                 logger.debug(
-                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.category}) → ${item.destinationId}`
+                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.categorySlugs.join(', ')}) → ${item.destinationId}`
                 );
             } else {
                 // onConflictDoNothing fired — slug already exists, skip silently

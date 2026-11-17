@@ -3,7 +3,7 @@
     "id": "001-hostTrade-uruguay-cerrajeria",
     "name": "Cerrajería Rápida Uruguay",
     "slug": "cerrajeria-rapida-uruguay",
-    "category": "CERRAJERIA",
+    "categorySlugs": ["cerrajeria"],
     "contact": "+54 9 3442 412345",
     "benefit": "10% de descuento mencionando Hospeda. Apertura de emergencia sin cargo adicional para hosts registrados.",
     "destinationId": "011-destination-concepcion-del-uruguay",

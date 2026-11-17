@@ -3,7 +3,7 @@
     "id": "009-hostTrade-gualeguaychu-electricidad",
     "name": "Electricidad Gualeguaychú",
     "slug": "electricidad-gualeguaychu",
-    "category": "ELECTRICIDAD",
+    "categorySlugs": ["electricidad"],
     "contact": "+54 9 3446 123456",
     "benefit": "Primera consulta sin costo. 10% de descuento en instalaciones nuevas para alojamientos Hospeda.",
     "destinationId": "005-destination-gualeguaychu",
