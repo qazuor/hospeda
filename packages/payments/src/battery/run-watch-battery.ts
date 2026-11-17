@@ -30,6 +30,7 @@ import {
     type WatchTransport
 } from './types';
 import { validateWatchCatalog } from './watch-catalog';
+import { chargeStatedByRequest, isMoneyWrite } from './watch-charge';
 import {
     assertAccountMatches,
     assertBudgetMatches,
@@ -84,6 +85,31 @@ function buildContext(args: {
                     code: 'READ_ENTRY_MUTATED',
                     message: `${entry.id} is declared read-only and tried a ${request.method}`
                 });
+            }
+            if (
+                request.method !== 'GET' &&
+                isMoneyWrite({ request }) &&
+                entry.effect !== 'moves-money'
+            ) {
+                throw new WatchGuardError({
+                    code: 'MONEY_ROUTE_FORBIDDEN',
+                    message: `${entry.id} is not marked moves-money and tried a ${request.method} to ${request.path}`
+                });
+            }
+            if (entry.effect === 'moves-money' && request.method !== 'GET') {
+                if (chargeMinor === undefined) {
+                    throw new WatchGuardError({
+                        code: 'CHARGE_UNDECLARED',
+                        message: `${entry.id} sent a ${request.method} to ${request.path} without declaring what it charges`
+                    });
+                }
+                const stated = chargeStatedByRequest({ request });
+                if (stated !== chargeMinor) {
+                    throw new WatchGuardError({
+                        code: 'CHARGE_MISMATCH',
+                        message: `${entry.id} declared a charge of ${chargeMinor} and the request body states ${stated} (minor units)`
+                    });
+                }
             }
             if (chargeMinor !== undefined) {
                 chargedMinor += chargeMinor;

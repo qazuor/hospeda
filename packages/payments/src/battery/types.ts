@@ -74,9 +74,12 @@ export interface WatchContext {
      *
      * @param args.label - Stable name of this request inside the measurement
      * @param args.request - The request
-     * @param args.chargeMinor - Amount in minor units this request can charge, when it can
+     * @param args.chargeMinor - Amount in minor units this request charges. REQUIRED on every
+     *   non-GET request of a `moves-money` measurement (0 for one that charges nothing), and it
+     *   must equal what the request body states: the guard does not trust the declaration
      * @returns The answer
-     * @throws {WatchGuardError} A non-GET from a `read` entry, or charges above the declared maximum
+     * @throws {WatchGuardError} A non-GET from a `read` entry, a money write from a measurement
+     *   that does not move money, an undeclared or mismatching charge, or charges above the maximum
      */
     readonly send: (args: {
         readonly label: string;
@@ -170,6 +173,9 @@ export type WatchGuardCode =
     | 'BUDGET_MISMATCH'
     | 'BUDGET_UNDECLARED'
     | 'BUDGET_EXCEEDED'
+    | 'CHARGE_MISMATCH'
+    | 'CHARGE_UNDECLARED'
+    | 'MONEY_ROUTE_FORBIDDEN'
     | 'READ_ENTRY_MUTATED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */

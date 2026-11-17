@@ -59,12 +59,15 @@ function entry(args: Partial<WatchEntry> & Pick<WatchEntry, 'effect'>): WatchEnt
         accounts: ['sandbox', 'production'],
         expected: 'created',
         measure: async (ctx) => {
+            const money = args.effect === 'moves-money';
             const response = await ctx.send({
                 label: 'create',
-                request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
-                ...(args.effect === 'moves-money' ? { chargeMinor: AUTHORIZED } : {})
+                request: money
+                    ? { method: 'POST', path: '/preapproval', body: PREAPPROVAL }
+                    : { method: 'POST', path: '/v1/customers', body: { email: 'a@example.test' } },
+                ...(money ? { chargeMinor: AUTHORIZED } : {})
             });
-            return response.status === 201 ? 'created' : 'not created';
+            return response.status === 201 || !money ? 'created' : 'not created';
         },
         ...args
     };
@@ -138,7 +141,7 @@ describe('TEST:B1:19 environment guard', () => {
         expect(result.run.outcome).toBe('completed');
         expect(result.mayPingWatchdog).toBe(true);
         const sent = server.requests().map((request) => `${request.method} ${request.path}`);
-        expect(sent).toEqual(['GET /users/me', 'POST /preapproval']);
+        expect(sent).toEqual(['GET /users/me', 'POST /v1/customers']);
     });
 
     it('does not ask the account for a read-only measurement', async () => {
@@ -296,7 +299,11 @@ describe('TEST:B1:19 budget guard', () => {
                 });
                 await ctx.send({
                     label: 'b',
-                    request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                    request: {
+                        method: 'POST',
+                        path: '/preapproval',
+                        body: { transaction_amount: 0.01 }
+                    },
                     chargeMinor: 1
                 });
                 return 'done';
@@ -308,13 +315,13 @@ describe('TEST:B1:19 budget guard', () => {
     });
 
     it('refuses a charge declared by a measurement that is not money-moving', async () => {
-        const { transport, clock } = await fakeAs('sandbox');
+        const { server, transport, clock } = await fakeAs('sandbox');
         const sneaky = entry({
             effect: 'mutates',
             measure: async (ctx): Promise<JsonValue> => {
                 await ctx.send({
                     label: 'a',
-                    request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                    request: { method: 'POST', path: '/v1/customers', body: {} },
                     chargeMinor: 1
                 });
                 return 'created';
@@ -322,6 +329,7 @@ describe('TEST:B1:19 budget guard', () => {
         });
         const result = await run({ account: 'sandbox', catalog: [sneaky], transport, clock });
         expect(result.run.reason).toContain('BUDGET_EXCEEDED');
+        expect(mutatingRequests(server)).toEqual([]);
     });
 
     it('does not let a read-only measurement mutate', async () => {
@@ -334,5 +342,191 @@ describe('TEST:B1:19 budget guard', () => {
         });
         expect(result.run.reason).toContain('READ_ENTRY_MUTATED');
         expect(server.requests()).toEqual([]);
+    });
+});
+
+describe('the budget guard reads the charge from the request, not from the declaration', () => {
+    const money = (args: {
+        readonly body: unknown;
+        readonly chargeMinor?: number;
+        readonly path?: string;
+        readonly method?: 'POST' | 'PUT';
+    }) =>
+        entry({
+            effect: 'moves-money',
+            maxChargeMinor: AUTHORIZED,
+            measure: async (ctx): Promise<JsonValue> => {
+                await ctx.send({
+                    label: 'x',
+                    request: {
+                        method: args.method ?? 'POST',
+                        path: args.path ?? '/preapproval',
+                        body: args.body
+                    },
+                    ...(args.chargeMinor === undefined ? {} : { chargeMinor: args.chargeMinor })
+                });
+                return 'created';
+            }
+        });
+
+    it('aborts, sending nothing, when pesos were sent as if they were centavos (100 times too much)', async () => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const body = {
+            ...PREAPPROVAL,
+            auto_recurring: { ...PREAPPROVAL.auto_recurring, transaction_amount: 150000 }
+        };
+        const result = await run({
+            account: 'sandbox',
+            catalog: [money({ body, chargeMinor: AUTHORIZED })],
+            transport,
+            clock
+        });
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('aborts when the body charges 100 times LESS than declared', async () => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const body = {
+            ...PREAPPROVAL,
+            auto_recurring: { ...PREAPPROVAL.auto_recurring, transaction_amount: 15 }
+        };
+        const result = await run({
+            account: 'sandbox',
+            catalog: [money({ body, chargeMinor: AUTHORIZED })],
+            transport,
+            clock
+        });
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('aborts an undeclared charge on a non-GET request of a money-moving measurement', async () => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [money({ body: PREAPPROVAL })],
+            transport,
+            clock
+        });
+        expect(result.run.reason).toContain('CHARGE_UNDECLARED');
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('accepts the exact conversion, with the body in pesos and the declaration in minor units', async () => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [money({ body: PREAPPROVAL, chargeMinor: AUTHORIZED })],
+            transport,
+            clock
+        });
+        expect(result.run.outcome).toBe('completed');
+        expect(mutatingRequests(server)).toHaveLength(1);
+    });
+
+    it('accepts a request that charges nothing when it declares 0', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                money({
+                    body: { status: 'cancelled' },
+                    chargeMinor: 0,
+                    path: '/preapproval/abc',
+                    method: 'PUT'
+                })
+            ],
+            transport,
+            clock
+        });
+        expect(result.run.outcome).toBe('completed');
+    });
+
+    it('aborts when a body that states no amount declares a charge', async () => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                money({
+                    body: { status: 'cancelled' },
+                    chargeMinor: 100,
+                    path: '/preapproval/abc',
+                    method: 'PUT'
+                })
+            ],
+            transport,
+            clock
+        });
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('aborts when the body states several different amounts', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                money({
+                    body: { transaction_amount: 1, amount: 2 },
+                    chargeMinor: 100,
+                    path: '/v1/payments'
+                })
+            ],
+            transport,
+            clock
+        });
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+    });
+
+    it('aborts an amount that is not a finite non-negative number', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                money({ body: { amount: -5 }, chargeMinor: 0, path: '/v1/payments/1/refunds' })
+            ],
+            transport,
+            clock
+        });
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+    });
+
+    it.each([
+        ['/v1/payments', 'POST'],
+        ['/v1/payments/123/refunds', 'POST'],
+        ['/preapproval', 'POST'],
+        ['/preapproval/abc', 'PUT'],
+        ['/v1/orders', 'POST'],
+        ['/v1/orders/9/refund?x=1', 'POST']
+    ] as const)('forbids a %s %s from a measurement not marked moves-money', async (path, method) => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const sneaky = entry({
+            effect: 'mutates',
+            measure: async (ctx): Promise<JsonValue> => {
+                await ctx.send({ label: 'x', request: { method, path, body: {} } });
+                return 'created';
+            }
+        });
+        const result = await run({ account: 'sandbox', catalog: [sneaky], transport, clock });
+        expect(result.run.reason).toContain('MONEY_ROUTE_FORBIDDEN');
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('lets a non-money measurement GET a money route', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const reader = entry({
+            effect: 'read',
+            expected: 'seen',
+            measure: async (ctx): Promise<JsonValue> => {
+                await ctx.send({
+                    label: 'x',
+                    request: { method: 'GET', path: '/preapproval/abc' }
+                });
+                return 'seen';
+            }
+        });
+        const result = await run({ account: 'sandbox', catalog: [reader], transport, clock });
+        expect(result.run.outcome).toBe('completed');
     });
 });
