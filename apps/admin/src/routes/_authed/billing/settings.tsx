@@ -2,6 +2,7 @@ import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { AddonPurchasesFreezeCard } from '@/features/billing-addon-freeze/components/AddonPurchasesFreezeCard';
+import { ProviderWatchAuthorizationCard } from '@/features/billing-provider-watch/components/ProviderWatchAuthorizationCard';
 import { SignupFreezeCard } from '@/features/billing-signup-freeze/components/SignupFreezeCard';
 import { requireAdminPermission } from '@/lib/admin-api-access';
 
@@ -17,6 +18,7 @@ export function BillingSettingsPage() {
         <SidebarPageLayout titleKey="admin-billing.settings.title">
             <SignupFreezeCard />
             <AddonPurchasesFreezeCard />
+            <ProviderWatchAuthorizationCard />
         </SidebarPageLayout>
     );
 }
