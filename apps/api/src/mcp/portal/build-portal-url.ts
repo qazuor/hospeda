@@ -67,31 +67,36 @@ function sectionSlugOf(input: {
     return Object.hasOwn(slugs, input.section) ? slugs[input.section] : undefined;
 }
 
-/** Path of an editor hub or section, with no locale. */
+/** A destination's path template (dynamic segments left in place) and the values that fill them. */
+interface ResolvedPath {
+    readonly template: string;
+    readonly params: Readonly<Record<string, string>>;
+}
+
+/** Template and values of an editor hub or section, with no locale. */
 function editorPath(input: {
     readonly vertical: PortalListingVertical;
     readonly id: string;
     readonly section?: PortalSectionId;
-}): string {
+}): ResolvedPath {
     const { vertical, id, section } = input;
     const slug = section === undefined ? undefined : sectionSlugOf({ vertical, section });
     const isAccommodation = vertical === 'accommodation';
     const params: Readonly<Record<string, string>> = isAccommodation ? { id } : { id, vertical };
     if (slug === undefined) {
         const hub = isAccommodation ? 'accommodationEditorHub' : 'listingEditorHub';
-        return fillTemplate({ template: PORTAL_ROUTE_TEMPLATES[hub], params });
+        return { template: PORTAL_ROUTE_TEMPLATES[hub], params };
     }
     const template = PORTAL_ROUTE_TEMPLATES[EDITOR_SECTION_TEMPLATE_BY_VERTICAL[vertical]];
-    return fillTemplate({
-        template: template.replace(PORTAL_SECTION_PLACEHOLDER, slug),
-        params
-    });
+    return { template: template.replace(PORTAL_SECTION_PLACEHOLDER, slug), params };
 }
 
-/** Path of a destination, with no locale. */
-function pathOf(destination: PortalDestination): string {
-    const path = (key: PortalRouteKey, params: Readonly<Record<string, string>> = {}): string =>
-        fillTemplate({ template: PORTAL_ROUTE_TEMPLATES[key], params });
+/** Template and values of a destination, with no locale. */
+function resolveDestination(destination: PortalDestination): ResolvedPath {
+    const path = (key: PortalRouteKey, params: Readonly<Record<string, string>> = {}) => ({
+        template: PORTAL_ROUTE_TEMPLATES[key],
+        params
+    });
 
     switch (destination.kind) {
         case 'listingEditor':
@@ -120,11 +125,34 @@ function pathOf(destination: PortalDestination): string {
             return path('providerPanel');
         case 'aiAssistants':
             return path('aiAssistants');
+        case 'faq':
+            return path('faq');
+        case 'contact':
+            return path('contact');
         default: {
             const unreachable: never = destination;
             throw new Error(`Unknown portal destination: ${JSON.stringify(unreachable)}`);
         }
     }
+}
+
+/**
+ * The route template a destination resolves to, with its dynamic segments
+ * (`[id]`, `[vertical]`, `[slug]`, `[conversationId]`) left in place and an
+ * editor section already replaced by its slug, for example
+ * `mi-cuenta/propiedades/[id]/editar/fotos`. It is what must exist as a page in
+ * `apps/web`: the help-catalog guard checks it the way `check-portal-routes`
+ * checks the route map.
+ *
+ * @param args - The destination
+ * @returns The template, with no locale and no edge slashes
+ */
+export function portalDestinationTemplate({
+    destination
+}: {
+    readonly destination: PortalDestination;
+}): string {
+    return resolveDestination(destination).template;
 }
 
 /**
@@ -152,5 +180,6 @@ export function buildPortalUrl({
     if (base === '') {
         throw new Error('Portal links need the configured site URL');
     }
-    return `${base}/${locale}/${pathOf(destination)}/`;
+    const { template, params } = resolveDestination(destination);
+    return `${base}/${locale}/${fillTemplate({ template, params })}/`;
 }
