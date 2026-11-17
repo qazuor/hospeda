@@ -13,8 +13,6 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
-const BASE = '/api/v1/admin/provider-watch';
-
 /** Query keys of the provider watch screens. */
 export const providerWatchQueryKeys = {
     account: ['provider-watch', 'account'] as const,
@@ -42,7 +40,7 @@ async function send<T>(args: {
 export function useProviderWatchAccount(args: { readonly enabled: boolean }) {
     return useQuery({
         queryKey: providerWatchQueryKeys.account,
-        queryFn: () => send<ProviderWatchAccount>({ path: `${BASE}/account` }),
+        queryFn: () => send<ProviderWatchAccount>({ path: '/api/v1/admin/provider-watch/account' }),
         enabled: args.enabled,
         retry: false,
         staleTime: 0
@@ -54,7 +52,11 @@ export function useAuthorizeProviderWatch() {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (input: ProviderWatchAuthorizeInput) =>
-            send<unknown>({ path: `${BASE}/authorization`, method: 'POST', body: input }),
+            send<unknown>({
+                path: '/api/v1/admin/provider-watch/authorization',
+                method: 'POST',
+                body: input
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['platform-settings'] });
         }
@@ -70,7 +72,11 @@ export function useProviderWatchShapes(args: { readonly enabled: boolean }) {
     return useQuery({
         queryKey: providerWatchQueryKeys.shapes,
         queryFn: async () =>
-            (await send<{ items: ProviderWatchShapeReview[] }>({ path: `${BASE}/shapes` })).items,
+            (
+                await send<{ items: ProviderWatchShapeReview[] }>({
+                    path: '/api/v1/admin/provider-watch/shapes'
+                })
+            ).items,
         enabled: args.enabled,
         staleTime: 30_000
     });
@@ -82,7 +88,7 @@ export function useAcceptProviderWatchShape() {
     return useMutation({
         mutationFn: (input: { readonly measurementId: string } & ProviderWatchAcceptShapeInput) =>
             send<{ acceptedAt: string }>({
-                path: `${BASE}/shapes/${encodeURIComponent(input.measurementId)}/accept`,
+                path: `/api/v1/admin/provider-watch/shapes/${encodeURIComponent(input.measurementId)}/accept`,
                 method: 'POST',
                 body: { account: input.account, runId: input.runId }
             }),
