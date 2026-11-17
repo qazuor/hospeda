@@ -40,7 +40,8 @@ export const PURCHASE_REJECTION_ANSWERS: Readonly<Record<PurchaseAddonRefusalRea
     ADDON_VERSION_NOT_CURRENT: { status: 409, code: 'ADDON_VERSION_NOT_CURRENT' },
     ALREADY_ACTIVE: { status: 409, code: 'ADDON_ALREADY_ACTIVE' },
     FREE_UNDER_GRANT: { status: 409, code: 'ADDON_FREE_UNDER_GRANT' },
-    ORDER_REQUEST_REUSED: { status: 409, code: 'ADDON_ORDER_REQUEST_REUSED' }
+    ORDER_REQUEST_REUSED: { status: 409, code: 'ADDON_ORDER_REQUEST_REUSED' },
+    ORDER_REQUEST_ABANDONED: { status: 409, code: 'ADDON_ORDER_REQUEST_ABANDONED' }
 };
 
 /** Converts a typed A1 refusal into the public error envelope. */
