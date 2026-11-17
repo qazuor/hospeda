@@ -551,9 +551,12 @@ describe('list_reviews', () => {
             expect(reviewerNames).toHaveBeenCalledWith({ reviewerIds: [SECRET_REVIEWER_ID] });
         });
 
-        it('keeps null titles and texts as null, not as empty envelopes', async () => {
+        it.each([
+            ['null', null],
+            ['empty', '']
+        ])('keeps %s titles and texts as null, not as empty envelopes', async (_label, empty) => {
             // Arrange
-            ownerReviews.mockResolvedValue(page([readerRow({ title: null, content: null })]));
+            ownerReviews.mockResolvedValue(page([readerRow({ title: empty, content: empty })]));
 
             // Act
             const outcome = await run({});
@@ -563,6 +566,23 @@ describe('list_reviews', () => {
                 ok: true,
                 data: { items: [{ title: null, text: null, textTruncated: false }] }
             });
+        });
+
+        it('does not promise a page the window cannot reach', async () => {
+            // Arrange: 500 reviews match, but paging reaches only the newest 200
+            ownerReviews.mockResolvedValue({
+                rows: [readerRow()],
+                total: 500,
+                countsByState: { APPROVED: 500, PENDING: 0, REJECTED: 0 }
+            });
+
+            // Act
+            const lastReachable = await run({ page: 10, pageSize: 20 });
+            const beforeIt = await run({ page: 9, pageSize: 20 });
+
+            // Assert
+            expect(lastReachable.ok && lastReachable.data.hasMore).toBe(false);
+            expect(beforeIt.ok && beforeIt.data.hasMore).toBe(true);
         });
 
         it('reports hasMore while reviews follow the page', async () => {

@@ -229,15 +229,13 @@ function toSummaries({
     readonly textChars: number;
 }): ReviewSummary[] {
     return rows.map((row) => {
-        const title =
-            row.title === null
-                ? null
-                : excerptText({
-                      text: row.title,
-                      maxChars: Math.min(LIST_REVIEWS_TITLE_EXCERPT_CHARS, textChars)
-                  });
-        const text =
-            row.content === null ? null : excerptText({ text: row.content, maxChars: textChars });
+        const title = row.title
+            ? excerptText({
+                  text: row.title,
+                  maxChars: Math.min(LIST_REVIEWS_TITLE_EXCERPT_CHARS, textChars)
+              })
+            : null;
+        const text = row.content ? excerptText({ text: row.content, maxChars: textChars }) : null;
         const reviewerName =
             row.reviewerId === null ? undefined : reviewerNames.get(row.reviewerId);
         return {
@@ -313,7 +311,7 @@ function scopeOfListing({
 export const listReviewsTool = defineTool({
     name: 'list_reviews',
     title: 'Reseñas de mis publicaciones',
-    description: `Lists the reviews received on the connected Hospeda user's listings (accommodations, venues and experiences), newest first, paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}). It returns ALL the reviews of the user's own listings, whatever their moderation state: each carries "moderationState" (APPROVED = public; PENDING = awaiting moderation, not public; REJECTED = rejected by moderation, not public), so say which are public when you report them. Per review: id, the listing (vertical, id, name), rating (0 to 5), title, text, date, moderationState and the author's display name (nothing else about the author). "text" may be an excerpt: when "textTruncated" is true it was cut. The result also carries "total", "hasMore" and "countsByState" (APPROVED, PENDING and REJECTED counts under the other filters). Filters: vertical, listingId (needs vertical), minRating, maxRating, since, moderationState; combine them freely. Paging reaches the newest ${OWNER_REVIEWS_MAX_WINDOW} reviews of a search: use since, vertical or listingId to go further back. Reviews cannot be replied to or changed from here, and there is no "already replied" information. If "incomplete" is true the user has too many listings to cover in one call: tell them it is partial and use vertical and listingId. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Lists the reviews received on the connected Hospeda user's listings (accommodations, venues and experiences), newest first, paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}). It returns ALL the reviews of the user's own listings, whatever their moderation state: each carries "moderationState" (APPROVED = public; PENDING = awaiting moderation, not public; REJECTED = rejected by moderation, not public), so say which are public when you report them. Per review: id, the listing (vertical, id, name), rating (0 to 5), title, text, date, moderationState and the author's display name (nothing else about the author). "text" may be an excerpt: when "textTruncated" is true it was cut. The result also carries "total", "hasMore" and "countsByState" (APPROVED, PENDING and REJECTED counts under the other filters). Filters: vertical, listingId (needs vertical), minRating, maxRating, since, moderationState; combine them freely. Paging reaches the newest ${OWNER_REVIEWS_MAX_WINDOW} reviews of a search: use since, vertical or listingId to go further back. Reviews cannot be replied to or changed from here, and there is no "already replied" information. If "incomplete" is true the user may have more listings than one call covers (a conservative signal: it can be set even when nothing is missing): tell them the result might be partial and narrow with vertical and listingId. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and listingId from list_my_listings. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: ListReviewsInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
@@ -385,7 +383,8 @@ export const listReviewsTool = defineTool({
                     total: reviews.total,
                     page,
                     pageSize,
-                    hasMore: page * pageSize < reviews.total,
+                    // Paging reaches only the newest OWNER_REVIEWS_MAX_WINDOW reviews of a search.
+                    hasMore: page * pageSize < Math.min(reviews.total, OWNER_REVIEWS_MAX_WINDOW),
                     countsByState: reviews.countsByState,
                     ...(reviewScope.incomplete ? { incomplete: true as const } : {})
                 })
