@@ -152,6 +152,42 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4423
+    {
+        id: '2026-11-16-admin-plan-change-checkout-link',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Cambiar el plan de un cliente desde el panel ya genera el checkout',
+            en: "Changing a customer's plan from the panel now generates the checkout",
+            pt: 'Alterar o plano de um cliente pelo painel agora gera o checkout'
+        },
+        body: {
+            es: 'Al cambiar el plan de una suscripción desde el panel, ahora obtenés el enlace de autorización para enviarle al cliente, con la fecha del primer cobro y los días de crédito. El plan actual sigue vigente hasta que el cliente autorice.',
+            en: "When you change a subscription's plan from the panel, you now get the authorization link to send to the customer, with the first charge date and the credit days. The current plan stays in effect until the customer authorizes.",
+            pt: 'Ao alterar o plano de uma assinatura pelo painel, agora você obtém o link de autorização para enviar ao cliente, com a data da primeira cobrança e os dias de crédito. O plano atual continua vigente até que o cliente autorize.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4424
+    {
+        id: '2026-11-16-plan-change-replaced-subscription-shown',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Después de cambiar de plan, ves claro cuál es tu suscripción vigente',
+            en: 'After changing plans, it is clear which subscription is current',
+            pt: 'Depois de mudar de plano, fica claro qual é a sua assinatura vigente'
+        },
+        body: {
+            es: 'Cuando cambiás de plan, tu suscripción anterior aparece como «Reemplazada por» el plan nuevo, sin acciones, hasta que se da de baja en la próxima hora. La nueva queda como la única activa.',
+            en: 'When you change plans, your previous subscription appears as "Replaced by" the new plan, with no actions, until it is cancelled within the next hour. The new one remains the only active subscription.',
+            pt: 'Quando você muda de plano, sua assinatura anterior aparece como «Substituída por» o novo plano, sem ações, até ser cancelada na próxima hora. A nova fica como a única ativa.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4463
     {
         id: '2026-11-17-admin-plan-change-preview-names-and-date',
