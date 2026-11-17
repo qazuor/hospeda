@@ -92,10 +92,18 @@ interface I18nAssetEntry {
  * @param locale - Locale whose dictionary should be serialized.
  * @returns The script body, ready to serve verbatim.
  */
-function buildBody(locale: SupportedLocale): string {
-    const messages = pickClientNamespaces(getInlineLocaleMessages(locale));
+export function buildI18nAssetBody(input: {
+    readonly locale: SupportedLocale;
+    readonly messages: Record<string, string>;
+}): string {
+    const { locale, messages: sourceMessages } = input;
+    const messages = pickClientNamespaces(sourceMessages);
     const json = JSON.stringify(messages).replace(/</g, '\\u003c');
     return `(window.__HOSPEDA_I18N__||={})[${JSON.stringify(locale)}]=${json};`;
+}
+
+function buildBody(locale: SupportedLocale): string {
+    return buildI18nAssetBody({ locale, messages: getInlineLocaleMessages(locale) });
 }
 
 /**

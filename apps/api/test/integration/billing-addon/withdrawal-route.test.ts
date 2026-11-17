@@ -132,6 +132,7 @@ describe('TEST:B13b:1 AC:B13b:1 the owner withdrawal route', () => {
             {
                 addonInstanceId: ownId,
                 name: 'Route addon',
+                slug: expect.stringMatching(/^addon-route-/),
                 chargeKind: 'PERIODICO',
                 cycle: 'monthly',
                 price: 5000,
@@ -147,6 +148,7 @@ describe('TEST:B13b:1 AC:B13b:1 the owner withdrawal route', () => {
             {
                 addonInstanceId: ownId,
                 name: 'Route addon',
+                slug: expect.stringMatching(/^addon-route-/),
                 chargeKind: 'PERIODICO',
                 cycle: 'monthly',
                 price: 5000,
