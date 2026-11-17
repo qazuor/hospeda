@@ -38,7 +38,12 @@ import { ThemeControl } from '@/components/shared/preferences/ThemeControl.clien
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useAiAssistantsEntry } from '@/hooks/use-ai-assistants-entry';
 import { buildAdminPanelItem, STAFF_DISCRIMINATOR_PERMISSION } from '@/lib/admin-panel-link';
-import { identifyUser, resetUser, setPersonProperties } from '@/lib/analytics/umami-client';
+import {
+    identifyUser,
+    markVisitorAnonymous,
+    resetUser,
+    setPersonProperties
+} from '@/lib/analytics/umami-client';
 import { AUTH_ME_CACHE_KEY, type AuthMeUser, clearCachedAuthMe } from '@/lib/auth-cache';
 import { signOut } from '@/lib/auth-client';
 import { getInitials } from '@/lib/avatar-utils';
@@ -213,6 +218,14 @@ export function UserMenu({
     // is_staff works. Both are consent-gated and wait for the deferred tracker
     // (see `identifyUser`).
     //
+    // The document's first Umami pageview waits for this effect (HOS-2119,
+    // `umami-identity-gate.ts`): `identifyUser` releases it once the identify
+    // went out, and a guest releases it through `markVisitorAnonymous`. A guest
+    // counts only once the session is actually resolved (`permissions` is no
+    // longer `null`): the SSR `initialUser` is `null` for EVERY visitor on SSG
+    // pages, so releasing on it would send a logged-in visitor's first pageview
+    // before their identify.
+    //
     // HOS-296 — the `role` scalar person-property became the `roles` ARRAY.
     // Deliberately NOT a derived "primary role" and NOT a joined string:
     //   - the spec forbids inventing a primary role (an account genuinely
@@ -230,7 +243,10 @@ export function UserMenu({
     const rolesKey = [...roles].sort().join(',');
     // biome-ignore lint/correctness/useExhaustiveDependencies: `rolesKey` is the stable, order-independent projection of `roles`; depending on the array itself would re-fire on every render since it is a new reference each time.
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            if (permissions !== null) markVisitorAnonymous();
+            return;
+        }
         const props =
             permissions === null
                 ? undefined

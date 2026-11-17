@@ -3,16 +3,13 @@
  * @description HOS-2119 T-034: the admin Umami client injects the tracker script
  * once (with the CSP nonce), is a no-op when unconfigured or in dev, and routes
  * events / identify / reset through the shared analytics package. The identify
- * is sent only after the tracker holds the cache token of an answered pageview
- * (OQ-5), checked against a tracker stub that models `getSession().cache`.
+ * is sent as soon as the tracker is present and skipped when it already holds a
+ * cache token (OQ-5, revised 2026-11-17), checked against a tracker stub that
+ * models `getSession().cache`.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    installUmamiTrackerStub,
-    STUB_CACHE_TOKEN,
-    type UmamiTrackerStub
-} from '../../helpers/umami-tracker-stub';
+import { installUmamiTrackerStub, type UmamiTrackerStub } from '../../helpers/umami-tracker-stub';
 
 const SCRIPT_URL = 'https://pulso-staging.hospeda.com.ar/app.js';
 const WEBSITE_ID = '3f1c2b4e-8a6d-4c1f-9b2e-7d5a1e0c9f33';
@@ -27,13 +24,6 @@ vi.mock('@/utils/logger', () => ({
 }));
 
 type UmamiClientModule = typeof import('@/lib/analytics/umami-client');
-
-/**
- * Mirrors the module's poll constants. A static import would evaluate the
- * module before the hoisted `vi.mock` factories can read `mockEnv`.
- */
-const UMAMI_ACK_POLL_INTERVAL_MS = 250;
-const UMAMI_ACK_MAX_POLLS = 40;
 
 interface FakeTracker {
     track: ReturnType<typeof vi.fn>;
@@ -158,10 +148,11 @@ describe('umami-client (admin)', () => {
 
     describe('trackEvent', () => {
         it('forwards a valid catalog event to window.umami.track', async () => {
-            // Arrange
+            // Arrange: identity settled, so the event is not held (HOS-2119)
             const tracker = installTracker();
             const mod = await loadFreshModule();
             mod.initUmami();
+            mod.markVisitorAnonymous();
 
             // Act
             mod.trackEvent('admin_tour_completed', { role: null, tour_id: 'welcome' });
@@ -180,6 +171,7 @@ describe('umami-client (admin)', () => {
             const tracker = installTracker();
             const mod = await loadFreshModule();
             mod.initUmami();
+            mod.markVisitorAnonymous();
 
             // Act
             expect(() => mod.trackEvent('not_a_real_event' as never, {} as never)).not.toThrow();
@@ -248,17 +240,8 @@ describe('umami-client (admin)', () => {
         });
     });
 
-    describe('identify waits for the pageview acknowledgement (OQ-5)', () => {
-        beforeEach(() => {
-            vi.useFakeTimers();
-        });
-
-        afterEach(() => {
-            vi.useRealTimers();
-            Reflect.deleteProperty(document, 'readyState');
-        });
-
-        /** The tracker script finished loading; its auto pageview is in flight. */
+    describe('identify opens a per-user session and never claims the anonymous one (OQ-5)', () => {
+        /** The tracker script finished loading; its auto pageview may be in flight. */
         async function loadTracker(): Promise<{
             readonly mod: UmamiClientModule;
             readonly umami: UmamiTrackerStub;
@@ -270,21 +253,38 @@ describe('umami-client (admin)', () => {
             return { mod, umami };
         }
 
-        it('never identifies while the pageview is unanswered (no cache token)', async () => {
+        it('identifies at once, without a token, while the pageview is unanswered', async () => {
             // Arrange
             const { mod, umami } = await loadTracker();
 
             // Act
             mod.identifyUser('user-123');
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * 4);
 
             // Assert
-            expect(umami.identify).not.toHaveBeenCalled();
+            expect(umami.identify).toHaveBeenCalledTimes(1);
+            expect(umami.identify).toHaveBeenCalledWith('user-123');
+            expect(umami.identifyCaches).toEqual([undefined]);
         });
 
-        it('never identifies when the script loaded before the identify but the token is missing', async () => {
-            // Arrange: script loaded, tracker present, pageview not answered yet
+        it('delivers an identify issued before the script load when it loads', async () => {
+            // Arrange: initUmami ran, the deferred script has not loaded yet
+            const mod = await loadFreshModule();
+            mod.initUmami();
+            mod.identifyUser('user-early');
+
+            // Act
+            const umami = installUmamiTrackerStub();
+            trackerScripts()[0]?.dispatchEvent(new Event('load'));
+
+            // Assert
+            expect(umami.identifyCaches).toEqual([undefined]);
+            expect(umami.identify).toHaveBeenCalledWith('user-early');
+        });
+
+        it('never identifies when the tracker already holds a cache token (would claim the fingerprint)', async () => {
+            // Arrange: the pageview was answered before the session resolved
             const { mod, umami } = await loadTracker();
+            umami.answerPageview();
 
             // Act
             mod.identifyUser('user-late');
@@ -293,129 +293,55 @@ describe('umami-client (admin)', () => {
             expect(umami.identify).not.toHaveBeenCalled();
         });
 
-        it('identifies exactly once, with the token, right after the pageview is answered', async () => {
+        it('identifies once per document for the same user', async () => {
             // Arrange
             const { mod, umami } = await loadTracker();
-            mod.identifyUser('user-123');
-            mod.identifyUser('user-123');
 
             // Act
-            umami.answerPageview();
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * 3);
+            mod.identifyUser('user-123');
+            mod.identifyUser('user-123');
 
             // Assert
             expect(umami.identify).toHaveBeenCalledTimes(1);
-            expect(umami.identify).toHaveBeenCalledWith('user-123');
-            expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
-            expect(vi.getTimerCount()).toBe(0);
         });
 
-        it('delivers an identify issued before the script load once the pageview is answered', async () => {
-            // Arrange
-            const mod = await loadFreshModule();
-            mod.initUmami();
-            mod.identifyUser('user-early');
-            const umami = installUmamiTrackerStub();
-            trackerScripts()[0]?.dispatchEvent(new Event('load'));
-            trackerScripts()[0]?.dispatchEvent(new Event('load'));
-
-            // Act
-            umami.answerPageview();
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS);
-
-            // Assert
-            expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
-        });
-
-        it('identifies at once, and once per document, when the token is already held', async () => {
-            // Arrange
-            const { mod, umami } = await loadTracker();
-            umami.answerPageview();
-
-            // Act
-            mod.identifyUser('user-123');
-            mod.identifyUser('user-123');
-
-            // Assert
-            expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
-        });
-
-        it('gives up silently after the bound: no identify, no timer, no throw', async () => {
-            // Arrange
-            const { mod, umami } = await loadTracker();
-            expect([mod.UMAMI_ACK_POLL_INTERVAL_MS, mod.UMAMI_ACK_MAX_POLLS]).toEqual([
-                UMAMI_ACK_POLL_INTERVAL_MS,
-                UMAMI_ACK_MAX_POLLS
-            ]);
-            mod.identifyUser('user-123');
-
-            // Act
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * UMAMI_ACK_MAX_POLLS);
-            umami.answerPageview();
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * 4);
-
-            // Assert
-            expect(umami.identify).not.toHaveBeenCalled();
-            expect(vi.getTimerCount()).toBe(0);
-        });
-
-        it('never identifies when the pageview request failed (no token)', async () => {
-            // Arrange
-            const { mod, umami } = await loadTracker();
-            mod.identifyUser('user-123');
-
-            // Act
-            umami.answerPageview({ ok: false });
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * UMAMI_ACK_MAX_POLLS);
-
-            // Assert
-            expect(umami.identify).not.toHaveBeenCalled();
-        });
-
-        it('never identifies when the tracker has no getSession (cannot prove the token)', async () => {
+        it('identifies when the tracker has no getSession (no token provable)', async () => {
             // Arrange
             const mod = await loadFreshModule();
             mod.initUmami();
             const umami = installUmamiTrackerStub({ withGetSession: false });
             trackerScripts()[0]?.dispatchEvent(new Event('load'));
-            mod.identifyUser('user-123');
 
             // Act
-            umami.answerPageview();
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * UMAMI_ACK_MAX_POLLS);
-
-            // Assert
-            expect(umami.identify).not.toHaveBeenCalled();
-        });
-
-        it('starts the bound when the document completes, where the auto pageview goes out', async () => {
-            // Arrange: the script loads while the document is still loading
-            Object.defineProperty(document, 'readyState', {
-                configurable: true,
-                value: 'interactive'
-            });
-            const { mod, umami } = await loadTracker();
             mod.identifyUser('user-123');
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * UMAMI_ACK_MAX_POLLS * 2);
-
-            // Act: window load, then Umami answers the pageview
-            window.dispatchEvent(new Event('load'));
-            umami.answerPageview();
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS);
 
             // Assert
-            expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
+            expect(umami.identify).toHaveBeenCalledTimes(1);
         });
 
-        it('drops a pending identify when resetUser runs before the acknowledgement', async () => {
+        it('gives up silently and holds no timer when the tracker never loads', async () => {
             // Arrange
-            const { mod, umami } = await loadTracker();
+            vi.useFakeTimers();
+            const mod = await loadFreshModule();
+            mod.initUmami();
+
+            // Act / Assert
+            expect(() => mod.identifyUser('user-123')).not.toThrow();
+            vi.advanceTimersByTime(60_000);
+            expect(vi.getTimerCount()).toBe(0);
+            vi.useRealTimers();
+        });
+
+        it('drops a pending identify when resetUser runs before the script loads', async () => {
+            // Arrange
+            const mod = await loadFreshModule();
+            mod.initUmami();
             mod.identifyUser('user-early');
             mod.resetUser();
 
             // Act
-            umami.answerPageview();
-            vi.advanceTimersByTime(UMAMI_ACK_POLL_INTERVAL_MS * 2);
+            const umami = installUmamiTrackerStub();
+            trackerScripts()[0]?.dispatchEvent(new Event('load'));
 
             // Assert
             expect(umami.identify).not.toHaveBeenCalled();
@@ -424,7 +350,6 @@ describe('umami-client (admin)', () => {
         it('identifies again after resetUser and a new login', async () => {
             // Arrange
             const { mod, umami } = await loadTracker();
-            umami.answerPageview();
             mod.identifyUser('user-1');
 
             // Act

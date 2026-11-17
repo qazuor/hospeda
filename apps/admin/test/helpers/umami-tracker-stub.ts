@@ -2,11 +2,13 @@
  * @file umami-tracker-stub.ts
  * @description A `window.umami` stub that behaves like the Umami 3.5.0 tracker
  * where the admin identify order depends on it (HOS-2119, OQ-5). Mirrors
- * `apps/web/test/helpers/umami-tracker-stub.ts`, adapted to the admin, which
- * keeps the tracker's own auto pageview:
+ * `apps/web/test/helpers/umami-tracker-stub.ts`, simplified:
  *
- * - The auto pageview is internal to the tracker (never a `window.umami.track`
- *   call), so the test answers it with `answerPageview`.
+ * - `track()` returns a promise that settles only when the test answers the
+ *   request (`respond`), like the tracker's `send()` awaiting `fetch`. Answering
+ *   ANY request (pageview or custom event) stores the token, as the tracker
+ *   does. `answerPageview` stores it without a `track` call (a request the
+ *   test does not model, e.g. the old auto pageview).
  * - Answering stores the `x-umami-cache` token, exposed through `getSession()`,
  *   as the tracker does with `data.cache`. A failed request
  *   (`answerPageview({ ok: false })`) leaves no token.
@@ -28,8 +30,10 @@ export interface UmamiTrackerStub {
     readonly track: ReturnType<typeof vi.fn>;
     /** Spy of `umami.identify`. */
     readonly identify: ReturnType<typeof vi.fn>;
-    /** Answers the tracker's auto pageview. */
+    /** Stores the cache token as if some request had been answered. */
     readonly answerPageview: (input?: AnswerPageviewInput) => void;
+    /** Answers the oldest pending `track` request (stores the token when ok). */
+    readonly respond: (input?: AnswerPageviewInput) => void;
     /** Cache token held when each `identify` call was made (`undefined` = none). */
     readonly identifyCaches: readonly (string | undefined)[];
 }
@@ -50,8 +54,17 @@ export function installUmamiTrackerStub({
 } = {}): UmamiTrackerStub {
     let cache: string | undefined;
     const identifyCaches: Array<string | undefined> = [];
+    const pending: Array<(ok: boolean) => void> = [];
 
-    const track = vi.fn(() => Promise.resolve());
+    const track = vi.fn(
+        () =>
+            new Promise<void>((resolve) => {
+                pending.push((ok) => {
+                    if (ok) cache = STUB_CACHE_TOKEN;
+                    resolve();
+                });
+            })
+    );
     const identify = vi.fn(() => {
         identifyCaches.push(cache);
         return Promise.resolve();
@@ -67,6 +80,7 @@ export function installUmamiTrackerStub({
         answerPageview: ({ ok = true }: AnswerPageviewInput = {}) => {
             if (ok) cache = STUB_CACHE_TOKEN;
         },
+        respond: ({ ok = true }: AnswerPageviewInput = {}) => pending.shift()?.(ok),
         identifyCaches
     };
 }

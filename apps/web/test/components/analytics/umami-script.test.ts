@@ -75,6 +75,23 @@ describe('UmamiScript — the tag when configured', () => {
     });
 });
 
+describe('UmamiScript — first-pageview identity hold (OQ-5)', () => {
+    it('renders the await-identity meta only behind the gate and the prop', () => {
+        expect(TEMPLATE).toMatch(
+            /shouldRender && awaitIdentity && <meta name="umami-await-identity" content="true" \/>/
+        );
+    });
+
+    it('BaseLayout (mounts UserMenu) asks for it and StandaloneLayout (no UserMenu) does not', () => {
+        expect(stripComments(read('layouts/BaseLayout.astro'))).toMatch(
+            /<UmamiScript\b[^>]*\bawaitIdentity\b[^>]*\/>/
+        );
+        expect(stripComments(read('layouts/StandaloneLayout.astro'))).not.toContain(
+            'awaitIdentity'
+        );
+    });
+});
+
 describe('UmamiScript — the tag when not configured', () => {
     it('requires BOTH the script URL and the website id to render', () => {
         // Dropping either half would ship a broken tag (no src, or no id).
