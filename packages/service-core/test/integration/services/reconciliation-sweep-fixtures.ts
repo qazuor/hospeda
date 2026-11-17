@@ -140,12 +140,31 @@ async function anchors(
         )
     ).rows[0]?.id;
     if (!planId) throw new Error('No plan was seeded');
-    const versionId = (
-        await getServiceTestPool().query<{ id: string }>(
-            'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, true, true, 0, false) RETURNING id',
-            [planId, Math.floor(Math.random() * 100000000) + 1, vertical]
-        )
-    ).rows[0]?.id;
+    const pool = getServiceTestPool();
+    const client = await pool.connect();
+    let versionId: string | undefined;
+    try {
+        await client.query('BEGIN');
+        // This index is unique by (vertical, rank); serialize allocation and take the next rank
+        // within that vertical so parallel reconciliation fixtures cannot choose the same value.
+        await client.query('SELECT pg_advisory_xact_lock($1)', [1_999_003]);
+        const rank = await client.query<{ rank: number }>(
+            'SELECT COALESCE(MAX(rank), 0) + 1 AS rank FROM plan_version WHERE vertical = $1',
+            [vertical]
+        );
+        versionId = (
+            await client.query<{ id: string }>(
+                'INSERT INTO plan_version (plan_id, vertical, rank, sellable, current, trial_days, allows_pause) VALUES ($1, $3, $2, true, true, 0, false) RETURNING id',
+                [planId, rank.rows[0]?.rank, vertical]
+            )
+        ).rows[0]?.id;
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
     if (!versionId) throw new Error('No plan version was seeded');
     const optionId = (
         await getServiceTestPool().query<{ id: string }>(
