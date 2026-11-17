@@ -32,6 +32,7 @@ import {
     hostTradeBenefitTypeRequiresValue
 } from '@repo/schemas';
 import { useState } from 'react';
+import { TradeCategoryBadges } from '@/components/host/host-trades/TradeCategoryBadges';
 import type { MyHostTrade } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -218,23 +219,15 @@ export function HostTradeEditForm({ locale, trade: initialTrade }: HostTradeEdit
                             readOnly
                         />
                     </div>
+                    {/* Categories are managed by the Hospeda team (HOS-919 D3): shown
+                        in full as read-only badges, never an input, never sent. */}
                     <div className={styles.field}>
-                        <label
-                            className={styles.label}
-                            htmlFor="htf-category"
-                        >
-                            {t('account.provider.form.fields.category', 'Categoría')}
-                        </label>
-                        <input
-                            id="htf-category"
-                            type="text"
-                            className={styles.input}
-                            value={t(
-                                `host-trades.categories.${currentTrade.category}`,
-                                currentTrade.category
-                            )}
-                            disabled
-                            readOnly
+                        <span className={styles.label}>
+                            {t('account.provider.form.fields.categories', 'Rubros')}
+                        </span>
+                        <TradeCategoryBadges
+                            categories={currentTrade.categories}
+                            locale={locale}
                         />
                     </div>
                 </div>

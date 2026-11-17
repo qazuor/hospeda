@@ -37,6 +37,7 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
 import { RegisterUsageForm } from '@/components/host/host-trades/RegisterUsageForm.client';
+import { TradeCategoryBadges } from '@/components/host/host-trades/TradeCategoryBadges';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import type { DirectoryProvider } from '@/lib/api/endpoints-protected';
@@ -155,9 +156,7 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
                 </span>
                 <div class="register-usage__provider-body">
                     <h2 class="register-usage__provider-name">{provider.name}</h2>
-                    <p class="register-usage__provider-category">
-                        {t(`host-trades.categories.${provider.category}`, provider.category)}
-                    </p>
+                    <TradeCategoryBadges categories={provider.categories} locale={locale} />
                     <p class="register-usage__provider-benefit">
                         <span class="register-usage__provider-benefit-label">
                             {t('host-trades.card.benefit', 'Beneficio para hosts')}
@@ -264,13 +263,6 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
         font-weight: 700;
         font-size: 1.25rem;
         color: var(--core-foreground);
-    }
-
-    .register-usage__provider-category {
-        margin: 0;
-        font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--core-muted-foreground);
     }
 
     .register-usage__provider-benefit {

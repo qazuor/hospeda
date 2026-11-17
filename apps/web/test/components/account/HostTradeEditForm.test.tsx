@@ -3,7 +3,8 @@
  * @description RTL tests for the HostTradeEditForm React island (HOS-278 §8).
  *
  * Covers:
- * - Identity fields (name/slug/category) render disabled
+ * - Identity fields (name/slug) render disabled; ALL categories render as
+ *   read-only badges and there is no way to edit or send them (HOS-919 D3)
  * - The benefit-atom rule: a benefitText-only edit still carries benefitType
  *   AND benefitValue in the PATCH payload (both at the pure-helper level and
  *   through a real form interaction)
@@ -12,8 +13,8 @@
  * - The pending-review block renders only when `benefitReviewState === 'pending'`
  */
 
-import { HostTradeBenefitTypeEnum, HostTradeCategoryEnum } from '@repo/schemas';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { HostTradeBenefitTypeEnum } from '@repo/schemas';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostTradeEditForm } from '../../../src/components/account/HostTradeEditForm.client';
 import {
@@ -60,7 +61,20 @@ const BASE_TRADE: MyHostTrade = {
     id: 'trade-1',
     slug: 'plomeria-juan',
     name: 'Plomería Juan',
-    category: HostTradeCategoryEnum.PLOMERIA,
+    categories: [
+        {
+            id: 'cat-plomeria',
+            slug: 'plomeria',
+            nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+            groupSlug: 'instalaciones'
+        },
+        {
+            id: 'cat-destapaciones',
+            slug: 'destapaciones-desagotes',
+            nameI18n: { es: 'Destapaciones y desagotes', en: '', pt: '' },
+            groupSlug: 'instalaciones'
+        }
+    ],
     contact: '+5493441112233',
     benefit: 'Válido de lunes a viernes.',
     benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
@@ -74,7 +88,9 @@ const BASE_TRADE: MyHostTrade = {
     scheduleText: 'Lunes a Viernes 9 a 18',
     isActive: true,
     revokedAt: null,
-    revokeReason: null
+    revokeReason: null,
+    declarationSuspendedAt: null,
+    declarationSuspendReason: null
 };
 
 function renderForm(trade: MyHostTrade = BASE_TRADE) {
@@ -160,13 +176,46 @@ describe('HostTradeEditForm', () => {
         mockUpdateMine.mockResolvedValue({ ok: true, data: { trade: BASE_TRADE } });
     });
 
-    it('renders the identity fields (name/slug/category) as disabled', () => {
+    it('renders the identity fields (name/slug) as disabled', () => {
         renderForm();
         expect((screen.getByLabelText('Nombre') as HTMLInputElement).disabled).toBe(true);
         expect((screen.getByLabelText('Identificador (slug)') as HTMLInputElement).disabled).toBe(
             true
         );
-        expect((screen.getByLabelText('Categoría') as HTMLInputElement).disabled).toBe(true);
+    });
+
+    it('shows ALL the categories as read-only badges, with no «+N» cap (HOS-919 D3)', () => {
+        renderForm({
+            ...BASE_TRADE,
+            categories: ['a', 'b', 'c', 'd', 'e'].map((s) => ({
+                id: `cat-${s}`,
+                slug: s,
+                nameI18n: { es: `Rubro ${s}`, en: '', pt: '' },
+                groupSlug: 'g'
+            }))
+        });
+
+        const badges = screen.getByRole('list', { name: 'Rubros' });
+        expect(within(badges).getAllByRole('listitem')).toHaveLength(5);
+        expect(within(badges).queryByText(/^\+\d/)).toBeNull();
+    });
+
+    it('renders the categories in the order received, with the Spanish fallback', () => {
+        renderForm();
+
+        const labels = within(screen.getByRole('list', { name: 'Rubros' }))
+            .getAllByRole('listitem')
+            .map((li) => li.textContent);
+        expect(labels).toEqual(['Plomería', 'Destapaciones y desagotes']);
+    });
+
+    it('offers no control to edit the categories', () => {
+        renderForm();
+
+        // (the benefit-type <select> is a combobox too, so match by name)
+        expect(screen.queryByRole('combobox', { name: /rubros|categor/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('textbox', { name: /rubros|categor/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
     it('pre-fills the identity fields with the trade values', () => {
@@ -244,6 +293,8 @@ describe('HostTradeEditForm', () => {
         await vi.waitFor(() => expect(mockUpdateMine).toHaveBeenCalledTimes(1));
         const sentPayload = mockUpdateMine.mock.calls[0]?.[0];
         expect(sentPayload).toEqual({ contact: '+5493440009999' });
+        expect(sentPayload).not.toHaveProperty('categoryIds');
+        expect(sentPayload).not.toHaveProperty('categories');
     });
 
     it('does not call the API when nothing changed', () => {
