@@ -1604,6 +1604,13 @@
       "when": 1794903610623,
       "tag": "0228_hos2314_domain_event_seq",
       "breakpoints": true
+    },
+    {
+      "idx": 229,
+      "version": "7",
+      "when": 1794940750138,
+      "tag": "0229_hos919_provider_trade_categories",
+      "breakpoints": true
     }
   ]
 }
