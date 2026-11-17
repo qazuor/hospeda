@@ -26,6 +26,13 @@ import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory'
 
 const mockLogger = createLoggerMock();
 
+const PLOMERIA_REF = {
+    id: '00000000-0000-4000-a000-0000000000c1',
+    slug: 'plomeria',
+    nameI18n: { es: 'Plomeria', en: 'Plumbing', pt: 'Encanamento' },
+    groupSlug: 'instalaciones'
+};
+
 const TRADE_A = getMockId('attraction', 'ht-admin-a');
 const TRADE_B = getMockId('attraction', 'ht-admin-b');
 const HOST_A = getMockId('user', 'host-admin-a');
@@ -69,6 +76,11 @@ function buildService(options: {
 }) {
     const model = createModelMock();
     const hostTradeModel = createModelMock(['findByIds']);
+    // HOS-919: provider refs carry their catalog categories, hydrated in ONE batched call.
+    hostTradeModel.hydrateCategories = vi.fn(
+        async ({ hostTradeIds }: { hostTradeIds: readonly string[] }) =>
+            new Map(hostTradeIds.map((id) => [id, [PLOMERIA_REF]]))
+    );
     const userModel = createModelMock(['findByIds']);
     const reviewModel = createModelMock();
 
@@ -82,8 +94,7 @@ function buildService(options: {
             .map((id) => ({
                 id,
                 slug: `slug-${id.slice(0, 6)}`,
-                name: `Proveedor ${id.slice(0, 4)}`,
-                category: 'PLOMERIA'
+                name: `Proveedor ${id.slice(0, 4)}`
             }))
     );
     hostTradeModel.findByIds = findTradesByIds;
