@@ -67,6 +67,14 @@ describe('TEST:3.12:5 GUARD:G-FAC-03', () => {
         expect(guard.output).toContain('reader outside inventory');
     });
 
+    it('terminates on a recursive array type alias and still flags a BusinessLine comparison beside it', () => {
+        const root = fixture(
+            "import type { BusinessLine } from '@repo/schemas'; type Json = string | number | null | Json[] | { [k: string]: Json }; declare const a: Json; declare const b: Json; a === b; declare const line: BusinessLine; line === 'food';"
+        );
+        const result = scanBusinessLineDecisions(root);
+        expect(result.decisions).toHaveLength(1);
+    });
+
     it('keeps string style comparisons and rating object keys green', () => {
         const root = fixture(
             "const style = 'standard'; style === 'standard'; const rating = { food: { average: 5 } };"
