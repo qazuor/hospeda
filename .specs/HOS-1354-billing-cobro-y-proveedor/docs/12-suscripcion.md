@@ -1154,6 +1154,8 @@ staging, 15 y 16/11/2026). Decisión del owner (delegada, 2026-11-16):
   primer cobro que la fila ya tenía. No toca la predecesora ni su `succeeded_by_id`. Cualquier
   otra sucesora viva sigue respondiendo `SUCCESSION_IN_PROGRESS`.
 
+El primer cobro de una sucesora se redondea al segundo antes de guardarlo y mandarlo (RP17, EX-60).
+
 ---
 
 ## Lo que este capítulo NO cierra
