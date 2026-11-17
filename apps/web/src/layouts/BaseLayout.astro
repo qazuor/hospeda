@@ -198,8 +198,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  Renders nothing unless both PUBLIC_UMAMI_* values are set. Pageviews
 		  are sent per `astro:page-load` by its bundled script, tagged from the
 		  swapped `<meta name="umami-tag">` (see UmamiScript.astro).
+		  `awaitIdentity`: the Header's UserMenu settles the visitor identity,
+		  so the first pageview waits for the identify (HOS-2119, OQ-5).
 		-->
-		<UmamiScript tag={analyticsTag} />
+		<UmamiScript tag={analyticsTag} awaitIdentity />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
