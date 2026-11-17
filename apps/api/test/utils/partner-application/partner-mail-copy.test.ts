@@ -17,7 +17,7 @@ describe('partner application mail copy', () => {
                 partnerName: 'Casa'
             })
         ).toEqual({
-            subject: source.subject,
+            subject: source.subject.replace('{{partnerName}}', 'Casa'),
             preview: source.preview.replace('{{partnerName}}', 'Casa'),
             heading: source.heading.replace('{{partnerName}}', 'Casa'),
             paragraphs: [source.body, source.singleUse, source.ignore],
@@ -39,13 +39,43 @@ describe('partner application mail copy', () => {
             partnerName: 'Casa'
         });
         expect(copy).toEqual({
-            subject: source.subject,
+            subject: source.subject.replace('{{partnerName}}', 'Casa'),
             preview: direct.preview.replace('{{partnerName}}', 'Casa'),
             heading: direct.heading.replace('{{partnerName}}', 'Casa'),
             paragraphs: [direct.body, source.singleUse, direct.ignore],
             cta: source.cta
         });
         expect(JSON.stringify(copy)).not.toMatch(/postulaci|application|candidatura/i);
+    });
+
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('interpolates claim subject for application in %s', (locale) => {
+        const copy = resolvePartnerMailCopy({
+            kind: 'claim-notice',
+            origin: 'application',
+            locale,
+            partnerName: 'Casa'
+        });
+        expect(copy.subject).toContain('Casa');
+        expect(copy.subject).not.toContain('{{');
+    });
+
+    it.each([
+        'es',
+        'en',
+        'pt'
+    ] as const)('interpolates claim subject for direct creation in %s', (locale) => {
+        const copy = resolvePartnerMailCopy({
+            kind: 'claim-notice',
+            origin: 'direct',
+            locale,
+            partnerName: 'Casa'
+        });
+        expect(copy.subject).toContain('Casa');
+        expect(copy.subject).not.toContain('{{');
     });
 
     it.each([

@@ -18,10 +18,10 @@
     },
     "partnerApplication": {
         "claimNotice": {
-            "subject": "Reclamá tu Partner en Hospeda",
+            "subject": "Reclamá el Partner {{partnerName}} en Hospeda",
             "preview": "Aprobamos la postulación de {{partnerName}}",
             "heading": "Aprobamos la postulación de {{partnerName}}",
-            "body": "Para administrarlo, abrí el link de abajo e iniciá sesión con la cuenta con la que lo vas a manejar. Esa cuenta queda como dueña del Partner.",
+            "body": "Para administrarlo, abrí el link de abajo e iniciá sesión con la cuenta de este correo. Esa cuenta queda como dueña del Partner.",
             "singleUse": "El link es personal y sirve una sola vez. Si te mandamos otro antes, ese ya no funciona. No lo reenvíes.",
             "ignore": "Si no te postulaste como Partner de Hospeda, ignorá este correo.",
             "cta": "Reclamar el Partner"
@@ -29,7 +29,7 @@
         "claimNoticeDirect": {
             "preview": "El equipo de Hospeda creó el Partner {{partnerName}}",
             "heading": "El equipo de Hospeda creó el Partner {{partnerName}}",
-            "body": "Para administrarlo, reclamalo: abrí el link de abajo e iniciá sesión con la cuenta con la que lo vas a manejar. Esa cuenta queda como dueña del Partner.",
+            "body": "Para administrarlo, reclamalo: abrí el link de abajo e iniciá sesión con la cuenta de este correo. Esa cuenta queda como dueña del Partner.",
             "ignore": "Si no esperabas este correo, no hace falta que hagas nada."
         },
         "rejected": {

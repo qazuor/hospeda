@@ -96,7 +96,7 @@ describe('HOS-2040 TEST:V7:11 the claim notice renders its link, the Partner nam
         );
 
         // Assert
-        expect(result.subject).toBe(source.subject);
+        expect(result.subject).toBe(source.subject.replace('{{partnerName}}', partnerName));
         expect(html.includes(escapeHtml(source.body))).toBe(true);
         expect(html.includes(escapeHtml(source.cta))).toBe(true);
         expect(otherBodies.map((body) => html.includes(body))).toEqual([false, false]);
