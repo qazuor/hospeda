@@ -14,7 +14,8 @@ export const HOST_TRADE_ID_HOOK_KEY = 'hostTradeIdBeingUpdated';
  * Validates the `categoryIds` of a provider write (HOS-919 AC-4.1..AC-4.3).
  *
  * Rules, in this order:
- * - every id must exist and not be soft-deleted;
+ * - every id must exist, not be soft-deleted, and belong to a group that is
+ *   not soft-deleted either;
  * - an `INACTIVE` category is accepted only when the provider ALREADY holds it
  *   (a deactivated category stays on the providers that have it, it just can
  *   not be newly assigned). On create there is nothing to hold yet, so any
@@ -42,9 +43,10 @@ export async function assertCategoryIdsAssignable(input: {
     const found = await categoryModel.findByIds(categoryIds, tx);
     const byId = new Map(found.map((category) => [category.id as string, category]));
 
+    const idsInDeletedGroups = new Set(await categoryModel.findIdsInDeletedGroups(categoryIds, tx));
     const unknownIds = categoryIds.filter((id) => {
         const category = byId.get(id);
-        return !category || category.deletedAt;
+        return !category || category.deletedAt || idsInDeletedGroups.has(id);
     });
     if (unknownIds.length > 0) {
         throw new ServiceError(

@@ -96,7 +96,8 @@ function buildService(
     const categoryModel = {
         findByIds: vi
             .fn()
-            .mockResolvedValue([{ id: CAT_ID, lifecycleState: 'ACTIVE', deletedAt: null }])
+            .mockResolvedValue([{ id: CAT_ID, lifecycleState: 'ACTIVE', deletedAt: null }]),
+        findIdsInDeletedGroups: vi.fn().mockResolvedValue([])
     };
     const accommodationModel = { ...createModelMock(), ...accommodationModelOverrides };
 

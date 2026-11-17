@@ -179,6 +179,23 @@ export class HostTradeCategoryService extends BaseCrudService<
     }
 
     /**
+     * Refuses to restore a category whose group is still soft-deleted: the
+     * category would come back unreachable (hidden with its group) yet be
+     * flagged live. Restore the group first.
+     *
+     * @throws {ServiceError} VALIDATION_ERROR naming the `groupId` field.
+     */
+    protected override async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<string> {
+        const category = await this.model.findById(id, ctx?.tx);
+        if (category) await this.assertGroupUsable(category.groupId, ctx);
+        return id;
+    }
+
+    /**
      * Blocks deleting a category that a live provider still uses (AC-3.4).
      *
      * @throws {ServiceError} `CATEGORY_IN_USE` when a non-deleted provider links it.

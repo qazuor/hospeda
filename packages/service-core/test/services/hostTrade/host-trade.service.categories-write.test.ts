@@ -85,7 +85,11 @@ describe('HostTradeService category writes', () => {
             'replaceCategories',
             'hydrateCategories'
         ]);
-        categoryModel = createTypedModelMock(HostTradeCategoryModel, ['findByIds']);
+        categoryModel = createTypedModelMock(HostTradeCategoryModel, [
+            'findByIds',
+            'findIdsInDeletedGroups'
+        ]);
+        asMock(categoryModel.findIdsInDeletedGroups).mockResolvedValue([]);
         const qr = {
             findLiveCodeForEntity: vi.fn().mockResolvedValue({ data: null })
         } as unknown as QrCodeService;
@@ -153,6 +157,20 @@ describe('HostTradeService category writes', () => {
             const result = await service.create(creator, createInput([CAT_A]) as never);
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(model.create).not.toHaveBeenCalled();
+        });
+
+        it('should reject a category whose group is soft-deleted', async () => {
+            asMock(categoryModel.findByIds).mockResolvedValue([category(CAT_A)]);
+            asMock(categoryModel.findIdsInDeletedGroups).mockResolvedValue([CAT_A]);
+
+            const result = await service.create(creator, createInput([CAT_A]) as never);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.details).toMatchObject({
+                field: 'categoryIds',
+                reason: 'UNKNOWN_CATEGORY'
+            });
             expect(model.create).not.toHaveBeenCalled();
         });
 

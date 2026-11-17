@@ -3,7 +3,7 @@ import type {
     PublicHostTradeCatalog,
     PublicHostTradeCategoryGroup
 } from '@repo/schemas';
-import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTrades } from '../../schemas/host-trade/host_trade.dbschema.ts';
 import { hostTradeCategories } from '../../schemas/host-trade/host-trade-category.dbschema.ts';
@@ -163,6 +163,87 @@ export class HostTradeCategoryModel extends BaseModelImpl<HostTradeCategory> {
                 logError(this.entityName, 'findActiveBySlugs', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findActiveBySlugs', logContext, err.message, err);
+        }
+    }
+
+    /**
+     * Returns the ids, out of `categoryIds`, whose GROUP is soft-deleted. Such a
+     * category is unreachable in the catalog (the public catalog and the admin
+     * tree hide it with its group), so it can be neither assigned to a provider
+     * nor restored (HOS-919 review).
+     *
+     * @param categoryIds - Category UUIDs to check.
+     * @param tx - Optional transaction client.
+     * @returns The subset of ids whose group has `deleted_at` set.
+     * @throws DbError if the database query fails.
+     */
+    async findIdsInDeletedGroups(
+        categoryIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<string[]> {
+        if (categoryIds.length === 0) return [];
+        const db = this.getClient(tx);
+        const logContext = { categoryIds };
+        try {
+            const rows = await db
+                .select({ id: hostTradeCategories.id })
+                .from(hostTradeCategories)
+                .innerJoin(
+                    hostTradeCategoryGroups,
+                    eq(hostTradeCategoryGroups.id, hostTradeCategories.groupId)
+                )
+                .where(
+                    and(
+                        inArray(hostTradeCategories.id, [...categoryIds]),
+                        isNotNull(hostTradeCategoryGroups.deletedAt)
+                    )
+                );
+            return rows.map((row) => row.id);
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findIdsInDeletedGroups', logContext, err);
+            } catch {}
+            throw new DbError(
+                this.entityName,
+                'findIdsInDeletedGroups',
+                logContext,
+                err.message,
+                err
+            );
+        }
+    }
+
+    /**
+     * Locks the category row (`SELECT ... FOR UPDATE`) for the rest of the
+     * transaction. A concurrent insert into `r_host_trade_category` takes a
+     * KEY SHARE lock on this row through its foreign key, so it waits here: the
+     * "no live provider uses it" check and the soft delete that follows cannot
+     * be overtaken by a new link.
+     *
+     * Must run on a transaction client to be meaningful.
+     *
+     * @param categoryId - Category UUID.
+     * @param tx - Transaction client holding the lock.
+     * @returns `true` when the row exists (and is now locked).
+     * @throws DbError if the database query fails.
+     */
+    async lockForUpdate(categoryId: string, tx?: DrizzleClient): Promise<boolean> {
+        const db = this.getClient(tx);
+        const logContext = { categoryId };
+        try {
+            const rows = await db
+                .select({ id: hostTradeCategories.id })
+                .from(hostTradeCategories)
+                .where(eq(hostTradeCategories.id, categoryId))
+                .for('update');
+            return rows.length > 0;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'lockForUpdate', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'lockForUpdate', logContext, err.message, err);
         }
     }
 

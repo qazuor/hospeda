@@ -74,6 +74,7 @@ describe('HostTradeCategoryService', () => {
             'findAll',
             'count',
             'countLinkedHostTrades',
+            'findIdsInDeletedGroups',
             'findPublicCatalog',
             'getTable'
         ]);
@@ -226,10 +227,22 @@ describe('HostTradeCategoryService', () => {
         it('should restore a soft-deleted category', async () => {
             asMock(model.findById).mockResolvedValue({ ...category, deletedAt: new Date() });
             asMock(model.restore).mockResolvedValue(1);
+            asMock(groupModel.findById).mockResolvedValue(group);
 
             const result = await service.restore(actorRestore, categoryId);
 
             expect(result.error).toBeUndefined();
+        });
+
+        it('should refuse to restore a category whose group is soft-deleted', async () => {
+            asMock(model.findById).mockResolvedValue({ ...category, deletedAt: new Date() });
+            asMock(groupModel.findById).mockResolvedValue({ ...group, deletedAt: new Date() });
+
+            const result = await service.restore(actorRestore, categoryId);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.details).toMatchObject({ field: 'groupId', groupId });
+            expect(model.restore).not.toHaveBeenCalled();
         });
     });
 
