@@ -40,11 +40,16 @@ export const AMENITY_CATEGORIES: readonly AmenitiesTypeEnum[] = [
 export const FEATURE_CATEGORIES: readonly FeatureCategoryEnum[] =
     Object.values(FeatureCategoryEnum);
 
-/** Every category value of either kind (the two enums share no value). */
-export const ALL_CATALOG_CATEGORIES = [
-    ...AMENITY_CATEGORIES,
-    ...FEATURE_CATEGORIES
-] as unknown as readonly [string, ...string[]]; // never empty: both enums have members, and `z.enum` needs a non-empty tuple
+const [FIRST_CATEGORY, ...OTHER_CATEGORIES] = [...AMENITY_CATEGORIES, ...FEATURE_CATEGORIES];
+if (FIRST_CATEGORY === undefined) {
+    throw new Error('the amenity and feature category enums are empty');
+}
+
+/** Every category value of either kind (the two enums share no value). Non-empty, as `z.enum` needs. */
+export const ALL_CATALOG_CATEGORIES: readonly [string, ...string[]] = [
+    FIRST_CATEGORY,
+    ...OTHER_CATEGORIES
+];
 
 /**
  * The categories of one kind, in wizard order.
