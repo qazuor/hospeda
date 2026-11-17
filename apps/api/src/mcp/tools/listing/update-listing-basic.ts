@@ -46,26 +46,12 @@ import {
     AccommodationUpdateHttpSchema,
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
-    httpToDomainAccommodationUpdate,
     ServiceErrorCode,
     type VenueOwnerUpdateInput,
     VenueOwnerUpdateInputSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { type Actor, entityNotFoundError } from '@repo/service-core';
 import { z } from 'zod';
-import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../middlewares/accommodation-cache-invalidation';
-import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
-import {
-    decideListingAccess,
-    type ListingAccessWithSections,
-    throwListingAccessRefusal
-} from '../../../middlewares/listing-access';
-import {
-    experienceOwnerEditSections,
-    experienceOwnerEditSectionTraits,
-    venueOwnerEditSections
-} from '../../../utils/listing-access/owner-edit-listing-access';
 import { SPANISH_PARSE_PARAMS } from '../run-tool';
 import {
     defineTool,
@@ -75,19 +61,18 @@ import {
 } from '../tool-definition';
 import { type ListingDetail, readOwnListingDetail } from './get-listing';
 import {
+    authorizeOwnerEdit,
+    writeAccommodationPatch,
+    writeScheduledPatch
+} from './listing-owner-write';
+import {
     editorLink,
     type ListingRef,
     listingRefusalLink,
     readListingRef,
     sectionForField
 } from './listing-refusal-actions';
-import {
-    LISTING_TOOL_VERTICALS,
-    type ListingToolVertical,
-    listingToolAccommodationService,
-    listingToolExperienceService,
-    listingToolVenueService
-} from './listing-services';
+import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from './listing-services';
 
 /** The fields venues and experiences accept, in the order they are documented. */
 const SCHEDULED_BASIC_FIELDS = {
@@ -125,9 +110,6 @@ const UPDATE_LISTING_BASIC_VERTICALS = LISTING_TOOL_VERTICALS;
 
 /** One of {@link UPDATE_LISTING_BASIC_VERTICALS}. */
 type UpdateListingBasicVertical = ListingToolVertical;
-
-/** A vertical whose listings have opening hours (venue, experience). */
-type ScheduledVertical = Exclude<UpdateListingBasicVertical, VerticalEnum.ACCOMMODATION>;
 
 /** Per vertical: its allowlist schema and the Spanish name used in messages. */
 const VERTICAL_PATCH: Readonly<
@@ -272,110 +254,6 @@ export const UpdateListingBasicInputSchema = z
 /** Validated input of `update_listing_basic`. */
 export type UpdateListingBasicInput = z.output<typeof UpdateListingBasicInputSchema>;
 
-/** The uniform not-found error, whatever the vertical. */
-function notFound(): ToolHandlerResult<never> {
-    const error = entityNotFoundError({ entityName: 'listing' });
-    return { error: { code: error.code, message: error.message } };
-}
-
-/** The owner PATCH route's listing-access declaration for a vertical. */
-function ownerEditDeclaration(vertical: UpdateListingBasicVertical): ListingAccessWithSections {
-    if (vertical === VerticalEnum.ACCOMMODATION) {
-        return { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' };
-    }
-    if (vertical === VerticalEnum.VENUE) {
-        return {
-            vertical: VerticalEnum.VENUE,
-            operation: 'EDIT',
-            idParam: 'id',
-            listingSection: venueOwnerEditSections
-        };
-    }
-    return {
-        vertical: VerticalEnum.EXPERIENCE,
-        operation: 'EDIT',
-        idParam: 'id',
-        listingSection: experienceOwnerEditSections,
-        sectionTraits: experienceOwnerEditSectionTraits
-    };
-}
-
-/**
- * Runs the route's listing-access step, owner-only. Resolves to `undefined`
- * when allowed, to the not-found error for a foreign or missing listing;
- * every other refusal is thrown as the route throws it (a `ServiceError`,
- * mapped by the tool executor).
- */
-async function authorizeOwnerEdit(input: {
-    readonly actor: Actor;
-    readonly vertical: UpdateListingBasicVertical;
-    readonly id: string;
-    readonly patch: Record<string, unknown>;
-}): Promise<ToolHandlerResult<never> | undefined> {
-    const config = ownerEditDeclaration(input.vertical);
-    const decision = await decideListingAccess({
-        actor: input.actor,
-        listingId: input.id,
-        config,
-        tier: 'protected',
-        body: input.patch,
-        ownerOnly: true
-    });
-    if (decision === null) {
-        return notFound(); // never for EDIT; fail closed
-    }
-    const { result, subjectId, ports } = decision;
-    if (result.allowed) {
-        return undefined;
-    }
-    if (result.reason === 'NOT_FOUND') {
-        return notFound();
-    }
-    return throwListingAccessRefusal({ config, result, subjectId, ports });
-}
-
-/**
- * Converts the flat patch and calls `AccommodationService.update`, as the
- * accommodation owner PATCH route does.
- */
-async function updateAccommodation(input: {
-    readonly actor: Actor;
-    readonly id: string;
-    readonly patch: AccommodationUpdateHttp;
-}): Promise<ToolHandlerResult<never> | undefined> {
-    const result = await listingToolAccommodationService.update(
-        input.actor,
-        input.id,
-        httpToDomainAccommodationUpdate(input.patch)
-    );
-    if (result.error) {
-        return { error: result.error };
-    }
-    // The route's HTTP-level eviction (HOS-2063) does not wrap a tool call.
-    for (const pathPrefix of ACCOMMODATION_CACHE_INVALIDATION_PREFIXES) {
-        invalidateCacheByPathPrefix({ pathPrefix });
-    }
-    return undefined;
-}
-
-/** Calls the vertical's `updateOwn`, as the owner PATCH route does. */
-async function updateScheduled(input: {
-    readonly actor: Actor;
-    readonly vertical: ScheduledVertical;
-    readonly id: string;
-    readonly patch: VenueOwnerUpdateInput & ExperienceOwnerUpdateInput;
-}): Promise<ToolHandlerResult<never> | undefined> {
-    const { actor, vertical, id, patch } = input;
-    const result =
-        vertical === VerticalEnum.VENUE
-            ? await listingToolVenueService.updateOwn(id, patch, actor)
-            : await listingToolExperienceService.updateOwn(id, patch, actor);
-    if (result.error) {
-        return { error: result.error };
-    }
-    return undefined;
-}
-
 /** Spanish messages for refusal reasons the route can return. */
 const UPDATE_LISTING_BASIC_REASON_MESSAGES: Readonly<Record<string, string>> = {
     SECTION_ABSENT:
@@ -468,7 +346,7 @@ export const updateListingBasicTool = defineTool({
             if (refused) {
                 return refused;
             }
-            const failed = await updateAccommodation({ actor, id, patch });
+            const failed = await writeAccommodationPatch({ actor, id, patch });
             if (failed) {
                 return failed;
             }
@@ -488,7 +366,7 @@ export const updateListingBasicTool = defineTool({
         if (refused) {
             return refused;
         }
-        const failed = await updateScheduled({ actor, vertical, id, patch });
+        const failed = await writeScheduledPatch({ actor, vertical, id, patch });
         if (failed) {
             return failed;
         }
