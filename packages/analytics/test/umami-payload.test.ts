@@ -158,16 +158,38 @@ describe('mapToUmamiBatchItem', () => {
         });
     });
 
-    describe('identity of the user (never payload.id)', () => {
-        it('should never emit an id key, even with a real user id', () => {
+    describe('identity of the user (payload.id only for a real user id)', () => {
+        it('should send a real user id as payload.id AND data.user_id', () => {
             const { item } = mapToUmamiBatchItem({
                 ...base,
                 event: 'x',
                 properties: {},
                 distinctId: 'user-123'
             });
-            expect(JSON.stringify(item)).not.toMatch(/"id"\s*:/);
-            expect('id' in item.payload).toBe(false);
+            expect(item.payload.id).toBe('user-123');
+            expect(item.payload.data['user_id']).toBe('user-123');
+        });
+
+        it('should send payload.id with a visitor too (per-user session)', () => {
+            const { item } = mapToUmamiBatchItem({
+                ...base,
+                event: 'x',
+                properties: {},
+                distinctId: 'user-123',
+                visitor: { ip: '203.0.113.9', userAgent: 'Mozilla/5.0 Firefox/130.0' }
+            });
+            expect(item.payload.id).toBe('user-123');
+            expect(item.payload.ip).toBe('203.0.113.9');
+        });
+
+        it('should cut an over-long user id to the Umami distinct id limit', () => {
+            const { item } = mapToUmamiBatchItem({
+                ...base,
+                event: 'x',
+                properties: {},
+                distinctId: 'u'.repeat(80)
+            });
+            expect(item.payload.id).toBe('u'.repeat(50));
         });
 
         it('should put a real user id in data.user_id', () => {
@@ -191,9 +213,10 @@ describe('mapToUmamiBatchItem', () => {
             expect('id' in item.payload).toBe(false);
         });
 
-        it('should not send user_id when distinctId is missing', () => {
+        it('should not send user_id nor id when distinctId is missing', () => {
             const { item } = mapToUmamiBatchItem({ ...base, event: 'x', properties: {} });
             expect('user_id' in item.payload.data).toBe(false);
+            expect('id' in item.payload).toBe(false);
         });
     });
 

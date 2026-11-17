@@ -3,8 +3,10 @@
  * (HOS-2119, T-018). No network, no I/O.
  *
  * Rules measured on Umami 3.5.0 (spec HOS-2119 §5.5, §6.2):
- * - `payload.id` is NEVER emitted: Umami hashes it into the session id and
- *   would split the visitor from their browser session.
+ * - `payload.id` (Umami's distinct id) is emitted ONLY for a real user id, so the
+ *   event lands in the same per-user session `uuid(…, id)` as that user's browser
+ *   (revised 2026-11-17: a claimed anonymous fingerprint session leaked across
+ *   accounts on a shared device). Anonymous and system events carry no `id`.
  * - Umami truncates over-limit values silently (HTTP 200) and rejects the WHOLE
  *   event for numbers with `|n| >= 1e15`, so everything is bounded here.
  */
@@ -21,6 +23,8 @@ export const UMAMI_LIMITS = {
     dataKey: 500,
     /** Max url length. */
     url: 500,
+    /** Max distinct id length (Umami `payload.id`). */
+    distinctId: 50,
     /** Max hostname length. */
     hostname: 100,
     /** Numbers with an absolute value at or above this reject the whole event. */
@@ -66,6 +70,7 @@ export const UmamiBatchItemSchema = z.object({
     type: z.literal('event'),
     payload: z.object({
         website: z.string().min(1),
+        id: z.string().min(1).max(UMAMI_LIMITS.distinctId).optional(),
         hostname: z.string().min(1).max(UMAMI_LIMITS.hostname),
         url: z.string().min(1).max(UMAMI_LIMITS.url),
         name: z
@@ -255,7 +260,7 @@ export interface MapToUmamiBatchItemInput {
     readonly event: string;
     /** Properties already sanitized by `prepareAnalyticsEvent`. */
     readonly properties: Readonly<Record<string, unknown>>;
-    /** Hospeda distinct id; only a real user id is forwarded, as `data.user_id`. */
+    /** Hospeda distinct id; only a real user id is forwarded, as `data.user_id` and `payload.id`. */
     readonly distinctId?: string;
     /** Dedup uuid, forwarded as `data.event_uuid`. */
     readonly uuid?: string;
@@ -291,7 +296,8 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
 /**
  * Maps one sanitized analytics event to a validated Umami batch item.
  *
- * Never emits `payload.id`. See the module docs for the measured rules.
+ * Emits `payload.id` only for a real user id (anonymous and system ids never).
+ * See the module docs for the measured rules.
  *
  * @param input - Event, sanitized properties and delivery context.
  * @returns The batch item and any warnings.
@@ -312,7 +318,8 @@ function isRealUserId(distinctId: string | undefined): distinctId is string {
  */
 export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmamiBatchItemResult {
     const { data, warnings } = flattenForUmami({ properties: input.properties });
-    if (isRealUserId(input.distinctId)) {
+    const userId = isRealUserId(input.distinctId) ? input.distinctId : undefined;
+    if (userId !== undefined) {
         data['user_id'] = truncate({ value: input.distinctId, max: UMAMI_LIMITS.stringValue });
     }
     if (input.uuid !== undefined) {
@@ -346,6 +353,9 @@ export function mapToUmamiBatchItem(input: MapToUmamiBatchItemInput): MapToUmami
         type: 'event',
         payload: {
             website: input.websiteId,
+            ...(userId === undefined
+                ? {}
+                : { id: truncate({ value: userId, max: UMAMI_LIMITS.distinctId }) }),
             hostname: truncate({ value: input.hostname, max: UMAMI_LIMITS.hostname }),
             url: truncate({
                 value:
