@@ -423,6 +423,37 @@ describe('HostTradeService', () => {
             expect(result.data?.trades).toEqual([]);
         });
 
+        it('forwards the categories filter to model.findForHost (HOS-919 AC-5.4)', async () => {
+            const acc = makeAccommodation(DEST_ID_1, actorWithView.id);
+            const findForHostMock = vi.fn().mockResolvedValue([makeHostTrade()]);
+            const { service } = buildService(
+                { findForHost: findForHostMock },
+                { findAll: vi.fn().mockResolvedValue({ items: [acc], total: 1 }) }
+            );
+
+            await service.listForHost(actorWithView, undefined, {
+                categories: ['plomeria', 'pintura']
+            });
+
+            expect(findForHostMock).toHaveBeenCalledWith([DEST_ID_1], undefined, [
+                'plomeria',
+                'pintura'
+            ]);
+        });
+
+        it('applies no category filter when categories is empty', async () => {
+            const acc = makeAccommodation(DEST_ID_1, actorWithView.id);
+            const findForHostMock = vi.fn().mockResolvedValue([makeHostTrade()]);
+            const { service } = buildService(
+                { findForHost: findForHostMock },
+                { findAll: vi.fn().mockResolvedValue({ items: [acc], total: 1 }) }
+            );
+
+            await service.listForHost(actorWithView, undefined, { categories: [] });
+
+            expect(findForHostMock).toHaveBeenCalledWith([DEST_ID_1], undefined);
+        });
+
         it('passes transaction context to underlying model calls', async () => {
             const acc = makeAccommodation(DEST_ID_1, actorWithView.id);
             const trades = [makeHostTrade()];

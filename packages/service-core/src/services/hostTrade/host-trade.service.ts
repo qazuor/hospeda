@@ -771,12 +771,15 @@ export class HostTradeService extends BaseCrudService<
      * has no accommodations, an empty array is returned immediately without
      * querying the `host_trades` table.
      *
-     * Rows are ordered by `category ASC, name ASC` (implemented in the model).
+     * Rows are ordered by `name ASC` (implemented in the model) and carry their
+     * hydrated `categories`.
      *
      * Permission required: HOST_TRADE_VIEW (the host-facing read permission).
      *
      * @param actor - The authenticated host performing the request.
      * @param ctx - Optional service context (carries transaction client).
+     * @param filter - Optional filter. `categories` is an any-of list of catalog
+     *   slugs (HOS-919); empty or absent means no filter, unknown slugs match nothing.
      * @returns ServiceOutput wrapping an array of HostTrade rows.
      *
      * @example
@@ -790,7 +793,8 @@ export class HostTradeService extends BaseCrudService<
      */
     public async listForHost(
         actor: Actor,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        filter?: { readonly categories?: readonly string[] }
     ): Promise<ServiceOutput<{ trades: HostTrade[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listForHost',
@@ -830,7 +834,12 @@ export class HostTradeService extends BaseCrudService<
                 }
 
                 // 3. Fetch active host-trade entries for those destinations
-                const trades = await this.model.findForHost(distinctDestinationIds, ctx?.tx);
+                // An empty or absent `categories` list means "no filter" (HOS-919).
+                const categories = filter?.categories;
+                const trades =
+                    categories && categories.length > 0
+                        ? await this.model.findForHost(distinctDestinationIds, ctx?.tx, categories)
+                        : await this.model.findForHost(distinctDestinationIds, ctx?.tx);
 
                 return { trades: await this.attachCategories(trades, ctx) };
             }
