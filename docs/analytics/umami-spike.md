@@ -81,23 +81,20 @@ token as the tracker sends it, `/api/batch` for the server side; sessions read f
 
 Conclusions:
 
-- In the web's normal flow (anonymous pageview first, identify later) the browser stays in
-  the **anonymous fingerprint session**, which Umami stamps with the distinct id. A server
-  event joins it only **without** `payload.id`. Adding `payload.id` on the server splits it
-  into a new session (one extra visitor per user), the opposite of the goal.
-- `payload.id` joins only when the browser document's first request already carried the id.
-  An identify sent before the pageview's response has no cache token, so it opens
-  `uuid(…, id)` on its own, and a later hard reload returns to the anonymous session. The web
-  client closes this race (owner decision, 2026-11-16): `identifyUser` waits, bounded, until
-  `umami-pageview.ts` saw this document's pageview answered AND the tracker holds the token
-  (`getSession().cache`); otherwise it sends no identify. The admin follows the same rule by
-  polling `getSession().cache`.
-- **Re-check on every Umami upgrade.** The identify ordering, web and admin, depends on two
-  details of the 3.5.0 tracker that are not a documented API: `umami.track()` returns the
-  promise of its `send()` (the web awaits it to know the pageview was answered), and
-  `umami.getSession()` exists and exposes the cache token as `cache` (read by
-  `hasUmamiCacheToken` in `@repo/analytics`). If either changes, no identify is sent at all
-  (fail-closed, never a split session), and logged-in visits silently stop being identified.
+- **Revised 2026-11-17 (owner, after staging smoke: claimed fingerprint session leaked across
+  accounts).** Claiming the anonymous fingerprint session (identify WITH the cache token, the
+  2026-11-16 design) leaks it: every later visitor on the same device/IP keeps landing in the
+  first user's session until Umami rotates its salt. The design is now: the browser identify
+  must be the document's FIRST request (no cache token), which opens `uuid(…, id)`, and server
+  events with a real user id send `payload.id = id`, landing in the same session (probe rows
+  "identify(Y) is the document's FIRST request" above). Anonymous and system server events send
+  no `payload.id`. The web and admin therefore send the identify as soon as the tracker is
+  present and SKIP it (never delay it) when `getSession().cache` already holds a token, read
+  with `hasUmamiCacheToken` in `@repo/analytics`. A lost race leaves that document anonymous.
+- **Re-check on every Umami upgrade.** The identify ordering, web and admin, depends on a detail
+  of the 3.5.0 tracker that is not a documented API: `umami.getSession()` exists and exposes the
+  cache token as `cache`. If it changes, no identify is sent at all (fail-closed, never a
+  claimed session), and logged-in visits silently stop being identified.
 - The server-created session row does carry `distinct_id`, but no `session_link` row is
   written for it (only identify writes one).
 

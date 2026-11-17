@@ -140,10 +140,12 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
   carrying the tracker's `x-umami-cache` token claims the anonymous session
   (same session id, Distinct ID attached, a `session_link` row). The token comes
   from the answer to an earlier request of the same document and lives only in
-  the tracker's memory. So a server event with the visitor's IP + User-Agent and
-  no Distinct ID joins the browser session. One that carries a Distinct ID
-  almost never does: only when the document's first request was the identify
-  itself, which the web never does (OQ-5).
+  the tracker's memory. An identify that is the document's FIRST request (no
+  token yet) opens the per-user session `uuid(…, id)`, and a server event that
+  carries the same Distinct ID lands in it (OQ-5, revised 2026-11-17). An
+  identify that claims the anonymous session leaks it: every later visitor on
+  the same device/IP keeps landing in that session, attributed to the first
+  user, until Umami rotates its salt.
 - Server-side ingestion: `POST /api/send` and `POST /api/batch` (max 500 items,
   ~10 MB), no auth token. A bot-like `User-Agent` (curl, node, anything with
   "api") is answered 200 and silently dropped. `payload.ip` and
@@ -193,7 +195,9 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
     `auth` signup, `ai/protected/chat*`) pass the visitor's IP
     (`cf-connecting-ip`, then `x-forwarded-for`) and `User-Agent`, so the event
     lands in the visitor's browser session and inherits its referrer, UTM and
-    path.
+    path. When the visitor is logged in, the event also carries their user id
+    as Distinct ID (see the `distinctId` mapping below), so it lands in the
+    user's per-user session.
   - Events with no visitor request (crons, webhooks, `api-server`) send a fixed
     synthetic identity: IP `127.0.0.1` and a browser-like, non-bot `User-Agent`.
     This counts as one synthetic visitor and stays out of `/stats` and path
@@ -210,12 +214,13 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
   - `properties` (already sanitized by `prepareAnalyticsEvent`) → event `data`.
     Arrays become strings (Umami behavior); the only array today is `roles`, which
     is acceptable.
-  - `distinctId` → never sent as Umami Distinct ID from the server (OQ-5, revised
-    2026-11-16). In the web's flow it would split the visitor into a separate
-    session, and the api cannot read the web's host-only `cookie-consent` cookie.
-    A real user id goes in `data.user_id`; `api-server` and `anon:*` ids are
-    dropped. The join rests on the same IP + User-Agent plus the browser
-    claiming its anonymous session (§6.3).
+  - `distinctId` → a real user id is sent BOTH as `data.user_id` and as the Umami
+    Distinct ID (`payload.id`), so the event lands in `uuid(…, userId)`, the
+    same per-user session the browser opens with its identify (OQ-5, revised
+    2026-11-17, owner, after staging smoke: claimed fingerprint session leaked
+    across accounts). `api-server` and `anon:*` ids, and events with no user
+    id, send NO Distinct ID: they keep the fingerprint session (anonymous
+    visitor) or the synthetic identity (crons, webhooks).
   - Every server event sends `hostname` (the surface's host) and a virtual `url`
     `/_server/<event>` unless the visitor's page url is known.
   - `uuid` (`analytics-event-uuid.ts`) → kept as a `data.event_uuid` property for
@@ -244,20 +249,24 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
 - Consent: Umami is cookieless, so pre-consent capture keeps working without the
   memory-persistence trick. `identify` (Distinct ID + session data) runs only after
   consent, listening to `CONSENT_CHANGED_EVENT` exactly as today.
-- Order (OQ-5, revised 2026-11-16): the web sends `identify` only after Umami
-  answered the current document's pageview and the tracker holds the cache token
-  (`getSession().cache`). The web wait has no timeout: with `<ClientRouter />` the
-  initial pageview goes out on `window.load`, often after the identify was
-  requested, so the identify is flushed whenever the acknowledgement arrives. When
-  it never does (ad blocker, failed request) no identify is sent and nothing
-  throws. Soft navigations keep the token. A full reload re-identifies only when
-  the session marker says the properties changed, and then again after that
-  document's pageview.
-- Admin: same order, without `identify` beyond the staff user id (OQ-5). The admin
-  keeps the tracker's auto pageview, so it polls `getSession().cache` (bounded,
-  counted from when the document is `complete`, which is when the tracker sends
-  that pageview) and gives up silently. The token check is shared
-  (`hasUmamiCacheToken` in `@repo/analytics`).
+- Order (OQ-5, revised 2026-11-17, owner, after staging smoke: claimed
+  fingerprint session leaked across accounts): the web must NOT claim the
+  anonymous session. Logged-in traffic (web + server) lives in a per-user
+  `uuid(…, id)` session; anonymous traffic lives in the fingerprint session,
+  never claimed. The identify is sent as soon as consent and the tracker are
+  present (no wait for the pageview's answer) and only while the tracker holds no
+  `x-umami-cache` token (`getSession().cache`, shared `hasUmamiCacheToken` in
+  `@repo/analytics`): with the token it would claim the fingerprint session, so
+  it is SKIPPED, never delayed, and that document stays anonymous. The tracker
+  keeps the id in memory, so every document identifies again (nothing persists
+  across reloads) and a changed person property re-sends it. Trade-off:
+  pageviews before the login do not join the post-login session. Known race: if
+  the document's first pageview is answered before the identify runs (the
+  `<ClientRouter />` pageview goes out on `window.load`; an island that
+  hydrates later loses the race), that document is not identified.
+- Admin: same rule for the staff user id (OQ-5). It keeps the tracker's auto
+  pageview, so the race above is more likely there (the session resolves
+  asynchronously); a lost race leaves that document anonymous (fail-closed).
 - CSP: remove PostHog hosts/hashes, add the Umami script origin; update
   `csp-soft-nav-script-hashes.ts` and `csp-nonce.ts`.
 
@@ -363,9 +372,9 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
   adapter's timeout budget; errors are logged once per flush.
 - AC-4 A unit test fails if any catalog event exceeds Umami's limits.
 - AC-5 Web before consent: pageviews and anonymous events reach Umami; no
-  `identify`. After consent: `identify` with the user's id runs once per session,
-  and again whenever the person properties change, always after the document's
-  pageview was acknowledged (OQ-5).
+  `identify`. After consent: `identify` with the user's id runs once per document,
+  and again whenever the person properties change, as soon as the tracker is
+  present and only while it holds no cache token (OQ-5, revised 2026-11-17).
 - AC-6 The six dashboards exist in Umami, created by `scripts/umami/setup.ts`
   idempotently (running it twice changes nothing).
 - AC-7 `GET …/traffic-stats` returns 404 for a listing the actor does not own,
@@ -385,9 +394,11 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
   (e.g. publish or contact) produces a server event with the same `session_id`
   as the pageview, and its referrer/country match. Checked twice: anonymous
   (no consent, logged out), and with consent and a logged-in user. In the second
-  run the identify keeps the pageview's `session_id`, and no second session
-  appears for that visitor after it. Events from crons and webhooks carry the
-  synthetic identity and no Distinct ID.
+  run the browser (after its identify) and the server events of that user share
+  one per-user `session_id` (`uuid(…, id)`), distinct from the anonymous
+  pageview's session. Then a second account on the same device does NOT land in
+  the first user's session. Events from crons and webhooks carry the synthetic
+  identity and no Distinct ID.
 
 ## 10. Risks
 
@@ -395,11 +406,12 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
   User-Agent; every server event comes from the api's IP. Without care, all
   server events land in one session and skew visitor counts. Measured in T-0: a
   Distinct ID splits the session, while the visitor's IP + User-Agent joins it.
-  Mitigation (decided 2026-11-15): request-scoped events forward the visitor's
-  IP + User-Agent and carry no Distinct ID; the rest use one synthetic identity
-  (§6.2). The browser keeps one session too: its identify waits for the
-  document's pageview to be acknowledged, so it claims the anonymous session
-  instead of opening `uuid(…, id)` (OQ-5, revised 2026-11-16). Residual risk:
+  Mitigation (decided 2026-11-15, revised 2026-11-17, owner, after staging
+  smoke: claimed fingerprint session leaked across accounts): request-scoped
+  events forward the visitor's IP + User-Agent; with a logged-in user they also
+  carry the user id as Distinct ID, and the browser identifies BEFORE holding a
+  cache token, so both land in `uuid(…, id)`. Anonymous visitors and the
+  synthetic identity send no Distinct ID (§6.2). Residual risk:
   the join depends on the tracker and the api seeing the same client IP (both
   behind Cloudflare). A mismatch only loses the join, not the event. AC-12
   verifies it.
@@ -458,33 +470,38 @@ settled in the T-0 spike.
 
 *Rejected:* a `stats.` subdomain.
 
-### OQ-5 · Distinct ID scope — RESOLVED (revised 2026-11-16)
+### OQ-5 · Distinct ID scope — RESOLVED (revised 2026-11-17)
 
 Distinct ID is always Hospeda's internal user id, never an email. Web: only after
-cookie consent, and **strictly after** Umami acknowledged the current document's
-pageview (§6.3). Admin: the staff user id. Server events: **never** a Distinct
-ID. The user id goes in `data.user_id`, and request-scoped events forward the
-visitor's IP + User-Agent. The join relies on that same IP + User-Agent plus the
-browser claiming its anonymous session (§5.5, §6.2, R-1).
+cookie consent, and **before** the tracker holds a cache token (§6.3). Admin: the
+staff user id. Server events: the user id as Distinct ID (`payload.id`) AND in
+`data.user_id` when the event has a real user; no Distinct ID for anonymous and
+system events. Logged-in traffic (web + server) lives in a per-user
+`uuid(…, id)` session; anonymous traffic lives in the fingerprint session, which
+is never claimed (§5.5, §6.2, R-1).
 
 *Revised (2026-11-15) because:* the T-0 spike measured that Umami hashes the
 Distinct ID into the session id. A server event carrying it opens a separate
-session per user, inflates visitors and breaks funnels that mix browser and
-server steps.
+session per user unless the browser is in the same session.
 
 *Revised (2026-11-16, owner) because:* a second measurement
 (`docs/analytics/umami-spike.md` §2) showed that an identify carrying the
-tracker's cache token claims the anonymous session. Sent before the pageview's
-answer it has no token and opens `uuid(…, id)`, which also breaks the join.
-Sending `payload.id` from the server was reconsidered and rejected again: it
-joins only that second, racy session, and the api cannot see the consent
-cookie.
+tracker's cache token claims the anonymous session, so the identify waited for
+the pageview's answer and server events carried no Distinct ID.
 
-*Accepted residual risk (2026-11-16, owner):* revoking consent after an identify
-reloads the page and stops sending any id, but Umami 3.5 cannot unlink a session
-it already claimed. Anonymous hits that keep landing on that fingerprint session
-(same IP + User-Agent + salt) stay associated with the user's distinct id until
-Umami rotates the session salt. No new identity is sent after revocation.
+*Revised (2026-11-17, owner, after staging smoke: claimed fingerprint session
+leaked across accounts):* once a user claims the fingerprint session, every later
+visitor on the same device/IP (account switch, shared device, support acting as
+another user) keeps landing in it, attributed to the first user, until Umami
+rotates its salt; a sign-out reload cannot undo it. Option 1 was chosen: the
+identify must not claim the anonymous session, and the server sends the user id
+as Distinct ID so both halves meet in `uuid(…, id)`. Trade-off: pageviews before
+the login do not join the post-login session.
+
+Revoking consent after an identify still reloads the page (the tracker cannot
+forget its in-memory id) and no new identity is sent. The earlier accepted
+residual risk (anonymous hits staying linked to a claimed session) no longer
+applies, because no fingerprint session is ever claimed.
 
 ### OQ-6 · Umami database — RESOLVED: its own Postgres container
 
