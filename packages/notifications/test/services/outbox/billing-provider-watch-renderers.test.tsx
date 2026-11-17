@@ -57,7 +57,30 @@ describe('HOS-1512 provider watch alert mail', () => {
         expect(result.subject).toBe('Vigilancia del proveedor (producción): 1 cambio');
     });
 
+    it('says how many more changes the mail does not show', async () => {
+        const render = async (omitted: number) => {
+            const result = await renderer({
+                row: row({
+                    template: PROVIDER_WATCH_ALERT_TEMPLATE,
+                    payload: { ...payload, omitted }
+                })
+            });
+            return renderToStaticMarkup(result.react);
+        };
+        expect(await render(30)).toContain('30 cambios más no se muestran');
+        expect(await render(1)).toContain('1 cambio más no se muestra');
+        expect(await render(0)).not.toContain('no se muestra');
+    });
+
+    it('renders a payload written before the field existed as nothing omitted', async () => {
+        const result = await renderer({
+            row: row({ template: PROVIDER_WATCH_ALERT_TEMPLATE, payload })
+        });
+        expect(renderToStaticMarkup(result.react)).not.toContain('no se muestra');
+    });
+
     it.each([
+        ['a negative omitted count', { ...payload, omitted: -1 }],
         ['an empty payload', {}],
         ['no alerts', { ...payload, alerts: [] }],
         ['an unknown account', { ...payload, account: 'staging' }]

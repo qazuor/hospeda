@@ -59,6 +59,7 @@ export async function enqueueProviderWatchAlerts(
     const payload = {
         account: input.account,
         finishedAt: input.finishedAt.toISOString(),
+        omitted: Math.max(0, input.alerts.length - MAX_ALERTS_PER_MAIL),
         alerts: input.alerts.slice(0, MAX_ALERTS_PER_MAIL).map((alert) => ({
             measurementId: alert.measurementId,
             kind: alert.kind,

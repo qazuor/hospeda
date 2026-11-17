@@ -22,6 +22,8 @@ export interface ProviderWatchAlertProps {
     /** ISO instant the run finished. */
     readonly finishedAt: string;
     readonly alerts: readonly ProviderWatchAlertLine[];
+    /** How many further alerts the run found that this mail does not carry. */
+    readonly omitted?: number;
 }
 
 /** Human name of the account a run targeted. */
@@ -77,6 +79,15 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
                     ))}
                 </div>
             ))}
+            {props.omitted !== undefined && props.omitted > 0 && (
+                <Text>
+                    {props.omitted}{' '}
+                    {props.omitted === 1
+                        ? 'cambio más no se muestra'
+                        : 'cambios más no se muestran'}
+                    : están todos en el registro de la corrida.
+                </Text>
+            )}
         </EmailLayout>
     );
 }

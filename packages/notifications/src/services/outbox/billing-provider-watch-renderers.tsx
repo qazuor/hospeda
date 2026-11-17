@@ -22,7 +22,9 @@ const alertSchema = z.object({
 export const providerWatchAlertPayloadSchema = z.object({
     account: z.enum(['sandbox', 'production']),
     finishedAt: z.iso.datetime({ offset: true }),
-    alerts: z.array(alertSchema).min(1)
+    alerts: z.array(alertSchema).min(1),
+    /** Alerts the run found beyond the ones the mail carries. */
+    omitted: z.number().int().min(0).default(0)
 });
 
 /** Builds the renderer of the provider watch alert mail for the production sender. */
