@@ -33,7 +33,7 @@
             "portfolioLinks": "Enlaces a tu portfolio (opcional)",
             "topics": "Temas sobre los que te gustaría escribir",
             "experience": "Experiencia previa (opcional)",
-            "category": "Categoría del servicio",
+            "categorySlugs": "Rubros del servicio",
             "destinationId": "Localidad donde prestás el servicio",
             "benefitType": "Beneficio para los anfitriones",
             "benefitValue": "Valor del beneficio",
@@ -56,6 +56,7 @@
             "ngo": "ONG",
             "institution": "Institución"
         },
+        "categoriesLoadError": "No pudimos cargar los rubros. Recargá la página para intentarlo de nuevo.",
         "accountEmailNotice": "Vamos a usar el correo de tu cuenta:",
         "messageIntro": "Mensaje:",
         "submit": "Enviar solicitud",

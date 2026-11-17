@@ -8,8 +8,8 @@
  * `AllianceLeadCreateInputSchema` (the public payload persisted by the
  * backend) carries the generic fields (`kind`, `contactName`, `email`,
  * `phone`, `message`) PLUS six typed `service_provider`-only columns
- * (`businessName`, `category`, `destinationId`, `benefitType`,
- * `benefitValue`, `benefitText` — HOS-278 §6.4), because approving a
+ * (`businessName`, `categorySlugs`, `destinationId`, `benefitType`,
+ * `benefitValue`, `benefitText` — HOS-278 §6.4, HOS-919), because approving a
  * `service_provider` lead materializes a `host_trades` directory row from
  * them and prose is unusable as data. `partner` gets the same treatment for
  * two of its fields (`businessName`, `partnerType` — HOS-278 §6.3/§7,
@@ -38,9 +38,11 @@ export interface AllianceLeadSpecificFieldConfig {
      * Input type. `'url'` fields additionally get URL-format validation.
      * `'select'` fields render as a native `<select>` (options are resolved
      * by the caller — see `AllianceLead.client.tsx`). `'number'` fields
-     * additionally get positive-integer validation.
+     * additionally get positive-integer validation. `'multiselect'` fields
+     * hold a list (see {@link AllianceLeadMultiValues}) and render as the
+     * grouped trade-category combobox (HOS-919).
      */
-    readonly type: 'text' | 'url' | 'select' | 'number';
+    readonly type: 'text' | 'url' | 'select' | 'number' | 'multiselect';
     /**
      * Whether the field is required for this kind. `benefitValue` is
      * declared `false` here even though it IS conditionally required — that
@@ -98,7 +100,7 @@ export const ALLIANCE_LEAD_SPECIFIC_FIELDS: Readonly<
     // `partner`/`sponsor`.
     service_provider: [
         { name: 'businessName', type: 'text', required: true, typed: true },
-        { name: 'category', type: 'select', required: true, typed: true },
+        { name: 'categorySlugs', type: 'multiselect', required: true, typed: true },
         { name: 'destinationId', type: 'select', required: true, typed: true },
         { name: 'benefitType', type: 'select', required: true, typed: true },
         { name: 'benefitValue', type: 'number', required: false, typed: true },
@@ -114,6 +116,13 @@ export const ALLIANCE_LEAD_SPECIFIC_FIELDS: Readonly<
 
 /** Flat map of specific-field name -> value, as collected by the form. */
 export type AllianceLeadSpecificValues = Record<string, string>;
+
+/**
+ * Values of the `'multiselect'` specific fields (HOS-919), keyed by field
+ * name. Kept apart from {@link AllianceLeadSpecificValues} because those are
+ * strings: a list squeezed into one would have to be re-split at every use.
+ */
+export type AllianceLeadMultiValues = Readonly<Record<string, ReadonlyArray<string>>>;
 
 /**
  * Serializes the kind-specific field values and the applicant's free-text
@@ -179,7 +188,7 @@ export type AllianceLeadTypedFields = Partial<
         AllianceLeadCreateInput,
         | 'businessName'
         | 'partnerType'
-        | 'category'
+        | 'categorySlugs'
         | 'destinationId'
         | 'benefitType'
         | 'benefitValue'
@@ -207,16 +216,26 @@ export type AllianceLeadTypedFields = Partial<
  */
 export function buildAllianceLeadTypedFields({
     kind,
-    specificValues
+    specificValues,
+    multiValues = {}
 }: {
     readonly kind: AllianceLeadKind;
     readonly specificValues: AllianceLeadSpecificValues;
+    readonly multiValues?: AllianceLeadMultiValues;
 }): AllianceLeadTypedFields {
     const fields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
-    const typedFields: Record<string, string | number> = {};
+    const typedFields: Record<string, string | number | ReadonlyArray<string>> = {};
 
     for (const field of fields) {
         if (!field.typed) continue;
+
+        if (field.type === 'multiselect') {
+            // Omitted when empty so the schema's own "required" rule is what
+            // answers a missing selection, never an empty array on the wire.
+            const selected = multiValues[field.name] ?? [];
+            if (selected.length > 0) typedFields[field.name] = [...selected];
+            continue;
+        }
 
         if (field.name === 'benefitValue') {
             const benefitType = specificValues.benefitType?.trim();
@@ -258,16 +277,28 @@ export type AllianceLeadSpecificFieldErrors = Record<string, string>;
 export function validateAllianceLeadSpecificFields({
     kind,
     specificValues,
+    multiValues = {},
     t
 }: {
     readonly kind: AllianceLeadKind;
     readonly specificValues: AllianceLeadSpecificValues;
+    readonly multiValues?: AllianceLeadMultiValues;
     readonly t: TranslationFn;
 }): AllianceLeadSpecificFieldErrors {
     const errors: AllianceLeadSpecificFieldErrors = {};
     const fields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
 
     for (const field of fields) {
+        if (field.type === 'multiselect') {
+            if (field.required && (multiValues[field.name]?.length ?? 0) === 0) {
+                errors[field.name] = t(
+                    'alliance-leads.form.validation.required',
+                    'Este campo es obligatorio.'
+                );
+            }
+            continue;
+        }
+
         const value = specificValues[field.name]?.trim() ?? '';
 
         if (field.required && !value) {

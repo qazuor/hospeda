@@ -44,10 +44,10 @@ describe('ALLIANCE_LEAD_SPECIFIC_FIELDS', () => {
         ]);
     });
 
-    it('declares businessName, category, destinationId, benefitType, benefitValue, benefitText, website for service_provider (HOS-278 §6.4)', () => {
+    it('declares businessName, categorySlugs, destinationId, benefitType, benefitValue, benefitText, website for service_provider (HOS-278 §6.4)', () => {
         expect(ALLIANCE_LEAD_SPECIFIC_FIELDS.service_provider.map((f) => f.name)).toEqual([
             'businessName',
-            'category',
+            'categorySlugs',
             'destinationId',
             'benefitType',
             'benefitValue',
@@ -62,7 +62,7 @@ describe('ALLIANCE_LEAD_SPECIFIC_FIELDS', () => {
         );
         expect(typedFlags).toEqual({
             businessName: true,
-            category: true,
+            categorySlugs: true,
             destinationId: true,
             benefitType: true,
             benefitValue: true,
@@ -242,7 +242,7 @@ describe('validateAllianceLeadSpecificFields', () => {
 
     // ── service_provider (HOS-278 §6.4) ─────────────────────────────────────
 
-    it('requires businessName, category, destinationId, benefitType for service_provider', () => {
+    it('requires businessName, categorySlugs, destinationId, benefitType for service_provider', () => {
         const errors = validateAllianceLeadSpecificFields({
             kind: 'service_provider',
             specificValues: {},
@@ -250,7 +250,7 @@ describe('validateAllianceLeadSpecificFields', () => {
         });
 
         expect(errors.businessName).toBeDefined();
-        expect(errors.category).toBeDefined();
+        expect(errors.categorySlugs).toBeDefined();
         expect(errors.destinationId).toBeDefined();
         expect(errors.benefitType).toBeDefined();
         expect(errors.website).toBeUndefined(); // optional
@@ -262,7 +262,6 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'TWO_FOR_ONE'
             },
@@ -277,7 +276,6 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'PERCENTAGE'
             },
@@ -292,7 +290,6 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'FIXED_AMOUNT',
                 benefitValue: '0'
@@ -310,7 +307,6 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'PERCENTAGE',
                 benefitValue: '15'
@@ -326,7 +322,6 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'PERCENTAGE',
                 benefitValue: 'not-a-number'
@@ -344,7 +339,6 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme SA',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'PERCENTAGE',
                 benefitValue: '15',
@@ -356,7 +350,7 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
         });
 
         expect(message).not.toContain('businessName');
-        expect(message).not.toContain('category');
+        expect(message).not.toContain('categorySlugs');
         expect(message).not.toContain('destinationId');
         expect(message).not.toContain('benefitType');
         expect(message).not.toContain('benefitValue');
@@ -381,7 +375,6 @@ describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme SA',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'PERCENTAGE',
                 benefitValue: '15'
@@ -435,18 +428,18 @@ describe('buildAllianceLeadTypedFields (HOS-278 §6.4)', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme SA',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'PERCENTAGE',
                 benefitValue: '15',
                 benefitText: 'Solo días hábiles',
                 website: 'https://acme.com'
-            }
+            },
+            multiValues: { categorySlugs: ['plomeria', 'pintura'] }
         });
 
         expect(typedFields).toEqual({
             businessName: 'Acme SA',
-            category: 'PLOMERIA',
+            categorySlugs: ['plomeria', 'pintura'],
             destinationId: 'dest-1',
             benefitType: 'PERCENTAGE',
             benefitValue: 15,
@@ -463,7 +456,6 @@ describe('buildAllianceLeadTypedFields (HOS-278 §6.4)', () => {
             kind: 'service_provider',
             specificValues: {
                 businessName: 'Acme SA',
-                category: 'PLOMERIA',
                 destinationId: 'dest-1',
                 benefitType: 'TWO_FOR_ONE',
                 // Stale value left over from a previous PERCENTAGE selection —
@@ -505,5 +497,84 @@ describe('buildAllianceLeadTypedFields (HOS-278 §6.4)', () => {
         });
         expect(typedFields).not.toHaveProperty('website');
         expect(typedFields).not.toHaveProperty('partnershipType');
+    });
+});
+
+describe('categorySlugs multiselect field (HOS-919)', () => {
+    it('declares categorySlugs as a required typed multiselect for service_provider', () => {
+        const field = ALLIANCE_LEAD_SPECIFIC_FIELDS.service_provider.find(
+            (f) => f.name === 'categorySlugs'
+        );
+
+        expect(field).toEqual({
+            name: 'categorySlugs',
+            type: 'multiselect',
+            required: true,
+            typed: true
+        });
+    });
+
+    it('does not keep the legacy single `category` field', () => {
+        const names = ALLIANCE_LEAD_SPECIFIC_FIELDS.service_provider.map((f) => f.name);
+
+        expect(names).not.toContain('category');
+    });
+
+    it('blocks an empty selection with the existing required message', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                destinationId: 'd',
+                benefitType: 'TWO_FOR_ONE'
+            },
+            multiValues: { categorySlugs: [] },
+            t
+        });
+
+        expect(errors.categorySlugs).toBe('Este campo es obligatorio.');
+    });
+
+    it('accepts a non-empty selection', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                destinationId: 'd',
+                benefitType: 'TWO_FOR_ONE'
+            },
+            multiValues: { categorySlugs: ['plomeria'] },
+            t
+        });
+
+        expect(errors.categorySlugs).toBeUndefined();
+    });
+
+    it('sends the slugs as an array and omits the key when nothing is selected', () => {
+        const withSlugs = buildAllianceLeadTypedFields({
+            kind: 'service_provider',
+            specificValues: {},
+            multiValues: { categorySlugs: ['plomeria', 'piletas'] }
+        });
+        const without = buildAllianceLeadTypedFields({
+            kind: 'service_provider',
+            specificValues: {},
+            multiValues: { categorySlugs: [] }
+        });
+
+        expect(withSlugs.categorySlugs).toEqual(['plomeria', 'piletas']);
+        expect(without).not.toHaveProperty('categorySlugs');
+    });
+
+    it('does not duplicate the selection into the free-text message', () => {
+        const message = serializeAllianceLeadMessage({
+            kind: 'service_provider',
+            specificValues: { categorySlugs: 'plomeria' },
+            freeText: 'Hola',
+            t
+        });
+
+        expect(message).not.toContain('plomeria');
+        expect(message).not.toContain('categorySlugs');
     });
 });
