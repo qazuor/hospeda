@@ -49,18 +49,44 @@
  *
  * ## Identify order (OQ-5, revised 2026-11-17)
  *
- * This module no longer tracks whether a pageview was acknowledged. The
- * identify (`umami-client.ts`) must be a document's FIRST request, before the
- * tracker holds an `x-umami-cache` token, so it opens a per-user session
- * instead of claiming the anonymous one; the client guards that itself by
- * reading the token with `hasUmamiCacheToken`.
+ * The identify (`umami-client.ts`) must be a document's FIRST request, before
+ * the tracker holds an `x-umami-cache` token, so it opens a per-user session
+ * instead of claiming the anonymous one; the client skips it once a token
+ * exists (`hasUmamiCacheToken`). The first `astro:page-load` usually comes
+ * before the UserMenu island hydrates and resolves the session, so an unheld
+ * first pageview would win that race and leave every logged-in visitor
+ * anonymous in the browser.
+ *
+ * So the FIRST pageview of the document is held until the visitor identity is
+ * settled (`umami-identity-gate.ts`): identify sent (or skipped), guest
+ * declared, or {@link FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS} elapsed, after which
+ * it goes out anonymously. It is held only when both hold:
+ * - the page mounts an auth-aware island that settles the identity, which
+ *   `UmamiScript.astro` declares with `<meta name="umami-await-identity">`
+ *   (BaseLayout; StandaloneLayout has no UserMenu, identifies nobody and so
+ *   sends at once);
+ * - analytics consent is granted, since without it no identify is sent
+ *   anyway (AC-5).
+ * Later pageviews are never held; one counted while the first is still held
+ * queues behind it so the order of the pages is kept.
  */
 
 import type { UmamiTracker } from '@repo/analytics';
+import {
+    FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS,
+    waitForVisitorIdentity
+} from '@/lib/analytics/umami-identity-gate';
 import { waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
+import { getConsent } from '@/lib/cookie-consent';
 
 /** `name` of the per-page `<meta>` carrying the Umami tag (detail pages only). */
 export const UMAMI_TAG_META_NAME = 'umami-tag';
+
+/**
+ * `name` of the `<meta>` declaring that the page mounts an auth-aware island
+ * which settles the visitor identity (see "Identify order").
+ */
+export const UMAMI_AWAIT_IDENTITY_META_NAME = 'umami-await-identity';
 
 /** Meta element `<ClientRouter />` renders; its absence means no soft navigation. */
 const CLIENT_ROUTER_META_SELECTOR = 'meta[name="astro-view-transitions-enabled"]';
@@ -80,6 +106,12 @@ let softNavFromUrl: string | null = null;
 /** URL of the page counted by the last pageview. */
 let lastPageUrl: string | null = null;
 let started = false;
+/** Whether this document already counted its first page. */
+let firstPageCounted = false;
+/** Pageview sends held behind the first pageview, in page order. */
+let heldSends: Array<() => void> | null = null;
+/** Cancels the identity wait of the first pageview, while one is pending. */
+let cancelIdentityWait: (() => void) | null = null;
 /**
  * Referrer of the page being shown: the previous page's URL after a soft
  * navigation, `document.referrer` on a full page load.
@@ -172,17 +204,53 @@ function countCurrentPage(): void {
     const referrer = softNavFromUrl === null ? undefined : stripOrigin(softNavFromUrl);
     lastPageUrl = url;
 
-    waitForUmamiTracker({
-        onReady: (tracker: UmamiTracker) => {
-            try {
-                tracker.track((defaults) =>
-                    buildPageviewPayload({ defaults, url, title, referrer, tag })
-                );
-            } catch {
-                // Best-effort: analytics must never break the page.
+    const send = (): void => {
+        waitForUmamiTracker({
+            onReady: (tracker: UmamiTracker) => {
+                try {
+                    tracker.track((defaults) =>
+                        buildPageviewPayload({ defaults, url, title, referrer, tag })
+                    );
+                } catch {
+                    // Best-effort: analytics must never break the page.
+                }
             }
+        });
+    };
+
+    if (heldSends) {
+        heldSends.push(send);
+        return;
+    }
+    if (firstPageCounted || !shouldHoldFirstPageview()) {
+        firstPageCounted = true;
+        send();
+        return;
+    }
+    firstPageCounted = true;
+    holdFirstPageview(send);
+}
+
+/** Whether the first pageview waits for the visitor identity (see "Identify order"). */
+function shouldHoldFirstPageview(): boolean {
+    if (!document.querySelector(`meta[name="${UMAMI_AWAIT_IDENTITY_META_NAME}"]`)) return false;
+    return getConsent()?.analytics === true;
+}
+
+/** Holds `send` (and any page counted meanwhile) until the identity settles. */
+function holdFirstPageview(send: () => void): void {
+    const queue: Array<() => void> = [send];
+    heldSends = queue;
+    const { cancel } = waitForVisitorIdentity({
+        timeoutMs: FIRST_PAGEVIEW_IDENTITY_TIMEOUT_MS,
+        onSettled: () => {
+            cancelIdentityWait = null;
+            heldSends = null;
+            for (const held of queue) held();
         }
     });
+    // A synchronous settlement already flushed the queue.
+    if (heldSends === queue) cancelIdentityWait = cancel;
 }
 
 function rememberPageBeingLeft(): void {
@@ -194,8 +262,8 @@ function rememberPageBeingLeft(): void {
 /** Result of {@link startUmamiPageviews}. */
 export interface StartUmamiPageviewsResult {
     /**
-     * Removes the listeners and forgets the navigation
-     * state (used by tests to start each case as a fresh document).
+     * Removes the listeners, drops a held first pageview and forgets the
+     * navigation state (used by tests to start each case as a fresh document).
      */
     readonly stop: () => void;
 }
@@ -216,6 +284,10 @@ export function startUmamiPageviews(): StartUmamiPageviewsResult {
     const stop = (): void => {
         document.removeEventListener('astro:before-swap', rememberPageBeingLeft);
         document.removeEventListener('astro:page-load', countCurrentPage);
+        cancelIdentityWait?.();
+        cancelIdentityWait = null;
+        heldSends = null;
+        firstPageCounted = false;
         softNavFromUrl = null;
         lastPageUrl = null;
         started = false;

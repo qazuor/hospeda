@@ -2,8 +2,9 @@
  * @file umami-client.ts
  * @description Typed web wrapper over the Umami browser tracker (HOS-2119, T-027).
  * Exposes the call-site surface used across the web app:
- * `trackEvent`, `trackTaggedEvent`, `identifyUser`, `setPersonProperties`,
- * `resetUser`. Umami has no group concept, so there is no group API.
+ * `trackEvent`, `trackTaggedEvent`, `identifyUser`, `markVisitorAnonymous`,
+ * `setPersonProperties`, `resetUser`. Umami has no group concept, so there is
+ * no group API.
  *
  * Built on `createBrowserAnalytics` so catalog validation, `prepareAnalyticsEvent`
  * and the anti-PII guards stay in force.
@@ -25,7 +26,11 @@
  *   device would be attributed to this user. So the identify is sent as soon as
  *   consent and the tracker are there, and is SKIPPED (never delayed) when the
  *   tracker already holds a token for another or no identity: that document
- *   stays anonymous. Trade-off: pageviews before the login do not join the
+ *   stays anonymous. The document's first pageview is held until the identity
+ *   settles (`umami-identity-gate.ts`): every exit of the identify path below
+ *   settles it, and `markVisitorAnonymous` settles it for a guest, so a
+ *   logged-in visitor's identify goes out before the first pageview instead of
+ *   losing the race. Trade-off: pageviews before the login do not join the
  *   post-login session. The identity lives in the tracker's memory, so every
  *   document identifies again (nothing is persisted across reloads).
  * - Revoking analytics consent forgets the identity (reloading the page when
@@ -46,6 +51,7 @@ import {
     prepareAnalyticsEvent,
     validateDistinctId
 } from '@repo/analytics';
+import { settleVisitorIdentity } from '@/lib/analytics/umami-identity-gate';
 import { getUmamiTracker, waitForUmamiTracker } from '@/lib/analytics/umami-tracker';
 import { CONSENT_CHANGED_EVENT, getConsent } from '@/lib/cookie-consent';
 import { webLogger } from '@/lib/logger';
@@ -209,6 +215,12 @@ function identifyNow(userId: string): void {
  */
 function flushPendingIdentity(): void {
     cancelTrackerWait = null;
+    deliverPendingIdentity();
+    // Sent, skipped or nothing to send: the first pageview may go now.
+    settleVisitorIdentity();
+}
+
+function deliverPendingIdentity(): void {
     const target = pendingUserId;
     if (target === null || !hasAnalyticsConsent()) return;
     pendingUserId = null;
@@ -227,6 +239,7 @@ function flushPendingIdentity(): void {
 function sendIdentify(userId: string): void {
     if (identified && alreadySent(identified, userId)) {
         pendingUserId = null;
+        settleVisitorIdentity();
         return;
     }
     pendingUserId = userId;
@@ -239,6 +252,8 @@ function sendIdentify(userId: string): void {
         },
         onGiveUp: () => {
             cancelTrackerWait = null;
+            // No tracker, no pageview either: nothing left to hold.
+            settleVisitorIdentity();
         }
     });
     // A synchronous `onReady` already ran and consumed the wait.
@@ -317,7 +332,10 @@ function isAcceptedDistinctId(userId: string): boolean {
  */
 export function identifyUser(userId: string, props?: AnalyticsPersonProperties): void {
     if (typeof window === 'undefined') return;
-    if (!isAcceptedDistinctId(userId)) return;
+    if (!isAcceptedDistinctId(userId)) {
+        settleVisitorIdentity();
+        return;
+    }
     if (props) personProperties = { ...personProperties, ...props };
     attachConsentListenerOnce();
     if (hasAnalyticsConsent()) {
@@ -325,6 +343,22 @@ export function identifyUser(userId: string, props?: AnalyticsPersonProperties):
         return;
     }
     pendingUserId = userId;
+    // No identify before consent (AC-5): the first pageview goes out anonymous.
+    settleVisitorIdentity();
+}
+
+/**
+ * Declare that the auth state resolved to a guest. Releases the document's
+ * first pageview, which waits for the visitor identity (see
+ * `umami-identity-gate.ts`). Call it only once the session is actually known
+ * (`/auth/me` or its cache answered), never from an SSR guest hint, which is
+ * `null` for every visitor on SSG pages. A logged-in visitor goes through
+ * {@link identifyUser} instead, which releases the pageview itself. No-op on
+ * the server.
+ */
+export function markVisitorAnonymous(): void {
+    if (typeof window === 'undefined') return;
+    settleVisitorIdentity();
 }
 
 /**
@@ -354,4 +388,5 @@ export function resetUser(): void {
     personProperties = {};
     identified = null;
     analytics.reset();
+    settleVisitorIdentity();
 }

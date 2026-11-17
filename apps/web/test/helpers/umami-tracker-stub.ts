@@ -15,6 +15,7 @@
  */
 
 import { vi } from 'vitest';
+import { resetVisitorIdentityGate } from '@/lib/analytics/umami-identity-gate';
 import {
     type StartUmamiPageviewsResult,
     startUmamiPageviews
@@ -94,21 +95,35 @@ export async function flushMicrotasks(): Promise<void> {
 export interface PageOptions {
     /** Whether the page renders `<ClientRouter />` (soft navigation). */
     readonly clientRouter?: boolean;
+    /**
+     * Whether the page mounts an auth-aware island, so `UmamiScript.astro`
+     * renders the `umami-await-identity` meta (BaseLayout).
+     */
+    readonly awaitIdentity?: boolean;
 }
 
 let pageviews: StartUmamiPageviewsResult | null = null;
 
 /**
- * Renders the element `UmamiScript.astro` emits, plus the ClientRouter meta
- * when asked.
+ * Renders the element `UmamiScript.astro` emits, plus the ClientRouter and
+ * await-identity metas when asked.
  *
  * @param options - Page options.
  */
-export function renderTrackerElement({ clientRouter = false }: PageOptions = {}): void {
+export function renderTrackerElement({
+    clientRouter = false,
+    awaitIdentity = false
+}: PageOptions = {}): void {
     document.head.insertAdjacentHTML(
         'beforeend',
         '<script data-website-id="site-id" data-auto-pageview="false"></script>'
     );
+    if (awaitIdentity) {
+        document.head.insertAdjacentHTML(
+            'beforeend',
+            '<meta name="umami-await-identity" content="true">'
+        );
+    }
     if (clientRouter) {
         document.head.insertAdjacentHTML(
             'beforeend',
@@ -150,10 +165,14 @@ export async function acknowledgedPage(): Promise<UmamiTrackerStub> {
     return umami;
 }
 
-/** Undoes the page helpers: stops the pageview module and clears the head. */
+/**
+ * Undoes the page helpers: stops the pageview module, re-arms the identity
+ * gate and clears the head.
+ */
 export function unloadPage(): void {
     pageviews?.stop();
     pageviews = null;
+    resetVisitorIdentityGate();
     document.head.innerHTML = '';
     window.history.replaceState({}, '', '/');
 }
