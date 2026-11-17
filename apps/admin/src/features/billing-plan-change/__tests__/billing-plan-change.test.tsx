@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import es from '@repo/i18n/locales/es/admin-billing.json';
+import billingEs from '@repo/i18n/locales/es/billing.json';
 import { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isRedirect } from '@tanstack/react-router';
@@ -19,8 +20,11 @@ vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({
         locale: 'es',
         t: (key: string, params?: Record<string, unknown>) => {
-            let value: unknown = es;
-            for (const segment of key.replace('admin-billing.', '').split('.'))
+            let value: unknown = key.startsWith('billing.') ? billingEs : es;
+            const translationKey = key.startsWith('billing.')
+                ? key.replace('billing.', '')
+                : key.replace('admin-billing.', '');
+            for (const segment of translationKey.split('.'))
                 value =
                     typeof value === 'object' && value !== null
                         ? (value as Record<string, unknown>)[segment]
@@ -41,17 +45,24 @@ const inspection = {
     status: 'ACTIVE',
     billingOptionId: currentId,
     subject: { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', displayName: 'Cliente Uno' },
-    currentPlan: { planName: 'Plan Base', cycle: 'monthly' }
+    currentPlan: { planName: 'Professional', planSlug: 'owner-pro', cycle: 'monthly' }
 };
-const option = (billingOptionId: string, planName: string, current: boolean) => ({
+const option = (
+    billingOptionId: string,
+    planName: string,
+    current: boolean,
+    planSlug = 'owner-pro'
+) => ({
     billingOptionId,
     planId: crypto.randomUUID(),
     planVersionId: crypto.randomUUID(),
     planName,
+    planSlug,
     cycle: 'monthly',
     amountMinor: 10000,
     currency: 'ARS',
-    current
+    current,
+    direction: current ? 'NONE' : 'DOWN'
 });
 function setup(result: object, optionsError?: Error) {
     fetchApi.mockImplementation(({ method, path }: { method?: string; path: string }) => {
@@ -63,9 +74,11 @@ function setup(result: object, optionsError?: Error) {
                     data: {
                         subscriptionId: id,
                         vertical: 'accommodation',
+                        nextChargeAt: '2026-12-01T03:00:00.000Z',
+                        currentCycle: 'monthly',
                         options: [
-                            option(currentId, 'Plan Base', true),
-                            option(targetId, 'Plan Plus', false)
+                            option(currentId, 'Professional', true, 'owner-pro'),
+                            option(targetId, 'Basic', false, 'owner-basico')
                         ]
                     }
                 }
@@ -85,7 +98,7 @@ beforeEach(() => {
     permissions = [PermissionEnum.BILLING_CHANGE_SUBSCRIPTION_PLAN];
 });
 describe('ACC_10 admin plan change screen', () => {
-    it('omits the current option and confirms customer, plans, path and body', async () => {
+    it('translates plans and cycle and previews date and next charge before confirming', async () => {
         setup({
             outcome: 'SUCCESSION',
             checkoutUrl: 'https://example.test/checkout',
@@ -96,6 +109,14 @@ describe('ACC_10 admin plan change screen', () => {
         const select = screen.getByLabelText(
             es.subscriptionPlanChange.destination
         ) as HTMLSelectElement;
+        expect(
+            screen.getByText(es.subscriptionPlanChange.current.replace('{plan}', 'Profesional'))
+        ).toBeTruthy();
+        expect(screen.getByTestId('billing-plan-change-screen').textContent).not.toContain(
+            'Professional'
+        );
+        expect(select.textContent).toContain('Básico · Mensual');
+        expect(select.textContent).not.toContain('Basic');
         expect(select.options).toHaveLength(2);
         expect(Array.from(select.options, (option) => option.value)).toEqual(['', targetId]);
         fireEvent.change(select, { target: { value: targetId } });
@@ -104,7 +125,13 @@ describe('ACC_10 admin plan change screen', () => {
         });
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.review }));
         expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
-            'Cliente Uno: de Plan Base a Plan Plus'
+            'Cliente Uno: de Profesional a Básico'
+        );
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            '01/12/2026'
+        );
+        expect(screen.getByTestId('billing-plan-change-confirmation').textContent).toContain(
+            'Próximo cobro:'
         );
         fireEvent.click(screen.getByRole('button', { name: es.subscriptionPlanChange.confirm }));
         await waitFor(() =>

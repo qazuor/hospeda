@@ -1,3 +1,4 @@
+import type { TranslationKey } from '@repo/i18n';
 import { AdminSubscriptionPlanChangeParamsSchema, PermissionEnum } from '@repo/schemas';
 import { useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
@@ -12,6 +13,7 @@ import {
     useBillingPlanChangeAction,
     useBillingPlanChangeData
 } from '../hooks/useBillingPlanChange';
+import { cycleLabel, planLabel, resolvePlanChangePreview } from '../plan-change-preview';
 
 /** Reads the typed refusal reason of a failed plan change (HOS-2238). */
 function errorReason(error: unknown): string {
@@ -41,10 +43,30 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
         inspection?.subject?.email ||
         inspection?.subject?.id ||
         subscriptionId;
-    const current =
-        inspection?.currentPlan?.planName ??
-        data.data?.options.options.find((option) => option.current)?.planName ??
-        '—';
+    const currentOption = data.data?.options.options.find((option) => option.current);
+    const current = currentOption
+        ? planLabel({ slug: currentOption.planSlug, name: currentOption.planName, t })
+        : inspection?.currentPlan
+          ? planLabel({
+                slug: inspection.currentPlan.planSlug,
+                name: inspection.currentPlan.planName,
+                t
+            })
+          : '—';
+    const preview = selected
+        ? resolvePlanChangePreview({
+              direction: selected.direction,
+              currentCycle: data.data?.options.currentCycle ?? null,
+              targetCycle: selected.cycle,
+              nextChargeAt: data.data?.options.nextChargeAt ?? null
+          })
+        : null;
+    const amount = selected
+        ? new Intl.NumberFormat(locale, {
+              style: 'currency',
+              currency: selected.currency
+          }).format(selected.amountMinor / 100)
+        : '';
     const result = action.data;
     const submit = async () => {
         if (!selected || inspection?.status !== 'ACTIVE' || action.isPending) return;
@@ -167,7 +189,12 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                                     key={option.billingOptionId}
                                                     value={option.billingOptionId}
                                                 >
-                                                    {option.planName} · {option.cycle} ·{' '}
+                                                    {planLabel({
+                                                        slug: option.planSlug,
+                                                        name: option.planName,
+                                                        t
+                                                    })}{' '}
+                                                    · {cycleLabel({ cycle: option.cycle, t })} ·{' '}
                                                     {new Intl.NumberFormat(locale, {
                                                         style: 'currency',
                                                         currency: option.currency
@@ -191,8 +218,36 @@ export function BillingPlanChangeScreen({ subscriptionId }: { readonly subscript
                                                     {
                                                         customer,
                                                         current,
-                                                        destination: selected.planName
+                                                        destination: planLabel({
+                                                            slug: selected.planSlug,
+                                                            name: selected.planName,
+                                                            t
+                                                        })
                                                     }
+                                                )}
+                                                {preview?.mode === 'AT_CYCLE_END' &&
+                                                preview.date ? (
+                                                    <>
+                                                        {' '}
+                                                        {t(
+                                                            'admin-billing.subscriptionPlanChange.previewAtCycleEnd' as TranslationKey,
+                                                            {
+                                                                date: date(preview.date)
+                                                            }
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {' '}
+                                                        {t(
+                                                            'admin-billing.subscriptionPlanChange.previewNeedsCheckout' as TranslationKey
+                                                        )}
+                                                    </>
+                                                )}
+                                                <br />
+                                                {t(
+                                                    'admin-billing.subscriptionPlanChange.previewNextCharge' as TranslationKey,
+                                                    { amount }
                                                 )}
                                             </p>
                                         ) : null}

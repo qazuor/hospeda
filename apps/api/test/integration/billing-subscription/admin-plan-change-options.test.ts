@@ -162,20 +162,26 @@ describe('ACC_10 plan change options and enriched inspection', () => {
             expect.objectContaining({
                 billingOptionId: currentOptionId,
                 planName: 'Plan actual de prueba',
+                planSlug: expect.stringContaining('plan-options-'),
                 amountMinor: 10000,
                 cycle: 'monthly',
-                current: true
+                current: true,
+                direction: 'NONE'
             })
         );
         expect(data.options).toContainEqual(
             expect.objectContaining({
                 billingOptionId: destinationOptionId,
                 planName: 'Plan destino de prueba',
+                planSlug: expect.stringContaining('plan-options-'),
                 amountMinor: 20000,
                 cycle: 'monthly',
-                current: false
+                current: false,
+                direction: expect.stringMatching(/^(UP|DOWN)$/)
             })
         );
+        expect(data.nextChargeAt).toBeNull();
+        expect(data.currentCycle).toBe('monthly');
         expect(audit).toHaveBeenCalledWith(
             expect.objectContaining({
                 auditEvent: AuditEventType.BILLING_READ,
@@ -226,7 +232,11 @@ describe('ACC_10 plan change options and enriched inspection', () => {
         expect(response.status).toBe(200);
         expect((await response.json()).data).toMatchObject({
             subject: { id: ownerId },
-            currentPlan: { planName: 'Plan actual de prueba', cycle: 'monthly' }
+            currentPlan: {
+                planName: 'Plan actual de prueba',
+                planSlug: expect.stringContaining('plan-options-'),
+                cycle: 'monthly'
+            }
         });
     });
     it('keeps the anchored option marked after its version leaves the current offer', async () => {
