@@ -667,9 +667,16 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         // same object when it has nothing to do, which is an implementation
         // detail of the helper, not part of its contract.
         const sanitizedEntities = sanitizeSearchIntentEntities(validatedEntities);
+        // HOS-2294: the normalizer already removes a malformed destinationId
+        // (`""`, `"colon"`, a non-UUID) per slot, BEFORE this comparison runs, so
+        // the before/after check alone would miss it and the HOS-298
+        // `locationCarryoverConflict` note would never fire. Count it as dropped.
+        const destinationIdRejectedByNormalizer =
+            normalized.droppedFields.includes('destinationId');
         let destinationIdDropped =
-            validatedEntities.destinationId !== undefined &&
-            sanitizedEntities.destinationId === undefined;
+            destinationIdRejectedByNormalizer ||
+            (validatedEntities.destinationId !== undefined &&
+                sanitizedEntities.destinationId === undefined);
         if (destinationIdDropped) {
             apiLogger.warn(
                 { locale, destinationId: validatedEntities.destinationId },

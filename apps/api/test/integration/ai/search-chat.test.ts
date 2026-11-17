@@ -3974,6 +3974,51 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/search-chat — integration gates
             expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
         });
 
+        it('HOS-2294: a malformed destinationId dropped by the normalizer still raises the carry-over note', async () => {
+            // Turn 1's location lived ONLY in `destinationId` (no city). Turn 2
+            // answers `destinationId: ""`: the normalizer rejects it per slot, so
+            // the sanitizer sees no id at all. Without counting the normalizer's
+            // drop, the search silently widens to every destination.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    isNewSearch: null,
+                    entities: { destinationId: '', minGuests: 6 }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = [];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabañas en Colón' },
+                        { role: 'assistant', content: 'Encontré cabañas en Colón.' },
+                        { role: 'user', content: 'para 6 personas' }
+                    ],
+                    currentFilters: { destinationId: COLON_DESTINATION_UUID },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const payload = JSON.parse(frames.find((f) => f.event === 'filters')?.data ?? '{}') as {
+                params: Record<string, unknown>;
+            };
+            expect(payload.params.destinationId).toBeUndefined();
+            const system = streamTextCalls[0]?.system ?? '';
+            expect(system).toContain(
+                'IMPORTANT — LOCATION NOT CARRIED OVER: the location from the previous message ' +
+                    'could NOT be carried into this search'
+            );
+        });
+
         it('resolves the city to a real destination instead of degrading to a keyword search when the id is invented', async () => {
             // The FIX-1 case, and the one this test used to pin BACKWARDS: it
             // asserted `params.q === 'Colón'` — a name/description ILIKE — as if
