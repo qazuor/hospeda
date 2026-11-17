@@ -726,6 +726,25 @@
             "cancel": "Cancelar",
             "noWritePermission": "Você não tem permissão para alterar esta opção.",
             "saveError": "Não foi possível salvar a alteração. Tente novamente."
+        },
+        "providerWatchAuthorization": {
+            "title": "Vigilância do provedor",
+            "description": "Autorize todo mês a execução em produção da bateria de vigilância e o máximo que ela pode cobrar",
+            "hint": "A execução mensal em produção não começa sem a autorização do mês corrente, e qualquer medição que movimente dinheiro é abortada se o seu máximo a cobrar não for EXATAMENTE este número. É renovada à mão todo mês.",
+            "statusNone": "Sem autorização",
+            "statusActive": "Autorizada para {month}",
+            "statusStale": "Vencida ({month})",
+            "currentValue": "Máximo a cobrar autorizado: {amount} ({minor} centavos)",
+            "monthLabel": "Mês (AAAA-MM)",
+            "maxChargeLabel": "Máximo a cobrar, em centavos de ARS",
+            "maxChargeHint": "Número inteiro. 150000 centavos são ARS 1.500,00. Tem que coincidir exatamente com o que a medição declara.",
+            "save": "Autorizar",
+            "confirmTitle": "Autorizar a bateria",
+            "confirmSave": "Autorizar a execução em produção de {month} com um máximo a cobrar de {amount}?",
+            "cancel": "Cancelar",
+            "invalidValue": "Informe um mês no formato AAAA-MM e um máximo a cobrar inteiro e maior que zero.",
+            "noWritePermission": "Somente um SUPER_ADMIN pode alterar esta autorização.",
+            "saveError": "Não foi possível salvar a autorização. Tente novamente."
         }
     },
     "sponsorships": {

@@ -726,6 +726,25 @@
             "cancel": "Cancel",
             "noWritePermission": "You do not have permission to change this switch.",
             "saveError": "Could not save the change. Please try again."
+        },
+        "providerWatchAuthorization": {
+            "title": "Provider watch",
+            "description": "Authorize the watch battery's production run every month, and the most it may charge",
+            "hint": "The monthly production run does not start without the authorization of the current month, and any measurement that moves money aborts unless its maximum charge is EXACTLY this number. It is renewed by hand every month.",
+            "statusNone": "Not authorized",
+            "statusActive": "Authorized for {month}",
+            "statusStale": "Expired ({month})",
+            "currentValue": "Authorized maximum charge: {amount} ({minor} centavos)",
+            "monthLabel": "Month (YYYY-MM)",
+            "maxChargeLabel": "Maximum charge, in ARS centavos",
+            "maxChargeHint": "A whole number. 150000 centavos is ARS 1,500.00. It must match exactly what the measurement declares.",
+            "save": "Authorize",
+            "confirmTitle": "Authorize the battery",
+            "confirmSave": "Authorize the production run of {month} with a maximum charge of {amount}?",
+            "cancel": "Cancel",
+            "invalidValue": "Enter a month as YYYY-MM and a whole maximum charge above zero.",
+            "noWritePermission": "Only a SUPER_ADMIN can change this authorization.",
+            "saveError": "Could not save the authorization. Please try again."
         }
     },
     "sponsorships": {
