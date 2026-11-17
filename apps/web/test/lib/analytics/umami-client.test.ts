@@ -23,11 +23,10 @@ import {
 } from '@/lib/analytics/umami-client';
 import { CONSENT_CHANGED_EVENT, saveConsent } from '@/lib/cookie-consent';
 import {
-    acknowledgedPage,
     flushMicrotasks,
     installUmamiTrackerStub,
+    loadPage,
     renderTrackerElement,
-    STUB_CACHE_TOKEN,
     startPageviews,
     unloadPage
 } from '../../helpers/umami-tracker-stub';
@@ -105,10 +104,10 @@ describe('trackEvent', () => {
     });
 });
 
-describe('identifyUser (consent-gated, once per session)', () => {
+describe('identifyUser (consent-gated, once per document)', () => {
     it('should never identify before consent', async () => {
         // Arrange
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
 
         // Act
         identifyUser('user-1');
@@ -121,7 +120,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
 
     it('should identify once with the user id after CONSENT_CHANGED_EVENT', async () => {
         // Arrange
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1');
 
         // Act
@@ -130,12 +129,12 @@ describe('identifyUser (consent-gated, once per session)', () => {
         // Assert
         expect(umami.identify).toHaveBeenCalledTimes(1);
         expect(umami.identify).toHaveBeenCalledWith('user-1');
-        expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
+        expect(umami.identifyCaches).toEqual([undefined]);
     });
 
     it('should not re-identify on repeated consent events', async () => {
         // Arrange
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1');
         grantConsent();
 
@@ -151,7 +150,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
 
     it('should not identify when consent changes to analytics=false', async () => {
         // Arrange
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1');
 
         // Act
@@ -164,7 +163,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
     it('should identify only once per session when called repeatedly with consent', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
 
         // Act
         identifyUser('user-1');
@@ -178,7 +177,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
     it('should identify again after resetUser (sign-out then sign-in)', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1');
 
         // Act
@@ -191,7 +190,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
 
     it('should never identify a user dropped by resetUser while pending consent', async () => {
         // Arrange
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1');
         resetUser();
 
@@ -205,7 +204,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
     it('should reject an email as distinct id', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
 
         // Act
         identifyUser('someone@example.com');
@@ -217,7 +216,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
     it('should reject a forbidden distinct id value', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
 
         // Act
         identifyUser('anonymous');
@@ -229,7 +228,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
     it('should fold person properties into the identify data', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         setPersonProperties({ locale: 'es' });
 
         // Act
@@ -249,7 +248,7 @@ describe('identifyUser (consent-gated, once per session)', () => {
 });
 
 describe('identifyUser before the deferred tracker exists (M4)', () => {
-    it('should keep the identity pending and send it after the late tracker pageview ack', async () => {
+    it('should keep the identity pending and send it as soon as the late tracker appears', async () => {
         // Arrange
         vi.useFakeTimers();
         grantConsent();
@@ -261,26 +260,27 @@ describe('identifyUser before the deferred tracker exists (M4)', () => {
         vi.advanceTimersByTime(1000);
         const umami = installUmamiTrackerStub();
         vi.advanceTimersByTime(250);
-        umami.respond();
         await flushMicrotasks();
-        vi.advanceTimersByTime(10_000);
 
         // Assert
         expect(umami.identify).toHaveBeenCalledTimes(1);
         expect(umami.identify).toHaveBeenCalledWith('user-1');
-        expect(umami.identifyCaches).toEqual([STUB_CACHE_TOKEN]);
+        expect(umami.identifyCaches).toEqual([undefined]);
     });
 
-    it('should not mark the session identified while the tracker is missing', () => {
+    it('should not mark the document identified while the tracker is missing', () => {
         // Arrange
         vi.useFakeTimers();
         grantConsent();
-
-        // Act
         identifyUser('user-1');
 
-        // Assert
-        expect(window.sessionStorage.getItem('umami-identified-user')).toBeNull();
+        // Act: the tracker shows up later and the same call is repeated
+        const umami = installUmamiTrackerStub();
+        identifyUser('user-1');
+        vi.advanceTimersByTime(250);
+
+        // Assert: exactly one identify, none lost to a marker of a send that never ran
+        expect(umami.identify).toHaveBeenCalledTimes(1);
     });
 });
 
@@ -288,7 +288,7 @@ describe('identifyUser when person properties change (M4)', () => {
     it('should send the enriched properties of a second call for the same id', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
 
         // Act: UserMenu calls with the id alone, then with the props
         identifyUser('user-1');
@@ -305,7 +305,7 @@ describe('identifyUser when person properties change (M4)', () => {
     it('should not re-send when the properties did not change', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1', { is_host: true });
 
         // Act
@@ -319,7 +319,7 @@ describe('identifyUser when person properties change (M4)', () => {
     it('should re-send for a changed property from setPersonProperties', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         identifyUser('user-1', { locale: 'es' });
 
         // Act
@@ -351,7 +351,7 @@ describe('consent revocation after an identify (M6)', () => {
     it('should forget the identity and reload when this page sent it', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         const reload = stubReload();
         identifyUser('user-1', { is_host: true });
 
@@ -360,14 +360,13 @@ describe('consent revocation after an identify (M6)', () => {
 
         // Assert
         expect(reload).toHaveBeenCalledTimes(1);
-        expect(window.sessionStorage.getItem('umami-identified-user')).toBeNull();
         expect(umami.identify).toHaveBeenCalledTimes(1);
     });
 
     it('should identify from scratch when consent is granted again', async () => {
         // Arrange
         grantConsent();
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         stubReload();
         identifyUser('user-1');
         saveConsent({ crashReporting: false, analytics: false, marketing: false });
@@ -376,13 +375,13 @@ describe('consent revocation after an identify (M6)', () => {
         grantConsent();
         identifyUser('user-1');
 
-        // Assert: the marker was cleared, so the id is sent again
+        // Assert: the marker was cleared, so the id is sent again (the stub token is reset by a fresh page)
         expect(umami.identify).toHaveBeenCalledTimes(2);
     });
 
     it('should drop a pending identity and not reload when nothing was sent', async () => {
         // Arrange
-        const umami = await acknowledgedPage();
+        const umami = loadPage();
         const reload = stubReload();
         identifyUser('user-1');
 

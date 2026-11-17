@@ -53,11 +53,12 @@ export interface HasUmamiCacheTokenInput {
  *
  * The tracker stores the token from the answer of each request it sends and
  * keeps it in memory for the life of the document. An `identify` sent while it
- * holds the token claims the anonymous session the pageview opened; one sent
- * without it opens a separate `uuid(…, id)` session (OQ-5,
- * `docs/analytics/umami-spike.md` §2). A tracker without `getSession`, or one
- * that throws, cannot prove the token and counts as not holding it, so the
- * caller never sends an identify that would split the session. Never throws.
+ * holds the token CLAIMS the anonymous fingerprint session (and every later
+ * visitor on that device keeps landing in it); one sent without it opens the
+ * per-user `uuid(…, id)` session (OQ-5 revised 2026-11-17,
+ * `docs/analytics/umami-spike.md` §2). Callers use this as a guard: identify
+ * only while the tracker does NOT hold a token. A tracker without
+ * `getSession`, or one that throws, counts as not holding it. Never throws.
  *
  * Re-check this contract (`getSession()` and its `cache` field) on every
  * Umami upgrade.
