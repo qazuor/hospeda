@@ -332,7 +332,7 @@ describe('ListingEditor', () => {
         // the owner. `handleApiError` now surfaces the actual message.
         mockPatch.mockResolvedValueOnce({
             ok: false,
-            error: { status: 500, message: 'Ese teléfono ya está en uso' }
+            error: { status: 409, message: 'Ese teléfono ya está en uso' }
         });
         renderEditor('venue', 'contact');
 
@@ -347,6 +347,21 @@ describe('ListingEditor', () => {
         const alert = await screen.findByRole('alert');
         expect(alert.textContent).toBe('Ese teléfono ya está en uso');
         expect(alert.textContent).not.toBe('No se pudieron guardar los cambios.');
+    });
+
+    it('shows the fixed localized banner, never the API message, on a 5xx PATCH failure (HOS-2312)', async () => {
+        mockPatch.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 500, message: 'An unexpected error occurred' }
+        });
+        renderEditor('venue', 'contact');
+        fireEvent.change(screen.getAllByLabelText('Número')[0], {
+            target: { value: '9 11 1234 5678' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        const alert = await screen.findByRole('alert');
+        expect(alert.textContent).toBe('No se pudieron guardar los cambios.');
     });
 
     it('sends priceFrom as undefined (not null) when cleared, so the PATCH succeeds (experience)', async () => {
