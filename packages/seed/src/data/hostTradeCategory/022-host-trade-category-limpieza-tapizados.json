@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "022-host-trade-category-limpieza-tapizados",
+    "slug": "limpieza-tapizados",
+    "groupSlug": "limpieza-ropa-blanca",
+    "nameI18n": {
+        "es": "Limpieza de tapizados",
+        "en": "Upholstery cleaning",
+        "pt": "Limpeza de estofados"
+    },
+    "keywordsI18n": {
+        "es": ["tapizados", "sillones", "alfombras", "colchones", "lavado en seco"]
+    },
+    "displayWeight": 30,
+    "lifecycleState": "ACTIVE"
+}

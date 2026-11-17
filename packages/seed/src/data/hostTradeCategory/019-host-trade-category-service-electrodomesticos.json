@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "019-host-trade-category-service-electrodomesticos",
+    "slug": "service-electrodomesticos",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Service de electrodomésticos",
+        "en": "Appliance repair",
+        "pt": "Assistência de eletrodomésticos"
+    },
+    "keywordsI18n": {
+        "es": ["heladera", "lavarropas", "microondas", "cocina", "técnico", "service"]
+    },
+    "displayWeight": 110,
+    "lifecycleState": "ACTIVE"
+}

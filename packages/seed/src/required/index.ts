@@ -12,6 +12,10 @@ import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
+import {
+    seedHostTradeCategories,
+    seedHostTradeCategoryGroups
+} from './hostTradeCategories.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
 import { seedPoiCategories } from './poiCategories.seed.js';
 import { seedPoiCategoryBackfill } from './poiCategoryBackfill.seed.js';
@@ -136,6 +140,13 @@ export async function runRequiredSeeds(context: SeedContext): Promise<{
         //      interest for a stable, predictable ordering, though the two
         //      seeds have no direct dependency on each other.
         { name: 'PoiCategories', run: () => seedPoiCategories(context) },
+
+        // 6.06 Load the provider trade category catalog (HOS-919): groups first,
+        //      then categories (each references its group by deterministic id).
+        //      Standalone, no dependency on other entities; the example
+        //      hostTrades seeder links providers to these rows by slug.
+        { name: 'HostTradeCategoryGroups', run: () => seedHostTradeCategoryGroups(context) },
+        { name: 'HostTradeCategories', run: () => seedHostTradeCategories(context) },
 
         // 6.1 Load points of interest (HOS-113) — before destinations, same
         //     reason as attractions: the destination↔POI relationship seed

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "006-host-trade-category-energia-solar",
+    "slug": "energia-solar",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Energía solar y termotanques",
+        "en": "Solar energy & water heaters",
+        "pt": "Energia solar e aquecedores"
+    },
+    "keywordsI18n": {
+        "es": ["panel solar", "termotanque", "calefón solar", "fotovoltaico"]
+    },
+    "displayWeight": 60,
+    "lifecycleState": "ACTIVE"
+}

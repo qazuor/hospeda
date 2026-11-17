@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/hostTradeCategoryGroup.schema.json",
+    "id": "002-host-trade-category-group-reparaciones-obra",
+    "slug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Reparaciones y obra",
+        "en": "Repairs & construction",
+        "pt": "Reparos e obras"
+    },
+    "displayWeight": 20,
+    "lifecycleState": "ACTIVE"
+}

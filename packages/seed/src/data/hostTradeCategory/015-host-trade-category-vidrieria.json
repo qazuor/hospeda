@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "015-host-trade-category-vidrieria",
+    "slug": "vidrieria",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Vidriería",
+        "en": "Glazier",
+        "pt": "Vidraçaria"
+    },
+    "keywordsI18n": {
+        "es": ["vidrio", "ventana", "espejo", "vidrio roto", "mampara"]
+    },
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

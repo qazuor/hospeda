@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "008-host-trade-category-seguridad-alarmas",
+    "slug": "seguridad-alarmas",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Seguridad y alarmas",
+        "en": "Security & alarms",
+        "pt": "Segurança e alarmes"
+    },
+    "keywordsI18n": {
+        "es": ["alarma", "cámara", "cctv", "monitoreo", "cerradura inteligente"]
+    },
+    "displayWeight": 80,
+    "lifecycleState": "ACTIVE"
+}

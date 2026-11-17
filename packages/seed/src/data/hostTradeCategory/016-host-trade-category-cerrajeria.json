@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "016-host-trade-category-cerrajeria",
+    "slug": "cerrajeria",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Cerrajería",
+        "en": "Locksmith",
+        "pt": "Chaveiro"
+    },
+    "keywordsI18n": {
+        "es": ["cerrajero", "llave", "cerradura", "puerta trabada", "copia de llaves"]
+    },
+    "displayWeight": 80,
+    "lifecycleState": "ACTIVE"
+}

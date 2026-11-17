@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "017-host-trade-category-toldos-cortinas-persianas",
+    "slug": "toldos-cortinas-persianas",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Toldos, cortinas y persianas",
+        "en": "Awnings, curtains & blinds",
+        "pt": "Toldos, cortinas e persianas"
+    },
+    "keywordsI18n": {
+        "es": ["toldo", "cortina", "persiana", "roller", "black out"]
+    },
+    "displayWeight": 90,
+    "lifecycleState": "ACTIVE"
+}

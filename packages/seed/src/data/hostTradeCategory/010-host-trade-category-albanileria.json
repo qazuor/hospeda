@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "010-host-trade-category-albanileria",
+    "slug": "albanileria",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Albañilería",
+        "en": "Masonry",
+        "pt": "Alvenaria"
+    },
+    "keywordsI18n": {
+        "es": ["albañil", "revoque", "pared", "humedad", "cerámica", "contrapiso"]
+    },
+    "displayWeight": 20,
+    "lifecycleState": "ACTIVE"
+}
