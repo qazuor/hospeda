@@ -262,6 +262,50 @@ describe('searchOwnerHelp', () => {
     });
 });
 
+describe('stop words never stem-match', () => {
+    it.each([
+        'cómo elimino mi cuenta',
+        'cómo cambio mi contraseña',
+        'cómo pago',
+        'cómo cancelo',
+        'cómo publico un evento',
+        'cuál es la temporada alta',
+        'me falta cobrar'
+    ])('returns no topic for "%s"', (question) => {
+        expect(ids(question)).toEqual([]);
+    });
+
+    it('returns only the right topic for "cómo elimino una foto"', () => {
+        expect(ids('cómo elimino una foto')).toEqual(['photos']);
+    });
+
+    it('still answers a "cómo" question that is about a topic', () => {
+        expect(ids('cómo subo fotos')[0]).toBe('photos');
+        expect(ids('cómo agrego comodidades')).toContain('amenities');
+    });
+
+    it('does not let a stop word stand for the longer keyword, but keeps multi-word keywords with stop words', () => {
+        // Arrange
+        const catalog = [
+            topic({ id: 'long', keywords: ['comodidad'] }),
+            topic({ id: 'phrase', keywords: ['no puedo publicar'] })
+        ];
+
+        // Assert
+        expect(searchOwnerHelp({ topics: catalog, question: 'como hago' })).toEqual([]);
+        // The other direction: a stop word as the keyword does not stand for a longer question word.
+        expect(
+            searchOwnerHelp({
+                topics: [topic({ id: 'stop', keywords: ['como'] })],
+                question: 'comodidades'
+            })
+        ).toEqual([]);
+        expect(
+            searchOwnerHelp({ topics: catalog, question: 'no puedo publicar' }).map((t) => t.id)
+        ).toEqual(['phrase']);
+    });
+});
+
 describe('findOwnerHelpTopic', () => {
     it('returns the topic with that id', () => {
         expect(findOwnerHelpTopic({ topics: OWNER_HELP_TOPICS, id: 'photos' })?.id).toBe('photos');

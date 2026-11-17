@@ -88,10 +88,17 @@ export function tokenizeHelpText({ text }: { readonly text: string }): readonly 
         .filter((word) => word !== '');
 }
 
-/** Whether two normalized words are the same word, or a stem and its longer form. */
+/**
+ * Whether two normalized words are the same word, or a stem and its longer form.
+ * Stop words match only themselves.
+ */
 function wordsMatch({ a, b }: { readonly a: string; readonly b: string }): boolean {
     if (a === b) {
         return true;
+    }
+    // A stop word never stands for a longer word: "como" is not "comodidad".
+    if (STOP_WORDS.has(a) || STOP_WORDS.has(b)) {
+        return false;
     }
     const [shorter, longer] = a.length <= b.length ? [a, b] : [b, a];
     return shorter.length >= MIN_STEM_LENGTH && longer.startsWith(shorter);
