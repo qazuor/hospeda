@@ -414,6 +414,25 @@ auditConfig:
     # the Expo SDK bump moves @expo/cli to zod 4. Confirm with:
     #   pnpm why zod -r --prod   # only >=4.6.6 left
     - GHSA-mrhx-c7xc-m3w5
+    # GHSA-fc5q-39xc-vjpf (2026-11-17, high): picomatch <=4.0.7 has a ReDoS
+    # through single-branch repeated extglobs. The trigger is the GLOB PATTERN,
+    # not the matched path, so it needs an attacker to choose a pattern.
+    # - The only resolved version is 4.0.7 (`pnpm why picomatch -r --prod`),
+    #   reached through build tooling: vite, tinyglobby, fdir and unplugin under
+    #   @tanstack/react-start and @tailwindcss/vite (admin), astro (web) and
+    #   metro (mobile).
+    # - Those tools match glob patterns that come from the project's own
+    #   config.
+    # - No Hospeda source imports picomatch, tinyglobby or fdir. Check with:
+    #     rg "picomatch|tinyglobby|from 'fdir'" apps/*/src packages/*/src
+    #   so no request input ever becomes a pattern.
+    # No fixed release exists: npm's latest is 4.0.7, and the advisory lists no
+    # first patched version, so an override cannot close it (the
+    # `"picomatch@^4.0.0"` floor above stays as is).
+    # Remove this exception as soon as picomatch 4.0.8 is published: raise that
+    # floor to ">=4.0.8" and confirm with
+    #   pnpm audit --prod   # no GHSA-fc5q-39xc-vjpf
+    - GHSA-fc5q-39xc-vjpf
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)

@@ -17,15 +17,15 @@ import {
     AiFaqDraftOutputSchema,
     AiPostGenerateDraftGenerationSchema,
     AiPostGenerateRequestSchema,
-    AiTextImproveRequestSchema,
-    SearchIntentOutputSchema
+    AiTextImproveRequestSchema
 } from '@repo/schemas';
 import { stripHtmlToText } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
 import { toSdkJsonSchema } from '../../../../packages/ai-core/scripts/ai-sweep/sdk-json-schema.js';
 import {
     accommodationImportProductionAccepts,
-    parseAnswerVerdict
+    parseAnswerVerdict,
+    searchIntentProductionAccepts
 } from '../../../../packages/ai-core/scripts/ai-sweep/task-checks.js';
 import { SWEEP_DIR } from '../../scripts/ai-sweep/generate-sweep-contexts.js';
 import { buildGeneratedTasksFile } from '../../scripts/ai-sweep/generate-sweep-tasks.js';
@@ -36,6 +36,10 @@ import {
     nullFieldsToUndefined
 } from '../../src/routes/accommodation/protected/import-from-url.ai.js';
 import { buildPostGeneratePrompt } from '../../src/routes/ai/admin/post-generate.js';
+import {
+    normalizeSearchModelOutput,
+    SearchIntentModelOutputSchema
+} from '../../src/routes/ai/protected/search-chat.model-output.js';
 import { buildConversationalSearchPrompt } from '../../src/routes/ai/protected/search-chat.prompt.js';
 import { buildTextImprovePrompt } from '../../src/routes/ai/protected/text-improve.js';
 import {
@@ -98,7 +102,7 @@ describe('HOS-2217 sweep task requests are the production requests', () => {
     it('stored output schemas are the AI SDK conversion of the live production schemas', () => {
         // Arrange
         const live = {
-            search_intent: SearchIntentOutputSchema,
+            search_intent: SearchIntentModelOutputSchema,
             accommodation_import: AccommodationImportAiModelOutputSchema,
             post_generate: AiPostGenerateDraftGenerationSchema,
             faq_draft: AiFaqDraftOutputSchema
@@ -312,6 +316,46 @@ describe('HOS-2217 sweep task requests are the production requests', () => {
         // Assert
         expect(sweep).toEqual(production);
         expect(production.filter(Boolean).length).toBe(3);
+    });
+
+    it('search_intent: the sweep production-acceptance check equals the production chain (HOS-2294)', () => {
+        // Arrange: production = the AI SDK validating the strict model schema (Zod
+        // strips unknown keys), then the normalizer, which never rejects an answer.
+        const entityKeys = Object.keys(SearchIntentModelOutputSchema.shape.entities.shape);
+        const allNull = Object.fromEntries(entityKeys.map((key) => [key, null]));
+        const full = (entities: Record<string, unknown>, top: Record<string, unknown> = {}) => ({
+            confidence: 0.9,
+            isNewSearch: null,
+            ...top,
+            entities: { ...allNull, ...entities }
+        });
+        const objects: unknown[] = [
+            full({}),
+            full({ minGuests: 4, city: 'Colón' }, { isNewSearch: false }),
+            full({ minGuests: 0, latitude: 999 }),
+            { ...full({}), extra: 'ignored' },
+            { confidence: 0.9, entities: { guests: 4 } },
+            { confidence: 0.9, entities: {} },
+            { entities: allNull },
+            full({ minGuests: '4' }),
+            {},
+            'not an object'
+        ];
+        const schema = generated.schemas.search_intent as Record<string, unknown>;
+
+        // Act
+        const sweep = objects.map(
+            (object) => searchIntentProductionAccepts({ schema, object }).accepted
+        );
+        const production = objects.map((object) => {
+            const accepted = SearchIntentModelOutputSchema.safeParse(object).success;
+            if (accepted) expect(() => normalizeSearchModelOutput({ value: object })).not.toThrow();
+            return accepted;
+        });
+
+        // Assert
+        expect(sweep).toEqual(production);
+        expect(production.filter(Boolean).length).toBe(4);
     });
 
     it('support: engine defaults only (no caller system), since no route calls it', () => {

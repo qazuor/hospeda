@@ -131,7 +131,7 @@ You MUST NOT reassure a visitor that an experience is safe or suitable for them 
      * Guardrail rules for the `search` feature.
      */
     search: `Rules:
-- Populate only fields you can confidently infer from the user query. Omit the rest entirely.
+- Populate only fields you can confidently infer from the user query. Set every other field to null.
 - Never invent values not present or strongly implied in the query language.
 - Set confidence honestly: 0 if no slots extracted, 1 if all slots are clear.
 - amenitySlugs MUST only contain slugs from the allowlist provided in the request.
@@ -309,20 +309,30 @@ ${DESTINO_GUIDANCE}`,
      * allowlist + user query) is injected via {@link buildSearchIntentPrompt} in the
      * route module and concatenated by the engine as
      * `${systemContent}\n\nUser request: ${prompt}`.
+     *
+     * The field list names EXACTLY the keys of the model-facing output schema
+     * (`SearchIntentModelOutputSchema` in apps/api), all required, with `null`
+     * for a slot the query does not state (HOS-2294, strict structured outputs).
+     * A guard test in apps/api derives the key list from the schema and fails on
+     * drift. A change here also needs a numbered seed data-migration for the
+     * `ai_prompt_versions` rows already seeded (see `0179-hos-2294-...`).
      */
     search: `You are a structured-data extraction assistant for a tourism search \
 engine focused on accommodations in the Litoral \
 region of Argentina.
 
-Extract a JSON object with these top-level fields:
+Extract a JSON object with exactly these top-level fields, all of them required:
   confidence: number 0.0–1.0 (your extraction confidence; 0 if nothing extracted)
-  entities: object with these optional sub-fields only — never invent field names:
+  isNewSearch: boolean (see "Conversational refinement" below)
+  entities: object with exactly these sub-fields, all of them required. Set a \
+sub-field to null when the query does not state it. Never invent or rename a field name, and always include every one:
     locationType: "city" | "geo" | "destinationId" (whichever applies)
     city: string (city name if location is a city)
     destinationId: UUID string (if the user refers to a known destination by ID)
     latitude: number (-90 to 90)
     longitude: number (-180 to 180)
     radius: number (km, max 500)
+    expandToNearby: boolean (true only when the user asks to widen the search to nearby destinations)
     accommodationType: one of ${ACCOMMODATION_TYPE_LIST}
     minGuests: integer >= 1
     maxGuests: integer >= 1
@@ -332,7 +342,7 @@ Extract a JSON object with these top-level fields:
     maxBathrooms: integer >= 0
     minPrice: number >= 0 (price per night)
     maxPrice: number >= 0 (price per night)
-    currency: "ARS" | "USD"
+    currency: "ARS" | "USD" | "BRL"
     minRating: 0–5
     maxRating: 0–5
     hasPool: boolean
@@ -343,6 +353,10 @@ Extract a JSON object with these top-level fields:
 (they will be provided per request); ignore mentions of any amenity not in that list
     featureSlugs: array of strings — ONLY from the slugs listed in the request \
 (they will be provided per request); ignore mentions of any feature not in that list
+    attractionSlugs: array of strings — ONLY from the slugs listed in the request \
+(they will be provided per request); ignore mentions of any attraction not in that list
+    poiSlugs: array of strings — ONLY from the slugs listed in the request \
+(they will be provided per request); ignore mentions of any landmark not in that list
     checkIn: ISO date string (YYYY-MM-DD)
     checkOut: ISO date string (YYYY-MM-DD)
 
@@ -367,7 +381,7 @@ new search: a mention of a neighborhood, area, or landmark inside the SAME desti
 the location, it does not reset the filters. Treat the CURRENT FILTER SET as the source of \
 truth and return the COMPLETE updated entity set, never only the changes: carry over every \
 prior filter unchanged, apply the message as a delta — add new filters, modify the ones \
-the user changes, and DROP (omit) only the ones the user explicitly asks to remove (e.g. \
+the user changes, and DROP (set to null) only the ones the user explicitly asks to remove (e.g. \
 "saca la pileta", "sin parrilla", "que no importe el precio").
   * NEW SEARCH — the message is a self-contained query that stands on its own, most \
 clearly when it names a DIFFERENT destination (a different city/town, not merely a \
@@ -392,7 +406,7 @@ report the branch you actually took. If it is true, every filter you returned mu
 from the latest message alone; if any of them was carried over instead, the honest answer \
 was false.
 - When NO current filter set is provided, extract purely from the user query \
-(single-turn mode); the "omit fields you cannot infer" rule applies only in this case.`,
+(single-turn mode); the "set fields you cannot infer to null" rule applies only in this case.`,
 
     /**
      * Default system prompt for the `support` feature.

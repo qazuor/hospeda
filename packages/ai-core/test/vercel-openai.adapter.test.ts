@@ -708,31 +708,46 @@ describe('OpenAiAdapter', () => {
         // Regression (AI search broken in prod): OpenAI structured-outputs strict
         // mode (the AI SDK default) rejects an output schema that has optional
         // properties with "Invalid schema for response_format ... 'required' is
-        // required ... Missing '<field>'". The `search` feature extracts partial
-        // slots (all-optional schema), so the adapter must opt it out via
-        // providerOptions.openai.strictJsonSchema:false.
+        // required ... Missing '<field>'". Such features opt out via
+        // providerOptions.openai.strictJsonSchema:false (FEATURES_WITHOUT_STRICT_JSON_SCHEMA).
+        // The set is empty since HOS-2294: `accommodation_import` and `search` both
+        // send a required + nullable schema and run strict.
 
-        it.each([
-            'search'
-        ] as const)('disables strict JSON schema for the "%s" feature (all-optional output)', async (feature) => {
-            // Arrange
+        it('HOS-2294: extractIntent opts out of strict per call while search stays strict', async () => {
+            // Arrange: AiIntentSchema (open entities record) is not expressible in strict mode.
             const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
-            const schema = z.object({ slot: z.string().optional() });
-            mockGenerateObject.mockResolvedValueOnce({
-                object: {},
+            mockGenerateObject.mockResolvedValue({
+                object: { kind: 'search', confidence: 0.9, entities: {}, rawQuery: 'q' },
                 usage: FAKE_SDK_USAGE,
                 finishReason: 'stop'
             });
 
             // Act
-            await adapter.generateObject({ feature, locale: 'es', prompt: 'q' }, schema);
+            await adapter.extractIntent({ query: 'q', locale: 'es' });
 
             // Assert
-            expect(mockGenerateObject).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    providerOptions: { openai: { strictJsonSchema: false } }
-                })
-            );
+            const call = mockGenerateObject.mock.calls.at(-1)?.[0] as { providerOptions?: unknown };
+            expect(call?.providerOptions).toEqual({ openai: { strictJsonSchema: false } });
+            expect(FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has('search')).toBe(false);
+        });
+
+        it('HOS-2294: search runs strict (required + nullable schema, no opt-out)', async () => {
+            // Arrange: the lenient mode let the model rename filter keys, silently dropped.
+            const adapter = new OpenAiAdapter({ apiKey: TEST_API_KEY });
+            const schema = z.object({ minGuests: z.number().nullable() });
+            mockGenerateObject.mockResolvedValue({
+                object: { minGuests: null },
+                usage: FAKE_SDK_USAGE,
+                finishReason: 'stop'
+            });
+
+            // Act
+            await adapter.generateObject({ feature: 'search', locale: 'es', prompt: 'q' }, schema);
+
+            // Assert
+            expect(FEATURES_WITHOUT_STRICT_JSON_SCHEMA.has('search')).toBe(false);
+            const call = mockGenerateObject.mock.calls.at(-1)?.[0] as { providerOptions?: unknown };
+            expect(call?.providerOptions).toBeUndefined();
         });
 
         it('HOS-2250: accommodation_import runs strict (required + nullable schema, no opt-out)', async () => {

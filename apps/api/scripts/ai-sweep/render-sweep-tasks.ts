@@ -35,8 +35,7 @@ import {
     AiPostGenerateRequestSchema,
     AiTextImproveRequestSchema,
     AttractionLocationConflictSchema,
-    SearchIntentEntitiesSchema,
-    SearchIntentOutputSchema
+    SearchIntentEntitiesSchema
 } from '@repo/schemas';
 import { stripHtmlToText } from '@repo/service-core';
 import { z } from 'zod';
@@ -46,6 +45,7 @@ import {
     buildImportAiPrompt
 } from '../../src/routes/accommodation/protected/import-from-url.ai.js';
 import { buildPostGeneratePrompt } from '../../src/routes/ai/admin/post-generate.prompt.js';
+import { SearchIntentModelOutputSchema } from '../../src/routes/ai/protected/search-chat.model-output.js';
 import {
     buildConversationalSearchPrompt,
     buildSearchReplyMessages,
@@ -115,11 +115,11 @@ export type RenderableCall = keyof typeof TASK_INPUT_SCHEMAS;
 /**
  * Production Zod schema of each serialized output schema id: the schema the
  * route hands `generateObject`, i.e. what the provider is constrained with.
- * For `accommodation_import` that is the strict model-facing schema (HOS-2250),
- * not the downstream parse.
+ * For `accommodation_import` (HOS-2250) and `search_intent` (HOS-2294) that is the
+ * strict model-facing schema, not the downstream parse.
  */
 export const OUTPUT_ZOD_SCHEMAS = {
-    search_intent: SearchIntentOutputSchema,
+    search_intent: SearchIntentModelOutputSchema,
     accommodation_import: AccommodationImportAiModelOutputSchema,
     post_generate: AiPostGenerateDraftGenerationSchema,
     faq_draft: AiFaqDraftOutputSchema

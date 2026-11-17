@@ -213,7 +213,7 @@ overall but fails one feature (say `accommodation_import` schema validity) is no
 | feature | production call reproduced | automatic checks |
 | --- | --- | --- |
 | `chat`, `chat_venue`, `chat_experience` | streamed chat over the real listing context (see above) | rubric facts, unknown handling, decline, language, raw codes, owner voice |
-| `search` | two calls: filter extraction (`generateObject`, `SearchIntentOutputSchema`) and the streamed reply (fixed ideal filters, so it is measured alone) | expected field values, no hallucinated filters, schema validity and production parse; reply rubric |
+| `search` | two calls: filter extraction (`generateObject`, strict `SearchIntentModelOutputSchema` since HOS-2294: every field required and nullable) and the streamed reply (fixed ideal filters, so it is measured alone) | expected field values, no hallucinated filters, schema validity against that strict schema, production acceptance (`searchIntentProductionAccepts`, equal to the SDK check, because the normalizer never rejects an answer); reply rubric |
 | `translate` | `translateField`: URL placeholders + `buildTranslationPrompt` | proper names verbatim, placeholders intact once, no preamble, language, preserved literals |
 | `text_improve` | `buildTextImprovePrompt`, streamed | facts kept, nothing invented, no preamble, voseo, length |
 | `post_generate` | `buildPostGeneratePrompt`, `generateObject` | schema + production strict parse, HTML content, requested language, no invented figures |
