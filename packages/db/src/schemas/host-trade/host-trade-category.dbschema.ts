@@ -9,6 +9,7 @@ import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-o
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { hostTradeCategoryGroups } from './host-trade-category-group.dbschema.ts';
+import { rHostTradeCategory } from './r_host_trade_category.dbschema.ts';
 
 /**
  * Host-trade categories (HOS-919): the editable, admin-owned second level of
@@ -54,11 +55,12 @@ export const hostTradeCategories = pgTable(
     })
 );
 
-export const hostTradeCategoriesRelations = relations(hostTradeCategories, ({ one }) => ({
+export const hostTradeCategoriesRelations = relations(hostTradeCategories, ({ one, many }) => ({
     group: one(hostTradeCategoryGroups, {
         fields: [hostTradeCategories.groupId],
         references: [hostTradeCategoryGroups.id]
-    })
+    }),
+    hostTrades: many(rHostTradeCategory)
 }));
 
 /** Drizzle-inferred INSERT type for host_trade_categories rows. */

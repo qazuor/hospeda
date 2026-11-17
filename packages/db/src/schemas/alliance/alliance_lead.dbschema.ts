@@ -124,6 +124,14 @@ export const allianceLeads = pgTable(
          * Validated against `HostTradeCategoryEnum` in `@repo/schemas`.
          */
         category: varchar('category', { length: 50 }),
+        /**
+         * Catalog category slugs the applicant selected (HOS-919), validated
+         * against active `host_trade_categories` by the service at write time.
+         * Replaces {@link category}, which stays as a legacy column until the
+         * contract release. Slugs, not ids, because they are what a lead
+         * captured at submission time and slugs are immutable.
+         */
+        categorySlugs: text('category_slugs').array(),
         /** Destination the applicant covers. Becomes `host_trades.destination_id`. */
         destinationId: uuid('destination_id').references(() => destinations.id, {
             onDelete: 'set null'
