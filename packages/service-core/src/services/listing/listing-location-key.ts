@@ -37,7 +37,12 @@ export interface LocationKeySource {
  * Returns `{}` when neither `location` nor `destinationId` is in the payload
  * (the key stays as stored). Otherwise the payload location is merged over the
  * stored one key by key (`''` clears a field, as the model does) and the key is
- * rebuilt; it is `null` when the address is not comparable (`s/n`, no number).
+ * rebuilt; it is `null` when the address is not comparable (`s/n`, no number), when
+ * `location` is explicitly `null` (HOS-2318) or when `destinationId` is explicitly `null`.
+ *
+ * A location exception (`location_exception_key`) is left untouched: it only exempts
+ * a listing while the exception key equals `location_key`, so a `null` key already
+ * makes it inert and re-adding the same address revives it (same as an edit away and back).
  *
  * @param args.payload - The validated create/update body.
  * @param args.current - The stored row, `null` on create.
@@ -51,12 +56,19 @@ export function resolveLocationKeyPatch(args: {
     const hasDestination = args.payload.destinationId !== undefined;
     if (!hasLocation && !hasDestination) return {};
 
-    const patchLocation = (args.payload.location ?? {}) as NonNullable<
-        LocationKeySource['location']
-    >;
-    const merged = { ...(args.current?.location ?? {}), ...patchLocation };
+    // `location: null` wipes the address: nothing is merged, so the key is null.
+    const merged: NonNullable<LocationKeySource['location']> =
+        args.payload.location === null
+            ? {}
+            : {
+                  ...(args.current?.location ?? {}),
+                  ...((args.payload.location ?? {}) as NonNullable<LocationKeySource['location']>)
+              };
+    // An explicit `destinationId: null` clears the destination; `undefined` keeps the stored one.
     const destinationId =
-        (args.payload.destinationId as string | undefined) ?? args.current?.destinationId;
+        args.payload.destinationId === null
+            ? null
+            : ((args.payload.destinationId as string | undefined) ?? args.current?.destinationId);
 
     return {
         locationKey: buildLocationKey({
