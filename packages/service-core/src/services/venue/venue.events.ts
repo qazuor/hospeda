@@ -39,8 +39,12 @@
  */
 
 import { VenueEventModel, type VenueModel, withTransaction } from '@repo/db';
+
 import {
+    isVenueEventPast,
+    partitionVenueEvents,
     ServiceErrorCode,
+    VENUE_EVENTS_MAX_ENTRIES,
     type VenueEvent,
     type VenueEventPublic,
     type VenueEventsGetInput,
@@ -60,8 +64,9 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, and the agenda is read whole — so an unstated page size
  * would silently truncate a long agenda rather than fail. Sized well above the
- * schema's own ceiling (`VENUE_EVENTS_MAX_ENTRIES`), so an agenda that
- * passed validation on the way in can always be read back out.
+ * ceiling (`VENUE_EVENTS_MAX_ENTRIES`, which counts only non-past entries,
+ * so a document carrying past ones can be longer), so an agenda that passed
+ * validation on the way in can always be read back out.
  */
 const EVENTS_READ_PAGE_SIZE = 500;
 
@@ -221,6 +226,9 @@ export async function getVenueEvents(
  * a venue that stopped doing live music needs a way to say so, and refusing the
  * empty document would leave them with no way to.
  *
+ * The agenda ceiling (`VENUE_EVENTS_MAX_ENTRIES`) is enforced here, over the
+ * entries that are not past (HOS-2254), and answers 400 `VALIDATION_ERROR`.
+ *
  * Entries are matched by `id` (HOS-2291): see the module header for the diff
  * rules, and {@link VenueEventInputSchema} for why an id of another venue is a
  * 404 rather than something the service trusts.
@@ -266,6 +274,27 @@ export async function replaceVenueEvents(
         const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
 
+        // HOS-2254: the ceiling counts the entries that are NOT past (live and
+        // switched-off ones). A past entry counts for nothing, because the
+        // document still carries it until the cleanup cron deletes it. The
+        // schema cannot do this: it does not know the time.
+        const now = new Date();
+        const { current, past } = partitionVenueEvents({
+            events: validated.agenda.events,
+            now
+        });
+        if (current.length > VENUE_EVENTS_MAX_ENTRIES) {
+            throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'zodError.venue.events.max');
+        }
+        // A past entry may only be one that already exists (re-sent with its id).
+        // Creating one dated in the past would skip the ceiling above.
+        if (past.some((event) => event.id === undefined)) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'zodError.venue.events.newPast'
+            );
+        }
+
         const eventModel = new VenueEventModel();
 
         // ONE transaction for the whole document, same reason the carta's write
@@ -286,9 +315,20 @@ export async function replaceVenueEvents(
             // (error-contract). Nothing has been written yet, so the refusal
             // leaves the agenda exactly as it was.
             const sentIds = new Set<string>();
+            // Past entries whose id is no longer stored: the cleanup cron deleted
+            // them while the owner's editor was open. They are already gone, so
+            // they are skipped instead of failing the whole save.
+            const vanishedPast = new Set<string>();
             for (const event of validated.agenda.events) {
                 if (event.id === undefined) continue;
                 if (!storedIds.has(event.id)) {
+                    // Only a PAST entry gets this leniency. An unknown id of a
+                    // live entry stays a 404, so a foreign id is never accepted.
+                    // Nothing is written for a skipped entry either way.
+                    if (isVenueEventPast({ event, now })) {
+                        vanishedPast.add(event.id);
+                        continue;
+                    }
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue event not found');
                 }
                 if (sentIds.has(event.id)) {
@@ -307,6 +347,7 @@ export async function replaceVenueEvents(
             }
 
             for (const [index, event] of validated.agenda.events.entries()) {
+                if (event.id !== undefined && vanishedPast.has(event.id)) continue;
                 const fields = {
                     title: event.title,
                     // `''` and `undefined` both mean "no blurb"; stored as

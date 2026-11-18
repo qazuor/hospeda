@@ -79,8 +79,8 @@ vi.mock('../../../src/services/venue/venue.permissions', () => ({
     checkVenueCanEditFaqs: vi.fn()
 }));
 
-import { ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ServiceErrorCode, type VenueEventInput } from '@repo/schemas';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { replaceVenueEvents } from '../../../src/services/venue/venue.events';
 import type { Actor } from '../../../src/types';
 
@@ -237,5 +237,155 @@ describe('replaceVenueEvents: stable ids (HOS-2291)', () => {
         });
 
         expect(withTransactionSpy).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('replaceVenueEvents: the ceiling counts non-past entries (HOS-2254)', () => {
+    // 2026-11-17 12:00 in AR (UTC-3).
+    const NOW = new Date('2026-11-17T15:00:00Z');
+
+    beforeEach(() => {
+        store.clear();
+        calls.length = 0;
+        nextId = 1;
+        vi.clearAllMocks();
+        vi.useFakeTimers();
+        vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    const oneOff = (title: string, date: string) => ({
+        title,
+        recurrence: 'once' as const,
+        date,
+        startTime: '21:00',
+        endTime: '23:00',
+        isActive: true
+    });
+    const many = (count: number, make: (index: number) => VenueEventInput): VenueEventInput[] =>
+        Array.from({ length: count }, (_, index) => make(index));
+
+    it('refuses a 31st non-past entry with 400 VALIDATION_ERROR and writes nothing', async () => {
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: many(31, (i) => weekly(`Semanal ${i}`)) }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(result.error?.message).toBe('zodError.venue.events.max');
+        expect(calls).toStrictEqual([]);
+    });
+
+    const seedPast = (count: number): string[] =>
+        Array.from({ length: count }, (_, i) => {
+            const pastId = `00000000-0000-4000-9000-${String(i).padStart(12, '0')}`;
+            store.set(pastId, {
+                id: pastId,
+                venueId: VENUE_ID,
+                title: `Pasado ${i}`,
+                description: null,
+                recurrence: 'once',
+                date: '2026-10-01',
+                weekday: null,
+                startTime: '21:00:00',
+                endTime: '23:00:00',
+                isActive: true,
+                displayOrder: i,
+                createdAt: new Date('2026-01-01T00:00:00Z'),
+                updatedAt: new Date('2026-01-01T00:00:00Z')
+            });
+            return pastId;
+        });
+
+    it('saves 30 non-past entries together with 25 EXISTING past ones re-sent with their id', async () => {
+        const ids = seedPast(25);
+        const events = [
+            ...many(30, (i) => weekly(`Semanal ${i}`)),
+            ...ids.map((pastId, i) => ({ ...oneOff(`Pasado ${i}`, '2026-10-01'), id: pastId }))
+        ];
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events }
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.events).toHaveLength(55);
+    });
+
+    it('refuses a NEW past entry (no id): it would bypass the ceiling', async () => {
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [oneOff('Nuevo pasado', '2026-10-01')] }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(calls).toStrictEqual([]);
+    });
+
+    it('treats a past entry whose id the cron already deleted as gone, saving the rest', async () => {
+        const vanished = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: {
+                events: [weekly('Semanal'), { ...oneOff('Ya borrado', '2026-10-01'), id: vanished }]
+            }
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.events.map((e) => e.title)).toEqual(['Semanal']);
+        expect(store.has(vanished)).toBe(false);
+    });
+
+    it('still answers 404 for an unknown id of a NON-past entry (foreign ids are never accepted)', async () => {
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [{ ...weekly('Ajeno'), id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' }] }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(calls).toStrictEqual([]);
+    });
+
+    it('answers with stable i18n keys: newPast and the live ceiling are distinct', async () => {
+        const newPast = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [oneOff('Nuevo pasado', '2026-10-01')] }
+        });
+        expect(newPast.error?.message).toBe('zodError.venue.events.newPast');
+    });
+
+    it('refuses an unbounded number of past entries (hard cap on the document)', async () => {
+        const ids = seedPast(101);
+        const events = ids.map((pastId, i) => ({
+            ...oneOff(`Pasado ${i}`, '2026-10-01'),
+            id: pastId
+        }));
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(calls).toStrictEqual([]);
+    });
+
+    it('counts a switched-off future entry against the ceiling', async () => {
+        const events = [
+            ...many(30, (i) => weekly(`Semanal ${i}`)),
+            { ...oneOff('Apagado', '2026-12-01'), isActive: false }
+        ];
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });
 });

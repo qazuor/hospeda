@@ -109,7 +109,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                             {
                                 title: 'Evento secreto',
                                 recurrence: 'once',
-                                date: '2026-10-09',
+                                date: '2099-10-09',
                                 startTime: '20:00'
                             }
                         ]
