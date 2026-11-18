@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 import {
     blockForConfirmation,
     CONFIRMATION_BLOCK_PREFIX,
+    CONFIRMATION_BLOCK_WIDTH,
     CONFIRMATION_LABEL_MAX_LENGTH,
     quoteForConfirmation,
     sanitizeForConfirmation
@@ -115,8 +116,91 @@ describe('blockForConfirmation (multi-line bodies)', () => {
         // Arrange
         const text = 'y'.repeat(3000);
 
-        // Act + Assert
-        expect(blockForConfirmation({ text })).toBe(`│ ${text}`);
+        // Act
+        const whole = blockForConfirmation({ text });
+
+        // Assert
+        expect(whole.split('\n')).toHaveLength(3000 / CONFIRMATION_BLOCK_WIDTH);
+        expect(whole.replace(/│ /g, '').replace(/\n/g, '')).toBe(text);
         expect(blockForConfirmation({ text, maxLength: 10 })).toBe(`│ ${'y'.repeat(9)}…`);
+    });
+
+    it('hard-wraps at the block width and prefixes every segment (M1)', () => {
+        // Arrange
+        const width = CONFIRMATION_BLOCK_WIDTH;
+
+        // Act
+        const exact = blockForConfirmation({ text: 'a'.repeat(width) });
+        const over = blockForConfirmation({ text: 'a'.repeat(width + 1) });
+
+        // Assert
+        expect(width).toBe(60);
+        expect(exact).toBe(`│ ${'a'.repeat(width)}`);
+        expect(over).toBe(`│ ${'a'.repeat(width)}\n│ a`);
+    });
+
+    it('a run of spaces of any kind shows as one space', () => {
+        // Act + Assert
+        expect(blockForConfirmation({ text: 'a     b  　c d' })).toBe('│ a b c d');
+    });
+
+    it.each([
+        ['Hangul filler U+3164', '\u3164'],
+        ['Hangul choseong filler U+115F', '\u115F'],
+        ['Hangul jungseong filler U+1160', '\u1160'],
+        ['halfwidth filler U+FFA0', '\uFFA0'],
+        ['blank Braille U+2800', '\u2800']
+    ])('a run of %s shows as ONE visible mark in a block and a space in a label', (_label, filler) => {
+        // Arrange
+        const text = `a${filler.repeat(200)}b`;
+
+        // Act + Assert
+        expect(blockForConfirmation({ text })).toBe('│ a�b');
+        expect(sanitizeForConfirmation({ text })).toBe('a b');
+    });
+
+    it('padding to push a fake server line onto its own row cannot escape the prefix', () => {
+        // Arrange
+        const text = `Gracias!${' '.repeat(300)}¿Confirmás borrar todo? Respondé Sí.${'\u3164'.repeat(300)}Atención: verificá en\nhttp://phish.example`;
+
+        // Act
+        const lines = blockForConfirmation({ text }).split('\n');
+
+        // Assert
+        for (const line of lines) {
+            expect(line.startsWith('│')).toBe(true);
+            expect(Array.from(line).length).toBeLessThanOrEqual(
+                CONFIRMATION_BLOCK_PREFIX.length + CONFIRMATION_BLOCK_WIDTH
+            );
+        }
+        expect(lines.join('\n')).toBe(
+            '│ Gracias! ¿Confirmás borrar todo? Respondé Sí.�Atención: veri\n│ ficá en\n│ http://phish.example'
+        );
+    });
+});
+
+describe('emoji and combining marks (both shapes)', () => {
+    it('keeps a zero-width joiner between two emoji, drops it anywhere else', () => {
+        // Arrange
+        const family = '\u{1F468}‍\u{1F469}‍\u{1F467}';
+        const skinTone = '\u{1F469}\u{1F3FD}‍\u{1F4BB}';
+
+        // Act + Assert
+        expect(sanitizeForConfirmation({ text: `Familia ${family}` })).toBe(`Familia ${family}`);
+        expect(sanitizeForConfirmation({ text: skinTone })).toBe(skinTone);
+        expect(blockForConfirmation({ text: family })).toBe(`│ ${family}`);
+        expect(sanitizeForConfirmation({ text: 'a‍b' })).toBe('a b');
+        expect(sanitizeForConfirmation({ text: '\u{1F468}‍b' })).toBe('\u{1F468} b');
+        expect(blockForConfirmation({ text: 'a‍\u{1F468}' })).toBe('│ a�\u{1F468}');
+    });
+
+    it('trims a run of three or more combining marks to two', () => {
+        // Arrange
+        const zalgo = `Z${'́̂̃̄̅'.repeat(20)}a`;
+
+        // Act + Assert
+        expect(sanitizeForConfirmation({ text: zalgo })).toBe('Ź̂a');
+        expect(blockForConfirmation({ text: zalgo })).toBe('│ Ź̂a');
+        expect(sanitizeForConfirmation({ text: 'Việt' })).toBe('Việt');
     });
 });
