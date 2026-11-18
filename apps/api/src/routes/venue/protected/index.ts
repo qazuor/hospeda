@@ -34,6 +34,7 @@ import { protectedGetVenueDailySpecialsRoute } from './getDailySpecials';
 import { protectedGetVenueEventsRoute } from './getEvents';
 import { protectedGetVenueMediaRoute } from './getMedia';
 import { protectedGetVenueMenuRoute } from './getMenu';
+import { protectedGetVenueWhatsappRoute } from './getWhatsapp';
 import { protectedListMyVenueRoute } from './listMine';
 import { protectedListVenuePromotionsRoute } from './listPromotions';
 import { protectedGetVenueMenuQrRoute } from './menuQr';
@@ -85,6 +86,10 @@ app.route('/', protectedListMyVenueRoute);
 // alongside /mine for readability.
 app.route('/', protectedVenueViewStatsRoute);
 app.route('/', protectedVenueViewStatsDailySeriesRoute);
+
+// GET /{id}/whatsapp — the number for a signed-in visitor, when the owner chose
+// "solo logueados" (HOS-2256). Registered before /{id} like its siblings.
+app.route('/', protectedGetVenueWhatsappRoute);
 
 // GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
 // /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a

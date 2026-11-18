@@ -1636,15 +1636,29 @@
     {
       "idx": 233,
       "version": "7",
-      "when": 1795012555757,
-      "tag": "0233_hos2270_special_offer_discount_type",
+      "when": 1795013865711,
+      "tag": "0233_hos2349_mcp_activity_permission",
       "breakpoints": true
     },
     {
       "idx": 234,
       "version": "7",
-      "when": 1795012569322,
-      "tag": "0234_hos2270_owner_promotions_entity",
+      "when": 1795019853854,
+      "tag": "0234_hos2256_venue_whatsapp_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1795023775360,
+      "tag": "0235_hos2270_special_offer_discount_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 236,
+      "version": "7",
+      "when": 1795023790143,
+      "tag": "0236_hos2270_owner_promotions_entity",
       "breakpoints": true
     }
   ]

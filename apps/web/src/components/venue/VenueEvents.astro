@@ -20,8 +20,9 @@
  * Same stance `VenueMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
  * by the API projection — withheld entirely
  * when the owner's CURRENT plan does not grant `manage_venue_events`, and
- * with `isActive: false` entries already dropped. This component has no gate
- * of its own to apply and does not re-derive either filter.
+ * with `isActive: false` entries and one-off events that already ended
+ * (`isVenueEventPast`, venue zone, HOS-2254) already dropped. This component
+ * has no gate of its own to apply and does not re-derive any of these filters.
  *
  * ## Recurrence rendering
  *

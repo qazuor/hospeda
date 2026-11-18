@@ -2612,6 +2612,9 @@
         "entityInteractionKind": {
             "invalid": "O tipo de interação não é válido"
         },
+        "venueWhatsappVisibility": {
+            "invalid": "A visibilidade do WhatsApp não é válida"
+        },
         "featureCategory": {
             "invalid": "Escolha uma categoria de característica válida"
         },
@@ -3338,7 +3341,9 @@
         "events": {
             "max": "A agenda não pode ter mais de {{max}} eventos",
             "max_one": "A agenda não pode ter mais de {{max}} evento",
-            "max_other": "A agenda não pode ter mais de {{max}} eventos"
+            "max_other": "A agenda não pode ter mais de {{max}} eventos",
+            "maxTotal": "Limite de eventos no total: {{max}}",
+            "newPast": "Não é possível criar um evento com data passada"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"

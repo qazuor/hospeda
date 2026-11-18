@@ -32,7 +32,7 @@ export function isStrictEditorPhone(value: string): boolean {
 }
 
 /** The `contactInfo` phone keys the owner editors let the user type (HOS-2034, HOS-2042). */
-const EDITOR_PHONE_KEYS = ['mobilePhone', 'workPhone'] as const;
+const EDITOR_PHONE_KEYS = ['mobilePhone', 'workPhone', 'whatsapp'] as const;
 
 /**
  * `superRefine` callback for an owner-update schema carrying `contactInfo`:
@@ -48,6 +48,7 @@ export function refineStrictContactPhone(
         readonly contactInfo?: {
             readonly mobilePhone?: string | null;
             readonly workPhone?: string | null;
+            readonly whatsapp?: string | null;
         } | null;
     },
     ctx: z.RefinementCtx

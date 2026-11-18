@@ -59,6 +59,7 @@ import {
     subscriptionSuccessionReevaluationJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
+    venueEventsPastCleanupJob,
     viewMonthlyRollupJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -128,7 +129,9 @@ export const cronJobs: CronJobDefinition[] = [
     aiListingQuestionsRetentionJob,
     aiQuestionsWeeklyDigestJob,
     // HOS-2335 D-13: 12-month retention of the assistant activity (mcp.tool.call only).
-    mcpAuditRetentionJob
+    mcpAuditRetentionJob,
+    // HOS-2254: past one-off venue events are deleted after 60 days.
+    venueEventsPastCleanupJob
 ];
 
 /**

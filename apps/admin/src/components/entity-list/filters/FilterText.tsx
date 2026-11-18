@@ -2,7 +2,8 @@
  * @file FilterText component
  *
  * A debounced free-text input filter that writes its value to the URL param.
- * Empty or whitespace-only input removes the param entirely.
+ * Empty or whitespace-only input removes the param entirely, and so does a
+ * value that misses the optional `validPattern` (with a hint shown).
  * The controlled input stays in sync when the URL param changes externally
  * (e.g. chip clear, reset-all).
  */
@@ -62,8 +63,17 @@ export function FilterText({ config, value, onChange }: FilterTextProps) {
     // Local state drives the input so the user sees immediate typing feedback
     const [localValue, setLocalValue] = useState(value ?? '');
 
+    // The value this component itself last emitted: its echo back through
+    // `value` must not overwrite what the user is still typing.
+    const emittedRef = useRef<{ readonly value: string | undefined } | null>(null);
+
     // Sync local state when the external value changes (chip clear, reset-all, etc.)
     useEffect(() => {
+        if (emittedRef.current !== null && emittedRef.current.value === value) {
+            emittedRef.current = null;
+            return;
+        }
+        emittedRef.current = null;
         setLocalValue(value ?? '');
     }, [value]);
 
@@ -81,10 +91,19 @@ export function FilterText({ config, value, onChange }: FilterTextProps) {
         }
 
         timerRef.current = setTimeout(() => {
-            const trimmed = raw.trim();
-            onChange(trimmed === '' ? undefined : trimmed);
+            const next = resolveTextFilterValue({ raw, validPattern: config.validPattern });
+            // Only a change comes back through `value`; an unchanged emission
+            // leaves no echo to skip.
+            emittedRef.current = next === value ? null : { value: next };
+            onChange(next);
         }, debounceMs);
     };
+
+    const trimmedLocal = localValue.trim();
+    const showInvalidHint =
+        config.validPattern !== undefined &&
+        trimmedLocal !== '' &&
+        !config.validPattern.test(trimmedLocal);
 
     // Clean up pending timer on unmount
     useEffect(() => {
@@ -101,7 +120,7 @@ export function FilterText({ config, value, onChange }: FilterTextProps) {
         : labelText;
 
     return (
-        <div className="relative flex items-center">
+        <div className="relative flex items-center gap-2">
             <Input
                 type="text"
                 value={localValue}
@@ -114,6 +133,32 @@ export function FilterText({ config, value, onChange }: FilterTextProps) {
                     isActive ? 'border-primary border-solid' : 'border-dashed'
                 )}
             />
+            {showInvalidHint && config.invalidHintKey ? (
+                <span
+                    className="text-muted-foreground text-xs"
+                    data-testid={`filter-text-hint-${config.paramKey}`}
+                >
+                    {t(config.invalidHintKey as TranslationKey)}
+                </span>
+            ) : null}
         </div>
     );
+}
+
+/**
+ * The URL value of a text filter for what the user typed: the trimmed text,
+ * or `undefined` (param removed) when it is empty or misses `validPattern`.
+ *
+ * @param input.raw - The input's current text.
+ * @param input.validPattern - Optional pattern the value must match.
+ * @returns The value to write to the URL, or `undefined`.
+ */
+export function resolveTextFilterValue(input: {
+    readonly raw: string;
+    readonly validPattern?: RegExp;
+}): string | undefined {
+    const trimmed = input.raw.trim();
+    if (trimmed === '') return undefined;
+    if (input.validPattern !== undefined && !input.validPattern.test(trimmed)) return undefined;
+    return trimmed;
 }

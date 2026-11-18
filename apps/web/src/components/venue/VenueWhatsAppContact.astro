@@ -1,0 +1,48 @@
+---
+/**
+ * @file VenueWhatsAppContact.astro
+ * @description Mounts the venue WhatsApp button island (HOS-2256).
+ *
+ * The page's section registry renders plain components with no client
+ * directives, so this wrapper owns the `client:idle`. It reads NO session: what
+ * it receives comes from the public, cacheable payload (`whatsapp`), which
+ * carries the number only when the owner chose "public". Signed-in behaviour is
+ * resolved in the browser by the island.
+ */
+import { VenueWhatsAppButton } from '@/components/venue/VenueWhatsAppButton.client';
+import type { VenueWhatsappState } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** The venue as the page holds it; only the fields below are read. */
+    readonly venue: {
+        readonly id: string;
+        readonly name: string;
+        readonly whatsapp?: VenueWhatsappState | null;
+    };
+    readonly signInHref: string;
+    readonly locale: SupportedLocale;
+}
+
+const { venue, signInHref, locale } = Astro.props;
+const whatsapp = venue.whatsapp ?? null;
+---
+
+{whatsapp && (
+    <div class="venue-whatsapp">
+        <VenueWhatsAppButton
+            client:idle
+            venueId={venue.id}
+            venueName={venue.name}
+            whatsapp={whatsapp}
+            signInHref={signInHref}
+            locale={locale}
+        />
+    </div>
+)}
+
+<style>
+    .venue-whatsapp {
+        margin-bottom: var(--space-6, 24px);
+    }
+</style>

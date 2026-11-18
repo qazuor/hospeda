@@ -1,6 +1,6 @@
 {
-  "id": "6e5b20fd-39b7-413a-a181-c0cb88fc771f",
-  "prevId": "8ee94eb3-a654-4e9b-8e83-8373b646e48d",
+  "id": "f44de924-0d2f-4e09-84fe-716922ab25cf",
+  "prevId": "974899a4-6421-43a5-aca0-000bc3d59f0a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -16673,20 +16673,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "entity_type": {
-          "name": "entity_type",
-          "type": "owner_promotion_entity_type_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'accommodation'"
-        },
-        "entity_id": {
-          "name": "entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "title": {
           "name": "title",
           "type": "text",
@@ -16804,27 +16790,6 @@
           "columns": [
             {
               "expression": "owner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "ownerPromotions_entityType_entityId_idx": {
-          "name": "ownerPromotions_entityType_entityId_idx",
-          "columns": [
-            {
-              "expression": "entity_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -17031,12 +16996,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "owner_promotions_venue_requires_entity_check": {
-          "name": "owner_promotions_venue_requires_entity_check",
-          "value": "\"owner_promotions\".\"entity_type\" <> 'venue' OR \"owner_promotions\".\"entity_id\" IS NOT NULL"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.partners": {
@@ -27664,6 +27624,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "whatsapp_visibility": {
+          "name": "whatsapp_visibility",
+          "type": "venue_whatsapp_visibility_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "location": {
           "name": "location",
           "type": "jsonb",
@@ -35799,16 +35766,7 @@
       "values": [
         "percentage",
         "fixed",
-        "free_night",
-        "special_offer"
-      ]
-    },
-    "public.owner_promotion_entity_type_enum": {
-      "name": "owner_promotion_entity_type_enum",
-      "schema": "public",
-      "values": [
-        "accommodation",
-        "venue"
+        "free_night"
       ]
     },
     "public.partner_content_review_state_enum": {
@@ -36552,6 +36510,7 @@
         "user.update.self",
         "ai.settings.manage",
         "aiConversation.viewAny",
+        "mcpActivity.view",
         "platform.featureFlag.manage",
         "platform.qrCode.view",
         "platform.qrCode.create",
@@ -36987,6 +36946,14 @@
         "FOOD_TRUCK",
         "PUB",
         "BOLICHE"
+      ]
+    },
+    "public.venue_whatsapp_visibility_enum": {
+      "name": "venue_whatsapp_visibility_enum",
+      "schema": "public",
+      "values": [
+        "PUBLIC",
+        "LOGGED_IN_ONLY"
       ]
     },
     "public.visibility_enum": {

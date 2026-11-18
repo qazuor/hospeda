@@ -79,7 +79,11 @@ export const LISTING_SECTIONS = {
             id: 'contact',
             vertical: 'venue',
             common: true,
-            fields: ['contactInfo', 'socialNetworks'],
+            // HOS-2256: `whatsappVisibility` is the owner's choice (writable);
+            // `whatsapp` is the derived public block (read-only, number only
+            // for PUBLIC). Both travel with the contact section.
+            fields: ['contactInfo', 'socialNetworks', 'whatsappVisibility'],
+            readOnlyFields: ['whatsapp'],
             order: 7,
             group: 'content'
         },

@@ -1042,6 +1042,20 @@ const plataformaSidebar: SidebarInput = {
             route: '/platform/ops/security-logs',
             permissions: ['SECURITY_LOG_VIEW'],
             onMissing: 'hide'
+        },
+        // HOS-2349 (D-15): SUPER_ADMIN only; ADMIN lacks MCP_ACTIVITY_VIEW, so hidden.
+        {
+            type: 'link',
+            id: 'mcp-activity',
+            label: {
+                es: 'Uso de asistentes IA',
+                en: 'AI assistant activity',
+                pt: 'Uso de assistentes IA'
+            },
+            icon: 'LogsIcon',
+            route: '/platform/ops/mcp-activity',
+            permissions: ['MCP_ACTIVITY_VIEW'],
+            onMissing: 'hide'
         }
     ]
 };

@@ -1,5 +1,5 @@
 {
-  "id": "8ee94eb3-a654-4e9b-8e83-8373b646e48d",
+  "id": "974899a4-6421-43a5-aca0-000bc3d59f0a",
   "prevId": "e617e0f3-9da4-4a73-beef-f2d457d6872a",
   "version": "7",
   "dialect": "postgresql",
@@ -35759,8 +35759,7 @@
       "values": [
         "percentage",
         "fixed",
-        "free_night",
-        "special_offer"
+        "free_night"
       ]
     },
     "public.partner_content_review_state_enum": {
@@ -36504,6 +36503,7 @@
         "user.update.self",
         "ai.settings.manage",
         "aiConversation.viewAny",
+        "mcpActivity.view",
         "platform.featureFlag.manage",
         "platform.qrCode.view",
         "platform.qrCode.create",

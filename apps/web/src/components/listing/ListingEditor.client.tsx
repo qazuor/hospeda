@@ -374,7 +374,12 @@ function buildPatchPayload({
         payload.richDescriptionI18n = current.i18nValues.richDescriptionI18n;
     }
 
-    if (!sameValue(current.contact, baseline.contact)) {
+    // HOS-2256: the venue WhatsApp number rides the same merged `contactInfo`
+    // block, and like the landline its key travels only when it changed, so a
+    // listing that never had one is not given an explicit `null` (an experience
+    // never changes it, so it never reaches that payload).
+    const whatsappChanged = current.whatsapp !== baseline.whatsapp;
+    if (!sameValue(current.contact, baseline.contact) || whatsappChanged) {
         payload.contactInfo = {
             mobilePhone: nullWhenEmpty(current.contact.mobilePhone),
             // HOS-2042: the landline is optional and MERGED server-side, so a
@@ -385,7 +390,8 @@ function buildPatchPayload({
             ...(current.contact.workPhone !== '' || baseline.contact.workPhone !== ''
                 ? { workPhone: nullWhenEmpty(current.contact.workPhone) }
                 : {}),
-            workEmail: nullWhenEmpty(current.contact.workEmail)
+            workEmail: nullWhenEmpty(current.contact.workEmail),
+            ...(whatsappChanged ? { whatsapp: nullWhenEmpty(current.whatsapp) } : {})
         };
     }
 
@@ -489,6 +495,11 @@ function buildVenuePatchFields({
 
     if (current.priceRange !== baseline.priceRange) {
         payload.priceRange = current.priceRange || null;
+    }
+    // HOS-2256: who may see the WhatsApp button. Writable only through the
+    // venue update schema, hence here and not in the shared diff.
+    if (current.whatsappVisibility !== baseline.whatsappVisibility) {
+        payload.whatsappVisibility = current.whatsappVisibility || null;
     }
     const location = buildLocationPatch({ current: current.location, baseline: baseline.location });
     if (location) {
@@ -705,6 +716,10 @@ export function ListingEditor({
         },
         // HOS-2189: venue postal address; an experience reads it as empty and
         // `buildPatchPayload` never emits it for that vertical.
+        // HOS-2256: venue WhatsApp number and who may see the button; an
+        // experience reads them as empty and never sends them.
+        whatsapp: strField(initialContact, 'whatsapp'),
+        whatsappVisibility: strField(data, 'whatsappVisibility'),
         location: parseLocationValues({ raw: data.location }),
         // T-020: added linkedIn to social per AC-4
         social: {

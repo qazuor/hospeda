@@ -111,6 +111,16 @@ const SOCIAL_LINKS: readonly SocialLink[] = [
     { key: 'tiktok', label: 'TikTok', icon: '🎵' }
 ] as const;
 
+/**
+ * Which social links are counted (HOS-2256). The site and Instagram are the two
+ * channels the owner panel reports; every other network, and "Ver menú", are
+ * not tracked. `undefined` makes Astro omit the attribute.
+ */
+const SOCIAL_INTERACTION_KINDS: Partial<Record<keyof VenueSocialNetworks, string>> = {
+    website: 'WEBSITE_CLICK',
+    instagram: 'INSTAGRAM_CLICK'
+};
+
 const menuLabel = t('venue.detail.menu', 'Ver menú');
 const socialLabel = t('venue.detail.social', 'Redes sociales');
 ---
@@ -121,7 +131,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
             <h3 class="venue-contact__social-title">{contactTitle}</h3>
             <div class="venue-contact__channels">
                 {phones.map(({ value, ariaLabel }) => (
-                    <a href={toTelHref(value)} class="venue-contact__link">
+                    <a href={toTelHref(value)} class="venue-contact__link" data-interaction-kind="PHONE_CLICK">
                         <PhoneIcon size={16} aria-hidden="true" />
                         <span>{value}</span>
                         <span class="sr-only">, {ariaLabel}</span>
@@ -143,6 +153,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
                         class="venue-contact__link"
                         target="_blank"
                         rel="noopener noreferrer"
+                        data-interaction-kind="WEBSITE_CLICK"
                     >
                         <GlobeIcon size={16} aria-hidden="true" />
                         <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
@@ -181,6 +192,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label={label}
+                                data-interaction-kind={SOCIAL_INTERACTION_KINDS[key]}
                             >
                                 <span aria-hidden="true">{icon}</span>
                                 <span>{label}</span>

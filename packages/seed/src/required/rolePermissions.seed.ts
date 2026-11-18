@@ -391,6 +391,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.AI_SETTINGS_MANAGE,
         // HOS-2075: read the listing AI chat conversations (anonymised, redacted) — SUPER_ADMIN-only.
         PermissionEnum.AI_CONVERSATION_VIEW_ANY,
+        // HOS-2349 (D-15): the admin log of every assistant (MCP) tool call — SUPER_ADMIN-only,
+        // NOT granted to ADMIN. Live envs get it from data-migration 0183.
+        PermissionEnum.MCP_ACTIVITY_VIEW,
 
         // MODERATION: Content auto-moderation management (SPEC-195)
         PermissionEnum.MODERATION_TERM_VIEW,
