@@ -80,6 +80,18 @@ export const RejectBenefitUsageInputSchema = z
     })
     .strict();
 
+/**
+ * A rejection note as the tools use it: blank or whitespace-only is no note.
+ * The SAME value is bound into the token, audited and written, so a blank note
+ * can neither reach the declarant's email nor make two equal previews differ.
+ *
+ * @param note - The note as received
+ * @returns The note verbatim, or `undefined` when it carries no text
+ */
+export function normalizeRejectionNote(note: string | undefined): string | undefined {
+    return note?.trim() ? note : undefined;
+}
+
 /** What the preview shows: the usage being answered. Nothing changed yet. */
 export interface BenefitUsageAnswerPreview {
     /** Discriminator. */
@@ -232,6 +244,13 @@ async function answerBenefitUsage(
         action === 'confirm'
             ? await confirmBenefitUsage({ actor, usageId: usage.id })
             : await rejectBenefitUsage({ actor, usageId: usage.id, note });
+    if (done.error?.code === ServiceErrorCode.VALIDATION_ERROR) {
+        // The write is keyed on PENDING: a parallel commit (the other answer's
+        // live token) got there first. Nothing was written, nobody was emailed.
+        return {
+            error: { ...done.error, reason: BENEFIT_USAGE_NOT_PENDING_REASON }
+        };
+    }
     const refused = fromUsageService(done);
     if (refused) {
         return refused;
@@ -262,7 +281,8 @@ export const confirmBenefitUsageTool = defineTool({
     description: `Confirms a PENDING benefit usage the other party declared (the service was really given), so it counts in the provider's public counters. A confirmation cannot be undone. ${SHARED_DESCRIPTION}`,
     inputSchema: ConfirmBenefitUsageInputSchema,
     isWrite: true,
-    hints: { destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    // Irreversible, and it moves the provider's public counters.
+    hints: { destructiveHint: true, idempotentHint: false, openWorldHint: true },
     reasonMessages: BENEFIT_USAGE_REASON_MESSAGES,
     refusalAction: ({ error }) => benefitUsageRefusalLink({ error }),
     auditTarget: ({ input }) => ({ type: 'host_trade_usage', id: input.usageId }),
@@ -291,7 +311,7 @@ export const rejectBenefitUsageTool = defineTool({
     reasonMessages: BENEFIT_USAGE_REASON_MESSAGES,
     refusalAction: ({ error }) => benefitUsageRefusalLink({ error }),
     auditTarget: ({ input }) => ({ type: 'host_trade_usage', id: input.usageId }),
-    auditContentLength: ({ input }) => input.note?.length,
+    auditContentLength: ({ input }) => normalizeRejectionNote(input.note)?.length,
     auditDetails: ({ input }) => ({
         step: input.confirmationToken === undefined ? 'preview' : 'commit'
     }),
@@ -302,7 +322,7 @@ export const rejectBenefitUsageTool = defineTool({
             actor,
             clientId: context.clientId,
             usageId: input.usageId,
-            note: input.note,
+            note: normalizeRejectionNote(input.note),
             confirmationToken: input.confirmationToken
         })
 });

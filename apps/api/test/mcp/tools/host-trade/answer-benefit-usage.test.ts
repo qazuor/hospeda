@@ -377,6 +377,91 @@ describe('AC-C38: the commit writes once and sends what the route sends', () => 
         expect(mocks.notifyUsageRejected).toHaveBeenCalledWith(expect.anything(), undefined);
     });
 
+    it('two live tokens committed in parallel: one writes, one email, the other is not-pending', async () => {
+        // Arrange: the service's compare-and-set, as the real UPDATE keyed on
+        // PENDING behaves: whichever commit lands first wins, the other matches
+        // zero rows and gets requireStatus's refusal.
+        let answered = false;
+        const loser = {
+            error: {
+                code: ServiceErrorCode.VALIDATION_ERROR,
+                message: 'Usage is no longer PENDING, expected PENDING'
+            }
+        };
+        const casWrite = (status: string) =>
+            (async ({ usageId }: { usageId: string }) => {
+                if (answered) {
+                    return loser;
+                }
+                answered = true;
+                return { data: { usage: { ...ROWS.find((row) => row.id === usageId), status } } };
+            }) as never;
+        writes.confirm.mockImplementation(casWrite('CONFIRMED'));
+        writes.reject.mockImplementation(casWrite('REJECTED'));
+        const usageId = PROVIDER_DECLARED.id;
+        const confirmPreview = await call(confirmBenefitUsageTool, { usageId });
+        const rejectPreview = await call(rejectBenefitUsageTool, { usageId });
+        if (
+            !confirmPreview.ok ||
+            !('confirmationToken' in confirmPreview.data) ||
+            !rejectPreview.ok ||
+            !('confirmationToken' in rejectPreview.data)
+        ) {
+            throw new Error('expected two previews');
+        }
+
+        // Act
+        const [confirmed, rejected] = await Promise.all([
+            call(confirmBenefitUsageTool, {
+                usageId,
+                confirmationToken: confirmPreview.data.confirmationToken
+            }),
+            call(rejectBenefitUsageTool, {
+                usageId,
+                confirmationToken: rejectPreview.data.confirmationToken
+            })
+        ]);
+
+        // Assert
+        expect(confirmed.ok).toBe(true);
+        expect(rejected.ok).toBe(false);
+        if (!rejected.ok) {
+            expect(rejected.failure.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(rejected.failure.message).toContain('ya no está pendiente');
+        }
+        expect(mocks.notifyUsageConfirmed).toHaveBeenCalledTimes(1);
+        expect(mocks.notifyUsageRejected).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['an empty note', ''],
+        ['a whitespace-only note', '  \n\t ']
+    ])('treats %s as no note, in the email and in the token', async (_label, note) => {
+        // Act
+        const preview = await call(rejectBenefitUsageTool, { usageId: PROVIDER_DECLARED.id, note });
+        if (!preview.ok || !('confirmationToken' in preview.data)) {
+            throw new Error('expected a preview');
+        }
+        // The same token commits with the note omitted: they bind the same.
+        const outcome = await call(rejectBenefitUsageTool, {
+            usageId: PROVIDER_DECLARED.id,
+            confirmationToken: preview.data.confirmationToken
+        });
+
+        // Assert
+        expect(outcome.ok).toBe(true);
+        expect(writes.reject.mock.calls[0]?.[0]).toEqual({
+            usageId: PROVIDER_DECLARED.id,
+            note: undefined
+        });
+        expect(mocks.notifyUsageRejected).toHaveBeenCalledWith(expect.anything(), undefined);
+    });
+
+    it('marks both answers destructive: neither is a harmless retry', () => {
+        expect(confirmBenefitUsageTool.hints?.destructiveHint).toBe(true);
+        expect(rejectBenefitUsageTool.hints?.destructiveHint).toBe(true);
+    });
+
     it('refuses an already-answered usage before any token', async () => {
         // Arrange
         mocks.usageService = buildUsageService([
