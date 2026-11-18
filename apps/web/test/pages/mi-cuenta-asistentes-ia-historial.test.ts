@@ -44,9 +44,7 @@ function lookUp(locale: (typeof LOCALES)[number], key: string): unknown {
         readFileSync(resolve(WEB, `../../packages/i18n/src/locales/${locale}/account.json`), 'utf8')
     );
     return key.split('.').reduce<unknown>((node, part) => {
-        return typeof node === 'object' && node !== null && part in node
-            ? (node as Record<string, unknown>)[part]
-            : undefined;
+        return typeof node === 'object' && node !== null ? Reflect.get(node, part) : undefined;
     }, account.aiAssistants.activity);
 }
 
@@ -63,6 +61,17 @@ describe('assistant history page (AC-C48)', () => {
     it('leaves the per-user list to the island, hydrated on load', () => {
         expect(page).toMatch(/<AiActivityHistory\s+client:load\b/);
         expect(page).toContain('connectUrl={assistantsUrl}');
+    });
+
+    it('builds the 401 sign-in link from its own path, the same for every user', () => {
+        expect(page).toContain('signinUrl={signinUrl}');
+        expect(page).toMatch(
+            /buildLoginRedirect\(\{\s*locale,\s*currentUrl: buildUrl\(\{ locale, path: 'mi-cuenta\/asistentes-ia\/historial' \}\)/
+        );
+    });
+
+    it('says why it hydrates on load', () => {
+        expect(readFileSync(PAGE, 'utf8')).toMatch(/Hydration: `client:load`/);
     });
 
     it('is linked from the assistants page, and links back to it', () => {

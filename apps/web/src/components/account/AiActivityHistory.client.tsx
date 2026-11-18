@@ -10,8 +10,9 @@
  * - Writes only by default; the "mostrar también lo que solo miró" toggle
  *   adds the read-only calls (decision D-12).
  * - A result filter narrows to done, refused or failed calls.
- *
- * Hydration: `client:load` (the list is the whole page).
+ * - A page past the last one (the history shrank, e.g. after the 12-month
+ *   retention) moves back to the last page instead of showing the empty state.
+ * - A 401 (the session ended) offers to sign in again instead of retrying.
  */
 
 import { AskToAiIcon } from '@repo/icons';
@@ -38,11 +39,14 @@ export interface AiActivityHistoryProps {
     readonly apiUrl: string;
     /** The "Asistentes de IA" page, where the connect instructions live. */
     readonly connectUrl: string;
+    /** Sign-in page that returns here, offered when the session ended (401). */
+    readonly signinUrl: string;
 }
 
 type LoadState =
     | { readonly kind: 'loading' }
     | { readonly kind: 'error' }
+    | { readonly kind: 'signedOut' }
     | {
           readonly kind: 'ready';
           readonly items: readonly AiActivityItemData[];
@@ -64,9 +68,15 @@ function toOutcome(value: string): AiActivityOutcome | undefined {
  * <AiActivityHistory client:load locale={locale} apiUrl={apiUrl} connectUrl={connectUrl} />
  * ```
  */
-export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHistoryProps) {
+export function AiActivityHistory({
+    locale,
+    apiUrl,
+    connectUrl,
+    signinUrl
+}: AiActivityHistoryProps) {
     const { t } = useMemo(() => createTranslations(locale), [locale]);
     const toggleId = useId();
+    const hintId = useId();
     const outcomeId = useId();
 
     const [page, setPage] = useState(1);
@@ -83,6 +93,10 @@ export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHist
             const res = await fetch(buildAiActivityUrl({ apiUrl, page, includeReads, outcome }), {
                 credentials: 'include'
             });
+            if (res.status === 401) {
+                if (seq === requestSeq.current) setLoad({ kind: 'signedOut' });
+                return;
+            }
             const parsed = res.ok ? parseAiActivityPage({ body: await res.json() }) : null;
             if (seq !== requestSeq.current) return;
             setLoad(
@@ -103,7 +117,15 @@ export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHist
         };
     }, [loadPage]);
 
+    useEffect(() => {
+        // An empty page past the first: the history shrank under the user.
+        // Go back to the last page that exists (or the first) and refetch.
+        if (load.kind !== 'ready' || load.items.length > 0 || page === 1) return;
+        setPage(Math.max(1, Math.min(page - 1, load.totalPages)));
+    }, [load, page]);
+
     const filtered = includeReads || outcome !== undefined;
+    const emptyOnFirstPage = load.kind === 'ready' && load.items.length === 0 && page === 1;
     const totalPages = load.kind === 'ready' ? Math.max(1, load.totalPages) : 1;
 
     return (
@@ -117,23 +139,30 @@ export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHist
                         id={toggleId}
                         type="checkbox"
                         className={styles.toggle}
+                        aria-describedby={hintId}
                         checked={includeReads}
                         onChange={(event) => {
                             setIncludeReads(event.target.checked);
                             setPage(1);
                         }}
                     />
-                    <label htmlFor={toggleId}>
-                        <span className={styles.toggleLabel}>
+                    <div>
+                        <label
+                            htmlFor={toggleId}
+                            className={styles.toggleLabel}
+                        >
                             {t(`${KEY}.filters.includeReads`, 'Mostrar también lo que solo miró')}
-                        </span>
-                        <span className={styles.hint}>
+                        </label>
+                        <span
+                            id={hintId}
+                            className={styles.hint}
+                        >
                             {t(
                                 `${KEY}.filters.includeReadsHint`,
                                 'Acciones en las que el asistente solo vio datos, sin cambiar nada.'
                             )}
                         </span>
-                    </label>
+                    </div>
                 </div>
                 <div className={styles.selectRow}>
                     <label
@@ -202,7 +231,27 @@ export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHist
                 </div>
             )}
 
-            {load.kind === 'ready' && load.items.length === 0 && !filtered && (
+            {load.kind === 'signedOut' && (
+                <div
+                    className={styles.errorWrap}
+                    role="alert"
+                >
+                    <span>
+                        {t(
+                            `${KEY}.errors.signedOut`,
+                            'Tu sesión terminó. Volvé a ingresar para ver el historial.'
+                        )}
+                    </span>
+                    <a
+                        className={styles.signInLink}
+                        href={signinUrl}
+                    >
+                        {t(`${KEY}.errors.signIn`, 'Ingresar')}
+                    </a>
+                </div>
+            )}
+
+            {emptyOnFirstPage && !filtered && (
                 <AccountEmptyState
                     title={t(`${KEY}.empty.title`, 'Todavía no hay acciones de tus asistentes')}
                     description={t(
@@ -215,7 +264,7 @@ export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHist
                 />
             )}
 
-            {load.kind === 'ready' && load.items.length === 0 && filtered && (
+            {emptyOnFirstPage && filtered && (
                 <p className={styles.notice}>
                     {t(`${KEY}.emptyFiltered`, 'No hay acciones que coincidan con este filtro.')}
                 </p>

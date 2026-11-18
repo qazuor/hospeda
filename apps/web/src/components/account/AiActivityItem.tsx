@@ -6,6 +6,9 @@
  * Shows only what the API projection returns. The assistant name is declared
  * by the client itself (untrusted) and renders as plain React text; a tool
  * name or error code is never shown raw, only through its i18n label.
+ *
+ * Every conversation link reads "Consulta de huésped", so its accessible name
+ * adds the action and the date: a screen-reader links list can tell them apart.
  */
 
 import {
@@ -104,6 +107,11 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
                     <a
                         className={styles.targetLink}
                         href={target.url}
+                        aria-label={t(
+                            `${KEY}.target.conversationAria`,
+                            'Abrir la consulta de huésped de «{{action}}», del {{date}}',
+                            { action, date: when }
+                        )}
                     >
                         {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
                     </a>

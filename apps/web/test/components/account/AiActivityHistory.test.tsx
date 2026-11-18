@@ -14,13 +14,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AiActivityHistory } from '../../../src/components/account/AiActivityHistory.client';
 
 vi.mock('../../../src/components/account/AiActivityHistory.module.css', () => ({
-    default: new Proxy({} as Record<string, string>, {
-        get: (_target, prop) => String(prop)
-    })
+    default: new Proxy<Record<string, string>>(
+        {},
+        {
+            get: (_target, prop) => String(prop)
+        }
+    )
 }));
 
 const API_URL = 'http://localhost:3001';
 const CONNECT_URL = '/es/mi-cuenta/asistentes-ia/';
+const SIGNIN_URL = '/es/auth/signin/?returnUrl=%2Fes%2Fmi-cuenta%2Fasistentes-ia%2Fhistorial%2F';
 const LISTING = '11111111-1111-4111-8111-111111111111';
 
 let sequence = 0;
@@ -42,21 +46,24 @@ function page(
     items: readonly Record<string, unknown>[],
     pagination: { page?: number; totalPages?: number } = {}
 ): Response {
-    return {
-        ok: true,
-        status: 200,
-        json: async () => ({
-            success: true,
-            data: {
-                items,
-                pagination: {
-                    page: pagination.page ?? 1,
-                    totalPages: pagination.totalPages ?? 1,
-                    total: items.length
-                }
+    return Response.json({
+        success: true,
+        data: {
+            items,
+            pagination: {
+                page: pagination.page ?? 1,
+                totalPages: pagination.totalPages ?? 1,
+                total: items.length
             }
-        })
-    } as Response;
+        }
+    });
+}
+
+/** The n-th row; fails the test when it is not there. */
+function row(index: number): HTMLElement {
+    const found = screen.getAllByRole('listitem')[index];
+    if (!found) throw new Error(`no row ${index}`);
+    return found;
 }
 
 /** The URL of the n-th fetch, parsed. */
@@ -72,6 +79,7 @@ async function renderHistory(first: Response) {
             locale="es"
             apiUrl={API_URL}
             connectUrl={CONNECT_URL}
+            signinUrl={SIGNIN_URL}
         />
     );
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
@@ -113,25 +121,23 @@ describe('AiActivityHistory', () => {
             ])
         );
 
-        const row = screen.getAllByRole('listitem')[0];
-        if (!row) throw new Error('no row');
-        expect(within(row).getByText('Editar los datos de una publicación')).toBeTruthy();
-        expect(within(row).getByText('Claude')).toBeTruthy();
-        expect(within(row).getByText('Hecho')).toBeTruthy();
-        expect(within(row).getByRole('link', { name: 'Casa del Río' }).getAttribute('href')).toBe(
+        const first = row(0);
+        expect(within(first).getByText('Editar los datos de una publicación')).toBeTruthy();
+        expect(within(first).getByText('Claude')).toBeTruthy();
+        expect(within(first).getByText('Hecho')).toBeTruthy();
+        expect(within(first).getByRole('link', { name: 'Casa del Río' }).getAttribute('href')).toBe(
             url
         );
-        expect(within(row).getByText(/2026/).tagName).toBe('TIME');
+        expect(within(first).getByText(/2026/).tagName).toBe('TIME');
     });
 
     it('shows a lost listing with no name and no link (AC-C47)', async () => {
         await renderHistory(page([item({ target: { type: 'accommodation', id: LISTING } })]));
 
-        const row = screen.getAllByRole('listitem')[0];
-        if (!row) throw new Error('no row');
-        expect(within(row).queryByRole('link')).toBeNull();
-        expect(within(row).getByText('Publicación que ya no está disponible')).toBeTruthy();
-        expect(row.textContent).not.toContain(LISTING);
+        const first = row(0);
+        expect(within(first).queryByRole('link')).toBeNull();
+        expect(within(first).getByText('Publicación que ya no está disponible')).toBeTruthy();
+        expect(first.textContent).not.toContain(LISTING);
     });
 
     it('reads a conversation as "Consulta de huésped", linked to the inbox thread', async () => {
@@ -145,9 +151,36 @@ describe('AiActivityHistory', () => {
             ])
         );
 
-        expect(screen.getByRole('link', { name: 'Consulta de huésped' }).getAttribute('href')).toBe(
-            'https://hospeda.test/c/'
+        const link = screen.getByRole('link', { name: /^Abrir la consulta de huésped de/ });
+        expect(link.getAttribute('href')).toBe('https://hospeda.test/c/');
+        expect(link.textContent).toBe('Consulta de huésped');
+    });
+
+    it('names each conversation link by its action and date, so two links differ (L1)', async () => {
+        await renderHistory(
+            page([
+                item({
+                    tool: 'reply_inquiry',
+                    loggedAt: '2026-11-18T13:05:00.000Z',
+                    target: { type: 'conversation', id: 'c-1', url: 'https://hospeda.test/c/1' }
+                }),
+                item({
+                    tool: 'get_inquiry',
+                    isWrite: false,
+                    loggedAt: '2026-11-17T09:00:00.000Z',
+                    target: { type: 'conversation', id: 'c-2', url: 'https://hospeda.test/c/2' }
+                })
+            ])
         );
+
+        const names = screen
+            .getAllByRole('link')
+            .map((link) => link.getAttribute('aria-label') ?? '');
+        expect(names).toHaveLength(2);
+        expect(names[0]).toContain('Responder una consulta');
+        expect(names[1]).toContain('Ver una consulta');
+        expect(names[0]).toMatch(/2026/);
+        expect(names[0]).not.toBe(names[1]);
     });
 
     it('renders an old send step exactly like a commit step', async () => {
@@ -159,10 +192,10 @@ describe('AiActivityHistory', () => {
             ])
         );
 
-        const [send, commit, preview] = screen.getAllByRole('listitem');
-        expect(send?.textContent?.replace(/\d/g, '')).toBe(commit?.textContent?.replace(/\d/g, ''));
-        expect(within(send as HTMLElement).getByText('Confirmado')).toBeTruthy();
-        expect(within(preview as HTMLElement).getByText('Vista previa')).toBeTruthy();
+        const [send, commit, preview] = [row(0), row(1), row(2)];
+        expect(send.textContent?.replace(/\d/g, '')).toBe(commit.textContent?.replace(/\d/g, ''));
+        expect(within(send).getByText('Confirmado')).toBeTruthy();
+        expect(within(preview).getByText('Vista previa')).toBeTruthy();
     });
 
     it('labels refusals and errors, and never shows a raw tool name or code', async () => {
@@ -174,14 +207,12 @@ describe('AiActivityHistory', () => {
             ])
         );
 
-        const [denied, declined, failed] = screen.getAllByRole('listitem');
-        expect(within(denied as HTMLElement).getByText('Rechazado por Hospeda')).toBeTruthy();
-        expect(
-            within(denied as HTMLElement).getByText('Tu plan no incluye esa función.')
-        ).toBeTruthy();
-        expect(within(declined as HTMLElement).getByText('Rechazado por vos')).toBeTruthy();
-        expect(within(failed as HTMLElement).getByText('Error')).toBeTruthy();
-        expect(within(failed as HTMLElement).getByText('Otra acción del asistente')).toBeTruthy();
+        const [denied, declined, failed] = [row(0), row(1), row(2)];
+        expect(within(denied).getByText('Rechazado por Hospeda')).toBeTruthy();
+        expect(within(denied).getByText('Tu plan no incluye esa función.')).toBeTruthy();
+        expect(within(declined).getByText('Rechazado por vos')).toBeTruthy();
+        expect(within(failed).getByText('Error')).toBeTruthy();
+        expect(within(failed).getByText('Otra acción del asistente')).toBeTruthy();
         const text = document.body.textContent ?? '';
         expect(text).not.toMatch(
             /ENTITLEMENT_REQUIRED|USER_DECLINED|SOME_FUTURE_CODE|some_future_tool/
@@ -197,10 +228,9 @@ describe('AiActivityHistory', () => {
             ])
         );
 
-        const rows = screen.getAllByRole('listitem');
-        expect(rows).toHaveLength(2);
-        expect(within(rows[0] as HTMLElement).getByText('Hecho')).toBeTruthy();
-        expect(within(rows[1] as HTMLElement).getByText('Resultado desconocido')).toBeTruthy();
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        expect(within(row(0)).getByText('Hecho')).toBeTruthy();
+        expect(within(row(1)).getByText('Resultado desconocido')).toBeTruthy();
         expect(document.body.textContent).not.toContain('cancelled_by_policy');
     });
 
@@ -210,7 +240,12 @@ describe('AiActivityHistory', () => {
             page([item({ tool: 'get_listing', isWrite: false })])
         );
 
-        fireEvent.click(screen.getByRole('checkbox', { name: /Mostrar también lo que solo miró/ }));
+        const toggle = screen.getByRole('checkbox', { name: 'Mostrar también lo que solo miró' });
+        expect(toggle.getAttribute('aria-describedby')).toBeTruthy();
+        expect(
+            document.getElementById(toggle.getAttribute('aria-describedby') ?? '')?.textContent
+        ).toBe('Acciones en las que el asistente solo vio datos, sin cambiar nada.');
+        fireEvent.click(toggle);
 
         await waitFor(() => expect(screen.getByText('Ver una publicación')).toBeTruthy());
         expect(requested(1).searchParams.get('includeReads')).toBe('true');
@@ -253,8 +288,34 @@ describe('AiActivityHistory', () => {
         expect(screen.queryByRole('navigation')).toBeNull();
     });
 
+    it('goes back to the last page when a later page comes back empty', async () => {
+        await renderHistory(page([item()], { page: 1, totalPages: 3 }));
+        vi.mocked(fetch).mockResolvedValueOnce(page([item()], { page: 2, totalPages: 3 }));
+        fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+        await waitFor(() => expect(screen.getByText('2 / 3')).toBeTruthy());
+
+        // The history shrank to one page while the user paged.
+        vi.mocked(fetch).mockResolvedValueOnce(page([], { page: 3, totalPages: 1 }));
+        vi.mocked(fetch).mockResolvedValueOnce(page([item()], { page: 1, totalPages: 1 }));
+        fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+        await waitFor(() => expect(requested(3).searchParams.get('page')).toBe('1'));
+        await waitFor(() => expect(screen.getAllByRole('listitem')).toHaveLength(1));
+        expect(screen.queryByText('Todavía no hay acciones de tus asistentes')).toBeNull();
+    });
+
+    it('offers to sign in again on a 401, not to retry', async () => {
+        await renderHistory(Response.json({}, { status: 401 }));
+
+        expect(screen.getByRole('alert').textContent).toContain('Tu sesión terminó');
+        expect(screen.getByRole('link', { name: 'Ingresar' }).getAttribute('href')).toBe(
+            SIGNIN_URL
+        );
+        expect(screen.queryByRole('button', { name: 'Reintentar' })).toBeNull();
+    });
+
     it('shows the error block and retries', async () => {
-        await renderHistory({ ok: false, status: 500, json: async () => ({}) } as Response);
+        await renderHistory(Response.json({}, { status: 500 }));
         expect(screen.getByRole('alert').textContent).toContain('No pudimos cargar el historial');
 
         vi.mocked(fetch).mockResolvedValueOnce(page([item()]));

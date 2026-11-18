@@ -212,6 +212,10 @@
     composes: secondary from "./AccountButton.module.css";
 }
 
+.signInLink {
+    composes: primary from "./AccountButton.module.css";
+}
+
 /* ── Pagination ────────────────────────────────────────────────────────── */
 
 .pagination {
