@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4423, #4444, #4464
+    {
+        id: '2026-11-16-plan-change-from-my-subscription-checkout',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Cambiar de plan desde Mi suscripción te lleva directo al checkout',
+            en: 'Changing plans from My subscription takes you straight to checkout',
+            pt: 'Mudar de plano em Minha assinatura leva você direto ao checkout'
+        },
+        body: {
+            es: 'Al pasar a un plan superior desde Mi suscripción, ahora llegás al checkout de Mercado Pago con tu correo de pagador ya cargado. Tu plan actual sigue hasta que autorices, y el crédito que te queda se descuenta del primer cobro del plan nuevo.',
+            en: 'When you upgrade to a higher plan from My subscription, you now land on the Mercado Pago checkout with your payer email already filled in. Your current plan stays until you authorize, and your remaining credit is deducted from the first charge of the new plan.',
+            pt: 'Ao passar para um plano superior em Minha assinatura, agora você chega ao checkout do Mercado Pago com o seu e-mail de pagador já preenchido. Seu plano atual continua até que você autorize, e o crédito restante é descontado da primeira cobrança do novo plano.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4423
     {
         id: '2026-11-16-admin-plan-change-checkout-link',
