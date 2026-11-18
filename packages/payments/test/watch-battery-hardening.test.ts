@@ -809,3 +809,211 @@ describe('n6: amounts in pesos have at most two decimals, as numbers and as stri
         expect(result.run.outcome).toBe('completed');
     });
 });
+
+describe('F2: a definitive 4xx releases its reservation, an unknown outcome keeps it', () => {
+    const refundPath = /\/v1\/payments\/[^/]+\/refunds$/;
+    const refunder = (attempts: number) =>
+        money('M1', async (ctx): Promise<JsonValue> => {
+            const made = await ctx.send({
+                label: 'charge',
+                request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                chargeMinor: CAP
+            });
+            for (let index = 0; index < attempts; index += 1) {
+                await ctx.send({
+                    label: `refund-${index}`,
+                    request: {
+                        method: 'POST',
+                        path: `/v1/payments/${idOf(made)}/refunds`,
+                        body: { amount: 1500 }
+                    },
+                    refundMinor: CAP
+                });
+            }
+            return 'done';
+        });
+
+    it('lets a refund be retried after the provider refused it with a 4xx, and books it once', async () => {
+        let refunds = 0;
+        const { transport, writes } = provider({
+            onWrite: (sent) => {
+                if (!refundPath.test(sent.path)) return undefined;
+                refunds += 1;
+                return refunds === 1
+                    ? { status: 400, body: { message: 'refused' } }
+                    : { status: 201, body: {} };
+            }
+        });
+        const result = await run({ catalog: [refunder(2)], transport });
+        expect(result.run.outcome).toBe('completed');
+        expect(result.run.reason).toBeUndefined();
+        expect(writes()).toHaveLength(3);
+        expect(result.run.ledger).toEqual({ charged: CAP, refunded: CAP });
+    });
+
+    it('lets a charge be retried after a 4xx without passing the cap', async () => {
+        let attempts = 0;
+        const { transport } = provider({
+            onWrite: () => {
+                attempts += 1;
+                return attempts === 1 ? { status: 422, body: { message: 'no' } } : undefined;
+            }
+        });
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    for (const label of ['first', 'second']) {
+                        await ctx.send({
+                            label,
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: CAP
+                        });
+                    }
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('completed');
+        expect(result.run.ledger).toEqual({ charged: CAP, refunded: 0 });
+    });
+
+    it('still holds the cap on the reserved amount before the answer arrives', async () => {
+        const { transport } = provider();
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    for (const label of ['first', 'second']) {
+                        await ctx.send({
+                            label,
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: CAP
+                        });
+                    }
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
+    });
+
+    it.each([
+        ['a 5xx', () => ({ status: 503, body: {} })],
+        ['a lost answer', () => new Error('socket hang up')],
+        ['a 2xx create without an id', () => ({ status: 201, body: {} })]
+    ])('keeps the reservation on %s and aborts with WRITE_OUTCOME_UNKNOWN', async (_name, answer) => {
+        const { transport } = provider({ onWrite: answer });
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    await ctx.send({
+                        label: 'charge',
+                        request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                        chargeMinor: CAP
+                    });
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('WRITE_OUTCOME_UNKNOWN');
+        expect(result.run.ledger).toEqual({ charged: CAP, refunded: 0 });
+    });
+});
+
+describe('F3: every progress record carries the ledger as it stands', () => {
+    it('stores the reserved charge with its key, and the release with the refusal', async () => {
+        const store = memoryRunStore();
+        let refused = false;
+        const { transport } = provider({
+            onWrite: () => {
+                if (refused) return undefined;
+                refused = true;
+                return { status: 400, body: {} };
+            }
+        });
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    for (const label of ['first', 'second']) {
+                        await ctx.send({
+                            label,
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: CAP
+                        });
+                    }
+                    return 'done';
+                })
+            ],
+            transport,
+            store
+        });
+        expect(result.run.outcome).toBe('completed');
+        // key(first), release(first), key(second), id(second)
+        expect(store.progress.map((entry) => entry.ledger)).toEqual([
+            { charged: CAP, refunded: 0 },
+            { charged: 0, refunded: 0 },
+            { charged: CAP, refunded: 0 },
+            { charged: CAP, refunded: 0 }
+        ]);
+        expect(store.progress[0]?.writeKeys).toHaveLength(1);
+        expect(store.progress[1]?.writeKeys).toBeUndefined();
+    });
+});
+
+describe('NIT 2: orders.create carries exactly one payment worth the total', () => {
+    it('refuses several payments even when their amounts are equal', async () => {
+        const { transport, writes } = provider();
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    await ctx.send({
+                        label: 'order',
+                        request: {
+                            method: 'POST',
+                            path: '/v1/orders',
+                            body: {
+                                total_amount: '1500.00',
+                                transactions: {
+                                    payments: [{ amount: '1500.00' }, { amount: '1500.00' }]
+                                }
+                            }
+                        },
+                        chargeMinor: CAP
+                    });
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('OPERATION_NOT_ALLOWED');
+        expect(writes()).toEqual([]);
+    });
+
+    it('refuses an order with no payment', async () => {
+        const { transport, writes } = provider();
+        const result = await run({
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    await ctx.send({
+                        label: 'order',
+                        request: {
+                            method: 'POST',
+                            path: '/v1/orders',
+                            body: { total_amount: '1500.00', transactions: { payments: [] } }
+                        },
+                        chargeMinor: CAP
+                    });
+                    return 'done';
+                })
+            ],
+            transport
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(writes()).toEqual([]);
+    });
+});
