@@ -1611,6 +1611,13 @@
       "when": 1794940750138,
       "tag": "0229_hos919_provider_trade_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 230,
+      "version": "7",
+      "when": 1794982865868,
+      "tag": "0230_hos2347_session_recording_permission",
+      "breakpoints": true
     }
   ]
 }

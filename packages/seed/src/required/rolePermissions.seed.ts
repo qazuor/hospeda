@@ -257,6 +257,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.LOGS_VIEW_ALL,
         PermissionEnum.ERRORS_VIEW,
         PermissionEnum.ANALYTICS_VIEW,
+        // HOS-2347: the web session recording switch (Umami replays + heatmaps) — SUPER_ADMIN-only.
+        PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE,
 
         // DEBUG & DEPLOY: All permissions
         PermissionEnum.DEBUG_TOOLS_ACCESS,

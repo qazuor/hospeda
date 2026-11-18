@@ -337,6 +337,7 @@ export enum PermissionEnum {
     LOGS_VIEW_ALL = 'logs.viewAll', // Allows viewing all logs.
     ERRORS_VIEW = 'errors.view', // Allows viewing error logs.
     ANALYTICS_VIEW = 'analytics.view', // Allows viewing analytics data.
+    ANALYTICS_SESSION_RECORDING_MANAGE = 'analytics.sessionRecording.manage', // Allows reading and switching the web session recording (Umami replays + heatmaps) on or off (HOS-2347). SUPER_ADMIN-only through the seed grant.
 
     // DEBUG & DEPLOY: Permissions for debugging and bulk operations
     DEBUG_TOOLS_ACCESS = 'system.debugTools.access', // Allows accessing debug tools.
