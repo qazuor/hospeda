@@ -198,11 +198,12 @@ failure to write the record is logged and swallowed.
 
 ## Tool catalog
 
-Fifteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
+Sixteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
 | `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. |
+| `get_owner_summary` | read | read-only | One summary of all the user's listings: counts per vertical and state, plan-gated metrics per vertical, and up to 10 "needs your attention" items with portal links. Period `7d` or `30d`. |
 | `get_listing` | read | read-only | Editable fields, amenities and features as `{ id, slug }`. |
 | `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. Each entry carries its `category`. |
 | `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
@@ -240,6 +241,53 @@ Tool-specific rules:
   views are kept 95 days. Accommodations add a block with favorites (advanced stats
   only), inquiries of this listing, and owner-wide inquiry figures. Metrics a
   vertical does not have are omitted, never zero.
+- `get_owner_summary` (HOS-2331, spec HOS-2335 §6.6). It is one call instead of one
+  `get_listing_stats` per listing. The subscription block is not here yet: it ships
+  with HOS-2328 after HOS-2066.
+  - `listings`: counts per vertical and publication state. They are computed over the
+    rows `list_my_listings` reads (`readMyListingRows`), so the two always agree.
+    `PURGED` is not counted. `partial: true` means a vertical has more than 100
+    listings.
+  - `metrics`: one entry per vertical the user has listings in. It is gated exactly
+    like `get_listing_stats` (`mcp/tools/listing/stats-entitlement.ts`, shared by
+    both tools). Without `view_basic_stats`, only that vertical's entry is replaced
+    by `{ omitted: 'NO_STATS_ENTITLEMENT', note, action }`, with a link to the
+    vertical's plans (owner decision D-9). The note names no plan until HOS-2066
+    exposes which plan versions carry the entitlement (HOS-1967 forbids
+    hardcoding names). Listings and attention are never gated.
+  - Metric sources, all owner-wide:
+    - views: `getStatsForHostAccommodations` / `getStatsForOwnListings`, summed;
+    - new reviews in the period, every moderation state: `readOwnerListingReviews`
+      with `since`;
+    - accommodation inquiries and reply speed: `getHostMonthlyInquiries` /
+      `getHostResponseRate`;
+    - unanswered inquiries: the host dashboard's `getUnreadCount`;
+    - favorites, advanced stats only: one batched count with the where of
+      `countBookmarksForEntity`.
+    A metric that cannot be read for a permission reason is left out and listed in
+    `omitted`, never zero.
+  - The period is `7d` or `30d`, because those are the windows the owner-wide view
+    reads offer. For 90 days, use `get_listing_stats` per listing.
+  - `attention`: most urgent first, capped at 10, with `moreAttention` counting the
+    rest. The kinds:
+    - `unanswered_inquiries`, linked to the inbox;
+    - `pending_benefit_usages` (owner decision D-11). Side `host` comes from
+      `countPendingForHost` and links to `usos-de-beneficio`. Side `provider` is the
+      provider inbox (`listForProvider`, `PENDING` declared by a host, only when
+      `getOwn` finds the user's directory listing) and links to `proveedor`, where
+      that inbox lives. Each side is omitted when zero.
+    - `open_fix_request`, from `listingNoticesModel.readOwnerListingNotices` (the
+      portal notices reader, purged excluded), linked to the editor hub;
+    - `incomplete` and `missing_photos`: drafts only, evaluated in batch by
+      `evaluateListingsPublishCompleteness` (the publish rules, one media query per
+      vertical), linked to the first missing editor section or to `fotos`.
+  - Cost: the reads are per vertical or owner-wide, so their number does not depend
+    on how many listings the user has (a test asserts it). The serialized result is
+    fitted to `MCP_RESULT_MAX_CHARS`. Attention items give way first. A result that
+    cannot fit is refused, never returned over budget.
+  - No new consent capability. Listings, stats, inquiries and reviews are covered.
+    The pending-usage counts are covered by the `benefitUsages` capability that
+    HOS-2332 adds.
 - `list_reviews`: the OWNER view of the reviews (HOS-2330, owner decisions D-7 and
   D-8). It returns every review of the user's own listings in every moderation
   state, `PENDING` and `REJECTED` text included, each labelled with its state.
@@ -403,6 +451,8 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 | HOS-2247 | MCP elicitation, to move reply confirmation to the user's side. |
 | Phase B | Entitlement gate on `/mcp`, plan status, ChatGPT directory. Blocked on HOS-1352 and HOS-2066. |
 | SDK `Server` | `createHospedaMcpServer` uses the low-level `Server`, which the SDK marks `@deprecated` ("advanced use"). It is deliberate: `McpServer` validates input in English and bypasses the Spanish message and the audit. Revisit on SDK upgrades. |
+| `get_owner_summary` subscription block | HOS-2328 (PR-9): `subscription` per vertical from the `get_my_plan` reader, and plan names in the `NO_STATS_ENTITLEMENT` note. Blocked on HOS-2066. |
+| `get_owner_summary` usage services | `mcp/tools/summary/owner-summary-services.ts` duplicates the getters HOS-2332 adds in `mcp/tools/host-trade/host-trade-tool-services.ts`. Switch to those once both are on staging. |
 | Billing refusal mapping | `set_listing_publication` maps billing refusals to reasons by matching service message text. There is no guard that fails if the text changes. |
 
 ## Related
