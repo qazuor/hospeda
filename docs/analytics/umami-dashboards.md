@@ -84,11 +84,21 @@ Segments (filters; `any` means a visitor matching at least one filter):
 | `Brasil y Uruguay` | country = BR OR UY |
 | `Llegan desde Google` | referrer contains `google` |
 | `Llegan desde redes sociales` | referrer contains `facebook`, `instagram`, `whatsapp` OR `t.co` |
-| `Llegan por campaña (UTM)` | utmSource is set |
-| `Usuarios logueados` | distinctId is set |
-| `Visitantes anónimos` | distinctId is not set |
+| `Llegan por campaña (UTM)` | utmSource is not empty |
+| `Usuarios logueados` | distinctId is not empty |
 | `Navegan fichas de alojamiento` | path contains `/alojamientos/` |
 | `Navegan Comer y salir y Experiencias` | path contains `/comer-y-salir/` OR `/experiencias/` |
+
+> **Only `eq`, `neq`, `c` and `dnc` work on segment column filters in Umami 3.5.**
+> The set/not-set operators (`s`, `ns`) and the rest (`re`, `gt`, ...) exist only
+> for event-data property filters. On a column filter the SQL builder emits broken
+> SQL and every stats query answers 500 (`42601 syntax error at or near "group"`).
+> "Is not set" cannot be expressed either: `distinctId = ''` matches nothing because
+> NULL is not equal to `''`. That is why "Visitantes anónimos" no longer exists, and
+> why the definitions' zod schema rejects any other operator at build time.
+>
+> A `Visitantes anónimos` segment created by an earlier run stays in Umami as
+> "unmanaged" until someone deletes it by hand, because the script never deletes.
 
 Cohorts (visitors that fired the event within the window):
 
