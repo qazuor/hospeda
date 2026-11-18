@@ -85,7 +85,9 @@ describe('provider watch battery cron', () => {
             schedule: PROVIDER_WATCH_SCHEDULE,
             exclusive: true,
             enabled: true,
-            scheduled: false
+            scheduled: false,
+            budgetMs: 540_000,
+            timeoutMs: 600_000
         });
         expect(PROVIDER_WATCH_SCHEDULE).toBe('17 7 * * *');
     });

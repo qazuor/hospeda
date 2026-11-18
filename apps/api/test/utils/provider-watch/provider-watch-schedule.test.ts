@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     isScheduledTickDue,
+    PROVIDER_WATCH_REQUEST_TIMEOUT_MS,
+    PROVIDER_WATCH_RUN_BUDGET_MS,
+    PROVIDER_WATCH_RUN_DEADLINE_MS,
     resolveWatchAccount
 } from '../../../src/utils/provider-watch/provider-watch-schedule';
 
@@ -55,5 +58,13 @@ describe('isScheduledTickDue', () => {
         // 2026-11-02 01:00 UTC is Sunday 2026-11-01 in Buenos Aires: the 1st, not Monday.
         expect(due('production', '2026-11-02T01:00:00Z')).toBe(true);
         expect(due('sandbox', '2026-11-02T01:00:00Z')).toBe(false);
+    });
+});
+
+describe('the stale-run cut-off never reaches a live run', () => {
+    it('keeps the budget plus the longest last request under the deadline', () => {
+        expect(PROVIDER_WATCH_RUN_BUDGET_MS + PROVIDER_WATCH_REQUEST_TIMEOUT_MS).toBeLessThan(
+            PROVIDER_WATCH_RUN_DEADLINE_MS
+        );
     });
 });

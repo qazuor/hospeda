@@ -13,10 +13,20 @@ import type { WatchAccount } from '@repo/payments';
 const MARKET_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 
 /**
- * How long a run may take (the job's timeout). A run still `running` this long after it started is
- * abandoned: its process died or was killed without closing it.
+ * The most a live run may take: the job's timeout. A `running` row older than this is abandoned.
+ *
+ * Why that is safe with the cron lock: the job is exclusive, so only one run lives at a time, and a
+ * live run stops STARTING measurements at {@link PROVIDER_WATCH_RUN_BUDGET_MS}; the longest request
+ * it can still be waiting on is capped by the transport's 30 s timeout. Budget plus that request is
+ * under this deadline, so a row older than it belongs to a process that died, never to a live run.
  */
 export const PROVIDER_WATCH_RUN_DEADLINE_MS = 600_000;
+
+/** When a live run stops starting measurements (90% of the deadline). */
+export const PROVIDER_WATCH_RUN_BUDGET_MS = 540_000;
+
+/** The transport's per-request timeout, which bounds the last request of a live run. */
+export const PROVIDER_WATCH_REQUEST_TIMEOUT_MS = 30_000;
 
 /** Name of the job, also the slug suffix of its watchdog check. */
 export const PROVIDER_WATCH_JOB_NAME = 'provider-watch-battery';

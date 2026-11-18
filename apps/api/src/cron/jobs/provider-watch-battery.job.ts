@@ -40,6 +40,7 @@ import {
 import {
     isScheduledTickDue,
     PROVIDER_WATCH_JOB_NAME,
+    PROVIDER_WATCH_RUN_BUDGET_MS,
     PROVIDER_WATCH_RUN_DEADLINE_MS,
     resolveWatchAccount
 } from '../../utils/provider-watch/provider-watch-schedule.js';
@@ -154,6 +155,7 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
         // The admin manual trigger keeps working. PR 2 removes this line.
         scheduled: false,
         timeoutMs: PROVIDER_WATCH_RUN_DEADLINE_MS,
+        budgetMs: PROVIDER_WATCH_RUN_BUDGET_MS,
         handler: async (ctx) => {
             const { logger, dryRun } = ctx;
             if (dryRun) {
