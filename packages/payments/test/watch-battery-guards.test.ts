@@ -922,3 +922,81 @@ describe('HOS-1512 M2: the authorized number caps the WHOLE RUN, not each measur
         expect(result.run.outcome).toBe('completed');
     });
 });
+
+describe('HOS-1512 M1 (follow-up): refunds state their amount; paths are case-sensitive', () => {
+    const send = async (args: {
+        readonly method: 'POST';
+        readonly path: string;
+        readonly body: unknown;
+        readonly chargeMinor?: number;
+    }) => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                entry({
+                    effect: 'moves-money',
+                    maxChargeMinor: AUTHORIZED,
+                    measure: async (ctx): Promise<JsonValue> => {
+                        await ctx.send({
+                            label: 'x',
+                            request: { method: args.method, path: args.path, body: args.body },
+                            ...(args.chargeMinor === undefined
+                                ? {}
+                                : { chargeMinor: args.chargeMinor })
+                        });
+                        return 'created';
+                    }
+                })
+            ],
+            transport,
+            clock
+        });
+        return { result, server };
+    };
+
+    it('refuses a refund whose body states no amount (a total refund) even if one is declared', async () => {
+        const { result, server } = await send({
+            method: 'POST',
+            path: '/v1/payments/123/refunds',
+            body: {},
+            chargeMinor: 0
+        });
+        expect(result.run.outcome).toBe('aborted');
+        const { server: second, transport, clock } = await fakeAs('sandbox');
+        const declared = await run({
+            account: 'sandbox',
+            catalog: [
+                entry({
+                    effect: 'moves-money',
+                    maxChargeMinor: AUTHORIZED,
+                    measure: async (ctx): Promise<JsonValue> => {
+                        await ctx.send({
+                            label: 'r',
+                            request: { method: 'POST', path: '/v1/payments/123/refunds', body: {} },
+                            refundMinor: 150000
+                        });
+                        return 'created';
+                    }
+                })
+            ],
+            transport,
+            clock
+        });
+        expect(declared.run.reason).toContain('CHARGE_MISMATCH');
+        expect(mutatingRequests(second)).toEqual([]);
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('classifies case-sensitively even for a money-moving measurement with a correct amount', async () => {
+        const { result, server } = await send({
+            method: 'POST',
+            path: '/V1/PAYMENTS',
+            body: { transaction_amount: 1500 },
+            chargeMinor: 150000
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('OPERATION_NOT_ALLOWED');
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+});
