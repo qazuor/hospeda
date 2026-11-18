@@ -98,6 +98,7 @@ function makeLeadModel(lead: Record<string, unknown> = mockLead) {
         create: vi.fn().mockResolvedValue(lead),
         findAll: vi.fn().mockResolvedValue({ items: [lead], total: 1 }),
         findById: vi.fn().mockResolvedValue(lead),
+        findByIdForUpdate: vi.fn().mockResolvedValue(lead),
         update: vi.fn().mockResolvedValue({ ...lead, status: 'approved' })
     };
 }

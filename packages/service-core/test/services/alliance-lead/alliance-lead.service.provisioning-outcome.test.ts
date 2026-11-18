@@ -183,6 +183,38 @@ describe('markHandled provisioning outcome (HOS-2339)', () => {
         expect(r.data).not.toHaveProperty('provisioning');
     });
 
+    it('re-reads the lead FOR UPDATE and does not create a second listing when a retry won the race', async () => {
+        const inviteToClaim = vi
+            .fn<AllianceClaimInvitePort['inviteToClaim']>()
+            .mockResolvedValue(undefined);
+        const { service, model, ht } = build({ row: lead(), inviteToClaim });
+        // The unlocked read saw no listing; the locked re-read sees the retry's commit.
+        model.findByIdForUpdate.mockResolvedValue(
+            lead({ status: 'approved', provisionedHostTradeId: HOST_TRADE_ID })
+        );
+        const r = await service.markHandled({
+            actor: admin,
+            id: LEAD_ID,
+            input: { status: 'approved' }
+        });
+        expect(model.findByIdForUpdate).toHaveBeenCalledOnce();
+        expect(ht.create).not.toHaveBeenCalled();
+        expect(r.data?.provisioning).toEqual({
+            provisioned: false,
+            reason: 'already-provisioned',
+            hostTradeId: HOST_TRADE_ID
+        });
+    });
+
+    it('sends no claim invite when provisioning was skipped for lack of an active category', async () => {
+        const inviteToClaim = vi
+            .fn<AllianceClaimInvitePort['inviteToClaim']>()
+            .mockResolvedValue(undefined);
+        const { service } = build({ row: lead(), active: false, inviteToClaim });
+        await service.markHandled({ actor: admin, id: LEAD_ID, input: { status: 'approved' } });
+        expect(inviteToClaim).not.toHaveBeenCalled();
+    });
+
     it.each([
         'partner',
         'sponsor',

@@ -39,8 +39,10 @@ describe.skipIf(!dbAvailable)('AllianceLeadService.provisionListing: real DB (HO
         group: crypto.randomUUID(),
         category: crypto.randomUUID(),
         destination: crypto.randomUUID(),
-        lead: crypto.randomUUID()
+        lead: crypto.randomUUID(),
+        raceLead: crypto.randomUUID()
     };
+    const raceName = `Race Biz ${RUN}`;
     const slug = `c-${RUN}-conc`;
 
     beforeAll(async () => {
@@ -103,6 +105,15 @@ describe.skipIf(!dbAvailable)('AllianceLeadService.provisionListing: real DB (HO
 
     afterAll(async () => {
         const db = getServiceTestDb();
+        const raceTrades = await db.select().from(hostTrades).where(eq(hostTrades.name, raceName));
+        const raceIds = raceTrades.map((t) => t.id);
+        await db.delete(allianceLeads).where(eq(allianceLeads.id, ids.raceLead));
+        if (raceIds.length > 0) {
+            await db
+                .delete(rHostTradeCategory)
+                .where(inArray(rHostTradeCategory.hostTradeId, raceIds));
+            await db.delete(hostTrades).where(inArray(hostTrades.id, raceIds));
+        }
         const [lead] = await db.select().from(allianceLeads).where(eq(allianceLeads.id, ids.lead));
         const providerIds = lead?.provisionedHostTradeId ? [lead.provisionedHostTradeId] : [];
         await db.delete(allianceLeads).where(eq(allianceLeads.id, ids.lead));
@@ -142,6 +153,41 @@ describe.skipIf(!dbAvailable)('AllianceLeadService.provisionListing: real DB (HO
             .where(eq(hostTrades.destinationId, ids.destination));
         expect(rows).toHaveLength(1);
         const [lead] = await db.select().from(allianceLeads).where(eq(allianceLeads.id, ids.lead));
+        expect(lead?.provisionedHostTradeId).toBe(rows[0]?.id);
+    });
+
+    it('creates exactly one listing when a re-approval races a retry', async () => {
+        const db = getServiceTestDb();
+        await db.insert(allianceLeads).values({
+            id: ids.raceLead,
+            kind: 'service_provider',
+            contactName: 'Race Contact',
+            email: `lead-race-${RUN}@example.com`,
+            message: 'Quiero sumarme',
+            status: 'approved',
+            businessName: raceName,
+            destinationId: ids.destination,
+            categorySlugs: [slug]
+        } as typeof allianceLeads.$inferInsert);
+        const service = new AllianceLeadService({ logger: createLoggerMock() });
+
+        const [a, b] = await Promise.all([
+            service.markHandled({
+                actor: admin,
+                id: ids.raceLead,
+                input: { status: 'approved' }
+            }),
+            service.provisionListing({ actor: admin, id: ids.raceLead })
+        ]);
+
+        expect(a.error).toBeUndefined();
+        expect(b.error).toBeUndefined();
+        const rows = await db.select().from(hostTrades).where(eq(hostTrades.name, raceName));
+        expect(rows).toHaveLength(1);
+        const [lead] = await db
+            .select()
+            .from(allianceLeads)
+            .where(eq(allianceLeads.id, ids.raceLead));
         expect(lead?.provisionedHostTradeId).toBe(rows[0]?.id);
     });
 });

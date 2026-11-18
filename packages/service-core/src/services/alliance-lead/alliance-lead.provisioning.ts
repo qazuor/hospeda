@@ -219,7 +219,7 @@ export const provisionServiceProviderListing = async ({
             logger.warn(
                 { leadId: lead.id },
                 '[alliance-lead] approved service provider has no usable typed provider data — ' +
-                    'legacy or malformed lead, listing must be created by hand'
+                    'legacy or malformed lead, the lead lacks the data to create the listing automatically'
             );
         }
         return { provisioned: false, reason: plan.reason, hostTradeId: plan.hostTradeId };
@@ -232,7 +232,7 @@ export const provisionServiceProviderListing = async ({
     if (activeCategories.length === 0) {
         logger.warn(
             { leadId: lead.id, categorySlugs: plan.categorySlugs },
-            '[alliance-lead] none of the lead categories is active — listing must be created by hand'
+            '[alliance-lead] none of the lead categories is active — reactivate one and retry provisioning'
         );
         return { provisioned: false, reason: 'no-active-category' };
     }

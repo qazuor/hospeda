@@ -1091,26 +1091,10 @@ export class AllianceLeadService extends BaseService {
                 // already-provisioned lead that is STILL unclaimed re-issues
                 // the invite — exactly the recovery path this fix needed for
                 // every lead whose first attempt silently never sent one.
-                const needsClaimInvite =
-                    validated.status === 'approved' &&
-                    existing.kind === 'service_provider' &&
-                    existing.applicantUserId === null &&
-                    (willProvision || existing.provisionedHostTradeId !== null);
-
-                // The RAW token minted by `createLead` never survives past its
-                // own closure — only its digest reaches the row — so there is
-                // no original token to resend here. A fresh one is minted
-                // instead. This supersedes any still-valid token from the
-                // original submission, which is the correct outcome: the email
-                // about to go out is the current, authoritative one.
-                const freshClaim = needsClaimInvite
-                    ? {
-                          token: generateClaimToken(),
-                          expiresAt: new Date(
-                              Date.now() + CLAIM_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000
-                          )
-                      }
-                    : null;
+                const mintFreshClaim = () => ({
+                    token: generateClaimToken(),
+                    expiresAt: new Date(Date.now() + CLAIM_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000)
+                });
 
                 // Provisioning and the status change must land together. A lead
                 // marked `approved` with no listing is the inconsistent state
@@ -1128,17 +1112,38 @@ export class AllianceLeadService extends BaseService {
                 ): Promise<{
                     row: SelectAllianceLead;
                     outcome: AllianceLeadProvisioningOutcome | undefined;
+                    freshClaim: { token: string; expiresAt: Date } | null;
                 }> => {
+                    // HOS-2339: a concurrent `provisionListing` retry may have
+                    // committed between the unlocked read above and this
+                    // transaction. Re-read the lead FOR UPDATE and decide from
+                    // THAT row, so an approve racing a retry creates one listing.
+                    const current =
+                        validated.status === 'approved' && txCtx?.tx
+                            ? ((await this._model.findByIdForUpdate(validated.id, txCtx.tx)) ??
+                              existing)
+                            : existing;
+
                     const provisioning =
                         validated.status === 'approved'
                             ? await provisionServiceProviderListing({
-                                  lead: existing,
+                                  lead: current,
                                   hostTradeModel: this._hostTradeModel,
                                   categoryModel: this._categoryModel,
                                   actorId: a.id,
                                   logger: this.logger,
                                   tx: txCtx?.tx
                               })
+                            : null;
+
+                    // The invite goes out only when a listing exists for the lead
+                    // (created now or already linked) and nobody has claimed it.
+                    const freshClaim =
+                        validated.status === 'approved' &&
+                        current.kind === 'service_provider' &&
+                        current.applicantUserId === null &&
+                        (provisioning?.provisioned || current.provisionedHostTradeId !== null)
+                            ? mintFreshClaim()
                             : null;
 
                     // TYPE-WORKAROUND: `claimToken` is deliberately absent from
@@ -1183,6 +1188,7 @@ export class AllianceLeadService extends BaseService {
 
                     return {
                         row: row as SelectAllianceLead,
+                        freshClaim,
                         // HOS-2339: only a service_provider approval reports an
                         // outcome. Rejections and the other kinds add nothing.
                         outcome:
@@ -1196,7 +1202,11 @@ export class AllianceLeadService extends BaseService {
                     };
                 };
 
-                const { row: updated, outcome } = execCtx?.tx
+                const {
+                    row: updated,
+                    outcome,
+                    freshClaim
+                } = execCtx?.tx
                     ? await applyDecision(execCtx)
                     : willProvision
                       ? await withServiceTransaction(applyDecision)
