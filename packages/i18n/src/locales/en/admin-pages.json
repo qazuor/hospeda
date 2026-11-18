@@ -1320,7 +1320,7 @@
                 "enableAria": "Turn session recordings on",
                 "disableAria": "Turn session recordings off",
                 "confirmEnable": "Production must have a signed privacy verification (docs/analytics/session-replay-privacy.md). Turn recordings on?",
-                "confirmDisable": "The change reaches the web within 60 seconds, and pages already open may keep recording for up to 5 minutes. Turn recordings off?",
+                "confirmDisable": "The change reaches the web within 60 seconds, and pages already open keep their replay for up to 5 minutes and their heatmap clicks until they are closed. Turn recordings off?",
                 "cancel": "Cancel",
                 "saveError": "The change could not be saved. The state shown is the last confirmed one.",
                 "readError": "The current state could not be read.",

@@ -89,18 +89,34 @@ and written to Umami by `pnpm umami:setup`.
 | `maskLevel` | `strict`: every text node and every input is masked. **There is no selective unmask**; no element is ever marked safe to show. |
 | `sampleRate` (replays) | 0.5 |
 | `heatmapSampleRate` | 0.5 |
-| `maxDuration` | 300000 ms (5 minutes) |
+| `maxDuration` | 300000 ms (5 minutes) per page load, replays only. Heatmaps have no time cap. |
 | `blockSelector` | `[data-umami-block]` |
 
 Source: `scripts/umami/recorder-definitions.ts`.
+
+### Measured recorder behaviour
+
+Read from the `recorder.js` that staging Umami 3.5 serves (2026-11-18, read only):
+
+- The recorder decides sampling and starts once per **page load** (each full load of a page).
+  A ClientRouter soft navigation does not start a new recording; the running one follows
+  `pushState` and keeps recording the new page.
+- The 5-minute cap counts from the start of that page load's replay. When it is reached the
+  replay **stops for good in that page load**: nothing restarts it, not even a soft
+  navigation or `pushState`. Only the next full page load can start a new one (sampled again
+  at 0.5).
+- **Heatmaps are not capped.** Click and scroll events keep being sent, across soft
+  navigations, until the page unloads.
 
 ## Propagation limits
 
 - **Switch turned off.** New page loads stop loading the recorder within about 60 s: the
   public answer is cached for 30 s at the edge and 30 s in the browser. A page that is already
-  recording keeps recording until it unloads or reaches 5 minutes. Nothing forces a reload.
-- **Consent revoked.** Nothing reloads at revoke time (D-2), so the current page keeps
-  recording until the visitor leaves it or it reaches 5 minutes. The next navigation, even a
+  recording keeps its replay going until it unloads or its 5 minutes run out, and keeps sending
+  heatmap clicks and scrolls until it unloads. Nothing forces a reload.
+- **Consent revoked.** Nothing reloads at revoke time (D-2), so the current page keeps its
+  replay going until the visitor leaves it or its 5 minutes run out, and keeps sending heatmap
+  clicks and scrolls until the visitor leaves it. The next navigation, even a
   link inside the site that would normally swap the page in place, is turned into a full page
   load, which ends the recording. The new page does not record.
 

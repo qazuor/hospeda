@@ -1320,7 +1320,7 @@
                 "enableAria": "Encender las grabaciones de sesión",
                 "disableAria": "Apagar las grabaciones de sesión",
                 "confirmEnable": "Producción tiene que tener una verificación de privacidad firmada (docs/analytics/session-replay-privacy.md). ¿Encender las grabaciones?",
-                "confirmDisable": "El cambio llega a la web en hasta 60 segundos, y las páginas ya abiertas pueden seguir grabando hasta 5 minutos. ¿Apagar las grabaciones?",
+                "confirmDisable": "El cambio llega a la web en hasta 60 segundos, y las páginas ya abiertas siguen con su replay hasta 5 minutos y con los clics del mapa de calor hasta que se cierran. ¿Apagar las grabaciones?",
                 "cancel": "Cancelar",
                 "saveError": "No se pudo guardar el cambio. El estado mostrado es el último confirmado.",
                 "readError": "No se pudo leer el estado actual.",

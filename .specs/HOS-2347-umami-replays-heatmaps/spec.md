@@ -758,6 +758,9 @@ means a `script#umami-recorder` exists with
   blocks, the cookie banner and the feedback modal. All other text is masked.
 - **AC-SM5 (staging)** Turning the switch OFF: a new full page load 60 s later
   fetches `{ enabled: false }` and loads no recorder.
+  An already-open page is also observed: its replay stops no later than 5 minutes
+  after it started, while its heatmap events (`/api/record` with type `heatmap`)
+  continue until the page is closed (measured behaviour, R-2).
 - **AC-SM6 (prod, before the first ON)** The owner, or someone the owner
   designates, runs the manual verification in the rewritten privacy doc:
   - log in or sign up;
@@ -797,6 +800,14 @@ Total: 55 acceptance criteria (A 6, P 5, W 13, R 6, B 4, S 7, PE 5, C 1, SM 6, D
   revoke or switch-OFF does not reload the page, so the current document may
   keep recording until unload or 5 min (`maxDuration`). Accepted and documented
   in the privacy doc. An in-page stop, if T-001 finds one, may shorten it.
+  **Measured after review (2026-11-18, staging `recorder.js`, read only):** the
+  5-minute cap applies to the replay only and counts per page load. When reached,
+  the replay stops for good in that page load; neither a soft navigation nor
+  `pushState` restarts it, and only a new full page load starts a new (re-sampled)
+  recording. Heatmap clicks and scrolls have **no** cap and continue across soft
+  navigations until the page unloads. Copy and the privacy doc state this. No
+  extra smoke step is needed for a restart (there is none); AC-SM5 now also
+  checks that an open page keeps sending heatmap events after the switch-off.
 - **R-3 Soft-nav hook does not cancel.** If the router hook cannot turn the swap
   into a full load, an excluded page could be recorded after a soft nav.
   Mitigation: T-001 measures it, and the AC-R5 test plus AC-SM3 verify it.

@@ -28,7 +28,9 @@ describe('session-replay-privacy.md (HOS-2347 AC-D1)', () => {
         ['the 60 s switch-off bound', /60 s/],
         ['indefinite retention (AC-S7, spike)', /retention in force today is \*\*indefinite\*\*/],
         ['the AC-SM6 procedure', /AC-SM6/],
-        ['the sign-off command', /\/smoke HOS-2347/]
+        ['the sign-off command', /\/smoke HOS-2347/],
+        ['the measured per-page-load replay cap', /stops for good in that page load/],
+        ['that heatmaps are not capped', /Heatmaps are not capped/]
     ])('states %s', (_label, pattern) => {
         expect(DOC).toMatch(pattern);
     });
