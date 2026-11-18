@@ -19,6 +19,13 @@
  *
  * Each tool has its own Redis key prefix (`mcp:confirm:<tool>:` by default).
  *
+ * **Stash (optional).** A preview may store a small server-side value next to
+ * the token (`create_listing` keeps the point it resolved from a Maps link, so
+ * the commit never resolves the link again). The stash is part of the digest,
+ * so the token binds the payload AND what the preview computed from it; it is
+ * returned by a successful consumption and never by a failed one. Without a
+ * stash the stored value is exactly the digest, as before.
+ *
  * Redis-unavailable policy: FAIL CLOSED. Without Redis there is no proof that
  * the preview was shown, so both functions answer `UNAVAILABLE`. There is
  * deliberately no in-memory fallback (it would not be shared across instances).
@@ -69,7 +76,13 @@ export interface ConfirmationStoreDeps {
 }
 
 /** Arguments for {@link issueConfirmationToken}. */
-export interface IssueConfirmationTokenArgs extends ConfirmationBinding, ConfirmationStoreDeps {}
+export interface IssueConfirmationTokenArgs extends ConfirmationBinding, ConfirmationStoreDeps {
+    /**
+     * A server-side value to keep with the token (see the file header). It is
+     * bound into the digest and handed back by a successful consumption.
+     */
+    readonly stash?: CanonicalJsonValue;
+}
 
 /** Result of {@link issueConfirmationToken}. */
 export type IssueConfirmationTokenResult =
@@ -84,22 +97,63 @@ export interface ConsumeConfirmationTokenArgs extends ConfirmationBinding, Confi
 
 /** Result of {@link consumeConfirmationToken}. */
 export type ConsumeConfirmationTokenResult =
-    | { readonly ok: true }
+    | {
+          readonly ok: true;
+          /** What the preview stashed with the token; absent when it stashed nothing. */
+          readonly stash?: CanonicalJsonValue;
+      }
     | { readonly ok: false; readonly reason: ConfirmationTokenFailureReason };
 
 const sha256Hex = (value: string): string => createHash('sha256').update(value).digest('hex');
 
-/** Digest of the binding. Length-prefixed fields so no field can bleed into another. */
+/** Separates the digest from the encoded stash in the stored value (a hex digest never holds it). */
+const STASH_SEPARATOR = '.';
+
+/**
+ * Digest of the binding (and of the stash, when there is one). Length-prefixed
+ * fields so no field can bleed into another.
+ */
 function bindingDigest({
     userId,
     clientId,
     tool,
     subjectId,
-    payload
-}: ConfirmationBinding): string {
-    return sha256Hex(
-        `${userId.length}:${userId}|${clientId.length}:${clientId}|${tool.length}:${tool}|${subjectId.length}:${subjectId}|${sha256Hex(canonicalJson(payload))}`
-    );
+    payload,
+    stash
+}: ConfirmationBinding & { readonly stash?: CanonicalJsonValue }): string {
+    const base = `${userId.length}:${userId}|${clientId.length}:${clientId}|${tool.length}:${tool}|${subjectId.length}:${subjectId}|${sha256Hex(canonicalJson(payload))}`;
+    return sha256Hex(stash === undefined ? base : `${base}|${sha256Hex(canonicalJson(stash))}`);
+}
+
+/** The value stored under the token key: the digest, plus the encoded stash when present. */
+function storedValue(args: ConfirmationBinding & { readonly stash?: CanonicalJsonValue }): string {
+    const digest = bindingDigest(args);
+    return args.stash === undefined
+        ? digest
+        : `${digest}${STASH_SEPARATOR}${Buffer.from(canonicalJson(args.stash)).toString('base64url')}`;
+}
+
+/**
+ * Splits a stored value into its digest and stash. A stash that does not decode
+ * yields `undefined`, which the caller treats as a mismatch (fail closed).
+ */
+function readStoredValue(
+    stored: string
+):
+    | { readonly digest: string; readonly stash?: CanonicalJsonValue; readonly broken?: never }
+    | { readonly broken: true } {
+    const at = stored.indexOf(STASH_SEPARATOR);
+    if (at === -1) {
+        return { digest: stored };
+    }
+    try {
+        const json: CanonicalJsonValue = JSON.parse(
+            Buffer.from(stored.slice(at + 1), 'base64url').toString('utf8')
+        );
+        return { digest: stored.slice(0, at), stash: json };
+    } catch {
+        return { broken: true };
+    }
 }
 
 const prefixFor = ({ tool, keyPrefix }: { tool: string; keyPrefix?: string }): string =>
@@ -174,7 +228,7 @@ export async function issueConfirmationToken(
     try {
         await redis.set(
             keyFor({ token, tool: args.tool, keyPrefix: args.keyPrefix }),
-            bindingDigest(args),
+            storedValue(args),
             'EX',
             CONFIRMATION_TOKEN_TTL_SECONDS
         );
@@ -222,8 +276,17 @@ export async function consumeConfirmationToken(
     if (stored === null) {
         return { ok: false, reason: 'INVALID' };
     }
-    const expected = Buffer.from(bindingDigest(args));
-    const actual = Buffer.from(stored);
+    const read = readStoredValue(stored);
+    if (read.broken) {
+        return { ok: false, reason: 'INVALID' };
+    }
+    // The digest is recomputed over the presented binding plus the STORED stash,
+    // so a stash is only ever returned alongside the binding it was issued for.
+    const expected = Buffer.from(bindingDigest({ ...args, stash: read.stash }));
+    const actual = Buffer.from(read.digest);
     const matches = expected.length === actual.length && timingSafeEqual(expected, actual);
-    return matches ? { ok: true } : { ok: false, reason: 'INVALID' };
+    if (!matches) {
+        return { ok: false, reason: 'INVALID' };
+    }
+    return read.stash === undefined ? { ok: true } : { ok: true, stash: read.stash };
 }
