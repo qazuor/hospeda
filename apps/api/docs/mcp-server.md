@@ -311,8 +311,8 @@ Tool-specific rules:
     fitted to `MCP_RESULT_MAX_CHARS`. Attention items give way first. A result that
     cannot fit is refused, never returned over budget.
   - No new consent capability. Listings, stats, inquiries and reviews are covered.
-    The pending-usage counts are covered by the `benefitUsages` capability that
-    HOS-2332 adds.
+    The pending-usage counts are covered by the `benefitUsages` capability
+    (HOS-2332).
 - `list_reviews`: the OWNER view of the reviews (HOS-2330, owner decisions D-7 and
   D-8). It returns every review of the user's own listings in every moderation
   state, `PENDING` and `REJECTED` text included, each labelled with its state.
@@ -515,7 +515,6 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 | Phase B | Entitlement gate on `/mcp`, plan status, ChatGPT directory. Blocked on HOS-1352 and HOS-2066. |
 | SDK `Server` | `createHospedaMcpServer` uses the low-level `Server`, which the SDK marks `@deprecated` ("advanced use"). It is deliberate: `McpServer` validates input in English and bypasses the Spanish message and the audit. Revisit on SDK upgrades. |
 | `get_owner_summary` subscription block | HOS-2328 (PR-9): `subscription` per vertical from the `get_my_plan` reader, and plan names in the `NO_STATS_ENTITLEMENT` note. Blocked on HOS-2066. |
-| `get_owner_summary` usage services | `mcp/tools/summary/owner-summary-services.ts` duplicates the getters HOS-2332 adds in `mcp/tools/host-trade/host-trade-tool-services.ts`. Switch to those once both are on staging. |
 | Billing refusal mapping | `set_listing_publication` maps billing refusals to reasons by matching service message text. There is no guard that fails if the text changes. |
 
 ## Related
