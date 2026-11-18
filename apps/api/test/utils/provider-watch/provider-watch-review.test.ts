@@ -148,7 +148,6 @@ describe('acceptShape', () => {
     });
 
     it.each([
-        ['a run of another account', { account: 'production', outcome: 'completed' }],
         ['a run that did not complete', { account: 'sandbox', outcome: 'aborted' }],
         ['a run still running', { account: 'sandbox', outcome: 'running' }]
     ])('refuses %s', async (_name, run) => {
@@ -158,6 +157,17 @@ describe('acceptShape', () => {
             measurements: { M1: { shapes: SHAPES } }
         });
         await expect(accept()).resolves.toEqual({ accepted: false, refusal: 'RUN_NOT_ACCEPTABLE' });
+        expect(h.acceptBaseline).not.toHaveBeenCalled();
+    });
+
+    it("answers 'not found' for a run of another account, as if it did not exist", async () => {
+        h.findById.mockResolvedValue({
+            id: RUN_ID,
+            account: 'production',
+            outcome: 'completed',
+            measurements: { M1: { shapes: SHAPES } }
+        });
+        await expect(accept()).resolves.toEqual({ accepted: false, refusal: 'RUN_NOT_FOUND' });
         expect(h.acceptBaseline).not.toHaveBeenCalled();
     });
 

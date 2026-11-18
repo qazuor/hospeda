@@ -71,8 +71,9 @@ export type AcceptShapeRefusal = 'RUN_NOT_FOUND' | 'RUN_NOT_ACCEPTABLE' | 'MEASU
 /**
  * Records that the owner accepted the shapes a run observed for one measurement.
  *
- * Only a COMPLETED run of the environment's own account can be accepted, and only a measurement
- * the run actually observed: the owner accepts what he saw, never something typed.
+ * Only a COMPLETED run of the environment's own account can be accepted (another account's run
+ * answers as if it did not exist), and only a measurement the run actually observed: the owner
+ * accepts what he saw, never something typed.
  *
  * @param args.account - The account this environment watches
  * @param args.measurementId - The measurement
@@ -91,9 +92,9 @@ export async function acceptShape(args: {
 > {
     const run = await providerWatchRunModel.findById({ id: args.runId });
     if (!run) return { accepted: false, refusal: 'RUN_NOT_FOUND' };
-    if (run.account !== args.account || run.outcome !== 'completed') {
-        return { accepted: false, refusal: 'RUN_NOT_ACCEPTABLE' };
-    }
+    // Another account's run is not this environment's to see: 404, like a missing one.
+    if (run.account !== args.account) return { accepted: false, refusal: 'RUN_NOT_FOUND' };
+    if (run.outcome !== 'completed') return { accepted: false, refusal: 'RUN_NOT_ACCEPTABLE' };
     const measurements = measurementsSchema.safeParse(run.measurements);
     const shapes = measurements.success ? measurements.data[args.measurementId]?.shapes : undefined;
     if (!shapes) return { accepted: false, refusal: 'MEASUREMENT_NOT_IN_RUN' };

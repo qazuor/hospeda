@@ -47,8 +47,9 @@ async function readConfirmedAccount(account: ReturnType<typeof environmentAccoun
     const read = await readProviderAccount({ transport: buildWatchTransport(), account });
     if (!read.ok) {
         throw new ServiceError(
+            // A token of the wrong kind is a server misconfiguration, not a caller mistake.
             read.refusal === 'WRONG_KIND'
-                ? ServiceErrorCode.VALIDATION_ERROR
+                ? ServiceErrorCode.CONFIGURATION_ERROR
                 : ServiceErrorCode.SERVICE_UNAVAILABLE,
             read.refusal === 'WRONG_KIND'
                 ? `The provider token of this environment is not a ${account === 'sandbox' ? 'test' : 'production'} account`
@@ -102,8 +103,9 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const account = await readConfirmedAccount(environmentAccount());
         if (account.id !== input.confirmedAccountId) {
+            // A state conflict (error contract): the account changed under the owner's confirmation.
             throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
+                ServiceErrorCode.ALREADY_EXISTS,
                 'The provider account is not the one the owner confirmed'
             );
         }
@@ -167,8 +169,9 @@ export const adminAcceptProviderWatchShapeRoute = createAdminRoute({
         const input = ProviderWatchAcceptShapeInputSchema.parse(body);
         const account = environmentAccount();
         if (input.account !== account) {
+            // Another account's run is not this environment's to see: 404 (error contract).
             throw new ServiceError(
-                ServiceErrorCode.VALIDATION_ERROR,
+                ServiceErrorCode.NOT_FOUND,
                 'This environment does not watch that account'
             );
         }
@@ -181,9 +184,11 @@ export const adminAcceptProviderWatchShapeRoute = createAdminRoute({
         });
         if (!result.accepted) {
             throw new ServiceError(
+                // 404 for a run that is not this environment's, 409 (state conflict) for a run that
+                // is not completed or does not hold the measurement.
                 result.refusal === 'RUN_NOT_FOUND'
                     ? ServiceErrorCode.NOT_FOUND
-                    : ServiceErrorCode.VALIDATION_ERROR,
+                    : ServiceErrorCode.ALREADY_EXISTS,
                 `The shape cannot be accepted: ${result.refusal}`
             );
         }
