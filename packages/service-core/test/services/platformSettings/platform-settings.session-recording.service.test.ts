@@ -242,4 +242,76 @@ describe('PlatformSettingsService — analytics.sessionRecording (HOS-2347)', ()
             undefined
         );
     });
+
+    describe('partial writes merge with the stored value', () => {
+        const writer = () =>
+            createActor({ permissions: [PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE] });
+
+        it('keeps the stored period when the write omits retentionDays', async () => {
+            // Arrange
+            asMock(modelMock.findByKey).mockResolvedValue({
+                ...recordingRow,
+                value: { enabled: false, retentionDays: 60 }
+            });
+            asMock(modelMock.upsertByKey).mockResolvedValue(recordingRow);
+
+            // Act
+            await service.upsert({ actor: writer(), key: KEY, value: { enabled: true } });
+
+            // Assert
+            expect(modelMock.upsertByKey).toHaveBeenCalledWith(
+                KEY,
+                { enabled: true, retentionDays: 60 },
+                expect.any(String),
+                undefined
+            );
+        });
+
+        it('keeps the stored switch when the write omits enabled', async () => {
+            asMock(modelMock.findByKey).mockResolvedValue({
+                ...recordingRow,
+                value: { enabled: true, retentionDays: 30 }
+            });
+            asMock(modelMock.upsertByKey).mockResolvedValue(recordingRow);
+
+            await service.upsert({ actor: writer(), key: KEY, value: { retentionDays: 14 } });
+
+            expect(modelMock.upsertByKey).toHaveBeenCalledWith(
+                KEY,
+                { enabled: true, retentionDays: 14 },
+                expect.any(String),
+                undefined
+            );
+        });
+
+        it('falls back to OFF and 30 when the stored row is invalid', async () => {
+            asMock(modelMock.findByKey).mockResolvedValue({
+                ...recordingRow,
+                value: { enabled: 'x' }
+            });
+            asMock(modelMock.upsertByKey).mockResolvedValue(recordingRow);
+
+            await service.upsert({ actor: writer(), key: KEY, value: { retentionDays: 60 } });
+
+            expect(modelMock.upsertByKey).toHaveBeenCalledWith(
+                KEY,
+                { enabled: false, retentionDays: 60 },
+                expect.any(String),
+                undefined
+            );
+        });
+
+        it('rejects an empty write and a period outside 14/30/60', async () => {
+            const empty = await service.upsert({ actor: writer(), key: KEY, value: {} });
+            const bad = await service.upsert({
+                actor: writer(),
+                key: KEY,
+                value: { retentionDays: 45 }
+            });
+
+            expectValidationError(empty);
+            expectValidationError(bad);
+            expect(modelMock.upsertByKey).not.toHaveBeenCalled();
+        });
+    });
 });

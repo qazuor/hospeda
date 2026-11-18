@@ -27,6 +27,8 @@ import {
     ProviderWatchAuthorizationValueSchema,
     PublicSessionRecordingResponseSchema,
     SeoDefaultsValueSchema,
+    SessionRecordingPatchSchema,
+    SessionRecordingPurgeRequestSchema,
     SessionRecordingPurgeResponseSchema,
     SessionRecordingRetentionDaysSchema,
     SessionRecordingValueSchema
@@ -115,21 +117,42 @@ describe('HOS-2347 retention period', () => {
         ).toBe(false);
     });
 
-    it('the purge response carries both counts and the period used', () => {
+    it('the purge response carries the counts, the period used and stoppedEarly', () => {
+        const valid = {
+            replaysDeleted: 3,
+            heatmapEventsDeleted: 0,
+            savedReplaysDeleted: 1,
+            retentionDays: 30,
+            stoppedEarly: false
+        };
+        expect(SessionRecordingPurgeResponseSchema.safeParse(valid).success).toBe(true);
         expect(
-            SessionRecordingPurgeResponseSchema.safeParse({
-                replaysDeleted: 3,
-                heatmapEventsDeleted: 0,
-                retentionDays: 30
-            }).success
-        ).toBe(true);
-        expect(
-            SessionRecordingPurgeResponseSchema.safeParse({
-                replaysDeleted: -1,
-                heatmapEventsDeleted: 0,
-                retentionDays: 30
-            }).success
+            SessionRecordingPurgeResponseSchema.safeParse({ ...valid, replaysDeleted: -1 }).success
         ).toBe(false);
+        expect(
+            SessionRecordingPurgeResponseSchema.safeParse({ ...valid, stoppedEarly: undefined })
+                .success
+        ).toBe(false);
+    });
+
+    it('the purge request is strictly { retentionDays: 14 | 30 | 60 }', () => {
+        expect(SessionRecordingPurgeRequestSchema.safeParse({ retentionDays: 14 }).success).toBe(
+            true
+        );
+        expect(SessionRecordingPurgeRequestSchema.safeParse({ retentionDays: 45 }).success).toBe(
+            false
+        );
+        expect(SessionRecordingPurgeRequestSchema.safeParse({}).success).toBe(false);
+        expect(
+            SessionRecordingPurgeRequestSchema.safeParse({ retentionDays: 30, x: 1 }).success
+        ).toBe(false);
+    });
+
+    it('the patch accepts either field alone, and refuses none or a bad period', () => {
+        expect(SessionRecordingPatchSchema.safeParse({ enabled: true }).success).toBe(true);
+        expect(SessionRecordingPatchSchema.safeParse({ retentionDays: 60 }).success).toBe(true);
+        expect(SessionRecordingPatchSchema.safeParse({}).success).toBe(false);
+        expect(SessionRecordingPatchSchema.safeParse({ retentionDays: 7 }).success).toBe(false);
     });
 });
 

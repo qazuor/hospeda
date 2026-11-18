@@ -7,8 +7,10 @@
  * was turned off still has to go.
  *
  * Needs the restricted Umami database connection (see the purge service). When
- * it is unset the job logs a warning and skips: that is a configuration state, not a
- * failure. A dry run deletes nothing.
+ * it is unset the job logs a warning and skips outside production; in production
+ * the run is reported as FAILED so the missing configuration shows red instead of
+ * silently keeping data past the promised period. When another purge holds the
+ * advisory lock the job skips with a log. A dry run deletes nothing.
  *
  * Schedule: daily at 4:25 Buenos Aires time, inside the off-peak maintenance band.
  *
@@ -46,6 +48,7 @@ export const sessionRecordingRetentionJob: CronJobDefinition = {
             // (same reason as the sibling retention jobs).
             const { PlatformSettingsService } = await import('@repo/service-core');
             const { apiLogger } = await import('../../utils/logger.js');
+            const { env } = await import('../../utils/env.js');
             const { purgeSessionRecordingsFromEnv, describeSkippedPurge } = await import(
                 '../../services/session-recording-purge.js'
             );
@@ -59,33 +62,59 @@ export const sessionRecordingRetentionJob: CronJobDefinition = {
                 ...(signal ? { signal } : {})
             });
 
-            if (outcome.status === 'skipped') {
-                const message = describeSkippedPurge(outcome.reason);
-                logger.warn(`Session recording retention skipped: ${message}`);
+            if (outcome.status === 'locked') {
+                logger.info('Session recording retention skipped: another purge is running');
                 return {
                     success: true,
-                    message: `Skipped: ${message}`,
+                    message: 'Skipped: another purge is already running',
                     processed: 0,
                     errors: 0,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { skipped: true, reason: 'LOCKED', retentionDays }
+                };
+            }
+
+            if (outcome.status === 'skipped') {
+                const message = describeSkippedPurge(outcome.reason);
+                const production = env.NODE_ENV === 'production';
+                if (production) {
+                    logger.error(`Session recording retention cannot run: ${message}`);
+                } else {
+                    logger.warn(`Session recording retention skipped: ${message}`);
+                }
+                return {
+                    // Production keeping recordings past the promised period is a failure, not a no-op.
+                    success: !production,
+                    message: production ? `Cannot run: ${message}` : `Skipped: ${message}`,
+                    processed: 0,
+                    errors: production ? 1 : 0,
                     durationMs: Date.now() - startedAt.getTime(),
                     details: { skipped: true, reason: outcome.reason, retentionDays }
                 };
             }
 
-            const { replaysDeleted, heatmapEventsDeleted, stoppedEarly } = outcome;
+            const { replaysDeleted, heatmapEventsDeleted, savedReplaysDeleted, stoppedEarly } =
+                outcome;
             logger.info('Session recording retention completed', {
                 retentionDays,
                 replaysDeleted,
                 heatmapEventsDeleted,
+                savedReplaysDeleted,
                 stoppedEarly
             });
             return {
                 success: true,
-                message: `Deleted ${replaysDeleted} replays and ${heatmapEventsDeleted} heatmap events older than ${retentionDays} days`,
-                processed: replaysDeleted + heatmapEventsDeleted,
+                message: `Deleted ${replaysDeleted} replays, ${heatmapEventsDeleted} heatmap events and ${savedReplaysDeleted} saved pointers older than ${retentionDays} days`,
+                processed: replaysDeleted + heatmapEventsDeleted + savedReplaysDeleted,
                 errors: 0,
                 durationMs: Date.now() - startedAt.getTime(),
-                details: { retentionDays, replaysDeleted, heatmapEventsDeleted, stoppedEarly }
+                details: {
+                    retentionDays,
+                    replaysDeleted,
+                    heatmapEventsDeleted,
+                    savedReplaysDeleted,
+                    stoppedEarly
+                }
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

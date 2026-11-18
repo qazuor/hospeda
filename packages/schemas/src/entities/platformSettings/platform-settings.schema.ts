@@ -228,16 +228,35 @@ export const SessionRecordingRetentionDaysSchema = z.union([
 export type SessionRecordingRetentionDays = z.infer<typeof SessionRecordingRetentionDaysSchema>;
 
 /**
- * Body of `POST /api/v1/admin/session-recording/purge` (HOS-2347): the counts of
- * what the purge deleted.
+ * Body of `POST /api/v1/admin/session-recording/purge` (HOS-2347): the period
+ * the admin saw and confirmed. The server answers 409 when it no longer matches
+ * the stored one, so a purge never deletes more than what was confirmed.
+ */
+export const SessionRecordingPurgeRequestSchema = z
+    .object({
+        /** The retention the admin confirmed in the dialog, in days. */
+        retentionDays: SessionRecordingRetentionDaysSchema
+    })
+    .strict();
+
+/** Inferred type of the purge request body. */
+export type SessionRecordingPurgeRequest = z.infer<typeof SessionRecordingPurgeRequestSchema>;
+
+/**
+ * Response of `POST /api/v1/admin/session-recording/purge` (HOS-2347): the
+ * counts of what the purge deleted and the period actually used.
  */
 export const SessionRecordingPurgeResponseSchema = z.object({
     /** Rows deleted from Umami's `session_replay` table. */
     replaysDeleted: z.number().int().nonnegative(),
     /** Rows deleted from Umami's `heatmap_event` table. */
     heatmapEventsDeleted: z.number().int().nonnegative(),
+    /** Saved-replay pointers (`session_replay_saved`) removed. */
+    savedReplaysDeleted: z.number().int().nonnegative(),
     /** Retention period the purge used, in days. */
-    retentionDays: SessionRecordingRetentionDaysSchema
+    retentionDays: SessionRecordingRetentionDaysSchema,
+    /** True when the time budget stopped the purge early; the next daily run finishes it. */
+    stoppedEarly: z.boolean()
 });
 
 /** Inferred type of the purge response. */
@@ -262,6 +281,23 @@ export const SessionRecordingValueSchema = z.object({
         DEFAULT_SESSION_RECORDING_RETENTION_DAYS
     )
 });
+
+/**
+ * Partial write of `analytics.sessionRecording` accepted by the admin PATCH
+ * (HOS-2347). A field left out keeps its stored value; the service merges it,
+ * so a client that sends only `enabled` never resets the period (and the other
+ * way round). At least one field is required.
+ */
+export const SessionRecordingPatchSchema = z
+    .object({
+        /** Whether the web may load the session recorder. */
+        enabled: z.boolean().optional(),
+        /** Retention in days. */
+        retentionDays: SessionRecordingRetentionDaysSchema.optional()
+    })
+    .refine((value) => value.enabled !== undefined || value.retentionDays !== undefined, {
+        message: 'At least one of enabled or retentionDays is required'
+    });
 
 /** Inferred type for the `analytics.sessionRecording` value. */
 export type SessionRecordingValue = z.infer<typeof SessionRecordingValueSchema>;

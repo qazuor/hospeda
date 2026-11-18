@@ -10,11 +10,14 @@ import { resolve } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types';
 
-const { mockRetention, mockIsEnabled, mockPurge } = vi.hoisted(() => ({
+const { mockRetention, mockIsEnabled, mockPurge, mockEnv } = vi.hoisted(() => ({
     mockRetention: vi.fn(),
     mockIsEnabled: vi.fn(),
-    mockPurge: vi.fn()
+    mockPurge: vi.fn(),
+    mockEnv: { NODE_ENV: 'development' as string }
 }));
+
+vi.mock('../../src/utils/env.js', () => ({ env: mockEnv }));
 
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
@@ -47,6 +50,7 @@ function makeContext(overrides: Partial<CronJobContext> = {}): CronJobContext {
 describe('sessionRecordingRetentionJob', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockEnv.NODE_ENV = 'development';
     });
 
     it('is in the manifest and the registry with the same schedule, in a file named after it', () => {
@@ -70,6 +74,7 @@ describe('sessionRecordingRetentionJob', () => {
             status: 'purged',
             replaysDeleted: 4,
             heatmapEventsDeleted: 6,
+            savedReplaysDeleted: 2,
             stoppedEarly: false
         });
 
@@ -80,7 +85,7 @@ describe('sessionRecordingRetentionJob', () => {
         expect(mockPurge).toHaveBeenCalledWith({ retentionDays: 14 });
         expect(mockIsEnabled).not.toHaveBeenCalled();
         expect(result.success).toBe(true);
-        expect(result.processed).toBe(10);
+        expect(result.processed).toBe(12);
         expect(result.details).toMatchObject({
             retentionDays: 14,
             replaysDeleted: 4,
@@ -96,6 +101,7 @@ describe('sessionRecordingRetentionJob', () => {
             status: 'purged',
             replaysDeleted: 0,
             heatmapEventsDeleted: 0,
+            savedReplaysDeleted: 0,
             stoppedEarly: true
         });
 
@@ -109,7 +115,7 @@ describe('sessionRecordingRetentionJob', () => {
         expect(result.details).toMatchObject({ stoppedEarly: true });
     });
 
-    it('logs a warning and skips, without failing, when the Umami DB URL is unset', async () => {
+    it('outside production, logs a warning and skips without failing when the Umami DB URL is unset', async () => {
         // Arrange
         const ctx = makeContext();
         mockRetention.mockResolvedValue(30);
@@ -124,6 +130,40 @@ describe('sessionRecordingRetentionJob', () => {
         expect(result.processed).toBe(0);
         expect(result.details).toMatchObject({ skipped: true, reason: 'DATABASE_URL_UNSET' });
         expect(ctx.logger.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('in production, an unset Umami DB URL fails the run so it shows red', async () => {
+        // Arrange
+        mockEnv.NODE_ENV = 'production';
+        const ctx = makeContext();
+        mockRetention.mockResolvedValue(30);
+        mockPurge.mockResolvedValue({ status: 'skipped', reason: 'DATABASE_URL_UNSET' });
+
+        // Act
+        const result = await sessionRecordingRetentionJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(false);
+        expect(result.errors).toBe(1);
+        expect(result.message).toContain('HOSPEDA_UMAMI_DATABASE_URL');
+        expect(ctx.logger.error).toHaveBeenCalledTimes(1);
+    });
+
+    it('skips with a log, without failing, when another purge holds the lock', async () => {
+        // Arrange
+        mockEnv.NODE_ENV = 'production';
+        const ctx = makeContext();
+        mockRetention.mockResolvedValue(30);
+        mockPurge.mockResolvedValue({ status: 'locked' });
+
+        // Act
+        const result = await sessionRecordingRetentionJob.handler(ctx);
+
+        // Assert
+        expect(result.success).toBe(true);
+        expect(result.processed).toBe(0);
+        expect(result.details).toMatchObject({ skipped: true, reason: 'LOCKED' });
+        expect(ctx.logger.info).toHaveBeenCalledTimes(1);
     });
 
     it('a dry run deletes nothing and reads nothing', async () => {
