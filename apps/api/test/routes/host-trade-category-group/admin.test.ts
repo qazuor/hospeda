@@ -152,6 +152,21 @@ describe('GET / (list)', () => {
         expect(mockAdminList.mock.calls[0]?.[1]).toMatchObject({ lifecycleState: 'ACTIVE' });
     });
 
+    it('does NOT invent a sort when the caller sends none (HOS-2340 AC-3.2)', async () => {
+        const res = await buildApp(ALL).request('/?page=1&pageSize=5');
+        expect(res.status).toBe(200);
+        expect(mockAdminList.mock.calls[0]?.[1]).not.toHaveProperty('sort');
+    });
+
+    it('forwards an explicit sort and includeDeleted untouched (HOS-2340 AC-3.4, AC-1.2)', async () => {
+        const res = await buildApp(ALL).request('/?sort=slug:asc&includeDeleted=true');
+        expect(res.status).toBe(200);
+        expect(mockAdminList.mock.calls[0]?.[1]).toMatchObject({
+            sort: 'slug:asc',
+            includeDeleted: true
+        });
+    });
+
     it('403 without HOST_TRADE_CATEGORY_VIEW', async () => {
         expect((await buildApp(ONLY_PANEL).request('/')).status).toBe(403);
         expect(mockAdminList).not.toHaveBeenCalled();

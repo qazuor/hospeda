@@ -27,7 +27,8 @@ import { resolveCell } from '@/components/billing/plan-comparison-rows';
 import {
 	formatPriceArs,
 	getActivePlans,
-	getComparisonGroups
+	getComparisonGroups,
+	getVisibleRows
 } from '@/components/billing/plan-comparison-table.helpers';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -124,7 +125,7 @@ const freePlanLabel = t('pricing.free', 'Gratis');
 						{getComparisonGroupLabel({ group: group.id, t })}
 					</th>
 				</tr>
-				{group.rows.map((row) => {
+				{getVisibleRows({ rows: group.rows, plans: activePlans }).map((row) => {
 					const RowIcon = row.icon ?? COMPARISON_ROW_ICONS[row.id];
 					// Per-row descriptive text (SPEC-299). Empty fallback → not rendered.
 					const rowDesc = t(`billing.comparison.rowDesc.${row.id}`, '');

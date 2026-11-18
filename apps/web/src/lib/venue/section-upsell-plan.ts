@@ -11,6 +11,8 @@ export interface VenueUpsellPlans {
     readonly translations: string | null;
     readonly dailySpecials: string | null;
     readonly venueEvents: string | null;
+    /** HOS-2258: the `media.videos` trait. `null` while no plan grants it. */
+    readonly videos: string | null;
 }
 
 /**
@@ -36,14 +38,18 @@ function sectionEntitlement(sectionId: string): string {
     return section.entitlementKey;
 }
 
-function menuTraitEntitlement(traitId: string): string {
-    const menu = LISTING_SECTIONS.venue.find((candidate) => candidate.id === 'menu');
+function traitEntitlement(sectionId: string, traitId: string): string {
+    const section = LISTING_SECTIONS.venue.find((candidate) => candidate.id === sectionId);
     const trait =
-        menu && 'traits' in menu
-            ? menu.traits?.find((candidate) => candidate.id === traitId)
+        section && 'traits' in section
+            ? section.traits?.find((candidate) => candidate.id === traitId)
             : undefined;
-    if (!trait) throw new Error(`Missing entitlement for venue menu trait: ${traitId}`);
+    if (!trait) throw new Error(`Missing entitlement for venue ${sectionId} trait: ${traitId}`);
     return trait.entitlementKey;
+}
+
+function menuTraitEntitlement(traitId: string): string {
+    return traitEntitlement('menu', traitId);
 }
 
 /** Resolve each venue editor upsell from the catalog's section and trait definitions. */
@@ -58,6 +64,7 @@ export function resolveVenueUpsellPlans(input: {
         itemPhotos: resolve(menuTraitEntitlement('itemPhotos')),
         translations: resolve(menuTraitEntitlement('translations')),
         dailySpecials: resolve(sectionEntitlement('dailySpecials')),
-        venueEvents: resolve(sectionEntitlement('venueEvents'))
+        venueEvents: resolve(sectionEntitlement('venueEvents')),
+        videos: resolve(traitEntitlement('media', 'videos'))
     };
 }

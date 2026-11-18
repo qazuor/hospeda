@@ -5,18 +5,26 @@
  *  - `allianceLeadKeys`           — stable query-key factory.
  *  - `useAllianceLeadsQuery`      — paginated list of leads (GET /admin/alliance/leads).
  *  - `useMarkAllianceLeadHandledMutation` — POST /admin/alliance/leads/:id/mark-handled
- *    (approve/reject).
+ *    (approve/reject). Approving a `service_provider` lead provisions its directory
+ *    listing server-side; the response carries the optional `provisioning` outcome
+ *    (HOS-2339).
+ *  - `useProvisionAllianceLeadMutation` — POST /admin/alliance/leads/:id/provision,
+ *    the dedicated retry for an approval that skipped provisioning. It never
+ *    re-sends the approval email (HOS-2339).
  *
  * All fetchers unwrap the `{success, data: {items, pagination}}` API envelope.
- * Gate: ALLIANCE_LEAD_VIEW_ALL (list) / ALLIANCE_LEAD_MANAGE (mutation).
+ * Gate: ALLIANCE_LEAD_VIEW_ALL (list) / ALLIANCE_LEAD_MANAGE (mutations).
  *
- * Unlike the retired owner-lead hooks, there is deliberately NO provision-owner or
- * approve-and-provision mutation here — approving an alliance lead never
- * auto-provisions any role/entity in V1 (HOS-277 NG-1); the admin follows up
- * manually.
+ * Partner leads are still provisioned through a separate action
+ * (approve-and-provision-partner); there is no mutation for it here yet.
  */
 
-import type { AllianceLead, AllianceLeadKind, AllianceLeadStatus } from '@repo/schemas';
+import type {
+    AllianceLead,
+    AllianceLeadKind,
+    AllianceLeadStatus,
+    AllianceLeadWithProvisioning
+} from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
@@ -100,16 +108,31 @@ async function fetchAllianceLeads(params: AllianceLeadsQueryParams): Promise<All
 
 /**
  * Calls POST /admin/alliance/leads/:id/mark-handled with approve/reject +
- * optional note. Returns the updated `AllianceLead` entity.
+ * optional note. Returns the updated lead plus, for an approved
+ * `service_provider`, the provisioning outcome.
  */
 async function markAllianceLeadHandled(
     payload: MarkAllianceLeadHandledPayload
-): Promise<AllianceLead> {
+): Promise<AllianceLeadWithProvisioning> {
     const { id, ...body } = payload;
-    const result = await fetchApi<{ success: boolean; data: AllianceLead }>({
+    const result = await fetchApi<{ success: boolean; data: AllianceLeadWithProvisioning }>({
         path: `/api/v1/admin/alliance/leads/${id}/mark-handled`,
         method: 'POST',
         body
+    });
+    return result.data.data;
+}
+
+/**
+ * Calls POST /admin/alliance/leads/:id/provision (no body). Returns the lead
+ * plus the provisioning outcome.
+ */
+async function provisionAllianceLead(payload: {
+    readonly id: string;
+}): Promise<AllianceLeadWithProvisioning> {
+    const result = await fetchApi<{ success: boolean; data: AllianceLeadWithProvisioning }>({
+        path: `/api/v1/admin/alliance/leads/${payload.id}/provision`,
+        method: 'POST'
     });
     return result.data.data;
 }
@@ -140,8 +163,8 @@ export const useAllianceLeadsQuery = (params: AllianceLeadsQueryParams) => {
 /**
  * TanStack mutation hook — mark a lead as approved or rejected.
  *
- * Invalidates the leads list on success so the inbox refreshes. Never
- * provisions any role/entity — see the module-level JSDoc.
+ * Invalidates the leads list on success so the inbox refreshes. The resolved
+ * value carries the provisioning outcome of a `service_provider` approval.
  *
  * @example
  * ```tsx
@@ -154,6 +177,28 @@ export const useMarkAllianceLeadHandledMutation = () => {
 
     return useMutation({
         mutationFn: (payload: MarkAllianceLeadHandledPayload) => markAllianceLeadHandled(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: allianceLeadKeys.lists() });
+        }
+    });
+};
+
+/**
+ * TanStack mutation hook — retry provisioning of an approved `service_provider`
+ * lead (HOS-2339). Invalidates the leads list on success so the "provider not
+ * created" badge refreshes.
+ *
+ * @example
+ * ```tsx
+ * const mutation = useProvisionAllianceLeadMutation();
+ * const result = await mutation.mutateAsync({ id: lead.id });
+ * ```
+ */
+export const useProvisionAllianceLeadMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: { readonly id: string }) => provisionAllianceLead(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: allianceLeadKeys.lists() });
         }

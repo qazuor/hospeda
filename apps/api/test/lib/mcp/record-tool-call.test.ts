@@ -34,6 +34,7 @@ describe('recordMcpToolCall', () => {
             actor,
             mcpAuth,
             tool: 'reply_to_conversation',
+            isWrite: true,
             target: { type: 'conversation', id: 'conv-1' },
             outcome: 'success',
             contentLength: 42
@@ -45,6 +46,7 @@ describe('recordMcpToolCall', () => {
             actorId: actor.id,
             clientId: mcpAuth.clientId,
             tool: 'reply_to_conversation',
+            isWrite: true,
             resourceType: 'conversation',
             resourceId: 'conv-1',
             outcome: 'success',
@@ -52,8 +54,33 @@ describe('recordMcpToolCall', () => {
         });
     });
 
+    it('should record a read call with isWrite false (D-12)', () => {
+        recordMcpToolCall({
+            actor,
+            mcpAuth,
+            tool: 'get_listing',
+            isWrite: false,
+            outcome: 'success'
+        });
+
+        expect(mockAuditLog).toHaveBeenCalledWith({
+            auditEvent: 'mcp.tool.call',
+            actorId: actor.id,
+            clientId: mcpAuth.clientId,
+            tool: 'get_listing',
+            isWrite: false,
+            outcome: 'success'
+        });
+    });
+
     it('should never persist the client-declared name', () => {
-        recordMcpToolCall({ actor, mcpAuth, tool: 'reply_inquiry', outcome: 'success' });
+        recordMcpToolCall({
+            actor,
+            mcpAuth,
+            tool: 'reply_inquiry',
+            isWrite: true,
+            outcome: 'success'
+        });
 
         expect(mockAuditLog.mock.calls[0]?.[0]).not.toHaveProperty('clientName');
     });
@@ -63,6 +90,7 @@ describe('recordMcpToolCall', () => {
             actor,
             mcpAuth,
             tool: 'reply_inquiry',
+            isWrite: true,
             outcome: 'success',
             details: { step: 'send' }
         });
@@ -77,6 +105,7 @@ describe('recordMcpToolCall', () => {
             actor,
             mcpAuth,
             tool: 'update_listing',
+            isWrite: true,
             target: { type: 'accommodation', id: 'acc-1' },
             outcome: 'denied',
             errorCode: 'FORBIDDEN'
@@ -92,6 +121,7 @@ describe('recordMcpToolCall', () => {
             actor,
             mcpAuth: { clientId: 'dcr-1' },
             tool: 'update_listing',
+            isWrite: true,
             outcome: 'error',
             errorCode: 'INTERNAL_ERROR'
         });
@@ -112,7 +142,13 @@ describe('recordMcpToolCall', () => {
         });
 
         expect(() =>
-            recordMcpToolCall({ actor, mcpAuth, tool: 'list_listings', outcome: 'success' })
+            recordMcpToolCall({
+                actor,
+                mcpAuth,
+                tool: 'list_listings',
+                isWrite: false,
+                outcome: 'success'
+            })
         ).not.toThrow();
         expect(mockLoggerError).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -133,7 +169,13 @@ describe('recordMcpToolCall', () => {
         });
 
         expect(() =>
-            recordMcpToolCall({ actor, mcpAuth, tool: 'list_listings', outcome: 'success' })
+            recordMcpToolCall({
+                actor,
+                mcpAuth,
+                tool: 'list_listings',
+                isWrite: false,
+                outcome: 'success'
+            })
         ).not.toThrow();
     });
 });

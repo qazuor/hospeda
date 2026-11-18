@@ -87,6 +87,25 @@ function stripPolicyKeys(value: unknown, keys: ReadonlySet<string>): unknown {
     );
 }
 
+/**
+ * Empties, inside a nested `media` object, the keys a catalog field removal also
+ * covers (HOS-2258). A trait declares `fields: ['videos']` at the top level, but
+ * the read model repeats the value as `media.videos`; without this the video
+ * would leave through the nested copy. The key stays and becomes `[]`, the same
+ * shape the accommodation projection has always published, so a consumer that
+ * reads `media.videos` keeps getting an array. Anything that is not a plain
+ * object passes through.
+ */
+function emptyNestedMediaFields(value: unknown, removed: ReadonlySet<string>): unknown {
+    if (value === null || typeof value !== 'object' || Array.isArray(value)) return value;
+    return Object.fromEntries(
+        Object.entries(value as Record<string, unknown>).map(([key, entry]) => [
+            key,
+            removed.has(key) && Array.isArray(entry) ? [] : entry
+        ])
+    );
+}
+
 /** Removes every catalog field whose section or trait is not available. */
 export function projectPublicListing<T extends Record<string, unknown>>(args: {
     readonly vertical: PublicVertical;
@@ -122,9 +141,11 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
     }
     const projected = Object.fromEntries(
         Object.entries(args.listing)
-            .map(([key, value]): [string, unknown] =>
-                key === 'policies' ? [key, stripPolicyKeys(value, removedPolicyKeys)] : [key, value]
-            )
+            .map(([key, value]): [string, unknown] => {
+                if (key === 'policies') return [key, stripPolicyKeys(value, removedPolicyKeys)];
+                if (key === 'media') return [key, emptyNestedMediaFields(value, removed)];
+                return [key, value];
+            })
             .filter(([key, value]) => {
                 if (removed.has(key)) return false;
                 return !(

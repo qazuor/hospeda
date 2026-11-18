@@ -17,6 +17,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import ListingVideoSection from '@/components/listing/ListingVideoSection.astro';
 import VenueJsonLd from '@/components/seo/VenueJsonLd.astro';
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
@@ -450,6 +451,16 @@ const breadcrumbItems = [
                     locale={locale}
                     variant="detail"
                 />
+            </div>
+        )}
+
+        <!-- Videos (HOS-2258): linked videos, lazy facade, right under the
+             gallery. They arrive already gated by the owner's plan
+             (`can_embed_video`) and moderation-filtered; the block hides
+             itself when none is left. -->
+        {venue.videos && venue.videos.length > 0 && (
+            <div class="venue-detail__videos">
+                <ListingVideoSection videos={venue.videos} locale={locale} scope="venue" />
             </div>
         )}
 

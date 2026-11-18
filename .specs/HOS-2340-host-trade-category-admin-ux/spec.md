@@ -126,7 +126,7 @@ admin gaps remain, all observed on staging:
 ### 5.3 Ordering (`service-core` and `db`)
 
 - `HostTradeCategoryService.adminList` (`host-trade-category.service.ts:~282`): compute `hasExplicitSort = typeof params.sort === 'string'` from the raw params and put it in `hookState`. `_executeAdminSearch` (`~:292`): when `!hasExplicitSort`, call `HostTradeCategoryModel.findAdminPage` with the assembled `where`, search condition and `includeDeleted`; otherwise delegate to `super`. Same shape for `HostTradeCategoryGroupService` (`~:181-210`), with a plain `ORDER BY display_weight, lower(name_i18n->>'es'), id` (no join, so it can use the generic model method with a custom order; add a model method if `findAll` cannot express a multi-key order).
-- `findAdminPage` orders by `g.display_weight, c.display_weight, lower(unaccent(c.name_i18n->>'es')), c.id`. `unaccent` is already used by the catalog search (`host-trade-category.search.ts:48`), so the order does not depend on the DB collation (R3 resolved). It selects only category columns (the join exists for ordering) and returns the same `{ items, total }` shape as `findAll`, so the service output is unchanged.
+- `findAdminPage` orders by `g.display_weight, lower(unaccent(g.name_i18n->>'es')), g.id, c.display_weight, lower(unaccent(c.name_i18n->>'es')), c.id`. `unaccent` is already used by the catalog search (`host-trade-category.search.ts:48`), so accents and case do not affect the order (the comparison itself still uses the DB collation). It selects only category columns (the join exists for ordering) and returns the same `{ items, total }` shape as `findAll`, so the service output is unchanged.
 - No schema, migration, seed or API contract change.
 
 ### 5.4 Restore UI (`apps/admin`)
@@ -155,7 +155,7 @@ admin gaps remain, all observed on staging:
 |---|---|---|
 | R1 | Moving the matcher changes web behaviour | The adapter delegates to the same algorithm; the existing web test file is the regression gate and is not edited; a utils test replays the same cases |
 | R2 | Admin sends an explicit `sort` by default somewhere, hiding D3 | Grep admin callers of the two list endpoints for `sort`; AC-3.1 integration test runs through the real endpoint with no `sort` |
-| R3 | Spanish ordering could depend on the DB collation | Resolved: order by `lower(unaccent(name))`, the extension the catalog search already relies on; the AC-3.1 test includes accented names («Albañilería» before «Vidriería») |
+| R3 | Accents could distort the Spanish ordering | Mitigated: unaccent removes accents and case, the comparison still uses the DB collation; order by `lower(unaccent(name))`, the extension the catalog search already relies on; the AC-3.1 test includes accented names («Albañilería» before «Vidriería») |
 | R4 | `metadata` is untyped (`Record<string, unknown>`) | Runtime type guard (§5.2); a malformed value falls back to `includes()` |
 | R5 | `includeDeleted` with the join could expose deleted groups' categories oddly | The `findAdminPage` join is a LEFT/INNER on `group_id` without a `deleted_at` filter on the group; test covers a live category under a deleted group and the reverse |
 | R6 | A concurrent restore and delete by two admins | Last write wins; AC-1.7 refetch shows the true state |

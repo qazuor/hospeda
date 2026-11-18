@@ -1,27 +1,46 @@
 /**
  * @file use-video-section.ts
- * @description State + persistence for the accommodation editor's video widget
- * (G7 smoke, H-121).
+ * @description State + persistence for the owner editors' video widget
+ * (accommodation G7 smoke H-121; venue HOS-2258).
  *
  * Deliberately NOT built on `useAccommodationSectionForm`: that hook's diff
- * engine maps one flat form-local key to one flat HTTP key
- * (`fieldKeyMap`), and the PATCH body videos actually travel in is nested —
- * `media: { videos: [...] }` (HOS-372's `HttpMediaUpdateSchema`). Bending the
- * shared five-page engine to emit a nested shape for this one field was not
- * worth the risk to the other five pages that depend on it staying flat.
- * `PhotoSection.client.tsx` already establishes the precedent that a self-
- * contained widget with its own persistence is normal in this editor.
+ * engine maps one flat form-local key to one flat HTTP key, and the PATCH body
+ * videos travel in differs per surface (`media: { videos }` for an
+ * accommodation, a top-level `videos` for a venue). The hook therefore knows no
+ * endpoint: the caller hands it a `save` function and the copy scope.
+ * `PhotoSection.client.tsx` already establishes the precedent that a
+ * self-contained widget with its own persistence is normal in this editor.
  */
 
 import { useCallback, useState } from 'react';
-import type { AccommodationVideoEntry } from '@/lib/api/types';
 import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
+import { getVideoSectionCopy, type VideoCopyScope } from './video-section-copy';
 
 const CAPTION_MIN = 3;
 const CAPTION_MAX = 100;
+
+/** A video as the widget reads it (the stored entity). */
+export interface VideoEntry {
+    readonly url: string;
+    readonly caption?: string | undefined;
+    readonly description?: string | undefined;
+}
+
+/** A video as `save` receives it: only what the server accepts. */
+export interface VideoPayload {
+    readonly url: string;
+    readonly caption?: string;
+}
+
+/** What a caller's `save` reports back. */
+export interface VideoSaveResult {
+    readonly ok: boolean;
+    /** HTTP status of a failed save, when known (a 403 gets its own copy). */
+    readonly status?: number | undefined;
+}
 
 /** One video row as the widget edits it (before caption trimming for submit). */
 export interface VideoRow {
@@ -42,16 +61,16 @@ export interface UseVideoSectionResult {
 }
 
 /** Converts the read-only entity videos into editable rows. */
-function toRows(videos: readonly AccommodationVideoEntry[]): readonly VideoRow[] {
+function toRows(videos: readonly VideoEntry[]): readonly VideoRow[] {
     return videos.map((v) => ({ url: v.url, caption: v.caption ?? '' }));
 }
 
 /**
  * Validates one row client-side before submit.
  *
- * Mirrors the server's actual constraints (`HttpVideoSchema` / `VideoSchema` in
- * `@repo/schemas`): `url` must be an http(s) URL, `caption` — when non-empty —
- * must be 3–100 chars. An empty caption is valid (omitted from the payload).
+ * Mirrors the server's actual constraints (`@repo/schemas`): `url` must be an
+ * http(s) URL, `caption` — when non-empty — must be 3–100 chars. An empty
+ * caption is valid (omitted from the payload).
  */
 function validateRow(row: VideoRow): 'url' | 'caption' | null {
     try {
@@ -70,23 +89,28 @@ function validateRow(row: VideoRow): 'url' | 'caption' | null {
 }
 
 /**
- * Drives the video widget: local rows, dirty tracking, validation, and a
- * direct PATCH against the SAME endpoint every other section saves through
- * (`media: { videos }` — HOS-372).
+ * Drives the video widget: local rows, dirty tracking, validation, and the
+ * caller-provided save.
  *
- * @param params - Locale, accommodation id, and the entity's current videos.
+ * @param params - Locale, the entity's current videos, how to persist and the copy scope.
  * @returns The widget's state and handlers.
  */
 export function useVideoSection({
     locale,
-    accommodationId,
-    initialVideos
+    initialVideos,
+    save,
+    copyScope,
+    maxVideos
 }: {
     readonly locale: SupportedLocale;
-    readonly accommodationId: string;
-    readonly initialVideos: readonly AccommodationVideoEntry[];
+    readonly initialVideos: readonly VideoEntry[];
+    readonly save: (videos: readonly VideoPayload[]) => Promise<VideoSaveResult>;
+    readonly copyScope: VideoCopyScope;
+    /** Most videos the surface accepts; absent means no cap (accommodation). */
+    readonly maxVideos?: number | undefined;
 }): UseVideoSectionResult {
     const { t } = createTranslations(locale);
+    const copy = getVideoSectionCopy({ scope: copyScope });
 
     const [rows, setRows] = useState<readonly VideoRow[]>(toRows(initialVideos));
     const [baseline, setBaseline] = useState<readonly VideoRow[]>(toRows(initialVideos));
@@ -106,10 +130,7 @@ export function useVideoSection({
         title: t('common.confirmations.unsavedChanges.title', 'Cambios sin guardar'),
         confirmLabel: t('common.confirmations.unsavedChanges.confirm', 'Sí, descartar'),
         cancelLabel: t('common.confirmations.unsavedChanges.cancel', 'Seguir editando'),
-        message: t(
-            'host.properties.editor.unsavedChanges',
-            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
-        )
+        message: t(copy.unsavedChanges.key, copy.unsavedChanges.fallback)
     });
 
     const addRow = useCallback(() => {
@@ -132,72 +153,56 @@ export function useVideoSection({
             if (!isDirty) {
                 addToast({
                     type: 'info',
-                    message: t(
-                        'host.properties.editor.toast.noChanges',
-                        'No hay cambios para guardar'
-                    )
+                    message: t(copy.noChanges.key, copy.noChanges.fallback)
                 });
+                return;
+            }
+
+            if (maxVideos !== undefined && rows.length > maxVideos) {
+                setFormError(t(copy.tooMany.key, copy.tooMany.fallback));
                 return;
             }
 
             for (const row of rows) {
                 const invalidField = validateRow(row);
                 if (invalidField === 'url') {
-                    setFormError(
-                        t(
-                            'host.properties.editor.video.urlInvalid',
-                            'Ingresá una URL de video válida'
-                        )
-                    );
+                    setFormError(t(copy.urlInvalid.key, copy.urlInvalid.fallback));
                     return;
                 }
                 if (invalidField === 'caption') {
-                    setFormError(
-                        t(
-                            'host.properties.editor.video.captionInvalid',
-                            'El título debe tener entre 3 y 100 caracteres, o dejalo vacío'
-                        )
-                    );
+                    setFormError(t(copy.captionInvalid.key, copy.captionInvalid.fallback));
                     return;
                 }
             }
 
             setIsSaving(true);
             try {
-                const { accommodationEditApi } = await import('@/lib/api/endpoints-protected');
-                const result = await accommodationEditApi.update({
-                    id: accommodationId,
-                    data: {
-                        media: {
-                            videos: rows.map((row) => ({
-                                url: row.url,
-                                ...(row.caption.length > 0 ? { caption: row.caption } : {})
-                            }))
-                        }
-                    }
-                });
+                const result = await save(
+                    rows.map((row) => ({
+                        url: row.url,
+                        ...(row.caption.length > 0 ? { caption: row.caption } : {})
+                    }))
+                );
 
                 if (result.ok) {
                     setBaseline(rows);
                     addToast({
                         type: 'success',
-                        message: t('host.properties.editor.video.saveSuccess', 'Videos guardados')
+                        message: t(copy.saveSuccess.key, copy.saveSuccess.fallback)
                     });
+                } else if (result.status === 403) {
+                    // HOS-2258: the plan has no video entitlement; nothing was stored.
+                    setFormError(t(copy.forbidden.key, copy.forbidden.fallback));
                 } else {
-                    setFormError(
-                        t(
-                            'host.properties.editor.video.saveFailed',
-                            'No se pudieron guardar los videos'
-                        )
-                    );
+                    setFormError(t(copy.saveFailed.key, copy.saveFailed.fallback));
                 }
             } catch {
-                setFormError(t('host.properties.editor.error.network', 'Error de conexión'));
+                setFormError(t(copy.network.key, copy.network.fallback));
             } finally {
                 setIsSaving(false);
             }
         },
-        [accommodationId, isDirty, rows, t]
+        [copy, isDirty, maxVideos, rows, save, t]
     );
 
     return { rows, isDirty, isSaving, formError, addRow, removeRow, setRowField, handleSubmit };

@@ -139,6 +139,12 @@
                 "area": "Applies only to: {{area}}"
             },
             "legalAge": "Sale of alcoholic beverages to persons under 18 is prohibited (Argentine Law 24.788)."
+        },
+        "videos": {
+            "title": "Videos",
+            "play": "Play video",
+            "playNamed": "Play video: {{caption}}",
+            "openExternal": "Watch on {{provider}} (opens in a new tab)"
         }
     },
     "types": {

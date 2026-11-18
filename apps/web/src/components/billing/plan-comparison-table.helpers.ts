@@ -9,6 +9,8 @@
 import {
     EXPERIENCE_GROUPS,
     OWNER_GROUPS,
+    type RowConfig,
+    resolveCell,
     TOURIST_GROUPS,
     VENUE_GROUPS
 } from '@/components/billing/plan-comparison-rows';
@@ -33,6 +35,25 @@ const GROUPS_BY_AUDIENCE = {
  */
 export function getComparisonGroups(audience: ComparisonAudience) {
     return GROUPS_BY_AUDIENCE[audience];
+}
+
+/**
+ * Drops the rows flagged `hideUntilGranted` while no rendered plan column
+ * grants them (HOS-2258). A row with the flag and at least one granting column
+ * is kept, so the row appears by itself once a plan gets the entitlement.
+ * @param input - The group's rows and the plan columns actually rendered.
+ * @returns The rows to render, in their original order.
+ */
+export function getVisibleRows(input: {
+    readonly rows: readonly RowConfig[];
+    readonly plans: readonly PublicPlanData[];
+}): readonly RowConfig[] {
+    const { rows, plans } = input;
+    return rows.filter(
+        (row) =>
+            !row.hideUntilGranted ||
+            plans.some((plan) => resolveCell({ cell: row.cell, plan }) !== 'no')
+    );
 }
 
 /**
