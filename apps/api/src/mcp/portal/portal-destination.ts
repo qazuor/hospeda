@@ -20,6 +20,7 @@ export const PORTAL_DESTINATION_LABELS: Readonly<Record<PortalDestinationKind, s
     benefitUsages: 'Ver mis usos de beneficio',
     providerPanel: 'Abrir mi panel de proveedor',
     aiAssistants: 'Administrar mis asistentes de IA',
+    aiAssistantsHistory: 'Ver lo que hicieron mis asistentes de IA',
     faq: 'Ver las preguntas frecuentes',
     contact: 'Contactar a Hospeda'
 };

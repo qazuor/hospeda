@@ -125,6 +125,8 @@ function resolveDestination(destination: PortalDestination): ResolvedPath {
             return path('providerPanel');
         case 'aiAssistants':
             return path('aiAssistants');
+        case 'aiAssistantsHistory':
+            return path('aiAssistantsHistory');
         case 'faq':
             return path('faq');
         case 'contact':

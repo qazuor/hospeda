@@ -82,6 +82,8 @@ export const PORTAL_ROUTE_TEMPLATES = {
     providerPanel: 'mi-cuenta/proveedor',
     /** Connected AI assistants. */
     aiAssistants: 'mi-cuenta/asistentes-ia',
+    /** What the user's AI assistants did on their behalf (HOS-2348). */
+    aiAssistantsHistory: 'mi-cuenta/asistentes-ia/historial',
     /** The public frequently-asked-questions page (HOS-2333). */
     faq: 'preguntas-frecuentes',
     /** The public contact page, where support is reached (HOS-2333). */
@@ -192,6 +194,7 @@ export type PortalDestination =
     | { readonly kind: 'benefitUsages' }
     | { readonly kind: 'providerPanel' }
     | { readonly kind: 'aiAssistants' }
+    | { readonly kind: 'aiAssistantsHistory' }
     | { readonly kind: 'faq' }
     | { readonly kind: 'contact' };
 
