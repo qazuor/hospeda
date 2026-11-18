@@ -6,7 +6,11 @@ const ROOT = join(import.meta.dirname, '../../../..');
 const ALLOWLIST: Readonly<Record<string, string>> = {
     'apps/api/src/app.ts': 'interactive (trafficClassMiddleware)',
     'apps/api/src/services/cutover-b9a/step-3b.compose.ts': 'background (cutover-b9a-step-3b.ts)',
-    'apps/api/src/utils/payment-provider.ts': 'definition site'
+    'apps/api/src/utils/payment-provider.ts': 'definition site',
+    // Reached only from the provider-watch-battery cron job (runCronHandlerInBackground). It has
+    // no governor on purpose: every request is one guarded watch send, never retried (HOS-1512).
+    'packages/payments/src/battery/catalog/watch-adapter-bridge.ts':
+        'background (provider-watch-battery cron job, no governor)'
 };
 
 function sourceFiles(directory: string): string[] {
