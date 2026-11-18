@@ -1,9 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import {
     courtesyGrants,
     eq,
     getDb,
+    idempotencyKeys,
     promoCodes,
     promoRedemptions,
+    providerLinks,
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
@@ -190,7 +193,40 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
         });
         expect((await listed(origin.id, seeded.ownerId)).succession).toEqual({
             checkoutOpen: true,
-            checkoutDeadline: checkoutDeadline.toISOString()
+            checkoutDeadline: checkoutDeadline.toISOString(),
+            successorId: successor.id,
+            checkoutUrl: null
+        });
+        // HOS-2344: an applied creation key and its provider link make the checkout resumable.
+        const checkoutUrl =
+            'https://www.mercadopago.com.ar/subscriptions/checkout?preapproval_id=p-2344';
+        await getDb()
+            .insert(providerLinks)
+            .values({
+                subscriptionId: successor.id,
+                provider: 'MERCADO_PAGO',
+                providerId: `p-2344-${successor.id}`
+            });
+        await getDb()
+            .insert(idempotencyKeys)
+            .values({
+                key: randomUUID(),
+                operation: 'PREAPPROVAL_CREATE',
+                subjectId: successor.id,
+                completedAt: NOW,
+                result: { applied: true, authorizationId: `p-2344-${successor.id}`, checkoutUrl }
+            });
+        cleanup.push(async () => {
+            await getDb()
+                .delete(idempotencyKeys)
+                .where(eq(idempotencyKeys.subjectId, successor.id));
+            await getDb()
+                .delete(providerLinks)
+                .where(eq(providerLinks.subscriptionId, successor.id));
+        });
+        expect((await listed(origin.id, seeded.ownerId)).succession).toMatchObject({
+            successorId: successor.id,
+            checkoutUrl
         });
         await getDb()
             .update(subscriptions)
@@ -198,7 +234,9 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
             .where(eq(subscriptions.id, successor.id));
         expect((await listed(origin.id, seeded.ownerId)).succession).toEqual({
             checkoutOpen: true,
-            checkoutDeadline: null
+            checkoutDeadline: null,
+            successorId: successor.id,
+            checkoutUrl
         });
         await getDb()
             .update(subscriptions)

@@ -2,7 +2,8 @@
  * @file G-R1-C static guard for the five writes that close a succession.
  * @description GUARD:G-R1-C (HOS-1352 program, built by B8b.4 / HOS-1579, AC:B8b:21, TEST:B8b:21).
  * Checks registered pointer writers, their paired calls from S18, complement repointing,
- * both courtesy balance writes, the S19 reconciliation mark, and promo immobility.
+ * both courtesy balance writes, the S19 reconciliation mark, promo immobility, and (HOS-2344)
+ * the single S40 writer that clears a predecessor's succeededById.
  * Exit 0 is clean; exit 1 reports `G-R1-C: <rule>: <file>:<line> <detail>`.
  * What it does NOT see:
  * - Properties supplied through spreads.
@@ -45,6 +46,18 @@ export const CLOSE_WRITERS = [
         file: `${DIR}/succession-close-writes.ts`,
         name: 'clearSuccessorLink',
         property: 'succeedsId'
+    }
+] as const;
+/**
+ * HOS-2344: the one writer that clears a predecessor's `succeeded_by_id`. S40 on a pending
+ * successor releases the predecessor in the same transaction that abandons the successor;
+ * S3 and S39 leave the pointer in place (HOS-2351).
+ */
+export const RELEASE_WRITERS = [
+    {
+        file: `${DIR}/succession-cancel-writes.ts`,
+        name: 'releaseCancelledSuccessionPredecessor',
+        caller: { file: `${DIR}/cancel-pending-attempt.service.ts`, name: 'cancelPendingAttempt' }
     }
 ] as const;
 /** S18 orchestration and the shared write implementations. */
@@ -290,6 +303,40 @@ function anchorChecks(root: string): Finding[] {
                 'flagRetainedPayments must call openReconciliationMark with reason REEMBOLSO_POR_CONFIRMAR and payment'
             )
         );
+    for (const writer of RELEASE_WRITERS) {
+        const sf = read(root, writer.file);
+        const node = sf && findTopLevel(sf, writer.name);
+        const clears =
+            node &&
+            sets(node).some(
+                (set) =>
+                    set.table === 'subscriptions' &&
+                    isNull(value(set.object, 'succeededById')) &&
+                    node.getText(sf).includes('subscriptions.succeededById')
+            );
+        if (!clears)
+            findings.push(
+                finding(
+                    'c6 pointer release',
+                    writer.file,
+                    node,
+                    sf,
+                    `${writer.name} must clear succeededById only where it still names the successor`
+                )
+            );
+        const caller = read(root, writer.caller.file);
+        const entry = caller && findTopLevel(caller, writer.caller.name);
+        if (!entry || callsNamed(entry, writer.name).length === 0)
+            findings.push(
+                finding(
+                    'c6 pointer release',
+                    writer.caller.file,
+                    entry,
+                    caller,
+                    `${writer.caller.name} must call ${writer.name}`
+                )
+            );
+    }
     return findings;
 }
 /** Run G-R1-C over a production tree; fixtures may lower the scanned-file floor. */
@@ -309,7 +356,7 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
     for (const file of files) {
         const source = readFileSync(join(root, file), 'utf8');
         if (
-            !/succeededById|succeedsId|linkClosedPredecessor|clearSuccessorLink|promoRedemptions/.test(
+            !/succeededById|succeedsId|linkClosedPredecessor|clearSuccessorLink|releaseCancelledSuccessionPredecessor|promoRedemptions/.test(
                 source
             )
         )
@@ -350,6 +397,27 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
                         );
                 }
                 if (
+                    successor &&
+                    ts.isPropertyAssignment(successor) &&
+                    isNull(successor.initializer)
+                ) {
+                    const owner = topLevelName(write.call);
+                    if (
+                        !RELEASE_WRITERS.some(
+                            (writer) => writer.file === file && writer.name === owner
+                        )
+                    )
+                        findings.push(
+                            finding(
+                                'c6 pointer release',
+                                file,
+                                write.call,
+                                sf,
+                                `${owner} clears succeededById outside the registered release writers`
+                            )
+                        );
+                }
+                if (
                     write.kind === 'set' &&
                     write.table === 'promoRedemptions' &&
                     property(write.object, 'subscriptionId')
@@ -375,6 +443,20 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
                             call,
                             sf,
                             `${topLevelName(call)} calls ${writer.name} outside closeSuccessionWrites`
+                        )
+                    );
+        }
+        for (const writer of RELEASE_WRITERS) {
+            if (!source.includes(writer.name)) continue;
+            for (const call of callsNamed(sf, writer.name))
+                if (file !== writer.caller.file || topLevelName(call) !== writer.caller.name)
+                    findings.push(
+                        finding(
+                            'c6 pointer release',
+                            file,
+                            call,
+                            sf,
+                            `${topLevelName(call)} calls ${writer.name} outside ${writer.caller.name}`
                         )
                     );
         }

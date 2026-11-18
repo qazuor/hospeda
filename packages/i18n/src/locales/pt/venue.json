@@ -44,7 +44,8 @@
             "PREMIUM": "Premium"
         },
         "openNow": "Aberto agora",
-        "closedNow": "Fechado agora",
+        "closedNow": "Fechado",
+        "opensAt": "Abre às {{time}}",
         "featured": "Destaque"
     },
     "detail": {

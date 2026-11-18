@@ -44,7 +44,8 @@
             "PREMIUM": "Premium"
         },
         "openNow": "Open now",
-        "closedNow": "Closed now",
+        "closedNow": "Closed",
+        "opensAt": "Opens at {{time}}",
         "featured": "Featured"
     },
     "detail": {

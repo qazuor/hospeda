@@ -21,7 +21,9 @@ export const AI_CAPABILITY_KEYS = [
     'pause',
     'reply',
     'reviews',
-    'createListings'
+    'createListings',
+    'providers',
+    'benefitUsages'
 ] as const;
 
 /** Spanish fallbacks for the capabilities (the locale files are the source). */
@@ -33,7 +35,9 @@ export const AI_CAPABILITY_FALLBACKS: Readonly<
     pause: 'Pausar o reanudar tus publicaciones',
     reply: 'Responder consultas de tus alojamientos',
     reviews: 'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas',
-    createListings: 'Crear borradores de publicaciones nuevas'
+    createListings: 'Crear borradores de publicaciones nuevas',
+    providers: 'Buscar en el directorio de proveedores para anfitriones',
+    benefitUsages: 'Ver tus usos de beneficios y confirmarlos o rechazarlos'
 };
 
 /**

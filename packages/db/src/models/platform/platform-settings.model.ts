@@ -1,5 +1,5 @@
 import type { InferSelectModel } from 'drizzle-orm';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { platformSettings } from '../../schemas/platform/platform-settings.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -90,6 +90,50 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
             );
         }
         return row;
+    }
+
+    /**
+     * Consumes the provider watch battery's monthly authorization (HOS-1512): a single conditional
+     * UPDATE, so two runs racing for the same authorization cannot both win. The row must hold
+     * the given month and no consumption yet; the loser's UPDATE re-evaluates the condition after
+     * the winner commits and matches nothing.
+     *
+     * @param input.month - The month the run needs (`YYYY-MM`)
+     * @param input.maxChargeMinor - The cap the run was pre-flighted with
+     * @param input.accountId - The account id the run was pre-flighted with. The three must still be
+     *   what is stored, or an authorization the owner rewrote during pre-flight would be consumed
+     *   while the run used the old values.
+     * @param input.runId - The run consuming it
+     * @param input.consumedAt - The instant of consumption
+     * @param input.tx - The transaction that also creates the run row
+     * @returns Whether this call consumed the authorization
+     */
+    async consumeProviderWatchAuthorization(input: {
+        readonly month: string;
+        readonly maxChargeMinor: number;
+        readonly accountId: string;
+        readonly runId: string;
+        readonly consumedAt: Date;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ readonly consumed: boolean }> {
+        const marker = JSON.stringify({
+            consumedAt: input.consumedAt.toISOString(),
+            consumedByRunId: input.runId
+        });
+        const rows = await this.getClient(input.tx)
+            .update(platformSettings)
+            .set({ value: sql`${platformSettings.value} || ${marker}::jsonb` })
+            .where(
+                and(
+                    eq(platformSettings.key, 'billing.providerWatchAuthorization'),
+                    sql`${platformSettings.value}->>'month' = ${input.month}`,
+                    sql`${platformSettings.value}->>'maxChargeMinor' = ${String(input.maxChargeMinor)}`,
+                    sql`${platformSettings.value}->>'accountId' = ${input.accountId}`,
+                    sql`${platformSettings.value}->>'consumedByRunId' IS NULL`
+                )
+            )
+            .returning({ key: platformSettings.key });
+        return { consumed: rows.length === 1 };
     }
 }
 
