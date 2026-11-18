@@ -528,6 +528,65 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             });
         });
 
+        it('HOS-2256: saves the typed WhatsApp number in contactInfo.whatsapp (venue)', async () => {
+            renderEditor(
+                'venue',
+                buildListing({
+                    contactInfo: { mobilePhone: '+5491100000000', workEmail: 'dueno@test.com' }
+                }),
+                'contact'
+            );
+
+            // Three phone pairs now: main, landline, WhatsApp.
+            const numbers = screen.getAllByLabelText('Número');
+            fireEvent.change(numbers[2] as HTMLElement, { target: { value: '9 343 1234567' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body.contactInfo).toStrictEqual({
+                mobilePhone: '+5491100000000',
+                workEmail: 'dueno@test.com',
+                whatsapp: '+54 9 343 1234567'
+            });
+            expect(body).not.toHaveProperty('whatsappVisibility');
+        });
+
+        it('HOS-2256: sends the chosen WhatsApp visibility and nothing else (AC-16)', async () => {
+            renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
+
+            fireEvent.click(screen.getByLabelText('Solo usuarios logueados'));
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).toHaveProperty('whatsappVisibility', 'LOGGED_IN_ONLY');
+            expect(body).not.toHaveProperty('contactInfo');
+        });
+
+        it('HOS-2256: does not touch the WhatsApp keys when neither control changes', async () => {
+            renderEditor(
+                'venue',
+                buildListing({
+                    contactInfo: { mobilePhone: '+5491100000000', whatsapp: '+5493431234567' },
+                    whatsappVisibility: 'PUBLIC'
+                }),
+                'contact'
+            );
+
+            fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'a@b.com' } });
+            fireEvent.click(saveButton());
+
+            const body = await wireBody();
+            expect(body).not.toHaveProperty('whatsappVisibility');
+            expect(body.contactInfo).not.toHaveProperty('whatsapp');
+        });
+
+        it('HOS-2256: an experience editor offers no WhatsApp controls at all', () => {
+            renderEditor('experience', buildListing({ contactInfo: {} }), 'contact');
+
+            expect(screen.queryByLabelText('Solo usuarios logueados')).not.toBeInTheDocument();
+            expect(screen.getAllByLabelText('Número')).toHaveLength(2);
+        });
+
         it('HOS-2042: does not write an explicit null landline when none was ever stored (AC-3)', async () => {
             renderEditor(
                 'experience',

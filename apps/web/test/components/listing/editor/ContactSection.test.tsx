@@ -222,4 +222,49 @@ describe('ContactSection', () => {
             screen.getByText('Estos datos de contacto se muestran públicamente en tu ficha.')
         ).toBeInTheDocument();
     });
+
+    describe('WhatsApp controls (HOS-2256)', () => {
+        const whatsapp = (visibility: string) => ({
+            number: '',
+            visibility,
+            onNumberChange: vi.fn(),
+            onVisibilityChange: vi.fn()
+        });
+
+        it('renders no WhatsApp control unless the caller passes them', () => {
+            renderSection();
+
+            expect(screen.queryByLabelText('Público')).not.toBeInTheDocument();
+        });
+
+        it('says the button stays hidden until the owner chooses (AC-16)', () => {
+            renderSection({ whatsapp: whatsapp('') });
+
+            expect(screen.getByText(/el botón de WhatsApp no se muestra/)).toBeInTheDocument();
+            expect(screen.getByLabelText('Público')).not.toBeChecked();
+            expect(screen.getByLabelText('Solo usuarios logueados')).not.toBeChecked();
+        });
+
+        it('warns that a public number can be copied by third parties (AC-21)', () => {
+            renderSection({ whatsapp: whatsapp('PUBLIC') });
+
+            expect(screen.getByText(/cualquiera puede copiarlo/)).toBeInTheDocument();
+            expect(screen.getByLabelText('Público')).toBeChecked();
+        });
+
+        it('does not show the copy warning for the signed-in-only choice', () => {
+            renderSection({ whatsapp: whatsapp('LOGGED_IN_ONLY') });
+
+            expect(screen.queryByText(/cualquiera puede copiarlo/)).not.toBeInTheDocument();
+        });
+
+        it('reports the picked visibility', () => {
+            const controls = whatsapp('');
+            renderSection({ whatsapp: controls });
+
+            fireEvent.click(screen.getByLabelText('Público'));
+
+            expect(controls.onVisibilityChange).toHaveBeenCalledWith('PUBLIC');
+        });
+    });
 });

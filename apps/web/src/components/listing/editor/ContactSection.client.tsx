@@ -23,6 +23,20 @@ import styles from './editor-fields.module.css';
 import { LISTING_FIELD_PREFIX } from './field-ids';
 import { ListingPhoneField } from './ListingPhoneField';
 import type { ContactValues } from './listing-edit-data';
+import { WhatsappControls } from './WhatsappControls';
+
+/**
+ * The venue-only WhatsApp controls (HOS-2256). Absent for the other vertical,
+ * so the section renders exactly what it rendered before.
+ */
+export interface ContactWhatsappControls {
+    /** Stored number, `''` when none. */
+    readonly number: string;
+    /** `''` while undecided, else `PUBLIC` or `LOGGED_IN_ONLY`. */
+    readonly visibility: string;
+    readonly onNumberChange: (value: string) => void;
+    readonly onVisibilityChange: (value: string) => void;
+}
 
 export interface ContactSectionProps {
     readonly locale: SupportedLocale;
@@ -31,15 +45,19 @@ export interface ContactSectionProps {
         'contactInfo.mobilePhone'?: string;
         'contactInfo.workPhone'?: string;
         'contactInfo.workEmail'?: string;
+        'contactInfo.whatsapp'?: string;
     }>;
     readonly onContactChange: (patch: Partial<ContactValues>) => void;
+    /** Venue WhatsApp number and visibility choice (HOS-2256). Omit to hide them. */
+    readonly whatsapp?: ContactWhatsappControls | undefined;
 }
 
 export function ContactSection({
     locale,
     contact,
     errors,
-    onContactChange
+    onContactChange,
+    whatsapp
 }: ContactSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -78,6 +96,13 @@ export function ContactSection({
                 onChange={(value) => onContactChange({ workPhone: value })}
                 error={errors['contactInfo.workPhone']}
             />
+            {whatsapp && (
+                <WhatsappControls
+                    locale={locale}
+                    controls={whatsapp}
+                    error={errors['contactInfo.whatsapp']}
+                />
+            )}
             {/* Visible <label>, not just an aria-label: an empty input with no
                 visible text next to it reads as an anonymous box to a sighted
                 user, which the per-section cards made more obvious. A visible

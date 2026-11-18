@@ -164,7 +164,16 @@
                 "mobilePhone": "Telefone",
                 "landlinePhone": "Telefone fixo",
                 "publicHint": "Estes dados de contato são exibidos publicamente na sua ficha.",
-                "workEmail": "E-mail"
+                "workEmail": "E-mail",
+                "whatsapp": "WhatsApp",
+                "whatsappVisibility": {
+                    "legend": "Quem vê o botão do WhatsApp",
+                    "loggedInOnly": "Apenas usuários logados",
+                    "public": "Público",
+                    "undecided": "Até você escolher uma opção, o botão do WhatsApp não aparece na sua ficha.",
+                    "publicWarning": "Seu número ficará visível na página e qualquer pessoa pode copiá-lo, inclusive programas automáticos.",
+                    "loggedInHint": "O número não aparece na página: só quem fez login consegue vê-lo."
+                }
             },
             "validation": {
                 "summaryMin": "Mínimo 10 caracteres.",

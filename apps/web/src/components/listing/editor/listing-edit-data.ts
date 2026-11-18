@@ -94,6 +94,19 @@ export interface ListingEditData {
     readonly summary: string;
     readonly richDescription: string;
     readonly contact: ContactValues;
+    /**
+     * Venue WhatsApp number (HOS-2256), `''` when none. Kept OUT of
+     * {@link ContactValues} on purpose: only the venue editor renders it, and
+     * the id contract enumerates every `contact` key as a control that must
+     * exist for both verticals.
+     */
+    readonly whatsapp: string;
+    /**
+     * Who may see the venue WhatsApp button: `''` while the owner has not
+     * decided (the button stays hidden), else a `VenueWhatsappVisibilityEnum`
+     * value. Venue only.
+     */
+    readonly whatsappVisibility: string;
     /** Venue postal address (HOS-2189); empty strings for a listing without one. */
     readonly location: LocationValues;
     readonly social: SocialValues;
