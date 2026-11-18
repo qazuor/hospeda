@@ -94,6 +94,23 @@ describe('isBlockedAddress', () => {
         '::ffff:7f00:1',
         '64:ff9b::a9fe:a9fe',
         '2001:db8::1',
+        // 6to4 (2002::/16) carrying loopback and the metadata address.
+        '2002:7f00:1::',
+        '2002:a9fe:a9fe::1',
+        '2002:0a00:0001::',
+        // Bits 16-48 only: the next hextets (here a public 1.1.142.250) are not the IPv4.
+        '2002:c0a8:0101:8efa::',
+        // IPv4-translated (::ffff:0:0/96).
+        '::ffff:0:7f00:1',
+        '::ffff:0:a9fe:a9fe',
+        // Local-use NAT64 (64:ff9b:1::/48), whatever it embeds.
+        '64:ff9b:1::a9fe:a9fe',
+        '64:ff9b:1::8.8.8.8',
+        // Documentation (3fff::/20) and SRv6 SIDs (5f00::/16).
+        '3fff::1',
+        '3fff:fff:ffff::1',
+        '5f00::1',
+        '5f00:ffff::1',
         'not-an-ip'
     ])('blocks %s', (address) => {
         expect(isBlockedAddress({ address })).toBe(true);
@@ -104,7 +121,16 @@ describe('isBlockedAddress', () => {
         '172.217.172.14',
         '8.8.8.8',
         '2800:3f0:4002:80a::200e',
-        '::ffff:142.250.79.46'
+        '::ffff:142.250.79.46',
+        // The same families carrying or sitting next to a public address.
+        '2002:8efa:4f2e::1',
+        // 142.250.127.0, even though hextets 2-3 read as 127.0.0.0.
+        '2002:8efa:7f00::',
+        '::ffff:0:8efa:4f2e',
+        '64:ff9b::8efa:4f2e',
+        '3fff:1000::1',
+        '5f01::1',
+        '64:ff9b:2::1'
     ])('allows the public address %s', (address) => {
         expect(isBlockedAddress({ address })).toBe(false);
     });

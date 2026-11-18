@@ -150,6 +150,12 @@ const BLOCKED_IPV6_SUBNETS: readonly (readonly [string, number])[] = [
     ['100::', 64],
     ['2001::', 23],
     ['2001:db8::', 32],
+    // Documentation (RFC 9637).
+    ['3fff::', 20],
+    // SRv6 SIDs (RFC 9602): never a public web host.
+    ['5f00::', 16],
+    // Local-use NAT64 (RFC 8215): translates to whatever the local network chose.
+    ['64:ff9b:1::', 48],
     ['fc00::', 7],
     ['fe80::', 10],
     ['fec0::', 10],
@@ -184,19 +190,27 @@ function ipv6Hextets(address: string): number[] | undefined {
     return hextets.length === 8 && hextets.every((h) => Number.isInteger(h)) ? hextets : undefined;
 }
 
+/** Dotted IPv4 from two hextets. */
+function ipv4Of(high: number, low: number): string {
+    return [high >> 8, high & 0xff, low >> 8, low & 0xff].join('.');
+}
+
 /**
  * The IPv4 address an IPv6 address embeds, when it is IPv4-mapped (`::ffff:a.b.c.d`),
- * IPv4-compatible (`::a.b.c.d`) or NAT64 (`64:ff9b::a.b.c.d`).
+ * IPv4-compatible (`::a.b.c.d`), IPv4-translated (`::ffff:0:a.b.c.d`, RFC 2765),
+ * well-known NAT64 (`64:ff9b::a.b.c.d`) or 6to4 (`2002:aabb:ccdd::/48`, bits
+ * 16-48). Each one reaches the IPv4 it carries, so that IPv4 is what gets checked.
  */
 function embeddedIpv4(hextets: readonly number[]): string | undefined {
-    const [h0, h1, h2, h3, h4, h5, h6 = 0, h7 = 0] = hextets;
-    const zeroHead = h0 === 0 && h1 === 0 && h2 === 0 && h3 === 0 && h4 === 0;
-    const mapped = zeroHead && (h5 === 0xffff || h5 === 0);
-    const nat64 = h0 === 0x64 && h1 === 0xff9b && h2 === 0 && h3 === 0 && h4 === 0 && h5 === 0;
-    if (!mapped && !nat64) {
-        return undefined;
+    const [h0, h1 = 0, h2 = 0, h3, h4, h5, h6 = 0, h7 = 0] = hextets;
+    if (h0 === 0x2002) {
+        return ipv4Of(h1, h2);
     }
-    return [h6 >> 8, h6 & 0xff, h7 >> 8, h7 & 0xff].join('.');
+    const zeroHead = h0 === 0 && h1 === 0 && h2 === 0 && h3 === 0;
+    const mapped = zeroHead && h4 === 0 && (h5 === 0xffff || h5 === 0);
+    const translated = zeroHead && h4 === 0xffff && h5 === 0;
+    const nat64 = h0 === 0x64 && h1 === 0xff9b && h2 === 0 && h3 === 0 && h4 === 0 && h5 === 0;
+    return mapped || translated || nat64 ? ipv4Of(h6, h7) : undefined;
 }
 
 /**
