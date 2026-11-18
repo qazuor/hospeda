@@ -178,6 +178,34 @@
             "label": "Event date"
         }
     },
+    "mcpActivity": {
+        "userId": {
+            "label": "User",
+            "placeholder": "User UUID"
+        },
+        "tool": {
+            "label": "Tool",
+            "placeholder": "E.g. reply_inquiry"
+        },
+        "outcome": {
+            "label": "Result",
+            "success": "Done",
+            "denied": "Denied",
+            "error": "Error"
+        },
+        "access": {
+            "label": "Type",
+            "read": "Read",
+            "write": "Write"
+        },
+        "clientId": {
+            "label": "Assistant",
+            "placeholder": "Assistant client_id"
+        },
+        "loggedAt": {
+            "label": "Call date"
+        }
+    },
     "endDate": {
         "label": "End date"
     },

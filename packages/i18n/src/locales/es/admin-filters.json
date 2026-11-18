@@ -178,6 +178,34 @@
             "label": "Fecha del evento"
         }
     },
+    "mcpActivity": {
+        "userId": {
+            "label": "Usuario",
+            "placeholder": "UUID del usuario"
+        },
+        "tool": {
+            "label": "Herramienta",
+            "placeholder": "Ej: reply_inquiry"
+        },
+        "outcome": {
+            "label": "Resultado",
+            "success": "Hecho",
+            "denied": "Rechazado",
+            "error": "Error"
+        },
+        "access": {
+            "label": "Tipo",
+            "read": "Consulta",
+            "write": "Cambio"
+        },
+        "clientId": {
+            "label": "Asistente",
+            "placeholder": "client_id del asistente"
+        },
+        "loggedAt": {
+            "label": "Fecha de la llamada"
+        }
+    },
     "endDate": {
         "label": "Fecha de fin"
     },

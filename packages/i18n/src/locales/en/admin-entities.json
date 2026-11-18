@@ -112,6 +112,12 @@
             "plural": "Security log",
             "description": "Authentication events: login failures, lockouts, and access denied"
         },
+        "mcpActivity": {
+            "singular": "Assistant use",
+            "plural": "Assistant activity",
+            "description": "Every AI assistant (MCP) call made on behalf of a user",
+            "coverageNote": "Calls stopped by the rate limit and calls that fail before reaching the tool are not recorded."
+        },
         "hostTrade": {
             "singular": "Trade",
             "plural": "Trades",
@@ -338,6 +344,16 @@
             "actor": "Actor",
             "target": "Target",
             "message": "Detail"
+        },
+        "mcpActivity": {
+            "loggedAt": "Date/Time",
+            "user": "User",
+            "tool": "Tool",
+            "access": "Type",
+            "outcome": "Result",
+            "errorCode": "Error code",
+            "client": "Assistant",
+            "target": "Target"
         }
     },
     "actions": {

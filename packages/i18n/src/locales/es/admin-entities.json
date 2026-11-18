@@ -112,6 +112,12 @@
             "plural": "Log de seguridad",
             "description": "Eventos de autenticación: fallos de login, bloqueos y accesos denegados"
         },
+        "mcpActivity": {
+            "singular": "Uso del asistente",
+            "plural": "Uso de asistentes",
+            "description": "Cada llamada de un asistente de IA (MCP) en nombre de un usuario",
+            "coverageNote": "No se registran las llamadas frenadas por el límite de uso ni las que fallan antes de llegar a la herramienta."
+        },
         "hostTrade": {
             "singular": "Oficio",
             "plural": "Oficios",
@@ -338,6 +344,16 @@
             "actor": "Actor",
             "target": "Objetivo",
             "message": "Detalle"
+        },
+        "mcpActivity": {
+            "loggedAt": "Fecha/Hora",
+            "user": "Usuario",
+            "tool": "Herramienta",
+            "access": "Tipo",
+            "outcome": "Resultado",
+            "errorCode": "Código de error",
+            "client": "Asistente",
+            "target": "Objetivo"
         }
     },
     "actions": {
