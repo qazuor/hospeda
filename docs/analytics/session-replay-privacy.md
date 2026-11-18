@@ -54,14 +54,19 @@ recorded.
 The single list is `RECORDING_EXCLUDED_ROUTE_PREFIXES` in
 `apps/web/src/lib/analytics/recording-exclusions.ts`. It is not copied here so it cannot drift.
 It covers sign-in, the account area, guest conversations, checkout, publishing, feedback,
-contributions, contact, partner claims, the whole `sumate` family (partner, provider and
-sponsor sign-ups) and the newsletter flow, in every locale. A test fails if any entry stops
+contributions, contact, partner claims and the newsletter flow, in every locale. A test fails if any entry stops
 matching a real page directory.
 
-**Rule: free-text forms are never recorded.** A page whose main content is a form where a
-visitor types free text (a lead, an application, a message) is excluded as a whole route,
-not just masked. That is why the whole `sumate` prefix is excluded: all three sign-ups are
-free-text lead forms (review decision, 2026-11-18).
+**Rule: free-text forms are excluded as a whole route.** A page whose main content is a
+form where a visitor types free text (a message, a claim, a contribution) is excluded, not
+just masked.
+
+**Exception: `sumate/*` is recorded (owner decision, 2026-11-18).** The partner, provider and
+sponsor sign-up pages are lead forms, but the owner chose to record them to study the
+conversion funnel. They rely on strict masking alone: every text node and every input value is
+masked, with no selective unmask, so an email, a phone number or a document ID typed there
+never reaches a replay. If a sign-up page ever gains a field that must not appear even as a
+masked shape, mark its outermost element with `data-umami-block` (see below).
 
 While the recorder is loaded, a soft navigation into an excluded route is turned into a full
 page load. The unload ends the recording, and the new page never loads the recorder.

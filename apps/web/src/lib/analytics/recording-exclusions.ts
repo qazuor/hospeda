@@ -6,8 +6,9 @@
  * maps to an existing directory under `src/pages/[lang]/`. So a renamed or
  * moved route fails CI instead of silently dropping out of the exclusion.
  *
- * `sumate` covers the whole family (partner, provider and sponsor sign-ups):
- * all three are free-text lead forms (HOS-2347 review decision, 2026-11-18).
+ * `sumate/*` (partner, provider and sponsor sign-ups) is deliberately NOT
+ * listed: the owner decided on 2026-11-18 that those pages are recorded. They
+ * stay protected by the recorder's strict masking of all text and inputs.
  *
  * The two legacy per-vertical publish routes (`publicar-<vertical>`) are not
  * listed: both are permanent redirects to `publicar/*` and never render.
@@ -24,7 +25,6 @@ export const RECORDING_EXCLUDED_ROUTE_PREFIXES = [
     'colaborar',
     'contacto',
     'partners/reclamar',
-    'sumate',
     'newsletter'
 ] as const;
 
