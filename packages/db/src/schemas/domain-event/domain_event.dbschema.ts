@@ -62,6 +62,9 @@ import {
  * - `subscription.scheduled_change_applied`: S38 applied a queued plan version
  *   and billing option (`entity_type = 'subscription'`, `entity_id` = its id,
  *   `reason = 'S38'`, and `changes` records both old/new pairs; actor `job`).
+ *   Since HOS-2345 `changes` also carries `{ field: 'effective_at', new }`, the
+ *   queued instant the new pair governs charges from; the reconciliation sweep
+ *   reads the old pair to price charges made before it.
  * - `subscription.provider_cancelled_after_rejection`: the `B/03` §10.1 mirror
  *   moved a `GRACE_PERIOD` row to `CANCELLED` because the provider cancelled
  *   its preapproval after a rejected charge (mirror pair `CANCELLED_ON_GRACE`).

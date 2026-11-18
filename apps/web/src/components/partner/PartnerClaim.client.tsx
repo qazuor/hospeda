@@ -8,10 +8,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { partnerClaimsPublicApi } from '@/lib/api/endpoints';
 import { partnersApi } from '@/lib/api/endpoints-protected';
-import { refreshBetterAuthSession, signOut } from '@/lib/auth-client';
+import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { savePendingAction, takePendingAction } from '@/lib/pending-action';
+import { clearPendingAction, savePendingAction, takePendingAction } from '@/lib/pending-action';
+import { signOutAndClearClientState } from '@/lib/sign-out';
 import { buildUrl } from '@/lib/urls';
 import styles from './PartnerClaim.module.css';
 import { PartnerClaimSignInForm } from './PartnerClaimSignInForm.client';
@@ -155,8 +156,17 @@ export const PartnerClaim: FC<PartnerClaimProps> = ({ locale }) => {
     };
 
     const signOutAndContinue = async (): Promise<void> => {
+        // The fragment is gone from the URL by now; the pending action carries the
+        // link across the reload. The shared sign-out also drops the cached signed-in
+        // /auth/me snapshot, which would otherwise make the reload resume as the old
+        // account (HOS-2338).
         saveClaimAction();
-        await signOut();
+        const { ok } = await signOutAndClearClientState();
+        if (!ok) {
+            clearPendingAction();
+            setState('error');
+            return;
+        }
         window.location.reload();
     };
 
