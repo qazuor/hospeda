@@ -398,6 +398,7 @@ async function preview(args: {
         }
         return needsConfirmation({
             message: createListingConfirmationMessage({
+                vertical: input.vertical,
                 listing: previewListing({ input, destinationName }),
                 point: stash.point,
                 ...(input.street === undefined ? {} : { street: input.street }),

@@ -59,6 +59,7 @@ import { type Actor, entityNotFoundError } from '@repo/service-core';
 import { z } from 'zod';
 import { SYSTEM_ACTOR } from '../../../routes/conversations/protected/owner/system-actor';
 import { apiLogger } from '../../../utils/logger';
+import { blockForConfirmation, quoteForConfirmation } from '../confirmation-text';
 import {
     confirmationAuditDetails,
     confirmationTokenRefused,
@@ -197,7 +198,9 @@ const REPLY_INQUIRY_TOOL_NAME = 'reply_inquiry';
 
 /**
  * The text the client's confirmation form shows the human (AC-C57): the inquiry
- * label and the exact reply, untouched.
+ * label and the exact reply. The names are guest- and owner-written, so they are
+ * sanitized and quoted on one line; the reply is a block whose every line is
+ * prefixed, so neither can fake a line of the message (`confirmation-text.ts`).
  *
  * @param args - Accommodation and guest names (either may be unknown) and the reply
  * @returns The Spanish form message
@@ -208,16 +211,18 @@ export function replyConfirmationMessage(args: {
     readonly text: string;
 }): string {
     const label = [
-        args.accommodationName === null ? undefined : `Alojamiento: «${args.accommodationName}»`,
-        args.guestName === null ? undefined : `Huésped: «${args.guestName}»`
+        args.accommodationName === null
+            ? undefined
+            : `Alojamiento: ${quoteForConfirmation({ text: args.accommodationName })}`,
+        args.guestName === null
+            ? undefined
+            : `Huésped: ${quoteForConfirmation({ text: args.guestName })}`
     ].filter((line): line is string => line !== undefined);
     return [
         'Vas a responder una consulta en Hospeda.',
         ...label,
-        'Este es el texto exacto que va a recibir el huésped:',
-        '---',
-        args.text,
-        '---',
+        'Este es el texto exacto que va a recibir el huésped (cada línea empieza con │):',
+        blockForConfirmation({ text: args.text }),
         '¿Confirmás el envío?'
     ].join('\n');
 }

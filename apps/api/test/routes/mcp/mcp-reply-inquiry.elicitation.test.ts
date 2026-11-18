@@ -300,7 +300,7 @@ describe('/mcp reply_inquiry confirmed out of band (2026-07-28, end to end)', ()
         expect(requests.confirm?.method).toBe('elicitation/create');
         const params = requests.confirm?.params ?? {};
         expect(params.mode).toBe('form');
-        expect(params.message).toContain(`\n${TEXT}\n`);
+        expect(params.message).toContain(`\n│ ${TEXT}\n`);
         expect(params.message).toContain('Cabañas del Río');
         expect(params.message).toContain('Lucía');
         expect(params.requestedSchema).toEqual({

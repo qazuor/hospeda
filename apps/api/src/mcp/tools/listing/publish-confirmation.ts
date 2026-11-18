@@ -18,6 +18,7 @@
 
 import { PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
+import { quoteForConfirmation } from '../confirmation-text';
 import { consumeConfirmationToken, issueConfirmationToken } from '../confirmation-token-store';
 import {
     type ConfirmationPlan,
@@ -110,7 +111,7 @@ export function publishBinding(args: {
  */
 export function publishConfirmationMessage({ name }: { readonly name: string }): string {
     return [
-        `Vas a publicar «${name}» en Hospeda.`,
+        `Vas a publicar ${quoteForConfirmation({ text: name, maxLength: 120 })} en Hospeda.`,
         'Va a quedar visible para cualquiera en el sitio público.',
         'Si todavía no usaste la prueba gratuita de esta categoría, publicar la inicia.',
         '¿Confirmás la publicación?'
