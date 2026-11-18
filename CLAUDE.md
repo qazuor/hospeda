@@ -488,6 +488,25 @@ from scratch, staging for the MercadoPago sandbox, prod for Cloudflare and real
 cron timing — each needs its own sign-off and the issue stays open until all are
 signed.
 
+### Work that waits for code to reach production: `espera-prod`
+
+Some work can only be done once a specific commit is in production, for example
+flipping a setting that depends on a fix, or running a backfill. Do not leave it
+in Backlog relying on memory. Instead:
+
+- add the workspace label **`espera-prod`** to the issue (team HOS or BETA);
+- add one line to its description: `Espera en prod: <sha> [<sha>...]`.
+
+On every push to `main`, `.github/workflows/espera-prod-sync.yml` checks the
+labelled issues. Once every declared SHA is in `main`, it comments on the issue,
+removes the label and moves the issue from Backlog to Todo. A labelled issue
+with no declaration line, or with a SHA the repository does not know, turns the
+job red and names the issue.
+
+Being in `main` is not the same as being deployed. The prod deploy is still a
+manual Coolify click, so confirm prod runs that commit before acting. Logic and
+failure modes: `scripts/espera-prod-sync.sh`.
+
 ### What's New: every promoted PR carries a novelty decision (HOS-1214)
 
 The What's New catalog is filled at the smoke sign-off and audited at the
