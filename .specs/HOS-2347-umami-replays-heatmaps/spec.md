@@ -440,6 +440,27 @@ replay_config: {
   - If no retention setting exists, Umami's default of **30 days** is accepted
     and stated in the privacy doc.
 
+> **T-001 result (spike, 2026-11-18).** Read from the built server of the
+> staging Umami 3.5 container:
+>
+> - The write path is `POST /api/websites/:id` with only `replayConfig`. It is
+>   partial and merged over the stored config; no full-record payload is needed,
+>   so `name` and `domain` are never sent.
+> - `recorderEnabled` is not an input: Umami derives it as
+>   `replayEnabled || heatmapEnabled`.
+> - The stored config is sparse (Umami drops `false` and unknown keys). Defaults
+>   (0.15, 0.15, `moderate`, 300000, `""`) are applied only by the recorder GET,
+>   which is cached 60 s plus 300 s stale-while-revalidate. The script compares
+>   normalized and defaulted values.
+> - Umami's normalization strips unknown keys on every write, so "preserve any
+>   undeclared key" can only mean "never send one": the script sends only the
+>   seven declared keys.
+> - **Retention is not configurable, and nothing in Umami ever deletes replays**
+>   (only a website reset or delete does). There is no 30-day default either. No
+>   retention job was built; the privacy doc states indefinite retention, and the
+>   mechanism is an open owner decision (§12). AC-S7 is satisfied by that
+>   statement.
+
 ### 6.9 Admin card
 
 `SessionRecordingCard` in `apps/admin/src/features/session-recording/`, mounted
@@ -814,6 +835,13 @@ The six open questions of the first draft were answered by the owner on
   description. Whether those legal texts change too is still open, and it is the
   owner's legal call. It does not block implementation; it must be answered
   before the first prod ON (AC-SM6).
+- **OQ-8 Replay retention (opened by the T-001 spike).** D-5 assumed either a
+  configurable retention or a 30-day Umami default. Neither exists: Umami 3.5
+  keeps replays forever. Options: (a) a VPS cron that deletes replay rows older
+  than 14 days directly in the Umami database; (b) accept indefinite retention;
+  (c) a Hospeda cron with read/write access to the Umami database. Not built;
+  it must be answered before the first prod ON. Until then, production stays ON
+  only for bounded windows.
 
 No other questions remain open.
 
