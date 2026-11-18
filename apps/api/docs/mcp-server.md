@@ -207,7 +207,7 @@ For `reply_inquiry`, `details.step` is `preview` or `send`. For `create_listing`
 `set_listing_publication`, `details.action` is `pause` or `resume` and `details.step`
 is `apply` (one step), `preview` or `commit` (publishing).
 
-On a call from a client that declared form elicitation, the three covered tools add
+On a call from a client that declared form elicitation, the five covered tools add
 `details.confirmation` (`elicitation` or `token`) and use `step` `preview`, `commit`
 or `declined`. Rows from clients without the capability carry no `confirmation` key
 and are unchanged. See [Out-of-band confirmation](#out-of-band-confirmation-hos-2247).
@@ -318,8 +318,10 @@ Tool-specific rules:
     to draft, and a `resume` that changes nothing. They are private and reversible.
     A token sent with one of them is burnt and refused (`CONFIRMATION_NOT_NEEDED`);
     so is a token whose listing stopped being publishable since the preview.
-  - Both publish steps need an identified OAuth client, because the proof is bound
-    to it.
+  - **Publishing now requires `clientId`.** Both publish steps need an identified
+    OAuth client, because the proof is bound to it; without one the call is refused
+    (`UNAUTHORIZED`) and nothing is published. `pause` and the other one-step calls
+    do not.
 - Benefit usages (`search_providers`, `list_benefit_usages`, `confirm_benefit_usage`,
   `reject_benefit_usage`, `undo_benefit_rejection`, HOS-2332). They mirror the
   HOS-376 routes and call the same `HostTradeUsageService` methods; see
@@ -443,9 +445,8 @@ the client's own form, which the model cannot answer. See the next section.
 ## Out-of-band confirmation (HOS-2247)
 
 Spec HOS-2335 §5.7, owner decisions D-17, D-18 and D-19. Covered tools:
-`reply_inquiry`, `create_listing`, and `set_listing_publication` when it publishes.
-`confirm_benefit_usage` and `reject_benefit_usage` follow in PR-14; until then they
-keep the token flow on every client.
+`reply_inquiry`, `create_listing`, `set_listing_publication` when it publishes,
+`confirm_benefit_usage` and `reject_benefit_usage` (PR-14, folded into the same PR).
 
 **Detection, per request.** A request on protocol revision 2026-07-28 or later
 carries its client capabilities in `params._meta`
@@ -461,7 +462,8 @@ Nothing is cached per session (`src/lib/mcp/elicitation.ts`).
    (`inputRequired(...)` from `@modelcontextprotocol/server`): one
    `elicitation/create` request in form mode, asking a single boolean `confirm`,
    whose message shows exactly what will happen (the reply text, the listing and its
-   point, the listing to publish). `requestState` is an opaque id.
+   point, the listing to publish, the usage and the rejection note). `requestState`
+   is an opaque id.
 2. **The client shows the form** to the human, then retries the same `tools/call`
    with `inputResponses.confirm` and the same `requestState`.
 3. **Retry.** `accept` with `confirm: true` runs the write once. `decline`,
@@ -483,6 +485,22 @@ mismatched state is one refusal (`ELICITATION_STATE_INVALID`), checked before th
 answer is read. Treat `requestState` as attacker-controlled; it is never trusted on
 its own.
 
+**The message cannot be forged by its contents.** It is the one text the model
+cannot answer, so every value in it that a guest, a provider, a declarant or the
+model wrote goes through `src/mcp/tools/confirmation-text.ts`:
+
+- A name or short field is one quoted line (`quoteForConfirmation`): control,
+  format (bidi overrides, zero-width) and line or paragraph separator characters
+  become spaces, whitespace collapses, the value is capped (80 characters by
+  default) and guillemets inside it are replaced, so it cannot close its own quote.
+- A body the human must read exactly (the reply, a description, a note) is a block
+  (`blockForConfirmation`): its line breaks stay, and every line starts with `│`,
+  so no content line can look like a line the server wrote. There is no closing
+  delimiter to forge. Other hidden characters show as `�`.
+- Server facts come before what the model wrote. In `create_listing`, the vertical,
+  type, city, price, map point and warning precede the name, and the description
+  comes last.
+
 **Strict by default (D-17).** On a capable client the covered tools never issue a
 token, and a token sent there is refused (`CONFIRMATION_TOKEN_REFUSED`) with nothing
 written. `ELICITATION_STRICT` (`src/mcp/tools/elicitation-policy.ts`) can relax one
@@ -492,6 +510,14 @@ capability keep the token flow unchanged.
 **A new two-step tool** must declare `confirmation: { elicitation: true }` and get an
 `ELICITATION_STRICT` entry. `test/mcp/tools/elicitation-registry.guard.test.ts` fails
 on a registered tool that takes a `confirmationToken` without them (AC-C65).
+
+**Benefit usages.** The state of `confirm_benefit_usage` and `reject_benefit_usage`
+is bound to user, client, tool, usage id and the rejection note, like their token.
+The counterpart check runs before any state is issued or settled. A decline, a
+cancel, or a forged, reused or mismatched state writes nothing and emails nobody: the
+proof is settled before the transition, and the transition is what sends the email.
+The service's compare-and-set on `PENDING` is unchanged, so a confirm and a reject
+confirmed in parallel still write once.
 
 **Which clients show the form (M-1).** Not measured yet. Do not assume a client
 supports the form until its row is filled in from a real session.
@@ -543,7 +569,6 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 | Item | State |
 |---|---|
 | HOS-2244 | Pausing a listing without a plan. |
-| HOS-2247 PR-14 | Out-of-band confirmation for `confirm_benefit_usage` and `reject_benefit_usage`. Empties `PENDING_PR14` in the registry guard. |
 | HOS-2247 M-1 | Fill in the client table of [Out-of-band confirmation](#out-of-band-confirmation-hos-2247) from real sessions. |
 | Phase B | Entitlement gate on `/mcp`, plan status, ChatGPT directory. Blocked on HOS-1352 and HOS-2066. |
 | SDK `Server` | `createHospedaMcpServer` uses the low-level `Server`, which the SDK marks `@deprecated` ("advanced use"). It is deliberate: `McpServer` validates input in English and bypasses the Spanish message and the audit. Revisit on SDK upgrades. |
