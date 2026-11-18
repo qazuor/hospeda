@@ -1,0 +1,39 @@
+name: Espera-prod Sync
+
+# Wakes up Linear issues labelled `espera-prod` once every commit they declare
+# ("Espera en prod: <sha>") is in `main`: comments, removes the label, moves the
+# issue to Todo if it is in Backlog. A merge to `main` is not a prod deploy (that
+# is a manual Coolify click), so this is a reminder, not a gate.
+# Logic and failure modes: scripts/espera-prod-sync.sh.
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: espera-prod-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Wake up issues waiting for prod
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout main with full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Sync espera-prod issues
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          TARGET_REF: ${{ github.sha }}
+        run: bash scripts/espera-prod-sync.sh
