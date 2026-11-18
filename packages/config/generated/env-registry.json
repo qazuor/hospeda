@@ -1347,6 +1347,21 @@
       "howToObtainEs": "Poné `staging` en el contenedor de staging y `prod` en el de prod. El slug del check es `<prefijo>-<job>` (por ejemplo `staging-billing-reconciliation-sweep`), que separa los dos entornos dentro del único proyecto gratuito. Opcional (HOS-1742): sin prefijo el ping es un no-op, así staging nunca alimenta los checks de prod."
     },
     {
+      "name": "HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL",
+      "description": "Payer email of the pending preapprovals the provider watch battery creates and cancels (HOS-1512)",
+      "descriptionEs": "Email del pagador de las preaprobaciones pendientes que la batería de vigilancia del proveedor crea y cancela (HOS-1512)",
+      "type": "string",
+      "required": false,
+      "secret": false,
+      "exampleValue": "provider-watch@hospeda.com.ar",
+      "apps": [
+        "api"
+      ],
+      "category": "billing",
+      "howToObtain": "Mercado Pago refuses a preapproval without `payer_email`. The battery creates one pending preapproval per measurement, with no card token, and cancels it in the same run, so nobody is ever charged. On staging use the email of the sandbox TEST buyer; on prod use an inbox Hospeda owns. Optional: without it the creating measurements fail (and the run alerts) while the read-only measurements still run.",
+      "howToObtainEs": "Mercado Pago rechaza una preaprobación sin `payer_email`. La batería crea una preaprobación pendiente por medición, sin token de tarjeta, y la cancela en la misma corrida, así que nunca se le cobra a nadie. En staging usá el email del comprador de PRUEBA del sandbox; en prod, una casilla de Hospeda. Opcional: sin ella fallan las mediciones que crean (y la corrida alerta), mientras las de solo lectura siguen corriendo."
+    },
+    {
       "name": "HOSPEDA_SENTRY_ENVIRONMENT",
       "description": "Sentry environment tag (production | staging)",
       "descriptionEs": "Tag de entorno en Sentry (production | staging) — separa eventos prod y staging cuando ambos corren con NODE_ENV=production.",
