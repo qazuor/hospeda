@@ -521,6 +521,7 @@
                 "ADDON_PURCHASES_FROZEN": "Add-on purchases are paused for now.",
                 "FAQ_DRAFT_NOT_ELIGIBLE": "That question doesn’t allow a draft answer.",
                 "CATEGORY_IN_USE": "That category is still in use.",
+                "PARTNER_TYPE_IN_USE": "That partner type is still in use.",
                 "RATE_LIMIT_EXCEEDED": "The assistant made too many requests in a row.",
                 "UNEXPECTED": "An unexpected error happened.",
                 "USER_DECLINED": "You didn’t confirm it.",
