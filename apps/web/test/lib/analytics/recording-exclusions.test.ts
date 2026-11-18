@@ -60,6 +60,26 @@ describe('isRecordingExcludedPath (HOS-2347)', () => {
         expect(isRecordingExcludedPath({ pathname: '/es/?next=/es/auth/' })).toBe(false);
     });
 
+    it.each([
+        '/es/%61uth/signin',
+        '/es/mi%2Dcuenta/',
+        '/%65s/contacto/',
+        '/es/sumate%2Fpartner/'
+    ])('decodes percent-encoding before matching: %s', (pathname) => {
+        expect(isRecordingExcludedPath({ pathname })).toBe(true);
+    });
+
+    it('fails closed on a malformed percent-encoding', () => {
+        expect(isRecordingExcludedPath({ pathname: '/es/alojamientos/%E0%A4%A/' })).toBe(true);
+        expect(isRecordingExcludedPath({ pathname: '/es/%' })).toBe(true);
+    });
+
+    it('still allows an encoded path that is not excluded', () => {
+        expect(
+            isRecordingExcludedPath({ pathname: '/es/alojamientos/caba%C3%B1a-del-r%C3%ADo/' })
+        ).toBe(false);
+    });
+
     it('matches with no locale segment and with no trailing slash', () => {
         expect(isRecordingExcludedPath({ pathname: '/auth/signin' })).toBe(true);
         expect(isRecordingExcludedPath({ pathname: '/es/contacto' })).toBe(true);

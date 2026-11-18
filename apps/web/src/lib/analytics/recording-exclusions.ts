@@ -40,7 +40,8 @@ const LOCALE_SEGMENT = /^\/(?:es|en|pt)(?=\/|$)/i;
  * leading and trailing slashes. A prefix matches when the rest equals it or
  * starts with `prefix + '/'`, so `publicar` matches `/es/publicar/nueva` but
  * not `/es/publicaciones/`. Case-insensitive; the query string and the hash
- * are ignored.
+ * are ignored. Percent-encoding is decoded first (`/es/%61uth` is `/es/auth`);
+ * a malformed encoding answers `true` (fail closed).
  *
  * @param input.pathname - A pathname, or a path that may carry `?query` / `#hash`
  * @returns `true` when the path is excluded from recording
@@ -53,7 +54,13 @@ const LOCALE_SEGMENT = /^\/(?:es|en|pt)(?=\/|$)/i;
  */
 export function isRecordingExcludedPath(input: { readonly pathname: string }): boolean {
     const withoutSuffix = input.pathname.split(/[?#]/, 1)[0] ?? '';
-    const rest = withoutSuffix
+    let decoded: string;
+    try {
+        decoded = decodeURIComponent(withoutSuffix);
+    } catch {
+        return true;
+    }
+    const rest = decoded
         .toLowerCase()
         .replace(LOCALE_SEGMENT, '')
         .replace(/^\/+|\/+$/g, '');
