@@ -1597,6 +1597,24 @@ export function createDbMock() {
             rollUpMonth = vi.fn().mockResolvedValue(0);
         },
 
+        /*
+         * HOS-2256 — listing interactions. EntityInteractionService defaults its
+         * three models at construction time and `routes/index.ts` imports the
+         * capture route, so every suite that mounts the router needs these
+         * exports (same failure mode as the partner trio above).
+         */
+        EntityInteractionModel: class MockEntityInteractionModel {
+            insertInteraction = vi.fn().mockResolvedValue({ id: 'ei_mock_id' });
+            purgeOlderThan = vi.fn().mockResolvedValue(0);
+            rollUpMonth = vi.fn().mockResolvedValue(0);
+        },
+
+        entityInteractionModel: {
+            insertInteraction: vi.fn().mockResolvedValue({ id: 'ei_mock_id' }),
+            purgeOlderThan: vi.fn().mockResolvedValue(0),
+            rollUpMonth: vi.fn().mockResolvedValue(0)
+        },
+
         EntityViewModel: class MockEntityViewModel {
             insertView = vi.fn().mockResolvedValue({ id: 'ev_mock_id' });
             getStatsForEntities = vi.fn().mockResolvedValue([]);

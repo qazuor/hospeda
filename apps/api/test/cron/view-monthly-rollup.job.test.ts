@@ -1,7 +1,7 @@
 /**
  * HOS-1063 A-6 — the monthly rollup job.
  *
- * This job exists because the 95-day purge decides "do we keep history?" on the
+ * This job exists because the 120-day purge decides "do we keep history?" on the
  * owner's behalf and irreversibly (R-4). The properties tested here are the ones
  * that make it actually do that, rather than merely appear to:
  *
@@ -25,10 +25,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const rollUpViews = vi.fn();
 const rollUpClicks = vi.fn();
+const rollUpInteractions = vi.fn();
 
 vi.mock('@repo/db', () => ({
     entityViewModel: { rollUpMonth: (...args: unknown[]) => rollUpViews(...args) },
-    partnerLogoClickModel: { rollUpMonth: (...args: unknown[]) => rollUpClicks(...args) }
+    partnerLogoClickModel: { rollUpMonth: (...args: unknown[]) => rollUpClicks(...args) },
+    entityInteractionModel: { rollUpMonth: (...args: unknown[]) => rollUpInteractions(...args) }
 }));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -48,6 +50,7 @@ describe('view-monthly-rollup job', () => {
         vi.clearAllMocks();
         rollUpViews.mockResolvedValue(3);
         rollUpClicks.mockResolvedValue(2);
+        rollUpInteractions.mockResolvedValue(4);
     });
 
     it('rolls up the PREVIOUS month and the CURRENT month on every run', async () => {
@@ -64,13 +67,14 @@ describe('view-monthly-rollup job', () => {
         // Assert — July AND August, for BOTH tables.
         expect(rollUpViews).toHaveBeenCalledTimes(2);
         expect(rollUpClicks).toHaveBeenCalledTimes(2);
+        expect(rollUpInteractions).toHaveBeenCalledTimes(2);
 
         const months = rollUpViews.mock.calls.map((c) =>
             (c[0] as { month: Date }).month.toISOString().slice(0, 7)
         );
         expect(months).toEqual(['2026-07', '2026-08']);
         expect(result.success).toBe(true);
-        expect(result.processed).toBe(10); // (3 + 2) per month, two months
+        expect(result.processed).toBe(18); // (3 + 2 + 4) per month, two months
     });
 
     /**
@@ -116,6 +120,7 @@ describe('view-monthly-rollup job', () => {
 
         expect(rollUpViews).not.toHaveBeenCalled();
         expect(rollUpClicks).not.toHaveBeenCalled();
+        expect(rollUpInteractions).not.toHaveBeenCalled();
         expect(result.success).toBe(true);
         expect(result.processed).toBe(0);
     });

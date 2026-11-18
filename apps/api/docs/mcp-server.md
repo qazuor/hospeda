@@ -283,7 +283,7 @@ Tool-specific rules:
 
 - `get_listing_stats`: plan gated. Without the entitlement the call is refused with
   "Tu plan no incluye estadisticas". For `90d` there is no comparison, because
-  views are kept 95 days. Accommodations add a block with favorites (advanced stats
+  views are kept 120 days. Accommodations add a block with favorites (advanced stats
   only), inquiries of this listing, and owner-wide inquiry figures. Metrics a
   vertical does not have are omitted, never zero.
 - `get_owner_summary` (HOS-2331, spec HOS-2335 §6.6). It is one call instead of one

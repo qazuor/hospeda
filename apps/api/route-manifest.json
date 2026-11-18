@@ -4259,6 +4259,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/public/interactions"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/public/newsletter/resend"
         },
         {

@@ -3,7 +3,7 @@
  * Data migration: 0183-hos2336-partner-types-catalog
  *
  * Dual-write counterpart (HOS-25) of the HOS-2336 baseline seed. The structural
- * migration `0232_hos2336_partner_types_catalog.sql` creates `partner_types`
+ * migration `0233_hos2336_partner_types_catalog.sql` creates `partner_types`
  * and the nullable `partners.type_id`; the baseline
  * (`required/partnerTypes.seed.ts` plus `src/data/partnerType/*`) fills the
  * catalog on a FRESH database, and the example partner fixtures now name their

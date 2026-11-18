@@ -343,7 +343,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '30 3 * * *',
         description:
-            'Hard-delete entity_views and partner_logo_clicks telemetry rows older than 95 days (30d analytics window + 65d buffer, GDPR-lite data minimisation, SPEC-159 T-011 / HOS-1063 A-3).'
+            'Hard-delete entity_views, partner_logo_clicks and entity_interactions telemetry rows older than 120 days (90d widest panel window + 30d buffer, GDPR-lite data minimisation, SPEC-159 T-011 / HOS-1063 A-3 / HOS-2256).'
     },
     {
         name: 'exchange-rate-fetch',
@@ -358,7 +358,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '10 4 * * *',
         description:
-            'Aggregate entity_views and partner_logo_clicks into their monthly rollups before the 95-day purge deletes them. Runs daily and rewrites the previous month plus the current month-to-date, so a single missed run cannot leave a permanent hole (HOS-1063 A-6).'
+            'Aggregate entity_views, partner_logo_clicks and entity_interactions into their monthly rollups before the 120-day purge deletes them. Runs daily and rewrites the previous month plus the current month-to-date, so a single missed run cannot leave a permanent hole (HOS-1063 A-6).'
     },
     {
         name: 'destination-weather-fetch',
