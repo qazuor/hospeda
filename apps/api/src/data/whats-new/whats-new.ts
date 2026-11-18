@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4480, #4496
+    {
+        id: '2026-11-18-providers-multiple-trade-categories',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los proveedores ahora muestran todos sus rubros',
+            en: 'Providers now show all their trades',
+            pt: 'Os fornecedores agora mostram todos os seus ramos'
+        },
+        body: {
+            es: 'En el directorio de proveedores cada proveedor puede tener varios rubros, por ejemplo plomería y electricidad. Podés filtrar por más de un rubro a la vez y ves a todos los que ofrecen alguno de ellos.',
+            en: 'In the provider directory each provider can have several trades, such as plumbing and electrical work. You can filter by more than one trade at once and see everyone who offers any of them.',
+            pt: 'No diretório de fornecedores cada fornecedor pode ter vários ramos, por exemplo encanamento e elétrica. Você pode filtrar por mais de um ramo ao mesmo tempo e ver todos que oferecem algum deles.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4447
     {
         id: '2026-11-17-venue-location-exception-request-from-editor',
