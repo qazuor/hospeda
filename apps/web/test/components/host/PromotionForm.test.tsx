@@ -375,6 +375,25 @@ describe('PromotionForm — create mode', () => {
         expect(window.location.href).toBe('');
     });
 
+    it('AC-21: offers the accommodation benefit types and never special_offer (HOS-2270)', async () => {
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByRole('combobox', { name: /Propiedad/i })).toBeInTheDocument();
+        });
+
+        const values = Array.from(document.querySelectorAll('select option')).map((option) =>
+            option.getAttribute('value')
+        );
+        expect(values).toEqual(expect.arrayContaining(['percentage', 'fixed', 'free_night']));
+        expect(values).not.toContain('special_offer');
+    });
+
     it('renders the accommodation select with "all properties" option when listOwn returns empty', async () => {
         // Arrange — default mock already returns empty list
         render(

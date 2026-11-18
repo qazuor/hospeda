@@ -1,6 +1,16 @@
 import { AccommodationModel, OwnerPromotionModel, TouristPriceAlertModel } from '@repo/db';
 import type { Accommodation, OwnerPromotion, PriceAlert } from '@repo/schemas';
-import { LifecycleStatusEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, OwnerPromotionEntityTypeEnum } from '@repo/schemas';
+
+/**
+ * The single accommodation a promotion targets, or `null` when it is owner-wide
+ * (D-4 of SPEC-285). Dual read (HOS-2270, release N): the new `entityId` first, the
+ * legacy `accommodationId` as a fallback so a row whose `entityId` has not been
+ * copied yet is not mistaken for an owner-wide one.
+ */
+function promotionTargetAccommodationId(promotion: OwnerPromotion): string | null {
+    return promotion.entityId ?? promotion.accommodationId ?? null;
+}
 
 /**
  * A single-page fetch size for the active-promotions, active-alerts, and
@@ -280,8 +290,8 @@ export class PromoOfferEvaluatorService {
         const targetedAccommodationIds = [
             ...new Set(
                 promotions
-                    .map((promotion) => promotion.accommodationId)
-                    .filter((id): id is string => id !== null && id !== undefined)
+                    .map(promotionTargetAccommodationId)
+                    .filter((id): id is string => id !== null)
             )
         ];
         const targetedAccommodations =
@@ -299,7 +309,7 @@ export class PromoOfferEvaluatorService {
         const ownerWideOwnerIds = [
             ...new Set(
                 promotions
-                    .filter((promotion) => !promotion.accommodationId)
+                    .filter((promotion) => promotionTargetAccommodationId(promotion) === null)
                     .map((promotion) => promotion.ownerId)
             )
         ];
@@ -313,8 +323,9 @@ export class PromoOfferEvaluatorService {
         }
 
         for (const promotion of promotions) {
-            const relevantAccommodations = promotion.accommodationId
-                ? [accommodationById.get(promotion.accommodationId)].filter(
+            const targetAccommodationId = promotionTargetAccommodationId(promotion);
+            const relevantAccommodations = targetAccommodationId
+                ? [accommodationById.get(targetAccommodationId)].filter(
                       (accommodation): accommodation is Accommodation => accommodation !== undefined
                   )
                 : (accommodationsByOwnerId.get(promotion.ownerId) ?? []);
@@ -364,11 +375,18 @@ export class PromoOfferEvaluatorService {
             const { items } = await this.ownerPromotionModel.findAll(
                 {
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    // HOS-2270: a venue promotion must never reach this scan, or a venue
+                    // would trigger "offer on your accommodation" emails (it would read
+                    // as owner-wide). Only accommodation promotions are evaluated.
+                    entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
                     deletedAt: null
                 },
                 { page, pageSize: SCAN_PAGE_SIZE }
             );
-            promotions.push(...items);
+            // Defence in depth: the filter above is the primary guard.
+            promotions.push(
+                ...items.filter((item) => item.entityType !== OwnerPromotionEntityTypeEnum.VENUE)
+            );
 
             if (items.length < SCAN_PAGE_SIZE) {
                 break;

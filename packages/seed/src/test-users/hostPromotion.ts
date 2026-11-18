@@ -3,6 +3,7 @@ import type { OwnerPromotionCreateInput } from '@repo/schemas';
 import {
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
+    OwnerPromotionEntityTypeEnum,
     PermissionEnum,
     RoleEnum,
     TouristAudienceEnum
@@ -118,6 +119,9 @@ export function buildHostPromotionInputs(input: BuildHostPromotionInputsInput): 
         slug: `promo-activa-${slugSuffix}`,
         ownerId,
         accommodationId,
+        // HOS-2270: dual write, both pairs name the same accommodation.
+        entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
+        entityId: accommodationId,
         title: `20% de descuento — ${spec.displayName}`,
         description:
             'Promoción de prueba (seed) actualmente vigente, generada automáticamente para ejercitar el listado de promociones del propietario (BETA-89). No representa una oferta real.',
@@ -135,6 +139,8 @@ export function buildHostPromotionInputs(input: BuildHostPromotionInputsInput): 
         slug: `promo-vencida-${slugSuffix}`,
         ownerId,
         accommodationId,
+        entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
+        entityId: accommodationId,
         title: `Descuento de temporada — ${spec.displayName}`,
         description:
             'Promoción de prueba (seed) vencida y archivada, generada automáticamente para ejercitar los distintos estados del listado de promociones del propietario (BETA-89). No representa una oferta real.',

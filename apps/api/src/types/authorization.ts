@@ -63,12 +63,18 @@ export type ListingAccessConfig = {
     capabilities?:
         | readonly string[]
         | ((args: { readonly body: Record<string, unknown> | undefined }) => readonly string[]);
-    /** Requested limit, evaluated against the subject read from the listing row. */
+    /**
+     * Requested limit, evaluated against the subject read from the listing row.
+     * `body` is the validated request body. Returning `undefined` means this call
+     * requests no limit (e.g. pausing or deleting what an owner already holds), so
+     * step 7 does not run.
+     */
     limit?: (args: {
         ctx: Context;
         listingId: string;
         subjectId: string;
-    }) => Promise<{ key: string; requested: number }>;
+        body?: Record<string, unknown>;
+    }) => Promise<{ key: string; requested: number } | undefined>;
 };
 
 /**

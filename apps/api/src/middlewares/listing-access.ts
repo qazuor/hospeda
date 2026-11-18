@@ -263,7 +263,7 @@ export async function decideListingAccess(
         throw new Error('A listing-access limit needs the request context to be evaluated');
     const limit =
         config.limit && subjectId && ctx
-            ? await config.limit({ ctx, listingId, subjectId })
+            ? await config.limit({ ctx, listingId, subjectId, body })
             : undefined;
     // Resolve route-level capabilities (HOS-1643): array as-is, function with body.
     const requiredKeys =

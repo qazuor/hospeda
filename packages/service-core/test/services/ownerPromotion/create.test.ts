@@ -1,4 +1,4 @@
-import type { OwnerPromotionModel } from '@repo/db';
+import type { AccommodationModel, OwnerPromotionModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnerPromotionService } from '../../../src/services/owner-promotion/ownerPromotion.service';
@@ -19,9 +19,19 @@ describe('OwnerPromotionService.create', () => {
     beforeEach(() => {
         modelMock = createModelMock(['create']);
         loggerMock = createLoggerMock();
+        // HOS-2270: the target is validated on create; the factory input's
+        // accommodation exists and belongs to the factory input's owner.
+        const defaults = createMockOwnerPromotionCreateInput();
         service = new OwnerPromotionService({
             logger: loggerMock,
-            model: modelMock as unknown as OwnerPromotionModel
+            model: modelMock as unknown as OwnerPromotionModel,
+            accommodationModel: {
+                findById: vi.fn().mockResolvedValue({
+                    id: defaults.accommodationId,
+                    ownerId: defaults.ownerId,
+                    deletedAt: null
+                })
+            } as unknown as AccommodationModel
         });
         actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_CREATE] });
         vi.clearAllMocks();
