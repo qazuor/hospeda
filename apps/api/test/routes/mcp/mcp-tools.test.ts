@@ -213,7 +213,7 @@ describe('/mcp tools (T-012 binding, end to end)', () => {
         ]);
     });
 
-    it('runs a read tool as the token subject without auditing it', async () => {
+    it('runs a read tool as the token subject and audits it as a read (D-12)', async () => {
         // Act
         const message = await callTool('dummy_read', { q: 'hola' });
 
@@ -223,7 +223,14 @@ describe('/mcp tools (T-012 binding, end to end)', () => {
             actorId: USER_ID,
             q: 'hola'
         });
-        expect(recordMock).not.toHaveBeenCalled();
+        expect(recordMock).toHaveBeenCalledTimes(1);
+        expect(recordMock).toHaveBeenCalledWith({
+            actor: expect.objectContaining({ id: USER_ID }),
+            mcpAuth: expect.objectContaining({ clientId: CLIENT_ID }),
+            tool: 'dummy_read',
+            isWrite: false,
+            outcome: 'success'
+        });
     });
 
     it('runs a write tool and audits it with the OAuth client', async () => {
@@ -237,6 +244,7 @@ describe('/mcp tools (T-012 binding, end to end)', () => {
             actor: expect.objectContaining({ id: USER_ID }),
             mcpAuth: expect.objectContaining({ clientId: CLIENT_ID, clientName: 'Claude' }),
             tool: 'dummy_write',
+            isWrite: true,
             outcome: 'success',
             target: { type: 'venue', id: 'v-1' }
         });
@@ -312,19 +320,28 @@ describe('/mcp tools (T-012 binding, end to end)', () => {
             actor: expect.objectContaining({ id: USER_ID }),
             mcpAuth: expect.objectContaining({ clientId: CLIENT_ID }),
             tool: 'dummy_write',
+            isWrite: true,
             outcome: 'error',
             errorCode: 'VALIDATION_ERROR'
         });
     });
 
-    it('answers malformed read arguments in Spanish without auditing', async () => {
+    it('answers malformed read arguments in Spanish and audits them as a read error', async () => {
         // Act
         const message = await callTool('dummy_read', {});
 
         // Assert
         expect(message.result?.isError).toBe(true);
         expect(message.result?.content?.[0]?.text).toContain('campo «q»');
-        expect(recordMock).not.toHaveBeenCalled();
+        expect(recordMock).toHaveBeenCalledTimes(1);
+        expect(recordMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                tool: 'dummy_read',
+                isWrite: false,
+                outcome: 'error',
+                errorCode: 'VALIDATION_ERROR'
+            })
+        );
     });
 
     it('answers an unknown tool with a JSON-RPC error', async () => {
