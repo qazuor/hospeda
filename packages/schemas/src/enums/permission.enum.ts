@@ -895,6 +895,7 @@ export enum PermissionEnum {
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     AI_CONVERSATION_VIEW_ANY = 'aiConversation.viewAny', // Allows reading the listing AI chat conversations of any listing, anonymised and with personal data redacted (HOS-2075). SUPER_ADMIN-only.
+    MCP_ACTIVITY_VIEW = 'mcpActivity.view', // Allows reading every user's assistant (MCP) tool calls in the admin log: user, tool, outcome, client and raw error code (HOS-2349, decision D-15). SUPER_ADMIN-only; ADMIN does not hold it.
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
 
     // REDIRECTABLE QR CODES (HOS-981): the Plataforma → Códigos QR manager.
