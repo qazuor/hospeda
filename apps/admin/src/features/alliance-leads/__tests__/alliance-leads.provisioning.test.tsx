@@ -7,7 +7,7 @@
  * Network is mocked through `vi.mock('@/lib/api/client')`.
  */
 
-import { type AllianceLead, PermissionEnum } from '@repo/schemas';
+import { type AllianceLead, HostTradeBenefitTypeEnum, PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -45,7 +45,7 @@ const baseLead: AllianceLead = {
     categorySlugs: ['plomeria', 'gas', 'viejo', 'borrada'],
     businessName: 'Plomeria Ana',
     destinationId: '44444444-4444-4444-a444-444444444444',
-    benefitType: 'PERCENTAGE',
+    benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
     provisionedHostTradeId: null,
     createdAt: new Date('2024-03-15T10:00:00.000Z'),
     updatedAt: new Date('2024-03-15T10:00:00.000Z'),
