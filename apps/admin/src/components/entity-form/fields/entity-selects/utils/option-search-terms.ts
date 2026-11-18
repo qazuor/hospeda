@@ -46,6 +46,7 @@ export function getSearchTerms(option: SelectOption): SearchableTerms | undefine
     const raw = option.metadata?.[SELECT_OPTION_SEARCH_TERMS_KEY];
     if (!isRecord(raw) || !isLocaleStringMap(raw.nameI18n)) return undefined;
     if (raw.keywordsI18n !== undefined && !isLocaleKeywordMap(raw.keywordsI18n)) return undefined;
+    // TYPE-WORKAROUND: metadata is Record<string, unknown>; the shape was validated by the guards above.
     return raw as unknown as SearchableTerms;
 }
 
