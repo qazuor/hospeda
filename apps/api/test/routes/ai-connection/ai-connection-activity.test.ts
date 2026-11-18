@@ -403,4 +403,47 @@ describe('GET /api/v1/protected/ai-connections/activity', () => {
             }
         });
     });
+
+    describe('link language (HOS-2348, owner decision 2026-11-18)', () => {
+        /** One owned listing row. */
+        function seedOwned() {
+            fake.listings = [
+                { vertical: 'accommodation', id: LISTING_OWNED, name: 'Casa', ownerId: USER_A }
+            ];
+            fake.rows = [
+                row({
+                    actorId: USER_A,
+                    tool: 'update_listing_basic',
+                    extra: { resourceType: 'accommodation', resourceId: LISTING_OWNED }
+                })
+            ];
+        }
+
+        it.each(['es', 'en', 'pt'])('?locale=%s builds links under /%s/', async (locale) => {
+            seedOwned();
+
+            const { res, items } = await list(`?locale=${locale}`);
+
+            expect(res.status).toBe(200);
+            expect(String(items[0]?.target?.url)).toMatch(
+                new RegExp(`^https?://[^/]+/${locale}/mi-cuenta/propiedades/`)
+            );
+        });
+
+        it('absent locale keeps the /es/ default', async () => {
+            seedOwned();
+
+            const { items } = await list();
+
+            expect(String(items[0]?.target?.url)).toMatch(/^https?:\/\/[^/]+\/es\//);
+        });
+
+        it.each(['xx', '..%2Fx'])('an invalid locale (%s) answers 400', async (locale) => {
+            seedOwned();
+
+            const { res } = await list(`?locale=${locale}`);
+
+            expect(res.status).toBe(400);
+        });
+    });
 });

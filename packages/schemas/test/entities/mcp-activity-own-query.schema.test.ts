@@ -18,6 +18,14 @@ import {
 const USER_ID = '2f6e1c3a-8b9d-4a7e-b5c4-d3e2f1a0b9c8';
 
 describe('McpActivityOwnQuerySchema', () => {
+    it.each(['es', 'en', 'pt'])('accepts the locale %s', (locale) => {
+        expect(McpActivityOwnQuerySchema.parse({ locale }).locale).toBe(locale);
+    });
+
+    it.each(['xx', '../x', 'ES', ''])('refuses the locale %j', (locale) => {
+        expect(McpActivityOwnQuerySchema.safeParse({ locale }).success).toBe(false);
+    });
+
     it('defaults to page 1 of 20 with reads hidden', () => {
         // Arrange / Act
         const parsed = McpActivityOwnQuerySchema.parse({});

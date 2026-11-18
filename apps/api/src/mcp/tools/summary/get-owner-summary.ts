@@ -66,7 +66,8 @@ export const getOwnerSummaryTool = defineTool({
     inputSchema: GetOwnerSummaryInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<OwnerSummary>> => {
+    handler: async ({ actor, input, context }): Promise<ToolHandlerResult<OwnerSummary>> => {
+        const { locale } = context;
         const read = await readMyListingRows({ actor });
         if (read.error) {
             return { error: read.error };
@@ -85,9 +86,9 @@ export const getOwnerSummaryTool = defineTool({
 
         const [unanswered, usages, fixRequests, drafts] = await Promise.all([
             readUnansweredInquiries({ actor }),
-            readPendingUsageItems({ actor }),
-            readFixRequestItems({ ownerId: actor.id, verticals: verticalsWithListings }),
-            readDraftAttention({ rows })
+            readPendingUsageItems({ actor, locale }),
+            readFixRequestItems({ ownerId: actor.id, verticals: verticalsWithListings, locale }),
+            readDraftAttention({ rows, locale })
         ]);
         if (unanswered.error) {
             return { error: unanswered.error };
@@ -104,6 +105,7 @@ export const getOwnerSummaryTool = defineTool({
                     listingIds: idsOf(vertical),
                     period: input.period,
                     now,
+                    locale,
                     partial: listings[vertical].partial === true,
                     ...(unanswered.data === undefined
                         ? {}
@@ -124,7 +126,7 @@ export const getOwnerSummaryTool = defineTool({
 
         const { attention, more } = capAttention({
             items: [
-                ...unansweredInquiriesItems({ count: unanswered.data }),
+                ...unansweredInquiriesItems({ count: unanswered.data, locale }),
                 ...usages.items,
                 ...fixRequests,
                 ...drafts

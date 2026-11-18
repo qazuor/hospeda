@@ -15,6 +15,7 @@ import type { ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { z } from 'zod';
+import type { PortalLocale } from '../portal/build-portal-url';
 import type { PortalDestination } from '../portal/portal-routes';
 
 /**
@@ -95,6 +96,12 @@ export interface ToolContext {
      * run without it.
      */
     readonly clientId?: string;
+    /**
+     * The locale of the user's web pages (`users.settings.languageWeb`, `es` when
+     * unset or unsupported), resolved once per call by the binding. Portal links
+     * carry it as their prefix. Omitted means `es`.
+     */
+    readonly locale?: PortalLocale;
 }
 
 /** The single entity a call acts on, for the audit record. */
