@@ -2,11 +2,10 @@
  * HOS-1512: the watch battery's run lifecycle, the one-shot authorization and the accepted
  * baseline, against a real database.
  */
-import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { platformSettingsModel } from '../../src/models/platform/platform-settings.model.ts';
 import { providerWatchRunModel as model } from '../../src/models/provider-watch-run/provider-watch-run.model.ts';
-import { providerWatchRuns, users } from '../../src/schemas/index.ts';
+import { users } from '../../src/schemas/index.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import {
     closeTestPool,
@@ -131,6 +130,60 @@ describe('run lifecycle', () => {
     });
 });
 
+describe('provider ids are persisted as the writes answer, apart from the closing of the run', () => {
+    it('accumulates ids per measurement on a running run and keeps the rest of the record', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.appendProviderIds({ runId, measurementId: 'M1', providerIds: ['a'], tx });
+            await model.appendProviderIds({ runId, measurementId: 'M1', providerIds: ['b'], tx });
+            await model.appendProviderIds({ runId, measurementId: 'RP2', providerIds: ['c'], tx });
+            const row = await model.findById({ id: runId, tx });
+            expect(row?.measurements).toEqual({
+                M1: { providerIds: ['a', 'b'] },
+                RP2: { providerIds: ['c'] }
+            });
+            expect(row?.outcome).toBe('running');
+        });
+    });
+
+    it('refuses to append to a run that is not running', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.close({ ...close(runId), tx });
+            await expect(
+                model.appendProviderIds({ runId, measurementId: 'M1', providerIds: ['a'], tx })
+            ).rejects.toThrow('not a running run');
+        });
+    });
+
+    it('survives the rollback of the transaction that was closing the run', async () => {
+        await withCleanSlate(async (db) => {
+            const { runId } = await model.open({
+                account: 'sandbox',
+                startedAt: START,
+                tx: db
+            });
+            await model.appendProviderIds({
+                runId,
+                measurementId: 'M1',
+                providerIds: ['pre-9'],
+                tx: db
+            });
+            await expect(
+                db.transaction(async (closing) => {
+                    await model.close({ ...close(runId), tx: closing as unknown as DrizzleClient });
+                    throw new Error('closing failed');
+                })
+            ).rejects.toThrow('closing failed');
+            const row = await model.findById({ id: runId, tx: db });
+            expect(row).toMatchObject({
+                outcome: 'running',
+                measurements: { M1: { providerIds: ['pre-9'] } }
+            });
+        });
+    });
+});
+
 describe('a run that opens abandons the stale running rows of its account', () => {
     const at = (iso: string) => new Date(iso);
 
@@ -141,10 +194,12 @@ describe('a run that opens abandons the stale running rows of its account', () =
                 startedAt: at('2026-11-17T08:00:00.000Z'),
                 tx
             });
-            await tx
-                .update(providerWatchRuns)
-                .set({ measurements: { M1: { providerIds: ['pre-123'] } } })
-                .where(eq(providerWatchRuns.id, stale.runId));
+            await model.appendProviderIds({
+                runId: stale.runId,
+                measurementId: 'M1',
+                providerIds: ['pre-123'],
+                tx
+            });
             const fresh = await model.open({
                 account: 'sandbox',
                 startedAt: START,

@@ -34,7 +34,8 @@ import { apiLogger } from '../../utils/logger.js';
 import {
     closeWatchRun,
     openWatchRun,
-    readAcceptedBaseline
+    readAcceptedBaseline,
+    recordWatchProgress
 } from '../../utils/provider-watch/provider-watch-run-store.js';
 import {
     isScheduledTickDue,
@@ -67,6 +68,12 @@ export interface ProviderWatchBatteryDeps {
         readonly startedAt: Date;
         readonly consumeAuthorizationOfMonth?: string;
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
+    /** Persists a provider id the moment a write answers it. */
+    readonly recordProgress: (args: {
+        readonly runId: string;
+        readonly measurementId: string;
+        readonly providerIds: readonly string[];
+    }) => Promise<void>;
     /** Closes the run and queues its alert mail. */
     readonly finishRun: (args: {
         readonly runId: string;
@@ -100,6 +107,7 @@ export function createProviderWatchBatteryDeps(): ProviderWatchBatteryDeps {
         },
         readBaseline: readAcceptedBaseline,
         startRun: openWatchRun,
+        recordProgress: recordWatchProgress,
         finishRun: closeWatchRun,
         now: () => getClock().clock.now(),
         pingWatchdog: () => pingHealthchecks({ job: PROVIDER_WATCH_JOB_NAME, signal: 'success' })
@@ -189,6 +197,7 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                     deadlineAt: ctx.deadlineAt,
                     readBaseline: deps.readBaseline,
                     startRun: deps.startRun,
+                    recordProgress: deps.recordProgress,
                     finishRun: async ({ runId, run: record }) => {
                         await deps.finishRun({
                             runId,

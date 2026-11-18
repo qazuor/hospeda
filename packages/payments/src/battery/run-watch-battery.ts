@@ -75,6 +75,16 @@ export interface RunWatchBatteryInput {
         readonly startedAt: Date;
         readonly consumeAuthorizationOfMonth?: string;
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
+    /**
+     * Persists a provider id the moment the write that created it answers, OUTSIDE the closing of
+     * the run, so a run that dies or whose closing fails still leaves the ids a human needs to
+     * cancel or refund what it created. When it rejects the run aborts: nothing more is sent.
+     */
+    readonly recordProgress: (args: {
+        readonly runId: string;
+        readonly measurementId: string;
+        readonly providerIds: readonly string[];
+    }) => Promise<void>;
     /** Writes the end of the run. It is part of the run: when it rejects, the run rejects. */
     readonly finishRun: (args: {
         readonly runId: string;
@@ -107,8 +117,10 @@ function buildContext(args: {
     readonly ledger: WatchLedger;
     /** The most the whole run may charge: the authorized number. */
     readonly runCap: number;
+    /** Persists a provider id as soon as a write answers it. */
+    readonly onProviderId: (id: string) => Promise<void>;
 }): WatchContext {
-    const { entry, transport, shapes, providerIds, ledger, runCap } = args;
+    const { entry, transport, shapes, providerIds, ledger, runCap, onProviderId } = args;
     let entryCharged = 0;
     return {
         send: async ({ label, request, chargeMinor, refundMinor }) => {
@@ -145,7 +157,17 @@ function buildContext(args: {
                     'id' in response.body
                         ? (response.body as { readonly id: unknown }).id
                         : undefined;
-                if (typeof id === 'string' || typeof id === 'number') providerIds.push(String(id));
+                if (typeof id === 'string' || typeof id === 'number') {
+                    providerIds.push(String(id));
+                    try {
+                        await onProviderId(String(id));
+                    } catch (error) {
+                        throw new WatchGuardError({
+                            code: 'PROGRESS_NOT_RECORDED',
+                            message: `${entry.id} created provider id ${String(id)} and it could not be recorded (${describeError(error)}); nothing more is sent`
+                        });
+                    }
+                }
             }
             return response;
         }
@@ -195,8 +217,9 @@ async function measureEntry(args: {
     /** Filled while the measurement runs, so a guard that aborts it midway keeps what it saw. */
     readonly sink: { readonly shapes: Record<string, ShapeMap>; readonly providerIds: string[] };
     readonly ledger: WatchLedger;
+    readonly onProviderId: (id: string) => Promise<void>;
 }): Promise<{ readonly record: WatchMeasurementRecord; readonly alerts: readonly WatchAlert[] }> {
-    const { entry, input, baseline, sink, ledger } = args;
+    const { entry, input, baseline, sink, ledger, onProviderId } = args;
     // The guards open the measurement: nothing is sent before they pass.
     if (entry.effect === 'moves-money') {
         assertBudgetMatches({ entry, authorization: input.authorization });
@@ -218,7 +241,8 @@ async function measureEntry(args: {
                 shapes,
                 providerIds,
                 ledger,
-                runCap: input.authorization?.maxChargeMinor ?? 0
+                runCap: input.authorization?.maxChargeMinor ?? 0,
+                onProviderId
             })
         );
     } catch (error) {
@@ -357,7 +381,19 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
             }
             const sink = { shapes: {} as Record<string, ShapeMap>, providerIds: [] as string[] };
             try {
-                const measured = await measureEntry({ entry, input, baseline, sink, ledger });
+                const measured = await measureEntry({
+                    entry,
+                    input,
+                    baseline,
+                    sink,
+                    ledger,
+                    onProviderId: (id) =>
+                        input.recordProgress({
+                            runId: started.runId,
+                            measurementId: entry.id,
+                            providerIds: [id]
+                        })
+                });
                 measurements[entry.id] = measured.record;
                 alerts.push(...measured.alerts);
                 if (measured.record.outcome === 'errored' && outcome === 'completed') {

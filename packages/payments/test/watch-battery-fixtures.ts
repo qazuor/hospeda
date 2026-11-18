@@ -3,6 +3,12 @@ import type { WatchRunRecord, WatchShapeBaseline } from '../src/battery/index';
 
 export interface MemoryRunStore {
     readonly started: { readonly runId: string; readonly consume: string | undefined }[];
+    /** Provider ids recorded the moment a write answered, before the run closed. */
+    readonly progress: {
+        readonly runId: string;
+        readonly measurementId: string;
+        readonly providerIds: readonly string[];
+    }[];
     readonly finished: { readonly runId: string; readonly run: WatchRunRecord }[];
     /** The run that consumed the authorization, if any. */
     consumedBy(): string | undefined;
@@ -13,6 +19,11 @@ export interface MemoryRunStore {
             readonly startedAt: Date;
             readonly consumeAuthorizationOfMonth?: string;
         }) => Promise<{ runId: string; authorizationConsumed: boolean }>;
+        readonly recordProgress: (args: {
+            readonly runId: string;
+            readonly measurementId: string;
+            readonly providerIds: readonly string[];
+        }) => Promise<void>;
         readonly finishRun: (args: { runId: string; run: WatchRunRecord }) => Promise<void>;
     };
     /** The last finished run. */
@@ -30,9 +41,11 @@ export function memoryRunStore(
 ): MemoryRunStore {
     const started: MemoryRunStore['started'] = [];
     const finished: { runId: string; run: WatchRunRecord }[] = [];
+    const progress: MemoryRunStore['progress'] = [];
     let consumed: string | undefined = args.consumedBy;
     return {
         started,
+        progress,
         finished,
         consumedBy: () => consumed,
         last: () => {
@@ -51,6 +64,9 @@ export function memoryRunStore(
                     authorizationConsumed = true;
                 }
                 return { runId, authorizationConsumed };
+            },
+            recordProgress: async (entry) => {
+                progress.push(entry);
             },
             finishRun: async ({ runId, run }) => {
                 finished.push({ runId, run });

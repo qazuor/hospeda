@@ -25,6 +25,7 @@ const h = vi.hoisted(() => {
         }),
         open: vi.fn(),
         close: vi.fn(),
+        appendProviderIds: vi.fn(),
         listBaselines: vi.fn(),
         listSuperAdminRecipients: vi.fn(),
         enqueue: vi.fn()
@@ -36,6 +37,7 @@ vi.mock('@repo/db', () => ({
     providerWatchRunModel: {
         open: h.open,
         close: h.close,
+        appendProviderIds: h.appendProviderIds,
         listBaselines: h.listBaselines
     },
     listSuperAdminRecipients: h.listSuperAdminRecipients,
@@ -52,7 +54,8 @@ import {
 import {
     closeWatchRun,
     openWatchRun,
-    readAcceptedBaseline
+    readAcceptedBaseline,
+    recordWatchProgress
 } from '../../../src/utils/provider-watch/provider-watch-run-store';
 
 const START = new Date('2026-11-17T10:00:00.000Z');
@@ -96,6 +99,27 @@ describe('openWatchRun', () => {
             consumeAuthorizationOfMonth: '2026-11',
             abandonRunsStartedBefore: new Date(START.getTime() - 600_000)
         });
+    });
+});
+
+describe('recordWatchProgress', () => {
+    it('writes the ids through the model on its own, never inside a transaction', async () => {
+        h.appendProviderIds.mockResolvedValue(undefined);
+        h.transaction.mockClear();
+        await recordWatchProgress({ runId: 'run-1', measurementId: 'M1', providerIds: ['pre-1'] });
+        expect(h.appendProviderIds).toHaveBeenCalledWith({
+            runId: 'run-1',
+            measurementId: 'M1',
+            providerIds: ['pre-1']
+        });
+        expect(h.transaction).not.toHaveBeenCalled();
+    });
+
+    it('propagates a failed write so the engine aborts the run', async () => {
+        h.appendProviderIds.mockRejectedValue(new Error('db down'));
+        await expect(
+            recordWatchProgress({ runId: 'run-1', measurementId: 'M1', providerIds: ['pre-1'] })
+        ).rejects.toThrow('db down');
     });
 });
 

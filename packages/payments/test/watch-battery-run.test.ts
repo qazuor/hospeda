@@ -668,3 +668,102 @@ describe('provider ids of what a run created', () => {
         expect(result.run.measurements.RP8?.providerIds).toEqual(['pre-123']);
     });
 });
+
+describe('HOS-1512 M4: provider ids are persisted the moment the write answers', () => {
+    const writer = (args: { readonly after?: () => Promise<void> } = {}): WatchEntry =>
+        readEntry({
+            id: 'RP8',
+            effect: 'mutates',
+            measure: async (ctx) => {
+                await ctx.send({
+                    label: 'customer',
+                    request: { method: 'POST', path: '/v1/customers', body: {} }
+                });
+                await args.after?.();
+                await ctx.send({
+                    label: 'second',
+                    request: { method: 'POST', path: '/v1/customers', body: {} }
+                });
+                return 'done';
+            }
+        });
+    const answering = (): WatchTransport => async (request) =>
+        request.path === '/users/me'
+            ? { status: 200, body: SANDBOX_ME }
+            : { status: 201, body: { id: `pre-${Math.random().toString(36).slice(2, 8)}` } };
+
+    it('has the id on record while the run is still going: a process that dies mid-run loses nothing', async () => {
+        const store = memoryRunStore();
+        let release: () => void = () => undefined;
+        const blocked = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const pending = runWatchBattery({
+            account: 'sandbox',
+            catalog: [writer({ after: () => blocked })],
+            transport: answering(),
+            authorization: null,
+            clock,
+            ...store.ports
+        });
+        for (let turn = 0; turn < 50 && store.progress.length === 0; turn += 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1));
+        }
+        // The run never closed (the "process died" here), yet the id is already stored.
+        expect(store.finished).toEqual([]);
+        expect(store.progress).toHaveLength(1);
+        expect(store.progress[0]).toMatchObject({ measurementId: 'RP8' });
+        expect(store.progress[0]?.providerIds).toHaveLength(1);
+        release();
+        await pending;
+    });
+
+    it('keeps the ids recorded when the closing of the run fails', async () => {
+        const store = memoryRunStore();
+        await expect(
+            runWatchBattery({
+                account: 'sandbox',
+                catalog: [writer()],
+                transport: answering(),
+                authorization: null,
+                clock,
+                ...store.ports,
+                finishRun: async () => {
+                    throw new Error('db down');
+                }
+            })
+        ).rejects.toThrow('db down');
+        expect(store.progress.map((entry) => entry.measurementId)).toEqual(['RP8', 'RP8']);
+        expect(store.progress.flatMap((entry) => entry.providerIds)).toHaveLength(2);
+    });
+
+    it('aborts, sending nothing more, when an id cannot be recorded', async () => {
+        const store = memoryRunStore();
+        const sent: string[] = [];
+        const transport: WatchTransport = async (request) => {
+            sent.push(`${request.method} ${request.path}`);
+            return answering()(request);
+        };
+        const result = await runWatchBattery({
+            account: 'sandbox',
+            catalog: [writer()],
+            transport,
+            authorization: null,
+            clock,
+            ...store.ports,
+            recordProgress: async () => {
+                throw new Error('db down');
+            }
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('PROGRESS_NOT_RECORDED');
+        expect(sent.filter((entry) => entry.startsWith('POST'))).toHaveLength(1);
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('does not record anything for a GET', async () => {
+        const store = memoryRunStore();
+        await run({ catalog: [readEntry()], transport: scripted({ id: 'x' }).transport, store });
+        expect(store.progress).toEqual([]);
+    });
+});

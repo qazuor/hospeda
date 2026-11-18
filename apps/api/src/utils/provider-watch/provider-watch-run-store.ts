@@ -73,6 +73,23 @@ export async function openWatchRun(args: {
 }
 
 /**
+ * Persists a provider id the moment the write that created it answers. It runs in its own
+ * statement, never inside the closing transaction, so the id survives a run that dies or whose
+ * closing rolls back.
+ *
+ * @param args.runId - The run
+ * @param args.measurementId - The measurement that created it
+ * @param args.providerIds - The ids the provider answered
+ */
+export async function recordWatchProgress(args: {
+    readonly runId: string;
+    readonly measurementId: string;
+    readonly providerIds: readonly string[];
+}): Promise<void> {
+    await providerWatchRunModel.appendProviderIds(args);
+}
+
+/**
  * Closes the run and queues its alert mail in a single transaction. The write is part of the run:
  * when it fails, nothing is stored or mailed and the error propagates so the run fails.
  *

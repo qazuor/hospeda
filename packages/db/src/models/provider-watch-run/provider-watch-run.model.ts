@@ -77,6 +77,45 @@ export class ProviderWatchRunModel {
     }
 
     /**
+     * Appends provider ids to one measurement of a still-`running` run, in a statement of its own.
+     * It is called the moment a write answers, outside the transaction that later closes the run,
+     * so the ids survive a run that dies or whose closing fails: a human needs them to cancel or
+     * refund what the run created.
+     *
+     * @param input.runId - The run
+     * @param input.measurementId - The measurement that created them
+     * @param input.providerIds - Ids the provider answered
+     * @param input.tx - Only for tests; production calls it with none, as its own statement
+     * @throws When no running run has that id
+     */
+    async appendProviderIds(input: {
+        readonly runId: string;
+        readonly measurementId: string;
+        readonly providerIds: readonly string[];
+        readonly tx?: DrizzleClient;
+    }): Promise<void> {
+        const measurement = input.measurementId;
+        const ids = JSON.stringify(input.providerIds);
+        const rows = await (input.tx ?? getDb())
+            .update(providerWatchRuns)
+            .set({
+                measurements: sql`jsonb_set(
+                    ${providerWatchRuns.measurements} || jsonb_build_object(${measurement}::text, COALESCE(${providerWatchRuns.measurements} -> ${measurement}, '{}'::jsonb)),
+                    ARRAY[${measurement}::text, 'providerIds'],
+                    COALESCE(${providerWatchRuns.measurements} -> ${measurement} -> 'providerIds', '[]'::jsonb) || ${ids}::jsonb,
+                    true
+                )`
+            })
+            .where(
+                and(eq(providerWatchRuns.id, input.runId), eq(providerWatchRuns.outcome, 'running'))
+            )
+            .returning({ id: providerWatchRuns.id });
+        if (rows.length !== 1) {
+            throw new Error(`provider_watch_run ${input.runId} is not a running run`);
+        }
+    }
+
+    /**
      * Closes a run with how it ended.
      *
      * @param input.id - The run id

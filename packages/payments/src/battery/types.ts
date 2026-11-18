@@ -199,6 +199,7 @@ export type WatchGuardCode =
     | 'MONEY_ROUTE_FORBIDDEN'
     | 'OPERATION_NOT_ALLOWED'
     | 'PATH_REJECTED'
+    | 'PROGRESS_NOT_RECORDED'
     | 'READ_ENTRY_MUTATED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */
