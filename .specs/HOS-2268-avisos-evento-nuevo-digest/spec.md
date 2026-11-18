@@ -26,6 +26,7 @@ Un local que carga tres eventos en una tarde no puede disparar tres mails por se
 - G-1: un job diario que arma, por seguidor, un único correo con los eventos nuevos de los locales que sigue.
 - G-2: definición estricta de "evento nuevo" (primera vez que existe, activo y futuro), que no se dispara por editar, reactivar ni por una bajada y subida de plan.
 - G-3: topes por correo y por local para que un local no pueda inundar.
+- G-5: el resumen es transaccional (decidido el 18/11/2026) y todo correo trae el enlace de baja del local.
 - G-4: envío por la cola `email_outbox`, con idempotencia, supresión de rebotes y registro en `notification_log`.
 
 ## 4. Fuera de alcance
@@ -50,6 +51,8 @@ Un local que carga tres eventos en una tarde no puede disparar tres mails por se
 ### 5.2 El outbox ya resuelve lo que ese job no
 
 Ver HOS-2267 5.1 y 5.2: `email_outbox` con `dedup_key` único, lease, supresión de rebote duro / cuenta borrada, opt-out y tope diario para correo `commercial`, log en `notification_log`.
+
+**Nota (18/11/2026):** como el digest es ahora `transactional` (6.3), el opt-out y el tope diario comercial de abajo **ya no se le aplican**; se conservan acá como descripción del outbox.
 
 **Tope diario**: `DAILY_COMMERCIAL_CAP_PER_RECIPIENT = 1` por destinatario y día de Argentina (`packages/notifications/src/constants/notification.constants.ts:47`), supresión terminal (`email-outbox-delivery.service.ts:~345-370`). Para el digest esto es una **ventaja**: es exactamente "máximo un correo por día" y lo hace el sistema, no el job. El `alerts-digest` no pasa por el outbox, así que no cuenta para ese tope.
 
@@ -103,7 +106,7 @@ Una corrida, **dentro de una única transacción** (el volumen es de decenas o c
 5. Estampar `new_notice_at = now()` en los eventos efectivamente incluidos en algún digest, en la misma transacción. Un evento cuyos seguidores son cero también se estampa (nadie a quien avisar y no vuelve a evaluarse).
 6. Resultado: `{ events, recipients, enqueued, skippedNoGate, errors }`.
 
-Clase de correo: **`commercial`** en `OUTBOX_TEMPLATE_CLASS` (`email-outbox-suppression.ts:34-41`). Así el outbox aplica sin código nuevo (a) el opt-out del turista (`REMINDER` en `NOTIFICATION_CATEGORY_MAP`, categoría que `PreferenceService` ya sabe respetar), y (b) el tope de 1 por día. Costo: si ese día el turista ya recibió otro correo comercial (hoy solo el win-back del trial, que es para dueños), el digest se descarta sin reintento. Aceptado; ver OQ-2.
+Clase de correo: **`transactional`** en `OUTBOX_TEMPLATE_CLASS` (`email-outbox-suppression.ts:34-41`). **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #16 ✱):** el resumen es **transaccional**: no lo frena el «no quiero promociones» ni el opt-out global, y no se descarta por el tope diario comercial. El turista lo corta **dejando de seguir al local**, y por eso el correo **siempre** tiene que traer el enlace de baja de un clic (ver 6.5, AC-10 y AC-14). Consecuencias a resolver en la implementación: (a) la categoría en `NOTIFICATION_CATEGORY_MAP` no puede ser una que el outbox trate como opt-out (OQ-5); (b) el «máximo un correo por día y por seguidor» deja de apoyarse en el tope comercial y descansa en la clave de dedup.
 
 Doble fuente de verdad del opt-out: el lector del outbox `createOutboxOptOutReader` solo reconoce plantillas cuyo nombre es un valor de `NotificationType`; por eso la plantilla se llama `venue_new_events_digest`.
 
@@ -117,12 +120,12 @@ Doble fuente de verdad del opt-out: el lector del outbox `createOutboxOptOutRead
 
 - Template `VenueNewEventsDigest.tsx` en `packages/notifications/src/templates/venue-events/`; renderer en `venue-event-renderers.tsx` (el mismo archivo de HOS-2267) con `resolveCopy` es/en/pt (`apps/api/src/utils/venue-event-mail-copy.ts`). Claves en `packages/i18n/src/locales/{es,en,pt}/notifications.json`: `venueEvents.digest.{subject,preview,heading,intro,venueHeading,whenLine,more,cta,ticketCta,unfollow,manage,footer}`. Asunto: "Novedades de los locales que seguís" (con el nombre del local si es uno solo).
 - Payload (capturado al encolar): `{ locale, venues: [{ venueName, venueSlug, followToken, events: [{ title, whenText inputs: recurrence/date/weekday/startTime/endTime, ticketUrl|null }], moreCount }], manageUrl }`. Sin releer dominio al enviar.
-- Baja de un clic **por local**: `followToken` es el token HMAC de HOS-2267 6.5 con `k = 'venue_follow'`; la ruta pública `GET /api/v1/public/venue-notifications/unsubscribe` marca `deleted_at` del seguimiento. Link adicional a "Mi cuenta > Avisos de locales" para gestionarlo todo.
+- **El correo siempre trae el enlace de baja de un clic por local** (obligatorio: es la única forma que tiene el turista de cortar el resumen, ver 6.3). Baja de un clic **por local**: `followToken` es el token HMAC de HOS-2267 6.5 con `k = 'venue_follow'`; la ruta pública `GET /api/v1/public/venue-notifications/unsubscribe` marca `deleted_at` del seguimiento. Link adicional a "Mi cuenta > Avisos de locales" para gestionarlo todo.
 - No se envía el correo si ningún evento resultó mostrable luego de los topes.
 
 ### 6.6 Anti-spam (resumen)
 
-- 1 digest por usuario y día (clave de dedup y tope comercial).
+- 1 digest por usuario y día (clave de dedup; el tope comercial no aplica porque el digest es transaccional).
 - 5 eventos por local y 10 locales por correo.
 - Un evento se anuncia **una sola vez** (`new_notice_at`).
 - Ventana de 72 h: sin avisos retroactivos tras cambios de plan.
@@ -144,7 +147,8 @@ El gate se evalúa en cada corrida. Sin la clave, el local queda fuera y sus eve
 - AC-8: Si el plan del local no incluye `venue_event_notifications`, no se encola nada para sus seguidores y sus eventos no se estampan; las filas de `venue_follow` siguen activas.
 - AC-9: Un local con 8 eventos nuevos muestra 5 en el correo y "y 3 más".
 - AC-10: El correo sale en el idioma del turista (es/en/pt) y cada local trae un link de baja de un clic que deja de seguirlo sin sesión.
-- AC-11: Un turista que desactivó los avisos por correo no recibe el digest (suprimido por el outbox como `opt_out`).
+- AC-11: Un turista que desactivó los avisos promocionales o por correo **sí** recibe el digest (es transaccional, no se suprime como `opt_out`), y un día con otro correo comercial tampoco lo descarta.
+- AC-14: Todo correo del digest trae, por cada local, el enlace de baja de un clic que deja de seguirlo (y, una vez dado de baja, el turista no vuelve a recibirlo de ese local). Un test falla si la plantilla se renderiza sin ese enlace.
 - AC-12: Con `dryRun` no se encola ni se estampa nada.
 - AC-13: Existe la entrada del job en `schedules.manifest.ts` y en `registry.ts`; el test de sincronización pasa.
 
@@ -155,14 +159,14 @@ El gate se evalúa en cada corrida. Sin la clave, el local queda fuera y sus eve
 - Integración con Postgres real: una corrida genera N filas de outbox y estampa; la segunda corrida no genera nada nuevo; una caída simulada antes de commit no estampa ni encola (atomicidad).
 - Renderer/plantilla: es/en/pt, "y N más", links de baja, payload inválido (`packages/notifications/test/services/outbox/venue-event-renderers.test.tsx`).
 - Guards de registro de plantillas del outbox (`email-outbox-template-registry.guard.test.ts`) y del manifest (`schedules-manifest.test.ts`).
-- Suppression: extender `packages/notifications/test/services/outbox/email-outbox-suppression.test.ts` con la plantilla nueva como `commercial`.
+- Suppression: extender `packages/notifications/test/services/outbox/email-outbox-suppression.test.ts` con la plantilla nueva como `transactional` (no suprimida por opt-out ni por el tope comercial).
 - Migración: drift guard; verificar que el `UPDATE` de estampado no rompe `db:fresh-dev`.
 - Staging: digest real a una casilla de prueba con un local con la clave.
 
 ## 9. Riesgos
 
 - R-1: depende de ids estables (HOS-2291); sin eso `created_at` no significa "nuevo".
-- R-2: el tope diario terminal puede descartar el digest si ese día hubo otro correo comercial. Hoy casi no hay otros para turistas.
+- R-2: (resuelto el 18/11/2026) el digest es `transactional`, así que el tope diario comercial no lo descarta. El riesgo pasa a ser el inverso: sin opt-out, el enlace de baja es la única salida (AC-14).
 - R-3: la transacción única escala mal con miles de seguidores. Hoy el mercado es una ciudad; el job loguea una advertencia por encima de 2000 destinatarios y habría que pasar a lotes por usuario con un estampado por (usuario, evento).
 - R-4: "dos digests el mismo día" (precios 8:00 y eventos 10:00). Por eso se separa por horario; unificar queda como mejora futura.
 - R-5: depende de la clave y el grant (HOS-2259, HOS-2281), no mergeables antes de la pasada final de HOS-1352.
@@ -172,12 +176,14 @@ El gate se evalúa en cada corrida. Sin la clave, el local queda fuera y sus eve
 Decidido (owner, 16/11/2026), en la parte que toca a este spec: la visibilidad del botón "Seguir" sigue al dato público "avisos habilitados" de HOS-2266 (mismo mecanismo que la carta), y el digest se corta con el mismo gate al enviar. No cambia el resto del diseño.
 
 - OQ-1: ¿Job propio o sumar a `alerts-digest`? Ver 6.1. Recomiendo job propio (B).
-- OQ-2: ¿El digest es `commercial` (respeta el opt-out del outbox y el tope de 1 por día, pero se puede perder si ese día ya salió otro comercial) o `transactional` (nunca se pierde, pero el turista que quiera frenar los avisos solo puede dejar de seguir)? Recomiendo `commercial`: es contenido promocional del local y el opt-out global tiene que funcionar.
-- OQ-3: Tope de eventos nuevos anunciados por local y por día (hoy: 5 mostrados, sin tope de creación). ¿Lo dejamos así hasta ver abuso? Recomiendo sí.
-- OQ-4: Horario 10:00. ¿Prefiere otro? Recomiendo 10:00 para separarlo del digest de precios.
+- OQ-2 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #16 ✱): `transactional`** (se aparta de la recomendación). Texto original: ¿El digest es `commercial` (respeta el opt-out del outbox y el tope de 1 por día, pero se puede perder si ese día ya salió otro comercial) o `transactional` (nunca se pierde, pero el turista que quiera frenar los avisos solo puede dejar de seguir)? Recomiendo `commercial`: es contenido promocional del local y el opt-out global tiene que funcionar.
+- OQ-3 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #17):** no hay tope de eventos por local y día; ya se muestran 5 como máximo. Texto original: Tope de eventos nuevos anunciados por local y por día (hoy: 5 mostrados, sin tope de creación). ¿Lo dejamos así hasta ver abuso? Recomiendo sí.
+- OQ-4 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #18):** sale a las 10:00. Texto original: Horario 10:00. ¿Prefiere otro? Recomiendo 10:00 para separarlo del digest de precios.
+- OQ-5 (abierta, la abre la decisión #16): ¿qué categoría de `NOTIFICATION_CATEGORY_MAP` lleva el digest para que `PreferenceService` y el outbox no lo traten como opt-out, y se mantiene `REMINDER`? ¿Cómo se garantiza el tope de un correo por día sin el tope comercial (solo la clave de dedup)? Hay que resolverlo en T-3.
 
 ## 11. Dependencias
 
+- Límite mensual de avisos a seguidores (decisión #48 ✱ de HOS-2252 ronda 2, 18/11/2026; clave nueva por HOS-2259, valores por HOS-2281): Pro 4 por mes, Premium sin tope. El corte en el envío queda abierto (HOS-2281, pregunta 3) y este job lo tiene que respetar.
 - HOS-2266 (tablas, gate), HOS-2291 (ids estables de eventos), HOS-2267 (tipos de notificación, copy, token de baja y ruta pública, que se crean ahí), HOS-2259/2281, HOS-2269 (`suspended_for_date`, opcional).
 
 ## 12. Smoke y Novedades
@@ -190,7 +196,7 @@ Decidido (owner, 16/11/2026), en la parte que toca a este spec: la visibilidad d
 
 1. T-1 Migración: `venue_events.new_notice_at` + índice + estampado de filas existentes.
 2. T-2 Función pura de selección y agrupación de digests + tests.
-3. T-3 Tipo `VENUE_NEW_EVENTS_DIGEST`, clase `commercial` en el outbox y tests de supresión.
+3. T-3 Tipo `VENUE_NEW_EVENTS_DIGEST`, clase `transactional` en el outbox y tests de supresión (resolver OQ-5).
 4. T-4 Plantilla + renderer + copy es/en/pt + tests.
 5. T-5 Job `venue-new-events-digest` + manifest + registry + tests unitarios.
 6. T-6 Integración Postgres real (atomicidad, idempotencia) y guards.

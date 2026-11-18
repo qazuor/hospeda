@@ -79,7 +79,7 @@ no tiene nada de esto.
 - Borrar un evento que tiene anotados activos (`CONFIRMED`) responde 409
   `ALREADY_EXISTS`, `details.reason = EVENT_HAS_ACTIVE_ENTRIES`. Para sacarlo, el local
   primero lo da de baja con `isActive = false` y cancela la lista (ver 6.5). Es la
-  decisión 6 del owner: nunca se borra lo ya confirmado.
+  decisión 6 del owner: nunca se borra lo ya confirmado. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #33; HOS-2260 OQ-9):** no se puede borrar un evento (ni el local) con anotados o reservas confirmadas: primero hay que cancelarlos, y **se les avisa** por correo (cancelación del local, 6.7).
 - Mantener compatibilidad: un payload sin ids sigue funcionando para el editor viejo
   mientras no haya listas (se resuelve con id nuevo por evento). Una vez que existe
   alguna lista, el cliente debe mandar ids.
@@ -263,18 +263,19 @@ en es, en y pt. Sin textos fijos en componentes.
 - R-1: diff de eventos (HOS-2291, ver 6.1). Si sale mal, borra anotados. Cubierto con RESTRICT y AC-12/13.
 - R-2: sobreventa. Cubierto con bloqueo de fila (AC-5).
 - R-3: inyección de fórmulas en CSV. Cubierto con escape.
-- R-4: la lista expone nombres. Solo los ve el dueño o staff con `venueReservation.viewAll`.
+- R-4: la lista expone nombres. Solo los ve el dueño o, desde la etapa 2 y **en solo lectura**, staff con `venueReservation.viewAll` (decidido el 18/11/2026, HOS-2252 ronda 2, #34; HOS-2260 OQ-10). Sin ruta de admin en la etapa 1.
 - R-5: depende de claves del catálogo que no existen hasta HOS-2259.
 
 ## 12. Preguntas abiertas para el owner
 
-Decididas en HOS-2260 (16/11/2026): OQ-1, OQ-3, OQ-4, OQ-7, OQ-8. OQ-9 sigue abierta
-allá. Específicas:
+Decididas en HOS-2260 (16/11/2026): OQ-1, OQ-3, OQ-4, OQ-7, OQ-8. OQ-9 y OQ-13 se
+decidieron el 18/11/2026 (ver abajo). Específicas:
 
 - OQ-A: **Decidido (owner, 16/11/2026): el cupo cuenta personas**, no anotaciones (OQ-7 de
   HOS-2260: cupo en personas, cierre por cupo u hora).
-- OQ-B: **máximo de acompañantes.** Sigue abierta (menor). Recomendada: 3 por defecto,
-  configurable de 0 a 10.
+- OQ-B: **máximo de acompañantes.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #38):** cada anotado puede sumar 3 acompañantes por defecto; el local lo ajusta entre 0 y 10.
+- OQ-9 de HOS-2260 (borrar con anotados): **decidido (owner, 18/11/2026, #33)**: primero cancelarlos, y se les avisa. Ver 6.1.
+- OQ-13 de HOS-2260: **decidido (owner, 18/11/2026, #37)**: la lista de invitados **no descuenta del aforo de reservas** (HOS-2275). Tiene su cupo propio por evento (6.3).
 
 ## 13. Dependencias
 

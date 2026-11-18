@@ -12,9 +12,9 @@ areas:
 
 ## 1. Resumen
 
-El issue pide mostrar en las tarjetas del listado de `/comer-y-salir/` y de cada rubro el estado «Abierto ahora», «Abre a las HH:MM» o «Cerrado». **Verificado: la mitad ya está hecha.** Las tarjetas ya muestran «Abierto ahora» y «Cerrado ahora», calculados en el navegador, en la zona horaria del local (HOS-1787 hoja 6.3). Lo que falta es el estado **«Abre a las HH:MM»**, y alinear el texto de «Cerrado».
+El issue pide mostrar en las tarjetas del listado de `/comer-y-salir/` y de cada rubro (y, por decisión del owner del 18/11/2026, también en la ficha del local) el estado «Abierto ahora», «Abre a las HH:MM» o «Cerrado». **Verificado: la mitad ya está hecha.** Las tarjetas ya muestran «Abierto ahora» y «Cerrado ahora», calculados en el navegador, en la zona horaria del local (HOS-1787 hoja 6.3). Lo que falta es el estado **«Abre a las HH:MM»**, y alinear el texto de «Cerrado».
 
-Es una mejora chica, sólo web, sin entitlement, sin API ni base de datos. Hija de la épica HOS-2252, Fase 1.
+Es una mejora chica (el owner sumó el 18/11/2026 el badge también en la ficha del local), sólo web, sin entitlement, sin API ni base de datos. Hija de la épica HOS-2252, Fase 1.
 
 Dos afirmaciones del issue y de la épica no se confirman en el código y se corrigen aquí (sección 5.4).
 
@@ -30,10 +30,11 @@ Dos afirmaciones del issue y de la épica no se confirman en el código y se cor
 - G-3. Vale para todos los planes; sin entitlement.
 - G-4. Respeta los horarios que cruzan la medianoche (regla DEC-FAC-052).
 - G-5. Misma accesibilidad y sin saltos de layout que el badge actual.
+- G-6. El mismo badge aparece también en la ficha del local (decisión del owner, 18/11/2026, HOS-2252 ronda 2, #3).
 
 ## 4. No-objetivos
 
-- NG-1. Mostrar el badge en la ficha del local (ver 5.4 y OQ-2).
+- NG-1. (Eliminado el 18/11/2026.) El badge **sí** va en la ficha del local: ver G-6, 6.5 y OQ-2.
 - NG-2. «Cierra a las HH:MM» o «Cierra pronto».
 - NG-3. Filtro «abierto ahora» en el listado.
 - NG-4. Actualización en vivo (intervalo). El estado se calcula una vez al hidratar, como hoy.
@@ -62,7 +63,7 @@ Dos afirmaciones del issue y de la épica no se confirman en el código y se cor
 
 ### 5.4 Correcciones a lo que dicen el issue y la épica
 
-1. La épica dice que el badge "existe en la ficha" del local. **No existe en la ficha.** `VenueOpenNowBadge` sólo se importa en `VenueCard.astro`. La ficha muestra la grilla de horarios (`OpeningHoursSection.astro`, `OpeningHoursGrid.client.tsx`), no un estado.
+1. La épica dice que el badge "existe en la ficha" del local. **No existe en la ficha** (y el owner decidió el 18/11/2026 agregarlo, ver 6.5). `VenueOpenNowBadge` sólo se importa en `VenueCard.astro`. La ficha muestra la grilla de horarios (`OpeningHoursSection.astro`, `OpeningHoursGrid.client.tsx`), no un estado.
 2. El issue dice que "falta mostrarlo en las tarjetas". Ya está en las tarjetas; lo que falta es el estado «Abre a las».
 3. El issue pide el cálculo en el cliente por las páginas cacheables. Ya se cumple y el diseño lo mantiene. El guard `cacheable-pages-are-session-blind.guard.test.ts` no se ve afectado: la isla es `.tsx` y no lee sesión.
 
@@ -103,10 +104,15 @@ Estilo del tercer estado: una clase `.opensSoon` en `VenueOpenNowBadge.module.cs
 - `venue.card` ya está en `i18n-client-namespaces.ts`, así que no hay que declarar prefijos nuevos.
 - Texto de `closedNow`: ver OQ-1.
 
+### 6.5 Badge en la ficha del local (decidido, 18/11/2026, HOS-2252 ronda 2, #3 ✱)
+
+El badge «Abierto ahora / Abre a las HH:MM / Cerrado» va **también en la ficha**, no solo en las tarjetas. Se reusa la isla `VenueOpenNowBadge.client.tsx` en el encabezado de la ficha, con el mismo contrato de render (nada en el servidor ni en el primer render, por el caché del borde). La ficha ya muestra la grilla de horarios; el badge no la reemplaza. Hay que adaptar el estilo: la isla hoy está pensada como badge `position: absolute` sobre la tarjeta, y en la ficha va en flujo normal. El lugar exacto del encabezado y la variante de estilo se definen en la implementación (ver OQ-4).
+
 ### 6.4 Lo que no cambia
 
 - `VenueCard.astro`: la forma exacta del montaje que fija `TEST:6.3:3` no cambia. No recibe el cálculo en el servidor.
 - API, schemas, base de datos, catálogo, planes: nada.
+- La grilla de horarios de la ficha (`OpeningHoursSection.astro`) sigue igual.
 
 ## 7. Datos y migraciones
 
@@ -127,7 +133,9 @@ Hora de referencia: viernes en `America/Argentina/Buenos_Aires`.
 - AC-9. El HTML servido (`renderToString` de la isla y el `.astro` de la tarjeta) **no** contiene el estado: se pinta recién después de montar.
 - AC-10. El badge no cambia el layout de la tarjeta (sigue `position: absolute`).
 - AC-11. El relleno del estado «Abre a las» cumple contraste AA (>= 4,5:1) con el texto blanco en tema claro y oscuro.
-- AC-12. No se agrega ningún campo a la API ni lectura de sesión a las páginas del listado.
+- AC-12. No se agrega ningún campo a la API ni lectura de sesión a las páginas del listado ni a la ficha.
+- AC-13. La ficha del local muestra el mismo badge (misma isla y mismos tres estados). El HTML servido de la ficha tampoco contiene el estado (AC-9 aplica igual).
+- AC-14. Un local cerrado muestra «Cerrado» (sin «ahora»), también cuando abre mañana, sin «Abre mañana».
 
 ## 9. Plan de pruebas
 
@@ -153,15 +161,17 @@ Guards: `cacheable-pages-are-session-blind.guard.test.ts`, el guard de i18n (cla
 
 ## 11. Preguntas abiertas para el owner
 
-- OQ-1. **Texto del estado cerrado.** Hoy dice «Cerrado ahora»; el issue pide «Cerrado».
+- OQ-1. **Texto del estado cerrado.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #2): opción 1, «Cerrado»** (en «Closed», pt «Fechado»). Hoy dice «Cerrado ahora»; el issue pide «Cerrado».
   1. Cambiar a «Cerrado» (en «Closed», pt «Fechado»). Recomendada: sigue el issue y queda parejo con «Abre a las…», donde «ahora» sobra.
   2. Dejar «Cerrado ahora». Pro: cero cambios de texto ni de tests existentes. Contra: no coincide con el criterio escrito.
-- OQ-2. **Badge en la ficha del local.** La épica da por hecho que ya está ahí y no lo está.
+- OQ-2. **Badge en la ficha del local.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #3 ✱): opción 2, se agrega en la ficha** (se aparta de la recomendación). La épica da por hecho que ya está ahí y no lo está.
   1. No agregarlo (fuera de esta spec); la ficha ya muestra la grilla de horarios. Recomendada: el issue habla sólo de las tarjetas.
   2. Agregarlo al encabezado de la ficha reusando la isla. Pro: coherencia con la tarjeta. Contra: alcance nuevo y otra pieza que probar; si se quiere, va en otro issue.
-- OQ-3. **«Abre mañana».** Un local que cerró hoy y abre mañana muestra «Cerrado».
+- OQ-3. **«Abre mañana».** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #4): opción 1, sigue «Cerrado», sin «Abre mañana».** Un local que cerró hoy y abre mañana muestra «Cerrado».
   1. Dejarlo así (lo que pide el issue). Recomendada.
   2. Mostrar «Abre mañana a las HH:MM». Pro: más informativo. Contra: requiere mirar el día siguiente y el feriado/excepción no está modelado.
+
+- OQ-4. **Ubicación y estilo del badge en la ficha (abierta, la abre la decisión #3).** ¿En qué punto del encabezado de la ficha va, y con qué variante de estilo? La spec no lo decide; lo resuelve el implementador con el diseño de la ficha.
 
 ## 12. Etiquetas de smoke y Novedades
 
@@ -180,6 +190,7 @@ Guards: `cacheable-pages-are-session-blind.guard.test.ts`, el guard de i18n (cla
 2. T-2. Isla: estados, etiquetas, clase `.opensSoon` con contraste medido + tests (0,5 día).
 3. T-3. i18n `venue.card.opensAt` (y `closedNow` según OQ-1) en es/en/pt + test de claves (0,25 día).
 4. T-4. Smoke local y en staging (0,25 día).
+5. T-5. Montar la isla en el encabezado de la ficha con su variante de estilo y tests (por estimar; decisión #3).
 
 ## 15. Linear
 

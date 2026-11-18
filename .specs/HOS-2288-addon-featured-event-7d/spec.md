@@ -187,7 +187,7 @@ lectura es correcto aunque la revalidación falle (solo se ve tarde).
 ### 5.8 Qué pasa si…
 
 - El evento se borra: `event_id` queda `NULL` (FK `SET NULL`), el add-on queda pagado y sin
-  efecto. Ver pregunta abierta 1.
+  efecto. **Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #5):** en la primera versión el destacado **se pierde sin reembolso**, y **antes de borrar se le avisa claramente al dueño** en el editor de eventos. Reasignarlo a otro evento queda para una segunda versión. Ver pregunta abierta 1.
 - Baja de plan hasta uno **sin** `manage_venue_events`: los eventos se ocultan (decisión 6 de
   HOS-2253), el destacado queda sin efecto visible; el add-on sigue vivo hasta que venza.
 - La ficha se purga: A5 cancela el add-on (el scope es `LISTING`), ya implementado.
@@ -225,6 +225,7 @@ lectura es correcto aunque la revalidación falle (solo se ve tarde).
 - AC-12. El texto del producto no menciona el plan, y el precio sale del catálogo (G7), no del código.
 - AC-13. Dado un local premium, entonces no ve la oferta y la compra se rechaza con 409
   `ADDON_NOT_ELIGIBLE` (regla de HOS-2292).
+- AC-15. Dado un evento con destacado vivo, cuando el dueño intenta borrarlo en el editor, entonces ve un aviso claro de que **pierde el destacado pagado, sin reembolso**, y debe confirmar. Si confirma, el evento se borra y el destacado se pierde (`event_id = NULL`, sin reasignación ni reembolso).
 - AC-14. El producto de producción se crea desde el admin solo tras la revisión del precio
   provisorio ($3.000) con el owner; el runbook queda en `docs/billing/`.
 
@@ -260,18 +261,19 @@ Decidido (owner, 16/11/2026):
 
 1. **Modelado.** Alcance `LISTING` + `event_id` guardado en la compra; sin alcance nuevo
    `EVENT` (5.1).
-2. **Precio.** Pago único $3.000, provisorio, a revisar con el owner antes de crear el producto
+2. **Precio.** Pago único $3.000, provisorio (confirmado como provisorio el 18/11/2026, ronda 1, #6), a revisar con el owner antes de crear el producto
    en producción.
 3. **¿Puede comprarlo un local premium?** No: no se ofrece (HOS-2292, regla «ya otorgado»).
 
 Abiertas (menores):
 
-1. **Si el dueño borra el evento ya destacado.** Opciones: A) el add-on se pierde sin
+1. **Si el dueño borra el evento ya destacado.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #5): opción A.** El destacado se pierde sin reembolso y antes de borrar se le avisa claramente al dueño; reasignarlo (opción B) queda para una segunda versión. Opciones: A) el add-on se pierde sin
    reembolso (simple, se siente injusto); B) reasignar a otro evento mientras dure (justo, más
    código y UI); C) impedir borrar un evento con destacado vivo (fricción). Recomendación: B
    en una segunda iteración; la primera acepta A y lo avisa en el resumen de compra.
 2. **¿Un evento por compra?** Recomendación: un evento por compra y varias compras en
    paralelo sobre eventos distintos (el criterio de la issue).
+   **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #52):** cada compra destaca un evento, y se pueden tener varias en paralelo sobre eventos distintos.
 
 ## 11. Dependencias
 
@@ -298,7 +300,7 @@ Abiertas (menores):
 3. `eventId` en el request, validaciones y código 409 en `purchaseAddon`. (1 d)
 4. `findActiveEventBoosts` + `resolvePublicEventIsFeatured` + `getBySlug` (orden). (1 d)
 5. Oyente de revalidación del local. (0,5 d)
-6. Web: selector de evento, resumen, i18n es/en/pt. (1 d)
+6. Web: selector de evento, resumen, i18n es/en/pt, y aviso previo al borrar un evento destacado (AC-15). (1,25 d)
 7. Web: insignia y orden en `VenueEvents` (compartida con HOS-2279). (0,25 d)
 8. Runbook en `docs/billing/` y creación del producto en el admin de staging con el precio
    provisorio. (0,25 d)

@@ -113,7 +113,7 @@ plan, se ve como «No incluido» en todas las columnas: una promesa vacía.
 Las filas curadas van en un módulo nuevo
 `apps/web/src/components/billing/plan-comparison-venue-night-rows.ts` (RO-RO, JSDoc) y
 se suman a `VENUE_GROUPS` como un grupo nuevo `venueNight` (etiqueta de grupo en
-`billing.comparison.group.venueNight`).
+`billing.comparison.group.venueNight`). **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #10):** el grupo se llama «Eventos y reservas» (es; en/pt a traducir).
 
 ### 6.2 Marca «solo para locales de noche»
 
@@ -192,15 +192,19 @@ razonable (después de `MAX_VENUES`).
 
 ### 6.6 Aviso del trial: qué planes incluyen la función, leído del catálogo
 
-**Decidido (owner, 16/11/2026, decisiones 27 y 27b):** durante el trial las funciones nuevas
+**Decidido (owner, 16/11/2026, decisiones 27 y 27b; texto ajustado el 18/11/2026, HOS-2252 ronda 1, #4):** durante el trial las funciones nuevas
 funcionan con valores mínimos (1 promo activa, 10 lugares de lista, 1 evento activo,
 filas de límite en la versión `trial`; HOS-2280 a HOS-2283) y muestran un aviso que dice
-**qué planes la incluyen**, calculado del catálogo:
+**qué planes la incluyen**, calculado del catálogo. **El texto «Incluido en …» lo arma
+el catálogo** según qué planes tienen la clave: «Incluido en Premium» o «Incluido en Pro
+y Premium». **No hay un texto aparte para las funciones solo-Premium**: es una única
+plantilla, `Incluido en {{plans}}`, y la lista de planes cambia sola.
 
-- «Incluido en Pro y Premium. El plan Básico no lo tiene» cuando la clave está en Pro y
-  Premium (promos, lista, avisos, recurrencia, métricas, video).
-- «Incluido en Premium. Los planes Básico y Pro no lo tienen» cuando solo Premium la tiene
-  (estadísticas por evento, promos VIP, reservas, grupos y cumpleaños).
+- Funciones en Pro y Premium (promos, lista, avisos, recurrencia, métricas, video):
+  «Incluido en Pro y Premium».
+- Funciones solo de Premium (estadísticas por evento, promos VIP, reservas, grupos y
+  cumpleaños): «Incluido en Premium».
+- Se retira la frase «El plan Básico no lo tiene» de la redacción del 16/11/2026.
 - Textos en es/en/pt (`billing.trial.includedInNotice.*`), con los nombres de plan
   interpolados desde el catálogo (`plan.name` de las versiones vendibles y vigentes que
   tienen la clave), nunca escritos a mano en el texto, y sin precios.
@@ -221,8 +225,7 @@ ownership de `guestList`, según 6.2).
 
 ## 8. UX / UI
 
-- Tabla de planes de «Comer y salir»: grupo nuevo «Para la noche» (nombre a confirmar con
-  copy) con filas de eventos, promos, lista y reservas, cada una con su ícono
+- Tabla de planes de «Comer y salir»: grupo nuevo «Eventos y reservas» (decidido el 18/11/2026) con filas de eventos, promos, lista y reservas, cada una con su ícono
   (`comparison-row-icons.ts`, íconos de `@repo/icons`).
 - Fila de lista de invitados con la leyenda «Para locales del rubro Noche».
 - Topes con su número o «Ilimitado», y «No incluido» donde no hay fila de límite.
@@ -246,9 +249,9 @@ ownership de `guestList`, según 6.2).
 7. El upsell de los editores no nombra planes (guard existente verde con los textos nuevos).
 8. La tabla de alojamiento, de experiencia y las filas existentes de venue no cambian.
 9. Dado un venue en trial, cuando abre una función que está en Pro y Premium (promos,
-   lista, avisos), entonces ve «Incluido en Pro y Premium. El plan Básico no lo tiene»; si
+   lista, avisos), entonces ve «Incluido en Pro y Premium»; si
    la función es solo de Premium (reservas, promos VIP, estadísticas por evento), ve
-   «Incluido en Premium. Los planes Básico y Pro no lo tienen». Los nombres salen del
+   «Incluido en Premium». Es la misma plantilla y los nombres salen del
    catálogo, en es/en/pt. Un venue con plan pago no lo ve.
 10. Dado que el componente del aviso tiene un nombre de plan literal, cuando corre el guard
    de upsell, entonces falla; con nombres leídos del catálogo, pasa.
@@ -286,7 +289,7 @@ ownership de `guestList`, según 6.2).
 2. **Decidido (owner, 16/11/2026): filas sin grant.** Se ocultan hasta que algún plan las
    otorga (6.3); no se muestran como «Próximamente». Incluye la fila de videos.
 3. **Nombre del grupo de filas** («Para la noche», «Eventos y reservas», otro).
-   Recomendación: «Eventos y reservas», sirve también para gastronomía.
+   **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #10): «Eventos y reservas».**
 4. **Decidido (owner, 16/11/2026): texto del aviso del trial.** Lo arma el catálogo según
    qué planes tienen la clave, con excepción acotada en el guard de upsell (6.6).
 
@@ -309,7 +312,7 @@ ownership de `guestList`, según 6.2).
 ## 15. Desglose de tareas
 
 1. Campo `hideUntilGranted` y `lineMarksOfSection` en `RowConfig` + helper + tests (0,5 día).
-2. Módulo de filas curadas y grupo `venueNight` (0,5 día).
+2. Módulo de filas curadas y grupo `venueNight` («Eventos y reservas») (0,5 día).
 3. Presentación de `guestList` y traits en `VENUE_CATALOG_PRESENTATION` (0,25 día).
 4. Textos es/en/pt de etiquetas y descripciones (1 día, con revisión de copy).
 5. Textos de ayuda, tope alcanzado y audiencia venue (0,5 día).

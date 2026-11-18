@@ -158,8 +158,7 @@ de lista, 1 evento activo; HOS-2280 a HOS-2283): la página no promete que el tr
 las funciones con los topes de Pro o Premium.
 
 Reglas de redacción: frases cortas, sin números que salgan del catálogo (los topes se leen del
-catálogo en la página de planes; la presentación puede citar cifras **solo si** las decide el
-owner, ver pregunta 3), sin «próximamente» con fecha, sin nombrar rubros que no son del bloque.
+catálogo en la página de planes; la presentación **cita las cifras de cada plan** (decidido el 18/11/2026, #50), siempre con el test de veracidad que las compara con el catálogo; ver pregunta 3), sin «próximamente» con fecha, sin nombrar rubros que no son del bloque.
 
 ### 6.4 Novedades
 
@@ -215,7 +214,7 @@ PDF (la página se exporta). Sin e2e. Guards: `pnpm check:guards`.
   test de veracidad (6.5).
 - R-2. Prometer antes de tiempo: los PR de bloque se abren **después** del merge de la concesión.
 - R-3. La página ya se entregó a prospectos con afirmaciones falsas (5.1). Conviene avisar al
-  owner qué cambió respecto de la versión entregada.
+  owner qué cambió respecto de la versión entregada. **No** se avisa a los prospectos que ya la recibieron (decidido el 18/11/2026, HOS-2252 ronda 2, #51 ✱; pregunta 4).
 - R-4. Mezclar rubros: la lista de invitados solo es de Noche; un texto genérico confunde.
 
 ## 10. Preguntas abiertas para el owner
@@ -231,8 +230,10 @@ PDF (la página se exporta). Sin e2e. Guards: `pnpm check:guards`.
    - A) Citarlas: es lo que busca el prospecto. Contra: si cambian, la página miente (R-1).
    - B) Solo describir y mandar a `/planes/` donde el catálogo manda. Contra: menos concreta.
    - **Recomiendo A con el test de veracidad que lee el catálogo**, así una cifra desfasada rompe CI.
+   - **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #50): opción A.** La presentación cita las cifras de cada plan, con un test que las compara con el catálogo.
 4. **¿Se avisa a los prospectos que ya recibieron la versión anterior?** Recomiendo sí, con el
    resumen de cambios del PR 0.
+   **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #51 ✱): no.** No se avisa a los prospectos que ya recibieron la presentación anterior (se aparta de la recomendación). El resumen de cambios del PR 0 queda solo para el owner.
 
 ## 11. Dependencias
 

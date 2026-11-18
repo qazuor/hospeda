@@ -95,8 +95,8 @@ Los componentes de alojamiento no se parametrizan. Razones: el formulario ya sup
 
 ### 6.4 Marca «Promo» en la tarjeta
 
-- API: `VenuePublicListItemSchema` suma `promoBadge?: { hasPromo: true }` (HOS-2272 le suma las franjas). En `list.ts` y en las otras rutas que arman tarjetas de local (`getByDestination.ts` y destacados del home) se hace una sola lectura por página: `OwnerPromotionModel.findVenueIdsWithActivePromo({ venueIds })` (`entity_type = 'venue'`, `entity_id IN venueIds`, ACTIVE, vigente, `tourist_audience = 'plus'`, `GROUP BY entity_id`). Una consulta, no N.
-- Web: `toVenueCardProps` (`apps/web/src/lib/api/transforms.ts:2729`) pasa el dato. `VenueCard.astro` pinta una etiqueta chica «Promo» si `data.promoBadge`. Discreta: misma altura y estilo que los otros chips de la tarjeta, texto fijo, sin interacción, `aria-label` descriptivo.
+- API: `VenuePublicListItemSchema` suma `promoBadge?: { hasPromo: true, vipOnly: boolean }` (HOS-2272 le suma las franjas). **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #32 ✱, HOS-2273 OQ-5):** si el local tiene **solo promos VIP**, la tarjeta pública muestra «Promo VIP»; `vipOnly` es verdadero cuando todas las promos vigentes del local son `vip`. El dato sigue sin revelar títulos ni beneficios. En `list.ts` y en las otras rutas que arman tarjetas de local (`getByDestination.ts` y destacados del home) se hace una sola lectura por página: `OwnerPromotionModel.findVenueIdsWithActivePromo({ venueIds })` (`entity_type = 'venue'`, `entity_id IN venueIds`, ACTIVE, vigente, cualquier `tourist_audience`, `GROUP BY entity_id`, con un agregado que diga si hay alguna `plus`). Una consulta, no N.
+- Web: `toVenueCardProps` (`apps/web/src/lib/api/transforms.ts:2729`) pasa el dato. `VenueCard.astro` pinta una etiqueta chica «Promo» si `data.promoBadge` (o «Promo VIP» si `vipOnly`). Discreta: misma altura y estilo que los otros chips de la tarjeta, texto fijo, sin interacción, `aria-label` descriptivo.
 - Como el dato es estático (hay o no hay promo vigente), vive en HTML cacheado y se revalida con la etiqueta del local. La parte que depende de la hora (badge «Ahora») es isla de cliente y va en HOS-2272.
 
 ### 6.5 i18n (es, en, pt)
@@ -137,7 +137,7 @@ Los textos van con la tilde correcta y sin inventar traducciones: pt y en con el
 - AC-8. Dado un local no publicado, entonces `GET /public/venues/{id}/promotions` responde 404.
 - AC-9. Dado un local con una promo vigente, entonces su tarjeta del listado muestra «Promo»; sin promo, no.
 - AC-10. Dada una promo pausada, vencida o aún no iniciada, entonces no sale en la ficha ni marca la tarjeta.
-- AC-11. Dada una promo `vip` (HOS-2273), entonces no sale en la ruta pública ni marca la tarjeta.
+- AC-11. Dada una promo `vip` (HOS-2273), entonces no sale en la ruta pública. Si es la única promo vigente del local, la tarjeta muestra «Promo VIP» (decisión #32 ✱); si el local tiene además una `plus`, muestra «Promo». Nunca se imprime su título ni su beneficio.
 - AC-12. Dada la ficha, entonces su HTML es idéntico para cualquier visitante (el guard `cacheable-pages-are-session-blind` sigue verde).
 - AC-13. Dado el idioma en, pt o es, entonces todos los textos nuevos se ven traducidos y sin claves crudas.
 - AC-14. Dado `upsellPlanName = null`, entonces ninguna pantalla imprime `null` ni queda en blanco.
@@ -166,9 +166,9 @@ Decidido (owner, 16/11/2026): se suma el tipo de beneficio «oferta especial» c
 
 Preguntas abiertas (menores):
 - OQ-1. Reuso de formularios. Opciones: (a) componentes de local nuevos más helpers compartidos; (b) parametrizar `PromotionForm`/`PromotionList` por vertical. **Recomiendo (a)**: (b) rompe G1 y ya pasa las 500 líneas.
-- OQ-2. Posición del bloque en la ficha. Opciones: (a) por orden del catálogo, tras eventos; (b) arriba, antes de la carta, para que se vea más. **Recomiendo (a)**: cambiar el orden es una decisión de producto y el catálogo ya lo define; (b) se puede pedir después.
-- OQ-4. Texto de la oferta en la tarjeta del listado: la marca queda en «Promo» fija (no se muestra el texto libre ahí). Opciones: (a) solo «Promo»; (b) mostrar el texto corto. **Recomiendo (a)**: la tarjeta es discreta y el texto libre no tiene largo controlado.
-- OQ-3. Aviso de «puede tardar en verse». Opciones: (a) mostrarlo; (b) esperar la revalidación sin aviso. **Recomiendo (a)**.
+- OQ-2. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #23): opción (a).** En la ficha, el bloque de promos va después de eventos, en el orden del catálogo. Posición del bloque en la ficha. Opciones: (a) por orden del catálogo, tras eventos; (b) arriba, antes de la carta, para que se vea más. **Recomiendo (a)**: cambiar el orden es una decisión de producto y el catálogo ya lo define; (b) se puede pedir después.
+- OQ-4. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #24): opción (a).** La tarjeta del listado muestra solo «Promo», sin el texto de la oferta. Texto de la oferta en la tarjeta del listado: la marca queda en «Promo» fija (no se muestra el texto libre ahí). Opciones: (a) solo «Promo»; (b) mostrar el texto corto. **Recomiendo (a)**: la tarjeta es discreta y el texto libre no tiene largo controlado.
+- OQ-3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #25): opción (a).** Al guardar una promo se avisa «puede tardar unos minutos en verse». Aviso de «puede tardar en verse». Opciones: (a) mostrarlo; (b) esperar la revalidación sin aviso. **Recomiendo (a)**.
 
 ## 12. Dependencias
 

@@ -211,11 +211,11 @@ Guards: `check:guards`, `check-no-listing-dispatch` (G-FAC-05), `check-catalog-k
 - OQ-1. **Decidido (owner, 16/11/2026): se acepta tocar `LISTING_SECTIONS` en la fase 1.** El trait `videos` no crea claves ni valores, solo estructura de código, y es lo que habilita el gate. Billing de la épica dio OK con las condiciones de 6.8. Se descartaron esperar a la pasada final y el gate solo por `enforceUserGate`.
 - OQ-2. **Decidido (owner, 16/11/2026): fila de videos antes del grant.** Se **oculta** hasta que algún plan la otorgue (HOS-2280); no se muestra «Próximamente» ni «No incluido». Supera la redacción «Próximamente» de la coordinación con billing.
 - OQ-3. **Decidido (owner, 16/11/2026): videos ya cargados.** No hay: staging 0, producción 0, seeds sin videos de venue. Sin acción; se repite la consulta antes del merge.
-- OQ-4. **Tope de videos y proveedores.** Alojamiento no tiene tope y acepta tres proveedores.
+- OQ-4. **Tope de videos y proveedores.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #5): opción 1.** Máximo 6 videos, de YouTube, Vimeo o Dailymotion. Alojamiento no tiene tope y acepta tres proveedores.
   1. Tope de 6 por Zod, los mismos tres proveedores. Recomendada.
   2. Sin tope, igual que alojamiento. Pro: paridad. Contra: un local puede cargar cientos de fachadas.
   3. Sólo YouTube y Vimeo (como dice el issue), sin Dailymotion. Pro: menos superficie y sin la dependencia del Player ID. Contra: dos caminos de render distintos para dos verticales.
-- OQ-5. **403 en lugar de recorte silencioso.** Alojamiento neutralizaba lo no entitulado sin rechazar el PATCH entero (HOS-216). El pipeline de catálogo rechaza el PATCH con 403. Como el widget de videos guarda por separado, el 403 sólo afecta a quien manda `videos`.
+- OQ-5. **403 en lugar de recorte silencioso.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #6): opción 1.** Si el plan no incluye videos, guardar uno da un error claro (403) y no se guarda nada. Alojamiento neutralizaba lo no entitulado sin rechazar el PATCH entero (HOS-216). El pipeline de catálogo rechaza el PATCH con 403. Como el widget de videos guarda por separado, el 403 sólo afecta a quien manda `videos`.
   1. 403 (lo que hace experiencia con sus traits). Recomendada.
   2. Recortar `videos` y devolver 200. Contra: oculta al cliente que no se guardó nada.
 

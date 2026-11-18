@@ -155,6 +155,8 @@ Sin job, sin columna. Al subir de plan el trait pasa a `available` y los semanal
 
 **OQ-2. Reactivar un semanal en borrador sin la clave.**
 
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #11): opción 1.** Si el dueño bajó de plan, no puede reactivar un semanal que había apagado a mano.
+
 1. Requiere la clave (recomendada): reactivar equivale a publicar algo que el plan no incluye. Contra: el dueño en baja que apagó a mano uno de sus semanales y quiere volver a prenderlo, no puede.
 2. Permitido mientras el plan siga sin la clave pero sin efecto público. Contra: es un estado confuso, "activo" pero invisible.
 
