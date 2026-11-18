@@ -67,6 +67,11 @@ export const LISTING_SECTIONS = {
             vertical: 'venue',
             common: true,
             fields: ['videos'],
+            // HOS-2258: photos stay free; only the linked videos are gated.
+            // The key exists in the catalog but no venue plan grants it yet
+            // (HOS-2280), so the trait ships OFF: writes answer 403 and the
+            // public payload carries no videos.
+            traits: [{ id: 'videos', entitlementKey: K.CAN_EMBED_VIDEO, fields: ['videos'] }],
             order: 6,
             group: 'content'
         },

@@ -345,6 +345,28 @@
                 "description": "Não foi possível ler o estado das seções da sua ficha. Tente novamente em alguns minutos.",
                 "retry": "Tentar novamente",
                 "back": "Voltar às minhas fichas"
+            },
+            "video": {
+                "sectionTitle": "Vídeos",
+                "sectionDescription": "Adicione links de vídeos do YouTube, Vimeo ou Dailymotion que mostrem o seu local.",
+                "empty": "Você ainda não adicionou nenhum vídeo.",
+                "urlLabel": "Link do vídeo",
+                "urlPlaceholder": "https://youtu.be/...",
+                "captionLabel": "Título do vídeo (opcional)",
+                "addButton": "Adicionar vídeo",
+                "saveButton": "Salvar vídeos",
+                "removeAria": "Remover vídeo {{index}}",
+                "urlInvalid": "Informe uma URL de vídeo válida",
+                "captionInvalid": "O título deve ter entre 3 e 100 caracteres, ou deixe em branco",
+                "saveSuccess": "Vídeos salvos",
+                "saveFailed": "Não foi possível salvar os vídeos",
+                "forbidden": "Seu plano não inclui vídeos. Nada foi salvo.",
+                "tooMany": "Você pode adicionar até 6 vídeos.",
+                "network": "Erro de conexão",
+                "noChanges": "Não há alterações para salvar",
+                "saving": "Salvando...",
+                "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Sair mesmo assim?",
+                "locked": "Os vídeos do seu local estão incluídos no plano {{plan}}."
             }
         },
         "checklist": {

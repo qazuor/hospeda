@@ -145,6 +145,12 @@
                 "area": "Rige solo en: {{area}}"
             },
             "legalAge": "Prohibida la venta de bebidas alcohólicas a menores de 18 años (Ley 24.788)."
+        },
+        "videos": {
+            "title": "Videos",
+            "play": "Reproducir video",
+            "playNamed": "Reproducir video: {{caption}}",
+            "openExternal": "Ver en {{provider}} (se abre en una pestaña nueva)"
         }
     },
     "types": {

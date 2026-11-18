@@ -36,6 +36,7 @@ import {
     listingRetentionPassJob,
     manualGraceExpiryJob,
     manualInstallmentOpenJob,
+    mcpAuditRetentionJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
@@ -125,7 +126,9 @@ export const cronJobs: CronJobDefinition[] = [
     listingRetentionPassJob,
     // HOS-2101: the host AI questions panel's 12-month retention and weekly digest.
     aiListingQuestionsRetentionJob,
-    aiQuestionsWeeklyDigestJob
+    aiQuestionsWeeklyDigestJob,
+    // HOS-2335 D-13: 12-month retention of the assistant activity (mcp.tool.call only).
+    mcpAuditRetentionJob
 ];
 
 /**

@@ -1,6 +1,8 @@
 import type { HostTradeCategoryModel, HostTradeModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import {
+    type AllianceLeadProvisioningOutcome,
+    type AllianceLeadProvisionSkipReason,
     type HostTradeBenefitTypeEnum,
     HostTradeBenefitTypeEnumSchema,
     LifecycleStatusEnum,
@@ -41,11 +43,7 @@ export interface ProvisionListingInput {
 }
 
 /** Why provisioning did not produce a new listing, when it did not. */
-export type ProvisionSkipReason =
-    | 'not-a-service-provider'
-    | 'already-provisioned'
-    | 'legacy-lead-without-typed-fields'
-    | 'no-active-category';
+export type ProvisionSkipReason = AllianceLeadProvisionSkipReason;
 
 /**
  * What a lead's approval will produce, decided WITHOUT touching the database.
@@ -138,6 +136,25 @@ export type ProvisionListingResult =
       };
 
 /**
+ * Maps a {@link ProvisionListingResult} to the outcome reported by the admin
+ * API (HOS-2339). The one mapping shared by `markHandled` and `provisionListing`.
+ *
+ * @param params - `{ result }`.
+ * @returns The wire-shaped outcome.
+ */
+export const toProvisioningOutcome = (params: {
+    readonly result: ProvisionListingResult;
+}): AllianceLeadProvisioningOutcome => {
+    const { result } = params;
+    if (result.provisioned) return { provisioned: true, hostTradeId: result.hostTradeId };
+    return {
+        provisioned: false,
+        reason: result.reason,
+        ...(result.hostTradeId === undefined ? {} : { hostTradeId: result.hostTradeId })
+    };
+};
+
+/**
  * Composes the listing's `contact` free-text field from the lead's contact
  * details.
  *
@@ -202,7 +219,7 @@ export const provisionServiceProviderListing = async ({
             logger.warn(
                 { leadId: lead.id },
                 '[alliance-lead] approved service provider has no usable typed provider data — ' +
-                    'legacy or malformed lead, listing must be created by hand'
+                    'legacy or malformed lead, the lead lacks the data to create the listing automatically'
             );
         }
         return { provisioned: false, reason: plan.reason, hostTradeId: plan.hostTradeId };
@@ -215,7 +232,7 @@ export const provisionServiceProviderListing = async ({
     if (activeCategories.length === 0) {
         logger.warn(
             { leadId: lead.id, categorySlugs: plan.categorySlugs },
-            '[alliance-lead] none of the lead categories is active — listing must be created by hand'
+            '[alliance-lead] none of the lead categories is active — reactivate one and retry provisioning'
         );
         return { provisioned: false, reason: 'no-active-category' };
     }

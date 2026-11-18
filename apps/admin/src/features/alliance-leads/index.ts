@@ -7,6 +7,10 @@
 
 // Components
 export { AllianceLeadInbox } from './components/AllianceLeadInbox';
+export {
+    AllianceLeadProvisioningBadge,
+    needsProvider
+} from './components/AllianceLeadProvisioningBadge';
 export type { AllianceLeadStatusBadgeProps } from './components/AllianceLeadStatusBadge';
 export { AllianceLeadStatusBadge } from './components/AllianceLeadStatusBadge';
 export type {
@@ -19,5 +23,6 @@ export type {
 export {
     allianceLeadKeys,
     useAllianceLeadsQuery,
-    useMarkAllianceLeadHandledMutation
+    useMarkAllianceLeadHandledMutation,
+    useProvisionAllianceLeadMutation
 } from './hooks/useAllianceLeads';

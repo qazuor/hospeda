@@ -167,23 +167,32 @@ async function measureEntry(args: {
         });
     }
     const { shapes, providerIds } = sink;
-    let obtained: JsonValue;
+    const guarded = createGuardedSend({
+        entry,
+        transport: input.transport,
+        runId,
+        state,
+        runCap: input.authorization?.maxChargeMinor ?? 0,
+        shapes,
+        providerIds,
+        record: (progress) => input.recordProgress({ runId, measurementId: entry.id, ...progress })
+    });
+    let obtained: JsonValue = null;
+    let failed = false;
+    let failure: unknown;
     try {
-        obtained = await entry.measure({
-            send: createGuardedSend({
-                entry,
-                transport: input.transport,
-                runId,
-                state,
-                runCap: input.authorization?.maxChargeMinor ?? 0,
-                shapes,
-                providerIds,
-                record: (progress) =>
-                    input.recordProgress({ runId, measurementId: entry.id, ...progress })
-            })
-        });
+        obtained = await entry.measure({ send: guarded.send });
     } catch (error) {
-        if (error instanceof WatchGuardError) throw error;
+        failed = true;
+        failure = error;
+    }
+    // Whatever the measurement did, no send may still be in flight (nor start) when its ids are
+    // read and the run is closed: settle first, then decide.
+    const guardFailure = await guarded.settle();
+    // The guard that tripped FIRST is the cause; a later refusal (e.g. a send after it) is not.
+    if (guardFailure !== null) throw guardFailure;
+    if (failure instanceof WatchGuardError) throw failure;
+    if (failed) {
         return {
             record: {
                 outcome: 'errored',
@@ -191,7 +200,7 @@ async function measureEntry(args: {
                 obtained: null,
                 shapes,
                 providerIds,
-                error: describeError(error)
+                error: describeError(failure)
             },
             alerts: []
         };

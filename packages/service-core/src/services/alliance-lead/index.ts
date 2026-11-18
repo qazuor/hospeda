@@ -16,5 +16,6 @@ export {
     type CreateAllianceLeadInput,
     type ListAllianceLeadsForAdminInput,
     type ListMyAllianceLeadsInput,
-    type MarkAllianceLeadHandledInput
+    type MarkAllianceLeadHandledInput,
+    type ProvisionAllianceLeadListingInput
 } from './alliance-lead.service';

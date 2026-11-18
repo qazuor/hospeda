@@ -25,6 +25,7 @@ import { Label } from '@/components/ui-wrapped';
 import { cn } from '@/lib/utils';
 
 import type { FieldConfig, SelectOption } from '../types/field-config.types';
+import { filterClientOptions } from './entity-selects/utils/option-search-terms';
 
 /**
  * Props for the EntitySelectField component
@@ -187,9 +188,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
                         return;
                     }
 
-                    const filtered = allOptions.filter((option) =>
-                        option.label.toLowerCase().includes(query.toLowerCase())
-                    );
+                    const filtered = filterClientOptions({ options: allOptions, query });
                     setSearchOptions(filtered);
                     return;
                 }

@@ -41,6 +41,7 @@ import {
     type BusinessLine,
     ServiceErrorCode,
     sectionsTouchedByBody,
+    sectionTraitsTouchedByBody,
     VenueAdminCreateInputSchema,
     type VenueOwnerCreateInput,
     VenueOwnerCreateInputSchema,
@@ -172,6 +173,21 @@ export function venueCreateSections({
 }
 
 /**
+ * The section traits a venue owner-create body touches (HOS-2258: `videos`,
+ * gated by `can_embed_video`). Shared with `create_listing`.
+ *
+ * @param args - The validated body
+ * @returns The touched trait ids
+ */
+export function venueCreateSectionTraits({
+    body
+}: {
+    readonly body: Record<string, unknown> | undefined;
+}): readonly string[] {
+    return sectionTraitsTouchedByBody({ vertical: 'venue', body });
+}
+
+/**
  * This route's listing-access step, as a route-config fragment. The
  * `listingAccess` literal lives here (the G2 / G-R3-C scanners read it) and the
  * route spreads it, so the route and `create_listing` (HOS-2329) run the SAME
@@ -182,7 +198,8 @@ export const VENUE_OWNER_CREATE_ROUTE_ACCESS = {
         vertical: VerticalEnum.VENUE,
         operation: 'CREATE',
         businessLinesFromBody: venueCreateBusinessLines,
-        listingSection: venueCreateSections
+        listingSection: venueCreateSections,
+        sectionTraits: venueCreateSectionTraits
     }
 } as const satisfies { readonly listingAccess: ListingAccessWithSections };
 

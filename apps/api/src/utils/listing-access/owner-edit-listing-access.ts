@@ -40,6 +40,17 @@ export function venueOwnerEditSections({ body }: BodyArgs): readonly WrittenSect
 }
 
 /**
+ * Section traits a venue owner PATCH body touches (HOS-2258: `videos`, gated by
+ * `can_embed_video`). A `videos: []` counts as touched, `videos: null` does not.
+ *
+ * @param args - The validated body
+ * @returns The touched trait ids
+ */
+export function venueOwnerEditSectionTraits({ body }: BodyArgs): readonly string[] {
+    return sectionTraitsTouchedByBody({ vertical: 'venue', body });
+}
+
+/**
  * Sections an experience owner PATCH body writes.
  *
  * @param args - The validated body

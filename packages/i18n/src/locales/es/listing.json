@@ -345,6 +345,28 @@
                 "description": "No pudimos leer el estado de las secciones de tu ficha. Probá de nuevo en unos minutos.",
                 "retry": "Reintentar",
                 "back": "Volver a mis fichas"
+            },
+            "video": {
+                "sectionTitle": "Videos",
+                "sectionDescription": "Agregá enlaces a videos de YouTube, Vimeo o Dailymotion que muestren tu local.",
+                "empty": "Todavía no cargaste ningún video.",
+                "urlLabel": "Enlace del video",
+                "urlPlaceholder": "https://youtube.com/watch?v=...",
+                "captionLabel": "Título (opcional)",
+                "addButton": "Agregar video",
+                "saveButton": "Guardar videos",
+                "removeAria": "Eliminar video {{index}}",
+                "urlInvalid": "Ingresá una URL de video válida",
+                "captionInvalid": "El título debe tener entre 3 y 100 caracteres, o dejalo vacío",
+                "saveSuccess": "Videos guardados",
+                "saveFailed": "No se pudieron guardar los videos",
+                "forbidden": "Tu plan no incluye videos. No se guardó nada.",
+                "tooMany": "Podés cargar hasta 6 videos.",
+                "network": "Error de conexión",
+                "noChanges": "No hay cambios para guardar",
+                "saving": "Guardando...",
+                "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
+                "locked": "Los videos de tu local se incluyen en el plan {{plan}}."
             }
         },
         "checklist": {

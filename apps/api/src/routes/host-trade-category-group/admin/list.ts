@@ -26,8 +26,11 @@ export const adminListHostTradeCategoryGroupsRoute = createAdminListRoute({
         'Returns a paginated list of provider trade category groups. Filters: search, lifecycleState, includeDeleted.',
     tags: ['HostTradeCategoryGroups'],
     requiredPermissions: [PermissionEnum.HOST_TRADE_CATEGORY_VIEW],
-    requestQuery: HostTradeCategoryGroupAdminSearchSchema.omit({ page: true, pageSize: true })
-        .shape,
+    // `sort` loses its Zod default here (HOS-2340), see the categories list route.
+    requestQuery: {
+        ...HostTradeCategoryGroupAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
+        sort: HostTradeCategoryGroupAdminSearchSchema.shape.sort.removeDefault().optional()
+    },
     responseSchema: HostTradeCategoryGroupAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

@@ -28,7 +28,10 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 
 import { getActorFromContext } from '../../../utils/actor';
-import { venueOwnerEditSections } from '../../../utils/listing-access/owner-edit-listing-access';
+import {
+    venueOwnerEditSections,
+    venueOwnerEditSectionTraits
+} from '../../../utils/listing-access/owner-edit-listing-access';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -51,7 +54,8 @@ export const protectedPatchVenueRoute = createProtectedRoute({
         operation: 'EDIT',
         idParam: 'id',
         // Shared with the `update_listing_basic` MCP tool (HOS-2184).
-        listingSection: venueOwnerEditSections
+        listingSection: venueOwnerEditSections,
+        sectionTraits: venueOwnerEditSectionTraits
     },
     summary: 'Update venue listing (owner)',
     description: 'Partially updates operational fields of a venue listing. Requires ownership.',
