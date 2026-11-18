@@ -58,6 +58,15 @@
     color: var(--core-muted-foreground);
 }
 
+.unavailable {
+    margin: 0;
+    padding: var(--space-4, 1rem);
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+}
+
 .loading {
     padding: var(--space-4, 1rem);
     font-size: var(--text-caption, 0.75rem);

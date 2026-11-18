@@ -425,6 +425,7 @@
             "partnerTitle": "Tráfico de tu página",
             "propertySelectLabel": "Propiedad",
             "verticalTitle": "Tráfico: {{vertical}}",
+            "unavailable": "Estadísticas no disponibles en este momento. Intentá nuevamente más tarde.",
             "window": {
                 "label": "Período"
             },
