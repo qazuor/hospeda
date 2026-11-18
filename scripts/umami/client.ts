@@ -292,7 +292,8 @@ export async function listAll<S extends z.ZodTypeAny>(input: {
             }
             items.push(parsed.data);
         }
-        if (page * LIST_PAGE_SIZE >= envelope.count || envelope.data.length === 0) break;
+        // The server may clamp pageSize, so stop on what was actually received.
+        if (envelope.data.length === 0 || items.length >= envelope.count) break;
     }
     return items;
 }

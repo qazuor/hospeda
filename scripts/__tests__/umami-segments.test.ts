@@ -178,6 +178,26 @@ describe('listSegments', () => {
     });
 });
 
+describe('listSegments pagination', () => {
+    it('should return every item when the server clamps the page size below the requested one', async () => {
+        const all = Array.from({ length: 45 }, (_, i) => ({ ...stored, id: `s${i}` }));
+        const requested: number[] = [];
+        const fetchImpl = (async (url: string | URL) => {
+            const parsed = new URL(String(url));
+            const page = Number(parsed.searchParams.get('page') ?? '1');
+            requested.push(page);
+            const data = all.slice((page - 1) * 20, page * 20);
+            return json(200, { data, count: all.length, page, pageSize: 20 });
+        }) as typeof fetch;
+        const config: UmamiClientConfig = { baseUrl: 'http://umami.test', token: 'tok', fetchImpl };
+
+        const result = await listSegments({ config, websiteId: WEBSITE, type: 'segment' });
+
+        expect(result.map((s) => s.id)).toEqual(all.map((s) => s.id));
+        expect(requested).toEqual([1, 2, 3]);
+    });
+});
+
 describe('upsertSegment', () => {
     it('should create when absent', async () => {
         const { config, calls } = setup({ pages: [[]] });
