@@ -13,7 +13,11 @@
 
 import type { AccommodationModel, OwnerPromotionModel, TouristPriceAlertModel } from '@repo/db';
 import type { Accommodation, OwnerPromotion, PriceAlert } from '@repo/schemas';
-import { LifecycleStatusEnum, OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    OwnerPromotionDiscountTypeEnum,
+    OwnerPromotionEntityTypeEnum
+} from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     isPromotionQualifying,
@@ -426,5 +430,90 @@ describe('PromoOfferEvaluatorService.evaluatePromoOffers', () => {
         // Assert
         expect(result.size).toBe(0);
         expect(accommodationModel.findByIds).not.toHaveBeenCalled();
+    });
+
+    // ── HOS-2270: venue promotions ────────────────────────────────────────────
+
+    it('AC-10: a venue promotion of the owner generates no match for the owner accommodations', async () => {
+        // Arrange: a venue promotion reads as owner-wide if the type is ignored.
+        const venuePromotion = makePromotion({
+            entityType: OwnerPromotionEntityTypeEnum.VENUE,
+            entityId: getMockId('accommodation', 'promo-offer-venue'),
+            accommodationId: null
+        });
+        const alert = makeAlert({ accommodationId: ACCOMMODATION_ID });
+        const { service, accommodationModel } = makeService({
+            promotions: [venuePromotion],
+            alerts: [alert],
+            ownerAccommodations: [makeAccommodation()]
+        });
+
+        // Act
+        const result = await service.evaluatePromoOffers({ since: WINDOW_START, now: NOW });
+
+        // Assert
+        expect(result.size).toBe(0);
+        expect(accommodationModel.findAll).not.toHaveBeenCalled();
+    });
+
+    it('asks the model only for accommodation promotions', async () => {
+        // Arrange
+        const { service, ownerPromotionModel } = makeService({ promotions: [], alerts: [] });
+
+        // Act
+        await service.evaluatePromoOffers({ since: WINDOW_START, now: NOW });
+
+        // Assert
+        expect(ownerPromotionModel.findAll).toHaveBeenCalledWith(
+            expect.objectContaining({ entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION }),
+            expect.anything()
+        );
+    });
+
+    it('dual read: a legacy-only row (entityId not copied yet) targets its accommodation, not all of them', async () => {
+        // Arrange
+        const legacy = makePromotion({
+            entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
+            entityId: null,
+            accommodationId: ACCOMMODATION_ID
+        });
+        const alert = makeAlert({ accommodationId: OTHER_ACCOMMODATION_ID });
+        const { service, accommodationModel } = makeService({
+            promotions: [legacy],
+            alerts: [alert],
+            targetedAccommodations: [makeAccommodation()],
+            ownerAccommodations: [makeAccommodation({ id: OTHER_ACCOMMODATION_ID })]
+        });
+
+        // Act
+        const result = await service.evaluatePromoOffers({ since: WINDOW_START, now: NOW });
+
+        // Assert: it was NOT expanded to the owner's other accommodation.
+        expect(result.size).toBe(0);
+        expect(accommodationModel.findAll).not.toHaveBeenCalled();
+        expect(accommodationModel.findByIds).toHaveBeenCalledWith([ACCOMMODATION_ID]);
+    });
+
+    it('a promotion whose accommodation was deleted (entityId set, legacy FK nulled) is not owner-wide', async () => {
+        // Arrange
+        const orphan = makePromotion({
+            entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
+            entityId: ACCOMMODATION_ID,
+            accommodationId: null
+        });
+        const alert = makeAlert({ accommodationId: OTHER_ACCOMMODATION_ID });
+        const { service, accommodationModel } = makeService({
+            promotions: [orphan],
+            alerts: [alert],
+            targetedAccommodations: [],
+            ownerAccommodations: [makeAccommodation({ id: OTHER_ACCOMMODATION_ID })]
+        });
+
+        // Act
+        const result = await service.evaluatePromoOffers({ since: WINDOW_START, now: NOW });
+
+        // Assert
+        expect(result.size).toBe(0);
+        expect(accommodationModel.findAll).not.toHaveBeenCalled();
     });
 });
