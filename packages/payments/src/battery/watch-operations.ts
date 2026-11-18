@@ -12,7 +12,12 @@
  * - `charge`: the body MUST state the amount, which is compared with what the measurement declares.
  * - `zero-charge`: an exact match on method, path and body (a cancel or a pause); it charges nothing.
  * - `refund`: money going OUT; the body MUST state the amount. Never added to the charged total.
- * - `non-money`: creates something that cannot charge (a customer, a card token, a plan).
+ * - `non-money`: creates something that cannot charge (a customer, a card token, a plan), or a
+ *   PENDING preapproval with no card token and no plan (`preapproval.create-pending`, owner decision
+ *   2026-11-18): it charges nothing until a person authorizes it on the checkout, and the battery
+ *   cancels it in the same run (`preapproval.cancel`, the exact body `{status: 'cancelled'}`).
+ *   A creation that carries `card_token_id`, `status` or `preapproval_plan_id` never matches it and
+ *   falls to the `charge` rule, which needs a declared maximum charge.
  *
  * Every rule also fixes the SHAPE of the body: an exact allowlist of keys, nested keys included, so a
  * charge cannot carry a `preapproval_plan_id`, a held `capture`, a free period or `installments: 12`.
@@ -115,7 +120,57 @@ function installmentsPinned(value: unknown): boolean {
     return value === undefined || value === 1;
 }
 
+/** The keys a pending, no-token preapproval create carries: what the adapter's `authorize` sends. */
+const PENDING_PREAPPROVAL_KEYS = [
+    'reason',
+    'external_reference',
+    'payer_email',
+    'back_url',
+    'auto_recurring'
+] as const;
+
+/** The `auto_recurring` keys it must carry (`start_date` is the one optional one). */
+const PENDING_RECURRING_KEYS = [
+    'frequency',
+    'frequency_type',
+    'transaction_amount',
+    'currency_id'
+] as const;
+
 const RULES: readonly Rule[] = [
+    {
+        // Owner decision 2026-11-18: a preapproval created WITHOUT a card token is pending and
+        // cannot charge until a person authorizes it on the provider's page, which nobody is
+        // given; the measurement cancels it in the same run. It is the subscription path
+        // production uses, so it is NOT money-moving. The exact shape excludes `card_token_id`,
+        // `status` and `preapproval_plan_id`: any of them falls to `preapproval.create`, a charge.
+        rule: 'preapproval.create-pending',
+        method: 'POST',
+        path: /^\/preapproval$/,
+        kind: 'non-money',
+        creates: true,
+        shape: {
+            reason: true,
+            external_reference: true,
+            payer_email: true,
+            back_url: true,
+            auto_recurring: {
+                frequency: true,
+                frequency_type: true,
+                transaction_amount: true,
+                currency_id: true,
+                start_date: true
+            }
+        },
+        pins: (body) => nested(body, 'auto_recurring').frequency_type === 'months',
+        accepts: (body) => {
+            const recurring = nested(body, 'auto_recurring');
+            return (
+                exactKeys(body, PENDING_PREAPPROVAL_KEYS) &&
+                PENDING_RECURRING_KEYS.every((key) => recurring[key] !== undefined)
+            );
+        }
+    },
     {
         rule: 'preapproval.create',
         method: 'POST',
@@ -159,6 +214,16 @@ const RULES: readonly Rule[] = [
             return currency === undefined || currency === 'ARS';
         },
         amounts: (body) => [nested(body, 'auto_recurring').transaction_amount]
+    },
+    {
+        // A cancel stops charges and never makes one; the write guard still allows it only on an
+        // object THIS RUN created. Listed as non-money so a `mutates` measurement can cancel the
+        // pending preapproval it created (owner decision 2026-11-18). A pause stays below.
+        rule: 'preapproval.cancel',
+        method: 'PUT',
+        path: new RegExp(`^/preapproval/(${ID})$`),
+        kind: 'non-money',
+        accepts: (body) => exactKeys(body, ['status']) && body.status === 'cancelled'
     },
     {
         rule: 'preapproval.cancel-or-pause',

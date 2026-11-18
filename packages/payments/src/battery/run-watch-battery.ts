@@ -30,6 +30,7 @@ import {
     type WatchMeasurementRecord,
     type WatchRunOutcome,
     type WatchRunRecord,
+    type WatchSettings,
     type WatchShapeBaseline,
     type WatchTransport
 } from './types';
@@ -58,6 +59,8 @@ export interface RunWatchBatteryInput {
     readonly signal?: AbortSignal | undefined;
     /** No measurement starts at or after this instant. */
     readonly deadlineAt?: Date | undefined;
+    /** Per-deployment values the measurements need (payer email, return URL). */
+    readonly settings?: WatchSettings | undefined;
     /**
      * The shapes the owner ACCEPTED for this account; `null` when none was accepted yet. A shape
      * that differs from it alerts on EVERY run until the owner accepts the new one.
@@ -181,7 +184,13 @@ async function measureEntry(args: {
     let failed = false;
     let failure: unknown;
     try {
-        obtained = await entry.measure({ send: guarded.send, replay: guarded.replay });
+        obtained = await entry.measure({
+            send: guarded.send,
+            replay: guarded.replay,
+            runId,
+            now: () => input.clock.now(),
+            settings: input.settings ?? {}
+        });
     } catch (error) {
         failed = true;
         failure = error;

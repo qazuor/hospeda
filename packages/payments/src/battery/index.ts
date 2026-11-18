@@ -5,6 +5,10 @@
  */
 
 export {
+    isWatchReference,
+    WATCH_REFERENCE_PREFIX
+} from './catalog/watch-subjects';
+export {
     type RunWatchBatteryInput,
     type RunWatchBatteryResult,
     runWatchBattery
@@ -14,6 +18,7 @@ export {
     diffShapes,
     jsonEqual,
     type MeasurementShapeDifference,
+    projectForShape,
     shapeOf
 } from './shape';
 export type {
@@ -35,11 +40,19 @@ export type {
     WatchResponse,
     WatchRunOutcome,
     WatchRunRecord,
+    WatchSettings,
     WatchShapeBaseline,
     WatchTransport
 } from './types';
 export { WATCH_ACCOUNTS, WATCH_EFFECTS, WatchGuardError } from './types';
-export { validateWatchCatalog, WATCH_CATALOG } from './watch-catalog';
+export {
+    rowsOf,
+    validateWatchCatalog,
+    validateWatchCoverage,
+    WATCH_CATALOG,
+    WATCHED_BY_HAND,
+    type WatchedByHand
+} from './watch-catalog';
 export {
     assertAccountMatches,
     assertAuthorizationCoversMoneyCatalog,

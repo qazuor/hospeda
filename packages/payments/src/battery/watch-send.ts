@@ -11,7 +11,7 @@
  * @module battery/watch-send
  */
 import { createHash } from 'node:crypto';
-import { shapeOf } from './shape';
+import { projectForShape, shapeOf } from './shape';
 import {
     type ShapeMap,
     type WatchContext,
@@ -166,7 +166,17 @@ export function createGuardedSend(args: {
         }
     };
 
-    const sendOne: WatchContext['send'] = async ({ label, request, chargeMinor, refundMinor }) => {
+    const sendOne: WatchContext['send'] = async ({
+        label,
+        request,
+        chargeMinor,
+        refundMinor,
+        shapePaths
+    }) => {
+        const shapeOfAnswer = (body: unknown) =>
+            shapeOf({
+                body: shapePaths === undefined ? body : projectForShape({ body, paths: shapePaths })
+            });
         assertHeadersAllowed({ headers: request.headers });
         const { pathname, search } = normalizeRequestPath({
             path: request.path,
@@ -174,7 +184,7 @@ export function createGuardedSend(args: {
         });
         if (request.method === 'GET') {
             const response = await transport(request);
-            shapes[label] = shapeOf({ body: response.body });
+            shapes[label] = shapeOfAnswer(response.body);
             return response;
         }
         const operation = guardWrite({
@@ -240,7 +250,7 @@ export function createGuardedSend(args: {
                 message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the answer is lost (${describeError(error)}); money may have moved, the run stops`
             });
         }
-        shapes[label] = shapeOf({ body: response.body });
+        shapes[label] = shapeOfAnswer(response.body);
         // G3: a 402 to `orders.create` whose body names the failed order is a definitive decline
         // (EX-30, RP16), read as the adapter reads it. A 402 without a readable id stays unknown.
         const declinedId =

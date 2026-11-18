@@ -80,6 +80,9 @@ export interface WatchContext {
      *   non-GET request of a `moves-money` measurement (0 for one that charges nothing), and it
      *   must equal what the request body states: the guard does not trust the declaration
      * @returns The answer
+     * @param args.shapePaths - When set, the shape is recorded over ONLY these paths (`a.b`,
+     *   `results[].id`), a missing one read as `null` (see `projectForShape`). For re-reads of real
+     *   objects, whose optional fields vary from one object to the next
      * @throws {WatchGuardError} A non-GET from a `read` entry, a money write from a measurement
      *   that does not move money, an undeclared or mismatching charge, or charges above the maximum
      */
@@ -88,6 +91,7 @@ export interface WatchContext {
         readonly request: WatchRequest;
         readonly chargeMinor?: number;
         readonly refundMinor?: number;
+        readonly shapePaths?: readonly string[];
     }) => Promise<WatchResponse>;
     /**
      * Resends, VERBATIM, the last money write this measurement sent under the label `of`: the same
@@ -107,12 +111,37 @@ export interface WatchContext {
         readonly label: string;
         readonly of: string;
     }) => Promise<WatchResponse>;
+    /** The run's id: what a measurement derives its own `external_reference` values from. */
+    readonly runId: string;
+    /** The run's clock. */
+    readonly now: () => Date;
+    /** Per-deployment values a measurement needs and the catalog cannot know. */
+    readonly settings: WatchSettings;
 }
 
-/** One entry of the catalog: a measurement behind one `M*` or `RP*` row. */
+/** Per-deployment values the measurements need (set by the composition root). */
+export interface WatchSettings {
+    /**
+     * The payer email a measurement declares on the authorizations it creates. The provider
+     * refuses a preapproval without one (`payer_email is required`).
+     */
+    readonly payerEmail?: string | undefined;
+    /** The `back_url` of the authorizations a measurement creates: the site's origin. */
+    readonly returnUrl?: string | undefined;
+}
+
+/** One entry of the catalog: a measurement that re-checks one or more `M*` / `RP*` rows. */
 export interface WatchEntry {
-    /** The row id in `fake-lists.json` (`M1`..`M13`, `RP1`..`RP13`). */
+    /**
+     * Stable id of the measurement (at most 16 characters: the accepted-baseline key). Without
+     * `rows` it must itself be a row id of `fake-lists.json`.
+     */
     readonly id: string;
+    /**
+     * The `fake-lists.json` rows this measurement re-checks. Empty for a drift watch that re-reads
+     * real objects (adapter parse and shape) without re-checking a row. When absent, `id` is the row.
+     */
+    readonly rows?: readonly string[];
     /** The accounts this measurement is run against. */
     readonly accounts: readonly WatchAccount[];
     readonly effect: WatchEffect;

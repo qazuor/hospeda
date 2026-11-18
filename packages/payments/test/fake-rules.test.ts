@@ -200,7 +200,8 @@ describe('TEST:B1:14 RP4: another currency is refused', () => {
             })
         });
         expect(refused.code).toBe('REJECTED');
-        expect(refused.message).toMatch(/USD/);
+        // The provider's measured refusal, word for word (EX-18): it names the field, not the code.
+        expect(refused.message).toContain('Invalid field -> auto_recurring.currency_id');
         // The next id is the first one: nothing was created by the refused request.
         const { authorizationId } = await fake.authorize(AUTHORIZE);
         expect(authorizationId).toBe('fake-auth-1');
