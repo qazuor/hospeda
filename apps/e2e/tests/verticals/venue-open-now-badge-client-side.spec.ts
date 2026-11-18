@@ -198,6 +198,8 @@ test.describe('AC:6:7 client-side open-now badge @p0 @verticals', () => {
         const closedCard = page.locator('article.venue-card', { hasText: closedName });
 
         await expect(openCard.getByText('Abierto ahora')).toBeVisible({ timeout: 15_000 });
-        await expect(closedCard.getByText('Cerrado')).toBeVisible({ timeout: 15_000 });
+        await expect(closedCard.getByText('Cerrado', { exact: true })).toBeVisible({
+            timeout: 15_000
+        });
     });
 });
