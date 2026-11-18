@@ -35,13 +35,13 @@ import {
     type WatchTransport
 } from './types';
 import { validateWatchCatalog } from './watch-catalog';
-import { chargeStatedByRequest, isMoneyWrite } from './watch-charge';
 import {
     assertAccountMatches,
     assertBudgetMatches,
     assertProductionAuthorized
 } from './watch-guards';
 import { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
+import { guardWrite, type WatchLedger } from './watch-write-guard';
 
 /** What {@link runWatchBattery} needs. */
 export interface RunWatchBatteryInput {
@@ -105,52 +105,24 @@ function buildContext(args: {
     readonly providerIds: string[];
 }): WatchContext {
     const { entry, transport, shapes, providerIds } = args;
-    let chargedMinor = 0;
+    const ledger: WatchLedger = { charged: 0, refunded: 0 };
     return {
-        send: async ({ label, request, chargeMinor }) => {
+        send: async ({ label, request, chargeMinor, refundMinor }) => {
             const { pathname } = normalizeRequestPath({
                 path: request.path,
                 origin: WATCH_INTERNAL_ORIGIN
             });
-            if (entry.effect === 'read' && request.method !== 'GET') {
-                throw new WatchGuardError({
-                    code: 'READ_ENTRY_MUTATED',
-                    message: `${entry.id} is declared read-only and tried a ${request.method}`
+            if (request.method !== 'GET') {
+                guardWrite({
+                    entryId: entry.id,
+                    effect: entry.effect,
+                    request,
+                    pathname,
+                    chargeMinor,
+                    refundMinor,
+                    ledger,
+                    chargeCap: entry.maxChargeMinor ?? 0
                 });
-            }
-            if (
-                request.method !== 'GET' &&
-                isMoneyWrite({ request, pathname }) &&
-                entry.effect !== 'moves-money'
-            ) {
-                throw new WatchGuardError({
-                    code: 'MONEY_ROUTE_FORBIDDEN',
-                    message: `${entry.id} is not marked moves-money and tried a ${request.method} to ${request.path}`
-                });
-            }
-            if (entry.effect === 'moves-money' && request.method !== 'GET') {
-                if (chargeMinor === undefined) {
-                    throw new WatchGuardError({
-                        code: 'CHARGE_UNDECLARED',
-                        message: `${entry.id} sent a ${request.method} to ${request.path} without declaring what it charges`
-                    });
-                }
-                const stated = chargeStatedByRequest({ request });
-                if (stated !== chargeMinor) {
-                    throw new WatchGuardError({
-                        code: 'CHARGE_MISMATCH',
-                        message: `${entry.id} declared a charge of ${chargeMinor} and the request body states ${stated} (minor units)`
-                    });
-                }
-            }
-            if (chargeMinor !== undefined) {
-                chargedMinor += chargeMinor;
-                if (entry.effect !== 'moves-money' || chargedMinor > (entry.maxChargeMinor ?? 0)) {
-                    throw new WatchGuardError({
-                        code: 'BUDGET_EXCEEDED',
-                        message: `${entry.id} would charge ${chargedMinor}, above what it declared`
-                    });
-                }
             }
             const response = await transport(request);
             shapes[label] = shapeOf({ body: response.body });

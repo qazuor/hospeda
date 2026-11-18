@@ -74,6 +74,8 @@ export interface WatchContext {
      *
      * @param args.label - Stable name of this request inside the measurement
      * @param args.request - The request
+     * @param args.refundMinor - Amount in minor units a refund request sends out (money OUT:
+     *   never subtracted from the charges)
      * @param args.chargeMinor - Amount in minor units this request charges. REQUIRED on every
      *   non-GET request of a `moves-money` measurement (0 for one that charges nothing), and it
      *   must equal what the request body states: the guard does not trust the declaration
@@ -85,6 +87,7 @@ export interface WatchContext {
         readonly label: string;
         readonly request: WatchRequest;
         readonly chargeMinor?: number;
+        readonly refundMinor?: number;
     }) => Promise<WatchResponse>;
 }
 

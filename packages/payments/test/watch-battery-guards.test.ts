@@ -298,7 +298,7 @@ describe('TEST:B1:19 budget guard', () => {
                     label: 'b',
                     request: {
                         method: 'POST',
-                        path: '/preapproval',
+                        path: '/v1/payments',
                         body: { transaction_amount: 0.01 }
                     },
                     chargeMinor: 1
@@ -346,6 +346,7 @@ describe('the budget guard reads the charge from the request, not from the decla
     const money = (args: {
         readonly body: unknown;
         readonly chargeMinor?: number;
+        readonly refundMinor?: number;
         readonly path?: string;
         readonly method?: 'POST' | 'PUT';
     }) =>
@@ -360,7 +361,8 @@ describe('the budget guard reads the charge from the request, not from the decla
                         path: args.path ?? '/preapproval',
                         body: args.body
                     },
-                    ...(args.chargeMinor === undefined ? {} : { chargeMinor: args.chargeMinor })
+                    ...(args.chargeMinor === undefined ? {} : { chargeMinor: args.chargeMinor }),
+                    ...(args.refundMinor === undefined ? {} : { refundMinor: args.refundMinor })
                 });
                 return 'created';
             }
@@ -440,7 +442,7 @@ describe('the budget guard reads the charge from the request, not from the decla
         expect(result.run.outcome).toBe('completed');
     });
 
-    it('aborts when a body that states no amount declares a charge', async () => {
+    it('aborts when a cancel (a zero-charge operation) declares a charge', async () => {
         const { server, transport, clock } = await fakeAs('sandbox');
         const result = await run({
             account: 'sandbox',
@@ -455,19 +457,22 @@ describe('the budget guard reads the charge from the request, not from the decla
             transport,
             clock
         });
-        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
         expect(mutatingRequests(server)).toEqual([]);
     });
 
-    it('aborts when the body states several different amounts', async () => {
+    it('aborts when an order states several different amounts', async () => {
         const { transport, clock } = await fakeAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
                 money({
-                    body: { transaction_amount: 1, amount: 2 },
+                    body: {
+                        total_amount: '1.00',
+                        transactions: { payments: [{ amount: '2.00' }] }
+                    },
                     chargeMinor: 100,
-                    path: '/v1/payments'
+                    path: '/v1/orders'
                 })
             ],
             transport,
@@ -481,7 +486,7 @@ describe('the budget guard reads the charge from the request, not from the decla
         const result = await run({
             account: 'sandbox',
             catalog: [
-                money({ body: { amount: -5 }, chargeMinor: 0, path: '/v1/payments/1/refunds' })
+                money({ body: { amount: -5 }, refundMinor: 0, path: '/v1/payments/1/refunds' })
             ],
             transport,
             clock
@@ -619,5 +624,180 @@ describe('TEST:B1:19 the production run is pinned to the account the owner confi
         });
         expect(result.run.outcome).toBe('completed');
         expect(result.store.started[0]?.consume).toBeUndefined();
+    });
+});
+
+describe('HOS-1512 M1: only listed operations may be sent, whatever the measurement is marked', () => {
+    const send = async (args: {
+        readonly effect: 'mutates' | 'moves-money';
+        readonly method: 'POST' | 'PUT' | 'DELETE';
+        readonly path: string;
+        readonly body: unknown;
+        readonly chargeMinor?: number;
+    }) => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                entry({
+                    effect: args.effect,
+                    ...(args.effect === 'moves-money' ? { maxChargeMinor: AUTHORIZED } : {}),
+                    measure: async (ctx): Promise<JsonValue> => {
+                        await ctx.send({
+                            label: 'x',
+                            request: { method: args.method, path: args.path, body: args.body },
+                            ...(args.chargeMinor === undefined
+                                ? {}
+                                : { chargeMinor: args.chargeMinor })
+                        });
+                        return 'created';
+                    }
+                })
+            ],
+            transport,
+            clock
+        });
+        return { result, server };
+    };
+
+    it.each([
+        ['resuming a preapproval', 'PUT', '/preapproval/abc', { status: 'authorized' }],
+        [
+            'a preapproval from a plan, which states no amount',
+            'POST',
+            '/preapproval',
+            { preapproval_plan_id: 'plan-1', reason: 'x' }
+        ],
+        ['capturing a payment', 'PUT', '/v1/payments/123', { capture: true }],
+        ['cancelling a payment', 'PUT', '/v1/payments/123', { status: 'cancelled' }],
+        [
+            'a cancel mixed with another field',
+            'PUT',
+            '/preapproval/abc',
+            { status: 'cancelled', reason: 'x' }
+        ],
+        [
+            'a cancel with extra keys',
+            'PUT',
+            '/preapproval/abc',
+            { status: 'paused', auto_recurring: {} }
+        ],
+        ['deleting a preapproval', 'DELETE', '/preapproval/abc', {}],
+        ['an advanced payment', 'POST', '/v1/advanced_payments', { payments: [] }],
+        ['an authorized payment', 'POST', '/authorized_payments/1', {}],
+        ['an unknown write', 'POST', '/v1/something', {}],
+        ['a refund of a non-existent shape', 'POST', '/v1/payments/1/refunds/2', {}]
+    ] as const)('refuses %s even from a money-moving measurement, sending nothing', async (_name, method, path, body) => {
+        const { result, server } = await send({
+            effect: 'moves-money',
+            method,
+            path,
+            body,
+            chargeMinor: 0
+        });
+        expect(['aborted']).toContain(result.run.outcome);
+        expect(result.run.reason).toMatch(
+            /OPERATION_NOT_ALLOWED|CHARGE_MISMATCH|MONEY_ROUTE_FORBIDDEN/
+        );
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('classifies the path case-sensitively: an uppercase money route is not a listed operation', async () => {
+        const { result, server } = await send({
+            effect: 'mutates',
+            method: 'POST',
+            path: '/V1/PAYMENTS',
+            body: { transaction_amount: 1 }
+        });
+        expect(result.run.reason).toMatch(/OPERATION_NOT_ALLOWED|MONEY_ROUTE_FORBIDDEN/);
+        expect(mutatingRequests(server)).toEqual([]);
+    });
+
+    it('lets a listed zero-charge operation through with a declared 0 and in-body status only', async () => {
+        for (const status of ['cancelled', 'paused']) {
+            const { result } = await send({
+                effect: 'moves-money',
+                method: 'PUT',
+                path: '/preapproval/abc',
+                body: { status },
+                chargeMinor: 0
+            });
+            expect(result.run.outcome).toBe('completed');
+        }
+    });
+
+    it('requires a charge to state its amount: an Order total_amount is read as pesos strings', async () => {
+        const { result } = await send({
+            effect: 'moves-money',
+            method: 'POST',
+            path: '/v1/orders',
+            body: {
+                total_amount: '1500.00',
+                transactions: { payments: [{ amount: '1500.00' }] }
+            },
+            chargeMinor: 150000
+        });
+        expect(result.run.outcome).toBe('completed');
+    });
+
+    it('does not read the singular `transaction.payments` an Order never has', async () => {
+        const { result } = await send({
+            effect: 'moves-money',
+            method: 'POST',
+            path: '/v1/orders',
+            body: { transaction: { payments: [{ amount: '1500.00' }] } },
+            chargeMinor: 150000
+        });
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+    });
+
+    it('books a refund apart from charges and requires its stated amount', async () => {
+        const ok = await send({
+            effect: 'moves-money',
+            method: 'POST',
+            path: '/v1/payments/123/refunds',
+            body: { amount: 1500 },
+            chargeMinor: 0
+        });
+        // A refund is declared with refundMinor, not chargeMinor: declaring none is refused.
+        expect(ok.result.run.reason).toContain('CHARGE_UNDECLARED');
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const refunded = await run({
+            account: 'sandbox',
+            catalog: [
+                entry({
+                    effect: 'moves-money',
+                    maxChargeMinor: AUTHORIZED,
+                    measure: async (ctx): Promise<JsonValue> => {
+                        await ctx.send({
+                            label: 'r',
+                            request: {
+                                method: 'POST',
+                                path: '/v1/payments/123/refunds',
+                                body: { amount: 1500 }
+                            },
+                            refundMinor: 150000
+                        });
+                        return 'created';
+                    }
+                })
+            ],
+            transport,
+            clock
+        });
+        expect(refunded.run.outcome).toBe('completed');
+        expect(mutatingRequests(server)).toHaveLength(1);
+    });
+
+    it('refuses a refund whose body states a different amount than declared', async () => {
+        const { result, server } = await send({
+            effect: 'moves-money',
+            method: 'POST',
+            path: '/v1/payments/123/refunds',
+            body: { amount: 15 },
+            chargeMinor: 150000
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(mutatingRequests(server)).toEqual([]);
     });
 });
