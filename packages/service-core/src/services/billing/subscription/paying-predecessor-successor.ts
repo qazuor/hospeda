@@ -88,7 +88,7 @@ export async function isSuccessorOfPayingPredecessor({
         id: subscriptions.id,
         class: subscriptions.class,
         paymentMethod: subscriptions.paymentMethod,
-        succeedsId: subscriptions.succeedsId
+        predecessorId: subscriptions.succeedsId
     };
     const [predecessor] =
         subscription.succeedsId === null
@@ -105,7 +105,7 @@ export async function isSuccessorOfPayingPredecessor({
     if (!predecessor) return false;
     if (!payingSuccessorShape({ successor: subscription, predecessor })) return false;
     return isPayingPrincipal({
-        principal: { id: predecessor.id, predecessorId: predecessor.succeedsId },
+        principal: { id: predecessor.id, predecessorId: predecessor.predecessorId },
         payments,
         tx
     });
