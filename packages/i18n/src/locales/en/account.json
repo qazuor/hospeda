@@ -409,6 +409,114 @@
             "link": "See my AI assistants",
             "revoked": "We disconnected your AI assistants.",
             "failed": "We could not save your answer. Please try again."
+        },
+        "activity": {
+            "title": "Your assistants’ history",
+            "description": "Everything your AI assistants did with your account.",
+            "intro": "We keep what your assistants did for the last 12 months. We never keep the text of your messages or replies.",
+            "historyLink": "See what your assistants did",
+            "backLink": "Back to my assistants",
+            "unnamedAssistant": "Unnamed assistant",
+            "unknownTool": "Another assistant action",
+            "loading": "Loading the history...",
+            "emptyFiltered": "No actions match this filter.",
+            "filters": {
+                "title": "Filter the history",
+                "includeReads": "Also show lookups",
+                "includeReadsHint": "A lookup is when the assistant only looked at data without changing anything.",
+                "outcome": "Result",
+                "outcomeAll": "All results"
+            },
+            "outcomes": {
+                "success": "Done",
+                "denied": "Refused",
+                "error": "Failed"
+            },
+            "result": {
+                "done": "Done",
+                "deniedByHospeda": "Refused by Hospeda",
+                "declinedByYou": "Declined by you",
+                "error": "Error"
+            },
+            "steps": {
+                "preview": "Preview",
+                "commit": "Confirmed"
+            },
+            "target": {
+                "conversation": "Inquiry",
+                "unavailable": "Listing no longer available"
+            },
+            "empty": {
+                "title": "Your assistants haven’t done anything yet",
+                "description": "When you connect an AI assistant and ask it for something, you’ll see here what it did with your account.",
+                "cta": "How to connect an assistant"
+            },
+            "errors": {
+                "loadFailed": "We couldn’t load the history. Please try again.",
+                "retry": "Try again"
+            },
+            "pagination": {
+                "label": "History pages",
+                "prev": "Previous",
+                "next": "Next"
+            },
+            "tools": {
+                "list_my_listings": "View your listings",
+                "get_owner_summary": "View your account summary",
+                "get_listing": "View a listing",
+                "update_listing_basic": "Edit a listing’s details",
+                "get_listing_amenities": "View a listing’s amenities",
+                "update_listing_amenities": "Edit a listing’s amenities",
+                "set_listing_publication": "Publish or pause a listing",
+                "list_amenities_and_features": "View the amenities catalog",
+                "get_listing_stats": "View a listing’s statistics",
+                "get_listing_creation_guide": "Check how to create a listing",
+                "create_listing": "Create a draft listing",
+                "list_reviews": "View your listings’ reviews",
+                "get_help": "Check Hospeda’s help",
+                "list_inquiries": "View your inquiries",
+                "get_inquiry": "View an inquiry",
+                "reply_inquiry": "Reply to an inquiry",
+                "search_providers": "Search for providers",
+                "list_benefit_usages": "View your benefit uses",
+                "confirm_benefit_usage": "Confirm a benefit use",
+                "reject_benefit_usage": "Reject a benefit use",
+                "undo_benefit_rejection": "Undo a benefit use rejection"
+            },
+            "errorCodes": {
+                "VALIDATION_ERROR": "The assistant sent data that wasn’t valid.",
+                "NOT_FOUND": "We couldn’t find what the assistant was looking for.",
+                "UNAUTHORIZED": "The assistant needed to sign in again.",
+                "FORBIDDEN": "Your account doesn’t allow that action.",
+                "EMAIL_NOT_VERIFIED": "You need to verify your email first.",
+                "INTERNAL_ERROR": "We had a problem on our side.",
+                "ALREADY_EXISTS": "That already existed.",
+                "INVALID_PAGINATION_PARAMS": "The assistant asked for a page that doesn’t exist.",
+                "NOT_IMPLEMENTED": "That action isn’t available yet.",
+                "SERVICE_UNAVAILABLE": "The service wasn’t available at that moment.",
+                "CONFIGURATION_ERROR": "We had a configuration problem.",
+                "QUOTA_EXCEEDED": "You reached your plan’s limit.",
+                "LIMIT_REACHED": "You reached your plan’s limit.",
+                "ENTITLEMENT_REQUIRED": "Your plan doesn’t include that feature.",
+                "PROVIDER_ERROR": "An external service answered with an error.",
+                "PROVIDER_RATE_LIMITED": "An external service was overloaded.",
+                "PROVIDER_TIMEOUT": "An external service took too long to answer.",
+                "PLAN_DISABLED": "That plan is no longer available.",
+                "GONE": "That no longer exists.",
+                "PASSWORD_INCORRECT": "The password wasn’t correct.",
+                "HOST_NOT_FOUND": "We couldn’t find that host.",
+                "USAGE_PENDING_EXISTS": "There was already a pending benefit use.",
+                "DECLARATION_BLOCKED": "That use couldn’t be recorded for now.",
+                "DECLARATION_SUSPENDED": "Recording uses was suspended.",
+                "NO_CONFIRMED_USAGE": "There was no confirmed use for that.",
+                "SELF_REVIEW_FORBIDDEN": "You can’t review your own listing.",
+                "SELF_USAGE_FORBIDDEN": "You can’t record a use with yourself.",
+                "REVIEW_ALREADY_EXISTS": "That review already existed.",
+                "RATE_LIMIT_EXCEEDED": "The assistant made too many requests in a row.",
+                "UNEXPECTED": "An unexpected error happened.",
+                "USER_DECLINED": "You didn’t confirm it.",
+                "USER_CANCELLED": "You cancelled the confirmation."
+            }
         }
     },
     "subscription": {

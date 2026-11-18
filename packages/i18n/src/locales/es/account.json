@@ -409,6 +409,114 @@
             "link": "Ver mis asistentes de IA",
             "revoked": "Desconectamos tus asistentes de IA.",
             "failed": "No pudimos guardar tu respuesta. Probá de nuevo."
+        },
+        "activity": {
+            "title": "Historial de tus asistentes",
+            "description": "Todo lo que tus asistentes de IA hicieron con tu cuenta.",
+            "intro": "Guardamos lo que hicieron tus asistentes durante los últimos 12 meses. Nunca guardamos el texto de tus mensajes ni de tus respuestas.",
+            "historyLink": "Ver lo que hicieron tus asistentes",
+            "backLink": "Volver a mis asistentes",
+            "unnamedAssistant": "Asistente sin nombre",
+            "unknownTool": "Otra acción del asistente",
+            "loading": "Cargando el historial...",
+            "emptyFiltered": "No hay acciones que coincidan con este filtro.",
+            "filters": {
+                "title": "Filtrar el historial",
+                "includeReads": "Mostrar también consultas",
+                "includeReadsHint": "Una consulta es cuando el asistente solo miró datos, sin cambiar nada.",
+                "outcome": "Resultado",
+                "outcomeAll": "Todos los resultados"
+            },
+            "outcomes": {
+                "success": "Hecho",
+                "denied": "Rechazado",
+                "error": "Con error"
+            },
+            "result": {
+                "done": "Hecho",
+                "deniedByHospeda": "Rechazado por Hospeda",
+                "declinedByYou": "Rechazado por vos",
+                "error": "Error"
+            },
+            "steps": {
+                "preview": "Vista previa",
+                "commit": "Confirmado"
+            },
+            "target": {
+                "conversation": "Consulta",
+                "unavailable": "Publicación que ya no está disponible"
+            },
+            "empty": {
+                "title": "Todavía no hay acciones de tus asistentes",
+                "description": "Cuando conectes un asistente de IA y le pidas algo, acá vas a ver lo que hizo con tu cuenta.",
+                "cta": "Cómo conectar un asistente"
+            },
+            "errors": {
+                "loadFailed": "No pudimos cargar el historial. Probá de nuevo.",
+                "retry": "Reintentar"
+            },
+            "pagination": {
+                "label": "Páginas del historial",
+                "prev": "Anterior",
+                "next": "Siguiente"
+            },
+            "tools": {
+                "list_my_listings": "Ver tus publicaciones",
+                "get_owner_summary": "Ver el resumen de tu cuenta",
+                "get_listing": "Ver una publicación",
+                "update_listing_basic": "Editar los datos de una publicación",
+                "get_listing_amenities": "Ver los servicios de una publicación",
+                "update_listing_amenities": "Editar los servicios de una publicación",
+                "set_listing_publication": "Publicar o pausar una publicación",
+                "list_amenities_and_features": "Ver el catálogo de servicios",
+                "get_listing_stats": "Ver las estadísticas de una publicación",
+                "get_listing_creation_guide": "Consultar cómo crear una publicación",
+                "create_listing": "Crear un borrador de publicación",
+                "list_reviews": "Ver las reseñas de tus publicaciones",
+                "get_help": "Consultar la ayuda de Hospeda",
+                "list_inquiries": "Ver tus consultas",
+                "get_inquiry": "Ver una consulta",
+                "reply_inquiry": "Responder una consulta",
+                "search_providers": "Buscar proveedores",
+                "list_benefit_usages": "Ver tus usos de beneficio",
+                "confirm_benefit_usage": "Confirmar un uso de beneficio",
+                "reject_benefit_usage": "Rechazar un uso de beneficio",
+                "undo_benefit_rejection": "Deshacer el rechazo de un uso de beneficio"
+            },
+            "errorCodes": {
+                "VALIDATION_ERROR": "Los datos que mandó el asistente no eran válidos.",
+                "NOT_FOUND": "No encontramos lo que el asistente buscaba.",
+                "UNAUTHORIZED": "El asistente tenía que volver a iniciar sesión.",
+                "FORBIDDEN": "Tu cuenta no permite esa acción.",
+                "EMAIL_NOT_VERIFIED": "Primero tenés que verificar tu correo.",
+                "INTERNAL_ERROR": "Tuvimos un problema de nuestro lado.",
+                "ALREADY_EXISTS": "Eso ya existía.",
+                "INVALID_PAGINATION_PARAMS": "El asistente pidió una página que no existe.",
+                "NOT_IMPLEMENTED": "Esa acción todavía no está disponible.",
+                "SERVICE_UNAVAILABLE": "El servicio no estaba disponible en ese momento.",
+                "CONFIGURATION_ERROR": "Tuvimos un problema de configuración.",
+                "QUOTA_EXCEEDED": "Llegaste al límite de tu plan.",
+                "LIMIT_REACHED": "Llegaste al límite de tu plan.",
+                "ENTITLEMENT_REQUIRED": "Tu plan no incluye esa función.",
+                "PROVIDER_ERROR": "Un servicio externo respondió con un error.",
+                "PROVIDER_RATE_LIMITED": "Un servicio externo estaba saturado.",
+                "PROVIDER_TIMEOUT": "Un servicio externo tardó demasiado en responder.",
+                "PLAN_DISABLED": "Ese plan ya no está disponible.",
+                "GONE": "Eso ya no existe.",
+                "PASSWORD_INCORRECT": "La contraseña no era correcta.",
+                "HOST_NOT_FOUND": "No encontramos a ese anfitrión.",
+                "USAGE_PENDING_EXISTS": "Ya había un uso de beneficio pendiente.",
+                "DECLARATION_BLOCKED": "No se podía registrar ese uso por ahora.",
+                "DECLARATION_SUSPENDED": "El registro de usos estaba suspendido.",
+                "NO_CONFIRMED_USAGE": "No había un uso confirmado para eso.",
+                "SELF_REVIEW_FORBIDDEN": "No podés reseñar tu propia publicación.",
+                "SELF_USAGE_FORBIDDEN": "No podés registrar un uso con vos mismo.",
+                "REVIEW_ALREADY_EXISTS": "Esa reseña ya existía.",
+                "RATE_LIMIT_EXCEEDED": "El asistente hizo demasiados pedidos seguidos.",
+                "UNEXPECTED": "Ocurrió un error inesperado.",
+                "USER_DECLINED": "No lo confirmaste.",
+                "USER_CANCELLED": "Cancelaste la confirmación."
+            }
         }
     },
     "subscription": {

@@ -409,6 +409,114 @@
             "link": "Ver meus assistentes de IA",
             "revoked": "Desconectamos seus assistentes de IA.",
             "failed": "Não foi possível salvar sua resposta. Tente novamente."
+        },
+        "activity": {
+            "title": "Histórico dos seus assistentes",
+            "description": "Tudo o que seus assistentes de IA fizeram com a sua conta.",
+            "intro": "Guardamos o que seus assistentes fizeram nos últimos 12 meses. Nunca guardamos o texto das suas mensagens nem das suas respostas.",
+            "historyLink": "Ver o que seus assistentes fizeram",
+            "backLink": "Voltar para meus assistentes",
+            "unnamedAssistant": "Assistente sem nome",
+            "unknownTool": "Outra ação do assistente",
+            "loading": "Carregando o histórico...",
+            "emptyFiltered": "Nenhuma ação corresponde a este filtro.",
+            "filters": {
+                "title": "Filtrar o histórico",
+                "includeReads": "Mostrar também as leituras de dados",
+                "includeReadsHint": "Uma leitura de dados é quando o assistente só olhou informações, sem mudar nada.",
+                "outcome": "Resultado da ação",
+                "outcomeAll": "Todos os resultados"
+            },
+            "outcomes": {
+                "success": "Feito",
+                "denied": "Recusado",
+                "error": "Com erro"
+            },
+            "result": {
+                "done": "Feito",
+                "deniedByHospeda": "Recusado pelo Hospeda",
+                "declinedByYou": "Recusado por você",
+                "error": "Erro"
+            },
+            "steps": {
+                "preview": "Prévia",
+                "commit": "Ação confirmada"
+            },
+            "target": {
+                "conversation": "Consulta de hóspede",
+                "unavailable": "Anúncio que não está mais disponível"
+            },
+            "empty": {
+                "title": "Seus assistentes ainda não fizeram nada",
+                "description": "Quando você conectar um assistente de IA e pedir algo, vai ver aqui o que ele fez com a sua conta.",
+                "cta": "Como conectar um assistente"
+            },
+            "errors": {
+                "loadFailed": "Não conseguimos carregar o histórico. Tente de novo.",
+                "retry": "Tentar de novo"
+            },
+            "pagination": {
+                "label": "Páginas do histórico",
+                "prev": "Anterior",
+                "next": "Próxima"
+            },
+            "tools": {
+                "list_my_listings": "Ver seus anúncios",
+                "get_owner_summary": "Ver o resumo da sua conta",
+                "get_listing": "Ver um anúncio",
+                "update_listing_basic": "Editar os dados de um anúncio",
+                "get_listing_amenities": "Ver as comodidades de um anúncio",
+                "update_listing_amenities": "Editar as comodidades de um anúncio",
+                "set_listing_publication": "Publicar ou pausar um anúncio",
+                "list_amenities_and_features": "Ver o catálogo de comodidades",
+                "get_listing_stats": "Ver as estatísticas de um anúncio",
+                "get_listing_creation_guide": "Consultar como criar um anúncio",
+                "create_listing": "Criar um rascunho de anúncio",
+                "list_reviews": "Ver as avaliações dos seus anúncios",
+                "get_help": "Consultar a ajuda do Hospeda",
+                "list_inquiries": "Ver suas consultas",
+                "get_inquiry": "Ver uma consulta",
+                "reply_inquiry": "Responder uma consulta",
+                "search_providers": "Buscar fornecedores",
+                "list_benefit_usages": "Ver seus usos de benefício",
+                "confirm_benefit_usage": "Confirmar um uso de benefício",
+                "reject_benefit_usage": "Recusar um uso de benefício",
+                "undo_benefit_rejection": "Desfazer a recusa de um uso de benefício"
+            },
+            "errorCodes": {
+                "VALIDATION_ERROR": "Os dados que o assistente enviou não eram válidos.",
+                "NOT_FOUND": "Não encontramos o que o assistente procurava.",
+                "UNAUTHORIZED": "O assistente precisava entrar de novo.",
+                "FORBIDDEN": "Sua conta não permite essa ação.",
+                "EMAIL_NOT_VERIFIED": "Primeiro você precisa verificar seu e-mail.",
+                "INTERNAL_ERROR": "Tivemos um problema do nosso lado.",
+                "ALREADY_EXISTS": "Isso já existia.",
+                "INVALID_PAGINATION_PARAMS": "O assistente pediu uma página que não existe.",
+                "NOT_IMPLEMENTED": "Essa ação ainda não está disponível.",
+                "SERVICE_UNAVAILABLE": "O serviço não estava disponível naquele momento.",
+                "CONFIGURATION_ERROR": "Tivemos um problema de configuração.",
+                "QUOTA_EXCEEDED": "Você chegou ao limite do seu plano.",
+                "LIMIT_REACHED": "Você chegou ao limite do seu plano.",
+                "ENTITLEMENT_REQUIRED": "Seu plano não inclui essa função.",
+                "PROVIDER_ERROR": "Um serviço externo respondeu com um erro.",
+                "PROVIDER_RATE_LIMITED": "Um serviço externo estava sobrecarregado.",
+                "PROVIDER_TIMEOUT": "Um serviço externo demorou demais para responder.",
+                "PLAN_DISABLED": "Esse plano não está mais disponível.",
+                "GONE": "Isso não existe mais.",
+                "PASSWORD_INCORRECT": "A senha não estava correta.",
+                "HOST_NOT_FOUND": "Não encontramos esse anfitrião.",
+                "USAGE_PENDING_EXISTS": "Já havia um uso de benefício pendente.",
+                "DECLARATION_BLOCKED": "Não era possível registrar esse uso por enquanto.",
+                "DECLARATION_SUSPENDED": "O registro de usos estava suspenso.",
+                "NO_CONFIRMED_USAGE": "Não havia um uso confirmado para isso.",
+                "SELF_REVIEW_FORBIDDEN": "Você não pode avaliar seu próprio anúncio.",
+                "SELF_USAGE_FORBIDDEN": "Você não pode registrar um uso com você mesmo.",
+                "REVIEW_ALREADY_EXISTS": "Essa avaliação já existia.",
+                "RATE_LIMIT_EXCEEDED": "O assistente fez pedidos demais seguidos.",
+                "UNEXPECTED": "Aconteceu um erro inesperado.",
+                "USER_DECLINED": "Você não confirmou.",
+                "USER_CANCELLED": "Você cancelou a confirmação."
+            }
         }
     },
     "subscription": {
