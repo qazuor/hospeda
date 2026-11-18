@@ -9,6 +9,7 @@
  *   batched by `limit`; `countOlderThan` counts the same set (AC-C56).
  * - The label lookups return live rows only, with their owner (AC-C47).
  */
+import { McpActivityOwnFilterSchema, VerticalEnum } from '@repo/schemas';
 import { and, count, eq, inArray } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AuditLogEntryModel } from '../../src/models/audit-log/auditLogEntry.model.ts';
@@ -205,6 +206,34 @@ describe('McpActivityModel.listToolCalls (real DB)', () => {
     });
 });
 
+describe('McpActivityModel inclusive toDate (real DB, L4)', () => {
+    const model = new McpActivityModel();
+
+    it('a bare toDate includes every row logged on that day', async () => {
+        await withTestTransaction(async (tx) => {
+            const { a } = await twoUsers(tx);
+            const lateThatDay = await insertRow(tx, {
+                actorId: a,
+                loggedAt: new Date('2026-11-18T23:30:00Z'),
+                data: call({ tool: 'get_listing' })
+            });
+            await insertRow(tx, {
+                actorId: a,
+                loggedAt: new Date('2026-11-19T00:00:00Z'),
+                data: call({ tool: 'get_listing' })
+            });
+            const { toDate } = McpActivityOwnFilterSchema.parse({ toDate: '2026-11-18' });
+
+            const result = await model.listToolCalls(
+                { actorId: a, toDate, page: 1, pageSize: 20, sortDirection: 'desc' },
+                tx
+            );
+
+            expect(result.items.map((row) => row.id)).toEqual([lateThatDay]);
+        });
+    });
+});
+
 describe('AuditLogEntryModel scoped retention (real DB, AC-C56)', () => {
     const model = new AuditLogEntryModel();
 
@@ -313,7 +342,7 @@ describe('McpActivityModel label lookups (real DB)', () => {
             });
 
             const names = await model.findListingNames(
-                { vertical: 'accommodation', ids: [live.id, gone.id] },
+                { vertical: VerticalEnum.ACCOMMODATION, ids: [live.id, gone.id] },
                 tx
             );
             const owners = await model.findConversationOwners({ ids: [conversation.id] }, tx);

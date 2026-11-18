@@ -1,3 +1,4 @@
+import { MCP_TOOL_CALL_EVENT_TYPE, VerticalEnum } from '@repo/schemas';
 import { and, eq, gte, inArray, isNull, lte, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
@@ -11,14 +12,11 @@ import type { DrizzleClient } from '../../types.ts';
 /** Row type inferred from the audit_log_entries table. */
 type AuditLogEntryRow = typeof auditLogEntries.$inferSelect;
 
-/** `event_type` of an MCP tool call row (kept in step with `@repo/schemas`). */
-const MCP_TOOL_CALL = 'mcp.tool.call';
-
 /** Listing tables the activity resolves names from, by vertical. */
 const LISTING_TABLES = {
-    accommodation: accommodations,
-    venue: venues,
-    experience: experiences
+    [VerticalEnum.ACCOMMODATION]: accommodations,
+    [VerticalEnum.VENUE]: venues,
+    [VerticalEnum.EXPERIENCE]: experiences
 } as const;
 
 /** A vertical whose listings carry a name and an owner. */
@@ -114,7 +112,7 @@ export class McpActivityModel extends BaseModelImpl<AuditLogEntryRow> {
         filter: McpToolCallListFilter,
         tx?: DrizzleClient
     ): Promise<{ items: AuditLogEntryRow[]; total: number }> {
-        const where: Record<string, unknown> = { eventType: MCP_TOOL_CALL };
+        const where: Record<string, unknown> = { eventType: MCP_TOOL_CALL_EVENT_TYPE };
         if (filter.actorId !== undefined) where.actorId = filter.actorId;
         const conditions = this.buildDataConditions(filter);
         return this.findAll(
