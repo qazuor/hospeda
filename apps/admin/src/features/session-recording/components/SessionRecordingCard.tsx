@@ -2,7 +2,12 @@ import en from '@repo/i18n/locales/en/admin-pages.json';
 import es from '@repo/i18n/locales/es/admin-pages.json';
 import pt from '@repo/i18n/locales/pt/admin-pages.json';
 import { LoaderIcon } from '@repo/icons';
-import { PermissionEnum } from '@repo/schemas';
+import {
+    DEFAULT_SESSION_RECORDING_RETENTION_DAYS,
+    PermissionEnum,
+    SESSION_RECORDING_RETENTION_DAYS_OPTIONS,
+    SessionRecordingRetentionDaysSchema
+} from '@repo/schemas';
 import { useState } from 'react';
 import {
     AlertDialog,
@@ -17,9 +22,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
+} from '@/components/ui/select';
 import { usePlatformSetting, useUpdatePlatformSetting } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { usePurgeSessionRecordings } from '../hooks/use-purge-session-recordings';
 
 const COPY_BY_LOCALE = { es, en, pt } as const;
 
@@ -33,6 +46,11 @@ type CopyKey = keyof typeof es.systemSettings.critical.sessionRecording;
  * everybody else (AC-A4). Turning it on or off always goes through a
  * confirmation dialog; the state line only ever shows the last value the api
  * confirmed, so a failed write never flips it (AC-A5).
+ *
+ * The same card holds the retention period (14, 30 or 60 days, default 30) and
+ * the "Limpiar ahora" action that purges the expired recordings right away
+ * behind a confirmation dialog. Both reuse the same permission. Every write of
+ * the setting sends BOTH fields, because the api replaces the whole value.
  *
  * Replay vs heatmap, sampling and masking are NOT managed here: they live in
  * Umami and are written by `pnpm umami:setup`.
@@ -48,13 +66,25 @@ function SessionRecordingCardBody() {
     const { locale } = useTranslations();
     const query = usePlatformSetting({ key: 'analytics.sessionRecording' });
     const mutation = useUpdatePlatformSetting({ key: 'analytics.sessionRecording' });
+    const purge = usePurgeSessionRecordings();
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [purgeDialogOpen, setPurgeDialogOpen] = useState(false);
     const selectedLocale = locale === 'en' || locale === 'pt' ? locale : 'es';
     const translate = (key: CopyKey): string =>
         COPY_BY_LOCALE[selectedLocale].systemSettings.critical.sessionRecording[key];
 
     const row = query.data?.row ?? null;
     const enabled = row?.value.enabled === true;
+    const retentionDays = row?.value.retentionDays ?? DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+    const fill = (text: string, values: Record<string, string | number>): string =>
+        Object.entries(values).reduce(
+            (acc, [name, value]) => acc.replace(`{{${name}}}`, String(value)),
+            text
+        );
+    const purgeErrorKey: CopyKey =
+        (purge.error as { status?: number } | null)?.status === 503
+            ? 'purgeNotConfigured'
+            : 'purgeError';
     const lastChanged = row
         ? translate('lastChanged').replace(
               '{{date}}',
@@ -131,6 +161,101 @@ function SessionRecordingCardBody() {
                     )}
                     {actionLabel}
                 </Button>
+                <div className="space-y-2 border-t pt-4">
+                    <label
+                        htmlFor="session-recording-retention"
+                        className="font-medium text-sm"
+                    >
+                        {translate('retentionLabel')}
+                    </label>
+                    <Select
+                        value={String(retentionDays)}
+                        onValueChange={(value) => {
+                            const parsed = SessionRecordingRetentionDaysSchema.safeParse(
+                                Number(value)
+                            );
+                            if (parsed.success) {
+                                mutation.mutate({ enabled, retentionDays: parsed.data });
+                            }
+                        }}
+                        disabled={query.isLoading || query.isError || mutation.isPending}
+                    >
+                        <SelectTrigger
+                            id="session-recording-retention"
+                            className="w-40"
+                            data-testid="session-recording-retention"
+                        >
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {SESSION_RECORDING_RETENTION_DAYS_OPTIONS.map((days) => (
+                                <SelectItem
+                                    key={days}
+                                    value={String(days)}
+                                >
+                                    {fill(translate('retentionOption'), { days })}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <p className="text-muted-foreground text-sm">{translate('retentionHelp')}</p>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        data-testid="session-recording-purge"
+                        aria-label={translate('purgeAria')}
+                        disabled={query.isLoading || query.isError || purge.isPending}
+                        onClick={() => setPurgeDialogOpen(true)}
+                    >
+                        {purge.isPending && (
+                            <LoaderIcon
+                                className="mr-2 h-4 w-4 animate-spin"
+                                aria-hidden="true"
+                            />
+                        )}
+                        {translate('purgeButton')}
+                    </Button>
+                    {purge.isSuccess && (
+                        <p
+                            className="text-sm"
+                            role="status"
+                            data-testid="session-recording-purge-result"
+                        >
+                            {fill(translate('purgeDone'), {
+                                replays: purge.data.replaysDeleted,
+                                heatmaps: purge.data.heatmapEventsDeleted
+                            })}
+                        </p>
+                    )}
+                    {purge.isError && (
+                        <p
+                            className="text-destructive text-sm"
+                            role="alert"
+                            data-testid="session-recording-purge-error"
+                        >
+                            {translate(purgeErrorKey)}
+                        </p>
+                    )}
+                </div>
+                <AlertDialog
+                    open={purgeDialogOpen}
+                    onOpenChange={setPurgeDialogOpen}
+                >
+                    <AlertDialogContent data-testid="session-recording-purge-confirm">
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>{translate('purgeButton')}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {fill(translate('purgeConfirm'), { days: retentionDays })}
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>{translate('cancel')}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => purge.mutate()}>
+                                {translate('purgeConfirmAction')}
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
                 <AlertDialog
                     open={dialogOpen}
                     onOpenChange={setDialogOpen}
@@ -145,7 +270,9 @@ function SessionRecordingCardBody() {
                         <AlertDialogFooter>
                             <AlertDialogCancel>{translate('cancel')}</AlertDialogCancel>
                             <AlertDialogAction
-                                onClick={() => mutation.mutate({ enabled: !enabled })}
+                                onClick={() =>
+                                    mutation.mutate({ enabled: !enabled, retentionDays })
+                                }
                                 disabled={mutation.isPending}
                             >
                                 {actionLabel}

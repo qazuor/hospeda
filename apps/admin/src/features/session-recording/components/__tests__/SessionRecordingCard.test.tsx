@@ -4,7 +4,7 @@ import { PermissionEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionRecordingCard } from '../SessionRecordingCard';
 
 type FetchApiInput = { readonly path: string; readonly method?: string; readonly body?: unknown };
@@ -18,10 +18,12 @@ vi.mock('@/hooks/use-translations', () => ({ useTranslations: () => ({ locale: '
 const copy = es.systemSettings.critical.sessionRecording;
 const PATH = '/api/v1/admin/platform-settings/analytics.sessionRecording';
 
-function row(enabled: boolean, updatedAt = '2026-11-12T10:00:00.000Z') {
+const PURGE_PATH = '/api/v1/admin/session-recording/purge';
+
+function row(enabled: boolean, updatedAt = '2026-11-12T10:00:00.000Z', retentionDays?: number) {
     return {
         key: 'analytics.sessionRecording',
-        value: { enabled },
+        value: retentionDays === undefined ? { enabled } : { enabled, retentionDays },
         updatedAt,
         updatedBy: 'super-admin-1'
     };
@@ -49,6 +51,14 @@ async function confirmToggle(label: string): Promise<void> {
         })
     );
 }
+
+// Radix Select needs these DOM APIs, which jsdom lacks.
+beforeAll(() => {
+    Element.prototype.hasPointerCapture ??= () => false;
+    Element.prototype.setPointerCapture ??= () => undefined;
+    Element.prototype.releasePointerCapture ??= () => undefined;
+    Element.prototype.scrollIntoView ??= () => undefined;
+});
 
 describe('SessionRecordingCard (HOS-2347)', () => {
     beforeEach(() => {
@@ -85,7 +95,7 @@ describe('SessionRecordingCard (HOS-2347)', () => {
         expect(patches[0]?.[0]).toEqual({
             path: PATH,
             method: 'PATCH',
-            body: { value: { enabled: true } }
+            body: { value: { enabled: true, retentionDays: 30 } }
         });
         await waitFor(() =>
             expect(screen.getByTestId('session-recording-status')).toHaveTextContent(copy.statusOn)
@@ -181,5 +191,137 @@ describe('SessionRecordingCard (HOS-2347)', () => {
         const keys = Object.keys(copy).sort();
         expect(Object.keys(en.systemSettings.critical.sessionRecording).sort()).toEqual(keys);
         expect(Object.keys(pt.systemSettings.critical.sessionRecording).sort()).toEqual(keys);
+    });
+
+    describe('retention and manual purge', () => {
+        const patches = () => fetchApi.mock.calls.filter(([call]) => call.method === 'PATCH');
+        const purges = () => fetchApi.mock.calls.filter(([call]) => call.path === PURGE_PATH);
+
+        it('shows the default 30 days when the row carries no period', async () => {
+            fetchApi.mockResolvedValue({ data: { data: row(true) } });
+            renderCard();
+
+            const select = await screen.findByTestId('session-recording-retention');
+
+            expect(select).toHaveTextContent('30');
+        });
+
+        it('shows the stored period', async () => {
+            fetchApi.mockResolvedValue({ data: { data: row(true, undefined, 60) } });
+            renderCard();
+
+            const select = await screen.findByTestId('session-recording-retention');
+
+            await waitFor(() => expect(select).toHaveTextContent('60'));
+        });
+
+        it('picking 14 days sends one PATCH with the period AND the current switch', async () => {
+            // Arrange
+            fetchApi
+                .mockResolvedValueOnce({ data: { data: row(true) } })
+                .mockResolvedValue({ data: { data: row(true, undefined, 14) } });
+            const user = userEvent.setup();
+            renderCard();
+            const select = await screen.findByTestId('session-recording-retention');
+            await waitFor(() => expect(select).toBeEnabled());
+
+            // Act
+            await user.click(select);
+            await user.click(await screen.findByRole('option', { name: '14 días' }));
+
+            // Assert
+            await waitFor(() => expect(patches()).toHaveLength(1));
+            expect(patches()[0]?.[0]).toEqual({
+                path: PATH,
+                method: 'PATCH',
+                body: { value: { enabled: true, retentionDays: 14 } }
+            });
+        });
+
+        it('turning the switch off keeps the stored period instead of resetting it', async () => {
+            fetchApi
+                .mockResolvedValueOnce({ data: { data: row(true, undefined, 60) } })
+                .mockResolvedValue({ data: { data: row(false, undefined, 60) } });
+            renderCard();
+
+            await confirmToggle(copy.disable);
+
+            expect(patches()[0]?.[0].body).toEqual({
+                value: { enabled: false, retentionDays: 60 }
+            });
+        });
+
+        it('cancelling the purge confirmation sends no request', async () => {
+            fetchApi.mockResolvedValue({ data: { data: row(false, undefined, 14) } });
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            await user.click(button);
+            const dialog = screen.getByTestId('session-recording-purge-confirm');
+            expect(dialog).toHaveTextContent('14 días');
+            await user.click(within(dialog).getByRole('button', { name: copy.cancel }));
+
+            expect(purges()).toHaveLength(0);
+        });
+
+        it('confirming the purge sends one POST and shows the deleted counts', async () => {
+            // Arrange
+            fetchApi.mockImplementation(async ({ path }) =>
+                path === PURGE_PATH
+                    ? {
+                          data: {
+                              data: {
+                                  replaysDeleted: 12,
+                                  heatmapEventsDeleted: 340,
+                                  retentionDays: 30
+                              }
+                          }
+                      }
+                    : { data: { data: row(true) } }
+            );
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            // Act
+            await user.click(button);
+            await user.click(
+                within(screen.getByTestId('session-recording-purge-confirm')).getByRole('button', {
+                    name: copy.purgeConfirmAction
+                })
+            );
+
+            // Assert
+            expect(await screen.findByTestId('session-recording-purge-result')).toHaveTextContent(
+                '12 grabaciones y 340 eventos'
+            );
+            expect(purges()).toHaveLength(1);
+            expect(purges()[0]?.[0]).toEqual({ path: PURGE_PATH, method: 'POST' });
+        });
+
+        it('a 503 from the purge says the cleanup is not configured', async () => {
+            fetchApi.mockImplementation(async ({ path }) => {
+                if (path === PURGE_PATH) throw Object.assign(new Error('503'), { status: 503 });
+                return { data: { data: row(true) } };
+            });
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            await user.click(button);
+            await user.click(
+                within(screen.getByTestId('session-recording-purge-confirm')).getByRole('button', {
+                    name: copy.purgeConfirmAction
+                })
+            );
+
+            expect(await screen.findByTestId('session-recording-purge-error')).toHaveTextContent(
+                copy.purgeNotConfigured
+            );
+        });
     });
 });

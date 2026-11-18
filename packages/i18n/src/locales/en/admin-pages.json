@@ -1324,7 +1324,18 @@
                 "cancel": "Cancel",
                 "saveError": "The change could not be saved. The state shown is the last confirmed one.",
                 "readError": "The current state could not be read.",
-                "retry": "Retry"
+                "retry": "Retry",
+                "retentionLabel": "Recording retention",
+                "retentionOption": "{{days}} days",
+                "retentionHelp": "After this period, recordings and heatmap data are deleted automatically every day, even while the switch is off.",
+                "retentionSaveError": "The period could not be saved. The last confirmed one is shown.",
+                "purgeButton": "Clean up now",
+                "purgeAria": "Delete expired recordings now",
+                "purgeConfirm": "Recordings and heatmap data older than {{days}} days will be permanently deleted. Clean up now?",
+                "purgeConfirmAction": "Delete now",
+                "purgeDone": "Deleted {{replays}} recordings and {{heatmaps}} heatmap events.",
+                "purgeError": "The cleanup could not be completed.",
+                "purgeNotConfigured": "The cleanup is not configured: the api has no connection to the Umami database."
             }
         },
         "seo": {

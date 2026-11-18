@@ -1324,7 +1324,18 @@
                 "cancel": "Cancelar",
                 "saveError": "No se pudo guardar el cambio. El estado mostrado es el último confirmado.",
                 "readError": "No se pudo leer el estado actual.",
-                "retry": "Reintentar"
+                "retry": "Reintentar",
+                "retentionLabel": "Retención de grabaciones",
+                "retentionOption": "{{days}} días",
+                "retentionHelp": "Pasado este período, las grabaciones y los datos de mapas de calor se borran solos todos los días, aunque el interruptor esté apagado.",
+                "retentionSaveError": "No se pudo guardar el período. Se muestra el último confirmado.",
+                "purgeButton": "Limpiar ahora",
+                "purgeAria": "Borrar ahora las grabaciones vencidas",
+                "purgeConfirm": "Se van a borrar de forma definitiva las grabaciones y los datos de mapas de calor con más de {{days}} días. ¿Limpiar ahora?",
+                "purgeConfirmAction": "Borrar ahora",
+                "purgeDone": "Se borraron {{replays}} grabaciones y {{heatmaps}} eventos de mapa de calor.",
+                "purgeError": "No se pudo completar la limpieza.",
+                "purgeNotConfigured": "La limpieza no está configurada: falta la conexión a la base de Umami en la api."
             }
         },
         "seo": {
