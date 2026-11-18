@@ -492,3 +492,72 @@ describe('projectPublicListing — nightInfo policy keys (HOS-2060, DEC-FAC-040)
         expect(projected.policies).toBeNull();
     });
 });
+
+describe('projectPublicListing: venue videos trait (HOS-2258)', () => {
+    const videos = [{ url: 'https://youtu.be/dQw4w9WgXcQ', moderationState: 'APPROVED' }];
+    const listing = {
+        id: 'v',
+        ownerId: 'owner',
+        videos,
+        description: 'Pizzas con https://youtu.be/dQw4w9WgXcQ',
+        media: { featuredImage: { url: 'https://img/1.jpg' }, gallery: [], videos }
+    };
+    const statesWith = (videosState: 'available' | 'locked') =>
+        new Map([
+            ['basicInfo', { state: 'available', traits: new Map<string, string>() }],
+            [
+                'media',
+                {
+                    state: 'available',
+                    traits: new Map([['videos', videosState]])
+                }
+            ]
+        ]);
+
+    it('drops both the top-level and the nested videos while the trait is locked', () => {
+        const projected = projectPublicListing({
+            vertical: 'venue',
+            listing,
+            states: statesWith('locked')
+        });
+
+        expect(projected).not.toHaveProperty('videos');
+        expect((projected.media as { videos: unknown }).videos).toEqual([]);
+        expect(projected.media).toHaveProperty('featuredImage');
+    });
+
+    it('keeps both copies when the trait is available', () => {
+        const projected = projectPublicListing({
+            vertical: 'venue',
+            listing,
+            states: statesWith('available')
+        });
+
+        expect(projected.videos).toEqual(videos);
+        expect((projected.media as { videos: unknown }).videos).toEqual(videos);
+    });
+
+    it('never rewrites the owner description (AC-12)', () => {
+        const projected = projectPublicListing({
+            vertical: 'venue',
+            listing,
+            states: statesWith('locked')
+        });
+
+        expect(projected.description).toBe(listing.description);
+    });
+
+    it('does not break when media is absent, null or not an object', () => {
+        for (const media of [undefined, null, 'x', ['a']]) {
+            const { media: _omit, ...rest } = listing;
+            const input = media === undefined ? rest : { ...rest, media };
+            expect(() =>
+                projectPublicListing({
+                    vertical: 'venue',
+                    listing: input,
+                    states: statesWith('locked')
+                })
+            ).not.toThrow();
+        }
+    });
+});

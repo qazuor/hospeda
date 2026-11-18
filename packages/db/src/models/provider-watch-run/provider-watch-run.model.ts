@@ -198,35 +198,46 @@ export class ProviderWatchRunModel {
         readonly alerts: unknown[];
         readonly tx?: DrizzleClient;
     }): Promise<SelectProviderWatchRun> {
-        const executor = input.tx ?? getDb();
-        // The in-memory record carries no write keys: they were persisted before each send and are
-        // the only way to find an object whose answer was lost. Merge, never overwrite.
-        const [stored] = await executor
-            .select({ measurements: providerWatchRuns.measurements })
-            .from(providerWatchRuns)
-            .where(
-                and(eq(providerWatchRuns.id, input.id), eq(providerWatchRuns.outcome, 'running'))
-            )
-            .limit(1);
-        const [row] = await executor
-            .update(providerWatchRuns)
-            .set({
-                finishedAt: input.finishedAt,
-                outcome: input.outcome,
-                reason: input.reason,
-                measurements: mergeMeasurements({
-                    stored: stored?.measurements,
-                    closing: input.measurements
-                }),
-                ledger: input.ledger,
-                alerts: input.alerts
-            })
-            .where(
-                and(eq(providerWatchRuns.id, input.id), eq(providerWatchRuns.outcome, 'running'))
-            )
-            .returning();
-        if (!row) throw new Error(`provider_watch_run ${input.id} is not an open run`);
-        return row;
+        const work = async (executor: DrizzleClient): Promise<SelectProviderWatchRun> => {
+            // The in-memory record carries no write keys: they were persisted before each send and
+            // are the only way to find an object whose answer was lost. Merge, never overwrite.
+            // FOR UPDATE: the read and the update are one atomic step, so a progress write cannot
+            // land between them and be overwritten by a merge of a stale copy.
+            const [stored] = await executor
+                .select({ measurements: providerWatchRuns.measurements })
+                .from(providerWatchRuns)
+                .where(
+                    and(
+                        eq(providerWatchRuns.id, input.id),
+                        eq(providerWatchRuns.outcome, 'running')
+                    )
+                )
+                .limit(1)
+                .for('update');
+            const [row] = await executor
+                .update(providerWatchRuns)
+                .set({
+                    finishedAt: input.finishedAt,
+                    outcome: input.outcome,
+                    reason: input.reason,
+                    measurements: mergeMeasurements({
+                        stored: stored?.measurements,
+                        closing: input.measurements
+                    }),
+                    ledger: input.ledger,
+                    alerts: input.alerts
+                })
+                .where(
+                    and(
+                        eq(providerWatchRuns.id, input.id),
+                        eq(providerWatchRuns.outcome, 'running')
+                    )
+                )
+                .returning();
+            if (!row) throw new Error(`provider_watch_run ${input.id} is not an open run`);
+            return row;
+        };
+        return input.tx ? work(input.tx) : getDb().transaction((tx) => work(tx as DrizzleClient));
     }
 
     /**

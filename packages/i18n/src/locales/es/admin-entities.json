@@ -1014,7 +1014,9 @@
             "actions": "Acciones"
         },
         "actions": {
-            "handle": "Resolver"
+            "handle": "Resolver",
+            "createProvider": "Crear proveedor",
+            "creatingProvider": "Creando..."
         },
         "handle": {
             "title": "Resolver lead",
@@ -1028,12 +1030,32 @@
             "submit": "Confirmar",
             "submitting": "Guardando...",
             "successApproved": "Lead aprobado exitosamente.",
-            "successRejected": "Lead rechazado."
+            "successRejected": "Lead rechazado.",
+            "categoriesLabel": "Categorías elegidas",
+            "categoryState": {
+                "inactive": "Inactiva",
+                "deleted": "Borrada",
+                "missing": "No existe"
+            },
+            "categoriesNote": "Si ninguna categoría está activa, el proveedor no se crea.",
+            "catalogUnavailable": "No se pudo cargar el catálogo",
+            "warningNoActiveCategory": "Lead aprobado, pero el proveedor no se creó: ninguna de sus categorías está activa. Reactivá una categoría y tocá «Crear proveedor».",
+            "warningLegacy": "Lead aprobado, pero el proveedor no se creó: al lead le faltan datos para crearlo automáticamente."
         },
         "pagination": {
             "prev": "Anterior",
             "next": "Siguiente",
             "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
+        },
+        "badge": {
+            "providerNotCreated": "Proveedor no creado"
+        },
+        "provision": {
+            "success": "Proveedor creado",
+            "alreadyExists": "El proveedor ya existe",
+            "error": "No se pudo crear el proveedor. Intentá de nuevo.",
+            "stillNoCategory": "El proveedor sigue sin crearse: ninguna de las categorías elegidas está activa. Reactivá una y volvé a intentar.",
+            "missingData": "No se puede crear el proveedor automáticamente: al lead le faltan datos."
         }
     },
     "hostTrade": {

@@ -139,6 +139,12 @@
                 "area": "Vale só para: {{area}}"
             },
             "legalAge": "Proibida a venda de bebidas alcoólicas a menores de 18 anos (Lei argentina 24.788)."
+        },
+        "videos": {
+            "title": "Vídeos",
+            "play": "Reproduzir vídeo",
+            "playNamed": "Reproduzir vídeo: {{caption}}",
+            "openExternal": "Assistir no {{provider}} (abre em uma nova aba)"
         }
     },
     "types": {

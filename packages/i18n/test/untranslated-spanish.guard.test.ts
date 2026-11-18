@@ -43,6 +43,7 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Total: ['en', 'pt'],
     Manual: ['en', 'pt'],
     Blog: ['en', 'pt'],
+    Videos: ['en'],
     Camping: ['en'],
     Error: ['en'],
     Partner: ['en'],

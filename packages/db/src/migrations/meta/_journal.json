@@ -1629,8 +1629,15 @@
     {
       "idx": 232,
       "version": "7",
-      "when": 1795004760640,
-      "tag": "0232_hos2349_mcp_activity_permission",
+      "when": 1794996122220,
+      "tag": "0232_hos2256_entity_interactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 233,
+      "version": "7",
+      "when": 1795013865711,
+      "tag": "0233_hos2349_mcp_activity_permission",
       "breakpoints": true
     }
   ]

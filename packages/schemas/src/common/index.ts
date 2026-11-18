@@ -60,6 +60,7 @@ export * from './listing-owner-listing.schema.js';
 export * from './listing-policies.schema.js';
 export * from './listing-purge-on-request.schema.js';
 export * from './listing-support-edit.schema.js';
+export * from './listing-video-input.schema.js';
 export * from './location.schema.js';
 export * from './location-rule.schema.js';
 export * from './media.schema.js';

@@ -55,6 +55,8 @@ interface CatalogRowPresentation {
     readonly descKey: string;
     /** Decorative icon, resolved from the shared icon table. */
     readonly icon: ComponentType<IconProps> | undefined;
+    /** Omit the row while no plan column grants its entitlement (HOS-2258). */
+    readonly hideUntilGranted?: boolean | undefined;
 }
 
 /** Presentation of one section and its optional traits. */
@@ -74,7 +76,19 @@ const VENUE_CATALOG_PRESENTATION = {
     openingHours: {},
     price: {},
     amenities: {},
-    media: {},
+    media: {
+        traits: {
+            videos: {
+                rowId: 'venueVideos',
+                labelKey: 'billing.comparison.row.venueVideos',
+                descKey: 'billing.comparison.rowDesc.venueVideos',
+                icon: COMPARISON_ROW_ICONS.venueVideos,
+                // HOS-2258: no venue plan grants `can_embed_video` yet
+                // (HOS-2280), so the row stays out of the table until one does.
+                hideUntilGranted: true
+            }
+        }
+    },
     contact: {},
     menu: {
         section: {
@@ -190,6 +204,7 @@ function buildRow({
         cell: { kind: 'entitlement', key: entitlementKey },
         status: 'available',
         icon: presentation?.icon,
+        ...(presentation?.hideUntilGranted ? { hideUntilGranted: true } : {}),
         ...(lineMarks.length > 0 ? { lineMarks } : {})
     };
 }

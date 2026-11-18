@@ -64,6 +64,9 @@ const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: stri
         { table: 'r_entity_tag', fk: 'entity_id' },
         { table: 'qr_codes', fk: 'entity_id' },
         { table: 'entity_view_monthly_rollups', fk: 'entity_id' },
+        // HOS-2256: the interaction summaries go with the content, like the view
+        // rollups. The raw `entity_interactions` rows are left to their TTL cron.
+        { table: 'entity_interaction_monthly_rollups', fk: 'entity_id' },
         { table: 'venue_menu_items', fk: 'venue_id' },
         { table: 'venue_menu_sections', fk: 'venue_id' },
         { table: 'venue_daily_specials', fk: 'venue_id' },
