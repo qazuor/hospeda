@@ -37,9 +37,6 @@ export const AMOUNT_BELOW_FLOOR_MESSAGE = 'Cannot pay an amount lower than $ 15.
 /** RP3, the provider's exact refusal above the ceiling. */
 export const AMOUNT_ABOVE_CEILING_MESSAGE = 'Cannot pay an amount greater than $ 2000000.00';
 
-/** RP4, the provider's exact refusal of another currency (EX-18, sandbox and production). */
-export const CURRENCY_REFUSED_MESSAGE = 'Invalid field -> auto_recurring.currency_id';
-
 /** RP1: refuse reuse of a card token before creating another authorization. */
 export function assertUnusedPaymentToken(args: {
     readonly paymentToken: string | undefined;
@@ -68,7 +65,7 @@ export function assertChargeableAmount(args: {
     const refuse = (message: string) =>
         new PaymentProviderError({ code: 'REJECTED', capability: args.capability, message });
     if (args.amount.currency !== FAKE_CURRENCY) {
-        throw refuse(CURRENCY_REFUSED_MESSAGE);
+        throw refuse(`currency ${args.amount.currency} is not accepted: only ${FAKE_CURRENCY}`);
     }
     if (args.amount.amountMinor < FAKE_AMOUNT_FLOOR_MINOR) throw refuse(AMOUNT_BELOW_FLOOR_MESSAGE);
     if (args.amount.amountMinor > FAKE_AMOUNT_CEILING_MINOR) {
