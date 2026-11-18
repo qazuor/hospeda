@@ -26,7 +26,7 @@
 import { HostTradeUsageDeclaredByEnum, HostTradeUsageStatusEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import type { PortalDestination } from '../../portal/portal-routes';
 import {
     getHostTradeToolService,
@@ -55,8 +55,8 @@ export type AttentionRead =
     | { readonly items?: never; readonly error: ToolErrorPayload };
 
 /** Builds a portal URL from the configured site URL. */
-function portalUrl(destination: PortalDestination): string {
-    return buildPortalUrl({ destination, siteUrl: env.HOSPEDA_SITE_URL });
+function portalUrl(destination: PortalDestination, locale: PortalLocale | undefined): string {
+    return buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL });
 }
 
 /**
@@ -66,14 +66,19 @@ function portalUrl(destination: PortalDestination): string {
  * @returns Zero or one item
  */
 export function unansweredInquiriesItems({
-    count
+    count,
+    locale
 }: {
     readonly count: number | undefined;
+    /** Locale prefix of the links (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }): readonly AttentionItem[] {
     if (count === undefined || count <= 0) {
         return [];
     }
-    return [{ kind: 'unanswered_inquiries', count, actionUrl: portalUrl({ kind: 'inquiry' }) }];
+    return [
+        { kind: 'unanswered_inquiries', count, actionUrl: portalUrl({ kind: 'inquiry' }, locale) }
+    ];
 }
 
 /**
@@ -84,9 +89,12 @@ export function unansweredInquiriesItems({
  * @returns Zero, one or two items, or the service error
  */
 export async function readPendingUsageItems({
-    actor
+    actor,
+    locale
 }: {
     readonly actor: Actor;
+    /** Locale prefix of the links (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }): Promise<AttentionRead> {
     const usages = getHostTradeUsageToolService();
     const [hostPending, own] = await Promise.all([
@@ -123,7 +131,7 @@ export async function readPendingUsageItems({
             kind: 'pending_benefit_usages',
             side: 'host',
             count: hostCount,
-            actionUrl: portalUrl({ kind: 'benefitUsages' })
+            actionUrl: portalUrl({ kind: 'benefitUsages' }, locale)
         });
     }
     const providerCount = providerPending?.data?.total ?? 0;
@@ -132,7 +140,7 @@ export async function readPendingUsageItems({
             kind: 'pending_benefit_usages',
             side: 'provider',
             count: providerCount,
-            actionUrl: portalUrl({ kind: 'providerPanel' })
+            actionUrl: portalUrl({ kind: 'providerPanel' }, locale)
         });
     }
     return { items };
@@ -146,10 +154,13 @@ export async function readPendingUsageItems({
  */
 export async function readFixRequestItems({
     ownerId,
-    verticals
+    verticals,
+    locale
 }: {
     readonly ownerId: string;
     readonly verticals: readonly ListingToolVertical[];
+    /** Locale prefix of the links (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }): Promise<readonly AttentionItem[]> {
     const ordered = LISTING_TOOL_VERTICALS.filter((vertical) => verticals.includes(vertical));
     const reads = await Promise.all(
@@ -161,7 +172,7 @@ export async function readFixRequestItems({
                 kind: 'open_fix_request',
                 listing: { id: listing.id, vertical, name: listing.name },
                 reportedFixed: listing.reportedFixed,
-                actionUrl: portalUrl({ kind: 'listingEditor', vertical, id: listing.id })
+                actionUrl: portalUrl({ kind: 'listingEditor', vertical, id: listing.id }, locale)
             })
         )
     );

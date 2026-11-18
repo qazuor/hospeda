@@ -182,6 +182,22 @@ describe('buildPortalUrl', () => {
             ).toBe(`${SITE}/pt/mi-cuenta/complementos/`);
         });
 
+        it.each(['es', 'en', 'pt'] as const)('prefixes the %s locale', (locale) => {
+            expect(buildPortalUrl({ destination: { kind: 'addons' }, siteUrl: SITE, locale })).toBe(
+                `${SITE}/${locale}/mi-cuenta/complementos/`
+            );
+        });
+
+        it('falls back to es when no locale is given', () => {
+            expect(
+                buildPortalUrl({
+                    destination: { kind: 'addons' },
+                    siteUrl: SITE,
+                    locale: undefined
+                })
+            ).toBe(`${SITE}/es/mi-cuenta/complementos/`);
+        });
+
         it('refuses an empty site URL', () => {
             expect(() => urlOf({ kind: 'addons' }, '  ')).toThrow();
         });

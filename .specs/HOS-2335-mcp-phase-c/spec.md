@@ -1544,7 +1544,7 @@ leave unconfirmed. Until the owner answers, HOS-2247 excludes the tool.
 - **U-2** Whether accommodation drafts count against `max_accommodations` at create: create routes (V6.1) and the host-onboarding header (BETA-197) disagree; read the `quota` step `resolveListingAccess` runs for `CREATE`.
 - **U-3** Whether venue/experience have an open-draft precheck like accommodation. None found.
 - **U-4** Exact `requiredPermissions`/`emailUnverifiedOperation` of the host-trade usage reads and transitions — copy verbatim (C-4).
-- **U-5** Persisted user locale — none found in `packages/db/src/schemas/user/`; links default to `es`.
+- **U-5** Persisted user locale — resolved: `users.settings.languageWeb` (`@repo/schemas` user settings, the source the add-on emails use through `resolveRecipientLocale`). MCP tool links, including refusal links, use it and fall back to `es`. The owner-history route (`/ai-connections/activity`) still builds its target links in `es`, because its reader is shared with the admin log and takes no per-viewer locale.
 - **U-6** Whether the one-address duplicate lookup is exposed as a read the preview can call (`packages/service-core/src/services/listing/listing-location-key.ts`); if not, skip the warning, publication stays the gate.
 - **U-7** Whether `VenueOwnerCreateInputSchema` and `ExperienceOwnerCreateInputCheckedSchema` accept `location` / `meetingPoint*` at create (and what the venue create's `listingSection` step requires for it); otherwise write it through the owner PATCH in the same commit.
 - **U-8** Whether showing `moderationReason` to owners is wanted — not asked; excluded until the owner says otherwise.

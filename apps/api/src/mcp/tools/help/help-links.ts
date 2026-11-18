@@ -22,7 +22,7 @@ import type {
     OwnerHelpDestination,
     OwnerHelpTopic
 } from '../../../data/owner-help/owner-help.types';
-import { buildPortalUrl } from '../../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import { describePortalDestination } from '../../portal/portal-destination';
 import type { PortalDestination, PortalListingVertical } from '../../portal/portal-routes';
 
@@ -88,16 +88,18 @@ function destinationFitsAudience({
 function toLink({
     destination,
     label,
-    siteUrl
+    siteUrl,
+    locale
 }: {
     readonly destination: PortalDestination;
     readonly label?: string;
     readonly siteUrl: string;
+    readonly locale?: PortalLocale;
 }): HelpLink | undefined {
     try {
         return {
             label: label ?? describePortalDestination({ destination }),
-            url: buildPortalUrl({ destination, siteUrl })
+            url: buildPortalUrl({ destination, locale, siteUrl })
         };
     } catch {
         return undefined;
@@ -117,6 +119,8 @@ export interface BuildHelpLinksArgs {
     readonly ownListings?: readonly HelpOwnListing[];
     /** Public base URL of the web app. */
     readonly siteUrl: string;
+    /** Locale prefix of the links (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }
 
 /**
@@ -159,7 +163,8 @@ export function buildHelpLinks({
     topic,
     audience,
     ownListings,
-    siteUrl
+    siteUrl,
+    locale
 }: BuildHelpLinksArgs): readonly HelpLink[] {
     const links: HelpLink[] = [];
     const editorVerticals: PortalListingVertical[] = [];
@@ -169,7 +174,7 @@ export function buildHelpLinks({
             continue;
         }
         if (destination.kind !== 'ownEditorSection') {
-            const link = toLink({ destination, label: destination.label, siteUrl });
+            const link = toLink({ destination, label: destination.label, siteUrl, locale });
             if (link !== undefined) {
                 links.push(link);
             }
@@ -179,7 +184,8 @@ export function buildHelpLinks({
         if (ownListings === undefined) {
             const link = toLink({
                 destination: { kind: 'ownerListings', vertical: destination.vertical },
-                siteUrl
+                siteUrl,
+                locale
             });
             if (link !== undefined) {
                 links.push(link);
@@ -202,7 +208,8 @@ export function buildHelpLinks({
                     section: destination.section
                 },
                 label: `${destination.label ?? 'Editor'} · ${VERTICAL_NOUN[destination.vertical]} ${index + 1}`,
-                siteUrl
+                siteUrl,
+                locale
             });
             if (link !== undefined) {
                 links.push(link);
@@ -212,7 +219,11 @@ export function buildHelpLinks({
 
     if (links.length === 0) {
         for (const vertical of new Set(editorVerticals)) {
-            const link = toLink({ destination: { kind: 'createListing', vertical }, siteUrl });
+            const link = toLink({
+                destination: { kind: 'createListing', vertical },
+                siteUrl,
+                locale
+            });
             if (link !== undefined) {
                 links.push(link);
             }
@@ -220,7 +231,7 @@ export function buildHelpLinks({
     }
 
     if (topic.faqKey !== undefined) {
-        const link = toLink({ destination: { kind: 'faq' }, siteUrl });
+        const link = toLink({ destination: { kind: 'faq' }, siteUrl, locale });
         if (link !== undefined) {
             links.push(link);
         }
@@ -243,12 +254,14 @@ export function buildHelpLinks({
  * @returns The two links, fewer when a URL cannot be built
  */
 export function buildFallbackHelpLinks({
-    siteUrl
+    siteUrl,
+    locale
 }: {
     readonly siteUrl: string;
+    readonly locale?: PortalLocale;
 }): readonly HelpLink[] {
     return [{ kind: 'faq' as const }, { kind: 'contact' as const }].flatMap((destination) => {
-        const link = toLink({ destination, siteUrl });
+        const link = toLink({ destination, siteUrl, locale });
         return link === undefined ? [] : [link];
     });
 }

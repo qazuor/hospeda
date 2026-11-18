@@ -25,7 +25,7 @@
 import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import type { PortalDestination, PortalSectionId } from '../../portal/portal-routes';
 import { consumeConfirmationToken, issueConfirmationToken } from '../confirmation-token-store';
 import { defineTool, type ToolHandlerResult, type ToolRefusalLink } from '../tool-definition';
@@ -148,8 +148,8 @@ export interface CreateListingCreated {
 export type CreateListingResult = CreateListingPreview | CreateListingCreated;
 
 /** Builds a portal URL from the configured site URL. */
-function portalUrl(destination: PortalDestination): string {
-    return buildPortalUrl({ destination, siteUrl: env.HOSPEDA_SITE_URL });
+function portalUrl(destination: PortalDestination, locale: PortalLocale | undefined): string {
+    return buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL });
 }
 
 /** The error answered when the token store cannot be used. Nothing was written. */
@@ -195,16 +195,20 @@ function nextStepsFor(args: {
     readonly vertical: ListingToolVertical;
     readonly id: string;
     readonly hasLocation: boolean;
+    readonly locale: PortalLocale | undefined;
 }): readonly CreateListingNextStep[] {
-    const { vertical, id, hasLocation } = args;
+    const { vertical, id, hasLocation, locale } = args;
     const sections = NEXT_STEP_SECTIONS[vertical];
     const editor = (section?: PortalSectionId) =>
-        portalUrl({
-            kind: 'listingEditor',
-            vertical,
-            id,
-            ...(section === undefined ? {} : { section })
-        });
+        portalUrl(
+            {
+                kind: 'listingEditor',
+                vertical,
+                id,
+                ...(section === undefined ? {} : { section })
+            },
+            locale
+        );
     return [
         {
             step: 'amenities',
@@ -346,15 +350,19 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
                     id: created.data.id,
                     vertical: input.vertical,
                     publicationStatus: 'DRAFT',
-                    editorUrl: portalUrl({
-                        kind: 'listingEditor',
-                        vertical: input.vertical,
-                        id: created.data.id
-                    }),
+                    editorUrl: portalUrl(
+                        {
+                            kind: 'listingEditor',
+                            vertical: input.vertical,
+                            id: created.data.id
+                        },
+                        context.locale
+                    ),
                     nextSteps: nextStepsFor({
                         vertical: input.vertical,
                         id: created.data.id,
-                        hasLocation: bodyHasLocation({ vertical: input.vertical, body })
+                        hasLocation: bodyHasLocation({ vertical: input.vertical, body }),
+                        locale: context.locale
                     })
                 }
             };

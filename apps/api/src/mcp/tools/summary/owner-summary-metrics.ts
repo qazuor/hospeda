@@ -33,7 +33,7 @@ import {
 } from '@repo/schemas';
 import { type Actor, entityViewService } from '@repo/service-core';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import { describePortalDestination } from '../../portal/portal-destination';
 import type { PortalDestination } from '../../portal/portal-routes';
 import { readOwnerAccommodationIds } from '../inquiry/inquiry-readers';
@@ -75,13 +75,16 @@ interface ServiceResult<T> {
 }
 
 /** The omission entry of a vertical without basic stats. */
-function omittedMetrics(vertical: ListingToolVertical): OmittedMetrics {
+function omittedMetrics(
+    vertical: ListingToolVertical,
+    locale: PortalLocale | undefined
+): OmittedMetrics {
     const destination: PortalDestination = { kind: 'plans', vertical };
     return {
         omitted: 'NO_STATS_ENTITLEMENT',
         note: NO_STATS_NOTE,
         action: {
-            url: buildPortalUrl({ destination, siteUrl: env.HOSPEDA_SITE_URL }),
+            url: buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL }),
             label: describePortalDestination({ destination })
         }
     };
@@ -197,10 +200,12 @@ export async function readVerticalMetrics(args: {
     readonly now: Date;
     readonly unansweredInquiries?: number;
     readonly partial?: boolean;
+    /** Locale prefix of the links (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }): Promise<VerticalMetricsResult> {
-    const { actor, vertical, listingIds, period, now, unansweredInquiries, partial } = args;
+    const { actor, vertical, listingIds, period, now, unansweredInquiries, partial, locale } = args;
     if (!(await hasBasicStatsEntitlement({ userId: actor.id, vertical }))) {
-        return { metrics: omittedMetrics(vertical) };
+        return { metrics: omittedMetrics(vertical, locale) };
     }
     const isAccommodation = vertical === VerticalEnum.ACCOMMODATION;
     const since = new Date(now.getTime() - OWNER_SUMMARY_PERIOD_DAYS[period] * 86_400_000);
