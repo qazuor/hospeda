@@ -266,7 +266,7 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 42000 } });
     });
 
-    it('lets the owner authorize a read-only battery: sum 0, says the run moves no money, sends 0', async () => {
+    it('lets the owner authorize a battery with no money-moving measurement: says it moves no money and cancels what it creates, sends 0', async () => {
         permissions.mockReturnValue(MANAGER);
         api({ preview: { expectedMaxChargeMinor: 0, measurements: [] } });
         renderCard();
@@ -276,7 +276,11 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
         fireEvent.click(screen.getByTestId('provider-watch-save'));
         const dialog = await screen.findByTestId('provider-watch-confirm');
-        expect(dialog).toHaveTextContent(/solo lectura|read-only/i);
+        expect(dialog).toHaveTextContent(/no mueve plata|moves no money/i);
+        expect(dialog).toHaveTextContent(
+            /cancela en la misma corrida|cancels them in the same run/i
+        );
+        expect(dialog).not.toHaveTextContent(/solo lectura|read-only/i);
         fireEvent.click(within(dialog).getByRole('button', { name: copy.save }));
         await waitFor(() => expect(posts()).toHaveLength(1));
         expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 0 } });

@@ -748,14 +748,14 @@
             "save": "Authorize",
             "confirmTitle": "Authorize one run",
             "confirmSave": "Authorize ONE run of {month} against the account {account}, for exactly {amount}? It is the sum of the money-moving measurements and also the cap of what the run may charge. The authorization is consumed when the run starts.",
-            "confirmSaveReadOnly": "Authorize ONE run of {month} against the account {account}? The catalog has no money-moving measurement: the run is read-only and moves no money (authorized amount: {amount}). The authorization is consumed when the run starts.",
+            "confirmSaveReadOnly": "Authorize ONE run of {month} against the account {account}? The catalog has no money-moving measurement: the run moves no money (authorized amount: {amount}). It may create objects that cannot charge (pending preapprovals, with no card) and cancels them in the same run. The authorization is consumed when the run starts.",
             "cancel": "Cancel",
-            "invalidValue": "Enter a month as YYYY-MM and a whole maximum charge above zero.",
+            "invalidValue": "Enter a month as YYYY-MM and exactly the amount the catalog computes: the sum of the maximum charges of its money-moving measurements (0 when it has none).",
             "noWritePermission": "Only a SUPER_ADMIN can change this authorization.",
             "saveError": "Could not save the authorization. Please try again.",
             "expectedTitle": "Amount one run needs",
             "expectedValue": "{amount} ({minor} centavos): the sum of {count} money-moving measurements ({ids}).",
-            "noMoneyCatalog": "The catalog has no money-moving measurement for this account: the run is read-only and moves no money. It is authorized with an amount of 0.",
+            "noMoneyCatalog": "The catalog has no money-moving measurement for this account: the run moves no money. It may create objects that cannot charge (pending preapprovals, with no card) and cancels them in the same run. It is authorized with an amount of 0.",
             "previewError": "The amount one run needs could not be computed. Authorizing is not possible."
         },
         "providerWatchShapes": {

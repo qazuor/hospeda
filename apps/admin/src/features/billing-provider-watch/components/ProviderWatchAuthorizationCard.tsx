@@ -267,7 +267,7 @@ export function ProviderWatchAuthorizationCard() {
                                 {translate('previewError')}
                             </p>
                         )}
-                        {preview.data && preview.data.expectedMaxChargeMinor > 0 && (
+                        {preview.data && preview.data.measurements.length > 0 && (
                             <p data-testid="provider-watch-expected">
                                 {translate('expectedValue', {
                                     amount: formatArs(preview.data.expectedMaxChargeMinor),
@@ -279,7 +279,7 @@ export function ProviderWatchAuthorizationCard() {
                                 })}
                             </p>
                         )}
-                        {preview.data && preview.data.expectedMaxChargeMinor === 0 && (
+                        {preview.data && preview.data.measurements.length === 0 && (
                             <p
                                 className="text-muted-foreground"
                                 data-testid="provider-watch-no-money"
@@ -332,7 +332,8 @@ export function ProviderWatchAuthorizationCard() {
                             <AlertDialogDescription>
                                 {pending
                                     ? translate(
-                                          pending.maxChargeMinor === 0
+                                          // No money-moving measurement, never "the sum is 0" (HOS-1512).
+                                          preview.data?.measurements.length === 0
                                               ? 'confirmSaveReadOnly'
                                               : 'confirmSave',
                                           {

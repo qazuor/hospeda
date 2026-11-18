@@ -748,14 +748,14 @@
             "save": "Salvar autorização",
             "confirmTitle": "Autorizar uma execução",
             "confirmSave": "Autorizar UMA execução de {month} contra a conta {account}, por exatamente {amount}? É a soma das medições que movimentam dinheiro e também o teto do que a execução pode cobrar. A autorização é consumida quando a execução começa.",
-            "confirmSaveReadOnly": "Autorizar UMA execução de {month} contra a conta {account}? O catálogo não tem medições que movimentem dinheiro: a execução é somente leitura e não movimenta dinheiro (valor autorizado: {amount}). A autorização é consumida quando a execução começa.",
+            "confirmSaveReadOnly": "Autorizar UMA execução de {month} contra a conta {account}? O catálogo não tem medições que movimentem dinheiro: a execução não movimenta dinheiro (valor autorizado: {amount}). Ela pode criar objetos que não podem cobrar (pré-aprovações pendentes, sem cartão) e os cancela na mesma execução. A autorização é consumida quando a execução começa.",
             "cancel": "Cancelar",
-            "invalidValue": "Informe um mês no formato AAAA-MM e um máximo a cobrar inteiro e maior que zero.",
+            "invalidValue": "Informe um mês no formato AAAA-MM e exatamente o valor que o catálogo calcula: a soma dos máximos a cobrar das suas medições que movimentam dinheiro (0 se não tiver nenhuma).",
             "noWritePermission": "Somente um SUPER_ADMIN pode alterar esta autorização.",
             "saveError": "Não foi possível salvar a autorização. Tente novamente.",
             "expectedTitle": "Valor de que uma execução precisa",
             "expectedValue": "{amount} ({minor} centavos): soma de {count} medições que movimentam dinheiro ({ids}).",
-            "noMoneyCatalog": "O catálogo não tem medições que movimentem dinheiro nesta conta: a execução é somente leitura e não movimenta dinheiro. Ela é autorizada com valor 0.",
+            "noMoneyCatalog": "O catálogo não tem medições que movimentem dinheiro nesta conta: a execução não movimenta dinheiro. Ela pode criar objetos que não podem cobrar (pré-aprovações pendentes, sem cartão) e os cancela na mesma execução. Ela é autorizada com valor 0.",
             "previewError": "Não foi possível calcular o valor de que a execução precisa. Não é possível autorizar."
         },
         "providerWatchShapes": {
