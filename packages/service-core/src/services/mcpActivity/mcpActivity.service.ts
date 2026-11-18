@@ -192,6 +192,7 @@ export class McpActivityService extends BaseService {
                 const parsed = this.parseRows({ rows: result.items });
                 const lookups = await this.lookUp({
                     request: collectLookupRequest({ rows: parsed }),
+                    withUsers: validated.scope.kind === 'all',
                     tx: execCtx.tx
                 });
                 const items = parsed.map((row) =>
@@ -289,16 +290,22 @@ export class McpActivityService extends BaseService {
         return parsed;
     }
 
-    /** Runs the page's batched lookups: one query per kind, none when empty. */
+    /**
+     * Runs the page's batched lookups: one query per kind, none when empty.
+     * Users are looked up only when `withUsers` (the `all` scope): an owner's
+     * own history never reads the users table.
+     */
     private async lookUp(input: {
         readonly request: McpActivityLookupRequest;
+        readonly withUsers: boolean;
         readonly tx?: ServiceContext['tx'];
     }): Promise<McpActivityLookups> {
-        const { request, tx } = input;
+        const { request, withUsers, tx } = input;
         const verticals = [...request.listingIds.entries()];
-        const [clients, conversations, ...listingPages] = await Promise.all([
+        const [clients, conversations, userRows, ...listingPages] = await Promise.all([
             this.model.findClientNames({ clientIds: request.clientIds }, tx),
             this.model.findConversationOwners({ ids: request.conversationIds }, tx),
+            withUsers ? this.model.findUsers({ ids: request.actorIds }, tx) : Promise.resolve([]),
             ...verticals.map(([vertical, ids]) =>
                 this.model.findListingNames({ vertical, ids }, tx)
             )
@@ -316,10 +323,18 @@ export class McpActivityService extends BaseService {
         for (const client of clients) {
             if (client.name) clientNames.set(client.clientId, client.name);
         }
+        const users = new Map<string, { readonly name?: string; readonly email: string }>();
+        for (const user of userRows) {
+            users.set(user.id, {
+                email: user.email,
+                ...(user.displayName ? { name: user.displayName } : {})
+            });
+        }
         return {
             clientNames,
             listings,
-            conversationOwners: new Map(conversations.map((c) => [c.id, c.ownerId]))
+            conversationOwners: new Map(conversations.map((c) => [c.id, c.ownerId])),
+            users
         };
     }
 }
