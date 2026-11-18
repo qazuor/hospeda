@@ -13,6 +13,7 @@
 import {
     type HostTradeCategoryAdmin,
     type HostTradeCategoryCreateInput,
+    type HostTradeCategoryGroupAdmin,
     type HostTradeCategoryUpdateInput,
     LifecycleStatusEnum,
     PermissionEnum
@@ -41,6 +42,9 @@ import { CatalogStateBadge } from './CatalogStateBadge';
 import { CatalogTable } from './CatalogTable';
 import { HostTradeCategoryDialog } from './HostTradeCategoryDialog';
 import { ShowDeletedToggle } from './ShowDeletedToggle';
+
+/** Stable empty list, so memoized values do not rebuild while the groups load. */
+const NO_GROUPS: readonly HostTradeCategoryGroupAdmin[] = [];
 
 const PAGE_SIZE = 50;
 const GROUPS_PAGE_SIZE = 100;
@@ -87,7 +91,7 @@ export function HostTradeCategoriesSection() {
         pageSize: GROUPS_PAGE_SIZE,
         includeDeleted: showDeleted || undefined
     });
-    const allGroups = groupsQuery.data?.items ?? [];
+    const allGroups = groupsQuery.data?.items ?? NO_GROUPS;
     const groups = useMemo(() => allGroups.filter((group) => !group.deletedAt), [allGroups]);
     const groupNameById = useMemo(
         () =>

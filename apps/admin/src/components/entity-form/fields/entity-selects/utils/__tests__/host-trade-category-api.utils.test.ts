@@ -103,6 +103,25 @@ describe('host trade category loaders', () => {
         expect(labelsFor('plumbing')).toEqual(['Plomería']);
     });
 
+    it('finds an option by its slug even when the label fell back to the slug', async () => {
+        mockFetch.mockResolvedValue(
+            page([
+                {
+                    id: 'c-5',
+                    slug: 'sin-nombre',
+                    nameI18n: {},
+                    keywordsI18n: { es: [], en: [], pt: [] },
+                    lifecycleState: 'ACTIVE'
+                }
+            ])
+        );
+
+        const options = await loadAllHostTradeCategories();
+
+        expect(options[0]?.label).toBe('sin-nombre');
+        expect(filterClientOptions({ options, query: 'sin-nom' })).toHaveLength(1);
+    });
+
     it('keeps an already-linked inactive category resolvable by id', async () => {
         mockFetch.mockResolvedValue(page([ACTIVE, INACTIVE]));
 

@@ -23,7 +23,7 @@ import type {
     HostTradeCategoryUpdateInput,
     LifecycleStatusEnum
 } from '@repo/schemas';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { isApiError } from '@/lib/errors';
 
@@ -93,15 +93,19 @@ export function isCategoryInUseError(error: unknown): boolean {
 /**
  * Whether an error is the refusal to restore a category whose GROUP is still
  * soft-deleted (HOS-2340). The service answers a `VALIDATION_ERROR` naming the
- * `groupId` field; the 400/422 status is the fallback when the details are
- * dropped, since the category restore route has no other business refusal.
+ * `groupId` field. The API strips `details` from that response (and `fetchApi`
+ * does not copy them either), so in practice the signal is the server's own
+ * `error.code === 'VALIDATION_ERROR'` in the response body, which the category
+ * restore route sends for no other business refusal. A bare 400/422 with no such
+ * code (a proxy, a malformed request) is NOT this error and gets the generic copy.
  *
  * @param error - Anything a restore mutation rejected with.
  */
 export function isGroupStillDeletedError(error: unknown): boolean {
     if (!isApiError(error)) return false;
     if (error.details?.field === 'groupId') return true;
-    return error.status === 400 || error.status === 422;
+    const body = error.body as { error?: { code?: unknown } } | null | undefined;
+    return body?.error?.code === 'VALIDATION_ERROR';
 }
 
 /** Serialises defined filters into a query string. A `false` boolean is omitted. */
@@ -152,6 +156,9 @@ async function writeRow<TItem>(input: {
 export const useHostTradeCategoryGroups = (filters: HostTradeCategoryGroupFilters = {}) =>
     useQuery({
         queryKey: hostTradeCategoryQueryKeys.groupList(filters),
+        // Toggling `includeDeleted` changes the key; keep the previous groups meanwhile so
+        // the group names and the select do not flash empty.
+        placeholderData: keepPreviousData,
         queryFn: () =>
             fetchPage<HostTradeCategoryGroupAdmin>(HOST_TRADE_CATEGORY_GROUPS_ENDPOINT, {
                 ...filters

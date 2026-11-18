@@ -56,7 +56,12 @@ const toSelectOption = (item: HostTradeCategoryAdmin): SelectOption => ({
     metadata: {
         [SELECT_OPTION_SEARCH_TERMS_KEY]: {
             nameI18n: item.nameI18n,
-            keywordsI18n: item.keywordsI18n
+            // The slug is searchable too, so an option whose label fell back to the slug
+            // (no Spanish/English/Portuguese name) is still findable.
+            keywordsI18n: {
+                ...item.keywordsI18n,
+                es: [...(item.keywordsI18n?.es ?? []), item.slug]
+            }
         }
     }
 });

@@ -114,9 +114,17 @@ describe('isGroupStillDeletedError', () => {
         expect(isGroupStillDeletedError(error)).toBe(true);
     });
 
-    it('falls back to the 400 and 422 statuses when details are dropped', () => {
-        expect(isGroupStillDeletedError(new ApiError('x', { status: 400 }))).toBe(true);
-        expect(isGroupStillDeletedError(new ApiError('x', { status: 422 }))).toBe(true);
+    it('recognizes the server VALIDATION_ERROR code when the API strips the details', () => {
+        const error = new ApiError('x', {
+            status: 400,
+            body: { success: false, error: { code: 'VALIDATION_ERROR', message: 'x' } }
+        });
+        expect(isGroupStillDeletedError(error)).toBe(true);
+    });
+
+    it('does not treat a bare 400 or 422 without the server code as the group refusal', () => {
+        expect(isGroupStillDeletedError(new ApiError('x', { status: 400 }))).toBe(false);
+        expect(isGroupStillDeletedError(new ApiError('x', { status: 422 }))).toBe(false);
     });
 
     it('does not treat other failures as the group refusal', () => {
@@ -221,6 +229,47 @@ describe('categories tab', () => {
             expect(pending.textContent).toBe('admin-pages.hostTradeCategories.actions.restoring');
         });
         release();
+    });
+
+    it('shows the generic message for a bare 400 without the server code (AC-1.7)', async () => {
+        mockApi(() => {
+            throw new ApiError('bad request', { status: 400 });
+        });
+        renderWithClient(<HostTradeCategoriesSection />);
+        await screen.findByTestId(`category-row-${CATEGORY_ID}`);
+        fireEvent.click(screen.getByTestId('category-show-deleted'));
+        fireEvent.click(await screen.findByTestId(`category-restore-${DELETED_CATEGORY_ID}`));
+
+        await waitFor(() => {
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    variant: 'error',
+                    message: 'admin-pages.hostTradeCategories.messages.restoreError'
+                })
+            );
+        });
+    });
+
+    it('explains the group must be restored first from the real server shape (AC-1.6)', async () => {
+        mockApi(() => {
+            throw new ApiError('group deleted', {
+                status: 400,
+                body: { success: false, error: { code: 'VALIDATION_ERROR', message: 'x' } }
+            });
+        });
+        renderWithClient(<HostTradeCategoriesSection />);
+        await screen.findByTestId(`category-row-${CATEGORY_ID}`);
+        fireEvent.click(screen.getByTestId('category-show-deleted'));
+        fireEvent.click(await screen.findByTestId(`category-restore-${DELETED_CATEGORY_ID}`));
+
+        await waitFor(() => {
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    message:
+                        'admin-pages.hostTradeCategories.categories.messages.restoreGroupDeleted'
+                })
+            );
+        });
     });
 
     it('explains that the group must be restored first (AC-1.6)', async () => {
