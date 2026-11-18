@@ -1,8 +1,9 @@
 /**
  * @file session-replay-privacy-doc.test.ts
- * @description HOS-2347 AC-D1 (and AC-S7 as rewritten by the spike): the
- * privacy doc no longer claims Umami has no recording, and states masking,
- * consent, propagation, retention, the six blocked surfaces and the
+ * @description HOS-2347 AC-D1 (and AC-S7 as rewritten by the retention
+ * decision): the privacy doc no longer claims Umami has no recording, and states
+ * masking, consent, propagation, the configurable 14/30/60-day retention with its
+ * daily purge (saved replays included), the six blocked surfaces and the
  * production verification procedure.
  */
 
@@ -26,7 +27,22 @@ describe('session-replay-privacy.md (HOS-2347 AC-D1)', () => {
         ['the consent rule', /usage analytics/i],
         ['no forced reload', /Nothing forces a reload/],
         ['the 60 s switch-off bound', /60 s/],
-        ['indefinite retention (AC-S7, spike)', /retention in force today is \*\*indefinite\*\*/],
+        [
+            'that Umami never deletes recordings on its own (AC-S7)',
+            /no retention setting and no age-based delete API/
+        ],
+        [
+            'the configurable 14, 30 or 60 day retention (AC-S7)',
+            /\*\*14, 30 or 60 days\*\*; the default is\s+\*\*30\*\*/
+        ],
+        ['the daily purge cron', /`session-recording-retention` cron runs daily/],
+        ['that the purge runs with the switch OFF', /also while the\s+switch is OFF/],
+        ['that saved replays are purged too', /saved replays included/],
+        [
+            'the restricted role grant on the three tables',
+            /GRANT SELECT, DELETE ON session_replay, heatmap_event, session_replay_saved/
+        ],
+        ['that recordings are pseudonymous, not anonymous', /pseudonymous/],
         ['the AC-SM6 procedure', /AC-SM6/],
         ['the sign-off command', /\/smoke HOS-2347/],
         ['the measured per-page-load replay cap', /stops for good in that page load/],
