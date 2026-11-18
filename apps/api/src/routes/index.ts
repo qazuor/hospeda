@@ -190,6 +190,7 @@ import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
 import { protectedSearchHistoryRoutes } from './search-history';
+import { adminSessionRecordingRoutes } from './session-recording/admin/index.js';
 import {
     adminGetGptActionSchemaRoute,
     adminGetMakeWebhookSchemaRoute,
@@ -723,6 +724,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
         // HOS-1512: provider watch battery (account confirmation, authorization, shape acceptance)
         app.route('/api/v1/admin/provider-watch', adminProviderWatchRoutes);
+        // HOS-2347: manual purge of expired Umami recordings
+        app.route('/api/v1/admin/session-recording', adminSessionRecordingRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);

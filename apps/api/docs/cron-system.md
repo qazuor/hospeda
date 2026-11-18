@@ -955,6 +955,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
 | `mcp-audit-retention` | system | `20 4 * * *` | `apps/api/src/cron/jobs/mcp-audit-retention.job.ts` (HOS-2335 D-13: `mcp.tool.call` rows older than 12 months only) |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
+| `session-recording-retention` | system | `25 4 * * *` | `apps/api/src/cron/jobs/session-recording-retention.job.ts` (HOS-2347: Umami replays and heatmaps older than the configured 14/30/60 days; needs `HOSPEDA_UMAMI_DATABASE_URL`, skips with a warning when unset) |
 | `venue-events-past-cleanup` | system | `15 4 * * *` | `apps/api/src/cron/jobs/venue-events-past-cleanup.job.ts` (HOS-2254) |
 
 `subscription-scheduled-change` walks every due queue row in keyset pages of `limit`, so one
