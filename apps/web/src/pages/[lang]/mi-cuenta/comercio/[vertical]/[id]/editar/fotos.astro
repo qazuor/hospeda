@@ -9,15 +9,26 @@
  * this page — the same shape the accommodation editor's `fotos` route has. The
  * two values passed in only paint the first frame while it hydrates.
  *
+ * ## Videos (HOS-2258)
+ *
+ * Below the photos, a video widget appears ONLY while the catalog's `videos`
+ * trait of this section is `available` (it never compares the vertical: an
+ * experience section has no such trait, so nothing renders for it). A `locked`
+ * trait shows an upsell naming the cheapest plan that grants it, and nothing at
+ * all while no plan does, so the feature stays invisible until one is sold.
+ *
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/fotos/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
+import { ListingVideoSection } from '@/components/listing/editor/ListingVideoSection.client';
 import { MediaSection } from '@/components/listing/editor/MediaSection.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { readListingMedia } from '@/lib/listing/listing-editor-detail';
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
 
 export const prerender = false;
 
@@ -26,10 +37,17 @@ const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: '
 if (resolution.redirect) return resolution.redirect;
 if (resolution.error) return resolution.error;
 
-const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
+const { detail, locale, vertical, listingId, sectionId, registry, sectionStates } = resolution;
 const { t } = createTranslations(locale);
 
 const media = readListingMedia({ detail });
+
+// HOS-2258: the widget follows the catalog trait's state, never the vertical.
+const videosState = sectionId ? sectionStates[sectionId]?.traits?.videos : undefined;
+const videosUpsellPlan =
+	videosState === 'locked'
+		? resolveVenueUpsellPlans({ plans: await fetchAudiencePlans({ audience: 'venue' }), t }).videos
+		: null;
 ---
 
 <ListingEditorSectionLayout
@@ -49,4 +67,38 @@ const media = readListingMedia({ detail });
 		initialFeaturedImage={media.featuredImage}
 		initialGallery={media.gallery}
 	/>
+
+	{videosState === 'available' && (
+		<ListingVideoSection
+			client:load
+			locale={locale}
+			vertical={vertical}
+			listingId={listingId}
+			initialVideos={media.videos}
+		/>
+	)}
+
+	{videosState === 'locked' && videosUpsellPlan && (
+		<p class="videos-locked" role="note" data-testid="listing-videos-locked">
+			{t(
+				'listing.owner.editor.video.locked',
+				'Los videos de tu local se incluyen en el plan {{plan}}.',
+				{ plan: videosUpsellPlan }
+			)}
+		</p>
+	)}
 </ListingEditorSectionLayout>
+
+<style>
+	.videos-locked {
+		margin: var(--space-6, 2rem) 0 0;
+		padding: var(--space-3, 0.75rem);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md, 10px);
+		background: var(--surface-warm);
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		line-height: 1.5;
+		color: var(--core-foreground);
+	}
+</style>

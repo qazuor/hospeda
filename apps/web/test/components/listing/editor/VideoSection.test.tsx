@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { VideoSection } from '@/components/host/editor/VideoSection.client';
+import { VideoSection } from '@/components/listing/editor/VideoSection.client';
 
 const useVideoSectionMock = vi.hoisted(() => ({
     rows: [{ url: 'https://youtube.com/watch?v=abc', caption: 'Recorrido' }],
@@ -32,17 +32,18 @@ vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
     })
 }));
 
-vi.mock('@/components/host/editor/use-video-section', () => ({
+vi.mock('@/components/listing/editor/use-video-section', () => ({
     useVideoSection: () => useVideoSectionMock
 }));
 
-describe('VideoSection', () => {
+describe('VideoSection (shared widget)', () => {
     it('uses dedicated button classes instead of the photo upload styles', () => {
         render(
             <VideoSection
                 locale="es"
-                accommodationId="acc-1"
                 initialVideos={[]}
+                save={vi.fn()}
+                copyScope="accommodation"
             />
         );
 
@@ -58,8 +59,9 @@ describe('VideoSection', () => {
         render(
             <VideoSection
                 locale="es"
-                accommodationId="acc-1"
                 initialVideos={[]}
+                save={vi.fn()}
+                copyScope="accommodation"
             />
         );
 
@@ -71,8 +73,9 @@ describe('VideoSection', () => {
         render(
             <VideoSection
                 locale="es"
-                accommodationId="acc-1"
                 initialVideos={[]}
+                save={vi.fn()}
+                copyScope="accommodation"
             />
         );
 
@@ -81,5 +84,24 @@ describe('VideoSection', () => {
 
         expect(useVideoSectionMock.addRow).toHaveBeenCalledTimes(1);
         expect(useVideoSectionMock.removeRow).toHaveBeenCalledWith(0);
+    });
+
+    it('disables the add button once the cap is reached and keeps listing copy', () => {
+        useVideoSectionMock.rows = Array.from({ length: 6 }, (_, i) => ({
+            url: `https://youtube.com/watch?v=${i}`,
+            caption: ''
+        }));
+        render(
+            <VideoSection
+                locale="es"
+                initialVideos={[]}
+                save={vi.fn()}
+                copyScope="listing"
+                maxVideos={6}
+            />
+        );
+
+        expect(screen.getByRole('button', { name: 'Agregar video' })).toBeDisabled();
+        expect(screen.getByText(/tu local/)).toBeInTheDocument();
     });
 });
