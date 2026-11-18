@@ -219,35 +219,8 @@ turn the limiter into a write amplifier), a crash inside the binder before the
 audit, and an insert the fire-and-forget persister drops leave no row. The log is
 best-effort, not a ledger.
 
-**Retention (D-13).** `mcp.tool.call` rows are kept 12 months
-(`MCP_AUDIT_RETENTION_MONTHS`). The `mcp-audit-retention` cron deletes older ones
-and nothing else: `mcp.connection.revoked` and every admin and security row are
-untouched. The job hands its abort signal and deadline to the batch loop, which
-stops between statements (`stoppedEarly`); the rows left go on the next run.
-
-**Reader (D-14).** `McpActivityService.list` in service-core is the one reader
-of these rows, shared by the owner's history (HOS-2348) and the admin log
-(HOS-2349). The route injects the scope: `own` forces the session actor and
-refuses a user filter; `all` needs the all-scope permission. Tool, outcome,
-client and access (read/write) filter over the `data` jsonb (D-16). Items carry
-no content: the client's registered name and, while the row's actor still owns
-it, the listing name and portal link. A bare `toDate` (`2026-11-18`) covers that
-whole day in UTC. A row whose `data` does not parse is left out of `items` but
-stays in `total`; the output's `skipped` counts those rows for the page.
-
-**Admin log (HOS-2349).** `GET /api/v1/admin/mcp-activity`
-(`routes/mcp-activity/admin/list.ts`) calls the reader with `scope: { kind: 'all' }`.
-It is gated by `MCP_ACTIVITY_VIEW` (`'mcpActivity.view'`, D-15), granted to
-SUPER_ADMIN only: ADMIN answers 403, even holding `AUDIT_LOG_VIEW`. The all-scope
-permission of the reader (`MCP_ACTIVITY_ALL_SCOPE_PERMISSION`) is the same value.
-Filters: `userId`, `tool` (a Zod enum of the registered tool names, so a typo is a
-400), `outcome`, `access` (`read | write`, absent = both), `clientId`, `fromDate`,
-`toDate`; `sort` is `loggedAt:desc` (default) or `loggedAt:asc`; `page` + `pageSize`.
-Unknown params are a 400. Rows add the user's display name and email while the
-account is live (`all` scope only; the owner's history never reads `users`), and
-the raw `errorCode`. Items carry no portal link: those are owner links. The admin
-screen is `apps/admin/src/routes/_authed/platform/ops/mcp-activity.tsx`, and its
-header says that rate-limited and crashed calls leave no row (R-16).
+Retention, the shared activity reader and the admin log of these rows are in
+[Assistant activity](mcp-activity.md).
 
 ## Tool catalog
 
@@ -504,6 +477,7 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 
 ## Related
 
+- [Assistant activity](mcp-activity.md) (retention, reader, admin log)
 - [Route architecture](route-architecture.md#ai-connection-routes-hos-2184) (protected `ai-connections`)
 - [Error contract](error-contract.md)
 - [Environment variables](../../../docs/guides/environment-variables.md)
