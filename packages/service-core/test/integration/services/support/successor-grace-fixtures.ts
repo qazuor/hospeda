@@ -61,7 +61,8 @@ export async function successorGraceFixture({
     predecessorPaid = true,
     predecessorPaymentMethod = 'CARD',
     successorPaymentMethod = 'CARD',
-    succession = 'IN_PROGRESS'
+    succession = 'IN_PROGRESS',
+    middleHop = false
 }: {
     readonly graceDays?: number;
     readonly declaredFrom?: SuccessionBase;
@@ -70,6 +71,12 @@ export async function successorGraceFixture({
     readonly successorPaymentMethod?: 'CARD' | 'MANUAL';
     /** `IN_PROGRESS`: both traces; `CLOSED`: only the predecessor's `sucedida_por` (INV:D15). */
     readonly succession?: 'IN_PROGRESS' | 'CLOSED';
+    /**
+     * HOS-2224: put a card principal in credit (no payment of its own, `CANCELLED`) between the
+     * seeded predecessor and the successor, with its own succession already closed. The
+     * successor's direct predecessor is then that middle row.
+     */
+    readonly middleHop?: boolean;
 } = {}) {
     const base = predecessorPaid
         ? await graceFixture({ graceDays })
@@ -135,21 +142,27 @@ export async function successorGraceFixture({
             ? bornAt
             : new Date(authorizationWindowEndsAt.getTime() + 24 * HOUR_MS);
 
+    const middleId = middleHop
+        ? await insertMiddleHop({ from: predecessorRow, rootId: predecessorId })
+        : null;
+    const directPredecessorId = middleId ?? predecessorId;
+
     await getServiceTestDb()
         .update(subscriptions)
         .set({
             firstChargeAt,
             authorizationWindowEndsAt,
             paymentMethod: successorPaymentMethod,
-            succeedsId: succession === 'IN_PROGRESS' ? predecessorId : null
+            succeedsId: succession === 'IN_PROGRESS' ? directPredecessorId : null
         })
         .where(eq(subscriptions.id, started.subscriptionId));
     // `sucedida_por` is written at declaration and survives the succession's close (INV:D15).
     await getServiceTestDb()
         .update(subscriptions)
         .set({ succeededById: started.subscriptionId })
-        .where(eq(subscriptions.id, predecessorId));
+        .where(eq(subscriptions.id, directPredecessorId));
     return {
+        middleId,
         provider,
         clock,
         user,
@@ -170,6 +183,40 @@ export async function successorGraceFixture({
             coverageNotices
         }
     };
+}
+
+/**
+ * Inserts the middle row of a two-hop chain (HOS-2224): a `CANCELLED` card principal with no
+ * payment of its own, whose succession from `rootId` is already closed (the root keeps its
+ * `sucedida_por`, the middle's `sucede_a` is null, INV:D15).
+ */
+async function insertMiddleHop({
+    from,
+    rootId
+}: {
+    readonly from: typeof subscriptions.$inferSelect;
+    readonly rootId: string;
+}): Promise<string> {
+    const db = getServiceTestDb();
+    const [middle] = await db
+        .insert(subscriptions)
+        .values({
+            userId: from.userId,
+            vertical: from.vertical,
+            planVersionId: from.planVersionId,
+            billingOptionId: from.billingOptionId,
+            paymentMethod: 'CARD',
+            class: 'PRINCIPAL',
+            status: 'CANCELLED',
+            succeedsId: null
+        })
+        .returning({ id: subscriptions.id });
+    if (!middle) throw new Error('Middle hop fixture row missing');
+    await db
+        .update(subscriptions)
+        .set({ succeededById: middle.id })
+        .where(eq(subscriptions.id, rootId));
+    return middle.id;
 }
 
 /** Retires the seeded rows: CANCELLED with an empty clock; the users' outbox and coverage-loss rows deleted. */
