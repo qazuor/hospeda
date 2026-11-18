@@ -299,3 +299,89 @@ describe('response budget', () => {
         expect(measureResultChars({ value: data })).toBeLessThanOrEqual(MCP_RESULT_MAX_CHARS);
     });
 });
+
+describe('the response budget never overflows (MEDIUM-2)', () => {
+    it('20 rows per side of 120-char names made of quotes and control characters', async () => {
+        // Arrange: each of these characters serializes to 2 or 6 JSON characters.
+        const hostile = '"\u0001\u0002\n\t\u001f'.repeat(20).slice(0, 120);
+        const row = (index: number, overrides: Record<string, unknown>) =>
+            usageRow({
+                id: `d${String(index).padStart(7, '0')}-1111-4111-8111-111111111111`,
+                note: hostile,
+                rejectionNote: hostile,
+                ...overrides
+            });
+        fakes = buildUsageService([
+            ...Array.from({ length: 20 }, (_, index) => row(index, {})),
+            ...Array.from({ length: 20 }, (_, index) =>
+                row(index + 20, {
+                    hostTradeId: OWN_TRADE_ID,
+                    hostUserId: OTHER_HOST_ID,
+                    declaredBy: 'HOST'
+                })
+            )
+        ]);
+        fakes.hostTradeModel.findByIds.mockImplementation(async (ids: readonly string[]) =>
+            ids.map((id) => ({ id, slug: 'x', name: hostile, ownerUserId: 'o' }))
+        );
+        fakes.usageModel.findLinkedHostsWithNames.mockResolvedValue([
+            { id: OTHER_HOST_ID, displayName: hostile, firstName: null, lastName: null }
+        ]);
+        mocks.usageService = fakes.service;
+        mocks.getOwn.mockResolvedValue({ data: { trade: { ...ownTrade(), name: hostile } } });
+
+        // Act
+        const data = await listData({ pageSize: 20 });
+
+        // Assert: inside the budget, and because the names shrink with the
+        // notes, the whole page still fits at the floor: nothing is dropped.
+        expect(measureResultChars({ value: data })).toBeLessThanOrEqual(MCP_RESULT_MAX_CHARS);
+        expect(data.items).toHaveLength(20);
+        expect(data.omittedItems).toBeUndefined();
+        expect(data.items.every((item) => item.textTruncated)).toBe(true);
+    });
+});
+
+describe('ordered reads (HIGH-1)', () => {
+    it('asks both sides of the model for newest first with an id tie-break', async () => {
+        // Act
+        await listData();
+
+        // Assert
+        const options = fakes.usageModel.findAll.mock.calls.map((call) => call[1]);
+        expect(options).toHaveLength(2);
+        for (const option of options) {
+            expect(option).toMatchObject({
+                sortBy: 'createdAt',
+                sortOrder: 'desc',
+                thenSortBy: 'id'
+            });
+        }
+    });
+
+    it('merges unordered rows newest first, ties by id', async () => {
+        // Arrange: the fake answers in table order, deliberately unsorted.
+        const at = new Date('2026-11-06T00:00:00Z');
+        fakes = buildUsageService([
+            usageRow({ id: 'e3333333-3333-4333-8333-333333333333', createdAt: at }),
+            usageRow({
+                id: 'e1111111-1111-4111-8111-111111111111',
+                createdAt: new Date('2026-11-01T00:00:00Z')
+            }),
+            usageRow({ id: 'e2222222-2222-4222-8222-222222222222', createdAt: at })
+        ]);
+        mocks.usageService = fakes.service;
+
+        // Act
+        const data = await listData({ side: 'host' });
+
+        // Assert (one side is the service's order; "both" re-sorts)
+        const both = await listData();
+        expect(both.items.map((item) => item.id)).toEqual([
+            'e2222222-2222-4222-8222-222222222222',
+            'e3333333-3333-4333-8333-333333333333',
+            'e1111111-1111-4111-8111-111111111111'
+        ]);
+        expect(data.items).toHaveLength(3);
+    });
+});

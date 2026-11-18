@@ -38,14 +38,10 @@ import { type Actor, isUsageCounterpart } from '@repo/service-core';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
 import { buildPortalUrl } from '../../portal/build-portal-url';
-import {
-    excerptText,
-    MCP_LIST_MAX_PAGE_SIZE,
-    MCP_RESULT_MAX_CHARS,
-    measureResultChars
-} from '../response-budget';
+import { excerptText, MCP_LIST_MAX_PAGE_SIZE } from '../response-budget';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
+import { fitPageToBudget } from './fit-page-to-budget';
 import { getHostTradeToolService, getHostTradeUsageToolService } from './host-trade-tool-services';
 
 /** Usages per page when the call does not say. */
@@ -58,11 +54,12 @@ export const LIST_BENEFIT_USAGES_DEFAULT_PAGE_SIZE = 10;
 export const LIST_BENEFIT_USAGES_BOTH_SIDES_MAX_WINDOW = 100;
 
 /**
- * Note excerpt lengths tried in order until the page fits the response budget.
- * The first is the write-time cap of a note (300), so nothing is cut unless the
- * page would overflow.
+ * Excerpt lengths tried in order until the page fits the response budget, for
+ * the notes and (capped at `NAME_EXCERPT_CHARS`) the names. The first is the
+ * write-time cap of a note (300), so nothing is cut unless the page would
+ * overflow; the last is the floor, measured too (`fitPageToBudget`).
  */
-const NOTE_EXCERPT_STEPS: readonly number[] = [300, 150, 60];
+const NOTE_EXCERPT_STEPS: readonly number[] = [300, 150, 60, 30];
 
 /** Longest name excerpt. Provider names have no cap at write time. */
 const NAME_EXCERPT_CHARS = 120;
@@ -163,6 +160,11 @@ export interface ListBenefitUsagesResult {
     /** `true` when more usages follow this page. */
     readonly hasMore: boolean;
     /**
+     * Usages of this page left out to fit the response budget. The next page
+     * starts after them, so ask again with a smaller pageSize to see them.
+     */
+    readonly omittedItems?: number;
+    /**
      * Whether the user owns a directory listing (the provider side exists).
      * Absent when only the host side was asked for.
      */
@@ -214,9 +216,12 @@ function wrapExcerpt(
     };
 }
 
-/** Wraps a party's name, excerpted. */
-const wrapName = (text: string | null | undefined, source: 'provider_listing' | 'host_name') =>
-    wrapExcerpt(text, source, NAME_EXCERPT_CHARS);
+/** Wraps a party's name, excerpted; names shrink with the step, never past their cap. */
+const wrapName = (
+    text: string | null | undefined,
+    source: 'provider_listing' | 'host_name',
+    stepChars: number
+) => wrapExcerpt(text, source, Math.min(NAME_EXCERPT_CHARS, stepChars));
 
 /** The fields every projection shares; `names` are the row's wrapped names. */
 function baseSummary({
@@ -293,7 +298,11 @@ async function readHostSide({
             total: listed.data.total,
             rows: ({ noteChars }) =>
                 listed.data.items.map((row) => {
-                    const providerName = wrapName(row.hostTrade?.name, 'provider_listing');
+                    const providerName = wrapName(
+                        row.hostTrade?.name,
+                        'provider_listing',
+                        noteChars
+                    );
                     return {
                         ...baseSummary({ row, noteChars, names: [providerName] }),
                         side: 'host',
@@ -348,13 +357,17 @@ async function readProviderSide({
     const hostNames = new Map(
         (linked.data?.hosts ?? []).map((host) => [host.id, host.displayName])
     );
-    const providerName = wrapName(trade.name, 'provider_listing');
     return {
         page: {
             total: listed.data.total,
             rows: ({ noteChars }) =>
                 listed.data.items.map((row) => {
-                    const hostName = wrapName(hostNames.get(row.hostUserId), 'host_name');
+                    const providerName = wrapName(trade.name, 'provider_listing', noteChars);
+                    const hostName = wrapName(
+                        hostNames.get(row.hostUserId),
+                        'host_name',
+                        noteChars
+                    );
                     return {
                         ...baseSummary({ row, noteChars, names: [providerName, hostName] }),
                         side: 'provider',
@@ -378,7 +391,7 @@ async function readProviderSide({
 export const listBenefitUsagesTool = defineTool({
     name: 'list_benefit_usages',
     title: 'Mis usos de beneficio',
-    description: `Lists the benefit usages of the connected Hospeda user, newest first, paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}). A usage records that a host used a directory provider's benefit: one party declares it and the OTHER party confirms or rejects it. side "host" = the user used a provider's benefit; side "provider" = a host used the benefit of the user's own directory listing (only if the user is a provider, see "isProvider"); "both" (default) lists the two. Filters: status, and pendingMine: true for only the usages waiting for the user's answer. Per usage: id, side, declaredBy, status, provider, counterpartName, servicedAt, createdAt, note, rejectionNote, textTruncated (a note or name was cut) and canAnswer (true when the user may confirm or reject it now with confirm_benefit_usage or reject_benefit_usage). A REJECTED usage can be put back to PENDING with undo_benefit_rejection, only by whoever rejected it. Usages cannot be declared from here: send the user to the provider's declareUsageUrl (search_providers) or to providerPanelUrl. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Lists the benefit usages of the connected Hospeda user, newest first, paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}). A usage records that a host used a directory provider's benefit: one party declares it and the OTHER party confirms or rejects it. side "host" = the user used a provider's benefit; side "provider" = a host used the benefit of the user's own directory listing (only if the user is a provider, see "isProvider"); "both" (default) lists the two. Filters: status, and pendingMine: true for only the usages waiting for the user's answer. Per usage: id, side, declaredBy, status, provider, counterpartName, servicedAt, createdAt, note, rejectionNote, textTruncated (a note or name was cut) and canAnswer (true when the user may confirm or reject it now with confirm_benefit_usage or reject_benefit_usage). A REJECTED usage can be put back to PENDING with undo_benefit_rejection, only by whoever rejected it. If "omittedItems" is present, that many usages of this page did not fit: ask again with a smaller pageSize. Usages cannot be declared from here: send the user to the provider's declareUsageUrl (search_providers) or to providerPanelUrl. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: ListBenefitUsagesInputSchema,
     isWrite: false,
     handler: async ({ actor, input }): Promise<ToolHandlerResult<ListBenefitUsagesResult>> => {
@@ -410,7 +423,9 @@ export const listBenefitUsagesTool = defineTool({
         const itemsFor = (noteChars: number) => {
             const merged = pages
                 .flatMap((sidePage) => sidePage.rows({ noteChars }))
-                .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+                // The services' order (newest first, then id), so a merged
+                // page boundary is as stable as each side's.
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || a.id.localeCompare(b.id));
             return side === 'both' ? merged.slice((page - 1) * pageSize, page * pageSize) : merged;
         };
         const isProvider = provider === undefined ? undefined : provider.page !== null;
@@ -436,13 +451,6 @@ export const listBenefitUsagesTool = defineTool({
                 : {})
         });
 
-        for (const noteChars of NOTE_EXCERPT_STEPS.slice(0, -1)) {
-            const result = build(noteChars);
-            if (measureResultChars({ value: result }) <= MCP_RESULT_MAX_CHARS) {
-                return { data: result };
-            }
-        }
-        // The shortest excerpt is the floor: nothing shorter is tried.
-        return { data: build(NOTE_EXCERPT_STEPS[NOTE_EXCERPT_STEPS.length - 1] ?? 0) };
+        return { data: fitPageToBudget({ steps: NOTE_EXCERPT_STEPS, build }) };
     }
 });

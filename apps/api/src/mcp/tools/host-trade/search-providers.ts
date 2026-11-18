@@ -31,17 +31,12 @@ import { HostTradeCatalogSlugSchema, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
 import { buildPortalUrl } from '../../portal/build-portal-url';
-import { tokenizeHelpText } from '../help/help-search';
+import { contentWordsOf, tokenizeHelpText } from '../help/help-search';
 import { listCreationDestinations } from '../listing/listing-creation-catalog';
-import {
-    excerptText,
-    MCP_LIST_MAX_PAGE_SIZE,
-    MCP_RESULT_MAX_CHARS,
-    MCP_TEXT_EXCERPT_CHARS,
-    measureResultChars
-} from '../response-budget';
+import { excerptText, MCP_LIST_MAX_PAGE_SIZE, MCP_TEXT_EXCERPT_CHARS } from '../response-budget';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
+import { fitPageToBudget } from './fit-page-to-budget';
 import { getHostTradeToolService } from './host-trade-tool-services';
 
 /** Providers per page when the call does not say. */
@@ -78,9 +73,15 @@ export const SearchProvidersInputSchema = z
             .trim()
             .min(1)
             .max(100)
+            // Only filler words ("de la", "para que") would match the whole
+            // directory, which answers a question nobody asked.
+            .refine((query) => contentWordsOf({ text: query }).length > 0, {
+                message:
+                    'query has no searchable word (only short or filler words); use a more specific term, for example "plomero", or omit query'
+            })
             .optional()
             .describe(
-                'Words to look for in the provider name and benefit, for example "plomero" or "descuento". Accents and case are ignored; every word must match.'
+                'Words to look for in the provider name and benefit, for example "plomero" or "descuento". Accents and case are ignored; every meaningful word must match (filler words are ignored).'
             ),
         category: HostTradeCatalogSlugSchema.optional().describe(
             'Only providers of this directory category (its slug, from the "categories" of a previous result, for example "plomeria").'
@@ -145,6 +146,11 @@ export interface SearchProvidersResult {
     readonly pageSize: number;
     /** `true` when more providers follow this page. */
     readonly hasMore: boolean;
+    /**
+     * Providers of this page left out to fit the response budget. The next page
+     * starts after them, so ask again with a smaller pageSize to see them.
+     */
+    readonly omittedItems?: number;
 }
 
 /** The directory row fields the tool reads (a subset of `HostTradePublicSchema`). */
@@ -251,7 +257,7 @@ async function readDestinationNames(): Promise<ReadonlyMap<string, string>> {
 export const searchProvidersTool = defineTool({
     name: 'search_providers',
     title: 'Buscar proveedores',
-    description: `Searches the provider directory of the connected Hospeda host: the service providers (plumbers, electricians, cleaning...) that offer Hospeda hosts a benefit, in the destinations where the host has accommodations. Only hosts have access. Filters: query (words in the name or benefit), category (a category slug) and destinationId; paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}), with "total" and "hasMore". Per provider: slug, name, categories, benefit (its fine print), contact, schedule, is24h, destination, confirmedUsesCount, distinctHostsCount, reviewsCount, averageRating, the directory link (directoryUrl) and the link where the host declares a usage of the benefit (declareUsageUrl). Texts may be excerpts: "textTruncated" says when one was cut; the full text is on directoryUrl. You cannot declare a usage from here: when the user wants to, give them declareUsageUrl. ${UNTRUSTED_DATA_NOTICE}`,
+    description: `Searches the provider directory of the connected Hospeda host: the service providers (plumbers, electricians, cleaning...) that offer Hospeda hosts a benefit, in the destinations where the host has accommodations. Only hosts have access. Filters: query (words in the name or benefit), category (a category slug) and destinationId; paginated (pageSize up to ${MCP_LIST_MAX_PAGE_SIZE}), with "total" and "hasMore". Per provider: slug, name, categories, benefit (its fine print), contact, schedule, is24h, destination, confirmedUsesCount, distinctHostsCount, reviewsCount, averageRating, the directory link (directoryUrl) and the link where the host declares a usage of the benefit (declareUsageUrl). Texts may be excerpts: "textTruncated" says when one was cut; the full text is on directoryUrl. If "omittedItems" is present, that many providers of this page did not fit: ask again with a smaller pageSize. You cannot declare a usage from here: when the user wants to, give them declareUsageUrl. ${UNTRUSTED_DATA_NOTICE}`,
     inputSchema: SearchProvidersInputSchema,
     isWrite: false,
     reasonMessages: SEARCH_PROVIDERS_REASON_MESSAGES,
@@ -273,7 +279,7 @@ export const searchProvidersTool = defineTool({
                 : { error: listed.error };
         }
 
-        const queryWords = query === undefined ? [] : tokenizeHelpText({ text: query });
+        const queryWords = query === undefined ? [] : contentWordsOf({ text: query });
         const matching = listed.data.trades.filter(
             (row) =>
                 (destinationId === undefined || row.destinationId === destinationId) &&
@@ -290,13 +296,6 @@ export const searchProvidersTool = defineTool({
             pageSize,
             hasMore: page * pageSize < matching.length
         });
-        for (const textChars of TEXT_EXCERPT_STEPS.slice(0, -1)) {
-            const result = build(textChars);
-            if (measureResultChars({ value: result }) <= MCP_RESULT_MAX_CHARS) {
-                return { data: result };
-            }
-        }
-        // The shortest excerpt is the floor: nothing shorter is tried.
-        return { data: build(TEXT_EXCERPT_STEPS[TEXT_EXCERPT_STEPS.length - 1] ?? 0) };
+        return { data: fitPageToBudget({ steps: TEXT_EXCERPT_STEPS, build }) };
     }
 });

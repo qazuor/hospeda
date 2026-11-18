@@ -90,7 +90,7 @@ const TRADES: Readonly<Record<string, { ownerUserId: string; slug: string; name:
 export function buildUsageService(rows: readonly Record<string, unknown>[] = []) {
     const usageModel = {
         findById: vi.fn(async (id: string) => rows.find((row) => row.id === id) ?? null),
-        findAll: vi.fn(async (where: Record<string, unknown>) => {
+        findAll: vi.fn(async (where: Record<string, unknown>, _options?: unknown) => {
             const items = rows.filter((row) =>
                 Object.entries(where).every(([key, value]) =>
                     key === 'deletedAt' ? row.deletedAt === null : row[key] === value

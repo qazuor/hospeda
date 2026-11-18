@@ -255,6 +255,63 @@ describe('projection and untrusted text', () => {
     });
 });
 
+describe('the response budget never overflows (MEDIUM-2)', () => {
+    it('20 providers whose texts are quotes and control characters', async () => {
+        // Arrange
+        const hostile = '"\u0001\u0002\n\t\u001f'.repeat(20).slice(0, 120);
+        mocks.listForHost.mockResolvedValue({
+            data: {
+                trades: Array.from({ length: 20 }, (_, index) =>
+                    trade({
+                        slug: `proveedor-${index}`,
+                        name: hostile,
+                        benefit: hostile.repeat(40),
+                        contact: hostile,
+                        scheduleText: hostile
+                    })
+                )
+            }
+        });
+
+        // Act
+        const data = await searchData({ pageSize: 20 });
+
+        // Assert
+        expect(measureResultChars({ value: data })).toBeLessThanOrEqual(MCP_RESULT_MAX_CHARS);
+        expect(data.items.length).toBeGreaterThan(0);
+        expect(data.items.length + (data.omittedItems ?? 0)).toBe(20);
+        if (data.omittedItems) {
+            expect(data.hasMore).toBe(true);
+        }
+    });
+});
+
+describe('a query of filler words only (LOW-4)', () => {
+    it.each([
+        'de la',
+        'para que con',
+        'el'
+    ])('refuses %j instead of returning everything', async (query) => {
+        // Act
+        const outcome = await search({ query });
+
+        // Assert
+        expect(outcome.ok).toBe(false);
+        if (!outcome.ok) {
+            expect(outcome.failure.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        }
+        expect(mocks.listForHost).not.toHaveBeenCalled();
+    });
+
+    it('ignores the filler words of a query that has a real one', async () => {
+        // Act
+        const data = await searchData({ query: 'descuento de la limpieza' });
+
+        // Assert
+        expect(data.items.map((item) => item.slug)).toEqual(['limpieza-ya']);
+    });
+});
+
 describe('refusals', () => {
     it('maps a non-host FORBIDDEN to a message and the directory link', async () => {
         // Arrange
