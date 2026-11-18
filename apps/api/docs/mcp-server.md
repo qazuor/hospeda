@@ -20,6 +20,7 @@ anyone adding a tool.
 - [Tool catalog](#tool-catalog)
 - [create_listing and the Maps link resolver](#create_listing-and-the-maps-link-resolver)
 - [reply_inquiry and its security limit](#reply_inquiry-and-its-security-limit)
+- [Out-of-band confirmation (HOS-2247)](#out-of-band-confirmation-hos-2247)
 - [Adding a tool](#adding-a-tool)
 - [Known follow-ups](#known-follow-ups)
 
@@ -202,7 +203,14 @@ Both use the existing `auditLog()` pipeline (`audit_log_entries`). No new table.
 | `mcp.connection.revoked` | A user disconnects an assistant | actor, `clientId`, `removed` counts (consents, refresh tokens, access tokens) |
 
 For `reply_inquiry`, `details.step` is `preview` or `send`. For `create_listing`,
-`confirm_benefit_usage` and `reject_benefit_usage` it is `preview` or `commit`.
+`confirm_benefit_usage` and `reject_benefit_usage` it is `preview` or `commit`. For
+`set_listing_publication`, `details.action` is `pause` or `resume` and `details.step`
+is `apply` (one step), `preview` or `commit` (publishing).
+
+On a call from a client that declared form elicitation, the three covered tools add
+`details.confirmation` (`elicitation` or `token`) and use `step` `preview`, `commit`
+or `declined`. Rows from clients without the capability carry no `confirmation` key
+and are unchanged. See [Out-of-band confirmation](#out-of-band-confirmation-hos-2247).
 Content (a reply text, a rejection note) is never recorded, only its length. Auditing never changes a tool result: a
 failure to write the record is logged and swallowed.
 
@@ -224,7 +232,7 @@ Twenty tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagr
 | `get_inquiry` | read | read-only | Never marks the inquiry read. |
 | `update_listing_basic` | write | idempotent, not destructive | Accommodation, venue, experience. |
 | `update_listing_amenities` | write | idempotent, not destructive | Adds or removes the items of ONE category; the rest of the set is untouched. No confirmation token. |
-| `set_listing_publication` | write | **destructive**, not idempotent | `pause` or `resume`. |
+| `set_listing_publication` | write | **destructive**, not idempotent | `pause` (one step) or `resume`. A `resume` that publishes is two steps. |
 | `create_listing` | write | open-world, not destructive, not idempotent | Creates a DRAFT, two-step, see below. |
 | `reply_inquiry` | write | open-world, not destructive, not idempotent | Two-step, see below. |
 | `search_providers` | read | read-only | The host's provider directory, the same rows as the portal. Filters: `query`, `category` (catalog slug), `destinationId`, paging. Provider texts are untrusted text. |
@@ -295,10 +303,23 @@ Tool-specific rules:
   vertical (`applicable_verticals`), otherwise a validation error names the id and
   nothing is written. It runs the owner PATCH route's listing access and service
   call, and evicts the public accommodation cache after a write (HOS-2323).
-- `set_listing_publication`: resuming an **archived** listing is two steps. The
+- `set_listing_publication`: resuming an **archived** listing is two calls. The
   first `resume` returns it to draft, the second puts it online. Going online needs
   an active plan or the free trial and a free slot. Refusals map to Spanish reasons
   (`NO_COVERAGE`, `SUBSCRIPTION_REQUIRED`, `LISTING_LIMIT_REACHED`, and others).
+  - **Publishing is confirmed** (HOS-2247, owner decision D-19). Publishing makes the
+    listing public and can start the trial, so a `resume` that would publish is two
+    steps, like `create_listing`. The preview runs the publish access step as a dry
+    run (a missing plan or slot is refused before any token), writes nothing and
+    answers a token. The token is bound to
+    `user + client + 'set_listing_publication' + listing id + { vertical, id, action, step }`
+    and is single use. The commit runs the publish exactly as before.
+  - **What stays one step.** `pause`, a `resume` that reactivates an archived listing
+    to draft, and a `resume` that changes nothing. They are private and reversible.
+    A token sent with one of them is burnt and refused (`CONFIRMATION_NOT_NEEDED`);
+    so is a token whose listing stopped being publishable since the preview.
+  - Both publish steps need an identified OAuth client, because the proof is bound
+    to it.
 - Benefit usages (`search_providers`, `list_benefit_usages`, `confirm_benefit_usage`,
   `reject_benefit_usage`, `undo_benefit_rejection`, HOS-2332). They mirror the
   HOS-376 routes and call the same `HostTradeUsageService` methods; see
@@ -410,12 +431,77 @@ The token (`confirmation-token-store.ts`):
 
 ### Security limit
 
-The confirmation token is returned **to the same model** that calls the tool. It
-guards only against accidental, altered or replayed sends. It does **not** stop a
-manipulated model (for example one steered by a guest message) from calling step 2
-itself. The real human approval is the MCP client's per-tool approval prompt for a
-write tool. Follow-up HOS-2247 (MCP elicitation) would move the confirmation to the
-user's side.
+On a client **without** form elicitation, the confirmation token is returned **to
+the same model** that calls the tool. It guards only against accidental, altered or
+replayed sends. It does **not** stop a manipulated model (for example one steered by
+a guest message) from calling step 2 itself. There, the real human approval is the
+MCP client's per-tool approval prompt for a write tool.
+
+On a client **with** form elicitation, the token is never issued: the human answers
+the client's own form, which the model cannot answer. See the next section.
+
+## Out-of-band confirmation (HOS-2247)
+
+Spec HOS-2335 §5.7, owner decisions D-17, D-18 and D-19. Covered tools:
+`reply_inquiry`, `create_listing`, and `set_listing_publication` when it publishes.
+`confirm_benefit_usage` and `reject_benefit_usage` follow in PR-14; until then they
+keep the token flow on every client.
+
+**Detection, per request.** A request on protocol revision 2026-07-28 or later
+carries its client capabilities in `params._meta`
+(`io.modelcontextprotocol/clientCapabilities`). The client supports the form when it
+declares `elicitation: {}` or `elicitation: { form: {} }`; `{ url: {} }` alone does
+not count. A 2025-era request carries no envelope and always gets the token flow.
+Nothing is cached per session (`src/lib/mcp/elicitation.ts`).
+
+**The round trip (2026-07-28 only, D-18).**
+
+1. **First call**, no token. The tool validates, runs its dry-run checks and writes
+   nothing. Instead of a token it answers an `input_required` result
+   (`inputRequired(...)` from `@modelcontextprotocol/server`): one
+   `elicitation/create` request in form mode, asking a single boolean `confirm`,
+   whose message shows exactly what will happen (the reply text, the listing and its
+   point, the listing to publish). `requestState` is an opaque id.
+2. **The client shows the form** to the human, then retries the same `tools/call`
+   with `inputResponses.confirm` and the same `requestState`.
+3. **Retry.** `accept` with `confirm: true` runs the write once. `decline`,
+   `accept` with `confirm` false, `cancel` or no answer writes nothing
+   (`USER_DECLINED` or `USER_CANCELLED`).
+
+The server never pushes a 2025-era `elicitation/create` request. The SDK's
+`legacyShim` is turned off in `src/lib/mcp/server.ts`, and a static test fails if
+`elicitInput` appears in the API source.
+
+**The state.** `requestState` is the random id of a record in the same Redis store
+as the tokens, under `mcp:elicit:<tool>:`. Nothing is signed, because nothing is
+carried in it. The record is bound like a token: user, OAuth client, tool, subject
+(inquiry, vertical or listing) and payload, plus the stash (`create_listing` writes
+the point the form showed and does not resolve the link again). The retry recomputes
+the binding from its own arguments. The record is consumed by `GETDEL` in every case,
+decline included, so it answers once. An unknown, expired, reused, foreign or
+mismatched state is one refusal (`ELICITATION_STATE_INVALID`), checked before the
+answer is read. Treat `requestState` as attacker-controlled; it is never trusted on
+its own.
+
+**Strict by default (D-17).** On a capable client the covered tools never issue a
+token, and a token sent there is refused (`CONFIRMATION_TOKEN_REFUSED`) with nothing
+written. `ELICITATION_STRICT` (`src/mcp/tools/elicitation-policy.ts`) can relax one
+tool; a relaxed tool runs the token flow on every client. Clients without the
+capability keep the token flow unchanged.
+
+**A new two-step tool** must declare `confirmation: { elicitation: true }` and get an
+`ELICITATION_STRICT` entry. `test/mcp/tools/elicitation-registry.guard.test.ts` fails
+on a registered tool that takes a `confirmationToken` without them (AC-C65).
+
+**Which clients show the form (M-1).** Not measured yet. Do not assume a client
+supports the form until its row is filled in from a real session.
+
+| Client | Protocol revision it sends | Declares form elicitation | Form shown to the human | Model can answer it |
+|---|---|---|---|---|
+| Claude.ai (web) | to measure | to measure | to measure | to measure |
+| Claude Desktop | to measure | to measure | to measure | to measure |
+| Claude Code | to measure | to measure | to measure | to measure |
+| ChatGPT | to measure | to measure | to measure | to measure |
 
 ## Adding a tool
 
@@ -436,6 +522,9 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
    - `auditTarget` returns `{ type, id }` of the entity.
    - `auditContentLength` returns the length of user content, never the content.
    - `auditDetails` returns scalar facts, for example `{ step }`. Never user content.
+   - A two-step tool (it takes a `confirmationToken`) also declares
+     `confirmation: { elicitation: true }` and an `ELICITATION_STRICT` entry; see
+     [Out-of-band confirmation](#out-of-band-confirmation-hos-2247).
 5. **Wrap untrusted text** with `wrapUntrustedText` and append `UNTRUSTED_DATA_NOTICE`
    to the description when the tool returns third-party text.
 6. **Owner-only.** Resolve the resource through the owner-scoped readers and answer
@@ -454,7 +543,8 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 | Item | State |
 |---|---|
 | HOS-2244 | Pausing a listing without a plan. |
-| HOS-2247 | MCP elicitation, to move reply confirmation to the user's side. |
+| HOS-2247 PR-14 | Out-of-band confirmation for `confirm_benefit_usage` and `reject_benefit_usage`. Empties `PENDING_PR14` in the registry guard. |
+| HOS-2247 M-1 | Fill in the client table of [Out-of-band confirmation](#out-of-band-confirmation-hos-2247) from real sessions. |
 | Phase B | Entitlement gate on `/mcp`, plan status, ChatGPT directory. Blocked on HOS-1352 and HOS-2066. |
 | SDK `Server` | `createHospedaMcpServer` uses the low-level `Server`, which the SDK marks `@deprecated` ("advanced use"). It is deliberate: `McpServer` validates input in English and bypasses the Spanish message and the audit. Revisit on SDK upgrades. |
 | Billing refusal mapping | `set_listing_publication` maps billing refusals to reasons by matching service message text. There is no guard that fails if the text changes. |
