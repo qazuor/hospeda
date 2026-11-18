@@ -952,6 +952,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-inactivity-archive` | system | `30 5 * * *` | `apps/api/src/cron/jobs/listing-inactivity-archive.job.ts` |
 | `listing-remote-deletion-retry` | system | `45 5 * * *` | `apps/api/src/cron/jobs/listing-remote-deletion-retry.job.ts` |
 | `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
+| `mcp-audit-retention` | system | `20 4 * * *` | `apps/api/src/cron/jobs/mcp-audit-retention.job.ts` (HOS-2335 D-13: `mcp.tool.call` rows older than 12 months only) |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
 
 `subscription-scheduled-change` walks every due queue row in keyset pages of `limit`, so one
