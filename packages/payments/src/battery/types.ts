@@ -89,6 +89,24 @@ export interface WatchContext {
         readonly chargeMinor?: number;
         readonly refundMinor?: number;
     }) => Promise<WatchResponse>;
+    /**
+     * Resends, VERBATIM, the last money write this measurement sent under the label `of`: the same
+     * method, path, body and derived idempotency key (F4, for measurements such as `EX-58`, where an
+     * identical replay must answer the first full response). The request is the stored one, so a
+     * replay cannot change it. A replay books no money: if the provider answers a create replay with
+     * an object other than the first one (or a lost answer, or a 5xx), money may have moved and the
+     * run stops with `WRITE_OUTCOME_UNKNOWN`.
+     *
+     * @param args.label - The label the replay's answer shape is recorded under
+     * @param args.of - The label of the money write to replay
+     * @returns The answer
+     * @throws {WatchGuardError} `REPLAY_NOT_SENT` when this measurement never sent a money write
+     *   under `of`; `WRITE_OUTCOME_UNKNOWN` as described above
+     */
+    readonly replay: (args: {
+        readonly label: string;
+        readonly of: string;
+    }) => Promise<WatchResponse>;
 }
 
 /** One entry of the catalog: a measurement behind one `M*` or `RP*` row. */
@@ -213,7 +231,8 @@ export type WatchGuardCode =
     | 'WRITE_OUTCOME_UNKNOWN'
     | 'AUTHORIZATION_SUM_MISMATCH'
     | 'READ_ENTRY_MUTATED'
-    | 'SEND_AFTER_SETTLED';
+    | 'SEND_AFTER_SETTLED'
+    | 'REPLAY_NOT_SENT';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */
 export class WatchGuardError extends Error {

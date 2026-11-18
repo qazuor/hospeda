@@ -181,7 +181,7 @@ async function measureEntry(args: {
     let failed = false;
     let failure: unknown;
     try {
-        obtained = await entry.measure({ send: guarded.send });
+        obtained = await entry.measure({ send: guarded.send, replay: guarded.replay });
     } catch (error) {
         failed = true;
         failure = error;

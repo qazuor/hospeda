@@ -27,7 +27,9 @@ import { guardWrite, releaseWrite, type WatchRunState } from './watch-write-guar
 /**
  * The statuses that are a definitive rejection: the provider refused the request and no money
  * moved, so the reservation is given back. Every other status of a money write (408, 409, 425, 429,
- * any other 4xx, 5xx) is an unknown outcome: the reservation stays and the run stops.
+ * any other 4xx, 5xx) is an unknown outcome: the reservation stays and the run stops. One exception
+ * (G3): a 402 to `orders.create` whose body names the failed order under `data.id` is a definitive
+ * decline too, exactly as the adapter reads it (see `declinedOrderIdOf`).
  */
 const DEFINITIVE_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 401, 403, 404, 422]);
 
@@ -67,10 +69,38 @@ function idOf(body: unknown): string | undefined {
     return typeof id === 'string' || typeof id === 'number' ? String(id) : undefined;
 }
 
+/**
+ * G3: the id of the failed order a declined `orders.create` answers with a 402 (`EX-30`, `RP16`).
+ * Read exactly as the adapter reads it (`mercadopago-order-charge.ts`, `DeclinedOrderSchema`): a
+ * non-empty string under `data.id`. Anything else is not a readable decline.
+ *
+ * @param body - The 402 answer's body
+ * @returns The failed order's id, or `undefined` when the body carries none
+ */
+function declinedOrderIdOf(body: unknown): string | undefined {
+    if (typeof body !== 'object' || body === null || !('data' in body)) return undefined;
+    const data = (body as { readonly data: unknown }).data;
+    if (typeof data !== 'object' || data === null || !('id' in data)) return undefined;
+    const id = (data as { readonly id: unknown }).id;
+    return typeof id === 'string' && id.length > 0 ? id : undefined;
+}
+
+/** A money write that left, kept so {@link GuardedSend.replay} can resend it verbatim (F4). */
+interface SentMoneyWrite {
+    readonly key: string;
+    /** The request exactly as it went out: stamped body and derived key header included. */
+    readonly request: WatchRequest;
+    readonly creates: boolean;
+    /** The id the first answer carried, once it answered one. */
+    firstId?: string;
+}
+
 /** What {@link createGuardedSend} returns: the `send` and the way to close it. */
 export interface GuardedSend {
     /** The `send` for the measurement's context; sends run one at a time, in call order. */
     readonly send: WatchContext['send'];
+    /** The `replay` for the measurement's context; queued with the sends, in call order. */
+    readonly replay: WatchContext['replay'];
     /**
      * Closes the send once the measurement has settled: refuses any send that has not started,
      * waits for the one in flight, and answers the first guard error any send raised (or `null`).
@@ -115,6 +145,8 @@ export function createGuardedSend(args: {
     const { entry, transport, runId, state, runCap, shapes, providerIds, record } = args;
     let entryCharged = 0;
     const sequences = new Map<string, number>();
+    /** The last money write that left under each label: what a replay may resend. */
+    const lastMoneyWrite = new Map<string, SentMoneyWrite>();
 
     const recordOrAbort = async (
         what: string,
@@ -192,6 +224,12 @@ export function createGuardedSend(args: {
             };
         }
 
+        const sent: SentMoneyWrite | null =
+            movesMoney && key !== null
+                ? { key, request: outgoing, creates: operation.creates }
+                : null;
+        // Kept the moment it leaves: from here on this run HAS sent the key, whatever the answer.
+        if (sent !== null) lastMoneyWrite.set(label, sent);
         let response: Awaited<ReturnType<WatchTransport>>;
         try {
             response = await transport(outgoing);
@@ -203,14 +241,24 @@ export function createGuardedSend(args: {
             });
         }
         shapes[label] = shapeOf({ body: response.body });
-        if (movesMoney && DEFINITIVE_REJECTION_STATUSES.has(response.status)) {
+        // G3: a 402 to `orders.create` whose body names the failed order is a definitive decline
+        // (EX-30, RP16), read as the adapter reads it. A 402 without a readable id stays unknown.
+        const declinedId =
+            operation.rule === 'orders.create' && response.status === 402
+                ? declinedOrderIdOf(response.body)
+                : undefined;
+        if (
+            movesMoney &&
+            (DEFINITIVE_REJECTION_STATUSES.has(response.status) || declinedId !== undefined)
+        ) {
             // A definitive refusal: nothing moved, so the reservation is given back and the
             // corrected ledger is persisted. (A 5xx or a lost answer keeps it, below.)
             releaseWrite({ operation, state });
             if (operation.kind === 'charge') entryCharged -= operation.statedMinor ?? 0;
             // The provider may still have answered an id (traceability). It goes in `providerIds`
             // only: it is NOT one of this run's objects, so it never becomes a valid target.
-            const refusedId = idOf(response.body);
+            const refusedId = declinedId ?? idOf(response.body);
+            if (sent !== null && refusedId !== undefined) sent.firstId = refusedId;
             if (refusedId !== undefined) providerIds.push(refusedId);
             await recordOrAbort(
                 `was refused with ${response.status}`,
@@ -226,6 +274,7 @@ export function createGuardedSend(args: {
             });
         }
         if (id !== undefined) {
+            if (sent !== null) sent.firstId = id;
             providerIds.push(id);
             if (operation.creates) {
                 state.createdIds.add(id);
@@ -251,6 +300,52 @@ export function createGuardedSend(args: {
         return response;
     };
 
+    /** F4: resends the stored request of a money write, verbatim, booking nothing. */
+    const replayOne: WatchContext['replay'] = async ({ label, of }) => {
+        const original = lastMoneyWrite.get(of);
+        if (original === undefined) {
+            throw new WatchGuardError({
+                code: 'REPLAY_NOT_SENT',
+                message: `${entry.id} asked to replay "${of}", which it never sent as a money write; a replay only resends a key this run already sent`
+            });
+        }
+        const where = `${original.request.method} ${original.request.path} (replay of key ${original.key})`;
+        let response: Awaited<ReturnType<WatchTransport>>;
+        try {
+            response = await transport(original.request);
+        } catch (error) {
+            throw new WatchGuardError({
+                code: 'WRITE_OUTCOME_UNKNOWN',
+                message: `${entry.id} sent ${where} and the answer is lost (${describeError(error)}); money may have moved, the run stops`
+            });
+        }
+        shapes[label] = shapeOf({ body: response.body });
+        if (response.status >= 500) {
+            throw new WatchGuardError({
+                code: 'WRITE_OUTCOME_UNKNOWN',
+                message: `${entry.id} sent ${where} and the provider answered ${response.status}; money may have moved, the run stops`
+            });
+        }
+        if (original.creates && response.status >= 200 && response.status < 300) {
+            // A replay books nothing, so it must answer the FIRST object: any other one (or none)
+            // means the provider may have created and charged again.
+            const id = idOf(response.body);
+            if (id === undefined || id !== original.firstId) {
+                if (id !== undefined) {
+                    providerIds.push(id);
+                    await recordOrAbort(`replayed key ${original.key} and got ${id}`, {
+                        providerIds: [id]
+                    });
+                }
+                throw new WatchGuardError({
+                    code: 'WRITE_OUTCOME_UNKNOWN',
+                    message: `${entry.id} sent ${where} and the answer is not the first object (${id ?? 'no id'} instead of ${original.firstId ?? 'none'}); money may have moved, the run stops`
+                });
+            }
+        }
+        return response;
+    };
+
     // The queue: each send starts when the previous one has finished (answered or failed).
     let tail: Promise<unknown> = Promise.resolve();
     let closedBecause: string | null = null;
@@ -269,12 +364,14 @@ export function createGuardedSend(args: {
         return promise;
     };
 
-    const send: WatchContext['send'] = (call) => {
+    const enqueue = (
+        work: () => Promise<Awaited<ReturnType<WatchTransport>>>
+    ): Promise<Awaited<ReturnType<WatchTransport>>> => {
         if (closedBecause !== null) return unobserved(Promise.reject(refuseClosed()));
         const result = tail.then(async () => {
             if (closedBecause !== null) throw refuseClosed();
             try {
-                return await sendOne(call);
+                return await work();
             } catch (error) {
                 if (error instanceof WatchGuardError) {
                     firstGuardError ??= error;
@@ -287,11 +384,14 @@ export function createGuardedSend(args: {
         return unobserved(result);
     };
 
+    const send: WatchContext['send'] = (call) => enqueue(() => sendOne(call));
+    const replay: WatchContext['replay'] = (call) => enqueue(() => replayOne(call));
+
     const settle = async (): Promise<WatchGuardError | null> => {
         closedBecause ??= 'the measurement settled';
         await tail;
         return firstGuardError;
     };
 
-    return { send, settle };
+    return { send, replay, settle };
 }
