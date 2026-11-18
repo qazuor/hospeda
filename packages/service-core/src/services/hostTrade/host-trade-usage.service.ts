@@ -44,7 +44,8 @@ import { recalculateHostTradeAggregates } from './host-trade-aggregates';
 import {
     checkCanDeclareUsageAsHost,
     checkCanManageUsages,
-    checkCanViewAllUsages
+    checkCanViewAllUsages,
+    isUsageCounterpart
 } from './host-trade-usage.permissions';
 
 /**
@@ -186,6 +187,17 @@ const declareAsProviderInputSchema = z.object({
     hostUserId: z.string().uuid().optional(),
     hostEmail: z.string().email().optional()
 });
+
+/**
+ * The order of every paginated usage list: newest first, then by id, so rows
+ * created in the same instant keep one order across pages. Without it the
+ * base model does not order at all and a page boundary is arbitrary.
+ */
+const USAGE_LIST_ORDER = {
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
+    thenSortBy: 'id'
+} as const;
 
 /**
  * Service for the benefit-usage record (HOS-376).
@@ -822,7 +834,7 @@ export class HostTradeUsageService extends BaseCrudService<
 
                 const { items, total } = await this.model.findAll(
                     where,
-                    { page: validated.page, pageSize: validated.pageSize },
+                    { page: validated.page, pageSize: validated.pageSize, ...USAGE_LIST_ORDER },
                     undefined,
                     ctx?.tx
                 );
@@ -962,7 +974,7 @@ export class HostTradeUsageService extends BaseCrudService<
 
                 const { items, total } = await this.model.findAll(
                     where,
-                    { page: validated.page, pageSize: validated.pageSize },
+                    { page: validated.page, pageSize: validated.pageSize, ...USAGE_LIST_ORDER },
                     undefined,
                     ctx?.tx
                 );
@@ -1019,6 +1031,47 @@ export class HostTradeUsageService extends BaseCrudService<
     // --- Transitions ------------------------------------------------------
 
     /**
+     * Reads a usage the actor may answer, without changing it (HOS-2332).
+     *
+     * The read half of {@link confirmUsage} / {@link rejectUsage}: the SAME
+     * counterpart check, so a caller that previews an answer before committing
+     * it (the MCP `confirm_benefit_usage` / `reject_benefit_usage` preview) is
+     * refused exactly where the transition would be. A foreign usage, the
+     * declarant's own declaration (AC-6) and a missing id are one NOT_FOUND,
+     * never FORBIDDEN. The state is NOT checked here: the transition does that,
+     * and a reader may want to say "already answered" in its own words.
+     *
+     * The row comes back with its provider ref, the projection the host-facing
+     * lists carry, so the caller can name the provider without a second read.
+     *
+     * @param input - The usage id.
+     * @param actor - Must be the counterpart of whoever declared it.
+     * @param ctx - Optional service context.
+     * @returns The usage with its provider ref.
+     */
+    public async getAnswerableUsage(
+        input: { usageId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ usage: HostTradeBenefitUsageWithProvider }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAnswerableUsage',
+            input: { ...input, actor },
+            schema: usageIdInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const usage = await this.requireAnswerableBy(
+                    validated.usageId,
+                    validatedActor,
+                    ctx
+                );
+                const [withProvider] = await this.attachProviders([usage], ctx);
+                return { usage: withProvider ?? { ...usage, hostTrade: null, hasReview: false } };
+            }
+        });
+    }
+
+    /**
      * Confirms a pending usage. Only the counterpart may do it.
      *
      * @param input - The usage id.
@@ -1044,17 +1097,18 @@ export class HostTradeUsageService extends BaseCrudService<
                 );
                 this.requireStatus(usage, HostTradeUsageStatusEnum.PENDING);
 
-                const updated = await this.model.update(
-                    { id: validated.usageId },
-                    {
+                const updated = await this.transitionFrom({
+                    usageId: validated.usageId,
+                    from: HostTradeUsageStatusEnum.PENDING,
+                    data: {
                         status: HostTradeUsageStatusEnum.CONFIRMED,
                         confirmedAt: new Date(),
                         confirmedById: validatedActor.id,
                         updatedById: validatedActor.id
                         // TYPE-WORKAROUND: a state-machine transition writes status and its stamps, none of which the update schema declares
                     } as unknown as Partial<HostTradeBenefitUsage>,
-                    ctx?.tx
-                );
+                    tx: ctx?.tx
+                });
 
                 // The ONLY transition that moves a counter, and it does not go
                 // through the base update, so `_afterUpdate` never fires for
@@ -1066,7 +1120,7 @@ export class HostTradeUsageService extends BaseCrudService<
                     tx: ctx?.tx
                 });
 
-                return { usage: updated as HostTradeBenefitUsage };
+                return { usage: updated };
             }
         });
     }
@@ -1109,9 +1163,10 @@ export class HostTradeUsageService extends BaseCrudService<
                     );
                     this.requireStatus(usage, HostTradeUsageStatusEnum.PENDING);
 
-                    const updated = await this.model.update(
-                        { id: validated.usageId },
-                        {
+                    const updated = await this.transitionFrom({
+                        usageId: validated.usageId,
+                        from: HostTradeUsageStatusEnum.PENDING,
+                        data: {
                             status: HostTradeUsageStatusEnum.REJECTED,
                             rejectedAt: new Date(),
                             rejectedById: validatedActor.id,
@@ -1119,12 +1174,12 @@ export class HostTradeUsageService extends BaseCrudService<
                             updatedById: validatedActor.id
                             // TYPE-WORKAROUND: a state-machine transition writes status and its stamps, none of which the update schema declares
                         } as unknown as Partial<HostTradeBenefitUsage>,
-                        execCtx.tx
-                    );
+                        tx: execCtx.tx
+                    });
 
                     await this.applyRejectionThreshold(usage.hostTradeId, execCtx);
 
-                    return { usage: updated as HostTradeBenefitUsage };
+                    return { usage: updated };
                 };
 
                 return ctx?.tx ? run(ctx) : withServiceTransaction(run);
@@ -1401,9 +1456,13 @@ export class HostTradeUsageService extends BaseCrudService<
                 }
                 this.requireStatus(usage, HostTradeUsageStatusEnum.REJECTED);
 
-                const updated = await this.model.update(
-                    { id: validated.usageId },
-                    {
+                const updated = await this.transitionFrom({
+                    usageId: validated.usageId,
+                    from: HostTradeUsageStatusEnum.REJECTED,
+                    // Also keyed on who rejected it: a parallel undo-and-reject
+                    // by someone else must not reopen a row they did not close.
+                    where: { rejectedById: validatedActor.id },
+                    data: {
                         status: HostTradeUsageStatusEnum.PENDING,
                         rejectedAt: null,
                         rejectedById: null,
@@ -1411,10 +1470,10 @@ export class HostTradeUsageService extends BaseCrudService<
                         updatedById: validatedActor.id
                         // TYPE-WORKAROUND: undoing a rejection clears status and its stamps, all transition columns the update schema does not declare
                     } as unknown as Partial<HostTradeBenefitUsage>,
-                    ctx?.tx
-                );
+                    tx: ctx?.tx
+                });
 
-                return { usage: updated as HostTradeBenefitUsage };
+                return { usage: updated };
             }
         });
     }
@@ -1449,18 +1508,57 @@ export class HostTradeUsageService extends BaseCrudService<
     ): Promise<HostTradeBenefitUsage> {
         const usage = await this.requireUsage(usageId, ctx);
 
-        let counterpartId: string | null;
-        if (usage.declaredBy === HostTradeUsageDeclaredByEnum.PROVIDER) {
-            counterpartId = usage.hostUserId;
-        } else {
-            const provider = await this.hostTradeModel.findById(usage.hostTradeId, ctx?.tx);
-            counterpartId = provider?.ownerUserId ?? null;
-        }
+        // The listing is only read when the HOST declared the row: a
+        // provider-declared row names its counterpart on the row itself.
+        const providerOwnerUserId =
+            usage.declaredBy === HostTradeUsageDeclaredByEnum.PROVIDER
+                ? null
+                : ((await this.hostTradeModel.findById(usage.hostTradeId, ctx?.tx))?.ownerUserId ??
+                  null);
 
-        if (!counterpartId || counterpartId !== actor.id) {
+        if (
+            !isUsageCounterpart({
+                declaredBy: usage.declaredBy,
+                hostUserId: usage.hostUserId,
+                providerOwnerUserId,
+                actorId: actor.id
+            })
+        ) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Usage not found');
         }
         return usage;
+    }
+
+    /**
+     * Writes a transition only if the row is still in `from` (compare-and-set).
+     *
+     * The status read before it is a fast refusal, not the guarantee: two
+     * commits in parallel (a confirm and a reject of the same PENDING usage)
+     * both pass that read. The status in the UPDATE's WHERE lets exactly one of
+     * them match; the other matches zero rows and gets the same refusal as
+     * {@link requireStatus}, so it writes nothing and its caller sends no email.
+     */
+    private async transitionFrom({
+        usageId,
+        from,
+        where,
+        data,
+        tx
+    }: {
+        readonly usageId: string;
+        readonly from: HostTradeUsageStatusEnum;
+        readonly where?: Readonly<Record<string, unknown>>;
+        readonly data: Partial<HostTradeBenefitUsage>;
+        readonly tx?: ServiceContext['tx'];
+    }): Promise<HostTradeBenefitUsage> {
+        const updated = await this.model.update({ ...where, id: usageId, status: from }, data, tx);
+        if (!updated) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Usage is no longer ${from}, expected ${from}`
+            );
+        }
+        return updated;
     }
 
     /** Asserts the usage is in the state the transition requires. */

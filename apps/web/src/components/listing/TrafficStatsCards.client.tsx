@@ -8,9 +8,11 @@
  * `window`; this island refetches whenever it (or the listing) changes. It
  * builds no selector of its own.
  *
- * **Fail-soft.** Analytics are never worth an error banner: a failed request,
- * an invalid payload (checked with `ListingTrafficStatsResponseSchema`) and
- * `available: false` all render nothing at all.
+ * **Fail-soft.** Analytics are never worth an error banner: a failed request
+ * and an invalid payload (checked with `ListingTrafficStatsResponseSchema`)
+ * render nothing at all. `available: false` (the analytics provider is down,
+ * HOS-2346) renders a neutral "unavailable" notice instead, so the owner sees
+ * why the block is empty rather than a bare title.
  *
  * **Sentinels.** The API appends two computed referrer rows. `(direct)` and
  * `(internal)` are rendered with their i18n labels; real hosts are shown
@@ -70,6 +72,7 @@ export interface TrafficStatsCardsProps {
 type CardsState =
     | { readonly status: 'loading' }
     | { readonly status: 'ready'; readonly data: ListingTrafficStatsResponse }
+    | { readonly status: 'unavailable' }
     | { readonly status: 'hidden' };
 
 /**
@@ -212,7 +215,8 @@ export function TrafficStatsCards({
                 });
                 if (!result.ok) return { status: 'hidden' };
                 const parsed = ListingTrafficStatsResponseSchema.safeParse(result.data);
-                if (!parsed.success || !parsed.data.available) return { status: 'hidden' };
+                if (!parsed.success) return { status: 'hidden' };
+                if (!parsed.data.available) return { status: 'unavailable' };
                 return { status: 'ready', data: parsed.data };
             } catch {
                 return { status: 'hidden' };
@@ -229,6 +233,20 @@ export function TrafficStatsCards({
     }, [entityType, entityId, windowParam]);
 
     if (state.status === 'hidden') return null;
+
+    if (state.status === 'unavailable') {
+        return (
+            <p
+                className={styles.unavailable}
+                data-testid="traffic-stats-unavailable"
+            >
+                {t(
+                    'listing.owner.traffic.unavailable',
+                    'Estadísticas no disponibles en este momento. Intentá nuevamente más tarde.'
+                )}
+            </p>
+        );
+    }
 
     if (state.status === 'loading') {
         return (

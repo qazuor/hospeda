@@ -338,7 +338,8 @@ Measured on Umami 3.5.0 in the T-0 spike (`docs/analytics/umami-spike.md`):
 - UI: one shared island (`TrafficStatsCards.client.tsx`) mounted below the
   existing `entity_views` cards in every owner panel: accommodation
   (`AnalyticsSection.client.tsx`), venue, experience, and the partner panel from
-  HOS-1063. Cards hide when `available: false`. Copy in es/en/pt.
+  HOS-1063. When `available: false` the block shows an unavailable message
+  (HOS-2346). Copy in es/en/pt.
 - All four verticals ship together (OQ-7). **Correction (task planning,
   2026-11-14):** the code does not send `entity_id` today. `accommodation_viewed`
   and `contact_owner_*` carry `accommodation_id`; `EntityViewTracker` emits no
@@ -375,7 +376,9 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
   completed). «Contactos» is shown for accommodation only; for venue,
   experience and partner it is absent, never a zero (OQ-7 addendum).
 - Window selector shared with the existing cards.
-- When Umami is unavailable, the new cards are not rendered; no error banner.
+- When Umami is unavailable, the block shows an unavailable message (HOS-2346):
+  «Estadísticas no disponibles en este momento. Intentá nuevamente más tarde.»
+  in neutral styling, never an error banner.
 - Empty state (listing with no traffic): the cards show «Todavía no hay datos».
 
 ## 9. Acceptance criteria
@@ -398,8 +401,8 @@ Umami on: delete PostHog clients, env vars (registry, `env.ts`,
 - AC-7 `GET …/traffic-stats` returns 404 for a listing the actor does not own,
   and 200 with data for their own, for each of the four entity types.
 - AC-8 With Umami down or slow (> 3 s), `…/traffic-stats` returns
-  `available: false` within budget and the panel shows only the `entity_views`
-  cards.
+  `available: false` within budget, the panel keeps showing the `entity_views`
+  cards, and the traffic block shows an unavailable message (HOS-2346).
 - AC-9 After removal: `grep -ri posthog apps packages infra scripts .github`
   (excluding historical docs/ADRs) returns nothing, and `pnpm check:guards` is
   green.
