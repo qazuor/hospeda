@@ -5,7 +5,7 @@ import { EmailLayout } from '../components/layout.js';
 /** One change the watch battery found, as the mail shows it. */
 export interface ProviderWatchAlertLine {
     readonly measurementId: string;
-    readonly kind: 'value_changed' | 'shape_changed';
+    readonly kind: 'value_changed' | 'shape_changed' | 'shape_baseline_missing';
     /** For a shape change: the request whose response changed. */
     readonly label?: string;
     /** What the battery expected, already rendered as text. */
@@ -70,7 +70,9 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
                         <strong>{alert.measurementId}</strong>{' '}
                         {alert.kind === 'value_changed'
                             ? 'devolvió otro valor'
-                            : `cambió la forma de la respuesta${alert.label ? ` (${alert.label})` : ''}`}
+                            : alert.kind === 'shape_baseline_missing'
+                              ? 'no tiene una forma de respuesta aceptada: revisala y aceptala en el panel'
+                              : `cambió la forma de la respuesta${alert.label ? ` (${alert.label})` : ''}`}
                     </Text>
                     <Text>Esperaba: {alert.expected}</Text>
                     <Text>Obtuvo: {alert.obtained}</Text>

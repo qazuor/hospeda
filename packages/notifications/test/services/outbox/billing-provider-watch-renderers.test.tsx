@@ -47,6 +47,29 @@ describe('HOS-1512 provider watch alert mail', () => {
         expect(html).toContain('No ajustó nada');
     });
 
+    it('says a measurement has no accepted shape yet', async () => {
+        const result = await renderer({
+            row: row({
+                template: PROVIDER_WATCH_ALERT_TEMPLATE,
+                payload: {
+                    ...payload,
+                    alerts: [
+                        {
+                            measurementId: 'M7',
+                            kind: 'shape_baseline_missing',
+                            expected: 'null',
+                            obtained: '{"get":{"$":"object"}}',
+                            details: ['no accepted baseline for this measurement']
+                        }
+                    ]
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('M7');
+        expect(html).toContain('no tiene una forma de respuesta aceptada');
+    });
+
     it('names production and uses the singular for one change', async () => {
         const result = await renderer({
             row: row({

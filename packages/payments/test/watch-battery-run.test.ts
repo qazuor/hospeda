@@ -203,10 +203,13 @@ describe('the production run needs the authorization of the current month', () =
     });
 });
 
+/** An accepted baseline for RP7, so these tests see no baseline-missing alert. */
+const ACCEPTED_RP7: WatchShapeBaseline = { RP7: {} };
+
 describe('comparison and alerts', () => {
     it('records a matching run with no alert and its shapes', async () => {
         const { transport } = scripted({ id: 'x', status: 'authorized' });
-        const result = await run({ catalog: [readEntry()], transport });
+        const result = await run({ catalog: [readEntry()], transport, previous: ACCEPTED_RP7 });
         expect(result.run.outcome).toBe('completed');
         expect(result.run.alerts).toEqual([]);
         expect(result.run.measurements.RP7?.outcome).toBe('matched');
@@ -220,7 +223,7 @@ describe('comparison and alerts', () => {
 
     it('alerts with what it expected and what it got when the value changed, and still completes', async () => {
         const { transport } = scripted({ other: 1 });
-        const result = await run({ catalog: [readEntry()], transport });
+        const result = await run({ catalog: [readEntry()], transport, previous: ACCEPTED_RP7 });
         expect(result.run.outcome).toBe('completed');
         expect(result.run.measurements.RP7?.outcome).toBe('changed');
         expect(result.run.alerts).toEqual([
@@ -252,10 +255,39 @@ describe('comparison and alerts', () => {
         });
     });
 
-    it('alerts nothing about shape on the first run, when there is no baseline', async () => {
+    it('alerts on EVERY run, with its own kind, while no baseline was accepted', async () => {
+        const store = memoryRunStore({ baseline: null });
         const { transport } = scripted({ id: 'x' });
-        const result = await run({ catalog: [readEntry()], transport, previous: null });
-        expect(result.run.alerts).toEqual([]);
+        const first = await run({ catalog: [readEntry()], transport, store });
+        const second = await run({ catalog: [readEntry()], transport, store });
+        for (const result of [first, second]) {
+            expect(result.run.alerts).toHaveLength(1);
+            expect(result.run.alerts[0]).toMatchObject({
+                measurementId: 'RP7',
+                kind: 'shape_baseline_missing',
+                obtained: { get: { $: 'object', id: 'string' } }
+            });
+        }
+        expect(second.mayPingWatchdog).toBe(true);
+    });
+
+    it('alerts for a measurement missing from an otherwise accepted baseline', async () => {
+        const store = memoryRunStore({ baseline: { RP8: { get: { $: 'object' } } } });
+        const { transport } = scripted({ id: 'x' });
+        const result = await run({ catalog: [readEntry()], transport, store });
+        expect(result.run.alerts.map((alert) => alert.kind)).toEqual(['shape_baseline_missing']);
+    });
+
+    it('does not alert while the shape equals the accepted baseline', async () => {
+        const accepted: WatchShapeBaseline = {
+            RP7: { get: shapeOf({ body: { id: 'x' } }) }
+        };
+        const store = memoryRunStore({ baseline: accepted });
+        const { transport } = scripted({ id: 'x' });
+        const first = await run({ catalog: [readEntry()], transport, store });
+        const second = await run({ catalog: [readEntry()], transport, store });
+        expect(first.run.alerts).toEqual([]);
+        expect(second.run.alerts).toEqual([]);
     });
 
     it('ignores previous shapes of labels the measurement no longer sends', async () => {

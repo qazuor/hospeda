@@ -11,7 +11,7 @@ export const PROVIDER_WATCH_ALERT_TEMPLATE = 'billing.provider-watch-alert';
 
 const alertSchema = z.object({
     measurementId: z.string().min(1),
-    kind: z.enum(['value_changed', 'shape_changed']),
+    kind: z.enum(['value_changed', 'shape_changed', 'shape_baseline_missing']),
     label: z.string().min(1).optional(),
     expected: z.string(),
     obtained: z.string(),

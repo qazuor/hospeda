@@ -140,13 +140,16 @@ export interface WatchMeasurementRecord {
 }
 
 /** What kind of change an alert reports. */
-export type WatchAlertKind = 'value_changed' | 'shape_changed';
+export type WatchAlertKind = 'value_changed' | 'shape_changed' | 'shape_baseline_missing';
 
 /** One change the run found, ready to be mailed. */
 export interface WatchAlert {
     readonly measurementId: string;
     readonly kind: WatchAlertKind;
-    /** For `shape_changed`: the request label whose response changed. */
+    /**
+     * For `shape_changed`: the request label whose response changed. A `shape_baseline_missing`
+     * alert has no label: it covers every response of the measurement.
+     */
     readonly label?: string;
     readonly expected: JsonValue;
     readonly obtained: JsonValue;

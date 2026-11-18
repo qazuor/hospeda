@@ -168,7 +168,18 @@ function shapeAlerts(args: {
     readonly previous: MeasurementShapes | undefined;
     readonly current: MeasurementShapes;
 }): readonly WatchAlert[] {
-    if (args.previous === undefined) return [];
+    // No accepted baseline is NEVER silent: it alerts on every run until the owner accepts a shape.
+    if (args.previous === undefined) {
+        return [
+            {
+                measurementId: args.id,
+                kind: 'shape_baseline_missing',
+                expected: null,
+                obtained: args.current,
+                details: ['no accepted baseline for this measurement: review and accept its shape']
+            }
+        ];
+    }
     const alerts: WatchAlert[] = [];
     for (const [label, previousShape] of Object.entries(args.previous)) {
         const currentShape = args.current[label];
