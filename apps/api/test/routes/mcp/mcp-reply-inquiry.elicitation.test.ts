@@ -101,6 +101,10 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
+import {
+    ELICITATION_REASON_MESSAGES,
+    ELICITATION_STATE_INVALID_REASON
+} from '../../../src/mcp/tools/elicitation-confirmation';
 import { env, validateApiEnv } from '../../../src/utils/env';
 
 const MODERN = '2026-07-28';
@@ -402,6 +406,35 @@ describe('/mcp reply_inquiry confirmed out of band (2026-07-28, end to end)', ()
         expect(textOf(genuineAfterAltered)).toBe([...texts][0]);
     });
 
+    it.each([
+        [
+            'an inquiry that is not found',
+            { inquiryId: 'c9999999-9999-4999-8999-999999999999', text: TEXT }
+        ],
+        ['malformed input', { inquiryId: CONV_ID, text: '' }]
+    ])('L2: a retry refused before settling (%s) still burns the state', async (_label, args) => {
+        // Arrange
+        const { state } = await askConfirmation();
+
+        // Act
+        const refused = await callReply(args, {
+            retry: { requestState: state, inputResponses: CONFIRMED }
+        });
+        const genuine = await callReply(
+            { inquiryId: CONV_ID, text: TEXT },
+            { retry: { requestState: state, inputResponses: CONFIRMED } }
+        );
+
+        // Assert
+        expect(refused.result?.isError).toBe(true);
+        expect(genuine.result?.isError).toBe(true);
+        expect(textOf(genuine)).toContain(
+            ELICITATION_REASON_MESSAGES[ELICITATION_STATE_INVALID_REASON]
+        );
+        expect(createMessage).not.toHaveBeenCalled();
+        expect(fake.data.size).toBe(0);
+    });
+
     it('AC-C61: two retries racing with the same state write exactly once', async () => {
         // Arrange
         const { state } = await askConfirmation();
@@ -467,7 +500,7 @@ describe('/mcp reply_inquiry confirmed out of band (2026-07-28, end to end)', ()
         expect(createMessage).toHaveBeenCalledTimes(1);
         expect(recordCall.mock.calls.map(([call]) => call.details)).toEqual([
             { step: 'preview' },
-            { step: 'send' }
+            { step: 'commit' }
         ]);
     });
 });

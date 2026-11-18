@@ -29,7 +29,9 @@
  *    §6.3; ChatGPT shows its linking UI on it); or, when a covered tool asks
  *    the human to confirm out of band, the 2026-07-28 `input_required` result
  *    (`elicitation.ts`, HOS-2247). Whether the client can show that form is
- *    read from the request itself before the tool runs.
+ *    read from the request itself before the tool runs. A failed outcome
+ *    burns the elicitation state the retry carried, so a refusal that came
+ *    before the answer was settled never leaves it replayable (L2).
  *
  * It never throws. A thrown error would reach the client as a protocol error
  * carrying internals; everything is caught here and answered with the
@@ -43,6 +45,7 @@ import type {
     ToolAnnotations
 } from '@modelcontextprotocol/server';
 import { z } from 'zod';
+import { discardUnsettledConfirmation } from '../../mcp/tools/elicitation-confirmation';
 import {
     type ConfirmableToolRunOutcome,
     executeConfirmableTool,
@@ -344,6 +347,10 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
             });
         }
 
+        if (outcome.ok === false) {
+            // A refused retry never leaves its state usable (HOS-2247 L2).
+            await discardUnsettledConfirmation({ tool: definition.name, confirmation });
+        }
         if (outcome.ok === 'confirmation_required') {
             // Tools ask only when the context says the client can show the
             // form; anything else is a wiring bug, and nothing was written.

@@ -37,11 +37,17 @@ import {
     type ConfirmationBinding,
     type ConfirmationStoreDeps,
     consumeConfirmationToken,
+    discardConfirmationToken,
     issueConfirmationToken
 } from './confirmation-token-store';
-import { ELICITATION_STRICT, type ElicitationToolName } from './elicitation-policy';
+import {
+    ELICITATION_STRICT,
+    ELICITATION_TOOL_NAMES,
+    type ElicitationToolName
+} from './elicitation-policy';
 import type {
     ToolAuditDetails,
+    ToolConfirmationContext,
     ToolContext,
     ToolErrorPayload,
     ToolHandlerResult,
@@ -322,4 +328,44 @@ export function needsConfirmation({
     readonly stateId: string;
 }): ToolNeedsConfirmation {
     return { needsConfirmation: { message, stateId } };
+}
+
+/** Arguments for {@link discardUnsettledConfirmation}. */
+export interface DiscardUnsettledConfirmationArgs {
+    /** The tool called. */
+    readonly tool: string;
+    /** The call's confirmation context. */
+    readonly confirmation: ToolConfirmationContext | undefined;
+    /** Store injection (tests). */
+    readonly deps?: ConfirmationStoreDeps;
+}
+
+/**
+ * Burns the state a refused retry carried (HOS-2247 L2). A retry can be refused
+ * before its tool settles the answer (not found, no permission, no longer
+ * pending, malformed input); the state must still never be usable again. A
+ * state the tool already settled is gone, so this second `GETDEL` is a no-op.
+ *
+ * @param args - Tool, the call's confirmation context and deps
+ */
+export async function discardUnsettledConfirmation({
+    tool,
+    confirmation,
+    deps
+}: DiscardUnsettledConfirmationArgs): Promise<void> {
+    const stateId = confirmation?.answer?.stateId;
+    if (stateId === undefined || !isElicitationToolName(tool)) {
+        return;
+    }
+    await discardConfirmationToken({
+        token: stateId,
+        tool,
+        keyPrefix: elicitationKeyPrefix(tool),
+        ...(deps?.getRedis ? { getRedis: deps.getRedis } : {})
+    });
+}
+
+/** Whether `name` is a tool covered by out-of-band confirmation. */
+function isElicitationToolName(name: string): name is ElicitationToolName {
+    return (ELICITATION_TOOL_NAMES as readonly string[]).includes(name);
 }

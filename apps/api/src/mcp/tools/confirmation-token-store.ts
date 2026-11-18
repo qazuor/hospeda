@@ -184,7 +184,7 @@ function logUnavailable({
     tool,
     error
 }: {
-    readonly op: 'issue' | 'consume';
+    readonly op: 'issue' | 'consume' | 'discard';
     readonly tool: string;
     readonly error?: unknown;
 }) {
@@ -289,4 +289,39 @@ export async function consumeConfirmationToken(
         return { ok: false, reason: 'INVALID' };
     }
     return read.stash === undefined ? { ok: true } : { ok: true, stash: read.stash };
+}
+
+/** Arguments for {@link discardConfirmationToken}. */
+export interface DiscardConfirmationTokenArgs extends ConfirmationStoreDeps {
+    /** The token (or elicitation state id) to burn. */
+    readonly token: string;
+    /** The tool it was issued for (it selects the key prefix). */
+    readonly tool: string;
+}
+
+/**
+ * Burns a token without checking any binding: one `GETDEL` on its key, result
+ * ignored. Used when a call that carried a confirmation is refused before it
+ * could be settled, so the proof can never be presented again (HOS-2247 L2).
+ * Best effort: a store failure is logged and swallowed, since nothing is
+ * written either way.
+ *
+ * @param args - The token, its tool and optional deps
+ */
+export async function discardConfirmationToken(args: DiscardConfirmationTokenArgs): Promise<void> {
+    if (args.token.length === 0) {
+        return;
+    }
+    const redis = await resolveRedis(args);
+    if (!redis) {
+        logUnavailable({ op: 'discard', tool: args.tool });
+        return;
+    }
+    try {
+        await redis.getdel(
+            keyFor({ token: args.token, tool: args.tool, keyPrefix: args.keyPrefix })
+        );
+    } catch (error) {
+        logUnavailable({ op: 'discard', tool: args.tool, error });
+    }
 }

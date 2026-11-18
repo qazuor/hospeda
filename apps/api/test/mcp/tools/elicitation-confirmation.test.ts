@@ -16,6 +16,7 @@ import {
     CONFIRMATION_TOKEN_REFUSED_REASON,
     confirmationAuditDetails,
     confirmationTokenRefused,
+    discardUnsettledConfirmation,
     ELICITATION_REASON_MESSAGES,
     ELICITATION_STATE_INVALID_REASON,
     type ElicitationBinding,
@@ -363,5 +364,70 @@ describe('refusals', () => {
         expect(ELICITATION_REASON_MESSAGES[CONFIRMATION_TOKEN_REFUSED_REASON]).toContain(
             'SIN confirmationToken'
         );
+    });
+});
+
+describe('discardUnsettledConfirmation (L2: a refused retry burns its state)', () => {
+    it('burns the state a retry carried, so it can never be settled afterwards', async () => {
+        // Arrange
+        const fake = makeFakeRedis();
+        const issued = await issueConfirmationState({ binding: BINDING, deps: fake.deps });
+        if (!issued.ok) throw new Error('issue failed');
+
+        // Act
+        await discardUnsettledConfirmation({
+            tool: 'reply_inquiry',
+            confirmation: {
+                elicitationSupported: true,
+                answer: { stateId: issued.stateId, decision: 'confirm' }
+            },
+            deps: fake.deps
+        });
+        const settled = await settleConfirmationAnswer({
+            binding: BINDING,
+            plan: { mode: 'elicitation', step: 'commit', stateId: issued.stateId },
+            deps: fake.deps
+        });
+
+        // Assert
+        expect(fake.data.size).toBe(0);
+        expect(settled).toMatchObject({ error: { reason: ELICITATION_STATE_INVALID_REASON } });
+    });
+
+    it.each([
+        ['no answer on the call', 'reply_inquiry', undefined],
+        [
+            'a tool that is not covered',
+            'get_listing',
+            { stateId: 'x', decision: 'confirm' as const }
+        ]
+    ])('touches nothing for %s', async (_label, tool, answer) => {
+        // Arrange
+        const fake = makeFakeRedis();
+        await issueConfirmationState({ binding: BINDING, deps: fake.deps });
+
+        // Act
+        await discardUnsettledConfirmation({
+            tool,
+            confirmation: { elicitationSupported: true, ...(answer ? { answer } : {}) },
+            deps: fake.deps
+        });
+
+        // Assert
+        expect(fake.data.size).toBe(1);
+    });
+
+    it('never throws when the store is down', async () => {
+        // Act + Assert
+        await expect(
+            discardUnsettledConfirmation({
+                tool: 'reply_inquiry',
+                confirmation: {
+                    elicitationSupported: true,
+                    answer: { stateId: 's', decision: 'confirm' }
+                },
+                deps: { getRedis: async () => undefined }
+            })
+        ).resolves.toBeUndefined();
     });
 });
