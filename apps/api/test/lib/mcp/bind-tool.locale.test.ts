@@ -7,7 +7,7 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
-import type { Actor } from '@repo/service-core';
+import { type Actor, ServiceError } from '@repo/service-core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
@@ -69,6 +69,21 @@ const refusingTool = defineTool({
     handler: async () => ({ error: { code: ServiceErrorCode.FORBIDDEN, message: 'x' } })
 });
 
+/** A tool whose handler THROWS a `ServiceError`: the executor's catch path. */
+const throwingTool = defineTool({
+    name: 'probe_locale_throw',
+    title: 'Probe',
+    description: 'Probe',
+    inputSchema: z.object({ id: z.string() }),
+    isWrite: false,
+    refusalAction: () => ({
+        destination: { kind: 'listingEditor', vertical: 'accommodation', id: LISTING_ID }
+    }),
+    handler: async () => {
+        throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'x');
+    }
+});
+
 /** A tool that returns a link it builds from the call context. */
 const linkingTool = defineTool({
     name: 'probe_locale_link',
@@ -116,6 +131,24 @@ describe('MCP portal links use the user locale', () => {
         });
 
         expect(resolveRecipientLocale).toHaveBeenCalledWith({ userId: USER_ID });
+        expect(result.structuredContent).toMatchObject({
+            action: { url: `${SITE}/${locale}/mi-cuenta/propiedades/${LISTING_ID}/editar/` }
+        });
+    });
+
+    it.each([
+        'en',
+        'pt'
+    ] as const)('a thrown ServiceError refusal link carries the %s prefix', async (locale) => {
+        resolveRecipientLocale.mockResolvedValue(locale);
+
+        const result = await handleMcpToolCall({
+            definition: throwingTool,
+            input: { id: LISTING_ID },
+            ctx: ctx()
+        });
+
+        expect(result.isError).toBe(true);
         expect(result.structuredContent).toMatchObject({
             action: { url: `${SITE}/${locale}/mi-cuenta/propiedades/${LISTING_ID}/editar/` }
         });
