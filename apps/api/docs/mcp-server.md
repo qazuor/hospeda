@@ -229,15 +229,19 @@ stays in `total`; the output's `skipped` counts those rows for the page.
 **Owner history (HOS-2348).** `GET /api/v1/protected/ai-connections/activity`
 calls that reader with `scope: { kind: 'own' }` and nothing else can change it:
 the query is strict, so `userId`, `actorId` or `scope` answer 400. It lists
-writes only by default; `includeReads=true` is the web's "mostrar también
-consultas" toggle (D-12) and maps to no `access` filter. The route wires the
+writes only by default; `includeReads=true` is the web's "mostrar también lo
+que solo miró" toggle (D-12) and maps to no `access` filter. In es "consulta"
+is kept for guest inquiries only, so the toggle never uses the word. The route wires the
 reader's `buildTargetUrl` port to `mcp/portal/activity-target-url.ts`: a listing
 links to its editor and a conversation to its inquiry thread, always in `es`
 (U-5). The response does not carry `skipped`. The web page is
 `/{lang}/mi-cuenta/asistentes-ia/historial/` (portal destination
 `aiAssistantsHistory`). It labels every tool and error code through i18n and
 renders a `reply_inquiry` row with `step: 'send'` (written before HOS-2247) the
-same as one with `step: 'commit'`.
+same as one with `step: 'commit'`. The web parser is tolerant where the API
+schema is strict: each item is validated on its own, an invalid one is left
+out, an unknown nested key is dropped and an unknown outcome renders as
+"Resultado desconocido", so a newer API never blanks the page.
 
 ## Tool catalog
 
