@@ -15,7 +15,7 @@ import type { OwnerHelpTopic } from '../owner-help.types';
 const ACCOMMODATION_LIST_LABEL = 'Mis propiedades';
 
 /** Label of the venue and experience list page, as the portal titles it. */
-const COMMERCE_LIST_LABEL = 'Mi comercio';
+const VENUE_AND_EXPERIENCE_LIST_LABEL = 'Mi comercio';
 
 /** Topics about listings. */
 export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
@@ -35,7 +35,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             'galeria'
         ],
         steps: [
-            `Abrí el editor de la publicación: desde «${ACCOMMODATION_LIST_LABEL}» (alojamientos) o «${COMMERCE_LIST_LABEL}» (comercios y experiencias), tocá «Editar» en su tarjeta.`,
+            `Abrí el editor de la publicación: desde «${ACCOMMODATION_LIST_LABEL}» (alojamientos) o «${VENUE_AND_EXPERIENCE_LIST_LABEL}» (comercios y experiencias), tocá «Editar» en su tarjeta.`,
             'Entrá a la sección «Fotos».',
             'Cargá la imagen principal: arrastrá una imagen o hacé clic para elegirla. Es obligatoria para poder publicar.',
             'Sumá más fotos a la galería. Cada archivo puede ser JPG, PNG, WebP o HEIC y pesar hasta 10 MB.',
@@ -75,7 +75,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             'Entrá a la página de publicar del rubro que querés: alojamiento, comer y salir o experiencias.',
             'Completá el formulario de alta con los datos básicos. Si ya tenés un borrador, el sitio te ofrece retomarlo antes de crear otro.',
             'La publicación se crea como borrador: todavía no se ve en el sitio.',
-            `Abrila desde «${ACCOMMODATION_LIST_LABEL}» o «${COMMERCE_LIST_LABEL}» con «Editar» y completá sus secciones. El editor marca lo que falta.`,
+            `Abrila desde «${ACCOMMODATION_LIST_LABEL}» o «${VENUE_AND_EXPERIENCE_LIST_LABEL}» con «Editar» y completá sus secciones. El editor marca lo que falta.`,
             'Cuando cumpla los requisitos, tocá «Publicar» en su tarjeta.'
         ],
         destinations: [
@@ -113,7 +113,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'venue', label: VENUE_AND_EXPERIENCE_LIST_LABEL },
             {
                 kind: 'ownEditorSection',
                 vertical: 'accommodation',
@@ -157,8 +157,12 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'experience', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'venue', label: VENUE_AND_EXPERIENCE_LIST_LABEL },
+            {
+                kind: 'ownerListings',
+                vertical: 'experience',
+                label: VENUE_AND_EXPERIENCE_LIST_LABEL
+            },
             { kind: 'addons', label: 'Complementos' }
         ],
         faqKey: 'owners.pause',
@@ -185,8 +189,12 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'experience', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'venue', label: VENUE_AND_EXPERIENCE_LIST_LABEL },
+            {
+                kind: 'ownerListings',
+                vertical: 'experience',
+                label: VENUE_AND_EXPERIENCE_LIST_LABEL
+            },
             { kind: 'contact' }
         ],
         reviewedAt: '2026-11-17'
@@ -252,7 +260,7 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
             'rechazada'
         ],
         steps: [
-            `Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «${ACCOMMODATION_LIST_LABEL}» o «${COMMERCE_LIST_LABEL}» y en el editor de esa publicación.`,
+            `Si Hospeda te pidió un arreglo, vas a ver el aviso «Te pidieron un arreglo en esta ficha» en «${ACCOMMODATION_LIST_LABEL}» o «${VENUE_AND_EXPERIENCE_LIST_LABEL}» y en el editor de esa publicación.`,
             'El aviso puede traer una fecha sugerida para corregirlo. Tu publicación sigue a la vista mientras tanto.',
             'Corregí lo que se pidió desde el editor.',
             'Tocá «Ya lo corregí» para avisar a Hospeda. Eso no cierra el pedido ni publica nada: lo revisa el equipo.',
@@ -260,8 +268,12 @@ export const LISTING_HELP_TOPICS: readonly OwnerHelpTopic[] = [
         ],
         destinations: [
             { kind: 'ownerListings', vertical: 'accommodation', label: ACCOMMODATION_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'venue', label: COMMERCE_LIST_LABEL },
-            { kind: 'ownerListings', vertical: 'experience', label: COMMERCE_LIST_LABEL },
+            { kind: 'ownerListings', vertical: 'venue', label: VENUE_AND_EXPERIENCE_LIST_LABEL },
+            {
+                kind: 'ownerListings',
+                vertical: 'experience',
+                label: VENUE_AND_EXPERIENCE_LIST_LABEL
+            },
             { kind: 'contact' }
         ],
         reviewedAt: '2026-11-17'
