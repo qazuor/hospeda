@@ -1571,9 +1571,9 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_UMAMI_DATABASE_URL',
         description:
-            'Postgres connection string of the Umami database, for a dedicated role that can only SELECT and DELETE on session_replay and heatmap_event. Used only by the recording retention purge (HOS-2347). Unset: the daily purge logs a warning and skips, and the manual purge answers 503',
+            'Postgres connection string of the Umami database, for a dedicated role that can only SELECT and DELETE on session_replay, heatmap_event and session_replay_saved. Used only by the recording retention purge (HOS-2347). Unset: the manual purge answers 503, and the daily purge skips with a warning (a failed run in production)',
         descriptionEs:
-            'Connection string de Postgres de la base de Umami, para un rol dedicado que solo puede hacer SELECT y DELETE sobre session_replay y heatmap_event. Lo usa solo la purga de retencion de grabaciones (HOS-2347). Sin setear: el cron diario avisa y se saltea, y la purga manual responde 503',
+            'Connection string de Postgres de la base de Umami, para un rol dedicado que solo puede hacer SELECT y DELETE sobre session_replay, heatmap_event y session_replay_saved. Lo usa solo la purga de retencion de grabaciones (HOS-2347). Sin setear: la purga manual responde 503 y el cron diario se saltea con un aviso (falla la corrida en produccion)',
         type: 'string',
         required: false,
         secret: true,
@@ -1582,9 +1582,9 @@ export const HOSPEDA_ENV_VARS = [
         category: 'monitoring',
         helpUrl: 'https://umami.is/docs',
         howToObtain:
-            'Create the restricted role on the Umami Postgres with the SQL in docs/analytics/session-replay-privacy.md (CONNECT, USAGE on public, SELECT and DELETE on session_replay and heatmap_event only), then build the URL with that role. This is the ONLY Umami write path the api holds; it never holds a Umami API write key.',
+            'Create the restricted role on the Umami Postgres with the SQL in docs/analytics/session-replay-privacy.md (CONNECT, USAGE on public, SELECT and DELETE on session_replay, heatmap_event and session_replay_saved only), then build the URL with that role. This is the ONLY Umami write path the api holds; it never holds a Umami API write key.',
         howToObtainEs:
-            'Crea el rol restringido en el Postgres de Umami con el SQL de docs/analytics/session-replay-privacy.md (CONNECT, USAGE sobre public, SELECT y DELETE solo sobre session_replay y heatmap_event) y arma la URL con ese rol. Es el UNICO camino de escritura a Umami que tiene la api; nunca guarda una API key de escritura de Umami.'
+            'Crea el rol restringido en el Postgres de Umami con el SQL de docs/analytics/session-replay-privacy.md (CONNECT, USAGE sobre public, SELECT y DELETE solo sobre session_replay, heatmap_event y session_replay_saved) y arma la URL con ese rol. Es el UNICO camino de escritura a Umami que tiene la api; nunca guarda una API key de escritura de Umami.'
     },
     {
         name: 'SENTRY_AUTH_TOKEN',
