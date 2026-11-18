@@ -58,7 +58,7 @@ const latest = await loadMigrationByNumber<{
 /** HOS-2270: the six own-scoped promotion permissions VENUE_OWNER gained. */
 const promotionGrants = await loadMigrationByNumber<{
     readonly GRANTS: ReadonlyArray<{ role: RoleEnum; permission: PermissionEnum }>;
-}>({ number: '0183' });
+}>({ number: '0184' });
 
 /** 0079's list for a role plus what later migrations granted to it. */
 function expectedSeedFor(args: {

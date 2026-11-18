@@ -19,7 +19,8 @@ import type { VenueOpeningHoursEntry } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { computeOpenNowInZone } from '@/lib/venue/open-now-in-zone';
+import { computeOpenStatusInZone } from '@/lib/venue/open-now-in-zone';
+import type { VenueOpenStatusDetail } from '@/lib/venue-hours';
 import styles from './VenueOpenNowBadge.module.css';
 
 interface VenueOpenNowBadgeProps {
@@ -27,28 +28,48 @@ interface VenueOpenNowBadgeProps {
     readonly locale: SupportedLocale;
     /** The full week map from the API response. */
     readonly openingHours: Record<string, VenueOpeningHoursEntry>;
+    /**
+     * `card` (default) is the `position: absolute` overlay on a listing card;
+     * `inline` flows in the document, for the venue detail header.
+     */
+    readonly variant?: 'card' | 'inline';
 }
 
 /**
- * Renders the "open now" / "closed now" badge after hydration.
+ * Renders the "open now" / "opens at HH:MM" / "closed" badge after hydration.
  *
  * The initial state is `null` (nothing rendered) so the SSR HTML carries no
  * badge; the effect computes the status once on mount. A `null` result — no
  * opening-hours data for today — also renders nothing.
  */
-export function VenueOpenNowBadge({ locale, openingHours }: VenueOpenNowBadgeProps) {
-    const [status, setStatus] = useState<boolean | null>(null);
+export function VenueOpenNowBadge({
+    locale,
+    openingHours,
+    variant = 'card'
+}: VenueOpenNowBadgeProps) {
+    const [detail, setDetail] = useState<VenueOpenStatusDetail | null>(null);
 
     useEffect(() => {
-        setStatus(computeOpenNowInZone({ openingHours, now: new Date() }));
+        setDetail(computeOpenStatusInZone({ openingHours, now: new Date() }));
     }, [openingHours]);
 
-    if (status === null) return null;
+    if (detail === null) return null;
 
     const t = createT(locale);
-    const label = status
-        ? t('venue.card.openNow', 'Abierto ahora')
-        : t('venue.card.closedNow', 'Cerrado ahora');
+    let label: string;
+    let tone: string;
+    if (detail.status === 'open') {
+        label = t('venue.card.openNow', 'Abierto ahora');
+        tone = styles.open;
+    } else if (detail.status === 'opensToday') {
+        label = t('venue.card.opensAt', 'Abre a las {{time}}', { time: detail.opensAt });
+        tone = styles.opensSoon;
+    } else {
+        label = t('venue.card.closedNow', 'Cerrado');
+        tone = styles.closed;
+    }
 
-    return <div className={cn(styles.badge, status ? styles.open : styles.closed)}>{label}</div>;
+    return (
+        <div className={cn(styles.badge, tone, variant === 'inline' && styles.inline)}>{label}</div>
+    );
 }

@@ -4363,6 +4363,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/session-recording"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/stats"
         },
         {

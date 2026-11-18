@@ -12,7 +12,7 @@
         },
         "analytics": {
             "label": "Usage analytics",
-            "description": "Anonymous statistics about how visitors navigate the site (most-viewed pages, search flows). Does not include error monitoring."
+            "description": "Anonymous statistics about how visitors navigate the site (most-viewed pages, search flows). When active, it may include session recordings and heatmaps with all text and fields masked; never on sign-in, your account, checkout, publishing or contact forms. Does not include error monitoring."
         },
         "marketing": {
             "label": "Marketing",

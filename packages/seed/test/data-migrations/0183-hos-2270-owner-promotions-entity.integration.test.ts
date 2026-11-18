@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0182-hos-2270-owner-promotions-entity.ts` (HOS-2270, release N).
+ * Integration tests for `0183-hos-2270-owner-promotions-entity.ts` (HOS-2270, release N).
  *
  * Runs against the REAL integration database with the rollback-isolation idiom of
  * `staff-email-domain-to-com-ar.integration.test.ts`: every test does its setup, the
@@ -27,7 +27,7 @@ import {
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0182-hos-2270-owner-promotions-entity.js';
+import * as migration from '../../src/data-migrations/0183-hos-2270-owner-promotions-entity.js';
 import { assertRequiredColumns } from '../../src/data-migrations/columnDependencyGuard.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
@@ -127,7 +127,7 @@ async function read(tx: DrizzleClient, id: string) {
     };
 }
 
-describe('HOS-2270: 0182-hos-2270-owner-promotions-entity (integration)', () => {
+describe('HOS-2270: 0183-hos-2270-owner-promotions-entity (integration)', () => {
     beforeAll(() => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error('HOSPEDA_DATABASE_URL is not set');

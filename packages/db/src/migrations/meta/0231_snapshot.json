@@ -1,5 +1,5 @@
 {
-  "id": "ca1ded03-2fe4-487d-83fd-0a6924608043",
+  "id": "56ad69ed-a44c-4aff-8cd6-cf5620147eb8",
   "prevId": "b9c5e4af-5b96-466d-8c0a-4becfa04d68a",
   "version": "7",
   "dialect": "postgresql",
@@ -35492,8 +35492,7 @@
       "values": [
         "percentage",
         "fixed",
-        "free_night",
-        "special_offer"
+        "free_night"
       ]
     },
     "public.partner_content_review_state_enum": {
@@ -35807,6 +35806,7 @@
         "logs.viewAll",
         "errors.view",
         "analytics.view",
+        "analytics.sessionRecording.manage",
         "system.debugTools.access",
         "entities.bulk.import",
         "entities.bulk.export",

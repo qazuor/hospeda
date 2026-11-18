@@ -66,6 +66,7 @@ const VENUE_EVENTS_UPSELL_COPY = {
 
 /** One agenda entry, as the API returns it. */
 interface VenueEventRow {
+    readonly id: string;
     readonly title: string;
     readonly description: string | null;
     readonly recurrence: 'once' | 'weekly';
@@ -173,6 +174,7 @@ export function VenueEventsManager({
             if (result.ok) {
                 setEntries(
                     result.data.events.map((event) => ({
+                        id: event.id,
                         title: event.title,
                         description: event.description ?? '',
                         recurrence: event.recurrence,
@@ -252,6 +254,8 @@ export function VenueEventsManager({
                         (entry.recurrence !== 'once' || entry.date.length > 0)
                 )
                 .map((entry) => ({
+                    // Stored events send their id back so they keep it (HOS-2291).
+                    ...(entry.id ? { id: entry.id } : {}),
                     title: entry.title.trim(),
                     description: entry.description.trim() || null,
                     recurrence: entry.recurrence,

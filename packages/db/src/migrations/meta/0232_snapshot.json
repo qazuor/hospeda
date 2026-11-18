@@ -1,6 +1,6 @@
 {
-  "id": "ffdacb85-8fe1-46fa-b339-e6ccba79718f",
-  "prevId": "ca1ded03-2fe4-487d-83fd-0a6924608043",
+  "id": "cb95fa3a-2b37-4a4e-9dab-0d6c2d5648fb",
+  "prevId": "56ad69ed-a44c-4aff-8cd6-cf5620147eb8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -16419,20 +16419,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "entity_type": {
-          "name": "entity_type",
-          "type": "owner_promotion_entity_type_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'accommodation'"
-        },
-        "entity_id": {
-          "name": "entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
         "title": {
           "name": "title",
           "type": "text",
@@ -16550,27 +16536,6 @@
           "columns": [
             {
               "expression": "owner_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "ownerPromotions_entityType_entityId_idx": {
-          "name": "ownerPromotions_entityType_entityId_idx",
-          "columns": [
-            {
-              "expression": "entity_type",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -16777,12 +16742,7 @@
         }
       },
       "policies": {},
-      "checkConstraints": {
-        "owner_promotions_venue_requires_entity_check": {
-          "name": "owner_promotions_venue_requires_entity_check",
-          "value": "\"owner_promotions\".\"entity_type\" <> 'venue' OR \"owner_promotions\".\"entity_id\" IS NOT NULL"
-        }
-      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.partners": {
@@ -35536,14 +35496,6 @@
         "special_offer"
       ]
     },
-    "public.owner_promotion_entity_type_enum": {
-      "name": "owner_promotion_entity_type_enum",
-      "schema": "public",
-      "values": [
-        "accommodation",
-        "venue"
-      ]
-    },
     "public.partner_content_review_state_enum": {
       "name": "partner_content_review_state_enum",
       "schema": "public",
@@ -35855,6 +35807,7 @@
         "logs.viewAll",
         "errors.view",
         "analytics.view",
+        "analytics.sessionRecording.manage",
         "system.debugTools.access",
         "entities.bulk.import",
         "entities.bulk.export",

@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0183-hos-2270-venue-owner-promotion-permissions
+ * Data migration: 0184-hos-2270-venue-owner-promotion-permissions
  *
  * Gives the `VENUE_OWNER` role the six own-scoped owner-promotion permissions
  * that `HOST` already holds (HOS-2270). The baseline
@@ -18,7 +18,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0183-hos-2270-venue-owner-promotion-permissions',
+    name: '0184-hos-2270-venue-owner-promotion-permissions',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

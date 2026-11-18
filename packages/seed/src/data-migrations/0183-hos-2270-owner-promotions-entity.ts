@@ -1,13 +1,13 @@
 /**
  * @fileoverview
- * Data migration: 0182-hos-2270-owner-promotions-entity
+ * Data migration: 0183-hos-2270-owner-promotions-entity
  *
  * Release N (expand) of the owner-promotions target change (HOS-2270): copies
  * `owner_promotions.accommodation_id` into the new `entity_id` column.
  *
  * ## Why this migration exists
  *
- * Structural migration 0232 added `entity_type` (default `'accommodation'`) and
+ * Structural migration 0233 added `entity_type` (default `'accommodation'`) and
  * `entity_id`. The default types every existing row correctly, but `entity_id`
  * is born NULL, and NULL with `entity_type = 'accommodation'` means "all of the
  * owner's accommodations". Until this runs, an already-seeded environment holds
@@ -46,7 +46,7 @@ import { sql } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0182-hos-2270-owner-promotions-entity',
+    name: '0183-hos-2270-owner-promotions-entity',
     group: 'required',
     destructive: false,
     requiresColumns: [

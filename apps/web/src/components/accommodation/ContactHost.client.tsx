@@ -18,6 +18,7 @@ import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 import { trackEvent } from '@/lib/analytics/umami-client';
 import type { ApiErrorShape } from '@/lib/api-errors';
 import { translateApiError } from '@/lib/api-errors';
@@ -184,7 +185,10 @@ export function ContactHost({ accommodation, locale, initialMessage }: ContactHo
             path: `mi-cuenta/consultas/${existingConversationId}`
         });
         return (
-            <div className={styles.root}>
+            <div
+                className={styles.root}
+                {...UMAMI_BLOCK_PROPS}
+            >
                 <a
                     href={threadUrl}
                     className={styles.viewExistingLink}
@@ -470,7 +474,10 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
     const messageErrorId = 'contact-host-message-error';
 
     return (
-        <div className={styles.root}>
+        <div
+            className={styles.root}
+            {...UMAMI_BLOCK_PROPS}
+        >
             {/* --- Success state --- */}
             {submitState.phase === 'success' && (
                 <p

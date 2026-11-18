@@ -1,13 +1,13 @@
 /**
  * @fileoverview
- * Unit tests for `0183-hos-2270-venue-owner-promotion-permissions.ts` (HOS-2270).
+ * Unit tests for `0184-hos-2270-venue-owner-promotion-permissions.ts` (HOS-2270).
  *
  * Mocks only the insert chain: the migration is one `INSERT ... ON CONFLICT DO NOTHING`,
  * and what matters is WHICH rows it asks for and that it never overwrites.
  */
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import * as migration from '../../src/data-migrations/0183-hos-2270-venue-owner-promotion-permissions.js';
+import * as migration from '../../src/data-migrations/0184-hos-2270-venue-owner-promotion-permissions.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -32,10 +32,10 @@ const SIX = [
     PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN
 ];
 
-describe('0183-hos-2270-venue-owner-promotion-permissions', () => {
+describe('0184-hos-2270-venue-owner-promotion-permissions', () => {
     it('is required and additive', () => {
         expect(migration.meta).toEqual({
-            name: '0183-hos-2270-venue-owner-promotion-permissions',
+            name: '0184-hos-2270-venue-owner-promotion-permissions',
             group: 'required',
             destructive: false
         });

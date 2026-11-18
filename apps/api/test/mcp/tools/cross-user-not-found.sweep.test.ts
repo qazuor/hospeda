@@ -552,6 +552,8 @@ const ID_TOOL_CASES: readonly IdToolCase[] = [
  */
 const NO_RESOURCE_INPUT_TOOLS: Readonly<Record<string, string>> = {
     list_my_listings: 'lists what the token subject owns; takes no input',
+    get_owner_summary:
+        'summarizes what the token subject owns; its only input is the period, and every read is scoped to the caller (HOS-2331)',
     list_amenities_and_features: 'reads the public catalog; the vertical is its only input',
     get_help:
         "answers from the static help catalog; its topicId names a catalog entry, and the editor links it builds come only from the caller's own listings",
