@@ -187,7 +187,7 @@ test.describe('AC:6:7 client-side open-now badge @p0 @verticals', () => {
         expect(html).toContain(openName);
         expect(html).toContain(closedName);
         expect(html).not.toContain('Abierto ahora');
-        expect(html).not.toContain('Cerrado ahora');
+        expect(html).not.toContain('Cerrado');
         expect(html).not.toContain('venue-card__open-badge');
 
         // ── The browser computes both badges from the fixed clock ────────────
@@ -198,6 +198,6 @@ test.describe('AC:6:7 client-side open-now badge @p0 @verticals', () => {
         const closedCard = page.locator('article.venue-card', { hasText: closedName });
 
         await expect(openCard.getByText('Abierto ahora')).toBeVisible({ timeout: 15_000 });
-        await expect(closedCard.getByText('Cerrado ahora')).toBeVisible({ timeout: 15_000 });
+        await expect(closedCard.getByText('Cerrado')).toBeVisible({ timeout: 15_000 });
     });
 });

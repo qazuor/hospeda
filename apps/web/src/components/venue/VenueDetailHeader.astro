@@ -2,7 +2,8 @@
 /**
  * @file VenueDetailHeader.astro
  * @description Detail page header for a venue listing (SPEC-239 T-054).
- * Shows name, type badge, price-range badge, average rating, and a featured star.
+ * Shows name, type badge, price-range badge, open-now badge (HOS-2257, client
+ * island, inline variant in the badges row), average rating, and a featured star.
  * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
  *
  * Layout (HOS-84): a vertical stack — a back-button row on top, then a 2-column
@@ -29,6 +30,7 @@ import { StarIcon, LocationIcon } from '@repo/icons';
 import type { VenueDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { VenueOpenNowBadge } from '@/components/venue/VenueOpenNowBadge.client';
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 
 interface Props {
@@ -73,6 +75,15 @@ const isNew = venue.createdAt
                 <span class="venue-detail-header__type-badge wh-compact-badge">{typeLabel}</span>
                 {priceRangeLabel && (
                     <span class="venue-detail-header__price-badge wh-compact-badge">{priceRangeLabel}</span>
+                )}
+                {/* HOS-2257: open-now status, computed in the browser (edge-cached page). */}
+                {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
+                    <VenueOpenNowBadge
+                        client:idle
+                        locale={locale}
+                        openingHours={venue.openingHours}
+                        variant="inline"
+                    />
                 )}
                 {venue.isFeatured && (
                     <span class="featured-badge">
