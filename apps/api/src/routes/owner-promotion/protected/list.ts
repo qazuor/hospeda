@@ -8,7 +8,12 @@
  * By using `list()` with an explicit `where: { ownerId: actor.id }` clause, draft and
  * archived promotions are visible to the owner without ever touching the public code path.
  */
-import { LifecycleStatusEnum, OwnerPromotionProtectedSchema, PermissionEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    OwnerPromotionEntityTypeEnum,
+    OwnerPromotionProtectedSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -63,7 +68,11 @@ export const protectedListOwnOwnerPromotionsRoute = createProtectedListRoute({
 
         // Scope strictly to the authenticated actor's own promotions.
         // The ownerId is taken from the session — the client cannot influence it.
-        const where: Record<string, unknown> = { ownerId: actor.id };
+        // HOS-2270: and only accommodation promotions; a venue's are listed by the venue.
+        const where: Record<string, unknown> = {
+            ownerId: actor.id,
+            entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION
+        };
 
         // Optional lifecycle filter supplied by the owner (e.g. to see only DRAFTs).
         if (query?.lifecycleState) {

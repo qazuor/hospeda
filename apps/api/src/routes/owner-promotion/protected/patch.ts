@@ -17,6 +17,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { assertAccommodationPromotion } from './accommodation-door';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
@@ -50,6 +51,8 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
         if (existing.error) {
             throw new ServiceError(existing.error.code, existing.error.message);
         }
+        // HOS-2270: a venue promotion is not reachable through the accommodation door.
+        assertAccommodationPromotion(existing.data);
         await enforceUserGate({
             userId: actor.id,
             vertical: VerticalEnum.ACCOMMODATION,

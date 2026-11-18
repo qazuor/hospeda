@@ -4,6 +4,7 @@
  */
 import {
     LifecycleStatusEnum,
+    OwnerPromotionEntityTypeEnum,
     OwnerPromotionIdSchema,
     OwnerPromotionPublicSchema,
     ServiceErrorCode
@@ -54,11 +55,16 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
         // - lifecycleState !== ACTIVE  → DRAFT/ARCHIVED promos must not be probed by UUID.
         // - deletedAt != null          → soft-deleted promos must not remain fetchable
         //   even when their lifecycleState is still ACTIVE (SPEC-285 FIX 2).
+        // - entityType = venue         → HOS-2270: a venue promotion is published by the
+        //   venue's own route (HOS-2271), never by this accommodation endpoint.
         const row = result.data as
-            | { lifecycleState?: string; deletedAt?: unknown }
+            | { lifecycleState?: string; deletedAt?: unknown; entityType?: string }
             | null
             | undefined;
         if (!row || row.lifecycleState !== LifecycleStatusEnum.ACTIVE || row.deletedAt != null) {
+            return null;
+        }
+        if (row.entityType === OwnerPromotionEntityTypeEnum.VENUE) {
             return null;
         }
 

@@ -1705,6 +1705,12 @@ export function createDbMock() {
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all venue routes without a real DB.
         venueModel: new VenueMockModel(),
+        // HOS-2270: `OwnerPromotionService` (real in route tests that do not mock it)
+        // and `VenuePromotionService` construct a `VenueModel` to validate the target
+        // of a venue promotion; the CLASS has to be here or the route tree throws
+        // "not a constructor" while it loads.
+        VenueModel: GenericMockModel,
+        ownerPromotionModel: new GenericMockModel(),
         venues: VENUE_TABLE_COLUMNS,
         venueReviewModel: new GenericMockModel(),
         rVenueAmenityModel: new GenericMockModel(),
