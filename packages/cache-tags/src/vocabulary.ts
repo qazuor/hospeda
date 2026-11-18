@@ -119,6 +119,17 @@ export const CACHE_TAG_SITE_CONFIG = 'site-config';
 export const CACHE_TAG_HOST_TRADE_CATEGORIES = 'host-trade-categories';
 
 /**
+ * The partner type catalog (HOS-2336) served by the public partner-types
+ * endpoint and rendered at SSR on every partner page (the type name comes from
+ * the catalog row). Every admin write to a type purges it, so a rename also
+ * refreshes the partner pages that carry it.
+ *
+ * Not `partner-types`: that would start with the `partner` entity prefix, so it
+ * would be the per-entity tag of a partner whose key is `types`.
+ */
+export const CACHE_TAG_PARTNER_TYPES = 'catalog-partner-types';
+
+/**
  * The catch-all every cacheable response carries IN ADDITION to its own tags.
  *
  * It exists because Cloudflare's `purge_everything` has no scoped form, and

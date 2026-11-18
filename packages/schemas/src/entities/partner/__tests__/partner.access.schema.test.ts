@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { PartnerCarouselItemSchema, PartnerPublicSchema } from '../partner.access.schema.js';
 
 /**
@@ -13,7 +12,7 @@ const basePayload = {
     slug: 'acme-litoral',
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
-    type: PartnerTypeEnum.BUSINESS,
+    type: { slug: 'business', name: 'Comercio' },
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
     lifecycleState: 'ACTIVE'
@@ -107,5 +106,44 @@ describe('PartnerCarouselItemSchema — carousel presence by key (AC:V7:13)', ()
         });
         expect(PartnerCarouselItemSchema.safeParse(basePayload).success).toBe(false);
         expect(PartnerPublicSchema.safeParse(basePayload).success).toBe(true);
+    });
+});
+
+describe('PartnerPublicSchema — type from the catalog (HOS-2336 D5, R2)', () => {
+    it('carries the type as { slug, name }, not the legacy enum string', () => {
+        // Arrange
+        const payload = { ...basePayload, type: { slug: 'media', name: 'Medio' } };
+
+        // Act
+        const result = PartnerPublicSchema.safeParse(payload);
+
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.type).toEqual({ slug: 'media', name: 'Medio' });
+        }
+    });
+
+    it('rejects the legacy enum string shape', () => {
+        const result = PartnerPublicSchema.safeParse({ ...basePayload, type: 'business' });
+        expect(result.success).toBe(false);
+    });
+
+    it('accepts a null type for a partner the backfill has not reached', () => {
+        const result = PartnerPublicSchema.safeParse({ ...basePayload, type: null });
+        expect(result.success).toBe(true);
+    });
+
+    it('does not leak the type id or the admin ref', () => {
+        const result = PartnerPublicSchema.safeParse({
+            ...basePayload,
+            typeId: '00000000-0000-4000-a000-000000000009',
+            partnerType: { id: '00000000-0000-4000-a000-000000000009' }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data).not.toHaveProperty('typeId');
+            expect(result.data).not.toHaveProperty('partnerType');
+        }
     });
 });

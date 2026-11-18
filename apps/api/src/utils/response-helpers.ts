@@ -654,6 +654,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.ADDON_PURCHASES_FROZEN:
             // Provider trade catalog: deleting a group/category still in use (HOS-919)
             case ServiceErrorCode.CATEGORY_IN_USE:
+            // Partner type catalog: deactivating/deleting a type partners still use (HOS-2336)
+            case ServiceErrorCode.PARTNER_TYPE_IN_USE:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.DECLARATION_BLOCKED:
@@ -907,7 +909,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
                 [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409,
                 // Provider trade catalog: deleting a group/category still in use (HOS-919)
-                [ServiceErrorCode.CATEGORY_IN_USE]: 409
+                [ServiceErrorCode.CATEGORY_IN_USE]: 409,
+                // Partner type catalog: deactivating/deleting a type partners still use (HOS-2336)
+                [ServiceErrorCode.PARTNER_TYPE_IN_USE]: 409
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

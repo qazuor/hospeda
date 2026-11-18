@@ -67,6 +67,10 @@ export type HostTradeCategoryIdType = z.infer<typeof HostTradeCategoryIdSchema>;
 export const HostTradeCategoryGroupIdSchema = BaseIdSchema;
 export type HostTradeCategoryGroupIdType = z.infer<typeof HostTradeCategoryGroupIdSchema>;
 
+/** Id of a row in `partner_types`, the admin-managed partner type catalog (HOS-2336). */
+export const PartnerTypeIdSchema = BaseIdSchema;
+export type PartnerTypeIdType = z.infer<typeof PartnerTypeIdSchema>;
+
 /**
  * Id of a row in `partners` — the alliance/sponsor directory.
  *

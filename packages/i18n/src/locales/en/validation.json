@@ -3834,6 +3834,23 @@
             }
         }
     },
+    "partnerType": {
+        "slug": {
+            "required": "The slug is required",
+            "min": "The slug must be at least {{min}} characters",
+            "max": "The slug cannot exceed {{max}} characters",
+            "pattern": "The slug only allows lowercase letters, numbers and hyphens"
+        },
+        "nameI18n": {
+            "esRequired": "The Spanish name is required"
+        },
+        "displayWeight": {
+            "required": "The order is required",
+            "int": "The order must be a whole number",
+            "min": "The order must be at least {{min}}",
+            "max": "The order cannot exceed {{max}}"
+        }
+    },
     "poiCategory": {
         "displayWeight": {
             "int": "El peso de visualización debe ser un número entero",

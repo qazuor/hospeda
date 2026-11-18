@@ -90,6 +90,7 @@
         "BAD_REQUEST": "That request isn't valid.",
         "CONFLICT": "The resource conflicts with the current state.",
         "CATEGORY_IN_USE": "This category is used by providers. Deactivate it instead of deleting it.",
+        "PARTNER_TYPE_IN_USE": "This type is used by partners. Assign them another type before deactivating or deleting it.",
         "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again in a few minutes.",
         "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back.",
         "ACCOUNT_DELETED": "This account has been deleted and is no longer available.",

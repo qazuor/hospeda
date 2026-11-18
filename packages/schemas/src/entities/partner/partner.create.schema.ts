@@ -35,7 +35,8 @@ export const createPartnerSchema = partnerSchema
         ownerUserId: true,
         analytics: true, // Will default to {}
         presenceModerated: true,
-        claimSecretHash: true
+        claimSecretHash: true,
+        partnerType: true // Read-only hydration (HOS-2336)
     })
     .extend(PARTNER_SAFE_WRITE_URL_FIELDS);
 

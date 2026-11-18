@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-review-state.enum.js';
-import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import {
     PARTNER_OWNER_FORBIDDEN_FIELDS,
     PartnerOwnerUpdateSchema,
@@ -12,7 +11,13 @@ const smuggled: Record<string, unknown> = {
     id: '00000000-0000-4000-a000-000000000001',
     name: 'Renamed By Owner',
     slug: 'renamed-by-owner',
-    type: PartnerTypeEnum.NGO,
+    typeId: '00000000-0000-4000-a000-000000000009',
+    partnerType: {
+        id: '00000000-0000-4000-a000-000000000009',
+        slug: 'ngo',
+        nameI18n: { es: 'ONG', en: 'NGO', pt: 'ONG' },
+        lifecycleState: 'ACTIVE'
+    },
     lifecycleState: 'ACTIVE',
     presenceModerated: true,
     claimSecretHash: 'hashed-one-time-secret',
