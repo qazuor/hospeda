@@ -1629,6 +1629,13 @@ export interface PartnerDetailData {
      * reached yet.
      */
     readonly typeLabel: string | null;
+    /**
+     * The bare legacy enum value (`business` / `ngo` / `institution`) when the
+     * API still answers `type` as a string, i.e. an API older than HOS-2336
+     * during a web-first rollout. The page labels it through `partners.types.*`.
+     * `null` whenever {@link typeLabel} came from the catalog.
+     */
+    readonly legacyType: string | null;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;

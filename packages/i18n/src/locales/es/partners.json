@@ -1,4 +1,9 @@
 {
+    "types": {
+        "business": "Comercio",
+        "ngo": "ONG",
+        "institution": "Institución"
+    },
     "detail": {
         "metaTitle": "{name} — Aliado de Hospeda",
         "metaDescription": "Conocé a {name}, aliado de Hospeda en el Litoral entrerriano.",

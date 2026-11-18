@@ -109,3 +109,21 @@ describe('toPartnerDetailProps — catalog type label (HOS-2336 AC-5.1)', () => 
         expect(toPartnerDetailProps({ item, locale: 'en' }).typeLabel).toBe('ONG');
     });
 });
+
+describe('toPartnerDetailProps — tolerates an API older than HOS-2336', () => {
+    it('carries a bare enum string as legacyType, never as the label', () => {
+        // Arrange — the pre-HOS-2336 API answered `type: 'ngo'`.
+        const item = { ...apiPayload, type: 'ngo' };
+
+        // Act
+        const props = toPartnerDetailProps({ item, locale: 'es' });
+
+        // Assert
+        expect(props.typeLabel).toBeNull();
+        expect(props.legacyType).toBe('ngo');
+    });
+
+    it('leaves legacyType null when the catalog object is present', () => {
+        expect(toPartnerDetailProps({ item: apiPayload, locale: 'es' }).legacyType).toBeNull();
+    });
+});

@@ -22,9 +22,9 @@ describe('partner detail indexability', () => {
 });
 
 describe('partner detail type label (HOS-2336)', () => {
-    it('renders the catalog label in SSR, never the retired enum keys (AC-5.1)', () => {
-        expect(src).toContain('partner.typeLabel');
-        expect(src).not.toContain('partners.types.');
+    it('renders the catalog label in SSR, the legacy keys only as a fallback (AC-5.1)', () => {
+        expect(src).toContain('partner.typeLabel ??');
+        expect(src).toMatch(/partners\.types\.\$\{partner\.legacyType\}/);
     });
 
     it('carries the partner type catalog cache tag so a rename reaches the page (R5)', () => {

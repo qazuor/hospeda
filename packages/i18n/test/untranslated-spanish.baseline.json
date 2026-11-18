@@ -3900,6 +3900,7 @@
         "newsletter.json:confirmYourEmail.spamNote",
         "newsletter.json:confirmYourEmail.title",
         "partners.json:detail.socialHeading",
+        "partners.json:types.ngo",
         "pricing.json:consultPrice",
         "pricing.json:limitLine",
         "pricing.json:owner.cta.description_one",

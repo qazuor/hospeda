@@ -1971,7 +1971,15 @@ export interface MyPartner {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /** Catalog type id (HOS-2336). `null` until the release-N backfill reaches the row. */
+    readonly typeId?: string | null;
+    /** The hydrated catalog type row (HOS-2336), as `PartnerTypeRefSchema` serializes it. */
+    readonly partnerType?: {
+        readonly id: string;
+        readonly slug: string;
+        readonly nameI18n: Readonly<Record<string, string | undefined>>;
+        readonly lifecycleState: string;
+    } | null;
     readonly logoUrl: string | null;
     readonly description: string | null;
     readonly websiteUrl: string | null;

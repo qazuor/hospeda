@@ -51,12 +51,14 @@ describe('the partner directory is gone (AC-8)', () => {
         const parsed = JSON.parse(raw) as Record<string, unknown>;
 
         // Assert — `tiers` is gone because the former commercial category is
-        // not shown publicly. `types` is gone too since HOS-2336: the detail
-        // page renders the type's own catalog name, not a closed enum label.
+        // not shown publicly. `types` survives only through the HOS-2336
+        // rollout: the page renders the catalog name, and falls back to these
+        // labels while an older API still answers `type` as a bare enum string.
+        // The N+1 contract release removes it.
         for (const section of DELETED_I18N_SECTIONS) {
             expect(parsed[section], `partners.${section} is back in ${locale}`).toBeUndefined();
         }
-        expect(parsed.types, `partners.types is back in ${locale}`).toBeUndefined();
+        expect(parsed.types, `partners.types was dropped from ${locale}`).toBeDefined();
     });
 });
 

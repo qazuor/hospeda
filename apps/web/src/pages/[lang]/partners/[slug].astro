@@ -95,7 +95,11 @@ applyCacheHeaders({
 
 // --- Presentation ---
 // The type label is catalog data resolved by the transform (HOS-2336 AC-5.1).
-const typeLabel = partner.typeLabel;
+// An API older than HOS-2336 still answers a bare enum string: label it with
+// the legacy keys so a web-first rollout never renders a raw value.
+const typeLabel =
+    partner.typeLabel ??
+    (partner.legacyType ? t(`partners.types.${partner.legacyType}`, partner.legacyType) : null);
 const metaTitle = t('partners.detail.metaTitle', `${partner.name} — Aliado de Hospeda`, {
     name: partner.name
 });
