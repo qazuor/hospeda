@@ -176,7 +176,14 @@ export const McpActivityItemSchema = z
             .strict(),
         target: McpActivityTargetSchema.optional(),
         /** The user the assistant acted for. `all` scope only. */
-        actorId: z.string().uuid().optional()
+        actorId: z.string().uuid().optional(),
+        /**
+         * Display name of that user, while the account is live. `all` scope
+         * only: staff-facing, as the admin users list shows it (HOS-2349).
+         */
+        actorName: z.string().min(1).optional(),
+        /** Email of that user, while the account is live. `all` scope only (HOS-2349). */
+        actorEmail: z.string().min(1).optional()
     })
     .strict();
 
@@ -246,3 +253,39 @@ export const PurgeMcpActivityInputSchema = z
 
 /** Validated {@link PurgeMcpActivityInputSchema}. */
 export type PurgeMcpActivityInput = z.infer<typeof PurgeMcpActivityInputSchema>;
+
+/** `sort` values the admin log accepts: `loggedAt`, either direction (HOS-2349). */
+export const McpActivityAdminSortSchema = z.enum(['loggedAt:desc', 'loggedAt:asc']);
+
+/** TypeScript type inferred from {@link McpActivityAdminSortSchema}. */
+export type McpActivityAdminSort = z.infer<typeof McpActivityAdminSortSchema>;
+
+/**
+ * Query of `GET /api/v1/admin/mcp-activity` (HOS-2349), minus `page` and
+ * `pageSize`, which the admin list factory adds. Every filter of the `all`
+ * scope, plus `sort` in the entity-list `field:direction` shape. The API
+ * narrows `tool` to the registered tool names, so a typo is a 400 (AC-C53).
+ */
+export const McpActivityAdminQuerySchema = z
+    .object({
+        /** The user the assistant acted for. */
+        userId: z.string().uuid().optional(),
+        /** Recorded tool name. */
+        tool: McpActivityToolNameSchema.optional(),
+        /** Result of the call. */
+        outcome: McpActivityOutcomeSchema.optional(),
+        /** Reads, writes, or (absent) both: the admin sees everything by default (D-12). */
+        access: McpActivityAccessSchema.optional(),
+        /** OAuth `client_id` of the assistant. */
+        clientId: AiConnectionClientIdSchema.optional(),
+        /** Calls logged on or after this instant. */
+        fromDate: z.coerce.date().optional(),
+        /** Calls logged on or before this instant; a bare date covers its whole day. */
+        toDate: McpActivityToDateSchema.optional(),
+        /** `loggedAt` order. Defaults to `loggedAt:desc`. */
+        sort: McpActivityAdminSortSchema.optional()
+    })
+    .strict();
+
+/** TypeScript type inferred from {@link McpActivityAdminQuerySchema}. */
+export type McpActivityAdminQuery = z.infer<typeof McpActivityAdminQuerySchema>;
