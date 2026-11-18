@@ -194,6 +194,8 @@ export type WatchGuardCode =
     | 'CHARGE_MISMATCH'
     | 'CHARGE_UNDECLARED'
     | 'MONEY_ROUTE_FORBIDDEN'
+    | 'OPERATION_NOT_ALLOWED'
+    | 'PATH_REJECTED'
     | 'READ_ENTRY_MUTATED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */

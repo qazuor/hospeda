@@ -41,6 +41,7 @@ import {
     assertBudgetMatches,
     assertProductionAuthorized
 } from './watch-guards';
+import { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
 
 /** What {@link runWatchBattery} needs. */
 export interface RunWatchBatteryInput {
@@ -107,6 +108,10 @@ function buildContext(args: {
     let chargedMinor = 0;
     return {
         send: async ({ label, request, chargeMinor }) => {
+            const { pathname } = normalizeRequestPath({
+                path: request.path,
+                origin: WATCH_INTERNAL_ORIGIN
+            });
             if (entry.effect === 'read' && request.method !== 'GET') {
                 throw new WatchGuardError({
                     code: 'READ_ENTRY_MUTATED',
@@ -115,7 +120,7 @@ function buildContext(args: {
             }
             if (
                 request.method !== 'GET' &&
-                isMoneyWrite({ request }) &&
+                isMoneyWrite({ request, pathname }) &&
                 entry.effect !== 'moves-money'
             ) {
                 throw new WatchGuardError({

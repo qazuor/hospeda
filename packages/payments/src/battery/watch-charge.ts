@@ -12,18 +12,23 @@
 import { WatchGuardError, type WatchRequest } from './types';
 
 /** Routes that can move money, with their subpaths. Only a `moves-money` measurement may send to them. */
-const MONEY_ROUTE = /^\/(?:v1\/payments|preapproval|v1\/orders)(?:\/|$)/;
+const MONEY_ROUTE =
+    /^\/(?:v1\/payments|v1\/advanced_payments|preapproval|v1\/orders|authorized_payments)(?:\/|$)/;
 
 /**
  * Whether a request is a write to a route that can move money.
  *
  * @param args.request - The request
- * @returns True for any non-GET to `/v1/payments`, `/preapproval` or `/v1/orders` and their subpaths
+ * @param args.pathname - The normalized pathname
+ * @returns True for any non-GET to a money route and its subpaths
  */
-export function isMoneyWrite(args: { readonly request: WatchRequest }): boolean {
+export function isMoneyWrite(args: {
+    readonly request: WatchRequest;
+    /** The NORMALIZED pathname (see `normalizeRequestPath`), never the raw path. */
+    readonly pathname: string;
+}): boolean {
     if (args.request.method === 'GET') return false;
-    const path = args.request.path.split('?')[0] ?? '';
-    return MONEY_ROUTE.test(path);
+    return MONEY_ROUTE.test(args.pathname);
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

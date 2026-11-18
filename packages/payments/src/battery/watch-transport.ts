@@ -5,6 +5,7 @@
  * @module battery/watch-transport
  */
 import type { WatchRequest, WatchResponse, WatchTransport } from './types';
+import { normalizeRequestPath } from './watch-path';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 
@@ -34,7 +35,13 @@ export function createWatchTransport(args: {
     const baseUrl = args.baseUrl.replace(/\/+$/, '');
     return async (request: WatchRequest): Promise<WatchResponse> => {
         const hasBody = request.body !== undefined;
-        const response = await fetchFn(`${baseUrl}${request.path}`, {
+        // The bearer token must never reach another host: the path is normalized against the
+        // provider origin here too, whatever the caller's guards did.
+        const { pathname, search } = normalizeRequestPath({
+            path: request.path,
+            origin: new URL(baseUrl).origin
+        });
+        const response = await fetchFn(`${baseUrl}${pathname}${search}`, {
             method: request.method,
             headers: {
                 ...(hasBody ? { 'content-type': 'application/json' } : {}),

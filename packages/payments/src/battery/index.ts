@@ -41,4 +41,5 @@ export {
     marketMonthOf,
     WATCH_TEST_ACCOUNT_TAG
 } from './watch-guards';
+export { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
 export { createWatchTransport } from './watch-transport';
