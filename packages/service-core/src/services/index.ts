@@ -399,6 +399,7 @@ export * from './hostTrade/host-trade-usage.service';
 export * from './listing';
 export type { ListingHookState } from './listing/listing.types';
 export * from './listing-traffic-stats';
+export * from './mcpActivity/index.js';
 export * from './media';
 export * from './moderation';
 export * from './newsletter';
