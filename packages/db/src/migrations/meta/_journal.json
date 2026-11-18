@@ -1618,6 +1618,13 @@
       "when": 1794978870610,
       "tag": "0230_hos1512_provider_watch",
       "breakpoints": true
+    },
+    {
+      "idx": 231,
+      "version": "7",
+      "when": 1794988302393,
+      "tag": "0231_hos2349_mcp_activity_permission",
+      "breakpoints": true
     }
   ]
 }
