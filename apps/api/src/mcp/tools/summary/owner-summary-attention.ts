@@ -18,9 +18,9 @@
  *   (where the fix-request banner lives);
  * - incomplete drafts and missing photos: `readDraftAttention`.
  *
- * Built against the service-core methods on staging. HOS-2332 (PR #4501) adds
- * `list_benefit_usages` over the same reads; this block uses the counts, not
- * the rows, so it needs nothing from it.
+ * The services are the shared instances of the provider and benefit-usage tools
+ * (`host-trade/host-trade-tool-services.ts`, HOS-2332). This block reads the
+ * counts that `list_benefit_usages` pages through, not the rows.
  */
 
 import { HostTradeUsageDeclaredByEnum, HostTradeUsageStatusEnum } from '@repo/schemas';
@@ -28,13 +28,13 @@ import type { Actor } from '@repo/service-core';
 import { env } from '../../../utils/env';
 import { buildPortalUrl } from '../../portal/build-portal-url';
 import type { PortalDestination } from '../../portal/portal-routes';
+import {
+    getHostTradeToolService,
+    getHostTradeUsageToolService
+} from '../host-trade/host-trade-tool-services';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';
 import type { ToolErrorPayload } from '../tool-definition';
 import { readOpenFixRequestListings } from './owner-summary-readers';
-import {
-    getSummaryHostTradeService,
-    getSummaryHostTradeUsageService
-} from './owner-summary-services';
 import type { AttentionItem, AttentionKind } from './owner-summary-types';
 
 /** Most attention items returned; the rest are counted in `more`. */
@@ -88,10 +88,10 @@ export async function readPendingUsageItems({
 }: {
     readonly actor: Actor;
 }): Promise<AttentionRead> {
-    const usages = getSummaryHostTradeUsageService();
+    const usages = getHostTradeUsageToolService();
     const [hostPending, own] = await Promise.all([
         usages.countPendingForHost(actor),
-        getSummaryHostTradeService().getOwn(actor)
+        getHostTradeToolService().getOwn(actor)
     ]);
     if (hostPending.error) {
         return { error: hostPending.error };
