@@ -42,7 +42,10 @@ function refuse(code: ConstructorParameters<typeof WatchGuardError>[0]['code'], 
 }
 
 /**
- * Checks one non-GET request and books its money on the run state.
+ * Checks one non-GET request and RESERVES its money on the run state: the amount is booked before
+ * the request leaves, so the cap holds across concurrent and in-flight writes. The caller then
+ * confirms the reservation (a 2xx: nothing to do, it stays booked), keeps it (an unknown outcome,
+ * which aborts the run) or gives it back with {@link releaseWrite} (a definitive 4xx: nothing moved).
  *
  * @param args.entryId - The measurement sending it
  * @param args.effect - What the measurement is marked as
@@ -176,4 +179,28 @@ export function guardWrite(args: {
     state.refundedById.set(target, refundedAfter);
     ledger.refunded += operation.statedMinor;
     return operation;
+}
+
+/**
+ * Gives back the reservation {@link guardWrite} made for a write the provider definitively
+ * refused (a 4xx): nothing moved, so the ledger and the per-object refund map must not keep it.
+ * Never call it for an unknown outcome (transport error, 5xx, a 2xx create without an id): there the
+ * money may have moved and the reservation stays.
+ *
+ * @param args.operation - The operation {@link guardWrite} returned
+ * @param args.state - The run's state
+ */
+export function releaseWrite(args: {
+    readonly operation: WatchOperation;
+    readonly state: WatchRunState;
+}): void {
+    const { operation, state } = args;
+    const minor = operation.statedMinor ?? 0;
+    if (operation.kind === 'charge') {
+        state.ledger.charged -= minor;
+    } else if (operation.kind === 'refund') {
+        const target = operation.targetId ?? '';
+        state.refundedById.set(target, (state.refundedById.get(target) ?? 0) - minor);
+        state.ledger.refunded -= minor;
+    }
 }
