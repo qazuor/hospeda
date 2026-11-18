@@ -216,11 +216,15 @@ describe('C-3: the writes are audited', () => {
         });
     });
 
-    it('does not audit the reads', async () => {
+    it('audits a read as a read, without a length or details (HOS-2335 D-12)', async () => {
         // Act
         await callThroughBinding(listBenefitUsagesTool, { side: 'host' });
 
         // Assert
-        expect(mocks.record).not.toHaveBeenCalled();
+        expect(mocks.record).toHaveBeenCalledTimes(1);
+        const row = mocks.record.mock.calls[0]?.[0];
+        expect(row).toMatchObject({ tool: 'list_benefit_usages', isWrite: false });
+        expect(row).not.toHaveProperty('contentLength');
+        expect(row).not.toHaveProperty('details');
     });
 });

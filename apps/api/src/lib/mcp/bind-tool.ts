@@ -19,8 +19,10 @@
  *    bypassed both this message and the audit;
  * 4. runs the tool with `executeTool` (person-state check, handler, Spanish
  *    error mapping);
- * 5. audits write tools with `recordMcpToolCall` (success, denied or error),
- *    malformed calls included (AC-12: every write call leaves a record);
+ * 5. audits every call that reached step 3, read or write, with
+ *    `recordMcpToolCall` (success, denied or error), malformed calls included
+ *    (AC-12; D-12 of HOS-2335 added reads and the `isWrite` flag). A
+ *    rate-limited call and a crash inside this binder leave no record (R-16);
  * 6. renders the outcome as an MCP result: text content on success,
  *    `isError: true` with the Spanish message on failure (and, when the
  *    refusal has a portal page, its URL on a last line of the text and in
@@ -45,7 +47,7 @@ import {
 import { buildMcpWwwAuthenticate } from '../../middlewares/mcp-auth';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
-import { getMcpCaller, type McpCallerSource } from './caller';
+import { getMcpCaller, type McpCaller, type McpCallerSource } from './caller';
 import { recordMcpToolCall } from './record-tool-call';
 import { consumeMcpToolCall } from './tool-rate-limit';
 
@@ -224,6 +226,72 @@ function readAuditField<T>(read: () => T | undefined): T | undefined {
     }
 }
 
+/** Arguments for {@link recordToolCall}. RO-RO. */
+interface RecordToolCallArgs<TSchema extends z.ZodObject, TData> extends McpCaller {
+    /** The tool. */
+    readonly definition: ToolDefinition<TSchema, TData>;
+    /** What `parseToolInput` answered. */
+    readonly parsed:
+        | { readonly ok: true; readonly input: z.output<TSchema> }
+        | { readonly ok: false };
+    /** How the call ended. */
+    readonly outcome: ToolRunOutcome<TData>;
+}
+
+/**
+ * Audits one call that reached `parseToolInput`, read or write (D-12,
+ * HOS-2348). A write carries its target (the created entity first), its
+ * content length and its details; a read carries its `auditTarget` only, so a
+ * read row never holds a length or a detail. `isWrite` is recorded so the
+ * history can tell the two apart.
+ *
+ * `recordMcpToolCall` is synchronous and fire-and-forget: the extra insert a
+ * read now costs never delays or fails the tool result.
+ *
+ * @param args - Definition, caller, parse result and run outcome
+ */
+function recordToolCall<TSchema extends z.ZodObject, TData>({
+    definition,
+    actor,
+    mcpAuth,
+    parsed,
+    outcome
+}: RecordToolCallArgs<TSchema, TData>): void {
+    const { isWrite } = definition;
+    // The audit readers are typed on VALIDATED input; on a malformed call
+    // there is none, so the record carries no target, length or details.
+    const resultTarget: ToolTarget | undefined =
+        isWrite && parsed.ok && outcome.ok
+            ? readAuditField(() =>
+                  definition.auditResultTarget?.({ input: parsed.input, data: outcome.data })
+              )
+            : undefined;
+    const target: ToolTarget | undefined =
+        resultTarget ??
+        (parsed.ok
+            ? readAuditField(() => definition.auditTarget?.({ input: parsed.input }))
+            : undefined);
+    const contentLength =
+        isWrite && parsed.ok
+            ? readAuditField(() => definition.auditContentLength?.({ input: parsed.input }))
+            : undefined;
+    const details =
+        isWrite && parsed.ok
+            ? readAuditField(() => definition.auditDetails?.({ input: parsed.input }))
+            : undefined;
+    recordMcpToolCall({
+        actor,
+        mcpAuth,
+        tool: definition.name,
+        isWrite,
+        outcome: outcome.ok ? 'success' : outcome.failure.kind,
+        ...(target ? { target } : {}),
+        ...(outcome.ok ? {} : { errorCode: String(outcome.failure.code) }),
+        ...(contentLength === undefined ? {} : { contentLength }),
+        ...(details ? { details } : {})
+    });
+}
+
 /** Arguments for {@link handleMcpToolCall}. RO-RO. */
 export interface HandleMcpToolCallArgs<TSchema extends z.ZodObject, TData> {
     /** The tool. */
@@ -266,40 +334,7 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
               })
             : parsed;
 
-        if (definition.isWrite) {
-            // The audit readers are typed on VALIDATED input; on a malformed
-            // call there is none, so the record carries no target or length.
-            const resultTarget: ToolTarget | undefined =
-                parsed.ok && outcome.ok
-                    ? readAuditField(() =>
-                          definition.auditResultTarget?.({
-                              input: parsed.input,
-                              data: outcome.data
-                          })
-                      )
-                    : undefined;
-            const target: ToolTarget | undefined =
-                resultTarget ??
-                (parsed.ok
-                    ? readAuditField(() => definition.auditTarget?.({ input: parsed.input }))
-                    : undefined);
-            const contentLength = parsed.ok
-                ? readAuditField(() => definition.auditContentLength?.({ input: parsed.input }))
-                : undefined;
-            const details = parsed.ok
-                ? readAuditField(() => definition.auditDetails?.({ input: parsed.input }))
-                : undefined;
-            recordMcpToolCall({
-                actor,
-                mcpAuth,
-                tool: definition.name,
-                outcome: outcome.ok ? 'success' : outcome.failure.kind,
-                ...(target ? { target } : {}),
-                ...(outcome.ok ? {} : { errorCode: String(outcome.failure.code) }),
-                ...(contentLength === undefined ? {} : { contentLength }),
-                ...(details ? { details } : {})
-            });
-        }
+        recordToolCall({ definition, actor, mcpAuth, parsed, outcome });
 
         return renderOutcome(outcome);
     } catch (error) {

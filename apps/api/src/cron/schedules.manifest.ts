@@ -322,6 +322,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Hard-delete AI chat questions and answers older than 12 months, then the chat conversations left empty (HOS-2101 owner retention decision).'
     },
     {
+        name: 'mcp-audit-retention',
+        displayName: 'Purga del historial de asistentes de IA',
+        category: 'system',
+        schedule: '20 4 * * *',
+        description:
+            'Hard-delete mcp.tool.call audit rows older than 12 months; every other audit and security row is untouched (HOS-2335 D-13 owner retention decision).'
+    },
+    {
         name: 'ai-questions-weekly-digest',
         displayName: 'Resumen semanal de preguntas sin responder',
         category: 'notifications',
