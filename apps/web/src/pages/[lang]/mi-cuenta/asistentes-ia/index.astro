@@ -7,7 +7,8 @@
  * @rendering SSR
  *
  * The per-user list is fetched by the `AiAssistantsPanel` island in the
- * browser. The only server-side input is the MCP URL, which is the same for
+ * browser. A static link leads to the assistant history (`historial/`,
+ * HOS-2348). The only server-side input is the MCP URL, which is the same for
  * everyone (`null` while the feature is off).
  */
 
@@ -34,10 +35,26 @@ const description = t(
 	'Conectá asistentes de IA a tu cuenta de Hospeda y administrá los que ya conectaste.',
 );
 const mcpUrl = await getConfiguredMcpUrl();
+const historyUrl = buildUrl({ locale, path: 'mi-cuenta/asistentes-ia/historial' });
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="asistentes-ia">
 	<AccountPageHeader title={title} description={description} />
 
+	<a class="ai-assistants__history-link" href={historyUrl}>
+		{t('account.aiAssistants.activity.historyLink', 'Ver lo que hicieron tus asistentes')}
+	</a>
+
 	<AiAssistantsPanel client:load locale={locale} apiUrl={getApiUrl()} mcpUrl={mcpUrl} />
 </AccountLayout>
+
+<style>
+	.ai-assistants__history-link {
+		display: inline-block;
+		margin-bottom: var(--space-6, 24px);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--brand-primary);
+		text-decoration: underline;
+	}
+</style>
