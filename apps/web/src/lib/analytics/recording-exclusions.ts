@@ -6,8 +6,8 @@
  * maps to an existing directory under `src/pages/[lang]/`. So a renamed or
  * moved route fails CI instead of silently dropping out of the exclusion.
  *
- * `publicar-experiencia` and `publicar-restaurante` are not listed: both are
- * permanent redirects to `publicar/*` and never render.
+ * The two legacy per-vertical publish routes (`publicar-<vertical>`) are not
+ * listed: both are permanent redirects to `publicar/*` and never render.
  */
 
 /** Excluded route prefixes, relative to `/{lang}/`, without slashes. */
