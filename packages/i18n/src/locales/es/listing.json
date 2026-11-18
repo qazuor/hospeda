@@ -81,6 +81,31 @@
                 "seePlans": "Ver planes",
                 "error": "No pudimos cargar los escaneos del QR. Probá de nuevo más tarde.",
                 "empty": "Todavía no tuvo escaneos en este período."
+            },
+            "venueStats": {
+                "title": "Métricas de tu ficha",
+                "venue": "Local",
+                "loading": "Cargando métricas…",
+                "error": "No pudimos cargar las métricas. Probá de nuevo más tarde.",
+                "lockedPreTrial": "Las métricas avanzadas estarán disponibles cuando publiques tu ficha.",
+                "lockedWithPlan": "Desbloqueá el gráfico diario, los clics por canal, la tasa de clics y {{history}} de datos con {{plan}}.",
+                "lockedWithoutPlan": "Las métricas avanzadas incluyen el gráfico diario, clics por canal, tasa de clics y {{history}} de datos.",
+                "historyDays_one": "{{count}} día",
+                "historyDays_other": "{{count}} días",
+                "seePlans": "Ver planes",
+                "views": "visitas",
+                "clicks": "clics de contacto",
+                "clickRate": "tasa de clics",
+                "clickRateHelp": "De cada 100 visitas, cuántas tocaron algún contacto.",
+                "empty": "Todavía no hay visitas en este período.",
+                "channel": {
+                    "phone": "Teléfono",
+                    "map": "Mapa",
+                    "website": "Sitio web",
+                    "instagram": "Instagram",
+                    "tickets": "Entradas",
+                    "whatsapp": "WhatsApp"
+                }
             }
         },
         "editor": {

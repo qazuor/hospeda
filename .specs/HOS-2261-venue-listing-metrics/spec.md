@@ -104,6 +104,8 @@ Se crea `VenueStatsWindowSchema = z.enum(['7d','30d','90d'])` propio de esta rut
 - `customRateLimit` por usuario, 30/min, como `menuQrScans.ts`.
 - Respuesta `VenueStatsSchema` (en `@repo/schemas`):
 
+> Nota de implementación: el repositorio ya exporta `VenueStatsSchema` para los totales administrativos del catálogo de locales. El contrato nuevo se exporta como `VenueListingStatsSchema` desde el namespace `venue`, y su ventana como `VenueStatsWindowSchema`, para evitar colisión de nombres sin cambiar el contrato descrito abajo.
+
 ```
 {
   window: '7d'|'30d'|'90d',
@@ -133,9 +135,9 @@ Las rutas básicas (`/mine/views`, `/mine/views/daily-series`) **no cambian** y 
 - Cómo sabe el panel si mostrar datos o upsell:
   1. Pide `GET /venues/{id}/stats`. 200: muestra el panel.
   2. 403 `ENTITLEMENT_REQUIRED` con esa clave: estado `locked`. El upsell usa `resolveUnlockingPlanName({ plans, entitlementKey: 'view_advanced_stats', t })`, igual que `section-upsell-plan.ts`: nombra el primer plan **de local** que incluye la clave, leído del catálogo (regla HOS-1967: ningún mapa hardcodeado).
-  3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #9 ✱):** si el plan del dueño no incluye métricas, el dueño ve **un aviso de upgrade**, no una sección vacía ni nada. Si **ningún** plan de local incluye todavía la clave (estado de la Fase 1), `resolveUnlockingPlanName` devuelve `null`: el aviso se muestra igual, **sin nombrar un plan** (el texto exacto y si debe verse ya en la Fase 1 antes de HOS-2280 queda como OQ-5).
+  3. **Decidido (owner, 2026-11-18): nada hasta HOS-2280.** La página resuelve la visibilidad con `resolveUnlockingPlanName` usando el catálogo de planes de local. Si devuelve `null`, no monta el panel ni muestra un aviso, y no se solicita `/venues/{id}/stats`; el dueño sigue viendo sólo el widget básico actual. Si hay un plan que otorga la clave, el island puede consultar las métricas: una respuesta 200 muestra el panel y el 403 de entitlement muestra un aviso que nombra el plan devuelto por el catálogo. La página permanece session-blind; la entitlement del usuario se comprueba en el island mediante la API protegida.
 - El copy del upsell nombra lo que se desbloquea: gráfico diario, clics por canal, tasa de clics, 90 días.
-- Se usa `useListingPlanGate` como `VenueMenuQrWidget`, para distinguir "sin trial todavía" de "plan sin la clave".
+- El catálogo sólo decide si la función está disponible para venta. La respuesta protegida de stats decide en el island cliente si el usuario puede ver datos o recibe el aviso de upgrade.
 - Cliente: `listingAnalyticsApi.getVenueStats({ id, window })` en `apps/web/src/lib/api/endpoints-protected.ts` (objeto `listingAnalyticsApi`, línea 2480).
 
 ### 6.5 i18n
@@ -155,7 +157,7 @@ Ninguna de esta spec. La tabla, su migración, la retención de 120 días y el r
 - AC-5. Un dueño sin la clave recibe 403 `ENTITLEMENT_REQUIRED` en `/venues/{id}/stats`.
 - AC-6. Un local ajeno responde 404 con el mismo cuerpo que uno inexistente. Un id con formato inválido responde 400.
 - AC-7. El básico sigue viendo exactamente lo de hoy en `ListingViewsWidget`.
-- AC-8. Dado un dueño cuyo plan no incluye `view_advanced_stats`, el panel muestra un **aviso de upgrade** (nunca una sección vacía). Cuando algún plan de local incluye la clave, el aviso nombra ese plan, leído del catálogo. Con la clave asignada a ningún plan (estado de la Fase 1), el aviso no nombra plan (ver OQ-5).
+- AC-8. Si ningún plan de local incluye `view_advanced_stats`, el panel y el aviso de upgrade no se renderizan y no se solicita el endpoint de métricas; el dueño ve el widget básico actual. Cuando un plan de local incluye la clave, el usuario autorizado ve el panel y quien no tenga la entitlement ve un aviso que nombra el plan que otorga la clave, resuelto desde el catálogo.
 - AC-9. Un usuario con `view_advanced_stats` **sólo** en `VENUE` recibe 403 en `hostFavoritesBreakdown` y `hostMarketComparison` (alojamiento) y `AnalyticsSection` sigue en `locked`/básico para él.
 - AC-10. `EntityViewWindowSchema` sigue rechazando `90d` en las rutas básicas.
 - AC-11. Los números básicos de `/mine/views` y `/mine/views/daily-series` no cambian para ningún plan.
@@ -165,15 +167,18 @@ Ninguna de esta spec. La tabla, su migración, la retención de 120 días y el r
 ## 9. Plan de pruebas
 
 Unit
+
 - `packages/schemas/test/...`: `VenueStatsSchema`, `VenueStatsWindowSchema`.
 - `packages/service-core/test/services/entityView/entityView.venue-stats.test.ts`: composición, relleno, tasa de clics (AC-3, 4).
 - `apps/web/test/components/venue/VenueListingStatsPanel.test.tsx`: estados loading/ready/locked/error, upsell con plan, panel oculto sin plan que la incluya (AC-8), cambio de ventana.
 - `apps/web/test/components/venue/venue-stats-panel-mount.test.ts` (lectura de fuente): se monta sólo con `venueListings`.
 
 Integración (base real)
+
 - `packages/db/test/integration/entity-interaction-stats.model.integration.test.ts`: dedup por bucket de 30 min, agrupado por `kind`, ventana de 90 días con datos de hasta 120 días presentes.
 
 API
+
 - `apps/api/test/routes/venue/protected/stats.test.ts`: AC-1, 5, 6. Seguir en los tests de handler lo que dice `apps/api/CLAUDE.md` (bypass de SUPER_ADMIN, mock global de `@repo/db`, `CI=true`).
 - `apps/api/test/routes/commercial-gates.stats.test.ts`: ya cubre el gate de estadísticas; agregar AC-9 (cruce de verticales) y AC-10.
 
@@ -203,7 +208,7 @@ Guards: `check:guards`, `check-catalog-key-usage` (la clave ya está en el catá
   1. Nada hasta que haya un plan de local con la clave. Recomendada: no promete lo que no se vende.
   2. Un upsell genérico sin plan. Pro: anticipa la oferta. Contra: promete algo que HOS-2280 puede no asignar.
 - OQ-4. **Qué plan recibe la clave.** El reparto aprobado dice pro y premium. Lo decide HOS-2280, no esta spec; se registra para que el upsell pueda nombrar "Pro" y no "Premium".
-- OQ-5. **Aviso de upgrade en la Fase 1 (abierta, la abre la decisión #9).** Mientras ningún plan de local tenga `view_advanced_stats` (hasta HOS-2280), ¿el aviso se muestra ya, sin nombrar plan, o recién cuando exista un plan que la incluya? La spec aplica la decisión del owner («aviso, no sección vacía») pero no decide el texto ni el momento. Hay que resolverlo antes de implementar T-7.
+- OQ-5. **Decidido (owner, 2026-11-18): nada hasta HOS-2280.** Mientras ningún plan de local del catálogo incluya `view_advanced_stats`, se ocultan por completo el panel avanzado y su aviso de upgrade; el dueño ve sólo el widget básico actual y no se llama al endpoint de estadísticas. Cuando algún plan de local otorgue la clave, la visibilidad se resuelve desde el catálogo (`resolveUnlockingPlanName`/`hideUntilGranted`), sin mapa hardcodeado; si el usuario carece de la entitlement, el aviso nombra el plan devuelto por el catálogo. El estado de entitlement del usuario permanece en el island cliente, para mantener la página session-blind.
 
 ## 12. Etiquetas de smoke y Novedades
 

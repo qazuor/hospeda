@@ -48,6 +48,8 @@ import type {
     UserProtected,
     UserPublic,
     UserStatsResponse,
+    VenueListingStats,
+    VenueStatsWindow,
     VerticalEnum
 } from '@repo/schemas';
 import {
@@ -2686,6 +2688,25 @@ export const listingAnalyticsApi = {
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/venues/${venueId}/menu-qr/scans`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get advanced daily views and click metrics for one venue listing (HOS-2261).
+     *
+     * @param params - Venue id and requested rolling window.
+     * @returns The venue metrics response or the protected route error.
+     */
+    getVenueStats({
+        id,
+        window: windowParam
+    }: {
+        readonly id: string;
+        readonly window: VenueStatsWindow;
+    }): Promise<ApiResult<VenueListingStats>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/venues/${id}/stats`,
             params: { window: windowParam }
         });
     }

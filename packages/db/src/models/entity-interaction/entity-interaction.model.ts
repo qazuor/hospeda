@@ -47,6 +47,21 @@ export interface PurgeInteractionsOlderThanInput {
     readonly days: number;
 }
 
+/** Aggregated interaction counts for one kind and optional event. */
+export interface EntityInteractionClickStatsRow {
+    readonly kind: EntityInteractionKind;
+    readonly eventId: string | null;
+    readonly unique: number;
+    readonly total: number;
+}
+
+/** Click statistics for a single entity over a rolling window. */
+export interface EntityClickStatsForEntity {
+    readonly byKind: readonly EntityInteractionClickStatsRow[];
+    /** Distinct 30-minute visitor buckets with at least one kind of click. */
+    readonly visitsWithClick: number;
+}
+
 /**
  * Standalone model for the `entity_interactions` telemetry table.
  *
@@ -56,6 +71,100 @@ export class EntityInteractionModel {
     /** Returns the provided tx if available, otherwise the global db client. */
     private getClient(tx?: DrizzleClient): DrizzleClient {
         return tx ?? getDb();
+    }
+
+    /**
+     * Counts clicks by kind/event and distinct visits with any click for one entity.
+     *
+     * @param input - Entity identity and rolling window in days.
+     * @param tx - Optional transaction client.
+     * @returns Per-kind aggregates and distinct 30-minute visits with a click.
+     * @throws {DbError} If either aggregation query fails.
+     */
+    async getClickStatsForEntity(
+        input: {
+            readonly entityType: TrackableInteractionEntityType;
+            readonly entityId: string;
+            readonly windowDays: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<EntityClickStatsForEntity> {
+        const db = this.getClient(tx);
+        const windowStart = new Date(Date.now() - input.windowDays * 24 * 60 * 60 * 1000);
+        const logContext = {
+            entityType: input.entityType,
+            entityId: input.entityId,
+            windowDays: input.windowDays
+        };
+
+        try {
+            const rows = await db.execute<
+                {
+                    kind: EntityInteractionKind;
+                    eventId: string | null;
+                    unique: string | number;
+                    total: string | number;
+                } & Record<string, unknown>
+            >(sql`
+                SELECT
+                    kind,
+                    event_id AS "eventId",
+                    COUNT(DISTINCT visitor_hash)::int AS "unique",
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM occurred_at) / 1800)
+                    ))::int AS total
+                FROM entity_interactions
+                WHERE entity_type = ${input.entityType}::entity_type_enum
+                  AND entity_id = ${input.entityId}::uuid
+                  -- Event impressions (HOS-2265) are not contact clicks.
+                  AND kind::text <> 'EVENT_IMPRESSION'
+                  AND occurred_at > ${windowStart}
+                GROUP BY kind, event_id
+            `);
+            const rawRows = rows.rows;
+            const byKind = rawRows.map((row) => ({
+                kind: row.kind,
+                eventId: row.eventId,
+                unique: Number(row.unique),
+                total: Number(row.total)
+            }));
+            const visitRows = await db.execute<
+                { visitsWithClick: string | number } & Record<string, unknown>
+            >(sql`
+                SELECT COUNT(DISTINCT (
+                    visitor_hash,
+                    FLOOR(EXTRACT(EPOCH FROM occurred_at) / 1800)
+                ))::int AS "visitsWithClick"
+                FROM entity_interactions
+                WHERE entity_type = ${input.entityType}::entity_type_enum
+                  AND entity_id = ${input.entityId}::uuid
+                  AND kind::text <> 'EVENT_IMPRESSION'
+                  AND occurred_at > ${windowStart}
+            `);
+            const rawVisitRows = visitRows.rows;
+            const visitsWithClick = Number(rawVisitRows[0]?.visitsWithClick ?? 0);
+
+            try {
+                logQuery('entityInteractions', 'getClickStatsForEntity', logContext, {
+                    rowCount: byKind.length,
+                    visitsWithClick
+                });
+            } catch {}
+
+            return { byKind, visitsWithClick };
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityInteractions', 'getClickStatsForEntity', logContext, err);
+            } catch {}
+            throw new DbError(
+                'entityInteractions',
+                'getClickStatsForEntity',
+                logContext,
+                err.message
+            );
+        }
     }
 
     /**

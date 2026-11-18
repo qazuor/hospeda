@@ -5227,6 +5227,11 @@
         },
         "kind": {
             "notForEntityType": "Este tipo de interacción no corresponde a la entidad"
+        },
+        "venueStats": {
+            "window": {
+                "invalid": "La ventana debe ser de 7, 30 o 90 días"
+            }
         }
     },
     "partnerStats": {

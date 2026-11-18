@@ -81,6 +81,31 @@
                 "seePlans": "See plans",
                 "error": "We couldn't load the QR scans. Please try again later.",
                 "empty": "No scans yet in this period."
+            },
+            "venueStats": {
+                "title": "Listing metrics",
+                "venue": "Venue",
+                "loading": "Loading metrics…",
+                "error": "We couldn't load the metrics. Please try again later.",
+                "lockedPreTrial": "Advanced metrics will be available when you publish your listing.",
+                "lockedWithPlan": "Unlock the daily chart, clicks by channel, click rate and {{history}} of data with {{plan}}.",
+                "lockedWithoutPlan": "Advanced metrics include a daily chart, clicks by channel, click rate and {{history}} of data.",
+                "historyDays_one": "{{count}} day",
+                "historyDays_other": "{{count}} days",
+                "seePlans": "See plans",
+                "views": "visits",
+                "clicks": "contact clicks",
+                "clickRate": "click rate",
+                "clickRateHelp": "Out of every 100 visits, how many tapped a contact option.",
+                "empty": "There are no visits in this period yet.",
+                "channel": {
+                    "phone": "Phone",
+                    "map": "Map",
+                    "website": "Website",
+                    "instagram": "Instagram",
+                    "tickets": "Tickets",
+                    "whatsapp": "WhatsApp"
+                }
             }
         },
         "editor": {

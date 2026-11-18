@@ -5227,6 +5227,11 @@
         },
         "kind": {
             "notForEntityType": "This interaction kind does not apply to the entity"
+        },
+        "venueStats": {
+            "window": {
+                "invalid": "The window must be 7, 30 or 90 days"
+            }
         }
     },
     "partnerStats": {
