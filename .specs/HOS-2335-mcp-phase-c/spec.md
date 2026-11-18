@@ -45,15 +45,15 @@ improvements. They share one design, so they ship under this spec:
 | HOS-2331 | Owner summary | read | listings now, subscription after HOS-2328 |
 | HOS-2332 | Provider search and benefit usages | read + write | now |
 | HOS-2333 | Client help ("how do I do X") | read | now |
-| HOS-2348 | Assistant history in the owner's account | read (web) | delta 2026-11-18, after D-12…D-14 |
-| HOS-2349 | Admin log of every assistant use | read (admin) | delta 2026-11-18, after D-12…D-16 |
-| HOS-2247 | Confirmation the model cannot answer (MCP elicitation) | cross-cutting (write tools) | delta 2026-11-18, after D-17, D-18 |
+| HOS-2348 | Assistant history in the owner's account | read (web) | now (decided D-12…D-14) |
+| HOS-2349 | Admin log of every assistant use | read (admin) | now (decided D-12…D-16) |
+| HOS-2247 | Confirmation the model cannot answer (MCP elicitation) | cross-cutting (write tools) | now; benefit tools with PR-7 (decided D-17, D-18) |
 
 The design is defined once in §5: portal links, the step pattern, aggregate
 reads, the help source, the Google Maps link resolver and (delta) the assistant
 activity read model. §6 has one section per child. The owner decided every open
-question of the first eight children on 2026-11-17 (§10). The three children
-added on 2026-11-18 carry open decisions (§10.1).
+question of the first eight children on 2026-11-17 (§10). The owner decided the
+open questions of the three children added on 2026-11-18 the same day (§10.1).
 
 **Blockers.** The HOS-1352 umbrella is NOT a blocker: `epic/HOS-1352-post-mvp`
 merged into `staging` on 2026-11-15 (PR #4353, merge `96756adfc4`). The only
@@ -518,8 +518,9 @@ experiences.
   it on the admin permission (`checkCanViewAuditLogType`), so no owner can use it.
 
 **Conclusion.** The data source is sufficient. Neither child needs a new table
-or new columns. The only schema change is the new permission value of §6.10
-(D-15), plus an optional expression index (D-16).
+or new columns. The only schema change is the new `MCP_ACTIVITY_VIEW`
+permission value of §6.10 (D-15), plus an expression index only if the staging
+query plan needs one (D-16).
 
 **Design.**
 
@@ -528,8 +529,8 @@ or new columns. The only schema change is the new permission value of §6.10
   `event_type = 'mcp.tool.call'`.
   - `scope` is `{ kind: 'own' }` or `{ kind: 'all' }`. It is injected by the
     route, never read from the request (the `logType` pattern of `list.ts`).
-  - `own` forces `actor_id = actor.id` and accepts no user filter.
-    `all` requires the §6.10 permission.
+  - `own` forces `actor_id` from the session actor and accepts no user filter.
+    `all` requires `MCP_ACTIVITY_VIEW` (§6.10). Decision D-14.
   - Returns rows already projected to an `McpActivityItem`: `id`, `loggedAt`,
     `tool`, `outcome`, `errorCode?`, `step?`, `confirmation?` (§5.7),
     `client: { id, name? }`, `target?: { type, id, label?, url? }`, and for
@@ -542,12 +543,25 @@ or new columns. The only schema change is the new permission value of §6.10
     no longer owns, or that is deleted, gets no label and no link. For
     conversations the label is a fixed "Consulta" plus the inbox link; the guest
     name and message are never resolved.
-- **Recording reads** depends on D-12. If reads are recorded, the binder records
-  every call (not only `isWrite`). Reads keep `auditTarget` only, with no
-  `details`. Rate-limited calls stay unrecorded (R-16).
-- **Retention** depends on D-13. Whatever the window, the purge is scoped to
-  `event_type LIKE 'mcp.%'`, so admin and security families keep today's
-  behaviour. It is a new cron in `schedules.manifest.ts`, named after its job.
+- **Recording reads (D-12).** The binder change:
+  - `handleMcpToolCall` drops the `if (definition.isWrite)` guard
+    (`bind-tool.ts:269`) and records every call that reaches `parseToolInput`,
+    read or write, in success, denied or error;
+  - the MCP entry gains `isWrite: boolean` (in `data`, set from
+    `definition.isWrite`), so both screens can tell reads from writes. Rows
+    written before this change have no `isWrite`; the reader treats a missing
+    value as `true`, because only writes were recorded then;
+  - reads keep `auditTarget` only, with no `details` and no `contentLength`;
+  - rate-limited calls and binder crashes stay unrecorded (R-16).
+- **Retention (D-13): 12 months, MCP rows only.**
+  - New cron `mcp-audit-retention` in `schedules.manifest.ts` (daily), job file
+    named after it, with the usual dry-run mode.
+  - It deletes rows with `event_type = 'mcp.tool.call'` and `logged_at` older
+    than 12 months, and nothing else. `mcp.connection.revoked` and every admin
+    and security row keep today's behaviour (no purge).
+  - The model gains a scoped delete, `purgeOlderThan({ before, eventType })`.
+    The existing unscoped `purgeOld` is not called by the job.
+  - The window is a constant (`MCP_AUDIT_RETENTION_MONTHS = 12`), not an env var.
 - **Action labels.** Tool names map to Spanish labels in i18n
   (`account.aiAssistants.activity.tools.<tool_name>`, es/en/pt). Outcome and
   step labels live there too.
@@ -575,26 +589,47 @@ read from its type declarations; context7 was unavailable in this session).**
   - **2025 era (push).** `ctx.elicitInput(...)` sends a server-to-client
     request. It is `@deprecated` and throws on a 2026-07-28 request. On our
     stateless legacy fallback (GET/DELETE answer 405) whether a push can reach
-    the client during the POST is unverified (U-10).
+    the client during the POST is unverified. D-18 does not build this path.
 - **Support detection.** 2026-07-28 requests carry the client's
   `clientCapabilities` in the per-request envelope (`ctx.mcpReq.envelope`).
   `elicitation: {}` counts as form support. On the 2025 era capabilities are
   declared once at `initialize` (`getClientCapabilities()`), which a stateless
-  per-request server does not keep, so a 2025 client is treated as unsupported
-  unless U-10 proves otherwise.
+  per-request server does not keep. By D-18, every 2025-era client is treated as
+  unsupported.
 - **`requestState` is attacker-controlled on retry.** The SDK says a server
   that lets it influence business logic must integrity-protect it, and does not
   do this for you.
-- Which commercial clients (Claude, ChatGPT, others) declare elicitation, and on
-  which era, is NOT documented here. It is measured in the staging smoke (U-9).
+- Which commercial clients declare elicitation, and on which era, is NOT
+  documented here. HOS-2247 requires measuring it first (M-1 below).
+
+**Measurement first (M-1, HOS-2247 comment).** Before PR-13 builds the flow,
+measure on staging which clients support form elicitation today: Claude.ai web,
+Claude desktop, Claude Code and ChatGPT.
+
+- Method: PR-13a logs, per `/mcp` request, the protocol era, the declared
+  `clientCapabilities.elicitation` (present, form, url) and the OAuth client id.
+  It logs no token and no content. One session per client is run on staging.
+- For each client, also record by hand whether the form reaches the human and
+  whether the model can see or answer it.
+- The result goes in a table in `apps/api/docs/mcp-server.md` and on HOS-2247.
+  It replaces U-9.
+- If no client supports the 2026-07-28 form elicitation, PR-13 still ships. Every
+  client then takes the fallback, and the docs say so.
 
 **Design.**
 
-- **Covered tools:** every tool that today confirms with a P1 token:
-  `reply_inquiry` and `create_listing` on staging, and `confirm_benefit_usage` /
-  `reject_benefit_usage` when PR-7 lands. A registry test makes the set
-  explicit: a tool that issues a confirmation token MUST declare
-  `confirmation: { elicitation: true }` and pass both paths' tests.
+- **Covered tools:** every MCP tool that writes with a confirmation token
+  (HOS-2247 comment, coordinator 2026-11-18):
+  - `reply_inquiry` and `create_listing` (on staging);
+  - `confirm_benefit_usage`, `reject_benefit_usage` and `undo_benefit_rejection`
+    (PR-7). §6.7 still describes `undo_benefit_rejection` as one step; U-13
+    aligns it with what PR-7 ships.
+  - A registry test makes the set explicit. A tool that issues a confirmation
+    token MUST declare `confirmation: { elicitation: true }` and pass the tests
+    of both paths.
+  - **Not covered:** edits without a token (D-2: `update_listing_basic`,
+    `update_listing_amenities`, `set_listing_publication`). They stay out of
+    HOS-2247. D-19 asks the owner about `set_listing_publication`.
 - **Flow on a capable client (2026-07-28, form elicitation declared):**
   1. The first call validates and dry-runs exactly as the P1 preview does.
      Instead of a token it returns `input_required` with one form elicitation:
@@ -613,10 +648,19 @@ read from its type declarations; context7 was unavailable in this session).**
      commit through the same code the token commit uses today. Anything else
      (declined, cancelled, `false`, missing, mismatched, reused, expired) ⇒
      nothing is written, and the record is burnt.
-- **Fallback.** A client without the capability (or on the 2025 era) gets the
-  current token flow, byte for byte. Its tests stay unchanged (regression guard).
-- **Policy on a capable client** is D-17: whether the token path stays open
-  there.
+- **Fallback.** A client without the capability, and every 2025-era client
+  (D-18: only the 2026-07-28 flow is built), gets the current token flow byte
+  for byte. Its tests stay unchanged (regression guard). The security limit
+  stays documented for those clients.
+- **Policy on a capable client (D-17: strict).**
+  - A capable client must confirm through the elicitation. The server never
+    issues it a token, and a `confirmationToken` it sends is refused with
+    nothing written.
+  - One constant map, `ELICITATION_STRICT` (tool name → boolean, all `true`),
+    holds the policy per tool. Setting
+    one to `false` lets a capable client also use the token path for that tool.
+    Changing it is a code change with its own PR, made when the smoke finds a
+    client that declares elicitation but does not render it.
 - **Audit (C-3).** `auditDetails` gains `confirmation: 'elicitation' | 'token'`
   and steps `preview | commit | declined`. A decline or cancel is recorded as
   `outcome: 'denied'` with `errorCode: 'USER_DECLINED' | 'USER_CANCELLED'`.
@@ -1179,7 +1223,7 @@ use, nothing more.
   `asistentes-ia/index.astro`. Vanilla CSS / CSS Modules, i18n for every string.
 - API: `GET /api/v1/protected/ai-connections/activity`, a `createProtectedRoute`
   next to `ai-connection/protected/list.ts`. Query: `page`, `pageSize` (≤ 20),
-  `clientId?`, `outcome?`, `includeReads?` (only if D-12 option 3), `fromDate?`,
+  `clientId?`, `outcome?`, `includeReads?` (default `false`, D-12), `fromDate?`,
   `toDate?`. Strict: an `actorId` or `userId` param is a 400. It calls the §5.6
   reader with `scope: { kind: 'own' }`.
 
@@ -1215,6 +1259,10 @@ with a retry. Loading ⇒ the account list skeleton.
 - AC-C50: An `auditDetails` value that is a string longer than 40 characters
   fails a registry test (keeps C-3 and NG-10 enforced, so no free text can reach
   the history).
+- AC-C50a (D-12): Given an owner with recorded read and write calls, when the
+  history loads with no toggle, then only write rows appear (rows with no
+  `isWrite` count as writes). With "mostrar también consultas" on
+  (`includeReads=true`), read rows appear too, in the same order.
 
 ### 6.10 HOS-2349 — admin log of every assistant use (delta 2026-11-18)
 
@@ -1230,40 +1278,67 @@ entity-list framework, TanStack Query, Tailwind). The new screen is
 
 **API.** `GET /api/v1/admin/mcp-activity`, a `createAdminListRoute`
 (`page` + `pageSize`, never `limit`; unknown params rejected), with
-`requiredPermissions: [<D-15 permission>]` and no role check (G6).
+`requiredPermissions: [PermissionEnum.MCP_ACTIVITY_VIEW]` and no role check (G6).
 
 - Filters: `userId`, `tool` (an enum of registered tool names, so a typo is a
-  400), `outcome` (`success | denied | error`), `clientId`, `fromDate`,
-  `toDate`. Sort: `loggedAt` desc (default) or asc.
+  400), `outcome` (`success | denied | error`), `access` (`read | write`,
+  default both: admin sees everything, D-12), `clientId`, `fromDate`, `toDate`.
+  Sort: `loggedAt` desc (default) or asc.
+- **Permission (D-15): new `PermissionEnum.MCP_ACTIVITY_VIEW = 'mcpActivity.view'`,
+  granted to SUPER_ADMIN only, not ADMIN.**
+  - Structural migration from `pnpm db:generate` (`ALTER TYPE` on the
+    `permission` Postgres enum).
+  - Seed dual-write: the SUPER_ADMIN grant in
+    `packages/seed/src/required/rolePermissions.seed.ts`, plus a numbered
+    data-migration from `pnpm db:seed:make` that inserts the same
+    `role_permission` row in live environments.
+  - The `PermissionEnum` frozen-count and naming guards in
+    `packages/schemas/test/enums/` are recounted, not just incremented.
 - It calls the §5.6 reader with `scope: { kind: 'all' }`. Rows add the user
   (id, display name, email: staff-facing, as the admin users list shows) and the
   raw `errorCode`.
 - Query plan: `event_type` + `logged_at` use the existing index; `actor_id` uses
-  its index; `tool`/`outcome`/`clientId` filter `data` (D-16).
+  its index; `tool`/`outcome`/`clientId`/`isWrite` filter the `data` jsonb
+  (D-16). An expression index in `migrations/extras/` is added only if the
+  staging `EXPLAIN` shows the jsonb filter scanning beyond the MCP rows of the
+  date range.
 
 **Acceptance criteria:**
 
-- AC-C51: Given a staff user without the D-15 permission, the route answers 403
-  before any read, and the admin route guard redirects. A test asserts the
-  route declares the permission and that no role enum is referenced (static).
+- AC-C51: Given a staff user without `MCP_ACTIVITY_VIEW` (an ADMIN, for
+  example), the route answers 403 before any read, and the admin route guard
+  redirects. A test asserts the route declares the permission and that no role
+  enum is referenced (static).
+- AC-C51a: After `db:migrate` + `db:seed:migrate` on a database seeded before
+  this change, SUPER_ADMIN holds `mcpActivity.view` and ADMIN does not. A fresh
+  `db:fresh` gives the same result (dual-write).
 - AC-C52: Filters by user, tool, outcome, client and date range combine, and the
   result `total` matches a direct count over the seeded rows.
 - AC-C53: An unregistered `tool` value or an unknown query param answers 400.
 - AC-C54: HOS-2348 and HOS-2349 call the same reader function (an import
   identity test), and the `own` scope cannot be widened by any input.
-- AC-C55 (only if D-12 option 2 or 3): Given one call of every registered tool
-  ending in success, in denied and in error, then each appears exactly once.
-- AC-C56 (retention, D-13): Given `mcp.tool.call` rows on both sides of the
-  window and admin-family rows older than it, when the purge job runs, then only
-  the old MCP rows are deleted. Dry-run reports the same count it would delete,
-  and a mutation of the scope predicate fails the test.
+- AC-C55 (binder, D-12): Given one call of every registered tool, read or write,
+  ending in success, in denied and in error, then each leaves exactly one row
+  with the right `tool`, `outcome` and `isWrite`. A read row carries no
+  `details` and no `contentLength`. A rate-limited call leaves none. The test
+  iterates `MCP_TOOL_DEFINITIONS`, so a new tool is covered without editing it.
+- AC-C56 (retention, D-13): Given `mcp.tool.call` rows older and newer than 12
+  months, plus `mcp.connection.revoked`, admin-family and security-family rows
+  older than 12 months, when `mcp-audit-retention` runs, then only the old
+  `mcp.tool.call` rows are deleted. Dry-run reports the count it would delete and
+  deletes nothing. A mutation of the `event_type` predicate fails the test.
+- AC-C56a: `mcp-audit-retention` is in `schedules.manifest.ts`, and its job file
+  is named after it.
 
 ### 6.11 HOS-2247 — confirmation the model cannot answer (delta 2026-11-18)
 
-**Scope.** §5.7 applied to `reply_inquiry`, `create_listing`, and (with PR-7)
-`confirm_benefit_usage` / `reject_benefit_usage`. Docs: the "Security limit"
-section of `apps/api/docs/mcp-server.md` is rewritten to state which path
-removes the limit and which does not.
+**Scope.** §5.7 applied to every token-confirmed write tool: `reply_inquiry`,
+`create_listing`, and (with PR-7) `confirm_benefit_usage`,
+`reject_benefit_usage` and `undo_benefit_rejection`. Edits without a token (D-2)
+stay out (D-19 is the one open question). It starts with measurement M-1.
+Docs: the "Security limit" section of `apps/api/docs/mcp-server.md` is
+rewritten. It names the clients measured to support elicitation and keeps the
+limit documented for the others.
 
 **Acceptance criteria:**
 
@@ -1281,11 +1356,19 @@ removes the limit and which does not.
   same refusal is returned in every case, and the stored record is burnt.
 - AC-C61: Given two retries racing with the same `requestState`, then exactly
   one write happens.
-- AC-C62: Given a client that does not declare elicitation, or a 2025-era
-  client (unless U-10 changes it), then the token flow runs exactly as today and
-  the existing `reply_inquiry` and `create_listing` tests pass unchanged.
-- AC-C63 (policy, D-17): the behaviour of a `confirmationToken` sent by a
-  capable client matches the decision, and a test asserts it per tool.
+- AC-C62 (D-18): Given a client that does not declare elicitation, or any
+  2025-era client, then the token flow runs exactly as today, and the existing
+  `reply_inquiry` and `create_listing` tests pass unchanged. No 2025 push path
+  (`elicitInput`) exists in the code; a static test asserts it.
+- AC-C63 (D-17, strict): Given a capable client, then no call returns a
+  `confirmationToken`, and a call that carries one is refused with nothing
+  written. With a tool's `ELICITATION_STRICT` entry set to `false` in a test,
+  the same client may also complete the token path for that tool, and only that
+  tool. Asserted per covered tool.
+- AC-C63a (M-1): before PR-13 merges, `apps/api/docs/mcp-server.md` holds the
+  measured table for Claude.ai web, Claude desktop, Claude Code and ChatGPT:
+  era, declared elicitation, form shown to the human (yes or no), and model able
+  to answer (yes or no).
 - AC-C64: For `create_listing`, the elicitation message shows the resolved
   point and the commit writes exactly the stashed point, as AC-C23b requires of
   the token path.
@@ -1299,15 +1382,18 @@ removes the limit and which does not.
   stores the resolved point. Help is a typed catalog in code (D-3).
 - **Delta 2026-11-18 (HOS-2348, HOS-2349, HOS-2247):**
   - no new table and no new column: both logs read `audit_log_entries` (§5.6);
-  - one structural migration only if D-15 picks a new `PermissionEnum` value:
-    `permission` is a Postgres enum (`PermissionPgEnum`,
+  - one structural migration for `MCP_ACTIVITY_VIEW` (D-15): `permission` is a
+    Postgres enum (`PermissionPgEnum`,
     `packages/db/src/schemas/enums.dbschema.ts:182`), so `pnpm db:generate`
-    emits the `ALTER TYPE`. The role grant follows the seed dual-write rule:
-    `packages/seed/src/required/rolePermissions.seed.ts` (baseline) plus a
+    emits the `ALTER TYPE`. The SUPER_ADMIN grant follows the seed dual-write
+    rule: `packages/seed/src/required/rolePermissions.seed.ts` (baseline) plus a
     numbered data-migration (precedent `0171-hos2075-ai-conversation-permission.ts`).
     The `PermissionEnum` frozen-count guards are recounted;
-  - an optional expression index on `data->>'tool'` (D-16), hand-written in
-    `packages/db/src/migrations/extras/`;
+  - the MCP audit entry gains `isWrite` inside `data` (no column, D-12);
+  - an expression index on `data->>'tool'`, hand-written in
+    `packages/db/src/migrations/extras/`, ONLY if the staging query plan needs
+    it (D-16);
+  - a new cron, `mcp-audit-retention`, with a 12-month constant (D-13);
   - elicitation state reuses the §5.2 Redis store under its own prefix. No new
     env var and no signing secret.
 - **Contract changes (additive):**
@@ -1345,15 +1431,18 @@ Each child closes with its own PR (`Closes HOS-23xx`); the last also carries `Cl
 
 PR-6 may split the resolver into its own PR first (it is self-contained and carries the SSRF ACs).
 
-**Delta 2026-11-18 (proposed; starts only after the open decisions of §10.1):**
+**Delta 2026-11-18 (decisions D-12…D-18, owner, 2026-11-18):**
 
 | PR | Content | Depends on | When |
 |---|---|---|---|
-| PR-10 | §5.6 reader (`McpActivityService`), read-call recording if D-12 says so, MCP-scoped retention cron (D-13), D-16 index if chosen; no route yet (no magic word) | D-12, D-13, D-16 | now |
-| PR-11 | HOS-2348 protected route + web history island + i18n es/en/pt + `check-portal-routes` entry | PR-10, PR-1 | now |
-| PR-12 | HOS-2349 permission (enum migration + seed dual-write, D-15) + admin route + admin screen | PR-10, D-15 | now |
-| PR-13 | HOS-2247 §5.7 binder outcome + elicitation for `reply_inquiry` and `create_listing` + docs "Security limit" rewrite | PR-2, PR-6, D-17, D-18 | now |
-| PR-14 | Elicitation for `confirm_benefit_usage` / `reject_benefit_usage` (folded into PR-7 if PR-13 merges first; no magic word if HOS-2247 already closed) | PR-7, PR-13 | now |
+| PR-10 | Binder records every call with `isWrite` (D-12, AC-C55) + §5.6 reader (`McpActivityService`, scope `own`/`all`, D-14) + `mcp-audit-retention` cron and scoped `purgeOlderThan` (D-13, AC-C56); no route yet (no magic word) | — | now |
+| PR-11 | HOS-2348 protected route + web history island with the reads toggle + i18n es/en/pt + `check-portal-routes` entry | PR-10, PR-1 | now |
+| PR-12 | HOS-2349: `MCP_ACTIVITY_VIEW` enum migration + SUPER_ADMIN seed dual-write (D-15, AC-C51a) + admin route + admin screen; the extras index only if the staging `EXPLAIN` needs it (D-16) | PR-10 | now |
+| PR-13a | M-1 measurement: capability logging on `/mcp` (no token, no content); staging sessions with the four clients; results table (no magic word) | — | now |
+| PR-13 | HOS-2247 §5.7: binder `inputRequired` outcome, 2026-07-28 flow only (D-18), strict policy + `ELICITATION_STRICT` (D-17), for `reply_inquiry` and `create_listing`; docs "Security limit" rewrite | PR-2, PR-6, PR-13a | now |
+| PR-14 | Elicitation for `confirm_benefit_usage`, `reject_benefit_usage` and `undo_benefit_rejection`. Folded into PR-7 if PR-13 merges first; no magic word if HOS-2247 is already closed | PR-7, PR-13 | now |
+
+HOS-2247 closes on whichever of PR-13 and PR-14 merges last.
 
 The spec's last PR carries `Closes HOS-2335`. With this delta that is PR-9
 (after HOS-2066) unless every delta PR is still open then.
@@ -1374,10 +1463,12 @@ The spec's last PR carries `Closes HOS-2335`. With this delta that is PR-9
 - **R-12 Unknown client budget:** constants + smoke (U-1).
 - **R-13 The history leaks another user's rows:** scope injected by the route, `own` forces `actor_id`, user params refused (AC-C45, AC-C54); mutation-check the scope predicate.
 - **R-14 Content reaches a log:** C-3 stores lengths only; key allowlist on the owner response (AC-C46); registry test on `auditDetails` values (AC-C50).
-- **R-15 Audit volume if reads are recorded (D-12):** bounded by the per-client, per-user rate limit (`HOSPEDA_MCP_RATE_LIMIT_*`) and the MCP-scoped purge (D-13); the insert stays fire-and-forget, so a slow insert never slows a tool.
+- **R-15 Audit volume from recorded reads (D-12):** bounded by the per-client, per-user rate limit (`HOSPEDA_MCP_RATE_LIMIT_*`) and the MCP-scoped purge (D-13); the insert stays fire-and-forget, so a slow insert never slows a tool.
 - **R-16 "Every use" is not literally every use:** rate-limited calls, binder crashes and dropped fire-and-forget inserts leave no row (§5.6). The admin screen states it. Recording rate-limited calls is rejected on purpose: a looping client would turn the limiter into a write amplifier.
-- **R-17 Elicitation is only as strong as the client:** the guarantee holds only if the client shows the form to the human and never lets the model answer it. That is a client property we cannot test from the server; the smoke records per client what it does (U-9). The token path remains the floor.
-- **R-18 Downgrade by capability:** a manipulated model cannot change the client's declared capabilities, but a client that drops the capability falls back to tokens. D-17 decides whether a capable client may still use tokens.
+- **R-17 Elicitation is only as strong as the client:** the guarantee holds only if the client shows the form to the human and never lets the model answer it. That is a client property we cannot test from the server; M-1 records per client what it does (AC-C63a). The token path remains the floor.
+- **R-18 Downgrade by capability:** a manipulated model cannot change the client's declared capabilities, but a client that drops the capability falls back to tokens. D-17 (strict) closes the token path for capable clients; `ELICITATION_STRICT` reopens it per tool only by a code change.
+- **R-20 Strict policy blocks a user:** a client that declares elicitation and renders it badly leaves the user unable to confirm a covered write. M-1 is meant to find it before PR-13; the per-tool constant is the remedy.
+- **R-21 Unconfirmed edits stay model-driven:** the D-2 edits without a token, `set_listing_publication` included, are still confirmed only by the client's per-tool approval prompt (D-19).
 - **R-19 Stale target labels:** labels resolve at read time through owner-scoped readers; a lost or deleted target shows no name (AC-C47).
 
 ## 10. Owner decisions (2026-11-17)
@@ -1398,118 +1489,45 @@ The spec's last PR carries `Closes HOS-2335`. With this delta that is PR-9
 
 Correction recorded with these decisions: the HOS-1352 umbrella merged into `staging` on 2026-11-15 (PR #4353) and blocks nothing; HOS-2066 is the only gate (HOS-2328 and the summary's subscription block).
 
-### 10.1 Open decisions (delta 2026-11-18, HOS-2348 / HOS-2349 / HOS-2247)
+### 10.1 Owner decisions (delta, owner, 2026-11-18)
 
-Each lists options with pros, cons and impact, and a recommendation. Nothing in
-§5.6, §5.7 or §6.9-§6.11 that depends on them is built before the owner answers.
+The owner decided D-12…D-18 on 2026-11-18. Each went to the recommended option.
+The options considered are in this file's history (commit `f4d5a84c36`).
 
-**D-12 — Do read-only tool calls appear in the logs?**
+| # | Question | Decision (owner, 2026-11-18) | Where it lands |
+|---|---|---|---|
+| D-12 | Do read-only tool calls appear in the logs? | **Record reads and writes.** Admin sees everything. The owner history shows writes by default, with a "mostrar también consultas" toggle | §5.6, §6.9, §6.10, AC-C50a, AC-C55 |
+| D-13 | Retention of MCP audit rows | **12 months, `event_type = 'mcp.tool.call'` only**, through the new `mcp-audit-retention` cron. Other audit families are untouched | §5.6, AC-C56, AC-C56a |
+| D-14 | Do HOS-2348 and HOS-2349 share one backend read? | **One shared reader.** The route injects the scope: `own` (forced from the session) or `all` | §5.6, AC-C45, AC-C54 |
+| D-15 | Which permission gates HOS-2349? | **New `MCP_ACTIVITY_VIEW` (`'mcpActivity.view'`), SUPER_ADMIN only, not ADMIN.** Enum migration plus seed dual-write | §6.10, §7, AC-C51, AC-C51a |
+| D-16 | How are tool, outcome and client filtered? | **Over the `data` jsonb.** An extras expression index is added only if the staging query plan needs one | §6.10, §7 |
+| D-17 | Elicitation policy on a capable client | **Strict.** A client that supports elicitation must confirm through it. The per-tool `ELICITATION_STRICT` constant relaxes it | §5.7, AC-C63, R-20 |
+| D-18 | 2025-era clients | **Only the 2026-07-28 flow.** 2025-era clients keep the current token | §5.7, AC-C62 |
 
-1. *Writes only (today).* Pros: no change, smallest volume. Cons: HOS-2349's
-   "every use" is false; the owner never sees that an assistant read their
-   inquiries. Impact: none.
-2. *Record reads; admin sees them, the owner history shows writes only.* Pros:
-   admin log complete; owner view short. Cons: the owner cannot see what was
-   read. Impact: the binder records every call (one branch), volume grows (R-15).
-3. *Record reads; both see them; the owner history defaults to writes with a
-   "mostrar también consultas" toggle.* Pros: full transparency to the person
-   the data belongs to; admin complete. Cons: one more filter in the web UI.
-   Impact: as 2, plus `includeReads` on the protected route.
+**Still open.**
 
-**Recommendation: 3.** Reading guest inquiries on the owner's behalf is
-exactly what an owner would want to be able to check, and the cost over 2 is
-one filter.
+**D-19 — Does `set_listing_publication` join HOS-2247?** It is a D-2 edit with no
+token, so by default it stays out of HOS-2247. One reason to reconsider it: a
+publish makes a listing public and fires the trial activation event
+(`listing_published`), which starts the vertical's trial. A steered model can
+cause that, and the client's per-tool approval prompt is the only check (R-21).
+The amenity and basic-field edits are reversible and private, so they stay out
+without a question.
 
-**D-13 — Retention of MCP audit rows.** Today nothing is purged (§5.6).
+1. *Keep it out (today).* Pros: no change; publishing stays one call. Cons: a
+   steered model can publish and start a trial. Impact: none.
+2. *Add a confirmation to `publish` only (not to `pause`), with a token and an
+   elicitation like the other covered tools.* Pros: the one public, billing-relevant
+   transition gets a confirmation the model cannot answer. Cons: one more step
+   for every publish from the chat; it changes `set_listing_publication`'s
+   contract (phase A). Impact: the tool joins the PR-13 registry set and needs
+   its own preview.
+3. *Elicitation only, with no token fallback.* Pros: no new token flow. Cons:
+   unconfirmed on clients without elicitation, so it is inconsistent across
+   clients. Impact: a second policy shape.
 
-1. *Keep forever.* Pros: nothing to build. Cons: unbounded growth, worse with
-   D-12; personal activity kept with no limit. Impact: none.
-2. *90 days* (`purgeOld`'s default). Pros: small table. Cons: an owner asking
-   "what did it do last semester" gets nothing; short for support disputes.
-3. *12 months*, the window the owner chose for AI chat data (HOS-2101,
-   `ai-listing-questions-retention`). Pros: one AI retention rule across the
-   product; covers a season. Cons: larger table than 2.
-4. *Purge the whole `audit_log_entries` table on one window.* Pros: one job.
-   Cons: changes retention of admin and security audit, which is out of scope
-   and not asked. Impact: every family.
-
-Every option except 1 needs a scoped purge (`event_type LIKE 'mcp.%'`) and a
-cron. **Recommendation: 3**, scoped to MCP events only.
-
-**D-14 — Do HOS-2348 and HOS-2349 share one backend read?**
-
-1. *One reader, scope injected by the route (`own` | `all`).* Pros: one query,
-   one projection, one set of label resolvers; the leak risk lives in one
-   predicate that is mutation-tested. Cons: a bug in the shared projection
-   reaches both screens. Impact: one service, two thin routes.
-2. *Owner route calls the existing `AuditLogEntryService.listEntries`.* Pros:
-   no new service. Cons: that service is gated on `AUDIT_LOG_VIEW` and returns
-   raw rows with `data`, so the owner path would bypass its gate and need its
-   own projection anyway. Impact: weakens SPEC-162's gate.
-3. *Two independent readers.* Pros: isolation. Cons: two copies of the same
-   query and label logic, which C-6 forbids. Impact: duplicate code.
-
-**Recommendation: 1.** Same pattern as the `logType` split in
-`routes/audit-logs/list.ts`.
-
-**D-15 — Which permission gates HOS-2349?**
-
-1. *Reuse `AUDIT_LOG_VIEW`.* Pros: no migration. Cons: SUPER_ADMIN only
-   (`rolePermissions.seed.ts:666`), and it grants the whole admin audit log;
-   support staff cannot get one without the other. Impact: none.
-2. *New `MCP_ACTIVITY_VIEW` (`'mcpActivity.view'`), seeded to SUPER_ADMIN;
-   wider grants are a role edit later.* Pros: least privilege; granted
-   independently. Cons: a Postgres enum migration and a seed dual-write
-   data-migration; frozen permission counts recounted. Impact: PR-12 carries
-   DB and seed work.
-
-**Recommendation: 2.** Whether ADMIN also gets it at seed time is a sub-question
-for the owner; the default here is SUPER_ADMIN only.
-
-**D-16 — How are tool, outcome and client filtered?**
-
-1. *Filter on `data->>'tool'` / `'outcome'` / `'clientId'`, plus an expression
-   index on `(data->>'tool')` in the extras carril.* Pros: no structural
-   migration; no MCP-only columns in a generic table. Cons: jsonb predicates in
-   the model (typed through `sql` helpers); an extras index is Drizzle-invisible.
-2. *New nullable columns `tool`, `outcome`, `client_id` on `audit_log_entries`.*
-   Pros: typed, plainly indexed. Cons: a structural migration; columns that are
-   null for every non-MCP row; old rows need a backfill (expand/contract).
-3. *A dedicated `mcp_tool_call` table.* Pros: clean shape. Cons: a second write
-   path and a second retention story; the SPEC-162 viewer stops seeing MCP rows.
-
-**Recommendation: 1.** The existing `(event_type, logged_at)` index narrows to
-MCP rows first; the expression index is added only if the staging query plan
-needs it.
-
-**D-17 — Elicitation policy on a client that supports it (per tool).**
-
-1. *Strict: a capable client gets only elicitation; a `confirmationToken` from
-   it is refused and no token is ever issued to it.* Pros: the security limit is
-   actually removed for those clients; no path for a steered model. Cons: if a
-   client declares the capability but renders it badly, the user cannot confirm
-   until it is fixed. Impact: one branch per covered tool.
-2. *Lenient: both paths open.* Pros: never blocks a user. Cons: a steered model
-   keeps the token path, so the limit is not removed. Impact: smallest.
-3. *Per tool: strict for `reply_inquiry` (writes to a third party) and the
-   benefit transitions; lenient for `create_listing` (only creates a private
-   draft).* Pros: strictness where harm reaches someone else. Cons: two
-   behaviours to explain and test.
-
-**Recommendation: 1**, with a kill switch constant per tool to drop to 2 if
-the smoke finds a client that declares elicitation and fails to render it.
-
-**D-18 — 2025-era clients.**
-
-1. *Only the 2026-07-28 multi-round-trip path; 2025 clients use tokens.* Pros:
-   fits the stateless endpoint; the push API is deprecated. Cons: a client that
-   only speaks 2025 and supports elicitation gets no benefit.
-2. *Also implement the 2025 push path (`elicitInput`).* Pros: wider coverage.
-   Cons: needs the POST stream to stay open for a server-to-client request
-   (unverified on our stateless fallback, U-10); deprecated API.
-
-**Recommendation: 1**, revisited only if the smoke (U-9) shows a main client
-that supports elicitation only on the 2025 era.
+**Recommendation: 2**, publish only. Pausing removes exposure and is safe to
+leave unconfirmed. Until the owner answers, HOS-2247 excludes the tool.
 
 ## 11. Not determined (implementer resolves from code or smoke)
 
@@ -1521,16 +1539,17 @@ that supports elicitation only on the 2025 era.
 - **U-6** Whether the one-address duplicate lookup is exposed as a read the preview can call (`packages/service-core/src/services/listing/listing-location-key.ts`); if not, skip the warning, publication stays the gate.
 - **U-7** Whether `VenueOwnerCreateInputSchema` and `ExperienceOwnerCreateInputCheckedSchema` accept `location` / `meetingPoint*` at create (and what the venue create's `listingSection` step requires for it); otherwise write it through the owner PATCH in the same commit.
 - **U-8** Whether showing `moderationReason` to owners is wanted — not asked; excluded until the owner says otherwise.
-- **U-9** Which clients (Claude, ChatGPT, others) declare form elicitation, on which protocol era, and whether they show the form to the human without the model in the loop. Not documented here; measured in the staging smoke and recorded per client.
-- **U-10** Whether a 2025-era push elicitation can reach the client through the SDK's stateless legacy fallback during one POST.
+- **U-9** Which clients declare form elicitation, on which era, and whether they show the form to the human with the model out of the loop. Now a planned measurement, M-1 (§5.7, PR-13a, AC-C63a), over Claude.ai web, Claude desktop, Claude Code and ChatGPT.
+- **U-10** ~~Whether a 2025-era push elicitation can reach the client through the stateless legacy fallback.~~ Moot: D-18 builds no 2025 push path.
 - **U-11** Whether the low-level `Server` (`lib/mcp/server.ts:66`) hands `inputResponses`, `requestState` and the per-request `clientCapabilities` to the `tools/call` handler, or only `McpServer` does.
-- **U-12** The HOS-2247 Linear comment (scope widening) was not readable from the session that drafted this delta; reconcile §5.7/§6.11 with it before PR-13.
+- **U-12** ~~Reconcile §5.7/§6.11 with the HOS-2247 Linear comment.~~ **Closed 2026-11-18.** The comment widens the scope to every MCP tool that writes with a confirmation token, starting with `create_listing`. It leaves the D-2 edits without a token to the spec, asks to measure client support first (Claude.ai web and desktop, Claude Code, ChatGPT), and keeps the token with a documented limit where elicitation is missing. §5.7 (covered tools, M-1, fallback), §6.11, AC-C63a and D-19 reflect it.
+- **U-13** §6.7 specifies `undo_benefit_rejection` as one step, with no token. The coordinator reports that PR-7 makes it token-confirmed. Align §6.7 with what PR-7 ships. If it ships with a token, the AC-C65 registry rule covers it under HOS-2247; if not, it falls under D-2 and stays out.
 
 ## 12. Implementation notes
 
 - **Smoke:** `status-needs-smoke-staging` — real Claude + ChatGPT, including pasting a real `maps.app.goo.gl` short link and a full URL. PR-9 reads billing: follow `docs/billing/smoke-checklist.md` (staging).
-- **Release:** no migrations, no seed data, no env vars (links reuse `HOSPEDA_SITE_URL`). Delta exception: PR-12 carries the permission enum migration and the role-grant data-migration if D-15 picks option 2 (`db:migrate` → `db:apply-extras` → `db:seed:migrate`), and PR-10 may carry an extras index (D-16).
-- **Smoke (delta):** HOS-2247 needs real clients on staging (U-9); HOS-2348/2349 need a real assistant session whose rows then appear in both screens.
+- **Release:** no migrations, no seed data, no env vars (links reuse `HOSPEDA_SITE_URL`). Delta exception: PR-12 carries the `MCP_ACTIVITY_VIEW` enum migration and the SUPER_ADMIN role-grant data-migration (`db:migrate` → `db:apply-extras` → `db:seed:migrate`), plus an extras index only if the staging plan needs it (D-16). PR-10 adds the `mcp-audit-retention` cron (no env var).
+- **Smoke (delta):** HOS-2247 needs the four clients of M-1 on staging; HOS-2348/2349 need a real assistant session whose rows then appear in both screens.
 - **Branching:** each PR cut from `staging`, targeting `staging`.
 - **HOS-2185 reuse:** tools stay plain `(actor, input, context)` functions; the confirmation store, portal links and Maps resolver import nothing from `lib/mcp/`.
 - **Consent copy (es/en/pt):** add "crear borradores de publicaciones", "ver todas las reseñas de tus publicaciones" and "confirmar o rechazar usos de beneficios".
