@@ -354,6 +354,9 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         }
     }
 
+    // Read BEFORE the run starts: an infrastructure error here must not burn the authorization.
+    const baseline =
+        outcome === 'completed' ? await input.readBaseline({ account: input.account }) : null;
     const preflightPassed = outcome === 'completed';
     const started = await input.startRun({
         account: input.account,
@@ -376,7 +379,6 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
     }
 
     if (outcome === 'completed') {
-        const baseline = await input.readBaseline({ account: input.account });
         for (const entry of entries) {
             const stopped = stopReason(input);
             if (stopped !== null) {

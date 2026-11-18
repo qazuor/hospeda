@@ -427,6 +427,9 @@ describe('the run is written as part of the run', () => {
                 }
             })
         ).rejects.toThrow('db down');
+        // Nothing started, so a production run could not have burnt the authorization.
+        expect(store.started).toEqual([]);
+        expect(store.finished).toEqual([]);
     });
 });
 
@@ -609,6 +612,26 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         await run({ account: 'production', catalog, transport, authorization: AUTHORIZED, store });
         expect(store.started).toHaveLength(1);
         expect(store.started[0]?.consume).toBe('2026-11');
+    });
+
+    it('does not burn the authorization when the baseline cannot be read', async () => {
+        const store = memoryRunStore();
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        await expect(
+            runWatchBattery({
+                account: 'production',
+                catalog,
+                transport,
+                authorization: AUTHORIZED,
+                clock,
+                ...store.ports,
+                readBaseline: async () => {
+                    throw new Error('db down');
+                }
+            })
+        ).rejects.toThrow('db down');
+        expect(store.consumedBy()).toBeUndefined();
+        expect(store.started).toEqual([]);
     });
 
     it('does not consume anything in a sandbox run', async () => {
