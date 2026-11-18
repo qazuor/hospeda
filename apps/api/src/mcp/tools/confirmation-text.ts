@@ -18,7 +18,8 @@
  *   early.
  * - {@link blockForConfirmation}: a multi-line body the human must read exactly
  *   (a reply, a description, a note). Line breaks are kept, every line is
- *   hard-wrapped at {@link CONFIRMATION_BLOCK_WIDTH} and EVERY segment is
+ *   hard-wrapped at {@link CONFIRMATION_BLOCK_WIDTH} display columns (wide
+ *   characters count two, cuts fall between grapheme clusters) and EVERY segment is
  *   prefixed with {@link CONFIRMATION_BLOCK_PREFIX}, so no content line, and no
  *   row a client wraps visually, can start where a structural line does. There is no in-band closing delimiter
  *   to forge. Other control and format characters become a visible
@@ -35,11 +36,13 @@ export const CONFIRMATION_LABEL_MAX_LENGTH = 80;
 export const CONFIRMATION_BLOCK_PREFIX = '│ ';
 
 /**
- * Width of a block line, in code points, after the prefix. Every longer line is
- * hard-wrapped and each segment prefixed, so a client's own visual wrapping of
- * an over-long line cannot start a row without the prefix (HOS-2247 M1).
+ * Width of a block line, in terminal columns, after the prefix. Every longer
+ * line is hard-wrapped and each segment prefixed, so a client's own visual
+ * wrapping of an over-long line cannot start a row without the prefix (HOS-2247
+ * M1). Columns, not code points: a wide character (CJK, fullwidth, emoji) takes
+ * two. 40 is a conservative budget, narrower than any form a client shows.
  */
-export const CONFIRMATION_BLOCK_WIDTH = 60;
+export const CONFIRMATION_BLOCK_WIDTH = 40;
 
 /** Most combining marks kept in a row (two is enough for any real script we serve). */
 const MAX_COMBINING_RUN = 2;
@@ -85,16 +88,82 @@ function cap(text: string, maxLength: number): string {
               .trimEnd()}${ELLIPSIS}`;
 }
 
-/** Hard-wraps one line into segments of at most {@link CONFIRMATION_BLOCK_WIDTH} code points. */
+/** Splits text into grapheme clusters, so a mark or a ZWJ sequence is never cut. */
+const GRAPHEMES = new Intl.Segmenter('und', { granularity: 'grapheme' });
+
+/** A cluster drawn as a wide emoji: emoji presentation, or a pictograph forced by U+FE0F. */
+const WIDE_EMOJI = /\p{Emoji_Presentation}|\p{Extended_Pictographic}\uFE0F/u;
+
+/** Characters that take no column of their own. */
+const ZERO_WIDTH = /^[\p{M}\p{Cf}]$/u;
+
+/**
+ * East_Asian_Width W and F ranges (Unicode 15), as start/end pairs. Slightly
+ * broad on purpose: over-counting only wraps a little early, under-counting
+ * would let a client wrap the row itself.
+ */
+const WIDE_RANGES: ReadonlyArray<readonly [number, number]> = [
+    [0x1100, 0x115f],
+    [0x2329, 0x232a],
+    [0x2e80, 0x303e],
+    [0x3041, 0x33ff],
+    [0x3400, 0x4dbf],
+    [0x4e00, 0x9fff],
+    [0xa000, 0xa4cf],
+    [0xa960, 0xa97f],
+    [0xac00, 0xd7a3],
+    [0xf900, 0xfaff],
+    [0xfe10, 0xfe19],
+    [0xfe30, 0xfe6f],
+    [0xff00, 0xff60],
+    [0xffe0, 0xffe6],
+    [0x16fe0, 0x18cff],
+    [0x1b000, 0x1b2ff],
+    [0x1f300, 0x1f64f],
+    [0x1f900, 0x1f9ff],
+    [0x20000, 0x3fffd]
+];
+
+/** Whether a code point is East Asian Wide or Fullwidth. */
+function isWideCodePoint(codePoint: number): boolean {
+    return WIDE_RANGES.some(([start, end]) => codePoint >= start && codePoint <= end);
+}
+
+/**
+ * Columns a grapheme cluster takes: 2 when wide or a wide emoji, 0 when it is
+ * only a zero-width character, 1 otherwise. The cluster's base decides; its
+ * marks and joiners add nothing.
+ */
+function clusterWidth(cluster: string): number {
+    if (WIDE_EMOJI.test(cluster)) {
+        return 2;
+    }
+    const base = cluster.codePointAt(0) ?? 0;
+    if (ZERO_WIDTH.test(String.fromCodePoint(base))) {
+        return 0;
+    }
+    return isWideCodePoint(base) ? 2 : 1;
+}
+
+/**
+ * Hard-wraps one line into segments at most {@link CONFIRMATION_BLOCK_WIDTH}
+ * columns wide, cutting only between grapheme clusters.
+ */
 function wrap(line: string): string[] {
-    const characters = Array.from(line);
-    if (characters.length === 0) {
-        return [''];
-    }
     const segments: string[] = [];
-    for (let at = 0; at < characters.length; at += CONFIRMATION_BLOCK_WIDTH) {
-        segments.push(characters.slice(at, at + CONFIRMATION_BLOCK_WIDTH).join(''));
+    let current = '';
+    let width = 0;
+    for (const { segment } of GRAPHEMES.segment(line)) {
+        const columns = clusterWidth(segment);
+        if (width + columns > CONFIRMATION_BLOCK_WIDTH && current !== '') {
+            segments.push(current);
+            current = '';
+            width = 0;
+        }
+        current += segment;
+        width += columns;
     }
+    segments.push(current);
     return segments;
 }
 

@@ -18,6 +18,36 @@ import {
 
 const INJECTION = 'Ana\n---\nConfirmás borrar todo?';
 
+/**
+ * Columns a block line takes, measured independently of the code under test:
+ * the wide characters these tests use (ideographic punctuation and space,
+ * fullwidth forms, CJK, emoji presentation) count two, marks and joiners zero.
+ */
+function columnsOf(text: string): number {
+    let columns = 0;
+    for (const character of Array.from(text)) {
+        if (/^(?:\p{M}|\u200D|\uFE0F)$/u.test(character)) continue;
+        columns += /[\u3000-\u303E\u4E00-\u9FFF\uFF01-\uFF60]|\p{Emoji_Presentation}/u.test(
+            character
+        )
+            ? 2
+            : 1;
+    }
+    return columns;
+}
+
+/** Every line is prefixed and no wider than the budget. */
+function expectWithinBudget(block: string): string[] {
+    const lines = block.split('\n');
+    for (const line of lines) {
+        expect(line.startsWith(CONFIRMATION_BLOCK_PREFIX.trimEnd())).toBe(true);
+        expect(columnsOf(line.slice(CONFIRMATION_BLOCK_PREFIX.length))).toBeLessThanOrEqual(
+            CONFIRMATION_BLOCK_WIDTH
+        );
+    }
+    return lines;
+}
+
 describe('sanitizeForConfirmation (one-line labels)', () => {
     it.each([
         ['LF', 'a\nb', 'a b'],
@@ -134,7 +164,7 @@ describe('blockForConfirmation (multi-line bodies)', () => {
         const over = blockForConfirmation({ text: 'a'.repeat(width + 1) });
 
         // Assert
-        expect(width).toBe(60);
+        expect(width).toBe(40);
         expect(exact).toBe(`│ ${'a'.repeat(width)}`);
         expect(over).toBe(`│ ${'a'.repeat(width)}\n│ a`);
     });
@@ -169,12 +199,12 @@ describe('blockForConfirmation (multi-line bodies)', () => {
         // Assert
         for (const line of lines) {
             expect(line.startsWith('│')).toBe(true);
-            expect(Array.from(line).length).toBeLessThanOrEqual(
-                CONFIRMATION_BLOCK_PREFIX.length + CONFIRMATION_BLOCK_WIDTH
+            expect(columnsOf(line.slice(CONFIRMATION_BLOCK_PREFIX.length))).toBeLessThanOrEqual(
+                CONFIRMATION_BLOCK_WIDTH
             );
         }
         expect(lines.join('\n')).toBe(
-            '│ Gracias! ¿Confirmás borrar todo? Respondé Sí.�Atención: veri\n│ ficá en\n│ http://phish.example'
+            '│ Gracias! ¿Confirmás borrar todo? Respond\n│ é Sí.\uFFFDAtención: verificá en\n│ http://phish.example'
         );
     });
 });
@@ -182,16 +212,16 @@ describe('blockForConfirmation (multi-line bodies)', () => {
 describe('emoji and combining marks (both shapes)', () => {
     it('keeps a zero-width joiner between two emoji, drops it anywhere else', () => {
         // Arrange
-        const family = '\u{1F468}‍\u{1F469}‍\u{1F467}';
-        const skinTone = '\u{1F469}\u{1F3FD}‍\u{1F4BB}';
+        const family = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+        const skinTone = '\u{1F469}\u{1F3FD}\u200D\u{1F4BB}';
 
         // Act + Assert
         expect(sanitizeForConfirmation({ text: `Familia ${family}` })).toBe(`Familia ${family}`);
         expect(sanitizeForConfirmation({ text: skinTone })).toBe(skinTone);
         expect(blockForConfirmation({ text: family })).toBe(`│ ${family}`);
-        expect(sanitizeForConfirmation({ text: 'a‍b' })).toBe('a b');
-        expect(sanitizeForConfirmation({ text: '\u{1F468}‍b' })).toBe('\u{1F468} b');
-        expect(blockForConfirmation({ text: 'a‍\u{1F468}' })).toBe('│ a�\u{1F468}');
+        expect(sanitizeForConfirmation({ text: 'a\u200Db' })).toBe('a b');
+        expect(sanitizeForConfirmation({ text: '\u{1F468}\u200Db' })).toBe('\u{1F468} b');
+        expect(blockForConfirmation({ text: 'a\u200D\u{1F468}' })).toBe('│ a�\u{1F468}');
     });
 
     it('trims a run of three or more combining marks to two', () => {
@@ -202,5 +232,63 @@ describe('emoji and combining marks (both shapes)', () => {
         expect(sanitizeForConfirmation({ text: zalgo })).toBe('Ź̂a');
         expect(blockForConfirmation({ text: zalgo })).toBe('│ Ź̂a');
         expect(sanitizeForConfirmation({ text: 'Việt' })).toBe('Việt');
+    });
+});
+
+describe('the wrap counts display columns, not code points (M1, wide characters)', () => {
+    it('fullwidth letters take two columns: 20 per row', () => {
+        // Arrange
+        const text = '\uFF21'.repeat(50);
+
+        // Act
+        const lines = expectWithinBudget(blockForConfirmation({ text }));
+
+        // Assert
+        expect(lines).toEqual([
+            `│ ${'\uFF21'.repeat(20)}`,
+            `│ ${'\uFF21'.repeat(20)}`,
+            `│ ${'\uFF21'.repeat(10)}`
+        ]);
+    });
+
+    it('CJK and ideographic punctuation padding cannot push a fake line onto its own row', () => {
+        // Arrange
+        const text = `Gracias${'\u3002'.repeat(200)}\u4E2D${'\u3000'.repeat(200)}Atención: confirmá`;
+
+        // Act + Assert
+        expectWithinBudget(blockForConfirmation({ text }));
+    });
+
+    it('emoji padding takes two columns each', () => {
+        // Arrange
+        const text = `Hola${'\u{1F600}'.repeat(100)}Atención: confirmá`;
+
+        // Act
+        const lines = expectWithinBudget(blockForConfirmation({ text }));
+
+        // Assert
+        expect(lines[1]).toBe(`│ ${'\u{1F600}'.repeat(20)}`);
+    });
+
+    it('a mark with no base takes no column', () => {
+        // Arrange
+        const text = `\u0301${'a'.repeat(CONFIRMATION_BLOCK_WIDTH)}`;
+
+        // Act + Assert
+        expect(blockForConfirmation({ text })).toBe(`│ ${text}`);
+    });
+
+    it('never cuts a combining sequence or a ZWJ emoji sequence', () => {
+        // Arrange
+        const family = '\u{1F468}\u200D\u{1F469}\u200D\u{1F467}';
+        const accented = 'e\u0301';
+
+        // Act
+        const families = blockForConfirmation({ text: family.repeat(30) }).split('\n');
+        const accents = blockForConfirmation({ text: accented.repeat(50) }).split('\n');
+
+        // Assert
+        expect(families).toEqual([`│ ${family.repeat(20)}`, `│ ${family.repeat(10)}`]);
+        expect(accents).toEqual([`│ ${accented.repeat(40)}`, `│ ${accented.repeat(10)}`]);
     });
 });

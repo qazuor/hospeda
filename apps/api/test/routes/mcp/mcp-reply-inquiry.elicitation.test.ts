@@ -101,6 +101,7 @@ vi.mock('../../../src/middlewares/actor', async (importOriginal) => ({
 }));
 
 import { initApp } from '../../../src/app';
+import { blockForConfirmation } from '../../../src/mcp/tools/confirmation-text';
 import {
     ELICITATION_REASON_MESSAGES,
     ELICITATION_STATE_INVALID_REASON
@@ -304,7 +305,8 @@ describe('/mcp reply_inquiry confirmed out of band (2026-07-28, end to end)', ()
         expect(requests.confirm?.method).toBe('elicitation/create');
         const params = requests.confirm?.params ?? {};
         expect(params.mode).toBe('form');
-        expect(params.message).toContain(`\n│ ${TEXT}\n`);
+        expect(params.message).toContain(`\n${blockForConfirmation({ text: TEXT })}\n`);
+        expect(params.message).toContain('\n│ Hola Lucía, sí tenemos lugar. ¡Te espero\n│ !\n');
         expect(params.message).toContain('Cabañas del Río');
         expect(params.message).toContain('Lucía');
         expect(params.requestedSchema).toEqual({
