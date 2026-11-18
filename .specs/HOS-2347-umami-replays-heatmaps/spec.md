@@ -465,10 +465,10 @@ replay_config: {
 >   undeclared key" can only mean "never send one": the script sends only the
 >   seven declared keys.
 > - **Retention is not configurable, and nothing in Umami ever deletes replays**
->   (only a website reset or delete does). There is no 30-day default either. No
->   retention job was built; the privacy doc states indefinite retention, and the
->   mechanism is an open owner decision (§12). AC-S7 is satisfied by that
->   statement.
+>   (only a website reset or delete does). There is no 30-day default either. The
+>   spike found this; the owner then decided (2026-11-18, OQ-8) that Hospeda purges
+>   them itself: configurable 14, 30 or 60 days (default 30), a daily cron plus a
+>   manual action, saved replays included. See the privacy doc and AC-S7.
 
 ### 6.9 Admin card
 
@@ -716,10 +716,11 @@ means a `script#umami-recorder` exists with
 - **AC-S6** No env var for a write-capable Umami credential is added to
   `packages/config` or to any app env schema (`pnpm env:check:registry` green,
   plus a grep guard over the api).
-- **AC-S7** Given T-001 found a configurable recording retention, then it reads
-  14 days on staging and on prod, wherever it lives (declared by `umami:setup`,
-  or set on the Umami app). Given T-001 found none, then the privacy doc states
-  that Umami's default retention of 30 days applies.
+- **AC-S7** (rewritten by the retention decision, 2026-11-18, OQ-8) Umami 3.5 has no
+  retention setting, so the privacy doc states the retention Hospeda enforces itself:
+  configurable 14, 30 or 60 days (default 30), a daily purge that also runs while
+  recording is OFF, saved replays included, and a manual "clean up now" action. A test
+  (`apps/web/test/docs/session-replay-privacy-doc.test.ts`) pins those statements.
 
 ### 9.7 Permission and seed
 
