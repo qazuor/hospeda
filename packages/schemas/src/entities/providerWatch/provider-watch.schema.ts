@@ -23,6 +23,28 @@ export const ProviderWatchAccountSchema = z.object({
 /** The account the API's provider token belongs to. */
 export type ProviderWatchAccount = z.infer<typeof ProviderWatchAccountSchema>;
 
+/** One money-moving measurement of the catalog and the most it declares it can charge. */
+export const ProviderWatchMoneyMeasurementSchema = z.object({
+    id: z.string(),
+    maxChargeMinor: z.number().int().positive()
+});
+
+/**
+ * What the owner is about to authorize, computed by the API from the catalog: the EXACT amount (the
+ * sum of the money-moving measurements of this environment's account) and the measurements it comes
+ * from. The owner confirms it; he never types it.
+ */
+export const ProviderWatchAuthorizationPreviewSchema = z.object({
+    /** The exact amount, in ARS centavos; 0 when the account has no money-moving measurement. */
+    expectedMaxChargeMinor: z.number().int().nonnegative(),
+    measurements: z.array(ProviderWatchMoneyMeasurementSchema)
+});
+
+/** What the owner is about to authorize. */
+export type ProviderWatchAuthorizationPreview = z.infer<
+    typeof ProviderWatchAuthorizationPreviewSchema
+>;
+
 /**
  * Body of the authorization write. `confirmedAccountId` is the id the owner SAW in the admin;
  * the API reads the account again and refuses when it is not the same one, then stores the id it

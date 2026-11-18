@@ -8,6 +8,7 @@ import {
     PermissionEnum,
     ProviderWatchAcceptShapeInputSchema,
     ProviderWatchAccountSchema,
+    ProviderWatchAuthorizationPreviewSchema,
     ProviderWatchAuthorizeInputSchema,
     ProviderWatchShapeReviewSchema,
     ServiceErrorCode
@@ -20,6 +21,10 @@ import { createRouter } from '../../../utils/create-app.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { readProviderAccount } from '../../../utils/provider-watch/provider-watch-account.js';
+import {
+    checkAuthorizedAmount,
+    previewAuthorization
+} from '../../../utils/provider-watch/provider-watch-authorization.js';
 import {
     acceptShape,
     listShapeReviews
@@ -76,6 +81,22 @@ export const adminGetProviderWatchAccountRoute = createAdminRoute({
 });
 
 /**
+ * GET /api/v1/admin/provider-watch/authorization-preview: the EXACT amount one run needs (the sum of
+ * the money-moving measurements of this environment's account), for the owner to confirm.
+ */
+export const adminProviderWatchAuthorizationPreviewRoute = createAdminRoute({
+    method: 'get',
+    path: '/authorization-preview',
+    summary: 'Read the amount one provider watch run needs authorized',
+    description:
+        'Computes, from the catalog, the exact sum of the declared maximum charges of the money-moving measurements of the account this environment watches.',
+    tags: ['Provider watch'],
+    requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
+    responseSchema: ProviderWatchAuthorizationPreviewSchema,
+    handler: async () => previewAuthorization({ account: environmentAccount() })
+});
+
+/**
  * POST /api/v1/admin/provider-watch/authorization: authorizes ONE run of the month. The API reads
  * the account again and refuses unless it is the id the owner confirmed; it stores the id it read.
  */
@@ -101,7 +122,22 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
     ) => {
         const input = ProviderWatchAuthorizeInputSchema.parse(body);
         const actor = getActorFromContext(ctx);
-        const account = await readConfirmedAccount(environmentAccount());
+        const environment = environmentAccount();
+        // The amount is EXACT: the sum of the money-moving measurements, never typed. A production
+        // authorization with no money-moving measurement is refused outright.
+        const amount = checkAuthorizedAmount({
+            account: environment,
+            amountMinor: input.maxChargeMinor
+        });
+        if (!amount.ok) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                amount.refusal === 'NO_MONEY_MEASUREMENTS'
+                    ? 'The catalog has no money-moving measurement for this account: there is nothing to authorize'
+                    : `The authorized amount must be exactly ${amount.expectedMinor} (the sum of the money-moving measurements), not ${input.maxChargeMinor}`
+            );
+        }
+        const account = await readConfirmedAccount(environment);
         if (account.id !== input.confirmedAccountId) {
             // A state conflict (error contract): the account changed under the owner's confirmation.
             throw new ServiceError(
@@ -198,6 +234,7 @@ export const adminAcceptProviderWatchShapeRoute = createAdminRoute({
 
 const router = createRouter();
 router.route('/', adminGetProviderWatchAccountRoute);
+router.route('/', adminProviderWatchAuthorizationPreviewRoute);
 router.route('/', adminAuthorizeProviderWatchRoute);
 router.route('/', adminListProviderWatchShapesRoute);
 router.route('/', adminAcceptProviderWatchShapeRoute);

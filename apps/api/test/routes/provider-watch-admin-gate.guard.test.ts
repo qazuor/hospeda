@@ -14,6 +14,7 @@ const SOURCE = readFileSync(
 );
 const ROUTES = [
     'adminGetProviderWatchAccountRoute',
+    'adminProviderWatchAuthorizationPreviewRoute',
     'adminAuthorizeProviderWatchRoute',
     'adminListProviderWatchShapesRoute',
     'adminAcceptProviderWatchShapeRoute'
@@ -42,11 +43,24 @@ describe('provider watch admin routes are gated by BILLING_PROVIDER_WATCH_MANAGE
         expect(slice('adminAcceptProviderWatchShapeRoute')).not.toContain("path: '/account'");
     });
 
-    it('declares exactly the four routes, all mounted', () => {
+    it('declares exactly the five routes, all mounted', () => {
         const declared = [
             ...SOURCE.matchAll(/export const (admin\w+Route) = createAdminRoute\(/g)
         ].map((match) => match[1]);
         expect(declared).toEqual([...ROUTES]);
         for (const name of ROUTES) expect(SOURCE).toContain(`router.route('/', ${name});`);
+    });
+});
+
+describe('the authorize route refuses a wrong amount before it reads the provider account', () => {
+    it('checks the exact amount, then reads the account, then writes', () => {
+        const block = slice('adminAuthorizeProviderWatchRoute');
+        const check = block.indexOf('checkAuthorizedAmount(');
+        const read = block.indexOf('readConfirmedAccount(');
+        const write = block.indexOf('setProviderWatchAuthorization(');
+        expect(check).toBeGreaterThan(-1);
+        expect(check).toBeLessThan(read);
+        expect(read).toBeLessThan(write);
+        expect(block).toContain('NO_MONEY_MEASUREMENTS');
     });
 });
