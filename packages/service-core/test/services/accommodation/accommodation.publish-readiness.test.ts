@@ -11,23 +11,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildAccommodationPublishReadinessInput } from '../../../src/services/accommodation/accommodation.publish-readiness';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { ServiceConfig } from '../../../src/types';
+import { accommodationMediaRow } from './accommodation-media-row.fixture';
 
 const ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
-/** A media row; featured and approved unless overridden. */
+/** A media row of the test accommodation; featured and approved unless overridden. */
 function mediaRow(overrides: Partial<AccommodationMedia> = {}): AccommodationMedia {
-    return {
-        id: '00000000-0000-4000-8000-000000000001',
-        accommodationId: ID,
-        url: 'https://cdn.example.com/featured.jpg',
-        moderationState: 'APPROVED',
-        state: 'visible',
-        isFeatured: true,
-        sortOrder: 0,
-        createdAt: new Date('2026-01-01T00:00:00.000Z'),
-        updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-        ...overrides
-    } as unknown as AccommodationMedia;
+    return accommodationMediaRow({ accommodationId: ID, overrides });
 }
 
 /** A stored accommodation with every requirement answered. */
@@ -85,7 +75,7 @@ describe('buildAccommodationPublishReadinessInput', () => {
         // Act
         const pending = buildAccommodationPublishReadinessInput({
             accommodation: accommodation(),
-            mediaRows: [mediaRow({ moderationState: 'PENDING' } as Partial<AccommodationMedia>)]
+            mediaRows: [accommodationMediaRow({ accommodationId: ID, moderation: 'PENDING' })]
         });
         const notFeatured = buildAccommodationPublishReadinessInput({
             accommodation: accommodation(),
