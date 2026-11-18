@@ -6,6 +6,7 @@ import { PartnerEmptyPresenceCard } from '@/features/partners/components/Partner
 import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import { PartnerPresenceModerationCard } from '@/features/partners/components/PartnerPresenceModerationCard';
 import { usePartnerQuery } from '@/features/partners/hooks/usePartnerQuery';
+import { partnerTypeName } from '@/hooks/use-partner-types';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { formatShortDate } from '@/lib/format-helpers';
 
@@ -58,7 +59,8 @@ function PartnerViewPage() {
 
                 <div className="grid gap-4 rounded-lg border p-4 md:grid-cols-2">
                     <div>
-                        <span className="font-medium">Tipo:</span> {partner.type}
+                        <span className="font-medium">Tipo:</span>{' '}
+                        {partner.partnerType ? partnerTypeName(partner.partnerType) : '—'}
                     </div>
                     <div>
                         <span className="font-medium">Lifecycle:</span> {partner.lifecycleState}

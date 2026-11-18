@@ -36,6 +36,7 @@ import {
     HostTradeCategoryModel,
     HostTradeModel,
     PartnerModel,
+    PartnerTypeModel,
     type SelectAllianceLead
 } from '@repo/db';
 import {
@@ -65,6 +66,7 @@ import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import {
+    type PartnerProvisionSkipReason,
     type ProvisionPartnerResult,
     provisionPartnerFromLead,
     resolvePartnerProvisionPlan
@@ -257,6 +259,12 @@ export interface ApproveAndProvisionPartnerOutput {
     readonly partnerId: string | null;
     /** `true` when THIS call created the partner; `false` when it already existed. */
     readonly provisioned: boolean;
+    /**
+     * Why no partner was created by THIS call, when `provisioned` is false
+     * (HOS-2336, additive): `already-provisioned`,
+     * `legacy-lead-without-typed-fields` or `no-active-partner-type`.
+     */
+    readonly reason?: PartnerProvisionSkipReason;
 }
 
 // ---------------------------------------------------------------------------
@@ -506,6 +514,7 @@ export class AllianceLeadService extends BaseService {
     private readonly _hostTradeModel: HostTradeModel;
     private readonly _categoryModel: HostTradeCategoryModel;
     private readonly _partnerModel: PartnerModel;
+    private readonly _partnerTypeModel: PartnerTypeModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
     private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
     private readonly _intakeNotifier: AllianceLeadIntakeNotifyPort | null;
@@ -529,6 +538,9 @@ export class AllianceLeadService extends BaseService {
         // additionally demand PARTNER_MANAGE from an admin whose permission to
         // handle this lead is not in question.
         this._partnerModel = new PartnerModel();
+        // The partner type catalog (HOS-2336): validates a partner lead's
+        // `partnerType` slug at submission and again at approval.
+        this._partnerTypeModel = new PartnerTypeModel();
         this._claimInviter = claimInviter ?? null;
         this._decisionNotifier = decisionNotifier ?? null;
         this._intakeNotifier = intakeNotifier ?? null;
@@ -1527,6 +1539,7 @@ export class AllianceLeadService extends BaseService {
                     const result = await provisionPartnerFromLead({
                         lead: existing,
                         partnerModel: this._partnerModel,
+                        partnerTypeModel: this._partnerTypeModel,
                         actorId: a.id,
                         logger: this.logger,
                         tx: txCtx?.tx
@@ -1604,7 +1617,10 @@ export class AllianceLeadService extends BaseService {
                     partnerId: result.provisioned
                         ? result.partnerId
                         : (result.partnerId ?? lead.provisionedPartnerId ?? null),
-                    provisioned: result.provisioned
+                    provisioned: result.provisioned,
+                    // Additive (HOS-2336): why no partner was created, the shape
+                    // HOS-2339 builds its provisioning notice on.
+                    ...(result.provisioned ? {} : { reason: result.reason })
                 };
             }
         });

@@ -26,6 +26,31 @@ export const AllianceLeadProvisionSkipReasonSchema = z.enum(ALLIANCE_LEAD_PROVIS
 export type AllianceLeadProvisionSkipReason = z.infer<typeof AllianceLeadProvisionSkipReasonSchema>;
 
 /**
+ * Closed set of reasons PARTNER provisioning (approve-and-provision-partner)
+ * did not create a partner (HOS-2336). A sibling of
+ * {@link ALLIANCE_LEAD_PROVISION_SKIP_REASONS}, not a member of it: that set
+ * describes a `service_provider` listing outcome (`hostTradeId`), this one a
+ * `partner` outcome (`partnerId`). Pinned against the service-core
+ * `PartnerProvisionSkipReason` type by a test.
+ */
+export const ALLIANCE_LEAD_PARTNER_PROVISION_SKIP_REASONS = [
+    'not-a-partner',
+    'already-provisioned',
+    'legacy-lead-without-typed-fields',
+    'no-active-partner-type'
+] as const;
+
+/** Reason partner provisioning was skipped. */
+export const AllianceLeadPartnerProvisionSkipReasonSchema = z.enum(
+    ALLIANCE_LEAD_PARTNER_PROVISION_SKIP_REASONS
+);
+
+/** Reason partner provisioning was skipped. */
+export type AllianceLeadPartnerProvisionSkipReason = z.infer<
+    typeof AllianceLeadPartnerProvisionSkipReasonSchema
+>;
+
+/**
  * What a provisioning attempt did. `provisioned: true` requires `hostTradeId`
  * and forbids `reason`.
  */

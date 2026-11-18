@@ -1,9 +1,10 @@
 import type { LifecycleStatusEnum, Partner } from '@repo/schemas';
-import { and, asc, count, desc, eq, isNotNull, isNull, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNotNull, isNull, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
 import type { LifecycleStatusPgEnum } from '../../schemas/enums.dbschema.ts';
 import { partners } from '../../schemas/partner/partner.dbschema.js';
+import { partnerTypes } from '../../schemas/partner/partner-type.dbschema.js';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
@@ -21,6 +22,24 @@ export interface AdminSearchPartnerFilters extends SearchPartnerFilters {
     includeDeleted?: boolean;
 }
 
+/**
+ * Filter by partner type SLUG (HOS-2336, spec D6).
+ *
+ * Matches through `type_id` against the catalog. During release N a row the
+ * backfill has not reached yet (`type_id IS NULL`) still matches by its legacy
+ * enum value. An unknown slug matches nothing (AC-5.2): the comparison is on
+ * text, so it never raises an invalid-enum error.
+ *
+ * Exported for `PartnerService`'s admin search, which receives `type` as an
+ * entity filter and must not map it to the enum column (HOS-2336 AC-4.2).
+ *
+ * @param slug - Partner type catalog slug.
+ * @returns The SQL predicate.
+ */
+export function partnerTypeSlugCondition(slug: string): SQL {
+    return sql`(${partners.typeId} IN (SELECT ${partnerTypes.id} FROM ${partnerTypes} WHERE ${partnerTypes.slug} = ${slug}) OR (${partners.typeId} IS NULL AND ${partners.type}::text = ${slug}))`;
+}
+
 function partnerFilterConditions(filters: SearchPartnerFilters): SQL[] {
     const conditions: SQL[] = [];
     if (filters.q) {
@@ -30,7 +49,7 @@ function partnerFilterConditions(filters: SearchPartnerFilters): SQL[] {
         );
         if (textFilter) conditions.push(textFilter);
     }
-    if (filters.type) conditions.push(eq(partners.type, filters.type));
+    if (filters.type) conditions.push(partnerTypeSlugCondition(filters.type));
     return conditions;
 }
 
@@ -138,7 +157,7 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         }
 
         if (filters.type) {
-            conditions.push(eq(partners.type, filters.type));
+            conditions.push(partnerTypeSlugCondition(filters.type));
         }
 
         const result = await db

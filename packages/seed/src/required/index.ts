@@ -17,6 +17,7 @@ import {
     seedHostTradeCategoryGroups
 } from './hostTradeCategories.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
+import { seedPartnerTypes } from './partnerTypes.seed.js';
 import { seedPoiCategories } from './poiCategories.seed.js';
 import { seedPoiCategoryBackfill } from './poiCategoryBackfill.seed.js';
 import { seedPointsOfInterest } from './pointsOfInterest.seed.js';
@@ -147,6 +148,10 @@ export async function runRequiredSeeds(context: SeedContext): Promise<{
         //      hostTrades seeder links providers to these rows by slug.
         { name: 'HostTradeCategoryGroups', run: () => seedHostTradeCategoryGroups(context) },
         { name: 'HostTradeCategories', run: () => seedHostTradeCategories(context) },
+
+        // 6.07 Load the partner type catalog (HOS-2336). Standalone; the example
+        //      partners seeder references these rows by deterministic id.
+        { name: 'PartnerTypes', run: () => seedPartnerTypes(context) },
 
         // 6.1 Load points of interest (HOS-113) — before destinations, same
         //     reason as attractions: the destination↔POI relationship seed

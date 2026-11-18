@@ -4,11 +4,12 @@ import {
     domainEventModel,
     getDb,
     partnerApplicationModel,
+    partnerTypeModel,
     userModel,
     users
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import { type Actor, ServiceError } from '@repo/service-core';
+import { type Actor, legacyPartnerTypeFor, ServiceError } from '@repo/service-core';
 import { toSlug } from '@repo/utils';
 import { eq } from 'drizzle-orm';
 import { getRequestCorrelationId } from '../../lib/request-context';
@@ -22,13 +23,37 @@ import {
 import { assertAction5Step3 } from './partner-application-step3';
 import { createClaimAccount } from './partner-claim-account';
 
+/**
+ * Resolves the catalog type an approval assigns (HOS-2336): it must exist, not
+ * be soft-deleted and be ACTIVE. Read `FOR SHARE` when `tx` is a transaction,
+ * so a concurrent deactivation cannot commit before the partner insert.
+ *
+ * @returns The dual-write columns: `typeId` plus the legacy enum value or null.
+ * @throws {ServiceError} VALIDATION_ERROR with `details.field = 'typeId'`.
+ */
+async function resolveApprovalType(input: {
+    readonly typeId: string;
+    readonly tx: DrizzleClient;
+}): Promise<{ readonly typeId: string; readonly type: string | null }> {
+    const type = await partnerTypeModel.findByIdForShare(input.typeId, input.tx);
+    if (!type || type.deletedAt || type.lifecycleState !== 'ACTIVE') {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            'typeId is not an available partner type',
+            { field: 'typeId', typeId: input.typeId }
+        );
+    }
+    return { typeId: type.id, type: legacyPartnerTypeFor({ slug: type.slug }) };
+}
+
 /** Approves a pending application and creates an unclaimed draft Partner. */
 export async function approvePartnerApplication(input: {
     readonly actor: Actor;
     readonly applicationId: string;
     readonly reason: string;
     readonly name: string;
-    readonly type: 'business' | 'ngo' | 'institution';
+    /** Partner type catalog id (HOS-2336); must be ACTIVE. */
+    readonly typeId: string;
 }): Promise<{ readonly approved: true; readonly partnerId: string }> {
     assertAction5Step3({ actor: input.actor });
     const reason = input.reason.trim();
@@ -55,6 +80,9 @@ export async function approvePartnerApplication(input: {
     if (!preflightActor || preflightActor.email.toLowerCase() === preflight.email.toLowerCase()) {
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
     }
+    // Checked before a claim account is minted, so a stale type never leaves
+    // an orphan account to clean up. Re-checked under lock inside the tx.
+    await resolveApprovalType({ typeId: input.typeId, tx: db as DrizzleClient });
     const existingAccount = await partnerApplicationModel.findAccountIdByEmail({
         tx: db as DrizzleClient,
         email: preflight.email
@@ -86,12 +114,14 @@ export async function approvePartnerApplication(input: {
                 );
             }
 
+            const typeColumns = await resolveApprovalType({ typeId: input.typeId, tx });
             const at = getClock().clock.now();
             const partner = await partnerApplicationModel.insertUnclaimedPartner({
                 tx,
                 name: input.name,
                 slug: `${toSlug(input.name) || 'partner'}-${randomUUID().slice(0, 8)}`,
-                type: input.type,
+                type: typeColumns.type,
+                typeId: typeColumns.typeId,
                 actorId: input.actor.id,
                 claimEmail: application.email
             });

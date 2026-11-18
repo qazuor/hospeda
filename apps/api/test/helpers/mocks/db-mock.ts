@@ -1507,6 +1507,9 @@ export function createDbMock() {
         // assertions, which is what that failure mode looks like from the
         // summary line.
         PartnerMentionModel: GenericMockModel,
+        // HOS-2336: PartnerTypeService (catalog routes) and PartnerService (which
+        // now validates and hydrates the type) instantiate it at module scope.
+        PartnerTypeModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
         // HOS-113 T-021: PointOfInterestService (+ its default related model)
         // is instantiated at module scope by the new public POI routes, same
@@ -1716,6 +1719,12 @@ export function createDbMock() {
         // protected listing tests can initialize the real app.
         PlanCatalogModel: GenericMockModel,
         planCatalogModel: new GenericMockModel(),
+        // HOS-2336: partner presence reads and partner-application approval use
+        // the shared instance to resolve/hydrate the catalog type.
+        partnerTypeModel: Object.assign(new GenericMockModel(), {
+            findRefsByIds: async () => new Map(),
+            findByIdForShare: async () => null
+        }),
 
         // SPEC-239: Venue singleton model instances. VenueService,
         // VenueReviewService, and the standalone FAQ helpers access these at module

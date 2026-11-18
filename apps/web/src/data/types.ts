@@ -1645,7 +1645,19 @@ export interface ExperienceDetailData extends ExperienceCardData {
 export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /**
+     * The catalog type's name in the page locale, falling back to Spanish
+     * (HOS-2336 AC-5.1). `null` for a partner the release-N backfill has not
+     * reached yet.
+     */
+    readonly typeLabel: string | null;
+    /**
+     * The bare legacy enum value (`business` / `ngo` / `institution`) when the
+     * API still answers `type` as a string, i.e. an API older than HOS-2336
+     * during a web-first rollout. The page labels it through `partners.types.*`.
+     * `null` whenever {@link typeLabel} came from the catalog.
+     */
+    readonly legacyType: string | null;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;

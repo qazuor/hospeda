@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/partnerType.schema.json",
+    "id": "001-partner-type-business",
+    "slug": "business",
+    "nameI18n": {
+        "es": "Comercio",
+        "en": "Business",
+        "pt": "Comércio"
+    },
+    "displayWeight": 10,
+    "lifecycleState": "ACTIVE"
+}

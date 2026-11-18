@@ -10,7 +10,11 @@ import { claimPartnerByLink } from '../../../src/services/partner-application/pa
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
-import { createApplicationEmail } from './partner-application.helpers';
+import {
+    createApplicationEmail,
+    ensureTestPartnerType,
+    testPartnerTypeId
+} from './partner-application.helpers';
 
 const app = initApp();
 const CLAIM = 'verticals.partner-claim-notice';
@@ -43,7 +47,7 @@ async function createDirect(input: { readonly name: string; readonly claimEmail?
         body: JSON.stringify({
             ...input,
             slug: input.name.toLowerCase().replaceAll(' ', '-'),
-            type: 'business',
+            typeId: testPartnerTypeId(),
             lifecycleState: 'ACTIVE'
         })
     });
@@ -82,6 +86,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
     validateApiEnv();
+    await ensureTestPartnerType();
 });
 
 afterEach(async () => {

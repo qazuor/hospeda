@@ -7,6 +7,25 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { PartnerApplicationActionDialog } from '@/features/partner-applications/components/PartnerApplicationActionDialog';
 
+const BUSINESS_TYPE_ID = 'a2336000-0000-4000-8000-000000000001';
+
+// HOS-2336: the select lists the admin catalog, lowest weight first.
+vi.mock('@/hooks/use-partner-types', () => ({
+    usePartnerTypeOptions: () => ({
+        options: [
+            { value: BUSINESS_TYPE_ID, slug: 'business', label: 'Comercio', inactive: false },
+            {
+                value: 'a2336000-0000-4000-8000-000000000004',
+                slug: 'media',
+                label: 'Medio',
+                inactive: false
+            }
+        ],
+        isLoading: false,
+        isError: false
+    })
+}));
+
 vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: (key: string) => key, locale: 'es' })
 }));
@@ -39,9 +58,10 @@ describe('PartnerApplicationActionDialog approve', () => {
         fireEvent.click(screen.getByRole('button', { name: /approve.confirm/ }));
 
         await waitFor(() => expect(approve).toHaveBeenCalledOnce(), { timeout: 4000 });
-        const sent = approve.mock.calls[0]?.[0] as { type: string };
+        const sent = approve.mock.calls[0]?.[0] as { typeId: string };
         const select = screen.getByLabelText(/partnerType/) as HTMLSelectElement;
-        expect(sent.type).toBe(select.value);
+        expect(select.value).toBe(BUSINESS_TYPE_ID);
+        expect(sent.typeId).toBe(select.value);
         expect(PartnerApplicationApproveSchema.safeParse({ ...sent, id: undefined }).success).toBe(
             true
         );

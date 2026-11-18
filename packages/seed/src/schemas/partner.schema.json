@@ -21,10 +21,10 @@
             "type": "string",
             "description": "Partner display name"
         },
-        "type": {
+        "typeSlug": {
             "type": "string",
-            "enum": ["business", "ngo", "institution"],
-            "description": "Partner type (PartnerTypeEnum)"
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "description": "Partner type catalog slug (HOS-2336), resolved to partners.type_id by its deterministic id"
         },
         "logoUrl": {
             "type": "string",

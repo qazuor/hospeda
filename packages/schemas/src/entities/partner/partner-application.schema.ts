@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
+import { PartnerTypeIdSchema } from '../../common/id.schema.js';
 
 const partnerApplicationReasonSchema = z
     .string()
@@ -36,7 +36,8 @@ export const PartnerApplicationCancelWaitResponseSchema = z.object({
 /** Request body for approving a Partner application as action 5. */
 export const PartnerApplicationApproveSchema = z.object({
     name: z.string().min(1).max(255),
-    type: PartnerTypeEnumSchema,
+    /** Catalog partner type (HOS-2336). Must be ACTIVE. */
+    typeId: PartnerTypeIdSchema,
     reason: partnerApplicationReasonSchema
 });
 

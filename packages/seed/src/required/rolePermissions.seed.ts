@@ -427,6 +427,14 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_RESOLVE_APPLICATION,
         PermissionEnum.PARTNER_EMPTY_PRESENCE,
 
+        // PARTNER_TYPE (HOS-2336): admin-managed partner type catalog.
+        // Staff-only; the public catalog read needs no permission.
+        PermissionEnum.PARTNER_TYPE_VIEW,
+        PermissionEnum.PARTNER_TYPE_CREATE,
+        PermissionEnum.PARTNER_TYPE_UPDATE,
+        PermissionEnum.PARTNER_TYPE_DELETE,
+        PermissionEnum.PARTNER_TYPE_RESTORE,
+
         // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
         PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
         PermissionEnum.ALLIANCE_LEAD_MANAGE,
@@ -809,6 +817,14 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.PARTNER_MANAGE,
         PermissionEnum.PARTNER_RESOLVE_APPLICATION,
         PermissionEnum.PARTNER_EMPTY_PRESENCE,
+
+        // PARTNER_TYPE (HOS-2336): admin-managed partner type catalog.
+        // Staff-only; the public catalog read needs no permission.
+        PermissionEnum.PARTNER_TYPE_VIEW,
+        PermissionEnum.PARTNER_TYPE_CREATE,
+        PermissionEnum.PARTNER_TYPE_UPDATE,
+        PermissionEnum.PARTNER_TYPE_DELETE,
+        PermissionEnum.PARTNER_TYPE_RESTORE,
 
         // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277).
         PermissionEnum.ALLIANCE_LEAD_VIEW_ALL,
