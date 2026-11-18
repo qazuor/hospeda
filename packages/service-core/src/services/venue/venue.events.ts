@@ -40,7 +40,9 @@
 
 import { VenueEventModel, type VenueModel, withTransaction } from '@repo/db';
 import {
+    partitionVenueEvents,
     ServiceErrorCode,
+    VENUE_EVENTS_MAX_ENTRIES,
     type VenueEvent,
     type VenueEventPublic,
     type VenueEventsGetInput,
@@ -60,8 +62,9 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, and the agenda is read whole — so an unstated page size
  * would silently truncate a long agenda rather than fail. Sized well above the
- * schema's own ceiling (`VENUE_EVENTS_MAX_ENTRIES`), so an agenda that
- * passed validation on the way in can always be read back out.
+ * ceiling (`VENUE_EVENTS_MAX_ENTRIES`, which counts only non-past entries,
+ * so a document carrying past ones can be longer), so an agenda that passed
+ * validation on the way in can always be read back out.
  */
 const EVENTS_READ_PAGE_SIZE = 500;
 
@@ -221,6 +224,9 @@ export async function getVenueEvents(
  * a venue that stopped doing live music needs a way to say so, and refusing the
  * empty document would leave them with no way to.
  *
+ * The agenda ceiling (`VENUE_EVENTS_MAX_ENTRIES`) is enforced here, over the
+ * entries that are not past (HOS-2254), and answers 400 `VALIDATION_ERROR`.
+ *
  * Entries are matched by `id` (HOS-2291): see the module header for the diff
  * rules, and {@link VenueEventInputSchema} for why an id of another venue is a
  * 404 rather than something the service trusts.
@@ -265,6 +271,18 @@ export async function replaceVenueEvents(
 
         const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
+
+        // HOS-2254: the ceiling counts the entries that are NOT past (live and
+        // switched-off ones). A past entry counts for nothing, because the
+        // document still carries it until the cleanup cron deletes it. The
+        // schema cannot do this: it does not know the time.
+        const { current } = partitionVenueEvents({
+            events: validated.agenda.events,
+            now: new Date()
+        });
+        if (current.length > VENUE_EVENTS_MAX_ENTRIES) {
+            throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'zodError.venue.events.max');
+        }
 
         const eventModel = new VenueEventModel();
 

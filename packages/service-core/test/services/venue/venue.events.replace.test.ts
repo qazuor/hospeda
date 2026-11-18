@@ -79,8 +79,8 @@ vi.mock('../../../src/services/venue/venue.permissions', () => ({
     checkVenueCanEditFaqs: vi.fn()
 }));
 
-import { ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ServiceErrorCode, type VenueEventInput } from '@repo/schemas';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { replaceVenueEvents } from '../../../src/services/venue/venue.events';
 import type { Actor } from '../../../src/types';
 
@@ -237,5 +237,74 @@ describe('replaceVenueEvents: stable ids (HOS-2291)', () => {
         });
 
         expect(withTransactionSpy).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('replaceVenueEvents: the ceiling counts non-past entries (HOS-2254)', () => {
+    // 2026-11-17 12:00 in AR (UTC-3).
+    const NOW = new Date('2026-11-17T15:00:00Z');
+
+    beforeEach(() => {
+        store.clear();
+        calls.length = 0;
+        nextId = 1;
+        vi.clearAllMocks();
+        vi.useFakeTimers();
+        vi.setSystemTime(NOW);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    const oneOff = (title: string, date: string) => ({
+        title,
+        recurrence: 'once' as const,
+        date,
+        startTime: '21:00',
+        endTime: '23:00',
+        isActive: true
+    });
+    const many = (count: number, make: (index: number) => VenueEventInput): VenueEventInput[] =>
+        Array.from({ length: count }, (_, index) => make(index));
+
+    it('refuses a 31st non-past entry with 400 VALIDATION_ERROR and writes nothing', async () => {
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: many(31, (i) => weekly(`Semanal ${i}`)) }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(result.error?.message).toBe('zodError.venue.events.max');
+        expect(calls).toStrictEqual([]);
+    });
+
+    it('saves 30 non-past entries together with 25 past ones', async () => {
+        const events = [
+            ...many(30, (i) => weekly(`Semanal ${i}`)),
+            ...many(25, (i) => oneOff(`Pasado ${i}`, '2026-10-01'))
+        ];
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events }
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.events).toHaveLength(55);
+    });
+
+    it('counts a switched-off future entry against the ceiling', async () => {
+        const events = [
+            ...many(30, (i) => weekly(`Semanal ${i}`)),
+            { ...oneOff('Apagado', '2026-12-01'), isActive: false }
+        ];
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });
 });
