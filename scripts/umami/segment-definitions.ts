@@ -11,25 +11,19 @@ import { assertCatalogEvent } from './definitions.js';
  * setup script can compare it with what Umami stores and stay idempotent.
  */
 
-/** Filter operators accepted by Umami 3.5 (`parameters.filters[].operator`). */
-export const SEGMENT_OPERATORS = [
-    'eq',
-    'neq',
-    's',
-    'ns',
-    'c',
-    'dnc',
-    're',
-    'nre',
-    't',
-    'f',
-    'gt',
-    'lt',
-    'gte',
-    'lte',
-    'bf',
-    'af'
-] as const;
+/**
+ * Filter operators allowed on segment COLUMN filters (`parameters.filters[].operator`).
+ *
+ * Umami 3.5 accepts more operators in its payload schema (`s`, `ns`, `re`, `nre`,
+ * `t`, `f`, `gt`, ...), but they exist only for event-data property filters.
+ * The SQL builder for column filters does not support them and emits broken
+ * SQL: on staging, segments using `s`/`ns` made every stats query answer 500
+ * (`42601 syntax error at or near "group"`). Measured with ad-hoc stats filters:
+ * `distinctId=neq.` works (16 of 17 visitors), `utmSource=neq.` works, and
+ * `distinctId=eq.` returns 0 because NULL is not equal to '', so "is not set"
+ * cannot be expressed with column filters. Only these four are safe (HOS-2119).
+ */
+export const SEGMENT_OPERATORS = ['eq', 'neq', 'c', 'dnc'] as const;
 
 /** Filter names accepted by Umami 3.5 (`parameters.filters[].name`). */
 export const SEGMENT_FILTER_NAMES = [
@@ -135,9 +129,8 @@ export const HOSPEDA_SEGMENTS: readonly SegmentDefinition[] = [
         ],
         match: 'any'
     }),
-    segment({ name: 'Llegan por campaña (UTM)', filters: [filter('utmSource', 's', '')] }),
-    segment({ name: 'Usuarios logueados', filters: [filter('distinctId', 's', '')] }),
-    segment({ name: 'Visitantes anónimos', filters: [filter('distinctId', 'ns', '')] }),
+    segment({ name: 'Llegan por campaña (UTM)', filters: [filter('utmSource', 'neq', '')] }),
+    segment({ name: 'Usuarios logueados', filters: [filter('distinctId', 'neq', '')] }),
     segment({
         name: 'Navegan fichas de alojamiento',
         filters: [filter('path', 'c', '/alojamientos/')]
