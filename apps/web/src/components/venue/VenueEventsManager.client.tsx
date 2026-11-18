@@ -39,6 +39,7 @@ import { useCallback, useEffect, useId, useState } from 'react';
 import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
+import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
@@ -181,15 +182,24 @@ export function VenueEventsManager({
         [entries]
     );
 
-    const removeAllPast = useCallback(() => {
-        if (
-            !window.confirm(
-                t(
-                    'venue.owner.editor.venueEventsManager.removeAllPastConfirm',
-                    '¿Borrar todos los eventos pasados? Se quitan al guardar la agenda.'
-                )
-            )
-        ) {
+    const removeAllPast = useCallback(async () => {
+        // HOS-957: the product-styled dialog, never a native browser one.
+        const confirmed = await showConfirmationDialog({
+            title: t(
+                'venue.owner.editor.venueEventsManager.removeAllPastTitle',
+                'Borrar eventos pasados'
+            ),
+            message: t(
+                'venue.owner.editor.venueEventsManager.removeAllPastConfirm',
+                '¿Borrar todos los eventos pasados? Se quitan al guardar la agenda.'
+            ),
+            confirmLabel: t(
+                'venue.owner.editor.venueEventsManager.removeAllPastConfirmButton',
+                'Borrar'
+            ),
+            cancelLabel: t('common.cancel', 'Cancelar')
+        });
+        if (!confirmed) {
             return;
         }
         setEntries((prev) => prev.filter((entry) => !entry.isPast));

@@ -370,6 +370,8 @@
                 "duplicate": "Duplicar",
                 "removeAllPast": "Apagar todos os passados",
                 "removeAllPastConfirm": "Apagar todos os eventos passados? Eles são removidos ao salvar a agenda.",
+                "removeAllPastTitle": "Apagar eventos passados",
+                "removeAllPastConfirmButton": "Apagar",
                 "pastRetentionHint": "Os eventos passados são apagados sozinhos após 60 dias.",
                 "save": "Salvar agenda",
                 "saving": "Salvando…",

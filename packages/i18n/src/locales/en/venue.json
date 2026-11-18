@@ -370,6 +370,8 @@
                 "duplicate": "Duplicate",
                 "removeAllPast": "Delete all past events",
                 "removeAllPastConfirm": "Delete all past events? They are removed when you save the schedule.",
+                "removeAllPastTitle": "Delete past events",
+                "removeAllPastConfirmButton": "Delete",
                 "pastRetentionHint": "Past events are deleted automatically after 60 days.",
                 "save": "Save schedule",
                 "saving": "Saving…",

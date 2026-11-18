@@ -27,7 +27,7 @@ export interface VenueEventsPastGroupProps {
     readonly tPlural: (key: string, count: number, params?: Record<string, unknown>) => string;
     readonly onDuplicate: (index: number) => void;
     readonly onRemove: (index: number) => void;
-    readonly onRemoveAll: () => void;
+    readonly onRemoveAll: () => void | Promise<void>;
 }
 
 /**

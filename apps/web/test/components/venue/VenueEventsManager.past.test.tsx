@@ -18,11 +18,18 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
+vi.mock('../../../src/lib/forms/show-confirmation-dialog', () => ({
+    showConfirmationDialog: vi.fn()
+}));
+
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: { get: vi.fn(), getProtected: vi.fn(), put: vi.fn(), delete: vi.fn() }
 }));
 
 import { apiClient } from '../../../src/lib/api/client';
+import { showConfirmationDialog } from '../../../src/lib/forms/show-confirmation-dialog';
+
+const mockConfirm = vi.mocked(showConfirmationDialog);
 
 const mockGet = vi.mocked(apiClient.getProtected);
 const mockPut = vi.mocked(apiClient.put);
@@ -125,7 +132,7 @@ describe('VenueEventsManager: past events (HOS-2254)', () => {
     });
 
     it('«Borrar todos los pasados» removes every past event after confirming, and none of the live ones', async () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(true);
+        mockConfirm.mockResolvedValue(true);
         load([
             row(1, {}),
             row(2, { date: '2026-10-01', isPast: true }),
@@ -135,16 +142,18 @@ describe('VenueEventsManager: past events (HOS-2254)', () => {
         fireEvent.click(await screen.findByText('Borrar todos los pasados'));
         const events = await savedEvents();
 
+        expect(mockConfirm).toHaveBeenCalledTimes(1);
         expect(events.map((e) => e.id)).toEqual([id(1)]);
         expect(screen.queryByTestId('venue-events-past')).toBeNull();
     });
 
     it('keeps everything when the owner declines the confirmation', async () => {
-        vi.spyOn(window, 'confirm').mockReturnValue(false);
+        mockConfirm.mockResolvedValue(false);
         load([row(2, { date: '2026-10-01', isPast: true })]);
 
         fireEvent.click(await screen.findByText('Borrar todos los pasados'));
 
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
         expect(screen.getByTestId('venue-events-past')).toBeTruthy();
     });
 
