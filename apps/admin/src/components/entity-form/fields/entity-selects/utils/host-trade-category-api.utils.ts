@@ -19,7 +19,10 @@
  */
 
 import type { HostTradeCategoryAdmin } from '@repo/schemas';
-import type { SelectOption } from '@/components/entity-form/types/field-config.types';
+import {
+    SELECT_OPTION_SEARCH_TERMS_KEY,
+    type SelectOption
+} from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
 import { resolveI18nText } from '@/utils/i18n-text';
 import { adminLogger } from '@/utils/logger';
@@ -48,7 +51,14 @@ interface AdminListResponse {
 const toSelectOption = (item: HostTradeCategoryAdmin): SelectOption => ({
     value: item.id,
     label: resolveI18nText(item.nameI18n) || item.slug,
-    description: item.slug
+    description: item.slug,
+    // Lets the select search the name and the related words in every locale (HOS-2340).
+    metadata: {
+        [SELECT_OPTION_SEARCH_TERMS_KEY]: {
+            nameI18n: item.nameI18n,
+            keywordsI18n: item.keywordsI18n
+        }
+    }
 });
 
 /** Fetches one page of the admin catalog, optionally scoped to ACTIVE rows. */
