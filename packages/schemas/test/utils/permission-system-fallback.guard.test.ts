@@ -10,7 +10,7 @@
  * becomes near-impossible to find.
  *
  * Making the fallback throw was considered and rejected on evidence: 101 of the
- * 712 permissions relied on it when this guard landed (103 of 690 at the HOS-2349
+ * 712 permissions relied on it when this guard landed (104 of 691 at the HOS-2349
  * recount, 2026-11-18), and they are not mistakes. Whole live
  * families sit there — `AMENITY_*`, `FEATURE_*`, `TAG_*`, `AD_SLOT_*`,
  * `AD_MEDIA_ASSET_*`, `PRICING_TIER_*` — and giving each one a
@@ -69,6 +69,7 @@ const KNOWN_SYSTEM_FALLBACK_KEYS: readonly string[] = [
     'AMENITY_LIFECYCLE_CHANGE',
     'AMENITY_UPDATE',
     'AMENITY_VIEW',
+    'ANALYTICS_SESSION_RECORDING_MANAGE',
     'ANALYTICS_VIEW',
     'AUDIT_LOG_VIEW',
     'DASHBOARD_BASE_VIEW',

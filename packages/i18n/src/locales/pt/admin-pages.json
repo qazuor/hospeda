@@ -1306,7 +1306,26 @@
             "cacheClearError": "Falha ao limpar cache",
             "dangerZone": "Zona de Perigo",
             "dangerZoneDesc": "Redefinição de banco de dados e outras operações perigosas",
-            "dangerZoneDevOnly": "Disponível apenas no ambiente de desenvolvimento"
+            "dangerZoneDevOnly": "Disponível apenas no ambiente de desenvolvimento",
+            "sessionRecording": {
+                "title": "Gravações de sessão e mapas de calor",
+                "description": "Interruptor geral do gravador do Umami na web. Desligado, a web nunca carrega o gravador.",
+                "statusOn": "LIGADO",
+                "statusOff": "DESLIGADO",
+                "lastChanged": "Última alteração: {{date}}",
+                "neverChanged": "Nunca alterado",
+                "help": "Replay ou mapa de calor, amostragem e mascaramento são configurados no Umami com `pnpm umami:setup`, não aqui.",
+                "enable": "Ligar",
+                "disable": "Desligar",
+                "enableAria": "Ligar as gravações de sessão",
+                "disableAria": "Desligar as gravações de sessão",
+                "confirmEnable": "A produção precisa ter uma verificação de privacidade assinada (docs/analytics/session-replay-privacy.md). Ligar as gravações?",
+                "confirmDisable": "A mudança chega à web em até 60 segundos, e as páginas já abertas continuam com o replay por até 5 minutos e com os cliques do mapa de calor até serem fechadas. Desligar as gravações?",
+                "cancel": "Cancelar",
+                "saveError": "Não foi possível salvar a mudança. O estado mostrado é o último confirmado.",
+                "readError": "Não foi possível ler o estado atual.",
+                "retry": "Tentar novamente"
+            }
         },
         "seo": {
             "title": "Configuração de SEO",
@@ -1949,7 +1968,12 @@
         },
         "state": {
             "active": "Ativo",
-            "inactive": "Inativo"
+            "inactive": "Inativo",
+            "deleted": "Excluído"
+        },
+        "showDeleted": "Mostrar excluídos",
+        "messages": {
+            "restoreError": "Não foi possível recuperar."
         },
         "loading": "Carregando…",
         "error": "Não foi possível carregar o catálogo.",
@@ -1966,7 +1990,9 @@
             "edit": "Alterar",
             "delete": "Excluir",
             "cancel": "Cancelar",
-            "save": "Salvar"
+            "save": "Salvar",
+            "restore": "Recuperar",
+            "restoring": "Recuperando..."
         },
         "groups": {
             "add": "Novo grupo",
@@ -1992,7 +2018,8 @@
                 "deleted": "Grupo excluído.",
                 "saveError": "Não foi possível salvar o grupo.",
                 "deleteError": "Não foi possível excluir o grupo.",
-                "inUse": "Não é possível excluir: o grupo ainda tem categorias. Desative-o para deixar de oferecê-lo, ou mova antes as categorias dele."
+                "inUse": "Não é possível excluir: o grupo ainda tem categorias. Desative-o para deixar de oferecê-lo, ou mova antes as categorias dele.",
+                "restored": "Grupo recuperado."
             }
         },
         "categories": {
@@ -2038,7 +2065,9 @@
                 "deleted": "Categoria excluída.",
                 "saveError": "Não foi possível salvar a categoria.",
                 "deleteError": "Não foi possível excluir a categoria.",
-                "inUse": "Não é possível excluir: há fornecedores que usam esta categoria. Desative-a para deixar de oferecê-la; os fornecedores que já a têm a mantêm."
+                "inUse": "Não é possível excluir: há fornecedores que usam esta categoria. Desative-a para deixar de oferecê-la; os fornecedores que já a têm a mantêm.",
+                "restored": "Categoria recuperada.",
+                "restoreGroupDeleted": "Não é possível recuperar: o grupo desta categoria está excluído. Recupere primeiro o grupo."
             }
         }
     },

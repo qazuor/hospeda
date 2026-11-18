@@ -7,7 +7,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0182-hos2349-mcp-activity-permission.js';
+import * as migration from '../../src/data-migrations/0183-hos2349-mcp-activity-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -32,7 +32,7 @@ function buildCtx(inserted: unknown[]) {
 describe('HOS-2349 MCP activity permission seed grant', () => {
     it('declares an additive migration granting the permission to SUPER_ADMIN only', () => {
         expect(migration.meta).toEqual({
-            name: '0182-hos2349-mcp-activity-permission',
+            name: '0183-hos2349-mcp-activity-permission',
             group: 'required',
             destructive: false
         });

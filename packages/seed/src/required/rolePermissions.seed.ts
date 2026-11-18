@@ -257,6 +257,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.LOGS_VIEW_ALL,
         PermissionEnum.ERRORS_VIEW,
         PermissionEnum.ANALYTICS_VIEW,
+        // HOS-2347: the web session recording switch (Umami replays + heatmaps) — SUPER_ADMIN-only.
+        PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE,
 
         // DEBUG & DEPLOY: All permissions
         PermissionEnum.DEBUG_TOOLS_ACCESS,
@@ -390,7 +392,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // HOS-2075: read the listing AI chat conversations (anonymised, redacted) — SUPER_ADMIN-only.
         PermissionEnum.AI_CONVERSATION_VIEW_ANY,
         // HOS-2349 (D-15): the admin log of every assistant (MCP) tool call — SUPER_ADMIN-only,
-        // NOT granted to ADMIN. Live envs get it from data-migration 0182.
+        // NOT granted to ADMIN. Live envs get it from data-migration 0183.
         PermissionEnum.MCP_ACTIVITY_VIEW,
 
         // MODERATION: Content auto-moderation management (SPEC-195)

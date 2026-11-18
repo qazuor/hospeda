@@ -188,6 +188,7 @@
             "label": "Ferramenta",
             "options": {
                 "list_my_listings": "list_my_listings",
+                "get_owner_summary": "get_owner_summary",
                 "get_listing": "get_listing",
                 "update_listing_basic": "update_listing_basic",
                 "get_listing_amenities": "get_listing_amenities",

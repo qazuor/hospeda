@@ -26,7 +26,14 @@ export const adminListHostTradeCategoriesRoute = createAdminListRoute({
         'Returns a paginated list of provider trade categories. Filters: groupId, lifecycleState, search (slug, names and keywords), includeDeleted.',
     tags: ['HostTradeCategories'],
     requiredPermissions: [PermissionEnum.HOST_TRADE_CATEGORY_VIEW],
-    requestQuery: HostTradeCategoryAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
+    // `sort` loses its Zod default here (HOS-2340): the route validates the query, so
+    // with the default an omitted sort would reach the service as `createdAt:desc`,
+    // indistinguishable from an explicit one, and the catalog default order
+    // (group weight, category weight, name, id) could never apply.
+    requestQuery: {
+        ...HostTradeCategoryAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
+        sort: HostTradeCategoryAdminSearchSchema.shape.sort.removeDefault().optional()
+    },
     responseSchema: HostTradeCategoryAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

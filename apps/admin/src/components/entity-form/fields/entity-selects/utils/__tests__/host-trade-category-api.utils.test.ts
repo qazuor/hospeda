@@ -17,6 +17,7 @@ import {
     loadHostTradeCategoriesByIds,
     loadHostTradeCategoryFilterOptions
 } from '../host-trade-category-api.utils';
+import { filterClientOptions } from '../option-search-terms';
 
 const mockFetch = vi.mocked(fetchApi);
 
@@ -66,6 +67,59 @@ describe('host trade category loaders', () => {
         const options = await loadAllHostTradeCategories();
 
         expect(options).toEqual([expect.objectContaining({ value: 'c-1', label: 'Plomería' })]);
+    });
+
+    it('carries name and keywords in the option metadata and finds them by keyword (AC-2.1, 2.2, 2.5)', async () => {
+        mockFetch.mockResolvedValue(
+            page([
+                {
+                    id: 'c-3',
+                    slug: 'destapaciones',
+                    nameI18n: {
+                        es: 'Destapaciones y desagotes',
+                        en: 'Unclogging',
+                        pt: 'Desentupimento'
+                    },
+                    keywordsI18n: { es: ['pozo ciego'], en: [], pt: [] },
+                    lifecycleState: 'ACTIVE'
+                },
+                {
+                    id: 'c-4',
+                    slug: 'climatizacion',
+                    nameI18n: { es: 'Climatización', en: 'Air conditioning', pt: 'Climatização' },
+                    keywordsI18n: { es: ['aire acondicionado'], en: [], pt: [] },
+                    lifecycleState: 'ACTIVE'
+                },
+                ACTIVE
+            ])
+        );
+
+        const options = await loadAllHostTradeCategories();
+
+        const labelsFor = (query: string) =>
+            filterClientOptions({ options, query }).map((option) => option.label);
+        expect(labelsFor('pozo')).toEqual(['Destapaciones y desagotes']);
+        expect(labelsFor('aíre')).toEqual(['Climatización']);
+        expect(labelsFor('plumbing')).toEqual(['Plomería']);
+    });
+
+    it('finds an option by its slug even when the label fell back to the slug', async () => {
+        mockFetch.mockResolvedValue(
+            page([
+                {
+                    id: 'c-5',
+                    slug: 'sin-nombre',
+                    nameI18n: {},
+                    keywordsI18n: { es: [], en: [], pt: [] },
+                    lifecycleState: 'ACTIVE'
+                }
+            ])
+        );
+
+        const options = await loadAllHostTradeCategories();
+
+        expect(options[0]?.label).toBe('sin-nombre');
+        expect(filterClientOptions({ options, query: 'sin-nom' })).toHaveLength(1);
     });
 
     it('keeps an already-linked inactive category resolvable by id', async () => {

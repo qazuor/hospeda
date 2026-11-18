@@ -170,7 +170,6 @@ import {
     generateSlug
 } from './accommodation.helpers';
 import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
-import { composeAccommodationMedia } from './accommodation.media-compose';
 import { attachComposedMedia, attachComposedMediaList } from './accommodation.media-read';
 import { syncAccommodationMedia } from './accommodation.media-sync';
 import {
@@ -204,6 +203,7 @@ import {
     projectAccommodationOwnerAvatar,
     projectAccommodationOwnerAvatarList
 } from './accommodation.projections';
+import { buildAccommodationPublishReadinessInput } from './accommodation.publish-readiness';
 import type { AccommodationHookState, HostOnboardingResult } from './accommodation.types';
 
 /** Entity-specific filter fields for accommodation admin search. */
@@ -1800,21 +1800,11 @@ export class AccommodationService extends BaseCrudService<
             accommodationIds: [accommodation.id],
             ...(ctx?.tx === undefined ? {} : { tx: ctx.tx })
         });
-        const composedMedia = composeAccommodationMedia({
-            rows: mediaRowsById.get(accommodation.id) ?? [],
-            videos: accommodation.videos
-        });
-        const extraInfo = accommodation.extraInfo ?? {};
         const missingRequirements = resolveMissingPublishRequirements({
-            input: {
-                description: accommodation.description,
-                capacity: extraInfo.capacity,
-                // HOS-2060: the minimum stay is a house rule now.
-                minNights: accommodation.policies?.minNights ?? undefined,
-                bedrooms: extraInfo.bedrooms,
-                bathrooms: extraInfo.bathrooms,
-                hasMainImage: Boolean(composedMedia.featuredImage?.url)
-            }
+            input: buildAccommodationPublishReadinessInput({
+                accommodation,
+                mediaRows: mediaRowsById.get(accommodation.id) ?? []
+            })
         });
         return { complete: missingRequirements.length === 0, missing: missingRequirements };
     }

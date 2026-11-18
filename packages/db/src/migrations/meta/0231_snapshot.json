@@ -1,5 +1,5 @@
 {
-  "id": "4121410d-407e-475e-9d2d-740f9335185d",
+  "id": "56ad69ed-a44c-4aff-8cd6-cf5620147eb8",
   "prevId": "b9c5e4af-5b96-466d-8c0a-4becfa04d68a",
   "version": "7",
   "dialect": "postgresql",
@@ -35806,6 +35806,7 @@
         "logs.viewAll",
         "errors.view",
         "analytics.view",
+        "analytics.sessionRecording.manage",
         "system.debugTools.access",
         "entities.bulk.import",
         "entities.bulk.export",
@@ -36235,7 +36236,6 @@
         "user.update.self",
         "ai.settings.manage",
         "aiConversation.viewAny",
-        "mcpActivity.view",
         "platform.featureFlag.manage",
         "platform.qrCode.view",
         "platform.qrCode.create",

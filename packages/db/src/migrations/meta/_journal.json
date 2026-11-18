@@ -1622,8 +1622,15 @@
     {
       "idx": 231,
       "version": "7",
-      "when": 1794988302393,
-      "tag": "0231_hos2349_mcp_activity_permission",
+      "when": 1794987220228,
+      "tag": "0231_hos2347_session_recording_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 232,
+      "version": "7",
+      "when": 1795004760640,
+      "tag": "0232_hos2349_mcp_activity_permission",
       "breakpoints": true
     }
   ]

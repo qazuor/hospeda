@@ -85,12 +85,15 @@ export async function openWatchRun(args: {
  * @param args.runId - The run
  * @param args.measurementId - The measurement that created it
  * @param args.providerIds - The ids the provider answered
+ * @param args.writeKeys - Idempotency keys of writes about to be sent
+ * @param args.ledger - The money ledger as it stands, written in the same statement
  */
 export async function recordWatchProgress(args: {
     readonly runId: string;
     readonly measurementId: string;
     readonly providerIds?: readonly string[];
     readonly writeKeys?: readonly string[];
+    readonly ledger?: { readonly charged: number; readonly refunded: number };
 }): Promise<void> {
     await providerWatchRunModel.appendProgress(args);
 }

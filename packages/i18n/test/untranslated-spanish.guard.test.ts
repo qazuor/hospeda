@@ -71,7 +71,11 @@ const LEGITIMATE_IDENTICAL: Readonly<Record<string, readonly TargetLocale[]>> = 
     Tablet: ['en', 'pt'],
     Período: ['pt'],
     '{{count}} visitante': ['pt'],
-    '{{count}} visitantes': ['pt']
+    '{{count}} visitantes': ['pt'],
+    // Same word in Brazilian Portuguese (HOS-2349 assistant activity log).
+    Tipo: ['pt'],
+    Resultado: ['pt'],
+    Consulta: ['pt']
 };
 
 /** Flattens a nested JSON object to dot-notation leaf entries. */
@@ -110,6 +114,8 @@ function collectIdentical({ locale }: { locale: TargetLocale }): string[] {
             // Placeholders / symbols only: nothing to translate.
             if (!/\p{L}/u.test(value.replace(/\{\{\w+\}\}/g, ''))) continue;
             if (LEGITIMATE_IDENTICAL[value]?.includes(locale)) continue;
+            // snake_case identifiers (MCP tool names, HOS-2349) are never translated.
+            if (/^[a-z]+(?:_[a-z]+)+$/.test(value)) continue;
             found.push(`${file}:${key}`);
         }
     }

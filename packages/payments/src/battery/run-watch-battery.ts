@@ -90,6 +90,8 @@ export interface RunWatchBatteryInput {
         readonly providerIds?: readonly string[];
         /** Idempotency keys of writes about to be sent, recorded BEFORE they are. */
         readonly writeKeys?: readonly string[];
+        /** The money ledger as it stands, written in the same statement as this record. */
+        readonly ledger: { readonly charged: number; readonly refunded: number };
     }) => Promise<void>;
     /** Writes the end of the run. It is part of the run: when it rejects, the run rejects. */
     readonly finishRun: (args: {
@@ -270,6 +272,7 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
             if (input.authorization) {
                 assertAuthorizationCoversMoneyCatalog({
                     entries,
+                    account: input.account,
                     authorization: input.authorization
                 });
             }
