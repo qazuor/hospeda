@@ -41,6 +41,7 @@ import type {
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { parseListingPolicyValues } from '../listing/listing-policies';
+import { normalizeListingVideos } from '../listing/listing-videos';
 import { parseLocationException } from '../listing/location-exception-view';
 import { webLogger } from '../logger';
 import {
@@ -1041,54 +1042,9 @@ export function toAccommodationDetailPageProps({
             : {}),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
-            const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
-            // Normalize videos to `{ url, caption?, description? }`. Accepts both
-            // the schema shape (objects) and legacy bare-URL strings so older
-            // accommodation records keep rendering.
-            //
-            // HOS-1022: `moderationState` is read here ONLY to filter — it is
-            // still dropped from the output object, exactly as before. Nothing
-            // read `videos` on the public detail page prior to this ticket, so
-            // no filter existed; now that a video actually reaches the DOM as an
-            // `<iframe>`, an un-approved one must not render. A legacy bare-URL
-            // string entry carries no `moderationState` at all (it predates the
-            // field), which is treated as "not approved" — fail closed, matching
-            // the platform's moderation default, rather than assuming old data is
-            // safe to publish unreviewed.
-            const videos = (rawVideos ?? [])
-                .map((entry) => {
-                    if (typeof entry === 'string') {
-                        return entry.length > 0 ? { url: entry, moderationState: undefined } : null;
-                    }
-                    if (entry && typeof entry === 'object') {
-                        const v = entry as Record<string, unknown>;
-                        const url = typeof v.url === 'string' ? v.url : '';
-                        if (!url) return null;
-                        return {
-                            url,
-                            caption: typeof v.caption === 'string' ? v.caption : undefined,
-                            description:
-                                typeof v.description === 'string' ? v.description : undefined,
-                            moderationState:
-                                typeof v.moderationState === 'string'
-                                    ? v.moderationState
-                                    : undefined
-                        };
-                    }
-                    return null;
-                })
-                .filter(
-                    (
-                        entry
-                    ): entry is {
-                        url: string;
-                        caption?: string;
-                        description?: string;
-                        moderationState?: string;
-                    } => entry !== null
-                )
-                .filter((entry) => entry.moderationState === 'APPROVED')
-                .map(({ moderationState: _moderationState, ...rest }) => rest);
+            // HOS-1022 / HOS-2258: the approved-only normalization is shared with
+            // the venue detail page (`normalizeListingVideos`).
+            const videos = normalizeListingVideos({ raw: mediaObj?.videos });
             return {
                 images: mediaObj?.images ?? extractGalleryUrls(item),
                 // Preserve caption/description alongside gallery URLs so
@@ -3071,6 +3027,11 @@ export function toVenueDetailPageProps({
         // re-applies either.
         dailySpecials: mapVenueDailySpecials(item.dailySpecials),
         venueEvents: mapVenueEvents(item.venueEvents),
+        // HOS-2258: already withheld by the API's trait projection for a plan
+        // without `can_embed_video`; only approved entries are kept here.
+        videos: normalizeListingVideos({
+            raw: (item.media as { videos?: unknown } | null)?.videos
+        }),
         nightInfo: toVenueNightInfo({ item, locale }),
         policies: parseListingPolicyValues({ raw: item.policies }),
         rating: parsePublicDimensionRatings(item.rating),

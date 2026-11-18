@@ -346,6 +346,10 @@
             "path": "/api/v1/admin/alliance/leads/:id/mark-handled"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/admin/alliance/leads/:id/provision"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/admin/amenities"
         },
@@ -4248,6 +4252,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/host-trade-categories"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/public/interactions"
         },
         {
             "method": "POST",

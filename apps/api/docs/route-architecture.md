@@ -521,6 +521,18 @@ Request body: `{ entityType: 'ACCOMMODATION' | 'POST' | 'EVENT', entityId: uuid 
 `visitorHash` is computed **server-side** (daily-salted SHA-256 of truncated IP + UA); raw IPs
 are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`.
 
+### Interaction capture (HOS-2256)
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| `POST` | `/api/v1/public/interactions` | None (`skipAuth: true`) | Records a tap on a venue page element (`PHONE_CLICK`, `MAP_CLICK`, `WEBSITE_CLICK`, `INSTAGRAM_CLICK`, `TICKET_CLICK`, `WHATSAPP_CLICK`). Same contract as the view beacon: bot UA gets a fake 202, **30 requests/min per IP**, always 202. The only non-2xx is **400 `VALIDATION_ERROR`** for a malformed body. |
+
+Request body: `{ entityType: 'VENUE', entityId: uuid, kind, eventId?: uuid }`. `eventId` is required
+for `TICKET_CLICK` / `EVENT_IMPRESSION` and forbidden for the rest. A listing that does not exist or
+is not published, an `eventId` of another listing, the owner's own tap and a DB error all answer
+202 without inserting (no existence oracle). The visitor hash never uses the user id.
+Rows live in `entity_interactions`, never in `entity_views`.
+
 ### Protected reads
 
 | Method | Path | Permission | Response |
@@ -751,6 +763,18 @@ Rules worth knowing before touching them:
   is no longer read or written.
 - The alliance lead form sends `categorySlugs`; the slugs are validated against the
   active catalog on submit and resolved to ACTIVE categories at approval.
+- **Approving a `service_provider` lead can skip provisioning** (HOS-2339). When none
+  of the chosen categories is ACTIVE (`no-active-category`) or the lead predates the
+  typed fields (`legacy-lead-without-typed-fields`), the lead is still `approved`.
+  `POST /api/v1/admin/alliance/leads/{id}/mark-handled` then answers the lead plus an
+  optional `provisioning: { provisioned, reason?, hostTradeId? }` (absent for
+  rejections and other kinds). The dedicated retry is
+  `POST /api/v1/admin/alliance/leads/{id}/provision` (`ALLIANCE_LEAD_MANAGE`, no
+  body): idempotent, re-runs provisioning only, never sends the approval email, and
+  mints and sends a claim invite only when it newly creates the listing for a lead
+  with no applicant user. A skip is a 200 outcome, not an error; a non-provider lead
+  answers 422 `NOT_A_SERVICE_PROVIDER`, a lead that is not `approved` answers 409
+  `LEAD_NOT_APPROVED`.
 
 ---
 

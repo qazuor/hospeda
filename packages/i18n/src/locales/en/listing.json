@@ -337,6 +337,28 @@
                 "description": "We could not read your listing section states. Please try again in a few minutes.",
                 "retry": "Try again",
                 "back": "Back to my listings"
+            },
+            "video": {
+                "sectionTitle": "Videos",
+                "sectionDescription": "Add links to YouTube, Vimeo or Dailymotion videos that show your venue.",
+                "empty": "You haven't added any videos yet.",
+                "urlLabel": "Video link",
+                "urlPlaceholder": "https://youtu.be/...",
+                "captionLabel": "Title (optional)",
+                "addButton": "Add video",
+                "saveButton": "Save videos",
+                "removeAria": "Remove video {{index}}",
+                "urlInvalid": "Enter a valid video URL",
+                "captionInvalid": "The title must be between 3 and 100 characters, or leave it empty",
+                "saveSuccess": "Videos saved",
+                "saveFailed": "The videos could not be saved",
+                "forbidden": "Your plan does not include videos. Nothing was saved.",
+                "tooMany": "You can add up to 6 videos.",
+                "network": "Connection error",
+                "noChanges": "There are no changes to save",
+                "saving": "Saving...",
+                "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+                "locked": "Videos for your venue are included in the {{plan}} plan."
             }
         },
         "checklist": {

@@ -13,6 +13,7 @@ export * from './destination/index.ts';
 export * from './domain-event/index.ts';
 export * from './email-outbox/index.ts';
 export * from './entity-comment/index.ts';
+export * from './entity-interaction/index.ts';
 export * from './entity-view/index.ts';
 export * from './event/index.ts';
 export * from './exchange-rate/index.ts';

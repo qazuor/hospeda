@@ -98,6 +98,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     venueMenu: FileTextIcon,
     venueDailySpecial: CalendarIcon,
     venueEvents: MegaphoneIcon,
+    venueVideos: VideoIcon,
     menuItemPhotos: ImageIcon,
     multilingualMenu: GlobeIcon,
     menuQrScanMetrics: QrCodeIcon,

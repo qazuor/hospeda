@@ -9,6 +9,7 @@ import {
     ClientTypeEnum,
     ConversationStatusEnum,
     DestinationTypeEnum,
+    EntityInteractionKindEnum,
     EntityPermissionReasonEnum,
     EntityTypeEnum,
     EventCategoryEnum,
@@ -455,6 +456,15 @@ export const PartnerMentionChannelPgEnum = pgEnum(
 export const PartnerLogoClickDestinationPgEnum = pgEnum(
     'partner_logo_click_destination_enum',
     enumToTuple(PartnerLogoClickDestinationEnum)
+);
+
+/**
+ * What a visitor did on a listing page (HOS-2256). Values mirror
+ * `EntityInteractionKindEnum`; `EVENT_IMPRESSION` is reserved for HOS-2265.
+ */
+export const EntityInteractionKindPgEnum = pgEnum(
+    'entity_interaction_kind_enum',
+    enumToTuple(EntityInteractionKindEnum)
 );
 
 /**

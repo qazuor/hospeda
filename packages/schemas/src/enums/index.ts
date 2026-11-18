@@ -31,6 +31,9 @@ export * from './currency.enum.js';
 export * from './currency.schema.js';
 export * from './destination-type.enum.js';
 export * from './destination-type.schema.js';
+// Listing interaction kinds (HOS-2256)
+export * from './entity-interaction-kind.enum.js';
+export * from './entity-interaction-kind.schema.js';
 export * from './entity-permission-reason.enum.js';
 export * from './entity-permission-reason.schema.js';
 export * from './entity-type.enum.js';

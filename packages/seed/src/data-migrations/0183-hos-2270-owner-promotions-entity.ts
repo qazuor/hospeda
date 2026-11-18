@@ -7,7 +7,7 @@
  *
  * ## Why this migration exists
  *
- * Structural migration 0233 added `entity_type` (default `'accommodation'`) and
+ * Structural migration 0234 added `entity_type` (default `'accommodation'`) and
  * `entity_id`. The default types every existing row correctly, but `entity_id`
  * is born NULL, and NULL with `entity_type = 'accommodation'` means "all of the
  * owner's accommodations". Until this runs, an already-seeded environment holds
