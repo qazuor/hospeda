@@ -503,15 +503,20 @@ model wrote goes through `src/mcp/tools/confirmation-text.ts`:
   become spaces, whitespace collapses, the value is capped (80 characters by
   default) and guillemets inside it are replaced, so it cannot close its own quote.
 - A body the human must read exactly (the reply, a description, a note) is a block
-  (`blockForConfirmation`): its line breaks stay, every line is hard-wrapped at 60
-  code points, and every resulting row starts with `│`, so no content line, and no
+  (`blockForConfirmation`): its line breaks stay, every line is hard-wrapped at 40
+  display columns, and every resulting row starts with `│`, so no content line, and no
   row a client wraps visually, can look like a line the server wrote. A run of
   spaces (any `\p{Zs}`) shows as one space and a run of blank-rendering fillers
   (U+115F, U+1160, U+3164, U+FFA0, U+2800) as one `U+FFFD`, so padding cannot push
   text onto a row of its own. There is no closing delimiter to forge. Other hidden
-  characters show as `U+FFFD`. Residual limit: a client narrower than about 62
-  columns still wraps a row itself; the wrapped part then has no prefix, but the
-  padding that would align it is gone.
+  characters show as `U+FFFD`. The wrap counts columns, not code points: a CJK,
+  fullwidth or emoji-presentation cluster takes two, a lone mark none, and cuts
+  fall only between grapheme clusters (`Intl.Segmenter`), so a ZWJ emoji or an
+  accented letter is never split. The width table is local (no dependency) and
+  deliberately broad: over-counting only wraps early. Text is not NFKC-normalized,
+  because NFKC also rewrites what the human reads (`²` becomes `2`, `½` becomes
+  `1⁄2`); fullwidth forms are shown as written and counted as wide. Residual
+  limit: a client narrower than about 42 columns still wraps a row itself.
 - Both shapes keep a zero-width joiner only between two emoji (family emoji),
   and trim stacked combining marks to two (no "zalgo" text over other lines).
 - The form shows everything the call writes. Every cap is the create schemas'
