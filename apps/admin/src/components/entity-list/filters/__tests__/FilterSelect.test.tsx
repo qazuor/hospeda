@@ -240,3 +240,29 @@ describe('FilterSelect', () => {
         }
     });
 });
+
+describe('FilterSelect — runtime options (HOS-2336)', () => {
+    it('loads catalog options and labels the active one with its display text', async () => {
+        const loadOptions = vi.fn().mockResolvedValue([{ value: 'media', label: 'Medio' }]);
+        const config: SelectFilterConfig = {
+            paramKey: 'type',
+            labelKey: 'admin-filters.partnerType.label',
+            type: 'select',
+            options: [],
+            loadOptions
+        };
+
+        render(
+            <FilterSelect
+                config={config}
+                value="media"
+                onChange={vi.fn()}
+            />
+        );
+
+        expect(loadOptions).toHaveBeenCalledTimes(1);
+        expect(
+            await screen.findByRole('combobox', { name: 'admin-filters.partnerType.label: Medio' })
+        ).toBeTruthy();
+    });
+});

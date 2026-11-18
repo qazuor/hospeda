@@ -86,7 +86,11 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         // TEST:V7:13 (a) Gold and Silver have distinct presence keys; moderated and unowned rows are hidden.
         const goldPage = await publicPage(g.partner.slug);
         expect(goldPage.status, await goldPage.clone().text()).toBe(200);
-        expect((await goldPage.json()).data).toEqual(PartnerPublicSchema.parse(g.partner));
+        // The fixture row carries only the legacy enum (no `type_id`), so the
+        // public read answers `type: null` until the backfill reaches it (HOS-2336).
+        expect((await goldPage.json()).data).toEqual(
+            PartnerPublicSchema.parse({ ...g.partner, type: null })
+        );
         expect((await publicPage(s.partner.slug)).status).toBe(404);
         expect((await publicPage(m.partner.slug)).status).toBe(404);
         expect((await publicPage(u[0].slug)).status).toBe(404);
@@ -97,10 +101,10 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
             u[0].id
         ]);
         expect(initialItems.find(({ id }) => id === g.partner.id)).toEqual(
-            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: true })
+            PartnerCarouselItemSchema.parse({ ...g.partner, type: null, hasPublicPage: true })
         );
         expect(initialItems.find(({ id }) => id === s.partner.id)).toEqual(
-            PartnerCarouselItemSchema.parse({ ...s.partner, hasPublicPage: false })
+            PartnerCarouselItemSchema.parse({ ...s.partner, type: null, hasPublicPage: false })
         );
         expect(initialItems.map(({ id }) => id)).not.toContain(m.partner.id);
         expect(initialItems.map(({ id }) => id)).not.toContain(u[0].id);
@@ -114,7 +118,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         await invalidateEffectiveSetsForUser(s.owner!.id);
         const afterSilverSuspension = await carouselItems([g.partner.id, s.partner.id]);
         expect(afterSilverSuspension).toEqual([
-            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: true })
+            PartnerCarouselItemSchema.parse({ ...g.partner, type: null, hasPublicPage: true })
         ]);
 
         // TEST:V7:13 (c) Gold downgraded to Silver loses its page but keeps carousel presence.
@@ -125,7 +129,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         await invalidateEffectiveSetsForUser(g.owner!.id);
         expect((await publicPage(g.partner.slug)).status).toBe(404);
         expect(await carouselItems([g.partner.id])).toEqual([
-            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: false })
+            PartnerCarouselItemSchema.parse({ ...g.partner, type: null, hasPublicPage: false })
         ]);
 
         // TEST:V7:13 (d) Moderation answers 404 without changing billing or retained content.
@@ -177,7 +181,7 @@ describe('TEST:V7:13 AC:V7:13 — public presence is selected by key and moderat
         await invalidateEffectiveSetsForUser(g.owner!.id);
         expect((await publicPage(g.partner.slug)).status).toBe(200);
         expect(await carouselItems([g.partner.id])).toEqual([
-            PartnerCarouselItemSchema.parse({ ...g.partner, hasPublicPage: true })
+            PartnerCarouselItemSchema.parse({ ...g.partner, type: null, hasPublicPage: true })
         ]);
         // TEST:V7:13 (f) Moderation goes through the admin route while the response cache is warm.
         const adminId = randomUUID();

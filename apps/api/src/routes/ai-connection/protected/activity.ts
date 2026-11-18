@@ -12,6 +12,9 @@
  *   admin log uses (decision D-14).
  * - **Reads toggle (D-12).** `includeReads` absent or `false` lists writes
  *   only; `true` lists reads too ("mostrar también consultas").
+ * - **Link language.** `locale` (`es|en|pt`) is the language the web page is
+ *   rendered in; the target links are built with it (owner decision
+ *   2026-11-18, HOS-2348). Absent builds `es` links.
  * - **Privacy.** Items are allowlist-projected by the reader and validated
  *   against the strict owner item schema, so a key outside the allowlist fails
  *   the response instead of reaching the owner (AC-C46). A target the user no
@@ -52,8 +55,8 @@ export function getOwnActivityReader(): McpActivityService {
     ownActivityReader ??= new McpActivityService(
         { logger: apiLogger },
         {
-            buildTargetUrl: ({ target }) =>
-                buildActivityTargetUrl({ target, siteUrl: env.HOSPEDA_SITE_URL })
+            buildTargetUrl: ({ target, locale }) =>
+                buildActivityTargetUrl({ target, siteUrl: env.HOSPEDA_SITE_URL, locale })
         }
     );
     return ownActivityReader;
@@ -70,14 +73,15 @@ export function getOwnActivityReader(): McpActivityService {
  */
 export async function handleListOwnActivity(ctx: Context, query: McpActivityOwnQuery) {
     const actor = getActorFromContext(ctx);
-    const { page, pageSize, ...filterQuery } = query;
+    const { page, pageSize, locale, ...filterQuery } = query;
 
     const result = await getOwnActivityReader().list({
         actor,
         scope: { kind: 'own' },
         filter: toMcpActivityOwnFilter({ query: filterQuery }),
         page,
-        pageSize
+        pageSize,
+        locale
     });
 
     if (result.error) {

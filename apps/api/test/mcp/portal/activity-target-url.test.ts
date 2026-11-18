@@ -30,6 +30,20 @@ describe('buildActivityTargetUrl', () => {
         expect(url).toBe(`${SITE}/es/${path}/`);
     });
 
+    it.each([
+        ['es', 'es'],
+        ['en', 'en'],
+        ['pt', 'pt']
+    ] as const)('builds the link in the %s locale', (locale, prefix) => {
+        const url = buildActivityTargetUrl({
+            target: { type: 'accommodation', id: ID },
+            siteUrl: SITE,
+            locale
+        });
+
+        expect(url).toBe(`${SITE}/${prefix}/mi-cuenta/propiedades/${ID}/editar/`);
+    });
+
     it('gives no link to a target type no page shows', () => {
         expect(
             buildActivityTargetUrl({ target: { type: 'amenity', id: ID }, siteUrl: SITE })

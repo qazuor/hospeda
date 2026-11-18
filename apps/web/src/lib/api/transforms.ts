@@ -3373,6 +3373,29 @@ export function toExperienceDetailPageProps({
  * @param locale - Active locale for i18n field resolution
  * @returns Typed PartnerDetailData for the partner detail page
  */
+/**
+ * Resolves the public partner type `{ slug, name, nameI18n }` (HOS-2336 D5) to
+ * the label the page renders: `nameI18n[locale]`, then Spanish, then `name`.
+ * A bare string (an API older than HOS-2336) yields `null` here and is carried
+ * as `legacyType` instead, so it never renders as "[object Object]" or a raw
+ * enum value.
+ *
+ * @param input - The raw `type` value and the page locale.
+ * @returns The label, or `null` when the payload carries no type.
+ */
+function resolvePartnerTypeLabel({
+    type,
+    locale
+}: {
+    readonly type: unknown;
+    readonly locale: string;
+}): string | null {
+    if (!type || typeof type !== 'object') return null;
+    const { name, nameI18n } = type as { name?: unknown; nameI18n?: I18nTextLike };
+    const label = resolveI18nTextWithLegacyFallback({ i18n: nameI18n, legacy: name, locale });
+    return label || null;
+}
+
 export function toPartnerDetailProps({
     item,
     locale = 'es'
@@ -3387,7 +3410,8 @@ export function toPartnerDetailProps({
             legacy: item.name,
             locale
         }),
-        type: String(item.type || ''),
+        typeLabel: resolvePartnerTypeLabel({ type: item.type, locale }),
+        legacyType: typeof item.type === 'string' && item.type !== '' ? item.type : null,
         description:
             item.description == null
                 ? null

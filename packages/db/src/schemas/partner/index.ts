@@ -7,3 +7,5 @@ export * from './partner_logo_click_monthly_rollup.dbschema.js';
 export * from './partner_mention.dbschema.js';
 // Partner application (spec «postulacion», V6 ESQ:2)
 export * from './partner-application.dbschema.js';
+// Partner type catalog (HOS-2336)
+export * from './partner-type.dbschema.js';

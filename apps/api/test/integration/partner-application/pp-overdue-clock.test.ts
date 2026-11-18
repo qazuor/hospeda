@@ -17,7 +17,12 @@ import {
     seedPartner,
     seedPlan
 } from '../partner-presence/partner-presence.helpers';
-import { createApplicationEmail, insertPending } from './partner-application.helpers';
+import {
+    createApplicationEmail,
+    ensureTestPartnerType,
+    insertPending,
+    testPartnerTypeId
+} from './partner-application.helpers';
 
 const app = initApp();
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -58,7 +63,11 @@ async function approve(applicationId: string, actorId: string, name: string) {
                 PermissionEnum.PARTNER_RESOLVE_APPLICATION
             ]
         }),
-        body: JSON.stringify({ reason: 'Clock test approval', name, type: 'business' })
+        body: JSON.stringify({
+            reason: 'Clock test approval',
+            name,
+            typeId: testPartnerTypeId()
+        })
     });
 }
 
@@ -66,6 +75,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
     validateApiEnv();
+    await ensureTestPartnerType();
     const result = await getDb().execute(sql`
         SELECT version, ("values" -> '8' ->> 'days')::int AS days
         FROM vertical_deadline_version

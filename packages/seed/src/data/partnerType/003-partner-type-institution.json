@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/partnerType.schema.json",
+    "id": "003-partner-type-institution",
+    "slug": "institution",
+    "nameI18n": {
+        "es": "Institución",
+        "en": "Institution",
+        "pt": "Instituição"
+    },
+    "displayWeight": 30,
+    "lifecycleState": "ACTIVE"
+}

@@ -243,7 +243,7 @@ describe('Admin /platform-settings/analytics.sessionRecording (HOS-2347)', () =>
         expect(response.status).toBe(200);
         expect(modelMock.upsertByKey).toHaveBeenCalledWith(
             'analytics.sessionRecording',
-            { enabled: true },
+            { enabled: true, retentionDays: 30 },
             SUPER_ADMIN_ID,
             undefined
         );

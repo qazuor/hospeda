@@ -74,7 +74,7 @@ export type PartnerOwnerUpdate = z.infer<typeof PartnerOwnerUpdateSchema>;
  * {@link PartnerOwnerUpdateSchema} rather than trusting that nobody widens it
  * by accident. Four groups, each dangerous in its own way:
  *
- * - **Identity** (`name`, `slug`, `type`) — what the partner IS, and what the
+ * - **Identity** (`name`, `slug`, `typeId`) — what the partner IS, and what the
  *   public URL resolves to. An owner who could rewrite their slug would break
  *   every link to their own ficha.
  * - **Commercial** (`lifecycleState`) — an owner
@@ -89,7 +89,8 @@ export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'id',
     'name',
     'slug',
-    'type',
+    'typeId',
+    'partnerType',
     'lifecycleState',
     'ownerUserId',
     'presenceModerated',
@@ -127,7 +128,8 @@ export const PartnerOwnerViewSchema = partnerSchema.pick({
     id: true,
     slug: true,
     name: true,
-    type: true,
+    typeId: true,
+    partnerType: true,
     logoUrl: true,
     description: true,
     websiteUrl: true,

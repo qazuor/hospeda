@@ -49,7 +49,8 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     pointOfInterestCatalog: 'pointOfInterest',
     poiCategories: 'poiCategory',
     hostTradeCategoryGroups: 'hostTradeCategoryGroup',
-    hostTradeCategories: 'hostTradeCategory'
+    hostTradeCategories: 'hostTradeCategory',
+    partnerTypes: 'partnerType'
 };
 
 /**

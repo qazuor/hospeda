@@ -50,6 +50,18 @@ describe('ServiceErrorCode CATEGORY_IN_USE (HOS-919)', () => {
     });
 });
 
+describe('ServiceErrorCode PARTNER_TYPE_IN_USE (HOS-2336)', () => {
+    it('should expose PARTNER_TYPE_IN_USE with a stable literal value', () => {
+        expect(ServiceErrorCode.PARTNER_TYPE_IN_USE).toBe('PARTNER_TYPE_IN_USE');
+    });
+
+    it('should be accepted by ServiceErrorCodeSchema', () => {
+        expect(ServiceErrorCodeSchema.parse('PARTNER_TYPE_IN_USE')).toBe(
+            ServiceErrorCode.PARTNER_TYPE_IN_USE
+        );
+    });
+});
+
 describe('ServiceErrorCodeSchema', () => {
     it('should accept every published enum value', () => {
         for (const code of Object.values(ServiceErrorCode)) {

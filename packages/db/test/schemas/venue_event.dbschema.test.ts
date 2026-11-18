@@ -21,7 +21,7 @@ describe('venue_events.ticket_url (HOS-2255)', () => {
 
     it('is added by a single ADD COLUMN migration', () => {
         const sql = readFileSync(
-            resolve(__dirname, '../../src/migrations/0237_hos2255_venue_event_ticket_url.sql'),
+            resolve(__dirname, '../../src/migrations/0238_hos2255_venue_event_ticket_url.sql'),
             'utf8'
         );
 

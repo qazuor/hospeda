@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/partnerType.schema.json",
+    "id": "005-partner-type-person",
+    "slug": "person",
+    "nameI18n": {
+        "es": "Persona",
+        "en": "Person",
+        "pt": "Pessoa"
+    },
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

@@ -50,6 +50,7 @@ import {
     providerWatchBatteryJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
+    sessionRecordingRetentionJob,
     socialPublishDispatchJob,
     subscriptionGraceReminderJob,
     subscriptionPauseEndJob,
@@ -130,6 +131,8 @@ export const cronJobs: CronJobDefinition[] = [
     aiQuestionsWeeklyDigestJob,
     // HOS-2335 D-13: 12-month retention of the assistant activity (mcp.tool.call only).
     mcpAuditRetentionJob,
+    // HOS-2347: Umami replays and heatmaps are purged after the configured retention.
+    sessionRecordingRetentionJob,
     // HOS-2254: past one-off venue events are deleted after 60 days.
     venueEventsPastCleanupJob
 ];

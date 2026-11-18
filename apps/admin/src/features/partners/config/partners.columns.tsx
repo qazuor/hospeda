@@ -1,9 +1,29 @@
 import type { TranslationKey } from '@repo/i18n';
 import { Link } from '@tanstack/react-router';
-import { createElement, Fragment } from 'react';
+import { type ComponentProps, createElement, Fragment } from 'react';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { Badge } from '@/components/ui/badge';
+import { partnerTypeName } from '@/hooks/use-partner-types';
 import type { Partner } from '../schemas/partners.schemas';
+
+/**
+ * Renders a partner's catalog type as a badge labelled from the type's own
+ * `nameI18n`; a partner the release-N backfill has not reached shows nothing.
+ *
+ * @param row - The partner list row, carrying the hydrated `partnerType` ref.
+ */
+const renderPartnerType = (row: Partner) =>
+    row.partnerType
+        ? createElement(
+              Badge,
+              {
+                  variant: 'secondary',
+                  'data-testid': 'partner-type-badge'
+              } as ComponentProps<typeof Badge>,
+              partnerTypeName(row.partnerType)
+          )
+        : null;
 
 /**
  * Create columns for partners table
@@ -22,28 +42,13 @@ export const createPartnersColumns = (t: ColumnTFunction): readonly ColumnConfig
             startVisibleOnGrid: true
         },
         {
+            // HOS-2336 AC-4.2: the type's own catalog name (data, not copy).
             id: 'type',
             header: t('admin-filters.partnerType.label' as TranslationKey),
-            accessorKey: 'type',
-            enableSorting: true,
-            columnType: ColumnType.BADGE,
-            badgeOptions: [
-                {
-                    value: 'business',
-                    label: t('admin-filters.partnerType.business' as TranslationKey),
-                    color: BadgeColor.BLUE
-                },
-                {
-                    value: 'ngo',
-                    label: t('admin-filters.partnerType.ngo' as TranslationKey),
-                    color: BadgeColor.GREEN
-                },
-                {
-                    value: 'institution',
-                    label: t('admin-filters.partnerType.institution' as TranslationKey),
-                    color: BadgeColor.PURPLE
-                }
-            ],
+            accessorKey: 'partnerType',
+            enableSorting: false,
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: renderPartnerType,
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },

@@ -21,7 +21,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
-import { buildPortalUrl } from '../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../portal/build-portal-url';
 import {
     describePortalDestination,
     isNonIdentifyingDestination
@@ -62,6 +62,8 @@ export interface AttachRefusalActionArgs {
     readonly input: unknown;
     /** The tool that failed. */
     readonly definition: Pick<ToolDefinition, 'name' | 'refusalAction'>;
+    /** Locale prefix of the link (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }
 
 /** Logs a link that could not be built. Never throws. */
@@ -93,13 +95,17 @@ function readRefusalLink(args: AttachRefusalActionArgs): ToolRefusalLink | undef
 function resolveLink(
     args: AttachRefusalActionArgs & { readonly link: ToolRefusalLink }
 ): ToolAction | undefined {
-    const { link, error, definition } = args;
+    const { link, error, definition, locale } = args;
     if (NOT_FOUND_CODES.has(error.code) && !isNonIdentifyingDestination(link)) {
         return undefined;
     }
     try {
         return {
-            url: buildPortalUrl({ destination: link.destination, siteUrl: env.HOSPEDA_SITE_URL }),
+            url: buildPortalUrl({
+                destination: link.destination,
+                locale,
+                siteUrl: env.HOSPEDA_SITE_URL
+            }),
             label: link.label ?? describePortalDestination(link)
         };
     } catch (cause) {

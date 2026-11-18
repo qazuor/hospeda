@@ -324,9 +324,6 @@
         "other": "Outro"
     },
     "partnerType": {
-        "label": "Tipo de parceiro",
-        "business": "Comércio",
-        "ngo": "ONG",
-        "institution": "Instituição"
+        "label": "Tipo de parceiro"
     }
 }

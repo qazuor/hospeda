@@ -8,16 +8,12 @@
  * RO-RO props — inputs are plain values, outputs are via callbacks.
  */
 
-import {
-    adminCreatePartnerSchema,
-    createPartnerSchema,
-    LifecycleStatusEnum,
-    PartnerTypeEnum
-} from '@repo/schemas';
+import { adminCreatePartnerSchema, createPartnerSchema, LifecycleStatusEnum } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
+import { usePartnerTypeOptions } from '@/hooks/use-partner-types';
 import { isApiError } from '@/lib/errors';
 import { PartnerClaimEmailField } from './PartnerClaimEmailField';
 
@@ -34,7 +30,12 @@ export interface PartnerFormProps {
      * Initial field values.  Pass the existing entity when editing;
      * omit (or pass `undefined`) when creating.
      */
-    readonly initialData?: Partial<PartnerFormValues> | null;
+    readonly initialData?:
+        | (Partial<Omit<PartnerFormValues, 'typeId'>> & {
+              /** Nullable on rows the HOS-2336 release-N backfill has not reached. */
+              readonly typeId?: string | null;
+          })
+        | null;
     /** Whether the form is in a pending/saving state. */
     readonly isSubmitting?: boolean;
     /** Label for the submit button. */
@@ -96,12 +97,6 @@ function extractConflictField(message: string): string | null {
 // ---------------------------------------------------------------------------
 // Option lists
 // ---------------------------------------------------------------------------
-
-const TYPE_OPTIONS: ReadonlyArray<{ value: PartnerTypeEnum; label: string }> = [
-    { value: PartnerTypeEnum.BUSINESS, label: 'Comercio' },
-    { value: PartnerTypeEnum.NGO, label: 'ONG' },
-    { value: PartnerTypeEnum.INSTITUTION, label: 'Institución' }
-];
 
 // ---------------------------------------------------------------------------
 // Small field wrapper
@@ -197,11 +192,15 @@ export function PartnerForm({
         readonly message: string;
     } | null>(null);
 
+    // HOS-2336 AC-4.1: ACTIVE catalog types plus the partner's current type,
+    // even when inactive, so saving other fields never forces a type change.
+    const typeOptions = usePartnerTypeOptions({ currentTypeId: initialData?.typeId });
+
     const form = useForm<PartnerFormSubmitValues>({
         defaultValues: {
             name: initialData?.name ?? '',
             slug: initialData?.slug ?? '',
-            type: initialData?.type ?? PartnerTypeEnum.BUSINESS,
+            typeId: initialData?.typeId ?? '',
             logoUrl: initialData?.logoUrl ?? null,
             websiteUrl: initialData?.websiteUrl ?? null,
             description: initialData?.description ?? null,
@@ -369,7 +368,7 @@ export function PartnerForm({
 
                         {/* Type */}
                         <form.Field
-                            name="type"
+                            name="typeId"
                             validators={{
                                 onChange: ({ value }) =>
                                     value ? undefined : 'El tipo es requerido'
@@ -387,20 +386,21 @@ export function PartnerForm({
                                         name={field.name}
                                         value={(field.state.value as string) ?? ''}
                                         onBlur={field.handleBlur}
-                                        onChange={(e) =>
-                                            field.handleChange(e.target.value as PartnerTypeEnum)
-                                        }
+                                        onChange={(e) => field.handleChange(e.target.value)}
                                         className={INPUT_CLASS}
-                                        disabled={isSubmitting}
+                                        disabled={isSubmitting || typeOptions.isLoading}
                                         aria-required="true"
+                                        data-testid="partner-type-select"
                                     >
                                         <option value="">Seleccioná el tipo…</option>
-                                        {TYPE_OPTIONS.map((opt) => (
+                                        {typeOptions.options.map((opt) => (
                                             <option
                                                 key={opt.value}
                                                 value={opt.value}
                                             >
-                                                {opt.label}
+                                                {opt.inactive
+                                                    ? `${opt.label} (inactiva)`
+                                                    : opt.label}
                                             </option>
                                         ))}
                                     </select>

@@ -7,15 +7,28 @@ import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PartnerApplicationPanelScreen } from '../PartnerApplicationPanelScreen';
 
-const mocks = vi.hoisted(() => ({ query: vi.fn(), cancelWait: vi.fn() }));
+const mocks = vi.hoisted(() => ({ query: vi.fn(), cancelWait: vi.fn(), approve: vi.fn() }));
 vi.mock('@/features/partner-applications/hooks/usePartnerApplicationPanel', () => ({
     usePartnerApplicationPanel: mocks.query
 }));
 vi.mock('@/features/partner-applications/hooks/usePartnerApplicationActions', () => ({
     usePartnerApplicationActions: () => ({
-        approve: { mutateAsync: vi.fn(), isPending: false },
+        approve: { mutateAsync: mocks.approve, isPending: false },
         reject: { mutateAsync: vi.fn(), isPending: false },
         cancelWait: { mutateAsync: mocks.cancelWait, isPending: false }
+    })
+}));
+// HOS-2336 AC-2.4: the approval dialog lists catalog types ordered by weight.
+const BUSINESS_TYPE_ID = 'f2336000-0000-4000-8000-000000000010';
+const MEDIA_TYPE_ID = 'f2336000-0000-4000-8000-000000000040';
+vi.mock('@/hooks/use-partner-types', () => ({
+    usePartnerTypeOptions: () => ({
+        options: [
+            { value: BUSINESS_TYPE_ID, slug: 'business', label: 'Comercio', inactive: false },
+            { value: MEDIA_TYPE_ID, slug: 'media', label: 'Medio', inactive: false }
+        ],
+        isLoading: false,
+        isError: false
     })
 }));
 vi.mock('@/hooks/use-user-permissions', () => ({ useHasPermission: () => false }));
@@ -144,6 +157,45 @@ describe('PartnerApplicationPanelScreen', () => {
         await waitFor(() =>
             expect(mocks.cancelWait).toHaveBeenCalledWith({ id: oldId, reason: 'Review complete' })
         );
+    });
+
+    it('approves with the picked catalog typeId, defaulting to the lowest weight (HOS-2336 AC-2.4)', async () => {
+        mocks.approve.mockReset().mockResolvedValue(undefined);
+        renderScreen();
+        const pendingTable = screen.getByTestId('partner-application-panel-table');
+        fireEvent.click(
+            within(pendingTable).getAllByRole('button', {
+                name: 'admin-entities.partnerApplicationPanel.actions.approve'
+            })[0] as HTMLElement
+        );
+        const select = screen.getByLabelText(
+            'admin-entities.partnerApplicationPanel.dialogs.partnerType'
+        ) as HTMLSelectElement;
+        expect(select.value).toBe(BUSINESS_TYPE_ID);
+        expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
+            'Comercio',
+            'Medio'
+        ]);
+        fireEvent.change(select, { target: { value: MEDIA_TYPE_ID } });
+        fireEvent.change(
+            screen.getByLabelText('admin-entities.partnerApplicationPanel.dialogs.partnerName'),
+            { target: { value: 'Diario Litoral' } }
+        );
+        fireEvent.change(
+            screen.getByLabelText('admin-entities.partnerApplicationPanel.dialogs.reason'),
+            { target: { value: 'Reviewed' } }
+        );
+        const confirm = screen.getByRole('button', {
+            name: 'admin-entities.partnerApplicationPanel.dialogs.approve.confirm'
+        });
+        await waitFor(() => expect(confirm).toBeEnabled());
+        fireEvent.click(confirm);
+        await waitFor(() =>
+            expect(mocks.approve).toHaveBeenCalledWith(
+                expect.objectContaining({ name: 'Diario Litoral', typeId: MEDIA_TYPE_ID })
+            )
+        );
+        expect(mocks.approve.mock.calls[0]?.[0]).not.toHaveProperty('type');
     });
 
     it('keeps the cancel dialog open and shows API failures as an alert', async () => {

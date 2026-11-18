@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { ContactInfoSchema } from '../../common/contact.schema.js';
-import { UserIdSchema } from '../../common/id.schema.js';
+import { PartnerTypeIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
-import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
+import { PartnerTypeRefSchema } from '../partner-type/partner-type.access.schema.js';
 
 /**
  * The partner fields whose WRITE contract is stricter than the entity's (HOS-703).
@@ -61,7 +61,19 @@ export const partnerSchema = z.object({
         .max(255)
         .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
     name: z.string().min(1).max(255),
-    type: PartnerTypeEnumSchema,
+    /**
+     * The partner's type in the admin-managed catalog (HOS-2336).
+     *
+     * Nullish during release N only: `partners.type_id` is added nullable and
+     * backfilled by a seed data-migration; the N+1 contract release makes it
+     * NOT NULL. Every write path sets it.
+     */
+    typeId: PartnerTypeIdSchema.nullish(),
+    /**
+     * The type row, hydrated on admin and owner reads (never stored on this
+     * table). Read-only: create/update schemas omit it.
+     */
+    partnerType: PartnerTypeRefSchema.nullish(),
     logoUrl: z.string().url().nullable().optional(),
     websiteUrl: z.string().url().nullable().optional(),
     description: z.string().max(5000).nullable().optional(),

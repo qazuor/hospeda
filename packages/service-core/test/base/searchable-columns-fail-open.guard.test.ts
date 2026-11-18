@@ -140,6 +140,10 @@ const DECLARED_EXCEPTIONS: ReadonlyArray<{ readonly service: string; readonly re
         reason: 'HOS-919: same as HostTradeCategoryService — the term matches slug OR a per-locale name (JSONB), built by buildCatalogSearchCondition in the adminList() → _executeAdminSearch override. adminList() is the only caller (apps/api admin list route); list() is not exposed with a search param.'
     },
     {
+        service: 'PartnerTypeService',
+        reason: 'HOS-2336: same shape as HostTradeCategoryService — the term matches slug OR a per-locale name (JSONB), built by buildCatalogSearchCondition in the adminList() → _executeAdminSearch override. adminList() is the only search caller (apps/api admin list route); the public route calls getPublicList(), which takes no search term, and list() is not exposed with a search param.'
+    },
+    {
         service: 'HostTradeUsageService',
         reason: 'Deliberate and pre-existing: the benefit-usage admin list filters on typed columns (declarant, state, date range). The two free-text columns it does have (note, rejectionNote) are moderation notes, not identifiers.'
     }

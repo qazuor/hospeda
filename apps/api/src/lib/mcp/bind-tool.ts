@@ -45,6 +45,7 @@ import {
     toToolFailure
 } from '../../mcp/tools/tool-errors';
 import { buildMcpWwwAuthenticate } from '../../middlewares/mcp-auth';
+import { resolveRecipientLocale } from '../../services/notification-recipient-locale';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { getMcpCaller, type McpCaller, type McpCallerSource } from './caller';
@@ -324,13 +325,17 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
             return renderOutcome({ ok: false, failure: buildRateLimitFailure() });
         }
 
-        const parsed = parseToolInput({ definition, input: rawInput });
+        // Once per call: every portal link of the answer carries the user's web
+        // language. Falls back to `es`, never throws.
+        const locale = await resolveRecipientLocale({ userId: actor.id });
+
+        const parsed = parseToolInput({ definition, input: rawInput, locale });
         const outcome: ToolRunOutcome<TData> = parsed.ok
             ? await executeTool({
                   definition,
                   actor,
                   input: parsed.input,
-                  context: { channel: 'mcp', clientId: mcpAuth.clientId }
+                  context: { channel: 'mcp', clientId: mcpAuth.clientId, locale }
               })
             : parsed;
 

@@ -1664,8 +1664,15 @@
     {
       "idx": 237,
       "version": "7",
-      "when": 1795034217741,
-      "tag": "0237_hos2255_venue_event_ticket_url",
+      "when": 1795034446162,
+      "tag": "0237_hos2336_partner_types_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 238,
+      "version": "7",
+      "when": 1795041949646,
+      "tag": "0238_hos2255_venue_event_ticket_url",
       "breakpoints": true
     }
   ]

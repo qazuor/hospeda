@@ -51,6 +51,7 @@ check answers 403 to someone the server never identified.
 | New self-service paid signups paused (S1 checkout; first publish that would start a trial: reason FIRST_PUBLISH_PAUSED) | **409** | `NEW_PAID_SIGNUPS_FROZEN` |
 | Addon purchases paused (A1) | **409** | `ADDON_PURCHASES_FROZEN` |
 | Deleting a provider trade category that live providers still use, or a catalog group that still has categories (HOS-919; deactivate instead) | **409** | `CATEGORY_IN_USE` |
+| Deactivating or soft-deleting a partner type that non-deleted partners still use (HOS-2336; reassign them first) | **409** | `PARTNER_TYPE_IN_USE` (`details.count` is public) |
 | Plan change while the next charge date is still being confirmed | **409** | `CONFLICT`, `error.details.reason: CYCLE_END_PENDING` |
 | Provider watch (HOS-1512): the provider account is not the one the owner confirmed; accepting a shape from a run that is not completed or does not hold the measurement | **409** | `ALREADY_EXISTS` |
 | Provider watch (HOS-1512): accepting a shape from a run of another account, or an unknown run | **404** | `NOT_FOUND` |
@@ -329,6 +330,7 @@ so an unrelated `VALIDATION_ERROR` that happened to mimic that payload keeps its
 |---|---|---|
 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience, ... }` | `apps/web/src/lib/billing-limit-error.ts` reads `limitKey` to render the limit-specific toast (which limit, and the addon that unlocks it) instead of the generic fallback. |
 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
+| `PARTNER_TYPE_IN_USE` | `{ partnerTypeId, count }` | The admin partner-type catalog says how many partners still use the type before the admin reassigns them (HOS-2336 AC-3.4). Admin-only routes; no partner data travels, only the count. |
 | `ALREADY_EXISTS` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The client needs the absent section identifier to explain why the requested content cannot be saved. |
 | `ALREADY_EXISTS` with `reason: 'DUPLICATE_LOCATION'` | `{ reason: 'DUPLICATE_LOCATION', existingListingId }` | The owner editor links to the listing that already holds the address. The id is always one of the caller's own listings: a duplicate held by another owner never produces this error. |
 | `ALREADY_EXISTS` with `reason: 'LOCATION_EXCEPTION_REVOKE_CONFLICT'` | `{ reason: 'LOCATION_EXCEPTION_REVOKE_CONFLICT', existingListingId }` | The admin form links to the owner's other published listing that would share the address once the exception is removed. Admin-only route; the id is the same owner's. |
