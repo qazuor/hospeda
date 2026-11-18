@@ -26,6 +26,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -167,7 +168,10 @@ export function WhatsAppContact({
     }
 
     return (
-        <section className={styles.root}>
+        <section
+            className={styles.root}
+            {...UMAMI_BLOCK_PROPS}
+        >
             <h3 className={styles.title}>{title}</h3>
 
             {viewer.showUpsell ? (

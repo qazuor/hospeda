@@ -3,7 +3,8 @@
  * @description Idempotent Umami dashboards-as-code setup (HOS-2119, AC-6).
  *
  * Upserts every saved report first, then the boards that reference them by id,
- * then the segments and cohorts. Re-running changes nothing (second run reports
+ * then the segments and cohorts, then the WEB website's session recorder config
+ * (HOS-2347, `recorder-definitions.ts`). Re-running changes nothing (second run reports
  * everything as unchanged). Items that exist in Umami but are not defined here
  * are only listed ("unmanaged"), never modified or deleted.
  *
@@ -35,6 +36,8 @@ import {
     upsertReport
 } from './client.js';
 import { buildReportDefinitions } from './definitions.js';
+import { upsertRecorderConfig } from './recorder-client.js';
+import { buildRecorderDefinition } from './recorder-definitions.js';
 import { buildSegmentDefinitions, type SegmentType } from './segment-definitions.js';
 import { listSegments, upsertSegment } from './segments-client.js';
 
@@ -50,7 +53,7 @@ export interface ActionCounts {
 
 /** A resource that exists in Umami but is not defined in the script. */
 export interface UnmanagedItem {
-    readonly kind: 'report' | 'board' | 'segment' | 'cohort';
+    readonly kind: 'report' | 'board' | 'segment' | 'cohort' | 'recorder-config-key';
     readonly name: string;
 }
 
@@ -62,6 +65,8 @@ export interface SetupOutcome {
     readonly boards: ActionCounts;
     readonly segments: ActionCounts;
     readonly cohorts: ActionCounts;
+    /** The WEB website's recorder config: one item, `updated` or `unchanged`. */
+    readonly recorder: ActionCounts;
     /** Report-only: existing items not defined in the script. Left untouched. */
     readonly unmanaged: readonly UnmanagedItem[];
 }
@@ -151,10 +156,11 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
     const boards: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const segments: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const cohorts: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
+    const recorder: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const secrets: string[] = [];
     const fail = (message: string): SetupOutcome => {
         error(`FAILED: ${message}`);
-        return { exitCode: 1, reports, boards, segments, cohorts, unmanaged: [] };
+        return { exitCode: 1, reports, boards, segments, cohorts, recorder, unmanaged: [] };
     };
 
     let token: string;
@@ -245,6 +251,27 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
         }
     }
 
+    const recorderUnmanaged: UnmanagedItem[] = [];
+    try {
+        const plan = await upsertRecorderConfig({
+            config,
+            websiteId: input.websiteId,
+            desired: buildRecorderDefinition()
+        });
+        recorder[plan.action]++;
+        log(`- recorder ${plan.action}: website ${input.websiteId}`);
+        for (const change of plan.changes) {
+            log(
+                `    ${change.field}: ${JSON.stringify(change.from)} -> ${JSON.stringify(change.to)}`
+            );
+        }
+        for (const key of plan.unmanagedKeys) {
+            recorderUnmanaged.push({ kind: 'recorder-config-key', name: key });
+        }
+    } catch (cause) {
+        return fail(`recorder config: ${describeError(cause, secrets)}`);
+    }
+
     const unmanaged: UnmanagedItem[] = [];
     try {
         unmanaged.push(
@@ -261,6 +288,7 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
         unmanaged.length = 0;
         log(`Warning: could not list unmanaged items: ${describeError(cause, secrets)}`);
     }
+    unmanaged.push(...recorderUnmanaged);
     if (unmanaged.length > 0) {
         log('');
         log('Unmanaged (left untouched):');
@@ -275,8 +303,9 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
     log(formatRow({ label: 'boards', counts: boards }));
     log(formatRow({ label: 'segments', counts: segments }));
     log(formatRow({ label: 'cohorts', counts: cohorts }));
+    log(formatRow({ label: 'recorder', counts: recorder }));
     log(input.dryRun ? 'Dry run completed; nothing was written.' : 'Umami setup completed.');
-    return { exitCode: 0, reports, boards, segments, cohorts, unmanaged };
+    return { exitCode: 0, reports, boards, segments, cohorts, recorder, unmanaged };
 }
 
 /** Result of {@link resolveSetupInput}. */

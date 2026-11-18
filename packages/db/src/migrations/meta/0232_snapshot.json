@@ -1,6 +1,6 @@
 {
-  "id": "c394f5c3-6fa3-40ed-a24c-922d9afef5b0",
-  "prevId": "73cb74bf-3959-4ee5-be93-576e430d84e1",
+  "id": "e617e0f3-9da4-4a73-beef-f2d457d6872a",
+  "prevId": "56ad69ed-a44c-4aff-8cd6-cf5620147eb8",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -27624,13 +27624,6 @@
           "primaryKey": false,
           "notNull": false
         },
-        "whatsapp_visibility": {
-          "name": "whatsapp_visibility",
-          "type": "venue_whatsapp_visibility_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": false
-        },
         "location": {
           "name": "location",
           "type": "jsonb",
@@ -36080,6 +36073,7 @@
         "logs.viewAll",
         "errors.view",
         "analytics.view",
+        "analytics.sessionRecording.manage",
         "system.debugTools.access",
         "entities.bulk.import",
         "entities.bulk.export",
@@ -36944,14 +36938,6 @@
         "FOOD_TRUCK",
         "PUB",
         "BOLICHE"
-      ]
-    },
-    "public.venue_whatsapp_visibility_enum": {
-      "name": "venue_whatsapp_visibility_enum",
-      "schema": "public",
-      "values": [
-        "PUBLIC",
-        "LOGGED_IN_ONLY"
       ]
     },
     "public.visibility_enum": {

@@ -1306,7 +1306,26 @@
             "cacheClearError": "Failed to clear cache",
             "dangerZone": "Danger Zone",
             "dangerZoneDesc": "Database reset and other dangerous operations",
-            "dangerZoneDevOnly": "Only available in development environment"
+            "dangerZoneDevOnly": "Only available in development environment",
+            "sessionRecording": {
+                "title": "Session recordings and heatmaps",
+                "description": "Master switch for the Umami recorder on the web. While off, the web never loads the recorder.",
+                "statusOn": "ON",
+                "statusOff": "OFF",
+                "lastChanged": "Last changed: {{date}}",
+                "neverChanged": "Never changed",
+                "help": "Replay vs heatmap, sampling and masking are configured in Umami through `pnpm umami:setup`, not here.",
+                "enable": "Turn on",
+                "disable": "Turn off",
+                "enableAria": "Turn session recordings on",
+                "disableAria": "Turn session recordings off",
+                "confirmEnable": "Production must have a signed privacy verification (docs/analytics/session-replay-privacy.md). Turn recordings on?",
+                "confirmDisable": "The change reaches the web within 60 seconds, and pages already open keep their replay for up to 5 minutes and their heatmap clicks until they are closed. Turn recordings off?",
+                "cancel": "Cancel",
+                "saveError": "The change could not be saved. The state shown is the last confirmed one.",
+                "readError": "The current state could not be read.",
+                "retry": "Retry"
+            }
         },
         "seo": {
             "title": "SEO Configuration",
