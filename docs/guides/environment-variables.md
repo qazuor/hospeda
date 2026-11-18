@@ -129,6 +129,7 @@ pnpm env:check
 | `HOSPEDA_UMAMI_API_KEY` | string | no | yes | - | API key (`umami_...`) of a view-only Umami user, sent as `Authorization: Bearer`; only used to read stats (HOS-2119) |
 | `HOSPEDA_HEALTHCHECKS_PING_KEY` | string | no | yes | - | Healthchecks.io project ping key for the free cron monitors (HOS-1742) |
 | `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX` | enum | no | no | - | `staging` or `prod`; prefixes each check slug (HOS-1742) |
+| `HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL` | email | no | no | - | Payer email of the pending preapprovals the provider watch battery creates and cancels in the same run; sandbox test buyer on staging (HOS-1512) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` | string | no | yes | - | MercadoLibre OAuth app client secret (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_REDIRECT_URI` | url | no | no | - | MercadoLibre OAuth callback URL, e.g. `https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback` (HOS-45) |
