@@ -67,8 +67,25 @@ function idOf(body: unknown): string | undefined {
     return typeof id === 'string' || typeof id === 'number' ? String(id) : undefined;
 }
 
+/** What {@link createGuardedSend} returns: the `send` and the way to close it. */
+export interface GuardedSend {
+    /** The `send` for the measurement's context; sends run one at a time, in call order. */
+    readonly send: WatchContext['send'];
+    /**
+     * Closes the send once the measurement has settled: refuses any send that has not started,
+     * waits for the one in flight, and answers the first guard error any send raised (or `null`).
+     * Never rejects. The engine calls it BEFORE it reads the measurement's ids or closes the run.
+     */
+    readonly settle: () => Promise<WatchGuardError | null>;
+}
+
 /**
  * Builds the `send` of one measurement.
+ *
+ * Sends are SERIALIZED: each one's guard, record, request and record complete before the next
+ * starts, so a measurement that fires two money writes at once (`Promise.all`) books, records and
+ * answers them in order, and the ledger snapshots persisted with them are monotonic. A send that
+ * trips a guard poisons the rest: the sends not yet started are refused.
  *
  * @param args.entry - The measurement
  * @param args.transport - Sends the raw request
@@ -79,7 +96,7 @@ function idOf(body: unknown): string | undefined {
  * @param args.providerIds - Filled with the ids of what writes created
  * @param args.record - Persists write keys (before sending), provider ids (as they answer) and
  *   the ledger, all in one statement per record
- * @returns The `send` for the measurement's context
+ * @returns The `send` for the measurement's context and the `settle` that closes it
  */
 export function createGuardedSend(args: {
     readonly entry: WatchEntry;
@@ -94,7 +111,7 @@ export function createGuardedSend(args: {
         readonly writeKeys?: readonly string[];
         readonly ledger: { readonly charged: number; readonly refunded: number };
     }) => Promise<void>;
-}): WatchContext['send'] {
+}): GuardedSend {
     const { entry, transport, runId, state, runCap, shapes, providerIds, record } = args;
     let entryCharged = 0;
     const sequences = new Map<string, number>();
@@ -117,7 +134,7 @@ export function createGuardedSend(args: {
         }
     };
 
-    return async ({ label, request, chargeMinor, refundMinor }) => {
+    const sendOne: WatchContext['send'] = async ({ label, request, chargeMinor, refundMinor }) => {
         assertHeadersAllowed({ headers: request.headers });
         const { pathname, search } = normalizeRequestPath({
             path: request.path,
@@ -191,7 +208,14 @@ export function createGuardedSend(args: {
             // corrected ledger is persisted. (A 5xx or a lost answer keeps it, below.)
             releaseWrite({ operation, state });
             if (operation.kind === 'charge') entryCharged -= operation.statedMinor ?? 0;
-            await recordOrAbort(`was refused with ${response.status}`, {});
+            // The provider may still have answered an id (traceability). It goes in `providerIds`
+            // only: it is NOT one of this run's objects, so it never becomes a valid target.
+            const refusedId = idOf(response.body);
+            if (refusedId !== undefined) providerIds.push(refusedId);
+            await recordOrAbort(
+                `was refused with ${response.status}`,
+                refusedId === undefined ? {} : { providerIds: [refusedId] }
+            );
             return response;
         }
         const id = idOf(response.body);
@@ -226,4 +250,41 @@ export function createGuardedSend(args: {
         }
         return response;
     };
+
+    // The queue: each send starts when the previous one has finished (answered or failed).
+    let tail: Promise<unknown> = Promise.resolve();
+    let closedBecause: string | null = null;
+    let firstGuardError: WatchGuardError | null = null;
+
+    const refuseClosed = (): WatchGuardError =>
+        new WatchGuardError({
+            code: 'SEND_AFTER_SETTLED',
+            message: `${entry.id} tried to send after ${closedBecause ?? 'it settled'}; nothing more is sent`
+        });
+
+    const send: WatchContext['send'] = (call) => {
+        if (closedBecause !== null) return Promise.reject(refuseClosed());
+        const result = tail.then(async () => {
+            if (closedBecause !== null) throw refuseClosed();
+            try {
+                return await sendOne(call);
+            } catch (error) {
+                if (error instanceof WatchGuardError) {
+                    firstGuardError ??= error;
+                    closedBecause = `a guard stopped it (${error.code})`;
+                }
+                throw error;
+            }
+        });
+        tail = result.catch(() => undefined);
+        return result;
+    };
+
+    const settle = async (): Promise<WatchGuardError | null> => {
+        closedBecause ??= 'the measurement settled';
+        await tail;
+        return firstGuardError;
+    };
+
+    return { send, settle };
 }
