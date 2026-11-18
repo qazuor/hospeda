@@ -240,6 +240,25 @@ describe('closeWatchRun', () => {
         expect(h.enqueue).not.toHaveBeenCalled();
     });
 
+    it('keeps the ORIGINAL failure beside ALERTS_NOT_DELIVERED when nobody can be told', async () => {
+        h.listSuperAdminRecipients.mockResolvedValue([]);
+        await expect(
+            closeWatchRun({
+                runId: 'run-1',
+                run: run({
+                    outcome: 'aborted',
+                    reason: 'BUDGET_EXCEEDED: M3 would charge too much',
+                    alerts: [alert]
+                }),
+                correlationId: 'c-1'
+            })
+        ).rejects.toThrow('stored as failed');
+        const closed = h.close.mock.calls[0]?.[0];
+        expect(closed.outcome).toBe('aborted');
+        expect(closed.reason).toContain('ALERTS_NOT_DELIVERED');
+        expect(closed.reason).toContain('BUDGET_EXCEEDED: M3 would charge too much');
+    });
+
     it('stores the reason and outcome of a run that did not complete', async () => {
         await closeWatchRun({
             runId: 'run-1',

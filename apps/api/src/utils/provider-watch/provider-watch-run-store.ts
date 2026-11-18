@@ -121,9 +121,11 @@ export async function closeWatchRun(args: {
         await providerWatchRunModel.close({
             id: args.runId,
             finishedAt: run.finishedAt,
-            outcome: undeliverable ? 'failed' : run.outcome,
+            // A run that was already aborted or failed keeps that outcome; only a completed one
+            // becomes failed because its alerts could not be delivered.
+            outcome: undeliverable && run.outcome === 'completed' ? 'failed' : run.outcome,
             reason: undeliverable
-                ? 'ALERTS_NOT_DELIVERED: the run found changes and there is no SUPER_ADMIN to tell'
+                ? `ALERTS_NOT_DELIVERED: the run found changes and there is no SUPER_ADMIN to tell${run.reason ? ` (original: ${run.reason})` : ''}`
                 : (run.reason ?? null),
             measurements: { ...run.measurements },
             alerts: run.alerts.map((alert) => ({
