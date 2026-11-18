@@ -281,7 +281,7 @@ export function ProviderWatchAuthorizationCard() {
                         )}
                         {preview.data && preview.data.expectedMaxChargeMinor === 0 && (
                             <p
-                                className="text-destructive"
+                                className="text-muted-foreground"
                                 data-testid="provider-watch-no-money"
                             >
                                 {translate('noMoneyCatalog')}
@@ -310,13 +310,7 @@ export function ProviderWatchAuthorizationCard() {
                         key={preview.data?.expectedMaxChargeMinor ?? 'pending'}
                         stored={stored}
                         expectedMinor={preview.data?.expectedMaxChargeMinor ?? 0}
-                        disabled={
-                            !canWrite ||
-                            !account.data ||
-                            !preview.data ||
-                            preview.data.expectedMaxChargeMinor === 0 ||
-                            mutation.isPending
-                        }
+                        disabled={!canWrite || !account.data || !preview.data || mutation.isPending}
                         translate={translate}
                         confirmedAccountId={account.data?.id ?? ''}
                         onValid={(value) => {
@@ -337,11 +331,16 @@ export function ProviderWatchAuthorizationCard() {
                             <AlertDialogTitle>{translate('confirmTitle')}</AlertDialogTitle>
                             <AlertDialogDescription>
                                 {pending
-                                    ? translate('confirmSave', {
-                                          month: pending.month,
-                                          account: accountLabel,
-                                          amount: formatArs(pending.maxChargeMinor)
-                                      })
+                                    ? translate(
+                                          pending.maxChargeMinor === 0
+                                              ? 'confirmSaveReadOnly'
+                                              : 'confirmSave',
+                                          {
+                                              month: pending.month,
+                                              account: accountLabel,
+                                              amount: formatArs(pending.maxChargeMinor)
+                                          }
+                                      )
                                     : ''}
                             </AlertDialogDescription>
                         </AlertDialogHeader>

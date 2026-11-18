@@ -38,6 +38,7 @@ import {
     NotificationRecipientSideEnum,
     OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
+    OwnerPromotionEntityTypeEnum,
     PartnerContentReviewStateEnum,
     PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
@@ -299,6 +300,12 @@ export const SponsorshipTierPgEnum = pgEnum(
 export const OwnerPromotionDiscountTypePgEnum = pgEnum(
     'owner_promotion_discount_type_enum',
     enumToTuple(OwnerPromotionDiscountTypeEnum)
+);
+
+/** Kind of listing an owner promotion hangs from (HOS-2270). */
+export const OwnerPromotionEntityTypePgEnum = pgEnum(
+    'owner_promotion_entity_type_enum',
+    enumToTuple(OwnerPromotionEntityTypeEnum)
 );
 
 export const TouristAudiencePgEnum = pgEnum(

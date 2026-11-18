@@ -1237,7 +1237,18 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // Mi cuenta self-edit (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // OWNER_PROMOTION: the same six own-scoped permissions HOST holds, so a
+        // venue owner can manage the promotions of their venues (HOS-2270). They
+        // only gate the route; whether the plan includes promotions is the
+        // `create_promotions` entitlement, checked by the listing-access pipeline.
+        PermissionEnum.OWNER_PROMOTION_CREATE,
+        PermissionEnum.OWNER_PROMOTION_VIEW_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_OWN,
+        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_OWN,
+        PermissionEnum.OWNER_PROMOTION_RESTORE_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN
     ],
 
     [RoleEnum.EXPERIENCE_OWNER]: [

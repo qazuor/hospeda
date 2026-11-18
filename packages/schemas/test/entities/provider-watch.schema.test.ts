@@ -14,6 +14,15 @@ describe('ProviderWatchAuthorizeInputSchema', () => {
         expect(ProviderWatchAuthorizeInputSchema.safeParse(valid).success).toBe(true);
     });
 
+    it('accepts an amount of 0 for a read-only battery, and never a negative one', () => {
+        expect(
+            ProviderWatchAuthorizeInputSchema.safeParse({ ...valid, maxChargeMinor: 0 }).success
+        ).toBe(true);
+        expect(
+            ProviderWatchAuthorizeInputSchema.safeParse({ ...valid, maxChargeMinor: -1 }).success
+        ).toBe(false);
+    });
+
     it('does not accept an account id of its own: the API stores the one it read', () => {
         const parsed = ProviderWatchAuthorizeInputSchema.parse({ ...valid, accountId: '999' });
         expect(parsed).not.toHaveProperty('accountId');

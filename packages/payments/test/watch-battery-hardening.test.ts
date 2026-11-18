@@ -500,12 +500,70 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
         expect(store.consumedBy()).toBeUndefined();
     });
 
-    it('refuses a production authorization when the catalog has no money-moving measurement', async () => {
-        const { go, store } = production([], 150000);
+    describe('a read-only battery (no money-moving measurement, sum 0)', () => {
+        const readOnly = (authorizedMinor: number, store = memoryRunStore()) => {
+            const { transport, sent } = provider({ account: 'production' });
+            const catalog: readonly WatchEntry[] = [
+                {
+                    id: 'RP7',
+                    accounts: ['sandbox', 'production'],
+                    effect: 'read',
+                    expected: 'done',
+                    measure: async () => 'done'
+                }
+            ];
+            return {
+                sent,
+                store,
+                go: () =>
+                    run({
+                        catalog,
+                        transport,
+                        store,
+                        account: 'production',
+                        authorization: {
+                            month: '2026-11',
+                            maxChargeMinor: authorizedMinor,
+                            accountId: '100000001'
+                        }
+                    })
+            };
+        };
+
+        it('runs with an authorization of 0 and consumes it once', async () => {
+            const { go, store } = readOnly(0);
+            const result = await go();
+            expect(result.run.outcome).toBe('completed');
+            expect(store.consumedBy()).toBe(result.runId);
+        });
+
+        it('refuses an authorization above 0, naming both numbers, and does not consume it', async () => {
+            const { go, store } = readOnly(150000);
+            const result = await go();
+            expect(result.run.outcome).toBe('refused');
+            expect(result.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
+            expect(result.run.reason).toContain('add up to 0');
+            expect(store.consumedBy()).toBeUndefined();
+        });
+
+        it('does not let a consumed authorization of 0 start a second run', async () => {
+            const store = memoryRunStore();
+            const first = await readOnly(0, store).go();
+            expect(first.run.outcome).toBe('completed');
+            const second = await readOnly(0, store).go();
+            expect(second.run.outcome).toBe('refused');
+            expect(second.run.reason).toContain('AUTHORIZATION_CONSUMED');
+        });
+    });
+
+    it('refuses an authorization of 0 when the money-moving measurements add up to more than 0', async () => {
+        const { go, store, sent } = production([100000], 0);
         const result = await go();
         expect(result.run.outcome).toBe('refused');
-        expect(result.run.reason).toContain('add up to 0');
+        expect(result.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
+        expect(result.run.reason).toContain('100000');
         expect(store.consumedBy()).toBeUndefined();
+        expect(sent).toEqual([]);
     });
 
     it('does not apply the exact-sum rule to a sandbox run, which consumes nothing', async () => {

@@ -242,14 +242,26 @@ describe('OwnerPromotionService — AC-005-01 lifecycle enforcement', () => {
 describe('OwnerPromotionService — _beforeCreate slug generation (bug #5 regression)', () => {
     let service: OwnerPromotionService;
     let mockModel: MockOwnerPromotionModel;
+    let accommodationModel: { findById: ReturnType<typeof vi.fn> };
     let actor: Actor;
     const ctx: ServiceContext = {} as ServiceContext;
 
     beforeEach(() => {
         mockModel = new MockOwnerPromotionModel();
+        // HOS-2270: the target is validated on create, so the accommodation exists and
+        // is the owner's (the factory input uses one owner and one accommodation).
+        const input = createMockOwnerPromotionCreateInput();
+        accommodationModel = {
+            findById: vi.fn().mockResolvedValue({
+                id: input.accommodationId,
+                ownerId: input.ownerId,
+                deletedAt: null
+            })
+        };
         actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_CREATE] });
         service = new OwnerPromotionService({
-            model: mockModel as never
+            model: mockModel as never,
+            accommodationModel: accommodationModel as never
         } as ServiceConfig & { model?: never });
     });
 

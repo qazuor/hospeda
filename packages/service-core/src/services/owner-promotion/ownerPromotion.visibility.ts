@@ -17,19 +17,25 @@ import { eq, sql } from 'drizzle-orm';
  * the old visibility/suspension/restriction/lifecycle predicates, HOS-1641).
  * Reused here rather than re-derived, per HOS-21 T-006.
  *
- * `ownerPromotions.accommodationId` is nullable (D-4 owner-wide promotions), so
- * a null accommodationId always passes this filter — an owner-wide promo has
- * no single accommodation whose visibility could hide it.
+ * An owner-wide promotion (D-4: accommodation type with no target) always passes
+ * this filter — it has no single accommodation whose visibility could hide it.
+ * A VENUE promotion never passes: this filter is the accommodation one, and a venue
+ * promotion has its own visibility rule (HOS-2273). Dual read (HOS-2270, release N):
+ * the target is `entity_id`, falling back to the legacy `accommodation_id` for a row
+ * whose `entity_id` has not been copied yet.
  */
 export function buildAccommodationVisibilityCondition(): SQL {
     const visibilityPredicate = eq(accommodations.publicationStatus, 'PUBLISHED');
 
     return sql`(
-        ${ownerPromotions.accommodationId} IS NULL
-        OR EXISTS (
-            SELECT 1 FROM ${accommodations}
-            WHERE ${accommodations.id} = ${ownerPromotions.accommodationId}
-            AND (${visibilityPredicate})
+        ${ownerPromotions.entityType} = 'accommodation'
+        AND (
+            (${ownerPromotions.entityId} IS NULL AND ${ownerPromotions.accommodationId} IS NULL)
+            OR EXISTS (
+                SELECT 1 FROM ${accommodations}
+                WHERE ${accommodations.id} = COALESCE(${ownerPromotions.entityId}, ${ownerPromotions.accommodationId})
+                AND (${visibilityPredicate})
+            )
         )
     )`;
 }

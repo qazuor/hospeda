@@ -9,7 +9,7 @@ import {
     UserProtectedSchema,
     UserPublicSchema
 } from '../user/user.access.schema.js';
-import { OwnerPromotionSchema } from './owner-promotion.schema.js';
+import { OwnerPromotionObjectSchema } from './owner-promotion.schema.js';
 
 /**
  * PUBLIC ACCESS SCHEMA
@@ -20,7 +20,7 @@ import { OwnerPromotionSchema } from './owner-promotion.schema.js';
  * Picks specific fields from the full schema to ensure only public data is exposed.
  * Excludes ownership details and redemption tracking.
  */
-export const OwnerPromotionPublicSchema = OwnerPromotionSchema.pick({
+export const OwnerPromotionPublicSchema = OwnerPromotionObjectSchema.pick({
     // Identification
     id: true,
     slug: true,
@@ -67,11 +67,14 @@ export type OwnerPromotionPublic = z.infer<typeof OwnerPromotionPublicSchema>;
  *
  * Extends public fields with ownership and operational data.
  */
-export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
+export const OwnerPromotionProtectedSchema = OwnerPromotionObjectSchema.pick({
     // All public fields
     id: true,
     slug: true,
     accommodationId: true,
+    // HOS-2270: the promotion target (dual read with `accommodationId` in release N).
+    entityType: true,
+    entityId: true,
     title: true,
     description: true,
     discountType: true,
@@ -118,7 +121,7 @@ export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSche
  * Extends the full schema with relation objects (admin tier). The `lifecycleState`
  * field is already included via the base schema's `BaseLifecycleFields` spread.
  */
-export const OwnerPromotionAdminSchema = OwnerPromotionSchema.extend({
+export const OwnerPromotionAdminSchema = OwnerPromotionObjectSchema.extend({
     /** Resolved owner data (admin tier). Available when the API joins the user. */
     owner: UserAdminSchema.nullable().optional(),
     /**
