@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { ListingVideosInputSchema } from '../../common/listing-video-input.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { AmenityRelationAttributesListSchema } from '../amenity/amenity.schema.js';
 import { VenueSchema } from './venue.schema.js';
@@ -201,8 +202,8 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     socialNetworks: true,
     // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
     // Photos are written through the relational `venue_media` endpoints and
-    // videos through this top-level column.
-    videos: true,
+    // videos through the top-level `videos` column, declared in `.extend` below
+    // (HOS-2258: capped, moderation state server-stamped).
     menuUrl: true,
     priceRange: true,
     richDescription: true,
@@ -253,7 +254,14 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
          */
         amenityAttributes: AmenityRelationAttributesListSchema.optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
-        refreshSlugFromName: z.boolean().optional()
+        refreshSlugFromName: z.boolean().optional(),
+        /**
+         * HOS-2258: linked videos (YouTube, Vimeo, Dailymotion). At most 6, and
+         * the client cannot choose the moderation state: it is stamped `APPROVED`
+         * on the way out. Writing this field needs the `can_embed_video`
+         * entitlement (the `media.videos` section trait).
+         */
+        videos: ListingVideosInputSchema.optional()
     });
 
 /** TypeScript type for {@link VenueOwnerUpdateInputSchema}. */
