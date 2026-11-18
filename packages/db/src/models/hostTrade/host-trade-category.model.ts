@@ -3,6 +3,7 @@ import type {
     PublicHostTradeCatalog,
     PublicHostTradeCategoryGroup
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { and, asc, count, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTrades } from '../../schemas/host-trade/host_trade.dbschema.ts';
@@ -10,6 +11,7 @@ import { hostTradeCategories } from '../../schemas/host-trade/host-trade-categor
 import { hostTradeCategoryGroups } from '../../schemas/host-trade/host-trade-category-group.dbschema.ts';
 import { rHostTradeCategory } from '../../schemas/host-trade/r_host_trade_category.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
+import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -116,6 +118,86 @@ export class HostTradeCategoryModel extends BaseModelImpl<HostTradeCategory> {
                 logError(this.entityName, 'findPublicCatalog', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findPublicCatalog', logContext, err.message, err);
+        }
+    }
+
+    /**
+     * Admin list page with the catalog's default order (HOS-2340 D3): group
+     * `display_weight`, group Spanish name and id (so groups sharing a weight do not
+     * interleave), category `display_weight`, Spanish name and `id` as the final
+     * tie-break, which keeps pagination stable. Names are compared as
+     * `lower(unaccent(...))`: that removes accents and case, but the comparison itself
+     * still uses the database collation.
+     *
+     * The join to the group exists only to order; it carries no `deleted_at`
+     * filter, so a category under a soft-deleted group is still listed when the
+     * caller asks for it. Only category columns are selected, so the output has
+     * the same shape as `findAll`.
+     *
+     * @param input.where - Column equality map, translated like `findAll` does.
+     * @param input.additionalConditions - Extra SQL conditions (admin text search).
+     * @param input.page - 1-based page.
+     * @param input.pageSize - Page size (capped at 200, like `findAll`).
+     * @param input.tx - Optional transaction client.
+     * @returns The page of categories and the total of the filtered rows.
+     * @throws DbError if the database query fails.
+     */
+    async findAdminPage(input: {
+        readonly where: Record<string, unknown>;
+        readonly additionalConditions?: readonly SQL[];
+        readonly page: number;
+        readonly pageSize: number;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ items: HostTradeCategory[]; total: number }> {
+        const db = this.getClient(input.tx);
+        const pageSize = Math.min(input.pageSize, 200);
+        const offset = (input.page - 1) * pageSize;
+        const logContext = { where: input.where, page: input.page, pageSize };
+
+        try {
+            const conditions = [
+                buildWhereClause(input.where, hostTradeCategories),
+                ...(input.additionalConditions ?? [])
+            ].filter((condition): condition is SQL => condition !== undefined);
+            const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+            const [rows, totals] = await Promise.all([
+                db
+                    .select({ category: hostTradeCategories })
+                    .from(hostTradeCategories)
+                    .innerJoin(
+                        hostTradeCategoryGroups,
+                        eq(hostTradeCategories.groupId, hostTradeCategoryGroups.id)
+                    )
+                    .where(whereClause)
+                    .orderBy(
+                        asc(hostTradeCategoryGroups.displayWeight),
+                        // Groups sharing a weight must not interleave their categories.
+                        asc(sql`lower(unaccent(${hostTradeCategoryGroups.nameI18n} ->> 'es'))`),
+                        asc(hostTradeCategoryGroups.id),
+                        asc(hostTradeCategories.displayWeight),
+                        asc(sql`lower(unaccent(${hostTradeCategories.nameI18n} ->> 'es'))`),
+                        asc(hostTradeCategories.id)
+                    )
+                    .limit(pageSize)
+                    .offset(offset),
+                db.select({ total: count() }).from(hostTradeCategories).where(whereClause)
+            ]);
+
+            const result = {
+                items: rows.map((row) => row.category) as HostTradeCategory[],
+                total: totals[0]?.total ?? 0
+            };
+            try {
+                logQuery(this.entityName, 'findAdminPage', logContext, result);
+            } catch {}
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAdminPage', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findAdminPage', logContext, err.message, err);
         }
     }
 

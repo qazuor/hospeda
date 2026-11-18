@@ -20,6 +20,13 @@ export type Actor = {
 };
 
 /**
+ * `SelectOption.metadata` key under which an option carries `{ nameI18n, keywordsI18n }`
+ * (HOS-2340). `EntitySelectField` client mode then searches name and keywords in every
+ * locale through the shared matcher; options without it keep the plain `includes()` filter.
+ */
+export const SELECT_OPTION_SEARCH_TERMS_KEY = 'searchTerms';
+
+/**
  * Base option type for selects and other choice fields
  */
 export type SelectOption = {
