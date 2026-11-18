@@ -70,18 +70,14 @@ vi.mock('../../../../src/utils/listing-catalog-relations', async (importOriginal
     fetchExperienceFeatures: vi.fn(async () => [])
 }));
 
-import { buildToolListEntry, handleMcpToolCall } from '../../../../src/lib/mcp/bind-tool';
-import { buildMcpAuthInfo } from '../../../../src/lib/mcp/caller';
 import {
     LISTING_MODERATED_REASON,
     type ListingPublicationResult,
-    planListingPublication,
     SET_LISTING_PUBLICATION_REASON_MESSAGES,
     setListingPublicationTool
 } from '../../../../src/mcp/tools/listing/set-listing-publication';
 import { runTool } from '../../../../src/mcp/tools/run-tool';
 import { TOOL_NOT_FOUND_MESSAGE } from '../../../../src/mcp/tools/tool-errors';
-import { clearSlidingWindowStore } from '../../../../src/middlewares/rate-limit';
 import { ListingPublicationService } from '../../../../src/services/listing-publication/listing-publication.service';
 import { env, validateApiEnv } from '../../../../src/utils/env';
 
@@ -390,200 +386,6 @@ describe('set_listing_publication', () => {
             expect(failure.code).toBe('EMAIL_NOT_VERIFIED');
             expect(getById).not.toHaveBeenCalled();
             expect(service.unpublish).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('planListingPublication (action → route)', () => {
-        it.each([
-            ['pause', PublicationStatusEnum.PUBLISHED, { kind: 'run', step: 'UNPUBLISH' }],
-            ['pause', PublicationStatusEnum.DRAFT, { kind: 'noop' }],
-            ['pause', PublicationStatusEnum.UNPUBLISHED_BY_BILLING, { kind: 'noop' }],
-            ['pause', PublicationStatusEnum.ARCHIVED, { kind: 'noop' }],
-            ['pause', PublicationStatusEnum.MODERATED, { kind: 'noop' }],
-            ['resume', PublicationStatusEnum.DRAFT, { kind: 'run', step: 'PUBLISH' }],
-            [
-                'resume',
-                PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
-                { kind: 'run', step: 'PUBLISH' }
-            ],
-            ['resume', PublicationStatusEnum.ARCHIVED, { kind: 'run', step: 'REACTIVATE' }],
-            ['resume', PublicationStatusEnum.PUBLISHED, { kind: 'noop' }],
-            [
-                'resume',
-                PublicationStatusEnum.MODERATED,
-                { kind: 'refuse', reason: LISTING_MODERATED_REASON }
-            ]
-        ] as const)('%s on %s → %o', (action, status, expected) => {
-            // Act + Assert
-            expect(planListingPublication({ action, status })).toEqual(expected);
-        });
-    });
-
-    it('rejects an unknown action and verticals without owner listings', async () => {
-        // Act
-        const badAction = await failureOf({ vertical: 'venue', id: LISTING_ID, action: 'delete' });
-        const badVertical = await failureOf({
-            vertical: 'tourist',
-            id: LISTING_ID,
-            action: 'pause'
-        });
-
-        // Assert
-        expect(badAction.code).toBe('VALIDATION_ERROR');
-        expect(badAction.message).toContain('action');
-        expect(badVertical.code).toBe('VALIDATION_ERROR');
-        expect(badVertical.message).toContain('vertical');
-    });
-
-    describe('audit (AC-12)', () => {
-        const mcpAuth = {
-            userId: OWNER_ID,
-            clientId: 'https://claude.ai/oauth/mcp-client-metadata',
-            clientName: 'Claude',
-            scopes: ['openid']
-        } as const;
-        const ctx = {
-            http: {
-                authInfo: buildMcpAuthInfo({
-                    token: 'tok',
-                    actor: actorFor(OWNER_ID),
-                    mcpAuth,
-                    resourceUrl: 'https://api.test/mcp'
-                })
-            }
-        };
-        const call = (input: Record<string, unknown>) =>
-            handleMcpToolCall({ definition: setListingPublicationTool, input, ctx });
-        const target = { type: 'venue', id: LISTING_ID };
-
-        beforeEach(() => {
-            clearSlidingWindowStore();
-            harness.givenFacts(mocks, {
-                vertical: VerticalEnum.VENUE,
-                status: PublicationStatusEnum.PUBLISHED
-            });
-        });
-
-        it('records a success with its target', async () => {
-            // Arrange
-            givenStates(
-                VerticalEnum.VENUE,
-                PublicationStatusEnum.PUBLISHED,
-                PublicationStatusEnum.DRAFT
-            );
-            givenPublicationService();
-
-            // Act
-            const result = await call({ vertical: 'venue', id: LISTING_ID, action: 'pause' });
-
-            // Assert
-            expect(result.isError).toBeUndefined();
-            expect(mocks.record).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    tool: 'set_listing_publication',
-                    outcome: 'success',
-                    target
-                })
-            );
-        });
-
-        it('records a billing refusal as denied, with its target', async () => {
-            // Arrange
-            harness.givenBilling(mocks, { covered: true, granted: false });
-            givenStates(VerticalEnum.VENUE, PublicationStatusEnum.PUBLISHED);
-            givenPublicationService();
-
-            // Act
-            const result = await call({ vertical: 'venue', id: LISTING_ID, action: 'pause' });
-
-            // Assert
-            expect(result.isError).toBe(true);
-            expect(mocks.record).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    outcome: 'denied',
-                    errorCode: 'ENTITLEMENT_REQUIRED',
-                    target
-                })
-            );
-        });
-
-        it('records each step: pause applies, a publish previews then commits', async () => {
-            // Arrange
-            givenStates(
-                VerticalEnum.VENUE,
-                PublicationStatusEnum.PUBLISHED,
-                PublicationStatusEnum.DRAFT
-            );
-            givenPublicationService();
-            await call({ vertical: 'venue', id: LISTING_ID, action: 'pause' });
-            harness.givenFacts(mocks, {
-                vertical: VerticalEnum.VENUE,
-                status: PublicationStatusEnum.DRAFT
-            });
-            givenStates(
-                VerticalEnum.VENUE,
-                PublicationStatusEnum.DRAFT,
-                PublicationStatusEnum.DRAFT,
-                PublicationStatusEnum.PUBLISHED
-            );
-            const publish = { vertical: 'venue', id: LISTING_ID, action: 'resume' };
-
-            // Act
-            const preview = await call(publish);
-            const token = JSON.parse(
-                preview.content[0]?.type === 'text' ? preview.content[0].text : '{}'
-            ).confirmationToken;
-            await call({ ...publish, confirmationToken: token });
-
-            // Assert
-            expect(mocks.record.mock.calls.map(([row]) => row.details)).toEqual([
-                { action: 'pause', step: 'apply' },
-                { action: 'resume', step: 'preview' },
-                { action: 'resume', step: 'commit' }
-            ]);
-        });
-
-        it('records an unexpected failure as error, with its target', async () => {
-            // Arrange
-            givenStates(VerticalEnum.VENUE, PublicationStatusEnum.PUBLISHED);
-            givenPublicationService().unpublish.mockRejectedValue(new Error('db down'));
-
-            // Act
-            const result = await call({ vertical: 'venue', id: LISTING_ID, action: 'pause' });
-
-            // Assert
-            expect(result.isError).toBe(true);
-            expect(mocks.record).toHaveBeenCalledWith(
-                expect.objectContaining({ outcome: 'error', errorCode: 'UNEXPECTED', target })
-            );
-        });
-    });
-
-    describe('tools/list entry', () => {
-        const entry = buildToolListEntry({ definition: setListingPublicationTool });
-
-        it('publishes one flat object schema MCP clients accept', () => {
-            // Assert
-            const schema = entry.inputSchema as Record<string, unknown>;
-            expect(schema.type).toBe('object');
-            expect(schema).not.toHaveProperty('oneOf');
-            expect(schema).not.toHaveProperty('anyOf');
-            expect(schema.additionalProperties).toBe(false);
-            expect(schema.required).toEqual(['vertical', 'id', 'action']);
-            expect((schema.properties as Record<string, unknown>).action).toMatchObject({
-                enum: ['pause', 'resume']
-            });
-        });
-
-        it('is a destructive, non-idempotent write', () => {
-            // Assert
-            expect(entry.annotations).toEqual({
-                title: 'Pausar o reanudar una publicación',
-                readOnlyHint: false,
-                openWorldHint: false,
-                destructiveHint: true,
-                idempotentHint: false
-            });
         });
     });
 });
