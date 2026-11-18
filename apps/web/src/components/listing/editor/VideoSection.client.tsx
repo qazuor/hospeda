@@ -15,10 +15,12 @@
  * misleadingly imply one shared save action for the whole page.
  */
 
+import { useId } from 'react';
 import { TextField } from '@/components/ui/TextField';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from '../../host/editor/PhotoSection.module.css';
+import fieldStyles from './editor-fields.module.css';
 import {
     useVideoSection,
     type VideoEntry,
@@ -135,18 +137,23 @@ export function VideoSection({
     const copy = getVideoSectionCopy({ scope: copyScope });
     const { rows, isDirty, isSaving, formError, addRow, removeRow, setRowField, handleSubmit } =
         useVideoSection({ locale, initialVideos, save, copyScope, maxVideos });
+    const titleId = useId();
     const atCap = maxVideos !== undefined && rows.length >= maxVideos;
 
     return (
         <section
-            className={styles.section}
+            className={fieldStyles.section}
+            aria-labelledby={titleId}
             style={{ marginTop: '2rem' }}
         >
             <form
                 onSubmit={handleSubmit}
                 noValidate
             >
-                <h3 className={styles.sectionTitle}>
+                <h3
+                    id={titleId}
+                    className={styles.sectionTitle}
+                >
                     {t(copy.sectionTitle.key, copy.sectionTitle.fallback)}
                 </h3>
                 <p className={styles.sectionDescription}>

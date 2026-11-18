@@ -26,6 +26,12 @@ vi.mock('@/lib/i18n', () => ({
     })
 }));
 
+vi.mock('@/components/listing/editor/editor-fields.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_t, prop) => `fields-${String(prop)}`
+    })
+}));
+
 vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
         get: (_t, prop) => String(prop)
@@ -103,5 +109,22 @@ describe('VideoSection (shared widget)', () => {
 
         expect(screen.getByRole('button', { name: 'Agregar video' })).toBeDisabled();
         expect(screen.getByText(/tu local/)).toBeInTheDocument();
+    });
+
+    it('renders inside the real editor card and labels the section by its heading', () => {
+        render(
+            <VideoSection
+                locale="es"
+                initialVideos={[]}
+                save={vi.fn()}
+                copyScope="listing"
+            />
+        );
+
+        const region = screen.getByRole('region', { name: 'Videos' });
+        expect(region.className).toBe('fields-section');
+        expect(region.getAttribute('aria-labelledby')).toBe(
+            screen.getByRole('heading', { name: 'Videos' }).id
+        );
     });
 });
