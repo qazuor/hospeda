@@ -82,4 +82,33 @@ describe('projectEvent (HOS-1042)', () => {
     it('keeps a null end time null rather than inventing one', () => {
         expect(projectEvent({ ...storedRow, endTime: null }).endTime).toBeNull();
     });
+
+    it('exposes exactly the public fields and never an internal column', () => {
+        // A column added to the table later must not reach a response until it
+        // is added to the projection on purpose (HOS-2291).
+        const withInternals = {
+            ...storedRow,
+            createdById: '44444444-4444-4444-8444-444444444444',
+            updatedById: '44444444-4444-4444-8444-444444444444',
+            internalFlag: 'secret'
+        };
+
+        expect(Object.keys(projectEvent(withInternals)).sort()).toStrictEqual(
+            [
+                'id',
+                'venueId',
+                'title',
+                'description',
+                'recurrence',
+                'date',
+                'weekday',
+                'startTime',
+                'endTime',
+                'isActive',
+                'displayOrder',
+                'createdAt',
+                'updatedAt'
+            ].sort()
+        );
+    });
 });
