@@ -117,7 +117,9 @@ describe('planConfirmation (D-17 strict)', () => {
         // Assert
         expect(Object.values(ELICITATION_STRICT).every((strict) => strict)).toBe(true);
         expect(Object.keys(ELICITATION_STRICT).sort()).toEqual([
+            'confirm_benefit_usage',
             'create_listing',
+            'reject_benefit_usage',
             'reply_inquiry',
             'set_listing_publication'
         ]);

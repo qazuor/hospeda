@@ -21,7 +21,9 @@
 export const ELICITATION_TOOL_NAMES = [
     'reply_inquiry',
     'create_listing',
-    'set_listing_publication'
+    'set_listing_publication',
+    'confirm_benefit_usage',
+    'reject_benefit_usage'
 ] as const;
 
 /** Name of a tool covered by out-of-band confirmation. */
@@ -31,5 +33,7 @@ export type ElicitationToolName = (typeof ELICITATION_TOOL_NAMES)[number];
 export const ELICITATION_STRICT: Readonly<Record<ElicitationToolName, boolean>> = {
     reply_inquiry: true,
     create_listing: true,
-    set_listing_publication: true
+    set_listing_publication: true,
+    confirm_benefit_usage: true,
+    reject_benefit_usage: true
 };

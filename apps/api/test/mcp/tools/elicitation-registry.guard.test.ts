@@ -18,13 +18,6 @@ import { describe, expect, it } from 'vitest';
 import { ELICITATION_STRICT } from '../../../src/mcp/tools/elicitation-policy';
 import { MCP_TOOL_DEFINITIONS } from '../../../src/mcp/tools/registry';
 
-/**
- * Token-confirmed tools that ship their out-of-band confirmation in PR-14
- * (spec HOS-2335 §8: "Elicitation for confirm_benefit_usage and
- * reject_benefit_usage"). PR-14 empties this list; nothing else may be added.
- */
-const PENDING_PR14 = ['confirm_benefit_usage', 'reject_benefit_usage'] as const;
-
 const SRC_DIR = join(__dirname, '../../../src');
 
 /** Source text without comments: a comment may NAME the push it rules out. */
@@ -63,9 +56,7 @@ describe('every token-confirmed tool declares out-of-band confirmation (AC-C65)'
     });
 
     it.each(
-        tokenTools
-            .filter((definition) => !(PENDING_PR14 as readonly string[]).includes(definition.name))
-            .map((definition) => [definition.name, definition] as const)
+        tokenTools.map((definition) => [definition.name, definition] as const)
     )('%s declares elicitation and has a strict-policy entry', (name, definition) => {
         // Assert
         expect(definition.confirmation).toEqual({ elicitation: true });
@@ -86,15 +77,6 @@ describe('every token-confirmed tool declares out-of-band confirmation (AC-C65)'
         expect(declaring.map((definition) => definition.name).sort()).toEqual(
             Object.keys(ELICITATION_STRICT).sort()
         );
-    });
-
-    it('the PR-14 exemption names only tools that still lack the declaration', () => {
-        // Assert: once PR-14 lands, this fails until the list is emptied.
-        for (const name of PENDING_PR14) {
-            const definition = MCP_TOOL_DEFINITIONS.find((tool) => tool.name === name);
-            expect(definition).toBeDefined();
-            expect(definition?.confirmation).toBeUndefined();
-        }
     });
 });
 
