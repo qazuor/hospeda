@@ -20,6 +20,12 @@ import type { Image, ListingCompletenessListing } from '@repo/schemas';
 import type { ListingFaq } from '@/components/listing/ListingFaqManager.client';
 import type { ListingDetail } from '@/lib/listing/owner-listings';
 
+/** One stored video as the venue editor's video widget reads it. */
+export interface ListingVideoEntry {
+    readonly url: string;
+    readonly caption?: string;
+}
+
 /** The loose record view of a listing detail. */
 function asRecord(detail: ListingDetail): Record<string, unknown> {
     // TYPE-WORKAROUND: the detail is a venue|experience union; the editor
@@ -69,17 +75,35 @@ export function readListingFaqs({
  * (HOS-372), so nothing read here is ever written back.
  *
  * @param params - The loaded listing detail.
- * @returns The featured image (or `null`) and the gallery.
+ * @returns The featured image (or `null`), the gallery and the stored videos.
  */
 export function readListingMedia({ detail }: { readonly detail: ListingDetail }): {
     readonly featuredImage: Image | null;
     readonly gallery: readonly Image[];
+    readonly videos: readonly ListingVideoEntry[];
 } {
-    const media = (asRecord(detail).media ?? {}) as Record<string, unknown>;
+    const record = asRecord(detail);
+    const media = (record.media ?? {}) as Record<string, unknown>;
+    // HOS-2258: the owner's own read is not projected by plan, so a venue that
+    // dropped to a plan without videos still sees what it loaded. The column is
+    // `videos`; `media.videos` is the same value composed on the way out.
+    const rawVideos = Array.isArray(record.videos) ? record.videos : media.videos;
 
     return {
         featuredImage: (media.featuredImage as Image | undefined) ?? null,
-        gallery: (media.gallery as Image[] | undefined) ?? []
+        gallery: (media.gallery as Image[] | undefined) ?? [],
+        videos: (Array.isArray(rawVideos) ? rawVideos : []).flatMap(
+            (entry): ListingVideoEntry[] => {
+                const video = entry as Record<string, unknown> | null;
+                if (!video || typeof video.url !== 'string' || video.url === '') return [];
+                return [
+                    {
+                        url: video.url,
+                        ...(typeof video.caption === 'string' ? { caption: video.caption } : {})
+                    }
+                ];
+            }
+        )
     };
 }
 

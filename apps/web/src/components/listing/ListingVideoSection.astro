@@ -1,7 +1,9 @@
 ---
 /**
- * @file VideoSection.astro
- * @description "Videos" section for the accommodation detail page (HOS-1022).
+ * @file ListingVideoSection.astro
+ * @description "Videos" section shared by the accommodation detail page
+ * (HOS-1022) and the venue detail page (HOS-2258). The `scope` prop only picks
+ * the i18n keys; the markup, the facade and the security rules are the same.
  * Renders host-authored YouTube/Vimeo/Dailymotion links as a lazy facade —
  * a static poster/placeholder plus a play button — and swaps in the real
  * `<iframe>` only on click, so the ~1MB+ of embed JS never loads for a
@@ -22,7 +24,7 @@
  * fails validation) resolves to `null` and is silently excluded — never
  * rendered "just in case", never linked out raw.
  *
- * Moderation: the caller (`toAccommodationDetailPageProps`) has already
+ * Moderation: the caller (`normalizeListingVideos`) has already
  * filtered to `moderationState === 'APPROVED'` videos only (HOS-1022) — this
  * component does not re-check moderation state, it only has to handle the
  * embed-URL derivation and the lazy-facade interaction.
@@ -40,11 +42,42 @@ interface Props {
 		readonly description?: string;
 	}>;
 	readonly locale: SupportedLocale;
+	/** Which surface's copy to use. */
+	readonly scope: 'accommodation' | 'venue';
 }
 
-const { videos, locale } = Astro.props;
+const { videos, locale, scope } = Astro.props;
 const { t } = createTranslations(locale);
 const dailymotionPlayerId = getDailymotionPlayerId();
+
+/** Static keys per scope: the key-usage guards read the source, so no key is assembled at runtime. */
+const COPY = {
+	accommodation: {
+		title: { key: 'accommodations.detail.videos.title', fallback: 'Videos' },
+		play: { key: 'accommodations.detail.videos.play', fallback: 'Reproducir video' },
+		playNamed: {
+			key: 'accommodations.detail.videos.playNamed',
+			fallback: 'Reproducir video: {{caption}}'
+		},
+		openExternal: {
+			key: 'accommodations.detail.videos.openExternal',
+			fallback: 'Ver en {{provider}} (se abre en una pestaña nueva)'
+		}
+	},
+	venue: {
+		title: { key: 'venue.detail.videos.title', fallback: 'Videos' },
+		play: { key: 'venue.detail.videos.play', fallback: 'Reproducir video' },
+		playNamed: {
+			key: 'venue.detail.videos.playNamed',
+			fallback: 'Reproducir video: {{caption}}'
+		},
+		openExternal: {
+			key: 'venue.detail.videos.openExternal',
+			fallback: 'Ver en {{provider}} (se abre en una pestaña nueva)'
+		}
+	}
+} as const;
+const copy = COPY[scope];
 
 /** Short, human-facing label per provider — shown on the facade badge. */
 const PROVIDER_LABELS: Record<VideoProvider, string> = {
@@ -70,16 +103,14 @@ if (resolvedVideos.length === 0) return;
 
 <section class="video-section" aria-labelledby="video-section-title">
 	<h2 class="video-section__title" id="video-section-title">
-		{t('accommodations.detail.videos.title', 'Videos')}
+		{t(copy.title.key, copy.title.fallback)}
 	</h2>
 
 	<div class="video-section__grid">
 		{resolvedVideos.map((video) => {
 			const playLabel = video.caption
-				? t('accommodations.detail.videos.playNamed', 'Reproducir video: {{caption}}', {
-						caption: video.caption
-					})
-				: t('accommodations.detail.videos.play', 'Reproducir video');
+				? t(copy.playNamed.key, copy.playNamed.fallback, { caption: video.caption })
+				: t(copy.play.key, copy.play.fallback);
 			if (!video.embedUrl) {
 				// No embeddable player in this configuration (Dailymotion without a
 				// Player ID, HOS-1217): link out to the provider's page instead of a
@@ -91,11 +122,9 @@ if (resolvedVideos.length === 0) return;
 							href={resolveSafeExternalUrl(video.externalUrl)}
 							target="_blank"
 							rel="noopener noreferrer"
-							aria-label={t(
-								'accommodations.detail.videos.openExternal',
-								'Ver en {{provider}} (se abre en una pestaña nueva)',
-								{ provider: PROVIDER_LABELS[video.provider] }
-							)}
+							aria-label={t(copy.openExternal.key, copy.openExternal.fallback, {
+								provider: PROVIDER_LABELS[video.provider]
+							})}
 						>
 							<span class="video-section__play-icon" aria-hidden="true">&#9654;</span>
 							<span class="video-section__provider-badge">{PROVIDER_LABELS[video.provider]}</span>

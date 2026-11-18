@@ -1884,6 +1884,9 @@
                     "min": "La descripción debe tener al menos {{min}} caracteres",
                     "required": "La descripción es obligatoria"
                 },
+                "list": {
+                    "max": "You can add up to 6 videos"
+                },
                 "url": {
                     "invalid": "La URL no es válida"
                 }

@@ -34,4 +34,15 @@ describe('sections touched by update body', () => {
             []
         );
     });
+    it('marks the venue videos trait for videos: [] but not for videos: null (HOS-2258)', () => {
+        expect(sectionTraitsTouchedByBody({ vertical: 'venue', body: { videos: [] } })).toEqual([
+            'videos'
+        ]);
+        expect(sectionTraitsTouchedByBody({ vertical: 'venue', body: { videos: null } })).toEqual(
+            []
+        );
+        expect(
+            sectionTraitsTouchedByBody({ vertical: 'venue', body: { priceRange: 'MID' } })
+        ).toEqual([]);
+    });
 });

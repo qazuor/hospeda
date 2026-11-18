@@ -3,9 +3,10 @@
  *
  * Approves or rejects an alliance lead (workflow transition).
  * Requires ALLIANCE_LEAD_MANAGE permission (enforced in the service layer).
- * Still never auto-provisions any role/entity (HOS-277 NG-1) — the admin
- * provisions the corresponding partner/sponsor/editor/HostTrade entry by
- * hand after approving.
+ * Approving a `service_provider` lead also provisions its `host_trades`
+ * listing (HOS-278) and reports what provisioning did in the optional
+ * `provisioning` response field (HOS-2339). Partner, sponsor and editor leads
+ * are still provisioned separately (partner via approve-and-provision-partner).
  *
  * What DID change (HOS-278 AC-6): the applicant is now emailed the outcome,
  * whichever way it went. Sending is fire-and-forget after the status is
@@ -14,7 +15,7 @@
  * @module routes/alliance/admin/mark-handled
  */
 
-import { AllianceLeadSchema, PermissionEnum } from '@repo/schemas';
+import { AllianceLeadWithProvisioningSchema, PermissionEnum } from '@repo/schemas';
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -81,15 +82,18 @@ export const adminMarkAllianceLeadHandledRoute = createAdminRoute({
     path: '/:id/mark-handled',
     summary: 'Mark an alliance lead as handled (admin)',
     description:
-        'Approves or rejects an alliance lead. Requires ALLIANCE_LEAD_MANAGE ' +
-        'permission. Never auto-provisions any role/entity (HOS-277 NG-1).',
+        'Approves or rejects an alliance lead. Approving a service_provider lead ' +
+        'provisions its directory listing; the response then carries an optional ' +
+        '`provisioning` field ({ provisioned, reason?, hostTradeId? }) saying what ' +
+        'provisioning did. Rejections and other kinds omit it. Requires ' +
+        'ALLIANCE_LEAD_MANAGE permission.',
     tags: ['Alliance'],
     requiredPermissions: [PermissionEnum.ALLIANCE_LEAD_MANAGE],
     requestParams: {
         id: z.string().uuid({ message: 'Lead ID must be a valid UUID' })
     },
     requestBody: MarkHandledBodySchema,
-    responseSchema: AllianceLeadSchema,
+    responseSchema: AllianceLeadWithProvisioningSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

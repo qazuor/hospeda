@@ -31,6 +31,7 @@ export * from './host-trade-category/index.js';
 export * from './host-trade-review/index.js';
 export * from './host-trade-review-reply/index.js';
 export * from './host-trade-usage/index.js';
+export * from './mcp-activity/index.js';
 export * from './newsletter/index.js';
 export * from './ownerPromotion/index.js';
 export * from './partner/index.js';

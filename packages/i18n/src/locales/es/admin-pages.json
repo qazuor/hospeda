@@ -1974,7 +1974,12 @@
         },
         "state": {
             "active": "Activo",
-            "inactive": "Inactivo"
+            "inactive": "Inactivo",
+            "deleted": "Borrado"
+        },
+        "showDeleted": "Mostrar borrados",
+        "messages": {
+            "restoreError": "No se pudo restaurar."
         },
         "loading": "Cargando…",
         "error": "No se pudo cargar el catálogo.",
@@ -1991,7 +1996,9 @@
             "edit": "Editar",
             "delete": "Eliminar",
             "cancel": "Cancelar",
-            "save": "Guardar"
+            "save": "Guardar",
+            "restore": "Restaurar",
+            "restoring": "Restaurando..."
         },
         "groups": {
             "add": "Nuevo grupo",
@@ -2017,7 +2024,8 @@
                 "deleted": "Grupo eliminado.",
                 "saveError": "No se pudo guardar el grupo.",
                 "deleteError": "No se pudo eliminar el grupo.",
-                "inUse": "No se puede eliminar: el grupo todavía tiene categorías. Desactivalo para dejar de ofrecerlo, o mové sus categorías primero."
+                "inUse": "No se puede eliminar: el grupo todavía tiene categorías. Desactivalo para dejar de ofrecerlo, o mové sus categorías primero.",
+                "restored": "Grupo restaurado."
             }
         },
         "categories": {
@@ -2063,7 +2071,9 @@
                 "deleted": "Categoría eliminada.",
                 "saveError": "No se pudo guardar la categoría.",
                 "deleteError": "No se pudo eliminar la categoría.",
-                "inUse": "No se puede eliminar: hay proveedores que usan esta categoría. Desactivala para dejar de ofrecerla; los proveedores que ya la tienen la conservan."
+                "inUse": "No se puede eliminar: hay proveedores que usan esta categoría. Desactivala para dejar de ofrecerla; los proveedores que ya la tienen la conservan.",
+                "restored": "Categoría restaurada.",
+                "restoreGroupDeleted": "No se puede restaurar: el grupo de esta categoría está borrado. Restaurá primero el grupo."
             }
         }
     },

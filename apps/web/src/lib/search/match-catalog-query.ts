@@ -1,6 +1,7 @@
 /**
  * @file match-catalog-query.ts
- * @description Pure search over the provider trade category catalog (HOS-919).
+ * @description Thin adapter over the shared flat-item matcher (`matchSearchItems` in
+ * `@repo/utils`, HOS-2340) for the nested public provider trade catalog (HOS-919).
  *
  * A category matches when EVERY query token is a prefix of some word in its
  * haystack. The haystack is the name and keywords in the current locale plus
@@ -10,6 +11,7 @@
  */
 
 import type { PublicHostTradeCatalog } from '@repo/schemas';
+import { matchSearchItems } from '@repo/utils';
 
 /** Locales the catalog carries names and keywords for. */
 export type CatalogLocale = 'es' | 'en' | 'pt';
@@ -29,47 +31,9 @@ export interface MatchCatalogQueryResult {
     readonly groups: PublicHostTradeCatalog['groups'];
 }
 
-type CatalogCategory = PublicHostTradeCatalog['groups'][number]['categories'][number];
-
-const DIACRITICS = /\p{M}/gu;
-const WHITESPACE = /\s+/;
-
-/**
- * Normalizes text for comparison: NFD, strips combining marks, lowercases,
- * trims and collapses whitespace.
- */
-const normalize = (text: string): string =>
-    text.normalize('NFD').replace(DIACRITICS, '').toLowerCase().replace(/\s+/g, ' ').trim();
-
-/** Splits normalized text into words, dropping empties. */
-const toWords = (text: string): readonly string[] =>
-    normalize(text)
-        .split(WHITESPACE)
-        .filter((word) => word.length > 0);
-
-/** True when every token is a prefix of at least one word. */
-const everyTokenPrefixes = (tokens: readonly string[], words: readonly string[]): boolean =>
-    tokens.every((token) => words.some((word) => word.startsWith(token)));
-
 /** Distinct locales to search: the current one plus Spanish. */
 const searchedLocales = (locale: CatalogLocale): readonly CatalogLocale[] =>
     locale === 'es' ? ['es'] : [locale, 'es'];
-
-/** Rank of a matching category: 0 = name match, 1 = keyword match, null = none. */
-const rankCategory = (
-    category: CatalogCategory,
-    tokens: readonly string[],
-    locales: readonly CatalogLocale[]
-): 0 | 1 | null => {
-    const nameWords = locales.flatMap((locale) => toWords(category.nameI18n[locale] ?? ''));
-    if (everyTokenPrefixes(tokens, nameWords)) return 0;
-
-    const keywordWords = locales.flatMap((locale) =>
-        (category.keywordsI18n[locale] ?? []).flatMap((keyword) => toWords(keyword))
-    );
-    if (everyTokenPrefixes(tokens, [...nameWords, ...keywordWords])) return 1;
-    return null;
-};
 
 /**
  * Filters and ranks the catalog for a typed query.
@@ -89,27 +53,21 @@ const rankCategory = (
  */
 export function matchCatalogQuery(input: MatchCatalogQueryInput): MatchCatalogQueryResult {
     const { catalog, query, locale } = input;
-    const tokens = toWords(query);
-    if (tokens.length === 0) return { groups: catalog.groups };
+    if (query.trim().length === 0) return { groups: catalog.groups };
 
     const locales = searchedLocales(locale);
 
     const groups = catalog.groups.flatMap((group) => {
-        const ranked = group.categories
-            .map((category, index) => ({
-                category,
-                index,
-                rank: rankCategory(category, tokens, locales)
-            }))
-            .filter(
-                (entry): entry is { category: CatalogCategory; index: number; rank: 0 | 1 } =>
-                    entry.rank !== null
-            )
-            .sort((a, b) => a.rank - b.rank || a.index - b.index);
-
-        return ranked.length === 0
-            ? []
-            : [{ ...group, categories: ranked.map((entry) => entry.category) }];
+        const categories = matchSearchItems({
+            items: group.categories,
+            query,
+            locales,
+            getTerms: (category) => ({
+                nameI18n: category.nameI18n,
+                keywordsI18n: category.keywordsI18n
+            })
+        });
+        return categories.length === 0 ? [] : [{ ...group, categories }];
     });
 
     return { groups };

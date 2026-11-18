@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4500
+    {
+        id: '2026-11-18-plan-change-checkout-resume-or-cancel',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Podés retomar o cancelar un cambio de plan que dejaste a medias',
+            en: 'You can resume or cancel a plan change you left halfway',
+            pt: 'Você pode retomar ou cancelar uma mudança de plano que deixou pela metade'
+        },
+        body: {
+            es: 'Si empezaste un cambio de plan y no terminaste el pago en Mercado Pago, Mi suscripción ahora te ofrece retomar ese mismo checkout o cancelar el cambio. Al cancelarlo, tu plan actual sigue igual y podés volver a cambiar de plan cuando quieras.',
+            en: 'If you started a plan change and did not finish paying in Mercado Pago, My subscription now lets you resume that same checkout or cancel the change. When you cancel it, your current plan stays the same and you can change plans again whenever you want.',
+            pt: 'Se você começou uma mudança de plano e não terminou o pagamento no Mercado Pago, Minha assinatura agora permite retomar esse mesmo checkout ou cancelar a mudança. Ao cancelar, seu plano atual continua igual e você pode mudar de plano de novo quando quiser.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4480, #4496
     {
         id: '2026-11-18-providers-multiple-trade-categories',

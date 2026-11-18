@@ -84,6 +84,7 @@ describe('HostTradeCategoryService', () => {
             'softDelete',
             'restore',
             'findAll',
+            'findAdminPage',
             'count',
             'countLinkedHostTrades',
             'findIdsInDeletedGroups',
@@ -349,7 +350,7 @@ describe('HostTradeCategoryService', () => {
                     PermissionEnum.ACCESS_PANEL_ADMIN
                 ]
             });
-            asMock(model.findAll).mockResolvedValue({ items: [category], total: 1 });
+            asMock(model.findAdminPage).mockResolvedValue({ items: [category], total: 1 });
 
             const result = await service.adminList(admin, {
                 groupId,
@@ -358,13 +359,79 @@ describe('HostTradeCategoryService', () => {
             });
 
             expect(result.error).toBeUndefined();
-            const [where, , conditions] = asMock(model.findAll).mock.calls[0] as [
-                Record<string, unknown>,
-                unknown,
-                unknown[]
+            expect(model.findAll).not.toHaveBeenCalled();
+            const [input] = asMock(model.findAdminPage).mock.calls[0] as [
+                {
+                    where: Record<string, unknown>;
+                    additionalConditions: unknown[];
+                    page: number;
+                    pageSize: number;
+                }
             ];
-            expect(where).toMatchObject({ groupId, lifecycleState: LifecycleStatusEnum.ACTIVE });
-            expect(conditions).toHaveLength(1);
+            expect(input.where).toMatchObject({
+                groupId,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+            expect(input.additionalConditions).toHaveLength(1);
+        });
+
+        it('should use the catalog default order when no sort is sent (AC-3.1)', async () => {
+            const admin = createActor({
+                permissions: [
+                    PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
+                    PermissionEnum.ACCESS_PANEL_ADMIN
+                ]
+            });
+            asMock(model.findAdminPage).mockResolvedValue({ items: [category], total: 1 });
+
+            await service.adminList(admin, { page: 2, pageSize: 50 });
+
+            expect(model.findAll).not.toHaveBeenCalled();
+            expect(asMock(model.findAdminPage).mock.calls[0]?.[0]).toMatchObject({
+                page: 2,
+                pageSize: 50,
+                where: { deletedAt: null }
+            });
+        });
+
+        it.each([
+            'slug:asc',
+            'createdAt:desc'
+        ])('should honour an explicit sort as sent: %s (AC-3.4)', async (sort) => {
+            const admin = createActor({
+                permissions: [
+                    PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
+                    PermissionEnum.ACCESS_PANEL_ADMIN
+                ]
+            });
+            asMock(model.findAll).mockResolvedValue({ items: [category], total: 1 });
+
+            await service.adminList(admin, { sort });
+
+            expect(model.findAdminPage).not.toHaveBeenCalled();
+            const [, options] = asMock(model.findAll).mock.calls[0] as [
+                unknown,
+                { sortBy: string; sortOrder: string }
+            ];
+            const [field, direction] = sort.split(':');
+            expect(options).toMatchObject({ sortBy: field, sortOrder: direction });
+        });
+
+        it('should include deleted rows only when includeDeleted is true (AC-3.5)', async () => {
+            const admin = createActor({
+                permissions: [
+                    PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
+                    PermissionEnum.ACCESS_PANEL_ADMIN
+                ]
+            });
+            asMock(model.findAdminPage).mockResolvedValue({ items: [], total: 0 });
+
+            await service.adminList(admin, { includeDeleted: true });
+
+            const [input] = asMock(model.findAdminPage).mock.calls[0] as [
+                { where: Record<string, unknown> }
+            ];
+            expect(input.where).not.toHaveProperty('deletedAt');
         });
     });
 });

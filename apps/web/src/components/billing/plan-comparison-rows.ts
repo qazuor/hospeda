@@ -78,6 +78,13 @@ export interface RowConfig {
     readonly icon?: ComponentType<IconProps> | undefined;
     /** Business lines that own the row's section; absent on common rows. */
     readonly lineMarks?: readonly LineMark[] | undefined;
+    /**
+     * HOS-2258: the row is omitted while no rendered plan column grants it.
+     * Lets a catalog trait ship before any plan includes it without the table
+     * advertising a feature nobody can buy; the row appears on its own once a
+     * plan grants the key.
+     */
+    readonly hideUntilGranted?: boolean | undefined;
 }
 
 export interface GroupConfig {

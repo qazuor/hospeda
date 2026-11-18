@@ -1308,6 +1308,16 @@ export interface VenueDetailData extends VenueCardData {
      */
     readonly venueEvents?: readonly VenueEvent[];
     /**
+     * Approved linked videos (HOS-2258). Empty when the venue has none OR the
+     * owner's plan does not grant `can_embed_video`: the API's trait projection
+     * empties `media.videos`, and the page cannot tell the two apart.
+     */
+    readonly videos?: readonly {
+        readonly url: string;
+        readonly caption?: string;
+        readonly description?: string;
+    }[];
+    /**
      * The `nightInfo` section (HOS-1849 / 4.5). Every field is `null` when the
      * section is not `available` — the API's projector removes them — so the
      * component renders nothing without asking about business lines.
