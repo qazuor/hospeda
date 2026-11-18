@@ -24,6 +24,7 @@ import {
     OWNER_ID,
     resetMocks,
     totalCalls,
+    unanswered,
     type World
 } from './owner-summary.harness';
 
@@ -37,6 +38,10 @@ vi.mock('../../../../src/mcp/tools/review/owner-review-reader', () => ({
 vi.mock('../../../../src/mcp/tools/summary/owner-summary-readers', () => ({
     countAccommodationFavorites: mocks.favorites,
     readOpenFixRequestListings: mocks.fixRequests
+}));
+vi.mock('../../../../src/mcp/tools/inquiry/inquiry-readers', () => ({
+    readOwnerAccommodationIds: mocks.ownerAccommodationIds,
+    readInquiryListContext: mocks.inquiryListContext
 }));
 vi.mock('../../../../src/services/listing-publication/listing-publish-completeness-batch', () => ({
     evaluateListingsPublishCompleteness: mocks.completeness
@@ -102,7 +107,7 @@ describe('get_owner_summary — budget and cost (AC-C32)', () => {
                 });
             }
         }
-        world.unread.set(OWNER_ID, 5);
+        unanswered(world, { ownerId: OWNER_ID, count: 5 });
         world.hostPending.set(OWNER_ID, 2);
         world.providerPending.set(OWNER_ID, 1);
         world.advancedStats.add(OWNER_ID);
@@ -147,6 +152,6 @@ describe('get_owner_summary — budget and cost (AC-C32)', () => {
         // Assert
         expect(measureResultChars({ value: result })).toBeLessThanOrEqual(MCP_RESULT_MAX_CHARS);
         expect(result.attention).toHaveLength(10);
-        expect(result.moreAttention).toBeGreaterThan(300);
+        expect(result.more).toBeGreaterThan(300);
     });
 });

@@ -5,6 +5,7 @@
  * the types it needs.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import type { ListingToolVertical } from '../listing/listing-services';
 
 /** The views periods the summary offers: the two the portal's owner-wide stats offer. */
@@ -19,17 +20,25 @@ export const OWNER_SUMMARY_PERIOD_DAYS: Readonly<Record<OwnerSummaryPeriod, numb
     '30d': 30
 };
 
-/** The publication states the summary counts. `PURGED` is final and left out. */
-export const OWNER_SUMMARY_STATUSES = [
-    'DRAFT',
-    'PUBLISHED',
-    'UNPUBLISHED_BY_BILLING',
-    'ARCHIVED',
-    'MODERATED'
-] as const;
+/** A publication state the summary counts: every state but the final `PURGED`. */
+export type OwnerSummaryStatus = Exclude<PublicationStatusEnum, PublicationStatusEnum.PURGED>;
 
-/** One of {@link OWNER_SUMMARY_STATUSES}. */
-export type OwnerSummaryStatus = (typeof OWNER_SUMMARY_STATUSES)[number];
+/** Whether a publication state is one the summary counts. */
+export function isOwnerSummaryStatus(status: string): status is OwnerSummaryStatus {
+    return status !== PublicationStatusEnum.PURGED && PUBLICATION_STATUSES.has(status);
+}
+
+const PUBLICATION_STATUSES: ReadonlySet<string> = new Set<string>(
+    Object.values(PublicationStatusEnum)
+);
+
+/**
+ * The publication states the summary counts, in the enum's order: derived from
+ * `PublicationStatusEnum` minus `PURGED`, so a new state is counted without
+ * touching this file.
+ */
+export const OWNER_SUMMARY_STATUSES: readonly OwnerSummaryStatus[] =
+    Object.values(PublicationStatusEnum).filter(isOwnerSummaryStatus);
 
 /** Listing counts of one vertical. */
 export interface VerticalListingCounts {
@@ -125,8 +134,19 @@ export interface VerticalMetrics {
     readonly inquiries?: SummaryInquiries;
     /** Accommodation only: conversations with activity the owner has not answered (the panel's badge count). */
     readonly unansweredInquiries?: number;
-    /** Accommodation only, advanced stats: users who currently saved any of the owner's accommodations. */
+    /**
+     * Accommodation only, advanced stats: live bookmarks summed over the owner's
+     * accommodations. A user who saved two of them counts twice; it is not a
+     * count of distinct users.
+     */
     readonly favorites?: number;
+    /**
+     * Present (`true`) when the vertical has more listings than one read covers.
+     * Then `newReviews` and `favorites` cover only the listings read, while
+     * `views`, `inquiries` and `unansweredInquiries` cover all of them. Tell the
+     * user the figures are partial.
+     */
+    readonly partial?: true;
     /** Metrics left out and why. Absent when nothing was left out. */
     readonly omitted?: Readonly<Record<string, 'not_in_plan' | 'not_permitted'>>;
 }
@@ -142,5 +162,5 @@ export interface OwnerSummary {
     /** What needs the owner's attention, most urgent first, at most 10. */
     readonly attention: readonly AttentionItem[];
     /** Attention items left out of `attention` (the cap, or the response budget). */
-    readonly moreAttention: number;
+    readonly more: number;
 }

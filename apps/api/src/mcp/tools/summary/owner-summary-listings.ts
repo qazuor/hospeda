@@ -19,7 +19,7 @@ import { editorLink, firstMissingSection } from '../listing/listing-refusal-acti
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';
 import {
     type AttentionItem,
-    OWNER_SUMMARY_STATUSES,
+    isOwnerSummaryStatus,
     type OwnerSummaryStatus,
     type VerticalListingCounts
 } from './owner-summary-types';
@@ -29,14 +29,6 @@ interface CountedRow {
     readonly id: string;
     readonly name: string;
     readonly publicationStatus: PublicationStatusEnum;
-}
-
-/** The counted states, for membership checks. */
-const COUNTED_STATUSES: ReadonlySet<string> = new Set<string>(OWNER_SUMMARY_STATUSES);
-
-/** Whether a publication state is one the summary counts. */
-function isCountedStatus(status: string): status is OwnerSummaryStatus {
-    return COUNTED_STATUSES.has(status);
 }
 
 /**
@@ -53,16 +45,17 @@ export function countListingsByStatus({
     readonly rows: readonly CountedRow[];
     readonly total: number;
 }): VerticalListingCounts {
+    // Typed as a full Record: a new counted state fails to compile here until it is added.
     const byStatus: Record<OwnerSummaryStatus, number> = {
-        DRAFT: 0,
-        PUBLISHED: 0,
-        UNPUBLISHED_BY_BILLING: 0,
-        ARCHIVED: 0,
-        MODERATED: 0
+        [PublicationStatusEnum.DRAFT]: 0,
+        [PublicationStatusEnum.PUBLISHED]: 0,
+        [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: 0,
+        [PublicationStatusEnum.ARCHIVED]: 0,
+        [PublicationStatusEnum.MODERATED]: 0
     };
     let counted = 0;
     for (const row of rows) {
-        if (isCountedStatus(row.publicationStatus)) {
+        if (isOwnerSummaryStatus(row.publicationStatus)) {
             byStatus[row.publicationStatus] += 1;
             counted += 1;
         }

@@ -32,7 +32,7 @@ const summaryWith = (count: number): OwnerSummary => ({
     listings: { accommodation: zero, venue: zero, experience: zero },
     metrics: {},
     attention: Array.from({ length: count }, (_, n) => item(n)),
-    moreAttention: 2
+    more: 2
 });
 
 describe('fitSummaryToBudget', () => {
@@ -64,7 +64,7 @@ describe('fitSummaryToBudget', () => {
             'id-2',
             'id-3'
         ]);
-        expect(fitted?.moreAttention).toBe(2 + 6);
+        expect(fitted?.more).toBe(2 + 6);
     });
 
     it('refuses a summary that is over the limit even with no attention left', () => {

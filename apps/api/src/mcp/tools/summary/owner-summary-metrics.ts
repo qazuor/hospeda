@@ -15,20 +15,28 @@
  *   reader of `list_reviews` (§6.5), filtered by `since`;
  * - accommodation inquiries: `ConversationService.getHostMonthlyInquiries` and
  *   `getHostResponseRate`, as `get_listing_stats` reads them;
- * - unanswered inquiries: the unread count the host dashboard reads
- *   (`ConversationService.getUnreadCount`, owner side);
- * - favorites (advanced stats): `countAccommodationFavorites`.
+ * - unanswered inquiries: conversations in `PENDING_OWNER`, the `total` of the
+ *   `list_inquiries` read (`ConversationService.listForOwner`);
+ * - favorites (advanced stats): `countAccommodationFavorites`, a sum of live
+ *   bookmarks, not of distinct users.
  *
  * A metric that cannot be read for a permission reason is OMITTED, never zero
  * (HOS-2184 AC-9). Any other failure fails the call.
  */
 
-import { EntityTypeEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import {
+    ConversationStatusEnum,
+    EntityTypeEnum,
+    PermissionEnum,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
 import { type Actor, entityViewService } from '@repo/service-core';
 import { env } from '../../../utils/env';
 import { buildPortalUrl } from '../../portal/build-portal-url';
 import { describePortalDestination } from '../../portal/portal-destination';
 import type { PortalDestination } from '../../portal/portal-routes';
+import { readOwnerAccommodationIds } from '../inquiry/inquiry-readers';
 import { getInquiryConversationService } from '../inquiry/inquiry-services';
 import { LISTING_STATS_INQUIRY_MONTHS } from '../listing/get-listing-stats.accommodation';
 import type { ListingToolVertical } from '../listing/listing-services';
@@ -135,39 +143,50 @@ async function readInquiryMetrics(args: {
 }
 
 /**
- * Reads the unanswered-inquiries count: the call the host dashboard makes. Read
- * once per summary and shared by the metrics and the (never gated) attention
- * block.
+ * Reads the unanswered-inquiries count: the `total` of the read `list_inquiries`
+ * makes for `status: PENDING_OWNER` (waiting for the owner's reply), over the
+ * same scope (`readOwnerAccommodationIds`) and behind the same
+ * `CONVERSATION_VIEW_OWN` permission, so the two tools cannot disagree. Two
+ * reads whatever the number of accommodations: the scope, then one page of 1.
+ * Read once per summary and shared by the metrics and the (never gated)
+ * attention block.
  *
- * @param args - The actor and their accommodation ids
- * @returns The count; `undefined` when not permitted or there are no accommodations
+ * @param args - The actor
+ * @returns The count; `undefined` when not permitted or the owner has no accommodations
  */
 export async function readUnansweredInquiries(args: {
     readonly actor: Actor;
-    readonly accommodationIds: readonly string[];
 }): Promise<ServiceResult<number | undefined>> {
-    const { actor, accommodationIds } = args;
+    const { actor } = args;
+    if (!actor.permissions.includes(PermissionEnum.CONVERSATION_VIEW_OWN)) {
+        return { data: undefined };
+    }
+    const accommodationIds = await readOwnerAccommodationIds({ ownerId: actor.id });
     if (accommodationIds.length === 0) {
         return { data: undefined };
     }
-    const unread = await getInquiryConversationService().getUnreadCount(actor, {
-        actorId: actor.id,
-        actorSide: 'OWNER',
-        accommodationIds: [...accommodationIds]
+    const pending = await getInquiryConversationService().listForOwner(actor, {
+        userId: actor.id,
+        accommodationIds: [...accommodationIds],
+        status: ConversationStatusEnum.PENDING_OWNER,
+        page: 1,
+        pageSize: 1
     });
-    if (unread.error) {
-        return unread.error.code === ServiceErrorCode.FORBIDDEN
+    if (pending.error) {
+        return pending.error.code === ServiceErrorCode.FORBIDDEN
             ? { data: undefined }
-            : { error: unread.error };
+            : { error: pending.error };
     }
-    return { data: unread.data?.count };
+    return { data: pending.data?.total };
 }
 
 /**
  * Reads the metrics of one vertical, or its omission note.
  *
  * @param args - The actor, the vertical, the owner's listing ids in it, the
- *   period, the instant "now" and (accommodation) the unanswered count already read
+ *   period, the instant "now", (accommodation) the unanswered count already read,
+ *   and whether the listing read of the vertical was partial (M-3: the per-listing
+ *   metrics then cover only the listings read)
  * @returns The metrics entry, or the error to report
  */
 export async function readVerticalMetrics(args: {
@@ -177,8 +196,9 @@ export async function readVerticalMetrics(args: {
     readonly period: OwnerSummaryPeriod;
     readonly now: Date;
     readonly unansweredInquiries?: number;
+    readonly partial?: boolean;
 }): Promise<VerticalMetricsResult> {
-    const { actor, vertical, listingIds, period, now, unansweredInquiries } = args;
+    const { actor, vertical, listingIds, period, now, unansweredInquiries, partial } = args;
     if (!(await hasBasicStatsEntitlement({ userId: actor.id, vertical }))) {
         return { metrics: omittedMetrics(vertical) };
     }
@@ -221,6 +241,7 @@ export async function readVerticalMetrics(args: {
                 ? { unansweredInquiries }
                 : {}),
             ...(favorites === undefined ? {} : { favorites }),
+            ...(partial ? { partial: true } : {}),
             ...(Object.keys(omitted).length > 0 ? { omitted } : {})
         }
     };

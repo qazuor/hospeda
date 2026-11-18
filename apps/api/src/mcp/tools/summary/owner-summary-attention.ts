@@ -4,8 +4,9 @@
  * (HOS-2331, spec HOS-2335 §6.6, AC-C31). Never plan gated (D-9).
  *
  * Sources:
- * - unanswered inquiries: the host dashboard's unread count (read once by the
- *   tool, `readUnansweredInquiries`), linked to the inbox;
+ * - unanswered inquiries: conversations in `PENDING_OWNER`, the count
+ *   `list_inquiries` gives for that status (read once by the tool,
+ *   `readUnansweredInquiries`), linked to the inbox;
  * - pending benefit usages (D-11): host side `countPendingForHost` (the
  *   `/usages/pending/count` badge, linked to `usos-de-beneficio`); provider side,
  *   only when `getOwn` finds the caller's directory listing, the provider inbox
@@ -36,7 +37,7 @@ import {
 } from './owner-summary-services';
 import type { AttentionItem, AttentionKind } from './owner-summary-types';
 
-/** Most attention items returned; the rest are counted in `moreAttention`. */
+/** Most attention items returned; the rest are counted in `more`. */
 export const OWNER_SUMMARY_ATTENTION_CAP = 10;
 
 /** Order of the kinds, most urgent first: people waiting on the owner come first. */
@@ -178,12 +179,12 @@ export function capAttention({
 }: {
     readonly items: readonly AttentionItem[];
     readonly cap?: number;
-}): { readonly attention: readonly AttentionItem[]; readonly moreAttention: number } {
+}): { readonly attention: readonly AttentionItem[]; readonly more: number } {
     const rank = (item: AttentionItem): number => KIND_ORDER.indexOf(item.kind);
     // Array.prototype.sort is stable, so items of one kind keep their order.
     const sorted = [...items].sort((a, b) => rank(a) - rank(b));
     return {
         attention: sorted.slice(0, cap),
-        moreAttention: Math.max(0, sorted.length - cap)
+        more: Math.max(0, sorted.length - cap)
     };
 }

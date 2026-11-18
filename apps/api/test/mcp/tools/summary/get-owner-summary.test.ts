@@ -25,6 +25,7 @@ import {
     OWNER_ID,
     resetMocks,
     TRADE_ID,
+    unanswered,
     type World
 } from './owner-summary.harness';
 
@@ -39,6 +40,10 @@ vi.mock('../../../../src/mcp/tools/summary/owner-summary-readers', () => ({
     countAccommodationFavorites: mocks.favorites,
     readOpenFixRequestListings: mocks.fixRequests
 }));
+vi.mock('../../../../src/mcp/tools/inquiry/inquiry-readers', () => ({
+    readOwnerAccommodationIds: mocks.ownerAccommodationIds,
+    readInquiryListContext: mocks.inquiryListContext
+}));
 vi.mock('../../../../src/services/listing-publication/listing-publish-completeness-batch', () => ({
     evaluateListingsPublishCompleteness: mocks.completeness
 }));
@@ -48,7 +53,7 @@ import { listMyListingsTool } from '../../../../src/mcp/tools/listing/list-my-li
 import { MCP_TOOL_DEFINITIONS } from '../../../../src/mcp/tools/registry';
 import { runTool } from '../../../../src/mcp/tools/run-tool';
 import { getOwnerSummaryTool } from '../../../../src/mcp/tools/summary/get-owner-summary';
-import { NO_STATS_NOTE } from '../../../../src/mcp/tools/summary/owner-summary-metrics';
+import { OWNER_SUMMARY_STATUSES } from '../../../../src/mcp/tools/summary/owner-summary-types';
 import { injectClock } from '../../../../src/utils/clock';
 import { validateApiEnv } from '../../../../src/utils/env';
 
@@ -156,7 +161,7 @@ describe('get_owner_summary', () => {
             addListing(world, { vertical: VerticalEnum.ACCOMMODATION, ownerId: OTHER_ID });
             addListing(world, { vertical: VerticalEnum.VENUE, ownerId: OTHER_ID });
             const mine = addListing(world, { vertical: VerticalEnum.VENUE });
-            world.unread.set(OTHER_ID, 9);
+            unanswered(world, { ownerId: OTHER_ID, count: 9 });
             world.hostPending.set(OTHER_ID, 4);
             world.providerPending.set(OTHER_ID, 2);
 
@@ -176,99 +181,44 @@ describe('get_owner_summary', () => {
             expect(reviewScopes).toEqual([{ vertical: VerticalEnum.VENUE, listingIds: [mine.id] }]);
             expect(mocks.favorites).not.toHaveBeenCalled();
         });
-    });
 
-    describe('metrics', () => {
-        it('without view_basic_stats only that vertical metrics become the plans note (AC-C30)', async () => {
+        it('counts every publication state but PURGED, derived from the enum (L-2)', async () => {
             // Arrange
-            addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
             addListing(world, { vertical: VerticalEnum.VENUE });
-            world.noBasicStats.set(OWNER_ID, new Set([VerticalEnum.ACCOMMODATION]));
-            world.unread.set(OWNER_ID, 2);
 
             // Act
             const result = await summary();
 
             // Assert
-            expect(result.metrics.accommodation).toEqual({
-                omitted: 'NO_STATS_ENTITLEMENT',
-                note: NO_STATS_NOTE,
-                action: { url: `${SITE}/es/planes/anfitriones/`, label: 'Ver los planes' }
-            });
-            expect(result.metrics.venue).toMatchObject({ period: '30d', views: 5 });
-            expect(result.listings.accommodation.total).toBe(1);
-            expect(result.attention.map((item) => item.kind)).toEqual(['unanswered_inquiries']);
-            expect(entityViewService.getStatsForHostAccommodations).not.toHaveBeenCalled();
+            const expected = Object.values(PublicationStatusEnum).filter(
+                (status) => status !== PublicationStatusEnum.PURGED
+            );
+            expect([...OWNER_SUMMARY_STATUSES]).toEqual(expected);
+            expect(Object.keys(result.listings.venue.byStatus).sort()).toEqual(
+                [...expected].sort()
+            );
         });
 
-        it('never reads (and so never zeroes) a metric of a gated vertical', async () => {
+        it('treats a vertical with only purged listings as having none (L-3)', async () => {
             // Arrange
-            addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            world.noBasicStats.set(OWNER_ID, new Set([VerticalEnum.ACCOMMODATION]));
+            addListing(world, {
+                vertical: VerticalEnum.EXPERIENCE,
+                status: PublicationStatusEnum.PURGED
+            });
+            addListing(world, { vertical: VerticalEnum.VENUE });
 
             // Act
             const result = await summary();
 
             // Assert
-            const entry = JSON.stringify(result.metrics.accommodation);
-            for (const key of ['views', 'newReviews', 'inquiries', 'favorites', 'unanswered']) {
-                expect(entry).not.toContain(key);
-            }
-            expect(mocks.ownerReviews).not.toHaveBeenCalled();
-            expect(mocks.favorites).not.toHaveBeenCalled();
-        });
-
-        it('reports accommodation metrics with the plan gates and the shared unread count', async () => {
-            // Arrange
-            addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            world.unread.set(OWNER_ID, 3);
-            world.advancedStats.add(OWNER_ID);
-
-            // Act
-            const result = await summary({ period: '7d' });
-
-            // Assert
-            expect(result.metrics.accommodation).toEqual({
-                period: '7d',
-                views: 20,
-                newReviews: {
-                    total: 3,
-                    byModerationState: { APPROVED: 2, PENDING: 1, REJECTED: 0 }
-                },
-                inquiries: {
-                    scope: 'all_my_accommodations',
-                    byMonth: [
-                        { month: '2026-10', count: 4 },
-                        { month: '2026-11', count: 2 }
-                    ],
-                    responseRatePercent: 80,
-                    averageResponseMinutes: 45
-                },
-                unansweredInquiries: 3,
-                favorites: 7
-            });
-            expect(mocks.ownerReviews.mock.calls[0]?.[0].filters).toEqual({
-                since: new Date(NOW.getTime() - 7 * 86_400_000)
-            });
-        });
-
-        it('omits favorites without view_advanced_stats and inquiries without permission, never zero', async () => {
-            // Arrange
-            addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            world.inquiriesForbidden = true;
-
-            // Act
-            const result = await summary();
-
-            // Assert
-            const metrics = result.metrics.accommodation;
-            expect(metrics).not.toHaveProperty('favorites');
-            expect(metrics).not.toHaveProperty('inquiries');
-            expect(metrics).toMatchObject({
-                omitted: { favorites: 'not_in_plan', inquiries: 'not_permitted' }
-            });
-            expect(mocks.favorites).not.toHaveBeenCalled();
+            expect(result.listings.experience.total).toBe(0);
+            expect(Object.keys(result.metrics)).toEqual(['venue']);
+            expect(mocks.fixRequests).not.toHaveBeenCalledWith(
+                expect.objectContaining({ vertical: VerticalEnum.EXPERIENCE })
+            );
+            expect(entityViewService.getStatsForOwnListings).not.toHaveBeenCalledWith(
+                expect.objectContaining({ entityType: 'EXPERIENCE' })
+            );
         });
     });
 
@@ -280,7 +230,7 @@ describe('get_owner_summary', () => {
                 name: 'La Parrilla'
             });
             addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            world.unread.set(OWNER_ID, 4);
+            unanswered(world, { ownerId: OWNER_ID, count: 4 });
             world.hostPending.set(OWNER_ID, 2);
             mocks.fixRequests.mockImplementation(async ({ vertical }: { vertical: string }) =>
                 vertical === VerticalEnum.VENUE
@@ -311,13 +261,13 @@ describe('get_owner_summary', () => {
                     actionUrl: `${SITE}/es/mi-cuenta/comercio/venue/${listing.id}/editar/`
                 }
             ]);
-            expect(result.moreAttention).toBe(0);
+            expect(result.more).toBe(0);
         });
 
         it('has no pending-usages item when nothing waits on the user', async () => {
             // Arrange
             addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            world.unread.set(OWNER_ID, 1);
+            unanswered(world, { ownerId: OWNER_ID, count: 1 });
 
             // Act
             const result = await summary();
@@ -401,7 +351,7 @@ describe('get_owner_summary', () => {
                 });
             }
             addListing(world, { vertical: VerticalEnum.ACCOMMODATION });
-            world.unread.set(OWNER_ID, 1);
+            unanswered(world, { ownerId: OWNER_ID, count: 1 });
             mocks.completeness.mockImplementation(
                 async ({ listings }: { listings: { id: string }[] }) =>
                     new Map(listings.map((l) => [l.id, ['summary']]))
@@ -413,7 +363,7 @@ describe('get_owner_summary', () => {
             // Assert
             expect(result.attention).toHaveLength(10);
             expect(result.attention[0]?.kind).toBe('unanswered_inquiries');
-            expect(result.moreAttention).toBe(3);
+            expect(result.more).toBe(3);
         });
     });
 

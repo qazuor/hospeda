@@ -4,7 +4,7 @@
  * §5.3, AC-C32). The result is measured the way it travels (serialized JSON).
  * Listing counts and metrics are fixed-size; only the attention block carries
  * owner text (listing names), so it is what gives way: items are dropped from
- * the least urgent end and counted in `moreAttention`. A summary that would
+ * the least urgent end and counted in `more`. A summary that would
  * still be over budget with no attention left is never returned.
  */
 
@@ -33,7 +33,7 @@ export function fitSummaryToBudget({
         fitted = {
             ...fitted,
             attention: fitted.attention.slice(0, -1),
-            moreAttention: fitted.moreAttention + 1
+            more: fitted.more + 1
         };
     }
     return fitted;
