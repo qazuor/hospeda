@@ -11,6 +11,7 @@ import {
     subscriptions
 } from '@repo/db';
 import { z } from 'zod';
+import { SCHEDULED_CHANGE_EFFECTIVE_AT_FIELD } from '../reconciliation/sweep/comparisons/applied-change-anchor.js';
 import type { ScheduledChangeApplier } from './subscription-billing-ports.js';
 
 const inputSchema = z.strictObject({
@@ -135,6 +136,12 @@ export async function applyScheduledChangeInTx(input: {
                 field: 'billing_option_id',
                 old: subscription.billingOptionId,
                 new: queued.targetBillingOptionId
+            },
+            // HOS-2345: the instant the new anchor governs charges from. S38 may run
+            // later than this, and the queue row it came from is deleted above.
+            {
+                field: SCHEDULED_CHANGE_EFFECTIVE_AT_FIELD,
+                new: queued.effectiveAt.toISOString()
             }
         ],
         tx

@@ -122,7 +122,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:15 S38 scheduled change a
                 field: 'billing_option_id',
                 old: seeded.predecessorBillingOptionId,
                 new: seeded.targetBillingOptionId
-            }
+            },
+            { field: 'effective_at', new: dueAt.toISOString() }
         ]);
     });
 

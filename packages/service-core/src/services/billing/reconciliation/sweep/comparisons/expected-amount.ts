@@ -19,6 +19,7 @@ import {
     type BillingOptionReader,
     readAnchoredBillingOption
 } from '../../../read-anchored-billing-option.js';
+import { readAnchorInForceAt } from './applied-change-anchor.js';
 
 export type ExpectedAmount =
     | {
@@ -198,17 +199,24 @@ export function createCutExpectedAmountPolicy(
                           }
                       } satisfies BillingOptionReader)
                     : ports.reader;
-            const anchoredSubscription = {
-                planVersionId: subscription.planVersionId,
-                billingOptionId: subscription.billingOptionId
-            };
-
             const change = await scheduledChange(subscription.id, executor);
             const startsAt =
                 change !== null &&
                 (purpose.kind === 'AUTHORIZATION' ||
                     purpose.chargeCreatedAt.getTime() >= change.effectiveAt.getTime());
             const destination = startsAt ? change : null;
+            // HOS-2345: a period charge made before an applied S38 change is priced
+            // with the anchor that governed it, not with the one S38 moved to.
+            const anchoredSubscription = (destination === null && purpose.kind === 'PERIOD'
+                ? await readAnchorInForceAt({
+                      subscriptionId: subscription.id,
+                      at: purpose.chargeCreatedAt,
+                      executor
+                  })
+                : null) ?? {
+                planVersionId: subscription.planVersionId,
+                billingOptionId: subscription.billingOptionId
+            };
             const migration =
                 destination === null && purpose.kind === 'AUTHORIZATION'
                     ? await migrationDecidedDestination({
