@@ -261,7 +261,7 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
          * on the way out. Writing this field needs the `can_embed_video`
          * entitlement (the `media.videos` section trait).
          */
-        videos: ListingVideosInputSchema.optional()
+        videos: ListingVideosInputSchema.nullish()
     });
 
 /** TypeScript type for {@link VenueOwnerUpdateInputSchema}. */
@@ -354,6 +354,14 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     averageRating: true,
     rating: true
 }).extend({
+    /**
+     * HOS-2258: linked videos go through the same rules as the owner PATCH
+     * (max 6, `APPROVED` stamped by the server). The route declares the
+     * `videos` section trait, so a create body that carries videos needs
+     * `can_embed_video` too. Without this override the `.omit()` schema took
+     * the base `videos` field verbatim, with any `moderationState` and no cap.
+     */
+    videos: ListingVideosInputSchema.nullish(),
     businessLines: z
         .array(z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }), {
             error: 'zodError.venue.businessLines.invalidType'

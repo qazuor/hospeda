@@ -223,6 +223,19 @@ function violations(
     return errors;
 }
 
+describe('KEYS_PENDING_PLAN_GRANT stays honest (HOS-2258)', () => {
+    it.each(
+        KEYS_PENDING_PLAN_GRANT
+    )('%s is still granted by no production venue plan; once one grants it, drop it from the allowlist', (key) => {
+        // Rule r6 looks at the venue plans only (the allowlist is for the venue trait).
+        const granted = PRODUCTION_PLAN_CATALOG.filter((plan) => plan.vertical === 'venue').some(
+            (plan) => plan.version.entitlements.some((entitlement) => entitlement.key === key)
+        );
+
+        expect(granted).toBe(false);
+    });
+});
+
 describe('G-FAC-02 listing catalog integrity', () => {
     it('satisfies all twelve catalog rules', () =>
         expect(violations(LISTING_SECTIONS)).toEqual([]));

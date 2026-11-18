@@ -3,6 +3,7 @@ import {
     LISTING_VIDEOS_MAX,
     ListingVideoInputSchema,
     ListingVideosInputSchema,
+    VenueOwnerCreateInputSchema,
     VenueOwnerUpdateInputSchema
 } from '../../src/index.js';
 
@@ -64,5 +65,28 @@ describe('ListingVideosInputSchema (HOS-2258)', () => {
                 videos: [{ url: YT, moderationState: 'REJECTED' }]
             }).videos?.[0]?.moderationState
         ).toBe('APPROVED');
+    });
+
+    it('accepts videos: null on the owner PATCH (an explicit clear)', () => {
+        expect(VenueOwnerUpdateInputSchema.safeParse({ videos: null }).success).toBe(true);
+    });
+
+    it('applies the same cap and APPROVED stamp on owner CREATE', () => {
+        const base = {
+            name: 'Local',
+            summary: 'A good local venue summary.',
+            description: 'A detailed description of this local venue for visitors.',
+            type: 'CAFE'
+        };
+        const over = Array.from({ length: 7 }, () => ({ url: YT }));
+
+        expect(VenueOwnerCreateInputSchema.safeParse({ ...base, videos: over }).success).toBe(
+            false
+        );
+        const ok = VenueOwnerCreateInputSchema.safeParse({
+            ...base,
+            videos: [{ url: YT, moderationState: 'REJECTED' }]
+        });
+        expect(ok.data?.videos?.[0]?.moderationState).toBe('APPROVED');
     });
 });
