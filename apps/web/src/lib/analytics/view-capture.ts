@@ -117,14 +117,16 @@ export function sendPartnerLogoClickBeacon({
 }
 
 /**
- * The shared transport behind both beacons.
+ * The shared transport behind every beacon (views, partner logo clicks and,
+ * since HOS-2256, listing interactions via `interaction-capture.ts`).
  *
- * Extracted rather than copied so the two capture paths cannot drift: the CORS
+ * Extracted rather than copied so the capture paths cannot drift: the CORS
  * footprint, the `sendBeacon`-then-`fetch(keepalive)` ladder and the
- * never-throw contract are properties of the transport, not of either caller,
+ * never-throw contract are properties of the transport, not of any caller,
  * and a second copy is a second place to fix when one of them changes.
+ * Exported so a new beacon reuses it instead of copying it.
  */
-function postBeacon({
+export function postBeacon({
     path,
     payload,
     label
