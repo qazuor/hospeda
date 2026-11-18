@@ -20,16 +20,13 @@ describe('EntityInteractionCaptureBodySchema', () => {
         expect(EntityInteractionCaptureBodySchema.safeParse({ ...base, kind }).success).toBe(true);
     });
 
-    it.each(['TICKET_CLICK', 'EVENT_IMPRESSION'])('accepts %s with an eventId', (kind) => {
+    it.each(['TICKET_CLICK'])('accepts %s with an eventId', (kind) => {
         expect(
             EntityInteractionCaptureBodySchema.safeParse({ ...base, kind, eventId: EVENT }).success
         ).toBe(true);
     });
 
-    it.each([
-        'TICKET_CLICK',
-        'EVENT_IMPRESSION'
-    ])('rejects %s without an eventId (AC-5)', (kind) => {
+    it.each(['TICKET_CLICK'])('rejects %s without an eventId (AC-5)', (kind) => {
         const r = EntityInteractionCaptureBodySchema.safeParse({ ...base, kind });
         expect(r.success).toBe(false);
         expect(r.error?.issues[0]?.message).toBe('zodError.entityInteraction.eventId.required');
@@ -69,6 +66,20 @@ describe('EntityInteractionCaptureBodySchema', () => {
                 eventId: 'x'
             }).success
         ).toBe(false);
+    });
+});
+
+describe('EVENT_IMPRESSION (reserved for HOS-2265)', () => {
+    it('is not accepted by the public capture body until something emits it', () => {
+        const r = EntityInteractionCaptureBodySchema.safeParse({
+            ...base,
+            kind: 'EVENT_IMPRESSION',
+            eventId: EVENT
+        });
+        expect(r.success).toBe(false);
+        expect(r.error?.issues[0]?.message).toBe(
+            'zodError.entityInteraction.kind.notForEntityType'
+        );
     });
 });
 
