@@ -145,7 +145,8 @@ describe('TEST:1667:2 AC:1667:2 — restored reads', () => {
         expect(run()).toEqual({
             exitCode: 0,
             // 2026-11-17, HOS-1715: 182 (8 payment and addon reads return).
-            output: 'OK GUARD:G-R6: verified 182 read columns.'
+            // 2026-11-18, HOS-2344: 183 (S40 reads subscription.succeeds_id).
+            output: 'OK GUARD:G-R6: verified 183 read columns.'
         });
     });
 });

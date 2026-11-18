@@ -5,6 +5,7 @@ import { handleOrdersRoute } from './orders-route';
 import { handlePaymentsSearchRoute } from './payments-search-route';
 import { handlePreapprovalSearchRoute } from './preapproval-search-route';
 import { handleRefundsRoute } from './refunds-route';
+import { type FakeProviderAccount, handleUsersMeRoute } from './users-me-route';
 
 /** An HTTP response handled by an additive fake provider route. */
 export type ExtraRouteResult = { readonly status: number; readonly body?: unknown };
@@ -18,8 +19,10 @@ export async function handleExtraRoutes(args: {
     readonly body: unknown;
     readonly refundAmounts: Map<string, number>;
     readonly now: Date;
+    readonly account?: FakeProviderAccount;
 }): Promise<ExtraRouteResult | null> {
     return (
+        handleUsersMeRoute({ ...args, account: args.account ?? 'sandbox' }) ??
         (await handlePreapprovalSearchRoute(args)) ??
         (await handleOrdersRoute(args)) ??
         (await handleAuthorizedPaymentsRoute(args)) ??
