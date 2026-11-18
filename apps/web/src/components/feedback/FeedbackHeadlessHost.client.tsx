@@ -33,6 +33,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { loadFeedbackStyles } from '@/components/feedback/load-feedback-styles';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 import { captureFeedback, getLastEventId } from '@/lib/observability/sentry-lazy';
 
 // ---------------------------------------------------------------------------
@@ -194,6 +195,7 @@ export function FeedbackHeadlessHost({
         <FeedbackModal
             isOpen={isOpen}
             onClose={handleClose}
+            rootDataAttributes={UMAMI_BLOCK_PROPS}
             formProps={{
                 apiUrl,
                 appSource: 'web',
