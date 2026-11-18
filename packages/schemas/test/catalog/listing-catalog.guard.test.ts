@@ -372,3 +372,13 @@ describe('G-FAC-02 rule 12 review dimensions', () => {
         ).toBe(true);
     });
 });
+
+describe('HOS-2270 pending plan grants', () => {
+    it('no venue plan grants a key still listed as pending (remove the key with HOS-2282)', () => {
+        const granted = PRODUCTION_PLAN_CATALOG.filter((plan) => plan.vertical === 'venue')
+            .flatMap((plan) => plan.version.entitlements.map((entry) => entry.key))
+            .filter((key) => PENDING_PLAN_GRANT_VENUE_KEYS.includes(key));
+
+        expect(granted).toEqual([]);
+    });
+});

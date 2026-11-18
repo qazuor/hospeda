@@ -8,8 +8,9 @@
  *
  * - **read** (`GET .../promotions`): `read` intent, no entitlement, no limit.
  * - **pause or delete**: `delete` intent. The resolver skips the section key for it
- *   and these calls request no limit, so an owner who lost the plan can still put
- *   their promotions away (AC-6).
+ *   and these calls request no limit, so an owner who downgraded to a covered plan
+ *   without the key can still put their promotions away (AC-6). An owner whose
+ *   coverage fully lapsed gets NO_COVERAGE (step 5) on these calls, as on every EDIT.
  * - **create, edit, re-activate**: `write` intent. Needs the key, and the limit when
  *   the promotion ends up active.
  *
