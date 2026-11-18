@@ -6,6 +6,10 @@
  * or a refusal. Ownership is owner-only (AC-6), the audit carries the target
  * (AC-12), and the tool is listed as a destructive write.
  *
+ * HOS-2247 (D-19): a `resume` that publishes is two steps, so the happy paths
+ * here confirm the preview with its token; the confirmation step itself is
+ * covered in `set-listing-publication.confirmation.test.ts`.
+ *
  * Listing access runs for real over mocked ports (the pattern of
  * `update-listing-basic.test.ts`); `ListingPublicationService` and the
  * vertical services are spied on their prototypes. Billing refusals live in
@@ -30,7 +34,12 @@ const mocks = vi.hoisted(() => ({
     effectiveSet: vi.fn(),
     preTrialDraftLimits: vi.fn(),
     record: vi.fn(),
-    capturePublished: vi.fn()
+    capturePublished: vi.fn(),
+    redis: undefined as unknown
+}));
+
+vi.mock('../../../../src/utils/redis', () => ({
+    getRedisClient: vi.fn(async () => mocks.redis)
 }));
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
@@ -65,6 +74,7 @@ import { buildToolListEntry, handleMcpToolCall } from '../../../../src/lib/mcp/b
 import { buildMcpAuthInfo } from '../../../../src/lib/mcp/caller';
 import {
     LISTING_MODERATED_REASON,
+    type ListingPublicationResult,
     planListingPublication,
     SET_LISTING_PUBLICATION_REASON_MESSAGES,
     setListingPublicationTool
@@ -75,8 +85,8 @@ import { clearSlidingWindowStore } from '../../../../src/middlewares/rate-limit'
 import { ListingPublicationService } from '../../../../src/services/listing-publication/listing-publication.service';
 import { env, validateApiEnv } from '../../../../src/utils/env';
 
-const { OWNER_ID, OTHER_ID, LISTING_ID, VERTICALS, actorFor } = harness;
-const context = { channel: 'mcp' } as const;
+const { OWNER_ID, OTHER_ID, LISTING_ID, VERTICALS, CLIENT, actorFor } = harness;
+const context = { channel: 'mcp', clientId: CLIENT } as const;
 
 const SERVICES = {
     [VerticalEnum.ACCOMMODATION]: AccommodationService,
@@ -136,9 +146,11 @@ const failureOf = async (input: Record<string, unknown>, actor?: Actor) => {
     return outcome.failure;
 };
 
-const dataOf = async (input: Record<string, unknown>) => {
-    const outcome = await run(input);
+/** The state after the call; a publish preview is confirmed first (two steps). */
+const dataOf = async (input: Record<string, unknown>): Promise<ListingPublicationResult> => {
+    const outcome = await harness.throughPreview((next) => run(next), input);
     if (!outcome.ok) throw new Error(`expected success, got ${outcome.failure.code}`);
+    if (!('changed' in outcome.data)) throw new Error('expected the state after the call');
     return outcome.data;
 };
 
@@ -149,6 +161,7 @@ describe('set_listing_publication', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.redis = harness.makeFakeRedis().redis;
         harness.givenBilling(mocks, { covered: true, granted: true });
     });
 
@@ -213,10 +226,10 @@ describe('set_listing_publication', () => {
         it.each([
             PublicationStatusEnum.DRAFT,
             PublicationStatusEnum.UNPUBLISHED_BY_BILLING
-        ])('resume publishes a %s listing and answers its public URL', async (status) => {
-            // Arrange
+        ])('resume publishes a %s listing once confirmed and answers its public URL', async (status) => {
+            // Arrange: the preview reads the state, the commit reads it before and after.
             harness.givenFacts(mocks, { vertical, status });
-            givenStates(vertical, status, PublicationStatusEnum.PUBLISHED);
+            givenStates(vertical, status, status, PublicationStatusEnum.PUBLISHED);
             const service = givenPublicationService();
 
             // Act
@@ -492,6 +505,42 @@ describe('set_listing_publication', () => {
                     target
                 })
             );
+        });
+
+        it('records each step: pause applies, a publish previews then commits', async () => {
+            // Arrange
+            givenStates(
+                VerticalEnum.VENUE,
+                PublicationStatusEnum.PUBLISHED,
+                PublicationStatusEnum.DRAFT
+            );
+            givenPublicationService();
+            await call({ vertical: 'venue', id: LISTING_ID, action: 'pause' });
+            harness.givenFacts(mocks, {
+                vertical: VerticalEnum.VENUE,
+                status: PublicationStatusEnum.DRAFT
+            });
+            givenStates(
+                VerticalEnum.VENUE,
+                PublicationStatusEnum.DRAFT,
+                PublicationStatusEnum.DRAFT,
+                PublicationStatusEnum.PUBLISHED
+            );
+            const publish = { vertical: 'venue', id: LISTING_ID, action: 'resume' };
+
+            // Act
+            const preview = await call(publish);
+            const token = JSON.parse(
+                preview.content[0]?.type === 'text' ? preview.content[0].text : '{}'
+            ).confirmationToken;
+            await call({ ...publish, confirmationToken: token });
+
+            // Assert
+            expect(mocks.record.mock.calls.map(([row]) => row.details)).toEqual([
+                { action: 'pause', step: 'apply' },
+                { action: 'resume', step: 'preview' },
+                { action: 'resume', step: 'commit' }
+            ]);
         });
 
         it('records an unexpected failure as error, with its target', async () => {

@@ -20,17 +20,35 @@ import {
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, loadFacts } = vi.hoisted(() => {
-    const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
-    return {
-        USER_ID: userId,
-        CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
-        VALID_TOKEN: 'valid-access-token-0123456789',
-        ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
-        findOneMock: vi.fn(),
-        loadFacts: vi.fn()
-    };
-});
+const { USER_ID, CLIENT_ID, VALID_TOKEN, ACTOR, findOneMock, loadFacts, redisStore } = vi.hoisted(
+    () => {
+        const userId = '6c1e4d2b-9a8f-4e7d-a6c5-b4a3928170f6';
+        return {
+            USER_ID: userId,
+            CLIENT_ID: 'https://claude.ai/oauth/mcp-client-metadata',
+            VALID_TOKEN: 'valid-access-token-0123456789',
+            ACTOR: { id: userId, roles: ['HOST'], permissions: [], emailVerified: true },
+            findOneMock: vi.fn(),
+            loadFacts: vi.fn(),
+            redisStore: new Map<string, string>()
+        };
+    }
+);
+
+// Publishing is two steps (HOS-2247, D-19): the confirmation store over a Map.
+vi.mock('../../../src/utils/redis', () => ({
+    getRedisClient: vi.fn(async () => ({
+        set: async (key: string, value: string) => {
+            redisStore.set(key, value);
+            return 'OK';
+        },
+        getdel: async (key: string) => {
+            const value = redisStore.get(key) ?? null;
+            redisStore.delete(key);
+            return value;
+        }
+    }))
+}));
 
 vi.mock('../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
@@ -472,7 +490,7 @@ describe('/mcp listing tools (end to end)', () => {
         });
     });
 
-    it('set_listing_publication resumes an own draft venue and answers its public URL', async () => {
+    it('set_listing_publication publishes an own draft venue in two steps and answers its public URL', async () => {
         // Arrange
         loadFacts.mockResolvedValue({
             facts: {
@@ -494,20 +512,27 @@ describe('/mcp listing tools (end to end)', () => {
             }) as unknown as Awaited<ReturnType<VenueService['getById']>>;
         vi.spyOn(VenueService.prototype, 'getById')
             .mockResolvedValueOnce(venueRow(PublicationStatusEnum.DRAFT))
+            .mockResolvedValueOnce(venueRow(PublicationStatusEnum.DRAFT))
             .mockResolvedValueOnce(venueRow(PublicationStatusEnum.PUBLISHED));
         const publish = vi
             .spyOn(ListingPublicationService.prototype, 'publish')
             .mockResolvedValue({ id: VENUE_ID } as never);
+        const args = { vertical: 'venue', id: VENUE_ID, action: 'resume' };
 
         // Act
+        const preview = await callTool('set_listing_publication', args);
+        const previewData = JSON.parse(preview.result?.content?.[0]?.text ?? 'null');
+        const publishedBeforeConfirming = publish.mock.calls.length;
         const message = await callTool('set_listing_publication', {
-            vertical: 'venue',
-            id: VENUE_ID,
-            action: 'resume'
+            ...args,
+            confirmationToken: previewData.confirmationToken
         });
 
         // Assert
+        expect(previewData).toMatchObject({ status: 'confirmation_required', name: 'La Parrilla' });
+        expect(publishedBeforeConfirming).toBe(0);
         expect(message.result?.isError).toBeUndefined();
+        expect(publish).toHaveBeenCalledTimes(1);
         expect(publish).toHaveBeenCalledWith({
             actor: expect.objectContaining({ id: USER_ID }),
             id: VENUE_ID,
