@@ -4,6 +4,7 @@ import {
     AddonPurchasesFreezeValueSchema,
     type AnnouncementItem,
     AnnouncementsValueSchema,
+    DEFAULT_SESSION_RECORDING_RETENTION_DAYS,
     MaintenanceModeValueSchema,
     PaidSignupsFreezeValueSchema,
     PermissionEnum,
@@ -15,6 +16,7 @@ import {
     ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema,
     ServiceErrorCode,
+    type SessionRecordingRetentionDays,
     SessionRecordingValueSchema
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -327,6 +329,34 @@ export class PlatformSettingsService extends BaseService {
             return false;
         }
         return parsed.data.enabled;
+    }
+
+    /**
+     * How many days a Umami replay or heatmap event is kept (HOS-2347 retention).
+     *
+     * **Why this method instead of `get`**: the callers are the daily retention
+     * cron and the manual purge, and the cron has no actor. The answer is one
+     * platform-wide number.
+     *
+     * Independent of the on/off switch: old data has to go even while recording
+     * is OFF. A missing row, a row written before the field existed, or a value
+     * that fails the schema answers the default (30 days). A read error is NOT
+     * swallowed, so the caller fails loudly instead of purging on a guess.
+     *
+     * @returns The configured retention in days: 14, 30 or 60.
+     */
+    async getSessionRecordingRetentionDays(): Promise<SessionRecordingRetentionDays> {
+        const row = await this.model.findByKey('analytics.sessionRecording');
+        if (!row) return DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+        const parsed = SessionRecordingValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored analytics.sessionRecording value failed schema validation, using the default retention'
+            );
+            return DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+        }
+        return parsed.data.retentionDays;
     }
 
     /**

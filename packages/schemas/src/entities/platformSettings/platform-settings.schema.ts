@@ -211,6 +211,38 @@ export type ProviderWatchAuthorizationValue = z.infer<typeof ProviderWatchAuthor
 // `analytics.sessionRecording` value (HOS-2347)
 // ---------------------------------------------------------------------------
 
+/** The only retention periods the owner allows for replays and heatmaps, in days. */
+export const SESSION_RECORDING_RETENTION_DAYS_OPTIONS = [14, 30, 60] as const;
+
+/** Retention applied when the setting carries none (owner decision 2026-11-18). */
+export const DEFAULT_SESSION_RECORDING_RETENTION_DAYS = 30 as const;
+
+/** Zod enum of the allowed retention periods: `14 | 30 | 60`. */
+export const SessionRecordingRetentionDaysSchema = z.union([
+    z.literal(14),
+    z.literal(30),
+    z.literal(60)
+]);
+
+/** Inferred type of a retention period in days. */
+export type SessionRecordingRetentionDays = z.infer<typeof SessionRecordingRetentionDaysSchema>;
+
+/**
+ * Body of `POST /api/v1/admin/session-recording/purge` (HOS-2347): the counts of
+ * what the purge deleted.
+ */
+export const SessionRecordingPurgeResponseSchema = z.object({
+    /** Rows deleted from Umami's `session_replay` table. */
+    replaysDeleted: z.number().int().nonnegative(),
+    /** Rows deleted from Umami's `heatmap_event` table. */
+    heatmapEventsDeleted: z.number().int().nonnegative(),
+    /** Retention period the purge used, in days. */
+    retentionDays: SessionRecordingRetentionDaysSchema
+});
+
+/** Inferred type of the purge response. */
+export type SessionRecordingPurgeResponse = z.infer<typeof SessionRecordingPurgeResponseSchema>;
+
 /**
  * Value shape for `analytics.sessionRecording` (HOS-2347). The ONE switch that
  * decides whether the public web injects the Umami session recorder
@@ -220,7 +252,15 @@ export type ProviderWatchAuthorizationValue = z.infer<typeof ProviderWatchAuthor
  */
 export const SessionRecordingValueSchema = z.object({
     /** Whether the web may load the session recorder for consenting visitors. */
-    enabled: z.boolean()
+    enabled: z.boolean(),
+    /**
+     * Days a replay or heatmap event is kept before the daily purge deletes it
+     * (HOS-2347 retention). Additive: a row written before this field existed
+     * parses to the default (30).
+     */
+    retentionDays: SessionRecordingRetentionDaysSchema.default(
+        DEFAULT_SESSION_RECORDING_RETENTION_DAYS
+    )
 });
 
 /** Inferred type for the `analytics.sessionRecording` value. */

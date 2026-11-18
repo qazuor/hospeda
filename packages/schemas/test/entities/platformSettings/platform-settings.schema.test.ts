@@ -27,6 +27,8 @@ import {
     ProviderWatchAuthorizationValueSchema,
     PublicSessionRecordingResponseSchema,
     SeoDefaultsValueSchema,
+    SessionRecordingPurgeResponseSchema,
+    SessionRecordingRetentionDaysSchema,
     SessionRecordingValueSchema
 } from '../../../src/entities/platformSettings/platform-settings.schema';
 
@@ -80,6 +82,54 @@ describe('HOS-2347 SessionRecordingValueSchema', () => {
             updatedBy: VALID_ACTOR_UUID
         });
         expect(result.success).toBe(true);
+    });
+});
+
+describe('HOS-2347 retention period', () => {
+    it.each([14, 30, 60])('accepts %i days', (days) => {
+        expect(SessionRecordingRetentionDaysSchema.safeParse(days).success).toBe(true);
+    });
+
+    it.each([0, 7, 15, 90, -30, 30.5, '30', null])('rejects %s', (days) => {
+        expect(SessionRecordingRetentionDaysSchema.safeParse(days).success).toBe(false);
+    });
+
+    it('defaults to 30 when a stored row predates the field', () => {
+        // Arrange
+        const legacyRow = { enabled: true };
+
+        // Act
+        const result = SessionRecordingValueSchema.parse(legacyRow);
+
+        // Assert
+        expect(result).toEqual({ enabled: true, retentionDays: 30 });
+    });
+
+    it('keeps an explicit period and rejects a value outside the enum', () => {
+        expect(SessionRecordingValueSchema.parse({ enabled: false, retentionDays: 14 })).toEqual({
+            enabled: false,
+            retentionDays: 14
+        });
+        expect(
+            SessionRecordingValueSchema.safeParse({ enabled: true, retentionDays: 45 }).success
+        ).toBe(false);
+    });
+
+    it('the purge response carries both counts and the period used', () => {
+        expect(
+            SessionRecordingPurgeResponseSchema.safeParse({
+                replaysDeleted: 3,
+                heatmapEventsDeleted: 0,
+                retentionDays: 30
+            }).success
+        ).toBe(true);
+        expect(
+            SessionRecordingPurgeResponseSchema.safeParse({
+                replaysDeleted: -1,
+                heatmapEventsDeleted: 0,
+                retentionDays: 30
+            }).success
+        ).toBe(false);
     });
 });
 
