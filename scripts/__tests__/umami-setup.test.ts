@@ -341,7 +341,7 @@ describe('runSetup', () => {
     it('should leave the old item as unmanaged when a definition is renamed', async () => {
         const fake = fakeUmami();
         await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
-        const renamed = fake.segments.find((s) => s.name === 'Visitantes anónimos');
+        const renamed = fake.segments.find((s) => s.name === 'Usuarios logueados');
         if (!renamed) throw new Error('fixture: segment missing');
         renamed.name = 'Nombre viejo';
 

@@ -91,7 +91,7 @@ const stored = {
 };
 
 describe('segment definitions', () => {
-    it('should define the 12 segments and 8 cohorts with exact Spanish names', () => {
+    it('should define the 11 segments and 8 cohorts with exact Spanish names', () => {
         expect(HOSPEDA_SEGMENTS.map((s) => s.name)).toEqual([
             'Celular y tablet',
             'Escritorio y notebook',
@@ -102,7 +102,6 @@ describe('segment definitions', () => {
             'Llegan desde redes sociales',
             'Llegan por campaña (UTM)',
             'Usuarios logueados',
-            'Visitantes anónimos',
             'Navegan fichas de alojamiento',
             'Navegan Comer y salir y Experiencias'
         ]);
@@ -158,6 +157,30 @@ describe('segment definitions', () => {
             filters: [{ name: 'country', operator: 'like', value: 'AR' }]
         });
         expect(result.success).toBe(false);
+    });
+
+    it.each([
+        's',
+        'ns',
+        're',
+        'gt'
+    ])('should reject the %s operator on a segment column filter', (operator) => {
+        const result = segmentParametersSchema.safeParse({
+            filters: [{ name: 'distinctId', operator, value: '' }]
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should use the column-safe neq operator for the UTM and logged-in segments', () => {
+        const byName = (name: string) => HOSPEDA_SEGMENTS.find((s) => s.name === name);
+
+        expect(byName('Llegan por campaña (UTM)')?.parameters.filters).toEqual([
+            { name: 'utmSource', operator: 'neq', value: '' }
+        ]);
+        expect(byName('Usuarios logueados')?.parameters.filters).toEqual([
+            { name: 'distinctId', operator: 'neq', value: '' }
+        ]);
+        expect(byName('Visitantes anónimos')).toBeUndefined();
     });
 });
 
