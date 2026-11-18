@@ -30,7 +30,9 @@ interface Stored {
 }
 
 /** Stateful in-memory fake of the Umami endpoints the setup touches. */
-function fakeUmami(input: { readonly failReportPosts?: boolean } = {}): {
+function fakeUmami(
+    input: { readonly failReportPosts?: boolean; readonly failReportListsAfter?: number } = {}
+): {
     fetchImpl: typeof fetch;
     calls: Call[];
     reports: Stored[];
@@ -42,6 +44,7 @@ function fakeUmami(input: { readonly failReportPosts?: boolean } = {}): {
     const segments: Stored[] = [];
     const calls: Call[] = [];
     let seq = 0;
+    let reportListCalls = 0;
     const json = (status: number, body: unknown): Response =>
         new Response(JSON.stringify(body), { status });
     const envelope = (data: readonly unknown[]) => ({
@@ -80,6 +83,15 @@ function fakeUmami(input: { readonly failReportPosts?: boolean } = {}): {
             const created = { ...body, id: `id-${seq}`, name: String(body['name']) } as Stored;
             segments.push(created);
             return json(200, created);
+        }
+        if (path === '/api/reports' && method === 'GET') {
+            reportListCalls++;
+            if (
+                input.failReportListsAfter !== undefined &&
+                reportListCalls > input.failReportListsAfter
+            ) {
+                return json(500, { error: `list boom ${TOKEN}` });
+            }
         }
         const store = path.startsWith('/api/reports') ? reports : boards;
         const base = path.startsWith('/api/reports') ? '/api/reports' : '/api/boards';
@@ -306,6 +318,24 @@ describe('runSetup', () => {
         expect(writes(fake.calls)).toEqual([]);
         expect(fake.calls.some((c) => c.method === 'DELETE')).toBe(false);
         expect(JSON.stringify(fake.segments)).toBe(snapshot);
+    });
+
+    it('should warn and exit 0 when listing unmanaged items fails after applying', async () => {
+        // Each report upsert lists reports once; the next list is the unmanaged step.
+        const fake = fakeUmami({ failReportListsAfter: REPORT_COUNT });
+        const { input, out, err } = baseInput({ fetchImpl: fake.fetchImpl });
+
+        const result = await runSetup(input);
+
+        expect(result.exitCode).toBe(0);
+        expect(result.unmanaged).toEqual([]);
+        expect(out.join('\n')).toContain('Warning: could not list unmanaged items');
+        expect(out.join('\n')).not.toContain(TOKEN);
+        expect(err.join('\n')).not.toContain('FAILED');
+        expect(fake.reports).toHaveLength(REPORT_COUNT);
+        expect(fake.boards).toHaveLength(BOARD_COUNT);
+        expect(fake.segments).toHaveLength(SEGMENT_COUNT + COHORT_COUNT);
+        expect(result.segments.created).toBe(SEGMENT_COUNT);
     });
 
     it('should leave the old item as unmanaged when a definition is renamed', async () => {

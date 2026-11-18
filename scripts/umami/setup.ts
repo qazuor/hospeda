@@ -257,7 +257,9 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
             }))
         );
     } catch (cause) {
-        return fail(`listing unmanaged items: ${describeError(cause, secrets)}`);
+        // Report-only step: everything was already applied, so do not fail the run.
+        unmanaged.length = 0;
+        log(`Warning: could not list unmanaged items: ${describeError(cause, secrets)}`);
     }
     if (unmanaged.length > 0) {
         log('');
