@@ -280,6 +280,38 @@ describe('provider ids are persisted as the writes answer, apart from the closin
     });
 });
 
+describe('closing reads the stored measurements under a row lock (HOS-1512 G1c)', () => {
+    it('waits for a progress write in flight and keeps what it recorded', async () => {
+        await withCleanSlate(async (db) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx: db });
+            const writer = await getTestPool().connect();
+            try {
+                // A progress write that has updated the row and not committed yet.
+                await writer.query('BEGIN');
+                await writer.query(
+                    `UPDATE provider_watch_run
+                        SET measurements = jsonb_build_object('M1', jsonb_build_object('providerIds', jsonb_build_array('late-1')))
+                      WHERE id = $1`,
+                    [runId]
+                );
+                const closing = db.transaction((tx) =>
+                    model.close({ ...close(runId), tx: tx as unknown as DrizzleClient })
+                );
+                await new Promise((resolve) => setTimeout(resolve, 300));
+                await writer.query('COMMIT');
+                await closing;
+            } finally {
+                writer.release();
+            }
+            const row = await model.findById({ id: runId, tx: db });
+            expect(row).toMatchObject({
+                outcome: 'completed',
+                measurements: { M1: { outcome: 'matched', providerIds: ['late-1'] } }
+            });
+        });
+    });
+});
+
 describe('a run that opens abandons the stale running rows of its account', () => {
     const at = (iso: string) => new Date(iso);
 
