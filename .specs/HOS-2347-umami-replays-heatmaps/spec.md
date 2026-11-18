@@ -39,7 +39,7 @@ The design is **Option A** (owner, 2026-11-18):
 - The api never receives a write-capable Umami credential.
 
 Recording also requires analytics consent, never runs on sensitive routes, and
-never captures four marked UI surfaces.
+never captures six marked UI surfaces.
 
 ## 2. Problem
 
@@ -82,6 +82,8 @@ never captures four marked UI surfaces.
 - NG-6 Showing replays or heatmaps inside Hospeda. They are viewed in the Umami UI.
 - NG-7 Owner-facing (listing owner) access to replays or heatmaps.
 - NG-8 Error-prioritised or flow-prioritised sampling. Sampling is uniform (§6.5).
+- NG-9 Re-asking existing consents. `CONSENT_VERSION` is not bumped (D-1).
+- NG-10 Forcing a page reload on consent revoke or switch-off (D-2).
 
 ## 5. Current baseline
 
@@ -119,7 +121,8 @@ Verified on `origin/staging` (worktree cut 2026-11-18).
 - `CONSENT_VERSION = 2`. The `es` copy for the analytics category
   (`packages/i18n/src/locales/es/cookieConsent.json`) says "Estadísticas
   anónimas sobre cómo los visitantes navegan el sitio (páginas más vistas,
-  flujos de búsqueda)". It does not mention recordings or heatmaps (see OQ-1).
+  flujos de búsqueda)". It does not mention recordings or heatmaps. This spec
+  updates that copy without bumping `CONSENT_VERSION` (D-1, §6.12).
 
 ### 5.3 CSP
 
@@ -185,7 +188,8 @@ Verified on `origin/staging` (worktree cut 2026-11-18).
   `ANALYTICS_*` key will fail it until it is added to the list on purpose.
 - `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS`
   (`packages/schemas/src/entities/permission/permission.super-admin-exclusive.schema.ts`)
-  is a closed set tied to the V5 action keys (ACC_*). See OQ-3.
+  is a closed set tied to the V5 action keys (ACC_*). The new permission is
+  NOT added to it (D-3): it is SUPER_ADMIN-only through the seed grant alone.
 - Seed: baseline grants are in `packages/seed/src/required/rolePermissions.seed.ts`.
   The data-migration precedent for a SUPER_ADMIN-only grant is
   `packages/seed/src/data-migrations/0128-hos1591-promo-code-permission.ts`
@@ -223,6 +227,9 @@ view-only by registry contract.
 - `apps/web/src/components/feedback/FeedbackHeadlessHost.client.tsx`. It renders
   `FeedbackModal` (from `@repo/feedback`) **via a portal to `document.body`**, so
   a marker on the host's own root would not cover the modal (§6.6).
+- `apps/web/src/components/venue/VenueContactBlock.astro` and
+  `apps/web/src/components/experience/ExperienceContactBlock.astro` (listing
+  contact data on venue and experience pages).
 
 ## 6. Proposed design
 
@@ -322,13 +329,16 @@ cancellation versus `data-astro-reload` on links) is confirmed in T-001.
 that document until it unloads or reaches `maxDuration` (5 min). New page loads
 stop within 60 s (§6.3). This is accepted and documented.
 
-**Consent revoked while recording.**
+**Consent revoked while recording (D-2).**
 
-- If T-001 finds an in-page stop or unload API, the loader calls it on
-  `CONSENT_CHANGED_EVENT` with `analytics === false`.
-- If it finds none, recording stops at the next page load, because condition 3
-  fails there. This is documented in the privacy doc. Whether to also force a
-  reload, as `forgetIdentityOnRevocation` does, is OQ-2.
+- The loader never forces a reload, on revoke or on switch-off. Recording stops
+  at the next page load, because condition 3 (revoke) or condition 4
+  (switch-off) fails there. This is documented in the privacy doc.
+- If T-001 finds an in-page stop or unload API, the loader MAY call it on
+  `CONSENT_CHANGED_EVENT` with `analytics === false`. It is optional: the spec
+  passes without it.
+- `forgetIdentityOnRevocation` may still reload for its own reason (a logged-in
+  tracker identity, HOS-2119). This spec neither adds nor removes that reload.
 
 ### 6.5 Route exclusion (single list, guarded)
 
@@ -380,7 +390,12 @@ not apply, because those flows are excluded.
   3. `CookieConsentBanner.client.tsx`, on its rendered root (including any portal);
   4. the feedback UI. Because `FeedbackModal` is portaled to `document.body`, the
      attribute must be on the modal's portal root inside `@repo/feedback`, not
-     only on `FeedbackHeadlessHost`. How it gets there is OQ-4.
+     only on `FeedbackHeadlessHost`. Mechanism (D-4): `FeedbackModal` gets an
+     optional prop (e.g. `rootDataAttributes`) spread onto its portal root, and
+     `FeedbackHeadlessHost` passes the marker. `@repo/feedback` gains no new
+     dependency and stays unaware of Umami;
+  5. `VenueContactBlock.astro` (D-6);
+  6. `ExperienceContactBlock.astro` (D-6).
 - The attribute carries no value (`data-umami-block=""`). It is the same for
   every visitor, so it is session-blind.
 
@@ -416,6 +431,14 @@ replay_config: {
   values verbatim (confirmed in T-001).
 - Field names in the write payload (`recorderEnabled` / `replayConfig` or other)
   come from T-001. The spec does not guess them.
+- Retention (D-5): if T-001 finds a configurable retention for recordings, it
+  is set to **14 days**.
+  - If that setting is writable through the Umami API, `umami:setup` declares
+    it like any other field.
+  - If it is instance-level configuration (e.g. a Umami env var), the owner sets
+    it on the Umami app in Coolify, and the value is recorded on the issue.
+  - If no retention setting exists, Umami's default of **30 days** is accepted
+    and stated in the privacy doc.
 
 ### 6.9 Admin card
 
@@ -450,6 +473,7 @@ holds `ANALYTICS_SESSION_RECORDING_MANAGE`, and is absent from the DOM otherwise
   - data-migration from `pnpm db:seed:make hos2347-session-recording-permission`,
     modelled on `0128-hos1591-promo-code-permission.ts`.
   - Run order: `db:migrate` → `db:seed:migrate`.
+- NOT added to `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS` (D-3).
 - `permission-system-fallback.guard.test.ts`: add the key to the frozen list on
   purpose, next to `ANALYTICS_VIEW`. This is the same placement, not a new
   taxonomy decision.
@@ -465,12 +489,24 @@ Rewrite `docs/analytics/session-replay-privacy.md`:
 - the two layers;
 - the consent rule;
 - the route list, pointing to the code constant rather than copying it;
-- the block marker and its four surfaces;
+- the block marker (its surfaces are listed below);
 - `strict` masking with the explicit "no selective unmask" statement;
 - sampling 0.5 for both;
 - `maxDuration` 5 min;
-- the revoke and switch-off propagation limits from §6.4;
+- the revoke and switch-off propagation limits from §6.4 (no forced reload;
+  recording stops at the next page load);
+- the retention in force: 14 days, or Umami's default of 30 days if it is not
+  configurable (D-5);
+- the six blocked surfaces (§6.6);
 - the manual verification procedure (§9.8) with a sign-off table.
+
+### 6.12 Consent copy (D-1)
+
+- Update the "Análisis de uso" category description in
+  `packages/i18n/src/locales/{es,en,pt}/cookieConsent.json` to say that, when
+  active, usage analytics may include masked session recordings and heatmaps.
+  The exact wording is drafted in the implementation PR, in all three locales.
+- `CONSENT_VERSION` stays `2`. Existing consents are NOT re-asked.
 
 ## 7. Data model / contracts
 
@@ -579,6 +615,13 @@ means a `script#umami-recorder` exists with
   `recorder.js` loads and its config and ingest requests succeed with **zero**
   CSP violation reports for `script-src`, `connect-src` or `worker-src`. If any
   is reported, a CSP task is added before merge.
+- **AC-W12** Given the recorder is loaded, when `CONSENT_CHANGED_EVENT` fires
+  with `analytics: false`, then the loader calls neither `location.reload` nor
+  `location.assign`. On the next full page load, nothing is injected and `fetch`
+  is not called. (If an in-page stop exists, calling it is allowed, not asserted.)
+- **AC-W13** Given the recorder is loaded, when the switch is turned OFF, then
+  the current document is not reloaded by the loader. On the next full page load
+  (with the endpoint now answering `{ enabled: false }`), nothing is injected.
 
 ### 9.4 Route exclusion (US-3)
 
@@ -605,7 +648,7 @@ means a `script#umami-recorder` exists with
 
 ### 9.5 Block and mask (US-4)
 
-- **AC-B1** Rendering each of the four surfaces (§6.6) in a test DOM finds
+- **AC-B1** Rendering each of the six surfaces (§6.6) in a test DOM finds
   `[data-umami-block]` on the outermost element that the component inserts into
   the document. For the feedback modal and the cookie banner, that is the portal
   root under `document.body`.
@@ -614,6 +657,11 @@ means a `script#umami-recorder` exists with
   `blockSelector === '[' + ATTR + ']'`.
 - **AC-B3** `umami:setup` declares `maskLevel: 'strict'`. A definitions test
   fails on any other value.
+- **AC-B4** Given `FeedbackModal` is rendered with the new optional prop set to
+  `{ 'data-umami-block': '' }`, then its portal root under `document.body`
+  carries the attribute. Without the prop, the attribute is absent. The
+  `dependencies` and `peerDependencies` of `packages/feedback/package.json` are
+  unchanged by this spec.
 
 ### 9.6 `umami:setup` (US-5)
 
@@ -633,6 +681,10 @@ means a `script#umami-recorder` exists with
 - **AC-S6** No env var for a write-capable Umami credential is added to
   `packages/config` or to any app env schema (`pnpm env:check:registry` green,
   plus a grep guard over the api).
+- **AC-S7** Given T-001 found a configurable recording retention, then it reads
+  14 days on staging and on prod, wherever it lives (declared by `umami:setup`,
+  or set on the Umami app). Given T-001 found none, then the privacy doc states
+  that Umami's default retention of 30 days applies.
 
 ### 9.7 Permission and seed
 
@@ -645,6 +697,15 @@ means a `script#umami-recorder` exists with
   `check-seed-dual-write.sh` is green.
 - **AC-PE4** The system-fallback guard is green with the key listed, and every
   frozen permission count is updated to the recounted value.
+- **AC-PE5** `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS` does not contain
+  `ANALYTICS_SESSION_RECORDING_MANAGE`, and its length is unchanged.
+
+### 9.7b Consent copy (D-1)
+
+- **AC-C1** The analytics category description in `cookieConsent.json` for es,
+  en and pt each mentions session recordings and heatmaps. `CONSENT_VERSION`
+  is still `2`, and a visitor with a stored v2 consent sees no banner after the
+  change.
 
 ### 9.8 Staging smoke and prod privacy verification (US-6, US-7)
 
@@ -656,9 +717,10 @@ means a `script#umami-recorder` exists with
 - **AC-SM3 (staging)** Visiting `/es/auth/signin/` directly, and by clicking from
   a recorded page, loads no recorder in that document. The replay ends at the
   navigation.
-- **AC-SM4 (staging)** In a replay crossing an accommodation page, the
-  contact-owner form, the WhatsApp block, the cookie banner and the feedback
-  modal appear as blocked placeholders, and all other text is masked.
+- **AC-SM4 (staging)** In replays crossing an accommodation page, a venue page
+  and an experience page, these appear as blocked placeholders: the
+  contact-owner form, the WhatsApp block, the venue and experience contact
+  blocks, the cookie banner and the feedback modal. All other text is masked.
 - **AC-SM5 (staging)** Turning the switch OFF: a new full page load 60 s later
   fetches `{ enabled: false }` and loads no recorder.
 - **AC-SM6 (prod, before the first ON)** The owner, or someone the owner
@@ -673,16 +735,17 @@ means a `script#umami-recorder` exists with
   `/smoke HOS-2347`. Production is not switched ON before that sign-off.
 - **AC-D1** `docs/analytics/session-replay-privacy.md` no longer contains "has no
   session recording". It states `strict` masking with no selective unmask, the
-  consent rule, the propagation limits of §6.4 and the procedure of AC-SM6.
+  consent rule, the propagation limits of §6.4 (no forced reload), the
+  retention in force (D-5), the six blocked surfaces and the procedure of AC-SM6.
 - **AC-ADM1** Guard: no file under `apps/admin/src` references `recorder.js` or
   the recorder loader module.
 
-Total: 49 acceptance criteria (A 6, P 5, W 11, R 6, B 3, S 6, PE 4, SM 6, D 1, ADM 1).
+Total: 55 acceptance criteria (A 6, P 5, W 13, R 6, B 4, S 7, PE 5, C 1, SM 6, D 1, ADM 1).
 
 ## 10. UX notes
 
 - **Visitor:** there is no visible change. There is no recording indicator,
-  because the consent category is the disclosure (see OQ-1 on its copy). No
+  because the consent category is the disclosure (its copy is updated, §6.12). No
   error is ever shown to a visitor when the decision fails.
 - **Empty state (admin):** no row means "OFF · never changed".
 - **Loading state (admin):** the toggle is disabled until the read resolves.
@@ -695,9 +758,10 @@ Total: 49 acceptance criteria (A 6, P 5, W 11, R 6, B 3, S 6, PE 4, SM 6, D 1, A
   later is masked by `strict`, but not blocked, and not excluded. Mitigation:
   strict masking is the floor, and AC-SM6 is repeated before each prod ON window
   (documented in the privacy doc).
-- **R-2 No in-page stop.** If T-001 finds none, a revoke or switch-OFF leaves
-  the current document recording until unload or 5 min. Mitigation: documented,
-  and OQ-2 decides whether to force a reload.
+- **R-2 Recording continues in the open document.** By owner decision (D-2) a
+  revoke or switch-OFF does not reload the page, so the current document may
+  keep recording until unload or 5 min (`maxDuration`). Accepted and documented
+  in the privacy doc. An in-page stop, if T-001 finds one, may shorten it.
 - **R-3 Soft-nav hook does not cancel.** If the router hook cannot turn the swap
   into a full load, an excluded page could be recorded after a soft nav.
   Mitigation: T-001 measures it, and the AC-R5 test plus AC-SM3 verify it.
@@ -706,46 +770,52 @@ Total: 49 acceptance criteria (A 6, P 5, W 11, R 6, B 3, S 6, PE 4, SM 6, D 1, A
 - **R-5 Umami write API unknown.** A full-record write could clobber website
   fields. Mitigation: T-001 first, and AC-S4.
 - **R-6 Storage growth.** Replays at 0.5 sampling consume Umami Postgres disk on
-  the VPS. Mitigation: switched on only for windows. See OQ-5 on retention.
+  the VPS. Mitigation: switched on only for windows, and retention of 14 days
+  where configurable, otherwise Umami's default of 30 days (D-5).
 - **R-7 Public abuse.** The website id is public, so anyone can load
   `recorder.js` with it and post recordings while `recorder_enabled = true`.
   This is the same exposure the tracker has today. Accepted, and recorded here.
 - **R-8 CSP mismatch.** If the recorder uses a source the policy does not allow,
   it fails silently. That fails closed, so it is safe. Mitigation: AC-W11.
 
-## 12. Open questions
+## 12. Owner decisions and open questions
 
-- **OQ-1 Consent copy.** The "Usage analytics" description (es/en/pt) does not
-  mention recordings or heatmaps. Should it be updated, and the legal
-  cookies/privacy pages too? If the copy changes, should `CONSENT_VERSION` be
-  bumped so existing visitors are asked again? Recommended: update the copy
-  first. Bumping the version is the owner's legal call.
-- **OQ-2 Force reload on revoke.** If T-001 finds no in-page stop, should a
-  revoke while the recorder is loaded reload the page, the precedent in
-  `forgetIdentityOnRevocation`, or simply wait for the next page load (the
-  owner's minimum)? Recommended: reload, because it ends recording at once and
-  matches existing behaviour.
-- **OQ-3 Closed SUPER_ADMIN set.** Should `ANALYTICS_SESSION_RECORDING_MANAGE`
-  join `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS`, which blocks assigning it directly
-  to any other role from the panel? That set is documented as tied to the V5
-  action keys, and this is not one of them. Recommended: yes, because it
-  enforces "SUPER_ADMIN only" instead of relying on the seed.
-- **OQ-4 Marker inside `@repo/feedback`.** The feedback modal is portaled from a
-  shared package. There are two options:
-  - (a) add an optional `rootDataAttributes` prop to `FeedbackModal` that the
-    web passes; no new dependency;
-  - (b) make `@repo/feedback` import the constant from `@repo/analytics`; this
-    adds a dependency.
+### 12.1 Resolved decisions (owner, 2026-11-18)
 
-  Recommended: (a).
-- **OQ-5 Retention.** How long should Umami keep recordings, and does Umami 3.5
-  have a retention setting for them? T-001 measures the setting. The owner
-  decides the duration.
-- **OQ-6 Venue and experience contact blocks.** `VenueContactBlock.astro` and
-  `ExperienceContactBlock.astro` are not on the block list. They show the
-  listing's public contact data, which `strict` masks. Should they be blocked
-  too? Recommended: no, because the owner's list is deliberate and the data is
-  public.
+The six open questions of the first draft were answered by the owner on
+2026-11-18. They are recorded here as decisions and applied in the sections cited.
+
+- **D-1 (was OQ-1) Consent copy: update, no re-ask.** Update the "Análisis de
+  uso" description in es, en and pt to mention session recordings and heatmaps.
+  Do NOT bump `CONSENT_VERSION`; existing consents are not re-asked.
+  → §6.12, NG-9, AC-C1, T-016.
+- **D-2 (was OQ-2) No forced reload.** On consent revoke or switch-off, the
+  loader does not reload the page. Recording stops at the next page load. An
+  in-page stop may be used if the recorder exposes one, but it is not required.
+  → §6.4, NG-10, R-2, AC-W12, AC-W13.
+- **D-3 (was OQ-3) Seed grant only.** `ANALYTICS_SESSION_RECORDING_MANAGE` is
+  NOT added to `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS`. It is granted to SUPER_ADMIN
+  in the seed (baseline plus data-migration) only. → §5.5, §6.10, AC-PE5.
+- **D-4 (was OQ-4) Prop, no dependency.** The block marker reaches
+  `@repo/feedback` as an optional prop spread onto the `FeedbackModal` portal
+  root. No new dependency is added. → §6.6, AC-B4, T-010.
+- **D-5 (was OQ-5) Retention.** If the spike finds a configurable recording
+  retention, set it to 14 days. If not, accept Umami's default of 30 days and
+  document it in the privacy doc. → §6.8, §6.11, R-6, AC-S7, AC-D1, T-001, T-007.
+- **D-6 (was OQ-6) Block venue and experience contact.** `VenueContactBlock.astro`
+  and `ExperienceContactBlock.astro` also carry `data-umami-block`. Six blocked
+  surfaces in total. → §5.8, §6.6, AC-B1, AC-SM4, T-010.
+
+### 12.2 Open questions
+
+- **OQ-7 Legal pages.** The first draft's OQ-1 also asked whether the legal
+  cookies and privacy pages (`/{lang}/legal/cookies`, `/{lang}/legal/privacidad`)
+  need to mention session recordings. D-1 covers only the consent-banner
+  description. Whether those legal texts change too is still open, and it is the
+  owner's legal call. It does not block implementation; it must be answered
+  before the first prod ON (AC-SM6).
+
+No other questions remain open.
 
 ## 13. Implementation notes
 
@@ -759,7 +829,9 @@ Total: 49 acceptance criteria (A 6, P 5, W 11, R 6, B 3, S 6, PE 4, SM 6, D 1, A
   - (b) whether the recorder exposes an in-page stop or unload;
   - (c) which hosts and workers `recorder.js` uses, against the CSP;
   - (d) how to turn a ClientRouter soft nav into a full load;
-  - (e) the retention setting.
+  - (e) whether recording retention is configurable, and where (API field,
+    instance env var, or none), so D-5 can be applied: 14 days if configurable,
+    otherwise Umami's default of 30 days.
 
   Record the results on the issue. Re-plan if any result contradicts §6.
 
@@ -775,15 +847,22 @@ Total: 49 acceptance criteria (A 6, P 5, W 11, R 6, B 3, S 6, PE 4, SM 6, D 1, A
 - T-005 Service: mapper branches, upsert union, and `isSessionRecordingEnabled`.
 - T-006 API: public route plus headers plus a cache-list guard. The admin GET and
   PUT accept the key.
-- T-007 `umami:setup` recorder definitions and step (from the T-001 findings).
+- T-007 `umami:setup` recorder definitions and step (from the T-001 findings),
+  including the 14-day retention if T-001 found it writable through the API.
+  If it is instance-level, the owner sets it in Coolify and it is recorded on
+  the issue.
 
 **Phase 3 — Integration**
 
 - T-008 Web: exclusion list plus matcher plus pages-directory guard.
-- T-009 Web: recorder loader plus consent listener plus soft-nav guard.
-- T-010 Web plus `@repo/feedback`: block markers on the four surfaces (OQ-4).
+- T-009 Web: recorder loader plus consent listener plus soft-nav guard. No
+  forced reload on revoke or switch-off (D-2).
+- T-010 Web plus `@repo/feedback`: block markers on the six surfaces (D-6),
+  with the optional `FeedbackModal` portal-root prop and no new dependency (D-4).
 - T-011 Admin: `SessionRecordingCard` plus i18n plus permission gate.
 - T-012 CSP task, only if T-001 or AC-W11 finds a violation.
+- T-016 i18n: update the analytics consent description in es, en and pt; keep
+  `CONSENT_VERSION = 2` (D-1, AC-C1).
 
 **Phase 4 — Verification and docs**
 
@@ -799,8 +878,9 @@ Total: 49 acceptance criteria (A 6, P 5, W 11, R 6, B 3, S 6, PE 4, SM 6, D 1, A
 | service-core | `platform-settings.service.ts` |
 | api | `routes/platform-settings/public/index.ts` (or a sibling), `routes/index.ts` mount, `routes/platform-settings/admin/index.ts` |
 | db / seed | new migration, `rolePermissions.seed.ts`, new data-migration |
-| web | `components/analytics/UmamiScript.astro`, new `lib/analytics/umami-recorder.ts`, new `lib/analytics/recording-exclusions.ts`, `ContactHost.client.tsx`, `WhatsAppContact.client.tsx`, `CookieConsentBanner.client.tsx` |
-| feedback | `packages/feedback/src/components/FeedbackModal*` (OQ-4) |
+| web | `components/analytics/UmamiScript.astro`, new `lib/analytics/umami-recorder.ts`, new `lib/analytics/recording-exclusions.ts`, `ContactHost.client.tsx`, `WhatsAppContact.client.tsx`, `CookieConsentBanner.client.tsx`, `FeedbackHeadlessHost.client.tsx`, `venue/VenueContactBlock.astro`, `experience/ExperienceContactBlock.astro` |
+| feedback | `packages/feedback/src/components/FeedbackModal*` (optional portal-root prop, D-4) |
+| i18n | `packages/i18n/src/locales/{es,en,pt}/cookieConsent.json` (D-1) |
 | admin | `hooks/use-platform-setting.ts`, new `features/session-recording/`, `routes/_authed/platform/critical/index.tsx` |
 | scripts | `scripts/umami/setup.ts`, new `scripts/umami/recorder-definitions.ts`, client additions |
 | docs | `docs/analytics/session-replay-privacy.md` |
