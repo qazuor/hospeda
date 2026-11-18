@@ -18,6 +18,7 @@ import { protectedExperienceViewStatsDailySeriesRoute } from '../../src/routes/e
 import { hostDashboardRoute } from '../../src/routes/host/protected/dashboard';
 import { protectedGetVenueMenuQrRoute } from '../../src/routes/venue/protected/menuQr';
 import { protectedGetVenueMenuQrScansRoute } from '../../src/routes/venue/protected/menuQrScans';
+import { protectedGetVenueStatsRoute } from '../../src/routes/venue/protected/stats';
 import { protectedVenueViewStatsRoute } from '../../src/routes/venue/protected/viewStats';
 import { protectedVenueViewStatsDailySeriesRoute } from '../../src/routes/venue/protected/viewStatsDailySeries';
 import { hostAccommodationViewStatsRoute } from '../../src/routes/views/protected/accommodations-me';
@@ -39,6 +40,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         getStatsForHostAccommodations: mocks.service,
         getDailySeriesForHostAccommodations: mocks.service,
         getStatsForOwnListings: mocks.service,
+        getStatsForVenue: mocks.service,
         getDailySeriesForOwnListings: mocks.service
     },
     AccommodationService: class {
@@ -77,6 +79,7 @@ const BASIC = '22222222-2222-4222-8222-222222222222';
 const PREMIUM = '33333333-3333-4333-8333-333333333333';
 const GASTRO_BASIC = '44444444-4444-4444-8444-444444444444';
 const GASTRO_PREMIUM = '55555555-5555-4555-8555-555555555555';
+const VENUE_ADVANCED_ONLY = '77777777-7777-4777-8777-777777777777';
 const LISTING = '66666666-6666-4666-8666-666666666666';
 const baseSource = {
     type: 'BASE',
@@ -205,6 +208,16 @@ const rows = [
         resource: true
     },
     {
+        file: 'venue/advanced-stats',
+        route: protectedGetVenueStatsRoute,
+        path: `/${LISTING}/stats`,
+        key: 'view_advanced_stats',
+        vertical: VerticalEnum.VENUE,
+        denied: GASTRO_BASIC,
+        allowed: VENUE_ADVANCED_ONLY,
+        resource: true
+    },
+    {
         file: 'host/dashboard',
         route: hostDashboardRoute,
         path: '/dashboard',
@@ -262,6 +275,9 @@ beforeEach(() => {
                     ? ['view_basic_stats']
                     : [];
             if (userId === PREMIUM) keys.push('view_advanced_stats');
+            if (userId === VENUE_ADVANCED_ONLY && vertical === VerticalEnum.VENUE) {
+                keys.push('view_advanced_stats');
+            }
             if (userId === GASTRO_PREMIUM) keys.push('menu_qr_scan_metrics');
             return rehydrateEffectiveSet({
                 version: 1,
@@ -338,6 +354,26 @@ describe('TEST:V5:32 stats gates', () => {
             mocks.service.mockResolvedValue({
                 data: { id: LISTING, ownerId: row.allowed, slug: 'venue', name: 'Venue' }
             });
+        if (row.file === 'venue/advanced-stats')
+            mocks.service.mockResolvedValue({
+                data: {
+                    window: '30d',
+                    views: { unique: 0, total: 0 },
+                    dailyViews: [],
+                    clicks: {
+                        total: 0,
+                        byKind: {
+                            PHONE_CLICK: { unique: 0, total: 0 },
+                            MAP_CLICK: { unique: 0, total: 0 },
+                            WEBSITE_CLICK: { unique: 0, total: 0 },
+                            INSTAGRAM_CLICK: { unique: 0, total: 0 },
+                            TICKET_CLICK: { unique: 0, total: 0 },
+                            WHATSAPP_CLICK: { unique: 0, total: 0 }
+                        }
+                    },
+                    clickRate: null
+                }
+            });
         if (row.file === 'venue/menu-qr') {
             mocks.qr.mockImplementation(async (input: { targetUrl: string }) => ({
                 data: { id: LISTING, slug: 'qrslug', targetUrl: input.targetUrl }
@@ -401,5 +437,38 @@ describe('TEST:V5:32 stats gates', () => {
         const missing = await request(row, row.denied, row.path, permissions);
         expect(missing.status).toBe(404);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+
+    it('does not let a venue-only view_advanced_stats grant open accommodation routes', async () => {
+        const favorites = rows.find((row) => row.file === 'accommodation/favorites-breakdown');
+        const comparison = rows.find((row) => row.file === 'accommodation/market-comparison');
+        if (!favorites || !comparison) throw new Error('Accommodation stats routes missing');
+
+        for (const row of [favorites, comparison]) {
+            const response = await request(row, VENUE_ADVANCED_ONLY);
+            expect(response.status).toBe(403);
+            expect((await response.json()).error).toMatchObject({
+                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                details: { entitlementKey: 'view_advanced_stats' }
+            });
+        }
+    });
+
+    it('keeps the basic view endpoints at 7d/30d for accommodation, venue and experience', async () => {
+        const basicRows = rows.filter((row) =>
+            [
+                'views/accommodations-me',
+                'views/daily-series',
+                'venue/views',
+                'venue/daily-series',
+                'experience/views',
+                'experience/daily-series'
+            ].includes(row.file)
+        );
+        for (const row of basicRows) {
+            const response = await request(row, row.allowed, `${row.path}?window=90d`);
+            expect(response.status, row.file).toBe(400);
+            expect(mocks.service, row.file).not.toHaveBeenCalled();
+        }
     });
 });

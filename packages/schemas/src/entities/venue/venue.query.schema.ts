@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
-import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js';
+import {
+    EntityInteractionKindEnum,
+    PriceRangeEnumSchema,
+    VenueTypeEnumSchema
+} from '../../enums/index.js';
 import { VenueSchema } from './venue.schema.js';
 
 /**
@@ -223,3 +227,44 @@ export const VenueStatsSchema = z.object({
 
 /** TypeScript type for {@link VenueStatsSchema}. */
 export type VenueStats = z.infer<typeof VenueStatsSchema>;
+
+/** Rolling windows supported by advanced venue listing statistics. */
+export const VenueStatsWindowSchema = z.enum(['7d', '30d', '90d'], {
+    message: 'zodError.entityInteraction.venueStats.window.invalid'
+});
+
+/** Inferred rolling window supported by advanced venue statistics. */
+export type VenueStatsWindow = z.infer<typeof VenueStatsWindowSchema>;
+
+/** A click aggregate for one interaction channel. */
+const VenueListingStatsCountSchema = z.object({
+    unique: z.number().int().nonnegative(),
+    total: z.number().int().nonnegative()
+});
+
+/** Response contract for one venue's advanced listing statistics. */
+export const VenueListingStatsSchema = z.object({
+    window: VenueStatsWindowSchema,
+    views: VenueListingStatsCountSchema,
+    dailyViews: z.array(
+        z.object({
+            date: z.string().date(),
+            total: z.number().int().nonnegative()
+        })
+    ),
+    clicks: z.object({
+        total: z.number().int().nonnegative(),
+        byKind: z.object({
+            [EntityInteractionKindEnum.PHONE_CLICK]: VenueListingStatsCountSchema,
+            [EntityInteractionKindEnum.MAP_CLICK]: VenueListingStatsCountSchema,
+            [EntityInteractionKindEnum.WEBSITE_CLICK]: VenueListingStatsCountSchema,
+            [EntityInteractionKindEnum.INSTAGRAM_CLICK]: VenueListingStatsCountSchema,
+            [EntityInteractionKindEnum.TICKET_CLICK]: VenueListingStatsCountSchema,
+            [EntityInteractionKindEnum.WHATSAPP_CLICK]: VenueListingStatsCountSchema
+        })
+    }),
+    clickRate: z.number().min(0).max(1).nullable()
+});
+
+/** Inferred response shape for venue advanced listing statistics. */
+export type VenueListingStats = z.infer<typeof VenueListingStatsSchema>;

@@ -163,6 +163,23 @@ describe('TEST:B13a:25 AnalyticsSection effective-set gate', () => {
         expect(mockGetMarketComparison).not.toHaveBeenCalled();
         expect(mockGetFavoritesBreakdown).not.toHaveBeenCalled();
     });
+    it('keeps accommodation analytics basic when advanced stats exist only in VENUE', async () => {
+        // This hook read is explicitly the ACCOMMODATION effective set. A
+        // venue-only grant cannot be inherited by this vertical.
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { view_basic_stats: 1 },
+            limits: {},
+            failed: false
+        });
+        stubWiredEndpoints();
+
+        render(<AnalyticsSection locale="es" />);
+
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        expect(mockGetViews).toHaveBeenCalled();
+        expect(mockGetMarketComparison).not.toHaveBeenCalled();
+        expect(mockGetFavoritesBreakdown).not.toHaveBeenCalled();
+    });
     it('renders loading skeleton while fetching', () => {
         stubWiredEndpoints();
         mockGetViews.mockReturnValue(new Promise(() => {})); // never resolves

@@ -21,6 +21,7 @@ import { ListingActions } from '@/components/listing/ListingActions.client';
 import { ListingViewsWidget } from '@/components/listing/ListingViewsWidget.client';
 import { TourController } from '@/components/account/TourController.client';
 import { VenueMenuQrWidget } from '@/components/venue/VenueMenuQrWidget.client';
+import { VenueListingStatsPanel } from '@/components/venue/VenueListingStatsPanel.client';
 import ListingNotices from '@/components/listing/ListingNotices.astro';
 import { listingAnalyticsApi, publishApi } from '@/lib/api/endpoints-protected';
 import {
@@ -44,6 +45,8 @@ import {
 import { UNKNOWN_PUBLISH_AFFORDANCE } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import { shouldAnchorMenuQrTour } from '@/lib/venue/menu-qr-tour-anchor';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveUnlockingPlanName } from '@/lib/venue/section-upsell-plan';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PublicationStatusEnum } from '@repo/schemas';
@@ -164,6 +167,17 @@ const venueSectionStates = await Promise.all(
 );
 const anchorMenuQrTour = shouldAnchorMenuQrTour({ sectionStates: venueSectionStates });
 
+// The catalog controls whether advanced metrics exist for venue owners yet.
+// The user's entitlement stays in the client island and is checked by its API.
+const venueStatsUnlockingPlanName =
+    venueListings.length > 0
+        ? resolveUnlockingPlanName({
+              plans: await fetchAudiencePlans({ audience: 'venue' }),
+              entitlementKey: 'view_advanced_stats',
+              t
+          })
+        : null;
+
 // HOS-1156 retired `/mi-cuenta/comercio/nuevo/`, the vertical picker this
 // button used to open. Its replacement for a SIGNED-IN owner is the publish hub,
 // which lists all three verticals with their own CTAs and already knows which
@@ -248,6 +262,15 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
             listings={venueListings.map((listing) => ({ id: listing.id, name: listing.name }))}
         />
     </div>
+
+    {venueListings.length > 0 && venueStatsUnlockingPlanName !== null && (
+        <VenueListingStatsPanel
+            client:visible
+            locale={locale}
+            listings={venueListings.map((listing) => ({ id: listing.id, name: listing.name }))}
+            unlockingPlanName={venueStatsUnlockingPlanName}
+        />
+    )}
 
     {/* HOS-788: welcome-tour anchor for the listings list, shared by the
         venue and experience welcome tours. */}

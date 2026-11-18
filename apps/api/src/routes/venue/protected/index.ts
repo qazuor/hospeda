@@ -58,6 +58,7 @@ import { protectedReorderVenueMediaRoute } from './reorderMedia';
 import { protectedVenueReportFixedRoute } from './reportFixed';
 import { protectedGetVenueSectionStatesRoute } from './sectionStates';
 import { protectedSetFeaturedVenueMediaRoute } from './setFeaturedMedia';
+import { protectedGetVenueStatsRoute } from './stats';
 import { protectedVenueSupportEditsRoute } from './supportEdits';
 import { protectedUnpublishVenueRoute } from './unpublish';
 import { protectedUpdateVenueFaqRoute } from './updateFaq';
@@ -86,6 +87,7 @@ app.route('/', protectedListMyVenueRoute);
 // alongside /mine for readability.
 app.route('/', protectedVenueViewStatsRoute);
 app.route('/', protectedVenueViewStatsDailySeriesRoute);
+app.route('/', protectedGetVenueStatsRoute);
 
 // GET /{id}/whatsapp — the number for a signed-in visitor, when the owner chose
 // "solo logueados" (HOS-2256). Registered before /{id} like its siblings.
