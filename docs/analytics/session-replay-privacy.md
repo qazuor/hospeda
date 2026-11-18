@@ -122,15 +122,71 @@ Read from the `recorder.js` that staging Umami 3.5 serves (2026-11-18, read only
 
 ## Retention
 
-**Umami 3.5 does not let us configure how long recordings are kept, and it never deletes
-them.** The spike against the staging container found no retention setting in the api, the
-website config or the app environment, and no job that prunes replay rows. A recording is
-removed only when the website is reset or deleted.
+**Umami 3.5 has no retention setting and no age-based delete API**, so it never deletes
+recordings on its own. A recording is removed only when the website is reset or deleted.
+Hospeda therefore purges them itself (owner decision, 2026-11-18, HOS-2347 OQ-8).
 
-So the retention in force today is **indefinite**. This replaces the spec's assumption
-(D-5) of a 14-day setting or a 30-day Umami default; neither exists. Choosing a retention
-mechanism is an open owner decision, recorded on HOS-2347. Until it is decided, keep
-production ON only for bounded windows.
+### What is deleted, and when
+
+- Replays (`session_replay`) and heatmap events (`heatmap_event`) older than the configured
+  period are deleted. The only allowed periods are **14, 30 or 60 days**; the default is
+  **30**.
+- The period is part of the `analytics.sessionRecording` platform setting and is chosen in
+  the admin card (`/platform/critical`), next to the on/off switch, behind the permission
+  `analytics.sessionRecording.manage`.
+- The `session-recording-retention` cron runs daily (04:25 Buenos Aires) and **also while the
+  switch is OFF**: data recorded earlier still has to go.
+- The card has a "Limpiar ahora" button (with a confirmation) that purges immediately with the
+  configured period and shows how many rows were deleted.
+- Every delete is scoped to `website_id = HOSPEDA_UMAMI_WEBSITE_ID_WEB` and
+  `created_at < now() - <period>`, in batches of 5000 rows. Other websites in the same Umami
+  database are never touched. Replays a Umami user saved (`session_replay_saved`) are not
+  touched either.
+
+### How the api reaches Umami
+
+The api connects **directly to the Umami Postgres** through `HOSPEDA_UMAMI_DATABASE_URL`
+(secret, api only). That role can only `SELECT` and `DELETE` on those two tables. It is the
+single Umami write path the api holds: the api still never holds a Umami API write key, and
+the guard `no-umami-write-credential` keeps refusing one.
+
+When the variable is unset, the cron logs a warning and skips, and the manual purge answers
+`503 SERVICE_UNAVAILABLE` with `reason: RECORDING_PURGE_NOT_CONFIGURED`. Nothing crashes, but
+nothing is purged either, so set it before the first prod ON.
+
+#### One-time setup of the restricted role (the owner runs this)
+
+Run it on the Umami database, as a superuser, replacing the password. Nothing in the
+repository runs it for you.
+
+```sql
+CREATE ROLE umami_retention LOGIN PASSWORD '<set-by-owner>';
+GRANT CONNECT ON DATABASE umami TO umami_retention;
+GRANT USAGE ON SCHEMA public TO umami_retention;
+GRANT SELECT, DELETE ON session_replay, heatmap_event TO umami_retention;
+```
+
+Then set `HOSPEDA_UMAMI_DATABASE_URL=postgresql://umami_retention:<password>@<host>:5432/<database>`
+on the api in Coolify (staging and production) and redeploy.
+
+`SELECT` is needed because the delete filters on `website_id` and `created_at`. No other
+privilege is granted, so the role cannot read or change any other Umami table.
+
+### Umami upgrades can change the schema
+
+The purge depends on the Umami 3.5 names: tables `session_replay` and `heatmap_event`,
+columns `website_id` and `created_at`. A Umami upgrade can rename them. The unit test
+`apps/api/test/services/session-recording-purge.test.ts` pins those names, so an upgrade that
+changes them must update the purge and the test together. After every Umami upgrade, check the
+schema and run a manual purge once.
+
+### Recordings are pseudonymous, not anonymous
+
+For logged-in users the recorder shares the Umami session used by `umami.identify`
+(per-user sessions, HOS-2119). A replay can therefore be tied to the account identifier of
+the user it belongs to. Treat recordings as **pseudonymous personal data**, not as anonymous
+data: masking removes what is typed and shown, not the link to the account. Retention is the
+control that bounds how long that link exists.
 
 ## Manual verification before production (AC-SM6)
 
