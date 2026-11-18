@@ -209,32 +209,17 @@ describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
         expect(result.data?.events[0]?.isActive).toBe(true);
     });
 
-    it('refuses an agenda longer than the ceiling', () => {
-        // The ceiling exists so ONE request cannot write an unbounded number of
-        // rows in one transaction — not as a product tier, which is the
-        // entitlement's job.
+    it('does not cap the array itself: the ceiling counts non-past entries in the service (HOS-2254)', () => {
+        // The schema does not know the time, so it cannot tell a past entry from
+        // a live one. `replaceVenueEvents` enforces VENUE_EVENTS_MAX_ENTRIES over
+        // `partitionVenueEvents(...).current`; a past entry never counts.
         // Arrange
-        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 1 }, () => ({
+        const many = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 5 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
         // Act
-        const result = VenueEventsReplacePayloadSchema.safeParse({ events: tooMany });
-
-        // Assert
-        expect(result.success).toBe(false);
-    });
-
-    it('accepts exactly the ceiling', () => {
-        // Guards the boundary from the off-by-one that would make the test
-        // above pass while refusing a legitimate agenda.
-        // Arrange
-        const atLimit = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES }, () => ({
-            ...WEEKLY_HAPPY_HOUR
-        }));
-
-        // Act
-        const result = VenueEventsReplacePayloadSchema.safeParse({ events: atLimit });
+        const result = VenueEventsReplacePayloadSchema.safeParse({ events: many });
 
         // Assert
         expect(result.success).toBe(true);

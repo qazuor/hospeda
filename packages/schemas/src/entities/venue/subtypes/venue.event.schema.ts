@@ -318,12 +318,12 @@ export const VenueEventsReplacePayloadSchema = z.object({
      * means "take the agenda down" — a venue that stopped doing live music
      * needs a way to say so.
      */
-    events: z
-        .array(VenueEventInputSchema)
-        .max(VENUE_EVENTS_MAX_ENTRIES, {
-            message: 'zodError.venue.events.max'
-        })
-        .default([])
+    // No `.max` here (HOS-2254): the ceiling applies to the entries that are NOT
+    // past, and the schema does not know the time. The service enforces it with
+    // `partitionVenueEvents`. The document still carries the past entries (until
+    // the cleanup cron deletes them), so a hard array cap would block an owner
+    // who simply re-sends them.
+    events: z.array(VenueEventInputSchema).default([])
 });
 export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayloadSchema>;
 
@@ -356,3 +356,20 @@ export const VenueEventsOutputSchema = z.object({
     events: z.array(VenueEventPublicSchema)
 });
 export type VenueEventsOutput = z.infer<typeof VenueEventsOutputSchema>;
+
+/**
+ * An agenda entry as its OWNER reads it (HOS-2254): the public shape plus the
+ * calculated `isPast`. Never persisted; computed by `isVenueEventPast` on the
+ * server so the editor does not depend on the browser's clock.
+ */
+export const VenueEventOwnerSchema = VenueEventPublicSchema.extend({
+    isPast: z.boolean()
+});
+export type VenueEventOwner = z.infer<typeof VenueEventOwnerSchema>;
+
+/** What the owner's agenda read and write answer with. */
+export const VenueEventsOwnerOutputSchema = z.object({
+    /** The agenda, ordered by `displayOrder`, past entries included. */
+    events: z.array(VenueEventOwnerSchema)
+});
+export type VenueEventsOwnerOutput = z.infer<typeof VenueEventsOwnerOutputSchema>;
