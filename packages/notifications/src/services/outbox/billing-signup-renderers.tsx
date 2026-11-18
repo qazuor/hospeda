@@ -123,7 +123,7 @@ function attemptCancelledCancel(row: EmailOutboxRow) {
     if (typeof data.subscriptionId !== 'string')
         throw new TypeError('Faltan datos requeridos del aviso de cancelación');
     return {
-        subject: 'Cancelamos tu intento de alta de suscripción',
+        subject: 'Cancelamos tu intento pendiente',
         react: <AttemptCancelledCancel />
     };
 }

@@ -2,7 +2,8 @@
 /**
  * @file VenueDetailHeader.astro
  * @description Detail page header for a venue listing (SPEC-239 T-054).
- * Shows name, type badge, price-range badge, average rating, and a featured star.
+ * Shows name, type badge, price-range badge, open-now badge (HOS-2257, client
+ * island, inline variant in the badges row), average rating, and a featured star.
  * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
  *
  * Layout (HOS-84): a vertical stack — a back-button row on top, then a 2-column
@@ -29,6 +30,7 @@ import { StarIcon, LocationIcon } from '@repo/icons';
 import type { VenueDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { VenueOpenNowBadge } from '@/components/venue/VenueOpenNowBadge.client';
 import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
 
 interface Props {
@@ -83,6 +85,20 @@ const isNew = venue.createdAt
                 {isNew && (
                     <span class="venue-detail-header__new-badge wh-compact-badge">
                         {t('home.accommodations.badge.new', 'Nuevo')}
+                    </span>
+                )}
+                {/* HOS-2257: open-now status, computed in the browser (edge-cached page).
+                    The wrapper is server-rendered EMPTY with the pill's footprint reserved,
+                    so the late hydration paints into it without shifting the title/rating (CLS).
+                    It is last in the row so no sibling moves horizontally either. */}
+                {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
+                    <span class="venue-detail-header__open-now" data-open-now-slot>
+                        <VenueOpenNowBadge
+                            client:idle
+                            locale={locale}
+                            openingHours={venue.openingHours}
+                            variant="inline"
+                        />
                     </span>
                 )}
             </div>
@@ -234,6 +250,15 @@ const isNew = venue.createdAt
         font-weight: 600;
         line-height: 1.4;
         transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    /* Reserved footprint of the open-now pill (13px text * 1.4 + 8px padding
+       = ~26px tall; widest label "Abre a las 23:00" fits ~9.5rem). */
+    .venue-detail-header__open-now {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        min-width: 9.5rem;
     }
 
     .venue-detail-header__name {

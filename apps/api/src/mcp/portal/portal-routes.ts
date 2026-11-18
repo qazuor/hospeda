@@ -76,6 +76,8 @@ export const PORTAL_ROUTE_TEMPLATES = {
     providerDirectory: 'mi-cuenta/directorio-proveedores',
     /** One provider of the directory. */
     providerDetail: 'mi-cuenta/directorio-proveedores/[slug]',
+    /** Where a host declares a usage of one provider's benefit (HOS-2332). */
+    providerDeclareUsage: 'mi-cuenta/directorio-proveedores/[slug]/registrar-uso',
     /** The user's benefit usages. */
     benefitUsages: 'mi-cuenta/usos-de-beneficio',
     /** The provider's own panel. */
@@ -174,6 +176,8 @@ export type PortalListingVertical = ListingVertical;
  * - `plans`: the plans of a vertical.
  * - `inquiry`: the inquiry inbox, or one thread when `conversationId` is given.
  * - `providerDirectory`: the directory, or one provider when `slug` is given.
+ * - `declareBenefitUsage`: the page where a host declares a usage of one
+ *   provider's benefit. The assistant never declares (HOS-2335 NG-8); it links here.
  * - `faq` and `contact`: the public FAQ and contact pages, the fallback of the
  *   help tool (HOS-2333).
  */
@@ -191,6 +195,7 @@ export type PortalDestination =
     | { readonly kind: 'addons' }
     | { readonly kind: 'inquiry'; readonly conversationId?: string }
     | { readonly kind: 'providerDirectory'; readonly slug?: string }
+    | { readonly kind: 'declareBenefitUsage'; readonly slug: string }
     | { readonly kind: 'benefitUsages' }
     | { readonly kind: 'providerPanel' }
     | { readonly kind: 'aiAssistants' }

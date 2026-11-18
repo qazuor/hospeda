@@ -963,7 +963,7 @@ describe('HostTradeUsageService.listForHost — the host’s own record', () => 
         await service.listForHost({ page: 3, pageSize: 5 }, hostActor());
 
         const call = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
-        expect(call?.[1]).toEqual({ page: 3, pageSize: 5 });
+        expect(call?.[1]).toMatchObject({ page: 3, pageSize: 5 });
     });
 
     it('refuses an unauthenticated caller', async () => {

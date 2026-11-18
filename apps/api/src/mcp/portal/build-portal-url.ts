@@ -119,6 +119,8 @@ function resolveDestination(destination: PortalDestination): ResolvedPath {
             return destination.slug === undefined
                 ? path('providerDirectory')
                 : path('providerDetail', { slug: destination.slug });
+        case 'declareBenefitUsage':
+            return path('providerDeclareUsage', { slug: destination.slug });
         case 'benefitUsages':
             return path('benefitUsages');
         case 'providerPanel':

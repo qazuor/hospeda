@@ -18,11 +18,18 @@
  * are returned as is (§6.6 covers guest-written text only).
  */
 
-import { type PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import {
+    type Accommodation,
+    type Experience,
+    type PublicationStatusEnum,
+    type Venue,
+    VerticalEnum
+} from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { z } from 'zod';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
 import {
+    LISTING_TOOL_VERTICALS,
     type ListingToolVertical,
     listingToolAccommodationService,
     listingToolExperienceService,
@@ -70,9 +77,28 @@ interface ListingRow {
     readonly publicationStatus: PublicationStatusEnum;
 }
 
+/** One vertical's stored listings, as the "list own" service call returned them. */
+export interface VerticalListingRows<TRow> {
+    /** The listings read (at most {@link LIST_MY_LISTINGS_PAGE_SIZE}). */
+    readonly rows: readonly TRow[];
+    /** How many listings the owner has in the vertical, read or not. */
+    readonly total: number;
+}
+
+/**
+ * The caller's own stored listings per vertical, the full entities the "list
+ * own" service calls return. `readMyListings` projects them; the owner summary
+ * (`get_owner_summary`) counts and evaluates them without reading them again.
+ */
+export interface MyListingRows {
+    readonly [VerticalEnum.ACCOMMODATION]: VerticalListingRows<Accommodation>;
+    readonly [VerticalEnum.VENUE]: VerticalListingRows<Venue>;
+    readonly [VerticalEnum.EXPERIENCE]: VerticalListingRows<Experience>;
+}
+
 /** A per-vertical read: rows, or the service error to report. */
-type VerticalRead =
-    | { readonly rows: readonly ListingRow[]; readonly total: number; readonly error?: never }
+type VerticalRead<TRow> =
+    | (VerticalListingRows<TRow> & { readonly error?: never })
     | { readonly rows?: never; readonly total?: never; readonly error: ToolErrorPayload };
 
 /** Projects service rows to summaries of one vertical. */
@@ -89,9 +115,9 @@ function toSummaries(input: {
 }
 
 /** Output of `listOwn` and, when the page was full, of `countOwn`. */
-interface OwnReadInput {
+interface OwnReadInput<TRow> {
     readonly read: {
-        readonly data?: { readonly listings: readonly ListingRow[] };
+        readonly data?: { readonly listings: readonly TRow[] };
         readonly error?: ToolErrorPayload;
     };
     readonly count: {
@@ -101,7 +127,7 @@ interface OwnReadInput {
 }
 
 /** Combines a `listOwn` page with its optional `countOwn` into one vertical read. */
-function readOwn({ read, count }: OwnReadInput): VerticalRead {
+function readOwn<TRow>({ read, count }: OwnReadInput<TRow>): VerticalRead<TRow> {
     if (read.error) {
         return { error: read.error };
     }
@@ -116,18 +142,18 @@ function readOwn({ read, count }: OwnReadInput): VerticalRead {
 export const ListMyListingsInputSchema = z.object({}).strict();
 
 /**
- * Reads the caller's own listings across the three verticals with the same
- * service calls the protected "list own" routes make. Shared by `list_my_listings`
- * and by the tools that scope a read to the owner's listings (`list_reviews`).
+ * Reads the caller's own stored listings across the three verticals with the
+ * same service calls the protected "list own" routes make. A partial read
+ * would look like "you have no venues", so any vertical's failure fails it.
  *
  * @param args - The actor
- * @returns The listings with `total` and `hasMore`, or the service error
+ * @returns The rows and totals per vertical, or the service error
  */
-export async function readMyListings({
+export async function readMyListingRows({
     actor
 }: {
     readonly actor: Actor;
-}): Promise<ToolHandlerResult<ListMyListingsResult>> {
+}): Promise<ToolHandlerResult<MyListingRows>> {
     const [accommodations, venues, experiences] = await Promise.all([
         listingToolAccommodationService.list(actor, {
             page: 1,
@@ -151,29 +177,53 @@ export async function readMyListings({
             : listingToolExperienceService.countOwn(actor)
     ]);
 
-    const reads: readonly (readonly [ListingToolVertical, VerticalRead])[] = [
-        [
-            VerticalEnum.ACCOMMODATION,
-            accommodations.error
-                ? { error: accommodations.error }
-                : {
-                      rows: accommodations.data?.items ?? [],
-                      total: accommodations.data?.total ?? accommodations.data?.items.length ?? 0
-                  }
-        ],
-        [VerticalEnum.VENUE, readOwn({ read: venues, count: venueTotal })],
-        [VerticalEnum.EXPERIENCE, readOwn({ read: experiences, count: experienceTotal })]
-    ];
+    if (accommodations.error) {
+        return { error: accommodations.error };
+    }
+    const venueRead = readOwn({ read: venues, count: venueTotal });
+    if (venueRead.error) {
+        return { error: venueRead.error };
+    }
+    const experienceRead = readOwn({ read: experiences, count: experienceTotal });
+    if (experienceRead.error) {
+        return { error: experienceRead.error };
+    }
+    const accommodationRows = accommodations.data?.items ?? [];
+    return {
+        data: {
+            [VerticalEnum.ACCOMMODATION]: {
+                rows: accommodationRows,
+                total: accommodations.data?.total ?? accommodationRows.length
+            },
+            [VerticalEnum.VENUE]: { rows: venueRead.rows, total: venueRead.total },
+            [VerticalEnum.EXPERIENCE]: { rows: experienceRead.rows, total: experienceRead.total }
+        }
+    };
+}
 
+/**
+ * Reads the caller's own listings across the three verticals with the same
+ * service calls the protected "list own" routes make. Shared by `list_my_listings`
+ * and by the tools that scope a read to the owner's listings (`list_reviews`).
+ *
+ * @param args - The actor
+ * @returns The listings with `total` and `hasMore`, or the service error
+ */
+export async function readMyListings({
+    actor
+}: {
+    readonly actor: Actor;
+}): Promise<ToolHandlerResult<ListMyListingsResult>> {
+    const read = await readMyListingRows({ actor });
+    if (read.error) {
+        return { error: read.error };
+    }
     const listings: MyListingSummary[] = [];
     let total = 0;
-    for (const [vertical, read] of reads) {
-        // A partial list would read as "you have no venues": fail the call.
-        if (read.error) {
-            return { error: read.error };
-        }
-        listings.push(...toSummaries({ vertical, rows: read.rows }));
-        total += read.total;
+    for (const vertical of LISTING_TOOL_VERTICALS) {
+        const { rows, total: verticalTotal } = read.data[vertical];
+        listings.push(...toSummaries({ vertical, rows }));
+        total += verticalTotal;
     }
     return {
         data: {

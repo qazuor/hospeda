@@ -11,6 +11,7 @@ export * from './date';
 export * from './local-day';
 export * from './location-key';
 export * from './markdown-helpers';
+export * from './match-search-items';
 export * from './object';
 export * from './sentry';
 export * from './short-id';

@@ -45,6 +45,13 @@
  * has no UserMenu and leaves it off, so its pageview is never held. It is the
  * same for every visitor, so pages stay session-blind.
  *
+ * The same bundled script also starts the session recorder loader (HOS-2347,
+ * `src/lib/analytics/umami-recorder.ts`). It decides client-side, per
+ * document, whether to inject Umami's recorder (switch, consent, route
+ * exclusion, identity gate), so this markup stays the same for every visitor
+ * and pages stay session-blind. No page or layout names the recorder script;
+ * a guard test keeps it that way.
+ *
  * Env (both public by design, baked at build time):
  * - `PUBLIC_UMAMI_SCRIPT_URL`: full URL of the (renamed) tracker script.
  * - `PUBLIC_UMAMI_WEBSITE_ID`: Umami website id (UUID).
@@ -80,6 +87,8 @@ const shouldRender = Boolean(scriptUrl && websiteId);
 
 <script>
 	import { startUmamiPageviews } from '@/lib/analytics/umami-pageview';
+	import { startUmamiRecorder } from '@/lib/analytics/umami-recorder';
 
 	startUmamiPageviews();
+	startUmamiRecorder();
 </script>

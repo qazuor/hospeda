@@ -701,6 +701,11 @@
             },
             "planChange": {
                 "checkoutDeadline": "Podés terminar o cancelar el checkout hasta el {{date}}.",
+                "resumeCheckout": "Retomar el checkout en Mercado Pago",
+                "cancelCheckout": "Cancelar el cambio de plan",
+                "cancellingCheckout": "Cancelando el cambio de plan...",
+                "checkoutCancelled": "Cancelamos el cambio de plan. Tu plan actual sigue igual.",
+                "cancelCheckoutError": "No pudimos cancelar el cambio de plan. Recargá la página e intentá de nuevo.",
                 "courtesyLost_one": "Perdés 1 mes de cortesía; podés seguir en mensual y conservarlo.",
                 "courtesyLost_other": "Perdés {{count}} meses de cortesía; podés seguir en mensual y conservarlos.",
                 "open": "Cambiar de plan",

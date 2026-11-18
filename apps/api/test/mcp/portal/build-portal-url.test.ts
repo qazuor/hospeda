@@ -140,6 +140,11 @@ describe('buildPortalUrl', () => {
                 { kind: 'providerDirectory', slug: 'plomeria-sur' },
                 'mi-cuenta/directorio-proveedores/plomeria-sur'
             ],
+            [
+                'declare a usage of one provider',
+                { kind: 'declareBenefitUsage', slug: 'plomeria-sur' },
+                'mi-cuenta/directorio-proveedores/plomeria-sur/registrar-uso'
+            ],
             ['benefit usages', { kind: 'benefitUsages' }, 'mi-cuenta/usos-de-beneficio'],
             ['provider panel', { kind: 'providerPanel' }, 'mi-cuenta/proveedor'],
             ['AI assistants', { kind: 'aiAssistants' }, 'mi-cuenta/asistentes-ia'],
@@ -208,6 +213,7 @@ describe('the route map', () => {
                 'addons',
                 'inquiry',
                 'providerDirectory',
+                'declareBenefitUsage',
                 'benefitUsages',
                 'providerPanel',
                 'aiAssistants',
@@ -231,6 +237,9 @@ describe('isNonIdentifyingDestination', () => {
         ).toBe(false);
         expect(
             isNonIdentifyingDestination({ destination: { kind: 'providerDirectory', slug: 'x' } })
+        ).toBe(false);
+        expect(
+            isNonIdentifyingDestination({ destination: { kind: 'declareBenefitUsage', slug: 'x' } })
         ).toBe(false);
     });
 

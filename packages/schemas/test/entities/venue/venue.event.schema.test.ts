@@ -256,3 +256,27 @@ describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
         expect(result.success).toBe(false);
     });
 });
+
+describe('VenueEventInputSchema: optional id (HOS-2291)', () => {
+    const base = {
+        title: 'Jueves de jazz',
+        recurrence: 'weekly' as const,
+        weekday: 4,
+        startTime: '21:00'
+    };
+
+    it('keeps a valid id through parsing', () => {
+        const id = '33333333-3333-4333-8333-333333333333';
+        const parsed = VenueEventInputSchema.safeParse({ ...base, id });
+        expect(parsed.success && parsed.data.id).toBe(id);
+    });
+
+    it('accepts an entry without id (a new event)', () => {
+        const parsed = VenueEventInputSchema.safeParse(base);
+        expect(parsed.success && parsed.data.id).toBeUndefined();
+    });
+
+    it('rejects an id that is not a uuid', () => {
+        expect(VenueEventInputSchema.safeParse({ ...base, id: 'nope' }).success).toBe(false);
+    });
+});

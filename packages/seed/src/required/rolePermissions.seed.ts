@@ -257,6 +257,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.LOGS_VIEW_ALL,
         PermissionEnum.ERRORS_VIEW,
         PermissionEnum.ANALYTICS_VIEW,
+        // HOS-2347: the web session recording switch (Umami replays + heatmaps) — SUPER_ADMIN-only.
+        PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE,
 
         // DEBUG & DEPLOY: All permissions
         PermissionEnum.DEBUG_TOOLS_ACCESS,
@@ -362,6 +364,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SETTLE_EXTERNAL,
         // HOS-1551: action 13 (confirm a refund, RF2) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_REFUND,
+        // HOS-1512: authorize the provider watch battery's monthly run and accept a changed shape — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE,
         // HOS-1541: actions 3 and 4 (register a manual payment / confirm it was not paid) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT,
         PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID,

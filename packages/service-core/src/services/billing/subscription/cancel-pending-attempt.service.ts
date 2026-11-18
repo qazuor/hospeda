@@ -13,14 +13,27 @@ import { ServiceError } from '../../../types';
 import { type BillingFactSink, emitBillingFact } from '../facts/billing-fact-sink.js';
 import { cancelOurAuthorization } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
+import { reevaluateRetainedPayments } from './expire-authorization-windows.service.js';
 import { commitmentTaken, previousAttemptInProgress } from './resolve-live-commitment.js';
 import type { BeforeCancelNotice } from './start-subscription.service.js';
+import { releaseCancelledSuccessionPredecessor } from './succession-cancel-writes.js';
 
 const logger = createLogger('cancel-pending-attempt');
+
+/** Optional S5/S7 ports used when S40 re-evaluates the payments S19 retained on a predecessor. */
+export type CancelPendingAttemptRetainedPaymentPorts = Partial<
+    Pick<
+        Parameters<typeof reevaluateRetainedPayments>[1],
+        'coverageNotices' | 'scheduledChangeApplier' | 'complements'
+    >
+>;
 
 /**
  * S40 (HOS-1735): let the person abandon their own pending card signup and release its vertical commitment.
  * It is distinct from S39 because S39 means restarting the same option and uses its replacement notice.
+ * Since HOS-2344 it also abandons a pending successor (a plan change whose checkout was left open):
+ * the predecessor's `succeeded_by_id` goes back to NULL in the same transaction, its deferred
+ * courtesy stays open, and the payments S19 retained on it are re-evaluated as in S3.
  */
 export async function cancelPendingAttempt(
     input: { readonly subscriptionId: string; readonly userId: string },
@@ -29,6 +42,7 @@ export async function cancelPendingAttempt(
         readonly clock: Clock;
         readonly beforeCancelNotice: BeforeCancelNotice;
         readonly billingFacts?: BillingFactSink;
+        readonly retainedPayments?: CancelPendingAttemptRetainedPaymentPorts;
     }
 ): Promise<{
     readonly subscriptionId: string;
@@ -41,10 +55,11 @@ export async function cancelPendingAttempt(
         return { subscriptionId: input.subscriptionId, outcome: 'ALREADY_ABANDONED' };
     if (
         candidate.subscription.status !== 'PENDING_AUTHORIZATION' ||
-        candidate.subscription.class !== 'PRINCIPAL' ||
-        candidate.subscription.succeedsId !== null
+        candidate.subscription.class !== 'PRINCIPAL'
     )
         throw commitmentTaken();
+    // HOS-2344: a pending successor is cancellable too; its predecessor is released below.
+    const predecessorId = candidate.subscription.succeedsId;
     const link = candidate.providerLink;
     if (!link || !candidate.idempotencyKey || candidate.idempotencyKey.completedAt === null)
         throw previousAttemptInProgress();
@@ -77,16 +92,37 @@ export async function cancelPendingAttempt(
         const changed = await subscriptionModel.abandonReplacedPendingAuthorization({
             subscriptionId: candidate.subscription.id,
             now,
-            tx
+            tx,
+            ...(predecessorId === null ? {} : { predecessorId })
         });
         if (!changed.wrote) return 'CONFLICT';
+        const release =
+            predecessorId === null
+                ? { released: false }
+                : await releaseCancelledSuccessionPredecessor({
+                      predecessorId,
+                      successorId: candidate.subscription.id,
+                      now,
+                      tx
+                  });
         await recordProviderCancellationDecided({
             subscriptionId: candidate.subscription.id,
             transition: 'S40',
             decidedAt: now,
             actor: { type: 'owner', id: input.userId },
             correlationId: randomUUID(),
-            changes: [{ field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' }],
+            changes: [
+                { field: 'status', old: 'PENDING_AUTHORIZATION', new: 'ABANDONED' },
+                ...(release.released
+                    ? [
+                          {
+                              field: 'predecessor.succeededById',
+                              old: candidate.subscription.id,
+                              new: null
+                          }
+                      ]
+                    : [])
+            ],
             tx
         });
         return 'ABANDONED';
@@ -140,5 +176,16 @@ export async function cancelPendingAttempt(
                 'Cancelled authorization will be retried by the sweep'
             );
     }
+    // HOS-2344: the succession is over, as in S3 — re-evaluate what S19 retained on the predecessor.
+    if (predecessorId !== null)
+        await reevaluateRetainedPayments(
+            { predecessorId },
+            {
+                provider: ports.provider,
+                clock: ports.clock,
+                ...(ports.billingFacts ? { billingFacts: ports.billingFacts } : {}),
+                ...ports.retainedPayments
+            }
+        );
     return { subscriptionId: input.subscriptionId, outcome: 'ABANDONED' };
 }

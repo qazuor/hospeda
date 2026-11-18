@@ -15,6 +15,8 @@
  */
 export { MERCADOPAGO_CAPABILITY_SUPPORT } from './adapters/mercadopago/mercadopago-capability-support';
 export { MercadoPagoPaymentProvider } from './adapters/mercadopago/mercadopago-payment-provider';
+// HOS-1512 provider watch battery (appended to keep composition changes conflict-light).
+export * from './battery/index';
 export {
     isProbeSubject,
     PROBE_MANIFEST,

@@ -170,6 +170,7 @@ import { adminPlanCatalogRoutes } from './plan-catalog/admin/index.js';
 import { publicPlanCatalogRoutes } from './plan-catalog/public/index.js';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
 import { publicPlatformSettingsRoutes } from './platform-settings/public/index.js';
+import { publicSessionRecordingRoutes } from './platform-settings/public/session-recording.js';
 // POI category catalog: admin list/search (HOS-144 NG-1) + public catalog (HOS-147)
 import { adminPoiCategoryRoutes, publicPoiCategoryRoutes } from './poi-category';
 // Points of interest: seed-originated editorial catalog; admin CRUD added HOS-143
@@ -179,6 +180,7 @@ import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+import { adminProviderWatchRoutes } from './provider-watch/admin/index.js';
 import { protectedPublishRoutes } from './publish';
 // Redirectable QR codes (HOS-981): public resolution + admin CRUD
 import { adminQrCodeRoutes, publicQrCodeRoutes } from './qr-code';
@@ -404,6 +406,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Global platform announcements (SPEC-156 T-010): cross-device cache
         // for the web layout banner. Reads from platform_settings.announcements.global.
         app.route('/api/v1/public/announcements', publicPlatformSettingsRoutes);
+        // Web session recording switch (HOS-2347): `{ enabled }` only, 30 s cache.
+        app.route('/api/v1/public/session-recording', publicSessionRecordingRoutes);
 
         // Conversations (guest-owner messaging — SPEC-085)
         // Public:    /api/v1/public/conversations/*
@@ -708,6 +712,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
+        // HOS-1512: provider watch battery (account confirmation, authorization, shape acceptance)
+        app.route('/api/v1/admin/provider-watch', adminProviderWatchRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);

@@ -23,7 +23,11 @@ import {
     PaidSignupsFreezeValueSchema,
     PlatformSettingsKeySchema,
     PlatformSettingsResponseSchema,
-    SeoDefaultsValueSchema
+    ProviderWatchAuthorizationInputSchema,
+    ProviderWatchAuthorizationValueSchema,
+    PublicSessionRecordingResponseSchema,
+    SeoDefaultsValueSchema,
+    SessionRecordingValueSchema
 } from '../../../src/entities/platformSettings/platform-settings.schema';
 
 const VALID_UUID = '11111111-1111-4111-8111-111111111111';
@@ -31,13 +35,15 @@ const VALID_ACTOR_UUID = '22222222-2222-4222-8222-222222222222';
 const VALID_TIMESTAMP = '2026-05-28T12:34:56.000Z';
 
 describe('PlatformSettingsKeySchema', () => {
-    it('accepts each of the 4 supported keys', () => {
+    it('accepts each of the 7 supported keys', () => {
         for (const key of [
             'seo.defaults',
             'maintenance.mode',
             'announcements.global',
             'billing.paidSignupsFreeze',
-            'billing.addonPurchasesFreeze'
+            'billing.addonPurchasesFreeze',
+            'billing.providerWatchAuthorization',
+            'analytics.sessionRecording'
         ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
@@ -45,6 +51,50 @@ describe('PlatformSettingsKeySchema', () => {
 
     it('rejects unknown keys', () => {
         const result = PlatformSettingsKeySchema.safeParse('seo.unknown');
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-2347 SessionRecordingValueSchema', () => {
+    it('accepts a boolean enabled value', () => {
+        expect(SessionRecordingValueSchema.safeParse({ enabled: true }).success).toBe(true);
+        expect(SessionRecordingValueSchema.safeParse({ enabled: false }).success).toBe(true);
+    });
+
+    it('AC-A6: rejects a non-boolean enabled value', () => {
+        // Arrange
+        const value = { enabled: 'yes' };
+
+        // Act
+        const result = SessionRecordingValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('routes the analytics.sessionRecording branch of the response union', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'analytics.sessionRecording',
+            value: { enabled: true },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
+        });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('HOS-2347 PublicSessionRecordingResponseSchema', () => {
+    it('accepts exactly { enabled }', () => {
+        expect(PublicSessionRecordingResponseSchema.safeParse({ enabled: false }).success).toBe(
+            true
+        );
+    });
+
+    it('AC-P2: rejects any extra key (no updatedAt/updatedBy leak)', () => {
+        const result = PublicSessionRecordingResponseSchema.safeParse({
+            enabled: true,
+            updatedBy: VALID_ACTOR_UUID
+        });
         expect(result.success).toBe(false);
     });
 });
@@ -382,5 +432,111 @@ describe('PlatformSettingsResponseSchema (discriminated union)', () => {
             ...baseEnvelope
         });
         expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1512 ProviderWatchAuthorizationValueSchema', () => {
+    it('accepts a month and an integer maximum charge in minor units', () => {
+        const result = ProviderWatchAuthorizationValueSchema.safeParse({
+            month: '2026-11',
+            maxChargeMinor: 150000
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it.each([
+        '2026-13',
+        '2026-00',
+        '2026-1',
+        '26-11',
+        '2026/11',
+        '2026-11-01',
+        ''
+    ])('rejects the month %j', (month) => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month, maxChargeMinor: 100 }).success
+        ).toBe(false);
+    });
+
+    it.each([0, -1, 1.5, Number.NaN, '100'])('rejects the maximum charge %j', (maxChargeMinor) => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor })
+                .success
+        ).toBe(false);
+    });
+
+    it('is a member of the discriminated response union', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.providerWatchAuthorization',
+            value: { month: '2026-11', maxChargeMinor: 150000 },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects the value of another key under this key', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'billing.providerWatchAuthorization',
+            value: { frozen: true },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-1512 provider watch authorization input and consumption', () => {
+    const input = { month: '2026-11', maxChargeMinor: 150000, accountId: '100000001' };
+
+    it('accepts the input with a numeric account id and an optional nickname', () => {
+        expect(ProviderWatchAuthorizationInputSchema.safeParse(input).success).toBe(true);
+        expect(
+            ProviderWatchAuthorizationInputSchema.safeParse({
+                ...input,
+                accountNickname: 'HOSPEDA'
+            }).success
+        ).toBe(true);
+    });
+
+    it.each([
+        '',
+        'abc',
+        '12 34',
+        '-5',
+        '1'.repeat(21)
+    ])('rejects the account id %j', (accountId) => {
+        expect(
+            ProviderWatchAuthorizationInputSchema.safeParse({ ...input, accountId }).success
+        ).toBe(false);
+    });
+
+    it('requires the account id in the input', () => {
+        const { accountId: _omitted, ...withoutId } = input;
+        expect(ProviderWatchAuthorizationInputSchema.safeParse(withoutId).success).toBe(false);
+    });
+
+    it('strips the consumption fields from the input: a new authorization is never consumed', () => {
+        const parsed = ProviderWatchAuthorizationInputSchema.parse({
+            ...input,
+            consumedAt: '2026-11-01T00:00:00.000Z',
+            consumedByRunId: VALID_UUID
+        });
+        expect(parsed).not.toHaveProperty('consumedAt');
+        expect(parsed).not.toHaveProperty('consumedByRunId');
+    });
+
+    it('lets the stored value carry the consumption and tolerates a missing account id', () => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({
+                ...input,
+                consumedAt: '2026-11-01T00:00:00.000Z',
+                consumedByRunId: VALID_UUID
+            }).success
+        ).toBe(true);
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor: 1 })
+                .success
+        ).toBe(true);
     });
 });

@@ -701,6 +701,11 @@
             },
             "planChange": {
                 "checkoutDeadline": "You can complete or cancel checkout until {{date}}.",
+                "resumeCheckout": "Resume checkout in Mercado Pago",
+                "cancelCheckout": "Cancel the plan change",
+                "cancellingCheckout": "Cancelling the plan change...",
+                "checkoutCancelled": "We cancelled the plan change. Your current plan stays the same.",
+                "cancelCheckoutError": "We could not cancel the plan change. Reload the page and try again.",
                 "courtesyLost_one": "You lose 1 courtesy month; you can stay monthly and keep it.",
                 "courtesyLost_other": "You lose {{count}} courtesy months; you can stay monthly and keep them.",
                 "open": "Change plan",

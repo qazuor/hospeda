@@ -9,8 +9,13 @@ import {
     PermissionEnum,
     type PlatformSettingsKey,
     PlatformSettingsKeySchema,
+    type ProviderWatchAuthorizationInput,
+    ProviderWatchAuthorizationInputSchema,
+    type ProviderWatchAuthorizationValue,
+    ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    SessionRecordingValueSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -34,6 +39,14 @@ import { ServiceError } from '../../types';
  *   - `billing.paidSignupsFreeze` write → `BILLING_SETTINGS_WRITE`
  *   - `billing.addonPurchasesFreeze` read → `BILLING_SETTINGS_VIEW`
  *   - `billing.addonPurchasesFreeze` write → `BILLING_SETTINGS_WRITE`
+ *   - `billing.providerWatchAuthorization` read → `BILLING_SETTINGS_VIEW`
+ *   - `billing.providerWatchAuthorization` write → `BILLING_PROVIDER_WATCH_MANAGE` (SUPER_ADMIN-only: it
+ *     authorizes real money to move at the provider, and the owner custodies it, HOS-1512). It is
+ *     written ONLY by {@link PlatformSettingsService.setProviderWatchAuthorization}: the API
+ *     reads the provider account first, so the generic `upsert` refuses this key.
+ *   - `analytics.sessionRecording` (read or write) → `ANALYTICS_SESSION_RECORDING_MANAGE`
+ *     (HOS-2347; granted to SUPER_ADMIN by the seed, not locked (D-3); same
+ *     read+write collapse as `MAINTENANCE_MODE_WRITE`).
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -63,7 +76,13 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema
+    }),
+    z.object({
+        key: z.literal('analytics.sessionRecording'),
+        value: SessionRecordingValueSchema
     })
+    // `billing.providerWatchAuthorization` is deliberately absent: it is written only through
+    // `setProviderWatchAuthorization`, after the API confirmed the provider account (HOS-1512 D5).
 ]);
 
 // ---------------------------------------------------------------------------
@@ -79,7 +98,10 @@ function requiredReadPermission(key: PlatformSettingsKey): PermissionEnum {
             return PermissionEnum.MAINTENANCE_MODE_WRITE;
         case 'billing.paidSignupsFreeze':
         case 'billing.addonPurchasesFreeze':
+        case 'billing.providerWatchAuthorization':
             return PermissionEnum.BILLING_SETTINGS_VIEW;
+        case 'analytics.sessionRecording':
+            return PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -97,6 +119,10 @@ function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
         case 'billing.paidSignupsFreeze':
         case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_WRITE;
+        case 'billing.providerWatchAuthorization':
+            return PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE;
+        case 'analytics.sessionRecording':
+            return PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -272,6 +298,94 @@ export class PlatformSettingsService extends BaseService {
             return false;
         }
         return parsed.data.frozen;
+    }
+
+    /**
+     * Whether the public web may load the Umami session recorder (HOS-2347).
+     *
+     * **Why this method instead of `get`**: same reason as
+     * {@link isNewPaidSignupsFrozen}. The only caller is the public endpoint
+     * `GET /api/v1/public/session-recording`, which has no admin actor to gate
+     * on; the answer is one platform-wide boolean.
+     *
+     * A missing row answers `false` (recording is off by default). A stored
+     * value that fails the schema answers `false` and logs a warning. A read
+     * error is NOT swallowed: it propagates so the route answers 500 and the
+     * outage is visible. The web fails closed on a 500 anyway.
+     *
+     * @returns Whether session recording is switched on.
+     */
+    async isSessionRecordingEnabled(): Promise<boolean> {
+        const row = await this.model.findByKey('analytics.sessionRecording');
+        if (!row) return false;
+        const parsed = SessionRecordingValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored analytics.sessionRecording value failed schema validation — recording stays off'
+            );
+            return false;
+        }
+        return parsed.data.enabled;
+    }
+
+    /**
+     * The owner's monthly authorization for the provider watch battery (HOS-1512).
+     *
+     * **Why this method instead of `get`**: the caller is a cron job with no admin actor.
+     *
+     * **Read on every run, never cached**: the authorization is renewed every month and the
+     * production run must see the month in force NOW.
+     *
+     * Fails closed: a missing row or a value that fails the schema answers `null`, which means
+     * "not authorized" (the production run refuses, a money-moving measurement aborts). A read
+     * error is NOT swallowed.
+     *
+     * @returns The authorization, or `null` when none is in force.
+     */
+    async getProviderWatchAuthorization(): Promise<ProviderWatchAuthorizationValue | null> {
+        const row = await this.model.findByKey('billing.providerWatchAuthorization');
+        if (!row) return null;
+        const parsed = ProviderWatchAuthorizationValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored billing.providerWatchAuthorization value failed schema validation — treated as not authorized'
+            );
+            return null;
+        }
+        return parsed.data;
+    }
+
+    /**
+     * Writes the owner's monthly authorization for the provider watch battery (HOS-1512). Always a
+     * NEW authorization: the consumption fields are never accepted, so it is unconsumed. Requires
+     * `BILLING_PROVIDER_WATCH_MANAGE`. The caller (the admin route) has already read the provider account
+     * and confirmed `accountId` with the owner.
+     *
+     * @param input.actor - The owner
+     * @param input.value - Month, exact maximum charge and the confirmed account id
+     * @returns The stored row
+     */
+    async setProviderWatchAuthorization(
+        input: { actor: Actor; value: ProviderWatchAuthorizationInput },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PlatformSettingRecord>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setProviderWatchAuthorization',
+            input,
+            schema: z.object({ value: ProviderWatchAuthorizationInputSchema }),
+            ctx,
+            execute: async (data, actor, resolvedCtx) => {
+                this.checkWritePermission(actor, 'billing.providerWatchAuthorization');
+                return this.model.upsertByKey(
+                    'billing.providerWatchAuthorization',
+                    data.value,
+                    actor.id,
+                    resolvedCtx.tx
+                );
+            }
+        });
     }
 
     /**

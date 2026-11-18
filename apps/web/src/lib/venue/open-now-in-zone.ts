@@ -18,7 +18,8 @@
  */
 
 import type { VenueOpeningHoursEntry } from '@/data/types';
-import { computeOpenNowStatus } from '@/lib/venue-hours';
+import type { VenueOpenStatusDetail } from '@/lib/venue-hours';
+import { computeOpenNowStatus, computeOpenStatusDetail } from '@/lib/venue-hours';
 
 /**
  * Time zone the badge is evaluated in until a listing carries its own.
@@ -83,21 +84,15 @@ export function todayIndexInZone({ now, timeZone }: TodayIndexInZoneParams): num
 }
 
 /**
- * Computes "open now" using the venue's wall clock instead of the caller's.
+ * Rebuilds the venue's wall-clock reading of `now` as a local `Date`.
  *
- * Reads the weekday, hour and minute of `now` in `timeZone`, rebuilds that
- * wall-clock reading as a local `Date`, and delegates to
- * `computeOpenNowStatus` — so the DEC-FAC-052 overnight rule keeps living in
- * one place.
+ * Reads weekday, hour and minute of `now` in `timeZone` and assembles them with
+ * the `Date` component constructor, so `getDay()`/`getHours()` mirror the
+ * venue's clock regardless of the process time zone.
  *
- * @param params - Opening hours, the instant, and the target zone.
- * @returns `true` (open), `false` (closed), or `null` (no data for today → no badge).
+ * @returns The synthetic wall-clock date, or `null` if Intl gave unusable parts.
  */
-export function computeOpenNowInZone({
-    openingHours,
-    now,
-    timeZone = VENUE_OPEN_NOW_TIME_ZONE
-}: ComputeOpenNowInZoneParams): boolean | null {
+function wallClockInZone({ now, timeZone }: TodayIndexInZoneParams): Date | null {
     const parts = new Intl.DateTimeFormat('en-US', {
         timeZone,
         weekday: 'short',
@@ -119,9 +114,39 @@ export function computeOpenNowInZone({
         return null;
     }
 
-    // Built from components, so `getDay()`/`getHours()` mirror the venue's wall
-    // clock no matter the time zone of the process running this code.
-    const wallClock = new Date(2024, 0, SUNDAY_REFERENCE_DAY + dayIndex, hour, minute, 0, 0);
+    return new Date(2024, 0, SUNDAY_REFERENCE_DAY + dayIndex, hour, minute, 0, 0);
+}
 
-    return computeOpenNowStatus(openingHours, wallClock);
+/**
+ * Computes "open now" using the venue's wall clock instead of the caller's.
+ *
+ * Delegates to `computeOpenNowStatus` on the venue wall clock, so the
+ * DEC-FAC-052 overnight rule keeps living in one place.
+ *
+ * @param params - Opening hours, the instant, and the target zone.
+ * @returns `true` (open), `false` (closed), or `null` (no data for today → no badge).
+ */
+export function computeOpenNowInZone({
+    openingHours,
+    now,
+    timeZone = VENUE_OPEN_NOW_TIME_ZONE
+}: ComputeOpenNowInZoneParams): boolean | null {
+    const wallClock = wallClockInZone({ now, timeZone });
+    return wallClock === null ? null : computeOpenNowStatus(openingHours, wallClock);
+}
+
+/**
+ * Computes the detailed open status (open / opens later today / closed) using
+ * the venue's wall clock (HOS-2257).
+ *
+ * @param params - Opening hours, the instant, and the target zone.
+ * @returns The detailed status, or `null` when there is no data for today.
+ */
+export function computeOpenStatusInZone({
+    openingHours,
+    now,
+    timeZone = VENUE_OPEN_NOW_TIME_ZONE
+}: ComputeOpenNowInZoneParams): VenueOpenStatusDetail | null {
+    const wallClock = wallClockInZone({ now, timeZone });
+    return wallClock === null ? null : computeOpenStatusDetail(openingHours, wallClock);
 }

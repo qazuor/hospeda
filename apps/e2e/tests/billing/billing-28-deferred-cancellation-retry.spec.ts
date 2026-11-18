@@ -29,7 +29,7 @@ import { monthlyOptionForSlug } from '../../fixtures/signup-checkout.ts';
 
 const JOB_NAME = 'billing-deferred-cancellation-retry';
 const CANCEL_NOTICE = 'billing.attempt-cancelled-cancel';
-const CANCEL_SUBJECT = 'Cancelamos tu intento de alta de suscripción';
+const CANCEL_SUBJECT = 'Cancelamos tu intento pendiente';
 
 const RetryDetailsSchema = z.object({
     skipped: z.string().optional(),
@@ -243,7 +243,7 @@ test.describe('TEST:2157:1 TEST:2157:2 TEST:2157:3 TEST:2157:4 a cancelled signu
             timeoutMs: 30_000
         });
         const html = decodeHtmlEntities(mail.html).replace(/\s+/g, ' ');
-        expect(html).toContain('Cancelaste el intento de alta de suscripción que tenías pendiente');
+        expect(html).toContain('Cancelaste el alta o el cambio de plan que tenías pendiente');
         expect(html).toContain('Ese intento no te cobró nada.');
         await expect
             .poll(() => attemptNotices(sentAttempt.user.id, sentAttempt.subscriptionId), {
