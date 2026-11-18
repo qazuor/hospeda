@@ -1,9 +1,9 @@
 /**
  * @fileoverview
- * Data migration: 0182-hos2336-partner-types-catalog
+ * Data migration: 0183-hos2336-partner-types-catalog
  *
  * Dual-write counterpart (HOS-25) of the HOS-2336 baseline seed. The structural
- * migration `0231_hos2336_partner_types_catalog.sql` creates `partner_types`
+ * migration `0232_hos2336_partner_types_catalog.sql` creates `partner_types`
  * and the nullable `partners.type_id`; the baseline
  * (`required/partnerTypes.seed.ts` plus `src/data/partnerType/*`) fills the
  * catalog on a FRESH database, and the example partner fixtures now name their
@@ -50,7 +50,7 @@ import { logger } from '../utils/logger.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0182-hos2336-partner-types-catalog',
+    name: '0183-hos2336-partner-types-catalog',
     group: 'required',
     destructive: false,
     requiresColumns: [{ table: 'partners', column: 'type' }]
@@ -139,7 +139,7 @@ async function backfillPartnerTypeIds(
         const typeId = slug ? typeIdBySlug.get(slug) : undefined;
         if (!typeId) {
             unknownLegacyValues += 1;
-            logger.warn(`[0182] partners ${row.id}: unknown legacy type "${row.type}", skipped`);
+            logger.warn(`[0183] partners ${row.id}: unknown legacy type "${row.type}", skipped`);
             continue;
         }
         const updated = await ctx.db.execute(

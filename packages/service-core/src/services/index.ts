@@ -31,6 +31,8 @@ export {
 export * from './accommodation/accommodation.media-reader';
 export * from './accommodation/accommodation.occupancy';
 export * from './accommodation/accommodation.poi-proximity.helper';
+// HOS-2331: the publish-readiness facts of an accommodation, for batch evaluation.
+export { buildAccommodationPublishReadinessInput } from './accommodation/accommodation.publish-readiness';
 export * from './accommodation/accommodation.service';
 export * from './accommodation/accommodation.sync-featured-by-entitlement';
 // HookState types for service consumers

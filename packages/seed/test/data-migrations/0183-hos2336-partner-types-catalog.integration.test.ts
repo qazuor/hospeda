@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * PostgreSQL integration coverage for data-migration 0182 (HOS-2336): catalog
+ * PostgreSQL integration coverage for data-migration 0183 (HOS-2336): catalog
  * upsert (step 1), permission grants (step 2) and the `type_id` backfill from
  * the legacy `partners.type` (step 3).
  *
@@ -16,7 +16,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0182-hos2336-partner-types-catalog.js';
+import * as migration from '../../src/data-migrations/0183-hos2336-partner-types-catalog.js';
 import { assertRequiredColumns } from '../../src/data-migrations/columnDependencyGuard.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { partnerTypeIdFor } from '../../src/required/partnerTypes.seed.js';
@@ -80,7 +80,7 @@ const typeIdOf = async (tx: DrizzleClient, partnerId: string): Promise<string | 
     return (result.rows[0] as { type_id: string | null }).type_id;
 };
 
-describe('HOS-2336: 0182 catalog upsert, grants and backfill (integration)', () => {
+describe('HOS-2336: 0183 catalog upsert, grants and backfill (integration)', () => {
     beforeAll(() => {
         if (!process.env.HOSPEDA_DATABASE_URL)
             throw new Error('HOSPEDA_DATABASE_URL is not set in this worktree');

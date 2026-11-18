@@ -66,6 +66,7 @@ import {
     EXPERIENCE_CONTACT_ANCHOR_ID,
     hasPublicContactChannel
 } from '@/lib/experience-contact';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 
 interface Props {
     readonly contactInfo: ExperienceContactInfo | null;
@@ -127,7 +128,7 @@ if (!hasPublicContactChannel({ contactInfo })) {
 const heading = t('experience.detail.contact', 'Contacto');
 ---
 
-<section class="exp-contact" id={EXPERIENCE_CONTACT_ANCHOR_ID} aria-label={heading}>
+<section class="exp-contact" id={EXPERIENCE_CONTACT_ANCHOR_ID} aria-label={heading} {...UMAMI_BLOCK_PROPS}>
     <h3 class="exp-contact__title">{heading}</h3>
 
     <div class="exp-contact__channels">

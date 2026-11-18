@@ -1,16 +1,16 @@
 /**
  * @fileoverview
- * Unit coverage for data-migration 0182 (HOS-2336): its static contract (meta,
+ * Unit coverage for data-migration 0183 (HOS-2336): its static contract (meta,
  * legacy map, permission grants) and the no-drift guarantee against the seed
  * baseline. The behaviour against a real database lives in
- * `0182-hos2336-partner-types-catalog.integration.test.ts`.
+ * `0183-hos2336-partner-types-catalog.integration.test.ts`.
  */
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PartnerTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0182-hos2336-partner-types-catalog.js';
+import * as migration from '../../src/data-migrations/0183-hos2336-partner-types-catalog.js';
 import requiredManifest from '../../src/manifest-required.json';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -35,9 +35,9 @@ const PARTNER_TYPE_PERMISSIONS = [
     PermissionEnum.PARTNER_TYPE_RESTORE
 ];
 
-describe('0182 meta', () => {
+describe('0183 meta', () => {
     it('is a required, non-destructive migration', () => {
-        expect(migration.meta.name).toBe('0182-hos2336-partner-types-catalog');
+        expect(migration.meta.name).toBe('0183-hos2336-partner-types-catalog');
         expect(migration.meta.group).toBe('required');
         expect(migration.meta.destructive).toBe(false);
     });
@@ -47,7 +47,7 @@ describe('0182 meta', () => {
     });
 });
 
-describe('0182 legacy type map', () => {
+describe('0183 legacy type map', () => {
     it('covers every value of the legacy enum, and nothing else', () => {
         expect(Object.keys(migration.LEGACY_PARTNER_TYPE_TO_SLUG).sort()).toEqual(
             Object.values(PartnerTypeEnum).sort()
@@ -61,7 +61,7 @@ describe('0182 legacy type map', () => {
     });
 });
 
-describe('0182 permission grants', () => {
+describe('0183 permission grants', () => {
     it('grants the five partnerType permissions to SUPER_ADMIN and ADMIN only', () => {
         expect(migration.GRANTS).toHaveLength(10);
         for (const role of [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN]) {

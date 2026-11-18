@@ -31,7 +31,8 @@ export const PlatformSettingsKeySchema = z.enum([
     'announcements.global',
     'billing.paidSignupsFreeze',
     'billing.addonPurchasesFreeze',
-    'billing.providerWatchAuthorization'
+    'billing.providerWatchAuthorization',
+    'analytics.sessionRecording'
 ]);
 
 /** TypeScript type for the supported key set. */
@@ -207,6 +208,39 @@ export const ProviderWatchAuthorizationValueSchema = ProviderWatchAuthorizationI
 export type ProviderWatchAuthorizationValue = z.infer<typeof ProviderWatchAuthorizationValueSchema>;
 
 // ---------------------------------------------------------------------------
+// `analytics.sessionRecording` value (HOS-2347)
+// ---------------------------------------------------------------------------
+
+/**
+ * Value shape for `analytics.sessionRecording` (HOS-2347). The ONE switch that
+ * decides whether the public web injects the Umami session recorder
+ * (`recorder.js`, replays + heatmaps). Every recorder parameter lives in Umami
+ * and is managed as code by `pnpm umami:setup`; this value is a single boolean.
+ * An absent row means `enabled: false` (fail closed).
+ */
+export const SessionRecordingValueSchema = z.object({
+    /** Whether the web may load the session recorder for consenting visitors. */
+    enabled: z.boolean()
+});
+
+/** Inferred type for the `analytics.sessionRecording` value. */
+export type SessionRecordingValue = z.infer<typeof SessionRecordingValueSchema>;
+
+/**
+ * Body of `GET /api/v1/public/session-recording` (HOS-2347 §6.3). Strict, with
+ * exactly one key: the public read never exposes `updatedAt` or `updatedBy`.
+ */
+export const PublicSessionRecordingResponseSchema = z
+    .object({
+        /** Whether the web may load the session recorder. */
+        enabled: z.boolean()
+    })
+    .strict();
+
+/** Inferred type for the public session recording response. */
+export type PublicSessionRecordingResponse = z.infer<typeof PublicSessionRecordingResponseSchema>;
+
+// ---------------------------------------------------------------------------
 // Discriminated union response
 // ---------------------------------------------------------------------------
 
@@ -250,6 +284,12 @@ export const PlatformSettingsResponseSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.providerWatchAuthorization'),
         value: ProviderWatchAuthorizationValueSchema,
+        updatedAt: z.string().datetime({ offset: true }),
+        updatedBy: z.string().uuid()
+    }),
+    z.object({
+        key: z.literal('analytics.sessionRecording'),
+        value: SessionRecordingValueSchema,
         updatedAt: z.string().datetime({ offset: true }),
         updatedBy: z.string().uuid()
     })
