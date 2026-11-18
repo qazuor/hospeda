@@ -136,6 +136,20 @@ describe('startCronScheduler — soft-failure Sentry capture', () => {
         vi.restoreAllMocks();
     });
 
+    it('HOS-1512: never schedules an enabled job whose definition says scheduled: false', async () => {
+        const held = {
+            ...makeJob('provider-watch-battery', () => Promise.resolve(makeSuccessResult())),
+            scheduled: false
+        };
+        const live = makeJob('other-job', () => Promise.resolve(makeSuccessResult()));
+        mockGetEnabledCronJobs.mockReturnValue([held, live]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        expect(mockSchedule).toHaveBeenCalledTimes(1);
+    });
+
     it('captures to Sentry when result.success === false', async () => {
         const job = makeJob('dunning', () => Promise.resolve(makeSoftFailResult(3)));
         mockGetEnabledCronJobs.mockReturnValue([job]);

@@ -85,6 +85,9 @@ const ENQUEUE_SITES: Readonly<
     'apps/api/src/routes/billing-subscription/before-cancel-notice.ts':
         'BEFORE_CANCEL_TEMPLATE_BY_KIND',
     'apps/api/src/utils/trial/trial-campaign-outbox.ts': 'TRIAL_CAMPAIGN_TEMPLATES',
+    'apps/api/src/utils/provider-watch/provider-watch-alert-outbox.ts': [
+        'billing.provider-watch-alert'
+    ],
     'apps/api/src/utils/listing-publication/ports.ts': ['verticals.listing-restitution'],
     'apps/api/src/services/listing-notices/fix-reported-notice.ts': [
         'verticals.listing-fix-reported'

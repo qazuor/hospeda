@@ -37,6 +37,7 @@ import {
     createBillingManualPaymentRenderers,
     createBillingPlanMigrationRenderers,
     createBillingPromoRenderers,
+    createBillingProviderWatchRenderers,
     createBillingReconciliationRenderers,
     createBillingRenewalRenderers,
     createBillingSignupRenderers,
@@ -106,6 +107,7 @@ export function buildOutboxSenderRender(input: {
             ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
             ...createBillingPlanMigrationRenderers({ siteUrl: input.siteUrl }),
             ...createBillingCourtesyRenderers(),
+            ...createBillingProviderWatchRenderers(),
             ...createBillingReconciliationRenderers({
                 siteUrl: input.siteUrl,
                 readSubjects: input.readReconciliationSubjects ?? readReconciliationSubjects,
