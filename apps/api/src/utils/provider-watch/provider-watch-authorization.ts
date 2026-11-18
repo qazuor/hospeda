@@ -3,6 +3,8 @@
  * EXACTLY the sum of the declared maximum charges of the money-moving measurements of this
  * environment's account. The API computes it from the catalog, shows it for the owner to confirm,
  * and refuses any other value, so the owner never types an amount that the run will then refuse.
+ * When the catalog has no money-moving measurement the sum is 0 (a read-only battery) and 0 is the
+ * one valid amount (owner decision F5, 2026-11-18).
  *
  * @module utils/provider-watch/provider-watch-authorization
  */
@@ -37,7 +39,7 @@ export function previewAuthorization(args: {
 }
 
 /** Why an amount cannot be authorized. */
-export type AuthorizedAmountRefusal = 'NO_MONEY_MEASUREMENTS' | 'AMOUNT_DIFFERS';
+export type AuthorizedAmountRefusal = 'AMOUNT_DIFFERS';
 
 /**
  * Checks the amount the owner submits against the one the catalog requires.
@@ -59,9 +61,6 @@ export function checkAuthorizedAmount(args: {
           readonly expectedMinor: number;
       } {
     const { expectedMaxChargeMinor } = previewAuthorization(args);
-    if (expectedMaxChargeMinor === 0) {
-        return { ok: false, refusal: 'NO_MONEY_MEASUREMENTS', expectedMinor: 0 };
-    }
     if (args.amountMinor !== expectedMaxChargeMinor) {
         return { ok: false, refusal: 'AMOUNT_DIFFERS', expectedMinor: expectedMaxChargeMinor };
     }

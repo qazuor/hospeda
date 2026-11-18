@@ -18,7 +18,8 @@ import {
 import {
     EDITOR_SECTION_SLUGS,
     PORTAL_ROUTE_TEMPLATES,
-    type PortalDestination
+    type PortalDestination,
+    UNRELEASED_EDITOR_SECTIONS
 } from '../../../src/mcp/portal/portal-routes';
 
 const SITE = 'https://hospeda.test';
@@ -181,6 +182,22 @@ describe('buildPortalUrl', () => {
             ).toBe(`${SITE}/pt/mi-cuenta/complementos/`);
         });
 
+        it.each(['es', 'en', 'pt'] as const)('prefixes the %s locale', (locale) => {
+            expect(buildPortalUrl({ destination: { kind: 'addons' }, siteUrl: SITE, locale })).toBe(
+                `${SITE}/${locale}/mi-cuenta/complementos/`
+            );
+        });
+
+        it('falls back to es when no locale is given', () => {
+            expect(
+                buildPortalUrl({
+                    destination: { kind: 'addons' },
+                    siteUrl: SITE,
+                    locale: undefined
+                })
+            ).toBe(`${SITE}/es/mi-cuenta/complementos/`);
+        });
+
         it('refuses an empty site URL', () => {
             expect(() => urlOf({ kind: 'addons' }, '  ')).toThrow();
         });
@@ -190,7 +207,11 @@ describe('buildPortalUrl', () => {
 describe('the route map', () => {
     it('has a slug for every catalog section of every vertical, and no stale one', () => {
         for (const vertical of LISTING_VERTICALS) {
-            const catalogIds = LISTING_SECTIONS[vertical].map((section) => section.id).sort();
+            const unreleased: readonly string[] = UNRELEASED_EDITOR_SECTIONS[vertical];
+            const catalogIds = LISTING_SECTIONS[vertical]
+                .map((section) => section.id)
+                .filter((id) => !unreleased.includes(id))
+                .sort();
             expect(Object.keys(EDITOR_SECTION_SLUGS[vertical]).sort()).toEqual(catalogIds);
         }
     });

@@ -19,6 +19,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { assertAccommodationPromotion } from './accommodation-door';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
@@ -55,6 +56,9 @@ export const protectedGetOwnerPromotionByIdRoute = createProtectedRoute({
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
         }
+
+        // HOS-2270: a venue promotion is not reachable through the accommodation door.
+        assertAccommodationPromotion(result.data);
 
         return result.data;
     }
