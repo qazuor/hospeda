@@ -35,6 +35,7 @@ import {
     type CreateListingInput,
     CreateListingInputSchema
 } from './create-listing-input';
+import { previewInstructions, previewListing } from './create-listing-preview';
 import {
     authorizeOwnerCreate,
     bodyHasLocation,
@@ -50,7 +51,6 @@ import {
 } from './google-maps-link';
 import {
     findCreationDestination,
-    listingTypeLabel,
     type PublishQuotaNote,
     readPublishQuotaNote
 } from './listing-creation-catalog';
@@ -228,33 +228,6 @@ function nextStepsFor(args: {
             tool: 'set_listing_publication'
         }
     ];
-}
-
-/** Builds the preview's instruction to the model. */
-function previewInstructions({ expiresInSeconds }: { readonly expiresInSeconds: number }): string {
-    const minutes = Math.round(expiresInSeconds / 60);
-    return `Todavía NO se creó nada. Mostrale al usuario los datos de "listing" y de "location" (si hay coordenadas, pasale "mapCheckUrl" para que verifique el punto) y preguntale si lo confirma. Solo si responde que sí de forma explícita, volvé a llamar a create_listing con EXACTAMENTE los mismos datos y este confirmationToken. Si quiere cambiar algo, empezá de nuevo sin confirmationToken. El token es de un solo uso y vence en ${minutes} minutos. Se crea como borrador: no se publica.`;
-}
-
-/** The listing as the user will see it in the preview. */
-function previewListing(args: {
-    readonly input: CreateListingInput;
-    readonly destinationName: string;
-}): Readonly<Record<string, unknown>> {
-    const { input, destinationName } = args;
-    const {
-        vertical,
-        mapsUrl: _maps,
-        street: _street,
-        number: _number,
-        confirmationToken: _t,
-        ...rest
-    } = input;
-    return {
-        ...Object.fromEntries(Object.entries(rest).filter(([, value]) => value !== undefined)),
-        typeLabel: listingTypeLabel({ vertical, type: input.type }),
-        destinationName
-    };
 }
 
 /** Where a refusal of this tool should point. */
