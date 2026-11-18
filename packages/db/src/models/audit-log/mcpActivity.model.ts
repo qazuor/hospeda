@@ -6,6 +6,7 @@ import { auditLogEntries } from '../../schemas/audit-log/audit_log_entry.dbschem
 import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import { experiences } from '../../schemas/experience/experiences.dbschema.ts';
 import { oauthClients } from '../../schemas/oauth-provider/oauth-client.dbschema.ts';
+import { users } from '../../schemas/user/user.dbschema.ts';
 import { venues } from '../../schemas/venue/venue.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 
@@ -195,6 +196,27 @@ export class McpActivityModel extends BaseModelImpl<AuditLogEntryRow> {
             .select({ clientId: oauthClients.clientId, name: oauthClients.name })
             .from(oauthClients)
             .where(inArray(oauthClients.clientId, [...input.clientIds]));
+    }
+
+    /**
+     * Display name and email of the live (not soft-deleted) users among
+     * `ids`: the people the assistant acted for, shown to staff in the admin
+     * log (HOS-2349, `all` scope only). A deleted user is not returned; the
+     * row keeps its `actorId`.
+     *
+     * @param input.ids - Actor ids of one page.
+     * @param tx - Optional transaction client.
+     * @returns One entry per live user found.
+     */
+    async findUsers(
+        input: { readonly ids: readonly string[] },
+        tx?: DrizzleClient
+    ): Promise<{ id: string; displayName: string | null; email: string }[]> {
+        if (input.ids.length === 0) return [];
+        return this.getClient(tx)
+            .select({ id: users.id, displayName: users.displayName, email: users.email })
+            .from(users)
+            .where(and(inArray(users.id, [...input.ids]), isNull(users.deletedAt)));
     }
 }
 

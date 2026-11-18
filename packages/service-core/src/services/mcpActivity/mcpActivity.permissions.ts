@@ -4,15 +4,12 @@ import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
 
 /**
- * The permission the `all` scope of the assistant activity requires.
- *
- * Interim: `AUDIT_LOG_VIEW` (SUPER_ADMIN only). It already lets its holder
- * read these same `mcp.tool.call` rows through `GET /api/v1/admin/audit-logs`,
- * so the `all` scope exposes nothing new. HOS-2349 (PR-12 of HOS-2335) adds
- * `MCP_ACTIVITY_VIEW` (D-15) and switches this constant to it, in the same
- * change as the enum migration and the SUPER_ADMIN grant.
+ * The permission the `all` scope of the assistant activity requires:
+ * `MCP_ACTIVITY_VIEW` (decision D-15), SUPER_ADMIN only. ADMIN does not hold
+ * it. It replaced the interim `AUDIT_LOG_VIEW` of PR-10 in HOS-2349, together
+ * with the enum migration and the SUPER_ADMIN grant.
  */
-export const MCP_ACTIVITY_ALL_SCOPE_PERMISSION = PermissionEnum.AUDIT_LOG_VIEW;
+export const MCP_ACTIVITY_ALL_SCOPE_PERMISSION = PermissionEnum.MCP_ACTIVITY_VIEW;
 
 /**
  * Checks the actor may read every user's assistant activity (scope `all`).

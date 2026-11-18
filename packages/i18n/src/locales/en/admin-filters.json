@@ -178,6 +178,57 @@
             "label": "Event date"
         }
     },
+    "mcpActivity": {
+        "userId": {
+            "label": "User",
+            "placeholder": "User UUID",
+            "invalidHint": "Paste the full UUID"
+        },
+        "tool": {
+            "label": "Tool",
+            "options": {
+                "list_my_listings": "list_my_listings",
+                "get_owner_summary": "get_owner_summary",
+                "get_listing": "get_listing",
+                "update_listing_basic": "update_listing_basic",
+                "get_listing_amenities": "get_listing_amenities",
+                "update_listing_amenities": "update_listing_amenities",
+                "set_listing_publication": "set_listing_publication",
+                "list_amenities_and_features": "list_amenities_and_features",
+                "get_listing_stats": "get_listing_stats",
+                "get_listing_creation_guide": "get_listing_creation_guide",
+                "create_listing": "create_listing",
+                "list_reviews": "list_reviews",
+                "get_help": "get_help",
+                "list_inquiries": "list_inquiries",
+                "get_inquiry": "get_inquiry",
+                "reply_inquiry": "reply_inquiry",
+                "search_providers": "search_providers",
+                "list_benefit_usages": "list_benefit_usages",
+                "confirm_benefit_usage": "confirm_benefit_usage",
+                "reject_benefit_usage": "reject_benefit_usage",
+                "undo_benefit_rejection": "undo_benefit_rejection"
+            }
+        },
+        "outcome": {
+            "label": "Result",
+            "success": "Done",
+            "denied": "Denied",
+            "error": "Error"
+        },
+        "access": {
+            "label": "Type",
+            "read": "Read",
+            "write": "Write"
+        },
+        "clientId": {
+            "label": "Assistant",
+            "placeholder": "Assistant client_id"
+        },
+        "loggedAt": {
+            "label": "Call date (UTC)"
+        }
+    },
     "endDate": {
         "label": "End date"
     },
