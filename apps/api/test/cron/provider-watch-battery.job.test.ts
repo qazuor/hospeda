@@ -116,12 +116,30 @@ describe('provider watch battery cron', () => {
 
     it('still succeeds and pings when the run found changes, and records them', async () => {
         const changed = { ...readEntry, expected: { found: false } };
-        const { deps: d, recorded, pingWatchdog } = deps({ catalog: [changed] });
+        const {
+            deps: d,
+            recorded,
+            pingWatchdog
+        } = deps({
+            catalog: [changed],
+            readBaseline: async () => ({ RP7: {} })
+        });
         const result = await createProviderWatchBatteryJob(d).handler(context());
         expect(result.success).toBe(true);
         expect(result.details).toMatchObject({ alerts: 1 });
         expect(recorded[0]?.alerts).toHaveLength(1);
         expect(pingWatchdog).toHaveBeenCalledTimes(1);
+    });
+
+    it('alerts on every run while nothing was accepted, and still completes and pings', async () => {
+        const { deps: d, recorded, pingWatchdog } = deps();
+        const job = createProviderWatchBatteryJob(d);
+        for (let run = 1; run <= 2; run += 1) {
+            const result = await job.handler(context());
+            expect(result).toMatchObject({ success: true, details: { alerts: 1 } });
+            expect(recorded[run - 1]?.alerts[0]?.kind).toBe('shape_baseline_missing');
+        }
+        expect(pingWatchdog).toHaveBeenCalledTimes(2);
     });
 
     it('does not ping when a guard aborts the run', async () => {
