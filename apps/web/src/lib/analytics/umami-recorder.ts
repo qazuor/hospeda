@@ -32,6 +32,12 @@
  * D-2): recording stops at the next page load, where condition 3 or 4 fails.
  * Umami's recorder exposes no in-page stop that this loader relies on.
  *
+ * Navigation race: a router navigation that starts while the async checks are
+ * in flight cancels them (generation counter plus a pending flag recorded on
+ * every `astro:before-preparation`), so the recorder can never be injected
+ * as the visitor lands on an excluded route. A navigation another handler
+ * cancels leaves the flag set, which fails closed for that document.
+ *
  * The router may drop the injected element from `<head>` on a swap; the
  * already-running recorder is unaffected, and the module flag keeps it single.
  */
@@ -96,6 +102,19 @@ let started = false;
 let loaded = false;
 let evaluating = false;
 let consentListenerAttached = false;
+/**
+ * Navigation race guard (security review). A router navigation that starts
+ * while an evaluation is in flight cancels that evaluation: the async checks
+ * ran against the page being left, so their answer is stale. The pending
+ * destination is recorded on EVERY `astro:before-preparation`, loaded or not.
+ * Each navigation bumps the generation; an evaluation injects only if the
+ * generation it started under is still current and no navigation is pending.
+ */
+let navigationPending = false;
+let pendingDestination: URL | null = null;
+let navigationGeneration = 0;
+/** A page load arrived while an evaluation was in flight: re-run once it ends. */
+let reevaluateRequested = false;
 let options: Required<StartUmamiRecorderInput> | null = null;
 
 function findTrackerTarget(): TrackerTarget | null {
@@ -181,7 +200,12 @@ function inject(target: TrackerTarget): void {
 
 /** Evaluates conditions 1 to 6 for the current document. */
 function evaluate(): void {
-    if (loaded || evaluating) return;
+    if (loaded) return;
+    if (evaluating) {
+        reevaluateRequested = true;
+        return;
+    }
+    if (navigationPending) return;
     if (document.getElementById(RECORDER_SCRIPT_ID)) {
         loaded = true;
         return;
@@ -194,15 +218,30 @@ function evaluate(): void {
         return;
     }
     evaluating = true;
+    reevaluateRequested = false;
+    const generation = navigationGeneration;
     void (async () => {
         try {
             if (!(await isSwitchOn())) return;
             if (!(await waitForTrackerAndIdentity())) return;
-            // The visitor may have navigated or revoked meanwhile: re-check.
-            if (!started || currentPathExcluded() || !consentGranted()) return;
+            // Any navigation that started meanwhile cancels this evaluation; the
+            // next `astro:page-load` evaluates the new page from scratch.
+            if (!started || navigationPending || generation !== navigationGeneration) return;
+            if (
+                pendingDestination &&
+                isRecordingExcludedPath({ pathname: pendingDestination.pathname })
+            ) {
+                return;
+            }
+            // The visitor may have revoked meanwhile, or the URL changed: re-check.
+            if (currentPathExcluded() || !consentGranted()) return;
             inject(target);
         } finally {
             evaluating = false;
+            if (reevaluateRequested && started && !loaded && !navigationPending) {
+                reevaluateRequested = false;
+                evaluate();
+            }
         }
     })();
 }
@@ -219,14 +258,33 @@ function attachConsentListener(): void {
     window.addEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
 }
 
-/** Turns a soft navigation into an excluded route into a full page load. */
+/**
+ * Records every pending navigation (the race guard) and, once the recorder is
+ * loaded, turns a soft navigation into an excluded route into a full page load.
+ */
 function onBeforePreparation(event: Event): void {
-    if (!loaded || !options) return;
     const to: unknown = Reflect.get(event, 'to');
+    navigationPending = true;
+    navigationGeneration += 1;
+    pendingDestination = to instanceof URL ? to : null;
+    if (!loaded || !options) return;
     if (!(to instanceof URL)) return;
     if (!isRecordingExcludedPath({ pathname: to.pathname })) return;
     event.preventDefault();
     options.navigate(to.href);
+}
+
+/** The swap happened: the new document's URL is current, nothing is pending. */
+function onAfterSwap(): void {
+    navigationPending = false;
+    pendingDestination = null;
+}
+
+/** A page finished loading (initial or after a swap): evaluate it. */
+function onPageLoad(): void {
+    navigationPending = false;
+    pendingDestination = null;
+    evaluate();
 }
 
 /**
@@ -247,19 +305,25 @@ export function startUmamiRecorder(input: StartUmamiRecorderInput = {}): StartUm
     };
 
     const stop = (): void => {
-        document.removeEventListener('astro:page-load', evaluate);
+        document.removeEventListener('astro:page-load', onPageLoad);
+        document.removeEventListener('astro:after-swap', onAfterSwap);
         document.removeEventListener('astro:before-preparation', onBeforePreparation);
         window.removeEventListener(CONSENT_CHANGED_EVENT, onConsentChanged);
         started = false;
         loaded = false;
         evaluating = false;
         consentListenerAttached = false;
+        navigationPending = false;
+        pendingDestination = null;
+        navigationGeneration = 0;
+        reevaluateRequested = false;
         options = null;
     };
 
     document.addEventListener('astro:before-preparation', onBeforePreparation);
+    document.addEventListener('astro:after-swap', onAfterSwap);
     if (document.querySelector(CLIENT_ROUTER_META_SELECTOR)) {
-        document.addEventListener('astro:page-load', evaluate);
+        document.addEventListener('astro:page-load', onPageLoad);
     } else {
         evaluate();
     }

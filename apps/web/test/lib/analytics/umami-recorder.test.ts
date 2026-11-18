@@ -467,3 +467,76 @@ describe('umami-recorder after it loaded (HOS-2347)', () => {
         expect(recorderScripts()).toHaveLength(0);
     });
 });
+
+describe('umami-recorder navigation race (HOS-2347 security review)', () => {
+    /** A switch fetch whose answer the test releases by hand. */
+    function deferredSwitch(): { fetchImpl: typeof fetch; release: (enabled: boolean) => void } {
+        let resolve: ((response: Response) => void) | undefined;
+        const fetchImpl = (() =>
+            new Promise<Response>((r) => {
+                resolve = r;
+            })) as unknown as typeof fetch;
+        return { fetchImpl, release: (enabled) => resolve?.(switchResponse(enabled)) };
+    }
+
+    function prepareNavigation(href: string): Event {
+        const event = new Event('astro:before-preparation', { cancelable: true });
+        Reflect.set(event, 'to', new URL(href, window.location.origin));
+        document.dispatchEvent(event);
+        return event;
+    }
+
+    function completeSwap(pathname: string): void {
+        setPath(pathname);
+        document.dispatchEvent(new Event('astro:after-swap'));
+        pageLoad();
+    }
+
+    it('never injects when a navigation into an excluded route starts during evaluation', async () => {
+        // Arrange
+        consent(true);
+        const { fetchImpl, release } = deferredSwitch();
+        start(fetchImpl);
+        pageLoad();
+        await flush();
+
+        // Act: the visitor clicks into /auth while the switch request is in flight.
+        prepareNavigation('/es/auth/signin/');
+        release(true);
+        await flush();
+
+        // Assert: nothing before the swap, and nothing after landing on /auth.
+        expect(recorderScripts()).toHaveLength(0);
+        completeSwap('/es/auth/signin/');
+        await flush();
+        expect(recorderScripts()).toHaveLength(0);
+    });
+
+    it('treats any navigation started during evaluation as a cancel, then records after page-load on an allowed page', async () => {
+        // Arrange
+        consent(true);
+        const { fetchImpl, release } = deferredSwitch();
+        const second = vi.fn(async () => switchResponse(true));
+        let calls = 0;
+        const routed = ((...args: Parameters<typeof fetch>) => {
+            calls += 1;
+            return calls === 1 ? fetchImpl(...args) : second(...args);
+        }) as typeof fetch;
+        start(routed);
+        pageLoad();
+        await flush();
+
+        // Act: a soft nav to an allowed page starts mid-evaluation.
+        prepareNavigation('/es/destinos/');
+        release(true);
+        await flush();
+
+        // Assert: cancelled while the navigation is pending...
+        expect(recorderScripts()).toHaveLength(0);
+
+        // ...and injected once the new page has loaded.
+        completeSwap('/es/destinos/');
+        await flush();
+        expect(recorderScripts()).toHaveLength(1);
+    });
+});
