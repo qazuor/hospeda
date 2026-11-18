@@ -152,6 +152,114 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4447
+    {
+        id: '2026-11-17-venue-location-exception-request-from-editor',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Pedí una excepción de dirección desde el editor de tu local',
+            en: 'Request an address exception from your venue editor',
+            pt: 'Peça uma exceção de endereço no editor do seu local'
+        },
+        body: {
+            es: 'Si la dirección que cargás ya la usa otra ficha tuya publicada, el editor te muestra el botón «Pedir una excepción». Escribís el motivo, enviás el pedido y ves que quedó en revisión. Antes el botón de enviar no hacía nada.',
+            en: 'If the address you enter is already used by another published listing of yours, the editor shows a "Request an exception" button. Write your reason, send the request and see it is under review. Before, the send button did nothing.',
+            pt: 'Se o endereço que você informa já é usado por outra ficha sua publicada, o editor mostra o botão «Pedir uma exceção». Escreva o motivo, envie o pedido e veja que ele ficou em análise. Antes, o botão de enviar não fazia nada.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4449
+    {
+        id: '2026-11-17-venue-address-errors-translated-field-names',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Los errores de la dirección del local ahora se entienden',
+            en: 'Venue address errors now read clearly',
+            pt: 'Os erros do endereço do local agora são claros'
+        },
+        body: {
+            es: 'Si te equivocás al cargar la dirección, por ejemplo con una calle de una sola letra, el campo marcado dice qué corregir con el nombre del campo traducido, como «La calle debe tener al menos 2 caracteres». Antes aparecía el nombre interno del campo.',
+            en: 'If you make a mistake entering the address, such as a one-letter street, the marked field now tells you what to fix with a translated field name, like "The street must be at least 2 characters". Before, it showed the internal field name.',
+            pt: 'Se você errar ao informar o endereço, por exemplo com uma rua de uma só letra, o campo marcado diz o que corrigir com o nome do campo traduzido, como «A rua deve ter pelo menos 2 caracteres». Antes aparecia o nome interno do campo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4446
+    {
+        id: '2026-11-17-removed-venue-address-leaves-duplicates-list',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Al quitar la dirección de un local, sale de la lista de direcciones repetidas',
+            en: 'Removing a venue address takes it off the repeated-address list',
+            pt: 'Ao remover o endereço de um local, ele sai da lista de endereços repetidos'
+        },
+        body: {
+            es: 'Cuando vaciás la dirección de un local desde el panel, la ficha deja de figurar en el listado de direcciones repetidas y libera esa dirección. Antes seguía apareciendo aunque ya no tuviera dirección.',
+            en: 'When you clear a venue address from the panel, the listing no longer appears in the repeated-address list and frees that address. Before, it kept showing up even with no address.',
+            pt: 'Quando você limpa o endereço de um local pelo painel, a ficha deixa de aparecer na lista de endereços repetidos e libera esse endereço. Antes continuava aparecendo mesmo sem endereço.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4450
+    {
+        id: '2026-11-17-admin-ai-conversations-list-shows-content',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'El listado de conversaciones del chat IA muestra mensajes y primera pregunta',
+            en: 'The AI chat conversations list shows message count and first question',
+            pt: 'A lista de conversas do chat com IA mostra mensagens e primeira pergunta'
+        },
+        body: {
+            es: 'En Conversaciones del chat IA, cada fila trae la cantidad real de mensajes y la primera pregunta con los datos personales ya ocultos. Además, el rubro se llama «Comer y salir» en lugar de «Espacio». Antes los mensajes figuraban en 0 y la pregunta salía vacía.',
+            en: 'In AI chat conversations, each row now shows the real message count and the first question with personal data already hidden. The vertical is also called "Eat and go out" instead of "Space". Before, messages showed 0 and the question was empty.',
+            pt: 'Em Conversas do chat com IA, cada linha traz a quantidade real de mensagens e a primeira pergunta com os dados pessoais já ocultos. Além disso, o segmento se chama «Comer e sair» em vez de «Espaço». Antes as mensagens apareciam como 0 e a pergunta saía vazia.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4455
+    {
+        id: '2026-11-17-ai-questions-hidden-contact-data-readable',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Los datos de contacto ocultos en las preguntas a la IA se leen bien',
+            en: 'Hidden contact data in AI questions now reads clearly',
+            pt: 'Os dados de contato ocultos nas perguntas à IA agora são legíveis'
+        },
+        body: {
+            es: 'En el panel «Preguntas a la IA» y en el mail semanal, el mail y el teléfono que dejó un visitante aparecen como «[email oculto]» y «[teléfono oculto]», en tu idioma. Antes se veían marcadores técnicos como «[REDACTED_EMAIL]».',
+            en: 'In the "AI questions" panel and the weekly email, the email and phone a visitor left now appear as "[email hidden]" and "[phone hidden]", in your language. Before, you saw technical markers like "[REDACTED_EMAIL]".',
+            pt: 'No painel «Perguntas à IA» e no e-mail semanal, o e-mail e o telefone que um visitante deixou aparecem como «[e-mail oculto]» e «[telefone oculto]», no seu idioma. Antes você via marcadores técnicos como «[REDACTED_EMAIL]».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4448
+    {
+        id: '2026-11-17-addon-purchase-rejected-clear-message-retry',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Si Mercado Pago rechaza un complemento, el mensaje es claro y podés reintentar',
+            en: 'If Mercado Pago rejects an add-on, the message is clear and you can retry',
+            pt: 'Se o Mercado Pago recusar um complemento, a mensagem é clara e você pode tentar de novo'
+        },
+        body: {
+            es: 'Cuando Mercado Pago no acepta los datos de la compra de un complemento, ves el mensaje en tu idioma con lo que tenés que corregir, y podés volver a intentar enseguida. Antes el mensaje salía en inglés y el pedido podía quedar trabado.',
+            en: 'When Mercado Pago does not accept the details of an add-on purchase, you see the message in your language saying what to fix, and you can try again right away. Before, the message was in English and the order could get stuck.',
+            pt: 'Quando o Mercado Pago não aceita os dados da compra de um complemento, você vê a mensagem no seu idioma dizendo o que corrigir e pode tentar de novo imediatamente. Antes a mensagem saía em inglês e o pedido podia ficar travado.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4457
     {
         id: '2026-11-17-ai-search-keeps-every-filter',

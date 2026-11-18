@@ -269,9 +269,20 @@ export async function handleMcpToolCall<TSchema extends z.ZodObject, TData>({
         if (definition.isWrite) {
             // The audit readers are typed on VALIDATED input; on a malformed
             // call there is none, so the record carries no target or length.
-            const target: ToolTarget | undefined = parsed.ok
-                ? readAuditField(() => definition.auditTarget?.({ input: parsed.input }))
-                : undefined;
+            const resultTarget: ToolTarget | undefined =
+                parsed.ok && outcome.ok
+                    ? readAuditField(() =>
+                          definition.auditResultTarget?.({
+                              input: parsed.input,
+                              data: outcome.data
+                          })
+                      )
+                    : undefined;
+            const target: ToolTarget | undefined =
+                resultTarget ??
+                (parsed.ok
+                    ? readAuditField(() => definition.auditTarget?.({ input: parsed.input }))
+                    : undefined);
             const contentLength = parsed.ok
                 ? readAuditField(() => definition.auditContentLength?.({ input: parsed.input }))
                 : undefined;

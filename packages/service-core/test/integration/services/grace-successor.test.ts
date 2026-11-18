@@ -31,7 +31,11 @@ type Fixture = Awaited<ReturnType<typeof successorGraceFixture>>;
 async function seed(options: Parameters<typeof successorGraceFixture>[0] = {}): Promise<Fixture> {
     const fixture = await successorGraceFixture(options);
     seeded.push({
-        subscriptionIds: [fixture.predecessorId, fixture.successorId],
+        subscriptionIds: [
+            fixture.predecessorId,
+            fixture.successorId,
+            ...(fixture.middleId ? [fixture.middleId] : [])
+        ],
         userId: fixture.user.id
     });
     return fixture;
@@ -177,6 +181,34 @@ describe('TEST:B7:2 — the successor of a paying predecessor enters grace (AC:B
                     subscriptionId: fixture.predecessorId
                 })
             ).toBe(false);
+            await expectDeclined(fixture);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'HOS-2224 d2 — two closed hops in credit from a paying root: grace opens by S4',
+        async () => {
+            const fixture = await seed({ succession: 'CLOSED', middleHop: true });
+            const { middleId } = fixture;
+            if (middleId === null) throw new Error('Middle hop missing');
+            // The direct predecessor never charged; only the root of the chain did.
+            expect(
+                await creditedPaymentsFromLedger.hasCreditedPayment({ subscriptionId: middleId })
+            ).toBe(false);
+            expect((await row(middleId)).succeededById).toBe(fixture.successorId);
+            expect((await row(fixture.predecessorId)).succeededById).toBe(middleId);
+            await expectGraceStarted(fixture, 7);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'HOS-2224 d3 — two hops and no row of the chain ever charged: the successor dies by S16',
+        async () => {
+            const fixture = await seed({
+                succession: 'CLOSED',
+                middleHop: true,
+                predecessorPaid: false
+            });
             await expectDeclined(fixture);
         }
     );

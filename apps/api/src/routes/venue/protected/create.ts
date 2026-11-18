@@ -47,9 +47,10 @@ import {
     VenueProtectedSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { ServiceError, VenueService } from '@repo/service-core';
+import { type Actor, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 
+import type { ListingAccessWithSections } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -57,13 +58,24 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Handler for the venue owner-create endpoint. Exported standalone so it
- * is unit-testable against a mocked `Context` + spied service without booting
- * the full Hono app.
+ * Creates a venue listing for its owner exactly as this route does: the
+ * server-forced `ownerId`, the re-parse through the full admin create schema,
+ * then `VenueService.createForOwner` (role grant + insert in one transaction).
+ * Shared by this route and the owner assistant's `create_listing` tool
+ * (HOS-2329, spec HOS-2335 C-6), which runs the route's listing-access step
+ * itself before calling it.
+ *
+ * @param input - The actor and the validated owner-create body
+ * @returns The created venue
+ * @throws {ServiceError} VALIDATION_ERROR on a body the admin schema refuses,
+ *   or the service's error
  */
-export async function handleCreateVenueListing(ctx: Context, body: Record<string, unknown>) {
-    const actor = getActorFromContext(ctx);
-    const data = body as VenueOwnerCreateInput;
+export async function createVenueListingForOwner(input: {
+    readonly actor: Actor;
+    readonly body: Record<string, unknown>;
+}) {
+    const { actor } = input;
+    const data = input.body as VenueOwnerCreateInput;
 
     // Re-parse through the FULL admin create schema so every other
     // .default() field (isFeatured, reviewsCount,
@@ -111,6 +123,74 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
 }
 
 /**
+ * Handler for the venue owner-create endpoint. Exported standalone so it
+ * is unit-testable against a mocked `Context` + spied service without booting
+ * the full Hono app.
+ */
+export async function handleCreateVenueListing(ctx: Context, body: Record<string, unknown>) {
+    return createVenueListingForOwner({ actor: getActorFromContext(ctx), body });
+}
+
+/**
+ * The business lines a venue owner-create body asks for (the listing-access
+ * step's `businessLinesFromBody`): the body's own `businessLines`, otherwise the
+ * preselection of its `type`. Shared with `create_listing` (HOS-2329) so the
+ * tool's CREATE step sees the same lines as this route's.
+ *
+ * @param args - The validated body
+ * @returns The requested business lines
+ */
+export function venueCreateBusinessLines({
+    body
+}: {
+    readonly body: Record<string, unknown> | undefined;
+}): readonly BusinessLine[] {
+    if (Array.isArray(body?.businessLines))
+        return body.businessLines.filter(
+            (line): line is string => typeof line === 'string'
+        ) as BusinessLine[];
+    const type = body?.type as keyof typeof BUSINESS_LINE_RULES.venue.typeRules | undefined;
+    return type ? (BUSINESS_LINE_RULES.venue.typeRules[type]?.preselect ?? []) : [];
+}
+
+/**
+ * The sections a venue owner-create body writes (the listing-access step's
+ * `listingSection`). Shared with `create_listing` (HOS-2329).
+ *
+ * @param args - The validated body
+ * @returns One `write` declaration per touched section
+ */
+export function venueCreateSections({
+    body
+}: {
+    readonly body: Record<string, unknown> | undefined;
+}): { readonly id: string; readonly intent: 'write' }[] {
+    return sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
+        id,
+        intent: 'write' as const
+    }));
+}
+
+/**
+ * This route's listing-access step, as a route-config fragment. The
+ * `listingAccess` literal lives here (the G2 / G-R3-C scanners read it) and the
+ * route spreads it, so the route and `create_listing` (HOS-2329) run the SAME
+ * declaration object: {@link VENUE_OWNER_CREATE_LISTING_ACCESS}.
+ */
+export const VENUE_OWNER_CREATE_ROUTE_ACCESS = {
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'CREATE',
+        businessLinesFromBody: venueCreateBusinessLines,
+        listingSection: venueCreateSections
+    }
+} as const satisfies { readonly listingAccess: ListingAccessWithSections };
+
+/** The venue owner-create listing-access declaration, shared with `create_listing`. */
+export const VENUE_OWNER_CREATE_LISTING_ACCESS: ListingAccessWithSections =
+    VENUE_OWNER_CREATE_ROUTE_ACCESS.listingAccess;
+
+/**
  * POST /api/v1/protected/venues/
  *
  * Creates a venue listing owned by the caller. Starts as a
@@ -119,23 +199,7 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
 export const protectedCreateVenueListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
-    listingAccess: {
-        vertical: VerticalEnum.VENUE,
-        operation: 'CREATE',
-        businessLinesFromBody: ({ body }) => {
-            if (Array.isArray(body?.businessLines))
-                return body.businessLines.filter(
-                    (line): line is string => typeof line === 'string'
-                ) as BusinessLine[];
-            const type = body?.type as keyof typeof BUSINESS_LINE_RULES.venue.typeRules | undefined;
-            return type ? (BUSINESS_LINE_RULES.venue.typeRules[type]?.preselect ?? []) : [];
-        },
-        listingSection: ({ body }) =>
-            sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
-                id,
-                intent: 'write' as const
-            }))
-    },
+    ...VENUE_OWNER_CREATE_ROUTE_ACCESS,
     summary: 'Create a venue listing (owner self-service)',
     description:
         'Creates a venue listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no venue permission.',

@@ -483,12 +483,29 @@ const NO_RESOURCE_INPUT_TOOLS: Readonly<Record<string, string>> = {
     list_my_listings: 'lists what the token subject owns; takes no input',
     list_amenities_and_features: 'reads the public catalog; the vertical is its only input',
     get_help:
-        "answers from the static help catalog; its topicId names a catalog entry, and the editor links it builds come only from the caller's own listings"
+        "answers from the static help catalog; its topicId names a catalog entry, and the editor links it builds come only from the caller's own listings",
+    get_listing_creation_guide:
+        "reads the public catalog and the caller's own drafts; the vertical is its only input",
+    create_listing:
+        'creates a new listing owned by the caller; its only id is destinationId, a public catalog entry (HOS-2329)'
 };
 
+/**
+ * Write tools that take no resource id, so there is nothing to sweep across
+ * users: each one must also be in {@link NO_RESOURCE_INPUT_TOOLS}. The audit row
+ * of `create_listing` is covered by its own tests (`create-listing.audit.test.ts`).
+ */
+const ID_FREE_WRITE_TOOLS: ReadonlySet<string> = new Set(['create_listing']);
+
 const ID_LIKE_KEY = /^(id|.*Id|.*Ids)$/;
-// `topicId` is an entry of the static help catalog (`get_help`), not a resource anyone owns.
-const CATALOG_ID_KEYS: ReadonlySet<string> = new Set(['amenityIds', 'featureIds', 'topicId']);
+// `topicId` is an entry of the static help catalog (`get_help`), not a resource anyone owns;
+// `destinationId` is a public destination a new listing belongs to (`create_listing`).
+const CATALOG_ID_KEYS: ReadonlySet<string> = new Set([
+    'amenityIds',
+    'featureIds',
+    'topicId',
+    'destinationId'
+]);
 
 /** Input keys of a tool that look like a reference to a resource. */
 function idLikeKeys(tool: (typeof MCP_TOOL_DEFINITIONS)[number]): string[] {
@@ -580,6 +597,10 @@ describe('the registry is swept', () => {
         // Act / Assert
         expect(writeTools.length).toBeGreaterThan(0);
         for (const name of writeTools) {
+            if (ID_FREE_WRITE_TOOLS.has(name)) {
+                expect(name in NO_RESOURCE_INPUT_TOOLS).toBe(true);
+                continue;
+            }
             expect(ID_TOOL_CASES.some((c) => c.tool === name)).toBe(true);
         }
     });
