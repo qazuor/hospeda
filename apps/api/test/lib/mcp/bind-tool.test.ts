@@ -385,6 +385,40 @@ describe('handleMcpToolCall', () => {
             expect.not.objectContaining({ target: expect.anything() })
         );
     });
+
+    it('targets what a successful call created, and falls back to auditTarget on failure (HOS-2329)', async () => {
+        // Arrange
+        const { ctx } = ctxFor();
+        const CREATED_ID = '0b1c2d3e-4f50-4617-8a9b-0c1d2e3f4a5b';
+        let fail = false;
+        const definition = defineTool({
+            name: 'probe_create',
+            title: 'Probe create',
+            description: 'Probe',
+            inputSchema,
+            isWrite: true,
+            auditTarget: ({ input: parsed }) => ({ type: 'accommodation', id: parsed.listingId }),
+            auditResultTarget: ({ data }: { data: { createdId: string } }) => ({
+                type: 'accommodation',
+                id: data.createdId
+            }),
+            handler: async () =>
+                fail
+                    ? { error: { code: ServiceErrorCode.VALIDATION_ERROR, message: 'bad' } }
+                    : { data: { createdId: CREATED_ID } }
+        });
+
+        // Act
+        await handleMcpToolCall({ definition, input, ctx });
+        fail = true;
+        await handleMcpToolCall({ definition, input, ctx });
+
+        // Assert
+        expect(mockRecord.mock.calls.map(([call]) => call.target)).toEqual([
+            { type: 'accommodation', id: CREATED_ID },
+            { type: 'accommodation', id: LISTING_ID }
+        ]);
+    });
 });
 
 describe('buildToolReauthChallenge', () => {
