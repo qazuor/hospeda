@@ -13,7 +13,23 @@ const fetchApi = vi.hoisted(() => vi.fn<(input: FetchApiInput) => Promise<FetchA
 const permissions = vi.hoisted(() => vi.fn<() => PermissionEnum[]>(() => []));
 vi.mock('@/lib/api/client', () => ({ fetchApi }));
 vi.mock('@/hooks/use-user-permissions', () => ({ useUserPermissions: permissions }));
-vi.mock('@/hooks/use-translations', () => ({ useTranslations: () => ({ locale: 'es' }) }));
+// `tPlural` resolves `<key>_one` / `<key>_other` from the real es copy, like `pluralize()`.
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({
+        locale: 'es',
+        tPlural: (key: string, count: number) => {
+            const path = key.replace('admin-pages.', '').split('.');
+            const parent = path
+                .slice(0, -1)
+                .reduce<Record<string, unknown>>(
+                    (node, part) => node[part] as Record<string, unknown>,
+                    es as unknown as Record<string, unknown>
+                );
+            const text = parent[`${path.at(-1)}${count === 1 ? '_one' : '_other'}`] as string;
+            return text.replace('{{count}}', String(count));
+        }
+    })
+}));
 
 const copy = es.systemSettings.critical.sessionRecording;
 const PATH = '/api/v1/admin/platform-settings/analytics.sessionRecording';
@@ -331,6 +347,40 @@ describe('SessionRecordingCard (HOS-2347)', () => {
 
             expect(await screen.findByTestId('session-recording-purge-error')).toHaveTextContent(
                 copy.purgeNotConfigured
+            );
+        });
+
+        it('uses the singular for a count of one', async () => {
+            fetchApi.mockImplementation(async ({ path }) =>
+                path === PURGE_PATH
+                    ? {
+                          data: {
+                              data: {
+                                  replaysDeleted: 1,
+                                  heatmapEventsDeleted: 1,
+                                  savedReplaysDeleted: 1,
+                                  retentionDays: 30,
+                                  stoppedEarly: false
+                              }
+                          }
+                      }
+                    : { data: { data: row(true) } }
+            );
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            await user.click(button);
+            const confirm = within(screen.getByTestId('session-recording-purge-confirm')).getByRole(
+                'button',
+                { name: copy.purgeConfirmAction }
+            );
+            await waitFor(() => expect(confirm).toBeEnabled());
+            await user.click(confirm);
+
+            expect(await screen.findByTestId('session-recording-purge-result')).toHaveTextContent(
+                'Se borró: 1 grabación, 1 evento de mapa de calor y 1 grabación guardada.'
             );
         });
 

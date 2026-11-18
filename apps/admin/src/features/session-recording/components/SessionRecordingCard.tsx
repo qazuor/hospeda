@@ -38,6 +38,9 @@ const COPY_BY_LOCALE = { es, en, pt } as const;
 
 type CopyKey = keyof typeof es.systemSettings.critical.sessionRecording;
 
+/** Namespaced prefix of this card's keys, for the pluralized ones read through `tPlural`. */
+const PLURAL_PREFIX = 'admin-pages.systemSettings.critical.sessionRecording';
+
 /**
  * Master switch for the Umami session recorder on the web (HOS-2347 §6.9).
  *
@@ -78,7 +81,7 @@ function purgeErrorCopyKey(error: unknown): CopyKey {
 }
 
 function SessionRecordingCardBody() {
-    const { locale } = useTranslations();
+    const { locale, tPlural } = useTranslations();
     const query = usePlatformSetting({ key: 'analytics.sessionRecording' });
     const mutation = useUpdatePlatformSetting({ key: 'analytics.sessionRecording' });
     const purge = usePurgeSessionRecordings();
@@ -91,6 +94,15 @@ function SessionRecordingCardBody() {
     const row = query.data?.row ?? null;
     const enabled = row?.value.enabled === true;
     const retentionDays = row?.value.retentionDays ?? DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+    const plural = (
+        key:
+            | 'retentionOption'
+            | 'purgeConfirm'
+            | 'purgeDoneReplays'
+            | 'purgeDoneHeatmaps'
+            | 'purgeDoneSaved',
+        count: number
+    ): string => tPlural(`${PLURAL_PREFIX}.${key}`, count);
     const fill = (text: string, values: Record<string, string | number>): string =>
         Object.entries(values).reduce(
             (acc, [name, value]) => acc.replace(`{{${name}}}`, String(value)),
@@ -205,7 +217,7 @@ function SessionRecordingCardBody() {
                                     key={days}
                                     value={String(days)}
                                 >
-                                    {fill(translate('retentionOption'), { days })}
+                                    {plural('retentionOption', days)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -239,10 +251,13 @@ function SessionRecordingCardBody() {
                             data-testid="session-recording-purge-result"
                         >
                             {fill(translate('purgeDone'), {
-                                replays: purge.data.replaysDeleted,
-                                heatmaps: purge.data.heatmapEventsDeleted,
-                                saved: purge.data.savedReplaysDeleted,
-                                days: purge.data.retentionDays
+                                replays: plural('purgeDoneReplays', purge.data.replaysDeleted),
+                                heatmaps: plural(
+                                    'purgeDoneHeatmaps',
+                                    purge.data.heatmapEventsDeleted
+                                ),
+                                saved: plural('purgeDoneSaved', purge.data.savedReplaysDeleted),
+                                period: plural('retentionOption', purge.data.retentionDays)
                             })}
                             {purge.data.stoppedEarly && (
                                 <span
@@ -272,7 +287,7 @@ function SessionRecordingCardBody() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>{translate('purgeButton')}</AlertDialogTitle>
                             <AlertDialogDescription>
-                                {fill(translate('purgeConfirm'), { days: retentionDays })}
+                                {plural('purgeConfirm', retentionDays)}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
