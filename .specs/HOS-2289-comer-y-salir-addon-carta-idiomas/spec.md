@@ -122,7 +122,8 @@ idiomas rige en todas las fichas del dueño en el vertical, igual que en premium
 
 ### 6.2 Elegibilidad (HOS-2292)
 
-- Capacidad base: `manage_venue_menu` en el set efectivo (excluye básico).
+- **Regla general (decidida por el owner, 18/11/2026, HOS-2252 ronda 1, #3):** el complemento se ofrece cuando el plan ya tiene la capacidad base, nunca por el nombre del plan.
+- Capacidad base: `manage_venue_menu` en el set efectivo. **El plan Básico no la tiene, así que no se le ofrece la carta en idiomas** (decidido el 18/11/2026, #3).
 - Ya otorgada: `multilingual_venue_menu` ya en el set (excluye premium).
 - Rubro: la clave `multilingual_venue_menu` es trait de la sección `menu`, poseída por
   `food`, así que el dueño debe tener al menos una ficha de venue con rubro gastronomía.
@@ -212,7 +213,7 @@ de HOS-2292.
 
 ## 12. Preguntas abiertas y decisiones
 
-Decidido (owner, 16/11/2026):
+Decidido (owner, 16/11/2026; precio confirmado como provisorio el 18/11/2026, ronda 1, #6):
 
 1. **Precio y ciclo.** Mensual periódico, $9.000/mes provisorio, a revisar con el owner
    antes de producción. Hay que comprobar que pro + este add-on no deje a premium como
@@ -222,6 +223,7 @@ Abiertas (menores):
 
 2. **¿Se ofrece también a básico con carta?** Básico no tiene `manage_venue_menu`, así que
    la clave sola no le sirve. Recomendación: no (regla de capacidad base de HOS-2292).
+   **Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #3): no.** La regla es la capacidad base, no el nombre del plan; el Básico no tiene `manage_venue_menu`.
 3. **Caché pública.** Si la carta traducida tarda más de lo aceptable en aparecer tras
    comprar: opciones (a) aceptar la vida de la caché; (b) invalidación al cambiar la
    cobertura de un dueño de venue. Recomendación: medir en staging y decidir con el dato.

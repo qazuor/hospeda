@@ -54,7 +54,7 @@ Fuera:
   (16/11/2026): se aplica **al local** (alcance `listing`, no hay alcance nuevo «evento») y
   guarda el `event_id` en la compra; no se ofrece a Premium (HOS-2288, elegibilidad en
   HOS-2292).
-- Experiencias (su plan premium no entra acá; ver pregunta 3).
+- Experiencias: el destacado y la prioridad para **experiencias Premium** van **en un issue aparte, HOS-2180** (decidido el 18/11/2026, HOS-2252 ronda 2, #47 ✱); no entran acá (ver pregunta 3).
 - Reordenar el listado con otra regla que no sea «destacados primero» (ya existe).
 - Habilitar la compra web del add-on de visibilidad (HOS-2094).
 
@@ -129,7 +129,7 @@ cuando corre el reconciliador diario (05:00) o la sincronización de su próximo
 
 ### 5.3 Marca «Destacado» en el evento
 
-El evento no tiene identidad de destacado propia en este issue: **hereda del local**.
+El evento no tiene identidad de destacado propia en este issue: **hereda del local siempre**, también cuando el destacado del local viene de un complemento de visibilidad (decidido el 18/11/2026, #46).
 
 - API: en `getBySlug.ts:122-142` cada evento sale con `isFeatured`. Fuente única: la proyección
   pública. El valor es `resolvePublicIsFeatured(venue)` (la misma regla que la ficha). El
@@ -228,8 +228,8 @@ El evento no tiene identidad de destacado propia en este issue: **hereda del loc
      Contra: hace falta distinguir el origen (plan vs add-on) en la API, más código.
    - **Recomiendo A.** Simple, coherente con «destacado = destacado», y el add-on de evento
      sigue sirviendo a los planes que no tienen la marca (decisión del owner del
-     16/11/2026: no se ofrece a Premium, que ya destaca todos sus eventos). Sigue abierta
-     esta pregunta menor: la herencia desde un boost de visibilidad por add-on.
+     16/11/2026: no se ofrece a Premium, que ya destaca todos sus eventos).
+   - **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #46): opción A.** Los eventos heredan el destacado del local siempre, también cuando viene de un complemento de visibilidad.
 2. **¿Cómo llega «inmediato» a los premium existentes?** Opciones A/B/C de §5.2.
    **Recomiendo C.**
 3. **¿Experiencia Premium también recibe `featured_listing`?** La issue habla solo de Comer y
@@ -238,6 +238,7 @@ El evento no tiene identidad de destacado propia en este issue: **hereda del loc
    - B) Sí, venue y experiencia en la misma migración. Pro: coherencia.
      Contra: fuera del épico, necesita decisión de producto.
    - **Recomiendo A** y abrir una issue aparte si el owner lo quiere.
+   - **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #47 ✱):** el destacado y la prioridad para experiencias Premium van en un issue aparte, **HOS-2180**; esta spec queda solo con venue.
 4. **¿Se corrige la etiqueta `status-blocked` y las relaciones de Linear de HOS-2279 / HOS-2288?**
    Recomiendo sí: reemplazar HOS-929/HOS-1357 (Done) por «pase final de HOS-1352».
 

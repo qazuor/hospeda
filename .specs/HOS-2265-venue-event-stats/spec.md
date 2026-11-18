@@ -28,7 +28,7 @@ El local premium ve cómo le fue a cada evento y los compara en una tabla ordena
 ## 3. Goals
 
 - G-1. Definir cómo se mide la **vista de un evento** (OQ-1) y registrarla.
-- G-2. Endpoint protegido que devuelve, por evento, las métricas de una ventana (7d / 30d) y la tabla comparativa.
+- G-2. Endpoint protegido que devuelve, por evento, las métricas de una ventana (7d / 30d / 90d, decidido el 18/11/2026) y la tabla comparativa.
 - G-3. Gate `venue_event_stats` (premium) con upsell para pro.
 - G-4. Extensible: las métricas de avisos, listas y QR se suman cuando existan esos issues, sin rediseñar.
 - G-5. Baja de plan: los datos se conservan; la vista se oculta (HOS-2263 6.4).
@@ -90,18 +90,20 @@ Lo que esta spec le pide a HOS-2256 (coordinar al escribir su spec):
 4. Retención de 120 días con rollup mensual desde el primer día (decidido por el owner, 16/11/2026) y el job de purga de `entity_views`; ver 6.5.
 5. Si HOS-2256 decide en cambio una **columna `kind` en `entity_views`**, esta spec cambia sólo la capa de consulta (6.3), no el modelo de producto.
 
-### 6.2 Cómo se mide la «vista de un evento» (decisión pendiente, OQ-1)
+### 6.2 Cómo se mide la «vista de un evento» (decidido, OQ-1)
 
-Opción recomendada: **impresión del evento en la ficha** (`kind = 'EVENT_IMPRESSION'`), no una página propia.
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #2):** una vista es una **impresión del evento en la ficha** del local (`kind = 'EVENT_IMPRESSION'`), no una página propia. En el panel se rotula **«veces que se mostró»**.
 
 - Un island mínimo `VenueEventsImpressionTracker.client.tsx` en la sección de agenda de la ficha. Cuando la sección entra en el viewport (IntersectionObserver, una sola vez por carga de página), envía **un único beacon por página** con la lista de ids de eventos visibles (`eventIds: string[]`, máx. 30), no uno por evento. El backend expande a una fila por evento, deduplicadas por `(visitorHash, eventId, día)`.
 - Todo del lado cliente: la ficha sigue "session-blind" (`cacheable-pages-are-session-blind.guard.test.ts`). Filtro de bots idéntico al de `POST /views`.
-- Un evento `weekly` acumula vistas semana a semana; las métricas se ven por ventana (7d/30d), no "por edición".
+- Un evento `weekly` acumula vistas semana a semana; las métricas se ven por ventana (7d/30d/90d), no "por edición".
 - Alternativa (página propia del evento, `/comer-y-salir/<local>/eventos/<id>`): ver OQ-1. Aporta compartir/avisos pero es una ruta nueva, SEO, cache, y rompería el alcance "base sin tocar mucho"; **fuera de esta spec**.
 
 ### 6.3 API de lectura
 
-`GET /api/v1/protected/venues/:id/events/stats?window=7d|30d`
+`GET /api/v1/protected/venues/:id/events/stats?window=7d|30d|90d`
+
+**Ventanas (decidido, owner, 18/11/2026, HOS-2252 ronda 2, #12 ✱):** el panel ofrece 7, 30 y **90 días**. Como `EntityViewWindowSchema` es `7d | 30d` y las rutas básicas deben seguir rechazando `90d`, esta ruta usa un schema de ventana propio (patrón de `VenueStatsWindowSchema`, HOS-2261). La retención cruda de 120 días (HOS-2256) cubre los 90.
 
 ```ts
 listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id',
@@ -112,7 +114,7 @@ listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: '
 - Respuesta (schema nuevo `VenueEventStatsOutputSchema`, en `@repo/schemas`):
 
 ```ts
-{ window: '7d'|'30d',
+{ window: '7d'|'30d'|'90d',
   items: Array<{
     eventId, title, recurrence, date: string|null, weekday: number|null,
     isActive, isPast,
@@ -176,7 +178,8 @@ La ventana máxima expuesta es 30 días, igual que las vistas. Decidido (owner, 
 - AC-8. La ficha pública sigue pasando `cacheable-pages-are-session-blind`.
 - AC-9. La tabla se ordena por cada columna, con teclado y `aria-sort`.
 - AC-10. Baja de plan premium a pro: la pestaña se bloquea, los datos siguen en BD (conteo de filas igual) y reaparecen al volver a premium.
-- AC-11. Ventanas `7d` y `30d` aceptadas; otra devuelve 400 `VALIDATION_ERROR`.
+- AC-11. Ventanas `7d`, `30d` y `90d` aceptadas; otra devuelve 400 `VALIDATION_ERROR`. `EntityViewWindowSchema` sigue rechazando `90d` en las rutas básicas.
+- AC-13. La métrica de vistas se rotula «veces que se mostró» en el panel (es; en/pt equivalentes).
 - AC-12. Textos es/en/pt, guard de i18n verde. Guards G1, G2, G3, G6, G7, G18 verdes.
 
 ## 10. Test plan
@@ -194,16 +197,18 @@ La ventana máxima expuesta es 30 días, igual que las vistas. Decidido (owner, 
 - R-1. **Dependencia triple** (HOS-2291, HOS-2256, HOS-2259). Sin ids estables toda la spec es inválida; está marcado como prerrequisito.
 - R-2. Volumen: una fila por evento por visitante y día, sobre la ficha más vista. Mitigación: un beacon por página con lista de ids, dedupe diario, retención de 120 días con rollup mensual, índice parcial por `eventId`.
 - R-3. Privacidad: igual que `entity_views` (hash anónimo, sin PII). Revisar con HOS-2256 que el hash de usuarios autenticados no incluya IP (precedente `computeVisitorHash`).
-- R-4. "Vista" como impresión sobrestima el interés (la sección entra en pantalla, no se leyó). Se rotula «Veces que se mostró» o «Vistas», no «Interesados».
+- R-4. "Vista" como impresión sobrestima el interés (la sección entra en pantalla, no se leyó). Se rotula «veces que se mostró» (decidido el 18/11/2026), no «Vistas» ni «Interesados».
 - R-5. Las columnas futuras pueden cambiar de nombre cuando las specs de reservas/avisos se escriban. Se reservan como `null`.
 
 **OQ-1. ¿Cómo se mide la vista de un evento? (la decisión que pide el issue)**
+
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #2): opción 1**, impresión del evento en la ficha, rotulada «veces que se mostró». Las opciones 2 y 3 quedan fuera de esta spec.
 
 1. Impresión del evento en la ficha del local, un beacon por página (recomendada). Pro: sin ruta nueva, sin SEO ni cache extras; entrega métricas ya. Contra: mide "se mostró", no "lo abrió"; los eventos de arriba reciben más vistas que los de abajo.
 2. Página propia del evento (`/comer-y-salir/<local>/eventos/<id>` + `EntityViewTracker` con un nuevo `entityType`). Pro: vista real, URL compartible, sirve para los avisos (HOS-2266..2269) y el SEO. Contra: ruta, plantilla, cache, `sitemap`, i18n y moderación nuevos; mucho más alcance; sumar un valor a `entity_type_enum` rompe 5+ guards congelados (patrón ya medido: "un valor nuevo de enum rompe guards").
 3. Ambas: impresión ahora, página propia cuando se haga la épica de avisos. Pro: no bloquea hoy y deja la puerta abierta. Contra: dos definiciones de "vista" conviviendo, hay que rotular bien cuál es cuál.
 
-**OQ-2. ¿Histórico más allá de 30 días?** Parcialmente decidido (owner, 16/11/2026): retención de 120 días y rollup mensual desde el primer día (HOS-2256), así que el dato existe. Sigue abierta una cosa menor: si el panel de eventos expone ventanas mayores a 30 días (hoy 7d/30d, como las vistas) o se deja el rollup sin pantalla hasta que haya evidencia de uso.
+**OQ-2. ¿Histórico más allá de 30 días?** Parcialmente decidido (owner, 16/11/2026): retención de 120 días y rollup mensual desde el primer día (HOS-2256), así que el dato existe. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #12 ✱):** el panel ofrece ventanas de 7, 30 y 90 días. El rollup mensual sigue sin pantalla propia.
 
 **OQ-3. ¿Qué pasa con las métricas de un evento que el dueño borra?** Decidido (owner, 16/11/2026): los clics se conservan sin el evento (FK `event_id` `ON DELETE SET NULL`). El evento deja de listarse en la tabla y los totales del local se conservan. No hay snapshot del título ni cascade.
 

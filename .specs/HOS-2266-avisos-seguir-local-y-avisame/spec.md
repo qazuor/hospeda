@@ -31,6 +31,7 @@ Hoy un turista no tiene forma de enterarse de lo que pasa en un local de noche. 
 - G-5: gestión desde "Mi cuenta" (listar y dejar de seguir).
 - G-6: contador de seguidores para el dueño, sin datos personales.
 - G-7: consumir los ids estables de los eventos del local (prerequisito técnico: HOS-2291, ver 6.3).
+- G-9: al tocar "Avisame" en un evento, se le **pregunta en el momento** si además quiere seguir al local (decidido el 18/11/2026, ver 6.7 y OQ-2). Las dos acciones siguen siendo independientes.
 - G-8: "Avisame" en un evento semanal es de un solo uso: manda un único recordatorio (próxima fecha) y después el botón vuelve a "Avisame" (ver 6.2 y 6.5).
 
 ## 4. Fuera de alcance
@@ -166,6 +167,7 @@ Limpieza:
 ### 6.7 Web
 
 - Payload público: `getBySlug` suma `notificationsEnabled: boolean` ("avisos habilitados", resultado del gate) a `VenuePublicSchema` (`venue.access.schema.ts`), calculado donde ya se calcula el "withheld" de la carta y la agenda y con el mismo mecanismo. Es **solo un booleano**: nunca el nombre del plan ni la clave (DEC-FAC-072). Los eventos ya vienen con `id`.
+- **Pregunta al tocar "Avisame" (decidido, owner, 18/11/2026, HOS-2252 ronda 2, #13 ✱):** al tocar "Avisame" en un evento, la isla le pregunta en ese momento al turista si además quiere seguir al local. Responder que sí crea el seguimiento (`PUT .../follow`); responder que no deja solo la suscripción al evento. "Seguir" y "Avisame" **siguen siendo independientes**: ninguna implica la otra y se pueden cancelar por separado. Si la pregunta se muestra cuando el turista ya sigue al local queda como OQ-5.
 - Island `VenueFollowButton.client.tsx` en la cabecera de la ficha y `VenueEventNotifyButton.client.tsx` por evento dentro de `VenueEvents.astro`. Ambos solo se montan si `notificationsEnabled`. `VenueEventNotifyButton` muestra "Avisame" y, tras tocarlo, "Te avisamos"; cuando el recordatorio de un evento semanal ya salió, vuelve a "Avisame". Al montar llaman **una vez** a `notification-state` (si no hay sesión, el botón muestra "Seguir" y al tocarlo lleva al login con retorno). Cache cliente de la respuesta compartida entre ambos islands (molde `user-collections-cache.ts`).
 - `VenueEvents.astro` hoy es 100% presentacional; se le suma el slot del botón por entrada sin leer sesión (la página sigue pasando `cacheable-pages-are-session-blind`).
 - Mi cuenta: nueva sección `mi-cuenta/avisos-de-locales/index.astro` + island (molde `alertas/index.astro` + `AlertsList`), registrada en `AccountLayout` (`activeSection`). Lista seguimientos y "Avisame", botón de dejar de seguir, y chip "En pausa" si `paused`.
@@ -195,6 +197,8 @@ G1: el helper de gate recibe `VerticalEnum.VENUE` por parámetro y las rutas viv
 - AC-11: Al purgar la ficha, las suscripciones de ese local quedan cerradas.
 - AC-12: La página `/comer-y-salir/[slug]` sigue pasando `cacheable-pages-are-session-blind`.
 - AC-13: El payload público trae `notificationsEnabled` como único dato de los avisos (ni plan ni clave); coincide con el gate.
+- AC-15: Dado un turista logueado que no sigue al local, al tocar "Avisame" se le pregunta si además quiere seguir al local. Si acepta, existen la fila de `venue_event_subscription` y la de `venue_follow`; si rechaza, existe solo la de `venue_event_subscription`. En ambos casos la suscripción al evento se crea igual.
+- AC-16: El dueño ve el número **exacto** de seguidores (sin piso ni redondeo).
 - AC-14: Dado un evento semanal con el recordatorio ya enviado, `notification-state` no lo lista en `subscribedEventIds` y el botón vuelve a "Avisame"; tocarlo de nuevo rearma la misma fila sin duplicado.
 
 ## 8. Plan de pruebas
@@ -220,9 +224,10 @@ G1: el helper de gate recibe `VerticalEnum.VENUE` por parámetro y las rutas viv
 Decidido (owner, 16/11/2026): "Avisame" en un evento semanal manda un solo recordatorio, para la próxima fecha; después el botón vuelve a "Avisame" (ver 6.2, G-8, AC-14).
 
 - OQ-1 (resuelta): Decidido (owner, 16/11/2026): el botón sale según un dato público booleano "avisos habilitados: sí/no" en la ficha (`notificationsEnabled`), con el mismo mecanismo que la carta. No revela el plan.
-- OQ-2: ¿"Seguir" y "Avisame" son independientes? Recomiendo sí: "Avisame" no implica seguir al local (evita que alguien que solo quiere un recordatorio reciba el digest de eventos nuevos).
+- OQ-2 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #13 ✱):** siguen siendo independientes, pero al tocar "Avisame" se le pregunta en el momento si además quiere seguir al local. Texto original: ¿"Seguir" y "Avisame" son independientes? Recomiendo sí: "Avisame" no implica seguir al local (evita que alguien que solo quiere un recordatorio reciba el digest de eventos nuevos).
 - OQ-3: Topes por usuario (100 locales, 200 eventos): ¿los dejamos como constantes técnicas? Recomiendo sí, sin exponerlos como límite de plan.
-- OQ-4: ¿El contador del dueño debe mostrarse con un piso (por ejemplo, "menos de 5" cuando hay pocos) para no permitir deducir quién sigue? Con una sola persona el dueño igual no ve datos personales. Recomiendo número exacto.
+- OQ-4 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #14): el dueño ve el número exacto de seguidores.** Texto original: ¿El contador del dueño debe mostrarse con un piso (por ejemplo, "menos de 5" cuando hay pocos) para no permitir deducir quién sigue? Con una sola persona el dueño igual no ve datos personales. Recomiendo número exacto.
+- OQ-5 (abierta, la abre la decisión #13): si el turista ya sigue al local, ¿"Avisame" omite la pregunta? ¿Y qué pasa con el turista que rechazó seguir: se le vuelve a preguntar en el próximo "Avisame" del mismo local? La spec no lo decide; lo define el implementador con el owner antes de T-8.
 
 ## 11. Dependencias
 
@@ -245,7 +250,7 @@ Decidido (owner, 16/11/2026): "Avisame" en un evento semanal manda un solo recor
 5. T-5 Helper `readVenueNotificationGate` + tests.
 6. T-6 Rutas protegidas (follow, subscription, notification-state, me/venue-notifications, followers/summary) + tests de integración.
 7. T-7 Payload público `notificationsEnabled` (avisos habilitados, solo booleano) + schema.
-8. T-8 Islands de la ficha (Seguir, Avisame; "Avisame" vuelve tras el recordatorio semanal) + i18n es/en/pt.
+8. T-8 Islands de la ficha (Seguir, Avisame con la pregunta de seguir al local; "Avisame" vuelve tras el recordatorio semanal) + i18n es/en/pt.
 9. T-9 Página Mi cuenta + tarjeta de seguidores del dueño.
 10. T-10 Limpieza en purga de ficha y cierre de cuenta + tests.
 11. T-11 Guards (G1/G2) y revisión de `check-content-routes-declare-section`; e2e.

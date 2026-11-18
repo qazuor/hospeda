@@ -27,8 +27,8 @@ Hace dos cosas:
 2. Registra las **decisiones de producto** de las reservas. El owner cerró OQ-1 a OQ-8
    y OQ-C el 16/11/2026 (sección 11). Dos difieren de la recomendación original: OQ-6
    (QR validado solo por la cuenta del dueño) y OQ-C (capacidad = aforo total en
-   personas por noche). Las specs hijas ya aplican esas decisiones. OQ-9 a OQ-12
-   siguen abiertas, con su recomendación como supuesto.
+   personas por noche). Las specs hijas ya aplican esas decisiones. OQ-9 a OQ-13
+   se cerraron el 18/11/2026 (sección 11).
 
 Nada de esto existe hoy en ninguna vertical. No hay que migrar nada: es código nuevo.
 
@@ -95,7 +95,7 @@ Todo lo que sigue aplica las decisiones del owner de la sección 11.
 | `venue_reservation` | HOS-2275 (+2277, +2278) | Una reserva: mesa o VIP, personas, fecha. Grupo y cumpleaños son columnas opcionales. |
 | `venue_reservation_member` | HOS-2277 | Quién confirmó que va a un grupo. |
 | `venue_birthday_benefit` | HOS-2278 | El beneficio de cumpleaños del local (1 a 1 con el listing). |
-| `venue_entry_pass` | HOS-2276 | El QR: un pase por persona, del anotado o de la reserva. |
+| `venue_entry_pass` | HOS-2276 | El QR: un pase por persona, del anotado o de la reserva individual. Las reservas de grupo llevan **un QR por grupo** (HOS-2252 ronda 2, #41). |
 
 Todas llevan bloque de auditoría y soft delete como el resto del repo, salvo
 `venue_entry_scan` si se hace (evento de solo inserción, como `qr_code_scans`).
@@ -107,7 +107,8 @@ Tratamiento propuesto en PURGED: se borran con el contenido, igual que
 `venue_events`. Las filas con datos personales (`venue_guest_list_entry`,
 `venue_reservation`, `venue_reservation_member`, `venue_entry_pass`) se
 **anonimizan** en vez de borrarse si hay una reserva confirmada futura; esto se
-cierra en la spec de implementación de PURGED (HOS-1476) y queda como OQ-9.
+cierra en la spec de implementación de PURGED (HOS-1476). OQ-9 está decidida: no se
+puede borrar un local o evento con anotados o reservas confirmadas hasta cancelarlos.
 
 ### 6.2 Ciclo de estados común
 
@@ -173,7 +174,8 @@ Regla de **qué se gatea y qué no** (cumple la decisión 6 del owner):
 - Bypass de staff: dos permisos nuevos en `PermissionEnum`,
   `venueReservation.viewAll` y `venueReservation.manageAll` (familia en camelCase;
   ojo con la mezcla de convenciones del enum, ver CLAUDE.md raíz). Sirven al panel admin.
-- Sin rutas en `/admin/` en la etapa 1, salvo lectura de soporte (OQ-10).
+- Sin rutas en `/admin/` en la etapa 1. La lectura de soporte (solo lectura) llega en la
+  etapa 2 (OQ-10, decidida).
 
 ### 6.5 Contrato de errores (`apps/api/docs/error-contract.md`)
 
@@ -198,7 +200,7 @@ categoría `TRANSACTIONAL`, porque informan algo sobre la reserva propia). Idiom
 destinatario por el servicio de locale existente.
 
 - Al turista: anotación confirmada, reserva solicitada, aceptada, rechazada, vencida,
-  cancelada por el local, recordatorio (opcional, OQ-11).
+  cancelada por el local, recordatorio (no en la etapa 1, OQ-11).
 - Al local: reserva nueva por aceptar. La lista **no** manda correo por anotado.
 - El pase (QR) viaja en el correo de confirmación (HOS-2276).
 
@@ -244,8 +246,8 @@ Cada spec hija trae sus tablas, rutas y esquemas Zod. Lo común:
 
 ## 9. Criterios de aceptación de la spec paraguas
 
-- AC-1: OQ-1 a OQ-8 y OQ-C están decididas (16/11/2026); OQ-9 a OQ-13 siguen con su
-  recomendación como supuesto.
+- AC-1: OQ-1 a OQ-8 y OQ-C están decididas (16/11/2026); OQ-9 a OQ-13 también
+  (18/11/2026).
 - AC-2: los cinco issues hijos tienen su `spec.md` en `.specs/` con las decisiones aplicadas.
 - AC-3: ninguna tabla nueva queda sin fila en `purged-closed-list.json`.
 - AC-4: ningún gate de plan bloquea validar o cancelar lo ya confirmado.
@@ -274,8 +276,8 @@ Cada spec hija trae sus tablas, rutas y esquemas Zod. Lo común:
 
 ## 11. Decisiones del owner y preguntas abiertas
 
-OQ-1 a OQ-8 y OQ-C quedaron **decididas el 16/11/2026**. OQ-9 a OQ-13 siguen abiertas;
-las hijas asumen la recomendación.
+OQ-1 a OQ-8 y OQ-C quedaron **decididas el 16/11/2026**. OQ-9 a OQ-13 quedaron
+**decididas el 18/11/2026** (HOS-2252 ronda 2, #33 a #37).
 
 ### OQ-1 Confirmación: ¿al pedirla o la acepta el local? ¿Con qué plazo?
 
@@ -335,30 +337,33 @@ A) o plano de mesas (opción C) se eligen más adelante, en **HOS-2295**. Ver 6.
 
 ### OQ-9 Qué pasa al purgar un listing o dar de baja un evento con anotados
 
-Por la decisión 6 del owner **no se borra lo ya confirmado**. Opciones: (1) bloquear el
-borrado hasta cancelar a los anotados y avisarles (recomendada; se conecta con el aviso
-de cambios, HOS-2269); (2) borrar y avisar. En PURGED las filas pasan a anonimizadas.
+**Decidido (owner, 18/11/2026):** no se puede borrar un local o evento con anotados o
+reservas confirmadas: primero hay que cancelarlos, y se les avisa (HOS-2252 ronda 2,
+#33). Se conecta con el aviso de cambios, HOS-2269. En PURGED las filas pasan a
+anonimizadas.
 
 ### OQ-10 Soporte
 
-¿El equipo ve reservas de un local desde el admin para dar soporte? Recomendación: sí,
-solo lectura, detrás de `venueReservation.viewAll`, en una segunda etapa.
+**Decidido (owner, 18/11/2026):** el admin ve las reservas **solo en lectura**, detrás
+de `venueReservation.viewAll`, **desde la etapa 2** (HOS-2252 ronda 2, #34).
 
 ### OQ-11 Recordatorio al turista
 
-¿Recordatorio por correo antes de la fecha? Recomendación: **no en la etapa 1**; lo
-cubre HOS-2267 (recordatorio de evento, plan pro) y no hay que duplicarlo.
+**Decidido (owner, 18/11/2026):** **no hay recordatorio de reserva en la etapa 1**; lo
+cubre HOS-2267 (recordatorio de evento, plan pro) y no se duplica (HOS-2252 ronda 2,
+#35).
 
 ### OQ-13 ¿La lista de invitados descuenta del aforo de reservas?
 
-Recomendación: **no**. La lista tiene su cupo por evento (HOS-2274) y el aforo de reservas
-(HOS-2275) es para mesa, VIP, grupo y cumpleaños. Contra: un local lleno por lista puede
-seguir aceptando reservas. Se revisa cuando exista HOS-2295.
+**Decidido (owner, 18/11/2026): no** (HOS-2252 ronda 2, #37). La lista tiene su cupo por
+evento (HOS-2274) y el aforo de reservas (HOS-2275) es para mesa, VIP, grupo y
+cumpleaños. Contra: un local lleno por lista puede seguir aceptando reservas. Se revisa
+cuando exista HOS-2295.
 
 ### OQ-12 Ventana de reserva
 
-Antelación mínima 2 horas, máxima 60 días, no configurable por el local en la etapa 1
-(YAGNI). Alternativa: configurable. Recomendación: constantes.
+**Decidido (owner, 18/11/2026):** ventana **fija**, de 2 horas a 60 días, no
+configurable por el local (HOS-2252 ronda 2, #36).
 
 ## 12. Notas de implementación
 
@@ -383,7 +388,7 @@ Antelación mínima 2 horas, máxima 60 días, no configurable por el local en l
 
 ## 14. Desglose de tareas de esta spec
 
-1. T-1: hecho. El owner respondió OQ-1 a OQ-8 y OQ-C (16/11/2026). Quedan OQ-9 a OQ-13.
+1. T-1: hecho. El owner respondió OQ-1 a OQ-8 y OQ-C (16/11/2026) y OQ-9 a OQ-13 (18/11/2026).
 2. T-2: hecho. Respuestas aplicadas a las cinco specs hijas.
 3. T-3: dependencia **HOS-2291** (ids estables de eventos, antes HOS-2255 T-1).
 4. T-4: fila en `purged-closed-list.json` y su test, en cada PR de tabla.

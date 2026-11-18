@@ -177,10 +177,12 @@ aplicar el grant.
    terminar lista + reservas; (b) una por función a medida que salen. Recomendación: (a).
 2. **Decidido (owner, 16/11/2026): trial.** Cupo de 10 lugares en la versión `trial` de
    venue (pieza D), con el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6).
-   Abierto menor: el aviso para reservas (`venue_reservations`, solo Premium) necesita
-   otro texto (HOS-2262, pregunta 4).
+   El aviso para reservas (`venue_reservations`, solo Premium) usa la misma plantilla
+   «Incluido en Premium», armada por el catálogo: **no hay texto aparte** para funciones
+   solo-Premium (decidido el 18/11/2026, HOS-2252 ronda 1, #4; HOS-2262 6.6).
 3. **Tope de reservas.** Hoy no hay. Opciones: (a) sin tope; (b) límite por mes para
    premium. Recomendación: (a) hasta ver uso real.
+   **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #49): opción (a).** Las reservas de Premium no tienen tope.
 
 Consultas de solo lectura: C-1 a C-5 de HOS-2280, con las claves `venue_guest_list`,
 `venue_reservations`, `venue_group_reservations`, `max_venue_guest_list_size`.

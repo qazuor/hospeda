@@ -240,6 +240,7 @@ el catálogo de claves; ver HOS-2262).
 ## 12. Preguntas abiertas para el owner
 
 1. **Enforcement de los dos límites nuevos.** Decidido (owner, 16/11/2026): `NONE`. Se evalúan en vivo y no se archiva nada; la regla de baja de plan la implementa el código de cada función (HOS-2263 y HOS-2274). `ARCHIVE` prometía algo que no ocurre.
+0. **(abierta, la abre la decisión #48 de HOS-2252 ronda 2, 18/11/2026) Tercer límite: avisos mensuales a seguidores.** HOS-2281 asigna Pro 4 por mes y Premium sin tope, lo que exige una **clave de límite nueva** que esta spec todavía no declara (hoy: 7 entitlements y 2 límites). Hay que decidir su nombre, su `enforcement` (propuesta: `NONE`, como los otros) y ajustar los conteos y los tests congelados (7 a 7 entitlements, 2 a 3 límites), pasando por G3 y G18. Esta spec no la agrega por sí sola.
 2. **Clamp del `SUM` a 2147483647.** Opciones: (a) sí, en `foldKey`; (b) no, dejar crecer
    el número porque nada lo persiste. Recomendación: (a), es barato y blinda el futuro.
 3. **Fuente única de `UNLIMITED_LIMIT_VALUE`.** Opciones: (a) moverla a `@repo/schemas`
