@@ -282,6 +282,7 @@ export async function writeOwnerCreate(input: {
     if (vertical === VerticalEnum.ACCOMMODATION) {
         const draft = await startHostOnboardingDraft({
             actor,
+            source: 'assistant',
             body: body as Parameters<typeof startHostOnboardingDraft>[0]['body']
         });
         for (const pathPrefix of ACCOMMODATION_CACHE_INVALIDATION_PREFIXES) {

@@ -49,6 +49,13 @@ const HostOnboardingStartResponseSchema = z.object({
     accommodationSlug: z.string().nullable()
 });
 
+/**
+ * Who created a host-onboarding draft, for the analytics events' `draft_source`
+ * and `creation_source`: the portal form (`manual`) or the owner assistant's
+ * `create_listing` tool (`assistant`, owner decision on HOS-2329).
+ */
+export type HostOnboardingDraftSource = 'manual' | 'assistant';
+
 /** What {@link startHostOnboardingDraft} answers: the created draft. */
 export interface HostOnboardingDraft {
     /** Always `created` (BETA-197: the flow never resumes). */
@@ -67,8 +74,9 @@ export interface HostOnboardingDraft {
  * route and the owner assistant's `create_listing` tool (HOS-2329, spec
  * HOS-2335 C-1/C-6, owner decision D-6), so neither copies the other.
  *
- * @param input - The actor, the validated draft body, and the visitor context
- *   when the call came from a browser (the assistant has none)
+ * @param input - The actor, the validated draft body, the visitor context
+ *   when the call came from a browser (the assistant has none), and who created
+ *   the draft (defaults to `manual`, the portal form)
  * @returns The created draft
  * @throws {ServiceError} The service's error, as the route throws it
  */
@@ -76,8 +84,9 @@ export async function startHostOnboardingDraft(input: {
     readonly actor: Actor;
     readonly body: Parameters<AccommodationService['createForOnboarding']>[1];
     readonly visitor?: VisitorContext;
+    readonly source?: HostOnboardingDraftSource;
 }): Promise<HostOnboardingDraft> {
-    const { actor, body, visitor } = input;
+    const { actor, body, visitor, source = 'manual' } = input;
     const result = await accommodationService.createForOnboarding(actor, body);
 
     if (result.error) {
@@ -99,7 +108,7 @@ export async function startHostOnboardingDraft(input: {
         name: AnalyticsEvents.onboardingStarted,
         properties: {
             onboarding_type: 'host_accommodation',
-            draft_source: 'manual'
+            draft_source: source
         },
         ...(visitor ? { visitor } : {})
     });
@@ -109,7 +118,7 @@ export async function startHostOnboardingDraft(input: {
         name: AnalyticsEvents.accommodationDraftSaved,
         properties: {
             accommodation_id: data.accommodation.id,
-            creation_source: 'manual'
+            creation_source: source
         },
         ...(visitor ? { visitor } : {})
     });

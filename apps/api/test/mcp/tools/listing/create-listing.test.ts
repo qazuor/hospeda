@@ -300,7 +300,7 @@ describe('create_listing', () => {
             }
         });
 
-        it('accommodation: fires the two host-onboarding analytics events and evicts the cache (AC-C22)', async () => {
+        it('accommodation: fires the two host-onboarding analytics events with source assistant and evicts the cache (AC-C22)', async () => {
             // Arrange
             const token = await previewToken({ ...VALID_INPUT.accommodation });
 
@@ -315,7 +315,12 @@ describe('create_listing', () => {
             expect(mocks.analytics).toHaveBeenCalledWith(
                 expect.objectContaining({
                     distinctId: actorFor().id,
-                    properties: { accommodation_id: CREATED_ID, creation_source: 'manual' }
+                    properties: { accommodation_id: CREATED_ID, creation_source: 'assistant' }
+                })
+            );
+            expect(mocks.analytics).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    properties: { onboarding_type: 'host_accommodation', draft_source: 'assistant' }
                 })
             );
             expect(mocks.invalidateCache.mock.calls.map(([call]) => call.pathPrefix)).toEqual([
