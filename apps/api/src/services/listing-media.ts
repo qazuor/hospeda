@@ -93,6 +93,41 @@ export interface LoadListingMediaInput {
  */
 export async function loadListingMedia(input: LoadListingMediaInput): Promise<Media> {
     const { entityType, entityId, tx } = input;
+    const media = await loadListingMediaMany({
+        entityType,
+        entityIds: [entityId],
+        ...(tx === undefined ? {} : { tx })
+    });
+    return media.get(entityId) ?? {};
+}
+
+/** Input to {@link loadListingMediaMany}. */
+export interface LoadListingMediaManyInput {
+    /** Which venue or experience vertical the listings belong to. Selects the media table. */
+    readonly entityType: VenueOrExperience;
+    /** UUIDs of the listings whose media rows to load. Empty → empty map, no query. */
+    readonly entityIds: readonly string[];
+    /** Optional active transaction client, forwarded to the media model. */
+    readonly tx?: DrizzleClient;
+}
+
+/**
+ * The batch twin of {@link loadListingMedia}: ONE media query for many listings
+ * of a vertical, each composed with the same `composeListingMedia` (HOS-2331,
+ * so the owner summary evaluates every draft without a query per listing).
+ *
+ * @param input - {@link LoadListingMediaManyInput}
+ * @returns Map of listing id → composed {@link Media}; every requested id is present
+ *   (`{}` when the listing has no media rows)
+ * @throws {Error} Propagates a DB error from the media model (fail-hard, as above).
+ */
+export async function loadListingMediaMany(
+    input: LoadListingMediaManyInput
+): Promise<ReadonlyMap<string, Media>> {
+    const { entityType, entityIds, tx } = input;
+    if (entityIds.length === 0) {
+        return new Map();
+    }
 
     // HOS-1079: an exhaustive switch, not a binary ternary — `entityType` is
     // typed `VenueOrExperience` (exactly 'venue' | 'experience'), so the
@@ -108,13 +143,13 @@ export async function loadListingMedia(input: LoadListingMediaInput): Promise<Me
     switch (entityType) {
         case 'venue':
             grouped = await venueMediaModel.findByVenues({
-                venueIds: [entityId],
+                venueIds: [...entityIds],
                 tx
             });
             break;
         case 'experience':
             grouped = await experienceMediaModel.findByExperiences({
-                experienceIds: [entityId],
+                experienceIds: [...entityIds],
                 tx
             });
             break;
@@ -124,5 +159,10 @@ export async function loadListingMedia(input: LoadListingMediaInput): Promise<Me
         }
     }
 
-    return composeListingMedia({ rows: grouped.get(entityId) ?? [], videos: null });
+    return new Map(
+        entityIds.map((id) => [
+            id,
+            composeListingMedia({ rows: grouped.get(id) ?? [], videos: null })
+        ])
+    );
 }

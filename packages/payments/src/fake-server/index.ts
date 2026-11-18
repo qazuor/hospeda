@@ -9,3 +9,4 @@ export type {
 } from './fake-provider-server';
 export { startFakeProviderServer } from './fake-provider-server';
 export type { MercadoPagoDeliveriesResult, MercadoPagoDelivery } from './mercadopago-deliveries';
+export type { FakeProviderAccount } from './users-me-route';

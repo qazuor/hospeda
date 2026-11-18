@@ -584,6 +584,11 @@
             },
             "planChange": {
                 "checkoutDeadline": "Você pode concluir ou cancelar o checkout até {{date}}.",
+                "resumeCheckout": "Retomar o checkout no Mercado Pago",
+                "cancelCheckout": "Cancelar a mudança de plano",
+                "cancellingCheckout": "Cancelando a mudança de plano...",
+                "checkoutCancelled": "Cancelamos a mudança de plano. Seu plano atual continua igual.",
+                "cancelCheckoutError": "Não conseguimos cancelar a mudança de plano. Recarregue a página e tente novamente.",
                 "courtesyLost_one": "Você perde 1 mês de cortesia; pode continuar no mensal e mantê-lo.",
                 "courtesyLost_other": "Você perde {{count}} meses de cortesia; pode continuar no mensal e mantê-los.",
                 "open": "Mudar de plano",

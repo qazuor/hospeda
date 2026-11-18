@@ -10,12 +10,13 @@
  */
 
 /**
- * One agenda entry, as held in form state. Ids are not carried — see
- * `VenueEventInputSchema`'s doc for why: the whole list is re-submitted
- * as a document, so a client-supplied id would be one the server has to
- * either trust or ignore.
+ * One agenda entry, as held in form state. `id` is the stored event's id for a
+ * row loaded from the API and is sent back on save so the event keeps its
+ * identity (HOS-2291); a row the owner just added has none and is created.
  */
 export interface EventDraft {
+    /** Stored event id; absent on a row added in this session. */
+    id?: string;
     title: string;
     description: string;
     recurrence: 'once' | 'weekly';

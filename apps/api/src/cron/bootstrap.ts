@@ -63,7 +63,7 @@ export const startCronScheduler = async (): Promise<void> => {
         return;
     }
 
-    const enabledJobs = getEnabledCronJobs();
+    const enabledJobs = getEnabledCronJobs().filter((job) => job.scheduled !== false);
     if (enabledJobs.length === 0) {
         apiLogger.warn({ message: '[cron] No enabled jobs found — scheduler not started' });
         return;

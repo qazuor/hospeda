@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import type { VenueOpeningHoursEntry } from '../../../src/data/types';
 import {
     computeOpenNowInZone,
+    computeOpenStatusInZone,
     todayIndexInZone,
     VENUE_OPEN_NOW_TIME_ZONE
 } from '../../../src/lib/venue/open-now-in-zone';
@@ -139,6 +140,41 @@ describe('computeOpenNowInZone', () => {
                     timeZone: 'Asia/Tokyo'
                 })
             ).toBe(false);
+        });
+    });
+
+    describe('computeOpenStatusInZone (HOS-2257, AC-8)', () => {
+        const FRIDAY_NINE_TO_SIX: Record<string, VenueOpeningHoursEntry> = {
+            friday: { isOpen: true, shifts: [{ open: '09:00', close: '18:00' }] }
+        };
+
+        it('reads the venue clock: 07:00 ART gives opensToday regardless of process TZ', () => {
+            expect(
+                computeOpenStatusInZone({
+                    openingHours: FRIDAY_NINE_TO_SIX,
+                    now: at('2024-01-05T10:00:00.000Z')
+                })
+            ).toEqual({ status: 'opensToday', opensAt: '09:00' });
+        });
+
+        it('differs only by the requested zone, not by the caller clock', () => {
+            // 10:00Z is Friday 19:00 in Tokyo: after closing.
+            expect(
+                computeOpenStatusInZone({
+                    openingHours: FRIDAY_NINE_TO_SIX,
+                    now: at('2024-01-05T10:00:00.000Z'),
+                    timeZone: 'Asia/Tokyo'
+                })
+            ).toEqual({ status: 'closed' });
+        });
+
+        it('returns null without an entry for the zone day', () => {
+            expect(
+                computeOpenStatusInZone({
+                    openingHours: FRIDAY_NINE_TO_SIX,
+                    now: at('2024-01-08T15:00:00.000Z')
+                })
+            ).toBeNull();
         });
     });
 });

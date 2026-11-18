@@ -53,7 +53,11 @@ export const OwnSubscriptionsResponseSchema = z.object({
             succession: z
                 .object({
                     checkoutOpen: z.literal(true),
-                    checkoutDeadline: z.iso.datetime().nullable().optional()
+                    checkoutDeadline: z.iso.datetime().nullable().optional(),
+                    /** HOS-2344: the pending successor S40 can cancel. */
+                    successorId: z.string().uuid().optional(),
+                    /** HOS-2344: the successor's applied MP checkout, to resume it; null when none. */
+                    checkoutUrl: z.url().nullable().optional()
                 })
                 .nullable(),
             plan: OwnSubscriptionPlanSchema,

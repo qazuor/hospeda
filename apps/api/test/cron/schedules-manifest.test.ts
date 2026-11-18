@@ -52,6 +52,16 @@ describe('cron schedule manifest', () => {
         }
     });
 
+    it('marks as not scheduled exactly the jobs whose definition says so', () => {
+        const registryByName = new Map(cronJobs.map((job) => [job.name, job]));
+        for (const entry of CRON_SCHEDULES) {
+            expect(
+                entry.scheduled !== false,
+                `Manifest "${entry.name}" and its job definition disagree on \`scheduled\``
+            ).toBe(registryByName.get(entry.name)?.scheduled !== false);
+        }
+    });
+
     it('matches the cron expression of each registered job', () => {
         const registryByName = new Map(cronJobs.map((job) => [job.name, job]));
 

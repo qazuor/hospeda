@@ -30,7 +30,8 @@ export const PlatformSettingsKeySchema = z.enum([
     'maintenance.mode',
     'announcements.global',
     'billing.paidSignupsFreeze',
-    'billing.addonPurchasesFreeze'
+    'billing.addonPurchasesFreeze',
+    'billing.providerWatchAuthorization'
 ]);
 
 /** TypeScript type for the supported key set. */
@@ -162,6 +163,49 @@ export const AddonPurchasesFreezeValueSchema = z.object({ frozen: z.boolean() })
 /** Parsed value of the global addon purchase freeze setting. */
 export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValueSchema>;
 
+/**
+ * What the owner submits to authorize the provider watch battery (HOS-1512, AC:B1:15, AC:B1:20).
+ *
+ * The production run refuses unless `month` is the current month on the market clock and
+ * `maxChargeMinor` is EXACTLY the sum of the declared maximum charges of the account's money-moving
+ * measurements (the API computes that sum and refuses any other value); the whole run's charges are
+ * also capped at `maxChargeMinor`; the environment guard aborts, sending nothing, when `GET /users/me` answers another account id.
+ * An absent row means "not authorized". Money is an integer in minor units (ARS centavos).
+ *
+ * The consumption fields are NOT part of the input: a new authorization is always unconsumed.
+ */
+export const ProviderWatchAuthorizationInputSchema = z.object({
+    /** Market-time month the authorization covers, `YYYY-MM`. */
+    month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM'),
+    /** The amount authorized for ONE run, in ARS centavos: the exact sum of the money-moving measurements. */
+    maxChargeMinor: z.number().int().positive(),
+    /** The Mercado Pago account id the owner confirmed (read by the API, never typed). */
+    accountId: z.string().regex(/^\d{1,20}$/, 'Expected a numeric Mercado Pago account id'),
+    /** Nickname of that account, kept for the owner to recognize it. */
+    accountNickname: z.string().max(255).optional()
+});
+
+/** Input type of the provider watch authorization. */
+export type ProviderWatchAuthorizationInput = z.infer<typeof ProviderWatchAuthorizationInputSchema>;
+
+/**
+ * Value shape for `billing.providerWatchAuthorization`: the input plus the one-shot consumption
+ * state. One authorization allows ONE run within its month; the run that STARTS consumes it,
+ * atomically, and a re-run needs a new authorization. `accountId` is optional here only so a
+ * hand-edited row without it still parses: the run refuses it.
+ */
+export const ProviderWatchAuthorizationValueSchema = ProviderWatchAuthorizationInputSchema.partial({
+    accountId: true
+}).extend({
+    /** When the authorization was consumed (ISO-8601). Absent while unconsumed. */
+    consumedAt: z.string().datetime({ offset: true }).optional(),
+    /** The run that consumed it. Absent while unconsumed. */
+    consumedByRunId: z.string().uuid().optional()
+});
+
+/** Inferred type for the `billing.providerWatchAuthorization` value. */
+export type ProviderWatchAuthorizationValue = z.infer<typeof ProviderWatchAuthorizationValueSchema>;
+
 // ---------------------------------------------------------------------------
 // Discriminated union response
 // ---------------------------------------------------------------------------
@@ -200,6 +244,12 @@ export const PlatformSettingsResponseSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema,
+        updatedAt: z.string().datetime({ offset: true }),
+        updatedBy: z.string().uuid()
+    }),
+    z.object({
+        key: z.literal('billing.providerWatchAuthorization'),
+        value: ProviderWatchAuthorizationValueSchema,
         updatedAt: z.string().datetime({ offset: true }),
         updatedBy: z.string().uuid()
     })
