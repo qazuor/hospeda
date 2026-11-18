@@ -3931,6 +3931,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/venues/:id/stats"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/venues/:id/support-edits"
         },
         {

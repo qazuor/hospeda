@@ -89,6 +89,52 @@ async function readRollup(tx: DrizzleClient, entityId: string) {
 }
 
 describe('EntityInteractionModel (HOS-2256)', () => {
+    it('aggregates click kinds by 30-minute bucket and honors a 90-day window', async () => {
+        await withTestTransaction(async (tx) => {
+            const entityId = crypto.randomUUID();
+            const recent = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000);
+            const sameBucket = new Date(recent.getTime() + 5 * 60 * 1000);
+            const outsideWindow = new Date(Date.now() - 110 * 24 * 60 * 60 * 1000);
+            await tx.insert(entityInteractions).values([
+                {
+                    entityType: 'VENUE',
+                    entityId,
+                    kind: 'PHONE_CLICK',
+                    visitorHash: 'same-visit',
+                    occurredAt: recent
+                },
+                {
+                    entityType: 'VENUE',
+                    entityId,
+                    kind: 'MAP_CLICK',
+                    visitorHash: 'same-visit',
+                    occurredAt: sameBucket
+                },
+                {
+                    entityType: 'VENUE',
+                    entityId,
+                    kind: 'PHONE_CLICK',
+                    visitorHash: 'expired',
+                    occurredAt: outsideWindow
+                }
+            ]);
+
+            const stats = await model.getClickStatsForEntity(
+                { entityType: 'VENUE', entityId, windowDays: 90 },
+                tx
+            );
+
+            expect(stats.visitsWithClick).toBe(1);
+            expect(stats.byKind).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({ kind: 'PHONE_CLICK', unique: 1, total: 1 }),
+                    expect.objectContaining({ kind: 'MAP_CLICK', unique: 1, total: 1 })
+                ])
+            );
+            expect(stats.byKind).toHaveLength(2);
+        });
+    });
+
     it('inserts a row without touching entity_views (AC-14)', async () => {
         await withTestTransaction(async (tx) => {
             const entityId = crypto.randomUUID();

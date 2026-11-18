@@ -5270,6 +5270,11 @@
         },
         "kind": {
             "notForEntityType": "Este tipo de interação não corresponde à entidade"
+        },
+        "venueStats": {
+            "window": {
+                "invalid": "O período deve ser de 7, 30 ou 90 dias"
+            }
         }
     },
     "partnerStats": {
