@@ -7,8 +7,8 @@
  * owner's history (D-14) with the scope injected here, `{ kind: 'all' }`,
  * never read from the request.
  *
- * Filters: `userId`, `tool` (the registered tool names: a typo is a 400,
- * AC-C53), `outcome`, `access` (read | write; absent = both, D-12), `clientId`,
+ * Filters: `userId`, `tool` (`MCP_TOOL_NAMES`, the registered tool names: a
+ * typo is a 400, AC-C53), `outcome`, `access` (read | write; absent = both, D-12), `clientId`,
  * `fromDate`, `toDate`. Sort: `loggedAt:desc` (default) or `loggedAt:asc`.
  * Unknown params are a 400 (the admin list factory).
  *
@@ -25,33 +25,16 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { McpActivityService, ServiceError } from '@repo/service-core';
-import { z } from 'zod';
-import { MCP_TOOL_DEFINITIONS } from '../../../mcp/tools/registry';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createAdminListRoute } from '../../../utils/route-factory';
 
 /**
- * The registered tool names as a Zod enum, so an unregistered `tool` is a
- * validation error (400) rather than an empty page.
- *
- * @param input.names - Tool names of the registry.
- * @returns The enum schema.
- * @throws {Error} When the registry is empty (a programming error).
+ * Query of the admin log. `tool` is an enum of `MCP_TOOL_NAMES`, kept equal to
+ * the API registry by `test/mcp/tool-names-registry.guard.test.ts`.
  */
-export function buildRegisteredToolNameSchema(input: { readonly names: readonly string[] }) {
-    const [first, ...rest] = input.names;
-    if (first === undefined) throw new Error('The MCP tool registry is empty');
-    return z.enum([first, ...rest]);
-}
-
-/** Query of the admin log: the shared schema with `tool` narrowed to the registry. */
-export const AdminMcpActivityQuerySchema = McpActivityAdminQuerySchema.extend({
-    tool: buildRegisteredToolNameSchema({
-        names: MCP_TOOL_DEFINITIONS.map((definition) => definition.name)
-    }).optional()
-}).strict();
+export const AdminMcpActivityQuerySchema = McpActivityAdminQuerySchema;
 
 /** Lazy singleton: reads are stateless. No portal URL builder: owner links are not staff links. */
 const mcpActivityService = (() => {

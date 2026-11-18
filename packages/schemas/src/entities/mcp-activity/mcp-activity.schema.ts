@@ -55,14 +55,44 @@ export const McpActivityScopeSchema = z.discriminatedUnion('kind', [
 export type McpActivityScope = z.infer<typeof McpActivityScopeSchema>;
 
 /**
- * Tool name as recorded. The route narrows it to the registered tool names
- * (an enum the API owns); the reader only bounds its shape.
+ * Names of the assistant (MCP) tools the API registers, in registry order.
+ * The API registry (`apps/api/src/mcp/tools/registry.ts`) owns the tools; this
+ * tuple publishes their names so the admin filter can offer them as options.
+ * A guard test in `apps/api` asserts the two are equal in both directions, so
+ * a new tool cannot drift from this list (HOS-2349).
  */
-export const McpActivityToolNameSchema = z
-    .string()
-    .min(1)
-    .max(64)
-    .regex(/^[a-z][a-z0-9_]*$/);
+export const MCP_TOOL_NAMES = [
+    'list_my_listings',
+    'get_listing',
+    'update_listing_basic',
+    'get_listing_amenities',
+    'update_listing_amenities',
+    'set_listing_publication',
+    'list_amenities_and_features',
+    'get_listing_stats',
+    'get_listing_creation_guide',
+    'create_listing',
+    'list_reviews',
+    'get_help',
+    'list_inquiries',
+    'get_inquiry',
+    'reply_inquiry',
+    'search_providers',
+    'list_benefit_usages',
+    'confirm_benefit_usage',
+    'reject_benefit_usage',
+    'undo_benefit_rejection'
+] as const;
+
+/** A registered tool name. */
+export type McpToolName = (typeof MCP_TOOL_NAMES)[number];
+
+/**
+ * Tool name filter: one of {@link MCP_TOOL_NAMES}, so an unregistered value is
+ * a validation error (400), never an empty page (AC-C53). Recorded rows keep
+ * any string (`McpToolCallDataSchema`): a retired tool's rows stay readable.
+ */
+export const McpActivityToolNameSchema = z.enum(MCP_TOOL_NAMES);
 
 /** A calendar date with no time (`YYYY-MM-DD`). */
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -263,8 +293,8 @@ export type McpActivityAdminSort = z.infer<typeof McpActivityAdminSortSchema>;
 /**
  * Query of `GET /api/v1/admin/mcp-activity` (HOS-2349), minus `page` and
  * `pageSize`, which the admin list factory adds. Every filter of the `all`
- * scope, plus `sort` in the entity-list `field:direction` shape. The API
- * narrows `tool` to the registered tool names, so a typo is a 400 (AC-C53).
+ * scope, plus `sort` in the entity-list `field:direction` shape. `tool` is one
+ * of {@link MCP_TOOL_NAMES}, so a typo is a 400 (AC-C53).
  */
 export const McpActivityAdminQuerySchema = z
     .object({
