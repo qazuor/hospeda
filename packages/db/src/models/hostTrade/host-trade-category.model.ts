@@ -123,9 +123,11 @@ export class HostTradeCategoryModel extends BaseModelImpl<HostTradeCategory> {
 
     /**
      * Admin list page with the catalog's default order (HOS-2340 D3): group
-     * `display_weight`, category `display_weight`, Spanish name (case and accent
-     * insensitive through `lower(unaccent(...))`, so it does not depend on the DB
-     * collation) and `id` as the final tie-break, which keeps pagination stable.
+     * `display_weight`, group Spanish name and id (so groups sharing a weight do not
+     * interleave), category `display_weight`, Spanish name and `id` as the final
+     * tie-break, which keeps pagination stable. Names are compared as
+     * `lower(unaccent(...))`: that removes accents and case, but the comparison itself
+     * still uses the database collation.
      *
      * The join to the group exists only to order; it carries no `deleted_at`
      * filter, so a category under a soft-deleted group is still listed when the
@@ -170,6 +172,9 @@ export class HostTradeCategoryModel extends BaseModelImpl<HostTradeCategory> {
                     .where(whereClause)
                     .orderBy(
                         asc(hostTradeCategoryGroups.displayWeight),
+                        // Groups sharing a weight must not interleave their categories.
+                        asc(sql`lower(unaccent(${hostTradeCategoryGroups.nameI18n} ->> 'es'))`),
+                        asc(hostTradeCategoryGroups.id),
                         asc(hostTradeCategories.displayWeight),
                         asc(sql`lower(unaccent(${hostTradeCategories.nameI18n} ->> 'es'))`),
                         asc(hostTradeCategories.id)

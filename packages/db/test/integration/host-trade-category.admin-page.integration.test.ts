@@ -92,6 +92,32 @@ describe.skipIf(!DB_AVAILABLE)('HostTradeCategoryModel.findAdminPage', () => {
         });
     });
 
+    it('does not interleave the categories of two groups sharing a weight (AC-3.1)', async () => {
+        await withTestTransaction(async (tx) => {
+            const beta = group({ displayWeight: 50, nameI18n: { es: 'Beta', en: 'b', pt: 'b' } });
+            const alfa = group({ displayWeight: 50, nameI18n: { es: 'Álfa', en: 'a', pt: 'a' } });
+            await tx.insert(hostTradeCategoryGroups).values([beta, alfa]);
+            // Category weights alternate, so a missing group tie-break would interleave them.
+            await tx
+                .insert(hostTradeCategories)
+                .values([
+                    category(beta.id, 'B1', { displayWeight: 1 }),
+                    category(alfa.id, 'A2', { displayWeight: 2 }),
+                    category(beta.id, 'B3', { displayWeight: 3 }),
+                    category(alfa.id, 'A4', { displayWeight: 4 })
+                ]);
+
+            const { items } = await categoryModel.findAdminPage({
+                where: { groupId: [beta.id, alfa.id] },
+                page: 1,
+                pageSize: 50,
+                tx
+            });
+
+            expect(items.map((item) => item.nameI18n.es)).toEqual(['A2', 'A4', 'B1', 'B3']);
+        });
+    });
+
     it('pages 60 rows without duplicates or gaps and is repeatable (AC-3.3)', async () => {
         await withTestTransaction(async (tx) => {
             const g = group();
