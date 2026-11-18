@@ -7,6 +7,7 @@
 import type {
     ProviderWatchAcceptShapeInput,
     ProviderWatchAccount,
+    ProviderWatchAuthorizationPreview,
     ProviderWatchAuthorizeInput,
     ProviderWatchShapeReview
 } from '@repo/schemas';
@@ -16,6 +17,7 @@ import { fetchApi } from '@/lib/api/client';
 /** Query keys of the provider watch screens. */
 export const providerWatchQueryKeys = {
     account: ['provider-watch', 'account'] as const,
+    preview: ['provider-watch', 'authorization-preview'] as const,
     shapes: ['provider-watch', 'shapes'] as const
 } as const;
 
@@ -41,6 +43,25 @@ export function useProviderWatchAccount(args: { readonly enabled: boolean }) {
     return useQuery({
         queryKey: providerWatchQueryKeys.account,
         queryFn: () => send<ProviderWatchAccount>({ path: '/api/v1/admin/provider-watch/account' }),
+        enabled: args.enabled,
+        retry: false,
+        staleTime: 0
+    });
+}
+
+/**
+ * Reads the EXACT amount one run needs (the sum of the money-moving measurements), computed by the
+ * API from the catalog, for the owner to confirm.
+ *
+ * @param args.enabled - Only the owner (with the manage permission) can read it
+ */
+export function useProviderWatchAuthorizationPreview(args: { readonly enabled: boolean }) {
+    return useQuery({
+        queryKey: providerWatchQueryKeys.preview,
+        queryFn: () =>
+            send<ProviderWatchAuthorizationPreview>({
+                path: '/api/v1/admin/provider-watch/authorization-preview'
+            }),
         enabled: args.enabled,
         retry: false,
         staleTime: 0

@@ -19,6 +19,14 @@ const copy = es.settings.providerWatchAuthorization;
 const SETTING = '/api/v1/admin/platform-settings/billing.providerWatchAuthorization';
 const ACCOUNT = '/api/v1/admin/provider-watch/account';
 const AUTHORIZE = '/api/v1/admin/provider-watch/authorization';
+const PREVIEW = '/api/v1/admin/provider-watch/authorization-preview';
+const PREVIEW_OK = {
+    expectedMaxChargeMinor: 150000,
+    measurements: [
+        { id: 'RP1', maxChargeMinor: 100000 },
+        { id: 'RP2', maxChargeMinor: 50000 }
+    ]
+};
 const RUN_ID = '33333333-3333-4333-8333-333333333333';
 const PROVIDER = { id: '100000001', nickname: 'HOSPEDA', isTestAccount: false };
 
@@ -41,12 +49,22 @@ function row(value: Record<string, unknown>) {
 }
 
 /** Routes fetchApi by path, like the API would. */
-function api(args: { readonly setting?: unknown; readonly account?: unknown | Error } = {}): void {
+function api(
+    args: {
+        readonly setting?: unknown;
+        readonly account?: unknown | Error;
+        readonly preview?: unknown | Error;
+    } = {}
+): void {
     fetchApi.mockImplementation(async (input) => {
         if (input.path === SETTING) return { data: { data: args.setting ?? null } };
         if (input.path === ACCOUNT) {
             if (args.account instanceof Error) throw args.account;
             return { data: { data: args.account === undefined ? PROVIDER : args.account } };
+        }
+        if (input.path === PREVIEW) {
+            if (args.preview instanceof Error) throw args.preview;
+            return { data: { data: args.preview === undefined ? PREVIEW_OK : args.preview } };
         }
         if (input.path === AUTHORIZE) return { data: { data: { ok: true } } };
         throw new Error(`unexpected ${input.path}`);
@@ -161,7 +179,6 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         const month = await screen.findByTestId('provider-watch-month');
         await user.clear(month);
         await user.type(month, '2026-11');
-        await user.type(screen.getByTestId('provider-watch-max-charge'), '150000');
         await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
         fireEvent.click(screen.getByTestId('provider-watch-save'));
         expect(posts()).toHaveLength(0);
@@ -189,37 +206,92 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         expect(posts()).toHaveLength(0);
     });
 
-    it.each([
-        ['a decimal amount', '2026-11', '1500.5'],
-        ['an exponent amount', '2026-11', '1e3'],
-        ['an empty amount', '2026-11', ''],
-        ['a bad month', '2026-13', '100']
-    ])('refuses %s without opening the confirmation or sending anything', async (_name, monthValue, amount) => {
+    it('refuses a bad month without opening the confirmation or sending anything', async () => {
         permissions.mockReturnValue(MANAGER);
         api();
         const user = userEvent.setup();
         renderCard();
-
         await screen.findByTestId('provider-watch-account');
         const monthInput = await screen.findByTestId('provider-watch-month');
         await user.clear(monthInput);
-        await user.type(monthInput, monthValue);
-        if (amount) await user.type(screen.getByTestId('provider-watch-max-charge'), amount);
+        await user.type(monthInput, '2026-13');
         await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
         fireEvent.click(screen.getByTestId('provider-watch-save'));
-
         expect(await screen.findByRole('alert')).toHaveTextContent(copy.invalidValue);
         expect(screen.queryByTestId('provider-watch-confirm')).toBeNull();
         expect(posts()).toHaveLength(0);
     });
 
+    it('shows the exact amount the API computed, with the measurements behind it', async () => {
+        permissions.mockReturnValue(MANAGER);
+        api();
+        renderCard();
+        const expected = await screen.findByTestId('provider-watch-expected');
+        expect(expected).toHaveTextContent('150000 centavos');
+        expect(expected).toHaveTextContent('2 mediciones');
+        expect(expected).toHaveTextContent('RP1, RP2');
+    });
+
+    it('never lets the owner type the amount: the field is read-only and holds the computed sum', async () => {
+        permissions.mockReturnValue(MANAGER);
+        api();
+        renderCard();
+        await screen.findByTestId('provider-watch-expected');
+        await waitFor(() =>
+            expect(
+                (screen.getByTestId('provider-watch-max-charge') as HTMLInputElement).value
+            ).toBe('150000')
+        );
+        expect(screen.getByTestId('provider-watch-max-charge')).toHaveAttribute('readonly');
+    });
+
+    it('sends the computed amount, whatever the field held', async () => {
+        permissions.mockReturnValue(MANAGER);
+        api({
+            preview: {
+                expectedMaxChargeMinor: 42000,
+                measurements: [{ id: 'RP9', maxChargeMinor: 42000 }]
+            }
+        });
+        renderCard();
+        await screen.findByTestId('provider-watch-expected');
+        await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
+        fireEvent.click(screen.getByTestId('provider-watch-save'));
+        fireEvent.click(
+            within(await screen.findByTestId('provider-watch-confirm')).getByRole('button', {
+                name: copy.save
+            })
+        );
+        await waitFor(() => expect(posts()).toHaveLength(1));
+        expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 42000 } });
+    });
+
+    it('cannot authorize an empty money catalog: sum 0', async () => {
+        permissions.mockReturnValue(MANAGER);
+        api({ preview: { expectedMaxChargeMinor: 0, measurements: [] } });
+        renderCard();
+        expect(await screen.findByTestId('provider-watch-no-money')).toHaveTextContent(
+            copy.noMoneyCatalog
+        );
+        expect(screen.getByTestId('provider-watch-save')).toBeDisabled();
+        expect(posts()).toHaveLength(0);
+    });
+
+    it('cannot authorize when the amount cannot be computed', async () => {
+        permissions.mockReturnValue(MANAGER);
+        api({ preview: new Error('boom') });
+        renderCard();
+        expect(await screen.findByTestId('provider-watch-preview-error')).toHaveTextContent(
+            copy.previewError
+        );
+        expect(screen.getByTestId('provider-watch-save')).toBeDisabled();
+    });
+
     it('does not send anything when the confirmation is canceled', async () => {
         permissions.mockReturnValue(MANAGER);
         api();
-        const user = userEvent.setup();
         renderCard();
         await screen.findByTestId('provider-watch-account');
-        await user.type(await screen.findByTestId('provider-watch-max-charge'), '100');
         await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
         fireEvent.click(screen.getByTestId('provider-watch-save'));
         fireEvent.click(await screen.findByRole('button', { name: copy.cancel }));
@@ -231,12 +303,11 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         fetchApi.mockImplementation(async (input) => {
             if (input.path === SETTING) return { data: { data: null } };
             if (input.path === ACCOUNT) return { data: { data: PROVIDER } };
+            if (input.path === PREVIEW) return { data: { data: PREVIEW_OK } };
             throw new Error('private server detail');
         });
-        const user = userEvent.setup();
         renderCard();
         await screen.findByTestId('provider-watch-account');
-        await user.type(await screen.findByTestId('provider-watch-max-charge'), '100');
         await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
         fireEvent.click(screen.getByTestId('provider-watch-save'));
         fireEvent.click(

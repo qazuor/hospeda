@@ -22,7 +22,11 @@ import { Label } from '@/components/ui/label';
 import { usePlatformSetting } from '@/hooks/use-platform-setting';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { useAuthorizeProviderWatch, useProviderWatchAccount } from '../hooks';
+import {
+    useAuthorizeProviderWatch,
+    useProviderWatchAccount,
+    useProviderWatchAuthorizationPreview
+} from '../hooks';
 
 const COPY_BY_LOCALE = { es, en, pt };
 
@@ -52,28 +56,32 @@ type Translate = (
 ) => string;
 type Pending = { month: string; maxChargeMinor: number };
 
-/** The month and maximum-charge fields. Validated with the shared schema on submit. */
+/**
+ * The month field and the amount, which is NOT typed: it is the exact sum of the money-moving
+ * measurements the API computed, shown read-only for the owner to confirm. Validated with the shared
+ * schema on submit.
+ */
 function AuthorizationForm(props: {
     readonly stored: { readonly month: string; readonly maxChargeMinor: number } | null;
+    readonly expectedMinor: number;
     readonly disabled: boolean;
     readonly translate: Translate;
     readonly confirmedAccountId: string;
     readonly onValid: (value: Pending) => void;
     readonly onInvalid: () => void;
 }) {
-    const { stored, disabled, translate, confirmedAccountId, onValid, onInvalid } = props;
+    const { stored, expectedMinor, disabled, translate, confirmedAccountId, onValid, onInvalid } =
+        props;
     const form = useForm<FormValues>({
         defaultValues: {
             month: stored?.month ?? currentMarketMonth(),
-            maxChargeMinor: stored ? String(stored.maxChargeMinor) : ''
+            maxChargeMinor: String(expectedMinor)
         },
         onSubmit: ({ value }) => {
             const parsed = ProviderWatchAuthorizeInputSchema.safeParse({
                 month: value.month.trim(),
-                // Digits only: `Number()` would also accept '1e3' or '0x10'.
-                maxChargeMinor: /^\d+$/.test(value.maxChargeMinor.trim())
-                    ? Number(value.maxChargeMinor.trim())
-                    : Number.NaN,
+                // Never typed: the exact amount the API computed.
+                maxChargeMinor: expectedMinor,
                 confirmedAccountId
             });
             if (parsed.success) {
@@ -116,9 +124,8 @@ function AuthorizationForm(props: {
                             data-testid="provider-watch-max-charge"
                             inputMode="numeric"
                             value={field.state.value}
+                            readOnly
                             disabled={disabled}
-                            onChange={(event) => field.handleChange(event.target.value)}
-                            onBlur={field.handleBlur}
                         />
                         <p className="text-muted-foreground text-xs">
                             {translate('maxChargeHint')}
@@ -140,8 +147,9 @@ function AuthorizationForm(props: {
 
 /**
  * Shows and sets the one-run authorization of the provider watch battery (HOS-1512): the month its
- * production run is allowed in, the exact maximum charge, and the provider account the owner
- * CONFIRMS (read by the API, never typed). It shows whether the authorization was consumed and by
+ * production run is allowed in, the amount for the run (EXACTLY the sum of the money-moving
+ * measurements, computed by the API and shown for the owner to confirm, never typed), and the
+ * provider account the owner CONFIRMS (read by the API, never typed). It shows whether the authorization was consumed and by
  * which run. Writing needs `BILLING_PROVIDER_WATCH_MANAGE`, held only by SUPER_ADMIN.
  */
 export function ProviderWatchAuthorizationCard() {
@@ -150,6 +158,7 @@ export function ProviderWatchAuthorizationCard() {
     const canWrite = permissions.includes(PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE);
     const query = usePlatformSetting({ key: 'billing.providerWatchAuthorization' });
     const account = useProviderWatchAccount({ enabled: canWrite });
+    const preview = useProviderWatchAuthorizationPreview({ enabled: canWrite });
     const mutation = useAuthorizeProviderWatch();
     const [pending, setPending] = useState<Pending | null>(null);
     const [invalid, setInvalid] = useState(false);
@@ -246,6 +255,40 @@ export function ProviderWatchAuthorizationCard() {
                         {account.data && <p data-testid="provider-watch-account">{accountLabel}</p>}
                     </div>
                 )}
+                {canWrite && (
+                    <div className="space-y-1 text-sm">
+                        <p className="font-medium">{translate('expectedTitle')}</p>
+                        {preview.isError && (
+                            <p
+                                className="text-destructive"
+                                role="alert"
+                                data-testid="provider-watch-preview-error"
+                            >
+                                {translate('previewError')}
+                            </p>
+                        )}
+                        {preview.data && preview.data.expectedMaxChargeMinor > 0 && (
+                            <p data-testid="provider-watch-expected">
+                                {translate('expectedValue', {
+                                    amount: formatArs(preview.data.expectedMaxChargeMinor),
+                                    minor: String(preview.data.expectedMaxChargeMinor),
+                                    count: String(preview.data.measurements.length),
+                                    ids: preview.data.measurements
+                                        .map((measurement) => measurement.id)
+                                        .join(', ')
+                                })}
+                            </p>
+                        )}
+                        {preview.data && preview.data.expectedMaxChargeMinor === 0 && (
+                            <p
+                                className="text-destructive"
+                                data-testid="provider-watch-no-money"
+                            >
+                                {translate('noMoneyCatalog')}
+                            </p>
+                        )}
+                    </div>
+                )}
                 {invalid && (
                     <p
                         className="text-destructive text-sm"
@@ -264,8 +307,16 @@ export function ProviderWatchAuthorizationCard() {
                 )}
                 {!query.isLoading && (
                     <AuthorizationForm
+                        key={preview.data?.expectedMaxChargeMinor ?? 'pending'}
                         stored={stored}
-                        disabled={!canWrite || !account.data || mutation.isPending}
+                        expectedMinor={preview.data?.expectedMaxChargeMinor ?? 0}
+                        disabled={
+                            !canWrite ||
+                            !account.data ||
+                            !preview.data ||
+                            preview.data.expectedMaxChargeMinor === 0 ||
+                            mutation.isPending
+                        }
                         translate={translate}
                         confirmedAccountId={account.data?.id ?? ''}
                         onValid={(value) => {
