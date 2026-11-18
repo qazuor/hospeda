@@ -23,7 +23,7 @@ editor de eventos cuando el local llega al tope y desde la página de add-ons.
 
 Decidido (owner, 16/11/2026): es un pack **mensual** (`PERIODICO`) y **no apilable**. Si un
 local necesita más, se crea un pack más grande; la variante por temporada se evalúa cuando
-se resuelva HOS-2094. Precio **provisorio**: $5.000/mes, a revisar con el owner antes de
+se resuelva HOS-2179. Precio **provisorio**: $5.000/mes, a revisar con el owner antes de
 crear el producto en producción (ninguno va en el código, G7). Se crea desde el admin que ya
 existe, con un runbook.
 
@@ -57,7 +57,7 @@ permite vender más sin vaciar premium.
 - Packs de otras claves (HOS-2286, HOS-2287, HOS-2289).
 - Apilar el mismo pack: decidido que no se apila; si hace falta más se crea un pack más
   grande (otro producto), fuera de este alcance. Variante por temporada: se evalúa cuando se
-  resuelva HOS-2094.
+  resuelva HOS-2179.
 
 ## 5. Estado actual verificado (`origin/staging`, 92994b9dc6)
 
@@ -138,7 +138,7 @@ Decidido (owner, 16/11/2026): mensual y no apilable. El índice
 `uq_addon_instance_purchase_identity` ya limita a una instancia viva por
 `(owner, producto, destino)`, así que no hace falta código. Para más cupo se crea un pack
 más grande como producto aparte. La variante por temporada (`UNA_VEZ` + `FIXED_DAYS`, sin
-precedente con scope `VERTICAL_SUBSCRIPTION`) se evalúa cuando se resuelva HOS-2094.
+precedente con scope `VERTICAL_SUBSCRIPTION`) se evalúa cuando se resuelva HOS-2179.
 
 ### 6.2 Crear el add-on
 
@@ -263,7 +263,7 @@ Decidido (owner, 16/11/2026):
    (6.2).
 3. **Precio y ciclo.** Mensual, no apilable, precio provisorio $5.000/mes a revisar con el
    owner antes de crear el producto en producción. La variante por temporada se evalúa
-   cuando se resuelva HOS-2094.
+   cuando se resuelva HOS-2179.
 
 **Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #3): ¿puede comprarlo un plan básico? Sí.** Básico tiene 1 evento de fecha única; +5 daría 6. La regla de capacidad base alcanza y no se introduce una regla por nombre de plan. Con esto HOS-2292 puede pasar a `kind-spec`, con el diseño de 6.4 de esta spec.
 

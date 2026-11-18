@@ -23,7 +23,7 @@ página de complementos. Solo se ofrece a locales con el rubro «noche» (HOS-22
 decisión 4).
 
 Decidido (owner, 16/11/2026): pack **mensual** y **no apilable** (si hace falta más, se crea
-un pack más grande; la variante por temporada se evalúa cuando se resuelva HOS-2094). Precio
+un pack más grande; la variante por temporada se evalúa cuando se resuelva HOS-2179). Precio
 **provisorio** $7.000/mes, a revisar con el owner antes de crear el producto en producción.
 Se crea desde el admin existente, con runbook.
 
@@ -55,7 +55,7 @@ cambiar de plan.
 - La lista de invitados (HOS-2274) y el cupo base (HOS-2283).
 - El mecanismo de elegibilidad (HOS-2292) y cualquier código o migración para crear el
   add-on (se crea desde el admin).
-- Variante por fecha (`UNA_VEZ`): se evalúa cuando se resuelva HOS-2094.
+- Variante por fecha (`UNA_VEZ`): se evalúa cuando se resuelva HOS-2179.
 - Cupo por noche específica o por ficha (el límite es por evento y por usuario+vertical).
 
 ## 5. Estado actual verificado (`origin/staging`)
@@ -92,7 +92,7 @@ cambiar de plan.
 
 Se crea desde el admin existente siguiendo el runbook de HOS-2285 (6.2), sin migración.
 Una oferta por fecha (`UNA_VEZ` + `FIXED_DAYS` con `VERTICAL_SUBSCRIPTION`, sin precedente en
-producción) se evalúa cuando se resuelva HOS-2094.
+producción) se evalúa cuando se resuelva HOS-2179.
 
 ### 6.2 Elegibilidad (HOS-2292)
 
@@ -173,7 +173,7 @@ Decidido (owner, 16/11/2026):
 
 1. **Precio y ciclo.** Mensual periódico, no apilable, $7.000/mes provisorio a revisar con el
    owner antes de producción. La oferta por fecha (`UNA_VEZ` 30 días) se evalúa cuando se
-   resuelva HOS-2094.
+   resuelva HOS-2179.
 2. **Combinación `UNA_VEZ` + `FIXED_DAYS` + `VERTICAL_SUBSCRIPTION`.** Queda fuera de este
    spec por lo anterior; se verifica si se retoma la oferta por fecha.
 

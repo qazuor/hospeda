@@ -149,7 +149,7 @@ mergeadas (`4c6def33c2`, `a2fbcec322`).
 
 También quedan fuera, detrás de HOS-2066, **las hojas de contracargo de la Fase 2: HOS-1636,
 HOS-1639 y HOS-1539** (PM-562). Con ellas va el asiento manual de una devolución ambigua (PM-573).
-Otros diferidos del registro: HOS-2109, el fin de mes (PM-561); HOS-2094, los seis complementos de
+Otros diferidos del registro: HOS-2109, el fin de mes (PM-561); HOS-2179 (antes HOS-2094), los seis complementos de
 pago único (PM-564); [AC:B7:18](10-corte/B7.md#ac-b7-18), en HOS-2013 (PM-167); y el retiro total de
 un complemento, en HOS-2097 (PM-452).
 

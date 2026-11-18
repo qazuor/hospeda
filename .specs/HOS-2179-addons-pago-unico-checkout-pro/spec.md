@@ -76,9 +76,9 @@ Decidido por el owner (2026-11-18):
 7. **`EX-42` (vencer una preferencia por API) sigue `UNKNOWN`** (`06-mp-validation-matrix.md:401`).
    Este diseño lo necesita para cerrar la página después del primer pago aprobado, así que vuelve a
    la Fase 0.
-8. **`HOS-2094` parece ser esta misma spec.** HOS-2290 la describe como «medir Checkout Pro como
+8. **`HOS-2094` era esta misma spec.** HOS-2290 la describe como «medir Checkout Pro como
    redirect y habilitar la compra» (`.specs/HOS-2290-…/spec.md:160`), y HOS-2284, HOS-2285 a
-   HOS-2289 y HOS-2290 la citan como el bloqueo de la venta web. Ver P-9.
+   HOS-2289 y HOS-2290 la citan como el bloqueo de la venta web. HOS-2094 se cerró como duplicada de HOS-2179 (P-9, decidido por el owner el 2026-11-18).
 
 ## 3. Alcance y fuera de alcance
 
@@ -140,11 +140,13 @@ recurrente, y el freno operativo `addonPurchasesFreeze` (`purchase-addon.service
      sólo en el adaptador;
    - `payment_methods.excluded_payment_types` con **todo tipo que no sea tarjeta ni dinero en cuenta**
      (la lista exacta sale de `EX-62`; candidatos: `ticket`, `atm`, `bank_transfer`,
-     `digital_currency`; P-5);
+     `digital_currency`; P-5, decidido: ni Mercado Crédito ni efectivo);
    - `expires: true`, `expiration_date_from` = ahora, `expiration_date_to` = ahora + duración de la
-     página (P-2);
+     página (60 min, P-2);
    - `back_urls` (approved, pending, failure) apuntando al retorno de hoy, y `auto_return: approved`;
-   - `binary_mode` según P-6;
+   - `binary_mode: true` (P-6, decidido);
+   - `installments: 1`, una sola cuota (P-10, decidido);
+   - sin `payer.email` (P-8, decidido: no se pide ni se manda);
    - `X-Idempotency-Key` = la clave persistida (que el endpoint lo respete es `EX-61`).
 4. Se guarda el id de la página y su vencimiento en la instancia (§7.1) y el enlace en el resultado
    de la clave, igual que el `checkoutUrl` del recurrente (`purchase-addon.service.ts:44-63`).
@@ -157,7 +159,7 @@ recurrente, y el freno operativo `addonPurchasesFreeze` (`purchase-addon.service
   aprobado leído por id (A2), el vencimiento de su ventana (A3) o una orfandad (A5/A6, sin cambios).
 - La ventana del `UNA_VEZ` deja de ser `deadlines['10'].cardHours` (72 h, pensada para la orden) y
   pasa a ser **la duración de la página más un margen**, los dos valores del catálogo de plazos
-  (`billing-deadlines.schema.ts:9`), nunca constantes en código (P-2).
+  (`billing-deadlines.schema.ts:9`), nunca constantes en código (P-2: página de 60 min, margen de 1 h).
 - Mientras espera, la identidad de la compra sigue ocupada: otra pantalla ve «tu compra se está
   procesando» y el enlace para volver a la página mientras no venza (`PENDING_ELSEWHERE`, como hoy).
 
@@ -227,14 +229,14 @@ nada y el diseño se apoya sólo en §5.8 y en una duración corta de la página
 
 Si llega un segundo pago aprobado con la misma referencia sobre una instancia ya `ACTIVE`, A2 no
 corre otra vez. Se abre `COBRO_DUPLICADO` sobre la instancia con propuesta de devolver, y la
-devolución la confirma una persona (`DEC-CONC-001`, parte 3). P-4.
+devolución la confirma una persona (`DEC-CONC-001`, parte 3). Decidido por el owner el 2026-11-18 (P-4).
 
 ### 5.9 Pago que llega después del vencimiento
 
 Un pago aprobado sobre una instancia `ABANDONED` (la persona pagó en el último minuto y el aviso
 llegó tarde, o un pago quedó en revisión): lo ven el aviso y el barrido. Abre la marca 23
 (`ORDEN_PAGADA_SIN_INSTANCIA`, se conserva el valor guardado y se cambia la etiqueta a «pago único
-cobrado sin complemento activo»). Qué se hace con esa plata es P-3. Por construcción la población es
+cobrado sin complemento activo»). Con esa plata se hace lo decidido en P-3 (owner, 2026-11-18): la marca 23, una devolución que confirma una persona y un correo a la persona; no se activa tarde. Por construcción la población es
 casi cero: la ventana termina después que la página.
 
 ### 5.10 Conciliación
@@ -311,13 +313,13 @@ sin pago. El PR que retira (T-7) actualiza también `03-maquinas-de-estado.md` �
   `provider_order_id` (cambia el significado de una columna con datos de staging).
 - `idempotency_keys.operation` suma `PAYMENT_PAGE_CREATE` (si hay CHECK, migración).
 - Catálogo de plazos: duración de la página y margen de la ventana del `UNA_VEZ` (claves nuevas del
-  esquema de plazos y data-migration con dual-write si el catálogo vive en el seed). Valores: P-2.
+  esquema de plazos y data-migration con dual-write si el catálogo vive en el seed). Valores (P-2, decidido): página 60 min, margen 1 h.
 - Marcas: ninguna razón nueva. Se reusan 23 y `COBRO_DUPLICADO`; cambia la etiqueta de 23.
 
 ### 7.2 `PaymentProvider`
 
 La interfaz sigue con **ocho capacidades**. Los nombres no pueden llevar `checkout` (término
-prohibido, `provider-concepts.ts:38`). Propuesta (P-7 decide la forma):
+prohibido, `provider-concepts.ts:38`). Forma decidida por P-7 (dentro de las ocho capacidades, sin novena):
 
 | Capacidad | Método | Entrada → salida |
 |---|---|---|
@@ -353,7 +355,7 @@ el enlace nuevo. G7 prohíbe precios en código: el precio sale del producto.
 
 ### 7.5 API
 
-- `AddonPurchaseRequestSchema`: sin `payment`. `payerEmail` queda sólo para el recurrente (P-8).
+- `AddonPurchaseRequestSchema`: sin `payment`. `payerEmail` queda sólo para el recurrente; el `UNA_VEZ` no lo pide ni lo manda (P-8, decidido).
 - `AddonPurchaseResponseSchema`: sin `order`; el `UNA_VEZ` contesta como el recurrente
   (`checkoutUrl`, `processing`).
 - `AddonPurchaseReadResponseSchema`: sin cambio de forma; la lectura relee el proveedor si la
@@ -370,7 +372,7 @@ el enlace nuevo. G7 prohíbe precios en código: el precio sale del producto.
 - `hiddenListingNoticeKind` suma un aviso para `UNA_VEZ` sobre ficha no publicada: «el destaque
   corre igual aunque la ficha no se vea» (HOS-2290 AC-5, `DEC-ADDON-001`).
 - Confirmar → `REDIRECT` → Mercado Pago → retorno a `/mi-cuenta/complementos/?compra=<id>` → la
-  pantalla relee hasta `ACTIVE`, `CLOSED` o un tope; qué se muestra mientras tanto es P-1.
+  pantalla relee hasta `ACTIVE`, `CLOSED` o un tope; mientras tanto muestra «Estamos confirmando tu pago» y, si no se resuelve en unos segundos, «Te avisamos por correo cuando se acredite» (P-1, decidido).
 - Estilos con CSS Modules; textos por `@repo/i18n`. Ninguna página de `src/pages` lee sesión (el
   guard de páginas ciegas a la sesión sigue igual: todo esto vive en la isla).
 
@@ -415,8 +417,14 @@ Reglas:
 | `EX-68` | Parámetros del `back_url` en aprobado, rechazado y pendiente; comportamiento de `auto_return` | — | **[HUMANO]** anota la URL de retorno |
 | `EX-69` | Devolución de un pago de Checkout Pro y su relectura. En sandbox se espera `401` (`RF-1`). Si da `401`: o soporte de MP lo habilita, o **el owner** corre la sonda en producción con un pago propio del monto mínimo (ARS 15) y su devolución total. Requiere OK explícito del owner: es plata real | `POST /v1/payments/{id}/refunds`, `GET /v1/payments/{id}` | agente (sandbox); **owner** (producción) |
 | `EX-70` | Pago con dinero en cuenta del comprador de prueba: aprobación instantánea y `payment_type_id: account_money` | `GET /v1/payments/{id}` | **[HUMANO]** |
-| `EX-71` | Estados pendientes: con `binary_mode` en falso y en verdadero, la tarjeta `CONT` ¿queda `in_process`? | `GET /v1/payments/{id}` | **[HUMANO]** |
+| `EX-71` | Estados pendientes: con `binary_mode` en falso y en verdadero (el diseño usa verdadero, P-6), la tarjeta `CONT` ¿queda `in_process`? | `GET /v1/payments/{id}` | **[HUMANO]** |
 | `EX-72` | Credenciales y cuentas: con qué credencial del vendedor de prueba la página de sandbox funciona (la matriz vio `401 "Unauthorized use of live credentials"`, `:536`), comprador de prueba logueado o invitado, y las tarjetas de prueba vigentes (`APRO`, `OTHE`, `CONT`) | panel de cuentas de prueba | **[HUMANO]** owner |
+
+> Observación del owner (2026-11-18), todavía **no** es una fila de medición completa: en el sandbox
+> de AR con usuarios de prueba, el `sandbox_init_point` termina en la página de checkout de MP
+> «fatal / algo anduvo mal», mientras que el `init_point` abierto con el comprador de prueba
+> logueado sí funciona. `EX-72` debe medirlo (fecha, sonda, resultado) antes de dar por buena
+> cualquiera de las dos URLs.
 
 Además, de sólo lectura y por un agente:
 
@@ -453,7 +461,7 @@ crear, leer y vencer una preferencia. No se especifica nada más sobre esos arch
 - AC-11. Dada una instancia `ACTIVE`, cuando llega un segundo pago aprobado con su referencia,
   entonces no se reactiva nada y se abre `COBRO_DUPLICADO` con propuesta de devolver.
 - AC-12. Dada una instancia `ABANDONED`, cuando aparece un pago aprobado con su referencia (aviso o
-  barrido), entonces se abre la marca 23 y se aplica lo que decida P-3.
+  barrido), entonces se abre la marca 23 y se propone la devolución para que la confirme una persona y se manda el correo a la persona (P-3, decidido).
 - AC-13. Dada una devolución confirmada de un `UNA_VEZ`, cuando se ejecuta, entonces va por
   `POST /v1/payments/{id}/refunds` con clave estable y se confirma releyendo el pago.
 - AC-14. Dado el repo después del retiro, cuando corre el guard nuevo, entonces no hay `/v1/orders`
@@ -507,49 +515,35 @@ muerto hasta T-7.
 Freno: si algo falla después de T-6, `addonPurchasesFreeze` pausa todas las compras sin revertir
 código.
 
-## 14. Preguntas abiertas
+## 14. Decisiones del owner (2026-11-18)
 
-Cada una con opciones y la recomendada. Ninguna está decidida.
+Las diez preguntas abiertas de la Fase 1 las contestó el owner el 2026-11-18, todas con la opción
+recomendada. Quedan como decididas; el resto de la spec ya las aplica.
 
-- **P-1. Qué ve la persona mientras el pago se confirma.**
-  (a) Vuelve a «Complementos» con «Estamos confirmando tu pago», la pantalla relee unos segundos y,
-  si no se resuelve, dice «Te avisamos por correo cuando se acredite» y deja el estado en la lista.
-  (b) Una página de retorno propia con el estado. (c) Sólo el estado en la lista, sin mensaje.
-  **Recomendada: (a)**. Reusa el retorno y la relectura que ya existen, y no deja a nadie mirando un
-  spinner.
-- **P-2. Duración de la página y ventana de espera.** (a) Página 30 min, ventana +1 h. (b) Página
-  60 min, ventana +1 h. (c) Página 24 h, ventana +24 h. **Recomendada: (b)**. Alcanza para pagar con
-  calma, y la identidad de la compra queda ocupada poco tiempo si la persona se va.
-- **P-3. Pago aprobado sobre una compra ya abandonada.** (a) Marca 23 con propuesta de devolver que
-  confirma una persona, y correo a la persona. (b) Activar tarde si sigue siendo elegible (una
-  instancia nueva, porque `ABANDONED` es terminal). (c) Marca 23 y una persona elige entre activar y
-  devolver. **Recomendada: (a)**. Por construcción la población es casi cero, `ABANDONED` sigue siendo
-  terminal, y es la misma regla de `DEC-CONC-001`.
-- **P-4. Segundo pago aprobado sobre la misma página.** (a) `COBRO_DUPLICADO` con devolución que
-  confirma una persona. (b) Devolución automática. **Recomendada: (a)**: `DEC-CONC-001` parte 3
-  automatiza lo reversible y confirma la devolución.
-- **P-5. Qué cuenta como «instantáneo».** (a) Sólo tarjeta de crédito, débito y prepaga, y dinero en
-  cuenta; se excluye todo lo demás, incluido Mercado Crédito (`digital_currency`). (b) Incluir
-  Mercado Crédito, que también aprueba en el acto. **Recomendada: (a)**: es la lectura literal de D-3,
-  y se revisa con lo que mida `EX-62`.
-- **P-6. `binary_mode`.** (a) Verdadero: el pago se aprueba o se rechaza en el acto, sin revisión
-  manual. Algunos pagos que la revisión aprobaría se rechazan. (b) Falso: puede quedar `in_process`
-  horas o días. **Recomendada: (a)**: es lo que hace real «sólo instantáneos», y la persona puede
-  reintentar en la misma página.
-- **P-7. Forma del cambio de interfaz.** (a) Los métodos de §7.2 dentro de las ocho capacidades.
-  (b) Una novena capacidad «pago en página del proveedor». **Recomendada: (a)**: un pago único es un
-  cobro (capacidad 2), y vencer la página es cerrar algo vivo (capacidad 5). No agranda el contrato
-  que el README describe como cerrado.
-- **P-8. Correo del pagador en el `UNA_VEZ`.** (a) No pedirlo ni mandarlo: la referencia identifica la
-  compra. (b) Pedirlo y mandarlo como `payer.email` para precargar. **Recomendada: (a)**: un campo
-  menos, y el correo declarado nunca es identidad (CLAUDE.md, `declared_payer_email`).
-- **P-9. HOS-2094.** (a) Cerrarla como duplicada de HOS-2179 y apuntar a HOS-2179 las specs que la
-  citan (HOS-2284, HOS-2285 a HOS-2290) en un PR de docs aparte. (b) Dejarla como el issue de
-  «habilitar la venta web» y esta spec como el del cobro. **Recomendada: (a)**: D-4 dice que la venta
-  web es el alcance original de esta spec.
-- **P-10. Cuotas.** (a) Una sola cuota (`installments: 1`). (b) Las cuotas que ofrezca Mercado Pago.
-  **Recomendada: (a)**. Los montos son chicos, y unas cuotas sin interés le cuestan al vendedor. Es
-  una decisión de plata, la toma el owner.
+- **P-1. Qué ve la persona mientras el pago se confirma. Decidido (owner, 2026-11-18): (a).** Vuelve
+  a «Complementos» con «Estamos confirmando tu pago»; la pantalla relee unos segundos y pasa a
+  «listo». Si no se resuelve, dice «Te avisamos por correo cuando se acredite» y deja el estado en la
+  lista. Es lo mismo que el retorno del alta de suscripción.
+- **P-2. Duración de la página y ventana de espera. Decidido (owner, 2026-11-18): (b).** Página de
+  60 min, margen de la ventana de 1 h. Los dos valores viven en el catálogo de plazos.
+- **P-3. Pago aprobado sobre una compra ya abandonada. Decidido (owner, 2026-11-18): (a).** Marca 23
+  con propuesta de devolver que confirma una persona, y correo a la persona. `ABANDONED` sigue siendo
+  terminal; es la misma regla de `DEC-CONC-001`.
+- **P-4. Segundo pago aprobado sobre la misma página. Decidido (owner, 2026-11-18): (a).**
+  `COBRO_DUPLICADO` con devolución que confirma una persona (`DEC-CONC-001` parte 3).
+- **P-5. Qué cuenta como «instantáneo». Decidido (owner, 2026-11-18): (a).** Tarjeta de crédito,
+  débito y prepaga, y dinero en cuenta. NO Mercado Crédito (`digital_currency`), NO efectivo
+  (`ticket`, `atm`). Se revisa con lo que mida `EX-62`.
+- **P-6. `binary_mode`. Decidido (owner, 2026-11-18): (a), `binary_mode: true`.** El pago se aprueba
+  o se rechaza en el acto; la persona puede reintentar en la misma página.
+- **P-7. Forma del cambio de interfaz. Decidido (owner, 2026-11-18): (a).** Los métodos de §7.2 van
+  dentro de las ocho capacidades existentes. No hay novena capacidad.
+- **P-8. Correo del pagador en el `UNA_VEZ`. Decidido (owner, 2026-11-18): (a).** No se pide ni se
+  manda: la referencia identifica la compra.
+- **P-9. HOS-2094. Decidido (owner, 2026-11-18): (a).** HOS-2094 se cierra como duplicada de
+  HOS-2179. Las specs que la citaban (HOS-2284 y HOS-2285 a HOS-2290, más el checklist de smoke y el
+  índice del programa) se repuntaron a HOS-2179 en el PR de docs que registra estas respuestas.
+- **P-10. Cuotas. Decidido (owner, 2026-11-18): (a).** Una sola cuota (`installments: 1`).
 
 ## 15. Riesgos
 
@@ -560,7 +554,7 @@ Cada una con opciones y la recomendada. Ninguna está decidida.
   discontinuación. Este diseño suma dependencia sobre ella. Mitigación: la interfaz es de dominio, y
   cambiar de API cambia el adaptador.
 - R-3. Si `EX-66` mide que la página no se vence por API, el segundo pago (§5.8) queda como única
-  defensa. Mitigación: página corta (P-2) y marca.
+  defensa. Mitigación: página corta (60 min, P-2) y marca.
 - R-4. Si `EX-63` mide que el aviso `payment` no llega para Checkout Pro, la confirmación depende del
   retorno y de A3. Mitigación: la lectura en el retorno (§5.3, camino 2) y un A3 corto.
 - R-5. El alta directa de suscripciones sigue aceptando `paymentToken`. Está fuera de D-1, que habla
@@ -583,4 +577,4 @@ Cada una con opciones y la recomendada. Ninguna está decidida.
 
 - Issue nuevo: borrar `provider_order_id` y el índice de devoluciones de orden en la release
   siguiente a T-7.
-- P-9, si el owner elige (a): PR de docs que repunta las specs de HOS-2094 a HOS-2179.
+- P-9 (decidido): el PR de docs que registra las respuestas del owner repunta las specs de HOS-2094 a HOS-2179.
