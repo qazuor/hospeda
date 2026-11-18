@@ -24,8 +24,11 @@ export const INTERACTION_KINDS_BY_ENTITY_TYPE: Readonly<
         EntityInteractionKindEnum.WEBSITE_CLICK,
         EntityInteractionKindEnum.INSTAGRAM_CLICK,
         EntityInteractionKindEnum.TICKET_CLICK,
-        EntityInteractionKindEnum.WHATSAPP_CLICK,
-        EntityInteractionKindEnum.EVENT_IMPRESSION
+        EntityInteractionKindEnum.WHATSAPP_CLICK
+        // EVENT_IMPRESSION is deliberately NOT admitted yet: nothing emits it, so
+        // accepting it would only let a script seed a metric nobody reads.
+        // HOS-2265 adds it here when it ships the emitter (the enum value and the
+        // DB CHECK already allow it, so no migration is needed).
     ]
 };
 

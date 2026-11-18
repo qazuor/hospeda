@@ -259,4 +259,42 @@ describe('EntityInteractionModel (HOS-2256)', () => {
             expect(Number(rolled[0]?.total)).toBe(1);
         });
     });
+
+    it('does not double count a month after an event is deleted and the rollup re-runs', async () => {
+        await withTestTransaction(async (tx) => {
+            const { venueId, eventId } = await seedVenueWithEvent(tx);
+            await tx.insert(entityInteractions).values([
+                {
+                    entityType: 'VENUE',
+                    entityId: venueId,
+                    kind: 'TICKET_CLICK',
+                    eventId,
+                    visitorHash: 'a',
+                    occurredAt: AUG_10
+                },
+                {
+                    entityType: 'VENUE',
+                    entityId: venueId,
+                    kind: 'TICKET_CLICK',
+                    eventId,
+                    visitorHash: 'b',
+                    occurredAt: AUG_10
+                }
+            ]);
+            await model.rollUpMonth({ month: AUG_10 }, tx);
+            const before = await readRollup(tx, venueId);
+            expect(before).toHaveLength(1);
+            expect(before[0]?.event_id).toBe(eventId);
+
+            // The event goes away: the raw rows become event_id NULL (FK SET NULL).
+            await tx.delete(venueEvents).where(eq(venueEvents.id, eventId));
+            await model.rollUpMonth({ month: AUG_10 }, tx);
+
+            const after = await readRollup(tx, venueId);
+            const total = after.reduce((sum, r) => sum + Number(r.total), 0);
+            expect(after).toHaveLength(1);
+            expect(after[0]?.event_id).toBeNull();
+            expect(total).toBe(Number(before[0]?.total));
+        });
+    });
 });
