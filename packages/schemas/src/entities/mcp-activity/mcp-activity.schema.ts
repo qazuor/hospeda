@@ -136,7 +136,7 @@ export type McpActivityPage = z.infer<typeof McpActivityPageSchema>;
 /**
  * Entity a call targeted. `label` and `url` are present only while the row's
  * actor still owns a live target (AC-C47). A conversation never carries a
- * label: the UI shows a fixed "Consulta", and the guest's name and messages
+ * label: the UI shows a fixed "Consulta de huésped", and the guest's name and messages
  * are never resolved.
  */
 export const McpActivityTargetSchema = z
@@ -202,7 +202,7 @@ export const MCP_ACTIVITY_OWN_MAX_PAGE_SIZE = 20;
  * Strict: only these keys exist, so a `userId`, `actorId` or `scope` param is
  * a 400 and the own scope cannot be widened by input (AC-C45, AC-C54).
  *
- * `includeReads` is the "mostrar también consultas" toggle (decision D-12):
+ * `includeReads` is the "mostrar también lo que solo miró" toggle (D-12):
  * absent or `false` lists writes only; `true` lists reads too.
  */
 export const McpActivityOwnQuerySchema = z

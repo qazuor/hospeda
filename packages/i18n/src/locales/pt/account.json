@@ -436,7 +436,8 @@
                 "done": "Feito",
                 "deniedByHospeda": "Recusado pelo Hospeda",
                 "declinedByYou": "Recusado por você",
-                "error": "Erro"
+                "error": "Erro",
+                "unknown": "Resultado desconhecido"
             },
             "steps": {
                 "preview": "Prévia",
@@ -444,7 +445,8 @@
             },
             "target": {
                 "conversation": "Consulta de hóspede",
-                "unavailable": "Anúncio que não está mais disponível"
+                "unavailable": "Anúncio que não está mais disponível",
+                "conversationAria": "Abrir a consulta de hóspede de “{{action}}”, de {{date}}"
             },
             "empty": {
                 "title": "Seus assistentes ainda não fizeram nada",
@@ -453,7 +455,9 @@
             },
             "errors": {
                 "loadFailed": "Não conseguimos carregar o histórico. Tente de novo.",
-                "retry": "Tentar de novo"
+                "retry": "Tentar de novo",
+                "signedOut": "Sua sessão terminou. Entre de novo para ver o histórico.",
+                "signIn": "Entrar"
             },
             "pagination": {
                 "label": "Páginas do histórico",
@@ -470,10 +474,10 @@
                 "set_listing_publication": "Publicar ou pausar um anúncio",
                 "list_amenities_and_features": "Ver o catálogo de comodidades",
                 "get_listing_stats": "Ver as estatísticas de um anúncio",
-                "get_listing_creation_guide": "Consultar como criar um anúncio",
+                "get_listing_creation_guide": "Ver como criar um anúncio",
                 "create_listing": "Criar um rascunho de anúncio",
                 "list_reviews": "Ver as avaliações dos seus anúncios",
-                "get_help": "Consultar a ajuda do Hospeda",
+                "get_help": "Ver a ajuda do Hospeda",
                 "list_inquiries": "Ver suas consultas",
                 "get_inquiry": "Ver uma consulta",
                 "reply_inquiry": "Responder uma consulta",

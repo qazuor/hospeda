@@ -28,7 +28,7 @@ export interface BuildAiActivityUrlParams {
     readonly apiUrl: string;
     /** 1-based page. */
     readonly page: number;
-    /** The "mostrar también consultas" toggle (D-12). Off sends nothing: writes only. */
+    /** The "mostrar también lo que solo miró" toggle (D-12). Off sends nothing: writes only. */
     readonly includeReads: boolean;
     /** Only calls with this result. */
     readonly outcome?: AiActivityOutcome;
@@ -198,7 +198,7 @@ function toSafeLink(url: string | undefined): string | undefined {
  * The target of an item. A listing the user still owns shows its name (and
  * its editor link); one they lost or that was deleted comes without a label
  * and shows neither name nor link (AC-C47). A conversation always reads
- * "Consulta", with the inquiry link only while it is theirs. Other targets
+ * "Consulta de huésped", with the inquiry link only while it is theirs. Other targets
  * show nothing.
  *
  * @param params.target - The item's target, if any.

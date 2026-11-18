@@ -99,10 +99,12 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
                         className={styles.targetLink}
                         href={target.url}
                     >
-                        {t(`${KEY}.target.conversation`, 'Consulta')}
+                        {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
                     </a>
                 ) : (
-                    <p className={styles.target}>{t(`${KEY}.target.conversation`, 'Consulta')}</p>
+                    <p className={styles.target}>
+                        {t(`${KEY}.target.conversation`, 'Consulta de huésped')}
+                    </p>
                 ))}
 
             <p className={styles.meta}>

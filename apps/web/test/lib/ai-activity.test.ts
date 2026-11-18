@@ -149,7 +149,7 @@ describe('resolveAiActivityTarget (AC-C47)', () => {
         ).toEqual({ kind: 'listingUnavailable' });
     });
 
-    it('reads a conversation as "Consulta", linked only when the API gave a link', () => {
+    it('reads a conversation as "Consulta de huésped", linked only when the API gave a link', () => {
         expect(resolveAiActivityTarget({ target: { type: 'conversation', id: ID } })).toEqual({
             kind: 'conversation'
         });

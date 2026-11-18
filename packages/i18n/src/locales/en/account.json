@@ -422,8 +422,8 @@
             "emptyFiltered": "No actions match this filter.",
             "filters": {
                 "title": "Filter the history",
-                "includeReads": "Also show lookups",
-                "includeReadsHint": "A lookup is when the assistant only looked at data without changing anything.",
+                "includeReads": "Also show view-only actions",
+                "includeReadsHint": "Actions where the assistant only looked at data, without changing anything.",
                 "outcome": "Result",
                 "outcomeAll": "All results"
             },
@@ -436,15 +436,17 @@
                 "done": "Done",
                 "deniedByHospeda": "Refused by Hospeda",
                 "declinedByYou": "Declined by you",
-                "error": "Error"
+                "error": "Error",
+                "unknown": "Unknown result"
             },
             "steps": {
                 "preview": "Preview",
                 "commit": "Confirmed"
             },
             "target": {
-                "conversation": "Inquiry",
-                "unavailable": "Listing no longer available"
+                "conversation": "Guest inquiry",
+                "unavailable": "Listing no longer available",
+                "conversationAria": "Open the guest inquiry of “{{action}}”, {{date}}"
             },
             "empty": {
                 "title": "Your assistants haven’t done anything yet",
@@ -453,7 +455,9 @@
             },
             "errors": {
                 "loadFailed": "We couldn’t load the history. Please try again.",
-                "retry": "Try again"
+                "retry": "Try again",
+                "signedOut": "Your session ended. Sign in again to see the history.",
+                "signIn": "Sign in"
             },
             "pagination": {
                 "label": "History pages",
@@ -473,7 +477,7 @@
                 "get_listing_creation_guide": "Check how to create a listing",
                 "create_listing": "Create a draft listing",
                 "list_reviews": "View your listings’ reviews",
-                "get_help": "Check Hospeda’s help",
+                "get_help": "View Hospeda’s help",
                 "list_inquiries": "View your inquiries",
                 "get_inquiry": "View an inquiry",
                 "reply_inquiry": "Reply to an inquiry",

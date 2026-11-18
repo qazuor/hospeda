@@ -422,8 +422,8 @@
             "emptyFiltered": "No hay acciones que coincidan con este filtro.",
             "filters": {
                 "title": "Filtrar el historial",
-                "includeReads": "Mostrar también consultas",
-                "includeReadsHint": "Una consulta es cuando el asistente solo miró datos, sin cambiar nada.",
+                "includeReads": "Mostrar también lo que solo miró",
+                "includeReadsHint": "Acciones en las que el asistente solo vio datos, sin cambiar nada.",
                 "outcome": "Resultado",
                 "outcomeAll": "Todos los resultados"
             },
@@ -436,15 +436,17 @@
                 "done": "Hecho",
                 "deniedByHospeda": "Rechazado por Hospeda",
                 "declinedByYou": "Rechazado por vos",
-                "error": "Error"
+                "error": "Error",
+                "unknown": "Resultado desconocido"
             },
             "steps": {
                 "preview": "Vista previa",
                 "commit": "Confirmado"
             },
             "target": {
-                "conversation": "Consulta",
-                "unavailable": "Publicación que ya no está disponible"
+                "conversation": "Consulta de huésped",
+                "unavailable": "Publicación que ya no está disponible",
+                "conversationAria": "Abrir la consulta de huésped de «{{action}}», del {{date}}"
             },
             "empty": {
                 "title": "Todavía no hay acciones de tus asistentes",
@@ -453,7 +455,9 @@
             },
             "errors": {
                 "loadFailed": "No pudimos cargar el historial. Probá de nuevo.",
-                "retry": "Reintentar"
+                "retry": "Reintentar",
+                "signedOut": "Tu sesión terminó. Volvé a ingresar para ver el historial.",
+                "signIn": "Ingresar"
             },
             "pagination": {
                 "label": "Páginas del historial",
@@ -470,10 +474,10 @@
                 "set_listing_publication": "Publicar o pausar una publicación",
                 "list_amenities_and_features": "Ver el catálogo de servicios",
                 "get_listing_stats": "Ver las estadísticas de una publicación",
-                "get_listing_creation_guide": "Consultar cómo crear una publicación",
+                "get_listing_creation_guide": "Ver cómo crear una publicación",
                 "create_listing": "Crear un borrador de publicación",
                 "list_reviews": "Ver las reseñas de tus publicaciones",
-                "get_help": "Consultar la ayuda de Hospeda",
+                "get_help": "Ver la ayuda de Hospeda",
                 "list_inquiries": "Ver tus consultas",
                 "get_inquiry": "Ver una consulta",
                 "reply_inquiry": "Responder una consulta",

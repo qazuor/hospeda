@@ -134,7 +134,7 @@ describe('AiActivityHistory', () => {
         expect(row.textContent).not.toContain(LISTING);
     });
 
-    it('reads a conversation as "Consulta", linked to the inbox thread', async () => {
+    it('reads a conversation as "Consulta de huésped", linked to the inbox thread', async () => {
         await renderHistory(
             page([
                 item({
@@ -145,7 +145,7 @@ describe('AiActivityHistory', () => {
             ])
         );
 
-        expect(screen.getByRole('link', { name: 'Consulta' }).getAttribute('href')).toBe(
+        expect(screen.getByRole('link', { name: 'Consulta de huésped' }).getAttribute('href')).toBe(
             'https://hospeda.test/c/'
         );
     });
@@ -194,7 +194,7 @@ describe('AiActivityHistory', () => {
             page([item({ tool: 'get_listing', isWrite: false })])
         );
 
-        fireEvent.click(screen.getByRole('checkbox', { name: /Mostrar también consultas/ }));
+        fireEvent.click(screen.getByRole('checkbox', { name: /Mostrar también lo que solo miró/ }));
 
         await waitFor(() => expect(screen.getByText('Ver una publicación')).toBeTruthy());
         expect(requested(1).searchParams.get('includeReads')).toBe('true');

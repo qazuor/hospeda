@@ -7,8 +7,8 @@
  * Per-user data is fetched here, in the browser, so the Astro page stays
  * session-blind. The API only ever returns the session user's rows.
  *
- * - Writes only by default; the "mostrar también consultas" toggle adds the
- *   read-only calls (decision D-12).
+ * - Writes only by default; the "mostrar también lo que solo miró" toggle
+ *   adds the read-only calls (decision D-12).
  * - A result filter narrows to done, refused or failed calls.
  *
  * Hydration: `client:load` (the list is the whole page).
@@ -125,12 +125,12 @@ export function AiActivityHistory({ locale, apiUrl, connectUrl }: AiActivityHist
                     />
                     <label htmlFor={toggleId}>
                         <span className={styles.toggleLabel}>
-                            {t(`${KEY}.filters.includeReads`, 'Mostrar también consultas')}
+                            {t(`${KEY}.filters.includeReads`, 'Mostrar también lo que solo miró')}
                         </span>
                         <span className={styles.hint}>
                             {t(
                                 `${KEY}.filters.includeReadsHint`,
-                                'Una consulta es cuando el asistente solo miró datos, sin cambiar nada.'
+                                'Acciones en las que el asistente solo vio datos, sin cambiar nada.'
                             )}
                         </span>
                     </label>
