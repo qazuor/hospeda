@@ -29,7 +29,10 @@
  * document never loads the recorder (condition 2).
  *
  * The loader NEVER reloads on consent revoke or on switch-off (owner decision
- * D-2): recording stops at the next page load, where condition 3 or 4 fails.
+ * D-2). After a revoke, the next ClientRouter navigation is turned into a full
+ * page load (like an excluded destination), so the recording ends there and
+ * the new document fails condition 3. After a switch-off, recording stops at
+ * the next full page load, where condition 4 fails.
  * Umami's recorder exposes no in-page stop that this loader relies on.
  *
  * Navigation race: a router navigation that starts while the async checks are
@@ -248,7 +251,8 @@ function evaluate(): void {
 
 function onConsentChanged(event: Event): void {
     const detail = (event as CustomEvent<{ analytics?: boolean }>).detail;
-    // A revoke never reloads (D-2): recording stops at the next page load.
+    // A revoke never reloads (D-2): recording stops at the next navigation,
+    // which `onBeforePreparation` turns into a full page load.
     if (detail?.analytics === true) evaluate();
 }
 
@@ -260,7 +264,11 @@ function attachConsentListener(): void {
 
 /**
  * Records every pending navigation (the race guard) and, once the recorder is
- * loaded, turns a soft navigation into an excluded route into a full page load.
+ * loaded, turns a soft navigation into a full page load when either the
+ * destination is excluded or the visitor has revoked the analytics consent.
+ * The recorder follows `pushState`, so a soft swap would carry the recording
+ * into the next page; the full load ends it, and the new document re-evaluates
+ * every condition from scratch. Nothing reloads at revoke time (D-2).
  */
 function onBeforePreparation(event: Event): void {
     const to: unknown = Reflect.get(event, 'to');
@@ -269,7 +277,7 @@ function onBeforePreparation(event: Event): void {
     pendingDestination = to instanceof URL ? to : null;
     if (!loaded || !options) return;
     if (!(to instanceof URL)) return;
-    if (!isRecordingExcludedPath({ pathname: to.pathname })) return;
+    if (consentGranted() && !isRecordingExcludedPath({ pathname: to.pathname })) return;
     event.preventDefault();
     options.navigate(to.href);
 }

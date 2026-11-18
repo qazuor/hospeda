@@ -406,7 +406,7 @@ describe('umami-recorder after it loaded (HOS-2347)', () => {
         expect(recorderScripts()).toHaveLength(1);
     });
 
-    it('AC-W12: a revoke neither reloads nor navigates, and the next load records nothing', async () => {
+    it('AC-W12: a revoke neither reloads nor navigates at revoke time', async () => {
         // Arrange
         const reloadSpy = vi.fn();
         const assignSpy = vi.fn();
@@ -434,14 +434,40 @@ describe('umami-recorder after it loaded (HOS-2347)', () => {
         expect(assignSpy).not.toHaveBeenCalled();
         expect(navigate).not.toHaveBeenCalled();
         vi.restoreAllMocks();
+    });
 
-        // The next full page load is a fresh document: nothing, no fetch.
-        handle?.stop();
-        document.getElementById(RECORDER_SCRIPT_ID)?.remove();
+    it('AC-W12 (review fix): after a revoke, the next soft navigation becomes a full page load', async () => {
+        // Arrange
+        const navigate = await loadRecorder((async () =>
+            switchResponse(true)) as unknown as typeof fetch);
+        consent(false);
+        window.dispatchEvent(
+            new CustomEvent('cookie-consent:changed', { detail: { analytics: false } })
+        );
+        await flush();
+
+        // Act: a soft navigation to an ALLOWED page.
+        const event = prepareNavigation('/es/destinos/');
+
+        // Assert: the swap is cancelled and a full navigation forced, so the
+        // recorder cannot follow the visitor into the next page.
+        expect(event.defaultPrevented).toBe(true);
+        expect(navigate).toHaveBeenCalledTimes(1);
+        expect(navigate).toHaveBeenCalledWith(`${window.location.origin}/es/destinos/`);
+    });
+
+    it('AC-W12: the full page load forced after a revoke records nothing and fetches nothing', async () => {
+        // Arrange: a fresh document with a revoked consent (what the forced
+        // full navigation above lands on).
+        consent(false);
         const nextFetch = vi.fn(async () => switchResponse(true));
         start(nextFetch as unknown as typeof fetch);
+
+        // Act
         pageLoad();
         await flush();
+
+        // Assert
         expect(recorderScripts()).toHaveLength(0);
         expect(nextFetch).not.toHaveBeenCalled();
     });

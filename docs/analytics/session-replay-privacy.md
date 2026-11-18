@@ -93,8 +93,10 @@ Source: `scripts/umami/recorder-definitions.ts`.
 - **Switch turned off.** New page loads stop loading the recorder within about 60 s: the
   public answer is cached for 30 s at the edge and 30 s in the browser. A page that is already
   recording keeps recording until it unloads or reaches 5 minutes. Nothing forces a reload.
-- **Consent revoked.** The current page keeps recording until it unloads or reaches 5 minutes.
-  The next page load does not record. Nothing forces a reload (D-2).
+- **Consent revoked.** Nothing reloads at revoke time (D-2), so the current page keeps
+  recording until the visitor leaves it or it reaches 5 minutes. The next navigation, even a
+  link inside the site that would normally swap the page in place, is turned into a full page
+  load, which ends the recording. The new page does not record.
 
 ## Retention
 
