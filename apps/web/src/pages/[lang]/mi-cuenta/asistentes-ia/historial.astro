@@ -1,0 +1,85 @@
+---
+/**
+ * @file mi-cuenta/asistentes-ia/historial.astro
+ * @description Assistant history (HOS-2348, spec HOS-2335 §6.9): what the
+ * user's AI assistants did on their behalf.
+ * @route /{lang}/mi-cuenta/asistentes-ia/historial/
+ * @rendering SSR
+ *
+ * Session-blind: the server renders the same shell for every user. The list
+ * is fetched by the `AiActivityHistory` island in the browser, and the API
+ * only ever returns the session user's rows. The API's portal route map links
+ * here as `aiAssistantsHistory` (`check-portal-routes`).
+ *
+ * Hydration: `client:load`, not `client:idle` / `client:visible`. The list is
+ * the page's whole content and sits right under the header, so it is always
+ * in the first viewport; deferring it would only leave the skeleton on screen
+ * longer before the one fetch the page exists for.
+ *
+ * The sign-in link the island offers on a 401 is built here from the page's
+ * own path, the same for every user.
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { AiActivityHistory } from '@/components/account/AiActivityHistory.client';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
+import { getApiUrl } from '@/lib/env';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale: SupportedLocale = Astro.locals.locale;
+
+const { t } = createTranslations(locale);
+const title = t('account.aiAssistants.activity.title', 'Historial de tus asistentes');
+const description = t(
+	'account.aiAssistants.activity.description',
+	'Todo lo que tus asistentes de IA hicieron con tu cuenta.',
+);
+const assistantsUrl = buildUrl({ locale, path: 'mi-cuenta/asistentes-ia' });
+const signinUrl = buildLoginRedirect({
+	locale,
+	currentUrl: buildUrl({ locale, path: 'mi-cuenta/asistentes-ia/historial' }),
+});
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="asistentes-ia">
+	<AccountPageHeader title={title} description={description} />
+
+	<p class="ai-history__intro">
+		{t(
+			'account.aiAssistants.activity.intro',
+			'Guardamos lo que hicieron tus asistentes durante los últimos 12 meses. Nunca guardamos el texto de tus mensajes ni de tus respuestas.',
+		)}
+	</p>
+	<a class="ai-history__back" href={assistantsUrl}>
+		{t('account.aiAssistants.activity.backLink', 'Volver a mis asistentes')}
+	</a>
+
+	<AiActivityHistory
+		client:load
+		locale={locale}
+		apiUrl={getApiUrl()}
+		connectUrl={assistantsUrl}
+		signinUrl={signinUrl}
+	/>
+</AccountLayout>
+
+<style>
+	.ai-history__intro {
+		margin: 0 0 var(--space-3, 12px);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--core-muted-foreground);
+	}
+
+	.ai-history__back {
+		display: inline-block;
+		margin-bottom: var(--space-6, 24px);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--brand-primary);
+		text-decoration: underline;
+	}
+</style>

@@ -201,7 +201,8 @@ Both use the existing `auditLog()` pipeline (`audit_log_entries`). No new table.
 | `mcp.tool.call` | Every tool call that reaches input validation, **read or write**, including malformed ones (HOS-2335 D-12) | actor, `clientId`, tool, `isWrite`, target, outcome (`success`, `denied`, `error`), `errorCode`; writes also `contentLength` and `details`. The client-declared name is never recorded (untrusted text) |
 | `mcp.connection.revoked` | A user disconnects an assistant | actor, `clientId`, `removed` counts (consents, refresh tokens, access tokens) |
 
-For `reply_inquiry`, `details.step` is `preview` or `send`. For `create_listing`,
+For `reply_inquiry`, `details.step` is `preview` or `send` (the owner history shows
+`preview` and `send` as the same step). For `create_listing`,
 `confirm_benefit_usage` and `reject_benefit_usage` it is `preview` or `commit`.
 Content (a reply text, a rejection note) is never recorded, only its length. Auditing never changes a tool result: a
 failure to write the record is logged and swallowed.
@@ -234,6 +235,23 @@ no content: the client's registered name and, while the row's actor still owns
 it, the listing name and portal link. A bare `toDate` (`2026-11-18`) covers that
 whole day in UTC. A row whose `data` does not parse is left out of `items` but
 stays in `total`; the output's `skipped` counts those rows for the page.
+
+**Owner history (HOS-2348).** `GET /api/v1/protected/ai-connections/activity`
+calls that reader with `scope: { kind: 'own' }` and nothing else can change it:
+the query is strict, so `userId`, `actorId` or `scope` answer 400. It lists
+writes only by default; `includeReads=true` is the web's "mostrar también lo
+que solo miró" toggle (D-12) and maps to no `access` filter. In es "consulta"
+is kept for guest inquiries only, so the toggle never uses the word. The route wires the
+reader's `buildTargetUrl` port to `mcp/portal/activity-target-url.ts`: a listing
+links to its editor and a conversation to its inquiry thread, always in `es`
+(U-5). The response does not carry `skipped`. The web page is
+`/{lang}/mi-cuenta/asistentes-ia/historial/` (portal destination
+`aiAssistantsHistory`). It labels every tool and error code through i18n and
+renders a `reply_inquiry` row with `step: 'send'` (written before HOS-2247) the
+same as one with `step: 'commit'`. The web parser is tolerant where the API
+schema is strict: each item is validated on its own, an invalid one is left
+out, an unknown nested key is dropped and an unknown outcome renders as
+"Resultado desconocido", so a newer API never blanks the page.
 
 ## Tool catalog
 
@@ -522,6 +540,11 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
    - `auditTarget` returns `{ type, id }` of the entity.
    - `auditContentLength` returns the length of user content, never the content.
    - `auditDetails` returns scalar facts, for example `{ step }`. Never user content.
+     A string value longer than 40 characters fails
+     `test/mcp/tools/audit-details.registry.test.ts` (AC-C50).
+   - The owner's history shows the tool by name, so add a label under
+     `account.aiAssistants.activity.tools.<name>` in es, en and pt.
+     `test/mcp/tools/activity-labels.registry.test.ts` fails until you do (AC-C49).
 5. **Wrap untrusted text** with `wrapUntrustedText` and append `UNTRUSTED_DATA_NOTICE`
    to the description when the tool returns third-party text.
 6. **Owner-only.** Resolve the resource through the owner-scoped readers and answer
