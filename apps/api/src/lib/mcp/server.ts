@@ -68,7 +68,15 @@ export function createHospedaMcpServer({
             ...MCP_SERVER_INFO,
             ...(apiUrl ? { icons: buildBrandIcons({ apiUrl }) } : {})
         },
-        { capabilities: { tools: { listChanged: false } } }
+        {
+            capabilities: { tools: { listChanged: false } },
+            // HOS-2247, owner decision D-18: only the 2026-07-28 round trip.
+            // With the shim on, an `input_required` answered to a 2025-era
+            // request would become a server-to-client elicitation push; off,
+            // it fails loudly instead. No tool asks a 2025-era client anyway
+            // (`lib/mcp/elicitation.ts` treats those clients as unsupported).
+            inputRequired: { legacyShim: false }
+        }
     );
     registerMcpToolHandlers({ server, tools });
     return server;

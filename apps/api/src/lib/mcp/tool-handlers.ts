@@ -16,7 +16,12 @@
  * `ctx.http.authInfo` the same way.
  */
 
-import { ProtocolError, ProtocolErrorCode, type Server } from '@modelcontextprotocol/server';
+import {
+    isInputRequiredResult,
+    ProtocolError,
+    ProtocolErrorCode,
+    type Server
+} from '@modelcontextprotocol/server';
 import type { ToolDefinition } from '../../mcp/tools/tool-definition';
 import { buildToolListEntry, handleMcpToolCall } from './bind-tool';
 
@@ -73,6 +78,11 @@ export function registerMcpToolHandlers({ server, tools }: RegisterMcpToolHandle
             input: request.params.arguments,
             ctx
         });
+        // A covered tool asking the human to confirm (HOS-2247): the SDK's
+        // `tools/call` handler type accepts an `input_required` result as is.
+        if (isInputRequiredResult(result)) {
+            return result;
+        }
         // The SDK asks low-level `tools/call` authors to project the result
         // through the negotiated wire codec themselves. No tool declares an
         // output schema.

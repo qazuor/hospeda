@@ -35,7 +35,7 @@ import type {
 } from './tool-definition';
 import type { ToolFailure } from './tool-errors';
 
-/** Codes no portal page can fix: transient, or a reconnect. */
+/** Codes no portal page can fix: transient, a reconnect, or the human's own "no". */
 const NO_LINK_CODES: ReadonlySet<ToolErrorCode> = new Set<ToolErrorCode>([
     ServiceErrorCode.SERVICE_UNAVAILABLE,
     ServiceErrorCode.PROVIDER_ERROR,
@@ -43,7 +43,9 @@ const NO_LINK_CODES: ReadonlySet<ToolErrorCode> = new Set<ToolErrorCode>([
     ServiceErrorCode.PROVIDER_TIMEOUT,
     ServiceErrorCode.QUOTA_EXCEEDED,
     ServiceErrorCode.UNAUTHORIZED,
-    'RATE_LIMIT_EXCEEDED'
+    'RATE_LIMIT_EXCEEDED',
+    'USER_DECLINED',
+    'USER_CANCELLED'
 ]);
 
 /** Codes the error contract answers for a missing or foreign resource. */

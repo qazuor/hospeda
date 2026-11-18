@@ -103,6 +103,17 @@ const CODE_MAPPINGS: Readonly<Partial<Record<ToolErrorCode, CodeMapping>>> = {
     },
     [ServiceErrorCode.QUOTA_EXCEEDED]: RATE_LIMIT_MAPPING,
     RATE_LIMIT_EXCEEDED: RATE_LIMIT_MAPPING,
+    // HOS-2247: the human answered the client's confirmation form. Nothing was written.
+    USER_DECLINED: {
+        message:
+            'El usuario no confirmó la acción en el formulario de su aplicación. No se hizo ningún cambio.',
+        kind: 'denied'
+    },
+    USER_CANCELLED: {
+        message:
+            'La confirmación se cerró sin respuesta. No se hizo ningún cambio. Si el usuario todavía quiere hacerlo, volvé a llamar a la herramienta.',
+        kind: 'denied'
+    },
     [ServiceErrorCode.ALREADY_EXISTS]: {
         message: 'Eso ya existe en Hospeda; no hizo falta crearlo de nuevo.',
         kind: 'error'

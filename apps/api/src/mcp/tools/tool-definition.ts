@@ -20,9 +20,16 @@ import type { PortalDestination } from '../portal/portal-routes';
 /**
  * Error code a tool may report. Every {@link ServiceErrorCode}, plus the
  * `RATE_LIMIT_EXCEEDED` literal the API's rate limiters already emit
- * (`middlewares/rate-limit.ts`), so a limiter refusal maps like any other.
+ * (`middlewares/rate-limit.ts`), so a limiter refusal maps like any other,
+ * plus the two answers a human can give to a confirmation form the model never
+ * sees (HOS-2247): `USER_DECLINED` (declined, or left `confirm` unchecked) and
+ * `USER_CANCELLED` (dismissed the form, or the client sent no answer).
  */
-export type ToolErrorCode = ServiceErrorCode | 'RATE_LIMIT_EXCEEDED';
+export type ToolErrorCode =
+    | ServiceErrorCode
+    | 'RATE_LIMIT_EXCEEDED'
+    | 'USER_DECLINED'
+    | 'USER_CANCELLED';
 
 /**
  * Error payload a handler returns. Structurally a superset of the `error`
@@ -79,6 +86,36 @@ export type ToolHandlerResult<TData> =
     | { readonly data?: never; readonly error: ToolErrorPayload };
 
 /**
+ * A confirmation the CLIENT must ask the human, out of the model's reach
+ * (HOS-2247, spec §5.7). Neutral on purpose: only `lib/mcp/` turns it into an
+ * MCP elicitation, so a tool never imports the SDK.
+ */
+export interface ToolConfirmationRequest {
+    /** Spanish text the human reads: the exact preview of what will be written. */
+    readonly message: string;
+    /**
+     * Opaque id of the bound record in the confirmation store. The client echoes
+     * it back on the retry; it carries no data and is never trusted.
+     */
+    readonly stateId: string;
+}
+
+/** What a covered tool answers instead of a token preview on a capable client. */
+export interface ToolNeedsConfirmation {
+    readonly data?: never;
+    readonly error?: never;
+    readonly needsConfirmation: ToolConfirmationRequest;
+}
+
+/**
+ * Everything a handler may resolve to: a {@link ToolHandlerResult}, or (only
+ * when the context says the client can confirm out of band) a
+ * {@link ToolNeedsConfirmation}. Kept apart from `ToolHandlerResult` so readers
+ * and helpers typed on it keep their `data` xor `error` narrowing.
+ */
+export type ToolHandlerOutput<TData> = ToolHandlerResult<TData> | ToolNeedsConfirmation;
+
+/**
  * The channel a tool call arrives through. Closed on purpose: HOS-2185 adds
  * its own member when it ships.
  */
@@ -95,6 +132,41 @@ export interface ToolContext {
      * run without it.
      */
     readonly clientId?: string;
+    /**
+     * Whether the client can ask the human for a confirmation the model never
+     * sees, and the human's answer when this call is the retry of one
+     * (HOS-2247). Absent on channels and clients that cannot: those keep the
+     * confirmation-token flow.
+     */
+    readonly confirmation?: ToolConfirmationContext;
+}
+
+/** What the human answered on the client's confirmation form. */
+export type ToolConfirmationDecision = 'confirm' | 'decline' | 'cancel';
+
+/** The answer a retried call carries. Every field came from the client: untrusted. */
+export interface ToolConfirmationAnswer {
+    /** The state id the client echoed back. Validated only by the store lookup. */
+    readonly stateId: string;
+    /** The human's answer, already reduced to one of three values. */
+    readonly decision: ToolConfirmationDecision;
+}
+
+/** Out-of-band confirmation facts of one call. */
+export interface ToolConfirmationContext {
+    /** The client declared, on this request, that it renders confirmation forms. */
+    readonly elicitationSupported: boolean;
+    /** Present when this call is the retry of a confirmation request. */
+    readonly answer?: ToolConfirmationAnswer;
+}
+
+/**
+ * A tool's out-of-band confirmation declaration. Every tool that issues a
+ * confirmation token declares it (AC-C65, registry test).
+ */
+export interface ToolConfirmationDeclaration {
+    /** The tool confirms through the client's form on a capable client. */
+    readonly elicitation: true;
 }
 
 /** The single entity a call acts on, for the audit record. */
@@ -150,6 +222,11 @@ export interface ToolDefinition<TSchema extends z.ZodObject = z.ZodObject, TData
     /** Extra client hints. */
     readonly hints?: ToolHints;
     /**
+     * Out-of-band confirmation (HOS-2247). Every tool whose input carries a
+     * `confirmationToken` declares it; a registry test enforces it (AC-C65).
+     */
+    readonly confirmation?: ToolConfirmationDeclaration;
+    /**
      * The operation this tool performs in the email-verification allow-list
      * (`EMAIL_UNVERIFIED_ALLOWED_OPERATIONS`, `@repo/verticals`), exactly like
      * a route's `emailUnverifiedOperation`. Omit it and an unverified user is
@@ -197,17 +274,28 @@ export interface ToolDefinition<TSchema extends z.ZodObject = z.ZodObject, TData
      * Extra scalar facts about the call for the audit row's `details` (e.g.
      * which step of a two-step tool this call was). Read from validated input,
      * so it also applies to calls that fail. Never put user content here.
+     * `context` is the call's context (its confirmation facts tell an
+     * out-of-band confirmation from a token one); `data` is the success
+     * payload, absent on failures and confirmation requests (typed `unknown`
+     * for the reason given on {@link auditResultTarget}).
      */
-    auditDetails?(args: { readonly input: z.output<TSchema> }): ToolAuditDetails | undefined;
+    auditDetails?(args: {
+        readonly input: z.output<TSchema>;
+        readonly context?: ToolContext;
+        readonly data?: unknown;
+    }): ToolAuditDetails | undefined;
     /**
      * The tool itself: a thin adapter over service-core. Receives validated
      * input and the caller's actor; must not know which transport serves it.
+     * Only a tool declaring {@link confirmation} may resolve to a
+     * {@link ToolNeedsConfirmation}, and only when `context.confirmation` says
+     * the client can render it.
      */
     handler(args: {
         readonly actor: Actor;
         readonly input: z.output<TSchema>;
         readonly context: ToolContext;
-    }): Promise<ToolHandlerResult<TData>>;
+    }): Promise<ToolHandlerOutput<TData>>;
 }
 
 /**
