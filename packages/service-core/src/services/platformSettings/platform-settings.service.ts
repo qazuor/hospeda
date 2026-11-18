@@ -4,6 +4,7 @@ import {
     AddonPurchasesFreezeValueSchema,
     type AnnouncementItem,
     AnnouncementsValueSchema,
+    DEFAULT_SESSION_RECORDING_RETENTION_DAYS,
     MaintenanceModeValueSchema,
     PaidSignupsFreezeValueSchema,
     PermissionEnum,
@@ -15,6 +16,8 @@ import {
     ProviderWatchAuthorizationValueSchema,
     SeoDefaultsValueSchema,
     ServiceErrorCode,
+    SessionRecordingPatchSchema,
+    type SessionRecordingRetentionDays,
     SessionRecordingValueSchema
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -79,7 +82,8 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     }),
     z.object({
         key: z.literal('analytics.sessionRecording'),
-        value: SessionRecordingValueSchema
+        // A partial write: omitted fields are merged from the stored row in `upsert`.
+        value: SessionRecordingPatchSchema
     })
     // `billing.providerWatchAuthorization` is deliberately absent: it is written only through
     // `setProviderWatchAuthorization`, after the API confirmed the provider account (HOS-1512 D5).
@@ -330,6 +334,34 @@ export class PlatformSettingsService extends BaseService {
     }
 
     /**
+     * How many days a Umami replay or heatmap event is kept (HOS-2347 retention).
+     *
+     * **Why this method instead of `get`**: the callers are the daily retention
+     * cron and the manual purge, and the cron has no actor. The answer is one
+     * platform-wide number.
+     *
+     * Independent of the on/off switch: old data has to go even while recording
+     * is OFF. A missing row, a row written before the field existed, or a value
+     * that fails the schema answers the default (30 days). A read error is NOT
+     * swallowed, so the caller fails loudly instead of purging on a guess.
+     *
+     * @returns The configured retention in days: 14, 30 or 60.
+     */
+    async getSessionRecordingRetentionDays(): Promise<SessionRecordingRetentionDays> {
+        const row = await this.model.findByKey('analytics.sessionRecording');
+        if (!row) return DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+        const parsed = SessionRecordingValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored analytics.sessionRecording value failed schema validation, using the default retention'
+            );
+            return DEFAULT_SESSION_RECORDING_RETENTION_DAYS;
+        }
+        return parsed.data.retentionDays;
+    }
+
+    /**
      * The owner's monthly authorization for the provider watch battery (HOS-1512).
      *
      * **Why this method instead of `get`**: the caller is a cron job with no admin actor.
@@ -408,12 +440,14 @@ export class PlatformSettingsService extends BaseService {
             ctx,
             execute: async (data, actor, resolvedCtx) => {
                 this.checkWritePermission(actor, data.key);
-                const row = await this.model.upsertByKey(
-                    data.key,
-                    data.value,
-                    actor.id,
-                    resolvedCtx.tx
-                );
+                const value =
+                    data.key === 'analytics.sessionRecording'
+                        ? await this.mergeSessionRecordingPatch({
+                              patch: data.value,
+                              tx: resolvedCtx.tx
+                          })
+                        : data.value;
+                const row = await this.model.upsertByKey(data.key, value, actor.id, resolvedCtx.tx);
                 if (data.key === 'seo.defaults') {
                     this.triggerSeoRevalidation();
                 }
@@ -425,6 +459,27 @@ export class PlatformSettingsService extends BaseService {
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
+
+    /**
+     * Merges a partial `analytics.sessionRecording` write with the stored row
+     * (HOS-2347): a field the caller left out keeps its stored value, falling
+     * back to the defaults (`enabled: false`, 30 days) only when nothing is
+     * stored or the stored row is invalid.
+     */
+    private async mergeSessionRecordingPatch(input: {
+        readonly patch: z.infer<typeof SessionRecordingPatchSchema>;
+        readonly tx: ServiceContext['tx'];
+    }): Promise<z.infer<typeof SessionRecordingValueSchema>> {
+        const row = await this.model.findByKey('analytics.sessionRecording', input.tx);
+        const stored = row ? SessionRecordingValueSchema.safeParse(row.value) : null;
+        const base = stored?.success
+            ? stored.data
+            : { enabled: false, retentionDays: DEFAULT_SESSION_RECORDING_RETENTION_DAYS };
+        return {
+            enabled: input.patch.enabled ?? base.enabled,
+            retentionDays: input.patch.retentionDays ?? base.retentionDays
+        };
+    }
 
     private checkReadPermission(actor: Actor, key: PlatformSettingsKey): void {
         const required = requiredReadPermission(key);

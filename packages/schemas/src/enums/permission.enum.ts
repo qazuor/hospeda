@@ -1001,6 +1001,15 @@ export enum PermissionEnum {
     PARTNER_EMPTY_PRESENCE = 'partner.emptyPresence', // Allows action 25 to empty a Partner presence at its owner's request (AC:V8b:6, ACC:25).
     PARTNER_EDIT_OWN = 'partner.editOwn', // Allows the owner of a partner to edit their own listing (the partner owner family, V7 step 3).
 
+    // PARTNER_TYPE: admin-managed partner type catalog (HOS-2336). The public
+    // catalog read needs no permission. Grouped under the PARTNER permission
+    // category by key prefix.
+    PARTNER_TYPE_VIEW = 'partnerType.view', // Admin: list partner types, active or not.
+    PARTNER_TYPE_CREATE = 'partnerType.create', // Admin: create a partner type.
+    PARTNER_TYPE_UPDATE = 'partnerType.update', // Admin: edit or deactivate a partner type.
+    PARTNER_TYPE_DELETE = 'partnerType.delete', // Admin: soft-delete an unused partner type.
+    PARTNER_TYPE_RESTORE = 'partnerType.restore', // Admin: restore a soft-deleted partner type.
+
     // ALLIANCE_LEAD: Alliance leads admin inbox — partner/sponsor/editor/service_provider (HOS-277)
     ALLIANCE_LEAD_VIEW_ALL = 'allianceLead.viewAll', // Allows viewing all alliance leads (admin inbox, filterable by kind/status).
     ALLIANCE_LEAD_MANAGE = 'allianceLead.manage', // Allows approving/rejecting an alliance lead (mark-handled) with an admin note.

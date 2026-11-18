@@ -4,7 +4,7 @@ import { adminCreatePartnerSchema, createPartnerSchema } from '../partner.create
 const base = {
     name: 'Test Partner',
     slug: 'test-partner',
-    type: 'business',
+    typeId: '00000000-0000-4000-a000-0000000000b1',
     lifecycleState: 'ACTIVE'
 };
 
@@ -39,5 +39,16 @@ describe('adminCreatePartnerSchema', () => {
                 ownerUserId: '00000000-0000-4000-8000-000000000001'
             })
         ).not.toHaveProperty('ownerUserId');
+    });
+});
+
+describe('createPartnerSchema — catalog type (HOS-2336)', () => {
+    it('requires typeId on create', () => {
+        const { typeId: _typeId, ...withoutType } = base;
+
+        const result = createPartnerSchema.safeParse(withoutType);
+
+        expect(result.success).toBe(false);
+        expect(result.error?.issues.map((issue) => issue.path.join('.'))).toContain('typeId');
     });
 });

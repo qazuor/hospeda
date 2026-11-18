@@ -1,7 +1,9 @@
 import { faker } from '@faker-js/faker';
 import { describe, expect, it } from 'vitest';
 import {
+    ALLIANCE_LEAD_PARTNER_PROVISION_SKIP_REASONS,
     ALLIANCE_LEAD_PROVISION_SKIP_REASONS,
+    AllianceLeadPartnerProvisionSkipReasonSchema,
     AllianceLeadProvisioningOutcomeSchema,
     AllianceLeadWithProvisioningSchema
 } from '../../../src/entities/alliance-lead/alliance-lead.provisioning.schema.js';
@@ -74,5 +76,21 @@ describe('AllianceLeadWithProvisioningSchema', () => {
             provisioning: { provisioned: false, reason: 'no-active-category' }
         });
         expect(r.success).toBe(true);
+    });
+});
+
+describe('AllianceLeadPartnerProvisionSkipReasonSchema (HOS-2336)', () => {
+    it('carries no-active-partner-type and stays apart from the listing reasons', () => {
+        // Assert — partner and listing outcomes are different shapes.
+        expect(ALLIANCE_LEAD_PARTNER_PROVISION_SKIP_REASONS).toContain('no-active-partner-type');
+        expect(ALLIANCE_LEAD_PROVISION_SKIP_REASONS).not.toContain(
+            'no-active-partner-type' as never
+        );
+    });
+
+    it('rejects a reason outside the closed set', () => {
+        expect(
+            AllianceLeadPartnerProvisionSkipReasonSchema.safeParse('no-active-category').success
+        ).toBe(false);
     });
 });

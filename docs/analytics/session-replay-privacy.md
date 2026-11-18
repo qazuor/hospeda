@@ -122,15 +122,84 @@ Read from the `recorder.js` that staging Umami 3.5 serves (2026-11-18, read only
 
 ## Retention
 
-**Umami 3.5 does not let us configure how long recordings are kept, and it never deletes
-them.** The spike against the staging container found no retention setting in the api, the
-website config or the app environment, and no job that prunes replay rows. A recording is
-removed only when the website is reset or deleted.
+**Umami 3.5 has no retention setting and no age-based delete API**, so it never deletes
+recordings on its own. A recording is removed only when the website is reset or deleted.
+Hospeda therefore purges them itself (owner decision, 2026-11-18, HOS-2347 OQ-8).
 
-So the retention in force today is **indefinite**. This replaces the spec's assumption
-(D-5) of a 14-day setting or a 30-day Umami default; neither exists. Choosing a retention
-mechanism is an open owner decision, recorded on HOS-2347. Until it is decided, keep
-production ON only for bounded windows.
+### What is deleted, and when
+
+- Replays (`session_replay`, **saved replays included**) and heatmap events (`heatmap_event`)
+  older than the configured period are deleted. A saved replay is only a pointer
+  (`session_replay_saved`: a name and a `visit_id`) to chunks stored in `session_replay`; the
+  chunks are purged by age like any other, then the pointers that are older than the period
+  or whose visit has no chunk left are removed, so none dangles. Saving a replay does not
+  extend its life: the legal copy promises deletion within the retention period. The only allowed periods are **14, 30 or 60 days**; the default is
+  **30**.
+- The period is part of the `analytics.sessionRecording` platform setting and is chosen in
+  the admin card (`/platform/critical`), next to the on/off switch, behind the permission
+  `analytics.sessionRecording.manage`.
+- The `session-recording-retention` cron runs daily (04:25 Buenos Aires) and **also while the
+  switch is OFF**: data recorded earlier still has to go.
+- The card has a "Limpiar ahora" button. It refetches the setting when its confirmation opens
+  and sends the period the admin confirmed; the api answers `409` (`RECORDING_RETENTION_MISMATCH`)
+  when the stored period changed meanwhile. The result shows the counts and the period
+  actually used. The manual purge has a 60 second budget: when it runs out, the card says the
+  rest will be finished by the next daily run.
+- Only one purge runs at a time (a Postgres advisory lock on the purge's own connection,
+  taken by the cron and the manual purge alike). A second manual purge answers `409`
+  (`RECORDING_PURGE_ALREADY_RUNNING`); the cron skips with a log.
+- Every delete is scoped to `website_id = HOSPEDA_UMAMI_WEBSITE_ID_WEB` and
+  `created_at < now() - <period>`, in batches of 5000 rows. Other websites in the same Umami
+  database are never touched.
+
+### How the api reaches Umami
+
+The api connects **directly to the Umami Postgres** through `HOSPEDA_UMAMI_DATABASE_URL`
+(secret, api only). That role can only `SELECT` and `DELETE` on those three tables. It is the
+single Umami write path the api holds: the api still never holds a Umami API write key, and
+the guard `no-umami-write-credential` keeps refusing one.
+
+When the variable is unset, the manual purge answers `503 SERVICE_UNAVAILABLE` (the body
+carries only the code: a 5xx masks its reason, the cause is in the log). The cron skips with a
+warning outside production, and in production it reports the run as **failed** so the missing
+configuration shows red. Nothing crashes, but nothing is purged either, so set it before the
+first prod ON.
+
+#### One-time setup of the restricted role (the owner runs this)
+
+Run it on the Umami database, as a superuser, replacing the password. Nothing in the
+repository runs it for you.
+
+```sql
+CREATE ROLE umami_retention LOGIN PASSWORD '<set-by-owner>';
+GRANT CONNECT ON DATABASE umami TO umami_retention;
+GRANT USAGE ON SCHEMA public TO umami_retention;
+GRANT SELECT, DELETE ON session_replay, heatmap_event, session_replay_saved TO umami_retention;
+```
+
+Then set `HOSPEDA_UMAMI_DATABASE_URL=postgresql://umami_retention:<password>@<host>:5432/<database>`
+on the api in Coolify (staging and production) and redeploy.
+
+`SELECT` is needed because the deletes filter on `website_id`, `created_at` and `visit_id`. No other
+privilege is granted, so the role cannot read or change any other Umami table.
+
+### Umami upgrades can change the schema
+
+The purge depends on the Umami 3.5 names: tables `session_replay`, `heatmap_event` and
+`session_replay_saved`, columns `website_id`, `created_at` and `visit_id`. A Umami upgrade can rename them. The unit test
+`apps/api/test/services/session-recording-purge.test.ts` pins those names and
+`apps/api/test/integration/session-recording-purge.integration.test.ts` runs the real
+statements against Postgres, so an upgrade that changes them must update the purge and both
+tests together. After every Umami upgrade, check the
+schema and run a manual purge once.
+
+### Recordings are pseudonymous, not anonymous
+
+For logged-in users the recorder shares the Umami session used by `umami.identify`
+(per-user sessions, HOS-2119). A replay can therefore be tied to the account identifier of
+the user it belongs to. Treat recordings as **pseudonymous personal data**, not as anonymous
+data: masking removes what is typed and shown, not the link to the account. Retention is the
+control that bounds how long that link exists.
 
 ## Manual verification before production (AC-SM6)
 

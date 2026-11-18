@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 
-import { PartnerTypeEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePartnerApplicationActions } from '../usePartnerApplicationActions';
 
+const TYPE_ID = 'f2336000-0000-4000-8000-000000000001';
 const mocks = vi.hoisted(() => ({ fetchApi: vi.fn() }));
 vi.mock('@/lib/api/client', () => ({ fetchApi: mocks.fetchApi }));
 
@@ -25,14 +25,14 @@ describe('usePartnerApplicationActions', () => {
             result.current.approve.mutateAsync({
                 id: 'application-1',
                 name: 'Partner',
-                type: PartnerTypeEnum.BUSINESS,
+                typeId: TYPE_ID,
                 reason: 'Approved'
             })
         );
         expect(mocks.fetchApi).toHaveBeenLastCalledWith({
             path: '/api/v1/admin/partner-applications/application-1/approve',
             method: 'POST',
-            body: { name: 'Partner', type: PartnerTypeEnum.BUSINESS, reason: 'Approved' }
+            body: { name: 'Partner', typeId: TYPE_ID, reason: 'Approved' }
         });
 
         await act(async () =>

@@ -3871,6 +3871,23 @@
             }
         }
     },
+    "partnerType": {
+        "slug": {
+            "required": "O slug é obrigatório",
+            "min": "O slug deve ter pelo menos {{min}} caracteres",
+            "max": "O slug não pode ultrapassar {{max}} caracteres",
+            "pattern": "O slug só aceita letras minúsculas, números e hífens"
+        },
+        "nameI18n": {
+            "esRequired": "O nome em espanhol é obrigatório"
+        },
+        "displayWeight": {
+            "required": "A ordem é obrigatória",
+            "int": "A ordem deve ser um número inteiro",
+            "min": "A ordem deve ser pelo menos {{min}}",
+            "max": "A ordem não pode ultrapassar {{max}}"
+        }
+    },
     "poiCategory": {
         "displayWeight": {
             "int": "El peso de visualización debe ser un número entero",

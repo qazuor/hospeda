@@ -90,6 +90,7 @@
         "BAD_REQUEST": "A solicitação não é válida.",
         "CONFLICT": "O recurso entra em conflito com o estado atual.",
         "CATEGORY_IN_USE": "Esta categoria é usada por prestadores. Desative-a em vez de excluí-la.",
+        "PARTNER_TYPE_IN_USE": "Este tipo é usado por parceiros. Atribua outro tipo a eles antes de desativá-lo ou excluí-lo.",
         "SERVICE_UNAVAILABLE": "Este serviço está temporariamente indisponível. Tente novamente em alguns minutos.",
         "NEWSLETTER_NOT_CONFIGURED": "A newsletter não está disponível no momento. Estamos trabalhando para restabelecê-la.",
         "ACCOUNT_DELETED": "Esta conta foi excluída e não está mais disponível.",

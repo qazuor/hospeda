@@ -465,10 +465,10 @@ replay_config: {
 >   undeclared key" can only mean "never send one": the script sends only the
 >   seven declared keys.
 > - **Retention is not configurable, and nothing in Umami ever deletes replays**
->   (only a website reset or delete does). There is no 30-day default either. No
->   retention job was built; the privacy doc states indefinite retention, and the
->   mechanism is an open owner decision (§12). AC-S7 is satisfied by that
->   statement.
+>   (only a website reset or delete does). There is no 30-day default either. The
+>   spike found this; the owner then decided (2026-11-18, OQ-8) that Hospeda purges
+>   them itself: configurable 14, 30 or 60 days (default 30), a daily cron plus a
+>   manual action, saved replays included. See the privacy doc and AC-S7.
 
 ### 6.9 Admin card
 
@@ -716,10 +716,11 @@ means a `script#umami-recorder` exists with
 - **AC-S6** No env var for a write-capable Umami credential is added to
   `packages/config` or to any app env schema (`pnpm env:check:registry` green,
   plus a grep guard over the api).
-- **AC-S7** Given T-001 found a configurable recording retention, then it reads
-  14 days on staging and on prod, wherever it lives (declared by `umami:setup`,
-  or set on the Umami app). Given T-001 found none, then the privacy doc states
-  that Umami's default retention of 30 days applies.
+- **AC-S7** (rewritten by the retention decision, 2026-11-18, OQ-8) Umami 3.5 has no
+  retention setting, so the privacy doc states the retention Hospeda enforces itself:
+  configurable 14, 30 or 60 days (default 30), a daily purge that also runs while
+  recording is OFF, saved replays included, and a manual "clean up now" action. A test
+  (`apps/web/test/docs/session-replay-privacy-doc.test.ts`) pins those statements.
 
 ### 9.7 Permission and seed
 
@@ -860,13 +861,16 @@ The six open questions of the first draft were answered by the owner on
   description. Whether those legal texts change too is still open, and it is the
   owner's legal call. It does not block implementation; it must be answered
   before the first prod ON (AC-SM6).
-- **OQ-8 Replay retention (opened by the T-001 spike).** D-5 assumed either a
-  configurable retention or a 30-day Umami default. Neither exists: Umami 3.5
-  keeps replays forever. Options: (a) a VPS cron that deletes replay rows older
-  than 14 days directly in the Umami database; (b) accept indefinite retention;
-  (c) a Hospeda cron with read/write access to the Umami database. Not built;
-  it must be answered before the first prod ON. Until then, production stays ON
-  only for bounded windows.
+- **OQ-8 Replay retention (opened by the T-001 spike). RESOLVED 2026-11-18 (owner).**
+  Umami 3.5 keeps replays forever, so D-5 does not hold. Decision: replays and
+  heatmaps are deleted automatically after a configurable period of 14, 30 or
+  60 days (default 30), plus a manual "clean up now" action. Both live in the
+  existing admin card behind `analytics.sessionRecording.manage`. The api purges
+  through a direct Postgres connection (`HOSPEDA_UMAMI_DATABASE_URL`, a role with
+  only SELECT and DELETE on `session_replay` and `heatmap_event`), scoped by
+  website id and `created_at`, in batches. The api still holds no Umami API write
+  key. Delivered by the retention follow-up PR; see
+  `docs/analytics/session-replay-privacy.md`.
 
 No other questions remain open.
 

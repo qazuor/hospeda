@@ -330,6 +330,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Hard-delete mcp.tool.call audit rows older than 12 months; every other audit and security row is untouched (HOS-2335 D-13 owner retention decision).'
     },
     {
+        name: 'session-recording-retention',
+        displayName: 'Purga de grabaciones de sesion de Umami',
+        category: 'system',
+        schedule: '25 4 * * *',
+        description:
+            'Delete Umami session replays and heatmap events older than the configured retention (14, 30 or 60 days), even while recording is switched off (HOS-2347 owner retention decision).'
+    },
+    {
         name: 'venue-events-past-cleanup',
         displayName: 'Limpieza de eventos pasados de locales',
         category: 'system',

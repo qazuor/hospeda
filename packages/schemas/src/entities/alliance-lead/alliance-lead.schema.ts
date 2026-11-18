@@ -12,8 +12,8 @@ import {
 } from '../../common/id.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
-import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
 import { HostTradeCatalogSlugSchema } from '../host-trade-category/host-trade-category.fields.js';
+import { PartnerTypeSlugSchema } from '../partner-type/partner-type.fields.js';
 
 // ---------------------------------------------------------------------------
 // Alliance Lead Schema
@@ -195,14 +195,18 @@ export const AllianceLeadSchema = z.object({
      * into {@link AllianceLeadSchema.shape.message} by the submitting form —
      * that field is WHAT ALLIANCE the applicant is proposing (for an admin to
      * read and evaluate), while this one is WHAT KIND of organization they
-     * are (the structured value that becomes `partners.type`).
+     * are (the structured value that becomes `partners.type_id`).
+     *
+     * A partner type catalog SLUG since HOS-2336, no longer the closed enum.
+     * The shape is checked here; that it names an ACTIVE type is checked by
+     * the service at submission and again at approval (spec D3).
      *
      * Nullish because the other three kinds never carry it. The per-kind
      * requirement is imposed by `refineAllianceLeadKindFields` on the create
      * input, not here — this schema also parses rows submitted before the
      * column existed, which legitimately have none.
      */
-    partnerType: PartnerTypeEnumSchema.nullish(),
+    partnerType: PartnerTypeSlugSchema.nullish(),
 
     /**
      * Service category the applicant operates in (HOS-278 §6.4).

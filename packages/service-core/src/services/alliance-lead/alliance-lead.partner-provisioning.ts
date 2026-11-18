@@ -1,7 +1,13 @@
-import type { PartnerModel, SelectAllianceLead } from '@repo/db';
+import type { PartnerModel, PartnerTypeModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
-import { LifecycleStatusEnum, type PartnerTypeEnum, PartnerTypeEnumSchema } from '@repo/schemas';
+import {
+    type AllianceLeadPartnerProvisionSkipReason,
+    LifecycleStatusEnum,
+    type Partner,
+    PartnerTypeSlugSchema
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
+import { legacyPartnerTypeFor } from '../partner-type/partner-type.helpers';
 
 /**
  * @file alliance-lead.partner-provisioning.ts
@@ -23,6 +29,11 @@ export interface ProvisionPartnerInput {
     readonly lead: SelectAllianceLead;
     /** Model used to look up slugs and insert the partner. */
     readonly partnerModel: PartnerModel;
+    /**
+     * Partner type catalog (HOS-2336). The lead's `partnerType` slug is
+     * re-validated against ACTIVE types here, at approval time (spec D3).
+     */
+    readonly partnerTypeModel: PartnerTypeModel;
     /** The admin performing the action — recorded as the row's creator. */
     readonly actorId: string;
     /** Logger for the skip paths, which are silent by design but not invisible. */
@@ -31,11 +42,15 @@ export interface ProvisionPartnerInput {
     readonly tx?: Parameters<PartnerModel['create']>[1];
 }
 
-/** Why provisioning did not produce a partner row, when it did not. */
-export type PartnerProvisionSkipReason =
-    | 'not-a-partner'
-    | 'already-provisioned'
-    | 'legacy-lead-without-typed-fields';
+/**
+ * Why provisioning did not produce a partner row, when it did not. Derived
+ * from the closed `@repo/schemas` set so the API response enum and this type
+ * cannot drift. `no-active-partner-type`: the lead's `partnerType` slug names
+ * no ACTIVE, non-deleted type at approval time, because it was deactivated or
+ * deleted after the lead was submitted (HOS-2336 AC-2.2). The lead is still
+ * approved; no partner is created.
+ */
+export type PartnerProvisionSkipReason = AllianceLeadPartnerProvisionSkipReason;
 
 /**
  * What provisioning this lead will produce, decided WITHOUT touching the
@@ -55,7 +70,12 @@ export type PartnerProvisionPlan =
     | {
           readonly kind: 'provision';
           readonly organizationName: string;
-          readonly type: PartnerTypeEnum;
+          /**
+           * The catalog slug the lead declared. Whether it is still an ACTIVE
+           * type is NOT known here (this function is pure); the execution
+           * resolves it and may still skip with `no-active-partner-type`.
+           */
+          readonly typeSlug: string;
       };
 
 /**
@@ -79,12 +99,10 @@ export const resolvePartnerProvisionPlan = (lead: SelectAllianceLead): PartnerPr
         };
     }
 
-    // NARROWED, not merely checked for presence: the lead stores the type as
-    // varchar (this table's convention for closed sets) while `partners.type`
-    // is a real Postgres enum. Parsing is what crosses that seam — a cast would
-    // let a value the enum rejects reach the insert and fail there, halfway
-    // through provisioning.
-    const type = PartnerTypeEnumSchema.safeParse(lead.partnerType);
+    // NARROWED to the slug shape, not merely checked for presence. Whether the
+    // slug still names an ACTIVE catalog type is a database question, answered
+    // by `provisionPartnerFromLead` under a FOR SHARE lock (HOS-2336).
+    const type = PartnerTypeSlugSchema.safeParse(lead.partnerType);
 
     // `businessName` is checked here rather than trusted, because the backend
     // create schema does NOT require it for `partner` — only the web form does
@@ -98,7 +116,7 @@ export const resolvePartnerProvisionPlan = (lead: SelectAllianceLead): PartnerPr
     return {
         kind: 'provision',
         organizationName: lead.businessName,
-        type: type.data
+        typeSlug: type.data
     };
 };
 
@@ -132,6 +150,9 @@ export type ProvisionPartnerResult =
  *   There is nothing to build a NOT NULL row from. These keep the pre-HOS-278
  *   behavior: the admin creates the partner by hand. Refusing outright would
  *   strand every partner lead already sitting in the inbox.
+ * - **no-active-partner-type** — the lead's type slug was deactivated or
+ *   deleted after submission (HOS-2336 AC-2.2). Logged at `warn` with the lead
+ *   id and slug; the admin picks a type and creates the partner by hand.
  *
  * The row is created DORMANT — `lifecycleState: DRAFT`. Public visibility
  * requires `ACTIVE`, so a provisioned partner is invisible until an admin
@@ -144,6 +165,7 @@ export type ProvisionPartnerResult =
 export const provisionPartnerFromLead = async ({
     lead,
     partnerModel,
+    partnerTypeModel,
     actorId,
     logger,
     tx
@@ -166,6 +188,18 @@ export const provisionPartnerFromLead = async ({
         return { provisioned: false, reason: plan.reason, partnerId: plan.partnerId };
     }
 
+    // FOR SHARE: a concurrent deactivation or delete of this type (which takes
+    // FOR UPDATE) cannot commit between this check and the insert below.
+    const partnerType = await partnerTypeModel.findActiveBySlugForShare(plan.typeSlug, tx);
+    if (!partnerType) {
+        logger.warn(
+            { leadId: lead.id, partnerTypeSlug: plan.typeSlug },
+            '[alliance-lead] approved partner lead names a partner type that is no longer ' +
+                'active — lead approved, partner must be created by hand'
+        );
+        return { provisioned: false, reason: 'no-active-partner-type' };
+    }
+
     const slug = await createUniqueSlug(plan.organizationName, async (candidate) => {
         const existing = await partnerModel.findOne({ slug: candidate });
         return !!existing;
@@ -175,7 +209,10 @@ export const provisionPartnerFromLead = async ({
         {
             slug,
             name: plan.organizationName,
-            type: plan.type,
+            // Dual-write (HOS-2336 release N): the catalog id, plus the legacy
+            // enum value when the slug has one (`null` for e.g. `media`).
+            typeId: partnerType.id,
+            type: legacyPartnerTypeFor({ slug: partnerType.slug }),
             lifecycleState: LifecycleStatusEnum.DRAFT,
             // The applicant may be null: an anonymous submission whose email
             // already had an account stays unlinked until the owner redeems the
@@ -185,7 +222,7 @@ export const provisionPartnerFromLead = async ({
             ownerUserId: lead.applicantUserId,
             createdById: actorId,
             updatedById: actorId
-        },
+        } as Partial<Partner>,
         tx
     );
 

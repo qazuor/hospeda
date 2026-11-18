@@ -1335,12 +1335,7 @@
         "error": "Could not load applications. Reload the page.",
         "previous": "Previous",
         "next": "Next",
-        "page": "Page {page} of {totalPages}",
-        "types": {
-            "business": "Business",
-            "ngo": "Nonprofit organization",
-            "institution": "Institution"
-        }
+        "page": "Page {page} of {totalPages}"
     },
     "partnerEmptyPresence": {
         "title": "Empty the Partner presence",

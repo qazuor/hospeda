@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "partnerType.schema.json",
+    "title": "PartnerType Seed Schema",
+    "description": "JSON schema for partner type catalog seeds (HOS-2336) — matches the partner_types table. The row id is NOT the fixture id: it is a UUIDv5 derived from the slug.",
+    "type": "object",
+    "properties": {
+        "$schema": { "type": "string" },
+        "id": {
+            "type": "string",
+            "description": "Seed identifier (not the DB UUID — the UUID is derived from the slug)"
+        },
+        "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "minLength": 2,
+            "maxLength": 30,
+            "description": "Immutable kebab-case identifier (fits alliance_leads.partner_type varchar(30))"
+        },
+        "nameI18n": {
+            "type": "object",
+            "properties": {
+                "es": { "type": "string", "minLength": 1 },
+                "en": { "type": "string" },
+                "pt": { "type": "string" }
+            },
+            "required": ["es", "en", "pt"],
+            "additionalProperties": false
+        },
+        "displayWeight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Lower renders first"
+        },
+        "lifecycleState": { "type": "string", "enum": ["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"] }
+    },
+    "required": ["id", "slug", "nameI18n", "displayWeight"],
+    "additionalProperties": false
+}

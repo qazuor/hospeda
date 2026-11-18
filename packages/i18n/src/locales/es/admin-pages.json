@@ -996,7 +996,10 @@
                     },
                     "reasonLabel": "Motivo (obligatorio)",
                     "reasonPlaceholder": "Escribí el motivo que quedará en la auditoría",
-                    "confirm": { "assign": "Dar el rol", "remove": "Quitar el rol" },
+                    "confirm": {
+                        "assign": "Dar el rol",
+                        "remove": "Quitar el rol"
+                    },
                     "cancel": "Cancelar",
                     "rows": {
                         "ACC_17": "Migrar a los clientes de un plan retirado",
@@ -1324,7 +1327,29 @@
                 "cancel": "Cancelar",
                 "saveError": "No se pudo guardar el cambio. El estado mostrado es el último confirmado.",
                 "readError": "No se pudo leer el estado actual.",
-                "retry": "Reintentar"
+                "retry": "Reintentar",
+                "retentionLabel": "Retención de grabaciones",
+                "retentionHelp": "Pasado este período, las grabaciones y los datos de mapas de calor se borran solos todos los días, aunque el interruptor esté apagado.",
+                "retentionSaveError": "No se pudo guardar el período. Se muestra el último confirmado.",
+                "purgeButton": "Limpiar ahora",
+                "purgeAria": "Borrar ahora las grabaciones vencidas",
+                "purgeConfirmAction": "Borrar ahora",
+                "purgeError": "No se pudo completar la limpieza.",
+                "purgeNotConfigured": "La limpieza no está configurada: falta la conexión a la base de Umami en la api.",
+                "purgeStoppedEarly": "La limpieza no llegó a terminar en el tiempo disponible: se completará en la próxima corrida.",
+                "purgeMismatch": "El período de retención cambió mientras confirmabas. Revisá el valor actual y volvé a intentar.",
+                "purgeRunning": "Ya hay una limpieza en curso. Probá de nuevo en unos minutos.",
+                "retentionOption_one": "{{count}} día",
+                "retentionOption_other": "{{count}} días",
+                "purgeConfirm_one": "Se van a borrar de forma definitiva las grabaciones (incluidas las guardadas) y los datos de mapas de calor con más de {{count}} día. ¿Limpiar ahora?",
+                "purgeConfirm_other": "Se van a borrar de forma definitiva las grabaciones (incluidas las guardadas) y los datos de mapas de calor con más de {{count}} días. ¿Limpiar ahora?",
+                "purgeDone": "Se borró: {{replays}}, {{heatmaps}} y {{saved}}. Período usado: {{period}}.",
+                "purgeDoneReplays_one": "{{count}} grabación",
+                "purgeDoneReplays_other": "{{count}} grabaciones",
+                "purgeDoneHeatmaps_one": "{{count}} evento de mapa de calor",
+                "purgeDoneHeatmaps_other": "{{count}} eventos de mapa de calor",
+                "purgeDoneSaved_one": "{{count}} grabación guardada",
+                "purgeDoneSaved_other": "{{count}} grabaciones guardadas"
             }
         },
         "seo": {
@@ -1549,7 +1574,10 @@
             "next": "Siguiente",
             "page": "Página {page} de {total}"
         },
-        "reasons": { "RETIREMENT": "Retiro del catálogo", "PRICE_INCREASE": "Aumento de precio" },
+        "reasons": {
+            "RETIREMENT": "Retiro del catálogo",
+            "PRICE_INCREASE": "Aumento de precio"
+        },
         "retiredVersions": {
             "title": "Versiones retiradas",
             "show": "Mostrar versiones retiradas",
@@ -2162,5 +2190,60 @@
             "notNeeded": "La ficha ya no choca con otra ficha publicada del dueño, así que el pedido se cerró y no se concedió nada. Se actualizó la lista."
         },
         "genericError": "No se pudo completar la acción."
+    },
+    "partnerTypes": {
+        "title": "Tipos de partner",
+        "subtitle": "Catálogo de tipos que se pueden asignar a un partner.",
+        "loading": "Cargando…",
+        "error": "No se pudo cargar el catálogo.",
+        "empty": "Todavía no hay tipos.",
+        "add": "Nuevo tipo",
+        "showDeleted": "Mostrar borrados",
+        "state": {
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "deleted": "Borrado"
+        },
+        "columns": {
+            "name": "Nombre",
+            "slug": "Identificador",
+            "weight": "Peso",
+            "state": "Estado",
+            "partners": "Partners",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Eliminar",
+            "restore": "Restaurar",
+            "cancel": "Cancelar",
+            "save": "Guardar"
+        },
+        "dialog": {
+            "createTitle": "Nuevo tipo de partner",
+            "editTitle": "Editar tipo de partner",
+            "nameLabel": "Nombre",
+            "slugLabel": "Identificador",
+            "slugHint": "Se define al crear y no se puede cambiar después.",
+            "weightLabel": "Peso de orden",
+            "weightHint": "Los valores más bajos se muestran primero.",
+            "activeLabel": "Activo",
+            "activeHint": "Un tipo inactivo deja de ofrecerse para partners nuevos; los que ya lo tienen lo conservan."
+        },
+        "deleteDialog": {
+            "title": "Eliminar tipo de partner",
+            "message": "Vas a eliminar el tipo «{{name}}». Podés restaurarlo después desde «Mostrar borrados».",
+            "confirm": "Eliminar tipo"
+        },
+        "messages": {
+            "created": "Tipo creado.",
+            "updated": "Tipo actualizado.",
+            "deleted": "Tipo eliminado.",
+            "restored": "Tipo restaurado.",
+            "saveError": "No se pudo guardar el tipo.",
+            "deleteError": "No se pudo eliminar el tipo.",
+            "restoreError": "No se pudo restaurar el tipo.",
+            "inUse": "No se puede: {{count}} partner(s) usan este tipo. Asignales otro tipo primero."
+        }
     }
 }

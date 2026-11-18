@@ -138,7 +138,8 @@ test.describe('TEST:V8b:2 AC:V8b:2 partner application panel lists, marks overdu
         await newPendingRow.getByRole('button', { name: 'Aprobar' }).click();
         const approveDialog = page.getByTestId('partner-application-action-dialog');
         await approveDialog.getByLabel('Nombre del Partner').fill('Partner aprobado HOS-1496');
-        await approveDialog.getByLabel('Tipo de Partner').selectOption('business');
+        // Options come from the partner type catalog (HOS-2336): value is the type id.
+        await approveDialog.getByLabel('Tipo de Partner').selectOption({ label: 'Comercio' });
         await approveDialog.getByLabel('Motivo').fill('Aprobado en prueba e2e');
         await approveDialog.getByRole('button', { name: 'Aprobar', exact: true }).click();
         await expect

@@ -778,6 +778,41 @@ Rules worth knowing before touching them:
 
 ---
 
+## Partner Type Catalog Routes (HOS-2336)
+
+A partner's type is a row of the admin-managed `partner_types` catalog, referenced
+by `partners.type_id` (FK `RESTRICT`). Release N dual-writes the legacy
+`partners.type` enum (the value when the slug has one, `NULL` otherwise); release
+N+1 makes `type_id` NOT NULL and drops the enum.
+
+| Tier | Method | Path | `requiredPermissions` | Notes |
+|------|--------|------|-----------------------|-------|
+| Public | `GET` | `/api/v1/public/partner-types` | none | ACTIVE types ordered by weight, then Spanish name, with `nameI18n`. Feeds the partner forms. |
+| Admin | `GET`, `POST` | `/api/v1/admin/partner-types` | `PARTNER_TYPE_VIEW` / `_CREATE` | List rows carry `partnerCount`. `slug` is immutable and stays reserved after a soft delete (409 `ALREADY_EXISTS`). |
+| Admin | `GET`, `PATCH`, `DELETE` | `/api/v1/admin/partner-types/{id}` | `_VIEW` / `_UPDATE` / `_DELETE` | A body with `slug` answers 400. |
+| Admin | `POST` | `/api/v1/admin/partner-types/{id}/restore` | `_RESTORE` | |
+
+Rules worth knowing before touching them:
+
+- **`PARTNER_TYPE_IN_USE` is a 409 with a public `details.count`.** Deactivating or
+  soft-deleting a type that a non-deleted partner uses is refused. The check locks
+  the type `FOR UPDATE`; every partner write reads its type `FOR SHARE`, so the two
+  serialize.
+- **Partner writes take `typeId`.** It must be ACTIVE, unless it is the partner's
+  current type (saving other fields of a partner whose type was deactivated never
+  forces a change). Partner-application approval sends `typeId` too.
+- **Reads carry the type.** Admin reads embed `partnerType` (`id`, `slug`,
+  `nameI18n`, `lifecycleState`); public partner reads carry
+  `type: { slug, name, nameI18n } | null`. `?type=` filters take a catalog slug.
+- **Every catalog write purges the `catalog-partner-types` cache tag**
+  (`CACHE_TAG_PARTNER_TYPES`, `purgePartnerTypesCache`). The public partner page
+  carries the tag, so a rename reaches it.
+- Approve-and-provision of a partner alliance lead re-validates the lead's slug
+  against ACTIVE types and answers `201` with `reason: 'no-active-partner-type'`
+  when it is not.
+
+---
+
 ## Host-Trade Benefit Usage and Review Routes (HOS-376)
 
 The provider directory's write surface: one party declares that a benefit was
