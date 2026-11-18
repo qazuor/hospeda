@@ -1,5 +1,5 @@
 {
-  "id": "fa763953-5f71-42c5-a358-005389b0d18a",
+  "id": "b9c5e4af-5b96-466d-8c0a-4becfa04d68a",
   "prevId": "f046ffd4-5016-4e13-a725-7fe9994db199",
   "version": "7",
   "dialect": "postgresql",
@@ -32641,6 +32641,203 @@
       },
       "isRLSEnabled": false
     },
+    "public.provider_watch_run": {
+      "name": "provider_watch_run",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account": {
+          "name": "account",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "measurements": {
+          "name": "measurements",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "ledger": {
+          "name": "ledger",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"charged\":0,\"refunded\":0}'::jsonb"
+        },
+        "alerts": {
+          "name": "alerts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'[]'::jsonb"
+        }
+      },
+      "indexes": {
+        "idx_provider_watch_run_completed": {
+          "name": "idx_provider_watch_run_completed",
+          "columns": [
+            {
+              "expression": "account",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "finished_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"provider_watch_run\".\"outcome\" = 'completed'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_provider_watch_run_account": {
+          "name": "ck_provider_watch_run_account",
+          "value": "\"provider_watch_run\".\"account\" IN ('sandbox', 'production')"
+        },
+        "ck_provider_watch_run_outcome": {
+          "name": "ck_provider_watch_run_outcome",
+          "value": "\"provider_watch_run\".\"outcome\" IN ('running', 'completed', 'failed', 'aborted', 'refused')"
+        },
+        "ck_provider_watch_run_span": {
+          "name": "ck_provider_watch_run_span",
+          "value": "\"provider_watch_run\".\"finished_at\" IS NULL OR \"provider_watch_run\".\"finished_at\" >= \"provider_watch_run\".\"started_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.provider_watch_shape_baseline": {
+      "name": "provider_watch_shape_baseline",
+      "schema": "",
+      "columns": {
+        "account": {
+          "name": "account",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "measurement_id": {
+          "name": "measurement_id",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "shapes": {
+          "name": "shapes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "source_run_id": {
+          "name": "source_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accepted_by": {
+          "name": "accepted_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "provider_watch_shape_baseline_source_run_id_provider_watch_run_id_fk": {
+          "name": "provider_watch_shape_baseline_source_run_id_provider_watch_run_id_fk",
+          "tableFrom": "provider_watch_shape_baseline",
+          "tableTo": "provider_watch_run",
+          "columnsFrom": [
+            "source_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "provider_watch_shape_baseline_accepted_by_users_id_fk": {
+          "name": "provider_watch_shape_baseline_accepted_by_users_id_fk",
+          "tableFrom": "provider_watch_shape_baseline",
+          "tableTo": "users",
+          "columnsFrom": [
+            "accepted_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "provider_watch_shape_baseline_account_measurement_id_pk": {
+          "name": "provider_watch_shape_baseline_account_measurement_id_pk",
+          "columns": [
+            "account",
+            "measurement_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_provider_watch_shape_baseline_account": {
+          "name": "ck_provider_watch_shape_baseline_account",
+          "value": "\"provider_watch_shape_baseline\".\"account\" IN ('sandbox', 'production')"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.cuota_ventana": {
       "name": "cuota_ventana",
       "schema": "",
@@ -35609,7 +35806,6 @@
         "logs.viewAll",
         "errors.view",
         "analytics.view",
-        "analytics.sessionRecording.manage",
         "system.debugTools.access",
         "entities.bulk.import",
         "entities.bulk.export",
@@ -36021,6 +36217,7 @@
         "billing.subscription.inspect",
         "billing.viewOwn",
         "billing.settleExternal",
+        "billing.providerWatch.manage",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
         "billing.refund",

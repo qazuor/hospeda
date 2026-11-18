@@ -1863,6 +1863,26 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/provider-watch/account"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/provider-watch/authorization"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/provider-watch/authorization-preview"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/provider-watch/shapes"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/provider-watch/shapes/:measurementId/accept"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/qr-codes"
         },
         {

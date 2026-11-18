@@ -10,6 +10,7 @@ import {
 } from './mercadopago-deliveries';
 import { serializeAuthorization } from './serialize-authorization';
 import { serializeCharge } from './serialize-charge';
+import type { FakeProviderAccount } from './users-me-route';
 
 export interface AdjustableFakeServerClock {
     now(): Date;
@@ -24,6 +25,8 @@ export interface FakeProviderServerOptions {
     readonly host?: string;
     readonly clockFile?: string;
     readonly throttle?: FakeProviderThrottle;
+    /** The kind of account `GET /users/me` answers as. Defaults to `sandbox` (a test account). */
+    readonly account?: FakeProviderAccount;
 }
 
 /** Configures deterministic HTTP 429 responses from the fake provider server. */
@@ -230,7 +233,8 @@ export async function startFakeProviderServer(
                 headers: request.headers,
                 body,
                 refundAmounts,
-                now: options.clock.now()
+                now: options.clock.now(),
+                ...(options.account === undefined ? {} : { account: options.account })
             });
             if (extra !== null) {
                 if (extra.body === undefined) response.writeHead(extra.status).end();

@@ -134,7 +134,9 @@ function isOldBillingPermission(value: string): boolean {
         value === 'billing.migratePlan' ||
         // HOS-1580 actions 9 and 10 are new billing permissions.
         value === 'billing.pauseSubscription' ||
-        value === 'billing.changeSubscriptionPlan'
+        value === 'billing.changeSubscriptionPlan' ||
+        // HOS-1512 the provider watch battery's owner permission is new billing, not legacy.
+        value === 'billing.providerWatch.manage'
     )
         return false;
     return (

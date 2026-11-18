@@ -180,6 +180,7 @@ import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import { adminPostSponsorRoutes } from './postSponsor';
 import { protectedPriceAlertRoutes } from './price-alert';
 import { protectedProfileRoutes } from './profile';
+import { adminProviderWatchRoutes } from './provider-watch/admin/index.js';
 import { protectedPublishRoutes } from './publish';
 // Redirectable QR codes (HOS-981): public resolution + admin CRUD
 import { adminQrCodeRoutes, publicQrCodeRoutes } from './qr-code';
@@ -711,6 +712,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Platform settings admin (SPEC-156 PR-1: SEO defaults, maintenance mode, announcements)
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
+        // HOS-1512: provider watch battery (account confirmation, authorization, shape acceptance)
+        app.route('/api/v1/admin/provider-watch', adminProviderWatchRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);

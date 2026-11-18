@@ -27,6 +27,7 @@ import type {
     MaintenanceModeValue,
     PaidSignupsFreezeValue,
     PlatformSettingsKey,
+    ProviderWatchAuthorizationValue,
     SeoDefaultsValue,
     SessionRecordingValue
 } from '@repo/schemas';
@@ -55,7 +56,9 @@ export type PlatformSettingValue<K extends PlatformSettingsKey> = K extends 'seo
             ? AddonPurchasesFreezeValue
             : K extends 'analytics.sessionRecording'
               ? SessionRecordingValue
-              : never;
+              : K extends 'billing.providerWatchAuthorization'
+                ? ProviderWatchAuthorizationValue
+                : never;
 
 /**
  * Shape of a single row returned by `GET /api/v1/admin/platform-settings/{key}`.
