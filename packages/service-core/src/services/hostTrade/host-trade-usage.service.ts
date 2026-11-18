@@ -44,7 +44,8 @@ import { recalculateHostTradeAggregates } from './host-trade-aggregates';
 import {
     checkCanDeclareUsageAsHost,
     checkCanManageUsages,
-    checkCanViewAllUsages
+    checkCanViewAllUsages,
+    isUsageCounterpart
 } from './host-trade-usage.permissions';
 
 /**
@@ -1019,6 +1020,47 @@ export class HostTradeUsageService extends BaseCrudService<
     // --- Transitions ------------------------------------------------------
 
     /**
+     * Reads a usage the actor may answer, without changing it (HOS-2332).
+     *
+     * The read half of {@link confirmUsage} / {@link rejectUsage}: the SAME
+     * counterpart check, so a caller that previews an answer before committing
+     * it (the MCP `confirm_benefit_usage` / `reject_benefit_usage` preview) is
+     * refused exactly where the transition would be. A foreign usage, the
+     * declarant's own declaration (AC-6) and a missing id are one NOT_FOUND,
+     * never FORBIDDEN. The state is NOT checked here: the transition does that,
+     * and a reader may want to say "already answered" in its own words.
+     *
+     * The row comes back with its provider ref, the projection the host-facing
+     * lists carry, so the caller can name the provider without a second read.
+     *
+     * @param input - The usage id.
+     * @param actor - Must be the counterpart of whoever declared it.
+     * @param ctx - Optional service context.
+     * @returns The usage with its provider ref.
+     */
+    public async getAnswerableUsage(
+        input: { usageId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ usage: HostTradeBenefitUsageWithProvider }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getAnswerableUsage',
+            input: { ...input, actor },
+            schema: usageIdInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const usage = await this.requireAnswerableBy(
+                    validated.usageId,
+                    validatedActor,
+                    ctx
+                );
+                const [withProvider] = await this.attachProviders([usage], ctx);
+                return { usage: withProvider ?? { ...usage, hostTrade: null, hasReview: false } };
+            }
+        });
+    }
+
+    /**
      * Confirms a pending usage. Only the counterpart may do it.
      *
      * @param input - The usage id.
@@ -1449,15 +1491,22 @@ export class HostTradeUsageService extends BaseCrudService<
     ): Promise<HostTradeBenefitUsage> {
         const usage = await this.requireUsage(usageId, ctx);
 
-        let counterpartId: string | null;
-        if (usage.declaredBy === HostTradeUsageDeclaredByEnum.PROVIDER) {
-            counterpartId = usage.hostUserId;
-        } else {
-            const provider = await this.hostTradeModel.findById(usage.hostTradeId, ctx?.tx);
-            counterpartId = provider?.ownerUserId ?? null;
-        }
+        // The listing is only read when the HOST declared the row: a
+        // provider-declared row names its counterpart on the row itself.
+        const providerOwnerUserId =
+            usage.declaredBy === HostTradeUsageDeclaredByEnum.PROVIDER
+                ? null
+                : ((await this.hostTradeModel.findById(usage.hostTradeId, ctx?.tx))?.ownerUserId ??
+                  null);
 
-        if (!counterpartId || counterpartId !== actor.id) {
+        if (
+            !isUsageCounterpart({
+                declaredBy: usage.declaredBy,
+                hostUserId: usage.hostUserId,
+                providerOwnerUserId,
+                actorId: actor.id
+            })
+        ) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Usage not found');
         }
         return usage;
