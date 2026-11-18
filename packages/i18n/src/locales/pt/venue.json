@@ -367,7 +367,7 @@
                 "pastCount": "{{count}} eventos passados",
                 "pastCount_one": "{{count}} evento passado",
                 "pastCount_other": "{{count}} eventos passados",
-                "duplicate": "Duplicar",
+                "duplicate": "Duplicar evento",
                 "removeAllPast": "Apagar todos os passados",
                 "removeAllPastConfirm": "Apagar todos os eventos passados? Eles são removidos ao salvar a agenda.",
                 "removeAllPastTitle": "Apagar eventos passados",
