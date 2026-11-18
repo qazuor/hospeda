@@ -276,12 +276,20 @@ export async function replaceVenueEvents(
         // switched-off ones). A past entry counts for nothing, because the
         // document still carries it until the cleanup cron deletes it. The
         // schema cannot do this: it does not know the time.
-        const { current } = partitionVenueEvents({
+        const { current, past } = partitionVenueEvents({
             events: validated.agenda.events,
             now: new Date()
         });
         if (current.length > VENUE_EVENTS_MAX_ENTRIES) {
             throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'zodError.venue.events.max');
+        }
+        // A past entry may only be one that already exists (re-sent with its id).
+        // Creating one dated in the past would skip the ceiling above.
+        if (past.some((event) => event.id === undefined)) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'a new venue event cannot be dated in the past'
+            );
         }
 
         const eventModel = new VenueEventModel();

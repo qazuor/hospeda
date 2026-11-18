@@ -279,10 +279,32 @@ describe('replaceVenueEvents: the ceiling counts non-past entries (HOS-2254)', (
         expect(calls).toStrictEqual([]);
     });
 
-    it('saves 30 non-past entries together with 25 past ones', async () => {
+    const seedPast = (count: number): string[] =>
+        Array.from({ length: count }, (_, i) => {
+            const pastId = `00000000-0000-4000-9000-${String(i).padStart(12, '0')}`;
+            store.set(pastId, {
+                id: pastId,
+                venueId: VENUE_ID,
+                title: `Pasado ${i}`,
+                description: null,
+                recurrence: 'once',
+                date: '2026-10-01',
+                weekday: null,
+                startTime: '21:00:00',
+                endTime: '23:00:00',
+                isActive: true,
+                displayOrder: i,
+                createdAt: new Date('2026-01-01T00:00:00Z'),
+                updatedAt: new Date('2026-01-01T00:00:00Z')
+            });
+            return pastId;
+        });
+
+    it('saves 30 non-past entries together with 25 EXISTING past ones re-sent with their id', async () => {
+        const ids = seedPast(25);
         const events = [
             ...many(30, (i) => weekly(`Semanal ${i}`)),
-            ...many(25, (i) => oneOff(`Pasado ${i}`, '2026-10-01'))
+            ...ids.map((pastId, i) => ({ ...oneOff(`Pasado ${i}`, '2026-10-01'), id: pastId }))
         ];
 
         const result = await replaceVenueEvents(MODEL, ACTOR, {
@@ -292,6 +314,32 @@ describe('replaceVenueEvents: the ceiling counts non-past entries (HOS-2254)', (
 
         expect(result.error).toBeUndefined();
         expect(result.data?.events).toHaveLength(55);
+    });
+
+    it('refuses a NEW past entry (no id): it would bypass the ceiling', async () => {
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [oneOff('Nuevo pasado', '2026-10-01')] }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(calls).toStrictEqual([]);
+    });
+
+    it('refuses an unbounded number of past entries (hard cap on the document)', async () => {
+        const ids = seedPast(101);
+        const events = ids.map((pastId, i) => ({
+            ...oneOff(`Pasado ${i}`, '2026-10-01'),
+            id: pastId
+        }));
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(calls).toStrictEqual([]);
     });
 
     it('counts a switched-off future entry against the ceiling', async () => {

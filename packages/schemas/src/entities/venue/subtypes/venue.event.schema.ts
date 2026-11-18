@@ -53,6 +53,16 @@ import { z } from 'zod';
  */
 export const VENUE_EVENTS_MAX_ENTRIES = 30;
 
+/**
+ * Hard ceiling on the WHOLE document, past entries included (HOS-2254).
+ *
+ * `VENUE_EVENTS_MAX_ENTRIES` counts only entries that are not past, and the
+ * schema cannot tell them apart (it does not know the time). This bound keeps
+ * one PUT from writing an unbounded number of rows and stays well below the
+ * page size the agenda read uses, so a stored agenda can always be read back.
+ */
+export const VENUE_EVENTS_MAX_TOTAL_ENTRIES = 100;
+
 // ----------------------------------------------------------------------------
 // Recurrence
 // ----------------------------------------------------------------------------
@@ -318,12 +328,13 @@ export const VenueEventsReplacePayloadSchema = z.object({
      * means "take the agenda down" — a venue that stopped doing live music
      * needs a way to say so.
      */
-    // No `.max` here (HOS-2254): the ceiling applies to the entries that are NOT
-    // past, and the schema does not know the time. The service enforces it with
-    // `partitionVenueEvents`. The document still carries the past entries (until
-    // the cleanup cron deletes them), so a hard array cap would block an owner
-    // who simply re-sends them.
-    events: z.array(VenueEventInputSchema).default([])
+    // The 30-entry ceiling applies to entries that are NOT past (HOS-2254): the
+    // service enforces it with `partitionVenueEvents`, because the schema does
+    // not know the time. This bound is only the hard cap on the whole document.
+    events: z
+        .array(VenueEventInputSchema)
+        .max(VENUE_EVENTS_MAX_TOTAL_ENTRIES, { message: 'zodError.venue.events.max' })
+        .default([])
 });
 export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayloadSchema>;
 

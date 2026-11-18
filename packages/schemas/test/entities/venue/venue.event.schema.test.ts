@@ -28,6 +28,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     VENUE_EVENTS_MAX_ENTRIES,
+    VENUE_EVENTS_MAX_TOTAL_ENTRIES,
     VenueEventInputSchema,
     VenueEventsReplacePayloadSchema
 } from '../../../src/entities/venue/subtypes/venue.event.schema.js';
@@ -209,20 +210,22 @@ describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
         expect(result.data?.events[0]?.isActive).toBe(true);
     });
 
-    it('does not cap the array itself: the ceiling counts non-past entries in the service (HOS-2254)', () => {
-        // The schema does not know the time, so it cannot tell a past entry from
-        // a live one. `replaceVenueEvents` enforces VENUE_EVENTS_MAX_ENTRIES over
-        // `partitionVenueEvents(...).current`; a past entry never counts.
-        // Arrange
+    it('allows more than the non-past ceiling, since past entries are counted by the service (HOS-2254)', () => {
         const many = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 5 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
-        // Act
         const result = VenueEventsReplacePayloadSchema.safeParse({ events: many });
 
-        // Assert
         expect(result.success).toBe(true);
+    });
+
+    it('refuses a document over the hard total cap', () => {
+        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_TOTAL_ENTRIES + 1 }, () => ({
+            ...WEEKLY_HAPPY_HOUR
+        }));
+
+        expect(VenueEventsReplacePayloadSchema.safeParse({ events: tooMany }).success).toBe(false);
     });
 
     it('rejects the whole document when ONE entry has a broken recurrence', () => {
