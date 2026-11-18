@@ -273,9 +273,6 @@
         "other": "Other"
     },
     "partnerType": {
-        "label": "Partner type",
-        "business": "Business",
-        "ngo": "NGO",
-        "institution": "Institution"
+        "label": "Partner type"
     }
 }

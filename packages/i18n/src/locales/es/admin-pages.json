@@ -996,7 +996,10 @@
                     },
                     "reasonLabel": "Motivo (obligatorio)",
                     "reasonPlaceholder": "Escribí el motivo que quedará en la auditoría",
-                    "confirm": { "assign": "Dar el rol", "remove": "Quitar el rol" },
+                    "confirm": {
+                        "assign": "Dar el rol",
+                        "remove": "Quitar el rol"
+                    },
                     "cancel": "Cancelar",
                     "rows": {
                         "ACC_17": "Migrar a los clientes de un plan retirado",
@@ -1530,7 +1533,10 @@
             "next": "Siguiente",
             "page": "Página {page} de {total}"
         },
-        "reasons": { "RETIREMENT": "Retiro del catálogo", "PRICE_INCREASE": "Aumento de precio" },
+        "reasons": {
+            "RETIREMENT": "Retiro del catálogo",
+            "PRICE_INCREASE": "Aumento de precio"
+        },
         "retiredVersions": {
             "title": "Versiones retiradas",
             "show": "Mostrar versiones retiradas",
@@ -2133,5 +2139,60 @@
             "notNeeded": "La ficha ya no choca con otra ficha publicada del dueño, así que el pedido se cerró y no se concedió nada. Se actualizó la lista."
         },
         "genericError": "No se pudo completar la acción."
+    },
+    "partnerTypes": {
+        "title": "Tipos de partner",
+        "subtitle": "Catálogo de tipos que se pueden asignar a un partner.",
+        "loading": "Cargando…",
+        "error": "No se pudo cargar el catálogo.",
+        "empty": "Todavía no hay tipos.",
+        "add": "Nuevo tipo",
+        "showDeleted": "Mostrar borrados",
+        "state": {
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "deleted": "Borrado"
+        },
+        "columns": {
+            "name": "Nombre",
+            "slug": "Identificador",
+            "weight": "Peso",
+            "state": "Estado",
+            "partners": "Partners",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Eliminar",
+            "restore": "Restaurar",
+            "cancel": "Cancelar",
+            "save": "Guardar"
+        },
+        "dialog": {
+            "createTitle": "Nuevo tipo de partner",
+            "editTitle": "Editar tipo de partner",
+            "nameLabel": "Nombre",
+            "slugLabel": "Identificador",
+            "slugHint": "Se define al crear y no se puede cambiar después.",
+            "weightLabel": "Peso de orden",
+            "weightHint": "Los valores más bajos se muestran primero.",
+            "activeLabel": "Activo",
+            "activeHint": "Un tipo inactivo deja de ofrecerse para partners nuevos; los que ya lo tienen lo conservan."
+        },
+        "deleteDialog": {
+            "title": "Eliminar tipo de partner",
+            "message": "Vas a eliminar el tipo «{{name}}». Podés restaurarlo después desde «Mostrar borrados».",
+            "confirm": "Eliminar tipo"
+        },
+        "messages": {
+            "created": "Tipo creado.",
+            "updated": "Tipo actualizado.",
+            "deleted": "Tipo eliminado.",
+            "restored": "Tipo restaurado.",
+            "saveError": "No se pudo guardar el tipo.",
+            "deleteError": "No se pudo eliminar el tipo.",
+            "restoreError": "No se pudo restaurar el tipo.",
+            "inUse": "No se puede: {{count}} partner(s) usan este tipo. Asignales otro tipo primero."
+        }
     }
 }

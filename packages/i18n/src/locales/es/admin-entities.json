@@ -1297,12 +1297,7 @@
         "error": "No se pudieron cargar las postulaciones. Recargá la página.",
         "previous": "Anterior",
         "next": "Siguiente",
-        "page": "Página {page} de {totalPages}",
-        "types": {
-            "business": "Empresa",
-            "ngo": "Organización sin fines de lucro",
-            "institution": "Institución"
-        }
+        "page": "Página {page} de {totalPages}"
     },
     "partnerEmptyPresence": {
         "title": "Vaciar la presencia del Partner",

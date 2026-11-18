@@ -1297,12 +1297,7 @@
         "error": "Não foi possível carregar as candidaturas. Recarregue a página.",
         "previous": "Anterior",
         "next": "Próxima",
-        "page": "Página {page} de {totalPages}",
-        "types": {
-            "business": "Empresa",
-            "ngo": "Organização sem fins lucrativos",
-            "institution": "Instituição"
-        }
+        "page": "Página {page} de {totalPages}"
     },
     "partnerEmptyPresence": {
         "title": "Esvaziar a presença do Partner",
