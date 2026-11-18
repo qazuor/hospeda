@@ -348,6 +348,11 @@
             "spec": ".hoja/contexto.md:47-56"
         },
         {
+            "file": "apps/api/src/mcp/tools/listing/listing-creation-catalog.ts",
+            "category": "create-preselection",
+            "spec": ".specs/HOS-2335-mcp-phase-c/spec.md:648"
+        },
+        {
             "file": "apps/api/src/routes/venue/protected/create.ts",
             "category": "create-preselection",
             "spec": ".hoja/contexto.md:47-56"
