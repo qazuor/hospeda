@@ -164,9 +164,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'Mudar de plano em Minha assinatura leva você direto ao checkout'
         },
         body: {
-            es: 'Al pasar a un plan superior desde Mi suscripción, ahora llegás al checkout de Mercado Pago con tu correo de pagador ya cargado. Tu plan actual sigue hasta que autorices, y el crédito que te queda se descuenta del primer cobro del plan nuevo.',
-            en: 'When you upgrade to a higher plan from My subscription, you now land on the Mercado Pago checkout with your payer email already filled in. Your current plan stays until you authorize, and your remaining credit is deducted from the first charge of the new plan.',
-            pt: 'Ao passar para um plano superior em Minha assinatura, agora você chega ao checkout do Mercado Pago com o seu e-mail de pagador já preenchido. Seu plano atual continua até que você autorize, e o crédito restante é descontado da primeira cobrança do novo plano.'
+            es: 'Al pasar a un plan superior desde Mi suscripción, ahora llegás al checkout de Mercado Pago con tu correo de pagador ya cargado. Tu plan actual sigue hasta que autorices, y lo que ya pagaste se convierte en días de crédito antes del primer cobro del plan nuevo.',
+            en: 'When you upgrade to a higher plan from My subscription, you now land on the Mercado Pago checkout with your payer email already filled in. Your current plan stays until you authorize, and what you have already paid is converted into credit days before the first charge of the new plan.',
+            pt: 'Ao passar para um plano superior em Minha assinatura, agora você chega ao checkout do Mercado Pago com o seu e-mail de pagador já preenchido. Seu plano atual continua até que você autorize, e o que você já pagou é convertido em dias de crédito antes da primeira cobrança do novo plano.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
