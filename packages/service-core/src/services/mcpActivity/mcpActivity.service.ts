@@ -26,6 +26,7 @@ import {
     MCP_TOOL_CALL_EVENT_TYPE,
     type McpActivityAllFilter,
     type McpActivityItem,
+    type McpActivityLocale,
     type McpActivityOwnFilter,
     PurgeMcpActivityInputSchema
 } from '@repo/schemas';
@@ -60,6 +61,12 @@ export type ListMcpActivityArgs = {
     readonly pageSize: number;
     /** Optional service context. */
     readonly ctx?: ServiceContext;
+    /**
+     * Language of the target links, handed to the `buildTargetUrl` port. Not
+     * part of the validated input: it only shapes a link. Absent means the
+     * port's default.
+     */
+    readonly locale?: McpActivityLocale;
 } & (
     | { readonly scope: { readonly kind: 'own' }; readonly filter?: McpActivityOwnFilter }
     | { readonly scope: { readonly kind: 'all' }; readonly filter?: McpActivityAllFilter }
@@ -152,7 +159,7 @@ export class McpActivityService extends BaseService {
      *   out, so `items.length + skipped` is the page's row count.
      */
     public async list(input: ListMcpActivityArgs): Promise<ServiceOutput<ListMcpActivityOutput>> {
-        const { actor, scope, filter, page, pageSize, ctx } = input;
+        const { actor, scope, filter, page, pageSize, ctx, locale } = input;
         return this.runWithLoggingAndValidation({
             methodName: 'list',
             input: { actor, scope, filter, page, pageSize },
@@ -200,7 +207,8 @@ export class McpActivityService extends BaseService {
                         parsed: row,
                         scope: validated.scope,
                         lookups,
-                        buildTargetUrl: this.buildTargetUrl
+                        buildTargetUrl: this.buildTargetUrl,
+                        locale
                     })
                 );
                 return {

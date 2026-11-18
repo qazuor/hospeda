@@ -83,7 +83,8 @@ describe('McpActivityService', () => {
             {
                 model,
                 auditLogModel: auditModel,
-                buildTargetUrl: ({ target }) => `https://site.test/${target.type}/${target.id}`
+                buildTargetUrl: ({ target, locale }) =>
+                    `https://site.test/${locale ?? 'none'}/${target.type}/${target.id}`
             }
         );
         owner = createActor({ id: OWNER, permissions: [] });
@@ -249,6 +250,31 @@ describe('McpActivityService', () => {
             expect(result.data?.total).toBe(3);
         });
 
+        it('hands the locale to the link builder, and none when absent (admin path)', async () => {
+            asMock(model.listToolCalls).mockResolvedValue({
+                items: [row({ data: { resourceType: 'accommodation', resourceId: LISTING } })],
+                total: 1
+            });
+            asMock(model.findListingNames).mockResolvedValue([
+                { id: LISTING, name: 'Cabaña', ownerId: OWNER }
+            ]);
+
+            const withLocale = await service.list({
+                actor: owner,
+                scope: { kind: 'own' },
+                locale: 'pt',
+                ...PAGE
+            });
+            const without = await service.list({ actor: owner, scope: { kind: 'own' }, ...PAGE });
+
+            expect(withLocale.data?.items[0]?.target?.url).toBe(
+                `https://site.test/pt/accommodation/${LISTING}`
+            );
+            expect(without.data?.items[0]?.target?.url).toBe(
+                `https://site.test/none/accommodation/${LISTING}`
+            );
+        });
+
         it('labels and links a live listing the row actor owns; a lost or foreign one keeps type and id only (AC-C47)', async () => {
             const GONE = '11111111-2222-4333-8444-555555555555';
             const FOREIGN = '66666666-7777-4888-8999-aaaaaaaaaaaa';
@@ -272,7 +298,7 @@ describe('McpActivityService', () => {
                     type: 'accommodation',
                     id: LISTING,
                     label: 'Cabaña del río',
-                    url: `https://site.test/accommodation/${LISTING}`
+                    url: `https://site.test/none/accommodation/${LISTING}`
                 },
                 { type: 'accommodation', id: GONE },
                 { type: 'accommodation', id: FOREIGN }
@@ -304,7 +330,7 @@ describe('McpActivityService', () => {
                 {
                     type: 'conversation',
                     id: CONVERSATION,
-                    url: `https://site.test/conversation/${CONVERSATION}`
+                    url: `https://site.test/none/conversation/${CONVERSATION}`
                 },
                 { type: 'conversation', id: FOREIGN }
             ]);
