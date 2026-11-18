@@ -1331,11 +1331,14 @@
                 "retentionSaveError": "No se pudo guardar el período. Se muestra el último confirmado.",
                 "purgeButton": "Limpiar ahora",
                 "purgeAria": "Borrar ahora las grabaciones vencidas",
-                "purgeConfirm": "Se van a borrar de forma definitiva las grabaciones y los datos de mapas de calor con más de {{days}} días. ¿Limpiar ahora?",
+                "purgeConfirm": "Se van a borrar de forma definitiva las grabaciones (incluidas las guardadas) y los datos de mapas de calor con más de {{days}} días. ¿Limpiar ahora?",
                 "purgeConfirmAction": "Borrar ahora",
-                "purgeDone": "Se borraron {{replays}} grabaciones y {{heatmaps}} eventos de mapa de calor.",
+                "purgeDone": "Se borraron {{replays}} grabaciones, {{heatmaps}} eventos de mapa de calor y {{saved}} grabaciones guardadas. Período usado: {{days}} días.",
                 "purgeError": "No se pudo completar la limpieza.",
-                "purgeNotConfigured": "La limpieza no está configurada: falta la conexión a la base de Umami en la api."
+                "purgeNotConfigured": "La limpieza no está configurada: falta la conexión a la base de Umami en la api.",
+                "purgeStoppedEarly": "La limpieza no llegó a terminar en el tiempo disponible: se completará en la próxima corrida.",
+                "purgeMismatch": "El período de retención cambió mientras confirmabas. Revisá el valor actual y volvé a intentar.",
+                "purgeRunning": "Ya hay una limpieza en curso. Probá de nuevo en unos minutos."
             }
         },
         "seo": {

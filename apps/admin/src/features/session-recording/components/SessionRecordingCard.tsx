@@ -62,6 +62,21 @@ export function SessionRecordingCard() {
     return <SessionRecordingCardBody />;
 }
 
+/** Picks the inline message for a failed purge from the api error. */
+function purgeErrorCopyKey(error: unknown): CopyKey {
+    const failure = error as {
+        status?: number;
+        body?: { error?: { reason?: string } };
+    } | null;
+    if (failure?.status === 503) return 'purgeNotConfigured';
+    if (failure?.status === 409) {
+        return failure.body?.error?.reason === 'RECORDING_PURGE_ALREADY_RUNNING'
+            ? 'purgeRunning'
+            : 'purgeMismatch';
+    }
+    return 'purgeError';
+}
+
 function SessionRecordingCardBody() {
     const { locale } = useTranslations();
     const query = usePlatformSetting({ key: 'analytics.sessionRecording' });
@@ -81,10 +96,7 @@ function SessionRecordingCardBody() {
             (acc, [name, value]) => acc.replace(`{{${name}}}`, String(value)),
             text
         );
-    const purgeErrorKey: CopyKey =
-        (purge.error as { status?: number } | null)?.status === 503
-            ? 'purgeNotConfigured'
-            : 'purgeError';
+    const purgeErrorKey = purgeErrorCopyKey(purge.error);
     const lastChanged = row
         ? translate('lastChanged').replace(
               '{{date}}',
@@ -205,7 +217,12 @@ function SessionRecordingCardBody() {
                         data-testid="session-recording-purge"
                         aria-label={translate('purgeAria')}
                         disabled={query.isLoading || query.isError || purge.isPending}
-                        onClick={() => setPurgeDialogOpen(true)}
+                        onClick={() => {
+                            // The dialog must show the period the api holds NOW, not a stale one.
+                            void query.refetch();
+                            purge.reset();
+                            setPurgeDialogOpen(true);
+                        }}
                     >
                         {purge.isPending && (
                             <LoaderIcon
@@ -223,8 +240,18 @@ function SessionRecordingCardBody() {
                         >
                             {fill(translate('purgeDone'), {
                                 replays: purge.data.replaysDeleted,
-                                heatmaps: purge.data.heatmapEventsDeleted
+                                heatmaps: purge.data.heatmapEventsDeleted,
+                                saved: purge.data.savedReplaysDeleted,
+                                days: purge.data.retentionDays
                             })}
+                            {purge.data.stoppedEarly && (
+                                <span
+                                    className="mt-1 block text-muted-foreground"
+                                    data-testid="session-recording-purge-stopped-early"
+                                >
+                                    {translate('purgeStoppedEarly')}
+                                </span>
+                            )}
                         </p>
                     )}
                     {purge.isError && (
@@ -250,7 +277,10 @@ function SessionRecordingCardBody() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>{translate('cancel')}</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => purge.mutate()}>
+                            <AlertDialogAction
+                                disabled={query.isFetching}
+                                onClick={() => purge.mutate({ retentionDays })}
+                            >
                                 {translate('purgeConfirmAction')}
                             </AlertDialogAction>
                         </AlertDialogFooter>

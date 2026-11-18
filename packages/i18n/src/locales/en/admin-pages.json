@@ -1331,11 +1331,14 @@
                 "retentionSaveError": "The period could not be saved. The last confirmed one is shown.",
                 "purgeButton": "Clean up now",
                 "purgeAria": "Delete expired recordings now",
-                "purgeConfirm": "Recordings and heatmap data older than {{days}} days will be permanently deleted. Clean up now?",
+                "purgeConfirm": "Recordings (saved ones included) and heatmap data older than {{days}} days will be permanently deleted. Clean up now?",
                 "purgeConfirmAction": "Delete now",
-                "purgeDone": "Deleted {{replays}} recordings and {{heatmaps}} heatmap events.",
+                "purgeDone": "Deleted {{replays}} recordings, {{heatmaps}} heatmap events and {{saved}} saved recordings. Period used: {{days}} days.",
                 "purgeError": "The cleanup could not be completed.",
-                "purgeNotConfigured": "The cleanup is not configured: the api has no connection to the Umami database."
+                "purgeNotConfigured": "The cleanup is not configured: the api has no connection to the Umami database.",
+                "purgeStoppedEarly": "The cleanup did not finish within the available time: it will be completed on the next run.",
+                "purgeMismatch": "The retention period changed while you were confirming. Check the current value and try again.",
+                "purgeRunning": "A cleanup is already running. Try again in a few minutes."
             }
         },
         "seo": {

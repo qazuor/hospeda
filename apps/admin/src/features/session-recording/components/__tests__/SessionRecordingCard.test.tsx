@@ -275,7 +275,9 @@ describe('SessionRecordingCard (HOS-2347)', () => {
                               data: {
                                   replaysDeleted: 12,
                                   heatmapEventsDeleted: 340,
-                                  retentionDays: 30
+                                  savedReplaysDeleted: 2,
+                                  retentionDays: 30,
+                                  stoppedEarly: false
                               }
                           }
                       }
@@ -296,10 +298,18 @@ describe('SessionRecordingCard (HOS-2347)', () => {
 
             // Assert
             expect(await screen.findByTestId('session-recording-purge-result')).toHaveTextContent(
-                '12 grabaciones y 340 eventos'
+                '12 grabaciones, 340 eventos de mapa de calor y 2 grabaciones guardadas'
             );
+            expect(screen.getByTestId('session-recording-purge-result')).toHaveTextContent(
+                'Período usado: 30 días'
+            );
+            expect(screen.queryByTestId('session-recording-purge-stopped-early')).toBeNull();
             expect(purges()).toHaveLength(1);
-            expect(purges()[0]?.[0]).toEqual({ path: PURGE_PATH, method: 'POST' });
+            expect(purges()[0]?.[0]).toEqual({
+                path: PURGE_PATH,
+                method: 'POST',
+                body: { retentionDays: 30 }
+            });
         });
 
         it('a 503 from the purge says the cleanup is not configured', async () => {
@@ -321,6 +331,110 @@ describe('SessionRecordingCard (HOS-2347)', () => {
 
             expect(await screen.findByTestId('session-recording-purge-error')).toHaveTextContent(
                 copy.purgeNotConfigured
+            );
+        });
+
+        it('opening the confirmation refetches the setting and confirms the period the api holds now', async () => {
+            // Arrange: the first read says 30, the refetch (dialog open) says 14
+            let reads = 0;
+            fetchApi.mockImplementation(async ({ path }) => {
+                if (path === PURGE_PATH) {
+                    return {
+                        data: {
+                            data: {
+                                replaysDeleted: 0,
+                                heatmapEventsDeleted: 0,
+                                savedReplaysDeleted: 0,
+                                retentionDays: 14,
+                                stoppedEarly: false
+                            }
+                        }
+                    };
+                }
+                reads += 1;
+                return { data: { data: row(true, undefined, reads === 1 ? 30 : 14) } };
+            });
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            // Act
+            await user.click(button);
+            const dialog = screen.getByTestId('session-recording-purge-confirm');
+            await waitFor(() => expect(dialog).toHaveTextContent('14 días'));
+            const confirm = within(dialog).getByRole('button', { name: copy.purgeConfirmAction });
+            await waitFor(() => expect(confirm).toBeEnabled());
+            await user.click(confirm);
+
+            // Assert
+            expect(reads).toBeGreaterThanOrEqual(2);
+            await waitFor(() => expect(purges()).toHaveLength(1));
+            expect(purges()[0]?.[0].body).toEqual({ retentionDays: 14 });
+        });
+
+        it('says the rest will finish on the next run when the time budget stopped the purge', async () => {
+            fetchApi.mockImplementation(async ({ path }) =>
+                path === PURGE_PATH
+                    ? {
+                          data: {
+                              data: {
+                                  replaysDeleted: 5000,
+                                  heatmapEventsDeleted: 0,
+                                  savedReplaysDeleted: 0,
+                                  retentionDays: 30,
+                                  stoppedEarly: true
+                              }
+                          }
+                      }
+                    : { data: { data: row(true) } }
+            );
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            await user.click(button);
+            const confirm = within(screen.getByTestId('session-recording-purge-confirm')).getByRole(
+                'button',
+                { name: copy.purgeConfirmAction }
+            );
+            await waitFor(() => expect(confirm).toBeEnabled());
+            await user.click(confirm);
+
+            expect(
+                await screen.findByTestId('session-recording-purge-stopped-early')
+            ).toHaveTextContent(copy.purgeStoppedEarly);
+        });
+
+        it.each([
+            ['RECORDING_RETENTION_MISMATCH', copy.purgeMismatch],
+            ['RECORDING_PURGE_ALREADY_RUNNING', copy.purgeRunning]
+        ])('a 409 %s shows its own message', async (reason, message) => {
+            fetchApi.mockImplementation(async ({ path }) => {
+                if (path === PURGE_PATH) {
+                    throw Object.assign(new Error('409'), {
+                        status: 409,
+                        body: { error: { reason } }
+                    });
+                }
+                return { data: { data: row(true) } };
+            });
+            const user = userEvent.setup();
+            renderCard();
+            const button = await screen.findByTestId('session-recording-purge');
+            await waitFor(() => expect(button).toBeEnabled());
+
+            await user.click(button);
+            const confirm = within(screen.getByTestId('session-recording-purge-confirm')).getByRole(
+                'button',
+                { name: copy.purgeConfirmAction }
+            );
+            await waitFor(() => expect(confirm).toBeEnabled());
+            await user.click(confirm);
+
+            expect(await screen.findByTestId('session-recording-purge-error')).toHaveTextContent(
+                message
             );
         });
     });
