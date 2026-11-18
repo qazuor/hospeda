@@ -1,5 +1,5 @@
 {
-  "id": "835769ee-762b-48f9-8590-f590470082aa",
+  "id": "f44de924-0d2f-4e09-84fe-716922ab25cf",
   "prevId": "974899a4-6421-43a5-aca0-000bc3d59f0a",
   "version": "7",
   "dialect": "postgresql",
@@ -17027,13 +17027,7 @@
           "type": "partner_type_enum",
           "typeSchema": "public",
           "primaryKey": false,
-          "notNull": false
-        },
-        "type_id": {
-          "name": "type_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "logo_url": {
           "name": "logo_url",
@@ -17236,21 +17230,6 @@
           "method": "btree",
           "with": {}
         },
-        "partners_typeId_idx": {
-          "name": "partners_typeId_idx",
-          "columns": [
-            {
-              "expression": "type_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "partners_lifecycleState_idx": {
           "name": "partners_lifecycleState_idx",
           "columns": [
@@ -17329,19 +17308,6 @@
         }
       },
       "foreignKeys": {
-        "partners_type_id_partner_types_id_fk": {
-          "name": "partners_type_id_partner_types_id_fk",
-          "tableFrom": "partners",
-          "tableTo": "partner_types",
-          "columnsFrom": [
-            "type_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "restrict",
-          "onUpdate": "no action"
-        },
         "partners_owner_user_id_users_id_fk": {
           "name": "partners_owner_user_id_users_id_fk",
           "tableFrom": "partners",
@@ -17947,168 +17913,6 @@
           "value": "\"partner_application\".\"wait_cancelled_by\" IS NULL OR \"partner_application\".\"wait_cancelled_at\" IS NOT NULL"
         }
       },
-      "isRLSEnabled": false
-    },
-    "public.partner_types": {
-      "name": "partner_types",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "slug": {
-          "name": "slug",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name_i18n": {
-          "name": "name_i18n",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "translation_meta": {
-          "name": "translation_meta",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'{}'::jsonb"
-        },
-        "display_weight": {
-          "name": "display_weight",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 50
-        },
-        "lifecycle_state": {
-          "name": "lifecycle_state",
-          "type": "lifecycle_status_enum",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'ACTIVE'"
-        },
-        "admin_info": {
-          "name": "admin_info",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "created_by_id": {
-          "name": "created_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "updated_by_id": {
-          "name": "updated_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "deleted_by_id": {
-          "name": "deleted_by_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {
-        "partnerTypes_lifecycleState_idx": {
-          "name": "partnerTypes_lifecycleState_idx",
-          "columns": [
-            {
-              "expression": "lifecycle_state",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "partner_types_created_by_id_users_id_fk": {
-          "name": "partner_types_created_by_id_users_id_fk",
-          "tableFrom": "partner_types",
-          "tableTo": "users",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "partner_types_updated_by_id_users_id_fk": {
-          "name": "partner_types_updated_by_id_users_id_fk",
-          "tableFrom": "partner_types",
-          "tableTo": "users",
-          "columnsFrom": [
-            "updated_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "partner_types_deleted_by_id_users_id_fk": {
-          "name": "partner_types_deleted_by_id_users_id_fk",
-          "tableFrom": "partner_types",
-          "tableTo": "users",
-          "columnsFrom": [
-            "deleted_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "partner_types_slug_unique": {
-          "name": "partner_types_slug_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.platform_settings": {
@@ -27820,6 +27624,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "whatsapp_visibility": {
+          "name": "whatsapp_visibility",
+          "type": "venue_whatsapp_visibility_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "location": {
           "name": "location",
           "type": "jsonb",
@@ -36738,11 +36549,6 @@
         "partner.configureBilling",
         "partner.emptyPresence",
         "partner.editOwn",
-        "partnerType.view",
-        "partnerType.create",
-        "partnerType.update",
-        "partnerType.delete",
-        "partnerType.restore",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",
@@ -37140,6 +36946,14 @@
         "FOOD_TRUCK",
         "PUB",
         "BOLICHE"
+      ]
+    },
+    "public.venue_whatsapp_visibility_enum": {
+      "name": "venue_whatsapp_visibility_enum",
+      "schema": "public",
+      "values": [
+        "PUBLIC",
+        "LOGGED_IN_ONLY"
       ]
     },
     "public.visibility_enum": {

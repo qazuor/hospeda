@@ -330,6 +330,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Hard-delete mcp.tool.call audit rows older than 12 months; every other audit and security row is untouched (HOS-2335 D-13 owner retention decision).'
     },
     {
+        name: 'venue-events-past-cleanup',
+        displayName: 'Limpieza de eventos pasados de locales',
+        category: 'system',
+        schedule: '15 4 * * *',
+        description:
+            'Hard-delete one-off venue agenda events whose end passed more than 60 days ago; weekly events are never touched (HOS-2254).'
+    },
+    {
         name: 'ai-questions-weekly-digest',
         displayName: 'Resumen semanal de preguntas sin responder',
         category: 'notifications',

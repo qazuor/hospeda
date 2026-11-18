@@ -4,11 +4,12 @@
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 
-import { VenuePublicSchema } from '@repo/schemas';
+import { isVenueEventLive, VenuePublicSchema } from '@repo/schemas';
 import {
     getVenueDailySpecials,
     getVenueEvents,
     getVenueMenu,
+    resolveVenuePublicWhatsapp,
     ServiceError,
     VenueService
 } from '@repo/service-core';
@@ -119,9 +120,17 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                 getVenueEvents(model, { venueId: venue.id }),
                 getVenueDailySpecials(model, { venueId: venue.id, validOn: today })
             ]);
+        // HOS-2254: a one-off event that already ended is not published. The
+        // filter lives here, in the API, so the payload never carries stale
+        // events and the page stays session-blind and presentational. "Past" is
+        // `isVenueEventPast` (venue zone, `once` only), the single definition
+        // also used by the owner read and the cleanup cron. Like the daily menu,
+        // an event that ends while a copy is cached can survive at the edge until
+        // the cache TTL; no job is needed.
+        const now = new Date();
         const activeVenueEvents = eventsResult.error
             ? undefined
-            : eventsResult.data.events.filter((event) => event.isActive);
+            : eventsResult.data.events.filter((event) => isVenueEventLive({ event, now }));
 
         const [projected] = await projectPublicListings({
             vertical: 'venue',
@@ -131,6 +140,13 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                     ...withPublicVisibleFaqs(venue),
                     // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
                     isFeatured: resolvePublicIsFeatured(venue),
+                    // HOS-2256: the WhatsApp block. The number is in the payload
+                    // ONLY when the owner chose PUBLIC; `contactInfo` is still
+                    // narrowed by the schema and never names it.
+                    whatsapp: resolveVenuePublicWhatsapp({
+                        contactInfo: venue.contactInfo,
+                        mode: venue.whatsappVisibility
+                    }),
                     amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
                     features: featuresData.length > 0 ? featuresData : undefined,
                     menuSections:

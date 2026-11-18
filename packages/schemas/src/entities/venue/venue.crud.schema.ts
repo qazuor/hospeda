@@ -173,6 +173,7 @@ export type VenueAdminCreateOutput = z.infer<typeof VenueAdminCreateOutputSchema
  * Previously-permitted operational sections (unchanged):
  * - `openingHours`   — schedule (gated by `the vertical's EDIT_OWN`)
  * - `contactInfo`    — contact details (gated by `the vertical's EDIT_OWN`)
+ * - `whatsappVisibility` — who may see the WhatsApp button (HOS-2256)
  * - `socialNetworks` — social links (gated by `the vertical's EDIT_OWN`)
  * - `media`          — featured image, gallery, videos (gated by `the vertical's EDIT_OWN`)
  * - `menuUrl`        — online menu URL (gated by `the vertical's EDIT_OWN`)
@@ -199,6 +200,8 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     summary: true,
     openingHours: true,
     contactInfo: true,
+    // HOS-2256 section 7.8: who may see the WhatsApp button.
+    whatsappVisibility: true,
     socialNetworks: true,
     // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
     // Photos are written through the relational `venue_media` endpoints and

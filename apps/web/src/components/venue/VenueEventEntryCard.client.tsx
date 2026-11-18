@@ -16,7 +16,11 @@
 
 import type { JSX } from 'react';
 import type { TranslationFn } from '@/lib/i18n';
-import { type EventDraft, WEEKDAY_I18N_KEYS } from '@/lib/venue/venue-event-draft';
+import {
+    type EventDraft,
+    todayInVenueZone,
+    WEEKDAY_I18N_KEYS
+} from '@/lib/venue/venue-event-draft';
 import styles from './VenueEventsManager.module.css';
 
 export interface VenueEventEntryCardProps {
@@ -186,6 +190,10 @@ export function VenueEventEntryCard({
                     <input
                         className={styles.input}
                         type="date"
+                        // Lets the editor focus the date of a freshly duplicated event (HOS-2254).
+                        id={`venue-event-date-${index}`}
+                        // A new event cannot be dated in the past (hint; the API enforces it).
+                        min={entry.id ? undefined : todayInVenueZone()}
                         value={entry.date}
                         aria-label={t('venue.owner.editor.venueEventsManager.date', 'Fecha')}
                         onChange={(event) => {

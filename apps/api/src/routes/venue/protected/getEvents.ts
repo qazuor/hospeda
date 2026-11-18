@@ -23,7 +23,7 @@
  *
  * @module routes/venue/protected/getEvents
  */
-import { VenueEventsOutputSchema, VerticalEnum } from '@repo/schemas';
+import { VenueEventsOwnerOutputSchema, VerticalEnum, withVenueEventPastFlag } from '@repo/schemas';
 import { getVenueEvents, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
@@ -50,7 +50,10 @@ export async function handleGetVenueEvents(_ctx: Context, params: Record<string,
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    return result.data;
+    // HOS-2254: `isPast` is calculated here, in the venue's zone, so the editor
+    // never decides with the browser's clock. Past entries are returned, not
+    // hidden: the owner has to see them to duplicate or delete them.
+    return { events: withVenueEventPastFlag({ events: result.data.events, now: new Date() }) };
 }
 
 export const protectedGetVenueEventsRoute = createProtectedRoute({
@@ -70,7 +73,7 @@ export const protectedGetVenueEventsRoute = createProtectedRoute({
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: VenueEventsOutputSchema,
+    responseSchema: VenueEventsOwnerOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetVenueEvents(ctx, params)
 });

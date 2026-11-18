@@ -53,6 +53,16 @@ import { z } from 'zod';
  */
 export const VENUE_EVENTS_MAX_ENTRIES = 30;
 
+/**
+ * Hard ceiling on the WHOLE document, past entries included (HOS-2254).
+ *
+ * `VENUE_EVENTS_MAX_ENTRIES` counts only entries that are not past, and the
+ * schema cannot tell them apart (it does not know the time). This bound keeps
+ * one PUT from writing an unbounded number of rows and stays well below the
+ * page size the agenda read uses, so a stored agenda can always be read back.
+ */
+export const VENUE_EVENTS_MAX_TOTAL_ENTRIES = 100;
+
 // ----------------------------------------------------------------------------
 // Recurrence
 // ----------------------------------------------------------------------------
@@ -318,11 +328,12 @@ export const VenueEventsReplacePayloadSchema = z.object({
      * means "take the agenda down" — a venue that stopped doing live music
      * needs a way to say so.
      */
+    // The 30-entry ceiling applies to entries that are NOT past (HOS-2254): the
+    // service enforces it with `partitionVenueEvents`, because the schema does
+    // not know the time. This bound is only the hard cap on the whole document.
     events: z
         .array(VenueEventInputSchema)
-        .max(VENUE_EVENTS_MAX_ENTRIES, {
-            message: 'zodError.venue.events.max'
-        })
+        .max(VENUE_EVENTS_MAX_TOTAL_ENTRIES, { message: 'zodError.venue.events.maxTotal' })
         .default([])
 });
 export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayloadSchema>;
@@ -356,3 +367,20 @@ export const VenueEventsOutputSchema = z.object({
     events: z.array(VenueEventPublicSchema)
 });
 export type VenueEventsOutput = z.infer<typeof VenueEventsOutputSchema>;
+
+/**
+ * An agenda entry as its OWNER reads it (HOS-2254): the public shape plus the
+ * calculated `isPast`. Never persisted; computed by `isVenueEventPast` on the
+ * server so the editor does not depend on the browser's clock.
+ */
+export const VenueEventOwnerSchema = VenueEventPublicSchema.extend({
+    isPast: z.boolean()
+});
+export type VenueEventOwner = z.infer<typeof VenueEventOwnerSchema>;
+
+/** What the owner's agenda read and write answer with. */
+export const VenueEventsOwnerOutputSchema = z.object({
+    /** The agenda, ordered by `displayOrder`, past entries included. */
+    events: z.array(VenueEventOwnerSchema)
+});
+export type VenueEventsOwnerOutput = z.infer<typeof VenueEventsOwnerOutputSchema>;

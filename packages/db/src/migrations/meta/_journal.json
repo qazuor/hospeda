@@ -1643,8 +1643,15 @@
     {
       "idx": 234,
       "version": "7",
-      "when": 1795020497828,
-      "tag": "0234_hos2336_partner_types_catalog",
+      "when": 1795019853854,
+      "tag": "0234_hos2256_venue_whatsapp_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1795024539592,
+      "tag": "0235_hos2336_partner_types_catalog",
       "breakpoints": true
     }
   ]

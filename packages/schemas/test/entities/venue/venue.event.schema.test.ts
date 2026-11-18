@@ -28,6 +28,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     VENUE_EVENTS_MAX_ENTRIES,
+    VENUE_EVENTS_MAX_TOTAL_ENTRIES,
     VenueEventInputSchema,
     VenueEventsReplacePayloadSchema
 } from '../../../src/entities/venue/subtypes/venue.event.schema.js';
@@ -209,35 +210,22 @@ describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
         expect(result.data?.events[0]?.isActive).toBe(true);
     });
 
-    it('refuses an agenda longer than the ceiling', () => {
-        // The ceiling exists so ONE request cannot write an unbounded number of
-        // rows in one transaction — not as a product tier, which is the
-        // entitlement's job.
-        // Arrange
-        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 1 }, () => ({
+    it('allows more than the non-past ceiling, since past entries are counted by the service (HOS-2254)', () => {
+        const many = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES + 5 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
-        // Act
-        const result = VenueEventsReplacePayloadSchema.safeParse({ events: tooMany });
+        const result = VenueEventsReplacePayloadSchema.safeParse({ events: many });
 
-        // Assert
-        expect(result.success).toBe(false);
+        expect(result.success).toBe(true);
     });
 
-    it('accepts exactly the ceiling', () => {
-        // Guards the boundary from the off-by-one that would make the test
-        // above pass while refusing a legitimate agenda.
-        // Arrange
-        const atLimit = Array.from({ length: VENUE_EVENTS_MAX_ENTRIES }, () => ({
+    it('refuses a document over the hard total cap', () => {
+        const tooMany = Array.from({ length: VENUE_EVENTS_MAX_TOTAL_ENTRIES + 1 }, () => ({
             ...WEEKLY_HAPPY_HOUR
         }));
 
-        // Act
-        const result = VenueEventsReplacePayloadSchema.safeParse({ events: atLimit });
-
-        // Assert
-        expect(result.success).toBe(true);
+        expect(VenueEventsReplacePayloadSchema.safeParse({ events: tooMany }).success).toBe(false);
     });
 
     it('rejects the whole document when ONE entry has a broken recurrence', () => {
