@@ -67,13 +67,13 @@ describe('POST /api/v1/admin/alliance/leads/:id/provision (HOS-2339)', () => {
     const post = (headers: Record<string, string>, url = URL) =>
         app.request(url, { method: 'POST', headers });
 
-    it('401/403 for an unauthenticated caller, service never called', async () => {
+    it('401 for an unauthenticated caller, service never called', async () => {
         const spy = vi.spyOn(AllianceLeadService.prototype, 'provisionListing');
         const res = await app.request(URL, {
             method: 'POST',
             headers: { 'user-agent': 'vitest' }
         });
-        expect([401, 403]).toContain(res.status);
+        expect(res.status).toBe(401);
         expect(spy).not.toHaveBeenCalled();
     });
 
