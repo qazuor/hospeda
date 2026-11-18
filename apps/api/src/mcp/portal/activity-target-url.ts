@@ -14,7 +14,7 @@
  */
 
 import { LISTING_VERTICALS, type ListingVertical } from '@repo/schemas';
-import { buildPortalUrl } from './build-portal-url';
+import { buildPortalUrl, type PortalLocale } from './build-portal-url';
 import type { PortalDestination } from './portal-routes';
 
 /** Target type of an inquiry in the audit rows (`auditTarget` of the inquiry tools). */
@@ -26,6 +26,8 @@ export interface BuildActivityTargetUrlArgs {
     readonly target: { readonly type: string; readonly id: string };
     /** Public base URL of the web app (`HOSPEDA_SITE_URL`). */
     readonly siteUrl: string;
+    /** Locale prefix of the link (the page language of the owner history). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }
 
 /** Narrows a target type to a listing vertical. */
@@ -70,12 +72,17 @@ export function activityTargetDestination({
  */
 export function buildActivityTargetUrl({
     target,
-    siteUrl
+    siteUrl,
+    locale
 }: BuildActivityTargetUrlArgs): string | undefined {
     const destination = activityTargetDestination({ target });
     if (destination === undefined) return undefined;
     try {
-        return buildPortalUrl({ destination, siteUrl });
+        return buildPortalUrl({
+            destination,
+            siteUrl,
+            ...(locale === undefined ? {} : { locale })
+        });
     } catch {
         return undefined;
     }
