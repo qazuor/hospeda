@@ -10,7 +10,8 @@ import {
     type PlatformSettingsKey,
     PlatformSettingsKeySchema,
     SeoDefaultsValueSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    SessionRecordingValueSchema
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
@@ -34,6 +35,9 @@ import { ServiceError } from '../../types';
  *   - `billing.paidSignupsFreeze` write → `BILLING_SETTINGS_WRITE`
  *   - `billing.addonPurchasesFreeze` read → `BILLING_SETTINGS_VIEW`
  *   - `billing.addonPurchasesFreeze` write → `BILLING_SETTINGS_WRITE`
+ *   - `analytics.sessionRecording` (read or write) → `ANALYTICS_SESSION_RECORDING_MANAGE`
+ *     (HOS-2347; SUPER_ADMIN-only through the seed grant, same read+write
+ *     collapse as `MAINTENANCE_MODE_WRITE`).
  *
  * Side effect (per tech-analysis D7; tag purge since HOS-369 W1-1): a
  * successful write to `seo.defaults` purges the `site-config` and `home`
@@ -63,6 +67,10 @@ const UpsertInputSchema = z.discriminatedUnion('key', [
     z.object({
         key: z.literal('billing.addonPurchasesFreeze'),
         value: AddonPurchasesFreezeValueSchema
+    }),
+    z.object({
+        key: z.literal('analytics.sessionRecording'),
+        value: SessionRecordingValueSchema
     })
 ]);
 
@@ -80,6 +88,8 @@ function requiredReadPermission(key: PlatformSettingsKey): PermissionEnum {
         case 'billing.paidSignupsFreeze':
         case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_VIEW;
+        case 'analytics.sessionRecording':
+            return PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -97,6 +107,8 @@ function requiredWritePermission(key: PlatformSettingsKey): PermissionEnum {
         case 'billing.paidSignupsFreeze':
         case 'billing.addonPurchasesFreeze':
             return PermissionEnum.BILLING_SETTINGS_WRITE;
+        case 'analytics.sessionRecording':
+            return PermissionEnum.ANALYTICS_SESSION_RECORDING_MANAGE;
         default: {
             const exhaustive: never = key;
             return exhaustive;
@@ -272,6 +284,35 @@ export class PlatformSettingsService extends BaseService {
             return false;
         }
         return parsed.data.frozen;
+    }
+
+    /**
+     * Whether the public web may load the Umami session recorder (HOS-2347).
+     *
+     * **Why this method instead of `get`**: same reason as
+     * {@link isNewPaidSignupsFrozen}. The only caller is the public endpoint
+     * `GET /api/v1/public/session-recording`, which has no admin actor to gate
+     * on; the answer is one platform-wide boolean.
+     *
+     * A missing row answers `false` (recording is off by default). A stored
+     * value that fails the schema answers `false` and logs a warning. A read
+     * error is NOT swallowed: it propagates so the route answers 500 and the
+     * outage is visible. The web fails closed on a 500 anyway.
+     *
+     * @returns Whether session recording is switched on.
+     */
+    async isSessionRecordingEnabled(): Promise<boolean> {
+        const row = await this.model.findByKey('analytics.sessionRecording');
+        if (!row) return false;
+        const parsed = SessionRecordingValueSchema.safeParse(row.value);
+        if (!parsed.success) {
+            this.logger.warn(
+                { issues: parsed.error.issues },
+                'Stored analytics.sessionRecording value failed schema validation — recording stays off'
+            );
+            return false;
+        }
+        return parsed.data.enabled;
     }
 
     /**
