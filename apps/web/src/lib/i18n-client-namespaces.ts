@@ -269,7 +269,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1264 — venue half of `experience.aiChat` above.
     'venue.aiChat',
     // HOS-1787 leaf 6.3 — `VenueOpenNowBadge.client.tsx` renders
-    // `venue.card.openNow` / `venue.card.closedNow` in the browser.
+    // `venue.card.openNow` / `opensAt` / `closedNow` in the browser.
     'venue.card',
     // HOS-1787 leaf 5.1 — `NightInfoSection.client.tsx` reuses the approved
     // public `venue.detail.nightInfo.*` labels. The two-segment ancestor is what
