@@ -410,6 +410,8 @@ export * from './partner/partner.service';
 export * from './partner/partner-mention.service';
 // Partner in-platform statistics (HOS-1063)
 export * from './partner/partner-stats.service';
+// Partner type catalog (HOS-2336)
+export * from './partner-type';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './plan-catalog/addon-version-creation.service.js';
