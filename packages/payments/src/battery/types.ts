@@ -212,7 +212,8 @@ export type WatchGuardCode =
     | 'TARGET_NOT_CREATED_BY_RUN'
     | 'WRITE_OUTCOME_UNKNOWN'
     | 'AUTHORIZATION_SUM_MISMATCH'
-    | 'READ_ENTRY_MUTATED';
+    | 'READ_ENTRY_MUTATED'
+    | 'SEND_AFTER_SETTLED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */
 export class WatchGuardError extends Error {
