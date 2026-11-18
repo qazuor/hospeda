@@ -21,7 +21,7 @@
  */
 
 import { lookup as dnsLookup, type LookupAddress } from 'node:dns';
-import { BlockList, isIP } from 'node:net';
+import { BlockList, isIP, type LookupFunction } from 'node:net';
 
 /**
  * Hosts a Maps link may name, exact match only (spec §5.5). `goo.gl` is accepted
@@ -248,15 +248,7 @@ const defaultDnsLookup: MapsDnsLookup = (hostname, callback) => {
 };
 
 /** The `lookup` signature `net`/`tls` sockets call. */
-export type SocketLookup = (
-    hostname: string,
-    options: { readonly all?: boolean },
-    callback: (
-        error: NodeJS.ErrnoException | null,
-        address: string | readonly LookupAddress[],
-        family?: number
-    ) => void
-) => void;
+export type SocketLookup = LookupFunction;
 
 /**
  * Builds the `lookup` a hop's socket resolves through. It resolves every
@@ -284,7 +276,7 @@ export function createGuardedLookup(args: { readonly dns?: MapsDnsLookup } = {})
                 return;
             }
             if (options.all) {
-                callback(null, addresses);
+                callback(null, [...addresses]);
                 return;
             }
             callback(null, first.address, first.family);
