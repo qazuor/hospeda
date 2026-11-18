@@ -47,7 +47,7 @@ import {
     VenueProtectedSchema,
     VerticalEnum
 } from '@repo/schemas';
-import { ServiceError, VenueService } from '@repo/service-core';
+import { type Actor, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
@@ -57,13 +57,24 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Handler for the venue owner-create endpoint. Exported standalone so it
- * is unit-testable against a mocked `Context` + spied service without booting
- * the full Hono app.
+ * Creates a venue listing for its owner exactly as this route does: the
+ * server-forced `ownerId`, the re-parse through the full admin create schema,
+ * then `VenueService.createForOwner` (role grant + insert in one transaction).
+ * Shared by this route and the owner assistant's `create_listing` tool
+ * (HOS-2329, spec HOS-2335 C-6), which runs the route's listing-access step
+ * itself before calling it.
+ *
+ * @param input - The actor and the validated owner-create body
+ * @returns The created venue
+ * @throws {ServiceError} VALIDATION_ERROR on a body the admin schema refuses,
+ *   or the service's error
  */
-export async function handleCreateVenueListing(ctx: Context, body: Record<string, unknown>) {
-    const actor = getActorFromContext(ctx);
-    const data = body as VenueOwnerCreateInput;
+export async function createVenueListingForOwner(input: {
+    readonly actor: Actor;
+    readonly body: Record<string, unknown>;
+}) {
+    const { actor } = input;
+    const data = input.body as VenueOwnerCreateInput;
 
     // Re-parse through the FULL admin create schema so every other
     // .default() field (isFeatured, reviewsCount,
@@ -111,6 +122,55 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
 }
 
 /**
+ * Handler for the venue owner-create endpoint. Exported standalone so it
+ * is unit-testable against a mocked `Context` + spied service without booting
+ * the full Hono app.
+ */
+export async function handleCreateVenueListing(ctx: Context, body: Record<string, unknown>) {
+    return createVenueListingForOwner({ actor: getActorFromContext(ctx), body });
+}
+
+/**
+ * The business lines a venue owner-create body asks for (the listing-access
+ * step's `businessLinesFromBody`): the body's own `businessLines`, otherwise the
+ * preselection of its `type`. Shared with `create_listing` (HOS-2329) so the
+ * tool's CREATE step sees the same lines as this route's.
+ *
+ * @param args - The validated body
+ * @returns The requested business lines
+ */
+export function venueCreateBusinessLines({
+    body
+}: {
+    readonly body: Record<string, unknown> | undefined;
+}): BusinessLine[] {
+    if (Array.isArray(body?.businessLines))
+        return body.businessLines.filter(
+            (line): line is string => typeof line === 'string'
+        ) as BusinessLine[];
+    const type = body?.type as keyof typeof BUSINESS_LINE_RULES.venue.typeRules | undefined;
+    return type ? (BUSINESS_LINE_RULES.venue.typeRules[type]?.preselect ?? []) : [];
+}
+
+/**
+ * The sections a venue owner-create body writes (the listing-access step's
+ * `listingSection`). Shared with `create_listing` (HOS-2329).
+ *
+ * @param args - The validated body
+ * @returns One `write` declaration per touched section
+ */
+export function venueCreateSections({
+    body
+}: {
+    readonly body: Record<string, unknown> | undefined;
+}): { readonly id: string; readonly intent: 'write' }[] {
+    return sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
+        id,
+        intent: 'write' as const
+    }));
+}
+
+/**
  * POST /api/v1/protected/venues/
  *
  * Creates a venue listing owned by the caller. Starts as a
@@ -122,19 +182,8 @@ export const protectedCreateVenueListingRoute = createProtectedRoute({
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'CREATE',
-        businessLinesFromBody: ({ body }) => {
-            if (Array.isArray(body?.businessLines))
-                return body.businessLines.filter(
-                    (line): line is string => typeof line === 'string'
-                ) as BusinessLine[];
-            const type = body?.type as keyof typeof BUSINESS_LINE_RULES.venue.typeRules | undefined;
-            return type ? (BUSINESS_LINE_RULES.venue.typeRules[type]?.preselect ?? []) : [];
-        },
-        listingSection: ({ body }) =>
-            sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
-                id,
-                intent: 'write' as const
-            }))
+        businessLinesFromBody: venueCreateBusinessLines,
+        listingSection: venueCreateSections
     },
     summary: 'Create a venue listing (owner self-service)',
     description:

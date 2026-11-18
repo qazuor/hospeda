@@ -39,7 +39,7 @@ import {
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
-import { ExperienceService, ServiceError } from '@repo/service-core';
+import { type Actor, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
 import { getActorFromContext } from '../../../utils/actor';
@@ -49,12 +49,24 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const experienceService = new ExperienceService({ logger: apiLogger });
 
 /**
- * Handler for the experience owner-create endpoint. Exported standalone so it
- * is unit-testable against a mocked `Context` + spied service.
+ * Creates an experience listing for its owner exactly as this route does: the
+ * server-forced `ownerId`, the re-parse through the checked admin create schema,
+ * then `ExperienceService.createForOwner` (role grant + insert in one
+ * transaction). Shared by this route and the owner assistant's `create_listing`
+ * tool (HOS-2329, spec HOS-2335 C-6), which runs the route's listing-access step
+ * itself before calling it.
+ *
+ * @param input - The actor and the validated owner-create body
+ * @returns The created experience
+ * @throws {ServiceError} VALIDATION_ERROR on a body the admin schema refuses,
+ *   or the service's error
  */
-export async function handleCreateExperienceListing(ctx: Context, body: Record<string, unknown>) {
-    const actor = getActorFromContext(ctx);
-    const data = body as ExperienceOwnerCreateInput;
+export async function createExperienceListingForOwner(input: {
+    readonly actor: Actor;
+    readonly body: Record<string, unknown>;
+}) {
+    const { actor } = input;
+    const data = input.body as ExperienceOwnerCreateInput;
 
     // Re-parse through the full admin create schema so reviewsCount/averageRating get
     // their schema defaults.
@@ -89,6 +101,14 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
     }
 
     return result.data;
+}
+
+/**
+ * Handler for the experience owner-create endpoint. Exported standalone so it
+ * is unit-testable against a mocked `Context` + spied service.
+ */
+export async function handleCreateExperienceListing(ctx: Context, body: Record<string, unknown>) {
+    return createExperienceListingForOwner({ actor: getActorFromContext(ctx), body });
 }
 
 /**

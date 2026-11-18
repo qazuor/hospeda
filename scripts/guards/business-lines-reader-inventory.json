@@ -79,7 +79,7 @@
         },
         {
             "file": "apps/api/src/routes/venue/protected/create.ts",
-            "symbol": "protectedCreateVenueListingRoute",
+            "symbol": "venueCreateBusinessLines",
             "count": 2,
             "category": "create-writer",
             "spec": ".hoja/notas.md:2"
