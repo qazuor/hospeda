@@ -39,7 +39,7 @@ describe('TEST:V6:14 GUARD:G-R9 - every table hanging from a listing has a PURGE
     it('accepts the repository tree', () => {
         const result = run();
         expect(result.exitCode).toBe(0);
-        expect(result.output).toContain('29 tables hang by FK and 13 by entity_type');
+        expect(result.output).toContain('29 tables hang by FK and 15 by entity_type');
         expect(result.output).toMatch(/^OK GUARD:G-R9: /);
     });
 
