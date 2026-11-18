@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "029-host-trade-category-remis",
+    "slug": "remis",
+    "groupSlug": "abastecimiento-traslados",
+    "nameI18n": {
+        "es": "Remís",
+        "en": "Taxi / car service",
+        "pt": "Táxi / transfer"
+    },
+    "keywordsI18n": {
+        "es": ["remis", "taxi", "traslado", "aeropuerto", "terminal", "chofer"]
+    },
+    "displayWeight": 30,
+    "lifecycleState": "ACTIVE"
+}

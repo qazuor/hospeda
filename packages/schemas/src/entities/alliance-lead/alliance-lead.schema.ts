@@ -13,6 +13,7 @@ import {
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
+import { HostTradeCatalogSlugSchema } from '../host-trade-category/host-trade-category.fields.js';
 
 // ---------------------------------------------------------------------------
 // Alliance Lead Schema
@@ -206,6 +207,9 @@ export const AllianceLeadSchema = z.object({
     /**
      * Service category the applicant operates in (HOS-278 §6.4).
      *
+     * @deprecated HOS-919, removed in the N+1 contract PR (T-054). Use
+     * {@link AllianceLeadSchema.shape.categorySlugs}; no longer required.
+     *
      * The next four fields are `service_provider`-only, and they exist because
      * approving that kind must materialize a `host_trades` row — a table whose
      * `category`, `destination_id` and benefit are NOT NULL. Under HOS-277's
@@ -219,6 +223,25 @@ export const AllianceLeadSchema = z.object({
      * have none.
      */
     category: HostTradeCategoryEnumSchema.nullish(),
+
+    /**
+     * Catalog category slugs the applicant operates in (HOS-919), 1..10 distinct
+     * kebab-case slugs. Replaces {@link AllianceLeadSchema.shape.category}.
+     *
+     * Slugs rather than ids because the sign-up form is anonymous and slugs are
+     * immutable (HOS-919 D8); they are resolved against the active catalog when
+     * the lead is submitted and again when it is approved. Nullish for the same
+     * reason as `category`; a `service_provider` must supply at least one, which
+     * `refineAllianceLeadKindFields` enforces on the create input. An empty
+     * array is accepted here and treated as "none" by that rule.
+     */
+    categorySlugs: z
+        .array(HostTradeCatalogSlugSchema)
+        .max(10, { message: 'zodError.allianceLead.categorySlugs.max' })
+        .refine((slugs) => new Set(slugs).size === slugs.length, {
+            message: 'zodError.allianceLead.categorySlugs.unique'
+        })
+        .nullish(),
 
     /** Destination the applicant covers. Becomes `host_trades.destination_id`. */
     destinationId: DestinationIdSchema.nullish(),

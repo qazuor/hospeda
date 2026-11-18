@@ -30,7 +30,13 @@
  */
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { AllianceLeadModel, HostTradeModel, PartnerModel, type SelectAllianceLead } from '@repo/db';
+import {
+    AllianceLeadModel,
+    HostTradeCategoryModel,
+    HostTradeModel,
+    PartnerModel,
+    type SelectAllianceLead
+} from '@repo/db';
 import {
     type AllianceLead,
     AllianceLeadAdminListQuerySchema,
@@ -479,6 +485,7 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
 export class AllianceLeadService extends BaseService {
     private readonly _model: AllianceLeadModel;
     private readonly _hostTradeModel: HostTradeModel;
+    private readonly _categoryModel: HostTradeCategoryModel;
     private readonly _partnerModel: PartnerModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
     private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
@@ -497,6 +504,7 @@ export class AllianceLeadService extends BaseService {
         // demand HOST_TRADE_CREATE from an admin whose permission to approve
         // this lead is not in question.
         this._hostTradeModel = new HostTradeModel();
+        this._categoryModel = new HostTradeCategoryModel();
         // Same reasoning as `_hostTradeModel` above: provisioning is an effect
         // of ALLIANCE_LEAD_MANAGE, and going through PartnerService would
         // additionally demand PARTNER_MANAGE from an admin whose permission to
@@ -510,6 +518,34 @@ export class AllianceLeadService extends BaseService {
     // -----------------------------------------------------------------------
     // createLead — public (no permission gate)
     // -----------------------------------------------------------------------
+
+    /**
+     * Validates the `categorySlugs` of a submission against the ACTIVE catalog.
+     *
+     * @param submitted - Slugs the applicant sent (absent for non-provider kinds).
+     * @param tx - Optional transaction client.
+     * @returns The de-duplicated slugs to persist, or `null` when none were sent.
+     * @throws {ServiceError} VALIDATION_ERROR naming `categorySlugs` and the offending slugs.
+     */
+    private async resolveSubmittedCategorySlugs(
+        submitted: readonly string[] | null | undefined,
+        tx: DrizzleTransaction
+    ): Promise<string[] | null> {
+        if (!submitted || submitted.length === 0) return null;
+
+        const unique = [...new Set(submitted)];
+        const active = await this._categoryModel.findActiveBySlugs(unique, tx);
+        const activeSlugs = new Set(active.map((category) => category.slug));
+        const invalid = unique.filter((slug) => !activeSlugs.has(slug));
+        if (invalid.length > 0) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'categorySlugs contains a category that does not exist or is not available',
+                { field: 'categorySlugs', slugs: invalid }
+            );
+        }
+        return unique;
+    }
 
     /**
      * Submits a new alliance lead.
@@ -568,10 +604,21 @@ export class AllianceLeadService extends BaseService {
                           }
                         : null;
 
+                // The catalog is the only gate for the category list (HOS-919):
+                // this form is anonymous. Duplicates are collapsed, and any slug
+                // that is unknown, inactive or deleted is refused by name. The
+                // legacy `category` column is never written.
+                const categorySlugs = await this.resolveSubmittedCategorySlugs(
+                    validated.categorySlugs,
+                    execCtx?.tx
+                );
+
                 const lead = toAllianceLead(
                     await this._model.create(
                         {
                             ...(validated as Partial<SelectAllianceLead>),
+                            category: null,
+                            categorySlugs,
                             applicantUserId,
                             // The row stores the DIGEST. The raw token exists
                             // only in this closure and in the email that
@@ -1064,6 +1111,7 @@ export class AllianceLeadService extends BaseService {
                             ? await provisionServiceProviderListing({
                                   lead: existing,
                                   hostTradeModel: this._hostTradeModel,
+                                  categoryModel: this._categoryModel,
                                   actorId: a.id,
                                   logger: this.logger,
                                   tx: txCtx?.tx

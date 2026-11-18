@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/hostTradeCategoryGroup.schema.json",
+    "id": "003-host-trade-category-group-limpieza-ropa-blanca",
+    "slug": "limpieza-ropa-blanca",
+    "nameI18n": {
+        "es": "Limpieza y ropa blanca",
+        "en": "Cleaning & linens",
+        "pt": "Limpeza e roupa de cama"
+    },
+    "displayWeight": 30,
+    "lifecycleState": "ACTIVE"
+}

@@ -481,11 +481,14 @@ const ID_TOOL_CASES: readonly IdToolCase[] = [
  */
 const NO_RESOURCE_INPUT_TOOLS: Readonly<Record<string, string>> = {
     list_my_listings: 'lists what the token subject owns; takes no input',
-    list_amenities_and_features: 'reads the public catalog; the vertical is its only input'
+    list_amenities_and_features: 'reads the public catalog; the vertical is its only input',
+    get_help:
+        "answers from the static help catalog; its topicId names a catalog entry, and the editor links it builds come only from the caller's own listings"
 };
 
 const ID_LIKE_KEY = /^(id|.*Id|.*Ids)$/;
-const CATALOG_ID_KEYS: ReadonlySet<string> = new Set(['amenityIds', 'featureIds']);
+// `topicId` is an entry of the static help catalog (`get_help`), not a resource anyone owns.
+const CATALOG_ID_KEYS: ReadonlySet<string> = new Set(['amenityIds', 'featureIds', 'topicId']);
 
 /** Input keys of a tool that look like a reference to a resource. */
 function idLikeKeys(tool: (typeof MCP_TOOL_DEFINITIONS)[number]): string[] {

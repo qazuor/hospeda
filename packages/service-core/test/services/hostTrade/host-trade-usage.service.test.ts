@@ -18,7 +18,12 @@ import type {
     UserModel
 } from '@repo/db';
 import { hostTradeBenefitUsages } from '@repo/db';
-import { HostTradeUsageStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    HostTradeUsageProviderRefSchema,
+    HostTradeUsageStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostTradeUsageService } from '../../../src/services/hostTrade/host-trade-usage.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
@@ -26,6 +31,13 @@ import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
+
+const PLOMERIA_REF = {
+    id: '00000000-0000-4000-a000-0000000000c1',
+    slug: 'plomeria',
+    nameI18n: { es: 'Plomeria', en: 'Plumbing', pt: 'Encanamento' },
+    groupSlug: 'instalaciones'
+};
 
 const HT_ID = getMockId('attraction', 'ht-usage-1');
 const OWNER_ID = getMockId('user', 'provider-owner-1');
@@ -69,6 +81,11 @@ function buildService(
     // `findByIds` is not part of the default mock surface, but the host-facing
     // lists resolve every provider on a page through it in a single query.
     const hostTradeModel = createModelMock(['findByIds']);
+    // HOS-919: provider refs carry their catalog categories, hydrated in ONE batched call.
+    hostTradeModel.hydrateCategories = vi.fn(
+        async ({ hostTradeIds }: { hostTradeIds: readonly string[] }) =>
+            new Map(hostTradeIds.map((id) => [id, [PLOMERIA_REF]]))
+    );
     const userModel = createModelMock();
 
     model.create = vi.fn(async (data: Record<string, unknown>) => ({ id: 'created', ...data }));
@@ -1018,9 +1035,39 @@ describe('HostTradeUsageService — provider identity on the host’s lists', ()
             id: HT_ID,
             slug: 'plomero-centro',
             name: 'Plomero Centro',
-            category: 'PLOMERIA'
+            categories: [PLOMERIA_REF]
         });
         expect(res.data?.items[1]?.hostTrade?.id).toBe(OTHER_HT_ID);
+        expect(res.data?.items[0]?.hostTrade).not.toHaveProperty('category');
+    });
+
+    it('returns every category of the provider in the catalog order the model hands back (HOS-919)', async () => {
+        const { service, hostTradeModel } = buildEnrichedService();
+        const GAS_REF = {
+            ...PLOMERIA_REF,
+            id: '00000000-0000-4000-a000-0000000000c2',
+            slug: 'gas'
+        };
+        hostTradeModel.hydrateCategories = vi.fn(
+            async ({ hostTradeIds }: { hostTradeIds: readonly string[] }) =>
+                new Map(hostTradeIds.map((id) => [id, [PLOMERIA_REF, GAS_REF]]))
+        );
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        const provider = res.data?.items[0]?.hostTrade;
+        expect(provider?.categories.map((c) => c.slug)).toEqual(['plomeria', 'gas']);
+        expect(HostTradeUsageProviderRefSchema.safeParse(provider).success).toBe(true);
+        expect(hostTradeModel.hydrateCategories).toHaveBeenCalledTimes(1);
+    });
+
+    it('gives an empty categories list to a provider the hydration does not know', async () => {
+        const { service, hostTradeModel } = buildEnrichedService();
+        hostTradeModel.hydrateCategories = vi.fn(async () => new Map());
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.data?.items[0]?.hostTrade?.categories).toEqual([]);
     });
 
     it('flags which providers the host already reviewed, per provider and not per row', async () => {
@@ -1080,6 +1127,8 @@ describe('HostTradeUsageService — provider identity on the host’s lists', ()
         await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
 
         expect(hostTradeModel.findByIds).toHaveBeenCalledTimes(1);
+        // Categories: ONE batched hydrate for the page, never one per row (HOS-919).
+        expect(hostTradeModel.hydrateCategories).toHaveBeenCalledTimes(1);
         expect(idsAskedFor(hostTradeModel)).toEqual([HT_ID, OTHER_HT_ID].sort());
         expect(hostTradeModel.findById).not.toHaveBeenCalled();
     });

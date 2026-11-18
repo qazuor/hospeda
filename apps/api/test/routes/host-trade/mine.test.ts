@@ -211,6 +211,31 @@ describe('PATCH /mine — AC-8 / AC-9', () => {
         expect(payload).toMatchObject({ contact: '+54 9 341 000 0000' });
     });
 
+    it('never lets a provider change its own categories (HOS-919: categoryIds is admin-only)', async () => {
+        // Arrange - categories are an admin decision; the owner schema strips
+        // `categoryIds` (and the read-shape `categories`) like any identity field.
+        mockUpdateOwn.mockResolvedValue({ data: { trade: MOCK_OWN_TRADE } });
+        const app = buildApp([]);
+
+        // Act
+        const res = await app.request('/mine', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contact: '+54 9 341 000 0000',
+                categoryIds: ['55555555-5555-4555-8555-555555555555'],
+                categories: []
+            })
+        });
+
+        // Assert
+        expect(res.status).toBe(200);
+        const [, payload] = mockUpdateOwn.mock.calls[0] ?? [];
+        expect(payload).not.toHaveProperty('categoryIds');
+        expect(payload).not.toHaveProperty('categories');
+        expect(payload).toMatchObject({ contact: '+54 9 341 000 0000' });
+    });
+
     it('should map a NOT_FOUND from the service to 404', async () => {
         // Arrange — unlike the GET, editing a listing that does not exist IS a
         // client mistake.

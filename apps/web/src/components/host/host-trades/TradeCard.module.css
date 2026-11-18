@@ -22,7 +22,7 @@
     transform: translateY(-2px);
 }
 
-/* ── Card header: name + category badge ── */
+/* ── Card header: name (category badges render below, TradeCategoryBadges) ── */
 
 .cardHeader {
     display: flex;
@@ -39,20 +39,6 @@
     color: var(--core-foreground);
     line-height: 1.4;
     flex: 1;
-}
-
-.categoryBadge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.625rem;
-    border-radius: var(--radius-pill, 9999px);
-    background-color: var(--brand-primary-a12);
-    color: var(--brand-primary);
-    font-family: var(--font-sans);
-    font-size: 0.75rem;
-    font-weight: 600;
-    white-space: nowrap;
-    flex-shrink: 0;
 }
 
 /* ── 24h badge ── */

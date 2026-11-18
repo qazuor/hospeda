@@ -116,6 +116,26 @@ describe('ServiceErrorCode → HTTP mapping', () => {
     });
 
     /**
+     * HOS-919: deleting a catalog group or category that providers still use is
+     * a state conflict. 409, never a 500, with the domain code intact so the
+     * admin form can branch on it ("deactivate it instead").
+     */
+    it('CATEGORY_IN_USE answers 409 and keeps its own code on the wire', () => {
+        // Arrange
+        const { ctx, calls } = createMockContext();
+
+        // Act
+        handleRouteError(new ServiceError(ServiceErrorCode.CATEGORY_IN_USE, 'guard probe'), ctx);
+
+        // Assert
+        expect(calls[0]?.status).toBe(409);
+        expect(calls[0]?.body).toMatchObject({
+            success: false,
+            error: { code: ServiceErrorCode.CATEGORY_IN_USE }
+        });
+    });
+
+    /**
      * The admin-paused signup refusal. 409 and the domain code intact on the
      * wire: the web branches on `NEW_PAID_SIGNUPS_FROZEN` to show "signups are
      * paused" instead of the "already subscribed" copy a bare 409 would get.

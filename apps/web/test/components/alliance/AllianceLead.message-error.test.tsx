@@ -40,6 +40,14 @@ vi.mock('@/lib/auth-cache', () => ({
     writeCachedAuthMe: mockWriteCachedAuthMe
 }));
 
+// The category combobox fetches the public catalog client-side (HOS-919);
+// this suite is about the message error, so the catalog is just an empty one.
+vi.mock('@/lib/api/endpoints', () => ({
+    hostTradeCategoryApi: {
+        getHostTradeCatalog: vi.fn().mockResolvedValue({ ok: true, data: { groups: [] } })
+    }
+}));
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const TEST_DESTINATIONS = [

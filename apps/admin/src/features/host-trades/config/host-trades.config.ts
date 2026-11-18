@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { loadHostTradeCategoryFilterOptions } from '@/components/entity-form/fields/entity-selects/utils';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
@@ -9,7 +10,7 @@ import { createHostTradesColumns } from './host-trades.columns';
  * Entity configuration for the host-trades admin list page.
  *
  * Endpoint: `GET /api/v1/admin/host-trades`
- * Supports filter params: page, pageSize, search, destinationId, category, isActive,
+ * Supports filter params: page, pageSize, search, destinationId, categories (comma-separated slugs, any-of), isActive,
  * is24h, includeDeleted.
  */
 export const hostTradesConfig: EntityConfig<HostTradeListItem> = {
@@ -32,61 +33,14 @@ export const hostTradesConfig: EntityConfig<HostTradeListItem> = {
                 maxLength: 36
             },
             {
-                paramKey: 'category',
-                labelKey: 'admin-filters.hostTradeCategory.label',
-                type: 'select',
+                // Catalog-driven any-of filter (HOS-919): options are loaded from
+                // the admin catalog and the API receives comma-separated slugs.
+                paramKey: 'categories',
+                labelKey: 'admin-filters.hostTradeCategories.label',
+                type: 'multi-select',
                 order: 1,
-                options: [
-                    {
-                        value: 'CERRAJERIA',
-                        labelKey: 'admin-filters.hostTradeCategory.cerrajeria'
-                    },
-                    {
-                        value: 'PLOMERIA',
-                        labelKey: 'admin-filters.hostTradeCategory.plomeria'
-                    },
-                    {
-                        value: 'ELECTRICIDAD',
-                        labelKey: 'admin-filters.hostTradeCategory.electricidad'
-                    },
-                    { value: 'GAS', labelKey: 'admin-filters.hostTradeCategory.gas' },
-                    {
-                        value: 'CLIMATIZACION',
-                        labelKey: 'admin-filters.hostTradeCategory.climatizacion'
-                    },
-                    {
-                        value: 'LIMPIEZA',
-                        labelKey: 'admin-filters.hostTradeCategory.limpieza'
-                    },
-                    {
-                        value: 'FLETES',
-                        labelKey: 'admin-filters.hostTradeCategory.fletes'
-                    },
-                    {
-                        value: 'VIDRIERIA',
-                        labelKey: 'admin-filters.hostTradeCategory.vidrieria'
-                    },
-                    {
-                        value: 'CARPINTERIA',
-                        labelKey: 'admin-filters.hostTradeCategory.carpinteria'
-                    },
-                    {
-                        value: 'PILETA_JARDIN',
-                        labelKey: 'admin-filters.hostTradeCategory.piletaJardin'
-                    },
-                    {
-                        value: 'PLAGAS',
-                        labelKey: 'admin-filters.hostTradeCategory.plagas'
-                    },
-                    {
-                        value: 'INTERNET',
-                        labelKey: 'admin-filters.hostTradeCategory.internet'
-                    },
-                    {
-                        value: 'ALBANILERIA',
-                        labelKey: 'admin-filters.hostTradeCategory.albanileria'
-                    }
-                ]
+                optionsQueryKey: ['host-trade-category-filter-options'],
+                loadOptions: loadHostTradeCategoryFilterOptions
             },
             {
                 paramKey: 'isActive',

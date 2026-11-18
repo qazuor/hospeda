@@ -38,6 +38,18 @@ describe('ServiceErrorCode enum surface', () => {
     });
 });
 
+describe('ServiceErrorCode CATEGORY_IN_USE (HOS-919)', () => {
+    it('should expose CATEGORY_IN_USE with a stable literal value', () => {
+        expect(ServiceErrorCode.CATEGORY_IN_USE).toBe('CATEGORY_IN_USE');
+    });
+
+    it('should be accepted by ServiceErrorCodeSchema', () => {
+        expect(ServiceErrorCodeSchema.parse('CATEGORY_IN_USE')).toBe(
+            ServiceErrorCode.CATEGORY_IN_USE
+        );
+    });
+});
+
 describe('ServiceErrorCodeSchema', () => {
     it('should accept every published enum value', () => {
         for (const code of Object.values(ServiceErrorCode)) {

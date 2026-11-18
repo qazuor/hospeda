@@ -291,6 +291,41 @@ export class HostTradeUsageService extends BaseCrudService<
     }
 
     /**
+     * Builds the provider refs for a page: identity plus the provider's
+     * catalog categories (HOS-919), in catalog order.
+     *
+     * Two queries for the WHOLE page however many rows it has: one for the
+     * provider rows and ONE batched `hydrateCategories` for their categories
+     * (never one per provider). Soft-deleted providers still resolve, as
+     * `findByIds` returns them.
+     *
+     * @param ids - De-duplicated provider ids on the page.
+     * @param ctx - Optional service context, for transaction propagation.
+     * @returns Map from provider id to its ref.
+     */
+    private async resolveProviderRefs(
+        ids: readonly string[],
+        ctx?: ServiceContext
+    ): Promise<Map<string, HostTradeUsageProviderRef>> {
+        const [providers, categoriesById] = await Promise.all([
+            this.hostTradeModel.findByIds(ids, ctx?.tx),
+            this.hostTradeModel.hydrateCategories({ hostTradeIds: ids, tx: ctx?.tx })
+        ]);
+
+        return new Map(
+            providers.map((provider) => [
+                provider.id,
+                {
+                    id: provider.id,
+                    slug: provider.slug,
+                    name: provider.name,
+                    categories: categoriesById.get(provider.id) ?? []
+                }
+            ])
+        );
+    }
+
+    /**
      * Resolves each row's provider and host into displayable refs.
      *
      * An id that does not resolve yields `null` on that side and the row keeps
@@ -311,22 +346,10 @@ export class HostTradeUsageService extends BaseCrudService<
         const tradeIds = [...new Set(items.map((item) => item.hostTradeId))];
         const hostIds = [...new Set(items.map((item) => item.hostUserId))];
 
-        const [providers, hosts] = await Promise.all([
-            this.hostTradeModel.findByIds(tradeIds, ctx?.tx),
+        const [providerById, hosts] = await Promise.all([
+            this.resolveProviderRefs(tradeIds, ctx),
             this.userModel.findByIds(hostIds, ctx?.tx)
         ]);
-
-        const providerById = new Map<string, HostTradeUsageProviderRef>(
-            providers.map((provider) => [
-                provider.id,
-                {
-                    id: provider.id,
-                    slug: provider.slug,
-                    name: provider.name,
-                    category: provider.category
-                }
-            ])
-        );
 
         const hostById = new Map<string, HostTradeUsageHostRef>(
             hosts.map((host) => [
@@ -840,19 +863,7 @@ export class HostTradeUsageService extends BaseCrudService<
         if (items.length === 0) return [];
 
         const ids = [...new Set(items.map((item) => item.hostTradeId))];
-        const providers = await this.hostTradeModel.findByIds(ids, ctx?.tx);
-
-        const byId = new Map<string, HostTradeUsageProviderRef>(
-            providers.map((provider) => [
-                provider.id,
-                {
-                    id: provider.id,
-                    slug: provider.slug,
-                    name: provider.name,
-                    category: provider.category
-                }
-            ])
-        );
+        const byId = await this.resolveProviderRefs(ids, ctx);
 
         const reviewedTradeIds = await this.resolveReviewedTradeIds(items, ids, ctx);
 

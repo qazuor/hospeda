@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "011-host-trade-category-techista",
+    "slug": "techista",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Techista",
+        "en": "Roofing",
+        "pt": "Telhados"
+    },
+    "keywordsI18n": {
+        "es": ["techo", "goteras", "membrana", "chapa", "tejas", "impermeabilización"]
+    },
+    "displayWeight": 30,
+    "lifecycleState": "ACTIVE"
+}

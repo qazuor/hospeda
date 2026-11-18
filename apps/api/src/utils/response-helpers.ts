@@ -652,6 +652,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
             // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
             case ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN:
             case ServiceErrorCode.ADDON_PURCHASES_FROZEN:
+            // Provider trade catalog: deleting a group/category still in use (HOS-919)
+            case ServiceErrorCode.CATEGORY_IN_USE:
                 statusCode = 409;
                 break;
             case ServiceErrorCode.DECLARATION_BLOCKED:
@@ -903,7 +905,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.FAQ_DRAFT_NOT_ELIGIBLE]: 409,
                 // Admin-paused self-service signups (platform_settings['billing.paidSignupsFreeze'], HOS-1749)
                 [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
-                [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409
+                [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409,
+                // Provider trade catalog: deleting a group/category still in use (HOS-919)
+                [ServiceErrorCode.CATEGORY_IN_USE]: 409
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

@@ -153,6 +153,15 @@
         "empty": "No hay coincidencias",
         "featuredLabel": "Destacado"
     },
+    "tradeCategorySelect": {
+        "placeholder": "Buscá tu oficio (ej. plomería, aire acondicionado)",
+        "empty": "No encontramos ese rubro",
+        "emptyHint": "Si tu oficio no está, escribilo en el mensaje",
+        "maxReached": "Llegaste al máximo de {{max}} rubros",
+        "removeChip": "Quitar {{name}}",
+        "optionsLabel": "Rubros disponibles",
+        "selectedLabel": "Rubros elegidos"
+    },
     "pagination": {
         "previous": "Anterior",
         "next": "Siguiente",

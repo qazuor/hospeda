@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "024-host-trade-category-control-plagas",
+    "slug": "control-plagas",
+    "groupSlug": "limpieza-ropa-blanca",
+    "nameI18n": {
+        "es": "Control de plagas",
+        "en": "Pest control",
+        "pt": "Controle de pragas"
+    },
+    "keywordsI18n": {
+        "es": ["fumigación", "cucarachas", "ratas", "hormigas", "mosquitos", "termitas"]
+    },
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

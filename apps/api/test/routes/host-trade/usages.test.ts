@@ -103,13 +103,21 @@ const MOCK_USAGE = {
  * these routes with a 500 rather than quietly serving rows the UI can only show
  * as a uuid.
  */
+/** HOS-919: a provider's categories ride on the usage row as catalog refs. */
+const PLOMERIA_REF = {
+    id: '55555555-5555-4555-8555-555555555555',
+    slug: 'plomeria',
+    nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+    groupSlug: 'construccion'
+};
+
 const MOCK_USAGE_WITH_PROVIDER = {
     ...MOCK_USAGE,
     hostTrade: {
         id: HT_ID,
         slug: 'plomero-centro',
         name: 'Plomero Centro',
-        category: 'PLOMERIA'
+        categories: [PLOMERIA_REF]
     }
 };
 
@@ -397,7 +405,7 @@ describe('GET /protected/host-trades/usages — the host’s own record', () => 
             id: HT_ID,
             slug: 'plomero-centro',
             name: 'Plomero Centro',
-            category: 'PLOMERIA'
+            categories: [PLOMERIA_REF]
         });
     });
 

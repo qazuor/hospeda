@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "003-host-trade-category-electricidad",
+    "slug": "electricidad",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Electricidad",
+        "en": "Electrical",
+        "pt": "Elétrica"
+    },
+    "keywordsI18n": {
+        "es": ["electricista", "luz", "enchufe", "tablero", "corte", "cableado"]
+    },
+    "displayWeight": 30,
+    "lifecycleState": "ACTIVE"
+}

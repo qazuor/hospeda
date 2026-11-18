@@ -3,7 +3,7 @@
     "id": "012-hostTrade-concordia-albanileria",
     "name": "Albañilería y Reformas Concordia",
     "slug": "albanileria-y-reformas-concordia",
-    "category": "ALBANILERIA",
+    "categorySlugs": ["albanileria"],
     "contact": "+54 9 3454 123456",
     "benefit": "Presupuesto gratuito. 10% de descuento en reparaciones menores para alojamientos registrados en Hospeda.",
     "destinationId": "003-destination-concordia",

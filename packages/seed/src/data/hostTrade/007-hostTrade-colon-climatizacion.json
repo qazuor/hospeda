@@ -3,7 +3,7 @@
     "id": "007-hostTrade-colon-climatizacion",
     "name": "Clima Total Colón",
     "slug": "clima-total-colon",
-    "category": "CLIMATIZACION",
+    "categorySlugs": ["climatizacion"],
     "contact": "+54 9 3447 345678",
     "benefit": "Mantenimiento preventivo anual con 20% de descuento para alojamientos registrados. Service de temporada garantizado.",
     "destinationId": "002-destination-colon",

@@ -203,3 +203,59 @@ describe('GET /protected/host-trades', () => {
         expect([401, 403]).toContain(res.status);
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-919 AC-5.4: ?categories=<slug,slug> any-of filter
+// ---------------------------------------------------------------------------
+
+describe('GET /protected/host-trades?categories= (HOS-919 AC-5.4)', () => {
+    const VIEW = [PermissionEnum.HOST_TRADE_VIEW];
+
+    /** Third argument of the `listForHost(actor, ctx, filter)` call. */
+    function filterArg(): { categories?: readonly string[] } | undefined {
+        return mockListForHost.mock.calls[0]?.[2];
+    }
+
+    it('splits the comma-separated list and forwards it as an any-of slug array', async () => {
+        const res = await buildApp(VIEW).request('/?categories=plomeria,pintura');
+        expect(res.status).toBe(200);
+        expect(filterArg()).toEqual({ categories: ['plomeria', 'pintura'] });
+    });
+
+    it('forwards an unknown slug untouched: the service decides it matches nothing', async () => {
+        const res = await buildApp(VIEW).request('/?categories=plomeria,no-such-category');
+        expect(res.status).toBe(200);
+        expect(filterArg()).toEqual({ categories: ['plomeria', 'no-such-category'] });
+    });
+
+    it('answers 200 with an empty list when the service finds no match (all slugs unknown)', async () => {
+        mockListForHost.mockResolvedValue({ data: { trades: [] }, error: undefined });
+        const res = await buildApp(VIEW).request('/?categories=nope-1,nope-2');
+        const body = await res.json();
+        expect(res.status).toBe(200);
+        expect(body.data).toEqual([]);
+    });
+
+    it('applies no filter when the param is absent or empty', async () => {
+        await buildApp(VIEW).request('/');
+        await buildApp(VIEW).request('/?categories=');
+        expect(mockListForHost).toHaveBeenCalledTimes(2);
+        for (const call of mockListForHost.mock.calls) {
+            const filter = call[2] as { categories?: readonly string[] } | undefined;
+            expect(filter?.categories ?? []).toEqual([]);
+        }
+    });
+
+    it('answers 400 for more than 30 slugs, before reaching the service', async () => {
+        const many = Array.from({ length: 31 }, (_, i) => `cat-${i}`).join(',');
+        const res = await buildApp(VIEW).request(`/?categories=${many}`);
+        expect(res.status).toBe(400);
+        expect(mockListForHost).not.toHaveBeenCalled();
+    });
+
+    it('keeps the permission gate ahead of the filter (403 without HOST_TRADE_VIEW)', async () => {
+        const res = await buildApp([]).request('/?categories=plomeria');
+        expect(res.status).toBe(403);
+        expect(mockListForHost).not.toHaveBeenCalled();
+    });
+});

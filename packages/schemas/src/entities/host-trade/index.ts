@@ -2,6 +2,8 @@
 
 // Admin list search schema
 export * from './host-trade.admin-search.schema.js';
+// Shared `categories` slug-list list filter (HOS-919)
+export * from './host-trade.categories-filter.js';
 // CRUD operations (Create, Update input schemas)
 export * from './host-trade.crud.schema.js';
 // HTTP request/response schemas (public + admin read shapes, HTTP coercion)

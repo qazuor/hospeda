@@ -1,0 +1,24 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "002-host-trade-category-destapaciones-desagotes",
+    "slug": "destapaciones-desagotes",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Destapaciones y desagotes",
+        "en": "Drain clearing & septic",
+        "pt": "Desentupimento e fossa"
+    },
+    "keywordsI18n": {
+        "es": [
+            "destapación",
+            "desagote",
+            "cloaca",
+            "pozo ciego",
+            "cámara séptica",
+            "atmosférico",
+            "caño tapado"
+        ]
+    },
+    "displayWeight": 20,
+    "lifecycleState": "ACTIVE"
+}

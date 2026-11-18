@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "012-host-trade-category-pintura",
+    "slug": "pintura",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Pintura",
+        "en": "Painting",
+        "pt": "Pintura"
+    },
+    "keywordsI18n": {
+        "es": ["pintor", "látex", "esmalte", "fachada", "impermeabilizante"]
+    },
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

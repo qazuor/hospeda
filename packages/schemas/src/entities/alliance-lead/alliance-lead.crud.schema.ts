@@ -36,7 +36,6 @@ const REQUIRED_SERVICE_PROVIDER_FIELDS = [
         field: 'businessName',
         message: 'zodError.allianceLead.businessName.requiredForServiceProvider'
     },
-    { field: 'category', message: 'zodError.allianceLead.category.requiredForServiceProvider' },
     {
         field: 'destinationId',
         message: 'zodError.allianceLead.destinationId.requiredForServiceProvider'
@@ -85,7 +84,7 @@ export const refineAllianceLeadKindFields = (
         readonly kind?: string;
         readonly businessName?: string | null;
         readonly partnerType?: string | null;
-        readonly category?: string | null;
+        readonly categorySlugs?: readonly string[] | null;
         readonly destinationId?: string | null;
         readonly benefitType?: HostTradeBenefitTypeEnum | null;
         readonly benefitValue?: number | null;
@@ -98,6 +97,14 @@ export const refineAllianceLeadKindFields = (
             if (supplied === null || supplied === undefined) {
                 ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message });
             }
+        }
+
+        if (!value.categorySlugs || value.categorySlugs.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['categorySlugs'],
+                message: 'zodError.allianceLead.categorySlugs.requiredForServiceProvider'
+            });
         }
 
         refineHostTradeBenefit(value, ctx);

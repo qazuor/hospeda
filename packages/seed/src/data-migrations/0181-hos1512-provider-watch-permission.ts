@@ -4,7 +4,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0180-hos1512-provider-watch-permission',
+    name: '0181-hos1512-provider-watch-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

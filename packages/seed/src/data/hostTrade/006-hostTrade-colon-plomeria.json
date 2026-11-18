@@ -3,7 +3,7 @@
     "id": "006-hostTrade-colon-plomeria",
     "name": "Plomería y Sanitarios Colon",
     "slug": "plomeria-y-sanitarios-colon",
-    "category": "PLOMERIA",
+    "categorySlugs": ["plomeria"],
     "contact": "+54 9 3447 234567",
     "benefit": "Diagnóstico gratuito y 10% de descuento en mano de obra para hosts de Hospeda.",
     "destinationId": "002-destination-colon",

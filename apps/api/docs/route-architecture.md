@@ -715,6 +715,45 @@ else's answers the same **404** as one that does not exist (HOS-600).
 
 ---
 
+## Provider Trade Category Catalog Routes (HOS-919)
+
+A provider holds 1..10 categories from an editable two-level catalog (group, then
+category) instead of one enum value. The link is the `r_host_trade_category` join,
+and the write surface is `categoryIds` on the host-trade create/update schemas
+(admin only; the owner schema forbids it).
+
+| Tier | Method | Path | `requiredPermissions` | Notes |
+|------|--------|------|-----------------------|-------|
+| Public | `GET` | `/api/v1/public/host-trade-categories` | none | Active groups with their active categories, ordered by group weight, category weight and name. One query. Feeds the anonymous alliance form and the directory filter. |
+| Admin | `GET`, `POST` | `/api/v1/admin/host-trade-category-groups` | `HOST_TRADE_CATEGORY_VIEW` / `_CREATE` | Groups. `slug` is immutable after creation and stays reserved after a soft delete. |
+| Admin | `GET`, `PATCH`, `DELETE` | `/api/v1/admin/host-trade-category-groups/{id}` | `_VIEW` / `_UPDATE` / `_DELETE` | |
+| Admin | `POST` | `/api/v1/admin/host-trade-category-groups/{id}/restore` | `_RESTORE` | |
+| Admin | `GET`, `POST` | `/api/v1/admin/host-trade-categories` | `_VIEW` / `_CREATE` | Categories. Search spans slug, per-locale names and per-locale keywords. |
+| Admin | `GET`, `PATCH`, `DELETE` | `/api/v1/admin/host-trade-categories/{id}` | `_VIEW` / `_UPDATE` / `_DELETE` | |
+| Admin | `POST` | `/api/v1/admin/host-trade-categories/{id}/restore` | `_RESTORE` | |
+
+Rules worth knowing before touching them:
+
+- **`CATEGORY_IN_USE` is a 409.** Soft-deleting a category that at least one
+  NON-deleted provider still links is refused, and so is soft-deleting a group that
+  still has non-deleted categories. Deactivating (`lifecycleState: INACTIVE`) is always
+  allowed and providers keep the category. The service rule is the first line; the
+  `RESTRICT` foreign keys on `r_host_trade_category.category_id` and
+  `host_trade_categories.group_id` are the backstop. See
+  [`error-contract.md`](./error-contract.md).
+- **Every catalog write purges the `host-trade-categories` cache tag**
+  (`CACHE_TAG_HOST_TRADE_CATEGORIES`, `purgeHostTradeCategoriesCache` in
+  `@repo/service-core`), because the public catalog is cached.
+- **Directory filters are any-of.** `categories` takes catalog slugs; a provider
+  holding several of them matches once, unknown slugs match nothing.
+- **Reads carry `categories`** (`id`, `slug`, `nameI18n`, `groupSlug`), hydrated with
+  one batched query per page, in catalog order. The legacy single `category` column
+  is no longer read or written.
+- The alliance lead form sends `categorySlugs`; the slugs are validated against the
+  active catalog on submit and resolved to ACTIVE categories at approval.
+
+---
+
 ## Host-Trade Benefit Usage and Review Routes (HOS-376)
 
 The provider directory's write surface: one party declares that a benefit was

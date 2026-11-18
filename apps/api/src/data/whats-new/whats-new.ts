@@ -152,6 +152,222 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4423, #4444, #4464
+    {
+        id: '2026-11-16-plan-change-from-my-subscription-checkout',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Cambiar de plan desde Mi suscripción te lleva directo al checkout',
+            en: 'Changing plans from My subscription takes you straight to checkout',
+            pt: 'Mudar de plano em Minha assinatura leva você direto ao checkout'
+        },
+        body: {
+            es: 'Al pasar a un plan superior desde Mi suscripción, ahora llegás al checkout de Mercado Pago con tu correo de pagador ya cargado. Tu plan actual sigue hasta que autorices, y lo que ya pagaste se convierte en días de crédito antes del primer cobro del plan nuevo.',
+            en: 'When you upgrade to a higher plan from My subscription, you now land on the Mercado Pago checkout with your payer email already filled in. Your current plan stays until you authorize, and what you have already paid is converted into credit days before the first charge of the new plan.',
+            pt: 'Ao passar para um plano superior em Minha assinatura, agora você chega ao checkout do Mercado Pago com o seu e-mail de pagador já preenchido. Seu plano atual continua até que você autorize, e o que você já pagou é convertido em dias de crédito antes da primeira cobrança do novo plano.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4423
+    {
+        id: '2026-11-16-admin-plan-change-checkout-link',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Cambiar el plan de un cliente desde el panel ya genera el checkout',
+            en: "Changing a customer's plan from the panel now generates the checkout",
+            pt: 'Alterar o plano de um cliente pelo painel agora gera o checkout'
+        },
+        body: {
+            es: 'Al cambiar el plan de una suscripción desde el panel, ahora obtenés el enlace de autorización para enviarle al cliente, con la fecha del primer cobro y los días de crédito. El plan actual sigue vigente hasta que el cliente autorice.',
+            en: "When you change a subscription's plan from the panel, you now get the authorization link to send to the customer, with the first charge date and the credit days. The current plan stays in effect until the customer authorizes.",
+            pt: 'Ao alterar o plano de uma assinatura pelo painel, agora você obtém o link de autorização para enviar ao cliente, com a data da primeira cobrança e os dias de crédito. O plano atual continua vigente até que o cliente autorize.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4424
+    {
+        id: '2026-11-16-plan-change-replaced-subscription-shown',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Después de cambiar de plan, ves claro cuál es tu suscripción vigente',
+            en: 'After changing plans, it is clear which subscription is current',
+            pt: 'Depois de mudar de plano, fica claro qual é a sua assinatura vigente'
+        },
+        body: {
+            es: 'Cuando cambiás de plan, tu suscripción anterior aparece como «Reemplazada por» el plan nuevo, sin acciones, hasta que se da de baja en la próxima hora. La nueva queda como la única activa.',
+            en: 'When you change plans, your previous subscription appears as "Replaced by" the new plan, with no actions, until it is cancelled within the next hour. The new one remains the only active subscription.',
+            pt: 'Quando você muda de plano, sua assinatura anterior aparece como «Substituída por» o novo plano, sem ações, até ser cancelada na próxima hora. A nova fica como a única ativa.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4463
+    {
+        id: '2026-11-17-admin-plan-change-preview-names-and-date',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'La vista previa de cambio de plan muestra los planes y la fecha',
+            en: 'The plan change preview shows the plans and the date',
+            pt: 'A pré-visualização da mudança de plano mostra os planos e a data'
+        },
+        body: {
+            es: 'Al previsualizar un cambio de plan desde el admin, los planes aparecen con su nombre en español y, si es una baja, se ve la fecha en que entra en vigencia (por ejemplo 01/12/2026). Si la suscripción no está activa, el mensaje dice «La suscripción no está activa.».',
+            en: 'When you preview a plan change from the admin, the plans appear with their names in Spanish and, for a downgrade, you see the date it takes effect (for example 01/12/2026). If the subscription is not active, the message says "La suscripción no está activa.".',
+            pt: 'Ao pré-visualizar uma mudança de plano no admin, os planos aparecem com o nome em espanhol e, no caso de um downgrade, você vê a data em que ele entra em vigor (por exemplo 01/12/2026). Se a assinatura não estiver ativa, a mensagem diz «La suscripción no está activa.».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4452
+    {
+        id: '2026-11-17-promo-code-valid-through-end-of-end-date',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Un código promocional vale hasta el final de su fecha de cierre',
+            en: 'A promo code stays valid through the end of its end date',
+            pt: 'Um código promocional vale até o fim da sua data de término'
+        },
+        body: {
+            es: 'Si un código promocional termina el día D, sigue siendo válido hasta el final de ese día en hora de Argentina, y la lista muestra la fecha D.',
+            en: 'If a promo code ends on day D, it stays valid through the end of that day in Argentina time, and the list shows date D.',
+            pt: 'Se um código promocional termina no dia D, ele continua válido até o fim desse dia no horário da Argentina, e a lista mostra a data D.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4460
+    {
+        id: '2026-11-17-manual-partner-installment-saves-note',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'La cuota manual de un Partner guarda tu nota',
+            en: 'A manual Partner installment saves your note',
+            pt: 'A parcela manual de um Partner guarda a sua nota'
+        },
+        body: {
+            es: 'Al registrar una cuota manual de un Partner, la nota o referencia del comprobante que escribís (por ejemplo, una nota de transferencia) queda guardada junto con la cuota.',
+            en: 'When you record a manual Partner installment, the note or proof reference you type (for example, a transfer note) is saved with the installment.',
+            pt: 'Ao registrar uma parcela manual de um Partner, a nota ou referência do comprovante que você escreve (por exemplo, uma nota de transferência) fica salva junto com a parcela.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4468
+    {
+        id: '2026-11-17-partner-claim-link-creates-or-links-account',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['SPONSOR'],
+        title: {
+            es: 'Reclamar un Partner desde el link del correo es más simple',
+            en: 'Claiming a Partner from the email link is simpler',
+            pt: 'Reivindicar um Partner pelo link do e-mail ficou mais simples'
+        },
+        body: {
+            es: 'Con una cuenta nueva, se crea ya verificada y queda vinculada al Partner en un solo paso. Si ya tenés cuenta, iniciás sesión y lo reclamás. Si el link no es válido, la pantalla dice «No encontramos este Partner».',
+            en: 'With a new account, it is created already verified and linked to the Partner in a single step. If you already have an account, you sign in and claim it. If the link is not valid, the screen says "No encontramos este Partner".',
+            pt: 'Com uma conta nova, ela é criada já verificada e vinculada ao Partner em um único passo. Se você já tem conta, entra e reivindica o Partner. Se o link não for válido, a tela diz «No encontramos este Partner».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4467
+    {
+        id: '2026-11-17-addon-names-in-page-language',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Los add-ons se ven con su nombre en el idioma de la página',
+            en: 'Add-ons show their name in the page language',
+            pt: 'Os add-ons aparecem com o nome no idioma da página'
+        },
+        body: {
+            es: 'La tienda de add-ons y la tarjeta «Tus destaques recurrentes» muestran el nombre de cada add-on en el idioma de la página (español, inglés o portugués), portugués incluido.',
+            en: 'The add-ons store and the "Tus destaques recurrentes" card show each add-on name in the page language (Spanish, English or Portuguese), Portuguese included.',
+            pt: 'A loja de add-ons e o cartão «Tus destaques recurrentes» mostram o nome de cada add-on no idioma da página (espanhol, inglês ou português), incluindo o português.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4440
+    {
+        id: '2026-11-17-temporary-courtesy-starts-at-next-charge',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Una cortesía temporal empieza en el próximo cobro',
+            en: 'A temporary courtesy starts at the next charge',
+            pt: 'Uma cortesia temporária começa na próxima cobrança'
+        },
+        body: {
+            es: 'Una cortesía temporal de N meses ahora arranca en la fecha del próximo cobro, así que realmente saltea los próximos N cobros. La vista previa muestra la fecha de fin correcta.',
+            en: 'A temporary courtesy of N months now starts at the next charge date, so it really skips the next N charges. The preview shows the correct end date.',
+            pt: 'Uma cortesia temporária de N meses agora começa na data da próxima cobrança, então ela realmente pula as próximas N cobranças. A pré-visualização mostra a data de término correta.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4454
+    {
+        id: '2026-11-17-my-subscription-updates-right-away',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: '«Mi suscripción» se actualiza al instante',
+            en: '"Mi suscripción" updates right away',
+            pt: '«Mi suscripción» é atualizada na hora'
+        },
+        body: {
+            es: 'Al pausar, reanudar o cancelar tu suscripción, la tarjeta se actualiza enseguida, sin recargar la página. Además, el diálogo de pausa ya no muestra un encabezado de add-ons vacío.',
+            en: 'When you pause, resume or cancel your subscription, the card updates right away, without reloading the page. Also, the pause dialog no longer shows an empty add-ons header.',
+            pt: 'Ao pausar, retomar ou cancelar a sua assinatura, o cartão é atualizado na hora, sem recarregar a página. Além disso, o diálogo de pausa não mostra mais um cabeçalho de add-ons vazio.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4461
+    {
+        id: '2026-11-17-payer-email-field-explains-mercado-pago',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'El campo de correo de pago explica con qué correo vas a pagar',
+            en: 'The payer email field explains which email you will pay with',
+            pt: 'O campo de e-mail de pagamento explica com qual e-mail você vai pagar'
+        },
+        body: {
+            es: 'Al contratar un plan o comprar un add-on, el campo de correo aclara que es el correo con el que vas a pagar en Mercado Pago.',
+            en: 'When you subscribe to a plan or buy an add-on, the email field explains that it is the email you will pay with in Mercado Pago.',
+            pt: 'Ao contratar um plano ou comprar um add-on, o campo de e-mail explica que é o e-mail com o qual você vai pagar no Mercado Pago.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4453
+    {
+        id: '2026-11-17-addon-listing-picker-shows-name-and-status',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Al comprar un add-on ves el nombre y el estado de cada publicación',
+            en: "When buying an add-on you see each listing's name and status",
+            pt: 'Ao comprar um add-on você vê o nome e o status de cada publicação'
+        },
+        body: {
+            es: 'Al comprar un add-on para una publicación, el selector muestra el nombre de cada una y su estado de publicación, en vez de un identificador.',
+            en: "When buying an add-on for a listing, the picker shows each listing's name and publication status instead of an id.",
+            pt: 'Ao comprar um add-on para uma publicação, o seletor mostra o nome de cada uma e o status de publicação, em vez de um identificador.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4432
     {
         id: '2026-11-17-url-import-keeps-capacity-and-address',

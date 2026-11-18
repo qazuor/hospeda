@@ -93,7 +93,8 @@ export enum EntityTypeEnum {
     FEATURE = 'FEATURE',
     AMENITY = 'AMENITY',
     TAG = 'TAG',
-    POI_CATEGORY = 'POI_CATEGORY'
+    POI_CATEGORY = 'POI_CATEGORY',
+    HOST_TRADE_CATEGORY = 'HOST_TRADE_CATEGORY'
 }
 
 /**

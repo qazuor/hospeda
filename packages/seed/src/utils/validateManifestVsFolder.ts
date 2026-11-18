@@ -47,7 +47,9 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     venueReviews: 'venue/reviews',
     pointsOfInterest: 'pointOfInterest',
     pointOfInterestCatalog: 'pointOfInterest',
-    poiCategories: 'poiCategory'
+    poiCategories: 'poiCategory',
+    hostTradeCategoryGroups: 'hostTradeCategoryGroup',
+    hostTradeCategories: 'hostTradeCategory'
 };
 
 /**

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseSearchSchema } from '../../common/pagination.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
+import { HostTradeCategoriesFilterSchema } from './host-trade.categories-filter.js';
 
 /**
  * HostTradeQuerySchema — public/host query filters for the host-trades list endpoint.
@@ -22,8 +23,15 @@ export const HostTradeQuerySchema = BaseSearchSchema.extend({
     /** Filter by destination (required in most host-facing UIs) */
     destinationId: z.string().uuid().optional(),
 
-    /** Filter by service category */
+    /**
+     * Filter by the legacy single service category.
+     *
+     * @deprecated HOS-919, removed in the N+1 contract PR (T-054). Use `categories`.
+     */
     category: HostTradeCategoryEnumSchema.optional(),
+
+    /** Filter by catalog category slugs (comma-separated, any-of, max 30). */
+    categories: HostTradeCategoriesFilterSchema,
 
     /** Filter to show only 24h-available providers */
     is24h: z.boolean().optional()

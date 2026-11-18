@@ -48,6 +48,7 @@ check answers 403 to someone the server never identified.
 | State conflict | **409** | `ALREADY_EXISTS` |
 | New self-service paid signups paused (S1 checkout; first publish that would start a trial: reason FIRST_PUBLISH_PAUSED) | **409** | `NEW_PAID_SIGNUPS_FROZEN` |
 | Addon purchases paused (A1) | **409** | `ADDON_PURCHASES_FROZEN` |
+| Deleting a provider trade category that live providers still use, or a catalog group that still has categories (HOS-919; deactivate instead) | **409** | `CATEGORY_IN_USE` |
 | Plan change while the next charge date is still being confirmed | **409** | `CONFLICT`, `error.details.reason: CYCLE_END_PENDING` |
 | Exclusive manual cron trigger is already running | **409** | `CONFLICT`; public `error.details.holderRunId` is the active run ID or `null` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |

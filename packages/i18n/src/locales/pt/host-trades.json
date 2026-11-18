@@ -23,6 +23,8 @@
         "is24h": "Disponível 24h",
         "benefit": "Benefício para anfitriões",
         "contact": "Contatar",
+        "categoriesLabel": "Categorias",
+        "moreCategories": "mais {{count}} categorias",
         "stats": {
             "ratingLabel": "{{rating}} de 5 estrelas",
             "reviews_one": "{{count}} avaliação",
@@ -32,21 +34,6 @@
             "hosts_one": "{{count}} anfitrião",
             "hosts_other": "{{count}} anfitriões"
         }
-    },
-    "categories": {
-        "CERRAJERIA": "Chaveiro",
-        "PLOMERIA": "Encanamento",
-        "ELECTRICIDAD": "Elétrica",
-        "GAS": "Gás",
-        "CLIMATIZACION": "Climatização",
-        "LIMPIEZA": "Limpeza",
-        "FLETES": "Fretes",
-        "VIDRIERIA": "Vidraçaria",
-        "CARPINTERIA": "Carpintaria",
-        "PILETA_JARDIN": "Piscina e Jardim",
-        "PLAGAS": "Controle de pragas",
-        "INTERNET": "Internet / TV",
-        "ALBANILERIA": "Alvenaria"
     },
     "registerUsage": {
         "title": "Registrar uso do benefício",

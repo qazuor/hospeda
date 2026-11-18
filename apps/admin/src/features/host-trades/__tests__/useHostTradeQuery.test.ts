@@ -6,7 +6,6 @@
  * and verifies that list-cache invalidation is triggered on successful mutations.
  */
 
-import { HostTradeCategoryEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
@@ -106,7 +105,7 @@ describe('useCreateHostTradeMutation — valid submit calls API and returns enti
 
         const created = await result.current.mutateAsync({
             name: 'Plomero Pérez',
-            category: HostTradeCategoryEnum.PLOMERIA,
+            categoryIds: ['22222222-2222-4222-8222-222222222222'],
             contact: '+54 9 3442 123456',
             benefit: '10 % de descuento',
             destinationId: 'dest-uuid-001',

@@ -1940,6 +1940,108 @@
             }
         }
     },
+    "hostTradeCategories": {
+        "title": "Categorías de proveedores",
+        "subtitle": "Catálogo de rubros que los proveedores pueden ofrecer, agrupados por encabezado.",
+        "tabs": {
+            "groups": "Grupos",
+            "categories": "Categorías"
+        },
+        "state": {
+            "active": "Activo",
+            "inactive": "Inactivo"
+        },
+        "loading": "Cargando…",
+        "error": "No se pudo cargar el catálogo.",
+        "empty": "Todavía no hay elementos.",
+        "columns": {
+            "name": "Nombre",
+            "slug": "Identificador",
+            "group": "Grupo",
+            "weight": "Peso",
+            "state": "Estado",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Eliminar",
+            "cancel": "Cancelar",
+            "save": "Guardar"
+        },
+        "groups": {
+            "add": "Nuevo grupo",
+            "dialog": {
+                "createTitle": "Nuevo grupo",
+                "editTitle": "Editar grupo",
+                "nameLabel": "Nombre",
+                "slugLabel": "Identificador",
+                "slugHint": "Se define al crear y no se puede cambiar después.",
+                "weightLabel": "Peso de orden",
+                "weightHint": "Los valores más bajos se muestran primero.",
+                "activeLabel": "Activo",
+                "activeHint": "Un grupo inactivo deja de ofrecerse, pero sus datos se conservan."
+            },
+            "deleteDialog": {
+                "title": "Eliminar grupo",
+                "message": "Vas a eliminar el grupo «{{name}}». Esta acción lo quita del catálogo.",
+                "confirm": "Eliminar grupo"
+            },
+            "messages": {
+                "created": "Grupo creado.",
+                "updated": "Grupo actualizado.",
+                "deleted": "Grupo eliminado.",
+                "saveError": "No se pudo guardar el grupo.",
+                "deleteError": "No se pudo eliminar el grupo.",
+                "inUse": "No se puede eliminar: el grupo todavía tiene categorías. Desactivalo para dejar de ofrecerlo, o mové sus categorías primero."
+            }
+        },
+        "categories": {
+            "add": "Nueva categoría",
+            "filters": {
+                "search": "Buscar por nombre o identificador",
+                "group": "Grupo",
+                "allGroups": "Todos los grupos",
+                "state": "Estado",
+                "allStates": "Todos los estados"
+            },
+            "dialog": {
+                "createTitle": "Nueva categoría",
+                "editTitle": "Editar categoría",
+                "nameLabel": "Nombre",
+                "slugLabel": "Identificador",
+                "slugHint": "Se define al crear y no se puede cambiar después.",
+                "groupLabel": "Grupo",
+                "groupPlaceholder": "Elegí un grupo",
+                "weightLabel": "Peso de orden",
+                "weightHint": "Los valores más bajos se muestran primero.",
+                "activeLabel": "Activa",
+                "activeHint": "Una categoría inactiva deja de ofrecerse, pero se conserva en los proveedores que ya la tienen."
+            },
+            "keywords": {
+                "label": "Palabras relacionadas",
+                "hint": "Ayudan a encontrar la categoría al buscar (por ejemplo «pozo»). En minúsculas, hasta {{maxCount}} por idioma y {{maxLength}} caracteres cada una.",
+                "placeholder": "Escribí una palabra y apretá Enter",
+                "add": "Agregar",
+                "remove": "Quitar {{keyword}}",
+                "count": "{{count}} de {{max}}",
+                "tooMany": "Ya cargaste el máximo de palabras para este idioma.",
+                "tooLong": "La palabra supera los {{max}} caracteres."
+            },
+            "deleteDialog": {
+                "title": "Eliminar categoría",
+                "message": "Vas a eliminar la categoría «{{name}}». Esta acción la quita del catálogo.",
+                "confirm": "Eliminar categoría"
+            },
+            "messages": {
+                "created": "Categoría creada.",
+                "updated": "Categoría actualizada.",
+                "deleted": "Categoría eliminada.",
+                "saveError": "No se pudo guardar la categoría.",
+                "deleteError": "No se pudo eliminar la categoría.",
+                "inUse": "No se puede eliminar: hay proveedores que usan esta categoría. Desactivala para dejar de ofrecerla; los proveedores que ya la tienen la conservan."
+            }
+        }
+    },
     "locationDuplicates": {
         "title": "Direcciones repetidas",
         "description": "Fichas publicadas que comparten dirección. Un duplicado entre dueños distintos no bloquea la publicación: se revisa acá. Una excepción habilita a una ficha a compartir dirección (complejo de cabañas, patio gastronómico, restaurante de un hotel).",

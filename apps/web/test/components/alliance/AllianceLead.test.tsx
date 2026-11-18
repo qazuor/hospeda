@@ -40,7 +40,43 @@ vi.mock('@/lib/auth-cache', () => ({
     writeCachedAuthMe: mockWriteCachedAuthMe
 }));
 
+const { mockGetHostTradeCatalog } = vi.hoisted(() => ({ mockGetHostTradeCatalog: vi.fn() }));
+
+// The category combobox is fed by the public catalog (HOS-919), fetched
+// client-side. Mocked at the endpoint boundary so the suite owns the catalog.
+vi.mock('@/lib/api/endpoints', () => ({
+    hostTradeCategoryApi: { getHostTradeCatalog: mockGetHostTradeCatalog }
+}));
+
+const category = (slug: string, es: string, weight: number) => ({
+    id: `00000000-0000-4000-8000-${String(weight).padStart(12, '0')}`,
+    slug,
+    nameI18n: { es, en: es, pt: es },
+    displayWeight: weight,
+    keywordsI18n: { es: [], en: [], pt: [] }
+});
+
+const TEST_CATALOG = {
+    groups: [
+        {
+            slug: 'instalaciones',
+            nameI18n: { es: 'Instalaciones', en: 'Installations', pt: 'Instalações' },
+            displayWeight: 10,
+            categories: [category('plomeria', 'Plomería', 10), category('pintura', 'Pintura', 20)]
+        }
+    ]
+};
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/** Opens the category combobox and picks each option by its visible name. */
+async function pickCategories(names: ReadonlyArray<string>) {
+    const input = await screen.findByLabelText(/^categorySlugs/i);
+    for (const name of names) {
+        fireEvent.click(input);
+        fireEvent.mouseDown(await screen.findByRole('option', { name }));
+    }
+}
 
 // Non-empty by default so `service_provider` tests can select a
 // `destinationId` option without depending on the SSR-fetched real list.
@@ -77,6 +113,8 @@ async function fillGenericRequiredFields(
 describe('AllianceLead', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        mockGetHostTradeCatalog.mockReset();
+        mockGetHostTradeCatalog.mockResolvedValue({ ok: true, data: TEST_CATALOG });
         // Reset call history too, not just the return value: several assertions
         // below check that /auth/me was NOT called, and a stale count from the
         // previous test would make them pass or fail for the wrong reason.
@@ -145,18 +183,22 @@ describe('AllianceLead', () => {
             expect(screen.getByLabelText(/^sponsorshipInterest/i)).toBeInTheDocument();
         });
 
-        it('renders businessName, category, destinationId, benefitType, website for service_provider (HOS-278 §6.4)', () => {
+        it('renders businessName, categorySlugs, destinationId, benefitType, website for service_provider (HOS-278 §6.4, HOS-919)', () => {
             renderForm('service_provider');
             expect(screen.getByLabelText(/^businessName/i)).toBeInTheDocument();
-            expect(screen.getByLabelText(/^category/i)).toBeInTheDocument();
+            expect(screen.getByLabelText(/^categorySlugs/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/^destinationId/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/^benefitType/i)).toBeInTheDocument();
             expect(screen.getByLabelText(/^website/i)).toBeInTheDocument();
         });
 
-        it('renders category, destinationId, benefitType as <select> elements', () => {
+        it('renders categorySlugs as the grouped multi-select combobox, not a <select> (HOS-919)', () => {
             renderForm('service_provider');
-            expect(screen.getByLabelText(/^category/i).tagName).toBe('SELECT');
+            expect(screen.getByLabelText(/^categorySlugs/i)).toHaveAttribute('role', 'combobox');
+        });
+
+        it('renders destinationId, benefitType as <select> elements', () => {
+            renderForm('service_provider');
             expect(screen.getByLabelText(/^destinationId/i).tagName).toBe('SELECT');
             expect(screen.getByLabelText(/^benefitType/i).tagName).toBe('SELECT');
         });
@@ -334,9 +376,7 @@ describe('AllianceLead', () => {
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Plomería Acme' }
             });
-            fireEvent.change(screen.getByLabelText(/^category/i), {
-                target: { value: 'PLOMERIA' }
-            });
+            await pickCategories(['Plomería', 'Pintura']);
             fireEvent.change(screen.getByLabelText(/^destinationId/i), {
                 target: { value: '11111111-1111-4111-8111-111111111111' }
             });
@@ -357,9 +397,7 @@ describe('AllianceLead', () => {
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Plomería Acme' }
             });
-            fireEvent.change(screen.getByLabelText(/^category/i), {
-                target: { value: 'PLOMERIA' }
-            });
+            await pickCategories(['Plomería', 'Pintura']);
             fireEvent.change(screen.getByLabelText(/^destinationId/i), {
                 target: { value: '11111111-1111-4111-8111-111111111111' }
             });
@@ -377,7 +415,7 @@ describe('AllianceLead', () => {
             expect(global.fetch).not.toHaveBeenCalled();
         });
 
-        it('requires category, destinationId, benefitType', async () => {
+        it('requires categorySlugs, destinationId, benefitType', async () => {
             renderForm('service_provider');
             await fillGenericRequiredFields();
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
@@ -386,7 +424,10 @@ describe('AllianceLead', () => {
             fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
 
             await waitFor(() => {
-                expect(screen.getByLabelText(/^category/i)).toHaveAttribute('aria-invalid', 'true');
+                expect(screen.getByLabelText(/^categorySlugs/i)).toHaveAttribute(
+                    'aria-invalid',
+                    'true'
+                );
                 expect(screen.getByLabelText(/^destinationId/i)).toHaveAttribute(
                     'aria-invalid',
                     'true'
@@ -397,6 +438,65 @@ describe('AllianceLead', () => {
                 );
             });
             expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('blocks submit with 0 categories and shows the required message on the field (AC-1.5)', async () => {
+            renderForm('service_provider');
+            await fillGenericRequiredFields();
+            fireEvent.change(screen.getByLabelText(/^businessName/i), {
+                target: { value: 'Plomería Acme' }
+            });
+            fireEvent.change(screen.getByLabelText(/^destinationId/i), {
+                target: { value: '11111111-1111-4111-8111-111111111111' }
+            });
+            fireEvent.change(screen.getByLabelText(/^benefitType/i), {
+                target: { value: 'TWO_FOR_ONE' }
+            });
+            fireEvent.change(screen.getByLabelText(/contanos sobre tu servicio/i), {
+                target: { value: 'Ofrecemos servicio 24hs para hosts.' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
+
+            await waitFor(() => {
+                expect(document.getElementById('al-categorySlugs-error')?.textContent).toBe(
+                    'Este campo es obligatorio.'
+                );
+            });
+            expect(document.activeElement?.id).toBe('al-categorySlugs');
+            expect(global.fetch).not.toHaveBeenCalled();
+        });
+
+        it('fetches the public catalog client-side for service_provider only', async () => {
+            renderForm('service_provider');
+            await screen.findByLabelText(/^categorySlugs/i);
+            expect(mockGetHostTradeCatalog).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not fetch the catalog for the other kinds', async () => {
+            renderForm('partner');
+            await screen.findByLabelText(/^businessName/i);
+            expect(mockGetHostTradeCatalog).not.toHaveBeenCalled();
+        });
+
+        it('shows the chosen categories as chips', async () => {
+            renderForm('service_provider');
+            await pickCategories(['Plomería']);
+
+            const chips = await screen.findByRole('list', { name: /rubros elegidos/i });
+            expect(chips).toHaveTextContent('Plomería');
+        });
+
+        it('tells the applicant when the catalog could not be loaded', async () => {
+            mockGetHostTradeCatalog.mockResolvedValue({
+                ok: false,
+                error: { status: 503, message: 'down' }
+            });
+
+            renderForm('service_provider');
+
+            expect(await screen.findByRole('alert')).toHaveTextContent(
+                /no pudimos cargar los rubros/i
+            );
         });
 
         it('POSTs the typed fields as top-level payload keys, with benefitValue as a number', async () => {
@@ -419,7 +519,8 @@ describe('AllianceLead', () => {
             >;
 
             expect(body.businessName).toBe('Plomería Acme');
-            expect(body.category).toBe('PLOMERIA');
+            expect(body.categorySlugs).toEqual(['plomeria', 'pintura']);
+            expect(body).not.toHaveProperty('category');
             expect(body.destinationId).toBe('11111111-1111-4111-8111-111111111111');
             expect(body.benefitType).toBe('PERCENTAGE');
             expect(body.benefitValue).toBe(15);
@@ -819,9 +920,7 @@ describe('AllianceLead', () => {
             fireEvent.change(screen.getByLabelText(/^businessName/i), {
                 target: { value: 'Plomería Acme' }
             });
-            fireEvent.change(screen.getByLabelText(/^category/i), {
-                target: { value: 'PLOMERIA' }
-            });
+            await pickCategories(['Plomería', 'Pintura']);
             fireEvent.change(screen.getByLabelText(/^destinationId/i), {
                 target: { value: '11111111-1111-4111-8111-111111111111' }
             });

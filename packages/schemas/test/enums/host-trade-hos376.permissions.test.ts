@@ -59,12 +59,14 @@ describe('HOS-376 host-trade permissions (T-002)', () => {
             expect(PERMISSION_TO_CATEGORY[member]).toBe(PermissionCategoryEnum.HOST_TRADE);
         });
 
-        it('should grow the HOST_TRADE category from 7 to 12 permissions', () => {
+        // 7 (SPEC-241) + 5 (HOS-376) + 5 HOST_TRADE_CATEGORY_* (HOS-919), which
+        // fall under HOST_TRADE by key prefix.
+        it('should grow the HOST_TRADE category from 7 to 17 permissions', () => {
             const grouped = getPermissionsByCategory();
             const hostTradePermissions = grouped.get(PermissionCategoryEnum.HOST_TRADE);
 
             expect(hostTradePermissions).toBeDefined();
-            expect(hostTradePermissions).toHaveLength(12);
+            expect(hostTradePermissions).toHaveLength(17);
         });
 
         it('should keep the 7 pre-existing SPEC-241 permissions in the category', () => {

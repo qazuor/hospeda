@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "004-host-trade-category-gas-instalacion",
+    "slug": "gas-instalacion",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Instalación de gas",
+        "en": "Gas installation",
+        "pt": "Instalação de gás"
+    },
+    "keywordsI18n": {
+        "es": ["gasista", "matriculado", "estufa", "calefón", "pérdida de gas", "cocina"]
+    },
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

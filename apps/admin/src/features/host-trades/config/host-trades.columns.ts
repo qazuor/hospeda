@@ -1,36 +1,41 @@
 import { EditIcon } from '@repo/icons';
-import { HostTradeCategoryEnum, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
-import { createElement, Fragment } from 'react';
+import { type ComponentProps, createElement, Fragment } from 'react';
 import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { Badge } from '@/components/ui/badge';
+import { resolveI18nText } from '@/utils/i18n-text';
 import { useDeleteHostTradeMutation } from '../hooks/useHostTradeQuery';
 import type { HostTradeListItem } from '../schemas/host-trades.schemas';
 
 /**
- * Badge options for the category column, labelled from the shared dictionary.
+ * Renders a provider's categories as one badge each (HOS-919 AC-4.4).
  *
- * The labels used to be a hardcoded `Record<HostTradeCategoryEnum, string>` of
- * Spanish names in this file, and by the time it was removed three of the
- * thirteen had already drifted from `host-trades.categories.*`: the admin read
- * "Pileta / Jardín", "Plagas" and "Internet" where the public directory read
- * "Pileta y Jardín", "Control de plagas" and "Internet / TV". Two copies of the
- * same words only ever diverge.
+ * Labels come from each category's own `nameI18n` (es, then en, then pt), the
+ * same words the catalog screen and the public directory show. They are data,
+ * not copy, so there is no translation key and no hardcoded label here.
  *
- * `host-trades` is a SHARED namespace, so the admin reads the same entry the
- * directory renders — the category means the same thing on both screens, and
- * translating it twice is how they stop agreeing.
- *
- * @param t - Translation function from `useTranslations()`.
- * @returns One badge option per enum value, in enum order.
+ * @param row - The provider list row, carrying `categories` refs.
+ * @returns A wrapping group of badges, empty for a provider with none.
  */
-const buildCategoryBadgeOptions = (t: ColumnTFunction) =>
-    Object.values(HostTradeCategoryEnum).map((value) => ({
-        value,
-        label: t(`host-trades.categories.${value}`),
-        color: BadgeColor.TEAL
-    }));
+const renderCategoryBadges = (row: HostTradeListItem) =>
+    createElement(
+        'div',
+        { className: 'flex flex-wrap gap-1' },
+        (row.categories ?? []).map((category) =>
+            createElement(
+                Badge,
+                {
+                    key: category.id,
+                    variant: 'secondary',
+                    'data-testid': 'provider-category-badge'
+                } as ComponentProps<typeof Badge>,
+                resolveI18nText(category.nameI18n) || category.slug
+            )
+        )
+    );
 
 /**
  * Builds the TanStack Table column definitions for the host-trades list page.
@@ -60,12 +65,12 @@ export const createHostTradesColumns = (
                 : undefined
     },
     {
-        id: 'category',
+        id: 'categories',
         header: t('admin-entities.columns.category'),
-        accessorKey: 'category',
-        enableSorting: true,
-        columnType: ColumnType.BADGE,
-        badgeOptions: buildCategoryBadgeOptions(t)
+        accessorKey: 'categories',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: renderCategoryBadges
     },
     {
         id: 'contact',

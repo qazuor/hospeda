@@ -1608,8 +1608,15 @@
     {
       "idx": 229,
       "version": "7",
-      "when": 1794956979962,
-      "tag": "0229_hos1512_provider_watch",
+      "when": 1794940750138,
+      "tag": "0229_hos919_provider_trade_categories",
+      "breakpoints": true
+    },
+    {
+      "idx": 230,
+      "version": "7",
+      "when": 1794964914520,
+      "tag": "0230_hos1512_provider_watch",
       "breakpoints": true
     }
   ]

@@ -8,7 +8,8 @@ import {
     HostTradeBenefitUsageProviderCreateBodySchema,
     HostTradeBenefitUsageRejectBodySchema,
     HostTradeBenefitUsageSchema,
-    HostTradeBenefitUsageUpdateInputSchema
+    HostTradeBenefitUsageUpdateInputSchema,
+    HostTradeUsageProviderRefSchema
 } from '../index.js';
 
 const UUID_A = '11111111-1111-4111-8111-111111111111';
@@ -401,5 +402,40 @@ describe('HostTradeBenefitUsageAdminSearchSchema', () => {
             creationChannel: 'SMS'
         });
         expect(result.success).toBe(false);
+    });
+});
+
+describe('HostTradeUsageProviderRefSchema.categories (HOS-919)', () => {
+    const ref = {
+        id: UUID_A,
+        slug: 'plomeria',
+        nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+        groupSlug: 'hogar'
+    };
+    const base = { id: UUID_B, slug: 'plomero-juan', name: 'Plomero Juan' };
+
+    it('carries the provider categories as refs', () => {
+        const result = HostTradeUsageProviderRefSchema.safeParse({ ...base, categories: [ref] });
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.categories).toEqual([ref]);
+    });
+
+    it('defaults to [] and no longer requires the deprecated `category`', () => {
+        const result = HostTradeUsageProviderRefSchema.safeParse(base);
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.categories).toEqual([]);
+    });
+
+    it('still accepts the deprecated `category`', () => {
+        expect(
+            HostTradeUsageProviderRefSchema.safeParse({ ...base, category: 'PLOMERIA' }).success
+        ).toBe(true);
+    });
+
+    it('rejects a malformed ref', () => {
+        expect(
+            HostTradeUsageProviderRefSchema.safeParse({ ...base, categories: [{ slug: 'x' }] })
+                .success
+        ).toBe(false);
     });
 });

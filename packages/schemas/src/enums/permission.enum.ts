@@ -1012,6 +1012,16 @@ export enum PermissionEnum {
     HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
     HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll', // Admin: list all trades including inactive/soft-deleted.
 
+    // HOST_TRADE_CATEGORY: admin-managed provider trade category catalog (HOS-919).
+    // The same set gates the category groups: both tables are one catalog. The
+    // public catalog read needs no permission. Grouped under the HOST_TRADE
+    // permission category by key prefix.
+    HOST_TRADE_CATEGORY_VIEW = 'hostTradeCategory.view', // Admin: list catalog groups and categories, active or not.
+    HOST_TRADE_CATEGORY_CREATE = 'hostTradeCategory.create', // Admin: create a catalog group or category.
+    HOST_TRADE_CATEGORY_UPDATE = 'hostTradeCategory.update', // Admin: edit or deactivate a catalog group or category.
+    HOST_TRADE_CATEGORY_DELETE = 'hostTradeCategory.delete', // Admin: soft-delete an unused catalog group or category.
+    HOST_TRADE_CATEGORY_RESTORE = 'hostTradeCategory.restore', // Admin: restore a soft-deleted catalog group or category.
+
     // HOST_TRADE benefit usage + reviews (HOS-376). Split along the lines that
     // matter operationally: seeing the moderation queue is not the authority to
     // decide on it, and neither is the same as lifting an anti-abuse suspension.

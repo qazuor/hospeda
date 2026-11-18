@@ -7,7 +7,6 @@
 import { createHash } from 'node:crypto';
 import {
     HostTradeBenefitTypeEnum,
-    HostTradeCategoryEnum,
     PartnerTypeEnum,
     PermissionEnum,
     RoleEnum,
@@ -159,7 +158,8 @@ function providerLead(overrides: Record<string, unknown> = {}) {
         kind: 'service_provider' as const,
         status: 'pending' as string,
         businessName: 'Plomería Acme',
-        category: HostTradeCategoryEnum.PLOMERIA,
+        category: null,
+        categorySlugs: ['plomeria'],
         destinationId: '00000000-0000-4000-a000-000000000030',
         benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
         benefitValue: 15,
@@ -177,7 +177,25 @@ function providerLead(overrides: Record<string, unknown> = {}) {
 function makeProvisioningHostTradeModel() {
     return {
         findOne: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue({ id: HOST_TRADE_ID })
+        create: vi.fn().mockResolvedValue({ id: HOST_TRADE_ID }),
+        replaceCategories: vi.fn().mockResolvedValue({ added: [], removed: [] })
+    };
+}
+
+/** Catalog model for provisioning: every requested slug resolves to an active category. */
+function makeActiveCategoryModel() {
+    return {
+        findActiveBySlugs: vi
+            .fn()
+            .mockResolvedValue([{ id: '00000000-0000-4000-a000-0000000000c1', slug: 'plomeria' }]),
+        findByIdsForShare: vi.fn().mockResolvedValue([
+            {
+                id: '00000000-0000-4000-a000-0000000000c1',
+                lifecycleState: 'ACTIVE',
+                deletedAt: null
+            }
+        ]),
+        findIdsInDeletedGroups: vi.fn().mockResolvedValue([])
     };
 }
 
@@ -1289,6 +1307,7 @@ describe('AllianceLeadService', () => {
             });
             (service as any)._model = model;
             (service as any)._hostTradeModel = makeProvisioningHostTradeModel();
+            (service as any)._categoryModel = makeActiveCategoryModel();
 
             const result = await service.markHandled({
                 actor: adminActor,
@@ -1321,6 +1340,7 @@ describe('AllianceLeadService', () => {
             });
             (service as any)._model = model;
             (service as any)._hostTradeModel = makeProvisioningHostTradeModel();
+            (service as any)._categoryModel = makeActiveCategoryModel();
 
             await service.markHandled({
                 actor: adminActor,

@@ -35,11 +35,15 @@ import type { AllianceLeadCreateInput, AllianceLeadKind } from '@repo/schemas';
 import {
     AllianceLeadCreateInputSchema,
     HostTradeBenefitTypeEnum,
-    HostTradeCategoryEnum,
     hostTradeBenefitTypeRequiresValue,
     PartnerTypeEnum
 } from '@repo/schemas';
 import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import {
+    type TradeCategoryGroups,
+    TradeCategoryMultiSelect
+} from '@/components/form/TradeCategoryMultiSelect.client';
+import { hostTradeCategoryApi } from '@/lib/api/endpoints';
 import type { TranslationFn } from '@/lib/api-errors';
 import { visibleApiMessage } from '@/lib/api-errors';
 import {
@@ -50,6 +54,7 @@ import {
 } from '@/lib/auth-cache';
 import {
     ALLIANCE_LEAD_SPECIFIC_FIELDS,
+    type AllianceLeadMultiValues,
     type AllianceLeadSpecificValues,
     buildAllianceLeadTypedFields,
     omitOptionalMessageError,
@@ -119,14 +124,6 @@ interface SpecificSelectOption {
     readonly label: string;
 }
 
-/** `category` select options — the closed {@link HostTradeCategoryEnum} set. */
-function getCategoryOptions(t: TranslationFn): readonly SpecificSelectOption[] {
-    return Object.values(HostTradeCategoryEnum).map((value) => ({
-        value,
-        label: t(`host-trades.categories.${value}`, value)
-    }));
-}
-
 /** `benefitType` select options — the closed {@link HostTradeBenefitTypeEnum} set. */
 function getBenefitTypeOptions(t: TranslationFn): readonly SpecificSelectOption[] {
     return Object.values(HostTradeBenefitTypeEnum).map((value) => ({
@@ -148,6 +145,12 @@ function getDestinationOptions(
     destinations: ReadonlyArray<AllianceLeadDestinationOption>
 ): readonly SpecificSelectOption[] {
     return destinations.map((d) => ({ value: d.id, label: d.name }));
+}
+
+/** Lifecycle of the client-side catalog fetch that feeds the category combobox. */
+interface CatalogState {
+    readonly status: 'idle' | 'loading' | 'ready' | 'error';
+    readonly groups: TradeCategoryGroups;
 }
 
 interface GenericFields {
@@ -270,6 +273,8 @@ export function AllianceLead({
         setFields((prev) => (prev.contactName === '' ? { ...prev, contactName: name } : prev));
     }, [visitor]);
     const [specificValues, setSpecificValues] = useState<AllianceLeadSpecificValues>({});
+    const [multiValues, setMultiValues] = useState<AllianceLeadMultiValues>({});
+    const [catalog, setCatalog] = useState<CatalogState>({ status: 'idle', groups: [] });
     const [hp, setHp] = useState('');
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
@@ -281,6 +286,32 @@ export function AllianceLead({
     // no sign the submission worked. Focus moves with it because the submit
     // button that held focus no longer exists after the swap.
     const { ref: successRef } = useScrollIntoViewWhen<HTMLDivElement>({ active: isSuccess });
+
+    // The category combobox is fed by the public catalog, fetched in the
+    // BROWSER (HOS-919 §6.6): the landing page has no SSR tag for it and stays
+    // session-blind, and an admin rename shows up here without a cache purge of
+    // the page. Only `service_provider` carries the field, so the other three
+    // kinds never pay for the request.
+    useEffect(() => {
+        if (kind !== 'service_provider') return;
+
+        let cancelled = false;
+        setCatalog({ status: 'loading', groups: [] });
+
+        void (async () => {
+            const result = await hostTradeCategoryApi.getHostTradeCatalog();
+            if (cancelled) return;
+            setCatalog(
+                result.ok
+                    ? { status: 'ready', groups: result.data.groups }
+                    : { status: 'error', groups: [] }
+            );
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [kind]);
 
     // `benefitValue` only means something for the two numeric benefit types
     // (HOS-278 §6.4) — hidden otherwise, so an applicant offering `TWO_FOR_ONE`
@@ -294,7 +325,6 @@ export function AllianceLead({
     const visibleSpecificFields = specificFields.filter(
         (field) => field.name !== 'benefitValue' || benefitValueApplicable
     );
-    const categoryOptions = getCategoryOptions(t);
     const benefitTypeOptions = getBenefitTypeOptions(t);
     const partnerTypeOptions = getPartnerTypeOptions(t);
     const destinationOptions = getDestinationOptions(destinations);
@@ -317,6 +347,20 @@ export function AllianceLead({
         setFormError(null);
     }
 
+    function handleMultiChange({
+        name,
+        next
+    }: {
+        readonly name: string;
+        readonly next: ReadonlyArray<string>;
+    }): void {
+        setMultiValues((prev) => ({ ...prev, [name]: next }));
+        if (errors[name]) {
+            setErrors((prev) => ({ ...prev, [name]: '' }));
+        }
+        setFormError(null);
+    }
+
     function handleHoneypotChange(e: ChangeEvent<HTMLInputElement>): void {
         setHp(e.currentTarget.value);
     }
@@ -325,7 +369,12 @@ export function AllianceLead({
         e.preventDefault();
         setFormError(null);
 
-        const specificErrors = validateAllianceLeadSpecificFields({ kind, specificValues, t });
+        const specificErrors = validateAllianceLeadSpecificFields({
+            kind,
+            specificValues,
+            multiValues,
+            t
+        });
 
         const message = serializeAllianceLeadMessage({
             kind,
@@ -334,7 +383,7 @@ export function AllianceLead({
             t
         });
 
-        const typedFields = buildAllianceLeadTypedFields({ kind, specificValues });
+        const typedFields = buildAllianceLeadTypedFields({ kind, specificValues, multiValues });
 
         const payload: AllianceLeadCreateInput = {
             kind,
@@ -369,9 +418,18 @@ export function AllianceLead({
                 : {};
 
         const messageErrorHidden = !isMessageRequired && schemaErrors.message !== undefined;
+        // The client-side required message of a multiselect wins over the
+        // schema's wording for the same field (HOS-919 AC-1.5: an empty
+        // selection answers with the form's own "requerido" text).
+        const multiselectErrors: FieldErrors = Object.fromEntries(
+            specificFields.flatMap((field) => {
+                const message = specificErrors[field.name];
+                return field.type === 'multiselect' && message ? [[field.name, message]] : [];
+            })
+        );
         const combinedErrors = omitOptionalMessageError({
             kind,
-            errors: { ...specificErrors, ...schemaErrors, ...freeTextErrors }
+            errors: { ...specificErrors, ...schemaErrors, ...freeTextErrors, ...multiselectErrors }
         });
 
         if (Object.keys(combinedErrors).length > 0) {
@@ -633,15 +691,13 @@ export function AllianceLead({
                 const isFieldRequired =
                     field.name === 'benefitValue' ? benefitValueApplicable : field.required;
                 const options =
-                    field.name === 'category'
-                        ? categoryOptions
-                        : field.name === 'benefitType'
-                          ? benefitTypeOptions
-                          : field.name === 'destinationId'
-                            ? destinationOptions
-                            : field.name === 'partnerType'
-                              ? partnerTypeOptions
-                              : null;
+                    field.name === 'benefitType'
+                        ? benefitTypeOptions
+                        : field.name === 'destinationId'
+                          ? destinationOptions
+                          : field.name === 'partnerType'
+                            ? partnerTypeOptions
+                            : null;
 
                 return (
                     <div
@@ -662,7 +718,33 @@ export function AllianceLead({
                                 </span>
                             )}
                         </label>
-                        {field.type === 'select' && options ? (
+                        {field.type === 'multiselect' ? (
+                            <>
+                                <TradeCategoryMultiSelect
+                                    locale={locale}
+                                    groups={catalog.groups}
+                                    value={multiValues[field.name] ?? []}
+                                    onChange={(next) =>
+                                        handleMultiChange({ name: field.name, next })
+                                    }
+                                    inputId={fieldId}
+                                    required={isFieldRequired}
+                                    error={errors[field.name] || null}
+                                    disabled={catalog.status !== 'ready'}
+                                />
+                                {catalog.status === 'error' && (
+                                    <p
+                                        className={styles.errorMsg}
+                                        role="alert"
+                                    >
+                                        {t(
+                                            'alliance-leads.form.categoriesLoadError',
+                                            'No pudimos cargar los rubros. Recargá la página para intentarlo de nuevo.'
+                                        )}
+                                    </p>
+                                )}
+                            </>
+                        ) : field.type === 'select' && options ? (
                             <select
                                 id={fieldId}
                                 name={field.name}
@@ -708,7 +790,7 @@ export function AllianceLead({
                                 {...(field.type === 'number' ? { min: 1, step: 1 } : {})}
                             />
                         )}
-                        {hasError && (
+                        {hasError && field.type !== 'multiselect' && (
                             <p
                                 id={errorId}
                                 className={styles.errorMsg}

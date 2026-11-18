@@ -11,6 +11,7 @@ export type {
     FilterChipData,
     FilterControlConfig,
     FilterControlType,
+    MultiSelectFilterConfig,
     NumberRangeFilterConfig,
     SelectFilterConfig,
     TextFilterConfig

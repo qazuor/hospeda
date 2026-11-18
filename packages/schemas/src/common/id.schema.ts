@@ -61,6 +61,12 @@ export type PoiCategoryIdType = z.infer<typeof PoiCategoryIdSchema>;
 export const HostTradeIdSchema = BaseIdSchema;
 export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
 
+export const HostTradeCategoryIdSchema = BaseIdSchema;
+export type HostTradeCategoryIdType = z.infer<typeof HostTradeCategoryIdSchema>;
+
+export const HostTradeCategoryGroupIdSchema = BaseIdSchema;
+export type HostTradeCategoryGroupIdType = z.infer<typeof HostTradeCategoryGroupIdSchema>;
+
 /**
  * Id of a row in `partners` — the alliance/sponsor directory.
  *

@@ -1,6 +1,17 @@
-import { HostTradeCategoryEnum, PermissionEnum } from '@repo/schemas';
-import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
+import { HOST_TRADE_MAX_CATEGORIES, PermissionEnum } from '@repo/schemas';
+import {
+    EntityTypeEnum,
+    FieldTypeEnum,
+    LayoutTypeEnum
+} from '@/components/entity-form/enums/form-config.enums';
+import {
+    loadAllHostTradeCategories,
+    loadHostTradeCategoriesByIds
+} from '@/components/entity-form/fields/entity-selects/utils';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
+
+/** A provider needs at least one category. */
+const HOST_TRADE_MIN_CATEGORIES = 1;
 
 /**
  * Consolidated field configuration for the basic-info section of a host-trade entry.
@@ -58,21 +69,32 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             }
         },
         {
-            id: 'category',
-            type: FieldTypeEnum.SELECT,
+            id: 'categoryIds',
+            type: FieldTypeEnum.ENTITY_MULTISELECT,
             required: true,
             modes: ['view', 'edit', 'create'],
-            label: 'Categoría',
-            description: 'Tipo de servicio que ofrece el proveedor',
+            label: 'Categorías',
+            description: 'Rubros que ofrece el proveedor (de 1 a 10)',
+            placeholder: 'Elegí una o más categorías',
             permissions: {
                 view: [PermissionEnum.HOST_TRADE_VIEW, PermissionEnum.HOST_TRADE_VIEW_ALL],
                 edit: [PermissionEnum.HOST_TRADE_UPDATE]
             },
             typeConfig: {
-                options: Object.values(HostTradeCategoryEnum).map((value) => ({
-                    value,
-                    label: value
-                }))
+                // Options come from the ADMIN catalog (HOS-919): active rows are
+                // offered, and a category the provider already has stays
+                // resolvable even when inactive.
+                entityType: EntityTypeEnum.HOST_TRADE_CATEGORY,
+                searchFn: async () => [],
+                loadByIdsFn: loadHostTradeCategoriesByIds,
+                loadAllFn: loadAllHostTradeCategories,
+                multiple: true,
+                searchable: true,
+                clearable: true,
+                searchMode: 'client',
+                showAllWhenEmpty: true,
+                minItems: HOST_TRADE_MIN_CATEGORIES,
+                maxItems: HOST_TRADE_MAX_CATEGORIES
             }
         },
         {

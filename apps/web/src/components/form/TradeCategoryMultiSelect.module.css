@@ -1,0 +1,103 @@
+/* Chips, group headers and states of TradeCategoryMultiSelect.
+ * The field, listbox and option rows come from the shared `.combobox*`
+ * classes in `src/styles/components.css`. */
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin: 0 0 var(--space-2, 0.5rem);
+    padding: 0;
+    list-style: none;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: 2px 4px 2px 10px;
+    border: 1px solid var(--brand-primary-a15);
+    border-radius: var(--radius-pill);
+    background-color: var(--brand-primary-a10);
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.875rem);
+    line-height: 1.4;
+}
+
+.chipLabel {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.chipRemove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    transition: background-color var(--duration-fast, 0.15s) ease;
+}
+
+.chipRemove:hover:not(:disabled) {
+    background-color: var(--brand-primary-a15);
+}
+
+.chipRemove:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.chipRemove:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.group + .group {
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.groupHeader {
+    padding: 6px 10px 2px;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-heading);
+    font-size: var(--text-caption, 0.75rem);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.optionDisabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.emptyTitle {
+    margin: 0;
+    color: var(--core-foreground);
+}
+
+.emptyHint {
+    margin: var(--space-1, 0.25rem) 0 0;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-caption, 0.75rem);
+}
+
+.limit {
+    margin: var(--space-2, 0.5rem) 0 0;
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-caption, 0.75rem);
+}

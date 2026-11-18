@@ -3,7 +3,7 @@
     "id": "010-hostTrade-gualeguaychu-gas",
     "name": "Instalaciones a Gas El Litoral",
     "slug": "instalaciones-a-gas-el-litoral",
-    "category": "GAS",
+    "categorySlugs": ["gas-instalacion"],
     "contact": "+54 9 3446 234567",
     "benefit": "Revisión de instalación de gas gratuita para hosts Hospeda. Matriculado ENAGAS.",
     "destinationId": "005-destination-gualeguaychu",

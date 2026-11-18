@@ -1,7 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0180-hos1512-provider-watch-permission.js';
+import * as migration from '../../src/data-migrations/0181-hos1512-provider-watch-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -26,7 +26,7 @@ function buildCtx(inserted: unknown[]) {
 describe('HOS-1512 provider watch permission seed grant', () => {
     it('declares an additive migration granting the permission to SUPER_ADMIN only', () => {
         expect(migration.meta).toEqual({
-            name: '0180-hos1512-provider-watch-permission',
+            name: '0181-hos1512-provider-watch-permission',
             group: 'required',
             destructive: false
         });

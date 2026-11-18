@@ -15,6 +15,7 @@ import { HostTradeBenefitTypePgEnum, HostTradeCategoryPgEnum } from '../enums.db
 import { users } from '../user/user.dbschema.ts';
 import { hostTradeBenefitUsages } from './host_trade_benefit_usage.dbschema.ts';
 import { hostTradeReviews } from './host_trade_review.dbschema.ts';
+import { rHostTradeCategory } from './r_host_trade_category.dbschema.ts';
 
 /**
  * Host Trades table (SPEC-241)
@@ -29,8 +30,15 @@ export const hostTrades = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         slug: text('slug').notNull().unique(),
         name: text('name').notNull(),
-        /** Service category (e.g. PLOMERIA, ELECTRICIDAD). Drives directory filtering. */
-        category: HostTradeCategoryPgEnum('category').notNull(),
+        /**
+         * LEGACY single service category (e.g. PLOMERIA). Replaced by the
+         * editable catalog linked through `r_host_trade_category` (HOS-919).
+         *
+         * Expand step: the column is now NULLABLE and nothing reads or writes
+         * it after this release; the contract release drops it together with its
+         * two indexes and the `HostTradeCategoryPgEnum` (HOS-433 rule).
+         */
+        category: HostTradeCategoryPgEnum('category'),
         /** Contact information (phone, WhatsApp, email, etc.) — free text. */
         contact: text('contact').notNull(),
         /**
@@ -211,7 +219,9 @@ export const hostTradesRelations = relations(hostTrades, ({ one, many }) => ({
     /** All benefit-usage records declared/confirmed against this provider (HOS-376). */
     usages: many(hostTradeBenefitUsages),
     /** All reviews left for this provider (HOS-376). */
-    reviews: many(hostTradeReviews)
+    reviews: many(hostTradeReviews),
+    /** Catalog categories this provider is listed under (HOS-919). */
+    categories: many(rHostTradeCategory)
 }));
 
 /** Drizzle-inferred SELECT type for host_trades rows. */

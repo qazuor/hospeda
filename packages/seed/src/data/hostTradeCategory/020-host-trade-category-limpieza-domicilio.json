@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "020-host-trade-category-limpieza-domicilio",
+    "slug": "limpieza-domicilio",
+    "groupSlug": "limpieza-ropa-blanca",
+    "nameI18n": {
+        "es": "Limpieza a domicilio",
+        "en": "Home cleaning",
+        "pt": "Limpeza residencial"
+    },
+    "keywordsI18n": {
+        "es": ["limpieza", "mucama", "recambio", "check out", "final de obra"]
+    },
+    "displayWeight": 10,
+    "lifecycleState": "ACTIVE"
+}

@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "hostTrade.schema.json",
     "title": "HostTrade Seed Schema",
-    "description": "JSON schema for HostTrade entity seeds — matches the host_trades table and HostTradeSchema (SPEC-241)",
+    "description": "JSON schema for HostTrade entity seeds — matches the host_trades table and HostTradeSchema (SPEC-241); categories via categorySlugs (HOS-919)",
     "type": "object",
     "properties": {
         "$schema": {
@@ -22,24 +22,16 @@
             "minLength": 1,
             "description": "URL-safe slug (optional — server auto-generates from name if omitted)"
         },
-        "category": {
-            "type": "string",
-            "enum": [
-                "CERRAJERIA",
-                "PLOMERIA",
-                "ELECTRICIDAD",
-                "GAS",
-                "CLIMATIZACION",
-                "LIMPIEZA",
-                "FLETES",
-                "VIDRIERIA",
-                "CARPINTERIA",
-                "PILETA_JARDIN",
-                "PLAGAS",
-                "INTERNET",
-                "ALBANILERIA"
-            ],
-            "description": "Service category matching HostTradeCategoryEnum"
+        "categorySlugs": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 10,
+            "uniqueItems": true,
+            "items": {
+                "type": "string",
+                "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            },
+            "description": "Slugs of the catalog categories (HOS-919); each must exist in src/data/hostTradeCategory. The seeder links the provider through r_host_trade_category."
         },
         "contact": {
             "type": "string",
@@ -77,7 +69,7 @@
     "required": [
         "id",
         "name",
-        "category",
+        "categorySlugs",
         "contact",
         "benefit",
         "destinationId",

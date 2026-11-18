@@ -21,7 +21,6 @@ vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, string>) => {
             const labels: Record<string, string> = {
-                'host-trades.categories.PLOMERIA': 'Plomería',
                 'host-trades.card.benefit': 'Beneficio para hosts',
                 'host-trades.card.contact': 'Contactar',
                 'host-trades.card.stats.ratingLabel': '{{rating}} de 5 estrellas'
@@ -73,7 +72,14 @@ function buildTrade(aggregates: Partial<HostTradePublic> = {}): HostTradePublic 
         id: 'trade-1',
         slug: 'plomeria-lopez',
         name: 'Plomería López',
-        category: 'PLOMERIA',
+        categories: [
+            {
+                id: 'cat-plomeria',
+                slug: 'plomeria',
+                nameI18n: { es: 'Plomería', en: 'Plumbing', pt: 'Encanamento' },
+                groupSlug: 'instalaciones'
+            }
+        ],
         benefit: '15% de descuento',
         contact: '+54 9 3442 567890',
         is24h: false,

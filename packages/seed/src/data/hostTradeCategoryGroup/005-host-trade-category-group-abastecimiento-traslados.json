@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/hostTradeCategoryGroup.schema.json",
+    "id": "005-host-trade-category-group-abastecimiento-traslados",
+    "slug": "abastecimiento-traslados",
+    "nameI18n": {
+        "es": "Abastecimiento y traslados",
+        "en": "Supplies & transport",
+        "pt": "Abastecimento e transporte"
+    },
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

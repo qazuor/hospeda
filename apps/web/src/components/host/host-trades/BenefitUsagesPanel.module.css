@@ -77,11 +77,8 @@
     color: var(--core-foreground);
 }
 
-.cardCategory {
-    margin: 0;
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: var(--core-muted-foreground);
+.cardCategories {
+    margin-top: var(--space-1, 0.25rem);
 }
 
 .cardMeta {

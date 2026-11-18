@@ -96,6 +96,7 @@ const { adminHardDeleteHostTradeRoute } = await import(
 
 const MOCK_USER_ID = '11111111-1111-4111-8111-111111111111';
 const MOCK_TRADE_ID = '22222222-2222-4222-8222-222222222222';
+const CATEGORY_ID_1 = '55555555-5555-4555-8555-555555555555';
 
 /** Minimal host-trade fixture returned by the mocked service. */
 const MOCK_TRADE = {
@@ -241,28 +242,47 @@ describe('GET /admin/host-trades', () => {
     });
 
     /**
-     * Regression: SPEC-241 — before the fix, `_executeAdminSearch` in HostTradeService
-     * delegated to the base class WITHOUT passing entity-specific filters (category,
-     * destinationId, isActive, is24h), so `?category=PLOMERIA` was silently dropped
-     * and the full table was returned instead of the filtered subset.
+     * Regression: SPEC-241, param renamed `category` -> `categories` by HOS-919.
+     * `_executeAdminSearch` in HostTradeService once delegated to the base class
+     * WITHOUT passing entity-specific filters, so the filter was silently dropped
+     * and the full table came back.
      *
-     * This test verifies that query parameters are forwarded to the service via
-     * `adminList()`, which the service is responsible for handing to `_executeAdminSearch`.
-     * The service mock captures whatever the route passes — if the route strips or ignores
-     * query params before calling adminList(), the mock call args will not contain them.
+     * This test pins the ROUTE half: the comma-separated list reaches
+     * `adminList()` already split into slugs. That the rows are actually EXCLUDED
+     * is asserted where it can be observed, against a real database:
+     * `packages/db/test/integration/host-trade.model.integration.test.ts` and the
+     * service search tests.
      */
-    it('forwards ?category= filter to adminList() — regression SPEC-241', async () => {
+    it('forwards ?categories= to adminList() as a slug array - regression SPEC-241', async () => {
         const app = buildApp(ALL_PERMS);
-        const res = await app.request('/?category=PLOMERIA', { method: 'GET' });
+        const res = await app.request('/?categories=plomeria,pintura', { method: 'GET' });
         expect(res.status).toBe(200);
 
-        // The route must have called adminList() with the category param
         expect(mockAdminList).toHaveBeenCalledTimes(1);
         const [_actor, queryArg] = mockAdminList.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
-        expect(queryArg).toMatchObject({ category: 'PLOMERIA' });
+        expect(queryArg).toMatchObject({ categories: ['plomeria', 'pintura'] });
+    });
+
+    it('passes an unknown slug through untouched (the service ignores it)', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request('/?categories=no-such-category', { method: 'GET' });
+        expect(res.status).toBe(200);
+        const [_actor, queryArg] = mockAdminList.mock.calls[0] as [
+            unknown,
+            Record<string, unknown>
+        ];
+        expect(queryArg).toMatchObject({ categories: ['no-such-category'] });
+    });
+
+    it('answers 400 when more than 30 slugs are requested', async () => {
+        const app = buildApp(ALL_PERMS);
+        const many = Array.from({ length: 31 }, (_, i) => `cat-${i}`).join(',');
+        const res = await app.request(`/?categories=${many}`, { method: 'GET' });
+        expect(res.status).toBe(400);
+        expect(mockAdminList).not.toHaveBeenCalled();
     });
 
     it('forwards ?destinationId= filter to adminList() — regression SPEC-241', async () => {
@@ -321,7 +341,7 @@ describe('GET /admin/host-trades/:id', () => {
 describe('POST /admin/host-trades', () => {
     const createBody = {
         name: 'Electricista local',
-        category: 'ELECTRICIDAD',
+        categoryIds: [CATEGORY_ID_1],
         contact: '+54 3442 000002',
         benefit: 'Tarifa preferencial',
         destinationId: '33333333-3333-4333-8333-333333333333',
@@ -338,6 +358,53 @@ describe('POST /admin/host-trades', () => {
         expect(res.status).toBe(201);
         const body = await res.json();
         expect(body.success).toBe(true);
+    });
+
+    it('forwards categoryIds to the service on create', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(createBody)
+        });
+        expect(res.status).toBe(201);
+        expect(mockCreate.mock.calls[0]?.[1]).toMatchObject({ categoryIds: [CATEGORY_ID_1] });
+    });
+
+    it('answers 400 with 0 categoryIds, before reaching the service', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...createBody, categoryIds: [] })
+        });
+        expect(res.status).toBe(400);
+        expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it('answers 400 with 11 categoryIds', async () => {
+        const app = buildApp(ALL_PERMS);
+        const eleven = Array.from({ length: 11 }, () => crypto.randomUUID());
+        const res = await app.request('/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...createBody, categoryIds: eleven })
+        });
+        expect(res.status).toBe(400);
+        expect(mockCreate).not.toHaveBeenCalled();
+    });
+
+    it('answers 400 on duplicated or non-uuid categoryIds', async () => {
+        const app = buildApp(ALL_PERMS);
+        for (const categoryIds of [[CATEGORY_ID_1, CATEGORY_ID_1], ['not-a-uuid']]) {
+            const res = await app.request('/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...createBody, categoryIds })
+            });
+            expect(res.status).toBe(400);
+        }
+        expect(mockCreate).not.toHaveBeenCalled();
     });
 
     it('returns 403 for an actor WITHOUT HOST_TRADE_CREATE', async () => {
@@ -398,6 +465,31 @@ describe('PATCH /admin/host-trades/:id', () => {
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.success).toBe(true);
+    });
+
+    it('forwards categoryIds on PATCH', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request(`/${MOCK_TRADE_ID}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ categoryIds: [CATEGORY_ID_1] })
+        });
+        expect(res.status).toBe(200);
+        expect(mockUpdate.mock.calls[0]?.[2]).toMatchObject({ categoryIds: [CATEGORY_ID_1] });
+    });
+
+    it('answers 400 on PATCH with 0 or 11 categoryIds', async () => {
+        const app = buildApp(ALL_PERMS);
+        const eleven = Array.from({ length: 11 }, () => crypto.randomUUID());
+        for (const categoryIds of [[], eleven]) {
+            const res = await app.request(`/${MOCK_TRADE_ID}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryIds })
+            });
+            expect(res.status).toBe(400);
+        }
+        expect(mockUpdate).not.toHaveBeenCalled();
     });
 
     it('returns 403 for an actor WITHOUT HOST_TRADE_UPDATE', async () => {

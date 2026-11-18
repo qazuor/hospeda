@@ -1562,7 +1562,7 @@
             "fields": {
                 "name": "Nombre",
                 "slug": "Identificador (slug)",
-                "category": "Categoría",
+                "categories": "Rubros",
                 "contact": "Contacto",
                 "is24h": "Disponible las 24 horas",
                 "scheduleText": "Horario de atención",

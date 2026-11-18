@@ -1,5 +1,6 @@
 import {
     AccommodationModel,
+    HostTradeCategoryModel,
     HostTradeModel,
     hostTrades,
     isNotNull,
@@ -37,7 +38,14 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { runInServiceTransaction } from '../../utils/service-transaction';
 import { QrCodeService } from '../qr-code/qr-code.service';
+import {
+    attachCategories,
+    HOST_TRADE_ID_HOOK_KEY,
+    persistStagedCategoryIds,
+    stageCategoryIds
+} from './host-trade.categories';
 import {
     checkCanAdminListHostTrades,
     checkCanCreateHostTrade,
@@ -66,6 +74,16 @@ import {
  * to `keyof SelectHostTrade` turns that runtime footgun into a build error.
  */
 const OWNER_SCOPE_KEY: keyof SelectHostTrade = 'ownerUserId';
+
+/**
+ * Neutralises `categoryIds` in a write payload: it is not a column (the join
+ * rows are written by `_afterCreate`/`_afterUpdate`). The base class merges the
+ * hook result OVER the normalized input, so the key cannot be deleted, only
+ * overwritten with `undefined`, which the model layer ignores.
+ */
+const withoutCategoryIds = <T extends { categoryIds?: unknown }>(
+    data: T
+): Omit<T, 'categoryIds'> & { categoryIds: undefined } => ({ ...data, categoryIds: undefined });
 
 /** The only value `benefit_review_state` ever holds while an edit is waiting. */
 const HOST_TRADE_BENEFIT_REVIEW_PENDING = 'pending';
@@ -214,18 +232,23 @@ export class HostTradeService extends BaseCrudService<
      */
     private readonly qrCodeService: QrCodeService;
 
+    /** Category catalog model, used to validate the `categoryIds` of a write (HOS-919). */
+    private readonly categoryModel: HostTradeCategoryModel;
+
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeModel,
         accommodationModel?: AccommodationModel,
         revokeNotifier?: HostTradeRevokeNotifyPort | null,
-        qrCodeService?: QrCodeService
+        qrCodeService?: QrCodeService,
+        categoryModel?: HostTradeCategoryModel
     ) {
         super(ctx, HostTradeService.ENTITY_NAME);
         this.model = model ?? new HostTradeModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
         this.revokeNotifier = revokeNotifier ?? null;
         this.qrCodeService = qrCodeService ?? new QrCodeService(ctx);
+        this.categoryModel = categoryModel ?? new HostTradeCategoryModel();
     }
 
     // --- Permission hooks ---
@@ -323,8 +346,9 @@ export class HostTradeService extends BaseCrudService<
     protected async _beforeCreate(
         data: CreateHostTrade,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<HostTrade>> {
+        await this.stageCategoryIds({ categoryIds: data.categoryIds, hostTradeId: undefined, ctx });
         const providedSlug = (data as { slug?: string }).slug;
 
         if (providedSlug) {
@@ -336,7 +360,7 @@ export class HostTradeService extends BaseCrudService<
                     `Slug "${providedSlug}" is already taken by another host trade entry`
                 );
             }
-            return { ...data, slug: providedSlug };
+            return { ...withoutCategoryIds(data), slug: providedSlug };
         }
 
         // Auto-generate a unique slug from the name
@@ -345,7 +369,7 @@ export class HostTradeService extends BaseCrudService<
             return !!exists;
         });
 
-        return { ...data, slug };
+        return { ...withoutCategoryIds(data), slug };
     }
 
     /**
@@ -358,13 +382,20 @@ export class HostTradeService extends BaseCrudService<
     protected async _beforeUpdate(
         data: UpdateHostTrade,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<HostTrade>> {
         const newSlug = (data as { slug?: string; id?: string }).slug;
         const entityId = (data as { id?: string }).id;
 
+        const hostTradeId = ctx?.hookState?.[HOST_TRADE_ID_HOOK_KEY];
+        await this.stageCategoryIds({
+            categoryIds: data.categoryIds,
+            hostTradeId: typeof hostTradeId === 'string' ? hostTradeId : undefined,
+            ctx
+        });
+
         if (!newSlug) {
-            return { ...data };
+            return { ...withoutCategoryIds(data) };
         }
 
         // Check if slug is taken by a DIFFERENT row
@@ -376,7 +407,85 @@ export class HostTradeService extends BaseCrudService<
             );
         }
 
-        return { ...data, slug: newSlug };
+        return { ...withoutCategoryIds(data), slug: newSlug };
+    }
+
+    // --- Category writes (HOS-919) ---
+
+    private stageCategoryIds(input: {
+        readonly categoryIds: readonly string[] | undefined;
+        readonly hostTradeId: string | undefined;
+        readonly ctx: ServiceContext;
+    }): Promise<void> {
+        return stageCategoryIds({
+            ...input,
+            categoryModel: this.categoryModel,
+            hostTradeModel: this.model
+        });
+    }
+
+    private persistStagedCategoryIds(input: {
+        readonly hostTradeId: string;
+        readonly ctx: ServiceContext;
+    }): Promise<void> {
+        return persistStagedCategoryIds({ ...input, hostTradeModel: this.model });
+    }
+
+    /**
+     * Creates a provider and its category links atomically.
+     *
+     * @param actor - The actor performing the action.
+     * @param data - Validated create input, including `categoryIds`.
+     * @param ctx - Optional context; a supplied `tx` is joined, never replaced.
+     */
+    public override async create(
+        actor: Actor,
+        data: z.infer<typeof CreateHostTradeSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostTrade>> {
+        return runInServiceTransaction(ctx, (txCtx) => super.create(actor, data, txCtx));
+    }
+
+    /**
+     * Updates a provider; when `categoryIds` is present its category set is
+     * replaced in the same transaction, when absent the set is untouched.
+     *
+     * @param actor - The actor performing the action.
+     * @param id - The provider id.
+     * @param data - Validated update input.
+     * @param ctx - Optional context; a supplied `tx` is joined, never replaced.
+     */
+    public override async update(
+        actor: Actor,
+        id: string,
+        data: z.infer<typeof UpdateHostTradeSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<HostTrade>> {
+        return runInServiceTransaction(ctx, (txCtx) =>
+            super.update(actor, id, data, {
+                ...txCtx,
+                hookState: { ...txCtx.hookState, [HOST_TRADE_ID_HOOK_KEY]: id }
+            })
+        );
+    }
+
+    /** Writes the staged category links right after the row is created. */
+    protected override async _afterCreate(
+        entity: HostTrade,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTrade> {
+        await this.persistStagedCategoryIds({ hostTradeId: entity.id, ctx });
+        return this.attachCategoriesToOne(entity, ctx);
+    }
+
+    /** Hydrates the catalog refs: a single-entity read must not return the schema default `[]`. */
+    protected override async _afterGetByField(
+        entity: HostTrade | null,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTrade | null> {
+        return this.attachCategoriesToOne(entity, ctx);
     }
 
     /**
@@ -421,6 +530,11 @@ export class HostTradeService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ): Promise<HostTrade> {
+        // Outside the try below on purpose: a failed category write must
+        // surface (and roll the transaction back), unlike the QR repoint.
+        await this.persistStagedCategoryIds({ hostTradeId: entity.id, ctx });
+        const hydrated = await this.attachCategoriesToOne(entity, ctx);
+
         try {
             const found = await this.qrCodeService.findLiveCodeForEntity({
                 actor,
@@ -434,7 +548,7 @@ export class HostTradeService extends BaseCrudService<
             // Codes are created when somebody first asks to SEE one, so minting
             // here would burn a permanent slug during an unrelated edit.
             const code = found.data;
-            if (!code) return entity;
+            if (!code) return hydrated;
 
             const siteUrl = resolveSiteUrlFromTargetUrl({ targetUrl: code.targetUrl });
             if (!siteUrl) {
@@ -442,7 +556,7 @@ export class HostTradeService extends BaseCrudService<
                     { hostTradeId: entity.id, qrCodeId: code.id },
                     'QR target URL is not a parseable absolute URL; cannot repoint it'
                 );
-                return entity;
+                return hydrated;
             }
 
             await this.qrCodeService.setEntityTargetUrl({
@@ -463,7 +577,7 @@ export class HostTradeService extends BaseCrudService<
             );
         }
 
-        return entity;
+        return hydrated;
     }
 
     // --- Search / count ---
@@ -471,51 +585,94 @@ export class HostTradeService extends BaseCrudService<
     /**
      * Executes the host-trade search query for public / host-facing list calls.
      *
-     * Filters by `destinationId`, `category`, and `is24h` when provided.
+     * Filters by `destinationId`, `categories` (catalog slugs, any-of) and
+     * `is24h` when provided. The legacy single `category` filter is no longer
+     * applied (HOS-919): new providers have no value in that column.
+     *
+     * Every returned page is hydrated with its categories using ONE batched
+     * query ({@link HostTradeService.attachCategories}).
      *
      * @param params - Validated query parameters from HostTradeQuerySchema.
      * @param _actor - The requesting actor (unused; result set is not actor-scoped here).
-     * @param _ctx - Service context (carries optional transaction).
+     * @param ctx - Service context (carries optional transaction).
      */
     protected async _executeSearch(
         params: HostTradeQuery,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<HostTrade>> {
-        const where: Record<string, unknown> = {};
-        if (params.destinationId) where.destinationId = params.destinationId;
-        if (params.category) where.category = params.category;
-        if (typeof params.is24h === 'boolean') where.is24h = params.is24h;
+        const where = this.buildSearchWhere(params);
+        const additionalConditions = this.buildCategoryConditions(params.categories);
 
-        const { items, total } = await this.model.findAll(where);
-        return { items, total };
+        const { items, total } = await this.model.findAll(
+            where,
+            undefined,
+            additionalConditions,
+            ctx?.tx
+        );
+        return { items: await this.attachCategories(items, ctx), total };
     }
 
     /**
-     * Executes the host-trade count query.
+     * Executes the host-trade count query. It applies the SAME filters as
+     * {@link HostTradeService._executeSearch}, the categories predicate
+     * included, so the count always matches the list.
      *
      * @param params - Validated query parameters from HostTradeQuerySchema.
      * @param _actor - The requesting actor.
-     * @param _ctx - Service context.
+     * @param ctx - Service context.
      */
     protected async _executeCount(
         params: HostTradeQuery,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<CountResponse> {
+        const count = await this.model.count(this.buildSearchWhere(params), {
+            additionalConditions: this.buildCategoryConditions(params.categories),
+            tx: ctx?.tx
+        });
+        return { count };
+    }
+
+    /** Key-value part of the public search filter (everything but categories). */
+    private buildSearchWhere(params: HostTradeQuery): Record<string, unknown> {
         const where: Record<string, unknown> = {};
         if (params.destinationId) where.destinationId = params.destinationId;
-        if (params.category) where.category = params.category;
         if (typeof params.is24h === 'boolean') where.is24h = params.is24h;
+        return where;
+    }
 
-        const count = await this.model.count(where);
-        return { count };
+    /**
+     * Translates the `categories` slug list into the model's EXISTS predicate.
+     * An absent or empty list means "no filter" and yields no condition: the
+     * model predicate for an empty list would match nothing.
+     */
+    private buildCategoryConditions(categories: readonly string[] | undefined): SQL[] | undefined {
+        if (!categories || categories.length === 0) return undefined;
+        return [this.model.buildCategoriesFilterCondition({ categorySlugs: categories })];
+    }
+
+    private attachCategories(
+        items: HostTrade[],
+        ctx: ServiceContext | undefined
+    ): Promise<HostTrade[]> {
+        return attachCategories({ items, ctx, hostTradeModel: this.model });
+    }
+
+    /** Single-entity variant of {@link attachCategories}: one query, `null` stays `null`. */
+    private async attachCategoriesToOne<T extends HostTrade | null>(
+        entity: T,
+        ctx: ServiceContext | undefined
+    ): Promise<T> {
+        if (!entity) return entity;
+        const [hydrated] = await this.attachCategories([entity], ctx);
+        return (hydrated ?? entity) as T;
     }
 
     /**
      * Executes the admin search query with admin-specific filters.
      *
-     * Most entity-specific filter fields (`category`, `destinationId`, `isActive`,
+     * Most entity-specific filter fields (`destinationId`, `isActive`,
      * `is24h`) map directly to table column names, so they are merged into the
      * `where` clause by the base implementation. Sorting, pagination, and text
      * search are also forwarded to the base class, which handles them uniformly.
@@ -537,9 +694,20 @@ export class HostTradeService extends BaseCrudService<
         params: AdminSearchExecuteParams<HostTradeAdminEntityFilters>
     ): Promise<PaginatedListOutput<HostTrade>> {
         const { entityFilters, ...rest } = params;
-        const { declarationSuspended, ...columnFilters } = entityFilters;
+        // `category` is the deprecated single-category filter (HOS-919): it is
+        // dropped, never mapped to a column. `categories` is a slug list that
+        // becomes an EXISTS predicate below; neither is a plain column filter.
+        const {
+            declarationSuspended,
+            categories,
+            category: _legacyCategory,
+            ...columnFilters
+        } = entityFilters;
 
-        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+        const extraConditions: SQL[] = [
+            ...(params.extraConditions ?? []),
+            ...(this.buildCategoryConditions(categories) ?? [])
+        ];
 
         if (declarationSuspended === true) {
             extraConditions.push(isNotNull(hostTrades.declarationSuspendedAt));
@@ -547,11 +715,12 @@ export class HostTradeService extends BaseCrudService<
             extraConditions.push(isNull(hostTrades.declarationSuspendedAt));
         }
 
-        return super._executeAdminSearch({
+        const page = await super._executeAdminSearch({
             ...rest,
             entityFilters: columnFilters,
             extraConditions: extraConditions.length > 0 ? extraConditions : undefined
         });
+        return { ...page, items: await this.attachCategories(page.items, params.ctx) };
     }
 
     // --- Custom methods ---
@@ -564,12 +733,15 @@ export class HostTradeService extends BaseCrudService<
      * has no accommodations, an empty array is returned immediately without
      * querying the `host_trades` table.
      *
-     * Rows are ordered by `category ASC, name ASC` (implemented in the model).
+     * Rows are ordered by `name ASC` (implemented in the model) and carry their
+     * hydrated `categories`.
      *
      * Permission required: HOST_TRADE_VIEW (the host-facing read permission).
      *
      * @param actor - The authenticated host performing the request.
      * @param ctx - Optional service context (carries transaction client).
+     * @param filter - Optional filter. `categories` is an any-of list of catalog
+     *   slugs (HOS-919); empty or absent means no filter, unknown slugs match nothing.
      * @returns ServiceOutput wrapping an array of HostTrade rows.
      *
      * @example
@@ -583,7 +755,8 @@ export class HostTradeService extends BaseCrudService<
      */
     public async listForHost(
         actor: Actor,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        filter?: { readonly categories?: readonly string[] }
     ): Promise<ServiceOutput<{ trades: HostTrade[] }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listForHost',
@@ -623,9 +796,14 @@ export class HostTradeService extends BaseCrudService<
                 }
 
                 // 3. Fetch active host-trade entries for those destinations
-                const trades = await this.model.findForHost(distinctDestinationIds, ctx?.tx);
+                // An empty or absent `categories` list means "no filter" (HOS-919).
+                const categories = filter?.categories;
+                const trades =
+                    categories && categories.length > 0
+                        ? await this.model.findForHost(distinctDestinationIds, ctx?.tx, categories)
+                        : await this.model.findForHost(distinctDestinationIds, ctx?.tx);
 
-                return { trades };
+                return { trades: await this.attachCategories(trades, ctx) };
             }
         });
     }
@@ -670,7 +848,7 @@ export class HostTradeService extends BaseCrudService<
 
                 const trade = await this.model.findOne({ [OWNER_SCOPE_KEY]: ownerUserId }, ctx?.tx);
 
-                return { trade: trade ?? null };
+                return { trade: await this.attachCategoriesToOne(trade ?? null, ctx) };
             }
         });
     }
@@ -764,7 +942,7 @@ export class HostTradeService extends BaseCrudService<
                     );
                 }
 
-                return { trade: updated };
+                return { trade: await this.attachCategoriesToOne(updated, ctx) };
             }
         });
     }
@@ -822,7 +1000,7 @@ export class HostTradeService extends BaseCrudService<
                 // whoever pressed the button second, quietly rewriting the
                 // audit trail this whole mechanism exists to keep.
                 if (existing.revokedAt) {
-                    return { trade: existing };
+                    return { trade: await this.attachCategoriesToOne(existing, ctx) };
                 }
 
                 const updated = await this.model.update(
@@ -882,7 +1060,7 @@ export class HostTradeService extends BaseCrudService<
                         });
                 }
 
-                return { trade: updated };
+                return { trade: await this.attachCategoriesToOne(updated, ctx) };
             }
         });
     }
@@ -963,7 +1141,7 @@ export class HostTradeService extends BaseCrudService<
                     );
                 }
 
-                return { trade: updated };
+                return { trade: await this.attachCategoriesToOne(updated, ctx) };
             }
         });
     }
