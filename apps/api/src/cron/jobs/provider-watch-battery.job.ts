@@ -5,9 +5,9 @@
  * what changed, mails the administrator and adjusts nothing. This file only wires ports: the
  * engine, its guards and the catalog live in `@repo/payments`.
  *
- * One job, one weekly tick. The environment decides the account and the cadence: staging
- * watches the sandbox test account every week, production watches production on the first tick
- * of each month, and a manual trigger runs either at any time. Production does not start
+ * One job, one DAILY tick. The environment decides the account and the cadence: staging
+ * watches the sandbox test account on Mondays (weekly), production watches production on the 1st
+ * of each month (monthly), and a manual trigger runs either at any time. Production does not start
  * without the owner's authorization of the current month.
  *
  * The external watchdog is pinged ONLY by a run that completed and measured at least one

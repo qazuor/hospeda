@@ -1,7 +1,7 @@
 /**
  * Which account the watch battery targets and whether a scheduled tick is due (HOS-1512).
  *
- * One job, one weekly tick: the account and the cadence come from the environment. The
+ * One job, one DAILY tick: the account and the cadence come from the environment. The
  * environment is the one the external watchdog already uses (`HOSPEDA_HEALTHCHECKS_SLUG_PREFIX`):
  * staging watches the sandbox test account every week, production watches production once a
  * month, so the account a run targets and the watchdog check it pings always agree.
