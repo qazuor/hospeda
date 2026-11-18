@@ -77,7 +77,8 @@ export async function openWatchRun(args: {
 }
 
 /**
- * Persists a provider id the moment the write that created it answers. It runs in its own
+ * Persists what a write leaves behind: the idempotency key BEFORE the request is sent, and the
+ * provider id the moment the write answers. It runs in its own
  * statement, never inside the closing transaction, so the id survives a run that dies or whose
  * closing rolls back.
  *
@@ -88,9 +89,10 @@ export async function openWatchRun(args: {
 export async function recordWatchProgress(args: {
     readonly runId: string;
     readonly measurementId: string;
-    readonly providerIds: readonly string[];
+    readonly providerIds?: readonly string[];
+    readonly writeKeys?: readonly string[];
 }): Promise<void> {
-    await providerWatchRunModel.appendProviderIds(args);
+    await providerWatchRunModel.appendProgress(args);
 }
 
 /**
@@ -128,6 +130,7 @@ export async function closeWatchRun(args: {
                 ? `ALERTS_NOT_DELIVERED: the run found changes and there is no SUPER_ADMIN to tell${run.reason ? ` (original: ${run.reason})` : ''}`
                 : (run.reason ?? null),
             measurements: { ...run.measurements },
+            ledger: run.ledger,
             alerts: run.alerts.map((alert) => ({
                 ...alert,
                 channel: undeliverable ? null : PROVIDER_WATCH_ALERT_CHANNEL,

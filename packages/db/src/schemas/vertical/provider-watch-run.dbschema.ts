@@ -55,6 +55,11 @@ export const providerWatchRuns = pgTable(
             .$type<Record<string, unknown>>()
             .notNull()
             .default(sql`'{}'::jsonb`),
+        /** Money the run moved, in minor units: charges and refunds, kept apart (a refund never offsets a charge). */
+        ledger: jsonb('ledger')
+            .$type<{ charged: number; refunded: number }>()
+            .notNull()
+            .default(sql`'{"charged":0,"refunded":0}'::jsonb`),
         /** One entry per alert the run provoked, with the channel it went out on. */
         alerts: jsonb('alerts').$type<unknown[]>().notNull().default(sql`'[]'::jsonb`)
     },

@@ -81,41 +81,54 @@ export class ProviderWatchRunModel {
     }
 
     /**
-     * Appends provider ids to one measurement of a still-`running` run, in a statement of its own.
-     * It is called the moment a write answers, outside the transaction that later closes the run,
-     * so the ids survive a run that dies or whose closing fails: a human needs them to cancel or
-     * refund what the run created.
+     * Appends what a write left behind to one measurement of a still-`running` run, in statements of
+     * their own: the provider ids a write answered (`providerIds`) and the idempotency keys of
+     * writes about to be sent (`writeKeys`, recorded BEFORE the request leaves). It runs apart from
+     * the transaction that later closes the run, so both survive a run that dies or whose closing
+     * fails: a human needs them to cancel or refund what the run created.
      *
      * @param input.runId - The run
-     * @param input.measurementId - The measurement that created them
+     * @param input.measurementId - The measurement
      * @param input.providerIds - Ids the provider answered
-     * @param input.tx - Only for tests; production calls it with none, as its own statement
+     * @param input.writeKeys - Keys (also the objects' `external_reference`) of writes sent
+     * @param input.tx - Only for tests; production calls it with none, as its own statements
      * @throws When no running run has that id
      */
-    async appendProviderIds(input: {
+    async appendProgress(input: {
         readonly runId: string;
         readonly measurementId: string;
-        readonly providerIds: readonly string[];
+        readonly providerIds?: readonly string[];
+        readonly writeKeys?: readonly string[];
         readonly tx?: DrizzleClient;
     }): Promise<void> {
-        const measurement = input.measurementId;
-        const ids = JSON.stringify(input.providerIds);
-        const rows = await (input.tx ?? getDb())
-            .update(providerWatchRuns)
-            .set({
-                measurements: sql`jsonb_set(
-                    ${providerWatchRuns.measurements} || jsonb_build_object(${measurement}::text, COALESCE(${providerWatchRuns.measurements} -> ${measurement}, '{}'::jsonb)),
-                    ARRAY[${measurement}::text, 'providerIds'],
-                    COALESCE(${providerWatchRuns.measurements} -> ${measurement} -> 'providerIds', '[]'::jsonb) || ${ids}::jsonb,
-                    true
-                )`
-            })
-            .where(
-                and(eq(providerWatchRuns.id, input.runId), eq(providerWatchRuns.outcome, 'running'))
-            )
-            .returning({ id: providerWatchRuns.id });
-        if (rows.length !== 1) {
-            throw new Error(`provider_watch_run ${input.runId} is not a running run`);
+        const fields = [
+            ['providerIds', input.providerIds ?? []],
+            ['writeKeys', input.writeKeys ?? []]
+        ] as const;
+        for (const [field, values] of fields) {
+            if (values.length === 0) continue;
+            const measurement = input.measurementId;
+            const added = JSON.stringify(values);
+            const rows = await (input.tx ?? getDb())
+                .update(providerWatchRuns)
+                .set({
+                    measurements: sql`jsonb_set(
+                        ${providerWatchRuns.measurements} || jsonb_build_object(${measurement}::text, COALESCE(${providerWatchRuns.measurements} -> ${measurement}, '{}'::jsonb)),
+                        ARRAY[${measurement}::text, ${field}::text],
+                        COALESCE(${providerWatchRuns.measurements} -> ${measurement} -> ${field}, '[]'::jsonb) || ${added}::jsonb,
+                        true
+                    )`
+                })
+                .where(
+                    and(
+                        eq(providerWatchRuns.id, input.runId),
+                        eq(providerWatchRuns.outcome, 'running')
+                    )
+                )
+                .returning({ id: providerWatchRuns.id });
+            if (rows.length !== 1) {
+                throw new Error(`provider_watch_run ${input.runId} is not a running run`);
+            }
         }
     }
 
@@ -127,6 +140,7 @@ export class ProviderWatchRunModel {
      * @param input.outcome - How it ended
      * @param input.reason - Why it did not complete
      * @param input.measurements - Per measurement: outcome, values, shapes and provider ids
+     * @param input.ledger - Money the run moved: charges and refunds, kept apart
      * @param input.alerts - Each alert with the channel it went out on
      * @param input.tx - Optional transaction, so the closing and its alert mail commit together
      * @throws When no open run has that id
@@ -137,6 +151,7 @@ export class ProviderWatchRunModel {
         readonly outcome: Exclude<ProviderWatchOutcome, 'running'>;
         readonly reason: string | null;
         readonly measurements: Record<string, unknown>;
+        readonly ledger: { readonly charged: number; readonly refunded: number };
         readonly alerts: unknown[];
         readonly tx?: DrizzleClient;
     }): Promise<SelectProviderWatchRun> {
@@ -147,6 +162,7 @@ export class ProviderWatchRunModel {
                 outcome: input.outcome,
                 reason: input.reason,
                 measurements: input.measurements,
+                ledger: input.ledger,
                 alerts: input.alerts
             })
             .where(

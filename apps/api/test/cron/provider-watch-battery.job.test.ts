@@ -47,6 +47,16 @@ const readEntry: WatchEntry = {
     }
 };
 
+/** Sends nothing; gives a production catalog the sum its authorization must equal. */
+const moneyEntry: WatchEntry = {
+    id: 'RP9',
+    accounts: ['sandbox', 'production'],
+    effect: 'moves-money',
+    maxChargeMinor: 100,
+    expected: 'idle',
+    measure: async () => 'idle'
+};
+
 function deps(overrides: Partial<ProviderWatchBatteryDeps> = {}, me: unknown = SANDBOX_ME) {
     const recorded: WatchRunRecord[] = [];
     const started: { consume: string | undefined }[] = [];
@@ -198,6 +208,7 @@ describe('provider watch battery cron', () => {
                 started,
                 pingWatchdog
             } = production({
+                catalog: [readEntry, moneyEntry],
                 readAuthorization: async () => AUTHORIZED
             });
             const result = await createProviderWatchBatteryJob(d).handler(context());

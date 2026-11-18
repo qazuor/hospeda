@@ -1,5 +1,5 @@
 {
-  "id": "73c8e8f7-f649-473a-a425-59c6c739f6ee",
+  "id": "b9c5e4af-5b96-466d-8c0a-4becfa04d68a",
   "prevId": "f046ffd4-5016-4e13-a725-7fe9994db199",
   "version": "7",
   "dialect": "postgresql",
@@ -32688,6 +32688,13 @@
           "primaryKey": false,
           "notNull": true,
           "default": "'{}'::jsonb"
+        },
+        "ledger": {
+          "name": "ledger",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"charged\":0,\"refunded\":0}'::jsonb"
         },
         "alerts": {
           "name": "alerts",

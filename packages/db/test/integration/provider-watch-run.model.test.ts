@@ -44,6 +44,7 @@ const close = (id: string, overrides: Record<string, unknown> = {}) => ({
     outcome: 'completed' as const,
     reason: null,
     measurements: { M1: { outcome: 'matched', shapes: { create: { $: 'object' } } } },
+    ledger: { charged: 0, refunded: 0 },
     alerts: [] as unknown[],
     ...overrides
 });
@@ -134,9 +135,9 @@ describe('provider ids are persisted as the writes answer, apart from the closin
     it('accumulates ids per measurement on a running run and keeps the rest of the record', async () => {
         await withTestTransaction(async (tx) => {
             const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
-            await model.appendProviderIds({ runId, measurementId: 'M1', providerIds: ['a'], tx });
-            await model.appendProviderIds({ runId, measurementId: 'M1', providerIds: ['b'], tx });
-            await model.appendProviderIds({ runId, measurementId: 'RP2', providerIds: ['c'], tx });
+            await model.appendProgress({ runId, measurementId: 'M1', providerIds: ['a'], tx });
+            await model.appendProgress({ runId, measurementId: 'M1', providerIds: ['b'], tx });
+            await model.appendProgress({ runId, measurementId: 'RP2', providerIds: ['c'], tx });
             const row = await model.findById({ id: runId, tx });
             expect(row?.measurements).toEqual({
                 M1: { providerIds: ['a', 'b'] },
@@ -146,12 +147,46 @@ describe('provider ids are persisted as the writes answer, apart from the closin
         });
     });
 
+    it('records write keys apart from provider ids, and both survive in the row', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.appendProgress({ runId, measurementId: 'M1', writeKeys: ['hw-k1'], tx });
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                providerIds: ['pre-1'],
+                writeKeys: ['hw-k2'],
+                tx
+            });
+            const row = await model.findById({ id: runId, tx });
+            expect(row?.measurements).toEqual({
+                M1: { writeKeys: ['hw-k1', 'hw-k2'], providerIds: ['pre-1'] }
+            });
+        });
+    });
+
+    it('stores the ledger of the run when it closes, charges and refunds apart', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            expect((await model.findById({ id: runId, tx }))?.ledger).toEqual({
+                charged: 0,
+                refunded: 0
+            });
+            const closed = await model.close({
+                ...close(runId),
+                ledger: { charged: 150000, refunded: 50000 },
+                tx
+            });
+            expect(closed.ledger).toEqual({ charged: 150000, refunded: 50000 });
+        });
+    });
+
     it('refuses to append to a run that is not running', async () => {
         await withTestTransaction(async (tx) => {
             const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
             await model.close({ ...close(runId), tx });
             await expect(
-                model.appendProviderIds({ runId, measurementId: 'M1', providerIds: ['a'], tx })
+                model.appendProgress({ runId, measurementId: 'M1', providerIds: ['a'], tx })
             ).rejects.toThrow('not a running run');
         });
     });
@@ -163,7 +198,7 @@ describe('provider ids are persisted as the writes answer, apart from the closin
                 startedAt: START,
                 tx: db
             });
-            await model.appendProviderIds({
+            await model.appendProgress({
                 runId,
                 measurementId: 'M1',
                 providerIds: ['pre-9'],
@@ -194,7 +229,7 @@ describe('a run that opens abandons the stale running rows of its account', () =
                 startedAt: at('2026-11-17T08:00:00.000Z'),
                 tx
             });
-            await model.appendProviderIds({
+            await model.appendProgress({
                 runId: stale.runId,
                 measurementId: 'M1',
                 providerIds: ['pre-123'],

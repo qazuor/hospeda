@@ -7,6 +7,7 @@ CREATE TABLE "provider_watch_run" (
 	"outcome" varchar(16) NOT NULL,
 	"reason" text,
 	"measurements" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"ledger" jsonb DEFAULT '{"charged":0,"refunded":0}'::jsonb NOT NULL,
 	"alerts" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	CONSTRAINT "ck_provider_watch_run_account" CHECK ("provider_watch_run"."account" IN ('sandbox', 'production')),
 	CONSTRAINT "ck_provider_watch_run_outcome" CHECK ("provider_watch_run"."outcome" IN ('running', 'completed', 'failed', 'aborted', 'refused')),

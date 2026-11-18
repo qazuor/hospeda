@@ -77,7 +77,8 @@ export interface ProviderWatchBatteryDeps {
     readonly recordProgress: (args: {
         readonly runId: string;
         readonly measurementId: string;
-        readonly providerIds: readonly string[];
+        readonly providerIds?: readonly string[];
+        readonly writeKeys?: readonly string[];
     }) => Promise<void>;
     /** Closes the run and queues its alert mail. */
     readonly finishRun: (args: {

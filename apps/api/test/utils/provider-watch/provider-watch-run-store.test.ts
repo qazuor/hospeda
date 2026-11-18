@@ -25,7 +25,7 @@ const h = vi.hoisted(() => {
         }),
         open: vi.fn(),
         close: vi.fn(),
-        appendProviderIds: vi.fn(),
+        appendProgress: vi.fn(),
         listBaselines: vi.fn(),
         listSuperAdminRecipients: vi.fn(),
         enqueue: vi.fn()
@@ -37,7 +37,7 @@ vi.mock('@repo/db', () => ({
     providerWatchRunModel: {
         open: h.open,
         close: h.close,
-        appendProviderIds: h.appendProviderIds,
+        appendProgress: h.appendProgress,
         listBaselines: h.listBaselines
     },
     listSuperAdminRecipients: h.listSuperAdminRecipients,
@@ -70,6 +70,7 @@ function run(overrides: Partial<WatchRunRecord> = {}): WatchRunRecord {
         measurements: {
             M1: { outcome: 'matched', expected: 1, obtained: 1, shapes: {}, providerIds: ['pre-1'] }
         },
+        ledger: { charged: 0, refunded: 0 },
         alerts: [],
         ...overrides
     };
@@ -112,10 +113,10 @@ describe('openWatchRun', () => {
 
 describe('recordWatchProgress', () => {
     it('writes the ids through the model on its own, never inside a transaction', async () => {
-        h.appendProviderIds.mockResolvedValue(undefined);
+        h.appendProgress.mockResolvedValue(undefined);
         h.transaction.mockClear();
         await recordWatchProgress({ runId: 'run-1', measurementId: 'M1', providerIds: ['pre-1'] });
-        expect(h.appendProviderIds).toHaveBeenCalledWith({
+        expect(h.appendProgress).toHaveBeenCalledWith({
             runId: 'run-1',
             measurementId: 'M1',
             providerIds: ['pre-1']
@@ -123,8 +124,18 @@ describe('recordWatchProgress', () => {
         expect(h.transaction).not.toHaveBeenCalled();
     });
 
+    it('hands the model write keys too, which are recorded before a write is sent', async () => {
+        h.appendProgress.mockResolvedValue(undefined);
+        await recordWatchProgress({ runId: 'run-1', measurementId: 'M1', writeKeys: ['hw-k1'] });
+        expect(h.appendProgress).toHaveBeenCalledWith({
+            runId: 'run-1',
+            measurementId: 'M1',
+            writeKeys: ['hw-k1']
+        });
+    });
+
     it('propagates a failed write so the engine aborts the run', async () => {
-        h.appendProviderIds.mockRejectedValue(new Error('db down'));
+        h.appendProgress.mockRejectedValue(new Error('db down'));
         await expect(
             recordWatchProgress({ runId: 'run-1', measurementId: 'M1', providerIds: ['pre-1'] })
         ).rejects.toThrow('db down');
@@ -257,6 +268,15 @@ describe('closeWatchRun', () => {
         expect(closed.outcome).toBe('aborted');
         expect(closed.reason).toContain('ALERTS_NOT_DELIVERED');
         expect(closed.reason).toContain('BUDGET_EXCEEDED: M3 would charge too much');
+    });
+
+    it('stores the ledger of the run: charges and refunds apart', async () => {
+        await closeWatchRun({
+            runId: 'run-1',
+            run: run({ ledger: { charged: 150000, refunded: 50000 } }),
+            correlationId: 'c-1'
+        });
+        expect(h.close.mock.calls[0]?.[0].ledger).toEqual({ charged: 150000, refunded: 50000 });
     });
 
     it('stores the reason and outcome of a run that did not complete', async () => {
