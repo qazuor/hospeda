@@ -59,6 +59,26 @@ describe('session recording legal copy (HOS-2347 OQ-7)', () => {
         }
     }
 
+    it('never calls the recordings anonymous: they are pseudonymous', () => {
+        for (const mod of Object.values(MODULES)) {
+            const text = `${mod.sections?.sessionRecording?.title} ${mod.sections?.sessionRecording?.body}`;
+            expect(text).not.toMatch(/an[oó]nim|anonymi|an[oô]nim/i);
+        }
+        for (const [locale, pattern] of [
+            ['es', /seudónimas/],
+            ['en', /pseudonymous/],
+            ['pt', /pseudônimas/]
+        ] as const) {
+            for (const file of FILES) {
+                const body =
+                    MODULES[`../src/locales/${locale}/${file}.json`]?.sections?.sessionRecording
+                        ?.body;
+                expect(body).toMatch(pattern);
+                expect(body).toMatch(/account|cuenta|conta/);
+            }
+        }
+    });
+
     it('never pins a fixed retention: 14 and 30 days are not promised', () => {
         for (const mod of Object.values(MODULES)) {
             expect(mod.sections?.sessionRecording?.body).not.toMatch(/\b(14|30)\b/);
