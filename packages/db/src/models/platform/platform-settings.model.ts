@@ -99,6 +99,10 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
      * the winner commits and matches nothing.
      *
      * @param input.month - The month the run needs (`YYYY-MM`)
+     * @param input.maxChargeMinor - The cap the run was pre-flighted with
+     * @param input.accountId - The account id the run was pre-flighted with. The three must still be
+     *   what is stored, or an authorization the owner rewrote during pre-flight would be consumed
+     *   while the run used the old values.
      * @param input.runId - The run consuming it
      * @param input.consumedAt - The instant of consumption
      * @param input.tx - The transaction that also creates the run row
@@ -106,6 +110,8 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
      */
     async consumeProviderWatchAuthorization(input: {
         readonly month: string;
+        readonly maxChargeMinor: number;
+        readonly accountId: string;
         readonly runId: string;
         readonly consumedAt: Date;
         readonly tx?: DrizzleClient;
@@ -121,6 +127,8 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
                 and(
                     eq(platformSettings.key, 'billing.providerWatchAuthorization'),
                     sql`${platformSettings.value}->>'month' = ${input.month}`,
+                    sql`${platformSettings.value}->>'maxChargeMinor' = ${String(input.maxChargeMinor)}`,
+                    sql`${platformSettings.value}->>'accountId' = ${input.accountId}`,
                     sql`${platformSettings.value}->>'consumedByRunId' IS NULL`
                 )
             )

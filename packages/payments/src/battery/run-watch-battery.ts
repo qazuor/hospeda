@@ -67,13 +67,17 @@ export interface RunWatchBatteryInput {
     }) => Promise<WatchShapeBaseline | null>;
     /**
      * Opens the run's row. For a production run that passed every pre-flight check
-     * (`consumeAuthorizationOfMonth` set) it ALSO consumes the authorization, atomically with the
+     * (`consumeAuthorization` set) it ALSO consumes the authorization, atomically with the
      * insert; `authorizationConsumed` is false when another run consumed it first.
      */
     readonly startRun: (args: {
         readonly account: WatchAccount;
         readonly startedAt: Date;
-        readonly consumeAuthorizationOfMonth?: string;
+        readonly consumeAuthorization?: {
+            readonly month: string;
+            readonly maxChargeMinor: number;
+            readonly accountId: string;
+        };
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
     /**
      * Persists a provider id the moment the write that created it answers, OUTSIDE the closing of
@@ -355,7 +359,15 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         account: input.account,
         startedAt,
         ...(preflightPassed && input.account === 'production' && input.authorization
-            ? { consumeAuthorizationOfMonth: input.authorization.month }
+            ? {
+                  // The values the run was PRE-FLIGHTED with: if the owner rewrote the authorization in
+                  // the meantime, the consumption matches nothing and the run is refused.
+                  consumeAuthorization: {
+                      month: input.authorization.month,
+                      maxChargeMinor: input.authorization.maxChargeMinor,
+                      accountId: input.authorization.accountId ?? ''
+                  }
+              }
             : {})
     });
     if (preflightPassed && input.account === 'production' && !started.authorizationConsumed) {

@@ -66,7 +66,11 @@ export interface ProviderWatchBatteryDeps {
     readonly startRun: (args: {
         readonly account: WatchAccount;
         readonly startedAt: Date;
-        readonly consumeAuthorizationOfMonth?: string;
+        readonly consumeAuthorization?: {
+            readonly month: string;
+            readonly maxChargeMinor: number;
+            readonly accountId: string;
+        };
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
     /** Persists a provider id the moment a write answers it. */
     readonly recordProgress: (args: {

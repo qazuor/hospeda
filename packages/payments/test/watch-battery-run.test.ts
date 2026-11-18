@@ -585,6 +585,32 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         expect(store.consumedBy()).toBe(result.runId);
     });
 
+    it('refuses the run, burning nothing, when the authorization was rewritten after its pre-flight', async () => {
+        const store = memoryRunStore({
+            stored: { month: '2026-11', maxChargeMinor: 999999, accountId: '100000001' }
+        });
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        const result = await run({
+            account: 'production',
+            catalog,
+            transport,
+            authorization: AUTHORIZED,
+            store
+        });
+        expect(result.run.outcome).toBe('refused');
+        expect(result.run.reason).toContain('AUTHORIZATION_CONSUMED');
+        expect(store.consumedBy()).toBeUndefined();
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('hands the consumption the very values the run was pre-flighted with', async () => {
+        const store = memoryRunStore();
+        const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
+        await run({ account: 'production', catalog, transport, authorization: AUTHORIZED, store });
+        expect(store.started).toHaveLength(1);
+        expect(store.started[0]?.consume).toBe('2026-11');
+    });
+
     it('does not consume anything in a sandbox run', async () => {
         const store = memoryRunStore();
         const { transport } = scripted({ id: 'x' });

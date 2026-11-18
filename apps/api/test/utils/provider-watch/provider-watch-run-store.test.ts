@@ -90,13 +90,21 @@ describe('openWatchRun', () => {
             openWatchRun({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11'
+                consumeAuthorization: {
+                    month: '2026-11',
+                    maxChargeMinor: 150000,
+                    accountId: '100000001'
+                }
             })
         ).resolves.toEqual({ runId: 'run-1', authorizationConsumed: true });
         expect(h.open).toHaveBeenCalledWith({
             account: 'production',
             startedAt: START,
-            consumeAuthorizationOfMonth: '2026-11',
+            consumeAuthorization: {
+                month: '2026-11',
+                maxChargeMinor: 150000,
+                accountId: '100000001'
+            },
             abandonRunsStartedBefore: new Date(START.getTime() - 600_000)
         });
     });

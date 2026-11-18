@@ -267,7 +267,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const { runId, authorizationConsumed } = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11',
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             expect(authorizationConsumed).toBe(true);
@@ -286,13 +286,13 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const first = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11',
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             const second = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11',
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             expect(second.authorizationConsumed).toBe(false);
@@ -308,7 +308,24 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-10',
+                consumeAuthorization: { ...AUTHORIZATION, month: '2026-10' },
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('consumedByRunId');
+        });
+    });
+
+    it.each([
+        ['a different maximum charge', { maxChargeMinor: 999999 }],
+        ['a different account id', { accountId: '999999999' }]
+    ])('does not consume an authorization the owner rewrote with %s during pre-flight', async (_name, rewritten) => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, { ...AUTHORIZATION, ...rewritten });
+            const result = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -321,7 +338,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11',
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -334,7 +351,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11',
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             await platformSettingsModel.upsertByKey(
@@ -346,7 +363,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const again = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorizationOfMonth: '2026-11',
+                consumeAuthorization: AUTHORIZATION,
                 tx
             });
             expect(again.authorizationConsumed).toBe(true);
@@ -361,7 +378,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
                     model.open({
                         account: 'production',
                         startedAt: START,
-                        consumeAuthorizationOfMonth: '2026-11',
+                        consumeAuthorization: AUTHORIZATION,
                         tx: tx as unknown as DrizzleClient
                     })
                 );

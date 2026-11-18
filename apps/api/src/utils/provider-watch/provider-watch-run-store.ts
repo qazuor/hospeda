@@ -51,7 +51,7 @@ export async function readAcceptedBaseline(args: {
  *
  * @param args.account - The account the run targets
  * @param args.startedAt - The run's instant
- * @param args.consumeAuthorizationOfMonth - Month of the authorization to consume
+ * @param args.consumeAuthorization - The authorization to consume, with the values the run was pre-flighted with
  *
  * In the same transaction, any `running` row of this environment's account that is already past
  * the run deadline is closed as `failed` (reason `abandoned`) so a dead run never lingers; the
@@ -62,7 +62,11 @@ export async function readAcceptedBaseline(args: {
 export async function openWatchRun(args: {
     readonly account: WatchAccount;
     readonly startedAt: Date;
-    readonly consumeAuthorizationOfMonth?: string;
+    readonly consumeAuthorization?: {
+        readonly month: string;
+        readonly maxChargeMinor: number;
+        readonly accountId: string;
+    };
 }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
     return providerWatchRunModel.open({
         ...args,

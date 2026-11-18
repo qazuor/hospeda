@@ -20,7 +20,7 @@ export class ProviderWatchRunModel {
      *
      * @param input.account - The account the run targets
      * @param input.startedAt - The run's instant
-     * @param input.consumeAuthorizationOfMonth - Consume that month's authorization for this run
+     * @param input.consumeAuthorization - Consume the authorization with exactly these values for this run
      * @param input.abandonRunsStartedBefore - In the same transaction, every `running` row of this
      *   account that started before this instant is past its deadline: it is closed as `failed`
      *   with reason `abandoned`. Its measurements are left untouched, so the provider ids it
@@ -32,7 +32,11 @@ export class ProviderWatchRunModel {
     async open(input: {
         readonly account: ProviderWatchAccount;
         readonly startedAt: Date;
-        readonly consumeAuthorizationOfMonth?: string;
+        readonly consumeAuthorization?: {
+            readonly month: string;
+            readonly maxChargeMinor: number;
+            readonly accountId: string;
+        };
         readonly abandonRunsStartedBefore?: Date;
         readonly tx?: DrizzleClient;
     }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
@@ -62,11 +66,11 @@ export class ProviderWatchRunModel {
                 })
                 .returning({ id: providerWatchRuns.id });
             if (!row) throw new Error('provider_watch_run insert returned no row');
-            if (input.consumeAuthorizationOfMonth === undefined) {
+            if (input.consumeAuthorization === undefined) {
                 return { runId: row.id, authorizationConsumed: false };
             }
             const { consumed } = await platformSettingsModel.consumeProviderWatchAuthorization({
-                month: input.consumeAuthorizationOfMonth,
+                ...input.consumeAuthorization,
                 runId: row.id,
                 consumedAt: input.startedAt,
                 tx

@@ -61,8 +61,8 @@ function deps(overrides: Partial<ProviderWatchBatteryDeps> = {}, me: unknown = S
         buildTransport: () => transport,
         readAuthorization: async () => null,
         readBaseline: async () => null,
-        startRun: async ({ consumeAuthorizationOfMonth }) => {
-            started.push({ consume: consumeAuthorizationOfMonth });
+        startRun: async ({ consumeAuthorization }) => {
+            started.push({ consume: consumeAuthorization?.month });
             return { runId: crypto.randomUUID(), authorizationConsumed: true };
         },
         recordProgress: async () => undefined,

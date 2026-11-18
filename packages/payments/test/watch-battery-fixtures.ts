@@ -17,7 +17,11 @@ export interface MemoryRunStore {
         readonly startRun: (args: {
             readonly account: 'sandbox' | 'production';
             readonly startedAt: Date;
-            readonly consumeAuthorizationOfMonth?: string;
+            readonly consumeAuthorization?: {
+                readonly month: string;
+                readonly maxChargeMinor: number;
+                readonly accountId: string;
+            };
         }) => Promise<{ runId: string; authorizationConsumed: boolean }>;
         readonly recordProgress: (args: {
             readonly runId: string;
@@ -37,7 +41,16 @@ export interface MemoryRunStore {
  * @param args.consumedBy - A run that already consumed the authorization
  */
 export function memoryRunStore(
-    args: { readonly baseline?: WatchShapeBaseline | null; readonly consumedBy?: string } = {}
+    args: {
+        readonly baseline?: WatchShapeBaseline | null;
+        readonly consumedBy?: string;
+        /** The authorization as stored NOW; consumption matches nothing unless the run saw the same values. */
+        readonly stored?: {
+            readonly month: string;
+            readonly maxChargeMinor: number;
+            readonly accountId: string;
+        };
+    } = {}
 ): MemoryRunStore {
     const started: MemoryRunStore['started'] = [];
     const finished: { runId: string; run: WatchRunRecord }[] = [];
@@ -55,11 +68,18 @@ export function memoryRunStore(
         },
         ports: {
             readBaseline: async () => args.baseline ?? null,
-            startRun: async ({ consumeAuthorizationOfMonth }) => {
+            startRun: async ({ consumeAuthorization }) => {
                 const runId = crypto.randomUUID();
-                started.push({ runId, consume: consumeAuthorizationOfMonth });
+                started.push({ runId, consume: consumeAuthorization?.month });
                 let authorizationConsumed = false;
-                if (consumeAuthorizationOfMonth !== undefined && consumed === undefined) {
+                if (
+                    consumeAuthorization !== undefined &&
+                    consumed === undefined &&
+                    (args.stored === undefined ||
+                        (args.stored.month === consumeAuthorization.month &&
+                            args.stored.maxChargeMinor === consumeAuthorization.maxChargeMinor &&
+                            args.stored.accountId === consumeAuthorization.accountId))
+                ) {
                     consumed = runId;
                     authorizationConsumed = true;
                 }
