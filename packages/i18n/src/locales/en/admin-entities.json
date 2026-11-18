@@ -114,9 +114,9 @@
         },
         "mcpActivity": {
             "singular": "Assistant use",
-            "plural": "Assistant activity",
+            "plural": "AI assistant activity",
             "description": "Every AI assistant (MCP) call made on behalf of a user",
-            "coverageNote": "Calls stopped by the rate limit and calls that fail before reaching the tool are not recorded."
+            "coverageNote": "Calls stopped by the rate limit, calls that fail before reaching the tool and calls whose record is lost while saving are not recorded."
         },
         "hostTrade": {
             "singular": "Trade",

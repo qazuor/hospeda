@@ -114,9 +114,9 @@
         },
         "mcpActivity": {
             "singular": "Uso del asistente",
-            "plural": "Uso de asistentes",
+            "plural": "Uso de asistentes IA",
             "description": "Cada llamada de un asistente de IA (MCP) en nombre de un usuario",
-            "coverageNote": "No se registran las llamadas frenadas por el límite de uso ni las que fallan antes de llegar a la herramienta."
+            "coverageNote": "No se registran las llamadas frenadas por el límite de uso, las que fallan antes de llegar a la herramienta ni las que se pierden al guardar el registro."
         },
         "hostTrade": {
             "singular": "Oficio",
