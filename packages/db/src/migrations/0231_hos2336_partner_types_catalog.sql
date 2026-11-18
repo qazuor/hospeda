@@ -1,5 +1,5 @@
 -- HOS-2336 EXPAND step. partners.type, partners_type_idx and partner_type_enum are intentionally NOT dropped here, and partners.type_id stays nullable: the contract release (N+1) does both, after the seed data-migration has backfilled type_id everywhere (HOS-433 rule).
--- partners.type becomes nullable so a catalog type with no legacy enum value (media, person, any admin-made type) can be stored while the legacy column is still dual-written.
+-- partners.type becomes nullable so a catalog type with no legacy enum value (media, person, any admin-made type) can be stored while the legacy column is still dual-written. Rollback caveat: such a row has type NULL, which the pre-HOS-2336 app cannot parse, so do not assign a non-legacy type until the rollout is final.
 -- The new permission labels are only added here, never used in this transaction, so ADD VALUE inside the migration transaction is safe.
 ALTER TYPE "public"."permission_enum" ADD VALUE 'partnerType.view' BEFORE 'allianceLead.viewAll';--> statement-breakpoint
 ALTER TYPE "public"."permission_enum" ADD VALUE 'partnerType.create' BEFORE 'allianceLead.viewAll';--> statement-breakpoint

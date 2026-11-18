@@ -1,11 +1,21 @@
 import type { PartnerType, PartnerTypeRef, PublicPartnerType } from '@repo/schemas';
-import { and, asc, count, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { partners } from '../../schemas/partner/partner.dbschema.ts';
 import { partnerTypes } from '../../schemas/partner/partner-type.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+
+/**
+ * Join predicate "this partner belongs to this type" during release N
+ * (HOS-2336): by `type_id`, or, for a row the backfill has not reached yet, by
+ * the legacy enum value equal to the slug. Compared on text so a slug with no
+ * legacy value never raises an invalid-enum error.
+ */
+function partnerOfTypeCondition(): SQL {
+    return sql`(${partners.typeId} = ${partnerTypes.id} OR (${partners.typeId} IS NULL AND ${partners.type}::text = ${partnerTypes.slug}))`;
+}
 
 /**
  * Model for the `partner_types` table (HOS-2336): the admin-managed partner
@@ -180,9 +190,14 @@ export class PartnerTypeModel extends BaseModelImpl<PartnerType> {
      * Counts the non-deleted partners that use a type, whatever their
      * lifecycle state (AC-3.4).
      *
+     * Release N counts a row the backfill has not reached yet too
+     * (`type_id IS NULL` with the legacy `type` equal to the slug): such a row
+     * still belongs to the type, and the N+1 backfill will point it there, so
+     * the type must not be deactivated or deleted under it.
+     *
      * @param typeId - Type UUID.
      * @param tx - Optional transaction client.
-     * @returns Number of non-deleted partners with this `type_id`.
+     * @returns Number of non-deleted partners of this type.
      * @throws DbError if the database query fails.
      */
     async countPartners(typeId: string, tx?: DrizzleClient): Promise<number> {
@@ -191,14 +206,16 @@ export class PartnerTypeModel extends BaseModelImpl<PartnerType> {
             const [row] = await db
                 .select({ total: count() })
                 .from(partners)
-                .where(and(eq(partners.typeId, typeId), isNull(partners.deletedAt)));
+                .innerJoin(partnerTypes, partnerOfTypeCondition())
+                .where(and(eq(partnerTypes.id, typeId), isNull(partners.deletedAt)));
             return row?.total ?? 0;
         });
     }
 
     /**
      * Counts non-deleted partners per type in one grouped query, for the admin
-     * list (AC-3.1). Types with no partner are absent from the map.
+     * list (AC-3.1), with the same legacy-row rule as {@link countPartners}.
+     * Types with no partner are absent from the map.
      *
      * @param typeIds - Type UUIDs of the current page.
      * @param tx - Optional transaction client.
@@ -213,10 +230,11 @@ export class PartnerTypeModel extends BaseModelImpl<PartnerType> {
         const db = this.getClient(tx);
         return this.run('countPartnersByTypeIds', { count: typeIds.length }, async () => {
             const rows = await db
-                .select({ typeId: partners.typeId, total: count() })
+                .select({ typeId: partnerTypes.id, total: count() })
                 .from(partners)
-                .where(and(inArray(partners.typeId, [...typeIds]), isNull(partners.deletedAt)))
-                .groupBy(partners.typeId);
+                .innerJoin(partnerTypes, partnerOfTypeCondition())
+                .where(and(inArray(partnerTypes.id, [...typeIds]), isNull(partners.deletedAt)))
+                .groupBy(partnerTypes.id);
             const map = new Map<string, number>();
             for (const row of rows) {
                 if (row.typeId) map.set(row.typeId, row.total);

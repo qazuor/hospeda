@@ -39,8 +39,11 @@ export const partners = pgTable(
          * @deprecated Superseded by {@link typeId}. Nullable since release N so a
          * catalog type with no legacy enum value (`media`, `person`, any admin-made
          * type) can be stored; still dual-written with the legacy value whenever
-         * the type's slug has one, so an app rollback keeps reading it. Dropped,
-         * with `partner_type_enum`, in the N+1 contract release.
+         * the type's slug has one. An app rollback keeps reading ONLY those rows:
+         * a row of a non-legacy type has `type = NULL`, which the pre-HOS-2336
+         * schema (`type` required) cannot parse. So no non-legacy type may be
+         * assigned until the rollout is final. Dropped, with `partner_type_enum`,
+         * in the N+1 contract release.
          */
         type: PartnerTypePgEnum('type'),
         /**
