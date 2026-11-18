@@ -15,7 +15,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { useProvisionAllianceLeadMutation } from '../hooks/useAllianceLeads';
 import { resolveRetryToast } from '../provisioning-toast';
-import { needsProvider } from './AllianceLeadProvisioningBadge';
+import { canRetryProvisioning } from './AllianceLeadProvisioningBadge';
 
 /** Props for `CreateProviderButton`. */
 export type CreateProviderButtonProps = {
@@ -33,7 +33,7 @@ export function CreateProviderButton({ lead }: CreateProviderButtonProps) {
     const canManage = useHasPermission(PermissionEnum.ALLIANCE_LEAD_MANAGE);
     const provision = useProvisionAllianceLeadMutation();
 
-    if (!canManage || !needsProvider(lead)) return null;
+    if (!canManage || !canRetryProvisioning(lead)) return null;
 
     const handleProvision = async () => {
         try {

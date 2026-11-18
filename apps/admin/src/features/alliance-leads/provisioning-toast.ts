@@ -54,7 +54,11 @@ export function resolveRetryToast(params: {
     if (provisioning?.reason === 'already-provisioned') {
         return { variant: 'info', messageKey: `${KEY}.provision.alreadyExists` };
     }
-    const warning = warningKeyFor(provisioning?.reason);
-    if (warning) return { variant: 'warning', messageKey: warning };
+    if (provisioning?.reason === 'no-active-category') {
+        return { variant: 'warning', messageKey: `${KEY}.provision.stillNoCategory` };
+    }
+    if (provisioning?.reason === 'legacy-lead-without-typed-fields') {
+        return { variant: 'warning', messageKey: `${KEY}.provision.missingData` };
+    }
     return { variant: 'warning', messageKey: `${KEY}.provision.error` };
 }

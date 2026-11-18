@@ -11,10 +11,11 @@ import type { AllianceLead } from '@repo/schemas';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
 import { useLeadCategories } from '../hooks/useLeadCategories';
+import { resolveLeadCategorySlugs } from '../lead-provisionable';
 
 /** Props for `LeadCategoriesBlock`. */
 export type LeadCategoriesBlockProps = {
-    readonly lead: Pick<AllianceLead, 'kind' | 'categorySlugs'>;
+    readonly lead: Pick<AllianceLead, 'kind' | 'categorySlugs' | 'category'>;
 };
 
 /**
@@ -24,7 +25,8 @@ export type LeadCategoriesBlockProps = {
  */
 export function LeadCategoriesBlock({ lead }: LeadCategoriesBlockProps) {
     const { t } = useTranslations();
-    const slugs = lead.kind === 'service_provider' ? (lead.categorySlugs ?? []) : [];
+    // Falls back to the legacy `category` exactly like the server does.
+    const slugs = lead.kind === 'service_provider' ? resolveLeadCategorySlugs(lead) : [];
     const { items, status } = useLeadCategories({ slugs });
 
     if (slugs.length === 0) return null;

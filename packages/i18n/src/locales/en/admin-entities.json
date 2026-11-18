@@ -1023,8 +1023,8 @@
             },
             "categoriesNote": "If no category is active, the provider is not created.",
             "catalogUnavailable": "Could not load the catalog",
-            "warningNoActiveCategory": "Lead approved, but the provider was not created: none of its categories is active.",
-            "warningLegacy": "Lead approved, but the provider was not created: form data is missing. Create it by hand."
+            "warningNoActiveCategory": "Lead approved, but the provider was not created: none of its categories is active. Reactivate a category and press \"Create provider\".",
+            "warningLegacy": "Lead approved, but the provider was not created: the lead lacks the data to create it automatically."
         },
         "pagination": {
             "prev": "Previous",
@@ -1037,7 +1037,9 @@
         "provision": {
             "success": "Provider created",
             "alreadyExists": "The provider already exists",
-            "error": "Could not create the provider. Please try again."
+            "error": "Could not create the provider. Please try again.",
+            "stillNoCategory": "The provider is still not created: none of the chosen categories is active. Reactivate one and try again.",
+            "missingData": "The provider cannot be created automatically: the lead is missing data."
         }
     },
     "hostTrade": {

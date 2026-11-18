@@ -43,6 +43,9 @@ const baseLead: AllianceLead = {
     status: 'pending',
     adminNote: null,
     categorySlugs: ['plomeria', 'gas', 'viejo', 'borrada'],
+    businessName: 'Plomeria Ana',
+    destinationId: '44444444-4444-4444-a444-444444444444',
+    benefitType: 'PERCENTAGE',
     provisionedHostTradeId: null,
     createdAt: new Date('2024-03-15T10:00:00.000Z'),
     updatedAt: new Date('2024-03-15T10:00:00.000Z'),
@@ -87,6 +90,8 @@ const page = (items: AllianceLead[]) => ({
 
 type Routes = {
     list: AllianceLead[];
+    /** Rows the list answers once the provision call has resolved (proves invalidation). */
+    listAfterProvision?: AllianceLead[];
     catalog?: unknown;
     markHandled?: unknown;
     provision?: unknown;
@@ -94,6 +99,7 @@ type Routes = {
 
 /** Routes `fetchApi` by path so call order never matters. */
 function route(r: Routes) {
+    let provisioned = false;
     mockedFetchApi.mockImplementation((async (opts: { path: string }) => {
         if (opts.path.includes('/host-trade-categories')) {
             if (r.catalog instanceof Error) throw r.catalog;
@@ -102,9 +108,10 @@ function route(r: Routes) {
         if (opts.path.endsWith('/mark-handled')) return r.markHandled;
         if (opts.path.endsWith('/provision')) {
             if (r.provision instanceof Error) throw r.provision;
+            provisioned = true;
             return r.provision;
         }
-        return page(r.list);
+        return page(provisioned && r.listAfterProvision ? r.listAfterProvision : r.list);
     }) as never);
 }
 
@@ -197,7 +204,12 @@ describe('toast resolution', () => {
             resolveRetryToast({
                 provisioning: { provisioned: false, reason: 'no-active-category' }
             })
-        ).toEqual({ variant: 'warning', messageKey: `${K}.handle.warningNoActiveCategory` });
+        ).toEqual({ variant: 'warning', messageKey: `${K}.provision.stillNoCategory` });
+        expect(
+            resolveRetryToast({
+                provisioning: { provisioned: false, reason: 'legacy-lead-without-typed-fields' }
+            })
+        ).toEqual({ variant: 'warning', messageKey: `${K}.provision.missingData` });
     });
 });
 
@@ -309,6 +321,15 @@ describe('HandleDialog categories block', () => {
         expect(screen.getByText(`${K}.handle.submit`)).not.toBeDisabled();
     });
 
+    it('falls back to the legacy category when categorySlugs is empty', async () => {
+        route({ list: [lead({ categorySlugs: [], category: 'GAS' as never })] });
+        renderInbox();
+        await openHandleDialog();
+        await waitFor(() =>
+            expect(screen.getByTestId('lead-categories-block')).toBeInTheDocument()
+        );
+    });
+
     it.each([
         ['another kind', { kind: 'partner' as const }],
         ['null slugs', { categorySlugs: null }],
@@ -350,6 +371,16 @@ describe('persistent badge and retry button', () => {
         expect(screen.queryByText(`${K}.actions.createProvider`)).not.toBeInTheDocument();
     });
 
+    it('shows a neutral badge and no retry button when the lead lacks the typed data', async () => {
+        route({
+            list: [lead({ status: 'approved', businessName: null, categorySlugs: null })]
+        });
+        renderInbox();
+        await waitFor(() => expect(screen.getByText('Ana Plomera')).toBeInTheDocument());
+        expect(screen.getByTestId('provider-not-created-badge')).toBeInTheDocument();
+        expect(screen.queryByText(`${K}.actions.createProvider`)).not.toBeInTheDocument();
+    });
+
     it('AC-3.4 hides the button without ALLIANCE_LEAD_MANAGE', async () => {
         mockPermissions = [PermissionEnum.ALLIANCE_LEAD_VIEW_ALL];
         route({ list: [approvedNoProvider] });
@@ -358,9 +389,10 @@ describe('persistent badge and retry button', () => {
         expect(screen.queryByText(`${K}.actions.createProvider`)).not.toBeInTheDocument();
     });
 
-    it('AC-4.1 retry posts to /provision and shows the success toast', async () => {
+    it('AC-4.1 retry posts to /provision, shows the success toast and the badge disappears', async () => {
         route({
             list: [approvedNoProvider],
+            listAfterProvision: [{ ...approvedNoProvider, provisionedHostTradeId: HOST_TRADE_ID }],
             provision: wrap({
                 ...approvedNoProvider,
                 provisionedHostTradeId: HOST_TRADE_ID,
@@ -384,6 +416,10 @@ describe('persistent badge and retry button', () => {
                 message: `${K}.provision.success`
             })
         );
+        await waitFor(() =>
+            expect(screen.queryByTestId('provider-not-created-badge')).not.toBeInTheDocument()
+        );
+        expect(screen.queryByText(`${K}.actions.createProvider`)).not.toBeInTheDocument();
     });
 
     it('AC-4.2 still no category keeps the warning toast', async () => {
@@ -400,7 +436,7 @@ describe('persistent badge and retry button', () => {
         await waitFor(() =>
             expect(mockAddToast).toHaveBeenCalledWith({
                 variant: 'warning',
-                message: `${K}.handle.warningNoActiveCategory`
+                message: `${K}.provision.stillNoCategory`
             })
         );
     });

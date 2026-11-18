@@ -9,6 +9,7 @@
 import type { AllianceLead } from '@repo/schemas';
 import { Badge } from '@/components/ui/badge';
 import { useTranslations } from '@/hooks/use-translations';
+import { hasProvisionableData, type ProvisionableLeadFields } from '../lead-provisionable';
 
 /**
  * Whether an approved lead still needs its provider created.
@@ -28,10 +29,24 @@ export function needsProvider(
     );
 }
 
+type RetryableLead = Pick<AllianceLead, 'status' | 'kind' | 'provisionedHostTradeId'> &
+    ProvisionableLeadFields;
+
+/**
+ * Whether the «Crear proveedor» retry can succeed: the lead needs a provider
+ * AND carries the typed data automatic provisioning requires. Linking a
+ * hand-made listing, or dismissing the badge, is out of scope (HOS-2339).
+ *
+ * @param lead - The lead row.
+ */
+export function canRetryProvisioning(lead: RetryableLead) {
+    return needsProvider(lead) && hasProvisionableData(lead);
+}
+
 /** Props for `AllianceLeadProvisioningBadge`. */
 export type AllianceLeadProvisioningBadgeProps = {
     /** The lead the badge is for. Renders nothing when it needs no provider. */
-    readonly lead: Pick<AllianceLead, 'status' | 'kind' | 'provisionedHostTradeId'>;
+    readonly lead: RetryableLead;
 };
 
 /**
@@ -45,7 +60,7 @@ export function AllianceLeadProvisioningBadge({ lead }: AllianceLeadProvisioning
     if (!needsProvider(lead)) return null;
     return (
         <Badge
-            variant="destructive"
+            variant={hasProvisionableData(lead) ? 'destructive' : 'outline'}
             data-testid="provider-not-created-badge"
         >
             {t('admin-entities.allianceLeads.badge.providerNotCreated')}
