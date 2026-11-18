@@ -87,6 +87,12 @@ export {
 export { VenueService } from './venue.service';
 // Types
 export type { VenueHookState } from './venue.types';
+// WhatsApp contact (HOS-2256): public derivation + the signed-in visitor read
+export {
+    getVenueWhatsappForViewer,
+    readVenueWhatsappNumber,
+    resolveVenuePublicWhatsapp
+} from './venue.whatsapp';
 // Menu QR helpers (HOS-1044) — the target-URL builder and its inverse, shared
 // between the provisioning route and the slug-change repointing hook.
 export {
