@@ -7,12 +7,16 @@
  *  - Paginated table of leads (kind, contactName, email, status badge, createdAt).
  *  - Kind filter (all / partner / sponsor / editor / service_provider).
  *  - Status filter (all / pending / reviewing / approved / rejected).
- *  - Per-row "Handle" dialog: approve/reject radio + optional admin note.
+ *  - Per-row "Handle" dialog: approve/reject radio + optional admin note. For a
+ *    `service_provider` lead it also lists the categories the applicant chose,
+ *    with inactive/deleted markers (HOS-2339).
  *
- * Deliberately has NO "Approve & provision" action (unlike the retired owner-lead inbox,
- * which it was cloned from): provisioning the corresponding partner/sponsor/editor/
- * HostTrade entry is a MANUAL admin step in V1 (HOS-277 §6.4 / NG-1). Only the
- * "Handle" action (approve/reject + note) exists here.
+ * Approving a `service_provider` lead provisions its directory listing on the
+ * server (HOS-278). When that is skipped (no active category, legacy lead) the
+ * admin gets a warning toast, and the row keeps a persistent «Proveedor no
+ * creado» badge plus a «Crear proveedor» button that calls the dedicated retry
+ * endpoint (HOS-2339). Partner, sponsor and editor leads are still provisioned
+ * by hand; there is no inbox action for them yet.
  *
  * Gate: ALLIANCE_LEAD_VIEW_ALL (read) / ALLIANCE_LEAD_MANAGE (handle).
  *
@@ -40,7 +44,11 @@ import {
     useAllianceLeadsQuery,
     useMarkAllianceLeadHandledMutation
 } from '../hooks/useAllianceLeads';
+import { resolveApprovalToast } from '../provisioning-toast';
+import { AllianceLeadProvisioningBadge } from './AllianceLeadProvisioningBadge';
 import { AllianceLeadStatusBadge } from './AllianceLeadStatusBadge';
+import { CreateProviderButton } from './CreateProviderButton';
+import { LeadCategoriesBlock } from './LeadCategoriesBlock';
 
 // ---------------------------------------------------------------------------
 // Handle dialog
@@ -71,14 +79,20 @@ function HandleDialog({ lead, onClose }: HandleDialogProps) {
         });
 
         const isApproved = result.status === 'approved';
-        addToast({
-            variant: isApproved ? 'success' : 'default',
-            message: t(
-                isApproved
-                    ? 'admin-entities.allianceLeads.handle.successApproved'
-                    : 'admin-entities.allianceLeads.handle.successRejected'
-            )
-        });
+        if (isApproved) {
+            // A skipped provisioning warns; success and every other kind keep
+            // the green approval toast (HOS-2339).
+            const toast = resolveApprovalToast({ provisioning: result.provisioning });
+            addToast({
+                variant: toast.variant,
+                message: t(toast.messageKey as Parameters<typeof t>[0])
+            });
+        } else {
+            addToast({
+                variant: 'default',
+                message: t('admin-entities.allianceLeads.handle.successRejected')
+            });
+        }
 
         onClose();
     };
@@ -112,6 +126,9 @@ function HandleDialog({ lead, onClose }: HandleDialogProps) {
                         </p>
                     </div>
                 </div>
+
+                {/* Categories the applicant chose (service_provider only) */}
+                <LeadCategoriesBlock lead={lead} />
 
                 {/* Decision radio */}
                 <fieldset className="space-y-2">
@@ -194,8 +211,9 @@ type RowActionsProps = {
 };
 
 /**
- * Renders the per-row "Handle" action button. No "Provision owner" or
- * "Approve & provision" buttons exist here — see the module-level JSDoc.
+ * Renders the per-row "Handle" action button and, for an approved
+ * `service_provider` lead with no provider yet, the «Crear proveedor» retry
+ * button (HOS-2339). The retry is gated on ALLIANCE_LEAD_MANAGE.
  */
 function RowActions({ lead }: RowActionsProps) {
     const { t } = useTranslations();
@@ -224,6 +242,7 @@ function RowActions({ lead }: RowActionsProps) {
                     />
                 )}
             </Dialog>
+            <CreateProviderButton lead={lead} />
         </div>
     );
 }
@@ -422,7 +441,10 @@ export function AllianceLeadInbox() {
                                                 {lead.email}
                                             </td>
                                             <td className="px-4 py-3">
-                                                <AllianceLeadStatusBadge status={lead.status} />
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <AllianceLeadStatusBadge status={lead.status} />
+                                                    <AllianceLeadProvisioningBadge lead={lead} />
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-muted-foreground text-xs">
                                                 {lead.createdAt
