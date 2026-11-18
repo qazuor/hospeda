@@ -32,7 +32,7 @@ Hoy el local puede mover o cancelar un evento y el turista que dijo "Avisame" se
 
 ## 4. Fuera de alcance
 
-- Borrar un evento no avisa (es la distinción que pide el issue). El editor lo advierte con texto.
+- Borrar un evento no avisa a quienes tocaron "Avisame" (es la distinción que pide el issue). El editor lo advierte con texto. Excepción de otra spec: un evento con anotados o reservas confirmadas no se puede borrar hasta cancelarlos, y a ellos sí se les avisa (HOS-2260 OQ-9, HOS-2252 ronda 2, #33).
 - `is_active = false` ("estacionar") no avisa; mismo criterio.
 - Cambios de título, descripción, imagen, precio, link de entradas o `display_order`.
 - Cancelar la serie completa de un evento semanal con un solo gesto (ver 6.2).
@@ -123,6 +123,7 @@ Clase de correo: **`transactional`** en el outbox (no se agrega a `OUTBOX_TEMPLA
 
 - Template `VenueEventChanged.tsx` y renderer (en `venue-event-renderers.tsx`), copy con `resolveCopy` es/en/pt (`apps/api/src/utils/venue-event-mail-copy.ts`), claves `venueEvents.changed.{subject.suspended,subject.rescheduled,subject.resumed,heading,before,after,suspendedBody,resumedBody,cta,unsubscribe,footer}` en `packages/i18n/src/locales/{es,en,pt}/notifications.json`.
 - Payload capturado al encolar: `{ locale, venueName, venueSlug, eventTitle, kind, before: { recurrence, date, weekday, startTime, endTime }, after: {...}, suspendedForDate|null, unsubscribeToken }`. Fechas y horas en `America/Argentina/Buenos_Aires`.
+- Cuando se suspende la próxima fecha de un **semanal** y el turista tenía "Avisame", el aviso de suspensión incluye además la pregunta de si quiere que le avisemos de nuevo para la fecha siguiente (decidido el 18/11/2026, HOS-2252 ronda 2, #15; mecanismo en la OQ-6 de HOS-2267).
 - Asunto: "Cambio en <evento>: <nuevo cuándo>" o "Se suspendió <evento>". CTA a la ficha con ancla `#venue-venue-events`. Link de baja de un clic del evento (token de HOS-2267 6.5).
 
 ### 6.6 Web
@@ -193,12 +194,13 @@ Sin la clave, el job avanza el snapshot sin enviar (6.4 paso 4); las suscripcion
 
 - OQ-1 (resuelta): Decidido (owner, 16/11/2026): "Suspender" un evento semanal afecta solo la próxima fecha y vuelve solo.
 - OQ-2 (resuelta): Decidido (owner, 16/11/2026): las ediciones se agrupan 15 min y hay 2 h de espera entre avisos del mismo evento.
-- OQ-3: Si el dueño corrige un error dentro del enfriamiento: (1) esperar al enfriamiento (recomendada, evita ráfagas); (2) saltear el enfriamiento si el cambio revierte al estado que se había avisado antes.
+- OQ-3 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #19): opción 1.** Una corrección dentro de las 2 h espera el enfriamiento. Opciones: (1) esperar al enfriamiento (recomendada, evita ráfagas); (2) saltear el enfriamiento si el cambio revierte al estado que se había avisado antes.
 - OQ-4 (resuelta): Decidido (owner, 16/11/2026): una suspensión siempre avisa y "reanudar" también avisa (ninguna de las dos espera el enfriamiento de 2 h).
-- OQ-5: ¿La ventana de 15 min también aplica a suspender/reanudar? Hoy sí (permite deshacer un error sin mandar nada, AC-17). Alternativa: enviar en el acto. Recomiendo mantener la ventana.
+- OQ-5 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #20):** suspender y reanudar también esperan los 15 minutos (se mantiene la ventana). Texto original: ¿La ventana de 15 min también aplica a suspender/reanudar? Hoy sí (permite deshacer un error sin mandar nada, AC-17). Alternativa: enviar en el acto. Recomiendo mantener la ventana.
 
 ## 11. Dependencias
 
+- Límite mensual de avisos a seguidores (decisión #48 ✱ de HOS-2252 ronda 2, 18/11/2026; clave nueva por HOS-2259, valores por HOS-2281): Pro 4 por mes, Premium sin tope. El corte en el envío queda abierto (HOS-2281, pregunta 3) y este job lo tiene que respetar.
 - HOS-2291 (ids estables de eventos), HOS-2266 (suscripciones, gate), HOS-2267 (tipos, copy, token de baja, `computeNextOccurrence`), HOS-2259/2281 (clave y grant), coordinar con HOS-2254/2263/2264/2255 (eventos).
 - `manage_venue_events` se reusa para suspender y reanudar.
 

@@ -133,7 +133,7 @@ Las rutas básicas (`/mine/views`, `/mine/views/daily-series`) **no cambian** y 
 - Cómo sabe el panel si mostrar datos o upsell:
   1. Pide `GET /venues/{id}/stats`. 200: muestra el panel.
   2. 403 `ENTITLEMENT_REQUIRED` con esa clave: estado `locked`. El upsell usa `resolveUnlockingPlanName({ plans, entitlementKey: 'view_advanced_stats', t })`, igual que `section-upsell-plan.ts`: nombra el primer plan **de local** que incluye la clave, leído del catálogo (regla HOS-1967: ningún mapa hardcodeado).
-  3. Si **ningún** plan de local incluye todavía la clave (estado de la Fase 1), `resolveUnlockingPlanName` devuelve `null` y el panel **no se muestra**: no se promete algo que no se puede comprar. Esto es lo que mantiene la función oculta hasta HOS-2280.
+  3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #9 ✱):** si el plan del dueño no incluye métricas, el dueño ve **un aviso de upgrade**, no una sección vacía ni nada. Si **ningún** plan de local incluye todavía la clave (estado de la Fase 1), `resolveUnlockingPlanName` devuelve `null`: el aviso se muestra igual, **sin nombrar un plan** (el texto exacto y si debe verse ya en la Fase 1 antes de HOS-2280 queda como OQ-5).
 - El copy del upsell nombra lo que se desbloquea: gráfico diario, clics por canal, tasa de clics, 90 días.
 - Se usa `useListingPlanGate` como `VenueMenuQrWidget`, para distinguir "sin trial todavía" de "plan sin la clave".
 - Cliente: `listingAnalyticsApi.getVenueStats({ id, window })` en `apps/web/src/lib/api/endpoints-protected.ts` (objeto `listingAnalyticsApi`, línea 2480).
@@ -155,7 +155,7 @@ Ninguna de esta spec. La tabla, su migración, la retención de 120 días y el r
 - AC-5. Un dueño sin la clave recibe 403 `ENTITLEMENT_REQUIRED` en `/venues/{id}/stats`.
 - AC-6. Un local ajeno responde 404 con el mismo cuerpo que uno inexistente. Un id con formato inválido responde 400.
 - AC-7. El básico sigue viendo exactamente lo de hoy en `ListingViewsWidget`.
-- AC-8. Con la clave asignada a ningún plan de local (estado de la Fase 1), el panel no se renderiza y no muestra upsell. Cuando un plan de local la incluye, el upsell nombra ese plan, leído del catálogo.
+- AC-8. Dado un dueño cuyo plan no incluye `view_advanced_stats`, el panel muestra un **aviso de upgrade** (nunca una sección vacía). Cuando algún plan de local incluye la clave, el aviso nombra ese plan, leído del catálogo. Con la clave asignada a ningún plan (estado de la Fase 1), el aviso no nombra plan (ver OQ-5).
 - AC-9. Un usuario con `view_advanced_stats` **sólo** en `VENUE` recibe 403 en `hostFavoritesBreakdown` y `hostMarketComparison` (alojamiento) y `AnalyticsSection` sigue en `locked`/básico para él.
 - AC-10. `EntityViewWindowSchema` sigue rechazando `90d` en las rutas básicas.
 - AC-11. Los números básicos de `/mine/views` y `/mine/views/daily-series` no cambian para ningún plan.
@@ -192,23 +192,24 @@ Guards: `check:guards`, `check-catalog-key-usage` (la clave ya está en el catá
 
 ## 11. Preguntas abiertas para el owner
 
-- OQ-1. **Tasa de clics: qué significa.**
+- OQ-1. **Tasa de clics: qué significa.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #7): opción 1**, visitas con algún clic sobre visitas, con tope 100%.
   1. "Visitas con al menos un clic sobre total de visitas", recortada a 100%. Es lo que se explica en 6.3. Recomendada.
   2. "Clics totales sobre vistas totales". Pro: simple. Contra: puede pasar de 100% y se lee mal.
   3. "Clics de un canal sobre vistas" (una tasa por canal). Pro: más detalle. Contra: ocho números chicos poco confiables en un local con pocas visitas.
-- OQ-2. **Un local por vez o total de la cuenta.**
+- OQ-2. **Un local por vez o total de la cuenta.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #8): opción 1**, un local por vez con selector.
   1. Un local por vez con selector. Recomendada: la ruta ya es por id y los dueños con varios locales suelen tener rubros distintos.
   2. Además un total de la cuenta. Pro: vista general. Contra: otra ruta y otra definición; se puede agregar después.
-- OQ-3. **Qué ve un local sin plan que la incluya (hoy: todos).**
+- OQ-3. **Qué ve un local sin plan que la incluya (hoy: todos).** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #9 ✱): ve un aviso de upgrade, no una sección vacía.** Se aparta de la recomendación (opción 1).
   1. Nada hasta que haya un plan de local con la clave. Recomendada: no promete lo que no se vende.
   2. Un upsell genérico sin plan. Pro: anticipa la oferta. Contra: promete algo que HOS-2280 puede no asignar.
 - OQ-4. **Qué plan recibe la clave.** El reparto aprobado dice pro y premium. Lo decide HOS-2280, no esta spec; se registra para que el upsell pueda nombrar "Pro" y no "Premium".
+- OQ-5. **Aviso de upgrade en la Fase 1 (abierta, la abre la decisión #9).** Mientras ningún plan de local tenga `view_advanced_stats` (hasta HOS-2280), ¿el aviso se muestra ya, sin nombrar plan, o recién cuando exista un plan que la incluya? La spec aplica la decisión del owner («aviso, no sección vacía») pero no decide el texto ni el momento. Hay que resolverlo antes de implementar T-7.
 
 ## 12. Etiquetas de smoke y Novedades
 
 - `status-needs-smoke-staging`: porque necesita datos reales de clics (HOS-2256 desplegada) y un usuario con la clave en un plan de local, que sólo existe después de HOS-2280. Se anota en la spec: **no se puede firmar** hasta que ambas estén desplegadas.
 - `status-needs-smoke-local`: no hace falta.
-- What's New: **sí aplica**, pero se escribe recién cuando HOS-2280 habilite el panel (la novedad es del turista-dueño que lo ve). Hasta entonces la función está oculta; no se anuncia nada.
+- What's New: **sí aplica**, pero se escribe recién cuando HOS-2280 habilite el panel (la novedad es del turista-dueño que lo ve). Hasta entonces no se anuncia nada.
 
 ## 13. Dependencias
 

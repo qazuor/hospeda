@@ -140,7 +140,7 @@ este grant.
 8. El panel de promos de alojamiento de un owner con ambos planes no cambia.
 9. Dada la versión del plan `trial` de venue, tiene `max_active_promotions = 1`; un venue en
    trial crea una promo y la segunda falla con el mensaje de tope, y ve el aviso «Incluido
-   en Pro y Premium. El plan Básico no lo tiene».
+   en Pro y Premium» (texto armado por el catálogo, HOS-2262 6.6; decidido el 18/11/2026).
 
 ## 10. Plan de tests
 

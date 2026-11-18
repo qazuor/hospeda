@@ -323,9 +323,10 @@ aplicar el grant; incluye la fila «Videos» de HOS-2258, que no sale como
 2. **Decidido (owner, 16/11/2026): valores del trial.** Valores especiales y mínimos:
    1 evento activo, 1 promo activa y 10 lugares de lista, por additive grant sobre la
    versión `trial` (pieza D). Se descartaron los valores de pro (10 / 5 / 100) y dejarlo
-   inutilizable. Sigue abierto un detalle menor: el aviso del trial dice «Incluido en Pro
-   y Premium», falso para funciones solo de Premium (`venue_event_stats`); falta decidir
-   el texto para esas (HOS-2262, pregunta 4).
+   inutilizable. El detalle del aviso del trial quedó **decidido (owner, 18/11/2026, HOS-2252
+   ronda 1, #4)**: el texto «Incluido en …» lo arma el catálogo según qué planes tienen la
+   clave («Incluido en Premium» o «Incluido en Pro y Premium»); no hay un texto aparte para
+   las funciones solo-Premium como `venue_event_stats` (HOS-2262, 6.6).
 3. **«Sin tope»** se resuelve como fila con 2147483647. Confirmar que premium no deba
    tener, en cambio, un tope muy alto razonable (p. ej. 1000). Recomendación: mantener
    2147483647 (decisión 1), con el clamp de HOS-2259 contra overflow.

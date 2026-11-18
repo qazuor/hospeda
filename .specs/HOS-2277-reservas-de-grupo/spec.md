@@ -15,7 +15,7 @@ areas:
 ## 1. Resumen
 
 Una sola reserva para N personas con un nombre de grupo ("Despedida de Sofi, 12
-personas"). Quien reserva puede compartir un link para que los demás confirmen que van.
+personas"). Quien reserva puede compartir un link para que los demás confirmen que van. El grupo lleva **un solo QR** de ingreso.
 El local ve el grupo como **una unidad** en el panel, con la cantidad confirmada. Gate
 `venue_group_reservations`.
 
@@ -26,7 +26,7 @@ Aplica las decisiones del owner del 16/11/2026 (HOS-2260) y el modelo de HOS-227
 solicitud con aceptación del local que vence a las 24 h o 1 h antes de la fecha, y
 **capacidad = aforo total en personas por noche** (un solo entero por local). Un grupo de N
 personas retiene N personas del aforo desde que se pide (pendiente incluida). El pase por
-persona (HOS-2276) lo valida solo la cuenta del dueño.
+grupo (HOS-2276, **un QR por grupo**, decidido el 18/11/2026) lo valida solo la cuenta del dueño.
 
 ## 2. Problema
 
@@ -39,7 +39,7 @@ de verdad hasta que llegan.
 - G-1: reservar para un grupo con nombre y cantidad.
 - G-2: compartir un link; cada integrante confirma con su cuenta.
 - G-3: el local ve el grupo como unidad: nombre, cantidad pedida, cantidad confirmada.
-- G-4: un pase QR por persona confirmada, sin pasar de la cantidad reservada.
+- G-4: **un único pase QR por grupo** (decidido el 18/11/2026), que admite hasta la cantidad reservada.
 - G-5: mismo modelo, mismos estados y mismas notificaciones que una reserva común.
 
 ## 4. Non-goals
@@ -126,18 +126,13 @@ El organizador **cuenta** dentro de `party_size`; los integrantes confirmados so
 - Cada integrante ve el nombre del grupo, fecha y local; **no** ve los datos de los demás
   ni el teléfono del organizador. El organizador ve los nombres de los integrantes.
 
-### 6.3 Pases (OQ-I)
+### 6.3 Pase (OQ-I, decidido)
 
-Recomendada: **un QR por persona confirmada**, más el del organizador:
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #41 ✱): las reservas de grupo llevan un QR por grupo, no uno por persona** (se aparta de la recomendación original).
 
-- Al confirmarse el grupo, el pase del organizador admite `admits = party_size − integrantes`
-  (todos los lugares que nadie reclamó) y baja a medida que alguien se une, nunca por
-  debajo de 1. Cada integrante recibe un pase propio con `admits = 1` (`subject_type =
-  RESERVATION_MEMBER`, HOS-2276).
-- El total que puede entrar nunca supera `party_size`.
-- Si el pase del organizador ya fue usado, el link se cierra solo (no se une nadie más).
-- Si todo el grupo prefiere un solo QR, el organizador entra con todos (`admits` =
-  `party_size`) y nadie se une: es el caso por defecto si no se comparte el link.
+- La reserva de grupo tiene **un solo pase** (`subject_type = RESERVATION`, HOS-2276) con `admits = party_size`. Lo recibe el organizador con la confirmación; en la puerta entra uno y pasa el grupo.
+- No hay pases por integrante: no existe `subject_type = RESERVATION_MEMBER` (HOS-2276 lo retiró) y no hay `admits` dinámico ni recálculo al unirse o salir alguien.
+- Los integrantes que confirman por el link (6.2) siguen contando para "N de M confirmados" en el panel y para el organizador, pero **no reciben QR propio**. Qué pasa con ese mecanismo de confirmación ahora que no hay pase por persona queda como OQ-L.
 
 ### 6.4 Rutas
 
@@ -156,7 +151,7 @@ Rate limit de `join`: 10 por hora por usuario. El `GET` público es de solo lect
 ### 6.5 Notificaciones (tipos nuevos, `TRANSACTIONAL`, es/en/pt)
 
 - `VENUE_GROUP_JOINED`: al organizador, "X confirmó que va".
-- `VENUE_GROUP_MEMBER_CONFIRMED`: al integrante, con su pase.
+- `VENUE_GROUP_MEMBER_CONFIRMED`: al integrante, confirmando que quedó anotado en el grupo (sin pase propio, decisión #41 ✱).
 - `VENUE_GROUP_CANCELLED_BY_VENUE`: a todos.
 - Las del ciclo de la reserva (HOS-2275) siguen valiendo para el organizador.
 - Para no inundar al organizador, los avisos de "X confirmó" se agrupan en un resumen
@@ -171,7 +166,7 @@ Rate limit de `join`: 10 por hora por usuario. El `GET` público es de solo lect
 - **Página `/grupo/[token]`** (neutral al idioma, SSR sin caché, sin sesión): nombre,
   fecha, local y botón "Confirmar que voy" (isla). Sin sesión, lleva a ingresar y vuelve.
   Estados: lleno, cerrado, ya confirmado.
-- **Mi cuenta:** el organizador ve integrantes; el integrante ve su pase.
+- **Mi cuenta:** el organizador ve integrantes y el **QR del grupo**; el integrante ve el grupo, la fecha y el local (sin QR propio).
 - **Panel del local:** el grupo es una fila expandible: "Despedida de Sofi, 7 de 12
   confirmados".
 
@@ -193,8 +188,8 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 - AC-6: 20 uniones simultáneas a un grupo de 6 dejan exactamente 5 integrantes.
 - AC-7: un usuario no se une dos veces (409 `ALREADY_MEMBER`); el organizador no se une.
 - AC-8: token inexistente o link cerrado responde 404 igual.
-- AC-9: la suma de lo admitido por los pases del grupo nunca supera `party_size`.
-- AC-10: si el local cancela, todos los integrantes y pases quedan cancelados y avisados.
+- AC-9: la reserva de grupo tiene **un solo pase** con `admits = party_size`; no se emiten pases por integrante.
+- AC-10: si el local cancela, todos los integrantes quedan cancelados y avisados, y el pase del grupo pasa a `VOID`.
 - AC-11: el integrante no ve datos de otros integrantes ni el teléfono del organizador.
 - AC-12: el panel muestra el grupo como una unidad con "confirmados de total".
 - AC-13: un nombre de grupo con HTML se muestra escapado en web y correo.
@@ -207,12 +202,11 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 - Integración con base: concurrencia de uniones (AC-6), índices parciales, CHECK, RESTRICT.
 - Rutas: gate, 404 uniforme, rate limit, contrato de errores, visibilidad de datos.
 - Guards: `check-purged-closed-list`, páginas sin sesión (`/grupo/[token]`).
-- E2E: organizar, compartir, unirse con otra cuenta, validar ambos pases en la puerta.
+- E2E: organizar, compartir, unirse con otra cuenta, validar el QR del grupo en la puerta.
 
 ## 11. Riesgos
 
-- R-1: `admits` dinámico del organizador es la parte delicada. Se recalcula en la misma
-  transacción que la unión o la salida, y se prueba.
+- R-1: (resuelto el 18/11/2026) con un QR por grupo `admits` es fijo (`party_size`) y ya no se recalcula.
 - R-2: spam con el link por un tercero. Requiere cuenta verificada, límite y cierre del link.
 - R-3: PII de terceros que el organizador "anota". No se anota a nadie: cada integrante
   confirma con su propia cuenta.
@@ -220,19 +214,20 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 
 ## 12. Preguntas abiertas para el owner
 
-- OQ-I: **QR por grupo o por persona.** Sigue abierta (menor); el QR lo valida solo la
+- OQ-I: **QR por grupo o por persona.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #41 ✱): opción (1), un QR por grupo.** Texto original: el QR lo valida solo la
   cuenta del dueño (HOS-2276, OQ-6 decidida). (1) Uno por grupo: simple; entra uno y pasan
   todos, sin asistencia individual. (2) **Uno por persona confirmada, con el del
   organizador cubriendo los lugares sin reclamar (recomendada)**: da asistencia real y no
   obliga a todos a unirse. Impacto: la tabla de integrantes y el recálculo de `admits`.
-- OQ-J: **tamaño mínimo para ser "grupo".** Recomendada: 2 (lo marca el organizador) y
+- OQ-J: **tamaño mínimo para ser "grupo".** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #42):** un grupo es de 2 personas o más, y el local decide si acepta grupos (`allows_groups`). Texto original: Recomendada: 2 (lo marca el organizador) y
   que el local decida con `allows_groups` si acepta grupos. Alternativa: mínimo fijo
   de 6 (coincide con el ejemplo de cumpleaños de HOS-2278).
 - OQ-K: **Decidido (owner, 16/11/2026): sí, los integrantes necesitan cuenta** con email verificado (OQ-4 de HOS-2260).
+- OQ-L: **mecanismo de confirmación de integrantes (abierta, la abre la decisión #41).** Con un solo QR por grupo, ¿se mantiene el link para que los demás confirmen que van (solo como conteo "N de M" y aviso al organizador), o se elimina la tabla `venue_reservation_member` y el link? Y el estado `CHECKED_IN` del integrante deja de tener sentido (el ingreso se marca en el pase del grupo). La spec conserva el link y la tabla tal como estaban, sin pase propio, hasta que el owner decida.
 
 ## 13. Dependencias
 
-- Bloqueado por: HOS-2275 (modelo y aforo), HOS-2276 (pase por integrante), HOS-2259. Asignación de mesas a grupos: HOS-2295.
+- Bloqueado por: HOS-2275 (modelo y aforo), HOS-2276 (pase del grupo), HOS-2259. Asignación de mesas a grupos: HOS-2295.
 - Habilita: HOS-2278 (cumpleaños, que suele ser un grupo).
 
 ## 14. Smoke y What's New
@@ -244,7 +239,7 @@ libre del usuario (no se traduce) y se **escapa** en correos y panel.
 1. T-1: migración aditiva (`allows_groups` en `venue_reservation_setting`, columnas de grupo, tabla de integrantes), CHECK,
    enum y fila PURGED (1 día).
 2. T-2: servicio de grupos (pedir, unirse, salir, cerrar link) con bloqueo (1 día).
-3. T-3: recálculo de `admits` y pases por integrante, junto a HOS-2276 (1 día).
+3. T-3: pase único del grupo (`admits = party_size`) junto a HOS-2276; sin recálculo por integrante (0,5 día).
 4. T-4: rutas públicas y protegidas, gate, rate limit (1 día).
 5. T-5: notificaciones y plantillas (0,5 día).
 6. T-6: página `/grupo/[token]` e isla de unirse (1 día).

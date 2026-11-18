@@ -19,6 +19,8 @@ texto, condiciones ("grupo de 6 o más") y si pide DNI en la puerta. El turista 
 mi cumpleaños" al reservar, y el local ve la reserva destacada. La ficha pública muestra
 "Festejá tu cumple acá". Mismo gate que los grupos: `venue_group_reservations`.
 
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #44 ✱):** el beneficio de cumpleaños **no exige una reserva aceptada**. Funciona como un **cartel** de la ficha y se **reclama en el local**. La reserva con "Es mi cumpleaños" queda como aviso opcional al local (ver 6.5 y OQ-O).
+
 Es una **extensión** del modelo de reservas (HOS-2275), no un modelo aparte. Aplica las
 decisiones del owner del 16/11/2026 (HOS-2260): reserva por solicitud con vencimiento de 24
 h o 1 h antes de la fecha, y capacidad = aforo total en personas por noche. Una reserva de
@@ -33,7 +35,8 @@ ofrecen por Instagram. Falta un lugar donde publicarlo, pedirlo y verlo destacad
 
 - G-1: el local define su beneficio de cumpleaños, una sola vez por local.
 - G-2: el turista lo elige al reservar y ve qué incluye y qué se le va a pedir.
-- G-3: el local ve la reserva destacada, con el beneficio.
+- G-3: el local ve la reserva destacada, con el beneficio (cuando el turista marcó el aviso opcional).
+- G-6: el beneficio se publica como cartel y se reclama en el local, sin depender de una reserva aceptada (decisión #44 ✱).
 - G-4: la puerta sabe qué entregar y si pedir DNI.
 - G-5: la ficha pública lo promociona.
 
@@ -97,6 +100,8 @@ nombre de la reserva. Si el que cumple es otra persona, el local lo coordina por
 
 ### 6.2 Reglas
 
+> Las reglas de esta sección que hablan de elegibilidad al reservar (`BIRTHDAY_*`, snapshot) aplican al **aviso opcional** de cumpleaños en la reserva. Desde el 18/11/2026 (#44 ✱) el beneficio en sí no depende de ellas: ver 6.5.
+
 - Para reservar con cumpleaños: el local tiene un beneficio `is_active`, el dueño tiene
   `venue_group_reservations`, `party_size >= min_party_size` si hay mínimo, y el día de la
   semana está en `valid_weekdays` si está definido. Incumplirlo: 409 `ALREADY_EXISTS` con
@@ -135,6 +140,12 @@ La respuesta pública no incluye nada del dueño. La lectura pública también v
 de la ficha (`by-slug`, `by-id`, `list`, `by-destination`): misma disciplina que HOS-1792
 (ver HOS-2275, 6.4).
 
+### 6.5 Reclamo en el local (decidido, 18/11/2026, #44 ✱)
+
+- El beneficio **no exige una reserva aceptada**: la ficha lo publica como un cartel ("Festejá tu cumple acá") y el turista lo reclama **en el local**. Una solicitud rechazada, vencida o inexistente no le quita el beneficio.
+- Las condiciones del beneficio (`min_party_size`, `valid_weekdays`, `requires_id`) se muestran en la ficha como reglas que aplica el local en la puerta; el sistema no las impone ni verifica el cumpleaños (NG-2).
+- Marcar "Es mi cumpleaños" al reservar queda como **aviso opcional** al local (la reserva sale destacada en el panel). Qué parte de la elegibilidad, el snapshot, la insignia del panel y la tarjeta de la puerta (HOS-2276) se conserva con este cambio queda como OQ-O.
+
 ## 7. UX / UI
 
 - **Ficha pública:** bloque "Festejá tu cumple acá" con el título del beneficio, la
@@ -165,7 +176,8 @@ descripción del beneficio son del local, en el mismo formato multilang que
 - AC-2: un local con beneficio activo muestra "Festejá tu cumple acá" con el texto y las
   condiciones; sin beneficio o con plan sin la clave, el bloque no aparece.
 - AC-3: reservar con `isBirthday` en un local sin beneficio activo responde 409
-  `BIRTHDAY_NOT_AVAILABLE`.
+  `BIRTHDAY_NOT_AVAILABLE`. (Aplica al aviso opcional; ver OQ-O.)
+- AC-13: el beneficio de cumpleaños se ve en la ficha y es reclamable en el local **sin** una reserva aceptada: un turista sin reserva, o con una rechazada o vencida, ve el mismo cartel. Ninguna regla del servidor niega el beneficio por falta de reserva (decisión #44 ✱).
 - AC-4: con `min_party_size = 6`, una reserva de 4 con cumpleaños responde 409
   `BIRTHDAY_MIN_PARTY`.
 - AC-5: con `valid_weekdays = [5, 6]`, reservar un martes responde 409
@@ -202,15 +214,16 @@ descripción del beneficio son del local, en el mismo formato multilang que
 
 ## 12. Preguntas abiertas para el owner
 
-Decididas en HOS-2260 (16/11/2026): OQ-1, OQ-3, OQ-4, OQ-8. Específicas, todas abiertas (menores):
+Decididas en HOS-2260 (16/11/2026): OQ-1, OQ-3, OQ-4, OQ-8. Específicas (OQ-L, OQ-M y OQ-N se decidieron el 18/11/2026):
 
-- OQ-L: **¿un beneficio por local o varios?** Recomendada: uno (KISS y alcanza para el
+- OQ-L: **¿un beneficio por local o varios?** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #43): uno solo por local.** Recomendada: uno (KISS y alcanza para el
   caso de "cumple free"). Alternativa: una lista de beneficios por local (champagne,
   postre, entrada). Contra: más UI y más reglas de elegibilidad.
-- OQ-M: **¿el beneficio se aplica solo con reserva aceptada?** Recomendada: sí; la
+- OQ-M: **¿el beneficio se aplica solo con reserva aceptada?** **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #44 ✱): no.** Funciona como un cartel y se reclama en el local (se aparta de la recomendación; ver 6.5). Texto original: Recomendada: sí; la
   solicitud rechazada o vencida no lo da. Alternativa: sin reserva, como cartel de ficha.
 - OQ-N: **¿la ficha puede mostrar "Festejá tu cumple" a locales sin plan premium?**
-  Recomendada: no (es parte del plan, decisión de la épica).
+  **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #45): no**, no se muestra en locales sin Premium (es parte del plan, decisión de la épica).
+- OQ-O: **qué queda de la integración con la reserva (abierta, la abre la decisión #44).** Con un beneficio que se reclama en el local sin reserva aceptada: ¿se mantiene la casilla "Es mi cumpleaños" como aviso, el snapshot, los errores `BIRTHDAY_*`, la insignia del panel y la tarjeta "Cumpleaños: <título>" de la puerta? La spec los conserva tal como estaban, como aviso opcional, hasta que el owner decida el alcance.
 
 ## 13. Dependencias
 

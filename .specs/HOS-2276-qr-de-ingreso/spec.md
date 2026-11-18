@@ -72,7 +72,7 @@ repetidos y no hay registro de quién entró.
 El issue dejaba abierto "sumar un propósito o un token propio". Se recomienda **token
 propio** porque el modelo de stickers no encaja:
 
-1. Un sticker es **uno por cosa y dura años**; un pase es **uno por persona y por noche**
+1. Un sticker es **uno por cosa y dura años**; un pase es **uno por anotado o reserva (y uno por grupo) y por noche**
    (miles de filas). `slug` es único para siempre y no se reutiliza.
 2. Un sticker **redirige**; un pase **se consume**. `targetUrl` no tiene sentido.
 3. `qr_code_scans` guarda el user-agent crudo (decisión HOS-1141 para marketing). Un pase
@@ -90,8 +90,8 @@ Sí se reusa: `renderQrPng/renderQrSvg`, la corrección de errores Q y `generate
 |---|---|---|
 | `id` | uuid pk | |
 | `venue_id` | uuid fk `venues` | alcance de la validación |
-| `subject_type` | enum `venue_entry_subject` | `GUEST_LIST_ENTRY`, `RESERVATION`, `RESERVATION_MEMBER` (el último lo usa HOS-2277) |
-| `guest_list_entry_id` / `reservation_id` / `reservation_member_id` | uuid null | CHECK en extras: **exactamente uno** y coincide con `subject_type` |
+| `subject_type` | enum `venue_entry_subject` | `GUEST_LIST_ENTRY`, `RESERVATION` (una reserva de grupo también es `RESERVATION`: **un QR por grupo**, decidido el 18/11/2026, HOS-2252 ronda 2, #41 ✱, no un pase por integrante) |
+| `guest_list_entry_id` / `reservation_id` | uuid null | CHECK en extras: **exactamente uno** y coincide con `subject_type` |
 | `token` | varchar(32) único | 128 bits aleatorios (`crypto.randomBytes(16)`, base32 sin ambiguos). **No derivado** de ids |
 | `valid_date` | date | fecha de servicio (la noche del viernes sigue siendo viernes pasada la medianoche) |
 | `admits` | smallint | cuántas personas ingresan con este pase |
@@ -121,7 +121,7 @@ HOS-2274 y HOS-2275 no dependen de este issue y no hay que migrar filas viejas.
 
 - Se pide al confirmarse el sujeto (lo hace el correo de confirmación) y desde Mi cuenta.
 - Al cancelarse el sujeto, el pase pasa a `VOID` en la misma transacción.
-- `admits` = personas del sujeto (`party_size`); en grupos lo define HOS-2277.
+- `admits` = personas del sujeto (`party_size`); en una reserva de grupo es el tamaño del grupo, con **un solo QR por grupo** (decisión #41 ✱; ver HOS-2277).
 
 El correo adjunta el QR en PNG (`renderQrPng`, nivel Q) y repite el código corto de
 texto. La URL codificada es `https://<sitio>/pase/<token>`.
@@ -254,7 +254,7 @@ OQ-6 (quién valida) está **decidida** en HOS-2260 (16/11/2026): solo la cuenta
 Las preguntas OQ-G (gate con `capabilitiesAnyOf`) y OQ-H (vencimiento del link de puerta)
 **desaparecen** con el link de puerta y pasan a HOS-2295. Queda abierta:
 
-- OQ-F: **¿validar al escanear o ver y confirmar?** (1) **Validar y marcar al escanear,
+- OQ-F: **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #40):** el QR se valida **al escanearlo**, con **2 minutos para deshacer**, y se usa la **cámara del celular** (sin escáner propio ni dependencia nueva). **¿Validar al escanear o ver y confirmar?** (1) **Validar y marcar al escanear,
   con deshacer 2 minutos (recomendada)**: rápido en una fila larga. Contra: un escaneo
   accidental marca un pase. (2) Mostrar y pedir "Dejar pasar": más lento, más seguro. Y
   **¿escáner propio dentro de la página?** Recomendada: no ahora (la cámara del sistema
@@ -264,7 +264,7 @@ Las preguntas OQ-G (gate con `capabilitiesAnyOf`) y OQ-H (vencimiento del link d
 
 - Bloqueado por: HOS-2274 y HOS-2275 (sujetos del pase), HOS-2259 (claves).
 - Etapa 2 (personal de puerta): HOS-2295.
-- Habilita: HOS-2277 (pase por persona), HOS-2278 (beneficio en la puerta), HOS-2265
+- Habilita: HOS-2277 (un QR por grupo), HOS-2278 (beneficio en la puerta), HOS-2265
   (estadísticas por evento).
 
 ## 13. Smoke y What's New

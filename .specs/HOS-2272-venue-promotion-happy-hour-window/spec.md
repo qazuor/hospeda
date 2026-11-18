@@ -156,9 +156,9 @@ Riesgos:
 Preguntas (OQ-2 decidida abajo, el resto abiertas y menores):
 - OQ-1. Zona horaria. Opciones: (a) fija de Buenos Aires, como `VENUE_OPEN_NOW_TIME_ZONE`; (b) una zona por local (columna nueva). **Recomiendo (a)**: todos los locales están en Argentina y el propio código lo declara como único lugar a revisar.
 - Decidido (owner, 16/11/2026): una franja por promo. Una franja es un conjunto de días con un único rango de horas. Quien necesite «lun a mié 18 a 20» y «jue a sáb 23 a 00:30» carga dos promos, y cada una cuenta contra `max_active_promotions` (dos promos son dos cupos). No hay tabla ni lista de franjas. Esto deja el modelo de 6.1 tal cual y fija el tope de 10 franjas de la tarjeta como un máximo de promos con franja, no de franjas por promo.
-- OQ-3. Una promo sin franja, ¿muestra «Ahora» todo el tiempo? Opciones: (a) no, solo «Promo»; (b) sí. **Recomiendo (a)**: «Ahora» solo tiene sentido si hay una franja.
+- OQ-3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #26): opción (a).** Una promo sin franja muestra solo «Promo», sin «Ahora». Una promo sin franja, ¿muestra «Ahora» todo el tiempo? Opciones: (a) no, solo «Promo»; (b) sí. **Recomiendo (a)**: «Ahora» solo tiene sentido si hay una franja.
 - OQ-4. Refresco del badge con la página abierta. Opciones: (a) sin intervalo (precedente de «Abierto ahora»); (b) recalcular cada minuto. **Recomiendo (a)**.
-- OQ-5. Solapamiento con la agenda (`venue_events` ya admite un happy hour semanal). Opciones: (a) solo una ayuda en el formulario; (b) impedirlo. **Recomiendo (a)**: son cosas distintas (agenda vs beneficio) y el dueño puede querer ambas.
+- OQ-5. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #27): opción (a).** Si el local ya tiene un happy hour en su agenda, el formulario muestra una ayuda pero no lo impide. Solapamiento con la agenda (`venue_events` ya admite un happy hour semanal). Opciones: (a) solo una ayuda en el formulario; (b) impedirlo. **Recomiendo (a)**: son cosas distintas (agenda vs beneficio) y el dueño puede querer ambas.
 
 ## 12. Dependencias
 

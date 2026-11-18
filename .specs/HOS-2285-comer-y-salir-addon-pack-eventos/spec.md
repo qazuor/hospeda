@@ -162,7 +162,8 @@ contrato `billing-verticals-contract`, rechazo `NOT_ELIGIBLE` / `ADDON_NOT_ELIGI
 filtro de ofertas) se diseña y se implementa en **HOS-2292**, que pasa a ser prerrequisito
 de HOS-2285, HOS-2286, HOS-2287 y HOS-2289. Acá solo se declara lo que este add-on necesita:
 
-- Capacidad base: el plan debe otorgar `manage_venue_events`.
+- **Regla general (decidida por el owner, 18/11/2026, HOS-2252 ronda 1, #3):** un complemento se ofrece **cuando el plan ya tiene la capacidad base, nunca por el nombre del plan.**
+- Capacidad base: el plan debe otorgar `manage_venue_events`. **El plan Básico sí califica**: tiene 1 evento base y con el pack llega a 6.
 - No se ofrece cuando `max_venue_active_events` ya es «sin tope» (premium).
 - Sin regla de rubro (los eventos sirven a todo rubro de venue).
 - La oferta debe poder identificarse por la clave que otorga (`max_venue_active_events`),
@@ -215,6 +216,7 @@ que el add-on y el plan se traten igual.
    no aparece; si intenta comprarlo, recibe 409 `ADDON_NOT_ELIGIBLE` (regla de HOS-2292).
 3. Dado un dueño sin `manage_venue_events` (p. ej. un plan sin eventos), entonces no ve la
    oferta y la compra se rechaza igual (regla de HOS-2292).
+3b. Dado un dueño del plan **Básico** (con `manage_venue_events` y 1 evento), entonces **sí** ve la oferta y puede comprarla; con el pack su tope efectivo es 6 (decidido el 18/11/2026). La regla no nombra ningún plan.
 4. Dado un dueño en trial, entonces no puede comprarlo (`NO_VALID_TITLE`).
 5. Dado un dueño pro que llega al tope en el editor, cuando toca «Sumar +5 eventos»,
    entonces llega a la página de complementos con el pack preseleccionado.
@@ -263,9 +265,9 @@ Decidido (owner, 16/11/2026):
    owner antes de crear el producto en producción. La variante por temporada se evalúa
    cuando se resuelva HOS-2094.
 
-Abierta (menor): **¿puede comprarlo un plan básico?** Básico tiene 1 evento de fecha única;
-+5 daría 6. Recomendación: sí, la regla de capacidad base alcanza y no se introduce una
-regla por nombre de plan. Se cierra dentro de HOS-2292.
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #3): ¿puede comprarlo un plan básico? Sí.** Básico tiene 1 evento de fecha única; +5 daría 6. La regla de capacidad base alcanza y no se introduce una regla por nombre de plan. Con esto HOS-2292 puede pasar a `kind-spec`, con el diseño de 6.4 de esta spec.
+
+**Precio (decidido el 18/11/2026, ronda 1, #6):** sigue provisorio y se confirma antes de crear el producto en producción.
 
 ## 13. Dependencias
 

@@ -136,6 +136,8 @@ Helper puro nuevo `computeNextOccurrence({ recurrence, date, weekday, startTime,
 
 Un evento semanal genera **un solo** recordatorio, para su próxima fecha (decidido por el owner). Al enviarlo se marca `reminded_at`; la suscripción queda consumida y el botón de la ficha vuelve a "Avisame" (HOS-2266, 6.2). Un nuevo "Avisame" rearma la misma fila con la próxima fecha (`reminded_at = NULL`, nuevo `remind_for_date`), lo que permite otro recordatorio, nunca uno automático.
 
+**Fecha suspendida (decidido, owner, 18/11/2026, HOS-2252 ronda 2, #15 ✱):** si la próxima fecha de un semanal se suspende (HOS-2269), se le avisa al turista y **se le pregunta si quiere que le avisemos de nuevo** para la fecha siguiente. La suscripción **no** pasa sola a la fecha siguiente ni queda consumida en silencio: queda a la espera de la respuesta. Cómo se hace la pregunta y qué pasa si no responde queda como OQ-6.
+
 `remind_for_date` se calcula al suscribirse (HOS-2266 llama a este helper) y se recalcula si cambia la fecha/día (HOS-2269). Si dos specs de eventos (HOS-2254) ya crearon un helper equivalente, se reusa ese: el primero que mergee lo crea.
 
 ### 6.7 Anti-spam
@@ -164,6 +166,7 @@ El gate se evalúa en cada corrida, no al suscribirse: en cuanto el local deja d
 - AC-11: Un recordatorio no se pierde por haber recibido ya un correo comercial ese día (clase `transactional`).
 - AC-13: Tabla de horarios (Argentina): inicio 14:59 -> día anterior 18:00; inicio 15:00 -> mismo día 12:00; inicio 23:00 -> mismo día 12:00; inicio 10:00 -> día anterior 18:00.
 - AC-14: Un evento semanal suspendido para la próxima fecha (HOS-2269) no genera recordatorio para esa fecha mientras dure la suspensión; si se reanuda con tiempo suficiente (2 h), el recordatorio sale.
+- AC-15: Cuando la próxima fecha de un semanal se suspende, el turista suscripto recibe el aviso de suspensión y se le pregunta si quiere que le avisemos de nuevo para la fecha siguiente. Si responde que sí, la suscripción se rearma para esa fecha (nuevo `remind_for_date`, `reminded_at = NULL`); si responde que no o no responde, no se programa otro recordatorio y el botón vuelve a "Avisame".
 - AC-12: `pnpm test` del guard de registro de plantillas del outbox pasa con la plantilla nueva.
 
 ## 8. Plan de pruebas
@@ -190,10 +193,12 @@ El gate se evalúa en cada corrida, no al suscribirse: en cuanto el local deja d
 - OQ-2 (resuelta): Decidido (owner, 16/11/2026): si el evento empieza antes de las 15:00, el recordatorio sale el día anterior a las 18:00; si no, el mismo día a las 12:00. Nunca con menos de 2 h de anticipación. Hora de Argentina.
 - OQ-3: Secreto de los links de baja. Opciones: (1) reusar `HOSPEDA_NEWSLETTER_HMAC_SECRET` con un `kind` distinto en el payload (cero env nueva, recomendada); (2) env nueva `HOSPEDA_VENUE_NOTIFICATIONS_HMAC_SECRET` (aislamiento, pero hay que registrarla en `@repo/config`, setearla en Coolify y redeployar).
 - OQ-4: Tope defensivo de 5 recordatorios por usuario y día: ¿alcanza? Recomiendo sí.
-- OQ-5: Si la próxima fecha de un evento semanal está suspendida (HOS-2269) y el recordatorio de esa fecha se omite, ¿la suscripción pasa sola a la fecha siguiente o queda consumida sin aviso? Recomiendo que quede consumida y el botón vuelva a "Avisame" cuando pase la fecha suspendida, para no mandar algo que el turista no pidió para esa semana.
+- OQ-5 (resuelta): **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #15 ✱):** se le avisa al turista y se le pregunta si quiere que le avisemos de nuevo para la fecha siguiente (se aparta de la recomendación original). Texto original: si la próxima fecha de un evento semanal está suspendida (HOS-2269) y el recordatorio de esa fecha se omite, ¿la suscripción pasa sola a la fecha siguiente o queda consumida sin aviso? Recomiendo que quede consumida y el botón vuelva a "Avisame" cuando pase la fecha suspendida, para no mandar algo que el turista no pidió para esa semana.
+- OQ-6 (abierta, la abre la decisión #15): ¿cómo se hace la pregunta de "avisame de nuevo"? Candidatos: un enlace en el correo de suspensión de HOS-2269 que rearma la suscripción, o una pregunta al volver a la ficha. Y: ¿qué pasa si el turista no responde (se asume que no)? ¿Hasta cuándo vale el enlace? Hay que decidirlo junto con HOS-2269 antes de implementar el T-5.
 
 ## 11. Dependencias
 
+- Límite mensual de avisos a seguidores (decisión #48 ✱ de HOS-2252 ronda 2, 18/11/2026; clave nueva por HOS-2259, valores por HOS-2281): Pro 4 por mes, Premium sin tope. El corte en el envío queda abierto (HOS-2281, pregunta 3) y este job lo tiene que respetar.
 - HOS-2266 (tablas, gate), HOS-2291 (ids estables de eventos), HOS-2259/2281 (clave y grant), HOS-2255 (link de entradas, opcional), HOS-2269 (`suspended_for_date`, opcional hasta que exista).
 - Usa el outbox de HOS-1423/1448 ya mergeado.
 

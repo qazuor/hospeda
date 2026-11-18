@@ -39,9 +39,9 @@ Un local premium puede marcar una promo como «solo para turistas VIP». Esa pro
 ## 4. Fuera de alcance
 
 - Crear la clave y asignarla a los planes: HOS-2259 (catálogo, migración, G3 y G18) y HOS-2282 (additive grant a premium).
-- Gate de VIP en alojamiento. Hoy es libre; cambiarlo rompe lo existente (ver OQ-4).
+- Gate de VIP en alojamiento. Hoy es libre; limitar a Premium el interruptor VIP de las promos de alojamiento va **en un issue aparte, HOS-2357** (decidido el 18/11/2026, HOS-2252 ronda 2, #31 ✱; ver OQ-4).
 - Cerrar la fuga de promos VIP en la ficha de alojamiento: es el bug aparte HOS-2293 (accommodation VIP promo leak), relacionado pero separado de esta spec. Esta spec no lo arregla; en local la fuga se evita desde el diseño (la ruta pública de HOS-2271 filtra `tourist_audience = 'plus'`).
-- Mostrar el nombre del alojamiento en «Beneficios exclusivos» (solo se agrega el del local, ver OQ-3).
+- (Eliminado el 18/11/2026.) El nombre del comercio en «Beneficios exclusivos» **sí** se muestra también en las promos de alojamiento (decisión #30 ✱, ver 6.4 y OQ-3).
 
 ## 5. Estado actual del código
 
@@ -74,7 +74,7 @@ Verificado en `origin/staging` (`92994b9dc6`).
 - Las rutas `POST` y `PUT`/`PATCH` de HOS-2270 declaran `sectionTraits: ({ body }) => (body?.touristAudience === 'vip' ? ['vipPromotions'] : [])`. El detector vive en un módulo propio, `venue-promotion-vip-gate.ts`, junto a `menu-item-photo-gate.ts`, para testearlo sin armar un contexto de Hono.
 - Sin la clave: 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_vip_promotions'` (se rechaza, no se degrada en silencio a `plus`: el dueño lo ve y puede corregir, como las fotos de platos).
 - Con `intent: 'delete'` (pausar o borrar) el rasgo no se pide: una promo VIP ya cargada se puede pausar o borrar siempre.
-- Sin el rasgo, el `PATCH` que no menciona `touristAudience` (por ejemplo cambiar el título) pasa con la clave de la sección (ver OQ-2). Pasar una promo VIP a `plus` es un `write` normal.
+- **Sin Premium (sin el rasgo), el dueño no puede editar una promo VIP ya cargada** (decidido, owner, 18/11/2026, HOS-2252 ronda 2, #29 ✱; ver OQ-2). Un `PATCH`/`PUT` sobre una promo existente con `touristAudience = 'vip'` en la base exige el rasgo `vipPromotions`, aunque el body no mencione `touristAudience` (por ejemplo, cambiar el título). Como `sectionTraits` hoy solo ve el body, hace falta que el detector compare con la fila guardada (patrón del helper de HOS-2264 6.2). Pausar y borrar siguen sin pedir el rasgo (`intent: 'delete'`). Si pasar una VIP a `plus` cuenta como editar, queda como OQ-6.
 
 ### 6.3 Qué ve cada visitante en la ficha pública (session-blind)
 
@@ -97,7 +97,7 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
   `(entity_type = 'accommodation' AND entity_id IS NULL) OR (entity_type = 'accommodation' AND EXISTS alojamiento PUBLISHED con id = entity_id) OR (entity_type = 'venue' AND EXISTS local PUBLISHED con id = entity_id)`.
   Como `entity_id` no tiene FK, la existencia del listado se resuelve con `EXISTS` por tipo (no con una relación Drizzle).
   El predicado de «local publicado» es el mismo que usa el modelo de venue para lecturas públicas (`publicationStatus = 'PUBLISHED'`, `venue.model.ts:218`), reusado y no reescrito. Se compara por columna, no por vertical (G1).
-- El ítem de la lista suma `venueId`, `venueName` y `venueSlug` (nulos para alojamiento), resueltos con una sola consulta por página, no N. `ExclusiveDealsList.client.tsx` muestra el nombre del local y un enlace a `/comer-y-salir/{slug}/` cuando existe, y una marca «VIP» cuando `touristAudience === 'vip'` (el campo ya viene en el ítem).
+- El ítem de la lista suma `venueId`, `venueName` y `venueSlug` (nulos para alojamiento), resueltos con una sola consulta por página, no N. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #30 ✱):** «Beneficios exclusivos» muestra el nombre del comercio **también en las promos de alojamiento** (el nombre del alojamiento de la promo). Esto **toca una pantalla existente** y su ruta: el ítem suma el nombre del alojamiento, resuelto en la misma consulta por página (el nombre de campo y qué mostrar cuando la promo vale para todos los alojamientos del dueño, `entity_id` nulo, queda como OQ-7). `ExclusiveDealsList.client.tsx` muestra el nombre del comercio (local o alojamiento), un enlace a `/comer-y-salir/{slug}/` cuando es un local, y una marca «VIP» cuando `touristAudience === 'vip'` (el campo ya viene en el ítem).
 - Orden y paginación: una sola tabla, una sola consulta. No hay unión de dos fuentes.
 
 ### 6.5 Editor del dueño
@@ -105,13 +105,13 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 - `VenuePromotionForm` (HOS-2271) suma el interruptor «Exclusiva para turistas VIP».
   - Con el rasgo (`useListingPlanGate({ vertical: 'venue', entitlementKey: 'venue_vip_promotions' })` abierto): se puede activar, con la ayuda «Solo la ven los turistas con plan VIP. Los demás ven que existe y el plan para acceder».
   - Sin el rasgo: el interruptor queda deshabilitado con el upsell y el nombre del plan que lo habilita (`resolveVenueUpsellPlans` suma `vipPromotions`, resuelto desde el rasgo del catálogo con un helper `sectionTraitEntitlement(sectionId, traitId)`, generalización del `menuTraitEntitlement` actual). Si ningún plan lo lista todavía, texto genérico.
-  - Una promo VIP ya cargada sin el rasgo: el interruptor se ve encendido y bloqueado, y se puede apagar (pasa a `plus`).
+  - Una promo VIP ya cargada sin el rasgo: **el formulario de edición queda bloqueado** (decisión #29 ✱), con el upsell. Solo se puede pausar o borrar. Si el interruptor puede apagarse (pasar a `plus`) queda como OQ-6.
   - Si la API devuelve 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_vip_promotions'`, se muestra el upsell (el gate pudo cambiar entre la lectura y el guardado).
 - En la lista del dueño, las promos VIP llevan la marca «VIP».
 
 ### 6.6 Baja de plan (decisión 6)
 
-- Premium a pro, o a básico: las promos VIP vigentes siguen viéndose para los VIP hasta su fin, siguen contando como activas y se pueden pausar o borrar. No se crean ni se activan nuevas VIP, y no se puede pasar una `plus` a `vip`.
+- Premium a pro, o a básico: las promos VIP vigentes siguen viéndose para los VIP hasta su fin, siguen contando como activas y se pueden pausar o borrar, **pero no editar** (decisión #29 ✱). No se crean ni se activan nuevas VIP, y no se puede pasar una `plus` a `vip`.
 - No se oculta ni se degrada ninguna VIP a `plus`: un degradado silencioso cambiaría a quién se le muestra algo que el dueño prometió. Ver OQ-1.
 - El tope `max_active_promotions` y la clave `create_promotions` siguen su regla (HOS-2270): VIP no tiene tope propio.
 
@@ -131,12 +131,13 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 - Público: `GET /api/v1/public/venues/{id}/promotions` → `{ items: VenuePromotionPublic[], vipPromotionsCount: number }`.
 - Protegido (turista): `GET /api/v1/protected/owner-promotions/exclusive-deals?venueId=&accommodationId=&page=&pageSize=`. Errores: 401 sin sesión; 403 `ENTITLEMENT_REQUIRED` sin `exclusive_deals` (como hoy); 400 si `venueId` no es uuid.
 - Protegido (dueño): `touristAudience` en el body de las rutas de HOS-2270; 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_vip_promotions'`.
-- Item de lista: `+ venueId, venueName, venueSlug` (nulos para alojamiento; `venueId` se deriva de `entity_id` cuando `entity_type = 'venue'`).
+- Item de lista: `+ venueId, venueName, venueSlug` (nulos para alojamiento; `venueId` se deriva de `entity_id` cuando `entity_type = 'venue'`) y el nombre del alojamiento para promos de alojamiento (decisión #30 ✱, nombre de campo en OQ-7).
 
 ## 8. UX
 
+- Tarjeta del listado: si el local tiene **solo promos VIP**, la tarjeta pública muestra «Promo VIP» (decisión #32 ✱; dato en HOS-2271 6.4). Con promos `plus` muestra «Promo», como hasta ahora. No revela títulos ni beneficios.
 - Teaser: bloque sobrio con un ícono de «VIP», texto y un botón. Sin mostrar títulos ni números de descuento. Para quien tiene VIP, el mismo bloque muestra las tarjetas.
-- «Beneficios exclusivos»: marca «VIP» y nombre del local.
+- «Beneficios exclusivos»: marca «VIP» y nombre del comercio (local o alojamiento).
 - Accesibilidad: el teaser es texto, no imagen; el botón tiene nombre claro; el estado «cargando» no anuncia alertas.
 
 ## 9. Criterios de aceptación
@@ -144,7 +145,7 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 - AC-1. Dado un dueño con `venue_vip_promotions`, cuando guarda una promo con `touristAudience: 'vip'`, entonces se crea con audiencia `vip`.
 - AC-2. Dado un dueño sin esa clave, cuando guarda una promo `vip`, entonces 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_vip_promotions'`; y con `plus` se crea normalmente.
 - AC-3. Dado un dueño con `vip_promotions_access` de turista pero sin `venue_vip_promotions` de local, entonces no puede crear promos VIP (las claves no se cruzan). Y al revés: con `venue_vip_promotions` y sin las de turista, puede crearlas.
-- AC-4. Dado un dueño que bajó de premium a pro, entonces sus promos VIP vigentes se siguen mostrando a los VIP, puede pausarlas o borrarlas, y no puede crear ni activar nuevas VIP.
+- AC-4. Dado un dueño que bajó de premium a pro, entonces sus promos VIP vigentes se siguen mostrando a los VIP, puede pausarlas o borrarlas, y no puede crear ni activar nuevas VIP ni **editar** las cargadas.
 - AC-5. Dada una ficha de local con una promo VIP vigente, entonces el HTML del servidor trae el teaser con el número y no contiene el título, la descripción ni el beneficio de esa promo.
 - AC-6. Dada `GET /public/venues/{id}/promotions`, entonces `items` no incluye promos `vip` y `vipPromotionsCount` es el número de VIP vigentes de ese local publicado.
 - AC-7. Dado un turista con `vip_promotions_access`, cuando abre la ficha, entonces la isla muestra el detalle de las promos VIP del local.
@@ -154,7 +155,9 @@ Reglas de privacidad: el detalle de una promo VIP no sale de la API sin autentic
 - AC-11. Dadas promos VIP de local y de alojamiento, cuando un turista VIP abre «Beneficios exclusivos», entonces ve ambas, en una sola lista paginada.
 - AC-12. Dada una promo de un local no publicado, entonces no aparece en «Beneficios exclusivos».
 - AC-13. Dado el guard `cacheable-pages-are-session-blind`, entonces sigue verde con la ficha nueva.
-- AC-14. Dado un `PATCH` que solo cambia el título de una promo VIP existente sin tener el rasgo, entonces pasa; con `touristAudience: 'vip'` en el body, 403.
+- AC-14. Dado un dueño sin el rasgo, un `PATCH` que solo cambia el título de una promo VIP existente responde 403 `ENTITLEMENT_REQUIRED` con `entitlementKey: 'venue_vip_promotions'` (decisión #29 ✱), y el editor la muestra bloqueada. Pausar y borrar siguen permitidos. Sobre una promo `plus` el mismo `PATCH` pasa.
+- AC-17. Dado un local cuyas únicas promos vigentes son VIP, entonces su tarjeta del listado muestra «Promo VIP»; con al menos una promo `plus` vigente muestra «Promo»; sin promos vigentes, nada. El HTML de la tarjeta no contiene título ni beneficio de la VIP.
+- AC-16. Dada una promo de alojamiento en «Beneficios exclusivos», entonces el ítem muestra el nombre del alojamiento, igual que las de local muestran el nombre del local (decisión #30 ✱).
 - AC-15. Dada la clave `venue_vip_promotions` ausente del catálogo (HOS-2259 no mergeada), entonces el build o el guard G3 falla, no el runtime.
 
 ## 10. Plan de pruebas
@@ -177,11 +180,14 @@ Riesgos:
 - R-4. El teaser cacheado puede quedar con un número viejo hasta que corra la revalidación (HOS-2270, AC-16).
 
 Preguntas:
-- OQ-1. Baja de premium con promos VIP cargadas. Opciones: (a) se respetan hasta que venzan, solo se frena crear nuevas; (b) se pausan; (c) se pasan a `plus` (más visibles). **Recomiendo (a)**: es la decisión 6 («lo confirmado se respeta») y no cambia a quién se le promete algo.
-- OQ-2. ¿Editar el texto de una VIP ya cargada sin el rasgo? Opciones: (a) sí, el rasgo solo gatea poner `vip` en el body; (b) no, se bloquea toda edición de una VIP sin el rasgo. **Recomiendo (a)**: más simple y no castiga correcciones de un typo.
-- OQ-3. Nombre del local en «Beneficios exclusivos». Opciones: (a) mostrarlo solo para promos de local, como pide esta spec; (b) mostrar también el del alojamiento (cambia pantalla existente). **Recomiendo (a)**, y (b) como mejora aparte.
-- OQ-4. El interruptor VIP de alojamiento hoy no tiene gate. Opciones: (a) dejarlo; (b) gatearlo con una clave análoga en una spec aparte. **Recomiendo (a)** y abrir un issue si el dueño quiere (b): cambiarlo ahora quita una función a quien ya la usa.
-- OQ-5. ¿La tarjeta del listado marca «Promo» si el local solo tiene una promo VIP? Opciones: (a) no (se alinea con que el detalle es privado); (b) sí, con «Promo VIP». **Recomiendo (a)**.
+- OQ-1. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #28): opción (a).** Si el dueño baja de Premium, sus promos VIP siguen hasta vencer. Baja de premium con promos VIP cargadas. Opciones: (a) se respetan hasta que venzan, solo se frena crear nuevas; (b) se pausan; (c) se pasan a `plus` (más visibles). **Recomiendo (a)**: es la decisión 6 («lo confirmado se respeta») y no cambia a quién se le promete algo.
+- OQ-2. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #29 ✱): opción (b).** Sin Premium el dueño **no puede editar** una promo VIP ya cargada (se aparta de la recomendación; ver 6.2, AC-14). ¿Editar el texto de una VIP ya cargada sin el rasgo? Opciones: (a) sí, el rasgo solo gatea poner `vip` en el body; (b) no, se bloquea toda edición de una VIP sin el rasgo. **Recomiendo (a)**: más simple y no castiga correcciones de un typo.
+- OQ-3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #30 ✱): opción (b).** Se muestra el nombre del comercio también en las promos de alojamiento (toca una pantalla existente; ver 6.4). Nombre del local en «Beneficios exclusivos». Opciones: (a) mostrarlo solo para promos de local, como pide esta spec; (b) mostrar también el del alojamiento (cambia pantalla existente). **Recomiendo (a)**, y (b) como mejora aparte.
+- OQ-4. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #31 ✱): opción (b).** Limitar a Premium el interruptor VIP de alojamiento va en un issue aparte, **HOS-2357**; esta spec no lo toca. El interruptor VIP de alojamiento hoy no tiene gate. Opciones: (a) dejarlo; (b) gatearlo con una clave análoga en una spec aparte. **Recomiendo (a)** y abrir un issue si el dueño quiere (b): cambiarlo ahora quita una función a quien ya la usa.
+- OQ-5. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #32 ✱): opción (b).** Si el local tiene solo promos VIP, la tarjeta pública muestra **«Promo VIP»** (se aparta de la recomendación; el cambio en el dato de la tarjeta está en HOS-2271 6.4 y AC-11). ¿La tarjeta del listado marca «Promo» si el local solo tiene una promo VIP? Opciones: (a) no (se alinea con que el detalle es privado); (b) sí, con «Promo VIP». **Recomiendo (a)**.
+- OQ-6. **Editar una VIP sin Premium: qué cuenta como editar (abierta, la abre la decisión #29).** ¿Apagar el interruptor VIP (pasar a `plus`) está permitido, o también queda bloqueado? ¿Y reactivar una VIP pausada? La spec bloquea todo `PATCH`/`PUT` de contenido y deja pausar y borrar; el resto lo define el implementador con el owner.
+- OQ-7. **Nombre del comercio en promos de alojamiento (abierta, la abre la decisión #30).** Nombre del campo del ítem y qué mostrar cuando la promo vale para todos los alojamientos del dueño (`entity_id` nulo): ¿el nombre del dueño, un texto genérico o nada?
+- OQ-8. **Tarjeta «Promo VIP» con franja viva (abierta, la abre la decisión #32).** Si el local tiene solo promos VIP y una tiene franja vigente (HOS-2272), ¿la tarjeta muestra «Ahora» o sigue en «Promo VIP»? La spec no lo decide.
 
 ## 12. Dependencias
 
@@ -204,7 +210,8 @@ Preguntas:
 4. T-4 Ruta pública: `vipPromotionsCount` y test de «no leak».
 5. T-5 `exclusive-deals`: filtro `venueId`, visibilidad por target y campos del local en el ítem. Tests de servicio y de ruta.
 6. T-6 `VenueVipPromotions.client.tsx` y su montaje en `VenuePromotions.astro`.
-7. T-7 `ExclusiveDealsList`: nombre del local, enlace y marca VIP.
+7. T-7 `ExclusiveDealsList`: nombre del comercio (local y alojamiento), enlace y marca VIP.
+7b. T-7b Tarjeta del listado: «Promo VIP» cuando el local solo tiene promos VIP (en coordinación con HOS-2271 6.4).
 8. T-8 Formulario del dueño: interruptor con rasgo, upsell y estados de baja.
 9. T-9 i18n es, en, pt.
 10. T-10 e2e, guards y smoke de staging.

@@ -14,8 +14,8 @@ areas:
 ## 1. Resumen
 
 Asigna `venue_event_notifications` a las versiones de pro y premium de venue por el
-camino «additive grant». Es el bloque más chico: dos filas de entitlement por conjunto de
-versiones y ningún límite. Reusa **sin cambios** el patrón común definido en
+camino «additive grant». Es un bloque chico: dos filas de entitlement por conjunto de
+versiones y, desde la decisión del 18/11/2026 (HOS-2252 ronda 2, #48 ✱), **un límite mensual de avisos a seguidores** (Pro 4 por mes, Premium sin tope). Reusa **sin cambios** el patrón común definido en
 `.specs/HOS-2280-comer-y-salir-grants-eventos-metricas-video/spec.md`, secciones 5.1,
 5.2, 6.1 a 6.4 y 12 (consultas C-1 a C-5). Este documento solo declara lo propio.
 
@@ -32,12 +32,15 @@ local, cambio o suspensión) se construyen detrás de `venue_event_notifications
 | Clave | Básico | Pro | Premium |
 |---|---|---|---|
 | `venue_event_notifications` | no | agrega | agrega |
+| límite mensual de avisos a seguidores (**clave nueva**, nombre a definir en HOS-2259) | no | 4 por mes | 2147483647 (sin tope) |
 
-Filas en v1: 2 de `plan_version_entitlement`. Ninguna de límite.
+**Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #48 ✱):** el plan Pro tiene un **límite de 4 avisos a seguidores por mes**; Premium no tiene tope. Eso exige una **clave de límite nueva**, que **tiene que pasar por el catálogo** (HOS-2259 la declara; G3 y G18 la vigilan) y **no existe todavía**. Su nombre, su `enforcement` (`NONE`, evaluado en vivo, como el resto de los límites nuevos) y qué cuenta como «un aviso» (ver OQ-3) se definen en HOS-2259 y en la spec de envío, no acá.
+
+Filas en v1: 2 de `plan_version_entitlement` y 2 de `plan_version_limit` (pro y premium). Ninguna del plan Básico.
 
 ## 4. Fuera de alcance
 
-- Cualquier límite de avisos (no hay decisión de tope; ver pregunta 1).
+- El **conteo y el corte** del límite mensual de avisos en el envío (HOS-2267 a HOS-2269); acá solo se asigna el valor por plan. Decisión de tope: pregunta 1.
 - El mecanismo de seguir un local y los jobs de envío (HOS-2266 a HOS-2269).
 - Otros bloques de grants.
 
@@ -53,8 +56,8 @@ Filas en v1: 2 de `plan_version_entitlement`. Ninguna de límite.
   versiones nuevas para `venue-basico` y `venue-pro`): HOS-2280 sección 5.2.
 - Trial: toma entitlements de la versión de mayor rank (`trial-ratchet.ts`, cabecera), o sea
   que un venue en trial recibirá `venue_event_notifications` apenas se otorgue a premium.
-  Para esta clave no hay límite asociado, así que el efecto es coherente (probarla es
-  gratis para quien está en trial).
+  Para la clave de entitlement no hay límite asociado; el límite mensual nuevo sí lo tiene (ver pregunta 4). Probarla es
+  gratis para quien está en trial.
   **Decidido (owner, 16/11/2026):** se acepta, y no lleva fila propia en la versión
   `trial` (solo hay límites ahí). Durante el trial, el panel de avisos muestra el aviso
   con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6) (mecanismo y texto en HOS-2262,
@@ -110,7 +113,7 @@ está **oculta** mientras ningún plan la otorga (decisión 28 del owner: no se 
 8. Antes del grant, la tabla pública de planes de venue no muestra la fila de avisos;
    después, sí, sin cambio de código web.
 9. Un venue en trial tiene la clave (por mayor rank) y ve el aviso «Incluido en Pro y
-   Premium. El plan Básico no lo tiene» en el panel de avisos.
+   Premium» en el panel de avisos (texto armado por el catálogo, HOS-2262 6.6).
 
 ## 10. Plan de tests
 
@@ -125,8 +128,7 @@ está **oculta** mientras ningún plan la otorga (decisión 28 del owner: no se 
 - R-1. Habilitar antes de que el envío exista: los avisos no salen pero la tabla promete
   avisos. Mitigación: el orden de la épica (Fase 3 antes de Fase 4) y la regla de no
   mergear el grant hasta que HOS-2266 a HOS-2269 estén en `staging` y probados.
-- R-2. Avisos sin tope: un local premium puede disparar muchos avisos. No hay límite de
-  esta clave; el rate-limit queda a cargo de HOS-2267 y HOS-2268 (pregunta 1).
+- R-2. Avisos sin tope en Premium: un local premium puede disparar muchos avisos. Pro queda acotado a 4 por mes (decisión #48 ✱); Premium no tiene tope y el rate-limit queda a cargo de HOS-2267 y HOS-2268 (pregunta 1).
 - R-3. Mismo riesgo de versiones reales que HOS-2280 (R-1 de ese issue).
 
 ## 12. Preguntas abiertas para el owner
@@ -134,16 +136,19 @@ está **oculta** mientras ningún plan la otorga (decisión 28 del owner: no se 
 1. **Tope de avisos.** Opciones: (a) sin tope, solo la clave (la decisión actual);
    (b) un límite mensual de avisos para pro. Recomendación: (a) y medir; si aparece abuso,
    se agrega un límite con el mismo patrón (clave nueva más grant).
+   **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #48 ✱): opción (b), con valores concretos.** Pro 4 avisos a seguidores por mes; Premium sin tope. Se aparta de la recomendación.
 2. **Decidido (owner, 16/11/2026): trial.** Recibe la clave por la regla de mayor rank y
    muestra el aviso con los planes que la incluyen, leídos del catálogo (HOS-2262 6.6). No se
    bloquea.
+3. **(abierta, la abre la decisión #48) Qué cuenta como «un aviso».** ¿Cada correo enviado a un seguidor, o cada evento anunciado/cambiado por el local (con N seguidores es un aviso)? ¿Cuentan los tres tipos (recordatorio, evento nuevo, cambio) o solo los que el local dispara? ¿Qué pasa al llegar a 4: se omite el aviso en silencio, se avisa al dueño? ¿Mes calendario o ventana móvil? La spec no lo decide; hay que cerrarlo antes de implementar el corte en HOS-2267 a HOS-2269.
+4. **(abierta, la abre la decisión #48) Límite en el trial.** El trial toma los límites de la versión de menor rank (HOS-2280, 5.4). ¿El trial tiene una fila de límite propia para esta clave (valor mínimo para probar, como las otras) o hereda la del plan básico (que no la tiene)? Hay que decidirlo junto con HOS-2259.
 
 Consultas de solo lectura: C-1 a C-5 de HOS-2280, cambiando `in (...)` de C-3 por
 `venue_event_notifications`.
 
 ## 13. Dependencias
 
-- HOS-2259 (clave), pasada final de HOS-1352 y HOS-2066 (orden de la épica post-MVP).
+- HOS-2259 (claves, incluida la **clave nueva de límite mensual de avisos**, G3 y G18), pasada final de HOS-1352 y HOS-2066 (orden de la épica post-MVP).
 - HOS-2266, HOS-2267, HOS-2268, HOS-2269 construidas y en `staging` antes de habilitar.
 - Misma tabla `ADDITIVE_GRANTS_AFTER_0144` que HOS-2280 (coordinar el orden de merge).
 
@@ -158,8 +163,8 @@ Consultas de solo lectura: C-1 a C-5 de HOS-2280, cambiando `in (...)` de C-3 po
 ## 15. Desglose de tareas
 
 1. Consultas de solo lectura y confirmación de versiones (0,25 día).
-2. `catalog.ts` y tabla de grants post-0144 (0,25 día).
-3. Migración SQL + data-migration de seed + tests (0,5 día).
+2. `catalog.ts` y tabla de grants post-0144, con la fila del límite mensual (0,25 día).
+3. Migración SQL + data-migration de seed (entitlement y límite) + tests (0,75 día).
 4. Smoke de staging y firma (0,5 día).
 
 ## 16. Linear

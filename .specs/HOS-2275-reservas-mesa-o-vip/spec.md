@@ -304,16 +304,20 @@ del local (no se traducen).
 
 ## 12. Preguntas abiertas para el owner
 
-Decididas en HOS-2260 (16/11/2026): OQ-1, 2, 3, 4, 5, 8 y OQ-C. Siguen abiertas allá
-OQ-9, 11, 12 y 13. Específicas:
+Decididas en HOS-2260 (16/11/2026): OQ-1, 2, 3, 4, 5, 8 y OQ-C. OQ-9, 10, 11, 12 y 13
+se decidieron el 18/11/2026 (HOS-2252 ronda 2, #33 a #37), abajo. Específicas:
 
 - OQ-C: **Decidido (owner, 16/11/2026): aforo total en personas por noche, un solo
   número** (opción 1 de las originales; no la 2 recomendada). Tipos con horario o plano de
   mesas: HOS-2295.
 - OQ-D: **Decidido (owner, 16/11/2026): una solicitud pendiente retiene las personas que
   pidió.** Contra asumido: un local que no contesta bloquea aforo hasta el vencimiento.
-- OQ-E: **¿el local puede cargar una reserva a mano** (alguien que llamó)? Sigue abierta
-  (menor). Recomendada: no en la etapa 1. Contra: el panel no refleja la ocupación real y
+- OQ-9 de HOS-2260 (#33): **decidido**: no se puede borrar un local o evento con anotados o reservas confirmadas; primero hay que cancelarlos, y se les avisa (el correo de cancelación del local, 6.7).
+- OQ-10 de HOS-2260 (#34): **decidido**: el admin ve las reservas solo en lectura (`venueReservation.viewAll`), desde la etapa 2. No hay rutas de admin en esta spec.
+- OQ-11 de HOS-2260 (#35): **decidido**: no hay recordatorio de reserva en la etapa 1.
+- OQ-12 de HOS-2260 (#36): **decidido**: la ventana de reserva es fija, de 2 horas a 60 días (6.3).
+- OQ-13 de HOS-2260 (#37): **decidido**: la lista de invitados no descuenta del aforo de reservas.
+- OQ-E: **¿el local puede cargar una reserva a mano** (alguien que llamó)? **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #39): no en la etapa 1.** Contra: el panel no refleja la ocupación real y
   la disponibilidad pública queda optimista.
 
 ## 13. Dependencias

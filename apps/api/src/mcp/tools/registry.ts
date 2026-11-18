@@ -7,6 +7,10 @@
  */
 
 import { getHelpTool } from './help/get-help';
+import { confirmBenefitUsageTool, rejectBenefitUsageTool } from './host-trade/answer-benefit-usage';
+import { listBenefitUsagesTool } from './host-trade/list-benefit-usages';
+import { searchProvidersTool } from './host-trade/search-providers';
+import { undoBenefitRejectionTool } from './host-trade/undo-benefit-rejection';
 import { getInquiryTool } from './inquiry/get-inquiry';
 import { listInquiriesTool } from './inquiry/list-inquiries';
 import { replyInquiryTool } from './inquiry/reply-inquiry';
@@ -41,5 +45,10 @@ export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     getHelpTool,
     listInquiriesTool,
     getInquiryTool,
-    replyInquiryTool
+    replyInquiryTool,
+    searchProvidersTool,
+    listBenefitUsagesTool,
+    confirmBenefitUsageTool,
+    rejectBenefitUsageTool,
+    undoBenefitRejectionTool
 ];

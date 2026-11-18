@@ -248,8 +248,8 @@ Decidido (owner, 16/11/2026):
 - Datos vivos: prod 0 promos, staging 10 sin ninguna owner-wide.
 
 Siguen abiertas (menores, con recomendación):
-- OQ-3. Cupo de canjes (`maxRedemptions`) en locales. Opciones: (a) no pedirlo, hoy nada lo incrementa; (b) pedirlo como en alojamiento. **Recomiendo (a)** (YAGNI).
-- OQ-4. Tras una baja de plan, ¿las promos que exceden el nuevo tope se siguen mostrando hasta que venzan? Opciones: (a) sí, solo se bloquea crear (decisión 6 leída literal); (b) se pausan las que exceden. **Recomiendo (a)**, igual que alojamiento.
+- OQ-3. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #21): opción (a).** Las promos no tienen cupo de canjes. Cupo de canjes (`maxRedemptions`) en locales. Opciones: (a) no pedirlo, hoy nada lo incrementa; (b) pedirlo como en alojamiento. **Recomiendo (a)** (YAGNI).
+- OQ-4. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #22): opción (a).** Si el plan baja, las promos que sobran siguen hasta vencer; solo se frena crear nuevas. Tras una baja de plan, ¿las promos que exceden el nuevo tope se siguen mostrando hasta que venzan? Opciones: (a) sí, solo se bloquea crear (decisión 6 leída literal); (b) se pausan las que exceden. **Recomiendo (a)**, igual que alojamiento.
 - OQ-5. Dónde se guarda el texto de `special_offer`: (a) en `description` (sin columna nueva); (b) columna propia. **Recomiendo (a)** salvo que HOS-2272/2273 necesiten el texto aparte.
 - OQ-6. Purga sin FK: cómo declara `purged-closed-list.json` / `CONTENT_TABLES` una tabla que cuelga por id polimórfico. A resolver leyendo el guard `check-purged-closed-list` al implementar T-5.
 

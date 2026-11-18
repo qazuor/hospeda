@@ -28,7 +28,7 @@ Esta spec **sólo escribe** datos. Las consultas de agregación, las rutas del d
 
 ## 3. Objetivos
 
-- G-1. Registrar un clic por canal en la ficha pública del local: teléfono, mapa o cómo llegar, web, Instagram, «Comprar entrada» (con el id del evento) y WhatsApp (ver OQ-1).
+- G-1. Registrar un clic por canal en la ficha pública del local: teléfono, mapa o cómo llegar, web, Instagram, «Comprar entrada» (con el id del evento) y WhatsApp (botón nuevo, ver 7.8 y OQ-1).
 - G-2. Anónimo, igual que las vistas: hash de visitante diario, sin IP ni datos personales.
 - G-3. Mecanismo que no bloquea la navegación (`navigator.sendBeacon`).
 - G-4. Modelo que soporta objetivos a nivel evento (columna `event_id`) para HOS-2265, sin otra migración.
@@ -41,7 +41,7 @@ Esta spec **sólo escribe** datos. Las consultas de agregación, las rutas del d
 - NG-2. Medir la impresión de un evento en la ficha (vista del evento): decide HOS-2265. Esta spec sólo deja el valor `EVENT_IMPRESSION` en el enum para no obligar a otra migración (ver 7.1).
 - NG-3. Eventos de PostHog para el local. No se agregan (OQ-4).
 - NG-4. Otras entidades (alojamiento, experiencia, post). El modelo es genérico por `entity_type`, pero el Zod de captura sólo admite `VENUE` hoy.
-- NG-5. Crear un botón de WhatsApp en la ficha del local (ver OQ-1).
+- NG-5. (Eliminado el 18/11/2026.) El botón de WhatsApp **sí** entra en esta spec: ver 7.8 y OQ-1.
 
 ## 5. Estado actual del código (verificado en `origin/staging`)
 
@@ -71,7 +71,7 @@ Conclusión: la opción B del issue (columna de tipo en `entity_views`) ya fue e
 - Teléfonos (móvil y fijo) y web de `contactInfo`: `apps/web/src/components/venue/VenueContactBlock.astro` (`toTelHref`, línea 67; ancla de sitio web con `rel="noopener noreferrer"`).
 - Redes sociales (Instagram, etc.): mismo archivo, lista `SOCIAL_LINKS`.
 - Mapa: `apps/web/src/components/venue/VenueAddress.astro:52` ("Ver en el mapa", `buildVenueMapUrl`).
-- **WhatsApp: no existe en la ficha del local.** `VenueContactBlock.astro` lo dice dos veces: `whatsapp` se sacó de `VenueSocialNetworks` (HOS-1076) y de `contactInfo` público (HOS-2042) porque el número se gatea por visitante en otro endpoint. `packages/schemas/src/entities/venue/venue.access.schema.ts:37-39` lo confirma. El criterio del issue pide medirlo, pero no hay clic que medir (ver OQ-1).
+- **WhatsApp: no existe en la ficha del local.** `VenueContactBlock.astro` lo dice dos veces: `whatsapp` se sacó de `VenueSocialNetworks` (HOS-1076) y de `contactInfo` público (HOS-2042) porque el número se gatea por visitante en otro endpoint. `packages/schemas/src/entities/venue/venue.access.schema.ts:37-39` lo confirma. El criterio del issue pide medirlo y el owner decidió (18/11/2026) agregar el botón ahora: ver 7.8 y OQ-1.
 - «Comprar entrada»: no existe todavía. Lo agrega HOS-2255 (`.specs/HOS-2255-venue-events-ticket-link/spec.md`).
 
 ### 5.4 Los eventos del local no tienen id estable
@@ -100,7 +100,7 @@ Se elige A. El nombre sigue a la familia de telemetría vecina (`entity_views`, 
 
 - `PHONE_CLICK`, `MAP_CLICK`, `WEBSITE_CLICK`, `INSTAGRAM_CLICK`, `TICKET_CLICK`, `WHATSAPP_CLICK`, `EVENT_IMPRESSION`.
 
-`WHATSAPP_CLICK` y `EVENT_IMPRESSION` entran ya aunque nadie los emita todavía: agregar un valor a un enum pg es barato pero obliga a coordinar migraciones entre hermanas, y la coordinación es lo caro. Un valor sin emisor no cambia ningún número.
+`EVENT_IMPRESSION` entra ya aunque nadie lo emita todavía (`WHATSAPP_CLICK` lo emite el botón de 7.8): agregar un valor a un enum pg es barato pero obliga a coordinar migraciones entre hermanas, y la coordinación es lo caro. Un valor sin emisor no cambia ningún número.
 
 Nota para HOS-2255: ellos asumieron `kind = 'ticket_click'` en minúsculas. El repo usa mayúsculas para enums pg; el valor es `TICKET_CLICK`.
 
@@ -180,6 +180,7 @@ Consecuencia: el hash de clic y el de vista de un mismo usuario logueado no coin
   - HOS-2255 pone `TICKET_CLICK` + `data-interaction-event-id` en su botón. **No hace falta un tracker aparte** (HOS-2255 planea `VenueEventTicketClickTracker.client.tsx` escuchando `[data-venue-event-ticket]`): basta que su botón lleve el atributo común. Avisar a esa spec.
 - El `entityId` del local lo toma la isla de su prop (igual que `EntityViewTracker`).
 - Por qué isla y no un `<script>` de Astro: la app ya hashea los scripts inline para la CSP (`csp-soft-nav-script-hashes.ts`) y una isla `.tsx` queda fuera del barrido de sesión, igual que `EntityViewTracker`. La pérdida de un clic antes de `client:idle` es despreciable (la isla hidrata en el primer idle del navegador).
+- `WHATSAPP_CLICK`: lo emite el botón nuevo de 7.8, con `data-interaction-kind="WHATSAPP_CLICK"`.
 - Limitación que se documenta en el panel de HOS-2261: copiar un teléfono sin tocarlo, o abrir el enlace con el menú contextual, no cuenta.
 
 ### 7.7 Retención y limpieza
@@ -188,6 +189,18 @@ Consecuencia: el hash de clic y el de vista de un mismo usuario logueado no coin
 - Decidido (owner, 16/11/2026): las interacciones se guardan **120 días** (el horizonte común de este cron sube de 95 a 120 para vistas, clics de aliados y esta tabla; ver OQ-2). HOS-2261 muestra hasta 90, lo que deja 30 días de margen para un cron caído.
 - Rollup mensual `entity_interaction_monthly_rollups` desde el primer día, en esta misma spec: tarea T-7 (ver OQ-6). La purga destruye lo que el rollup resume, así que el rollup no puede llegar después.
 - Documentación a actualizar: `docs/guides/view-tracking-privacy.md` (sección nueva de interacciones; "la ventana más ancha es 30 días" deja de ser cierto), `apps/api/docs/route-architecture.md` (View Tracking Routes), `packages/db/CLAUDE.md` (lista de tablas append-only lean).
+
+### 7.8 Botón de WhatsApp (decidido por el owner, 18/11/2026, HOS-2252 ronda 1 #1)
+
+Se agrega **ahora** un botón de WhatsApp en la ficha de Comer y salir, y se mide su clic (`WHATSAPP_CLICK`).
+
+- **Quién lo ve lo elige el dueño**, con un ajuste **por ficha** con dos valores: «público» o «solo usuarios logueados».
+- **Alcance de esta spec:** campo nuevo en el local (migración estructural), control en el editor del dueño, el botón en la ficha y su medición. Entran en el desglose (ver 14, T-10 a T-12).
+- **Modo «solo logueados»:** las páginas son *session-blind* (5.5), así que el número **no puede ir en el HTML**. Una isla React lo pide a un endpoint **protegido** y recién entonces arma el enlace. El visitante sin sesión ve el botón y, al tocarlo, se le pide iniciar sesión (el detalle de la UX queda como OQ-7).
+- **Modo «público»:** el número va en el HTML y **cualquier scraper puede leerlo**. El editor tiene que decírselo al dueño al elegir ese modo.
+- **Encaje con HOS-1076 y HOS-2042:** hoy ocultan `whatsapp` de `VenueSocialNetworks` y del `contactInfo` público (`venue.access.schema.ts:37-39`; `VenueContactBlock.astro`). Hay que **reconciliarlos**: en el modo público el número vuelve a publicarse solo para las fichas que lo eligieron, y su schema público no puede volver a exponerlo por defecto (fail-closed). Cómo se modela en el schema público queda como OQ-8.
+- **Medición:** `WHATSAPP_CLICK` se emite con el mismo beacon y atributo común. En el modo «solo logueados» el clic se mide cuando el visitante logueado toca el botón ya resuelto.
+- **Clics del dueño:** no cuentan (decisión #1 de la ronda 2; ya cubierto por AC-8).
 
 ## 8. Criterios de aceptación
 
@@ -206,6 +219,12 @@ Consecuencia: el hash de clic y el de vista de un mismo usuario logueado no coin
 - AC-15. Antes de purgar, el rollup mensual ya resumió esas filas por local, canal y mes (y por evento cuando corresponde); el resumen sobrevive a la purga.
 - AC-13. `cacheable-pages-are-session-blind.guard.test.ts` sigue verde: ningún `.astro` lee sesión.
 - AC-14. La tabla no agrega filas a `entity_views`: un clic inserta 0 filas ahí (misma aserción que AC-13 de HOS-1063).
+- AC-16. El editor del dueño ofrece, por ficha, el ajuste de visibilidad de WhatsApp («público» / «solo logueados») y lo persiste. Una ficha sin número de WhatsApp no muestra el botón.
+- AC-17. Dada una ficha en modo «público», el botón de WhatsApp aparece con el enlace y el número en el HTML, y un clic inserta `WHATSAPP_CLICK`.
+- AC-18. Dada una ficha en modo «solo logueados», el HTML de la ficha **no contiene el número** (test de fuente y de respuesta). Un visitante logueado lo obtiene de un endpoint protegido; sin sesión ese endpoint responde 401 y no filtra el número.
+- AC-19. `cacheable-pages-are-session-blind.guard.test.ts` sigue verde con el botón (la página no lee sesión; lo hace la isla).
+- AC-20. El esquema público del local (`VenuePublicContactInfoSchema`) no expone `whatsapp` fuera del modo «público» elegido por el dueño.
+- AC-21. El editor advierte, al elegir «público», que el número puede ser copiado por terceros.
 
 ## 9. Plan de pruebas
 
@@ -220,6 +239,8 @@ Integración
 - `packages/db/test/integration/entity-interaction.model.integration.test.ts`: insert, CHECK de `event_id`, FK `SET NULL` al borrar el evento (AC-10), purga (AC-12). Usar la base de integración con el cuidado de siempre (nombre fijo, una sesión a la vez).
 - `apps/api/test/routes/interactions/capture.test.ts`: AC-1, 2, 4-9, 14. Verificar **la fila**, no sólo el status: un 202 no prueba que se registró (nota del propio `capture.ts` de aliados).
 - `apps/api/test/cron/entity-views-purge.job.test.ts`: agregar el caso de `entity_interactions` (AC-12).
+
+Botón de WhatsApp (7.8): test de que el HTML en modo «solo logueados» no contiene el número, test de ruta del endpoint protegido (401 sin sesión, número con sesión), test del editor, test de que el schema público no filtra `whatsapp` (AC-16 a AC-21).
 
 Guards a correr antes del PR: `pnpm check:guards`, `check-no-listing-dispatch`, el test de session-blind, `db:generate` sin diff pendiente.
 
@@ -236,17 +257,17 @@ E2E: no hace falta en Playwright; el beacon se cubre con el test de la isla. Se 
 
 ## 11. Preguntas abiertas para el owner
 
-- OQ-1. **WhatsApp en el local.** El criterio pide medir WhatsApp, pero la ficha del local no lo publica a propósito (HOS-1076, HOS-2042: el número se gatea por visitante).
-  1. Reservar el valor `WHATSAPP_CLICK` en el enum y no emitirlo hasta que exista el botón. Pro: no cambia nada de lo publicado. Contra: el panel de HOS-2261 no puede mostrar esa fila. Recomendada.
-  2. Agregar ya un botón de WhatsApp en la ficha, con su gate por visitante. Pro: cumple el criterio literal. Contra: es una feature de producto con riesgo de privacidad, fuera de esta épica.
-  3. Sacar WhatsApp del criterio. Pro: lo más simple. Contra: si luego se agrega, hay que migrar el enum.
+- OQ-1. **WhatsApp en el local.** **Decidido (owner, 18/11/2026, HOS-2252 ronda 1, #1): opción 2, ampliada.** Se agrega ahora el botón de WhatsApp en la ficha y se mide su clic. La visibilidad la elige el dueño con un ajuste por ficha («público» o «solo usuarios logueados»); hace falta un campo nuevo, el control en el editor y una migración. En el modo «solo logueados» el número no va en el HTML (páginas *session-blind*): lo pide una isla a un endpoint protegido. El encaje con HOS-1076 y HOS-2042 se resuelve en 7.8. Las opciones 1 y 3 quedan descartadas.
 - OQ-2. **Retención y ventana de 90 días.** Decidido (owner, 16/11/2026): las métricas se guardan 120 días; el horizonte común sube de 95 a 120 (vistas, clics de aliados y esta tabla). Da 30 días de margen para un cron caído frente a la ventana de 90 de HOS-2261. Costo asumido: los hashes pseudonimizados viven 25 días más.
 - OQ-3. **Borrar un evento y sus clics.** Decidido (owner, 16/11/2026): FK `event_id` con `ON DELETE SET NULL`. El total del local se conserva y sólo se pierde el detalle por evento. No hay CASCADE.
 - OQ-4. **PostHog.** No hay Umami en el repo; PostHog está pero el local no le manda eventos (decisión HOS-734).
   1. No mandar nada a PostHog; la tabla propia es la fuente. Recomendada (menos superficie, sin cookies).
   2. Duplicar cada clic como evento PostHog. Pro: embudos de marketing. Contra: consentimiento y un segundo número que puede no coincidir con el del panel.
-- OQ-5. **Clics del propio dueño y de staff.** Se propone no contar al dueño. Las vistas **sí** cuentan al dueño hoy; no se cambia (afectaría las cifras ya publicadas de alojamientos). Recomendada: descartar sólo al dueño. Alternativa: contarlo todo, más simple pero el dueño que prueba su teléfono infla su propia tasa.
+- OQ-5. **Clics del propio dueño y de staff.** Se propone no contar al dueño. Las vistas **sí** cuentan al dueño hoy; no se cambia (afectaría las cifras ya publicadas de alojamientos). Recomendada: descartar sólo al dueño. Alternativa: contarlo todo, más simple pero el dueño que prueba su teléfono infla su propia tasa. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #1):** los clics del propio dueño no cuentan (AC-8).
 - OQ-6. **Rollup mensual de interacciones.** Decidido (owner, 16/11/2026): se incluye desde el primer día (`entity_interaction_monthly_rollups`, extensión de `view-monthly-rollup.job.ts`, tarea T-7, último PR de esta spec). Lección de HOS-1063: el rollup "existe desde la primera migración o nunca", porque la purga destruye lo que resume. Costo asumido: una tabla y un job más, y una clave única con `event_id` nulo que necesita índice por expresión.
+
+- OQ-7. **UX del visitante sin sesión en el modo «solo logueados» (abierta, la abre la decisión #1 de la ronda 1).** ¿El botón se muestra siempre y al tocarlo pide iniciar sesión, o se oculta hasta tener sesión? Hay que decidirlo antes de implementar T-11. La spec no lo resuelve.
+- OQ-8. **Modelado del número en el schema público (abierta).** ¿El modo «público» agrega `whatsapp` condicionado al ajuste en `VenuePublicContactInfoSchema`, o va por un campo aparte del payload público? Hay que respetar el diseño fail-closed de HOS-2042. También queda abierto el valor por defecto del ajuste en fichas existentes (se propone «solo logueados», el más conservador) y el nombre de la columna.
 
 ## 12. Etiquetas de smoke y Novedades
 
@@ -270,6 +291,9 @@ E2E: no hace falta en Playwright; el beacon se cubre con el test de la isla. Se 
 7. T-7. Rollup mensual de interacciones, `entity_interaction_monthly_rollups` + extensión de `view-monthly-rollup.job.ts` (0,75 día; decidido, va como último PR de esta spec).
 8. T-8. Web: exportar `postBeacon`, `interaction-capture.ts`, isla `VenueInteractionTracker`, montaje en la ficha, atributos en `VenueContactBlock` y `VenueAddress`, tests (1 día).
 9. T-9. Smoke en staging y sign-off (0,5 día).
+10. T-10. Campo de visibilidad de WhatsApp en el local: enum + columna + migración estructural, schemas Zod y control en el editor del dueño con la advertencia de AC-21 (por estimar).
+11. T-11. Endpoint protegido que devuelve el número a usuarios logueados e isla del botón; modo público en el HTML; reconciliación con HOS-1076 y HOS-2042 (por estimar).
+12. T-12. Emisión de `WHATSAPP_CLICK`, tests de AC-16 a AC-21 y verificación en staging (por estimar).
 
 ## 15. Linear
 

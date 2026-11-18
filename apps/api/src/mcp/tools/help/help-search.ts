@@ -89,6 +89,19 @@ export function tokenizeHelpText({ text }: { readonly text: string }): readonly 
 }
 
 /**
+ * The words of a text that say something: normalized, at least
+ * `MIN_WORD_LENGTH` long and not a stop word. "de la" has none.
+ *
+ * @param args.text - Any text
+ * @returns The normalized content words
+ */
+export function contentWordsOf({ text }: { readonly text: string }): readonly string[] {
+    return tokenizeHelpText({ text }).filter(
+        (word) => word.length >= MIN_WORD_LENGTH && !STOP_WORDS.has(word)
+    );
+}
+
+/**
  * Whether two normalized words are the same word, or a stem and its longer form.
  * Stop words match only themselves.
  */
