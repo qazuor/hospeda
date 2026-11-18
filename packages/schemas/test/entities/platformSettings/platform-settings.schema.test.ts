@@ -458,7 +458,14 @@ describe('HOS-1512 ProviderWatchAuthorizationValueSchema', () => {
         ).toBe(false);
     });
 
-    it.each([0, -1, 1.5, Number.NaN, '100'])('rejects the maximum charge %j', (maxChargeMinor) => {
+    it('accepts a maximum charge of 0: the authorization of a read-only battery', () => {
+        expect(
+            ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor: 0 })
+                .success
+        ).toBe(true);
+    });
+
+    it.each([-1, 1.5, Number.NaN, '100'])('rejects the maximum charge %j', (maxChargeMinor) => {
         expect(
             ProviderWatchAuthorizationValueSchema.safeParse({ month: '2026-11', maxChargeMinor })
                 .success
