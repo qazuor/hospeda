@@ -212,7 +212,8 @@ best-effort, not a ledger.
 **Retention (D-13).** `mcp.tool.call` rows are kept 12 months
 (`MCP_AUDIT_RETENTION_MONTHS`). The `mcp-audit-retention` cron deletes older ones
 and nothing else: `mcp.connection.revoked` and every admin and security row are
-untouched.
+untouched. The job hands its abort signal and deadline to the batch loop, which
+stops between statements (`stoppedEarly`); the rows left go on the next run.
 
 **Reader (D-14).** `McpActivityService.list` in service-core is the one reader
 of these rows, shared by the owner's history (HOS-2348) and the admin log
@@ -220,7 +221,9 @@ of these rows, shared by the owner's history (HOS-2348) and the admin log
 refuses a user filter; `all` needs the all-scope permission. Tool, outcome,
 client and access (read/write) filter over the `data` jsonb (D-16). Items carry
 no content: the client's registered name and, while the row's actor still owns
-it, the listing name and portal link.
+it, the listing name and portal link. A bare `toDate` (`2026-11-18`) covers that
+whole day in UTC. A row whose `data` does not parse is left out of `items` but
+stays in `total`; the output's `skipped` counts those rows for the page.
 
 ## Tool catalog
 
