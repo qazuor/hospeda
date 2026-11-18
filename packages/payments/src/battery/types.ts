@@ -100,7 +100,9 @@ export interface WatchEntry {
     readonly effect: WatchEffect;
     /**
      * The most this measurement can charge, in minor units. Required for `moves-money`.
-     * The budget guard compares it with the monthly authorization, which must be EXACTLY equal.
+     * The authorized amount must EQUAL the sum of these across the account's money-moving
+     * measurements (checked in pre-flight, before the authorization is consumed); the run's total
+     * charges are also capped at the authorized amount.
      */
     readonly maxChargeMinor?: number;
     /** The value the fake's list says the provider yields. */
@@ -113,7 +115,11 @@ export interface WatchEntry {
 export interface WatchAuthorization {
     /** Market-time month it covers, `YYYY-MM`. */
     readonly month: string;
-    /** The exact maximum a measurement may charge, in minor units (ARS centavos). */
+    /**
+     * The amount authorized for ONE run, in minor units (ARS centavos): EXACTLY the sum of the
+     * declared maximum charges of the account's money-moving measurements, and the cap of the
+     * whole run's charges.
+     */
     readonly maxChargeMinor: number;
     /**
      * The Mercado Pago account id the owner confirmed. The production run aborts, sending

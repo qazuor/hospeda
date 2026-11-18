@@ -6,8 +6,11 @@
  *   opens with `GET /users/me` and aborts, sending nothing, against the wrong
  *   account. `live_mode` cannot tell the accounts apart: the test account is the
  *   one whose tags include `test_user`.
- * - The BUDGET guard: a measurement that moves money aborts unless its maximum
- *   charge equals the authorized number EXACTLY. An order of magnitude is not close.
+ * - The BUDGET guard, in two layers. (1) The authorized amount is EXACT at run level: in pre-flight,
+ *   before it is consumed, it must equal the sum of the declared maximum charges of the account's
+ *   money-moving measurements (owner decision, 2026-11-18); a mismatch refuses the run and burns
+ *   nothing. (2) It also caps the WHOLE run: the engine keeps one running total of charges, and a
+ *   measurement whose own maximum is above the authorized amount aborts. Refunds are tracked apart.
  *
  * @module battery/watch-guards
  */

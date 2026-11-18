@@ -166,9 +166,10 @@ export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValue
 /**
  * What the owner submits to authorize the provider watch battery (HOS-1512, AC:B1:15, AC:B1:20).
  *
- * The production run refuses unless `month` is the current month on the market clock; the budget
- * guard aborts any money-moving measurement whose maximum charge is not EXACTLY `maxChargeMinor`;
- * the environment guard aborts, sending nothing, when `GET /users/me` answers another account id.
+ * The production run refuses unless `month` is the current month on the market clock and
+ * `maxChargeMinor` is EXACTLY the sum of the declared maximum charges of the account's money-moving
+ * measurements (the API computes that sum and refuses any other value); the whole run's charges are
+ * also capped at `maxChargeMinor`; the environment guard aborts, sending nothing, when `GET /users/me` answers another account id.
  * An absent row means "not authorized". Money is an integer in minor units (ARS centavos).
  *
  * The consumption fields are NOT part of the input: a new authorization is always unconsumed.
@@ -176,7 +177,7 @@ export type AddonPurchasesFreezeValue = z.infer<typeof AddonPurchasesFreezeValue
 export const ProviderWatchAuthorizationInputSchema = z.object({
     /** Market-time month the authorization covers, `YYYY-MM`. */
     month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM'),
-    /** The exact maximum a money-moving measurement may charge, in ARS centavos. */
+    /** The amount authorized for ONE run, in ARS centavos: the exact sum of the money-moving measurements. */
     maxChargeMinor: z.number().int().positive(),
     /** The Mercado Pago account id the owner confirmed (read by the API, never typed). */
     accountId: z.string().regex(/^\d{1,20}$/, 'Expected a numeric Mercado Pago account id'),
