@@ -145,6 +145,27 @@ describe('self cancellation schemas', () => {
         expect(
             parse({ ...base, succession: { checkoutOpen: true, checkoutDeadline: 'invalid' } })
         ).toBe(false);
+        // HOS-2344: the successor to cancel and its resumable checkout.
+        const successorId = '00000000-0000-4000-8000-000000002344';
+        expect(
+            parse({
+                ...base,
+                succession: {
+                    checkoutOpen: true,
+                    successorId,
+                    checkoutUrl: 'https://www.mercadopago.com.ar/subscriptions/checkout?x=1'
+                }
+            })
+        ).toBe(true);
+        expect(
+            parse({ ...base, succession: { checkoutOpen: true, successorId, checkoutUrl: null } })
+        ).toBe(true);
+        expect(parse({ ...base, succession: { checkoutOpen: true, successorId: 'nope' } })).toBe(
+            false
+        );
+        expect(
+            parse({ ...base, succession: { checkoutOpen: true, checkoutUrl: 'not a url' } })
+        ).toBe(false);
     });
     it('accepts an empty or populated deferred courtesy list', () => {
         expect(OwnSubscriptionsResponseSchema.safeParse(ownSubscriptions).success).toBe(true);
