@@ -26,13 +26,8 @@
  */
 
 import { EntityTypeEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
-import {
-    entityViewService,
-    type HostViewDailySeriesOutputItem,
-    ServiceError
-} from '@repo/service-core';
+import { entityViewService, type HostViewDailySeriesOutputItem } from '@repo/service-core';
 import { z } from 'zod';
-import { enforceUserGate, readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import { type OwnListingRow, readOwnListingRow } from './get-listing';
@@ -43,6 +38,11 @@ import {
 import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import { type ListingToolVertical, ListingToolVerticalSchema } from './listing-services';
 import { readLatestListingReviews } from './listing-stats-readers';
+import {
+    hasAdvancedStatsEntitlement,
+    hasBasicStatsEntitlement,
+    NO_STATS_ENTITLEMENT_REASON
+} from './stats-entitlement';
 
 /** Periods offered for views. The panel offers 7d and 30d; 90d has no comparison. */
 export const LISTING_STATS_PERIODS = ['7d', '30d', '90d'] as const;
@@ -141,7 +141,7 @@ export interface ListingStats {
 }
 
 /** `reason` of the refusal when the plan has no stats; its Spanish text is below. */
-export const NO_STATS_ENTITLEMENT_REASON = 'NO_STATS_ENTITLEMENT';
+export { NO_STATS_ENTITLEMENT_REASON };
 
 /** Spanish messages for the reasons this tool refuses with. */
 const GET_LISTING_STATS_REASON_MESSAGES: Readonly<Record<string, string>> = {
@@ -250,22 +250,14 @@ export const getListingStatsTool = defineTool({
         const { vertical, listingId, period } = input;
 
         // The same capability the HTTP stats routes require of this vertical.
-        try {
-            await enforceUserGate({ userId: actor.id, vertical, keys: ['view_basic_stats'] });
-        } catch (error) {
-            if (
-                error instanceof ServiceError &&
-                error.code === ServiceErrorCode.ENTITLEMENT_REQUIRED
-            ) {
-                return {
-                    error: {
-                        code: error.code,
-                        message: error.message,
-                        reason: NO_STATS_ENTITLEMENT_REASON
-                    }
-                };
-            }
-            throw error;
+        if (!(await hasBasicStatsEntitlement({ userId: actor.id, vertical }))) {
+            return {
+                error: {
+                    code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                    message: 'Entitlement required',
+                    reason: NO_STATS_ENTITLEMENT_REASON
+                }
+            };
         }
         const admitted = await readOwnListingRow({ actor, vertical, id: listingId });
         if (admitted.error) {
@@ -276,14 +268,7 @@ export const getListingStatsTool = defineTool({
         const isAccommodation = vertical === VerticalEnum.ACCOMMODATION;
         // Favorites need the advanced capability, as `hostFavoritesBreakdown` does.
         const includeFavorites =
-            isAccommodation &&
-            (
-                await readEffectiveKeys({
-                    userId: actor.id,
-                    vertical,
-                    keys: ['view_advanced_stats']
-                })
-            ).view_advanced_stats === true;
+            isAccommodation && (await hasAdvancedStatsEntitlement({ userId: actor.id, vertical }));
         const [viewsResult, reviews, extras] = await Promise.all([
             entityViewService.getDailySeriesComparisonForOwnListing({
                 actor,

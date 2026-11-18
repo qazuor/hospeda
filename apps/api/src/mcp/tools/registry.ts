@@ -25,11 +25,13 @@ import { setListingPublicationTool } from './listing/set-listing-publication';
 import { updateListingAmenitiesTool } from './listing/update-listing-amenities';
 import { updateListingBasicTool } from './listing/update-listing-basic';
 import { listReviewsTool } from './review/list-reviews';
+import { getOwnerSummaryTool } from './summary/get-owner-summary';
 import type { ToolDefinition } from './tool-definition';
 
 /** Every v1 tool, in the order clients list them. */
 export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     listMyListingsTool,
+    getOwnerSummaryTool,
     getListingTool,
     updateListingBasicTool,
     getListingAmenitiesTool,
