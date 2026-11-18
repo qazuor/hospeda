@@ -5,6 +5,8 @@
  * with whatever the service decided and turns a service error into a thrown
  * `ServiceError`, so the 404 is the shared, enumeration-safe one.
  */
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 const { read } = vi.hoisted(() => ({ read: vi.fn() }));
@@ -49,5 +51,14 @@ describe('GET /protected/venues/:id/whatsapp', () => {
         await expect(handleGetVenueWhatsapp({} as never, { id: ID })).rejects.toMatchObject({
             code: 'NOT_FOUND'
         });
+    });
+
+    it('declares a per-client rate limit, since it reveals a contact to any signed-in account', () => {
+        const source = readFileSync(
+            resolve(__dirname, '../../../../src/routes/venue/protected/getWhatsapp.ts'),
+            'utf8'
+        );
+
+        expect(source).toMatch(/customRateLimit:\s*\{\s*requests:\s*20,\s*windowMs:\s*60_000\s*\}/);
     });
 });

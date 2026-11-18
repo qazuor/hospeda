@@ -59,5 +59,11 @@ export const protectedGetVenueWhatsappRoute = createProtectedRoute({
     },
     responseSchema: VenueWhatsappResponseSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) =>
-        handleGetVenueWhatsapp(ctx, params)
+        handleGetVenueWhatsapp(ctx, params),
+    options: {
+        // A contact reveal for any signed-in account, so it is bounded per
+        // client: 20 per minute is far above a person opening venue pages and
+        // far below a script walking venue ids (same order as the QR sheet).
+        customRateLimit: { requests: 20, windowMs: 60_000 }
+    }
 });
