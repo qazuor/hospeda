@@ -128,6 +128,7 @@
         "EMPTY_FILE": "O arquivo está vazio. Escolha outra imagem.",
         "NEW_PAID_SIGNUPS_FROZEN": "Pausamos temporariamente novas assinaturas. Se você já tem uma assinatura, ela continua funcionando normalmente.",
         "ADDON_PURCHASES_FROZEN": "Pausamos temporariamente a compra de complementos. O que você já comprou continua funcionando normalmente.",
+        "ADDON_ALREADY_ACTIVE": "Você já tem este complemento ativo. Não é preciso comprá-lo de novo.",
         "FIRST_PUBLISH_PAUSED": "Pausamos temporariamente a publicação de novos anúncios. Seu anúncio fica salvo como rascunho e você poderá publicá-lo quando retomarmos.",
         "PROMO_CODE_NOT_FOUND": "Não encontramos esse código.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "Este código não estende um período de teste.",

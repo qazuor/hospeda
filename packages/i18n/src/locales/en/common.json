@@ -128,6 +128,7 @@
         "EMPTY_FILE": "The file is empty. Choose another image.",
         "NEW_PAID_SIGNUPS_FROZEN": "We've temporarily paused new subscriptions. If you already have a subscription, it keeps working as usual.",
         "ADDON_PURCHASES_FROZEN": "We've temporarily paused add-on purchases. Anything you already bought keeps working as usual.",
+        "ADDON_ALREADY_ACTIVE": "You already have this add-on active. There is no need to buy it again.",
         "FIRST_PUBLISH_PAUSED": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume.",
         "PROMO_CODE_NOT_FOUND": "We couldn’t find that code.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "This code does not extend a trial.",
