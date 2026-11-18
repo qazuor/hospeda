@@ -89,6 +89,31 @@ describe('mcpAuditRetentionJob', () => {
         });
     });
 
+    it('hands the run signal and deadline to the purge, and reports an early stop (L2)', async () => {
+        // Arrange
+        const controller = new AbortController();
+        const deadlineAt = new Date('2026-11-18T07:22:00.000Z');
+        const ctx = makeContext({ signal: controller.signal, deadlineAt });
+        mockPurge.mockResolvedValue({
+            cutoff: CUTOFF,
+            deleted: 1000,
+            wouldDelete: 0,
+            stoppedEarly: true
+        });
+
+        // Act
+        const result = await mcpAuditRetentionJob.handler(ctx);
+
+        // Assert
+        expect(mockPurge).toHaveBeenCalledWith({
+            now: ctx.startedAt,
+            dryRun: false,
+            signal: controller.signal,
+            deadlineAt
+        });
+        expect(result.details).toMatchObject({ stoppedEarly: true });
+    });
+
     it('reports a failure instead of throwing', async () => {
         mockPurge.mockRejectedValue(new Error('db down'));
 

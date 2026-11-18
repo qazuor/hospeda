@@ -6,13 +6,17 @@
  * `audit_log_entries`. No new table.
  */
 
+import type { McpActivityOutcome } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { McpAuthContext } from '../../types';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { apiLogger } from '../../utils/logger';
 
-/** Outcome of an MCP tool call. */
-export type McpToolCallOutcome = 'success' | 'denied' | 'error';
+/**
+ * Outcome of an MCP tool call. The values live once, in `@repo/schemas`
+ * (`MCP_TOOL_CALL_OUTCOMES`), which the activity reader parses rows with.
+ */
+export type McpToolCallOutcome = McpActivityOutcome;
 
 /** Input of {@link recordMcpToolCall}. */
 export interface RecordMcpToolCallInput {

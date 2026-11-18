@@ -7,7 +7,9 @@
  * current (no purge) behaviour. See `McpActivityService.purgeExpired` for the
  * scoped, batched delete.
  *
- * A dry run reports how many rows it would delete and deletes nothing.
+ * A dry run reports how many rows it would delete and deletes nothing. The
+ * run's abort signal and deadline stop the batch loop between statements; the
+ * rows left go on the next run.
  * Idempotent: a second run over the same instant finds nothing to delete.
  *
  * Schedule: daily at 4:20 Buenos Aires time, inside the off-peak maintenance
@@ -29,23 +31,28 @@ export const mcpAuditRetentionJob: CronJobDefinition = {
     timeoutMs: 120_000,
 
     handler: async (ctx) => {
-        const { logger, startedAt, dryRun } = ctx;
+        const { logger, startedAt, dryRun, signal, deadlineAt } = ctx;
 
         try {
             // Lazy import keeps the DB singleton out of module top-level (Vitest
             // fork contamination, same as ai-listing-questions-retention).
             const { McpActivityService } = await import('@repo/service-core');
             const service = new McpActivityService({ logger: apiLogger });
-            const { cutoff, deleted, wouldDelete } = await service.purgeExpired({
+            // The signal and the deadline stop the batch loop between statements,
+            // so a timed-out run never keeps deleting in the background.
+            const { cutoff, deleted, wouldDelete, stoppedEarly } = await service.purgeExpired({
                 now: startedAt,
-                dryRun
+                dryRun,
+                ...(signal ? { signal } : {}),
+                ...(deadlineAt ? { deadlineAt } : {})
             });
             const details = {
                 dryRun,
                 cutoff: cutoff.toISOString(),
                 retentionMonths: MCP_AUDIT_RETENTION_MONTHS,
                 deleted,
-                wouldDelete
+                wouldDelete,
+                stoppedEarly
             };
 
             logger.info('MCP audit retention completed', details);

@@ -7,7 +7,7 @@
 
 import type { AuditEventTypeValue } from '@repo/logger';
 import { AuditEventType, LoggerColors, logger } from '@repo/logger';
-import type { AuditLogType, CreateAuditLogEntry } from '@repo/schemas';
+import type { AuditLogType, CreateAuditLogEntry, McpActivityOutcome } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 
 export type { AuditEventTypeValue };
@@ -165,7 +165,7 @@ interface McpToolCallEntry extends BaseAuditEntry {
     /** Entity id the call targeted, when it targets one. */
     readonly resourceId?: string;
     /** Result of the call. */
-    readonly outcome: 'success' | 'denied' | 'error';
+    readonly outcome: McpActivityOutcome;
     /** Error code when the outcome is `denied` or `error`. */
     readonly errorCode?: string;
     /** Length of the user content the call carried; never the content itself. */
