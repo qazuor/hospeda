@@ -521,6 +521,18 @@ Request body: `{ entityType: 'ACCOMMODATION' | 'POST' | 'EVENT', entityId: uuid 
 `visitorHash` is computed **server-side** (daily-salted SHA-256 of truncated IP + UA); raw IPs
 are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`.
 
+### Interaction capture (HOS-2256)
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| `POST` | `/api/v1/public/interactions` | None (`skipAuth: true`) | Records a tap on a venue page element (`PHONE_CLICK`, `MAP_CLICK`, `WEBSITE_CLICK`, `INSTAGRAM_CLICK`, `TICKET_CLICK`, `WHATSAPP_CLICK`). Same contract as the view beacon: bot UA gets a fake 202, **30 requests/min per IP**, always 202. The only non-2xx is **400 `VALIDATION_ERROR`** for a malformed body. |
+
+Request body: `{ entityType: 'VENUE', entityId: uuid, kind, eventId?: uuid }`. `eventId` is required
+for `TICKET_CLICK` / `EVENT_IMPRESSION` and forbidden for the rest. A listing that does not exist or
+is not published, an `eventId` of another listing, the owner's own tap and a DB error all answer
+202 without inserting (no existence oracle). The visitor hash never uses the user id.
+Rows live in `entity_interactions`, never in `entity_views`.
+
 ### Protected reads
 
 | Method | Path | Permission | Response |
