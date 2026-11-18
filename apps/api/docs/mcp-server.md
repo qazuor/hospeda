@@ -202,8 +202,10 @@ Both use the existing `auditLog()` pipeline (`audit_log_entries`). No new table.
 | `mcp.tool.call` | Every **write** tool call, including malformed ones | actor, `clientId`, tool, target, outcome (`success`, `denied`, `error`), `errorCode`, `contentLength`, `details`. The client-declared name is never recorded (untrusted text) |
 | `mcp.connection.revoked` | A user disconnects an assistant | actor, `clientId`, `removed` counts (consents, refresh tokens, access tokens) |
 
-For `reply_inquiry`, `details.step` is `preview` or `send`. For `create_listing`,
-`confirm_benefit_usage` and `reject_benefit_usage` it is `preview` or `commit`. For
+For `reply_inquiry`, `create_listing`, `confirm_benefit_usage` and
+`reject_benefit_usage`, `details.step` is `preview` or `commit`, on every client.
+`reply_inquiry` rows written before HOS-2247 L3 carry the legacy value `send` for
+its second step; read `send` as `commit` when querying older rows. For
 `set_listing_publication`, `details.action` is `pause` or `resume` and `details.step`
 is `apply` (one step), `preview` or `commit` (publishing).
 
@@ -313,7 +315,10 @@ Tool-specific rules:
     run (a missing plan or slot is refused before any token), writes nothing and
     answers a token. The token is bound to
     `user + client + 'set_listing_publication' + listing id + { vertical, id, action, step }`
-    and is single use. The commit runs the publish exactly as before.
+    and is single use. The commit runs the publish exactly as before. The
+    confirmation names what goes public: the vertical, the type, the city (from
+    the row the call already read; an unreadable value shows as `sin dato`) and
+    the name, server facts first.
   - **What stays one step.** `pause`, a `resume` that reactivates an archived listing
     to draft, and a `resume` that changes nothing. They are private and reversible.
     A token sent with one of them is burnt and refused (`CONFIRMATION_NOT_NEEDED`);
@@ -480,7 +485,11 @@ carried in it. The record is bound like a token: user, OAuth client, tool, subje
 (inquiry, vertical or listing) and payload, plus the stash (`create_listing` writes
 the point the form showed and does not resolve the link again). The retry recomputes
 the binding from its own arguments. The record is consumed by `GETDEL` in every case,
-decline included, so it answers once. An unknown, expired, reused, foreign or
+decline included, so it answers once. A retry that is refused BEFORE the answer is
+settled (malformed input, a listing or inquiry not found, a permission refusal, a
+usage no longer `PENDING`) burns its state too: the binder discards it on any failed
+outcome (`discardUnsettledConfirmation`), so a refused state can never be replayed
+later, once the refusal stops applying. An unknown, expired, reused, foreign or
 mismatched state is one refusal (`ELICITATION_STATE_INVALID`), checked before the
 answer is read. Treat `requestState` as attacker-controlled; it is never trusted on
 its own.
@@ -494,12 +503,22 @@ model wrote goes through `src/mcp/tools/confirmation-text.ts`:
   become spaces, whitespace collapses, the value is capped (80 characters by
   default) and guillemets inside it are replaced, so it cannot close its own quote.
 - A body the human must read exactly (the reply, a description, a note) is a block
-  (`blockForConfirmation`): its line breaks stay, and every line starts with `│`,
-  so no content line can look like a line the server wrote. There is no closing
-  delimiter to forge. Other hidden characters show as `�`.
+  (`blockForConfirmation`): its line breaks stay, every line is hard-wrapped at 60
+  code points, and every resulting row starts with `│`, so no content line, and no
+  row a client wraps visually, can look like a line the server wrote. A run of
+  spaces (any `\p{Zs}`) shows as one space and a run of blank-rendering fillers
+  (U+115F, U+1160, U+3164, U+FFA0, U+2800) as one `U+FFFD`, so padding cannot push
+  text onto a row of its own. There is no closing delimiter to forge. Other hidden
+  characters show as `U+FFFD`. Residual limit: a client narrower than about 62
+  columns still wraps a row itself; the wrapped part then has no prefix, but the
+  padding that would align it is gone.
+- Both shapes keep a zero-width joiner only between two emoji (family emoji),
+  and trim stacked combining marks to two (no "zalgo" text over other lines).
+- The form shows everything the call writes. Every cap is the create schemas'
+  maximum (name 100, summary 300, description 2000), so nothing written is cut.
 - Server facts come before what the model wrote. In `create_listing`, the vertical,
-  type, city, price, map point and warning precede the name, and the description
-  comes last.
+  type, city, price, map point and warning precede the name, and the summary and
+  description come last, as blocks.
 
 **Strict by default (D-17).** On a capable client the covered tools never issue a
 token, and a token sent there is refused (`CONFIRMATION_TOKEN_REFUSED`) with nothing
