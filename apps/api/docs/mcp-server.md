@@ -18,6 +18,7 @@ anyone adding a tool.
 - [Rate limit](#rate-limit)
 - [Audit events](#audit-events)
 - [Tool catalog](#tool-catalog)
+- [create_listing and the Maps link resolver](#create_listing-and-the-maps-link-resolver)
 - [reply_inquiry and its security limit](#reply_inquiry-and-its-security-limit)
 - [Adding a tool](#adding-a-tool)
 - [Known follow-ups](#known-follow-ups)
@@ -197,7 +198,7 @@ failure to write the record is logged and swallowed.
 
 ## Tool catalog
 
-Thirteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
+Fifteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
@@ -208,11 +209,13 @@ Thirteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disa
 | `get_listing_stats` | read | read-only | Periods `7d`, `30d`, `90d`. Needs the plan's `view_basic_stats` entitlement. Reviews are untrusted text. |
 | `list_reviews` | read | read-only | Reviews received on the user's listings, newest first, every moderation state with its `moderationState`. Filters: `vertical`, `listingId`, `minRating`, `maxRating`, `since`, `moderationState`, paging. Titles, texts and author names are untrusted text. |
 | `get_help` | read | read-only | "How do I do X in Hospeda" for owners and providers, from the curated Spanish help catalog (`data/owner-help`). `question` (up to 300 characters) or `topicId`, optional `audience`. At most 3 topics with `steps` and portal `links`; no match returns no topics plus the FAQ and contact links. |
+| `get_listing_creation_guide` | read | read-only | Steps, field limits (read from the create schemas), labelled types, city destinations, venue business lines, the user's open drafts and an informational publish quota. |
 | `list_inquiries` | read | read-only | Filters: `status`, `listingId`, paging. Accommodations only. |
 | `get_inquiry` | read | read-only | Never marks the inquiry read. |
 | `update_listing_basic` | write | idempotent, not destructive | Accommodation, venue, experience. |
 | `update_listing_amenities` | write | idempotent, not destructive | Adds or removes the items of ONE category; the rest of the set is untouched. No confirmation token. |
 | `set_listing_publication` | write | **destructive**, not idempotent | `pause` or `resume`. |
+| `create_listing` | write | open-world, not destructive, not idempotent | Creates a DRAFT, two-step, see below. |
 | `reply_inquiry` | write | open-world, not destructive, not idempotent | Two-step, see below. |
 
 Rules that apply to every tool:
@@ -282,6 +285,55 @@ Tool-specific rules:
   (`NO_COVERAGE`, `SUBSCRIPTION_REQUIRED`, `LISTING_LIMIT_REACHED`, and others).
 - `get_inquiry` reads without a read receipt. A reply that was sent marks the inquiry
   read (best effort, failures are logged and swallowed).
+
+## create_listing and the Maps link resolver
+
+`create_listing` (HOS-2329) creates a DRAFT accommodation, venue or experience. It is
+two steps, with the same token store as `reply_inquiry`.
+
+1. **Preview.** No `confirmationToken`. It validates the input with that vertical's
+   portal schema, checks the destination, runs the create route's listing access as a
+   dry run, resolves `mapsUrl`, reads the publish quota and the duplicate-address rule,
+   and answers what will be created plus a token. Nothing is written.
+2. **Commit.** The same input plus the token. The token is bound to
+   `user + client + 'create_listing' + vertical + the payload`, and to the point the
+   preview resolved (kept with the token as its stash). Any change burns it. The link
+   is not resolved again. Then the access step runs for real and the listing is
+   created once, through the function the portal route itself calls.
+
+What each vertical runs, and why:
+
+| Vertical | Same as | Access step | Side effects |
+|---|---|---|---|
+| accommodation | `POST /protected/host-onboarding/start` (owner decision D-6) | none, as the route declares none | `createForOnboarding` (insert and HOST promotion in one transaction), the `AnalyticsEvents.onboardingStarted` and `accommodationDraftSaved` events, then the public cache eviction |
+| venue | `POST /protected/venues/` | `CREATE`, business lines and sections from the body | `createForOwner` (role grant in the same transaction) |
+| experience | `POST /protected/experiences/` | `CREATE` | `createForOwner` (role grant in the same transaction) |
+
+- **No publish, no trial.** The row is born `DRAFT`. The trial starts on the first
+  publish, never here.
+- **Drafts are unlimited.** `CREATE` has no limit step; the cap is enforced at publish
+  (`LISTING_LIMIT_REACHED`). The preview only notes it when the user is at the cap.
+- **Location.** Coordinates come only from the user's Google Maps link. The street and
+  number the user confirms feed the `location_key` through the services' create hooks;
+  coordinates alone leave it null. When the address equals another published listing of
+  the same owner, the preview warns and a later publish answers `DUPLICATE_LOCATION`.
+  When there is no location, `nextSteps` links the editor's location section.
+
+The resolver (`src/mcp/tools/listing/google-maps-link*.ts`, spec §5.5, owner decision D-4):
+
+- Exact host allowlist on the parsed hostname (`maps.app.goo.gl`, `goo.gl` with a
+  `/maps/` path, `google.com`, `www.google.com`, `maps.google.com`, `google.com.ar`,
+  `www.google.com.ar`). `https:` only, no userinfo, no port (not even `:443`), no IP
+  literal.
+- A full URL is parsed with no network call. A short link is followed by hand: `HEAD`
+  (then `GET` on 405), headers only, at most 5 redirects, every hop re-checked, 3 s per
+  hop and 5 s in total.
+- The socket resolves through a guarded `lookup` that refuses the hop if any address is
+  private, loopback, link-local, metadata or reserved. The checked address is the one
+  connected to, so DNS rebinding has no second lookup to use.
+- An unreadable link, a point outside Argentina or a timeout is a `mapsUrl` validation
+  error with a Spanish reason. The link and the place text are never logged; the place
+  text is shown wrapped as untrusted data.
 
 ## reply_inquiry and its security limit
 
