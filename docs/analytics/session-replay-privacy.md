@@ -16,7 +16,7 @@ and the check that must pass before production is switched on (HOS-2347).
 
 | Layer | Where | What it controls |
 | --- | --- | --- |
-| Hospeda switch | `platform_settings` key `analytics.sessionRecording`, card on `/platform/critical` in the admin | Whether the web ever loads `recorder.js`. This is the operational on/off. Only `ANALYTICS_SESSION_RECORDING_MANAGE` (SUPER_ADMIN) sees and changes it. |
+| Hospeda switch | `platform_settings` key `analytics.sessionRecording`, card on `/platform/critical` in the admin | Whether the web ever loads `recorder.js`. This is the operational on/off. Only holders of `ANALYTICS_SESSION_RECORDING_MANAGE` see and change it. The permission is granted to SUPER_ADMIN by the seed; not locked (D-3), so per-user overrides can extend it. |
 | Umami config | `website.replay_config` of the WEB website, written by `pnpm umami:setup` | Replay vs heatmap, sampling, masking, maximum duration, block selector. |
 
 The Umami config can stay enabled permanently: while the Hospeda switch is off, no page loads

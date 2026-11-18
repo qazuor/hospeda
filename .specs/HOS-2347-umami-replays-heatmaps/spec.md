@@ -54,7 +54,9 @@ never captures six marked UI surfaces.
 
 ## 3. Goals
 
-- G-1 One admin switch (SUPER_ADMIN only) turns recording on or off for the web.
+- G-1 One admin switch turns recording on or off for the web. It is gated by
+  `ANALYTICS_SESSION_RECORDING_MANAGE`, which is granted to SUPER_ADMIN by the
+  seed; not locked (D-3), so per-user overrides can extend it.
   Switching OFF reaches new page loads within about 60 seconds.
 - G-2 Recording happens only when ALL of these hold: switch ON, the visitor's
   analytics consent is `true`, the route is not excluded, and the Umami tracker
@@ -189,7 +191,8 @@ Verified on `origin/staging` (worktree cut 2026-11-18).
 - `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS`
   (`packages/schemas/src/entities/permission/permission.super-admin-exclusive.schema.ts`)
   is a closed set tied to the V5 action keys (ACC_*). The new permission is
-  NOT added to it (D-3): it is SUPER_ADMIN-only through the seed grant alone.
+  NOT added to it (D-3): it is granted to SUPER_ADMIN by the seed; not locked,
+  so per-user overrides can extend it (review wording fix, 2026-11-18).
 - Seed: baseline grants are in `packages/seed/src/required/rolePermissions.seed.ts`.
   The data-migration precedent for a SUPER_ADMIN-only grant is
   `packages/seed/src/data-migrations/0128-hos1591-promo-code-permission.ts`
@@ -237,7 +240,7 @@ view-only by registry contract.
 
 | Layer | Lives in | Who changes it | Decides |
 |---|---|---|---|
-| Hospeda switch | `platform_settings` key `analytics.sessionRecording` | SUPER_ADMIN, admin card | Whether the web injects `recorder.js` at all |
+| Hospeda switch | `platform_settings` key `analytics.sessionRecording` | `ANALYTICS_SESSION_RECORDING_MANAGE` (seed: SUPER_ADMIN), admin card | Whether the web injects `recorder.js` at all |
 | Recorder config | Umami `website.recorder_enabled` + `replay_config` | `pnpm umami:setup` (code review + owner run) | What the recorder does once loaded |
 
 `umami:setup` keeps `recorder_enabled = true` on the web website permanently.

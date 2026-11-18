@@ -5,8 +5,9 @@
  * `invalid input value for enum permission_enum`. The baseline
  * (`rolePermissions.seed.ts`) carries the same grant for fresh DBs.
  *
- * Not added to `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS` (owner decision D-3): the
- * seed grant alone keeps it SUPER_ADMIN-only.
+ * Not added to `SUPER_ADMIN_EXCLUSIVE_PERMISSIONS` (owner decision D-3): it is
+ * granted to SUPER_ADMIN by the seed, but it is not locked, so a per-user
+ * permission override can extend it to anyone.
  */
 import { rolePermission } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
