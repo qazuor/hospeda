@@ -3,6 +3,8 @@
  * @description Behavior tests for the OAuth consent island (HOS-2184 T-027).
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OAuthConsent } from '../../../src/components/auth/OAuthConsent.client';
@@ -268,7 +270,7 @@ describe('OAuthConsent', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('lists the six capabilities', async () => {
+    it('lists the eight capabilities', async () => {
         // Arrange
         fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
 
@@ -283,10 +285,36 @@ describe('OAuthConsent', () => {
             'Pausar o reanudar tus publicaciones',
             'Responder consultas de tus alojamientos',
             'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas',
-            'Crear borradores de publicaciones nuevas'
+            'Crear borradores de publicaciones nuevas',
+            'Buscar en el directorio de proveedores para anfitriones',
+            'Ver tus usos de beneficios y confirmarlos o rechazarlos'
         ]) {
             expect(screen.getByText(text)).toBeInTheDocument();
         }
+    });
+
+    it('words the two directory capabilities naturally in every locale', () => {
+        // The component test mocks i18n to the Spanish fallbacks, so the locale
+        // files are read directly.
+        const capabilities = (locale: string) =>
+            JSON.parse(
+                readFileSync(
+                    join(process.cwd(), `../../packages/i18n/src/locales/${locale}/auth.json`),
+                    'utf8'
+                )
+            ).consent.capabilities as Record<string, string>;
+
+        expect(capabilities('en')).toMatchObject({
+            providers: "Search the hosts' provider directory",
+            benefitUsages: 'See your benefit usages and confirm or reject them'
+        });
+        expect(capabilities('es')).toMatchObject({
+            providers: 'Buscar en el directorio de proveedores para anfitriones',
+            benefitUsages: 'Ver tus usos de beneficios y confirmarlos o rechazarlos'
+        });
+        expect(capabilities('pt').providers).toBe(
+            'Buscar no diretório de fornecedores para anfitriões'
+        );
     });
 
     it('links the disconnect notice to the AI assistants panel', async () => {

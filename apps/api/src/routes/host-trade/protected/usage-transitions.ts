@@ -30,15 +30,16 @@ import {
     HostTradeBenefitUsageProtectedSchema,
     HostTradeBenefitUsageRejectBodySchema
 } from '@repo/schemas';
-import { HostTradeUsageService, ServiceError } from '@repo/service-core';
+import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { notifyUsageConfirmed, notifyUsageRejected } from '../../../lib/host-trade-notifications';
+import {
+    confirmBenefitUsage,
+    rejectBenefitUsage,
+    undoBenefitUsageRejection
+} from '../../../lib/host-trade-usage-transitions';
 import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
-
-const usageService = new HostTradeUsageService({ logger: apiLogger });
 
 /** Response shape shared by the three transitions. */
 const UsageTransitionResponseSchema = z.object({
@@ -51,15 +52,11 @@ const usageIdParam = { id: z.string().uuid() };
 export async function handleConfirmUsage(ctx: Context, params: Record<string, unknown>) {
     const actor = getActorFromContext(ctx);
 
-    const result = await usageService.confirmUsage({ usageId: params.id as string }, actor);
+    // The email to the declarant (T-041) rides inside the shared transition,
+    // so the assistant tool that confirms sends it too (HOS-2332).
+    const result = await confirmBenefitUsage({ actor, usageId: params.id as string });
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
-    }
-
-    // Fire-and-forget (T-041): tells the declarant, and invites the review
-    // when the declarant is the one who may write it.
-    if (result.data?.usage) {
-        void notifyUsageConfirmed(result.data.usage as never);
     }
 
     return { usage: result.data?.usage };
@@ -74,16 +71,11 @@ export async function handleRejectUsage(
     const actor = getActorFromContext(ctx);
     const note = (body as { note?: string } | undefined)?.note;
 
-    const result = await usageService.rejectUsage({ usageId: params.id as string, note }, actor);
+    // The email to the declarant, with the note (T-041), rides inside the
+    // shared transition, so the assistant tool that rejects sends it too.
+    const result = await rejectBenefitUsage({ actor, usageId: params.id as string, note });
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
-    }
-
-    // Fire-and-forget (T-041). A rejection blocks that side from re-declaring
-    // on the pair, so the declarant cannot be left to infer it from a row that
-    // quietly stopped counting.
-    if (result.data?.usage) {
-        void notifyUsageRejected(result.data.usage as never, note);
     }
 
     return { usage: result.data?.usage };
@@ -93,7 +85,7 @@ export async function handleRejectUsage(
 export async function handleUndoRejection(ctx: Context, params: Record<string, unknown>) {
     const actor = getActorFromContext(ctx);
 
-    const result = await usageService.undoRejection({ usageId: params.id as string }, actor);
+    const result = await undoBenefitUsageRejection({ actor, usageId: params.id as string });
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
     }
