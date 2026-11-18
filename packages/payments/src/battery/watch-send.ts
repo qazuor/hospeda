@@ -22,7 +22,14 @@ import {
 } from './types';
 import { assertHeadersAllowed } from './watch-headers';
 import { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
-import { guardWrite, type WatchRunState } from './watch-write-guard';
+import { guardWrite, releaseWrite, type WatchRunState } from './watch-write-guard';
+
+/**
+ * The statuses that are a definitive rejection: the provider refused the request and no money
+ * moved, so the reservation is given back. Every other status of a money write (408, 409, 425, 429,
+ * any other 4xx, 5xx) is an unknown outcome: the reservation stays and the run stops.
+ */
+const DEFINITIVE_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 401, 403, 404, 422]);
 
 /** Header the provider deduplicates a write by. */
 const IDEMPOTENCY_HEADER = 'X-Idempotency-Key';
@@ -70,7 +77,8 @@ function idOf(body: unknown): string | undefined {
  * @param args.runCap - The most the whole run may charge
  * @param args.shapes - Filled with the shape of every answer, by label
  * @param args.providerIds - Filled with the ids of what writes created
- * @param args.record - Persists write keys (before sending) and provider ids (as they answer)
+ * @param args.record - Persists write keys (before sending), provider ids (as they answer) and
+ *   the ledger, all in one statement per record
  * @returns The `send` for the measurement's context
  */
 export function createGuardedSend(args: {
@@ -84,6 +92,7 @@ export function createGuardedSend(args: {
     readonly record: (arg: {
         readonly providerIds?: readonly string[];
         readonly writeKeys?: readonly string[];
+        readonly ledger: { readonly charged: number; readonly refunded: number };
     }) => Promise<void>;
 }): WatchContext['send'] {
     const { entry, transport, runId, state, runCap, shapes, providerIds, record } = args;
@@ -95,7 +104,11 @@ export function createGuardedSend(args: {
         arg: { providerIds?: readonly string[]; writeKeys?: readonly string[] }
     ): Promise<void> => {
         try {
-            await record(arg);
+            // Every progress record carries the ledger as it stands, written in the same statement.
+            await record({
+                ...arg,
+                ledger: { charged: state.ledger.charged, refunded: state.ledger.refunded }
+            });
         } catch (error) {
             throw new WatchGuardError({
                 code: 'PROGRESS_NOT_RECORDED',
@@ -173,8 +186,16 @@ export function createGuardedSend(args: {
             });
         }
         shapes[label] = shapeOf({ body: response.body });
+        if (movesMoney && DEFINITIVE_REJECTION_STATUSES.has(response.status)) {
+            // A definitive refusal: nothing moved, so the reservation is given back and the
+            // corrected ledger is persisted. (A 5xx or a lost answer keeps it, below.)
+            releaseWrite({ operation, state });
+            if (operation.kind === 'charge') entryCharged -= operation.statedMinor ?? 0;
+            await recordOrAbort(`was refused with ${response.status}`, {});
+            return response;
+        }
         const id = idOf(response.body);
-        if (movesMoney && response.status >= 500) {
+        if (movesMoney && response.status >= 400) {
             throw new WatchGuardError({
                 code: 'WRITE_OUTCOME_UNKNOWN',
                 message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the provider answered ${response.status}; money may have moved, the run stops`

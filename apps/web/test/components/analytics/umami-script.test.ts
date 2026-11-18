@@ -68,9 +68,9 @@ describe('UmamiScript — the tag when configured', () => {
         expect(COMPONENT_CODE).not.toContain('data-auto-track');
     });
 
-    it('starts the per-page-load pageview from a bundled script', () => {
+    it('starts the per-page-load pageview and the recorder loader from one bundled script', () => {
         expect(TEMPLATE).toMatch(
-            /<script>\s*import \{ startUmamiPageviews \} from '@\/lib\/analytics\/umami-pageview';\s*startUmamiPageviews\(\);\s*<\/script>/
+            /<script>\s*import \{ startUmamiPageviews \} from '@\/lib\/analytics\/umami-pageview';\s*import \{ startUmamiRecorder \} from '@\/lib\/analytics\/umami-recorder';\s*startUmamiPageviews\(\);\s*startUmamiRecorder\(\);\s*<\/script>/
         );
     });
 });

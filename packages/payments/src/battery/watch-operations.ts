@@ -227,6 +227,9 @@ const RULES: readonly Rule[] = [
                 )
             );
         },
+        // The charge is ONE payment worth the total: several payments (even of equal amounts), or
+        // none, are not the order the adapter sends and are not on the list.
+        accepts: (body) => listOf(nested(body, 'transactions').payments).length === 1,
         amounts: (body) => {
             const payments = listOf(nested(body, 'transactions').payments);
             return [body.total_amount, ...payments.map((payment) => bodyOf(payment).amount)];

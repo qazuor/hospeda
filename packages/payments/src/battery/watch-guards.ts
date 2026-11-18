@@ -175,17 +175,17 @@ export function expectedAuthorizationSum(args: {
  * another catalog, or the catalog changed) refuses the run and burns nothing. The per-run cap stays
  * as a second layer.
  *
- * @param args.entries - The measurements of the account
+ * @param args.entries - The measurements to sum
+ * @param args.account - The account the run targets
  * @param args.authorization - The authorization in force
  * @throws {WatchGuardError} `AUTHORIZATION_SUM_MISMATCH`, naming both numbers
  */
 export function assertAuthorizationCoversMoneyCatalog(args: {
     readonly entries: readonly WatchEntry[];
+    readonly account: WatchAccount;
     readonly authorization: WatchAuthorization;
 }): void {
-    const expected = args.entries
-        .filter((entry) => entry.effect === 'moves-money')
-        .reduce((sum, entry) => sum + (entry.maxChargeMinor ?? 0), 0);
+    const expected = expectedAuthorizationSum({ catalog: args.entries, account: args.account });
     if (expected !== args.authorization.maxChargeMinor) {
         throw new WatchGuardError({
             code: 'AUTHORIZATION_SUM_MISMATCH',
