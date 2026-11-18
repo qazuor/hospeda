@@ -58,6 +58,7 @@ import {
     subscriptionSuccessionReevaluationJob,
     subscriptionWindowExpiryJob,
     trialMachineExpiryJob,
+    venueEventsPastCleanupJob,
     viewMonthlyRollupJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
@@ -125,7 +126,9 @@ export const cronJobs: CronJobDefinition[] = [
     listingRetentionPassJob,
     // HOS-2101: the host AI questions panel's 12-month retention and weekly digest.
     aiListingQuestionsRetentionJob,
-    aiQuestionsWeeklyDigestJob
+    aiQuestionsWeeklyDigestJob,
+    // HOS-2254: past one-off venue events are deleted after 60 days.
+    venueEventsPastCleanupJob
 ];
 
 /**

@@ -322,6 +322,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Hard-delete AI chat questions and answers older than 12 months, then the chat conversations left empty (HOS-2101 owner retention decision).'
     },
     {
+        name: 'venue-events-past-cleanup',
+        displayName: 'Limpieza de eventos pasados de locales',
+        category: 'system',
+        schedule: '15 4 * * *',
+        description:
+            'Hard-delete one-off venue agenda events whose end passed more than 60 days ago; weekly events are never touched (HOS-2254).'
+    },
+    {
         name: 'ai-questions-weekly-digest',
         displayName: 'Resumen semanal de preguntas sin responder',
         category: 'notifications',

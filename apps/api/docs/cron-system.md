@@ -954,6 +954,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `listing-remote-deletion-retry` | system | `45 5 * * *` | `apps/api/src/cron/jobs/listing-remote-deletion-retry.job.ts` |
 | `listing-retention-pass` | system | `10 2 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
 | `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
+| `venue-events-past-cleanup` | system | `15 4 * * *` | `apps/api/src/cron/jobs/venue-events-past-cleanup.job.ts` (HOS-2254) |
 
 `subscription-scheduled-change` walks every due queue row in keyset pages of `limit`, so one
 failed row can no longer starve the rows behind it. Each failure increments that row's
