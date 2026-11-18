@@ -9,6 +9,14 @@
  * edit silently stop matching the other's.
  */
 
+import {
+    getVenueEventZonedNow,
+    isVenueEventPast,
+    VENUE_EVENTS_MAX_ENTRIES,
+    VENUE_EVENTS_MAX_TOTAL_ENTRIES
+} from '@repo/schemas';
+import type { TranslationFn } from '@/lib/i18n';
+
 /**
  * One agenda entry, as held in form state. `id` is the stored event's id for a
  * row loaded from the API and is sent back on save so the event keeps its
@@ -118,4 +126,76 @@ export function movedBy<T>(list: readonly T[], index: number, delta: number): T[
         next.splice(target, 0, moved);
     }
     return next;
+}
+
+/**
+ * Today in the venue's zone, `YYYY-MM-DD`. Used as the `min` of the date input
+ * of an entry that has no id: a hint only, the API is the one that refuses a
+ * new event dated in the past.
+ *
+ * @returns The day.
+ */
+export function todayInVenueZone(): string {
+    return getVenueEventZonedNow({ now: new Date() }).date;
+}
+
+/**
+ * Turns a refused save (HTTP 400) into the specific sentence the owner needs.
+ *
+ * The API answers with stable i18n keys in `error.message`; anything else is not
+ * ours to explain and yields `null` (the caller falls back to the generic error).
+ * For a new event dated in the past the offending titles are listed, found with
+ * the browser clock: good enough to point at the entry, never used to decide.
+ *
+ * @param input - `{ message, entries, t }`.
+ * @returns The message, or `null` when the error is not one of ours.
+ */
+export function describeAgendaSaveError(input: {
+    readonly message: string | undefined;
+    readonly entries: readonly EventDraft[];
+    readonly t: TranslationFn;
+}): string | null {
+    const { message, entries, t } = input;
+    if (!message) {
+        return null;
+    }
+    if (message.includes('zodError.venue.events.newPast')) {
+        const now = new Date();
+        const titles = entries
+            .filter(
+                (entry) =>
+                    !entry.id &&
+                    entry.recurrence === 'once' &&
+                    entry.date.length > 0 &&
+                    isVenueEventPast({
+                        event: {
+                            recurrence: 'once',
+                            date: entry.date,
+                            startTime: entry.startTime,
+                            endTime: entry.endTime || null
+                        },
+                        now
+                    })
+            )
+            .map((entry) => entry.title.trim())
+            .filter((title) => title.length > 0);
+        const base = t(
+            'zodError.venue.events.newPast',
+            'No se puede crear un evento con fecha pasada'
+        );
+        return titles.length > 0 ? `${base}: ${titles.join(', ')}` : base;
+    }
+    if (message.includes('zodError.venue.events.maxTotal')) {
+        return t(
+            'zodError.venue.events.maxTotal',
+            'La agenda no puede tener más de {{max}} eventos en total',
+            { max: VENUE_EVENTS_MAX_TOTAL_ENTRIES }
+        );
+    }
+    if (message.includes('zodError.venue.events.max')) {
+        return t('zodError.venue.events.max', 'La agenda no puede tener más de {{max}} eventos', {
+            max: VENUE_EVENTS_MAX_ENTRIES
+        });
+    }
+    return null;
 }

@@ -43,6 +43,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import {
     countCurrent,
+    describeAgendaSaveError,
     draftFromRow,
     EMPTY_DRAFT,
     type EventDraft,
@@ -300,8 +301,18 @@ export function VenueEventsManager({
             return;
         }
 
+        // A 400 carrying one of our stable keys is explained specifically
+        // (which new event is dated in the past, which ceiling was hit).
+        const specific =
+            result.error.status === 400
+                ? describeAgendaSaveError({ message: result.error.message, entries, t })
+                : null;
         setMessage(
-            t('venue.owner.editor.venueEventsManager.saveError', 'No se pudo guardar la agenda.')
+            specific ??
+                t(
+                    'venue.owner.editor.venueEventsManager.saveError',
+                    'No se pudo guardar la agenda.'
+                )
         );
     }, [basePath, entries, t, upsellPlanName]);
 

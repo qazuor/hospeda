@@ -3329,7 +3329,9 @@
         "events": {
             "max": "La agenda no puede tener más de {{max}} eventos",
             "max_one": "La agenda no puede tener más de {{max}} evento",
-            "max_other": "La agenda no puede tener más de {{max}} eventos"
+            "max_other": "La agenda no puede tener más de {{max}} eventos",
+            "maxTotal": "La agenda no puede tener más de {{max}} eventos en total",
+            "newPast": "No se puede crear un evento con fecha pasada"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"

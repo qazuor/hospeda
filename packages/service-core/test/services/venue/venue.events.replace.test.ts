@@ -326,6 +326,39 @@ describe('replaceVenueEvents: the ceiling counts non-past entries (HOS-2254)', (
         expect(calls).toStrictEqual([]);
     });
 
+    it('treats a past entry whose id the cron already deleted as gone, saving the rest', async () => {
+        const vanished = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: {
+                events: [weekly('Semanal'), { ...oneOff('Ya borrado', '2026-10-01'), id: vanished }]
+            }
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.events.map((e) => e.title)).toEqual(['Semanal']);
+        expect(store.has(vanished)).toBe(false);
+    });
+
+    it('still answers 404 for an unknown id of a NON-past entry (foreign ids are never accepted)', async () => {
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [{ ...weekly('Ajeno'), id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' }] }
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(calls).toStrictEqual([]);
+    });
+
+    it('answers with stable i18n keys: newPast and the live ceiling are distinct', async () => {
+        const newPast = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [oneOff('Nuevo pasado', '2026-10-01')] }
+        });
+        expect(newPast.error?.message).toBe('zodError.venue.events.newPast');
+    });
+
     it('refuses an unbounded number of past entries (hard cap on the document)', async () => {
         const ids = seedPast(101);
         const events = ids.map((pastId, i) => ({

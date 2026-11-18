@@ -333,7 +333,7 @@ export const VenueEventsReplacePayloadSchema = z.object({
     // not know the time. This bound is only the hard cap on the whole document.
     events: z
         .array(VenueEventInputSchema)
-        .max(VENUE_EVENTS_MAX_TOTAL_ENTRIES, { message: 'zodError.venue.events.max' })
+        .max(VENUE_EVENTS_MAX_TOTAL_ENTRIES, { message: 'zodError.venue.events.maxTotal' })
         .default([])
 });
 export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayloadSchema>;

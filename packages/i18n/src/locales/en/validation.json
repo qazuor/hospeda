@@ -3329,7 +3329,9 @@
         "events": {
             "max": "The schedule cannot have more than {{max}} events",
             "max_one": "The schedule cannot have more than {{max}} event",
-            "max_other": "The schedule cannot have more than {{max}} events"
+            "max_other": "The schedule cannot have more than {{max}} events",
+            "maxTotal": "The schedule cannot have more than {{max}} events in total",
+            "newPast": "A new event cannot have a date in the past"
         },
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"

@@ -9,6 +9,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueEventsManager } from '../../../src/components/venue/VenueEventsManager.client';
+import { describeAgendaSaveError } from '../../../src/lib/venue/venue-event-draft';
 
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: () => ({
@@ -154,5 +155,53 @@ describe('VenueEventsManager: past events (HOS-2254)', () => {
         const add = (await screen.findByText('Agregar evento')) as HTMLButtonElement;
 
         expect(add.disabled).toBe(false);
+    });
+});
+
+describe('VenueEventsManager: save errors and date hint (HOS-2254)', () => {
+    it('explains a 400 newPast with the offending new entries, not the generic error', async () => {
+        load([]);
+        mockPut.mockResolvedValue({
+            ok: false as const,
+            error: { status: 400, message: 'zodError.venue.events.newPast' }
+        } as never);
+        fireEvent.click(await screen.findByText('Agregar evento'));
+        fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Brindis' } });
+        fireEvent.click(screen.getByLabelText('Un solo día'));
+        fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2020-01-01' } });
+        fireEvent.change(screen.getByLabelText('Hora de inicio'), { target: { value: '20:00' } });
+
+        fireEvent.click(screen.getByText('Guardar agenda'));
+
+        expect(await screen.findByText(/fecha pasada: Brindis/)).toBeTruthy();
+        expect(screen.queryByText('No se pudo guardar la agenda.')).toBeNull();
+    });
+
+    it('maps the 100 total cap and the live cap to their own messages', () => {
+        const t = (_key: string, fallback?: string) => fallback ?? _key;
+        const total = describeAgendaSaveError({
+            message: 'zodError.venue.events.maxTotal',
+            entries: [],
+            t
+        });
+        const live = describeAgendaSaveError({
+            message: 'zodError.venue.events.max',
+            entries: [],
+            t
+        });
+        expect(total).toContain('en total');
+        expect(live).not.toContain('en total');
+        expect(describeAgendaSaveError({ message: 'other', entries: [], t })).toBeNull();
+    });
+
+    it('sets min on the date of a new entry and not on a stored one', async () => {
+        load([row(1, {})]);
+        fireEvent.click(await screen.findByText('Agregar evento'));
+        fireEvent.click(screen.getAllByLabelText('Un solo día')[1] as HTMLElement);
+
+        const dates = screen.getAllByLabelText('Fecha') as HTMLInputElement[];
+
+        expect(dates[0]?.getAttribute('min')).toBeNull();
+        expect(dates[1]?.getAttribute('min')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 });
