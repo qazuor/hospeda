@@ -1954,7 +1954,7 @@
         },
         "showDeleted": "Mostrar excluídos",
         "messages": {
-            "restoreError": "Não foi possível restaurar."
+            "restoreError": "Não foi possível recuperar."
         },
         "loading": "Carregando…",
         "error": "Não foi possível carregar o catálogo.",
@@ -1972,8 +1972,8 @@
             "delete": "Excluir",
             "cancel": "Cancelar",
             "save": "Salvar",
-            "restore": "Restaurar",
-            "restoring": "Restaurando..."
+            "restore": "Recuperar",
+            "restoring": "Recuperando..."
         },
         "groups": {
             "add": "Novo grupo",
@@ -2000,7 +2000,7 @@
                 "saveError": "Não foi possível salvar o grupo.",
                 "deleteError": "Não foi possível excluir o grupo.",
                 "inUse": "Não é possível excluir: o grupo ainda tem categorias. Desative-o para deixar de oferecê-lo, ou mova antes as categorias dele.",
-                "restored": "Grupo restaurado."
+                "restored": "Grupo recuperado."
             }
         },
         "categories": {
@@ -2047,8 +2047,8 @@
                 "saveError": "Não foi possível salvar a categoria.",
                 "deleteError": "Não foi possível excluir a categoria.",
                 "inUse": "Não é possível excluir: há fornecedores que usam esta categoria. Desative-a para deixar de oferecê-la; os fornecedores que já a têm a mantêm.",
-                "restored": "Categoria restaurada.",
-                "restoreGroupDeleted": "Não é possível restaurar: o grupo desta categoria está excluído. Restaure primeiro o grupo."
+                "restored": "Categoria recuperada.",
+                "restoreGroupDeleted": "Não é possível recuperar: o grupo desta categoria está excluído. Recupere primeiro o grupo."
             }
         }
     },
