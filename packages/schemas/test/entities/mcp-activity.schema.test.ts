@@ -5,12 +5,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+    ListMcpActivityInputSchema,
     MCP_AUDIT_RETENTION_MONTHS,
     MCP_TOOL_CALL_EVENT_TYPE,
+    MCP_TOOL_CALL_OUTCOMES,
     McpActivityAllFilterSchema,
     McpActivityItemSchema,
     McpActivityOwnFilterSchema,
-    McpActivityPageSchema
+    McpActivityPageSchema,
+    McpToolCallDataSchema,
+    PurgeMcpActivityInputSchema
 } from '../../src/index.js';
 
 const USER_ID = '2f6e1c3a-8b9d-4a7e-b5c4-d3e2f1a0b9c8';
@@ -68,5 +72,54 @@ describe('assistant activity schemas', () => {
         expect(
             McpActivityItemSchema.safeParse({ ...item, client: { id: 'c', uri: 'x' } }).success
         ).toBe(false);
+    });
+
+    it('a bare toDate covers its whole day in UTC; a full instant is kept (L4)', () => {
+        expect(McpActivityOwnFilterSchema.parse({ toDate: '2026-11-18' }).toDate).toEqual(
+            new Date('2026-11-18T23:59:59.999Z')
+        );
+        expect(McpActivityOwnFilterSchema.parse({ toDate: '2026-11-18T10:00:00Z' }).toDate).toEqual(
+            new Date('2026-11-18T10:00:00Z')
+        );
+        expect(McpActivityOwnFilterSchema.safeParse({ toDate: 'not a date' }).success).toBe(false);
+    });
+
+    it('the list input has one strict branch per scope', () => {
+        const page = { page: 1, pageSize: 20 };
+        expect(
+            ListMcpActivityInputSchema.safeParse({ scope: { kind: 'own' }, ...page }).success
+        ).toBe(true);
+        expect(
+            ListMcpActivityInputSchema.safeParse({
+                scope: { kind: 'own' },
+                filter: { userId: USER_ID },
+                ...page
+            }).success
+        ).toBe(false);
+        expect(
+            ListMcpActivityInputSchema.safeParse({
+                scope: { kind: 'all' },
+                filter: { userId: USER_ID },
+                ...page
+            }).success
+        ).toBe(true);
+        expect(
+            ListMcpActivityInputSchema.safeParse({ scope: { kind: 'mine' }, ...page }).success
+        ).toBe(false);
+    });
+
+    it('reads only the binder outcomes from a row', () => {
+        expect(MCP_TOOL_CALL_OUTCOMES).toEqual(['success', 'denied', 'error']);
+        const base = { tool: 'get_listing', clientId: 'c' };
+        expect(McpToolCallDataSchema.safeParse({ ...base, outcome: 'denied' }).success).toBe(true);
+        expect(McpToolCallDataSchema.safeParse({ ...base, outcome: 'maybe' }).success).toBe(false);
+    });
+
+    it('the purge batch size is at least 1 (L2)', () => {
+        const now = new Date();
+        expect(PurgeMcpActivityInputSchema.safeParse({ now, batchSize: 1 }).success).toBe(true);
+        expect(PurgeMcpActivityInputSchema.safeParse({ now, batchSize: 0 }).success).toBe(false);
+        expect(PurgeMcpActivityInputSchema.safeParse({ now, batchSize: -5 }).success).toBe(false);
+        expect(PurgeMcpActivityInputSchema.safeParse({ now, batchSize: 1.5 }).success).toBe(false);
     });
 });

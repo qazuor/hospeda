@@ -18,8 +18,14 @@ export const MCP_TOOL_CALL_EVENT_TYPE = 'mcp.tool.call';
  */
 export const MCP_AUDIT_RETENTION_MONTHS = 12;
 
-/** Result of one tool call, as the binder records it. */
-export const McpActivityOutcomeSchema = z.enum(['success', 'denied', 'error']);
+/** Every result a tool call can end in, as the binder records it. */
+export const MCP_TOOL_CALL_OUTCOMES = ['success', 'denied', 'error'] as const;
+
+/**
+ * Result of one tool call. The single source of the outcome values: the API's
+ * `recordMcpToolCall` and audit entry type their `outcome` from it.
+ */
+export const McpActivityOutcomeSchema = z.enum(MCP_TOOL_CALL_OUTCOMES);
 
 /** TypeScript type inferred from {@link McpActivityOutcomeSchema}. */
 export type McpActivityOutcome = z.infer<typeof McpActivityOutcomeSchema>;
@@ -58,6 +64,24 @@ export const McpActivityToolNameSchema = z
     .max(64)
     .regex(/^[a-z][a-z0-9_]*$/);
 
+/** A calendar date with no time (`YYYY-MM-DD`). */
+const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * The upper bound of a date range, inclusive of its whole last day: a date
+ * with no time (`2026-11-18`) becomes the end of that day in UTC
+ * (`2026-11-18T23:59:59.999Z`), so the rows logged on it are included. A full
+ * instant is kept as given.
+ */
+export const McpActivityToDateSchema = z.union([
+    z
+        .string()
+        .regex(DATE_ONLY_PATTERN)
+        .transform((day) => new Date(`${day}T23:59:59.999Z`))
+        .pipe(z.date()),
+    z.coerce.date()
+]);
+
 /**
  * Filters of the `own` scope. Strict: a user filter (`userId`, `actorId`) is
  * a validation error, so the own scope cannot be widened by input (AC-C45,
@@ -75,8 +99,8 @@ export const McpActivityOwnFilterSchema = z
         clientId: AiConnectionClientIdSchema.optional(),
         /** Calls logged on or after this instant. */
         fromDate: z.coerce.date().optional(),
-        /** Calls logged on or before this instant. */
-        toDate: z.coerce.date().optional(),
+        /** Calls logged on or before this instant; a bare date covers its whole day. */
+        toDate: McpActivityToDateSchema.optional(),
         /** `loggedAt` order. Defaults to newest first. */
         sortDirection: z.enum(['asc', 'desc']).optional()
     })
@@ -158,3 +182,67 @@ export const McpActivityItemSchema = z
 
 /** TypeScript type inferred from {@link McpActivityItemSchema}. */
 export type McpActivityItem = z.infer<typeof McpActivityItemSchema>;
+
+/**
+ * Input of `McpActivityService.list`, minus the actor. One strict branch per
+ * scope: the `own` branch has no user filter at all, so the own scope cannot
+ * be widened by input (AC-C45, AC-C54).
+ */
+export const ListMcpActivityInputSchema = z.union([
+    z
+        .object({
+            scope: z.object({ kind: z.literal('own') }).strict(),
+            filter: McpActivityOwnFilterSchema.default({}),
+            ...McpActivityPageSchema.shape
+        })
+        .strict(),
+    z
+        .object({
+            scope: z.object({ kind: z.literal('all') }).strict(),
+            filter: McpActivityAllFilterSchema.default({}),
+            ...McpActivityPageSchema.shape
+        })
+        .strict()
+]);
+
+/** Validated {@link ListMcpActivityInputSchema}. */
+export type ListMcpActivityInput = z.infer<typeof ListMcpActivityInputSchema>;
+
+/**
+ * What the reader takes from an `mcp.tool.call` row's `data` jsonb. Only these
+ * keys are ever read; any other key in `data` (a future one included) never
+ * reaches an item.
+ */
+export const McpToolCallDataSchema = z.object({
+    tool: z.string().min(1),
+    outcome: McpActivityOutcomeSchema,
+    clientId: z.string().min(1),
+    isWrite: z.boolean().optional(),
+    errorCode: z.string().optional(),
+    resourceType: z.string().min(1).optional(),
+    resourceId: z.string().min(1).optional(),
+    details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional()
+});
+
+/** Parsed {@link McpToolCallDataSchema}. */
+export type McpToolCallData = z.infer<typeof McpToolCallDataSchema>;
+
+/** Most rows one retention statement deletes. */
+export const MCP_AUDIT_RETENTION_MAX_BATCH_SIZE = 10_000;
+
+/**
+ * Input of `McpActivityService.purgeExpired`, minus the abort signal. The batch
+ * size must be at least 1: a zero batch would never come back short and the
+ * loop would never end.
+ */
+export const PurgeMcpActivityInputSchema = z
+    .object({
+        now: z.date(),
+        dryRun: z.boolean().optional(),
+        batchSize: z.number().int().min(1).max(MCP_AUDIT_RETENTION_MAX_BATCH_SIZE).optional(),
+        deadlineAt: z.date().optional()
+    })
+    .strict();
+
+/** Validated {@link PurgeMcpActivityInputSchema}. */
+export type PurgeMcpActivityInput = z.infer<typeof PurgeMcpActivityInputSchema>;
