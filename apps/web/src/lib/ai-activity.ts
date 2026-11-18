@@ -12,6 +12,7 @@
 import { McpActivityOutcomeSchema, McpActivityOwnItemSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { AI_CONNECTIONS_API_PATH } from './ai-assistants';
+import type { SupportedLocale } from './i18n';
 
 /** Path of the protected assistant activity list. */
 export const AI_ACTIVITY_API_PATH = `${AI_CONNECTIONS_API_PATH}/activity`;
@@ -32,6 +33,8 @@ export interface BuildAiActivityUrlParams {
     readonly includeReads: boolean;
     /** Only calls with this result. */
     readonly outcome?: AiActivityOutcome;
+    /** Language the page is rendered in; the API builds the target links with it. */
+    readonly locale: SupportedLocale;
 }
 
 /**
@@ -43,17 +46,18 @@ export interface BuildAiActivityUrlParams {
  *
  * @example
  * ```ts
- * buildAiActivityUrl({ apiUrl: 'https://api.x', page: 2, includeReads: true });
- * // 'https://api.x/api/v1/protected/ai-connections/activity?page=2&includeReads=true'
+ * buildAiActivityUrl({ apiUrl: 'https://api.x', page: 2, includeReads: true, locale: 'es' });
+ * // 'https://api.x/api/v1/protected/ai-connections/activity?page=2&locale=es&includeReads=true'
  * ```
  */
 export function buildAiActivityUrl({
     apiUrl,
     page,
     includeReads,
-    outcome
+    outcome,
+    locale
 }: BuildAiActivityUrlParams): string {
-    const query = new URLSearchParams({ page: String(page) });
+    const query = new URLSearchParams({ page: String(page), locale });
     if (includeReads) query.set('includeReads', 'true');
     if (outcome !== undefined) query.set('outcome', outcome);
     return `${apiUrl.replace(/\/$/, '')}${AI_ACTIVITY_API_PATH}?${query.toString()}`;

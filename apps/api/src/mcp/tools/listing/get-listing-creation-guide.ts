@@ -218,13 +218,18 @@ export const getListingCreationGuideTool = defineTool({
     inputSchema: GetListingCreationGuideInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingCreationGuide>> => {
+    handler: async ({
+        actor,
+        input,
+        context
+    }): Promise<ToolHandlerResult<ListingCreationGuide>> => {
         const { vertical } = input;
         const [destinations, publishQuota] = await Promise.all([
             listCreationDestinations(),
             readPublishQuotaNote({ actor, vertical })
         ]);
         const siteUrl = env.HOSPEDA_SITE_URL;
+        const { locale } = context;
         return {
             data: {
                 vertical,
@@ -242,12 +247,14 @@ export const getListingCreationGuideTool = defineTool({
                     name: draft.name,
                     editorUrl: buildPortalUrl({
                         destination: { kind: 'listingEditor', vertical, id: draft.id },
+                        locale,
                         siteUrl
                     })
                 })),
                 publishQuota,
                 createPageUrl: buildPortalUrl({
                     destination: { kind: 'createListing', vertical },
+                    locale,
                     siteUrl
                 })
             }

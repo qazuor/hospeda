@@ -53,21 +53,29 @@ export function buildCatalogEditorSections({
     readonly vertical: ListingVertical;
     readonly sectionStates: ListingSectionStates;
 }): readonly EditorSection[] {
-    return LISTING_SECTIONS[vertical]
-        .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map((definition): EditorSection => {
-            const presentation = LISTING_SECTION_PRESENTATION[vertical][definition.id];
+    return (
+        LISTING_SECTIONS[vertical]
+            .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
+            // A section whose editor page has not shipped is not offered (HOS-2270).
+            .filter(
+                (definition) => !LISTING_SECTION_PRESENTATION[vertical][definition.id].unreleased
+            )
+            .slice()
+            .sort((a, b) => a.order - b.order)
+            .map((definition): EditorSection => {
+                const presentation = LISTING_SECTION_PRESENTATION[vertical][definition.id];
 
-            return {
-                id: definition.id,
-                slug: presentation.slug,
-                group: definition.group,
-                labelKey: presentation.labelKey,
-                ...(presentation.visibilityKey ? { visibilityKey: presentation.visibilityKey } : {})
-            };
-        });
+                return {
+                    id: definition.id,
+                    slug: presentation.slug,
+                    group: definition.group,
+                    labelKey: presentation.labelKey,
+                    ...(presentation.visibilityKey
+                        ? { visibilityKey: presentation.visibilityKey }
+                        : {})
+                };
+            })
+    );
 }
 
 /**

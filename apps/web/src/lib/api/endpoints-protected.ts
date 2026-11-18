@@ -1971,7 +1971,15 @@ export interface MyPartner {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /** Catalog type id (HOS-2336). `null` until the release-N backfill reaches the row. */
+    readonly typeId?: string | null;
+    /** The hydrated catalog type row (HOS-2336), as `PartnerTypeRefSchema` serializes it. */
+    readonly partnerType?: {
+        readonly id: string;
+        readonly slug: string;
+        readonly nameI18n: Readonly<Record<string, string | undefined>>;
+        readonly lifecycleState: string;
+    } | null;
     readonly logoUrl: string | null;
     readonly description: string | null;
     readonly websiteUrl: string | null;
@@ -2699,6 +2707,35 @@ interface AccommodationContactResponse {
     readonly phone?: string;
     readonly website?: string;
 }
+
+/**
+ * Protected venue reads for signed-in VISITORS (not the owner surfaces).
+ *
+ * @see GET /api/v1/protected/venues/:id/whatsapp (HOS-2256)
+ */
+export const protectedVenuesApi = {
+    /**
+     * Get the WhatsApp number of a published venue whose owner chose to share it
+     * with signed-in users. The public page is session-blind and edge-cached, so
+     * in that mode the number is never in the HTML and is fetched here instead.
+     *
+     * @param params - Venue ID + optional SSR cookie header.
+     * @returns `{ number }`, `number` being `null` when the venue shares none.
+     */
+    getWhatsApp({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        /** SSR-only: raw `Cookie` header so the request carries the session. */
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly number: string | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/venues/${id}/whatsapp`,
+            cookieHeader
+        });
+    }
+};
 
 /** Accommodation lifecycle state values used as query filter */
 

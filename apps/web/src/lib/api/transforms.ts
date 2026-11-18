@@ -37,7 +37,8 @@ import type {
     VenueEvent,
     VenueMenuSection,
     VenueOpeningHoursEntry,
-    VenueSocialNetworks
+    VenueSocialNetworks,
+    VenueWhatsappState
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { parseListingPolicyValues } from '../listing/listing-policies';
@@ -2982,6 +2983,22 @@ function toVenueDetailLocation(raw: unknown): VenueDetailLocation | null {
 }
 
 /**
+ * Reads the public WhatsApp block of a venue (HOS-2256). Fail-closed: anything
+ * that is not exactly one of the two documented shapes is "no button", and the
+ * number is kept only for `PUBLIC`, so a malformed payload can never turn a
+ * `LOGGED_IN_ONLY` block into a published number.
+ */
+function parseVenueWhatsapp(raw: unknown): VenueWhatsappState | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    if (obj.mode === 'LOGGED_IN_ONLY') return { mode: 'LOGGED_IN_ONLY' };
+    if (obj.mode === 'PUBLIC' && typeof obj.number === 'string' && obj.number.trim()) {
+        return { mode: 'PUBLIC', number: obj.number.trim() };
+    }
+    return null;
+}
+
+/**
  * Transforms a raw API venue item to VenueDetailData props.
  *
  * Used on the venue detail page where the full `VenuePublic` shape
@@ -3014,6 +3031,7 @@ export function toVenueDetailPageProps({
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         contactInfo: normalizeVenueContactInfo(item.contactInfo),
+        whatsapp: parseVenueWhatsapp(item.whatsapp),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
@@ -3354,6 +3372,29 @@ export function toExperienceDetailPageProps({
  * @param locale - Active locale for i18n field resolution
  * @returns Typed PartnerDetailData for the partner detail page
  */
+/**
+ * Resolves the public partner type `{ slug, name, nameI18n }` (HOS-2336 D5) to
+ * the label the page renders: `nameI18n[locale]`, then Spanish, then `name`.
+ * A bare string (an API older than HOS-2336) yields `null` here and is carried
+ * as `legacyType` instead, so it never renders as "[object Object]" or a raw
+ * enum value.
+ *
+ * @param input - The raw `type` value and the page locale.
+ * @returns The label, or `null` when the payload carries no type.
+ */
+function resolvePartnerTypeLabel({
+    type,
+    locale
+}: {
+    readonly type: unknown;
+    readonly locale: string;
+}): string | null {
+    if (!type || typeof type !== 'object') return null;
+    const { name, nameI18n } = type as { name?: unknown; nameI18n?: I18nTextLike };
+    const label = resolveI18nTextWithLegacyFallback({ i18n: nameI18n, legacy: name, locale });
+    return label || null;
+}
+
 export function toPartnerDetailProps({
     item,
     locale = 'es'
@@ -3368,7 +3409,8 @@ export function toPartnerDetailProps({
             legacy: item.name,
             locale
         }),
-        type: String(item.type || ''),
+        typeLabel: resolvePartnerTypeLabel({ type: item.type, locale }),
+        legacyType: typeof item.type === 'string' && item.type !== '' ? item.type : null,
         description:
             item.description == null
                 ? null

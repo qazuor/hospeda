@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import { loadPartnerTypeFilterOptions } from '@/components/entity-form/fields/entity-selects/utils';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
 import { EntityType } from '@/components/table/DataTable';
@@ -17,15 +18,15 @@ export const partnersConfig: EntityConfig<Partner> = {
     filterBarConfig: {
         filters: [
             {
+                // Catalog-driven filter (HOS-2336 AC-4.2): options come from the
+                // admin partner type catalog, every lifecycle state included,
+                // and the API receives the type SLUG (`?type=media`).
                 paramKey: 'type',
                 labelKey: 'admin-filters.partnerType.label',
                 type: 'select',
                 order: 1,
-                options: [
-                    { value: 'business', labelKey: 'admin-filters.partnerType.business' },
-                    { value: 'ngo', labelKey: 'admin-filters.partnerType.ngo' },
-                    { value: 'institution', labelKey: 'admin-filters.partnerType.institution' }
-                ]
+                options: [],
+                loadOptions: loadPartnerTypeFilterOptions
             },
             {
                 paramKey: 'includeDeleted',

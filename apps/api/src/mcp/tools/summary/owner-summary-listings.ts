@@ -13,7 +13,7 @@
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { evaluateListingsPublishCompleteness } from '../../../services/listing-publication/listing-publish-completeness-batch';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import type { MyListingRows } from '../listing/list-my-listings';
 import { editorLink, firstMissingSection } from '../listing/listing-refusal-actions';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';
@@ -86,8 +86,11 @@ export function countAllListings({
 const PHOTO_REQUIREMENTS: ReadonlySet<string> = new Set(['mainImage', 'media.featuredImage']);
 
 /** Builds a portal URL from the configured site URL. */
-function portalUrl(destination: Parameters<typeof buildPortalUrl>[0]['destination']): string {
-    return buildPortalUrl({ destination, siteUrl: env.HOSPEDA_SITE_URL });
+function portalUrl(
+    destination: Parameters<typeof buildPortalUrl>[0]['destination'],
+    locale: PortalLocale | undefined
+): string {
+    return buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL });
 }
 
 /**
@@ -100,8 +103,9 @@ function draftItems(args: {
     readonly vertical: ListingToolVertical;
     readonly row: CountedRow;
     readonly missing: readonly string[];
+    readonly locale: PortalLocale | undefined;
 }): AttentionItem[] {
-    const { vertical, row, missing } = args;
+    const { vertical, row, missing, locale } = args;
     const listing = { id: row.id, vertical, name: row.name };
     const ref = { vertical, id: row.id };
     const items: AttentionItem[] = [];
@@ -112,7 +116,8 @@ function draftItems(args: {
             listing,
             missing: rest,
             actionUrl: portalUrl(
-                editorLink({ ref, section: firstMissingSection({ vertical, missing: rest }) })
+                editorLink({ ref, section: firstMissingSection({ vertical, missing: rest }) }),
+                locale
             )
         });
     }
@@ -127,7 +132,8 @@ function draftItems(args: {
                         vertical,
                         missing: missing.filter((item) => PHOTO_REQUIREMENTS.has(item))
                     })
-                })
+                }),
+                locale
             )
         });
     }
@@ -142,9 +148,12 @@ function draftItems(args: {
  * @returns The `incomplete` and `missing_photos` items, in listing order
  */
 export async function readDraftAttention({
-    rows
+    rows,
+    locale
 }: {
     readonly rows: MyListingRows;
+    /** Locale prefix of the links (the user's web language). Defaults to `es`. */
+    readonly locale?: PortalLocale;
 }): Promise<readonly AttentionItem[]> {
     const isDraft = (row: CountedRow): boolean =>
         row.publicationStatus === PublicationStatusEnum.DRAFT;
@@ -176,7 +185,7 @@ export async function readDraftAttention({
         for (const row of drafts) {
             const unmet = missing.get(row.id);
             if (unmet !== undefined && unmet.length > 0) {
-                items.push(...draftItems({ vertical, row, missing: unmet }));
+                items.push(...draftItems({ vertical, row, missing: unmet, locale }));
             }
         }
     }

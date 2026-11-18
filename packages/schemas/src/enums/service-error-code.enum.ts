@@ -163,5 +163,12 @@ export enum ServiceErrorCode {
      * 409. A domain code rather than ALREADY_EXISTS so the admin UI can show
      * the "deactivate it instead" hint on this exact code.
      */
-    CATEGORY_IN_USE = 'CATEGORY_IN_USE'
+    CATEGORY_IN_USE = 'CATEGORY_IN_USE',
+
+    /**
+     * A partner type cannot be deactivated or soft-deleted because at least
+     * one non-deleted partner still uses it (HOS-2336). Maps to HTTP 409. The
+     * error details carry the partner `count`.
+     */
+    PARTNER_TYPE_IN_USE = 'PARTNER_TYPE_IN_USE'
 }

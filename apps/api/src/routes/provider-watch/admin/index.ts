@@ -123,8 +123,8 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
         const input = ProviderWatchAuthorizeInputSchema.parse(body);
         const actor = getActorFromContext(ctx);
         const environment = environmentAccount();
-        // The amount is EXACT: the sum of the money-moving measurements, never typed. A production
-        // authorization with no money-moving measurement is refused outright.
+        // The amount is EXACT: the sum of the money-moving measurements, never typed. A read-only
+        // battery has a sum of 0 and 0 is then the one valid amount; any other value is refused.
         const amount = checkAuthorizedAmount({
             account: environment,
             amountMinor: input.maxChargeMinor
@@ -132,9 +132,7 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
         if (!amount.ok) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
-                amount.refusal === 'NO_MONEY_MEASUREMENTS'
-                    ? 'The catalog has no money-moving measurement for this account: there is nothing to authorize'
-                    : `The authorized amount must be exactly ${amount.expectedMinor} (the sum of the money-moving measurements), not ${input.maxChargeMinor}`
+                `The authorized amount must be exactly ${amount.expectedMinor} (the sum of the money-moving measurements), not ${input.maxChargeMinor}`
             );
         }
         const account = await readConfirmedAccount(environment);

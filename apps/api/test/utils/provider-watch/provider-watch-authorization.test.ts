@@ -68,18 +68,30 @@ describe('checkAuthorizedAmount', () => {
         });
     });
 
-    it('refuses any authorization when there is no money-moving measurement (sum 0)', () => {
-        expect(checkAuthorizedAmount({ account: 'production', amountMinor: 100 })).toEqual({
-            ok: false,
-            refusal: 'NO_MONEY_MEASUREMENTS',
-            expectedMinor: 0
+    it('accepts exactly 0 when there is no money-moving measurement (sum 0, a read-only battery)', () => {
+        expect(checkAuthorizedAmount({ account: 'production', amountMinor: 0 })).toEqual({
+            ok: true
         });
         expect(
             checkAuthorizedAmount({
                 account: 'production',
-                amountMinor: 100,
+                amountMinor: 0,
                 catalog: [entry({ id: 'RP7', effect: 'read' })]
             })
-        ).toMatchObject({ ok: false, refusal: 'NO_MONEY_MEASUREMENTS' });
+        ).toEqual({ ok: true });
+    });
+
+    it('refuses any other amount when the sum is 0', () => {
+        expect(checkAuthorizedAmount({ account: 'production', amountMinor: 100 })).toEqual({
+            ok: false,
+            refusal: 'AMOUNT_DIFFERS',
+            expectedMinor: 0
+        });
+    });
+
+    it('refuses an authorization of 0 when the sum is greater than 0', () => {
+        expect(
+            checkAuthorizedAmount({ account: 'production', amountMinor: 0, catalog: CATALOG })
+        ).toEqual({ ok: false, refusal: 'AMOUNT_DIFFERS', expectedMinor: 150000 });
     });
 });

@@ -65,7 +65,9 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.NEW_PAID_SIGNUPS_FROZEN]: 409,
     [ServiceErrorCode.ADDON_PURCHASES_FROZEN]: 409,
     // Provider trade catalog: deleting a group/category still in use (HOS-919)
-    [ServiceErrorCode.CATEGORY_IN_USE]: 409
+    [ServiceErrorCode.CATEGORY_IN_USE]: 409,
+    // Partner type catalog: deactivating/deleting a type partners still use (HOS-2336)
+    [ServiceErrorCode.PARTNER_TYPE_IN_USE]: 409
 };
 
 /**

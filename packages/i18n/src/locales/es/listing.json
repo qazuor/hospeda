@@ -101,6 +101,7 @@
                 "menu": "Carta",
                 "dailySpecials": "Menú del día",
                 "venueEvents": "Eventos",
+                "venuePromotions": "Promociones",
                 "nightInfo": "Info para salir",
                 "aiQuestions": "Preguntas a la IA"
             },
@@ -164,7 +165,16 @@
                 "mobilePhone": "Teléfono",
                 "landlinePhone": "Teléfono fijo",
                 "publicHint": "Estos datos de contacto se muestran públicamente en tu ficha.",
-                "workEmail": "Email"
+                "workEmail": "Email",
+                "whatsapp": "WhatsApp",
+                "whatsappVisibility": {
+                    "legend": "Quién ve el botón de WhatsApp",
+                    "loggedInOnly": "Solo usuarios logueados",
+                    "public": "Público",
+                    "undecided": "Hasta que elijas una opción, el botón de WhatsApp no se muestra en tu ficha.",
+                    "publicWarning": "Tu número va a quedar visible en la página y cualquiera puede copiarlo, incluidos programas automáticos.",
+                    "loggedInHint": "El número no aparece en la página: solo lo ven las personas que iniciaron sesión."
+                }
             },
             "validation": {
                 "summaryMin": "Mínimo 10 caracteres.",

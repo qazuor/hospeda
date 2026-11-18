@@ -101,6 +101,8 @@ export * from './occupancy-source.enum.js';
 export * from './occupancy-source.schema.js';
 export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';
+export * from './owner-promotion-entity-type.enum.js';
+export * from './owner-promotion-entity-type.schema.js';
 export * from './partner-content-review-state.enum.js';
 export * from './partner-content-review-state.schema.js';
 // Partner logo click destinations (HOS-1063)
@@ -202,6 +204,9 @@ export * from './venue-entry-kind.enum.js';
 export * from './venue-entry-kind.schema.js';
 export * from './venue-type.enum.js';
 export * from './venue-type.schema.js';
+// Venue WhatsApp button visibility (HOS-2256)
+export * from './venue-whatsapp-visibility.enum.js';
+export * from './venue-whatsapp-visibility.schema.js';
 export * from './vertical.enum.js';
 export * from './vertical.schema.js';
 export * from './visibility.enum.js';

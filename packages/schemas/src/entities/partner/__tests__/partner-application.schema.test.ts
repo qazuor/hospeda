@@ -25,31 +25,31 @@ describe('partner application schemas', () => {
         expect(
             PartnerApplicationApproveSchema.safeParse({
                 name: 'Example Partner',
-                type: 'business',
+                typeId: '00000000-0000-4000-a000-000000000009',
                 reason: 'Reviewed'
             }).success
         ).toBe(true);
     });
 
-    it('rejects whitespace-only reason, invalid type, and empty name on approval', () => {
+    it('rejects whitespace-only reason, a non-uuid typeId, and empty name on approval', () => {
         expect(
             PartnerApplicationApproveSchema.safeParse({
                 name: 'Example',
-                type: 'business',
+                typeId: '00000000-0000-4000-a000-000000000009',
                 reason: '   '
             }).success
         ).toBe(false);
         expect(
             PartnerApplicationApproveSchema.safeParse({
                 name: 'Example',
-                type: 'invalid',
+                typeId: 'business',
                 reason: 'Reviewed'
             }).success
         ).toBe(false);
         expect(
             PartnerApplicationApproveSchema.safeParse({
                 name: '',
-                type: 'business',
+                typeId: '00000000-0000-4000-a000-000000000009',
                 reason: 'Reviewed'
             }).success
         ).toBe(false);

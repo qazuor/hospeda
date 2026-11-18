@@ -36,6 +36,7 @@ export * from './mcp-activity/index.js';
 export * from './newsletter/index.js';
 export * from './ownerPromotion/index.js';
 export * from './partner/index.js';
+export * from './partner-type/index.js';
 export * from './permission/index.js';
 export * from './platformSettings/index.js';
 export * from './poi-category/index.js';

@@ -150,6 +150,7 @@ import {
     publicPartnerClaimRoutes
 } from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
+import { adminPartnerTypeRoutes, publicPartnerTypeRoutes } from './partner-type';
 import {
     adminConfigurePartnerBillingRoute,
     adminCreatePartnerMentionsRoute,
@@ -190,6 +191,7 @@ import { protectedRecommendationsRoutes } from './recommendations';
 import { revalidationRouter } from './revalidation';
 import { robotsRoute } from './robots';
 import { protectedSearchHistoryRoutes } from './search-history';
+import { adminSessionRecordingRoutes } from './session-recording/admin/index.js';
 import {
     adminGetGptActionSchemaRoute,
     adminGetMakeWebhookSchemaRoute,
@@ -386,6 +388,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/poi-categories', publicPoiCategoryRoutes);
         // Provider trade catalog: public read tier for the selectors (HOS-919)
         app.route('/api/v1/public/host-trade-categories', publicHostTradeCategoryRoutes);
+        app.route('/api/v1/public/partner-types', publicPartnerTypeRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
@@ -655,6 +658,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Provider trade catalog: one set of permissions gates groups and categories (HOS-919)
         app.route('/api/v1/admin/host-trade-category-groups', adminHostTradeCategoryGroupRoutes);
         app.route('/api/v1/admin/host-trade-categories', adminHostTradeCategoryRoutes);
+        app.route('/api/v1/admin/partner-types', adminPartnerTypeRoutes);
 
         // User-tag admin routes (SPEC-086 T-025..T-028)
         // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE
@@ -723,6 +727,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/platform-settings', adminPlatformSettingsRoutes);
         // HOS-1512: provider watch battery (account confirmation, authorization, shape acceptance)
         app.route('/api/v1/admin/provider-watch', adminProviderWatchRoutes);
+        // HOS-2347: manual purge of expired Umami recordings
+        app.route('/api/v1/admin/session-recording', adminSessionRecordingRoutes);
         app.route('/api/v1/admin/billing-deadlines', adminBillingDeadlineRoutes);
         app.route('/api/v1/admin/vertical-deadlines', adminVerticalDeadlineRoutes);
         app.route('/api/v1/admin/billing-subscription', adminBillingSubscriptionRoutes);

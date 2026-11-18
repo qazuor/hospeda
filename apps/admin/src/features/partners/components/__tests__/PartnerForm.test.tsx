@@ -24,12 +24,39 @@
  *    fails loudly.
  */
 
-import { PartnerTypeEnum } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ApiError } from '@/lib/errors';
 import type { PartnerFormProps } from '../PartnerForm';
 import { PartnerForm } from '../PartnerForm';
+
+const NGO_TYPE_ID = 'f2336000-0000-4000-8000-000000000020';
+const MEDIA_TYPE_ID = 'f2336000-0000-4000-8000-000000000040';
+const LEGACY_TYPE_ID = 'f2336000-0000-4000-8000-000000000090';
+
+/** The admin catalog as the API answers it: ordered by weight, all lifecycle states. */
+const CATALOG = [
+    { id: NGO_TYPE_ID, slug: 'ngo', nameI18n: { es: 'ONG' }, lifecycleState: 'ACTIVE' },
+    { id: MEDIA_TYPE_ID, slug: 'media', nameI18n: { es: 'Medio' }, lifecycleState: 'ACTIVE' },
+    { id: LEGACY_TYPE_ID, slug: 'legacy', nameI18n: { es: 'Antiguo' }, lifecycleState: 'INACTIVE' }
+];
+
+vi.mock('@/hooks/use-partner-types', async (importActual) => {
+    const actual = await importActual<typeof import('@/hooks/use-partner-types')>();
+    return {
+        ...actual,
+        usePartnerTypeOptions: ({ currentTypeId }: { currentTypeId?: string | null } = {}) => ({
+            options: actual.toPartnerTypeOptions({
+                rows: CATALOG as unknown as Parameters<
+                    typeof actual.toPartnerTypeOptions
+                >[0]['rows'],
+                currentTypeId
+            }),
+            isLoading: false,
+            isError: false
+        })
+    };
+});
 
 /**
  * A partner exactly as production holds one.
@@ -40,7 +67,7 @@ function prodPartner() {
     return {
         name: 'Fundación Entre Ríos Sustentable',
         slug: 'fundacion-entre-rios-sustentable',
-        type: PartnerTypeEnum.NGO,
+        typeId: NGO_TYPE_ID,
         logoUrl: 'https://images.pexels.com/photos/1108572/pexels-photo-1108572.jpeg',
         websiteUrl: 'https://www.entreriossustentable.org.ar',
         description: 'Una fundación de prueba.',
@@ -205,5 +232,36 @@ describe('PartnerForm — a rejected save says so (HOS-1061)', () => {
         await waitFor(() => {
             expect(screen.getByRole('alert')).toHaveTextContent('Network error');
         });
+    });
+});
+
+describe('PartnerForm — catalog type select (HOS-2336 AC-4.1)', () => {
+    it('lists only ACTIVE types for a partner whose type is active, and submits typeId', async () => {
+        const { onSubmit } = renderForm();
+        const select = screen.getByTestId('partner-type-select') as HTMLSelectElement;
+
+        expect(within(select).queryByText(/Antiguo/)).toBeNull();
+        fireEvent.change(select, { target: { value: MEDIA_TYPE_ID } });
+        fireEvent.click(submitButton());
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ typeId: MEDIA_TYPE_ID });
+        expect(onSubmit.mock.calls[0]?.[0]).not.toHaveProperty('type');
+    });
+
+    it('keeps the current inactive type selectable, marked "inactiva", so other edits save', async () => {
+        const initialData = {
+            ...prodPartner(),
+            typeId: LEGACY_TYPE_ID
+        } as PartnerFormProps['initialData'];
+        const { onSubmit } = renderForm({ initialData });
+        const select = screen.getByTestId('partner-type-select') as HTMLSelectElement;
+
+        expect(select.value).toBe(LEGACY_TYPE_ID);
+        expect(within(select).getByText('Antiguo (inactiva)')).toBeTruthy();
+        fireEvent.click(submitButton());
+
+        await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+        expect(onSubmit.mock.calls[0]?.[0]).toMatchObject({ typeId: LEGACY_TYPE_ID });
     });
 });

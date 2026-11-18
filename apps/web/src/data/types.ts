@@ -1262,6 +1262,11 @@ export interface VenueContactInfo {
     readonly website?: string | null;
 }
 
+/** WhatsApp button state of a venue's public payload (HOS-2256). */
+export type VenueWhatsappState =
+    | { readonly mode: 'PUBLIC'; readonly number: string }
+    | { readonly mode: 'LOGGED_IN_ONLY' };
+
 export interface VenueDetailData extends VenueCardData {
     /** Structured postal address (HOS-2189). Null when the owner has not set one. */
     readonly location: VenueDetailLocation | null;
@@ -1275,6 +1280,13 @@ export interface VenueDetailData extends VenueCardData {
      * when no usable channel is present.
      */
     readonly contactInfo?: VenueContactInfo | null;
+    /**
+     * State of the WhatsApp button (HOS-2256), derived by the API from the
+     * owner's choice. The number is present ONLY for `PUBLIC`;
+     * `LOGGED_IN_ONLY` never carries it (an island asks a protected endpoint).
+     * `null` when the venue shows no button.
+     */
+    readonly whatsapp?: VenueWhatsappState | null;
     /** External URL for the establishment's menu. Null when not provided. */
     readonly menuUrl?: string | null;
     /**
@@ -1633,7 +1645,19 @@ export interface ExperienceDetailData extends ExperienceCardData {
 export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /**
+     * The catalog type's name in the page locale, falling back to Spanish
+     * (HOS-2336 AC-5.1). `null` for a partner the release-N backfill has not
+     * reached yet.
+     */
+    readonly typeLabel: string | null;
+    /**
+     * The bare legacy enum value (`business` / `ngo` / `institution`) when the
+     * API still answers `type` as a string, i.e. an API older than HOS-2336
+     * during a web-first rollout. The page labels it through `partners.types.*`.
+     * `null` whenever {@link typeLabel} came from the catalog.
+     */
+    readonly legacyType: string | null;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;

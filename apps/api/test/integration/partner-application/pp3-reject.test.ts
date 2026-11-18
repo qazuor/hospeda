@@ -12,7 +12,9 @@ import {
     createApplicationEmail,
     deleteApplications,
     deletePartners,
-    insertPending
+    ensureTestPartnerType,
+    insertPending,
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const app = initApp();
@@ -96,6 +98,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
     validateApiEnv();
+    await ensureTestPartnerType();
     await checkDatabasePreconditions();
 });
 afterEach(async () => {
@@ -223,7 +226,11 @@ describe('TEST:V7:5 PP3 rejection', () => {
             action: 'approve',
             id: approvedId,
             actorId,
-            body: { reason: REASON, name: 'PP3 Approved Fixture', type: 'business' }
+            body: {
+                reason: REASON,
+                name: 'PP3 Approved Fixture',
+                typeId: testPartnerTypeId()
+            }
         });
         expect(approval.status).toBe(200);
         const approvedPartnerId = (approval.body as { data: { partnerId: string } }).data.partnerId;

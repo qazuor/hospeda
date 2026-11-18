@@ -1,0 +1,2 @@
+CREATE TYPE "public"."venue_whatsapp_visibility_enum" AS ENUM('PUBLIC', 'LOGGED_IN_ONLY');--> statement-breakpoint
+ALTER TABLE "venues" ADD COLUMN "whatsapp_visibility" "venue_whatsapp_visibility_enum";

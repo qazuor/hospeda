@@ -27,6 +27,8 @@ describe('TEST:5.1:4 listing section presentation', () => {
             for (const [sectionId, presentation] of Object.entries(
                 LISTING_SECTION_PRESENTATION[vertical]
             )) {
+                // HOS-2270: a section flagged `unreleased` has no page yet (see below).
+                if ('unreleased' in presentation && presentation.unreleased) continue;
                 expect(
                     ROUTE_FILES,
                     `${vertical}.${sectionId} declares slug "${presentation.slug}" but no route file renders it`
@@ -48,6 +50,20 @@ describe('TEST:5.1:4 listing section presentation', () => {
             }
         });
     }
+
+    it('HOS-2270: an unreleased section has NO route file, so the flag is dropped with the page', () => {
+        for (const vertical of ['venue', 'experience'] as const) {
+            for (const [sectionId, presentation] of Object.entries(
+                LISTING_SECTION_PRESENTATION[vertical]
+            )) {
+                if (!('unreleased' in presentation) || !presentation.unreleased) continue;
+                expect(
+                    ROUTE_FILES,
+                    `${vertical}.${sectionId} is flagged unreleased but its page exists: remove the flag`
+                ).not.toContain(`${presentation.slug}.astro`);
+            }
+        }
+    });
 
     it('uses a URL-safe slug everywhere', () => {
         for (const vertical of ['venue', 'experience'] as const) {

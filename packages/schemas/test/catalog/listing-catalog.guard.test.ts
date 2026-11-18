@@ -23,7 +23,8 @@ const GLOBAL_KEYS_ALLOWED_IN_CATALOG: readonly string[] = ['has_verification_bad
  * public payload) until HOS-2280 grants `can_embed_video` to the venue plans;
  * remove the entry then, so rule r6 covers it again.
  */
-const KEYS_PENDING_PLAN_GRANT: readonly string[] = ['can_embed_video'];
+// create_promotions: HOS-2270 ships the venue promotions section before HOS-2282 grants it.
+const KEYS_PENDING_PLAN_GRANT: readonly string[] = ['can_embed_video', 'create_promotions'];
 type Catalog = typeof LISTING_SECTIONS;
 type Section = {
     id: string;

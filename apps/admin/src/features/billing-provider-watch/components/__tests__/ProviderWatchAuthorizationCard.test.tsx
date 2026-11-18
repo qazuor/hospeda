@@ -266,15 +266,20 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 42000 } });
     });
 
-    it('cannot authorize an empty money catalog: sum 0', async () => {
+    it('lets the owner authorize a read-only battery: sum 0, says the run moves no money, sends 0', async () => {
         permissions.mockReturnValue(MANAGER);
         api({ preview: { expectedMaxChargeMinor: 0, measurements: [] } });
         renderCard();
         expect(await screen.findByTestId('provider-watch-no-money')).toHaveTextContent(
             copy.noMoneyCatalog
         );
-        expect(screen.getByTestId('provider-watch-save')).toBeDisabled();
-        expect(posts()).toHaveLength(0);
+        await waitFor(() => expect(screen.getByTestId('provider-watch-save')).not.toBeDisabled());
+        fireEvent.click(screen.getByTestId('provider-watch-save'));
+        const dialog = await screen.findByTestId('provider-watch-confirm');
+        expect(dialog).toHaveTextContent(/solo lectura|read-only/i);
+        fireEvent.click(within(dialog).getByRole('button', { name: copy.save }));
+        await waitFor(() => expect(posts()).toHaveLength(1));
+        expect(posts()[0]?.[0]).toMatchObject({ body: { maxChargeMinor: 0 } });
     });
 
     it('cannot authorize when the amount cannot be computed', async () => {

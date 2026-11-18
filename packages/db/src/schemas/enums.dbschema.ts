@@ -38,6 +38,7 @@ import {
     NotificationRecipientSideEnum,
     OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
+    OwnerPromotionEntityTypeEnum,
     PartnerContentReviewStateEnum,
     PartnerLogoClickDestinationEnum,
     PartnerMentionChannelEnum,
@@ -76,6 +77,7 @@ import {
     TouristAudienceEnum,
     VenueEntryKindEnum,
     VenueTypeEnum,
+    VenueWhatsappVisibilityEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -300,6 +302,12 @@ export const OwnerPromotionDiscountTypePgEnum = pgEnum(
     enumToTuple(OwnerPromotionDiscountTypeEnum)
 );
 
+/** Kind of listing an owner promotion hangs from (HOS-2270). */
+export const OwnerPromotionEntityTypePgEnum = pgEnum(
+    'owner_promotion_entity_type_enum',
+    enumToTuple(OwnerPromotionEntityTypeEnum)
+);
+
 export const TouristAudiencePgEnum = pgEnum(
     'tourist_audience_enum',
     enumToTuple(TouristAudienceEnum)
@@ -333,6 +341,12 @@ export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRang
 export const VenueEntryKindPgEnum = pgEnum(
     'venue_entry_kind_enum',
     enumToTuple(VenueEntryKindEnum)
+);
+
+/** Who may see a venue's WhatsApp button (HOS-2256). */
+export const VenueWhatsappVisibilityPgEnum = pgEnum(
+    'venue_whatsapp_visibility_enum',
+    enumToTuple(VenueWhatsappVisibilityEnum)
 );
 
 export const ExternalPlatformPgEnum = pgEnum(

@@ -25,23 +25,29 @@ import { protectedAddVenueFeaturedMediaRoute } from './addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from './addMedia';
 import { protectedGetVenueBrochureRoute } from './brochure';
 import { protectedCreateVenueListingRoute } from './create';
+import { protectedCreateVenuePromotionRoute } from './createPromotion';
 import { protectedCreateVenueReviewRoute } from './createReview';
 import { protectedDeleteVenueMenuFileRoute } from './deleteMenuFile';
+import { protectedDeleteVenuePromotionRoute } from './deletePromotion';
 import { protectedGetVenueByIdRoute } from './getById';
 import { protectedGetVenueDailySpecialsRoute } from './getDailySpecials';
 import { protectedGetVenueEventsRoute } from './getEvents';
 import { protectedGetVenueMediaRoute } from './getMedia';
 import { protectedGetVenueMenuRoute } from './getMenu';
+import { protectedGetVenueWhatsappRoute } from './getWhatsapp';
 import { protectedListMyVenueRoute } from './listMine';
+import { protectedListVenuePromotionsRoute } from './listPromotions';
 import { protectedGetVenueMenuQrRoute } from './menuQr';
 import { protectedGetVenueMenuQrScansRoute } from './menuQrScans';
 import { protectedPatchVenueRoute } from './patch';
+import { protectedPatchVenuePromotionRoute } from './patchPromotion';
 import { protectedPublishVenueRoute } from './publish';
 import { protectedPurgeVenueRoute } from './purge';
 import { protectedVenuePurgePreviewRoute } from './purgePreview';
 import { protectedPutVenueDailySpecialsRoute } from './putDailySpecials';
 import { protectedPutVenueEventsRoute } from './putEvents';
 import { protectedPutVenueMenuRoute } from './putMenu';
+import { protectedPutVenuePromotionRoute } from './putPromotion';
 import { protectedGetVenueQrCodeRoute } from './qrCode';
 import { protectedGetVenueQrSheetRoute } from './qrSheet';
 import { protectedReactivateVenueRoute } from './reactivate';
@@ -80,6 +86,10 @@ app.route('/', protectedListMyVenueRoute);
 // alongside /mine for readability.
 app.route('/', protectedVenueViewStatsRoute);
 app.route('/', protectedVenueViewStatsDailySeriesRoute);
+
+// GET /{id}/whatsapp — the number for a signed-in visitor, when the owner chose
+// "solo logueados" (HOS-2256). Registered before /{id} like its siblings.
+app.route('/', protectedGetVenueWhatsappRoute);
 
 // GET /{id}/brochure — Printable PDF sheet (HOS-1058). Registered before
 // /{id} for the same DEFENSIVE reason as the media entries: Hono resolves a
@@ -157,6 +167,19 @@ app.route('/', protectedGetVenueEventsRoute);
 // PUT /{id}/events — replace the agenda. Gated on MANAGE_VENUE_EVENTS
 // (venue-pro and above).
 app.route('/', protectedPutVenueEventsRoute);
+
+// Promotions (HOS-2270) — the owner's promotions of the venue. Registered before
+// /{id} for the same DEFENSIVE reason as every static-segment entry above.
+//
+// GET /{id}/promotions — list them. NOT entitlement-gated: reading what the owner
+// loaded is never paid. POST creates (create_promotions + max_active_promotions);
+// PUT and PATCH edit, and PATCH is also the pause; DELETE puts one away, which
+// stays allowed after a plan downgrade.
+app.route('/', protectedListVenuePromotionsRoute);
+app.route('/', protectedCreateVenuePromotionRoute);
+app.route('/', protectedPutVenuePromotionRoute);
+app.route('/', protectedPatchVenuePromotionRoute);
+app.route('/', protectedDeleteVenuePromotionRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedPublishVenueRoute);

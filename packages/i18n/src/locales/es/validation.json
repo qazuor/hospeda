@@ -2473,6 +2473,9 @@
         "ownerPromotionDiscountType": {
             "invalid": "El owner promotion discount type no es válido"
         },
+        "ownerPromotionEntityType": {
+            "invalid": "El tipo de destino de la promoción no es válido"
+        },
         "partnerMentionChannel": {
             "invalid": "El canal de mención no es válido"
         },
@@ -2608,6 +2611,9 @@
         },
         "entityInteractionKind": {
             "invalid": "El tipo de interacción no es válido"
+        },
+        "venueWhatsappVisibility": {
+            "invalid": "La visibilidad del WhatsApp no es válida"
         },
         "featureCategory": {
             "invalid": "Elegí una categoría de característica válida"
@@ -3692,9 +3698,19 @@
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres"
         },
+        "discountType": {
+            "notForAccommodation": "Este tipo de beneficio no está disponible para alojamientos",
+            "notForVenue": "Este tipo de beneficio no está disponible para locales"
+        },
         "discountValue": {
+            "int": "El valor del descuento debe ser un número entero",
+            "maxPercentage": "El porcentaje no puede superar 100",
             "min": "El valor del descuento no puede ser negativo",
+            "notForSpecialOffer": "Una oferta especial no lleva valor de descuento",
             "required": "El valor del descuento es obligatorio"
+        },
+        "entityId": {
+            "requiredForVenue": "La promoción de un local necesita el id del local"
         },
         "maxRedemptions": {
             "int": "Los usos máximos deben ser un número entero",
@@ -3702,21 +3718,34 @@
         },
         "minNights": {
             "int": "La cantidad mínima de noches debe ser un número entero",
-            "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres"
+            "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres",
+            "notForVenue": "Las promociones de un local no tienen mínimo de noches"
         },
         "slug": {
             "min": "El identificador debe tener al menos {{min}} caracteres",
             "required": "El identificador es obligatorio"
+        },
+        "specialOfferText": {
+            "max": "El texto de la oferta no puede superar los 1000 caracteres",
+            "min": "El texto de la oferta no puede estar vacío",
+            "noDescription": "En una oferta especial el texto va en el campo de la oferta, no en la descripción",
+            "onlyForSpecialOffer": "El texto de la oferta solo aplica al tipo oferta especial",
+            "rejected": "El texto de la oferta no cumple las reglas de contenido",
+            "required": "Contá en qué consiste la oferta especial"
         },
         "title": {
             "max": "El título no puede superar los {{max}} caracteres",
             "min": "El título debe tener al menos {{min}} caracteres",
             "required": "El título es obligatorio"
         },
+        "touristAudience": {
+            "venuePlusOnly": "Las promociones de un local solo admiten la audiencia general"
+        },
         "validFrom": {
             "required": "La fecha de inicio es obligatoria"
         },
         "validUntil": {
+            "beforeValidFrom": "La fecha de fin debe ser posterior a la de inicio",
             "invalid": "La fecha de fin no es válida"
         }
     },
@@ -3840,6 +3869,23 @@
                 "required": "Indicá el motivo de la moderación",
                 "max": "El motivo de la moderación no puede superar los {{max}} caracteres"
             }
+        }
+    },
+    "partnerType": {
+        "slug": {
+            "required": "El slug es obligatorio",
+            "min": "El slug debe tener al menos {{min}} caracteres",
+            "max": "El slug no puede superar los {{max}} caracteres",
+            "pattern": "El slug sólo admite minúsculas, números y guiones"
+        },
+        "nameI18n": {
+            "esRequired": "El nombre en español es obligatorio"
+        },
+        "displayWeight": {
+            "required": "El orden es obligatorio",
+            "int": "El orden debe ser un número entero",
+            "min": "El orden debe ser al menos {{min}}",
+            "max": "El orden no puede superar {{max}}"
         }
     },
     "poiCategory": {

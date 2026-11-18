@@ -9,7 +9,7 @@
  * - The BUDGET guard, in two layers. (1) The authorized amount is EXACT at run level: in pre-flight,
  *   before it is consumed, it must equal the sum of the declared maximum charges of the account's
  *   money-moving measurements (owner decision, 2026-11-18); a mismatch refuses the run and burns
- *   nothing. (2) It also caps the WHOLE run: the engine keeps one running total of charges, and a
+ *   nothing. A read-only battery has a sum of 0 and is authorized with 0 (owner decision F5, 2026-11-18). (2) It also caps the WHOLE run: the engine keeps one running total of charges, and a
  *   measurement whose own maximum is above the authorized amount aborts. Refunds are tracked apart.
  *
  * @module battery/watch-guards

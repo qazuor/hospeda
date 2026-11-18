@@ -74,6 +74,12 @@
         "contactLandlineAriaLabel": "Ligar para o telefone fixo do estabelecimento",
         "contactEmailAriaLabel": "Enviar e-mail ao estabelecimento",
         "contactWebsiteAriaLabel": "Visitar o site do estabelecimento",
+        "whatsapp": {
+            "cta": "Enviar mensagem no WhatsApp",
+            "signInCta": "Entre para enviar mensagem no WhatsApp",
+            "loading": "Carregando WhatsApp",
+            "messageTemplate": "Olá, vi a ficha de {{name}} na Hospeda e queria perguntar uma coisa."
+        },
         "menuCarta": {
             "title": "Cardápio",
             "attachmentImage": "Cardápio em imagem",
