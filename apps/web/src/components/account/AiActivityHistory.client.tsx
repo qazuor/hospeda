@@ -90,9 +90,12 @@ export function AiActivityHistory({
         const seq = requestSeq.current;
         setLoad({ kind: 'loading' });
         try {
-            const res = await fetch(buildAiActivityUrl({ apiUrl, page, includeReads, outcome }), {
-                credentials: 'include'
-            });
+            const res = await fetch(
+                buildAiActivityUrl({ apiUrl, page, includeReads, outcome, locale }),
+                {
+                    credentials: 'include'
+                }
+            );
             if (res.status === 401) {
                 if (seq === requestSeq.current) setLoad({ kind: 'signedOut' });
                 return;
@@ -107,7 +110,7 @@ export function AiActivityHistory({
         } catch {
             if (seq === requestSeq.current) setLoad({ kind: 'error' });
         }
-    }, [apiUrl, page, includeReads, outcome]);
+    }, [apiUrl, page, includeReads, outcome, locale]);
 
     useEffect(() => {
         void loadPage();

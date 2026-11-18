@@ -230,9 +230,11 @@ writes only by default; `includeReads=true` is the web's "mostrar también lo
 que solo miró" toggle (D-12) and maps to no `access` filter. In es "consulta"
 is kept for guest inquiries only, so the toggle never uses the word. The route wires the
 reader's `buildTargetUrl` port to `mcp/portal/activity-target-url.ts`: a listing
-links to its editor and a conversation to its inquiry thread, always in `es`
-(U-5: the activity reader is shared with the admin log, so it has no per-viewer
-locale yet; MCP tool links do, see below). The response does not carry `skipped`. The web page is
+links to its editor and a conversation to its inquiry thread, in the language
+the page is rendered in: the web sends it as the optional `locale` query param
+(`es|en|pt`, anything else is a 400, absent means `es`). The source is the page
+language, not the stored user setting (U-5, owner decision 2026-11-18). The admin
+log passes no locale and keeps `es` links. The response does not carry `skipped`. The web page is
 `/{lang}/mi-cuenta/asistentes-ia/historial/` (portal destination
 `aiAssistantsHistory`). It labels every tool and error code through i18n and
 renders a `reply_inquiry` row with `step: 'send'` (written before HOS-2247) the

@@ -20,7 +20,7 @@ const ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
 describe('buildAiActivityUrl (D-12 toggle)', () => {
     it('sends no includeReads when the toggle is off: writes only', () => {
         const url = new URL(
-            buildAiActivityUrl({ apiUrl: `${API}/`, page: 1, includeReads: false })
+            buildAiActivityUrl({ apiUrl: `${API}/`, page: 1, includeReads: false, locale: 'es' })
         );
 
         expect(url.pathname).toBe('/api/v1/protected/ai-connections/activity');
@@ -29,19 +29,35 @@ describe('buildAiActivityUrl (D-12 toggle)', () => {
     });
 
     it('sends includeReads=true when the toggle is on', () => {
-        const url = new URL(buildAiActivityUrl({ apiUrl: API, page: 3, includeReads: true }));
+        const url = new URL(
+            buildAiActivityUrl({ apiUrl: API, page: 3, includeReads: true, locale: 'es' })
+        );
 
         expect(url.searchParams.get('includeReads')).toBe('true');
         expect(url.searchParams.get('page')).toBe('3');
     });
 
+    it.each(['es', 'en', 'pt'] as const)('sends the page language %s as locale', (locale) => {
+        const url = new URL(
+            buildAiActivityUrl({ apiUrl: API, page: 1, includeReads: false, locale })
+        );
+
+        expect(url.searchParams.get('locale')).toBe(locale);
+    });
+
     it('adds the result filter and never a user', () => {
         const url = new URL(
-            buildAiActivityUrl({ apiUrl: API, page: 1, includeReads: false, outcome: 'denied' })
+            buildAiActivityUrl({
+                apiUrl: API,
+                page: 1,
+                includeReads: false,
+                outcome: 'denied',
+                locale: 'es'
+            })
         );
 
         expect(url.searchParams.get('outcome')).toBe('denied');
-        expect([...url.searchParams.keys()].sort()).toEqual(['outcome', 'page']);
+        expect([...url.searchParams.keys()].sort()).toEqual(['locale', 'outcome', 'page']);
     });
 });
 

@@ -235,6 +235,12 @@ export type McpActivityOwnItem = z.infer<typeof McpActivityOwnItemSchema>;
 /** Largest page of the owner's history (HOS-2335 §6.9). */
 export const MCP_ACTIVITY_OWN_MAX_PAGE_SIZE = 20;
 
+/** Languages the owner history can build its target links in (the web locales). */
+export const McpActivityLocaleSchema = z.enum(['es', 'en', 'pt']);
+
+/** TypeScript type inferred from {@link McpActivityLocaleSchema}. */
+export type McpActivityLocale = z.infer<typeof McpActivityLocaleSchema>;
+
 /**
  * Query of `GET /api/v1/protected/ai-connections/activity` (HOS-2335 §6.9).
  * Strict: only these keys exist, so a `userId`, `actorId` or `scope` param is
@@ -263,7 +269,12 @@ export const McpActivityOwnQuerySchema = z
         /** Calls logged on or after this instant. */
         fromDate: z.coerce.date().optional(),
         /** Calls logged on or before this instant; a bare date covers its whole day. */
-        toDate: McpActivityToDateSchema.optional()
+        toDate: McpActivityToDateSchema.optional(),
+        /**
+         * Language of the target links: the page language the web renders in
+         * (owner decision 2026-11-18). Absent builds `es` links.
+         */
+        locale: McpActivityLocaleSchema.optional()
     })
     .strict();
 
@@ -279,7 +290,7 @@ export type McpActivityOwnQuery = z.infer<typeof McpActivityOwnQuerySchema>;
  * @returns The `own` filter.
  */
 export function toMcpActivityOwnFilter(input: {
-    readonly query: Omit<McpActivityOwnQuery, 'page' | 'pageSize'>;
+    readonly query: Omit<McpActivityOwnQuery, 'page' | 'pageSize' | 'locale'>;
 }): McpActivityOwnFilter {
     const { clientId, outcome, includeReads, fromDate, toDate } = input.query;
     return {

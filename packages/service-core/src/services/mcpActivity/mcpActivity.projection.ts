@@ -7,6 +7,7 @@
  */
 import {
     type McpActivityItem,
+    type McpActivityLocale,
     type McpActivityScope,
     type McpActivityTarget,
     type McpToolCallData,
@@ -92,6 +93,8 @@ export interface McpActivityLookups {
 /** Builds the portal URL of a target the row's actor still owns. */
 export type McpActivityTargetUrlBuilder = (input: {
     readonly target: { readonly type: string; readonly id: string };
+    /** Language of the link; absent means the builder's default (`es`). */
+    readonly locale?: McpActivityLocale;
 }) => string | undefined;
 
 /**
@@ -105,8 +108,9 @@ function projectTarget(input: {
     readonly actorId: string | null;
     readonly lookups: McpActivityLookups;
     readonly buildTargetUrl?: McpActivityTargetUrlBuilder;
+    readonly locale?: McpActivityLocale;
 }): McpActivityTarget | undefined {
-    const { data, actorId, lookups, buildTargetUrl } = input;
+    const { data, actorId, lookups, buildTargetUrl, locale } = input;
     if (data.resourceType === undefined || data.resourceId === undefined) return undefined;
     const bare = { type: data.resourceType, id: data.resourceId };
     if (actorId === null) return bare;
@@ -119,7 +123,7 @@ function projectTarget(input: {
             : listing.ownerId === actorId;
     if (!owned) return bare;
 
-    const url = buildTargetUrl?.({ target: bare });
+    const url = buildTargetUrl?.({ target: bare, ...(locale === undefined ? {} : { locale }) });
     return {
         ...bare,
         ...(listing === undefined ? {} : { label: listing.name }),
@@ -139,12 +143,19 @@ export function projectMcpActivityItem(input: {
     readonly scope: McpActivityScope;
     readonly lookups: McpActivityLookups;
     readonly buildTargetUrl?: McpActivityTargetUrlBuilder;
+    readonly locale?: McpActivityLocale;
 }): McpActivityItem {
-    const { parsed, scope, lookups, buildTargetUrl } = input;
+    const { parsed, scope, lookups, buildTargetUrl, locale } = input;
     const { row, data } = parsed;
     const step = data.details?.step;
     const clientName = lookups.clientNames.get(data.clientId);
-    const target = projectTarget({ data, actorId: row.actorId, lookups, buildTargetUrl });
+    const target = projectTarget({
+        data,
+        actorId: row.actorId,
+        lookups,
+        buildTargetUrl,
+        locale
+    });
     return {
         id: row.id,
         loggedAt: row.loggedAt,
