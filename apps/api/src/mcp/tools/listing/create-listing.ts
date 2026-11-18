@@ -304,7 +304,7 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
             }
             const destination = await findCreationDestination({ id: input.destinationId });
             if (!destination) {
-                return fieldError('destinationId', 'no es un destino de Hospeda');
+                return fieldError('destinationId', 'no es una ciudad de Hospeda');
             }
             const binding = {
                 userId: actor.id,

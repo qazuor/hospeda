@@ -153,8 +153,12 @@ export async function listCreationDestinations(): Promise<
 /**
  * Reads one destination the listing may belong to.
  *
+ * Only a CITY qualifies, the same set {@link listCreationDestinations} lists in
+ * the guide: a province or region id the model copied from elsewhere is refused
+ * as if it did not exist.
+ *
  * @param args - The destination id from the input
- * @returns The destination, or `undefined` when it does not exist
+ * @returns The destination, or `undefined` when it does not exist or is not a city
  */
 export async function findCreationDestination({
     id
@@ -162,7 +166,7 @@ export async function findCreationDestination({
     readonly id: string;
 }): Promise<CreationDestination | undefined> {
     const result = await destinationService.getById(createGuestActor(), id);
-    if (result.error || !result.data) {
+    if (result.error || !result.data || result.data.destinationType !== DestinationTypeEnum.CITY) {
         return undefined;
     }
     return { id: result.data.id, name: result.data.name };

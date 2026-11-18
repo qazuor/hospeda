@@ -11,7 +11,7 @@
  * @module test/mcp/tools/listing/create-listing.harness
  */
 
-import { VerticalEnum } from '@repo/schemas';
+import { DestinationTypeEnum, VerticalEnum } from '@repo/schemas';
 import {
     AccommodationService,
     type Actor,
@@ -40,6 +40,8 @@ export const OTHER_ID = '2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d';
 export const CREATED_ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
 export const DESTINATION_ID = 'd1111111-1111-4111-8111-111111111111';
 export const UNKNOWN_DESTINATION_ID = 'd9999999-9999-4999-8999-999999999999';
+/** A real destination that is not a city (a province). */
+export const PROVINCE_DESTINATION_ID = 'd8888888-8888-4888-8888-888888888888';
 export const CLIENT = 'https://claude.ai/oauth/mcp-client-metadata';
 export const OTHER_CLIENT = 'https://chatgpt.com/oauth/client';
 export const context = { channel: 'mcp', clientId: CLIENT } as const;
@@ -136,8 +138,22 @@ export function givenDestinations() {
             .spyOn(DestinationService.prototype, 'getById')
             .mockImplementation(async (_actor, id) =>
                 id === DESTINATION_ID
-                    ? ({ data: { id, name: 'Concepción del Uruguay' } } as never)
-                    : ({ data: null } as never)
+                    ? ({
+                          data: {
+                              id,
+                              name: 'Concepción del Uruguay',
+                              destinationType: DestinationTypeEnum.CITY
+                          }
+                      } as never)
+                    : id === PROVINCE_DESTINATION_ID
+                      ? ({
+                            data: {
+                                id,
+                                name: 'Entre Ríos',
+                                destinationType: DestinationTypeEnum.PROVINCE
+                            }
+                        } as never)
+                      : ({ data: null } as never)
             ),
         search: vi.spyOn(DestinationService.prototype, 'search').mockResolvedValue({
             data: { items: [{ id: DESTINATION_ID, name: 'Concepción del Uruguay' }], total: 1 }
