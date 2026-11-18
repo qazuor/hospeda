@@ -16,7 +16,7 @@
 import type { EntityInteractionKind, TrackableInteractionEntityType } from '@repo/schemas';
 import { getLocalMonthWindow } from '@repo/utils';
 import { lt, sql } from 'drizzle-orm';
-import { getDb } from '../../client.ts';
+import { getDb, withTransaction } from '../../client.ts';
 import type {
     InsertEntityInteraction,
     SelectEntityInteraction
@@ -113,9 +113,10 @@ export class EntityInteractionModel {
      * Aggregates one calendar month of interactions into
      * `entity_interaction_monthly_rollups`, for every (entity, kind, event) that has any.
      *
-     * A single `INSERT ... SELECT ... ON CONFLICT DO UPDATE`, so a re-run over a
-     * month whose source rows still exist CORRECTS the stored totals instead of
-     * duplicating them. Month boundaries are resolved in TypeScript (local
+     * A `DELETE` of the month plus an `INSERT ... SELECT ... ON CONFLICT DO
+     * UPDATE` in one transaction, so a re-run over a month whose source rows
+     * still exist CORRECTS the stored totals instead of duplicating them (see
+     * the comment on the DELETE for the deleted-event case). Month boundaries are resolved in TypeScript (local
      * midnights as UTC instants), never with `DATE_TRUNC ... AT TIME ZONE` in
      * SQL, for the two reasons documented in `PartnerLogoClickModel.rollUpMonth`
      * (the statement could not execute, and it was not sargable).
@@ -130,7 +131,6 @@ export class EntityInteractionModel {
      * @throws {DbError} If the database operation fails.
      */
     async rollUpMonth(input: { readonly month: Date }, tx?: DrizzleClient): Promise<number> {
-        const db = this.getClient(tx);
         const { monthStart, nextMonthStart, monthLabel } = getLocalMonthWindow({
             instant: input.month
         });
@@ -138,7 +138,22 @@ export class EntityInteractionModel {
 
         try {
             const nilEvent = sql.raw(`'${NIL_EVENT_ID_SQL}'::uuid`);
-            const result = await db.execute(sql`
+            // One transaction: the month is cleared and rewritten as a unit, so a
+            // reader never sees it half-written and a failure keeps the old rows.
+            const result = await withTransaction(async (client) => {
+                // WHY the DELETE. The unique key is (entity, kind, coalesce(event_id), month).
+                // When an event is deleted its raw rows become `event_id = NULL`
+                // (FK `SET NULL`), so the next run would INSERT a (NULL, month) row
+                // and leave the old (E, month) row standing: the month would count
+                // those taps twice, forever. Clearing the month first makes the
+                // rollup a pure function of the raw rows. This is only safe for a
+                // month whose raw rows are all still retained, which is true of the
+                // two months the cron rewrites (the horizon is 120 days).
+                await client.execute(sql`
+                    DELETE FROM entity_interaction_monthly_rollups
+                    WHERE month = ${monthLabel}::date
+                `);
+                return client.execute(sql`
                 INSERT INTO entity_interaction_monthly_rollups
                     (entity_type, entity_id, kind, event_id, month, total, unique_visitors)
                 SELECT
@@ -162,6 +177,7 @@ export class EntityInteractionModel {
                     total = EXCLUDED.total,
                     unique_visitors = EXCLUDED.unique_visitors
             `);
+            }, tx);
 
             const written = (result as { rowCount?: number | null }).rowCount ?? 0;
 
