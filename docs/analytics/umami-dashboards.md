@@ -9,6 +9,7 @@ Umami boards, funnels and goals that replace the PostHog dashboards `00 Resumen`
 | Funnels and goals | `scripts/umami/definitions.ts` (`HOSPEDA_FUNNELS`, `HOSPEDA_GOALS`) |
 | Boards and dropped tiles | `scripts/umami/boards.ts` (`BOARD_SPECS`, `DROPPED_TILES`) |
 | Segments and cohorts | `scripts/umami/segment-definitions.ts` (`HOSPEDA_SEGMENTS`, `HOSPEDA_COHORTS`); API client in `scripts/umami/segments-client.ts` |
+| Session recorder config (replays and heatmaps) | `scripts/umami/recorder-definitions.ts` (`buildRecorderDefinition`); API client in `scripts/umami/recorder-client.ts` |
 | API shapes measured on Umami 3.5.0 | `.specs/HOS-2119-posthog-to-umami/docs/umami-spike-findings.md` |
 | Event names and properties | `packages/analytics/src/catalog.ts`, [event-catalog.md](./event-catalog.md) |
 | PostHog originals (retired) | Removed in HOS-2119; see git history of `scripts/posthog/data.ts` |
@@ -113,6 +114,28 @@ Cohorts (visitors that fired the event within the window):
 | `Activaron una suscripción (90 días)` | `billing_subscription_activated` | 90day |
 | `Empezaron un trial (90 días)` | `trial_started` | 90day |
 
+## Session recorder config
+
+`pnpm umami:setup` also manages the recorder config of the WEB website (HOS-2347): replays
+and heatmaps on, sampling 0.5 for both, `strict` masking, 5-minute recordings and the block
+selector `[data-umami-block]`. The privacy rules around it are in
+[session-replay-privacy.md](./session-replay-privacy.md).
+
+- Umami 3.5 stores it in two `website` columns, `replay_config` and `recorder_enabled`. The
+  only write path is `POST /api/websites/:id` with a `replayConfig` object, which Umami
+  merges over the stored config. `recorderEnabled` is derived by Umami
+  (`replayEnabled || heatmapEnabled`) and is never sent.
+- The stored config is sparse: Umami drops `false` booleans and fills absent keys only when
+  the recorder reads them (0.15, 0.15, `moderate`, 300000, empty selector). The script
+  compares both sides normalized and defaulted, and writes only on a real difference. It
+  reports the recorder as `updated` or `unchanged`, with one line per changed field. It is
+  never `created`: the website already exists.
+- It sends only `replayConfig` with the seven declared keys, never `name`, `domain` or any
+  other website field. Keys it does not declare are listed as unmanaged.
+- This config does not switch recording on. The operational on/off is the Hospeda switch on
+  `/platform/critical`; while it is off, the web never loads `recorder.js`.
+- Umami has no retention setting for recordings and never deletes them. See the privacy doc.
+
 ## Re-running the script
 
 `pnpm umami:setup` is safe to run as often as you like.
@@ -128,7 +151,7 @@ Cohorts (visitors that fired the event within the window):
 ## Creating and updating them
 
 ```bash
-pnpm umami:setup            # create or update funnels, goals, boards, segments and cohorts
+pnpm umami:setup            # create or update funnels, goals, boards, segments, cohorts and the recorder config
 pnpm umami:setup --dry-run  # print what would change, write nothing
 ```
 
@@ -138,6 +161,7 @@ Behavior:
 - Order matters: reports first, boards second. `Funnel` and `Goal` components store the saved report id, so `buildBoardDefinitions` receives the `name -> id` map and throws `UNRESOLVED_REPORT` on a missing name.
 - Run it against staging first, then production, with the Umami credentials of that environment (login token or an `umami_...` API key, sent as a bearer credential).
 - Segments and cohorts run after boards (boards do not reference them). They are matched by `websiteId` + `type` + `name`.
+- The recorder config runs last, after segments. It reads the WEB website and posts only on a difference.
 - Renaming a board, report, segment or cohort creates a new one; the old one has to be deleted by hand (see "Re-running the script").
 
 ## PostHog → Umami gap list
