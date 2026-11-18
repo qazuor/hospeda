@@ -109,6 +109,27 @@ describe('listShapeReviews', () => {
         ]);
     });
 
+    it('lists the other measurements when ONE stored baseline is unreadable', async () => {
+        h.findLatestCompleted.mockResolvedValue({
+            id: RUN_ID,
+            finishedAt: FINISHED,
+            measurements: { M1: { shapes: SHAPES }, M2: { shapes: SHAPES } }
+        });
+        h.listBaselines.mockResolvedValue([
+            { measurementId: 'M1', shapes: 5, acceptedAt: FINISHED, acceptedBy: OWNER },
+            { measurementId: 'M2', shapes: SHAPES, acceptedAt: FINISHED, acceptedBy: OWNER }
+        ]);
+        const reviews = await listShapeReviews({ account: 'sandbox' });
+        expect(reviews.map((review) => review.measurementId)).toEqual(['M1', 'M2']);
+        expect(reviews[0]).toMatchObject({
+            accepted: null,
+            acceptedAt: null,
+            acceptedBy: null,
+            inSync: false
+        });
+        expect(reviews[1]).toMatchObject({ inSync: true });
+    });
+
     it('is empty when the stored measurements cannot be read', async () => {
         h.findLatestCompleted.mockResolvedValue({
             id: RUN_ID,

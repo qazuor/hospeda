@@ -48,7 +48,10 @@ export async function listShapeReviews(args: {
         .sort(([left], [right]) => left.localeCompare(right, 'en', { numeric: true }))
         .map(([measurementId, measurement]) => {
             const baseline = baselines.get(measurementId);
-            const accepted = baseline ? shapesSchema.parse(baseline.shapes) : null;
+            // One unreadable stored baseline must not 500 the whole list: it reads as "none".
+            const parsedBaseline = baseline ? shapesSchema.safeParse(baseline.shapes) : null;
+            const readable = parsedBaseline?.success === true ? baseline : undefined;
+            const accepted = parsedBaseline?.success === true ? parsedBaseline.data : null;
             const differences = differencesOf({ accepted, observed: measurement.shapes });
             return {
                 measurementId,
@@ -57,8 +60,8 @@ export async function listShapeReviews(args: {
                 observedAt: run.finishedAt?.toISOString() ?? '',
                 observed: measurement.shapes,
                 accepted,
-                acceptedAt: baseline?.acceptedAt.toISOString() ?? null,
-                acceptedBy: baseline?.acceptedBy ?? null,
+                acceptedAt: readable?.acceptedAt.toISOString() ?? null,
+                acceptedBy: readable?.acceptedBy ?? null,
                 inSync: accepted !== null && differences.length === 0,
                 differences: [...differences]
             };
