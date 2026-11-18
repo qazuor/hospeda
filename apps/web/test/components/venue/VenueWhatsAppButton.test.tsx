@@ -7,6 +7,8 @@
  * attribute that makes the tap count as `WHATSAPP_CLICK`.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, waitFor } from '@testing-library/react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,6 +31,7 @@ vi.mock('@/lib/i18n', () => ({
 }));
 
 import { VenueWhatsAppButton } from '@/components/venue/VenueWhatsAppButton.client';
+import { findBareInkDeclarations } from '../../static-guards/ink-literals';
 
 const NUMBER = '+54 9 343 7654321';
 const SIGN_IN = '/es/auth/signin/?returnUrl=%2Fes%2Fcomer-y-salir%2Fbar%2F';
@@ -123,5 +126,25 @@ describe('VenueWhatsAppButton', () => {
         );
 
         expect(container).toBeEmptyDOMElement();
+    });
+});
+
+describe('VenueWhatsAppButton ink (HOS-314)', () => {
+    const css = readFileSync(
+        resolve(__dirname, '../../../src/components/venue/VenueWhatsAppButton.module.css'),
+        'utf8'
+    );
+
+    it('reads the stylesheet', () => {
+        expect(css.length).toBeGreaterThan(300);
+    });
+
+    it('paints the brand green with the AA-safe dark ink token, never white', () => {
+        expect(css).toContain('background-color: var(--channel-whatsapp);');
+        expect(css).toContain('color: var(--channel-whatsapp-foreground);');
+    });
+
+    it('inks every text colour from an approved token', () => {
+        expect(findBareInkDeclarations(css)).toEqual([]);
     });
 });

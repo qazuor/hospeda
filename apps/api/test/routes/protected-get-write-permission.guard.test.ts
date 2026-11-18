@@ -7,7 +7,8 @@ const ROOT = join(import.meta.dirname, '../../src/routes');
 // HOS-1809: +1 (accommodation/protected/sectionStates.ts, owner-scoped READ_OWN, no permission).
 // HOS-2184: +1 (ai-connection/protected/list.ts, owner-scoped, no write permission).
 // HOS-2119: +1 (views/protected/traffic-stats.ts, owner-scoped via enforceUserGate, no write permission).
-const EXPECTED_GET_PROTECTED_COUNT = 104;
+// HOS-2256: +1 (venue/protected/getWhatsapp.ts, per-visitor read of a number the owner chose to share, no write permission).
+const EXPECTED_GET_PROTECTED_COUNT = 105;
 // HOS-1703: empty on purpose; add a file only with a linked owner decision
 const PENDING_OWNER_DECISION: readonly string[] = [];
 
