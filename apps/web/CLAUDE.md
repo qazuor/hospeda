@@ -1150,8 +1150,10 @@ Four things a future reader would otherwise re-derive wrongly:
   track and an `aria-hidden` duplicate for the seamless loop) and both must use
   the resolver, or the halves drift.
 - **The tier is never rendered.** It decides whether the page exists and nothing
-  else. `partners.tiers.*` was deleted from i18n on purpose; `partners.types.*`
-  stays, because the page does show "Comercio" / "ONG" / "Institución".
+  else. `partners.tiers.*` was deleted from i18n on purpose. `partners.types.*`
+  is gone too (HOS-2336): the type is an admin-managed catalog row, and the page
+  renders its own `nameI18n` (page locale, then Spanish) and carries the
+  `catalog-partner-types` cache tag so a rename purges it.
 
 There is deliberately **no partner index page** (`/autores/<slug>/` is the same
 shape). Consequently `partner` has an entity cache tag but no collection tag; a
