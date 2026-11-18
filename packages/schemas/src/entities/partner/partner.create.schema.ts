@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { PartnerTypeIdSchema } from '../../common/id.schema.js';
 import {
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
@@ -38,7 +39,11 @@ export const createPartnerSchema = partnerSchema
         claimSecretHash: true,
         partnerType: true // Read-only hydration (HOS-2336)
     })
-    .extend(PARTNER_SAFE_WRITE_URL_FIELDS);
+    .extend(PARTNER_SAFE_WRITE_URL_FIELDS)
+    // Required on create (HOS-2336): every new partner points at a catalog type.
+    // The entity keeps it nullish only for rows the release-N backfill has not
+    // reached yet.
+    .extend({ typeId: PartnerTypeIdSchema });
 
 export type CreatePartner = z.infer<typeof createPartnerSchema>;
 

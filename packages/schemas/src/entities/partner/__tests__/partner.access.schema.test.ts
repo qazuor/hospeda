@@ -12,7 +12,11 @@ const basePayload = {
     slug: 'acme-litoral',
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
-    type: { slug: 'business', name: 'Comercio' },
+    type: {
+        slug: 'business',
+        name: 'Comercio',
+        nameI18n: { es: 'Comercio', en: 'Business', pt: 'Comércio' }
+    },
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
     lifecycleState: 'ACTIVE'
@@ -110,9 +114,14 @@ describe('PartnerCarouselItemSchema — carousel presence by key (AC:V7:13)', ()
 });
 
 describe('PartnerPublicSchema — type from the catalog (HOS-2336 D5, R2)', () => {
-    it('carries the type as { slug, name }, not the legacy enum string', () => {
+    it('carries the type as { slug, name, nameI18n }, not the legacy enum string', () => {
         // Arrange
-        const payload = { ...basePayload, type: { slug: 'media', name: 'Medio' } };
+        const type = {
+            slug: 'media',
+            name: 'Medio',
+            nameI18n: { es: 'Medio', en: 'Media outlet', pt: 'Meio de comunicação' }
+        };
+        const payload = { ...basePayload, type };
 
         // Act
         const result = PartnerPublicSchema.safeParse(payload);
@@ -120,7 +129,7 @@ describe('PartnerPublicSchema — type from the catalog (HOS-2336 D5, R2)', () =
         // Assert
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.type).toEqual({ slug: 'media', name: 'Medio' });
+            expect(result.data.type).toEqual(type);
         }
     });
 

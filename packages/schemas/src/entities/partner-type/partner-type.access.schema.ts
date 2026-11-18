@@ -15,12 +15,17 @@ export const PartnerTypeRefSchema = PartnerTypeSchema.pick({
 });
 
 /**
- * The partner type as public partner reads carry it (spec D5): the slug plus
- * the name already resolved for the request locale (falling back to `es`).
+ * The partner type as public partner reads carry it (spec D5).
+ *
+ * Public API reads are locale-agnostic and cached by URL, so there is no
+ * "request locale" to resolve against: `name` is the Spanish name (the default
+ * locale), and `nameI18n` carries every locale so the SSR page renders
+ * `nameI18n[locale] || name` without a client fetch (AC-5.1).
  */
 export const PartnerPublicTypeSchema = z.object({
     slug: PartnerTypeSlugSchema,
-    name: z.string()
+    name: z.string(),
+    nameI18n: PartnerTypeSchema.shape.nameI18n
 });
 
 /** One partner type as the public catalog endpoint returns it. */
