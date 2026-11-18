@@ -22,6 +22,12 @@ export interface RecordMcpToolCallInput {
     readonly mcpAuth: Pick<McpAuthContext, 'clientId'>;
     /** MCP tool name. */
     readonly tool: string;
+    /**
+     * Whether the tool writes (`definition.isWrite`). Reads are recorded too
+     * since D-12 of HOS-2335; a row without the field predates it and was a
+     * write, because only writes were recorded then.
+     */
+    readonly isWrite: boolean;
     /** Entity the call targeted. Omit for calls with no single target (lists). */
     readonly target?: { readonly type: string; readonly id: string };
     /** Result of the call. */
@@ -55,6 +61,7 @@ export interface RecordMcpToolCallInput {
  *   actor,
  *   mcpAuth,
  *   tool: 'reply_to_conversation',
+ *   isWrite: true,
  *   target: { type: 'conversation', id: conversationId },
  *   outcome: 'success',
  *   contentLength: text.length
@@ -62,13 +69,15 @@ export interface RecordMcpToolCallInput {
  * ```
  */
 export function recordMcpToolCall(input: RecordMcpToolCallInput): void {
-    const { actor, mcpAuth, tool, target, outcome, errorCode, contentLength, details } = input;
+    const { actor, mcpAuth, tool, isWrite, target, outcome, errorCode, contentLength, details } =
+        input;
     try {
         auditLog({
             auditEvent: AuditEventType.MCP_TOOL_CALL,
             actorId: actor.id,
             clientId: mcpAuth.clientId,
             tool,
+            isWrite,
             ...(target ? { resourceType: target.type, resourceId: target.id } : {}),
             outcome,
             ...(errorCode === undefined ? {} : { errorCode }),

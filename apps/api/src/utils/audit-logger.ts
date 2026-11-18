@@ -155,6 +155,11 @@ interface McpToolCallEntry extends BaseAuditEntry {
     readonly clientId: string;
     /** MCP tool name. */
     readonly tool: string;
+    /**
+     * Whether the tool writes. Rows persisted before reads were audited
+     * (D-12 of HOS-2335) lack it; readers treat a missing value as `true`.
+     */
+    readonly isWrite: boolean;
     /** Entity type the call targeted, when it targets one. */
     readonly resourceType?: string;
     /** Entity id the call targeted, when it targets one. */
