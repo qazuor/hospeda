@@ -12,6 +12,8 @@
  *       announcements.global → MAINTENANCE_MODE_WRITE
  *       billing.paidSignupsFreeze → BILLING_SETTINGS_VIEW / BILLING_SETTINGS_WRITE
  *       billing.addonPurchasesFreeze → BILLING_SETTINGS_VIEW / BILLING_SETTINGS_WRITE
+ *       billing.providerWatchAuthorization → BILLING_SETTINGS_VIEW (read) / BILLING_PROVIDER_WATCH_MANAGE
+ *                                        (write, only through /admin/provider-watch/authorization)
  *     A static `requiredPermissions` array on the route would either be too
  *     permissive (drop the check) or too strict (require the union of all),
  *     so the per-key gate lives in the service layer (T-004) and the

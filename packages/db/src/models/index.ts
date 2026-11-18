@@ -29,6 +29,7 @@ export * from './platform/index.ts';
 export * from './post/index.ts';
 export * from './provider-charge-snapshot/index.ts';
 export * from './provider-notification/index.ts';
+export * from './provider-watch-run/index.ts';
 export * from './qr-code/index.ts';
 export * from './quota-window/index.ts';
 export * from './reconciliation-inventory/index.ts';

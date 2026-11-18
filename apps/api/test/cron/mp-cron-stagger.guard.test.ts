@@ -13,7 +13,11 @@ import { CRON_SCHEDULES } from '../../src/cron/schedules.manifest';
 
 const JOB_DIR = join(__dirname, '../../src/cron/jobs');
 /** Add jobs here when they reach MP indirectly and cannot be found by source scanning. */
-const MP_CALLING_JOBS_INDIRECT: readonly string[] = ['subscription-succession-reevaluation'];
+const MP_CALLING_JOBS_INDIRECT: readonly string[] = [
+    'subscription-succession-reevaluation',
+    // HOS-1512: raw HTTP to Mercado Pago through its own transport, not `getPaymentProvider`.
+    'provider-watch-battery'
+];
 /**
  * MP jobs announced on another branch, whose minutes stay reserved until their
  * manifest entry lands. Empty: HOS-1955 (`billing-deferred-cancellation-retry`)

@@ -14,10 +14,20 @@ vi.mock('@/features/billing-addon-freeze/components/AddonPurchasesFreezeCard', (
     AddonPurchasesFreezeCard: () => <div data-testid="addon-purchases-freeze-card" />
 }));
 
+vi.mock('@/features/billing-provider-watch/components/ProviderWatchAuthorizationCard', () => ({
+    ProviderWatchAuthorizationCard: () => <div data-testid="provider-watch-authorization-card" />
+}));
+
+vi.mock('@/features/billing-provider-watch/components/ProviderWatchShapesCard', () => ({
+    ProviderWatchShapesCard: () => <div data-testid="provider-watch-shapes-card" />
+}));
+
 describe('billing settings freeze controls', () => {
     it('shows the independent signup and addon purchase freeze cards', () => {
         render(<BillingSettingsPage />);
         expect(screen.getByTestId('signup-freeze-card')).toBeInTheDocument();
         expect(screen.getByTestId('addon-purchases-freeze-card')).toBeInTheDocument();
+        expect(screen.getByTestId('provider-watch-authorization-card')).toBeInTheDocument();
+        expect(screen.getByTestId('provider-watch-shapes-card')).toBeInTheDocument();
     });
 });

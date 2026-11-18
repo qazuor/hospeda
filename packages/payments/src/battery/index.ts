@@ -1,0 +1,55 @@
+/**
+ * The provider watch battery (HOS-1512): engine, guards, catalog and transport.
+ *
+ * @module battery
+ */
+
+export {
+    type RunWatchBatteryInput,
+    type RunWatchBatteryResult,
+    runWatchBattery
+} from './run-watch-battery';
+export {
+    diffMeasurementShapes,
+    diffShapes,
+    jsonEqual,
+    type MeasurementShapeDifference,
+    shapeOf
+} from './shape';
+export type {
+    JsonValue,
+    MeasurementShapes,
+    ShapeMap,
+    WatchAccount,
+    WatchAlert,
+    WatchAlertKind,
+    WatchAuthorization,
+    WatchContext,
+    WatchEffect,
+    WatchEntry,
+    WatchGuardCode,
+    WatchMeasurementOutcome,
+    WatchMeasurementRecord,
+    WatchMethod,
+    WatchRequest,
+    WatchResponse,
+    WatchRunOutcome,
+    WatchRunRecord,
+    WatchShapeBaseline,
+    WatchTransport
+} from './types';
+export { WATCH_ACCOUNTS, WATCH_EFFECTS, WatchGuardError } from './types';
+export { validateWatchCatalog, WATCH_CATALOG } from './watch-catalog';
+export {
+    assertAccountMatches,
+    assertAuthorizationCoversMoneyCatalog,
+    assertBudgetMatches,
+    assertProductionAuthorized,
+    expectedAuthorizationSum,
+    marketMonthOf,
+    WATCH_TEST_ACCOUNT_TAG
+} from './watch-guards';
+export { assertHeadersAllowed, WATCH_ALLOWED_HEADERS } from './watch-headers';
+export { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
+export { watchWriteKey } from './watch-send';
+export { createWatchTransport } from './watch-transport';

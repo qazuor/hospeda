@@ -4,6 +4,7 @@ import type { z } from 'zod';
 import { SubscriptionCancel } from './SubscriptionCancel.client';
 import { PromoCodeRedeem } from './PromoCodeRedeem.client';
 import { PlanChangeOffer } from './PlanChangeOffer.client';
+import { PlanChangeCheckoutPending } from './PlanChangeCheckoutPending.client';
 import { PauseOffer } from './PauseOffer.client';
 import { ResumeOffer } from './ResumeOffer.client';
 import { PausedCancel } from './PausedCancel.client';
@@ -58,6 +59,7 @@ const renewalKind = (row: OwnSubscriptionsResult['subscriptions'][number]) => {
                 {row.status === 'ACTIVE' && row.succession?.checkoutOpen ? <p class={styles.line} data-testid="my-subscription-plan-change-checkout">{t('account.subscription.mine.planChange.reason.succession')}</p> : row.status === 'ACTIVE' && <PlanChangeOffer client:visible subscriptionId={row.id} vertical={row.vertical as PricingSituationVertical} locale={locale} promo={row.promo !== null} courtesyMonths={totalCourtesyMonths({ row, deferredCourtesies: result.deferredCourtesies })} />}
                 {row.succession?.checkoutDeadline && <p class={styles.line} data-testid="my-subscription-plan-change-deadline">{t('account.subscription.mine.planChange.checkoutDeadline', undefined, { date: date(row.succession.checkoutDeadline) })}</p>}
                 {row.status === 'SUSPENDED' && row.succession?.checkoutOpen && <p class={styles.line} data-testid="my-subscription-plan-change-coverage">{t('account.subscription.mine.planChange.reason.successionCoverage')}</p>}
+                {row.succession?.checkoutOpen && row.succession.successorId && <PlanChangeCheckoutPending client:visible successorId={row.succession.successorId} checkoutUrl={row.succession.checkoutUrl ?? null} locale={locale} />}
                 {row.status === 'PAUSED' && row.pause?.expectedEndAt && <p class={styles.line}>{t('account.subscription.mine.pause.expectedEnd', undefined, { date: date(row.pause.expectedEndAt) })}</p>}
                 {row.status === 'PAUSED' && row.pause?.reason === 'CUSTOMER_REQUEST' && <ResumeOffer client:visible subscriptionId={row.id} locale={locale} />}
                 {row.status === 'PAUSED' && <p class={styles.line} data-testid="my-subscription-plan-change-paused">{t('account.subscription.mine.planChange.reason.paused')}</p>}

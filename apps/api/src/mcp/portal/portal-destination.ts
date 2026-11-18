@@ -17,6 +17,7 @@ export const PORTAL_DESTINATION_LABELS: Readonly<Record<PortalDestinationKind, s
     addons: 'Ver mis complementos',
     inquiry: 'Ver mis consultas',
     providerDirectory: 'Ver el directorio de proveedores',
+    declareBenefitUsage: 'Registrar un uso del beneficio',
     benefitUsages: 'Ver mis usos de beneficio',
     providerPanel: 'Abrir mi panel de proveedor',
     aiAssistants: 'Administrar mis asistentes de IA',
@@ -59,6 +60,8 @@ export function isNonIdentifyingDestination({
             return destination.conversationId === undefined;
         case 'providerDirectory':
             return destination.slug === undefined;
+        case 'declareBenefitUsage':
+            return false;
         default:
             return true;
     }
