@@ -220,21 +220,8 @@ turn the limiter into a write amplifier), a crash inside the binder before the
 audit, and an insert the fire-and-forget persister drops leave no row. The log is
 best-effort, not a ledger.
 
-**Retention (D-13).** `mcp.tool.call` rows are kept 12 months
-(`MCP_AUDIT_RETENTION_MONTHS`). The `mcp-audit-retention` cron deletes older ones
-and nothing else: `mcp.connection.revoked` and every admin and security row are
-untouched. The job hands its abort signal and deadline to the batch loop, which
-stops between statements (`stoppedEarly`); the rows left go on the next run.
-
-**Reader (D-14).** `McpActivityService.list` in service-core is the one reader
-of these rows, shared by the owner's history (HOS-2348) and the admin log
-(HOS-2349). The route injects the scope: `own` forces the session actor and
-refuses a user filter; `all` needs the all-scope permission. Tool, outcome,
-client and access (read/write) filter over the `data` jsonb (D-16). Items carry
-no content: the client's registered name and, while the row's actor still owns
-it, the listing name and portal link. A bare `toDate` (`2026-11-18`) covers that
-whole day in UTC. A row whose `data` does not parse is left out of `items` but
-stays in `total`; the output's `skipped` counts those rows for the page.
+Retention, the shared activity reader and the admin log of these rows are in
+[Assistant activity](mcp-activity.md).
 
 **Owner history (HOS-2348).** `GET /api/v1/protected/ai-connections/activity`
 calls that reader with `scope: { kind: 'own' }` and nothing else can change it:
@@ -571,6 +558,7 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 
 ## Related
 
+- [Assistant activity](mcp-activity.md) (retention, reader, admin log)
 - [Route architecture](route-architecture.md#ai-connection-routes-hos-2184) (protected `ai-connections`)
 - [Error contract](error-contract.md)
 - [Environment variables](../../../docs/guides/environment-variables.md)
