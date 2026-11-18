@@ -29,6 +29,7 @@ import VenueNightInfo from '@/components/venue/VenueNightInfo.astro';
 import ListingHouseRules from '@/components/listing/ListingHouseRules.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
+import VenueWhatsAppContact from '@/components/venue/VenueWhatsAppContact.astro';
 import VenueAddress from '@/components/venue/VenueAddress.astro';
 import { buildVenueJsonLdPlace } from '@/lib/venue/venue-address';
 import { hasVenuePublicContact } from '@/lib/venue-contact';
@@ -321,19 +322,28 @@ const venueDetailSectionBlocks: Readonly<
         { Component: ListingHouseRules, props: { policies: houseRulePolicies, locale } },
         ...(showEventsCta ? [{ Component: VenueEventsCta, props: { locale } }] : [])
     ],
-    contact: hasContactBlock
-        ? [
-              {
-                  Component: VenueContactBlock,
-                  props: {
-                      contactInfo: venue.contactInfo,
-                      menuUrl: venue.menuUrl,
-                      socialNetworks: venue.socialNetworks,
-                      locale
+    contact: [
+        ...(hasContactBlock
+            ? [
+                  {
+                      Component: VenueContactBlock,
+                      props: {
+                          contactInfo: venue.contactInfo,
+                          menuUrl: venue.menuUrl,
+                          socialNetworks: venue.socialNetworks,
+                          locale
+                      }
                   }
-              }
-          ]
-        : [],
+              ]
+            : []),
+        // HOS-2256: the WhatsApp button. The component decides by itself whether
+        // there is anything to show (the owner's choice rides the public payload;
+        // the page reads no session), like the other self-hiding blocks.
+        {
+            Component: VenueWhatsAppContact,
+            props: { venue, signInHref: reviewSignInHref, locale }
+        }
+    ],
     menu: [
         {
             Component: VenueMenu,

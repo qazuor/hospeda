@@ -25,7 +25,12 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
-import { PriceRangePgEnum, VenueEntryKindPgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
+import {
+    PriceRangePgEnum,
+    VenueEntryKindPgEnum,
+    VenueTypePgEnum,
+    VenueWhatsappVisibilityPgEnum
+} from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
 import { quotedList } from '../vertical/quoted-list.ts';
@@ -135,6 +140,15 @@ export const venues = pgTable(
         menuFileKind: VenueMenuFileKindPgEnum('menu_file_kind'),
         // Jsonb grouped columns (matching accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        /**
+         * Who may see the WhatsApp button (HOS-2256 section 7.8), chosen by the
+         * owner. NULLABLE on purpose: `NULL` means "the owner has not decided"
+         * and reads as HIDDEN, the behaviour of every listing before the setting
+         * existed, so a listing that already carries a `contact_info.whatsapp`
+         * does not start showing it until its owner picks a value. A
+         * `NOT NULL DEFAULT 'LOGGED_IN_ONLY'` would have opted all of them in.
+         */
+        whatsappVisibility: VenueWhatsappVisibilityPgEnum('whatsapp_visibility'),
         /**
          * Structured postal address (HOS-2189): street, number, floor, apartment
          * and coordinates, the same shape as `accommodations.location`. City,

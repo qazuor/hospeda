@@ -106,6 +106,16 @@ const RENDERS_LOCATION_FORM: Readonly<Record<VenueOrExperience, boolean>> = {
 };
 
 /**
+ * Whether the WhatsApp number and its visibility choice render for each vertical
+ * (HOS-2256). They exist on the venue update schema only; an experience's
+ * WhatsApp CTA is a different, retired surface (HOS-363).
+ */
+const RENDERS_WHATSAPP_FORM: Readonly<Record<VenueOrExperience, boolean>> = {
+    venue: true,
+    experience: false
+};
+
+/**
  * The house-rule keys the amenities page's Policies panel edits per vertical
  * (HOS-2060): the shared base plus the vertical's own. The venue night keys
  * (`minAge`, `dressCode`, `dressCodeNote`) are absent on purpose — the catalog
@@ -245,6 +255,17 @@ export const LISTING_SECTION_RENDERERS: Readonly<
                 contact={context.data.contact}
                 errors={context.errors}
                 onContactChange={context.onContactChange}
+                whatsapp={
+                    RENDERS_WHATSAPP_FORM[context.vertical]
+                        ? {
+                              number: context.data.whatsapp,
+                              mode: context.data.whatsappVisibility,
+                              onNumberChange: (value) => context.onFieldChange('whatsapp', value),
+                              onVisibilityChange: (value) =>
+                                  context.onFieldChange('whatsappVisibility', value)
+                          }
+                        : undefined
+                }
             />
             <SocialNetworksSection
                 locale={context.locale}

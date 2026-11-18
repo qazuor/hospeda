@@ -50,6 +50,28 @@ export const VenuePublicContactInfoSchema = z.object({
 });
 
 /**
+ * PUBLIC WhatsApp contact of a venue (HOS-2256 section 7.8, OQ-8).
+ *
+ * A SEPARATE derived field and not a `whatsapp` key of
+ * {@link VenuePublicContactInfoSchema}: that schema stays a fail-closed
+ * allow-list that never names the number (HOS-1076 / HOS-2042), so a new
+ * `contact_info` key or a future refactor cannot publish it by accident. The
+ * number can only appear here, and only in the `PUBLIC` variant the owner chose.
+ *
+ * - `{ mode: 'PUBLIC', number }`: the number is in the HTML on purpose.
+ * - `{ mode: 'LOGGED_IN_ONLY' }`: NO number. The web renders the button
+ *   and an island asks the protected endpoint for the number.
+ * - absent: no button (no number stored, or the owner has not decided).
+ */
+export const VenuePublicWhatsappSchema = z.discriminatedUnion('mode', [
+    z.object({ mode: z.literal('PUBLIC'), number: z.string().min(1) }),
+    z.object({ mode: z.literal('LOGGED_IN_ONLY') })
+]);
+
+/** TypeScript type for {@link VenuePublicWhatsappSchema}. */
+export type VenuePublicWhatsapp = z.infer<typeof VenuePublicWhatsappSchema>;
+
+/**
  * PUBLIC ACCESS SCHEMA
  *
  * Contains only the minimum data safe to expose to unauthenticated users.
@@ -145,6 +167,12 @@ export const VenuePublicSchema = VenueSchema.pick({
      * existed, simply has none.
      */
     contactInfo: VenuePublicContactInfoSchema.nullish(),
+    /**
+     * WhatsApp button state (HOS-2256), derived by the public route from the
+     * owner's WhatsApp choice. Never carries the number unless the owner
+     * picked `PUBLIC`. See {@link VenuePublicWhatsappSchema}.
+     */
+    whatsapp: VenuePublicWhatsappSchema.optional(),
     /**
      * Public featured state. Not a column: since HOS-1419 dropped the
      * admin-curated `is_featured` it is derived in the public routes from
@@ -371,6 +399,8 @@ export const VenueProtectedSchema = VenueSchema.pick({
 
     // Contact info (nested object with email, phone, website)
     contactInfo: true,
+    // HOS-2256: the owner reads back who may see the WhatsApp button.
+    whatsappVisibility: true,
 
     // Social networks
     socialNetworks: true,

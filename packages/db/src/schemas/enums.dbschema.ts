@@ -76,6 +76,7 @@ import {
     TouristAudienceEnum,
     VenueEntryKindEnum,
     VenueTypeEnum,
+    VenueWhatsappVisibilityEnum,
     VisibilityEnum
 } from '@repo/schemas';
 import { pgEnum } from 'drizzle-orm/pg-core';
@@ -333,6 +334,12 @@ export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRang
 export const VenueEntryKindPgEnum = pgEnum(
     'venue_entry_kind_enum',
     enumToTuple(VenueEntryKindEnum)
+);
+
+/** Who may see a venue's WhatsApp button (HOS-2256). */
+export const VenueWhatsappVisibilityPgEnum = pgEnum(
+    'venue_whatsapp_visibility_enum',
+    enumToTuple(VenueWhatsappVisibilityEnum)
 );
 
 export const ExternalPlatformPgEnum = pgEnum(
