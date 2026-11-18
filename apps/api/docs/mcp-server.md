@@ -106,7 +106,7 @@ The provider sends users to the web app: sign-in at `/es/auth/signin/`, consent 
 and the full capabilities the connection grants. Every MCP client goes through it.
 
 The capabilities listed are `read`, `edit`, `pause`, `reply`, `reviews`,
-`createListings`, `providers` (search the provider directory for hosts) and
+`createListings`, `providers` (search the hosts' provider directory) and
 `benefitUsages` (see your benefit usages and confirm or reject them). The same keys
 label a connection in the account's AI assistants panel. Their copy lives in
 `packages/i18n/src/locales/*/auth.json` and the two lists stay in sync:
@@ -229,8 +229,8 @@ Twenty tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagr
 | `reply_inquiry` | write | open-world, not destructive, not idempotent | Two-step, see below. |
 | `search_providers` | read | read-only | The host's provider directory, the same rows as the portal. Filters: `query`, `category` (catalog slug), `destinationId`, paging. Provider texts are untrusted text. |
 | `list_benefit_usages` | read | read-only | The user's benefit usages on both sides (`side`: `host`, `provider`, `both`), with `status`, `pendingMine` and `canAnswer`. Names and notes are untrusted text. |
-| `confirm_benefit_usage` | write | open-world, not destructive, not idempotent | Two-step. The counterpart confirms a PENDING usage; the other party gets the route's email. |
-| `reject_benefit_usage` | write | open-world, **destructive**, not idempotent | Two-step, optional `note` bound into the token. The other party gets the route's email. |
+| `confirm_benefit_usage` | write | open-world, **destructive**, not idempotent | Two-step. The counterpart confirms a PENDING usage; the other party gets the route's email. Irreversible, and it moves the provider's public counters. |
+| `reject_benefit_usage` | write | open-world, **destructive**, not idempotent | Two-step, optional `note` bound into the token (blank counts as no note). The other party gets the route's email. |
 | `undo_benefit_rejection` | write | not destructive, not idempotent | One step. Puts a REJECTED usage back to PENDING; only whoever rejected it may. Sends nothing. |
 
 Rules that apply to every tool:
@@ -317,6 +317,14 @@ Tool-specific rules:
   - **Two steps.** The token binds user, client, tool, usage id and the note, so a
     reject commit whose note changed is refused. A usage that is no longer PENDING
     is refused before any token is issued.
+  - **One writer.** The service's UPDATE is keyed on the state the transition
+    leaves (`status = 'PENDING'` for confirm and reject, `REJECTED` plus the
+    rejecter for undo). Two live tokens committed in parallel, a confirm and a
+    reject, write once: the other matches zero rows, gets the not-pending refusal
+    and sends no email.
+  - **Ordered lists.** `listForHost` and `listForProvider` read newest first with
+    an `id` tie-break (`BaseModel.findAll` does not order otherwise), which also
+    fixes the portal's `/usages` and `/mine/usages` pages.
   - **No declaring from chat** (owner decision). `search_providers` returns each
     provider's `declareUsageUrl`, the portal page where a host declares a usage.
   - `search_providers` reads `listForHost`, so a provider outside the host's
@@ -324,7 +332,11 @@ Tool-specific rules:
     directory. Hidden columns (pending benefit, suspension, owner) are never
     returned. On the provider side of `list_benefit_usages`, a host is named only
     when the pair is already linked; otherwise `counterpartName` is `null`. Long
-    texts step down to the response budget and `textTruncated` says so.
+    texts step down to the response budget and `textTruncated` says so. The floor
+    is measured too (`fitPageToBudget`): if it still overflows, trailing items are
+    dropped, `hasMore` is `true` and `omittedItems` says how many, to be re-read
+    with a smaller `pageSize`. A `search_providers` query of filler words only
+    ("de la") is a validation error, not the whole directory.
 - `get_inquiry` reads without a read receipt. A reply that was sent marks the inquiry
   read (best effort, failures are logged and swallowed).
 
