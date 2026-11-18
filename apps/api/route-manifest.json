@@ -2794,6 +2794,10 @@
             "path": "/api/v1/protected/ai-connections"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/ai-connections/activity"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/ai-connections/reset-review"
         },
