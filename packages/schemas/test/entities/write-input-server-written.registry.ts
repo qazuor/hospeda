@@ -331,6 +331,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     richDescription richDescriptionI18n seo slug socialNetworks summary summaryI18n tags
                     translationMeta type videos
                     entryKind entryNoteI18n entryPriceFrom
+                    whatsappVisibility
                     policies
                 `)
             },
@@ -343,6 +344,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     nameI18n openingHours priceRange rating richDescription richDescriptionI18n seo slug
                     socialNetworks summary summaryI18n tags translationMeta type videos
                     entryKind entryNoteI18n entryPriceFrom
+                    whatsappVisibility
                     policies
                 `)
             },
@@ -355,6 +357,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     nameI18n openingHours priceRange richDescription richDescriptionI18n seo
                     socialNetworks summary summaryI18n tags type videos
                     entryKind entryNoteI18n entryPriceFrom
+                    whatsappVisibility
                     policies
                 `)
             },
@@ -367,6 +370,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                     openingHours priceRange richDescription richDescriptionI18n socialNetworks
                     summary summaryI18n type videos
                     entryKind entryNoteI18n entryPriceFrom
+                    whatsappVisibility
                     policies
                 `)
             }
