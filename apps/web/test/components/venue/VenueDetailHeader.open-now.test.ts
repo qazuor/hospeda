@@ -13,6 +13,21 @@ const src = readFileSync(
 );
 
 describe('VenueDetailHeader open-now badge', () => {
+    it('server-renders a reserved slot (CLS) only when opening hours are non-empty', () => {
+        expect(src).toMatch(
+            /venue\.openingHours && Object\.keys\(venue\.openingHours\)\.length > 0 && \(\s*<span class="venue-detail-header__open-now" data-open-now-slot>\s*<VenueOpenNowBadge/
+        );
+        expect(src).toMatch(
+            /\.venue-detail-header__open-now \{[^}]*min-height: 26px;[^}]*min-width: 9\.5rem;/
+        );
+    });
+
+    it('places the slot after the other badges so no sibling shifts', () => {
+        expect(src.indexOf('data-open-now-slot')).toBeGreaterThan(
+            src.indexOf('venue-detail-header__new-badge wh-compact-badge')
+        );
+    });
+
     it('mounts the shared island with client:idle and the inline variant', () => {
         expect(src).toMatch(
             /<VenueOpenNowBadge\s+client:idle\s+locale=\{locale\}\s+openingHours=\{venue\.openingHours\}\s+variant="inline"\s*\/>/

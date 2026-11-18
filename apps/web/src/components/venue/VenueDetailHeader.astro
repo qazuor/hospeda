@@ -76,15 +76,6 @@ const isNew = venue.createdAt
                 {priceRangeLabel && (
                     <span class="venue-detail-header__price-badge wh-compact-badge">{priceRangeLabel}</span>
                 )}
-                {/* HOS-2257: open-now status, computed in the browser (edge-cached page). */}
-                {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
-                    <VenueOpenNowBadge
-                        client:idle
-                        locale={locale}
-                        openingHours={venue.openingHours}
-                        variant="inline"
-                    />
-                )}
                 {venue.isFeatured && (
                     <span class="featured-badge">
                         <StarIcon size={12} weight="fill" aria-hidden="true" />
@@ -94,6 +85,20 @@ const isNew = venue.createdAt
                 {isNew && (
                     <span class="venue-detail-header__new-badge wh-compact-badge">
                         {t('home.accommodations.badge.new', 'Nuevo')}
+                    </span>
+                )}
+                {/* HOS-2257: open-now status, computed in the browser (edge-cached page).
+                    The wrapper is server-rendered EMPTY with the pill's footprint reserved,
+                    so the late hydration paints into it without shifting the title/rating (CLS).
+                    It is last in the row so no sibling moves horizontally either. */}
+                {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
+                    <span class="venue-detail-header__open-now" data-open-now-slot>
+                        <VenueOpenNowBadge
+                            client:idle
+                            locale={locale}
+                            openingHours={venue.openingHours}
+                            variant="inline"
+                        />
                     </span>
                 )}
             </div>
@@ -245,6 +250,15 @@ const isNew = venue.createdAt
         font-weight: 600;
         line-height: 1.4;
         transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    /* Reserved footprint of the open-now pill (13px text * 1.4 + 8px padding
+       = ~26px tall; widest label "Abre a las 23:00" fits ~9.5rem). */
+    .venue-detail-header__open-now {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        min-width: 9.5rem;
     }
 
     .venue-detail-header__name {

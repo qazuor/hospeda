@@ -178,6 +178,13 @@ export function computeOpenNowStatus(
     return todayEntry ? false : null;
 }
 
+/** Formats total minutes since midnight as zero-padded `HH:MM`. */
+function formatMinutesAsHhMm(minutes: number): string {
+    const hh = String(Math.floor(minutes / 60)).padStart(2, '0');
+    const mm = String(minutes % 60).padStart(2, '0');
+    return `${hh}:${mm}`;
+}
+
 /**
  * Detailed open status of a venue for the "open now" badge (HOS-2257).
  *
@@ -222,7 +229,7 @@ export function computeOpenStatusDetail(
             const openMinutes = parseTimeToMinutes(shift.open);
             if (openMinutes === null || openMinutes <= currentMinutes) continue;
             if (earliest === null || openMinutes < earliest.minutes) {
-                earliest = { minutes: openMinutes, label: shift.open };
+                earliest = { minutes: openMinutes, label: formatMinutesAsHhMm(openMinutes) };
             }
         }
     }

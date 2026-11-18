@@ -76,4 +76,13 @@ describe('computeOpenStatusDetail', () => {
         };
         expect(computeOpenStatusDetail(hours, friday(7))).toEqual({ status: 'closed' });
     });
+    it('normalises the opening time to zero-padded HH:MM', () => {
+        const hours: Hours = {
+            friday: { isOpen: true, shifts: [{ open: '9:5', close: '18:00' }] }
+        };
+        expect(computeOpenStatusDetail(hours, friday(7))).toEqual({
+            status: 'opensToday',
+            opensAt: '09:05'
+        });
+    });
 });
