@@ -8,6 +8,7 @@ Umami boards, funnels and goals that replace the PostHog dashboards `00 Resumen`
 | --- | --- |
 | Funnels and goals | `scripts/umami/definitions.ts` (`HOSPEDA_FUNNELS`, `HOSPEDA_GOALS`) |
 | Boards and dropped tiles | `scripts/umami/boards.ts` (`BOARD_SPECS`, `DROPPED_TILES`) |
+| Segments and cohorts | `scripts/umami/segment-definitions.ts` (`HOSPEDA_SEGMENTS`, `HOSPEDA_COHORTS`); API client in `scripts/umami/segments-client.ts` |
 | API shapes measured on Umami 3.5.0 | `.specs/HOS-2119-posthog-to-umami/docs/umami-spike-findings.md` |
 | Event names and properties | `packages/analytics/src/catalog.ts`, [event-catalog.md](./event-catalog.md) |
 | PostHog originals (retired) | Removed in HOS-2119; see git history of `scripts/posthog/data.ts` |
@@ -68,21 +69,66 @@ Six goals on a single catalog event. **A goal is the share of visitors that fire
 | `Goal · Pagos exitosos` | `billing_charge_succeeded` |
 | `Goal · Trials convertidos a pago` | `trial_converted` |
 
+## Segments and cohorts
+
+Saved audiences for the WEB website, managed by the same script. Both are stored through `POST /api/websites/:websiteId/segments` with `type: 'segment' | 'cohort'` (Umami 3.5). Payloads are typed and validated with a zod schema that mirrors the server's. Cohort events are validated against `AnalyticsEventSchemas` (`UNKNOWN_EVENT` otherwise).
+
+Segments (filters; `any` means a visitor matching at least one filter):
+
+| Segment (name) | Filters |
+| --- | --- |
+| `Celular y tablet` | device = mobile OR tablet |
+| `Escritorio y notebook` | device = desktop OR laptop |
+| `Visitantes de Argentina` | country = AR |
+| `Visitantes del exterior` | country != AR |
+| `Brasil y Uruguay` | country = BR OR UY |
+| `Llegan desde Google` | referrer contains `google` |
+| `Llegan desde redes sociales` | referrer contains `facebook`, `instagram`, `whatsapp` OR `t.co` |
+| `Llegan por campaña (UTM)` | utmSource is set |
+| `Usuarios logueados` | distinctId is set |
+| `Visitantes anónimos` | distinctId is not set |
+| `Navegan fichas de alojamiento` | path contains `/alojamientos/` |
+| `Navegan Comer y salir y Experiencias` | path contains `/comer-y-salir/` OR `/experiencias/` |
+
+Cohorts (visitors that fired the event within the window):
+
+| Cohort (name) | Event | Window |
+| --- | --- | --- |
+| `Vieron un alojamiento (7 días)` | `accommodation_viewed` | 7day |
+| `Contactaron a un dueño (30 días)` | `contact_owner_completed` | 30day |
+| `Se registraron (30 días)` | `sign_up_completed` | 30day |
+| `Publicaron un alojamiento (30 días)` | `accommodation_published` | 30day |
+| `Usaron el chat con IA (30 días)` | `ai_chat_opened` | 30day |
+| `Empezaron un checkout (30 días)` | `billing_checkout_started` | 30day |
+| `Activaron una suscripción (90 días)` | `billing_subscription_activated` | 90day |
+| `Empezaron un trial (90 días)` | `trial_started` | 90day |
+
+## Re-running the script
+
+`pnpm umami:setup` is safe to run as often as you like.
+
+1. A second run with no definition change reports every resource as `unchanged` and sends no write.
+2. Adding a definition creates only that one; the existing ones stay `unchanged`.
+3. Editing a definition's parameters updates that resource in place (same id) and reports it as `updated`.
+4. Anything in Umami that is not in the script, including items made by hand in the UI, is never modified or deleted. After applying, the script lists the reports, boards, segments and cohorts it does not manage under "Unmanaged (left untouched)".
+5. A rename is a new definition: it creates a new item, and the old one stays and shows up as unmanaged. Delete it by hand in Umami when you no longer want it. The script never deletes.
+6. If more than one item matches a natural key, the script stops with an `ambiguous` error and writes nothing for it.
+7. `--dry-run` only reads. It prints what would be created or updated and writes nothing.
+
 ## Creating and updating them
 
 ```bash
-pnpm umami:setup            # create or update funnels, goals and boards
+pnpm umami:setup            # create or update funnels, goals, boards, segments and cohorts
 pnpm umami:setup --dry-run  # print what would change, write nothing
 ```
-
-> The `umami:setup` package script lands with T-041. Until then the definitions exist but nothing applies them.
 
 Behavior:
 
 - Idempotent. Reports are matched by `websiteId` + `name`, boards by `name`. Umami has no unique constraint, so the script upserts: a second run changes nothing. More than one match raises an `ambiguous` error instead of guessing.
 - Order matters: reports first, boards second. `Funnel` and `Goal` components store the saved report id, so `buildBoardDefinitions` receives the `name -> id` map and throws `UNRESOLVED_REPORT` on a missing name.
 - Run it against staging first, then production, with the Umami credentials of that environment (login token or an `umami_...` API key, sent as a bearer credential).
-- Renaming a board or report creates a new one; the old one has to be deleted by hand.
+- Segments and cohorts run after boards (boards do not reference them). They are matched by `websiteId` + `type` + `name`.
+- Renaming a board, report, segment or cohort creates a new one; the old one has to be deleted by hand (see "Re-running the script").
 
 ## PostHog → Umami gap list
 
