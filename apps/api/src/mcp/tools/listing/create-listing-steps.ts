@@ -21,8 +21,12 @@
  */
 
 import {
+    type AccommodationCreateDraftHttp,
+    AccommodationCreateDraftHttpSchema,
     DUPLICATE_LOCATION_REASON,
+    ExperienceAdminCreateInputCheckedSchema,
     ServiceErrorCode,
+    VenueAdminCreateInputSchema,
     type VenueOwnerCreateInput,
     VerticalEnum
 } from '@repo/schemas';
@@ -32,6 +36,7 @@ import {
     resolveLocationKeyPatch,
     ServiceError
 } from '@repo/service-core';
+import { z } from 'zod';
 import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../middlewares/accommodation-cache-invalidation';
 import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
 import {
@@ -245,34 +250,109 @@ export interface CreatedListing {
     readonly slug: string;
 }
 
-/** Reads the id and slug of a created row. */
-function readCreated(row: unknown): CreatedListing | undefined {
-    if (typeof row !== 'object' || row === null) {
-        return undefined;
+/** The slice of a created row the tool answers with. */
+const CreatedRowSchema = z.looseObject({ id: z.string().min(1), slug: z.string().min(1) });
+
+/** Where an issue of the commit-side schema lands in the tool's own input. */
+const INPUT_FIELD_OF: Readonly<Record<string, string>> = {
+    latitude: 'mapsUrl',
+    longitude: 'mapsUrl',
+    coordinates: 'mapsUrl',
+    meetingPointLat: 'mapsUrl',
+    meetingPointLong: 'mapsUrl',
+    meetingPoint: 'street',
+    location: 'street'
+};
+
+/** Maps a commit-side issue path to the input field the user can fix. */
+function inputFieldOf(path: readonly PropertyKey[]): string {
+    const [head, second] = path.map(String);
+    if (head === 'location') {
+        if (second === 'street' || second === 'number') return second;
+        if (second === 'coordinates') return 'mapsUrl';
     }
-    const { id, slug } = row as { readonly id?: unknown; readonly slug?: unknown };
-    return typeof id === 'string' && typeof slug === 'string' ? { id, slug } : undefined;
+    return INPUT_FIELD_OF[head ?? ''] ?? head ?? '';
+}
+
+/** The commit-side revalidation of a body, as each portal create path runs it. */
+export type ValidatedCreate =
+    | { readonly vertical: VerticalEnum.ACCOMMODATION; readonly body: AccommodationCreateDraftHttp }
+    | {
+          readonly vertical: VerticalEnum.VENUE | VerticalEnum.EXPERIENCE;
+          readonly body: Record<string, unknown>;
+      };
+
+/** What {@link validateCreateBody} answers. */
+export type ValidatedCreateResult =
+    | { readonly ok: true; readonly value: ValidatedCreate }
+    | { readonly ok: false; readonly error: ToolHandlerResult<never> };
+
+/** A VALIDATION_ERROR naming the input fields a commit-side issue lands on. */
+function commitSchemaError(error: z.ZodError): ToolHandlerResult<never> {
+    const details = error.issues.map((issue) => ({
+        path: [inputFieldOf(issue.path)],
+        message: issue.message
+    }));
+    return {
+        error: {
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            message: details.map((detail) => `${detail.path[0]}: ${detail.message}`).join('; '),
+            details
+        }
+    };
+}
+
+/**
+ * Runs the schema the commit's write path re-parses the body with:
+ * accommodation `AccommodationCreateDraftHttpSchema` (what `createForOnboarding`
+ * validates), venue `VenueAdminCreateInputSchema` and experience
+ * `ExperienceAdminCreateInputCheckedSchema` (with the server-forced `ownerId`,
+ * as the route helpers parse). The preview runs it before issuing a token, so a
+ * payload that would fail at commit fails at preview (L-6).
+ *
+ * @param input - Actor, vertical and the create body
+ * @returns The typed body, or a VALIDATION_ERROR naming the input fields
+ */
+export function validateCreateBody(input: {
+    readonly actor: Actor;
+    readonly vertical: CreateListingInput['vertical'];
+    readonly body: Record<string, unknown>;
+}): ValidatedCreateResult {
+    const { actor, vertical, body } = input;
+    if (vertical === VerticalEnum.ACCOMMODATION) {
+        const draft = AccommodationCreateDraftHttpSchema.safeParse(body);
+        return draft.success
+            ? { ok: true, value: { vertical, body: draft.data } }
+            : { ok: false, error: commitSchemaError(draft.error) };
+    }
+    const checked =
+        vertical === VerticalEnum.VENUE
+            ? VenueAdminCreateInputSchema.safeParse({ ...body, ownerId: actor.id })
+            : ExperienceAdminCreateInputCheckedSchema.safeParse({ ...body, ownerId: actor.id });
+    // The route helpers re-parse the body themselves; they take it as sent.
+    return checked.success
+        ? { ok: true, value: { vertical, body } }
+        : { ok: false, error: commitSchemaError(checked.error) };
 }
 
 /**
  * The single write: the portal route's own create function, then (accommodation)
  * the public cache eviction.
  *
- * @param input - Actor, vertical and the create body
+ * @param input - Actor and the body {@link validateCreateBody} accepted
  * @returns The created listing, or the error to answer with
  * @throws {ServiceError} What the route's create function throws
  */
 export async function writeOwnerCreate(input: {
     readonly actor: Actor;
-    readonly vertical: CreateListingInput['vertical'];
-    readonly body: Record<string, unknown>;
+    readonly create: ValidatedCreate;
 }): Promise<ToolHandlerResult<CreatedListing>> {
-    const { actor, vertical, body } = input;
-    if (vertical === VerticalEnum.ACCOMMODATION) {
+    const { actor, create } = input;
+    if (create.vertical === VerticalEnum.ACCOMMODATION) {
         const draft = await startHostOnboardingDraft({
             actor,
             source: 'assistant',
-            body: body as Parameters<typeof startHostOnboardingDraft>[0]['body']
+            body: create.body
         });
         for (const pathPrefix of ACCOMMODATION_CACHE_INVALIDATION_PREFIXES) {
             invalidateCacheByPathPrefix({ pathPrefix });
@@ -280,11 +360,11 @@ export async function writeOwnerCreate(input: {
         return { data: { id: draft.accommodationId, slug: draft.accommodationSlug } };
     }
     const row =
-        vertical === VerticalEnum.VENUE
-            ? await createVenueListingForOwner({ actor, body })
-            : await createExperienceListingForOwner({ actor, body });
-    const created = readCreated(row);
-    if (!created) {
+        create.vertical === VerticalEnum.VENUE
+            ? await createVenueListingForOwner({ actor, body: create.body })
+            : await createExperienceListingForOwner({ actor, body: create.body });
+    const created = CreatedRowSchema.safeParse(row);
+    if (!created.success) {
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
@@ -292,5 +372,5 @@ export async function writeOwnerCreate(input: {
             }
         };
     }
-    return { data: created };
+    return { data: { id: created.data.id, slug: created.data.slug } };
 }

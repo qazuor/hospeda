@@ -1,20 +1,29 @@
 /**
- * HOS-2329 — `create_listing` review fixes: the city-only destination (L-4).
- * Same mocks as `create-listing.test.ts`.
+ * HOS-2329 — `create_listing` review fixes: the city-only destination (L-4) and the commit-side revalidation run as a
+ * dry run before any token exists (L-6). Same mocks as `create-listing.test.ts`.
  *
  * @module test/mcp/tools/listing/create-listing.review
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationCreateDraftHttpSchema,
+    ExperienceAdminCreateInputCheckedSchema,
+    ServiceErrorCode,
+    VenueAdminCreateInputSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { validateCreateBody } from '../../../../src/mcp/tools/listing/create-listing-steps';
 import { validateApiEnv } from '../../../../src/utils/env';
 import {
+    actorFor,
     givenCreateServices,
     givenDestinations,
     givenPrecheck,
     makeFakeRedis,
     mocks,
     PROVINCE_DESTINATION_ID,
+    previewToken,
     run,
     VALID_INPUT,
     VERTICALS
@@ -63,6 +72,19 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 type Services = ReturnType<typeof givenCreateServices>;
+
+/** A schema failure as zod reports it, for the spied commit-side schemas. */
+const rejectWith = (path: readonly PropertyKey[]) =>
+    ({
+        success: false,
+        error: { issues: [{ code: 'custom', path, message: 'rechazado al confirmar' }] }
+    }) as never;
+
+const COMMIT_SCHEMAS = {
+    [VerticalEnum.ACCOMMODATION]: AccommodationCreateDraftHttpSchema,
+    [VerticalEnum.VENUE]: VenueAdminCreateInputSchema,
+    [VerticalEnum.EXPERIENCE]: ExperienceAdminCreateInputCheckedSchema
+} as const;
 
 describe('create_listing review fixes', () => {
     let fake: ReturnType<typeof makeFakeRedis>;
@@ -120,6 +142,92 @@ describe('create_listing review fixes', () => {
             expect(outcome.failure.message).toContain('no es una ciudad de Hospeda');
             expect(fake.redis.set).not.toHaveBeenCalled();
             expect(writes()).toBe(0);
+        });
+    });
+
+    describe('commit-side revalidation dry run (L-6)', () => {
+        it.each(
+            VERTICALS
+        )('%s: a body the commit schema rejects fails at preview, without a token', async (vertical) => {
+            // Arrange
+            vi.spyOn(COMMIT_SCHEMAS[vertical], 'safeParse').mockReturnValue(rejectWith(['name']));
+
+            // Act
+            const outcome = await run({ ...VALID_INPUT[vertical] });
+
+            // Assert
+            if (outcome.ok) throw new Error('expected a failure');
+            expect(outcome.failure.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(outcome.failure.message).toContain('name');
+            expect(outcome.failure.message).toContain('rechazado al confirmar');
+            expect(fake.redis.set).not.toHaveBeenCalled();
+            expect(decideSpy).not.toHaveBeenCalled();
+            expect(writes()).toBe(0);
+        });
+
+        it.each(
+            VERTICALS
+        )('%s: the commit re-runs the same schema and writes nothing on failure', async (vertical) => {
+            // Arrange
+            const token = await previewToken({ ...VALID_INPUT[vertical] });
+            vi.spyOn(COMMIT_SCHEMAS[vertical], 'safeParse').mockReturnValue(rejectWith(['name']));
+
+            // Act
+            const outcome = await run({ ...VALID_INPUT[vertical], confirmationToken: token });
+
+            // Assert
+            if (outcome.ok) throw new Error('expected a failure');
+            expect(outcome.failure.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(writes()).toBe(0);
+        });
+
+        it('maps commit-side paths back to the input fields the user can fix', () => {
+            // Act
+            const venue = validateCreateBody({
+                actor: actorFor(),
+                vertical: VerticalEnum.VENUE,
+                body: {
+                    ...VALID_INPUT.venue,
+                    location: {
+                        coordinates: { lat: 'x', long: 'y' },
+                        street: 'Calle Falsa',
+                        number: '1'
+                    }
+                }
+            });
+            const experience = validateCreateBody({
+                actor: actorFor(),
+                vertical: VerticalEnum.EXPERIENCE,
+                body: { ...VALID_INPUT.experience, meetingPointLat: 200, meetingPointLong: 0 }
+            });
+            const accommodation = validateCreateBody({
+                actor: actorFor(),
+                vertical: VerticalEnum.ACCOMMODATION,
+                body: { ...VALID_INPUT.accommodation, name: '' }
+            });
+
+            // Assert
+            const fields = (result: ReturnType<typeof validateCreateBody>) =>
+                result.ok
+                    ? []
+                    : (result.error.error?.details as { path: string[] }[]).map((d) => d.path[0]);
+            expect(venue.ok).toBe(false);
+            expect(new Set(fields(venue))).toEqual(new Set(['mapsUrl']));
+            expect(experience.ok).toBe(false);
+            expect(fields(experience)).toEqual(['mapsUrl']);
+            expect(accommodation.ok).toBe(false);
+            expect(fields(accommodation)).toEqual(['name']);
+        });
+
+        it('accepts the valid body of every vertical', () => {
+            for (const vertical of VERTICALS) {
+                const result = validateCreateBody({
+                    actor: actorFor(),
+                    vertical,
+                    body: { ...VALID_INPUT[vertical] }
+                });
+                expect(result.ok, vertical).toBe(true);
+            }
         });
     });
 });

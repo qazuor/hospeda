@@ -41,6 +41,7 @@ import {
     bodyHasLocation,
     buildCreateBody,
     hasDuplicateAddress,
+    validateCreateBody,
     writeOwnerCreate
 } from './create-listing-steps';
 import {
@@ -330,8 +331,12 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
                 return tokenInvalid();
             }
             const body = buildCreateBody({ input, point: stash.data.point });
+            const validated = validateCreateBody({ actor, vertical: input.vertical, body });
+            if (!validated.ok) {
+                return validated.error;
+            }
             await authorizeOwnerCreate({ actor, vertical: input.vertical, body });
-            const created = await writeOwnerCreate({ actor, vertical: input.vertical, body });
+            const created = await writeOwnerCreate({ actor, create: validated.value });
             if (created.error) {
                 return { error: created.error };
             }
@@ -380,6 +385,12 @@ async function preview(args: {
         addressHint = resolved.addressHint;
     }
     const body = buildCreateBody({ input, point });
+    // Dry run of the commit's own revalidation (L-6): what would fail at
+    // commit fails here, before any token exists.
+    const validated = validateCreateBody({ actor, vertical: input.vertical, body });
+    if (!validated.ok) {
+        return validated.error;
+    }
     // Dry run of the route's access step: refusals are thrown and mapped.
     await authorizeOwnerCreate({ actor, vertical: input.vertical, body });
     const [publishQuota, duplicate] = await Promise.all([
