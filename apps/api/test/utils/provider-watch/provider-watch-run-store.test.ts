@@ -134,6 +134,22 @@ describe('recordWatchProgress', () => {
         });
     });
 
+    it('hands the model the ledger, to be written in the same statement as the record', async () => {
+        h.appendProgress.mockResolvedValue(undefined);
+        await recordWatchProgress({
+            runId: 'run-1',
+            measurementId: 'M1',
+            writeKeys: ['hw-k1'],
+            ledger: { charged: 150000, refunded: 0 }
+        });
+        expect(h.appendProgress).toHaveBeenCalledWith({
+            runId: 'run-1',
+            measurementId: 'M1',
+            writeKeys: ['hw-k1'],
+            ledger: { charged: 150000, refunded: 0 }
+        });
+    });
+
     it('propagates a failed write so the engine aborts the run', async () => {
         h.appendProgress.mockRejectedValue(new Error('db down'));
         await expect(
