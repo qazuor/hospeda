@@ -74,6 +74,12 @@
         "contactLandlineAriaLabel": "Call the business landline",
         "contactEmailAriaLabel": "Email the business",
         "contactWebsiteAriaLabel": "Visit the business's website",
+        "whatsapp": {
+            "cta": "Message on WhatsApp",
+            "signInCta": "Sign in to message on WhatsApp",
+            "loading": "Loading WhatsApp",
+            "messageTemplate": "Hi, I saw your listing for {{name}} on Hospeda and wanted to ask something."
+        },
         "menuCarta": {
             "title": "Menu",
             "attachmentImage": "Menu photo",

@@ -1262,6 +1262,11 @@ export interface VenueContactInfo {
     readonly website?: string | null;
 }
 
+/** WhatsApp button state of a venue's public payload (HOS-2256). */
+export type VenueWhatsappState =
+    | { readonly visibility: 'PUBLIC'; readonly number: string }
+    | { readonly visibility: 'LOGGED_IN_ONLY' };
+
 export interface VenueDetailData extends VenueCardData {
     /** Structured postal address (HOS-2189). Null when the owner has not set one. */
     readonly location: VenueDetailLocation | null;
@@ -1275,6 +1280,13 @@ export interface VenueDetailData extends VenueCardData {
      * when no usable channel is present.
      */
     readonly contactInfo?: VenueContactInfo | null;
+    /**
+     * State of the WhatsApp button (HOS-2256), derived by the API from the
+     * owner's visibility choice. The number is present ONLY for `PUBLIC`;
+     * `LOGGED_IN_ONLY` never carries it (an island asks a protected endpoint).
+     * `null` when the venue shows no button.
+     */
+    readonly whatsapp?: VenueWhatsappState | null;
     /** External URL for the establishment's menu. Null when not provided. */
     readonly menuUrl?: string | null;
     /**
