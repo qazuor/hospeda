@@ -551,7 +551,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(body).not.toHaveProperty('whatsappVisibility');
         });
 
-        it('HOS-2256: sends the chosen WhatsApp visibility and nothing else (AC-16)', async () => {
+        it('HOS-2256: sends the chosen WhatsApp mode and nothing else (AC-16)', async () => {
             renderEditor('venue', buildListing({ contactInfo: {} }), 'contact');
 
             fireEvent.click(screen.getByLabelText('Solo usuarios logueados'));

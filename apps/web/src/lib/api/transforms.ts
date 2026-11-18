@@ -3035,9 +3035,9 @@ function toVenueDetailLocation(raw: unknown): VenueDetailLocation | null {
 function parseVenueWhatsapp(raw: unknown): VenueWhatsappState | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const obj = raw as Record<string, unknown>;
-    if (obj.visibility === 'LOGGED_IN_ONLY') return { visibility: 'LOGGED_IN_ONLY' };
-    if (obj.visibility === 'PUBLIC' && typeof obj.number === 'string' && obj.number.trim()) {
-        return { visibility: 'PUBLIC', number: obj.number.trim() };
+    if (obj.mode === 'LOGGED_IN_ONLY') return { mode: 'LOGGED_IN_ONLY' };
+    if (obj.mode === 'PUBLIC' && typeof obj.number === 'string' && obj.number.trim()) {
+        return { mode: 'PUBLIC', number: obj.number.trim() };
     }
     return null;
 }

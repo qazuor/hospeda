@@ -259,7 +259,7 @@ export const LISTING_SECTION_RENDERERS: Readonly<
                     RENDERS_WHATSAPP_FORM[context.vertical]
                         ? {
                               number: context.data.whatsapp,
-                              visibility: context.data.whatsappVisibility,
+                              mode: context.data.whatsappVisibility,
                               onNumberChange: (value) => context.onFieldChange('whatsapp', value),
                               onVisibilityChange: (value) =>
                                   context.onFieldChange('whatsappVisibility', value)

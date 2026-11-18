@@ -25,16 +25,16 @@ interface Props {
 }
 
 const { venue, signInHref, locale } = Astro.props;
-const mode = venue.whatsapp ?? null;
+const whatsapp = venue.whatsapp ?? null;
 ---
 
-{mode && (
+{whatsapp && (
     <div class="venue-whatsapp">
         <VenueWhatsAppButton
             client:idle
             venueId={venue.id}
             venueName={venue.name}
-            mode={mode}
+            whatsapp={whatsapp}
             signInHref={signInHref}
             locale={locale}
         />

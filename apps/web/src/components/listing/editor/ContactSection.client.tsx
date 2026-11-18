@@ -33,7 +33,7 @@ export interface ContactWhatsappControls {
     /** Stored number, `''` when none. */
     readonly number: string;
     /** `''` while undecided, else `PUBLIC` or `LOGGED_IN_ONLY`. */
-    readonly visibility: string;
+    readonly mode: string;
     readonly onNumberChange: (value: string) => void;
     readonly onVisibilityChange: (value: string) => void;
 }

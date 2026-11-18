@@ -50,8 +50,8 @@ function WhatsAppGlyph({ size }: { readonly size: number }) {
 
 /** What the page payload says about the button. Mirrors `VenueWhatsappState`. */
 export type VenueWhatsAppButtonMode =
-    | { readonly visibility: 'PUBLIC'; readonly number: string }
-    | { readonly visibility: 'LOGGED_IN_ONLY' };
+    | { readonly mode: 'PUBLIC'; readonly number: string }
+    | { readonly mode: 'LOGGED_IN_ONLY' };
 
 /** Props for {@link VenueWhatsAppButton}. */
 export interface VenueWhatsAppButtonProps {
@@ -60,7 +60,7 @@ export interface VenueWhatsAppButtonProps {
     /** Venue name, used in the prefilled message. */
     readonly venueName: string;
     /** What the owner chose to share. */
-    readonly mode: VenueWhatsAppButtonMode;
+    readonly whatsapp: VenueWhatsAppButtonMode;
     /** Sign-in URL that returns to this page, for anonymous visitors. */
     readonly signInHref: string;
     readonly locale: SupportedLocale;
@@ -75,12 +75,12 @@ type LookupState =
 /**
  * The venue WhatsApp button.
  *
- * @param props - Venue, mode, sign-in href and locale (RO-RO).
+ * @param props - Venue, WhatsApp state, sign-in href and locale (RO-RO).
  */
 export function VenueWhatsAppButton({
     venueId,
     venueName,
-    mode,
+    whatsapp,
     signInHref,
     locale
 }: VenueWhatsAppButtonProps) {
@@ -88,7 +88,7 @@ export function VenueWhatsAppButton({
     // Simple mode (no `initialUser`): `user` starts `null` for everyone, so the
     // server render and the first paint are the anonymous variant.
     const { user } = useAccountPermissions();
-    const isLoggedInMode = mode.visibility === 'LOGGED_IN_ONLY';
+    const isLoggedInMode = whatsapp.mode === 'LOGGED_IN_ONLY';
     const [lookup, setLookup] = useState<LookupState>({ status: 'loading' });
 
     useEffect(() => {
@@ -135,7 +135,7 @@ export function VenueWhatsAppButton({
         );
     };
 
-    if (mode.visibility === 'PUBLIC') return renderLink(mode.number);
+    if (whatsapp.mode === 'PUBLIC') return renderLink(whatsapp.number);
 
     if (!user) {
         return (

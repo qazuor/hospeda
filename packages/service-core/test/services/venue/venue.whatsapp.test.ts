@@ -39,28 +39,28 @@ describe('resolveVenuePublicWhatsapp', () => {
         expect(
             resolveVenuePublicWhatsapp({
                 contactInfo,
-                visibility: VenueWhatsappVisibilityEnum.PUBLIC
+                mode: VenueWhatsappVisibilityEnum.PUBLIC
             })
-        ).toEqual({ visibility: 'PUBLIC', number: NUMBER });
+        ).toEqual({ mode: 'PUBLIC', number: NUMBER });
     });
 
     it('never carries the number for LOGGED_IN_ONLY (AC-18)', () => {
         const result = resolveVenuePublicWhatsapp({
             contactInfo,
-            visibility: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY
+            mode: VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY
         });
 
-        expect(result).toEqual({ visibility: 'LOGGED_IN_ONLY' });
+        expect(result).toEqual({ mode: 'LOGGED_IN_ONLY' });
         expect(JSON.stringify(result)).not.toContain('1234567');
     });
 
     it.each([null, undefined])('publishes nothing while the owner has not decided (%s)', (v) => {
-        expect(resolveVenuePublicWhatsapp({ contactInfo, visibility: v })).toBeUndefined();
+        expect(resolveVenuePublicWhatsapp({ contactInfo, mode: v })).toBeUndefined();
     });
 
-    it('publishes nothing without a stored number, whatever the visibility (AC-16)', () => {
-        for (const visibility of Object.values(VenueWhatsappVisibilityEnum)) {
-            expect(resolveVenuePublicWhatsapp({ contactInfo: {}, visibility })).toBeUndefined();
+    it('publishes nothing without a stored number, whatever the mode (AC-16)', () => {
+        for (const mode of Object.values(VenueWhatsappVisibilityEnum)) {
+            expect(resolveVenuePublicWhatsapp({ contactInfo: {}, mode })).toBeUndefined();
         }
     });
 });

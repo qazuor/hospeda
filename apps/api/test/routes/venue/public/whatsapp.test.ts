@@ -143,12 +143,12 @@ beforeEach(async () => {
 });
 
 async function getBody(
-    visibility: string | null
+    mode: string | null
 ): Promise<{ text: string; data: Record<string, unknown> }> {
     venueSvc.getBySlug.mockResolvedValue({
         data: {
             ...makeVenue({ slug: 'bar', type: 'BAR', businessLines: ['food'] }),
-            whatsappVisibility: visibility
+            whatsappVisibility: mode
         }
     });
     const res = await app.request('/api/v1/public/venues/slug/bar', { headers: PUBLIC_HEADERS });
@@ -161,13 +161,13 @@ describe('GET /public/venues/slug/:slug — WhatsApp (HOS-2256)', () => {
     it('AC-17 publishes the number in the whatsapp block when the owner chose PUBLIC', async () => {
         const { data } = await getBody('PUBLIC');
 
-        expect(data.whatsapp).toEqual({ visibility: 'PUBLIC', number: SECRET_NUMBER });
+        expect(data.whatsapp).toEqual({ mode: 'PUBLIC', number: SECRET_NUMBER });
     });
 
     it('AC-18 never puts the number anywhere in the response for LOGGED_IN_ONLY', async () => {
         const { text, data } = await getBody('LOGGED_IN_ONLY');
 
-        expect(data.whatsapp).toEqual({ visibility: 'LOGGED_IN_ONLY' });
+        expect(data.whatsapp).toEqual({ mode: 'LOGGED_IN_ONLY' });
         expect(text).not.toContain('7654321');
     });
 

@@ -44,7 +44,7 @@ describe('VenueWhatsAppButton', () => {
         render(
             <VenueWhatsAppButton
                 {...base}
-                mode={{ visibility: 'PUBLIC', number: NUMBER }}
+                whatsapp={{ mode: 'PUBLIC', number: NUMBER }}
             />
         );
 
@@ -58,7 +58,7 @@ describe('VenueWhatsAppButton', () => {
         const html = renderToStaticMarkup(
             <VenueWhatsAppButton
                 {...base}
-                mode={{ visibility: 'LOGGED_IN_ONLY' }}
+                whatsapp={{ mode: 'LOGGED_IN_ONLY' }}
             />
         );
 
@@ -72,7 +72,7 @@ describe('VenueWhatsAppButton', () => {
         render(
             <VenueWhatsAppButton
                 {...base}
-                mode={{ visibility: 'LOGGED_IN_ONLY' }}
+                whatsapp={{ mode: 'LOGGED_IN_ONLY' }}
             />
         );
 
@@ -87,7 +87,7 @@ describe('VenueWhatsAppButton', () => {
         render(
             <VenueWhatsAppButton
                 {...base}
-                mode={{ visibility: 'LOGGED_IN_ONLY' }}
+                whatsapp={{ mode: 'LOGGED_IN_ONLY' }}
             />
         );
 
@@ -107,7 +107,7 @@ describe('VenueWhatsAppButton', () => {
         const { container } = render(
             <VenueWhatsAppButton
                 {...base}
-                mode={{ visibility: 'LOGGED_IN_ONLY' }}
+                whatsapp={{ mode: 'LOGGED_IN_ONLY' }}
             />
         );
 
@@ -118,7 +118,7 @@ describe('VenueWhatsAppButton', () => {
         const { container } = render(
             <VenueWhatsAppButton
                 {...base}
-                mode={{ visibility: 'PUBLIC', number: 'ver web' }}
+                whatsapp={{ mode: 'PUBLIC', number: 'ver web' }}
             />
         );
 

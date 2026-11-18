@@ -15,7 +15,7 @@ import {
 } from '../../../src/index.js';
 
 describe('VenuePublicContactInfoSchema (AC-20)', () => {
-    it('still strips whatsapp, whatever the visibility', () => {
+    it('still strips whatsapp, whatever the mode', () => {
         const parsed = VenuePublicContactInfoSchema.parse({
             mobilePhone: '+54 9 343 1111111',
             whatsapp: '+54 9 343 2222222'
@@ -28,26 +28,24 @@ describe('VenuePublicContactInfoSchema (AC-20)', () => {
 
 describe('VenuePublicWhatsappSchema', () => {
     it('keeps the number of the PUBLIC variant', () => {
-        expect(
-            VenuePublicWhatsappSchema.parse({ visibility: 'PUBLIC', number: '+54 9 343 1' })
-        ).toEqual({
-            visibility: 'PUBLIC',
+        expect(VenuePublicWhatsappSchema.parse({ mode: 'PUBLIC', number: '+54 9 343 1' })).toEqual({
+            mode: 'PUBLIC',
             number: '+54 9 343 1'
         });
     });
 
     it('strips a number smuggled into the LOGGED_IN_ONLY variant (AC-18)', () => {
         const parsed = VenuePublicWhatsappSchema.parse({
-            visibility: 'LOGGED_IN_ONLY',
+            mode: 'LOGGED_IN_ONLY',
             number: '+54 9 343 2222222'
         });
 
-        expect(parsed).toEqual({ visibility: 'LOGGED_IN_ONLY' });
+        expect(parsed).toEqual({ mode: 'LOGGED_IN_ONLY' });
     });
 
-    it('rejects a PUBLIC variant without a number and an unknown visibility', () => {
-        expect(VenuePublicWhatsappSchema.safeParse({ visibility: 'PUBLIC' }).success).toBe(false);
-        expect(VenuePublicWhatsappSchema.safeParse({ visibility: 'EVERYONE' }).success).toBe(false);
+    it('rejects a PUBLIC variant without a number and an unknown mode', () => {
+        expect(VenuePublicWhatsappSchema.safeParse({ mode: 'PUBLIC' }).success).toBe(false);
+        expect(VenuePublicWhatsappSchema.safeParse({ mode: 'EVERYONE' }).success).toBe(false);
     });
 });
 

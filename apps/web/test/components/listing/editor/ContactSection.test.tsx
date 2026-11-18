@@ -224,9 +224,9 @@ describe('ContactSection', () => {
     });
 
     describe('WhatsApp controls (HOS-2256)', () => {
-        const whatsapp = (visibility: string) => ({
+        const whatsapp = (mode: string) => ({
             number: '',
-            visibility,
+            mode,
             onNumberChange: vi.fn(),
             onVisibilityChange: vi.fn()
         });
@@ -258,7 +258,7 @@ describe('ContactSection', () => {
             expect(screen.queryByText(/cualquiera puede copiarlo/)).not.toBeInTheDocument();
         });
 
-        it('reports the picked visibility', () => {
+        it('reports the picked mode', () => {
             const controls = whatsapp('');
             renderSection({ whatsapp: controls });
 

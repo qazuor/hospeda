@@ -46,7 +46,7 @@ interface WhatsappControlsProps {
  */
 export function WhatsappControls({ locale, controls, error }: WhatsappControlsProps): JSX.Element {
     const { t } = createTranslations(locale);
-    const name = 'ce-whatsapp-visibility';
+    const name = 'ce-whatsapp-mode';
 
     return (
         <>
@@ -83,19 +83,19 @@ export function WhatsappControls({ locale, controls, error }: WhatsappControlsPr
                             type="radio"
                             name={name}
                             value={option.value}
-                            checked={controls.visibility === option.value}
+                            checked={controls.mode === option.value}
                             onChange={() => controls.onVisibilityChange(option.value)}
                         />{' '}
                         {t(option.key, option.fallback)}
                     </label>
                 ))}
                 <p className={styles.hint}>
-                    {controls.visibility === ''
+                    {controls.mode === ''
                         ? t(
                               'listing.owner.editor.contactField.whatsappVisibility.undecided',
                               'Hasta que elijas una opción, el botón de WhatsApp no se muestra en tu ficha.'
                           )
-                        : controls.visibility === 'PUBLIC'
+                        : controls.mode === 'PUBLIC'
                           ? t(
                                 'listing.owner.editor.contactField.whatsappVisibility.publicWarning',
                                 'Tu número va a quedar visible en la página y cualquiera puede copiarlo, incluidos programas automáticos.'

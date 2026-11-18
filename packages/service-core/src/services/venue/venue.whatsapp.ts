@@ -49,23 +49,23 @@ export function readVenueWhatsappNumber({
  * Decides the WhatsApp block of the PUBLIC venue payload.
  *
  * @param params.contactInfo - The stored `contact_info` blob.
- * @param params.visibility - The owner's choice, or `null`/`undefined` when undecided.
- * @returns `{ visibility: 'PUBLIC', number }`, `{ visibility: 'LOGGED_IN_ONLY' }`, or `undefined` (no button).
+ * @param params.mode - The owner's choice, or `null`/`undefined` when undecided.
+ * @returns `{ mode: 'PUBLIC', number }`, `{ mode: 'LOGGED_IN_ONLY' }`, or `undefined` (no button).
  */
 export function resolveVenuePublicWhatsapp({
     contactInfo,
-    visibility
+    mode
 }: {
     readonly contactInfo: unknown;
-    readonly visibility: VenueWhatsappVisibilityEnum | null | undefined;
+    readonly mode: VenueWhatsappVisibilityEnum | null | undefined;
 }): VenuePublicWhatsapp | undefined {
     const number = readVenueWhatsappNumber({ contactInfo });
     if (number === null) return undefined;
-    if (visibility === VenueWhatsappVisibilityEnum.PUBLIC) {
-        return { visibility: 'PUBLIC', number };
+    if (mode === VenueWhatsappVisibilityEnum.PUBLIC) {
+        return { mode: 'PUBLIC', number };
     }
-    if (visibility === VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY) {
-        return { visibility: 'LOGGED_IN_ONLY' };
+    if (mode === VenueWhatsappVisibilityEnum.LOGGED_IN_ONLY) {
+        return { mode: 'LOGGED_IN_ONLY' };
     }
     return undefined;
 }
@@ -96,7 +96,7 @@ export async function getVenueWhatsappForViewer(
     }
     const exposed = resolveVenuePublicWhatsapp({
         contactInfo: venue.contactInfo,
-        visibility: venue.whatsappVisibility as VenueWhatsappVisibilityEnum | null | undefined
+        mode: venue.whatsappVisibility as VenueWhatsappVisibilityEnum | null | undefined
     });
     const number = readVenueWhatsappNumber({ contactInfo: venue.contactInfo });
     return { data: { number: exposed && number ? number : null } };

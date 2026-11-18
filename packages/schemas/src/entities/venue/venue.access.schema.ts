@@ -58,14 +58,14 @@ export const VenuePublicContactInfoSchema = z.object({
  * `contact_info` key or a future refactor cannot publish it by accident. The
  * number can only appear here, and only in the `PUBLIC` variant the owner chose.
  *
- * - `{ visibility: 'PUBLIC', number }`: the number is in the HTML on purpose.
- * - `{ visibility: 'LOGGED_IN_ONLY' }`: NO number. The web renders the button
+ * - `{ mode: 'PUBLIC', number }`: the number is in the HTML on purpose.
+ * - `{ mode: 'LOGGED_IN_ONLY' }`: NO number. The web renders the button
  *   and an island asks the protected endpoint for the number.
  * - absent: no button (no number stored, or the owner has not decided).
  */
-export const VenuePublicWhatsappSchema = z.discriminatedUnion('visibility', [
-    z.object({ visibility: z.literal('PUBLIC'), number: z.string().min(1) }),
-    z.object({ visibility: z.literal('LOGGED_IN_ONLY') })
+export const VenuePublicWhatsappSchema = z.discriminatedUnion('mode', [
+    z.object({ mode: z.literal('PUBLIC'), number: z.string().min(1) }),
+    z.object({ mode: z.literal('LOGGED_IN_ONLY') })
 ]);
 
 /** TypeScript type for {@link VenuePublicWhatsappSchema}. */
@@ -169,7 +169,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     contactInfo: VenuePublicContactInfoSchema.nullish(),
     /**
      * WhatsApp button state (HOS-2256), derived by the public route from the
-     * owner's visibility choice. Never carries the number unless the owner
+     * owner's WhatsApp choice. Never carries the number unless the owner
      * picked `PUBLIC`. See {@link VenuePublicWhatsappSchema}.
      */
     whatsapp: VenuePublicWhatsappSchema.optional(),

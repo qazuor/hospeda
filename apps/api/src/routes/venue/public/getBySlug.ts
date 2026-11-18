@@ -137,7 +137,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                     // narrowed by the schema and never names it.
                     whatsapp: resolveVenuePublicWhatsapp({
                         contactInfo: venue.contactInfo,
-                        visibility: venue.whatsappVisibility
+                        mode: venue.whatsappVisibility
                     }),
                     amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
                     features: featuresData.length > 0 ? featuresData : undefined,
