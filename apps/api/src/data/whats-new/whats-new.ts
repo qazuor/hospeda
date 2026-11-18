@@ -152,6 +152,40 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4457
+    {
+        id: '2026-11-17-ai-search-keeps-every-filter',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'La búsqueda con IA respeta todos los filtros que pedís',
+            en: 'AI search keeps every filter you ask for',
+            pt: 'A busca com IA respeita todos os filtros que você pede'
+        },
+        body: {
+            es: 'Cuando le pedís a la búsqueda con IA algo como «cabaña para 4 con pileta en Colón», ahora aplica siempre el destino, el tipo, la cantidad de huéspedes y los servicios que nombraste. Antes, a veces se perdía alguno sin avisar.',
+            en: 'When you ask AI search for something like "a cabin for 4 with a pool in Colón", it now always applies the destination, type, number of guests and amenities you named. Before, one of them could sometimes be dropped without notice.',
+            pt: 'Quando você pede à busca com IA algo como «cabana para 4 com piscina em Colón», agora ela sempre aplica o destino, o tipo, a quantidade de hóspedes e os serviços que você mencionou. Antes, às vezes algum se perdia sem aviso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4469
+    {
+        id: '2026-11-17-reset-password-with-another-session-open',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Te avisamos si tenés otra sesión abierta al iniciar sesión o cambiar la contraseña',
+            en: 'We let you know when another session is open as you sign in or reset a password',
+            pt: 'Avisamos se houver outra sessão aberta ao entrar ou redefinir a senha'
+        },
+        body: {
+            es: 'Si ya tenés una sesión abierta, la pantalla de ingreso te muestra con qué cuenta estás y te deja seguir o usar otra cuenta. Y si cambiás la contraseña de otra cuenta, al terminar te ofrece cerrar la sesión actual para entrar con la nueva.',
+            en: 'If you already have a session open, the sign-in screen shows which account you are using and lets you continue or use another account. And if you reset the password of a different account, when you finish it offers to sign out of the current session so you can sign in with the new one.',
+            pt: 'Se você já tem uma sessão aberta, a tela de entrada mostra com qual conta você está e permite continuar ou usar outra conta. E se você redefinir a senha de outra conta, ao terminar ela oferece encerrar a sessão atual para entrar com a nova.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4423, #4444, #4464
     {
         id: '2026-11-16-plan-change-from-my-subscription-checkout',
