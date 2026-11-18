@@ -78,3 +78,66 @@ export function priceLabelOf({ input }: { readonly input: CreateListingInput }):
         : '';
     return `Desde ${amount}${unit}`;
 }
+
+/** Spanish labels of the listing fields the confirmation form lists, in order. */
+const CONFIRMATION_FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
+    ['name', 'Nombre'],
+    ['typeLabel', 'Tipo'],
+    ['destinationName', 'Ciudad'],
+    ['summary', 'Resumen'],
+    ['description', 'Descripción'],
+    ['maxGuests', 'Huéspedes como máximo'],
+    ['bedrooms', 'Dormitorios'],
+    ['bathrooms', 'Baños'],
+    ['beds', 'Camas'],
+    ['businessLines', 'Líneas de negocio'],
+    ['priceLabel', 'Precio']
+];
+
+/** Renders a preview value as one line of text; anything else is left out. */
+function fieldText(value: unknown): string | undefined {
+    if (typeof value === 'string' || typeof value === 'number') {
+        return String(value);
+    }
+    if (Array.isArray(value) && value.every((item) => typeof item === 'string')) {
+        return value.join(', ');
+    }
+    return undefined;
+}
+
+/**
+ * The text the client's confirmation form shows the human (HOS-2247, AC-C64):
+ * the listing as the preview shows it, and the location exactly as the commit
+ * will write it, the resolved point included.
+ *
+ * @param args - The preview record and the location the preview resolved
+ * @returns The Spanish form message
+ */
+export function createListingConfirmationMessage(args: {
+    readonly listing: Readonly<Record<string, unknown>>;
+    readonly point: { readonly lat: number; readonly lng: number } | null;
+    readonly street?: string;
+    readonly number?: string;
+    readonly duplicateAddressWarning?: string;
+}): string {
+    const fields = CONFIRMATION_FIELD_LABELS.flatMap(([key, label]) => {
+        const text = fieldText(args.listing[key]);
+        return text === undefined ? [] : [`${label}: ${text}`];
+    });
+    const address = [args.street, args.number].filter((part) => part !== undefined).join(' ');
+    const location = [
+        args.point === null
+            ? 'Ubicación en el mapa: sin marcar (se puede marcar después en el editor)'
+            : `Ubicación en el mapa: ${args.point.lat}, ${args.point.lng} (verificala en https://www.google.com/maps?q=${args.point.lat},${args.point.lng})`,
+        ...(address === '' ? [] : [`Dirección: ${address}`]),
+        ...(args.duplicateAddressWarning === undefined
+            ? []
+            : [`Atención: ${args.duplicateAddressWarning}`])
+    ];
+    return [
+        'Vas a crear esta publicación en Hospeda como BORRADOR (no se publica):',
+        ...fields,
+        ...location,
+        '¿Confirmás que se cree?'
+    ].join('\n');
+}

@@ -20,22 +20,48 @@
  * goes through the portal route's own create function
  * (`create-listing-steps.ts`). No path publishes: the row is born `DRAFT`,
  * no trial starts (it starts on the first publish).
+ *
+ * **Out-of-band confirmation (HOS-2247).** On a client that declares, on the
+ * request, that it renders confirmation forms, the preview issues NO token: it
+ * binds the same payload and the same resolved point to an opaque state and
+ * asks the client to show the human the listing and the point
+ * (`elicitation-confirmation.ts`). Only the human's `confirm` commits, once,
+ * writing exactly the stashed point (AC-C64). A token from such a client is
+ * refused (D-17).
  */
 
-import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
-import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
-import type { PortalDestination, PortalSectionId } from '../../portal/portal-routes';
 import { consumeConfirmationToken, issueConfirmationToken } from '../confirmation-token-store';
-import { defineTool, type ToolHandlerResult, type ToolRefusalLink } from '../tool-definition';
+import {
+    confirmationAuditDetails,
+    confirmationTokenRefused,
+    ELICITATION_REASON_MESSAGES,
+    type ElicitationBinding,
+    elicitationStateInvalid,
+    issueConfirmationState,
+    needsConfirmation,
+    planConfirmation,
+    settleConfirmationAnswer
+} from '../elicitation-confirmation';
+import { defineTool, type ToolHandlerOutput, type ToolHandlerResult } from '../tool-definition';
 import { UNTRUSTED_DATA_NOTICE, wrapUntrustedText } from '../untrusted-data';
 import {
     bindingPayloadOf,
     type CreateListingInput,
     CreateListingInputSchema
 } from './create-listing-input';
-import { previewInstructions, previewListing } from './create-listing-preview';
+import {
+    type CreateListingNextStep,
+    listingPortalUrl,
+    nextStepsFor,
+    refusalActionFor
+} from './create-listing-links';
+import {
+    createListingConfirmationMessage,
+    previewInstructions,
+    previewListing
+} from './create-listing-preview';
 import {
     authorizeOwnerCreate,
     bodyHasLocation,
@@ -67,6 +93,7 @@ export const CREATE_CONFIRMATION_UNAVAILABLE_REASON = 'CONFIRMATION_UNAVAILABLE'
 
 /** Spanish messages for the reasons this tool can answer with. */
 export const CREATE_LISTING_REASON_MESSAGES: Readonly<Record<string, string>> = {
+    ...ELICITATION_REASON_MESSAGES,
     [CREATE_CONFIRMATION_INVALID_REASON]:
         'La confirmación no es válida: venció, ya se usó o algún dato cambió. No se creó nada. Volvé a llamar a create_listing SIN confirmationToken para generar una nueva vista previa y pedile al usuario que la confirme.',
     [CREATE_CONFIRMATION_UNAVAILABLE_REASON]:
@@ -91,29 +118,7 @@ const CreatedAuditSchema = z.looseObject({
     id: z.string()
 });
 
-/** Editor sections the next steps link to, per vertical. */
-const NEXT_STEP_SECTIONS: Readonly<
-    Record<
-        ListingToolVertical,
-        {
-            readonly location: PortalSectionId;
-            readonly media: PortalSectionId;
-            readonly amenities: PortalSectionId;
-        }
-    >
-> = {
-    [VerticalEnum.ACCOMMODATION]: { location: 'location', media: 'photos', amenities: 'amenities' },
-    [VerticalEnum.VENUE]: { location: 'location', media: 'media', amenities: 'amenities' },
-    [VerticalEnum.EXPERIENCE]: { location: 'meetingPoint', media: 'media', amenities: 'amenities' }
-};
-
-/** One thing left to do after the draft exists. */
-export interface CreateListingNextStep {
-    readonly step: 'amenities' | 'photos' | 'location' | 'publish';
-    readonly label: string;
-    readonly url: string;
-    readonly tool?: string;
-}
+export type { CreateListingNextStep };
 
 /** What the preview answers. */
 export interface CreateListingPreview {
@@ -146,11 +151,6 @@ export interface CreateListingCreated {
 
 /** Result of a call. */
 export type CreateListingResult = CreateListingPreview | CreateListingCreated;
-
-/** Builds a portal URL from the configured site URL. */
-function portalUrl(destination: PortalDestination): string {
-    return buildPortalUrl({ destination, siteUrl: env.HOSPEDA_SITE_URL });
-}
 
 /** The error answered when the token store cannot be used. Nothing was written. */
 function storeUnavailable(): ToolHandlerResult<never> {
@@ -190,74 +190,6 @@ function mapCheckUrl(point: MapsPoint): string {
     return `https://www.google.com/maps?q=${point.lat},${point.lng}`;
 }
 
-/** The steps left once the draft exists (§6.4, AC-C23c). */
-function nextStepsFor(args: {
-    readonly vertical: ListingToolVertical;
-    readonly id: string;
-    readonly hasLocation: boolean;
-}): readonly CreateListingNextStep[] {
-    const { vertical, id, hasLocation } = args;
-    const sections = NEXT_STEP_SECTIONS[vertical];
-    const editor = (section?: PortalSectionId) =>
-        portalUrl({
-            kind: 'listingEditor',
-            vertical,
-            id,
-            ...(section === undefined ? {} : { section })
-        });
-    return [
-        {
-            step: 'amenities',
-            label: 'Cargar servicios y comodidades',
-            url: editor(sections.amenities),
-            tool: 'update_listing_amenities'
-        },
-        { step: 'photos', label: 'Subir fotos', url: editor(sections.media) },
-        ...(hasLocation
-            ? []
-            : [
-                  {
-                      step: 'location' as const,
-                      label: 'Marcar la ubicación en el mapa',
-                      url: editor(sections.location)
-                  }
-              ]),
-        {
-            step: 'publish',
-            label: 'Publicar cuando esté lista',
-            url: editor(),
-            tool: 'set_listing_publication'
-        }
-    ];
-}
-
-/** Where a refusal of this tool should point. */
-function refusalActionFor(args: {
-    readonly error: { readonly code: string; readonly reason?: string };
-    readonly input: unknown;
-}): ToolRefusalLink | undefined {
-    const parsed = z.looseObject({ vertical: z.enum(VerticalEnum) }).safeParse(args.input);
-    const vertical = parsed.success ? parsed.data.vertical : undefined;
-    if (
-        vertical !== VerticalEnum.ACCOMMODATION &&
-        vertical !== VerticalEnum.VENUE &&
-        vertical !== VerticalEnum.EXPERIENCE
-    ) {
-        return undefined;
-    }
-    switch (args.error.code) {
-        case ServiceErrorCode.ENTITLEMENT_REQUIRED:
-            return { destination: { kind: 'plans', vertical } };
-        case ServiceErrorCode.LIMIT_REACHED:
-            return { destination: { kind: 'subscription' } };
-        case ServiceErrorCode.FORBIDDEN:
-        case ServiceErrorCode.ALREADY_EXISTS:
-            return { destination: { kind: 'createListing', vertical } };
-        default:
-            return undefined;
-    }
-}
-
 /** Optional injection points (tests inject the Maps fetcher; never the network). */
 export interface CreateListingDeps extends ResolveGoogleMapsLinkDeps {}
 
@@ -272,10 +204,11 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
     return defineTool({
         name: CREATE_LISTING_TOOL_NAME,
         title: 'Crear publicación',
-        description: `Creates a DRAFT listing (accommodation, venue or experience) for the connected Hospeda user, in two steps. First call get_listing_creation_guide and collect the fields step by step with the user, in their own words. Step 1: call without confirmationToken. Nothing is created; you get a preview and a confirmationToken. Show the user the preview and ask for confirmation. Step 2: only after the user explicitly approves it, call again with exactly the same fields and the confirmationToken. For the location, ask the user to paste a Google Maps link to the place (mapsUrl) and to confirm the street and number; never invent coordinates, links or addresses. If the link cannot be read, ask for another one or go on without it: the location can be set later in the editor. A field that fails validation is reported by name: re-ask only that field. Nothing is published: publishing is a separate step (set_listing_publication). ${UNTRUSTED_DATA_NOTICE}`,
+        description: `Creates a DRAFT listing (accommodation, venue or experience) for the connected Hospeda user, in two steps. First call get_listing_creation_guide and collect the fields step by step with the user, in their own words. Step 1: call without confirmationToken. Nothing is created; you get a preview and a confirmationToken (some apps instead show the user their own confirmation form: then there is no token, and the listing is created only if the user confirms there). Show the user the preview and ask for confirmation. Step 2: only after the user explicitly approves it, call again with exactly the same fields and the confirmationToken. For the location, ask the user to paste a Google Maps link to the place (mapsUrl) and to confirm the street and number; never invent coordinates, links or addresses. If the link cannot be read, ask for another one or go on without it: the location can be set later in the editor. A field that fails validation is reported by name: re-ask only that field. Nothing is published: publishing is a separate step (set_listing_publication). ${UNTRUSTED_DATA_NOTICE}`,
         inputSchema: CreateListingInputSchema,
         isWrite: true,
         hints: { destructiveHint: false, idempotentHint: false, openWorldHint: true },
+        confirmation: { elicitation: true },
         reasonMessages: CREATE_LISTING_REASON_MESSAGES,
         refusalAction: refusalActionFor,
         auditResultTarget: ({ data }) => {
@@ -284,15 +217,20 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
                 ? { type: created.data.vertical, id: created.data.id }
                 : undefined;
         },
-        auditDetails: ({ input }) => ({
+        auditDetails: ({ input, context }) => ({
             step: input.confirmationToken === undefined ? 'preview' : 'commit',
-            vertical: input.vertical
+            vertical: input.vertical,
+            ...confirmationAuditDetails({
+                tool: CREATE_LISTING_TOOL_NAME,
+                confirmationToken: input.confirmationToken,
+                context
+            })
         }),
         handler: async ({
             actor,
             input,
             context
-        }): Promise<ToolHandlerResult<CreateListingResult>> => {
+        }): Promise<ToolHandlerOutput<CreateListingResult>> => {
             // The token is bound to the OAuth client; without one there is nothing to bind.
             const { clientId } = context;
             if (clientId === undefined) {
@@ -307,28 +245,39 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
             if (!destination) {
                 return fieldError('destinationId', 'no es una ciudad de Hospeda');
             }
-            const binding = {
+            const binding: ElicitationBinding = {
                 userId: actor.id,
                 clientId,
                 tool: CREATE_LISTING_TOOL_NAME,
                 subjectId: input.vertical,
                 payload: bindingPayloadOf({ input })
             };
-
-            if (input.confirmationToken === undefined) {
-                return preview({ actor, input, destinationName: destination.name, binding, deps });
-            }
-
-            const consumed = await consumeConfirmationToken({
-                ...binding,
-                token: input.confirmationToken
+            const plan = planConfirmation({
+                tool: CREATE_LISTING_TOOL_NAME,
+                confirmationToken: input.confirmationToken,
+                context
             });
-            if (!consumed.ok) {
-                return consumed.reason === 'UNAVAILABLE' ? storeUnavailable() : tokenInvalid();
+            if (plan.step === 'token_refused') {
+                return confirmationTokenRefused();
             }
-            const stash = PreviewStashSchema.safeParse(consumed.stash);
+            if (plan.step === 'preview') {
+                return preview({
+                    actor,
+                    input,
+                    destinationName: destination.name,
+                    binding,
+                    deps,
+                    mode: plan.mode
+                });
+            }
+
+            const confirmed = await confirmCommit({ binding, plan });
+            if (!confirmed.ok) {
+                return confirmed.error;
+            }
+            const stash = PreviewStashSchema.safeParse(confirmed.stash);
             if (!stash.success) {
-                return tokenInvalid();
+                return plan.mode === 'elicitation' ? elicitationStateInvalid() : tokenInvalid();
             }
             const body = buildCreateBody({ input, point: stash.data.point });
             const validated = validateCreateBody({ actor, vertical: input.vertical, body });
@@ -346,7 +295,7 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
                     id: created.data.id,
                     vertical: input.vertical,
                     publicationStatus: 'DRAFT',
-                    editorUrl: portalUrl({
+                    editorUrl: listingPortalUrl({
                         kind: 'listingEditor',
                         vertical: input.vertical,
                         id: created.data.id
@@ -362,14 +311,55 @@ export function buildCreateListingTool(deps: CreateListingDeps = {}) {
     });
 }
 
-/** The preview step: validates, dry-runs access, resolves the link, issues the token. */
+/**
+ * The commit's proof: the token (token flow) or the human's answer bound to
+ * the state (elicitation flow). Either is consumed once, and burnt on any
+ * mismatch; a decline is refused here and writes nothing.
+ */
+async function confirmCommit(args: {
+    readonly binding: ElicitationBinding;
+    readonly plan: Extract<
+        ReturnType<typeof planConfirmation>,
+        { readonly step: 'commit' | 'declined' }
+    >;
+}): Promise<
+    | { readonly ok: true; readonly stash: unknown }
+    | { readonly ok: false; readonly error: ToolHandlerResult<never> }
+> {
+    const { binding, plan } = args;
+    if (plan.mode === 'elicitation') {
+        const settled = await settleConfirmationAnswer({ binding, plan });
+        if (settled.kind === 'unavailable') {
+            return { ok: false, error: storeUnavailable() };
+        }
+        if (settled.kind === 'refused') {
+            return { ok: false, error: { error: settled.error } };
+        }
+        return { ok: true, stash: settled.stash };
+    }
+    const consumed = await consumeConfirmationToken({ ...binding, token: plan.token });
+    if (!consumed.ok) {
+        return {
+            ok: false,
+            error: consumed.reason === 'UNAVAILABLE' ? storeUnavailable() : tokenInvalid()
+        };
+    }
+    return { ok: true, stash: consumed.stash };
+}
+
+/**
+ * The preview step: validates, dry-runs access, resolves the link, then either
+ * issues the token (token flow) or binds a state and asks the client to confirm
+ * (elicitation flow). Both keep the resolved point as the stash.
+ */
 async function preview(args: {
     readonly actor: Parameters<typeof authorizeOwnerCreate>[0]['actor'];
     readonly input: CreateListingInput;
     readonly destinationName: string;
-    readonly binding: Omit<Parameters<typeof issueConfirmationToken>[0], 'stash'>;
+    readonly binding: ElicitationBinding;
     readonly deps: CreateListingDeps;
-}): Promise<ToolHandlerResult<CreateListingPreview>> {
+    readonly mode: 'token' | 'elicitation';
+}): Promise<ToolHandlerOutput<CreateListingPreview>> {
     const { actor, input, destinationName, binding, deps } = args;
     let point: MapsPoint | null = null;
     let addressHint: string | undefined;
@@ -397,10 +387,27 @@ async function preview(args: {
         readPublishQuotaNote({ actor, vertical: input.vertical }),
         hasDuplicateAddress({ actor, vertical: input.vertical, body })
     ]);
-    const issued = await issueConfirmationToken({
-        ...binding,
-        stash: { point: point ? { lat: point.lat, lng: point.lng } : null }
-    });
+    const stash = { point: point ? { lat: point.lat, lng: point.lng } : null };
+    const duplicateAddressWarning = duplicate
+        ? 'Ya tenés otra publicación activa en esta misma dirección: el borrador se puede crear, pero no vas a poder publicarlo con la misma dirección.'
+        : undefined;
+    if (args.mode === 'elicitation') {
+        const state = await issueConfirmationState({ binding, stash });
+        if (!state.ok) {
+            return storeUnavailable();
+        }
+        return needsConfirmation({
+            message: createListingConfirmationMessage({
+                listing: previewListing({ input, destinationName }),
+                point: stash.point,
+                ...(input.street === undefined ? {} : { street: input.street }),
+                ...(input.number === undefined ? {} : { number: input.number }),
+                ...(duplicateAddressWarning === undefined ? {} : { duplicateAddressWarning })
+            }),
+            stateId: state.stateId
+        });
+    }
+    const issued = await issueConfirmationToken({ ...binding, stash });
     if (!issued.ok) {
         return storeUnavailable();
     }
@@ -424,12 +431,7 @@ async function preview(args: {
                           : {}),
                       ...(input.street === undefined ? {} : { street: input.street }),
                       ...(input.number === undefined ? {} : { number: input.number }),
-                      ...(duplicate
-                          ? {
-                                duplicateAddressWarning:
-                                    'Ya tenés otra publicación activa en esta misma dirección: el borrador se puede crear, pero no vas a poder publicarlo con la misma dirección.'
-                            }
-                          : {})
+                      ...(duplicateAddressWarning === undefined ? {} : { duplicateAddressWarning })
                   }
                 : null,
             publishQuota,
