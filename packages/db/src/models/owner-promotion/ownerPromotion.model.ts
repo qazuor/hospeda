@@ -1,11 +1,39 @@
 import type { OwnerPromotion } from '@repo/schemas';
-import { and, eq, gte, isNull, lte, or } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+
+/**
+ * SQL condition: the promotion targets this accommodation, read DUAL (HOS-2270,
+ * release N): the new `entity_id` pair OR the legacy `accommodation_id`.
+ *
+ * Reading both makes the result independent of whether the data-migration that
+ * copies `accommodation_id` into `entity_id` has run yet. Drops its second branch
+ * in the release N+1 (contract).
+ *
+ * @param accommodationId - The accommodation the promotion must target.
+ */
+export function accommodationTargetCondition(accommodationId: string): SQL {
+    return sql`(${ownerPromotions.entityType} = 'accommodation' AND (${ownerPromotions.entityId} = ${accommodationId} OR ${ownerPromotions.accommodationId} = ${accommodationId}))`;
+}
+
+/**
+ * SQL condition: an owner-wide accommodation promotion, i.e. one that targets ALL of
+ * the owner's accommodations (D-4 of SPEC-285).
+ *
+ * It is `entity_type = 'accommodation'` with NO target in either column. Checking the
+ * legacy column too keeps a promotion whose `entity_id` has not been copied yet from
+ * being read as owner-wide. A venue promotion is never owner-wide.
+ *
+ * @param ownerId - The owner the promotion belongs to.
+ */
+export function ownerWideAccommodationCondition(ownerId: string): SQL {
+    return sql`(${ownerPromotions.entityType} = 'accommodation' AND ${ownerPromotions.entityId} IS NULL AND ${ownerPromotions.accommodationId} IS NULL AND ${ownerPromotions.ownerId} = ${ownerId})`;
+}
 
 /**
  * Model for managing owner promotions in the database.
@@ -100,7 +128,7 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 .from(ownerPromotions)
                 .where(
                     and(
-                        eq(ownerPromotions.accommodationId, accommodationId),
+                        accommodationTargetCondition(accommodationId),
                         eq(ownerPromotions.lifecycleState, 'ACTIVE'),
                         lte(ownerPromotions.validFrom, now),
                         // NULL validUntil means no expiry — treat as always valid (SPEC-285 FIX 4).
@@ -174,8 +202,11 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
      *
      * Implements D-4 from SPEC-285: the public accommodation detail page must show
      * promotions where either:
-     *   - `accommodationId = $accommodationId` (targeted at this listing), OR
-     *   - `accommodationId IS NULL AND ownerId = $ownerId` (owner-wide promo)
+     *   - the promotion targets this accommodation (`entity_type = 'accommodation'`
+     *     and `entity_id` or, until release N+1, `accommodation_id` equals it), OR
+     *   - it is owner-wide (`entity_type = 'accommodation'` with no target) and
+     *     `ownerId = $ownerId`.
+     * Venue promotions are never returned (HOS-2270).
      *
      * This prevents other owners' null-accommodationId promos from leaking onto
      * this accommodation (the AND `ownerId = $ownerId` guard isolates the owner).
@@ -202,14 +233,12 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
             );
 
-            // Targeted promo: matches this accommodation exactly.
-            const targetedCondition = eq(ownerPromotions.accommodationId, accommodationId);
+            // Targeted promo: matches this accommodation exactly (dual read, HOS-2270).
+            const targetedCondition = accommodationTargetCondition(accommodationId);
 
-            // Owner-wide promo: accommodationId IS NULL AND belongs to this owner.
-            const ownerWideCondition = and(
-                isNull(ownerPromotions.accommodationId),
-                eq(ownerPromotions.ownerId, ownerId)
-            );
+            // Owner-wide promo: accommodation type with no target AND belongs to this
+            // owner. A venue promotion is never read as owner-wide (HOS-2270).
+            const ownerWideCondition = ownerWideAccommodationCondition(ownerId);
 
             const whereClause = and(
                 eq(ownerPromotions.lifecycleState, 'ACTIVE'),
@@ -269,11 +298,8 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
             );
 
-            const targetedCondition = eq(ownerPromotions.accommodationId, accommodationId);
-            const ownerWideCondition = and(
-                isNull(ownerPromotions.accommodationId),
-                eq(ownerPromotions.ownerId, ownerId)
-            );
+            const targetedCondition = accommodationTargetCondition(accommodationId);
+            const ownerWideCondition = ownerWideAccommodationCondition(ownerId);
 
             const whereClause = and(
                 eq(ownerPromotions.lifecycleState, 'ACTIVE'),
@@ -293,6 +319,125 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 this.entityName,
                 method,
                 { accommodationId, ownerId },
+                (error as Error).message
+            );
+        }
+    }
+
+    /**
+     * Counts the promotions of an owner's VENUES that occupy a slot of the plan's
+     * `max_active_promotions` limit (HOS-2270).
+     *
+     * A promotion occupies a slot while it is `ACTIVE`, not soft-deleted and not
+     * expired. A promotion scheduled for the future (`validFrom` ahead) DOES
+     * count: leaving it out would let an owner stack unlimited scheduled
+     * promotions and have them all go live at once. Accommodation promotions are
+     * never counted here, so the two verticals do not spend each other's quota.
+     *
+     * @param params.ownerId - The owner whose venue promotions are counted.
+     * @param tx - Optional transaction client.
+     * @returns The number of venue promotions holding a slot.
+     */
+    async countActiveForVenueOwner(
+        { ownerId }: { ownerId: string },
+        tx?: DrizzleClient
+    ): Promise<number> {
+        const db = this.getClient(tx);
+        const method = 'countActiveForVenueOwner';
+        try {
+            const now = new Date();
+            const rows = await db
+                .select({ id: ownerPromotions.id })
+                .from(ownerPromotions)
+                .where(
+                    and(
+                        eq(ownerPromotions.ownerId, ownerId),
+                        eq(ownerPromotions.entityType, 'venue'),
+                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
+                        isNull(ownerPromotions.deletedAt),
+                        or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
+                    )
+                );
+            logQuery(this.entityName, method, { ownerId }, { total: rows.length });
+            return rows.length;
+        } catch (error) {
+            logError(this.entityName, method, { ownerId }, error as Error);
+            throw new DbError(this.entityName, method, { ownerId }, (error as Error).message);
+        }
+    }
+
+    /**
+     * Lists every non-deleted promotion of one venue, in any lifecycle state, newest
+     * first (HOS-2270). The owner's editor reads this; the public venue page reads
+     * its own filtered path.
+     *
+     * @param params.venueId - The venue the promotions hang from.
+     * @param tx - Optional transaction client.
+     * @returns The venue's promotions.
+     */
+    async findByVenue(
+        { venueId }: { venueId: string },
+        tx?: DrizzleClient
+    ): Promise<OwnerPromotion[]> {
+        const db = this.getClient(tx);
+        const method = 'findByVenue';
+        try {
+            const rows = await db
+                .select()
+                .from(ownerPromotions)
+                .where(
+                    and(
+                        eq(ownerPromotions.entityType, 'venue'),
+                        eq(ownerPromotions.entityId, venueId),
+                        isNull(ownerPromotions.deletedAt)
+                    )
+                )
+                .orderBy(desc(ownerPromotions.createdAt));
+            logQuery(this.entityName, method, { venueId }, { total: rows.length });
+            return rows as OwnerPromotion[];
+        } catch (error) {
+            logError(this.entityName, method, { venueId }, error as Error);
+            throw new DbError(this.entityName, method, { venueId }, (error as Error).message);
+        }
+    }
+
+    /**
+     * Finds one non-deleted promotion by id, only if it hangs from the given venue.
+     * A promotion of another venue, of an accommodation, or one that does not exist
+     * all answer `null`: the caller turns every one of them into the same 404.
+     *
+     * @param params.promotionId - The promotion id.
+     * @param params.venueId - The venue it must hang from.
+     * @param tx - Optional transaction client.
+     * @returns The promotion, or `null`.
+     */
+    async findOneOfVenue(
+        { promotionId, venueId }: { promotionId: string; venueId: string },
+        tx?: DrizzleClient
+    ): Promise<OwnerPromotion | null> {
+        const db = this.getClient(tx);
+        const method = 'findOneOfVenue';
+        try {
+            const rows = await db
+                .select()
+                .from(ownerPromotions)
+                .where(
+                    and(
+                        eq(ownerPromotions.id, promotionId),
+                        eq(ownerPromotions.entityType, 'venue'),
+                        eq(ownerPromotions.entityId, venueId),
+                        isNull(ownerPromotions.deletedAt)
+                    )
+                )
+                .limit(1);
+            logQuery(this.entityName, method, { promotionId, venueId }, rows);
+            return (rows[0] as OwnerPromotion | undefined) ?? null;
+        } catch (error) {
+            logError(this.entityName, method, { promotionId, venueId }, error as Error);
+            throw new DbError(
+                this.entityName,
+                method,
+                { promotionId, venueId },
                 (error as Error).message
             );
         }

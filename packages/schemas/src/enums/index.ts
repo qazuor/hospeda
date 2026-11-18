@@ -101,6 +101,8 @@ export * from './occupancy-source.enum.js';
 export * from './occupancy-source.schema.js';
 export * from './owner-promotion-discount-type.enum.js';
 export * from './owner-promotion-discount-type.schema.js';
+export * from './owner-promotion-entity-type.enum.js';
+export * from './owner-promotion-entity-type.schema.js';
 export * from './partner-content-review-state.enum.js';
 export * from './partner-content-review-state.schema.js';
 // Partner logo click destinations (HOS-1063)
