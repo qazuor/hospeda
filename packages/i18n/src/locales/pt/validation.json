@@ -612,8 +612,10 @@
             "min": "El nombre del negocio debe tener al menos {{min}} caracteres",
             "requiredForServiceProvider": "Indicá el nombre de tu negocio"
         },
-        "category": {
-            "requiredForServiceProvider": "Elegí la categoría del servicio que ofrecés"
+        "categorySlugs": {
+            "max": "Você pode escolher até {{max}} categorias",
+            "requiredForServiceProvider": "Escolha pelo menos uma categoria do serviço que você oferece",
+            "unique": "Não repita a mesma categoria"
         },
         "claimExpiresAt": {
             "invalid": "A data de expiração da confirmação é inválida"
@@ -3522,6 +3524,14 @@
             "required": "Indicá el valor del beneficio para el tipo elegido",
             "requiresType": "Elegí un tipo de beneficio antes de indicar su valor"
         },
+        "categories": {
+            "max": "Não é possível filtrar por mais de {{max}} categorias ao mesmo tempo"
+        },
+        "categoryIds": {
+            "max": "Um prestador pode ter até {{max}} categorias",
+            "min": "Escolha pelo menos uma categoria",
+            "unique": "Não repita a mesma categoria"
+        },
         "contact": {
             "min": "El contacto debe tener al menos {{min}} caracteres"
         },
@@ -3534,6 +3544,30 @@
         },
         "slug": {
             "min": "El slug debe tener al menos {{min}} caracteres"
+        }
+    },
+    "hostTradeCategory": {
+        "slug": {
+            "required": "O slug é obrigatório",
+            "min": "O slug deve ter pelo menos {{min}} caracteres",
+            "max": "O slug pode ter no máximo {{max}} caracteres",
+            "pattern": "O slug aceita apenas letras minúsculas, números e hífens"
+        },
+        "nameI18n": {
+            "esRequired": "O nome em espanhol é obrigatório"
+        },
+        "displayWeight": {
+            "required": "A ordem é obrigatória",
+            "int": "A ordem deve ser um número inteiro",
+            "min": "A ordem deve ser pelo menos {{min}}",
+            "max": "A ordem pode ser no máximo {{max}}"
+        },
+        "keywordsI18n": {
+            "required": "A palavra relacionada é obrigatória",
+            "min": "A palavra relacionada não pode estar vazia",
+            "max": "Cada palavra relacionada pode ter no máximo {{max}} caracteres",
+            "lowercase": "As palavras relacionadas devem estar em minúsculas",
+            "tooMany": "Até {{max}} palavras relacionadas por idioma"
         }
     },
     "hostTradeReview": {

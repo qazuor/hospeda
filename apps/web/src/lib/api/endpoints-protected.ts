@@ -22,7 +22,7 @@ import type {
     ConversationListingAvailability,
     DestinationReviewListItem,
     HostTradeBenefitTypeEnum,
-    HostTradeCategoryEnum,
+    HostTradeCategoryRef,
     HostTradeOwnerUpdate,
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
@@ -1103,7 +1103,8 @@ export interface MyHostTrade {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
-    readonly category: HostTradeCategoryEnum;
+    /** Catalog categories, in catalog order (HOS-919). */
+    readonly categories: ReadonlyArray<HostTradeCategoryRef>;
     readonly contact: string;
     /** Fine print of the LIVE benefit (conditions, exclusions, validity). */
     readonly benefit: string;
@@ -1151,7 +1152,8 @@ export interface DirectoryProvider {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
-    readonly category: HostTradeCategoryEnum;
+    /** Catalog categories, in catalog order (HOS-919). */
+    readonly categories: ReadonlyArray<HostTradeCategoryRef>;
     readonly contact: string;
     readonly benefit: string;
     readonly destinationId: string;
@@ -1219,7 +1221,8 @@ export interface BenefitUsage {
         readonly id: string;
         readonly slug: string;
         readonly name: string;
-        readonly category: HostTradeCategoryEnum;
+        /** Catalog categories, in catalog order (HOS-919). */
+        readonly categories: ReadonlyArray<HostTradeCategoryRef>;
     } | null;
     /**
      * Whether this host already reviewed this provider — what decides whether

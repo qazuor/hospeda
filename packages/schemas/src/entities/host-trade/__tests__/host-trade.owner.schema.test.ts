@@ -110,4 +110,27 @@ describe('HostTradeOwnerUpdateSchema — AC-9 server-side stripping', () => {
         expect(HOST_TRADE_OWNER_FORBIDDEN_FIELDS).toContain('destinationId');
         expect(HOST_TRADE_OWNER_FORBIDDEN_FIELDS).toContain('isActive');
     });
+
+    it('should forbid the multi-category fields so providers never edit their categories (HOS-919 D3)', () => {
+        expect(HOST_TRADE_OWNER_FORBIDDEN_FIELDS).toContain('categoryIds');
+        expect(HOST_TRADE_OWNER_FORBIDDEN_FIELDS).toContain('categories');
+    });
+
+    it('should strip categoryIds from an owner update payload', () => {
+        const result = HostTradeOwnerUpdateSchema.safeParse({
+            contact: '123',
+            categoryIds: ['6f9619ff-8b86-4d11-b42d-00c04fc964ff']
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.success && result.data).not.toHaveProperty('categoryIds');
+    });
+
+    it('should not declare any forbidden field in the owner update schema keys', () => {
+        const keys = Object.keys(HostTradeOwnerUpdateSchema.shape);
+
+        for (const forbidden of HOST_TRADE_OWNER_FORBIDDEN_FIELDS) {
+            expect(keys).not.toContain(forbidden);
+        }
+    });
 });

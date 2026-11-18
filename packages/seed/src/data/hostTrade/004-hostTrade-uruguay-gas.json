@@ -3,7 +3,7 @@
     "id": "004-hostTrade-uruguay-gas",
     "name": "Gas Servicios del Uruguay",
     "slug": "gas-servicios-del-uruguay",
-    "category": "GAS",
+    "categorySlugs": ["gas-instalacion"],
     "contact": "+54 9 3442 345678",
     "benefit": "Revisión anual de instalaciones con descuento del 20% para hosts Hospeda. Urgencias sin recargo.",
     "destinationId": "011-destination-concepcion-del-uruguay",

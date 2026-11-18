@@ -36,3 +36,18 @@ describe('HostTradeAdminSearchSchema — declarationSuspended', () => {
         );
     });
 });
+
+describe('HostTradeAdminSearchSchema — categories filter idempotency (HOS-919)', () => {
+    it('parses the comma-separated wire form into a slug array', () => {
+        const parsed = HostTradeAdminSearchSchema.parse({ categories: 'plomeria, gas' });
+
+        expect(parsed.categories).toEqual(['plomeria', 'gas']);
+    });
+
+    it('accepts an already-parsed slug array so a service can re-validate route output', () => {
+        const first = HostTradeAdminSearchSchema.parse({ categories: 'plomeria,gas' });
+        const second = HostTradeAdminSearchSchema.parse({ ...first });
+
+        expect(second.categories).toEqual(['plomeria', 'gas']);
+    });
+});

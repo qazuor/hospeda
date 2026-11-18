@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "013-host-trade-category-herreria",
+    "slug": "herreria",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Herrería",
+        "en": "Ironwork",
+        "pt": "Serralheria"
+    },
+    "keywordsI18n": {
+        "es": ["herrero", "rejas", "portón", "soldadura", "estructura metálica"]
+    },
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

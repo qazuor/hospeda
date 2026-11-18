@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
+import { HostTradeCategoriesFilterSchema } from './host-trade.categories-filter.js';
 
 /**
  * HostTradeAdminSearchSchema — admin list search parameters for the host-trades directory.
@@ -24,8 +25,15 @@ export const HostTradeAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by destination */
     destinationId: z.string().uuid().optional(),
 
-    /** Filter by service category */
+    /**
+     * Filter by the legacy single service category.
+     *
+     * @deprecated HOS-919, removed in the N+1 contract PR (T-054). Use `categories`.
+     */
     category: HostTradeCategoryEnumSchema.optional(),
+
+    /** Filter by catalog category slugs (comma-separated, any-of, max 30). */
+    categories: HostTradeCategoriesFilterSchema,
 
     /**
      * Filter by active status.

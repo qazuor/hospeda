@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "028-host-trade-category-fletes",
+    "slug": "fletes",
+    "groupSlug": "abastecimiento-traslados",
+    "nameI18n": {
+        "es": "Fletes",
+        "en": "Moving / Freight",
+        "pt": "Fretes"
+    },
+    "keywordsI18n": {
+        "es": ["flete", "mudanza", "traslado de muebles", "camioneta"]
+    },
+    "displayWeight": 20,
+    "lifecycleState": "ACTIVE"
+}

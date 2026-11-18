@@ -164,6 +164,10 @@ export type EntitySelectFieldConfig = {
     searchMode?: 'client' | 'server'; // Default: 'server'
     loadAllFn?: () => Promise<SelectOption[]>; // For client-side search
     showAllWhenEmpty?: boolean; // Show all options when no search query
+    /** Minimum number of selected values (multiple mode). Validated by the form schema. */
+    minItems?: number;
+    /** Maximum number of selected values (multiple mode). The picker stops adding past it. */
+    maxItems?: number;
 };
 
 /**

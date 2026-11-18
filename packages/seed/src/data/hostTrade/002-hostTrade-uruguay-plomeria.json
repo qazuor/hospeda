@@ -3,7 +3,7 @@
     "id": "002-hostTrade-uruguay-plomeria",
     "name": "Plomería Litoral",
     "slug": "plomeria-litoral",
-    "category": "PLOMERIA",
+    "categorySlugs": ["plomeria"],
     "contact": "https://wa.me/5493442567890",
     "benefit": "Visita de diagnóstico sin cargo para hosts Hospeda. 15% de descuento en mano de obra.",
     "destinationId": "011-destination-concepcion-del-uruguay",

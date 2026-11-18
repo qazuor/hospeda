@@ -255,6 +255,9 @@ export const buildFilterChips = ({
                 } else {
                     displayValue = activeValue;
                 }
+            } else if (simpleConfig.type === 'multi-select') {
+                // The chip shows the raw selected values, comma-separated list spaced out.
+                displayValue = activeValue.split(',').join(', ');
             } else if (simpleConfig.type === 'text') {
                 // Text filters use the raw string value as-is for chip display
                 displayValue = activeValue;

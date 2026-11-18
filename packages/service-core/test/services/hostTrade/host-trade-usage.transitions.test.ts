@@ -36,6 +36,13 @@ import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory'
 
 const mockLogger = createLoggerMock();
 
+const PLOMERIA_REF = {
+    id: '00000000-0000-4000-a000-0000000000c1',
+    slug: 'plomeria',
+    nameI18n: { es: 'Plomeria', en: 'Plumbing', pt: 'Encanamento' },
+    groupSlug: 'instalaciones'
+};
+
 const HT_ID = getMockId('attraction', 'ht-tx-1');
 const USAGE_ID = getMockId('feature', 'usage-tx-1');
 const OWNER_ID = getMockId('user', 'tx-owner');
@@ -71,6 +78,11 @@ function buildService(
     // `findByIds` is outside the default mock surface: the host-facing lists use
     // it to name each row's provider in a single query.
     const hostTradeModel = createModelMock(['findByIds']);
+    // HOS-919: provider refs carry their catalog categories, hydrated in ONE batched call.
+    hostTradeModel.hydrateCategories = vi.fn(
+        async ({ hostTradeIds }: { hostTradeIds: readonly string[] }) =>
+            new Map(hostTradeIds.map((id) => [id, [PLOMERIA_REF]]))
+    );
     const userModel = createModelMock();
 
     model.findById = vi.fn(async () => usage);
@@ -100,8 +112,7 @@ function buildService(
         ids.map((id) => ({
             id,
             slug: 'plomero-centro',
-            name: 'Plomero Centro',
-            category: 'PLOMERIA'
+            name: 'Plomero Centro'
         }))
     );
     hostTradeModel.update = vi.fn(
@@ -560,12 +571,21 @@ describe('listPendingForHost', () => {
         // The inbox names the provider of every row it returns, so its listing
         // model needs the batch read even in a test that only asserts paging.
         const hostTradeModel = createModelMock(['findByIds']);
+        // HOS-919: provider refs carry their catalog categories, hydrated in ONE batched call.
+        hostTradeModel.hydrateCategories = vi.fn(
+            async ({ hostTradeIds }: { hostTradeIds: readonly string[] }) =>
+                new Map(hostTradeIds.map((id) => [id, [PLOMERIA_REF]]))
+        );
+        // HOS-919: provider refs carry their catalog categories, hydrated in ONE batched call.
+        hostTradeModel.hydrateCategories = vi.fn(
+            async ({ hostTradeIds }: { hostTradeIds: readonly string[] }) =>
+                new Map(hostTradeIds.map((id) => [id, [PLOMERIA_REF]]))
+        );
         hostTradeModel.findByIds = vi.fn(async (ids: readonly string[]) =>
             ids.map((id) => ({
                 id,
                 slug: 'plomero-centro',
-                name: 'Plomero Centro',
-                category: 'PLOMERIA'
+                name: 'Plomero Centro'
             }))
         );
 

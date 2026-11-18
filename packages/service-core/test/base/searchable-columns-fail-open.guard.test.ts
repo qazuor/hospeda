@@ -132,6 +132,14 @@ const DECLARED_EXCEPTIONS: ReadonlyArray<{ readonly service: string; readonly re
         reason: 'exchange_rates has no text column at all: a uuid, four Postgres enums (fromCurrency, toCurrency, rateType, source), two numerics, a boolean and four timestamps. Free-text search has no surface here.'
     },
     {
+        service: 'HostTradeCategoryService',
+        reason: "HOS-919: the term must match slug OR a per-locale name OR a per-locale keyword (JSONB), which no column list can express — returning ['slug'] would AND a slug filter onto that OR and break name search. adminList() carries the term to _executeAdminSearch, which builds the condition with buildCatalogSearchCondition (unit + real-DB tests). adminList() is the only caller (apps/api admin list route); list() is not exposed with a search param and would fail open if it ever were."
+    },
+    {
+        service: 'HostTradeCategoryGroupService',
+        reason: 'HOS-919: same as HostTradeCategoryService — the term matches slug OR a per-locale name (JSONB), built by buildCatalogSearchCondition in the adminList() → _executeAdminSearch override. adminList() is the only caller (apps/api admin list route); list() is not exposed with a search param.'
+    },
+    {
         service: 'HostTradeUsageService',
         reason: 'Deliberate and pre-existing: the benefit-usage admin list filters on typed columns (declarant, state, date range). The two free-text columns it does have (note, rejectionNote) are moderation notes, not identifiers.'
     }

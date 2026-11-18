@@ -27,6 +27,15 @@ import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
+// Updates run in a transaction (HOS-919); no DB here, so the wrapper just runs
+// its callback with a stub `tx`.
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (fn: (ctx: unknown) => Promise<unknown>, baseCtx?: { hookState?: object }) =>
+            fn({ ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} })
+    )
+}));
+
 const HT_ID = getMockId('attraction', 'ht-qr-1');
 const DEST_ID = getMockId('destination', 'dest-qr-1');
 const USER_ID = getMockId('user', 'owner-qr-1');
@@ -130,6 +139,7 @@ function buildService(input: {
 
     const model = {
         ...createModelMock(['findForHost']),
+        hydrateCategories: vi.fn().mockResolvedValue(new Map()),
         findById: vi.fn().mockResolvedValue(existing),
         // The `_beforeUpdate` collision check: the new slug is free.
         findOne: vi.fn().mockResolvedValue(null),

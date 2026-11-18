@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/hostTradeCategoryGroup.schema.json",
+    "id": "001-host-trade-category-group-instalaciones",
+    "slug": "instalaciones",
+    "nameI18n": {
+        "es": "Instalaciones",
+        "en": "Installations",
+        "pt": "Instalações"
+    },
+    "displayWeight": 10,
+    "lifecycleState": "ACTIVE"
+}

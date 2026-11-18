@@ -33,14 +33,13 @@
             "portfolioLinks": "Portfolio links (optional)",
             "topics": "Topics you'd like to write about",
             "experience": "Previous experience (optional)",
-            "category": "Service category",
+            "categorySlugs": "Service categories",
             "destinationId": "Destination you cover",
             "benefitType": "Benefit for hosts",
             "benefitValue": "Benefit value",
             "benefitText": "Benefit conditions (optional)"
         },
         "placeholders": {
-            "category": "Select a category",
             "destinationId": "Select a destination",
             "benefitType": "Select a benefit",
             "partnerType": "Select an organization type"
@@ -56,6 +55,7 @@
             "ngo": "NGO",
             "institution": "Institution"
         },
+        "categoriesLoadError": "We could not load the categories. Reload the page to try again.",
         "accountEmailNotice": "We'll use your account email:",
         "messageIntro": "Message:",
         "submit": "Submit request",

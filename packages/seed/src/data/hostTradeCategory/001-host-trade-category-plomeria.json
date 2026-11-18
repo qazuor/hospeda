@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "001-host-trade-category-plomeria",
+    "slug": "plomeria",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Plomería",
+        "en": "Plumbing",
+        "pt": "Encanamento"
+    },
+    "keywordsI18n": {
+        "es": ["plomero", "caño", "pérdida", "canilla", "agua", "cañería", "inodoro"]
+    },
+    "displayWeight": 10,
+    "lifecycleState": "ACTIVE"
+}

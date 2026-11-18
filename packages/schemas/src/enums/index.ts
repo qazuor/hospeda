@@ -58,6 +58,7 @@ export * from './host-trade-benefit-type.enum.js';
 export * from './host-trade-benefit-type.schema.js';
 export * from './host-trade-category.enum.js';
 export * from './host-trade-category.schema.js';
+export * from './host-trade-category-legacy-map.js';
 export * from './host-trade-usage-channel.enum.js';
 export * from './host-trade-usage-channel.schema.js';
 export * from './host-trade-usage-declared-by.enum.js';

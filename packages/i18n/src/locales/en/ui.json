@@ -153,6 +153,15 @@
         "empty": "No matches found",
         "featuredLabel": "Featured"
     },
+    "tradeCategorySelect": {
+        "placeholder": "Search your trade (e.g. plumbing, air conditioning)",
+        "empty": "We could not find that category",
+        "emptyHint": "If your trade is not listed, write it in the message",
+        "maxReached": "You reached the maximum of {{max}} categories",
+        "removeChip": "Remove {{name}}",
+        "optionsLabel": "Available categories",
+        "selectedLabel": "Selected categories"
+    },
     "pagination": {
         "previous": "Previous",
         "next": "Next",

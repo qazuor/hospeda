@@ -153,6 +153,15 @@
         "empty": "Nenhuma correspondência encontrada",
         "featuredLabel": "Destaque"
     },
+    "tradeCategorySelect": {
+        "placeholder": "Busque seu ofício (ex.: encanamento, ar-condicionado)",
+        "empty": "Não encontramos essa categoria",
+        "emptyHint": "Se o seu ofício não estiver na lista, escreva na mensagem",
+        "maxReached": "Você atingiu o máximo de {{max}} categorias",
+        "removeChip": "Remover {{name}}",
+        "optionsLabel": "Categorias disponíveis",
+        "selectedLabel": "Categorias selecionadas"
+    },
     "pagination": {
         "previous": "Anterior",
         "next": "Próximo",

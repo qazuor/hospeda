@@ -286,7 +286,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'home.featuredDestinations',
     'home.searchBar',
     'host-trades.card',
-    'host-trades.categories',
     // The provider detail page's review list (HOS-376 T-053), for the same
     // reason as the islands below.
     'host-trades.directory',
@@ -353,6 +352,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'ui.favorite',
     'ui.filter',
     'ui.searchableSelect',
+    'ui.tradeCategorySelect',
     'validation'
 ] as const;
 

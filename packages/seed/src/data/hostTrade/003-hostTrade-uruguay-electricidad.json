@@ -3,7 +3,7 @@
     "id": "003-hostTrade-uruguay-electricidad",
     "name": "Electricista Martínez e Hijos",
     "slug": "electricista-martinez-e-hijos",
-    "category": "ELECTRICIDAD",
+    "categorySlugs": ["electricidad"],
     "contact": "+54 9 3442 234567",
     "benefit": "Presupuesto gratuito y 12% de descuento en materiales para alojamientos registrados en Hospeda.",
     "destinationId": "011-destination-concepcion-del-uruguay",

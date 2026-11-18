@@ -28,6 +28,7 @@ import type { Accommodation } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hostTradeCategoryApi } from '@/lib/api/endpoints';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -131,6 +132,23 @@ try {
 }
 
 // ---------------------------------------------------------------------------
+// Catalog order for the filter pills (HOS-919 AC-5.2): the pills follow the
+// catalog (group weight, then category weight), which the providers' own
+// category refs do not carry. Best-effort: on failure the island falls back to
+// first-appearance order and the page renders all the same.
+// ---------------------------------------------------------------------------
+
+let catalogOrder: string[] | undefined;
+if (trades.length > 0) {
+    const catalogResult = await hostTradeCategoryApi.getHostTradeCatalog();
+    if (catalogResult.ok) {
+        catalogOrder = catalogResult.data.groups.flatMap((group) =>
+            group.categories.map((category) => category.slug)
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
 // i18n
 // ---------------------------------------------------------------------------
 
@@ -172,6 +190,7 @@ const isEmpty = trades.length === 0;
             client:idle
             trades={trades as HostTradePublic[]}
             locale={locale}
+            catalogOrder={catalogOrder}
         />
     ) : (
         /* Empty state: disambiguated by secondary accommodations fetch */

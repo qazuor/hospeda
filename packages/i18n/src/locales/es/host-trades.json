@@ -23,6 +23,8 @@
         "is24h": "Disponible 24hs",
         "benefit": "Beneficio para hosts",
         "contact": "Contactar",
+        "categoriesLabel": "Rubros",
+        "moreCategories": "{{count}} rubros más",
         "stats": {
             "ratingLabel": "{{rating}} de 5 estrellas",
             "reviews_one": "{{count}} valoración",
@@ -32,21 +34,6 @@
             "hosts_one": "{{count}} anfitrión",
             "hosts_other": "{{count}} anfitriones"
         }
-    },
-    "categories": {
-        "CERRAJERIA": "Cerrajería",
-        "PLOMERIA": "Plomería",
-        "ELECTRICIDAD": "Electricidad",
-        "GAS": "Gas",
-        "CLIMATIZACION": "Climatización",
-        "LIMPIEZA": "Limpieza",
-        "FLETES": "Fletes",
-        "VIDRIERIA": "Vidriería",
-        "CARPINTERIA": "Carpintería",
-        "PILETA_JARDIN": "Pileta y Jardín",
-        "PLAGAS": "Control de plagas",
-        "INTERNET": "Internet / TV",
-        "ALBANILERIA": "Albañilería"
     },
     "registerUsage": {
         "title": "Registrar uso del beneficio",

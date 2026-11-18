@@ -33,14 +33,13 @@
             "portfolioLinks": "Links do seu portfólio (opcional)",
             "topics": "Temas sobre os quais gostaria de escrever",
             "experience": "Experiência anterior (opcional)",
-            "category": "Categoria do serviço",
+            "categorySlugs": "Categorias do serviço",
             "destinationId": "Localidade onde você atende",
             "benefitType": "Benefício para os anfitriões",
             "benefitValue": "Valor do benefício",
             "benefitText": "Condições do benefício (opcional)"
         },
         "placeholders": {
-            "category": "Selecione uma categoria",
             "destinationId": "Selecione uma localidade",
             "benefitType": "Selecione um benefício",
             "partnerType": "Selecione um tipo de organização"
@@ -56,6 +55,7 @@
             "ngo": "ONG",
             "institution": "Instituição"
         },
+        "categoriesLoadError": "Não foi possível carregar as categorias. Recarregue a página para tentar novamente.",
         "accountEmailNotice": "Vamos usar o e-mail da sua conta:",
         "messageIntro": "Mensagem:",
         "submit": "Enviar solicitação",

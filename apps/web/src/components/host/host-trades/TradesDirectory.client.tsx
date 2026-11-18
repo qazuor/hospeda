@@ -2,17 +2,23 @@
  * @file TradesDirectory.client.tsx
  * @description React island for the host trades directory page.
  *
- * Features:
- * - Category filter pills ("Todos" + one pill per present category).
+ * Features (HOS-919 US-5):
+ * - Category filter pills ("Todos" + one pill per category present in the
+ *   result set), multi-select with ANY-OF semantics: a provider is listed when
+ *   it has at least one of the selected categories, and once however many it
+ *   matches.
+ * - Pills follow the catalog order (group weight, then category weight). The
+ *   page passes that order as `catalogOrder` (slugs); without it the order of
+ *   first appearance is used, which is catalog order for every single provider
+ *   because the API returns each provider's categories already sorted.
  * - Client-side filtering — no refetch needed.
- * - Category groups sorted ALPHABETICALLY by their localized i18n label
- *   (AC-1.5). The sort uses `Intl.Collator` for locale-aware comparison.
- * - Within each category group, trades keep the server-provided order
- *   (already name-ASC).
- * - TradeCard grid rendering.
+ * - Providers keep the server-provided order (name ASC); filtering never
+ *   re-sorts them.
+ * - TradeCard grid rendering, each card with its own category badges.
  *
  * Receives trades as a prop from the SSR page (data already fetched
- * server-side). i18n is resolved client-side via `createTranslations(locale)`.
+ * server-side). i18n is resolved client-side via `createTranslations(locale)`;
+ * category labels come from the multilang catalog name.
  */
 
 import type { HostTradePublic } from '@repo/schemas';
@@ -21,6 +27,7 @@ import { useMemo, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveTradeCategoryName } from '@/lib/trade-category-labels';
 import { TradeCard } from './TradeCard';
 import styles from './TradesDirectory.module.css';
 
@@ -31,8 +38,19 @@ import styles from './TradesDirectory.module.css';
 export interface TradesDirectoryProps {
     /** Trades returned by the server-side fetch (already owner-scoped) */
     readonly trades: ReadonlyArray<HostTradePublic>;
-    /** Active UI locale for i18n and Intl.Collator */
+    /** Active UI locale for i18n */
     readonly locale: SupportedLocale;
+    /**
+     * Category slugs in catalog order (group weight, then category weight).
+     * Optional: when absent, pills keep the order in which categories first
+     * appear across the providers.
+     */
+    readonly catalogOrder?: ReadonlyArray<string>;
+}
+
+interface CategoryPill {
+    readonly slug: string;
+    readonly label: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,34 +58,51 @@ export interface TradesDirectoryProps {
 // ---------------------------------------------------------------------------
 
 /**
- * Builds a sorted list of unique categories present in the trades array.
- * Sorted ALPHABETICALLY by their localized label using `Intl.Collator` so
- * the visual order is consistent with the user's language (AC-1.5).
+ * Builds the filter pills: the union of the categories present in the result
+ * set, each once, in catalog order.
  *
- * @param trades - All available trades
- * @param getLabel - Callback that resolves a category key to its localized label
- * @param locale - BCP-47 locale for Intl.Collator
- * @returns Array of { category, label } sorted by label
+ * Categories the catalog order does not mention sort after the known ones, in
+ * order of first appearance. Array `sort` is stable, so ties keep that order.
+ *
+ * @param params.trades - Providers in the result set
+ * @param params.locale - Page locale, for the label
+ * @param params.catalogOrder - Slugs in catalog order, when the page has them
+ * @returns The pills to render
  */
-function buildSortedCategories({
+function buildCategoryPills({
     trades,
-    getLabel,
-    locale
+    locale,
+    catalogOrder
 }: {
     readonly trades: ReadonlyArray<HostTradePublic>;
-    readonly getLabel: (category: string) => string;
-    readonly locale: string;
-}): ReadonlyArray<{ readonly category: string; readonly label: string }> {
-    const seen = new Set<string>();
+    readonly locale: SupportedLocale;
+    readonly catalogOrder?: ReadonlyArray<string>;
+}): ReadonlyArray<CategoryPill> {
+    const bySlug = new Map<string, CategoryPill>();
     for (const trade of trades) {
-        seen.add(trade.category);
+        for (const category of trade.categories) {
+            if (!bySlug.has(category.slug)) {
+                bySlug.set(category.slug, {
+                    slug: category.slug,
+                    label: resolveTradeCategoryName({ nameI18n: category.nameI18n, locale })
+                });
+            }
+        }
     }
 
-    const collator = new Intl.Collator(locale, { sensitivity: 'base' });
+    const pills = Array.from(bySlug.values());
+    if (!catalogOrder || catalogOrder.length === 0) return pills;
 
-    return Array.from(seen)
-        .map((category) => ({ category, label: getLabel(category) }))
-        .sort((a, b) => collator.compare(a.label, b.label));
+    const rank = (slug: string): number => {
+        const index = catalogOrder.indexOf(slug);
+        return index === -1 ? Number.POSITIVE_INFINITY : index;
+    };
+    return pills.sort((a, b) => {
+        const ra = rank(a.slug);
+        const rb = rank(b.slug);
+        if (ra === rb) return 0;
+        return ra < rb ? -1 : 1;
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -79,36 +114,49 @@ function buildSortedCategories({
  *
  * @example
  * ```astro
- * <TradesDirectory client:idle trades={trades} locale={locale} />
+ * <TradesDirectory client:idle trades={trades} locale={locale} catalogOrder={order} />
  * ```
  */
-export function TradesDirectory({ trades, locale }: TradesDirectoryProps): JSX.Element {
+export function TradesDirectory({
+    trades,
+    locale,
+    catalogOrder
+}: TradesDirectoryProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    // Selected category slugs. Empty means "Todos" (no filter).
+    const [activeSlugs, setActiveSlugs] = useState<ReadonlySet<string>>(() => new Set());
 
-    // Build sorted category list (memoized — depends on trades + locale)
-    const sortedCategories = useMemo(
-        () =>
-            buildSortedCategories({
-                trades,
-                getLabel: (cat) => t(`host-trades.categories.${cat}`, cat),
-                locale
-            }),
-        [trades, locale, t]
+    const pills = useMemo(
+        () => buildCategoryPills({ trades, locale, catalogOrder }),
+        [trades, locale, catalogOrder]
     );
 
-    // Filter trades by the selected category (client-side, no refetch)
+    // Any-of filter (client-side, no refetch). `filter` keeps each provider once.
     const visibleTrades = useMemo(
         () =>
-            activeCategory === null
+            activeSlugs.size === 0
                 ? trades
-                : trades.filter((trade) => trade.category === activeCategory),
-        [trades, activeCategory]
+                : trades.filter((trade) =>
+                      trade.categories.some((category) => activeSlugs.has(category.slug))
+                  ),
+        [trades, activeSlugs]
     );
 
     // Whether the active category filter returned an empty result
-    const isFilteredEmpty = activeCategory !== null && visibleTrades.length === 0;
+    const isFilteredEmpty = activeSlugs.size > 0 && visibleTrades.length === 0;
+
+    function togglePill(slug: string): void {
+        setActiveSlugs((prev) => {
+            const next = new Set(prev);
+            if (next.has(slug)) {
+                next.delete(slug);
+            } else {
+                next.add(slug);
+            }
+            return next;
+        });
+    }
 
     // ---------------------------------------------------------------------------
     // Render
@@ -126,27 +174,25 @@ export function TradesDirectory({ trades, locale }: TradesDirectoryProps): JSX.E
                     type="button"
                     className={cn(
                         styles.filterPill,
-                        activeCategory === null && styles.filterPillActive
+                        activeSlugs.size === 0 && styles.filterPillActive
                     )}
-                    onClick={() => setActiveCategory(null)}
-                    aria-pressed={activeCategory === null}
+                    onClick={() => setActiveSlugs(new Set())}
+                    aria-pressed={activeSlugs.size === 0}
                 >
                     {t('host-trades.filter.all', 'Todos')}
                 </button>
 
-                {/* One pill per category present in the data, sorted by localized label */}
-                {sortedCategories.map(({ category, label }) => (
+                {/* One pill per category present in the data, in catalog order */}
+                {pills.map(({ slug, label }) => (
                     <button
-                        key={category}
+                        key={slug}
                         type="button"
                         className={cn(
                             styles.filterPill,
-                            activeCategory === category && styles.filterPillActive
+                            activeSlugs.has(slug) && styles.filterPillActive
                         )}
-                        onClick={() =>
-                            setActiveCategory(activeCategory === category ? null : category)
-                        }
-                        aria-pressed={activeCategory === category}
+                        onClick={() => togglePill(slug)}
+                        aria-pressed={activeSlugs.has(slug)}
                     >
                         {label}
                     </button>

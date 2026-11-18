@@ -23,6 +23,8 @@
         "is24h": "Available 24/7",
         "benefit": "Host benefit",
         "contact": "Contact",
+        "categoriesLabel": "Categories",
+        "moreCategories": "{{count}} more categories",
         "stats": {
             "ratingLabel": "{{rating}} out of 5 stars",
             "reviews_one": "{{count}} review",
@@ -32,21 +34,6 @@
             "hosts_one": "{{count}} host",
             "hosts_other": "{{count}} hosts"
         }
-    },
-    "categories": {
-        "CERRAJERIA": "Locksmith",
-        "PLOMERIA": "Plumbing",
-        "ELECTRICIDAD": "Electrical",
-        "GAS": "Gas",
-        "CLIMATIZACION": "HVAC",
-        "LIMPIEZA": "Cleaning",
-        "FLETES": "Moving / Freight",
-        "VIDRIERIA": "Glazier",
-        "CARPINTERIA": "Carpentry",
-        "PILETA_JARDIN": "Pool & Garden",
-        "PLAGAS": "Pest control",
-        "INTERNET": "Internet / TV",
-        "ALBANILERIA": "Masonry"
     },
     "registerUsage": {
         "title": "Record benefit use",

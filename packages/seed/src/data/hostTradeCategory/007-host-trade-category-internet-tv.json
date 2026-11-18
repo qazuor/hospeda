@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "007-host-trade-category-internet-tv",
+    "slug": "internet-tv",
+    "groupSlug": "instalaciones",
+    "nameI18n": {
+        "es": "Internet / TV",
+        "en": "Internet / TV",
+        "pt": "Internet / TV"
+    },
+    "keywordsI18n": {
+        "es": ["wifi", "fibra", "antena", "cable", "router", "satelital"]
+    },
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

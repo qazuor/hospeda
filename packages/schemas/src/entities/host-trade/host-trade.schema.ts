@@ -10,6 +10,7 @@ import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { BaseReviewFields } from '../../common/review.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
+import { HostTradeCategoryRefSchema } from '../host-trade-category/host-trade-category.access.schema.js';
 
 /**
  * HostTradeSchema — base entity schema for the host-trades directory.
@@ -28,8 +29,22 @@ export const HostTradeSchema = z.object({
     /** Display name of the tradesperson or business */
     name: z.string().min(1, { message: 'zodError.hostTrade.name.min' }),
 
-    /** Service category (e.g. PLOMERIA, ELECTRICIDAD) */
-    category: HostTradeCategoryEnumSchema,
+    /**
+     * Legacy single service category (e.g. PLOMERIA, ELECTRICIDAD).
+     *
+     * @deprecated HOS-919, removed in the N+1 contract PR (T-054). Kept optional
+     * for one release so rows and clients that predate the multi-category
+     * catalog still parse (additive-only schema compatibility policy). Read
+     * {@link HostTradeSchema.shape.categories} instead.
+     */
+    category: HostTradeCategoryEnumSchema.nullish(),
+
+    /**
+     * Catalog categories of the provider (HOS-919), in catalog order. Read-only
+     * on this shape: writes go through `categoryIds` on the create/update
+     * schemas. Defaults to `[]` so shapes that predate the catalog still parse.
+     */
+    categories: z.array(HostTradeCategoryRefSchema).default([]),
 
     /**
      * Contact information for the tradesperson.

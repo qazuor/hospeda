@@ -2,6 +2,23 @@ import { z } from 'zod';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { HostTradeSchema } from './host-trade.schema.js';
 
+/** Maximum categories a provider may carry. */
+export const HOST_TRADE_MAX_CATEGORIES = 10;
+
+/**
+ * Category ids written by an admin: 1..10 distinct catalog category uuids.
+ * Existence and soft-delete checks happen in the service, not here.
+ */
+export const HostTradeCategoryIdsSchema = z
+    .array(z.string().uuid({ message: 'zodError.common.id.invalidUuid' }), {
+        message: 'zodError.hostTrade.categoryIds.min'
+    })
+    .min(1, { message: 'zodError.hostTrade.categoryIds.min' })
+    .max(HOST_TRADE_MAX_CATEGORIES, { message: 'zodError.hostTrade.categoryIds.max' })
+    .refine((ids) => new Set(ids).size === ids.length, {
+        message: 'zodError.hostTrade.categoryIds.unique'
+    });
+
 /**
  * Schema for creating a new host-trade entry.
  *
@@ -33,8 +50,14 @@ export const CreateHostTradeSchema = HostTradeSchema.omit({
     benefitRespectedCount: true,
     declarationSuspendedAt: true,
     declarationSuspendedById: true,
-    declarationSuspendReason: true
+    declarationSuspendReason: true,
+
+    // HOS-919: `categories` is the READ shape (refs). Writes use `categoryIds`.
+    categories: true
 }).extend({
+    /** Catalog categories of the provider (HOS-919), 1..10 distinct ids. */
+    categoryIds: HostTradeCategoryIdsSchema,
+
     /**
      * URL-safe slug. Optional on creation — the API generates one from `name`
      * if this field is absent or empty.

@@ -2,7 +2,7 @@
  * @file TradeCard.tsx
  * @description Presentational card for a single host trade (local service provider).
  *
- * Displays: name, category badge (localized), benefit text, contact button,
+ * Displays: name, category badges (up to 3 plus «+N»), benefit text, contact button,
  * is24h badge (only when true), scheduleText (only when present), and the
  * stats line (only when the provider has any activity).
  *
@@ -26,9 +26,11 @@ import { formatNumber } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { TRADE_CARD_MAX_BADGES } from '@/lib/trade-category-labels';
 import { buildUrl } from '@/lib/urls';
 import { resolveTradeStats } from './resolve-trade-stats';
 import styles from './TradeCard.module.css';
+import { TradeCategoryBadges } from './TradeCategoryBadges';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -104,7 +106,6 @@ export function resolveContactHref(contact: string): string {
 export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
     const { t, tPlural } = createTranslations(locale);
 
-    const categoryLabel = t(`host-trades.categories.${trade.category}`, trade.category);
     const contactHref = resolveContactHref(trade.contact);
     const detailHref = buildUrl({
         locale,
@@ -125,7 +126,7 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
 
     return (
         <article className={styles.card}>
-            {/* ── Card header: name + category badge ── */}
+            {/* ── Card header: name ── */}
             <div className={styles.cardHeader}>
                 {/* The name is the way into the provider's page. A directory
                     reads that way, and it costs the card no new element —
@@ -139,8 +140,14 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
                         {trade.name}
                     </a>
                 </h3>
-                <span className={styles.categoryBadge}>{categoryLabel}</span>
             </div>
+
+            {/* ── Category badges: up to 3 plus «+N», in catalog order (HOS-919) ── */}
+            <TradeCategoryBadges
+                categories={trade.categories}
+                locale={locale}
+                max={TRADE_CARD_MAX_BADGES}
+            />
 
             {/* ── is24h badge ── */}
             {trade.is24h && (

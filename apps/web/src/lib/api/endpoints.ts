@@ -25,6 +25,7 @@ import type {
     PostPublic,
     PostSummary,
     PublicBusinessLine,
+    PublicHostTradeCatalog,
     QrCodeResolution,
     VenuePublic,
     VenuePublicFilterOptions
@@ -586,6 +587,29 @@ export const poiCategoryApi = {
     /** List the public POI category catalog (ACTIVE only, display-ordered). */
     list(): Promise<ApiResult<ReadonlyArray<PoiCategoryPublic>>> {
         return apiClient.get({ path: `${BASE}/poi-categories` });
+    }
+};
+
+// --- Host trade categories ---
+
+/**
+ * Public provider trade category catalog API (HOS-919). One call returns the
+ * ACTIVE groups with their ACTIVE categories, already ordered (group weight,
+ * then category weight). Public tier only: the web never reads the admin
+ * catalog routes.
+ */
+export const hostTradeCategoryApi = {
+    /**
+     * Fetch the public provider trade catalog.
+     *
+     * GET /api/v1/public/host-trade-categories
+     *
+     * Never throws: a failure resolves to `{ ok: false }`, which callers use
+     * to degrade (the marketing page omits its chips, the sign-up form falls
+     * back to a free-text hint).
+     */
+    getHostTradeCatalog(): Promise<ApiResult<PublicHostTradeCatalog>> {
+        return apiClient.get({ path: `${BASE}/host-trade-categories` });
     }
 };
 

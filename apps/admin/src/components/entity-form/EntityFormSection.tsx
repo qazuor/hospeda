@@ -273,6 +273,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                         );
 
                     case FieldTypeEnum.ENTITY_SELECT:
+                    case FieldTypeEnum.ENTITY_MULTISELECT:
                         return (
                             <EntitySelectField
                                 {...fieldProps}

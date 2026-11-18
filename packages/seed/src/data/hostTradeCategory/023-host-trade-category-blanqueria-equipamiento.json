@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "023-host-trade-category-blanqueria-equipamiento",
+    "slug": "blanqueria-equipamiento",
+    "groupSlug": "limpieza-ropa-blanca",
+    "nameI18n": {
+        "es": "Blanquería y equipamiento",
+        "en": "Linens & supplies",
+        "pt": "Enxoval e equipamentos"
+    },
+    "keywordsI18n": {
+        "es": ["blanquería", "sábanas", "toallas", "vajilla", "amenities", "equipamiento"]
+    },
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

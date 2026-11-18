@@ -289,6 +289,9 @@ describe('TEST:V6:32 — partner application and V7 schema from empty', () => {
                 'business_name',
                 'partner_type',
                 'category',
+                // HOS-919: the lead's chosen catalog categories (expand step;
+                // the legacy `category` above is dropped in release N+1).
+                'category_slugs',
                 'destination_id',
                 'benefit_type',
                 'benefit_value',

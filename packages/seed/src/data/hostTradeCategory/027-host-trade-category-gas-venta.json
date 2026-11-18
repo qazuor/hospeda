@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "027-host-trade-category-gas-venta",
+    "slug": "gas-venta",
+    "groupSlug": "abastecimiento-traslados",
+    "nameI18n": {
+        "es": "Venta de gas",
+        "en": "Gas supply",
+        "pt": "Venda de gás"
+    },
+    "keywordsI18n": {
+        "es": ["garrafa", "tubo", "gas envasado", "zeppelin"]
+    },
+    "displayWeight": 10,
+    "lifecycleState": "ACTIVE"
+}

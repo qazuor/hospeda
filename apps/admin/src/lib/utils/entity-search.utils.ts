@@ -487,6 +487,17 @@ export const entitySearchConfigs: Record<EntityTypeEnum, EntitySearchConfig> = {
         filters: {
             status: 'active'
         }
+    },
+
+    // HOS-919: unused by the host-trade form (it builds its own typeConfig with
+    // the admin catalog loaders) — present only to keep this record exhaustive.
+    [EntityTypeEnum.HOST_TRADE_CATEGORY]: {
+        entityType: EntityTypeEnum.HOST_TRADE_CATEGORY,
+        searchFields: ['slug'],
+        limit: 20,
+        sortBy: 'slug',
+        sortOrder: 'asc',
+        filters: {}
     }
 };
 
@@ -555,6 +566,12 @@ export const entityLoadConfigs: Record<EntityTypeEnum, EntityLoadConfig> = {
     [EntityTypeEnum.POI_CATEGORY]: {
         entityType: EntityTypeEnum.POI_CATEGORY,
         includeFields: ['id', 'slug', 'nameI18n', 'icon', 'status']
+    },
+
+    // HOS-919: see the matching note in `entitySearchConfigs`.
+    [EntityTypeEnum.HOST_TRADE_CATEGORY]: {
+        entityType: EntityTypeEnum.HOST_TRADE_CATEGORY,
+        includeFields: ['id', 'slug', 'nameI18n', 'lifecycleState']
     }
 };
 

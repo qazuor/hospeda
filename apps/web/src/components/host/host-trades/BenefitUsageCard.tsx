@@ -13,7 +13,9 @@ import { formatDate } from '@/lib/format-utils';
 import { canUndoRejection, parseCalendarDate } from '@/lib/host/benefit-usage-view';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { TRADE_CARD_MAX_BADGES } from '@/lib/trade-category-labels';
 import styles from './BenefitUsagesPanel.module.css';
+import { TradeCategoryBadges } from './TradeCategoryBadges';
 
 interface BenefitUsageCardProps {
     readonly locale: SupportedLocale;
@@ -93,12 +95,12 @@ export function BenefitUsageCard({
                 <div>
                     <h3 className={styles.cardTitle}>{providerName}</h3>
                     {usage.hostTrade ? (
-                        <p className={styles.cardCategory}>
-                            {t(
-                                `host-trades.categories.${usage.hostTrade.category}`,
-                                usage.hostTrade.category
-                            )}
-                        </p>
+                        <TradeCategoryBadges
+                            className={styles.cardCategories}
+                            categories={usage.hostTrade.categories}
+                            locale={locale}
+                            max={TRADE_CARD_MAX_BADGES}
+                        />
                     ) : null}
                 </div>
                 <span className={cn(styles.badge, styles[BADGE_CLASS[usage.status]])}>

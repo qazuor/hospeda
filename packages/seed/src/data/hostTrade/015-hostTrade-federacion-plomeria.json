@@ -3,7 +3,7 @@
     "id": "015-hostTrade-federacion-plomeria",
     "name": "Plomería Las Termas",
     "slug": "plomeria-las-termas",
-    "category": "PLOMERIA",
+    "categorySlugs": ["plomeria"],
     "contact": "+54 9 3456 123456",
     "benefit": "Especialistas en instalaciones termales. 10% de descuento para alojamientos registrados en Hospeda.",
     "destinationId": "004-destination-federacion",

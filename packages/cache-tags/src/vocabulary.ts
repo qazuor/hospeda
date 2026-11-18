@@ -111,6 +111,14 @@ export const CACHE_TAG_PRICING = 'pricing';
 export const CACHE_TAG_SITE_CONFIG = 'site-config';
 
 /**
+ * The provider trade category catalog (groups, categories, keywords) served by
+ * the public catalog endpoint and rendered at SSR on the providers
+ * presentation page. It is one document that changes as a whole whenever an
+ * admin edits any group or category, so a single tag purges it.
+ */
+export const CACHE_TAG_HOST_TRADE_CATEGORIES = 'host-trade-categories';
+
+/**
  * The catch-all every cacheable response carries IN ADDITION to its own tags.
  *
  * It exists because Cloudflare's `purge_everything` has no scoped form, and

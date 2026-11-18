@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/hostTradeCategoryGroup.schema.json",
+    "id": "004-host-trade-category-group-exterior",
+    "slug": "exterior",
+    "nameI18n": {
+        "es": "Exterior",
+        "en": "Outdoors",
+        "pt": "Área externa"
+    },
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

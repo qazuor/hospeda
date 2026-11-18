@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "009-host-trade-category-mantenimiento-general",
+    "slug": "mantenimiento-general",
+    "groupSlug": "reparaciones-obra",
+    "nameI18n": {
+        "es": "Mantenimiento general",
+        "en": "General maintenance",
+        "pt": "Manutenção geral"
+    },
+    "keywordsI18n": {
+        "es": ["arreglos", "manitas", "changas", "reparaciones", "todo terreno"]
+    },
+    "displayWeight": 10,
+    "lifecycleState": "ACTIVE"
+}

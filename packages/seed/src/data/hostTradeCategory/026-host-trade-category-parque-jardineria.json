@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/hostTradeCategory.schema.json",
+    "id": "026-host-trade-category-parque-jardineria",
+    "slug": "parque-jardineria",
+    "groupSlug": "exterior",
+    "nameI18n": {
+        "es": "Parque y jardinería",
+        "en": "Garden & landscaping",
+        "pt": "Jardinagem"
+    },
+    "keywordsI18n": {
+        "es": ["jardinero", "pasto", "poda", "césped", "desmalezado", "riego"]
+    },
+    "displayWeight": 20,
+    "lifecycleState": "ACTIVE"
+}

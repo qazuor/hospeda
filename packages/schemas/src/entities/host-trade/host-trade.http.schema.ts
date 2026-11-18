@@ -11,6 +11,7 @@
 import { z } from 'zod';
 import { httpBodyBoolean } from '../../common/boolean-params.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { HostTradeCategoryIdsSchema } from './host-trade.crud.schema.js';
 import { HostTradeSchema } from './host-trade.schema.js';
 
 // ============================================================================
@@ -34,6 +35,7 @@ export const HostTradePublicSchema = HostTradeSchema.pick({
     slug: true,
     name: true,
     category: true,
+    categories: true,
     contact: true,
     benefit: true,
     destinationId: true,
@@ -86,7 +88,9 @@ export type HostTradeAdmin = z.infer<typeof HostTradeAdminSchema>;
 export const HostTradeCreateHttpSchema = z.object({
     slug: z.string().min(1).optional(),
     name: z.string().min(1),
+    /** @deprecated HOS-919, removed in the N+1 contract PR (T-054). Use `categoryIds`. */
     category: HostTradeSchema.shape.category,
+    categoryIds: HostTradeCategoryIdsSchema,
     contact: z.string().min(1),
     benefit: z.string().min(1),
     destinationId: z.string().uuid(),

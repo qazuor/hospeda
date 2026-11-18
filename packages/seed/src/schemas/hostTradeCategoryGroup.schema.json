@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "hostTradeCategoryGroup.schema.json",
+    "title": "HostTradeCategoryGroup Seed Schema",
+    "description": "JSON schema for provider trade category group seeds (HOS-919) — matches the host_trade_category_groups table. The row id is NOT the fixture id: it is a UUIDv5 derived from the slug.",
+    "type": "object",
+    "properties": {
+        "$schema": { "type": "string" },
+        "id": {
+            "type": "string",
+            "description": "Seed identifier (not the DB UUID — the UUID is derived from the slug)"
+        },
+        "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "minLength": 3,
+            "maxLength": 100,
+            "description": "Immutable kebab-case identifier"
+        },
+        "nameI18n": {
+            "type": "object",
+            "properties": {
+                "es": { "type": "string", "minLength": 1 },
+                "en": { "type": "string" },
+                "pt": { "type": "string" }
+            },
+            "required": ["es", "en", "pt"],
+            "additionalProperties": false
+        },
+        "displayWeight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Lower renders first"
+        },
+        "lifecycleState": { "type": "string", "enum": ["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"] }
+    },
+    "required": ["id", "slug", "nameI18n", "displayWeight"],
+    "additionalProperties": false
+}

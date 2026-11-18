@@ -172,6 +172,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 const entitySelectFields = visibleFields.filter(
                     (field) =>
                         field.type === FieldTypeEnum.ENTITY_SELECT ||
+                        field.type === FieldTypeEnum.ENTITY_MULTISELECT ||
                         field.type === FieldTypeEnum.DESTINATION_SELECT ||
                         field.type === FieldTypeEnum.USER_SELECT ||
                         field.type === FieldTypeEnum.ACCOMMODATION_SELECT ||
@@ -192,7 +193,10 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                     // Get load function based on field type
                     let loadByIdsFn: ((ids: string[]) => Promise<SelectOption[]>) | undefined;
 
-                    if (field.type === FieldTypeEnum.ENTITY_SELECT) {
+                    if (
+                        field.type === FieldTypeEnum.ENTITY_SELECT ||
+                        field.type === FieldTypeEnum.ENTITY_MULTISELECT
+                    ) {
                         const entityConfig = field.typeConfig as EntitySelectFieldConfig;
                         loadByIdsFn = entityConfig?.loadByIdsFn;
                     } else if (field.type === FieldTypeEnum.DESTINATION_SELECT) {
@@ -322,6 +326,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                     );
 
                 case FieldTypeEnum.ENTITY_SELECT:
+                case FieldTypeEnum.ENTITY_MULTISELECT:
                 case FieldTypeEnum.DESTINATION_SELECT:
                 case FieldTypeEnum.USER_SELECT:
                 case FieldTypeEnum.ACCOMMODATION_SELECT:

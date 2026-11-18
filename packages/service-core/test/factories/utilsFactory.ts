@@ -18,6 +18,8 @@ export type IdTypes =
     | 'attraction'
     | 'pointOfInterest'
     | 'poiCategory'
+    | 'hostTradeCategory'
+    | 'hostTradeCategoryGroup'
     | 'destination'
     | 'destinationReview'
     | 'post'

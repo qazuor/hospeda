@@ -383,6 +383,7 @@ export * from './feature/feature.normalizers';
 export * from './feature/feature.service';
 export * from './feature-flags';
 export * from './geocoding';
+export * from './host-trade-category';
 export * from './hostTrade/host-trade.permissions';
 export * from './hostTrade/host-trade.service';
 // The HOS-376 half of the domain. Without these the services exist but are

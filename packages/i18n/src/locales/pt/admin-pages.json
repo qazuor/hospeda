@@ -1940,6 +1940,108 @@
             }
         }
     },
+    "hostTradeCategories": {
+        "title": "Categorias de fornecedores",
+        "subtitle": "Catálogo de ofícios que os fornecedores podem oferecer, agrupados por título.",
+        "tabs": {
+            "groups": "Grupos de ofícios",
+            "categories": "Categorias"
+        },
+        "state": {
+            "active": "Ativo",
+            "inactive": "Inativo"
+        },
+        "loading": "Carregando…",
+        "error": "Não foi possível carregar o catálogo.",
+        "empty": "Ainda não há itens.",
+        "columns": {
+            "name": "Nome",
+            "slug": "Código identificador",
+            "group": "Grupo de ofícios",
+            "weight": "Prioridade",
+            "state": "Status",
+            "actions": "Ações"
+        },
+        "actions": {
+            "edit": "Alterar",
+            "delete": "Excluir",
+            "cancel": "Cancelar",
+            "save": "Salvar"
+        },
+        "groups": {
+            "add": "Novo grupo",
+            "dialog": {
+                "createTitle": "Novo grupo",
+                "editTitle": "Alterar grupo",
+                "nameLabel": "Nome",
+                "slugLabel": "Código identificador",
+                "slugHint": "Definido na criação e não pode ser alterado depois.",
+                "weightLabel": "Peso de ordem",
+                "weightHint": "Os valores mais baixos aparecem primeiro.",
+                "activeLabel": "Ativo",
+                "activeHint": "Um grupo inativo deixa de ser oferecido, mas seus dados são mantidos."
+            },
+            "deleteDialog": {
+                "title": "Excluir grupo",
+                "message": "Você vai excluir o grupo «{{name}}». Esta ação o remove do catálogo.",
+                "confirm": "Excluir grupo"
+            },
+            "messages": {
+                "created": "Grupo criado.",
+                "updated": "Grupo atualizado.",
+                "deleted": "Grupo excluído.",
+                "saveError": "Não foi possível salvar o grupo.",
+                "deleteError": "Não foi possível excluir o grupo.",
+                "inUse": "Não é possível excluir: o grupo ainda tem categorias. Desative-o para deixar de oferecê-lo, ou mova antes as categorias dele."
+            }
+        },
+        "categories": {
+            "add": "Nova categoria",
+            "filters": {
+                "search": "Buscar por nome ou identificador",
+                "group": "Grupo de ofícios",
+                "allGroups": "Todos os grupos",
+                "state": "Status",
+                "allStates": "Todos os estados"
+            },
+            "dialog": {
+                "createTitle": "Nova categoria",
+                "editTitle": "Editar categoria",
+                "nameLabel": "Nome",
+                "slugLabel": "Código identificador",
+                "slugHint": "Definido na criação e não pode ser alterado depois.",
+                "groupLabel": "Grupo de ofícios",
+                "groupPlaceholder": "Escolha um grupo",
+                "weightLabel": "Peso de ordem",
+                "weightHint": "Os valores mais baixos aparecem primeiro.",
+                "activeLabel": "Ativa",
+                "activeHint": "Uma categoria inativa deixa de ser oferecida, mas os fornecedores que já a têm a mantêm."
+            },
+            "keywords": {
+                "label": "Palavras relacionadas",
+                "hint": "Ajudam a encontrar a categoria na busca (por exemplo «fossa»). Em minúsculas, até {{maxCount}} por idioma e {{maxLength}} caracteres cada.",
+                "placeholder": "Digite uma palavra e pressione Enter",
+                "add": "Adicionar",
+                "remove": "Remover {{keyword}}",
+                "count": "{{count}}/{{max}}",
+                "tooMany": "Você já adicionou o máximo de palavras para este idioma.",
+                "tooLong": "A palavra tem mais de {{max}} caracteres."
+            },
+            "deleteDialog": {
+                "title": "Excluir categoria",
+                "message": "Você vai excluir a categoria «{{name}}». Esta ação a remove do catálogo.",
+                "confirm": "Excluir categoria"
+            },
+            "messages": {
+                "created": "Categoria criada.",
+                "updated": "Categoria atualizada.",
+                "deleted": "Categoria excluída.",
+                "saveError": "Não foi possível salvar a categoria.",
+                "deleteError": "Não foi possível excluir a categoria.",
+                "inUse": "Não é possível excluir: há fornecedores que usam esta categoria. Desative-a para deixar de oferecê-la; os fornecedores que já a têm a mantêm."
+            }
+        }
+    },
     "locationDuplicates": {
         "title": "Endereços repetidos",
         "description": "Anúncios publicados que compartilham endereço. Uma duplicata entre donos diferentes não bloqueia a publicação: é revisada aqui. Uma exceção permite que um anúncio compartilhe endereço (complexo de chalés, praça de alimentação, restaurante de hotel).",

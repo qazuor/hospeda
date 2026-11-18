@@ -1,0 +1,61 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "hostTradeCategory.schema.json",
+    "title": "HostTradeCategory Seed Schema",
+    "description": "JSON schema for provider trade category seeds (HOS-919) — matches the host_trade_categories table. The row id is NOT the fixture id: it is a UUIDv5 derived from the slug.",
+    "type": "object",
+    "properties": {
+        "$schema": { "type": "string" },
+        "id": {
+            "type": "string",
+            "description": "Seed identifier (not the DB UUID — the UUID is derived from the slug)"
+        },
+        "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "minLength": 3,
+            "maxLength": 100,
+            "description": "Immutable kebab-case identifier"
+        },
+        "groupSlug": {
+            "type": "string",
+            "description": "Slug of the owning group; resolved to the group's deterministic id"
+        },
+        "nameI18n": {
+            "type": "object",
+            "properties": {
+                "es": { "type": "string", "minLength": 1 },
+                "en": { "type": "string" },
+                "pt": { "type": "string" }
+            },
+            "required": ["es", "en", "pt"],
+            "additionalProperties": false
+        },
+        "keywordsI18n": {
+            "type": "object",
+            "description": "Related search words per locale: lowercase, max 30 per locale, max 40 chars each",
+            "properties": {
+                "es": { "$ref": "#/definitions/keywords" },
+                "en": { "$ref": "#/definitions/keywords" },
+                "pt": { "$ref": "#/definitions/keywords" }
+            },
+            "additionalProperties": false
+        },
+        "displayWeight": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "Lower renders first inside its group"
+        },
+        "lifecycleState": { "type": "string", "enum": ["DRAFT", "ACTIVE", "INACTIVE", "ARCHIVED"] }
+    },
+    "definitions": {
+        "keywords": {
+            "type": "array",
+            "maxItems": 30,
+            "items": { "type": "string", "minLength": 1, "maxLength": 40 }
+        }
+    },
+    "required": ["id", "slug", "groupSlug", "nameI18n", "displayWeight"],
+    "additionalProperties": false
+}

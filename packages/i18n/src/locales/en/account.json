@@ -1562,7 +1562,7 @@
             "fields": {
                 "name": "Name",
                 "slug": "Identifier (slug)",
-                "category": "Category",
+                "categories": "Categories",
                 "contact": "Contact",
                 "is24h": "Available 24 hours",
                 "scheduleText": "Business hours",

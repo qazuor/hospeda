@@ -16,6 +16,7 @@
  * {@link ./global-setup.ts} after creating the ephemeral
  * `hospeda_integration_test` database.
  */
+import { ModerationStatusEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as hospedaSchema from '../../src/schemas/index.ts';
@@ -247,7 +248,7 @@ export const testData = {
             },
             media: {
                 featuredImage: {
-                    moderationState: 'APPROVED',
+                    moderationState: ModerationStatusEnum.APPROVED,
                     url: 'https://example.com/test-destination.jpg'
                 }
             },

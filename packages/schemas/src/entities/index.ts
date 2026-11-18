@@ -27,6 +27,7 @@ export * from './experience/index.js';
 export * from './feature/index.js';
 export * from './feature-flag/index.js';
 export * from './host-trade/index.js';
+export * from './host-trade-category/index.js';
 export * from './host-trade-review/index.js';
 export * from './host-trade-review-reply/index.js';
 export * from './host-trade-usage/index.js';
