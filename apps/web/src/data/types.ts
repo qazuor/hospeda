@@ -1623,7 +1623,12 @@ export interface ExperienceDetailData extends ExperienceCardData {
 export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /**
+     * The catalog type's name in the page locale, falling back to Spanish
+     * (HOS-2336 AC-5.1). `null` for a partner the release-N backfill has not
+     * reached yet.
+     */
+    readonly typeLabel: string | null;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;

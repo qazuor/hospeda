@@ -26,7 +26,7 @@
  */
 
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
-import { buildEntityCacheTags, CACHE_TAG_ALL } from '@repo/cache-tags';
+import { buildEntityCacheTags, CACHE_TAG_ALL, CACHE_TAG_PARTNER_TYPES } from '@repo/cache-tags';
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { InternalEntryTracker } from '@/components/analytics/InternalEntryTracker.client';
 import { partnerApi } from '@/lib/api/endpoints';
@@ -87,11 +87,15 @@ applyCacheHeaders({
     // `CACHE_TAG_ALL` is the filler rather than a collection tag because
     // partners deliberately have none.
     tags:
-        primaryCacheTag !== undefined ? [primaryCacheTag, ...extraCacheTags] : [CACHE_TAG_ALL]
+        primaryCacheTag !== undefined
+            ? // The type label is catalog data: a rename purges this tag (HOS-2336).
+              [primaryCacheTag, ...extraCacheTags, CACHE_TAG_PARTNER_TYPES]
+            : [CACHE_TAG_ALL]
 });
 
 // --- Presentation ---
-const typeLabel = t(`partners.types.${partner.type}`, partner.type);
+// The type label is catalog data resolved by the transform (HOS-2336 AC-5.1).
+const typeLabel = partner.typeLabel;
 const metaTitle = t('partners.detail.metaTitle', `${partner.name} — Aliado de Hospeda`, {
     name: partner.name
 });
@@ -149,7 +153,7 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
                     decoding="async"
                 />
             )}
-            <p class="partner__type">{typeLabel}</p>
+            {typeLabel && <p class="partner__type">{typeLabel}</p>}
             <h1 class="partner__name">{partner.name}</h1>
         </header>
 

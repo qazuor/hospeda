@@ -16,7 +16,11 @@ const apiPayload = {
     slug: 'acme-litoral',
     name: 'Acme Litoral',
     description: 'Excursiones por el Litoral.',
-    type: 'business',
+    type: {
+        slug: 'media',
+        name: 'Medio',
+        nameI18n: { es: 'Medio', en: 'Media outlet', pt: 'Meio de comunicação' }
+    },
     logoUrl: 'https://cdn.example.com/acme.png',
     websiteUrl: 'https://acme.example.com',
     lifecycleState: 'ACTIVE',
@@ -32,7 +36,7 @@ describe('toPartnerDetailProps', () => {
         // Assert
         expect(props.slug).toBe('acme-litoral');
         expect(props.name).toBe('Acme Litoral');
-        expect(props.type).toBe('business');
+        expect(props.typeLabel).toBe('Medio');
         expect(props.description).toBe('Excursiones por el Litoral.');
         expect(props.logoUrl).toBe('https://cdn.example.com/acme.png');
         expect(props.websiteUrl).toBe('https://acme.example.com');
@@ -45,10 +49,11 @@ describe('toPartnerDetailProps', () => {
         // a missing value with String() would render the literal text
         // "undefined" on a public page.
         const props = toPartnerDetailProps({
-            item: { slug: 'bare', name: 'Bare', type: 'ngo' }
+            item: { slug: 'bare', name: 'Bare', type: null }
         });
 
         // Assert
+        expect(props.typeLabel).toBeNull();
         expect(props.description).toBeNull();
         expect(props.logoUrl).toBeNull();
         expect(props.websiteUrl).toBeNull();
@@ -86,5 +91,21 @@ describe('toPartnerDetailProps', () => {
 
         // Assert
         expect(props.description).toBeNull();
+    });
+});
+
+describe('toPartnerDetailProps — catalog type label (HOS-2336 AC-5.1)', () => {
+    it('renders the type name in the page locale', () => {
+        expect(toPartnerDetailProps({ item: apiPayload, locale: 'en' }).typeLabel).toBe(
+            'Media outlet'
+        );
+        expect(toPartnerDetailProps({ item: apiPayload, locale: 'pt' }).typeLabel).toBe(
+            'Meio de comunicação'
+        );
+    });
+
+    it('falls back to Spanish when the locale has no name', () => {
+        const item = { ...apiPayload, type: { slug: 'ngo', name: 'ONG', nameI18n: { es: 'ONG' } } };
+        expect(toPartnerDetailProps({ item, locale: 'en' }).typeLabel).toBe('ONG');
     });
 });

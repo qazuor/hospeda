@@ -50,13 +50,13 @@ describe('the partner directory is gone (AC-8)', () => {
         );
         const parsed = JSON.parse(raw) as Record<string, unknown>;
 
-        // Assert — `types` survives on purpose: the detail page renders
-        // "Comercio" / "ONG" / "Institución". `tiers` does not, because the
-        // The former commercial category is not shown publicly.
+        // Assert — `tiers` is gone because the former commercial category is
+        // not shown publicly. `types` is gone too since HOS-2336: the detail
+        // page renders the type's own catalog name, not a closed enum label.
         for (const section of DELETED_I18N_SECTIONS) {
             expect(parsed[section], `partners.${section} is back in ${locale}`).toBeUndefined();
         }
-        expect(parsed.types, `partners.types was dropped from ${locale}`).toBeDefined();
+        expect(parsed.types, `partners.types is back in ${locale}`).toBeUndefined();
     });
 });
 
