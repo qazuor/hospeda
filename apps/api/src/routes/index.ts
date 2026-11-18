@@ -127,6 +127,7 @@ import {
 } from './integrations/mercadolibre-oauth/index.js';
 import { adminListingFixRequestRoutes } from './listing-fix-requests/admin/index.js';
 import { mcpRoutes } from './mcp';
+import { adminMcpActivityRoutes } from './mcp-activity';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -683,6 +684,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Admin audit & security log viewers (SPEC-162)
         app.route('/api/v1/admin/audit-logs', adminAuditLogRoutes);
         app.route('/api/v1/admin/security-logs', adminSecurityLogRoutes);
+
+        // Admin log of every assistant (MCP) tool call (HOS-2349, MCP_ACTIVITY_VIEW)
+        app.route('/api/v1/admin/mcp-activity', adminMcpActivityRoutes);
 
         // Admin view stats (SPEC-197 T-008–T-011)
         app.route('/api/v1/admin/views', adminViewsRoutes);
