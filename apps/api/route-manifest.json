@@ -3842,6 +3842,26 @@
             "path": "/api/v1/protected/venues/:id/menu-qr/scans"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/protected/venues/:id/promotions"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/promotions"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/protected/venues/:id/promotions/:promotionId"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/protected/venues/:id/promotions/:promotionId"
+        },
+        {
+            "method": "PUT",
+            "path": "/api/v1/protected/venues/:id/promotions/:promotionId"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/protected/venues/:id/publish"
         },

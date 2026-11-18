@@ -161,6 +161,8 @@ describe('VenuePromotionService', () => {
     let service: VenuePromotionService;
     let revalidate: ReturnType<typeof vi.spyOn>;
     const actor = createActor({ id: OWNER, permissions: [] });
+    // One instance: the factory stamps `createdAt` per call, so a fresh one never deep-equals.
+    const listed = stored();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -170,7 +172,7 @@ describe('VenuePromotionService', () => {
             softDelete: vi.fn().mockResolvedValue({ data: { count: 1 } })
         };
         model = {
-            findByVenue: vi.fn().mockResolvedValue([stored()]),
+            findByVenue: vi.fn().mockResolvedValue([listed]),
             countActiveForVenueOwner: vi.fn().mockResolvedValue(3),
             findOneOfVenue: vi.fn().mockResolvedValue(stored())
         };
@@ -281,7 +283,7 @@ describe('VenuePromotionService', () => {
 
         const result = await service.list({ actor: listActor, venueId: VENUE });
 
-        expect(result.data).toEqual({ items: [stored()], activeCount: 3 });
+        expect(result.data).toEqual({ items: [listed], activeCount: 3 });
         expect(model.countActiveForVenueOwner).toHaveBeenCalledWith({ ownerId: OWNER });
     });
 
