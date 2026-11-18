@@ -180,22 +180,26 @@ export function describeAgendaSaveError(input: {
             .map((entry) => entry.title.trim())
             .filter((title) => title.length > 0);
         const base = t(
-            'zodError.venue.events.newPast',
+            'venue.owner.editor.venueEventsManager.errorNewPast',
             'No se puede crear un evento con fecha pasada'
         );
         return titles.length > 0 ? `${base}: ${titles.join(', ')}` : base;
     }
     if (message.includes('zodError.venue.events.maxTotal')) {
         return t(
-            'zodError.venue.events.maxTotal',
+            'venue.owner.editor.venueEventsManager.errorMaxTotal',
             'La agenda no puede tener más de {{max}} eventos en total',
             { max: VENUE_EVENTS_MAX_TOTAL_ENTRIES }
         );
     }
     if (message.includes('zodError.venue.events.max')) {
-        return t('zodError.venue.events.max', 'La agenda no puede tener más de {{max}} eventos', {
-            max: VENUE_EVENTS_MAX_ENTRIES
-        });
+        return t(
+            'venue.owner.editor.venueEventsManager.errorMaxCurrent',
+            'La agenda no puede tener más de {{max}} eventos',
+            {
+                max: VENUE_EVENTS_MAX_ENTRIES
+            }
+        );
     }
     return null;
 }
