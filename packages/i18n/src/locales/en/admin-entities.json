@@ -998,7 +998,9 @@
             "actions": "Actions"
         },
         "actions": {
-            "handle": "Handle"
+            "handle": "Handle",
+            "createProvider": "Create provider",
+            "creatingProvider": "Creating..."
         },
         "handle": {
             "title": "Handle lead",
@@ -1012,12 +1014,30 @@
             "submit": "Confirm",
             "submitting": "Saving...",
             "successApproved": "Lead approved successfully.",
-            "successRejected": "Lead rejected."
+            "successRejected": "Lead rejected.",
+            "categoriesLabel": "Chosen categories",
+            "categoryState": {
+                "inactive": "Inactive",
+                "deleted": "Deleted",
+                "missing": "Does not exist"
+            },
+            "categoriesNote": "If no category is active, the provider is not created.",
+            "catalogUnavailable": "Could not load the catalog",
+            "warningNoActiveCategory": "Lead approved, but the provider was not created: none of its categories is active.",
+            "warningLegacy": "Lead approved, but the provider was not created: form data is missing. Create it by hand."
         },
         "pagination": {
             "prev": "Previous",
             "next": "Next",
             "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
+        },
+        "badge": {
+            "providerNotCreated": "Provider not created"
+        },
+        "provision": {
+            "success": "Provider created",
+            "alreadyExists": "The provider already exists",
+            "error": "Could not create the provider. Please try again."
         }
     },
     "hostTrade": {

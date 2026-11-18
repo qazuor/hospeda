@@ -998,7 +998,9 @@
             "actions": "Acciones"
         },
         "actions": {
-            "handle": "Resolver"
+            "handle": "Resolver",
+            "createProvider": "Crear proveedor",
+            "creatingProvider": "Creando..."
         },
         "handle": {
             "title": "Resolver lead",
@@ -1012,12 +1014,30 @@
             "submit": "Confirmar",
             "submitting": "Guardando...",
             "successApproved": "Lead aprobado exitosamente.",
-            "successRejected": "Lead rechazado."
+            "successRejected": "Lead rechazado.",
+            "categoriesLabel": "Categorías elegidas",
+            "categoryState": {
+                "inactive": "Inactiva",
+                "deleted": "Borrada",
+                "missing": "No existe"
+            },
+            "categoriesNote": "Si ninguna categoría está activa, el proveedor no se crea.",
+            "catalogUnavailable": "No se pudo cargar el catálogo",
+            "warningNoActiveCategory": "Lead aprobado, pero el proveedor no se creó: ninguna de sus categorías está activa.",
+            "warningLegacy": "Lead aprobado, pero el proveedor no se creó: faltan datos del formulario. Crealo a mano."
         },
         "pagination": {
             "prev": "Anterior",
             "next": "Siguiente",
             "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
+        },
+        "badge": {
+            "providerNotCreated": "Proveedor no creado"
+        },
+        "provision": {
+            "success": "Proveedor creado",
+            "alreadyExists": "El proveedor ya existe",
+            "error": "No se pudo crear el proveedor. Intentá de nuevo."
         }
     },
     "hostTrade": {
