@@ -23,6 +23,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { hasVenuePublicContact, VENUE_CONTACT_ANCHOR_ID } from '@/lib/venue-contact';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 
 interface Props {
     readonly contactInfo?: VenueContactInfo | null;
@@ -114,7 +115,7 @@ const menuLabel = t('venue.detail.menu', 'Ver menú');
 const socialLabel = t('venue.detail.social', 'Redes sociales');
 ---
 
-<section class="venue-contact" id={VENUE_CONTACT_ANCHOR_ID}>
+<section class="venue-contact" id={VENUE_CONTACT_ANCHOR_ID} {...UMAMI_BLOCK_PROPS}>
     {hasChannels && (
         <div class="venue-contact__channels-block">
             <h3 class="venue-contact__social-title">{contactTitle}</h3>

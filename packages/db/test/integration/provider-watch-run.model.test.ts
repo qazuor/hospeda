@@ -165,6 +165,67 @@ describe('provider ids are persisted as the writes answer, apart from the closin
         });
     });
 
+    it('keeps the write keys recorded before sending when the run closes SUCCESSFULLY (F1)', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.appendProgress({ runId, measurementId: 'M1', writeKeys: ['hw-k1'], tx });
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                providerIds: ['pre-1'],
+                writeKeys: ['hw-k2'],
+                tx
+            });
+            await model.appendProgress({ runId, measurementId: 'M2', writeKeys: ['hw-k3'], tx });
+            const closed = await model.close({
+                ...close(runId, {
+                    measurements: {
+                        M1: { outcome: 'matched', providerIds: ['pre-1'] },
+                        M3: { outcome: 'matched' }
+                    }
+                }),
+                tx
+            });
+            expect(closed.outcome).toBe('completed');
+            const row = await model.findById({ id: runId, tx });
+            expect(row?.measurements).toEqual({
+                M1: {
+                    outcome: 'matched',
+                    providerIds: ['pre-1'],
+                    writeKeys: ['hw-k1', 'hw-k2']
+                },
+                M2: { writeKeys: ['hw-k3'] },
+                M3: { outcome: 'matched' }
+            });
+        });
+    });
+
+    it('writes the ledger in the same statement as each progress record (F3)', async () => {
+        await withTestTransaction(async (tx) => {
+            const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                writeKeys: ['hw-k1'],
+                ledger: { charged: 150000, refunded: 0 },
+                tx
+            });
+            let row = await model.findById({ id: runId, tx });
+            expect(row?.ledger).toEqual({ charged: 150000, refunded: 0 });
+            expect(row?.measurements).toEqual({ M1: { writeKeys: ['hw-k1'] } });
+            // A release carries only the ledger.
+            await model.appendProgress({
+                runId,
+                measurementId: 'M1',
+                ledger: { charged: 0, refunded: 0 },
+                tx
+            });
+            row = await model.findById({ id: runId, tx });
+            expect(row?.ledger).toEqual({ charged: 0, refunded: 0 });
+            expect(row?.measurements).toEqual({ M1: { writeKeys: ['hw-k1'] } });
+        });
+    });
+
     it('stores the ledger of the run when it closes, charges and refunds apart', async () => {
         await withTestTransaction(async (tx) => {
             const { runId } = await model.open({ account: 'sandbox', startedAt: START, tx });
