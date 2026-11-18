@@ -32,6 +32,7 @@ import {
 } from '../../../data/owner-help/owner-help.types';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import type { PortalLocale } from '../../portal/build-portal-url';
 import { readMyListings } from '../listing/list-my-listings';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import {
@@ -154,17 +155,19 @@ function topicById({ id }: { readonly id: string }): readonly OwnerHelpTopic[] {
 function toAnswer({
     topics,
     audience,
-    ownListings
+    ownListings,
+    locale
 }: {
     readonly topics: readonly OwnerHelpTopic[];
     readonly audience?: OwnerHelpCallerAudience;
     readonly ownListings: readonly HelpOwnListing[] | undefined;
+    readonly locale?: PortalLocale;
 }): GetHelpResult {
     const siteUrl = env.HOSPEDA_SITE_URL;
     if (topics.length === 0) {
         return {
             topics: [],
-            fallbackLinks: buildFallbackHelpLinks({ siteUrl }),
+            fallbackLinks: buildFallbackHelpLinks({ siteUrl, locale }),
             note: GET_HELP_NO_MATCH_NOTE
         };
     }
@@ -173,7 +176,7 @@ function toAnswer({
             id: topic.id,
             title: topic.title,
             steps: topic.steps,
-            links: buildHelpLinks({ topic, audience, ownListings, siteUrl })
+            links: buildHelpLinks({ topic, audience, ownListings, siteUrl, locale })
         }))
     };
 }
@@ -189,7 +192,7 @@ export const getHelpTool = defineTool({
     inputSchema: GetHelpInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<GetHelpResult>> => {
+    handler: async ({ actor, input, context }): Promise<ToolHandlerResult<GetHelpResult>> => {
         const { question, topicId, audience } = input;
 
         const topics =
@@ -201,6 +204,6 @@ export const getHelpTool = defineTool({
             ? await readHelpOwnListings({ actor })
             : undefined;
 
-        return { data: toAnswer({ topics, audience, ownListings }) };
+        return { data: toAnswer({ topics, audience, ownListings, locale: context.locale }) };
     }
 });
