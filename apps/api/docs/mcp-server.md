@@ -105,6 +105,15 @@ The provider sends users to the web app: sign-in at `/es/auth/signin/`, consent 
 `/es/auth/consent/` (`MCP_OAUTH_CONSENT_PATH`). The consent page shows the account
 and the full capabilities the connection grants. Every MCP client goes through it.
 
+The capabilities listed are `read`, `edit`, `pause`, `reply`, `reviews`,
+`createListings`, `providers` (search the provider directory for hosts) and
+`benefitUsages` (see your benefit usages and confirm or reject them). The same keys
+label a connection in the account's AI assistants panel. Their copy lives in
+`packages/i18n/src/locales/*/auth.json` and the two lists stay in sync:
+`CAPABILITY_KEYS` in `OAuthConsent.client.tsx` and `AI_CAPABILITY_KEYS` in
+`apps/web/src/lib/ai-assistants.ts`. A tool that adds a new kind of access adds its
+capability in the same PR.
+
 Scopes are `openid`, `profile`, `email`, `offline_access`. Grants are
 `authorization_code` and `refresh_token`. There is no `client_credentials`: every
 token acts for a user.
@@ -192,13 +201,14 @@ Both use the existing `auditLog()` pipeline (`audit_log_entries`). No new table.
 | `mcp.tool.call` | Every **write** tool call, including malformed ones | actor, `clientId`, tool, target, outcome (`success`, `denied`, `error`), `errorCode`, `contentLength`, `details`. The client-declared name is never recorded (untrusted text) |
 | `mcp.connection.revoked` | A user disconnects an assistant | actor, `clientId`, `removed` counts (consents, refresh tokens, access tokens) |
 
-For `reply_inquiry`, `details.step` is `preview` or `send`. Content (a reply text)
-is never recorded, only its length. Auditing never changes a tool result: a
+For `reply_inquiry`, `details.step` is `preview` or `send`. For `create_listing`,
+`confirm_benefit_usage` and `reject_benefit_usage` it is `preview` or `commit`.
+Content (a reply text, a rejection note) is never recorded, only its length. Auditing never changes a tool result: a
 failure to write the record is logged and swallowed.
 
 ## Tool catalog
 
-Fifteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
+Twenty tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
@@ -217,6 +227,11 @@ Fifteen tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disag
 | `set_listing_publication` | write | **destructive**, not idempotent | `pause` or `resume`. |
 | `create_listing` | write | open-world, not destructive, not idempotent | Creates a DRAFT, two-step, see below. |
 | `reply_inquiry` | write | open-world, not destructive, not idempotent | Two-step, see below. |
+| `search_providers` | read | read-only | The host's provider directory, the same rows as the portal. Filters: `query`, `category` (catalog slug), `destinationId`, paging. Provider texts are untrusted text. |
+| `list_benefit_usages` | read | read-only | The user's benefit usages on both sides (`side`: `host`, `provider`, `both`), with `status`, `pendingMine` and `canAnswer`. Names and notes are untrusted text. |
+| `confirm_benefit_usage` | write | open-world, not destructive, not idempotent | Two-step. The counterpart confirms a PENDING usage; the other party gets the route's email. |
+| `reject_benefit_usage` | write | open-world, **destructive**, not idempotent | Two-step, optional `note` bound into the token. The other party gets the route's email. |
+| `undo_benefit_rejection` | write | not destructive, not idempotent | One step. Puts a REJECTED usage back to PENDING; only whoever rejected it may. Sends nothing. |
 
 Rules that apply to every tool:
 
@@ -224,7 +239,8 @@ Rules that apply to every tool:
   non-existent id all answer the same not-found error. There is no 403 and no
   entitlement error that would confirm the id exists. Staff (ADMIN, SUPER_ADMIN)
   get no bypass.
-- **Untrusted data.** Text written by guests or reviewers is wrapped in
+- **Untrusted data.** Text written by guests, reviewers, directory providers or
+  hosts is wrapped in
   `<untrusted_data source="...">` and the tool description carries
   `UNTRUSTED_DATA_NOTICE`. A guest message is never an instruction.
 - **Spanish errors.** Validation and failure messages are Spanish and never leak
@@ -283,6 +299,32 @@ Tool-specific rules:
   first `resume` returns it to draft, the second puts it online. Going online needs
   an active plan or the free trial and a free slot. Refusals map to Spanish reasons
   (`NO_COVERAGE`, `SUBSCRIPTION_REQUIRED`, `LISTING_LIMIT_REACHED`, and others).
+- Benefit usages (`search_providers`, `list_benefit_usages`, `confirm_benefit_usage`,
+  `reject_benefit_usage`, `undo_benefit_rejection`, HOS-2332). They mirror the
+  HOS-376 routes and call the same `HostTradeUsageService` methods; see
+  [route-architecture.md](route-architecture.md) for the flow itself.
+  - **Role-blind.** Who may answer is decided by the row's `declaredBy` alone
+    (`isUsageCounterpart`, shared with the service), never by the actor's role, and
+    the tools declare no permission. One account can be host and provider at once
+    (`host-provider@local.test`). A static test fails if a usage tool or
+    `lib/host-trade-usage-transitions.ts` references a role or a permission.
+  - **404, never 403.** A foreign usage, a missing id and the declarant answering
+    their own declaration all give the same not-found, in preview and in commit.
+    A FORBIDDEN from the service collapses to that not-found too.
+  - **Same emails as the route.** The route and the tools both call
+    `lib/host-trade-usage-transitions.ts`, which sends `notifyUsageConfirmed` and
+    `notifyUsageRejected` (with the note). Undo sends nothing, as in the portal.
+  - **Two steps.** The token binds user, client, tool, usage id and the note, so a
+    reject commit whose note changed is refused. A usage that is no longer PENDING
+    is refused before any token is issued.
+  - **No declaring from chat** (owner decision). `search_providers` returns each
+    provider's `declareUsageUrl`, the portal page where a host declares a usage.
+  - `search_providers` reads `listForHost`, so a provider outside the host's
+    destinations never appears; a non-host gets FORBIDDEN with a link to the
+    directory. Hidden columns (pending benefit, suspension, owner) are never
+    returned. On the provider side of `list_benefit_usages`, a host is named only
+    when the pair is already linked; otherwise `counterpartName` is `null`. Long
+    texts step down to the response budget and `textTruncated` says so.
 - `get_inquiry` reads without a read receipt. A reply that was sent marks the inquiry
   read (best effort, failures are logged and swallowed).
 
