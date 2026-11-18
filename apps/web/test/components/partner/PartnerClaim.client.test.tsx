@@ -7,6 +7,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PartnerClaim } from '../../../src/components/partner/PartnerClaim.client';
+import { AUTH_ME_CACHE_KEY } from '../../../src/lib/auth-cache';
 import { PENDING_ACTION_STORAGE_KEY, savePendingAction } from '../../../src/lib/pending-action';
 
 const mocks = vi.hoisted(() => ({
@@ -336,6 +337,71 @@ describe('PartnerClaim', () => {
         await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión y continuar' }));
         expect(mocks.signOut).toHaveBeenCalledOnce();
         expect(reload).toHaveBeenCalledOnce();
+    });
+
+    it('drops the cached signed-in /auth/me snapshot on sign out, so the reload does not resume as the old account (HOS-2338)', async () => {
+        // Arrange
+        setAuthenticated(true);
+        setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+        mocks.claim.mockResolvedValue({
+            ok: false,
+            error: { status: 403, reason: 'PARTNER_CLAIM_EMAIL_MISMATCH', message: 'x' }
+        });
+        renderClaim();
+        await userEvent.click(await screen.findByRole('button', { name: 'Reclamar el Partner' }));
+        const button = await screen.findByRole('button', { name: 'Cerrar sesión y continuar' });
+        window.sessionStorage.setItem(
+            AUTH_ME_CACHE_KEY,
+            JSON.stringify({
+                isAuthenticated: true,
+                user: mocks.user,
+                permissions: [],
+                roles: ['USER'],
+                cachedAt: Date.now()
+            })
+        );
+        const reload = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: { pathname: PATH, hash: '', reload }
+        });
+
+        // Act
+        await userEvent.click(button);
+
+        // Assert
+        expect(window.sessionStorage.getItem(AUTH_ME_CACHE_KEY)).toBeNull();
+        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).not.toBeNull();
+        expect(reload).toHaveBeenCalledOnce();
+    });
+
+    it('does not reload into the old session when the sign out fails, and erases the saved secret (HOS-2338)', async () => {
+        // Arrange
+        setAuthenticated(true);
+        setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+        mocks.claim.mockResolvedValue({
+            ok: false,
+            error: { status: 403, reason: 'PARTNER_CLAIM_EMAIL_MISMATCH', message: 'x' }
+        });
+        renderClaim();
+        await userEvent.click(await screen.findByRole('button', { name: 'Reclamar el Partner' }));
+        const button = await screen.findByRole('button', { name: 'Cerrar sesión y continuar' });
+        const reload = vi.fn();
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: { pathname: PATH, hash: '', reload }
+        });
+        mocks.signOut.mockResolvedValue({ error: { message: 'boom' } });
+
+        // Act
+        await userEvent.click(button);
+
+        // Assert
+        expect(reload).not.toHaveBeenCalled();
+        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).toBeNull();
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
     });
 
     it('renders the email mismatch copy in English and Portuguese', async () => {
