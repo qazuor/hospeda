@@ -36,15 +36,16 @@ import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../middlewares/
 import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
 import {
     decideListingAccess,
-    type ListingAccessWithSections,
     throwListingAccessRefusal
 } from '../../../middlewares/listing-access';
-import { createExperienceListingForOwner } from '../../../routes/experience/protected/create';
+import {
+    createExperienceListingForOwner,
+    EXPERIENCE_OWNER_CREATE_LISTING_ACCESS
+} from '../../../routes/experience/protected/create';
 import { startHostOnboardingDraft } from '../../../routes/host-onboarding/protected/start';
 import {
     createVenueListingForOwner,
-    venueCreateBusinessLines,
-    venueCreateSections
+    VENUE_OWNER_CREATE_LISTING_ACCESS
 } from '../../../routes/venue/protected/create';
 import type { ToolHandlerResult } from '../tool-definition';
 import { type CreateListingInput, priceOnRequestDefaults } from './create-listing-input';
@@ -160,21 +161,6 @@ export function bodyHasLocation({
     return body.meetingPoint !== undefined || body.meetingPointLat !== undefined;
 }
 
-/** The create route's listing-access declaration (venue and experience only). */
-function createDeclaration(
-    vertical: Exclude<CreateListingInput['vertical'], VerticalEnum.ACCOMMODATION>
-): ListingAccessWithSections {
-    if (vertical === VerticalEnum.VENUE) {
-        return {
-            vertical: VerticalEnum.VENUE,
-            operation: 'CREATE',
-            businessLinesFromBody: venueCreateBusinessLines,
-            listingSection: venueCreateSections
-        };
-    }
-    return { vertical: VerticalEnum.EXPERIENCE, operation: 'CREATE' };
-}
-
 /**
  * Runs the create route's listing-access step, owner-only and side-effect
  * free. Accommodation runs none, as `/host-onboarding/start` declares none.
@@ -192,7 +178,10 @@ export async function authorizeOwnerCreate(input: {
     if (input.vertical === VerticalEnum.ACCOMMODATION) {
         return undefined;
     }
-    const config = createDeclaration(input.vertical);
+    const config =
+        input.vertical === VerticalEnum.VENUE
+            ? VENUE_OWNER_CREATE_LISTING_ACCESS
+            : EXPERIENCE_OWNER_CREATE_LISTING_ACCESS;
     const decision = await decideListingAccess({
         actor: input.actor,
         listingId: '',

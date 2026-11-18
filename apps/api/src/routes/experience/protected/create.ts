@@ -42,6 +42,7 @@ import {
 import { type Actor, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 
+import type { ListingAccessWithSections } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -112,6 +113,20 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
 }
 
 /**
+ * This route's listing-access step, as a route-config fragment. The
+ * `listingAccess` literal lives here (the G2 / G-R3-C scanners read it) and the
+ * route spreads it, so the route and `create_listing` (HOS-2329) run the SAME
+ * declaration object: {@link EXPERIENCE_OWNER_CREATE_LISTING_ACCESS}.
+ */
+export const EXPERIENCE_OWNER_CREATE_ROUTE_ACCESS = {
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'CREATE' }
+} as const satisfies { readonly listingAccess: ListingAccessWithSections };
+
+/** The experience owner-create listing-access declaration, shared with `create_listing`. */
+export const EXPERIENCE_OWNER_CREATE_LISTING_ACCESS: ListingAccessWithSections =
+    EXPERIENCE_OWNER_CREATE_ROUTE_ACCESS.listingAccess;
+
+/**
  * POST /api/v1/protected/experiences/
  *
  * Creates an experience listing owned by the caller. Starts as a
@@ -120,7 +135,7 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
 export const protectedCreateExperienceListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
-    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'CREATE' },
+    ...EXPERIENCE_OWNER_CREATE_ROUTE_ACCESS,
     summary: 'Create an experience listing (owner self-service)',
     description:
         'Creates an experience listing owned by the authenticated caller and grants them the EXPERIENCE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no experience permission.',

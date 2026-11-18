@@ -50,6 +50,7 @@ import {
 import { type Actor, ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 
+import type { ListingAccessWithSections } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -171,6 +172,25 @@ export function venueCreateSections({
 }
 
 /**
+ * This route's listing-access step, as a route-config fragment. The
+ * `listingAccess` literal lives here (the G2 / G-R3-C scanners read it) and the
+ * route spreads it, so the route and `create_listing` (HOS-2329) run the SAME
+ * declaration object: {@link VENUE_OWNER_CREATE_LISTING_ACCESS}.
+ */
+export const VENUE_OWNER_CREATE_ROUTE_ACCESS = {
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'CREATE',
+        businessLinesFromBody: venueCreateBusinessLines,
+        listingSection: venueCreateSections
+    }
+} as const satisfies { readonly listingAccess: ListingAccessWithSections };
+
+/** The venue owner-create listing-access declaration, shared with `create_listing`. */
+export const VENUE_OWNER_CREATE_LISTING_ACCESS: ListingAccessWithSections =
+    VENUE_OWNER_CREATE_ROUTE_ACCESS.listingAccess;
+
+/**
  * POST /api/v1/protected/venues/
  *
  * Creates a venue listing owned by the caller. Starts as a
@@ -179,12 +199,7 @@ export function venueCreateSections({
 export const protectedCreateVenueListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
-    listingAccess: {
-        vertical: VerticalEnum.VENUE,
-        operation: 'CREATE',
-        businessLinesFromBody: venueCreateBusinessLines,
-        listingSection: venueCreateSections
-    },
+    ...VENUE_OWNER_CREATE_ROUTE_ACCESS,
     summary: 'Create a venue listing (owner self-service)',
     description:
         'Creates a venue listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no venue permission.',

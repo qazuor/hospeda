@@ -18,6 +18,8 @@ import {
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../../src/middlewares/accommodation-cache-invalidation';
+import { EXPERIENCE_OWNER_CREATE_LISTING_ACCESS } from '../../../../src/routes/experience/protected/create';
+import { VENUE_OWNER_CREATE_LISTING_ACCESS } from '../../../../src/routes/venue/protected/create';
 import { validateApiEnv } from '../../../../src/utils/env';
 import {
     actorFor,
@@ -355,10 +357,18 @@ describe('create_listing', () => {
                     config: { vertical: VerticalEnum.VENUE, operation: 'CREATE' }
                 });
                 expect(args.config.businessLinesFromBody({ body: args.body })).toEqual(['food']);
+                // The route's own declaration object, not a copy (M-2).
+                expect(args.config).toBe(VENUE_OWNER_CREATE_LISTING_ACCESS);
             }
             expect(mocks.coverage).toHaveBeenCalledWith(
                 expect.objectContaining({ userId: actorFor().id, vertical: VerticalEnum.VENUE })
             );
+        });
+
+        it("experience: the access step runs the route's own declaration object", async () => {
+            await run({ ...VALID_INPUT.experience });
+            const [args] = decideSpy.mock.calls[0] ?? [];
+            expect(args.config).toBe(EXPERIENCE_OWNER_CREATE_LISTING_ACCESS);
         });
 
         it('venue: explicit business lines reach the access step as given', async () => {
