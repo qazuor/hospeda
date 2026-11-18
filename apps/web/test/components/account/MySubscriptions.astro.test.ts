@@ -91,6 +91,14 @@ describe('MySubscriptions SSR block', () => {
         expect(source).toContain('row.succession?.checkoutDeadline');
         expect(source).toContain('date: date(row.succession.checkoutDeadline)');
     });
+    it('HOS-2344 offers resume and cancel for an open successor checkout in any status', () => {
+        expect(source).toContain(
+            "import { PlanChangeCheckoutPending } from './PlanChangeCheckoutPending.client';"
+        );
+        expect(source).toContain(
+            '{row.succession?.checkoutOpen && row.succession.successorId && <PlanChangeCheckoutPending client:visible successorId={row.succession.successorId} checkoutUrl={row.succession.checkoutUrl ?? null} locale={locale} />}'
+        );
+    });
     it('TEST:B9b:8 mounts pause for ACTIVE and PAUSED courtesy, but not other PAUSED reasons', () => {
         const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
         const pauseOffer = article.match(/\{\(([^{}]+)\) && <PauseOffer client:visible/u);

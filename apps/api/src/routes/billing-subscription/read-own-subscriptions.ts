@@ -5,6 +5,7 @@ import {
     courtesyGrants,
     emailOutbox,
     eq,
+    findPendingAttemptById,
     getDb,
     inArray,
     isNotNull,
@@ -24,6 +25,7 @@ import {
     isSuccessionCheckoutOpen,
     PAID_AFTER_CANCELLATION_TEMPLATE,
     readLivePromos,
+    readResumableCheckoutUrl,
     ServiceError
 } from '@repo/service-core';
 import { z } from 'zod';
@@ -111,6 +113,22 @@ export async function readOwnSubscriptions(userId: string) {
                   .from(subscriptions)
                   .where(inArray(subscriptions.id, successorIds));
     const successorsById = new Map(successors.map((successor) => [successor.id, successor]));
+    // HOS-2344: the open successor checkout can be resumed from Mi suscripción.
+    const successorCheckoutUrls = new Map(
+        await Promise.all(
+            successors
+                .filter((successor) => isSuccessionCheckoutOpen(successor.status))
+                .map(async (successor) => {
+                    const commitment = await findPendingAttemptById({
+                        subscriptionId: successor.id
+                    });
+                    return [
+                        successor.id,
+                        commitment ? readResumableCheckoutUrl({ commitment }) : null
+                    ] as const;
+                })
+        )
+    );
     const marks =
         ids.length === 0
             ? []
@@ -260,7 +278,9 @@ export async function readOwnSubscriptions(userId: string) {
                         ? {
                               checkoutOpen: true as const,
                               checkoutDeadline:
-                                  successor.authorizationWindowEndsAt?.toISOString() ?? null
+                                  successor.authorizationWindowEndsAt?.toISOString() ?? null,
+                              successorId: successor.id,
+                              checkoutUrl: successorCheckoutUrls.get(successor.id) ?? null
                           }
                         : null
             };

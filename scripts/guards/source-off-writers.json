@@ -582,6 +582,14 @@
         "reason": "S18 closes the succession: links only, no status or coverage change (AC:B8b:10)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/succession-cancel-writes.ts",
+        "symbol": "releaseCancelledSuccessionPredecessor",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2344: S40 on a pending successor clears the predecessor's succeeded_by_id only; the predecessor keeps its status and coverage, and the abandoned successor never covered anything."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
         "symbol": "repointComplements",
         "table": "addonInstances",
