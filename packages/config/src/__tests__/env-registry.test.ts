@@ -335,8 +335,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * Merge of HOS-2184 (+4 MCP and the rest of staging, 287 with PostHog) and
  * HOS-2119 (+8 Umami, -6 PostHog): 287 - 6 + 8 = 289.
+ *
+ * +1 = HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL (billing category, api only) — the
+ * payer email of the pending preapprovals the provider watch battery creates
+ * and cancels (HOS-1512). 289 + 1 = 290.
  */
-const EXPECTED_VAR_COUNT = 289;
+const EXPECTED_VAR_COUNT = 290;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

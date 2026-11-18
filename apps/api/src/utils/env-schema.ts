@@ -581,6 +581,11 @@ export const ApiEnvBaseSchema = z.object({
     /** Healthchecks.io check slug prefix; keeps staging and prod apart. */
     HOSPEDA_HEALTHCHECKS_SLUG_PREFIX: z.enum(['staging', 'prod']).optional(),
     /**
+     * Payer email of the pending preapprovals the provider watch battery creates and cancels
+     * in the same run (HOS-1512). Without it the creating measurements fail and alert.
+     */
+    HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL: blankAsUndefined(z.string().email()),
+    /**
      * Sentry environment tag. When set, takes precedence over NODE_ENV
      * for Sentry event tagging — lets prod and staging both run with
      * NODE_ENV=production (preserving prod-like behavior like
