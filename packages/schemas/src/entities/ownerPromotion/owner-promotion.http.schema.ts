@@ -14,6 +14,7 @@ import {
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
+import { OwnerPromotionEntityTypeEnum } from '../../enums/owner-promotion-entity-type.enum.js';
 import { TouristAudienceEnum } from '../../enums/tourist-audience.enum.js';
 import { TouristAudienceEnumSchema } from '../../enums/tourist-audience.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -170,6 +171,10 @@ export const httpToDomainOwnerPromotionCreate = (
     return {
         ownerId: httpData.ownerId,
         accommodationId: httpData.accommodationId ?? null,
+        // HOS-2270: this HTTP contract only knows accommodations; the dual write keeps
+        // the target pair equal to `accommodationId`.
+        entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
+        entityId: httpData.accommodationId ?? null,
         title: httpData.title,
         description: httpData.description ?? null,
         discountType: httpData.discountType,

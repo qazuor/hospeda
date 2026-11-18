@@ -1648,9 +1648,23 @@
       "breakpoints": true
     },
     {
+      "idx": 235,
+      "version": "7",
+      "when": 1795023775360,
+      "tag": "0235_hos2270_special_offer_discount_type",
+      "breakpoints": true
+    },
+    {
+      "idx": 236,
+      "version": "7",
+      "when": 1795023790143,
+      "tag": "0236_hos2270_owner_promotions_entity",
+      "breakpoints": true
+    },
+    {
       "idx": 237,
       "version": "7",
-      "when": 1795023776524,
+      "when": 1795034217741,
       "tag": "0237_hos2255_venue_event_ticket_url",
       "breakpoints": true
     }

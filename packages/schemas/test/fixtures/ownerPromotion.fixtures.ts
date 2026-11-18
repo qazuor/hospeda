@@ -1,13 +1,17 @@
 import { faker } from '@faker-js/faker';
 import { LifecycleStatusEnum } from '../../src/enums/lifecycle-state.enum.js';
-import { OwnerPromotionDiscountTypeEnum } from '../../src/enums/owner-promotion-discount-type.enum.js';
+import {
+    ACCOMMODATION_PROMOTION_DISCOUNT_TYPES,
+    OwnerPromotionDiscountTypeEnum
+} from '../../src/enums/owner-promotion-discount-type.enum.js';
 import { createBaseAuditFields, createBaseIdFields } from './common.fixtures.js';
 
 /**
  * OwnerPromotion fixtures for testing
  */
 
-const DISCOUNT_TYPES = Object.values(OwnerPromotionDiscountTypeEnum);
+// HOS-2270: the fixtures describe accommodation promotions, so `special_offer` (venue-only) is out.
+const DISCOUNT_TYPES = [...ACCOMMODATION_PROMOTION_DISCOUNT_TYPES];
 
 /**
  * Creates owner-promotion-specific entity fields (without id and audit fields).

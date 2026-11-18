@@ -169,6 +169,9 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'venue/protected/createReview.ts': {
         exempt: 'Reseña del turista: WRITE_ABOUT_LISTING, el paso 4 ya lo resuelve el servicio (V5.2, AC:V5:25); su gate de plan (write_reviews) es AC:V5:28 (V5.13). No es escritura del dueño sobre su ficha.'
     },
+    'venue/protected/createPromotion.ts': { operation: 'EDIT' },
+    'venue/protected/deletePromotion.ts': { operation: 'EDIT' },
+    'venue/protected/patchPromotion.ts': { operation: 'EDIT' },
     'venue/protected/publish.ts': { operation: 'PUBLISH' },
     'venue/protected/reactivate.ts': { operation: 'REACTIVATE' },
     'venue/protected/purge.ts': { operation: 'DELETE' },
@@ -181,6 +184,7 @@ const EXPECTED: Readonly<Record<string, { operation: string } | { exempt: string
     'venue/protected/putDailySpecials.ts': { operation: 'EDIT' },
     'venue/protected/putEvents.ts': { operation: 'EDIT' },
     'venue/protected/putMenu.ts': { operation: 'EDIT' },
+    'venue/protected/putPromotion.ts': { operation: 'EDIT' },
     'venue/protected/removeFaq.ts': { operation: 'EDIT' },
     'venue/protected/removeMedia.ts': { operation: 'EDIT' },
     'venue/protected/reorderFaqs.ts': { operation: 'EDIT' },
@@ -232,9 +236,9 @@ describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () =>
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))
         .sort();
 
-    it('discovers exactly the frozen 138 route files', () => {
+    it('discovers exactly the frozen 142 route files', () => {
         expect(actual).toEqual(Object.keys(EXPECTED).sort());
-        expect(Object.keys(EXPECTED)).toHaveLength(138);
+        expect(Object.keys(EXPECTED)).toHaveLength(142);
     });
 
     it('keeps the listingAccess matcher instrumented', () => {

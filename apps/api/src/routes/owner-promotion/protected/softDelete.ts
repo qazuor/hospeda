@@ -8,6 +8,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { assertAccommodationPromotion } from './accommodation-door';
 
 const ownerPromotionService = new OwnerPromotionService({ logger: apiLogger });
 
@@ -32,6 +33,12 @@ export const protectedDeleteOwnerPromotionRoute = createProtectedRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
+        // HOS-2270: a venue promotion is not reachable through the accommodation door.
+        const existing = await ownerPromotionService.getById(actor, id);
+        if (existing.error) {
+            throw new ServiceError(existing.error.code, existing.error.message);
+        }
+        assertAccommodationPromotion(existing.data);
         const result = await ownerPromotionService.softDelete(actor, id);
 
         if (result.error) {

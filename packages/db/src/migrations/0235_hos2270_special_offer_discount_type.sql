@@ -1,0 +1,1 @@
+ALTER TYPE "public"."owner_promotion_discount_type_enum" ADD VALUE 'special_offer';

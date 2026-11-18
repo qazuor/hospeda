@@ -8,6 +8,7 @@ import type {
 import {
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
+    OwnerPromotionEntityTypeEnum,
     TouristAudienceEnum
 } from '@repo/schemas';
 import { getMockId } from './utilsFactory';
@@ -21,11 +22,15 @@ export class OwnerPromotionFactoryBuilder {
     }
 
     build(): OwnerPromotion {
+        const accommodationId = getMockId('accommodation') as AccommodationIdType;
         return {
             id: getMockId('ownerPromotion') as OwnerPromotionIdType,
             slug: 'test-promotion',
             ownerId: getMockId('user') as UserIdType,
-            accommodationId: getMockId('accommodation') as AccommodationIdType,
+            accommodationId,
+            // HOS-2270: dual-written pair, equal to the legacy column.
+            entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION,
+            entityId: accommodationId,
             title: 'Test Promotion',
             description: 'A valid promotion description',
             discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,

@@ -139,10 +139,25 @@ describe('OwnerPromotion CRUD Schemas', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should validate all discount type enum values', () => {
-            // Arrange & Act & Assert
+        it('should validate every discount type its target allows', () => {
+            // Arrange & Act & Assert. HOS-2270: `special_offer` is venue-only, so an
+            // accommodation promotion carries the other three and the venue one needs
+            // a target id.
             for (const discountType of Object.values(OwnerPromotionDiscountTypeEnum)) {
-                const input = { ...createOwnerPromotionCreateInput(), discountType };
+                const isSpecialOffer =
+                    discountType === OwnerPromotionDiscountTypeEnum.SPECIAL_OFFER;
+                const input = {
+                    ...createOwnerPromotionCreateInput(),
+                    discountType,
+                    ...(isSpecialOffer
+                        ? {
+                              entityType: 'venue',
+                              entityId: '22222222-2222-4222-8222-222222222222',
+                              accommodationId: null,
+                              minNights: null
+                          }
+                        : {})
+                };
                 const result = OwnerPromotionCreateInputSchema.safeParse(input);
                 expect(result.success, `discountType "${discountType}" should be valid`).toBe(true);
             }

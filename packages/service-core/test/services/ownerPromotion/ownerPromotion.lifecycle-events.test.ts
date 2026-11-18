@@ -91,6 +91,13 @@ describe('OwnerPromotionService lifecycle events (SPEC-285 T-004)', () => {
             accommodationModel: accommodationModelMock as unknown as AccommodationModel
         });
 
+        // HOS-2270: the target is validated on create; the accommodation is the owner's.
+        accommodationModelMock.findById.mockResolvedValue({
+            id: accommodationId,
+            ownerId,
+            deletedAt: null
+        });
+
         // Default slug uniqueness — findBySlug returns null (slug is free).
         (modelMock.findBySlug as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 

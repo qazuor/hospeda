@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
-import { OwnerPromotionSchema } from './owner-promotion.schema.js';
+import { OwnerPromotionObjectSchema } from './owner-promotion.schema.js';
 
 /**
  * Owner Promotion Query Schemas
@@ -121,7 +121,7 @@ export const OwnerPromotionQuerySchema = BaseSearchSchema.extend({
 /**
  * Owner promotion list item schema - contains essential fields for list display
  */
-export const OwnerPromotionListItemSchema = OwnerPromotionSchema.pick({
+export const OwnerPromotionListItemSchema = OwnerPromotionObjectSchema.pick({
     id: true,
     slug: true,
     ownerId: true,
@@ -173,7 +173,7 @@ export const OwnerPromotionSearchResponseSchema = PaginationResultSchema(
 /**
  * Owner promotion summary schema for quick display
  */
-export const OwnerPromotionSummarySchema = OwnerPromotionSchema.pick({
+export const OwnerPromotionSummarySchema = OwnerPromotionObjectSchema.pick({
     id: true,
     slug: true,
     title: true,

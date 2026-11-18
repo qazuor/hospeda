@@ -748,13 +748,14 @@
             "save": "Autorizar",
             "confirmTitle": "Autorizar una corrida",
             "confirmSave": "¿Autorizar UNA corrida de {month} contra la cuenta {account}, por exactamente {amount}? Es la suma de las mediciones que mueven plata y también el tope de lo que la corrida puede cobrar. La autorización se consume cuando la corrida empieza.",
+            "confirmSaveReadOnly": "¿Autorizar UNA corrida de {month} contra la cuenta {account}? El catálogo no tiene mediciones que muevan plata: la corrida es de solo lectura y no mueve plata (monto autorizado: {amount}). La autorización se consume cuando la corrida empieza.",
             "cancel": "Cancelar",
             "invalidValue": "Ingresá un mes con formato AAAA-MM y un máximo a cobrar entero y mayor que cero.",
             "noWritePermission": "Solo un SUPER_ADMIN puede cambiar esta autorización.",
             "saveError": "No se pudo guardar la autorización. Probá de nuevo.",
             "expectedTitle": "Monto que necesita una corrida",
             "expectedValue": "{amount} ({minor} centavos): suma de {count} mediciones que mueven plata ({ids}).",
-            "noMoneyCatalog": "El catálogo todavía no tiene mediciones que muevan plata en esta cuenta: no hay nada que autorizar.",
+            "noMoneyCatalog": "El catálogo no tiene mediciones que muevan plata en esta cuenta: la corrida es de solo lectura y no mueve plata. Se autoriza con monto 0.",
             "previewError": "No se pudo calcular el monto que necesita la corrida. No se puede autorizar."
         },
         "providerWatchShapes": {

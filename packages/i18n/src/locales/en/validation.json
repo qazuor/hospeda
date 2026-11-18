@@ -2473,6 +2473,9 @@
         "ownerPromotionDiscountType": {
             "invalid": "El owner promotion discount type no es válido"
         },
+        "ownerPromotionEntityType": {
+            "invalid": "The promotion target type is not valid"
+        },
         "partnerMentionChannel": {
             "invalid": "The mention channel is not valid"
         },
@@ -3701,9 +3704,19 @@
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres"
         },
+        "discountType": {
+            "notForAccommodation": "This benefit type is not available for accommodations",
+            "notForVenue": "This benefit type is not available for venues"
+        },
         "discountValue": {
+            "int": "The discount value must be a whole number",
+            "maxPercentage": "The percentage cannot exceed 100",
             "min": "El valor del descuento no puede ser negativo",
+            "notForSpecialOffer": "A special offer has no discount value",
             "required": "El valor del descuento es obligatorio"
+        },
+        "entityId": {
+            "requiredForVenue": "A venue promotion needs the venue id"
         },
         "maxRedemptions": {
             "int": "Los usos máximos deben ser un número entero",
@@ -3711,21 +3724,34 @@
         },
         "minNights": {
             "int": "La cantidad mínima de noches debe ser un número entero",
-            "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres"
+            "min": "La cantidad mínima de noches debe tener al menos {{min}} caracteres",
+            "notForVenue": "Venue promotions have no minimum nights"
         },
         "slug": {
             "min": "El identificador debe tener al menos {{min}} caracteres",
             "required": "El identificador es obligatorio"
+        },
+        "specialOfferText": {
+            "max": "The offer text cannot exceed 1000 characters",
+            "min": "The offer text cannot be empty",
+            "noDescription": "In a special offer the text goes in the offer field, not in the description",
+            "onlyForSpecialOffer": "The offer text only applies to the special offer type",
+            "rejected": "The offer text does not meet the content rules",
+            "required": "Describe what the special offer is"
         },
         "title": {
             "max": "El título no puede superar los {{max}} caracteres",
             "min": "El título debe tener al menos {{min}} caracteres",
             "required": "El título es obligatorio"
         },
+        "touristAudience": {
+            "venuePlusOnly": "Venue promotions only accept the general audience"
+        },
         "validFrom": {
             "required": "La fecha de inicio es obligatoria"
         },
         "validUntil": {
+            "beforeValidFrom": "The end date must be after the start date",
             "invalid": "La fecha de fin no es válida"
         }
     },

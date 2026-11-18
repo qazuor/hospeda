@@ -104,7 +104,7 @@ vi.mock('@sentry/node', () => ({
     withScope: vi.fn()
 }));
 
-import { withTransaction } from '@repo/db';
+import { eq, isNotNull, isNull, lt, withTransaction } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { apiLogger } from '../../src/utils/logger';
 
@@ -221,6 +221,33 @@ describe('Archive Expired Promotions Cron Job', () => {
             expect(updatedAt).toBeInstanceOf(Date);
             expect(updatedAt.getTime()).toBeGreaterThanOrEqual(startedAt.getTime());
             expect(updatedAt.getTime()).toBeLessThanOrEqual(now);
+        });
+    });
+
+    describe('Venue promotions (HOS-2270, AC-15)', () => {
+        it('selects by lifecycle and expiry only, so an expired venue promotion is archived like any other', async () => {
+            // Arrange: the row is a venue promotion; the job never learns what it hangs from.
+            arrangeDefaultTx([{ id: 'venue-promotion-uuid' }]);
+
+            // Act
+            const result = await archiveExpiredPromotionsJob.handler(
+                createMockContext({ dryRun: false })
+            );
+
+            // Assert: it was archived...
+            expect(result.processed).toBe(1);
+            expect(mockUpdateWhere).toHaveBeenCalledTimes(1);
+            // ...and the predicate names no target column: nothing in it can exclude a venue.
+            const columns = [
+                ...vi.mocked(isNotNull).mock.calls,
+                ...vi.mocked(eq).mock.calls,
+                ...vi.mocked(isNull).mock.calls,
+                ...vi.mocked(lt).mock.calls
+            ].flatMap(([column]) => String(column));
+            expect(columns.length).toBeGreaterThan(0);
+            for (const column of columns) {
+                expect(column).not.toMatch(/entity|accommodation|venue/);
+            }
         });
     });
 

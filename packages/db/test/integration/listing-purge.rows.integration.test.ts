@@ -37,7 +37,9 @@ const verticalTables = {
         ['venue_menu_sections', 'venue_id'],
         ['venue_menu_items', 'venue_id'],
         ['venue_daily_specials', 'venue_id'],
-        ['venue_events', 'venue_id']
+        ['venue_events', 'venue_id'],
+        // HOS-2270: no FK, deleted by (entity_type, entity_id).
+        ['owner_promotions', 'entity_id']
     ],
     experience: [
         ['r_experience_amenity', 'experience_id'],
@@ -101,7 +103,12 @@ async function insertRow(
         r_entity_tag: sql`INSERT INTO r_entity_tag (tag_id, entity_id, entity_type, assigned_by_id) VALUES (${tagId}, ${listingId}, ${entityType}, ${ownerId}) RETURNING entity_id AS id`,
         qr_codes: sql`INSERT INTO qr_codes (slug, target_url, label, source, entity_type, entity_id, render_options) VALUES (${`pb12-${crypto.randomUUID()}`}, 'https://example.test', 'fixture', 'GENERATED', ${entityType}, ${listingId}, '{}'::jsonb) RETURNING id`,
         entity_view_monthly_rollups: sql`INSERT INTO entity_view_monthly_rollups (entity_type, entity_id, month, total, unique_visitors) VALUES (${entityType}, ${listingId}, '2026-10-01', 1, 1) RETURNING id`,
-        owner_promotions: sql`INSERT INTO owner_promotions (slug, owner_id, accommodation_id, title, discount_type, discount_value, valid_from) VALUES (${`pb12-${crypto.randomUUID()}`}, ${ownerId}, ${listingId}, 'fixture', 'percentage', 10, now()) RETURNING id`,
+        // HOS-2270: a venue promotion hangs from the polymorphic pair only; an
+        // accommodation one keeps the legacy column too (release N dual write).
+        owner_promotions:
+            vertical === 'venue'
+                ? sql`INSERT INTO owner_promotions (slug, owner_id, entity_type, entity_id, title, discount_type, discount_value, valid_from) VALUES (${`pb12-${crypto.randomUUID()}`}, ${ownerId}, 'venue', ${listingId}, 'fixture', 'percentage', 10, now()) RETURNING id`
+                : sql`INSERT INTO owner_promotions (slug, owner_id, accommodation_id, entity_type, entity_id, title, discount_type, discount_value, valid_from) VALUES (${`pb12-${crypto.randomUUID()}`}, ${ownerId}, ${listingId}, 'accommodation', ${listingId}, 'fixture', 'percentage', 10, now()) RETURNING id`,
         accommodation_external_listings: sql`INSERT INTO accommodation_external_listings (accommodation_id, platform, url) VALUES (${listingId}, 'GOOGLE', 'https://example.test') RETURNING id`,
         accommodation_external_reputation: sql`WITH source AS (INSERT INTO accommodation_external_listings (accommodation_id, platform, url) VALUES (${listingId}, 'GOOGLE', 'https://example.test/reputation') ON CONFLICT (accommodation_id, platform) WHERE deleted_at IS NULL DO UPDATE SET url = EXCLUDED.url RETURNING id) INSERT INTO accommodation_external_reputation (accommodation_id, platform, listing_id) SELECT ${listingId}, 'GOOGLE', id FROM source RETURNING id`,
         accommodation_occupancy: sql`INSERT INTO accommodation_occupancy (accommodation_id, date, source, created_by_id) VALUES (${listingId}, '2026-10-13', 'MANUAL', ${ownerId}) RETURNING id`,

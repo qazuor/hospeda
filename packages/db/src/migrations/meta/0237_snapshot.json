@@ -1,6 +1,6 @@
 {
-  "id": "6237e1be-96bd-4c8b-b322-a0f2de85b0a3",
-  "prevId": "f44de924-0d2f-4e09-84fe-716922ab25cf",
+  "id": "e4f72016-920d-442c-9519-022c0e3909c7",
+  "prevId": "1c29496f-d87e-441f-89b7-1c8184c27d5f",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -16673,6 +16673,20 @@
           "primaryKey": false,
           "notNull": false
         },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "owner_promotion_entity_type_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'accommodation'"
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "title": {
           "name": "title",
           "type": "text",
@@ -16790,6 +16804,27 @@
           "columns": [
             {
               "expression": "owner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ownerPromotions_entityType_entityId_idx": {
+          "name": "ownerPromotions_entityType_entityId_idx",
+          "columns": [
+            {
+              "expression": "entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entity_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -16996,7 +17031,12 @@
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "owner_promotions_venue_requires_entity_check": {
+          "name": "owner_promotions_venue_requires_entity_check",
+          "value": "\"owner_promotions\".\"entity_type\" <> 'venue' OR \"owner_promotions\".\"entity_id\" IS NOT NULL"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.partners": {
@@ -35772,7 +35812,16 @@
       "values": [
         "percentage",
         "fixed",
-        "free_night"
+        "free_night",
+        "special_offer"
+      ]
+    },
+    "public.owner_promotion_entity_type_enum": {
+      "name": "owner_promotion_entity_type_enum",
+      "schema": "public",
+      "values": [
+        "accommodation",
+        "venue"
       ]
     },
     "public.partner_content_review_state_enum": {
