@@ -147,7 +147,7 @@ describe('the shipped catalog against the fake', () => {
                 amount <= FAKE_AMOUNT_CEILING_MINOR
             );
         });
-        expect(created.length).toBe(account === 'sandbox' ? 4 : 1);
+        expect(created.length).toBe(account === 'sandbox' ? 2 : 1);
         const search = await createWatchTransport({
             baseUrl: server.url,
             accessToken: 'test-token'

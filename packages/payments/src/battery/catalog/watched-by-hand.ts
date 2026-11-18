@@ -24,6 +24,10 @@ export const WATCHED_BY_HAND: readonly WatchedByHand[] = [
     { row: 'M1', reason: `a change to a live authorization: ${LIVE_AUTHORIZATION}` },
     { row: 'M2', reason: `two changes to a live authorization: ${LIVE_AUTHORIZATION}` },
     {
+        row: 'M3',
+        reason: 'a duplicate creation needs two pending creations in one measurement, and the battery allows one (security review 2026-11-18)'
+    },
+    {
         row: 'M5',
         reason: `an amount change and the notices it does not send: ${LIVE_AUTHORIZATION}, and it watches the notice channels over time`
     },
@@ -58,6 +62,10 @@ export const WATCHED_BY_HAND: readonly WatchedByHand[] = [
     {
         row: 'RP2',
         reason: 'a refund without its key: refunds answer 401 in sandbox and move money in production'
+    },
+    {
+        row: 'RP4',
+        reason: 'another currency: a pending creation is pinned to ARS (security review 2026-11-18), so a USD or BRL probe is never sent'
     },
     {
         row: 'RP5',

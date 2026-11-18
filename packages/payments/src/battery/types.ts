@@ -152,6 +152,12 @@ export interface WatchEntry {
      * charges are also capped at the authorized amount.
      */
     readonly maxChargeMinor?: number;
+    /**
+     * The amount, in centavos, the measurement's ONE pending creation states. The floor when
+     * absent; only the RP3 probes declare another, and it must be one of `PENDING_AMOUNTS_MINOR`.
+     * The engine refuses, sending nothing, a pending creation that states any other amount.
+     */
+    readonly pendingAmountMinor?: number;
     /** The value the fake's list says the provider yields. */
     readonly expected: JsonValue;
     /** Runs the measurement and reads its result. Every request goes through `ctx.send`. */
@@ -261,7 +267,10 @@ export type WatchGuardCode =
     | 'AUTHORIZATION_SUM_MISMATCH'
     | 'READ_ENTRY_MUTATED'
     | 'SEND_AFTER_SETTLED'
-    | 'REPLAY_NOT_SENT';
+    | 'REPLAY_NOT_SENT'
+    | 'PENDING_CREATE_LIMIT'
+    | 'PENDING_AMOUNT_MISMATCH'
+    | 'PENDING_NOT_CANCELLED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */
 export class WatchGuardError extends Error {

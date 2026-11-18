@@ -8,9 +8,15 @@
  * even if the answer is lost. A transport failure, a 5xx or an unreadable answer to such a write
  * aborts the run: the engine does not know whether money moved, and it does not go on.
  *
+ * A pending preapproval creation (security review 2026-11-18) is tracked the same way, though it
+ * moves no money: someone who opens its approval link could authorize it before the run cancels
+ * it. Its key is derived and recorded before it leaves, its id is recorded as it answers, a lost
+ * or 5xx answer stops the run, a measurement may send ONE, and only at the amount it declares.
+ *
  * @module battery/watch-send
  */
 import { createHash } from 'node:crypto';
+import { FAKE_AMOUNT_FLOOR_MINOR } from '../fake/fake-rules';
 import { projectForShape, shapeOf } from './shape';
 import {
     type ShapeMap,
@@ -21,6 +27,7 @@ import {
     type WatchTransport
 } from './types';
 import { assertHeadersAllowed } from './watch-headers';
+import { PENDING_CANCEL_RULE, PENDING_CREATE_RULE, pendingAmountMinorOf } from './watch-operations';
 import { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
 import { guardWrite, releaseWrite, type WatchRunState } from './watch-write-guard';
 
@@ -144,6 +151,7 @@ export function createGuardedSend(args: {
 }): GuardedSend {
     const { entry, transport, runId, state, runCap, shapes, providerIds, record } = args;
     let entryCharged = 0;
+    let pendingCreates = 0;
     const sequences = new Map<string, number>();
     /** The last money write that left under each label: what a replay may resend. */
     const lastMoneyWrite = new Map<string, SentMoneyWrite>();
@@ -200,12 +208,32 @@ export function createGuardedSend(args: {
             entryCharged,
             entryCap: entry.maxChargeMinor ?? 0
         });
+        const pending = operation.rule === PENDING_CREATE_RULE;
+        if (pending) {
+            if (pendingCreates >= 1) {
+                throw new WatchGuardError({
+                    code: 'PENDING_CREATE_LIMIT',
+                    message: `${entry.id} tried a second pending preapproval creation; a measurement may send one, nothing was sent`
+                });
+            }
+            const declared = entry.pendingAmountMinor ?? FAKE_AMOUNT_FLOOR_MINOR;
+            const stated = pendingAmountMinorOf(request.body);
+            if (stated !== declared) {
+                throw new WatchGuardError({
+                    code: 'PENDING_AMOUNT_MISMATCH',
+                    message: `${entry.id} tried a pending preapproval of ${String(stated)} centavos but declares ${declared}; nothing was sent`
+                });
+            }
+            pendingCreates += 1;
+        }
         if (operation.kind === 'charge') entryCharged += operation.statedMinor ?? 0;
 
         const movesMoney = operation.kind === 'charge' || operation.kind === 'refund';
+        /** Writes whose outcome must be known: money writes and pending creations. */
+        const tracked = movesMoney || pending;
         let outgoing: WatchRequest = request;
         let key: string | null = null;
-        if (movesMoney) {
+        if (tracked) {
             const sequence = sequences.get(label) ?? 0;
             sequences.set(label, sequence + 1);
             key = watchWriteKey({ runId, entryId: entry.id, label, sequence });
@@ -244,10 +272,10 @@ export function createGuardedSend(args: {
         try {
             response = await transport(outgoing);
         } catch (error) {
-            if (!movesMoney) throw error;
+            if (!tracked) throw error;
             throw new WatchGuardError({
                 code: 'WRITE_OUTCOME_UNKNOWN',
-                message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the answer is lost (${describeError(error)}); money may have moved, the run stops`
+                message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the answer is lost (${describeError(error)}); ${pending ? 'a pending preapproval may exist' : 'money may have moved'}, the run stops`
             });
         }
         shapes[label] = shapeOfAnswer(response.body);
@@ -258,7 +286,7 @@ export function createGuardedSend(args: {
                 ? declinedOrderIdOf(response.body)
                 : undefined;
         if (
-            movesMoney &&
+            tracked &&
             (DEFINITIVE_REJECTION_STATUSES.has(response.status) || declinedId !== undefined)
         ) {
             // A definitive refusal: nothing moved, so the reservation is given back and the
@@ -277,17 +305,27 @@ export function createGuardedSend(args: {
             return response;
         }
         const id = idOf(response.body);
-        if (movesMoney && response.status >= 400) {
+        if (tracked && response.status >= 400) {
             throw new WatchGuardError({
                 code: 'WRITE_OUTCOME_UNKNOWN',
-                message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the provider answered ${response.status}; money may have moved, the run stops`
+                message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the provider answered ${response.status}; ${pending ? 'a pending preapproval may exist' : 'money may have moved'}, the run stops`
             });
+        }
+        if (
+            operation.rule === PENDING_CANCEL_RULE &&
+            operation.targetId !== null &&
+            response.status >= 200 &&
+            response.status < 300
+        ) {
+            state.cancelledIds.add(operation.targetId);
         }
         if (id !== undefined) {
             if (sent !== null) sent.firstId = id;
             providerIds.push(id);
             if (operation.creates) {
                 state.createdIds.add(id);
+                if (pending && key !== null)
+                    state.pendingCreated.set(id, { entryId: entry.id, key });
                 if (operation.kind === 'charge') {
                     state.chargedById.set(
                         id,
@@ -297,14 +335,14 @@ export function createGuardedSend(args: {
             }
             await recordOrAbort(`created provider id ${id}`, { providerIds: [id] });
         } else if (
-            movesMoney &&
+            tracked &&
             operation.creates &&
             response.status >= 200 &&
             response.status < 300
         ) {
             throw new WatchGuardError({
                 code: 'WRITE_OUTCOME_UNKNOWN',
-                message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the answer carries no id; money may have moved, the run stops`
+                message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the answer carries no id; ${pending ? 'a pending preapproval may exist' : 'money may have moved'}, the run stops`
             });
         }
         return response;
@@ -359,7 +397,39 @@ export function createGuardedSend(args: {
     // The queue: each send starts when the previous one has finished (answered or failed).
     let tail: Promise<unknown> = Promise.resolve();
     let closedBecause: string | null = null;
+    let settled = false;
     let firstGuardError: WatchGuardError | null = null;
+
+    /**
+     * The one send a guard does NOT poison (security review 2026-11-18): the exact cancel of a
+     * pending preapproval this run created and has not cancelled yet. It moves no money, and
+     * refusing it would leave a live approval link behind. A send after `settle` is still refused.
+     */
+    const isCleanupCancel = (call: Parameters<WatchContext['send']>[0]): boolean => {
+        const { request } = call;
+        if (request.method !== 'PUT') return false;
+        const body = request.body;
+        if (
+            typeof body !== 'object' ||
+            body === null ||
+            Array.isArray(body) ||
+            Object.keys(body).length !== 1 ||
+            (body as Record<string, unknown>).status !== 'cancelled'
+        ) {
+            return false;
+        }
+        let pathname: string;
+        try {
+            pathname = normalizeRequestPath({
+                path: request.path,
+                origin: WATCH_INTERNAL_ORIGIN
+            }).pathname;
+        } catch {
+            return false;
+        }
+        const id = /^\/preapproval\/([^/]+)$/.exec(pathname)?.[1];
+        return id !== undefined && state.pendingCreated.has(id) && !state.cancelledIds.has(id);
+    };
 
     const refuseClosed = (): WatchGuardError =>
         new WatchGuardError({
@@ -375,11 +445,13 @@ export function createGuardedSend(args: {
     };
 
     const enqueue = (
-        work: () => Promise<Awaited<ReturnType<WatchTransport>>>
+        work: () => Promise<Awaited<ReturnType<WatchTransport>>>,
+        cleanup: () => boolean = () => false
     ): Promise<Awaited<ReturnType<WatchTransport>>> => {
-        if (closedBecause !== null) return unobserved(Promise.reject(refuseClosed()));
+        const refused = () => settled || (closedBecause !== null && !cleanup());
+        if (refused()) return unobserved(Promise.reject(refuseClosed()));
         const result = tail.then(async () => {
-            if (closedBecause !== null) throw refuseClosed();
+            if (refused()) throw refuseClosed();
             try {
                 return await work();
             } catch (error) {
@@ -394,11 +466,16 @@ export function createGuardedSend(args: {
         return unobserved(result);
     };
 
-    const send: WatchContext['send'] = (call) => enqueue(() => sendOne(call));
+    const send: WatchContext['send'] = (call) =>
+        enqueue(
+            () => sendOne(call),
+            () => isCleanupCancel(call)
+        );
     const replay: WatchContext['replay'] = (call) => enqueue(() => replayOne(call));
 
     const settle = async (): Promise<WatchGuardError | null> => {
         closedBecause ??= 'the measurement settled';
+        settled = true;
         await tail;
         return firstGuardError;
     };

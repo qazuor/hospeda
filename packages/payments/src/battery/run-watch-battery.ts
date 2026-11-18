@@ -400,6 +400,17 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         }
     }
 
+    // Security review 2026-11-18: a pending preapproval left behind could still be authorized by
+    // whoever opens its link. Whatever else happened, a run that leaves one fails loudly.
+    const uncancelled = [...state.pendingCreated].filter(([id]) => !state.cancelledIds.has(id));
+    if (uncancelled.length > 0) {
+        outcome = 'aborted';
+        const listed = uncancelled
+            .map(([id, { entryId, key }]) => `${id} (${entryId}, key ${key})`)
+            .join(', ');
+        reason = `PENDING_NOT_CANCELLED: the run created and did not cancel ${listed}${reason === undefined ? '' : `; ${reason}`}`;
+    }
+
     const run: WatchRunRecord = {
         account: input.account,
         startedAt,

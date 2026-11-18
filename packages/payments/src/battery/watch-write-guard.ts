@@ -25,6 +25,10 @@ export interface WatchRunState {
     readonly chargedById: Map<string, number>;
     /** Minor units refunded on each object. */
     readonly refundedById: Map<string, number>;
+    /** Pending preapprovals this run created, by id, with the measurement and the derived key. */
+    readonly pendingCreated: Map<string, { readonly entryId: string; readonly key: string }>;
+    /** Ids the provider confirmed cancelled (a 2xx to the exact cancel). */
+    readonly cancelledIds: Set<string>;
 }
 
 /** A fresh state for one run. */
@@ -33,7 +37,9 @@ export function createWatchRunState(): WatchRunState {
         ledger: { charged: 0, refunded: 0 },
         createdIds: new Set(),
         chargedById: new Map(),
-        refundedById: new Map()
+        refundedById: new Map(),
+        pendingCreated: new Map(),
+        cancelledIds: new Set()
     };
 }
 

@@ -17,6 +17,7 @@ import { REAL_OBJECT_READ_ENTRIES } from './catalog/real-object-reads';
 import { SUBSCRIPTION_PATH_ENTRIES } from './catalog/subscription-path';
 import { WATCHED_BY_HAND, type WatchedByHand } from './catalog/watched-by-hand';
 import { WATCH_ACCOUNTS, WATCH_EFFECTS, type WatchEntry } from './types';
+import { PENDING_AMOUNTS_MINOR } from './watch-operations';
 
 /** The measurements the battery repeats. */
 export const WATCH_CATALOG: readonly WatchEntry[] = [
@@ -51,7 +52,8 @@ export function rowsOf(entry: WatchEntry): readonly string[] {
  *
  * Every id must be unique and fit the baseline key (16 characters); every row an entry re-checks
  * must be a row of the fake's lists (an entry without `rows` is itself a row); accounts and
- * effects must be known; a money-moving entry must declare an integer maximum charge above zero.
+ * effects must be known; a money-moving entry must declare an integer maximum charge above zero;
+ * a declared pending amount must be one of `PENDING_AMOUNTS_MINOR`, on an entry that mutates.
  *
  * @param args.catalog - The catalog to check
  * @returns The problems found, one line each; empty when the catalog is valid
@@ -73,6 +75,12 @@ export function validateWatchCatalog(args: { readonly catalog: readonly WatchEnt
             if (!known.has(row)) {
                 problems.push(`${entry.id}: re-checks ${row}, not a row of fake-lists.json`);
             }
+        }
+        if (
+            entry.pendingAmountMinor !== undefined &&
+            !(entry.effect === 'mutates' && PENDING_AMOUNTS_MINOR.has(entry.pendingAmountMinor))
+        ) {
+            problems.push(`${entry.id}: declares a pending amount that is not allowed`);
         }
         if (seen.has(entry.id)) problems.push(`${entry.id}: listed twice`);
         seen.add(entry.id);

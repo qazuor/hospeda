@@ -4,7 +4,8 @@
  * non-money only with the exact body `{status: 'cancelled'}`.
  */
 import { describe, expect, it } from 'vitest';
-import { classifyOperation } from '../src/battery/watch-operations';
+import { classifyOperation, PENDING_AMOUNTS_MINOR } from '../src/battery/watch-operations';
+import { FAKE_AMOUNT_CEILING_MINOR, FAKE_AMOUNT_FLOOR_MINOR } from '../src/fake/fake-rules';
 
 const PENDING = {
     reason: 'watch',
@@ -68,6 +69,54 @@ describe('preapproval.create-pending', () => {
         ]
     ])('is never non-money with %s', (_name, body) => {
         expect(create(body)?.kind).not.toBe('non-money');
+    });
+
+    it.each([
+        ['USD', 'USD'],
+        ['BRL', 'BRL'],
+        ['a lowercase ars', 'ars']
+    ])('is never non-money in %s', (_name, currency) => {
+        const body = {
+            ...PENDING,
+            auto_recurring: { ...PENDING.auto_recurring, currency_id: currency }
+        };
+        expect(create(body)?.kind).not.toBe('non-money');
+    });
+
+    it.each([
+        ['one peso above the floor', 16],
+        ['a typical price', 25_000],
+        ['the ceiling itself', 2_000_000],
+        ['zero', 0]
+    ])('is never non-money at %s', (_name, pesos) => {
+        const body = {
+            ...PENDING,
+            auto_recurring: { ...PENDING.auto_recurring, transaction_amount: pesos }
+        };
+        expect(create(body)?.kind).not.toBe('non-money');
+    });
+
+    it('refuses a malformed amount outright (the charge rule cannot read it either)', () => {
+        const body = {
+            ...PENDING,
+            auto_recurring: { ...PENDING.auto_recurring, transaction_amount: 15.005 }
+        };
+        expect(() => create(body)).toThrow(/CHARGE_MISMATCH|amount/i);
+    });
+
+    it('accepts exactly the floor and the two RP3 probes', () => {
+        expect([...PENDING_AMOUNTS_MINOR].sort((a, b) => a - b)).toEqual([
+            FAKE_AMOUNT_FLOOR_MINOR - 100,
+            FAKE_AMOUNT_FLOOR_MINOR,
+            FAKE_AMOUNT_CEILING_MINOR + 100
+        ]);
+        for (const minor of PENDING_AMOUNTS_MINOR) {
+            const body = {
+                ...PENDING,
+                auto_recurring: { ...PENDING.auto_recurring, transaction_amount: minor / 100 }
+            };
+            expect(create(body)?.rule).toBe('preapproval.create-pending');
+        }
     });
 
     it('is not pending without a payer email', () => {

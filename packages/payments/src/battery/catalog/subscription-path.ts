@@ -13,7 +13,6 @@
 import {
     AMOUNT_ABOVE_CEILING_MESSAGE,
     AMOUNT_BELOW_FLOOR_MESSAGE,
-    CURRENCY_REFUSED_MESSAGE,
     FAKE_AMOUNT_CEILING_MINOR,
     FAKE_AMOUNT_FLOOR_MINOR,
     FAKE_CURRENCY
@@ -31,9 +30,6 @@ import { requireCreationSettings, WATCH_REASON, watchReference } from './watch-s
 /** One peso, in centavos: the step just outside each bound of RP3. */
 const CENTAVOS_PER_PESO = 100;
 
-/** The two currencies EX-18 measured as refused. */
-const REFUSED_CURRENCIES = ['USD', 'BRL'] as const;
-
 /** Days ahead of the first charge in the RP17 measurement. */
 const FIRST_CHARGE_DAYS_AHEAD = 7;
 
@@ -49,7 +45,6 @@ function pendingInput(args: {
     readonly ctx: WatchContext;
     readonly use: string;
     readonly amountMinor?: number;
-    readonly currency?: string;
     readonly firstChargeAt?: string;
 }): AuthorizeInput {
     const { payerEmail, returnUrl } = requireCreationSettings(args.ctx);
@@ -57,7 +52,7 @@ function pendingInput(args: {
         reference: watchReference({ ctx: args.ctx, use: args.use }),
         amount: {
             amountMinor: args.amountMinor ?? FAKE_AMOUNT_FLOOR_MINOR,
-            currency: args.currency ?? FAKE_CURRENCY
+            currency: FAKE_CURRENCY
         },
         cadence: { everyMonths: 1 },
         reason: WATCH_REASON,
@@ -203,33 +198,6 @@ function lifecycleEntry(account: WatchAccount): WatchEntry {
     };
 }
 
-/** M3 / EX-17 (sandbox): the same request twice creates two authorizations. */
-const duplicateCreation: WatchEntry = {
-    id: 'duplicate-create',
-    rows: ['M3'],
-    accounts: ['sandbox'],
-    effect: 'mutates',
-    expected: { secondCreateIsANewAuthorization: true },
-    measure: async (ctx): Promise<JsonValue> => {
-        const bridge = createWatchAdapterBridge({ ctx });
-        const input = pendingInput({ ctx, use: 'duplicate' });
-        return withPendingAuthorization({
-            bridge,
-            input,
-            label: 'first',
-            inspect: async ({ id }) =>
-                withPendingAuthorization({
-                    bridge,
-                    input,
-                    label: 'second',
-                    inspect: async (second) => ({
-                        secondCreateIsANewAuthorization: second.id !== id
-                    })
-                })
-        });
-    }
-};
-
 /** RP17 / EX-60 (sandbox): the stored first charge date is truncated to the whole second. */
 const firstChargePrecision: WatchEntry = {
     id: 'first-charge-sec',
@@ -293,73 +261,53 @@ async function expectRefusal(args: {
     return typeof message === 'string' ? message : 'no message';
 }
 
-/** RP3 / PC-2 (sandbox and production): out-of-range amounts are refused with the exact message. */
-const amountBounds: WatchEntry = {
-    id: 'amount-bounds',
-    rows: ['RP3'],
-    accounts: ['sandbox', 'production'],
-    effect: 'mutates',
-    expected: {
-        belowFloor: AMOUNT_BELOW_FLOOR_MESSAGE,
-        aboveCeiling: AMOUNT_ABOVE_CEILING_MESSAGE
-    },
-    measure: async (ctx): Promise<JsonValue> => {
-        const bridge = createWatchAdapterBridge({ ctx });
-        return {
-            belowFloor: await expectRefusal({
-                bridge,
-                label: 'below-floor',
-                input: pendingInput({
-                    ctx,
-                    use: 'below-floor',
-                    amountMinor: FAKE_AMOUNT_FLOOR_MINOR - CENTAVOS_PER_PESO
-                })
-            }),
-            aboveCeiling: await expectRefusal({
-                bridge,
-                label: 'above-ceiling',
-                input: pendingInput({
-                    ctx,
-                    use: 'above-ceiling',
-                    amountMinor: FAKE_AMOUNT_CEILING_MINOR + CENTAVOS_PER_PESO
-                })
-            })
-        };
-    }
-};
-
 /**
- * RP4 / EX-18 (sandbox and production): another currency is refused. The amount is the floor: the
- * provider checks the amount BEFORE the currency (EX-18), so it must not be below the floor.
+ * RP3 / PC-2 (sandbox and production): an amount out of range is refused with the exact message.
+ * One measurement per bound: the engine allows ONE pending creation per measurement, and only at
+ * the amount the measurement declares (security review 2026-11-18).
  */
-const otherCurrency: WatchEntry = {
-    id: 'other-currency',
-    rows: ['RP4'],
-    accounts: ['sandbox', 'production'],
-    effect: 'mutates',
-    expected: Object.fromEntries(
-        REFUSED_CURRENCIES.map((code) => [code, CURRENCY_REFUSED_MESSAGE])
-    ),
-    measure: async (ctx): Promise<JsonValue> => {
-        const bridge = createWatchAdapterBridge({ ctx });
-        const read: Record<string, string> = {};
-        for (const currency of REFUSED_CURRENCIES) {
-            read[currency] = await expectRefusal({
-                bridge,
-                label: `currency-${currency.toLowerCase()}`,
-                input: pendingInput({ ctx, use: `currency-${currency.toLowerCase()}`, currency })
-            });
-        }
-        return read;
-    }
-};
+function amountBound(args: {
+    readonly id: string;
+    readonly use: string;
+    readonly amountMinor: number;
+    readonly message: string;
+}): WatchEntry {
+    return {
+        id: args.id,
+        rows: ['RP3'],
+        accounts: ['sandbox', 'production'],
+        effect: 'mutates',
+        pendingAmountMinor: args.amountMinor,
+        expected: { refusal: args.message },
+        measure: async (ctx): Promise<JsonValue> => ({
+            refusal: await expectRefusal({
+                bridge: createWatchAdapterBridge({ ctx }),
+                label: args.use,
+                input: pendingInput({ ctx, use: args.use, amountMinor: args.amountMinor })
+            })
+        })
+    };
+}
+
+const belowFloor = amountBound({
+    id: 'amount-floor',
+    use: 'below-floor',
+    amountMinor: FAKE_AMOUNT_FLOOR_MINOR - CENTAVOS_PER_PESO,
+    message: AMOUNT_BELOW_FLOOR_MESSAGE
+});
+
+const aboveCeiling = amountBound({
+    id: 'amount-ceiling',
+    use: 'above-ceiling',
+    amountMinor: FAKE_AMOUNT_CEILING_MINOR + CENTAVOS_PER_PESO,
+    message: AMOUNT_ABOVE_CEILING_MESSAGE
+});
 
 /** The measurements over the no-token subscription path. */
 export const SUBSCRIPTION_PATH_ENTRIES: readonly WatchEntry[] = [
     lifecycleEntry('sandbox'),
     lifecycleEntry('production'),
-    duplicateCreation,
     firstChargePrecision,
-    amountBounds,
-    otherCurrency
+    belowFloor,
+    aboveCeiling
 ];

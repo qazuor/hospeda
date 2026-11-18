@@ -16,8 +16,11 @@
  *   PENDING preapproval with no card token and no plan (`preapproval.create-pending`, owner decision
  *   2026-11-18): it charges nothing until a person authorizes it on the checkout, and the battery
  *   cancels it in the same run (`preapproval.cancel`, the exact body `{status: 'cancelled'}`).
- *   A creation that carries `card_token_id`, `status` or `preapproval_plan_id` never matches it and
- *   falls to the `charge` rule, which needs a declared maximum charge.
+ *   A creation that carries `card_token_id`, `status` or `preapproval_plan_id`, another currency
+ *   than ARS or an amount outside {@link PENDING_AMOUNTS_MINOR} never matches it and falls to the
+ *   `charge` rule, which needs a declared maximum charge. The engine also tracks it like a money
+ *   write (derived key recorded before it leaves, id recorded as it answers), allows ONE per
+ *   measurement, and aborts the run if any it created was not cancelled.
  *
  * Every rule also fixes the SHAPE of the body: an exact allowlist of keys, nested keys included, so a
  * charge cannot carry a `preapproval_plan_id`, a held `capture`, a free period or `installments: 12`.
@@ -32,6 +35,11 @@
  *
  * @module battery/watch-operations
  */
+import {
+    FAKE_AMOUNT_CEILING_MINOR,
+    FAKE_AMOUNT_FLOOR_MINOR,
+    FAKE_CURRENCY
+} from '../fake/fake-rules';
 import { type WatchGuardCode, WatchGuardError, type WatchRequest } from './types';
 
 /** What an allowed operation does with money. */
@@ -120,6 +128,41 @@ function installmentsPinned(value: unknown): boolean {
     return value === undefined || value === 1;
 }
 
+/** The rule of a pending, no-token preapproval creation. */
+export const PENDING_CREATE_RULE = 'preapproval.create-pending';
+
+/** The rule of the exact cancel of a preapproval. */
+export const PENDING_CANCEL_RULE = 'preapproval.cancel';
+
+/** One peso, in centavos: the step just outside each bound of RP3. */
+const CENTAVOS_PER_PESO = 100;
+
+/**
+ * The ONLY amounts a pending creation may state, in centavos (security review 2026-11-18): someone
+ * who opens its approval link could still authorize it before the run cancels it, so its amount is
+ * a fixed, small set. The floor (PC-2) is what every measurement uses; one peso below the floor and
+ * one peso above the ceiling are the RP3 probes the provider is expected to refuse, and the engine
+ * lets only the measurement that declares one of them send it (`WatchEntry.pendingAmountMinor`).
+ */
+export const PENDING_AMOUNTS_MINOR: ReadonlySet<number> = new Set([
+    FAKE_AMOUNT_FLOOR_MINOR,
+    FAKE_AMOUNT_FLOOR_MINOR - CENTAVOS_PER_PESO,
+    FAKE_AMOUNT_CEILING_MINOR + CENTAVOS_PER_PESO
+]);
+
+/** The only currency a pending creation may state (security review 2026-11-18). */
+export const PENDING_CURRENCY = FAKE_CURRENCY;
+
+/**
+ * The amount a pending creation's body states, in centavos.
+ *
+ * @param body - The request body
+ * @returns The amount, or `null` when the body states none or a malformed one
+ */
+export function pendingAmountMinorOf(body: unknown): number | null {
+    return minorOf(nested(bodyOf(body), 'auto_recurring').transaction_amount);
+}
+
 /** The keys a pending, no-token preapproval create carries: what the adapter's `authorize` sends. */
 const PENDING_PREAPPROVAL_KEYS = [
     'reason',
@@ -144,7 +187,9 @@ const RULES: readonly Rule[] = [
         // given; the measurement cancels it in the same run. It is the subscription path
         // production uses, so it is NOT money-moving. The exact shape excludes `card_token_id`,
         // `status` and `preapproval_plan_id`: any of them falls to `preapproval.create`, a charge.
-        rule: 'preapproval.create-pending',
+        // Its currency is pinned to ARS and its amount to PENDING_AMOUNTS_MINOR (security review
+        // 2026-11-18); anything else falls to `preapproval.create` too.
+        rule: PENDING_CREATE_RULE,
         method: 'POST',
         path: /^\/preapproval$/,
         kind: 'non-money',
@@ -162,7 +207,16 @@ const RULES: readonly Rule[] = [
                 start_date: true
             }
         },
-        pins: (body) => nested(body, 'auto_recurring').frequency_type === 'months',
+        pins: (body) => {
+            const recurring = nested(body, 'auto_recurring');
+            const amount = pendingAmountMinorOf(body);
+            return (
+                recurring.frequency_type === 'months' &&
+                recurring.currency_id === PENDING_CURRENCY &&
+                amount !== null &&
+                PENDING_AMOUNTS_MINOR.has(amount)
+            );
+        },
         accepts: (body) => {
             const recurring = nested(body, 'auto_recurring');
             return (
@@ -219,7 +273,7 @@ const RULES: readonly Rule[] = [
         // A cancel stops charges and never makes one; the write guard still allows it only on an
         // object THIS RUN created. Listed as non-money so a `mutates` measurement can cancel the
         // pending preapproval it created (owner decision 2026-11-18). A pause stays below.
-        rule: 'preapproval.cancel',
+        rule: PENDING_CANCEL_RULE,
         method: 'PUT',
         path: new RegExp(`^/preapproval/(${ID})$`),
         kind: 'non-money',
