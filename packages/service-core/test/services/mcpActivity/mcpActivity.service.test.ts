@@ -99,18 +99,24 @@ describe('McpActivityService', () => {
             expect(modelFilter()).toMatchObject({ actorId: OWNER });
         });
 
-        it.each([
-            ['userId', { userId: OTHER }],
-            ['actorId', { actorId: OTHER }]
-        ])('own: a %s filter is a validation error and nothing is read', async (_k, filter) => {
-            const result = await service.list({
+        it('own: a userId or actorId filter is refused by the type and at runtime', async () => {
+            // @ts-expect-error the own scope takes no userId (L3); only `all` does
+            const withUserId = await service.list({
                 actor: owner,
                 scope: { kind: 'own' },
-                filter,
+                filter: { userId: OTHER },
+                ...PAGE
+            });
+            const withActorId = await service.list({
+                actor: owner,
+                scope: { kind: 'own' },
+                // @ts-expect-error the own filter has no user field (L3)
+                filter: { actorId: OTHER },
                 ...PAGE
             });
 
-            expectValidationError(result);
+            expectValidationError(withUserId);
+            expectValidationError(withActorId);
             expect(model.listToolCalls).not.toHaveBeenCalled();
         });
 
@@ -151,6 +157,7 @@ describe('McpActivityService', () => {
             const limit = await service.list({
                 actor: owner,
                 scope: { kind: 'own' },
+                // @ts-expect-error pagination is page + pageSize, never limit
                 filter: { limit: 5 },
                 ...PAGE
             });
@@ -169,8 +176,8 @@ describe('McpActivityService', () => {
                     tool: 'reply_inquiry',
                     outcome: 'denied',
                     clientId: CLAUDE,
-                    fromDate: '2026-11-01T00:00:00Z',
-                    toDate: '2026-11-30T00:00:00Z',
+                    fromDate: new Date('2026-11-01T00:00:00Z'),
+                    toDate: new Date('2026-11-30T00:00:00Z'),
                     sortDirection: 'asc'
                 },
                 page: 2,
@@ -342,7 +349,7 @@ describe('McpActivityService', () => {
             expect(JSON.stringify(item)).not.toMatch(/private reply text|Ana|contentLength/);
         });
 
-        it('drops a row whose data the binder never wrote', async () => {
+        it('drops a row whose data the binder never wrote and counts it as skipped', async () => {
             asMock(model.listToolCalls).mockResolvedValue({
                 items: [row({ data: { outcome: 'maybe' } }), row({ data: {} })],
                 total: 2
@@ -350,7 +357,18 @@ describe('McpActivityService', () => {
 
             const result = await service.list({ actor: owner, scope: { kind: 'own' }, ...PAGE });
 
+            // total stays the database count; skipped says why items is shorter (L1).
             expect(result.data?.items).toHaveLength(1);
+            expect(result.data?.total).toBe(2);
+            expect(result.data?.skipped).toBe(1);
+        });
+
+        it('reports zero skipped when every row parses (L1)', async () => {
+            asMock(model.listToolCalls).mockResolvedValue({ items: [row({ data: {} })], total: 1 });
+
+            const result = await service.list({ actor: owner, scope: { kind: 'own' }, ...PAGE });
+
+            expect(result.data?.skipped).toBe(0);
         });
     });
 
@@ -373,7 +391,12 @@ describe('McpActivityService', () => {
                 eventType: 'mcp.tool.call'
             });
             expect(auditModel.purgeOlderThan).not.toHaveBeenCalled();
-            expect(result).toEqual({ cutoff: CUTOFF, deleted: 0, wouldDelete: 7 });
+            expect(result).toEqual({
+                cutoff: CUTOFF,
+                deleted: 0,
+                wouldDelete: 7,
+                stoppedEarly: false
+            });
         });
 
         it('deletes in batches scoped to mcp.tool.call until a batch comes back short', async () => {
@@ -388,7 +411,56 @@ describe('McpActivityService', () => {
             for (const [args] of asMock(auditModel.purgeOlderThan).mock.calls) {
                 expect(args).toEqual({ before: CUTOFF, eventType: 'mcp.tool.call', limit: 2 });
             }
-            expect(result).toEqual({ cutoff: CUTOFF, deleted: 5, wouldDelete: 0 });
+            expect(result).toEqual({
+                cutoff: CUTOFF,
+                deleted: 5,
+                wouldDelete: 0,
+                stoppedEarly: false
+            });
+        });
+
+        it('stops between batches once the signal is aborted (L2)', async () => {
+            const controller = new AbortController();
+            let calls = 0;
+            // Full batches for a while, so a loop that ignored the signal would
+            // run on (and end, short, after five) instead of hanging the test.
+            asMock(auditModel.purgeOlderThan).mockImplementation(async () => {
+                calls += 1;
+                controller.abort();
+                return calls > 5 ? 0 : 2;
+            });
+
+            const result = await service.purgeExpired({
+                now: NOW,
+                batchSize: 2,
+                signal: controller.signal
+            });
+
+            expect(auditModel.purgeOlderThan).toHaveBeenCalledTimes(1);
+            expect(result).toMatchObject({ deleted: 2, stoppedEarly: true });
+        });
+
+        it('starts no statement once the deadline has passed (L2)', async () => {
+            asMock(auditModel.purgeOlderThan)
+                .mockResolvedValue(0)
+                .mockResolvedValueOnce(2)
+                .mockResolvedValueOnce(2);
+
+            const result = await service.purgeExpired({
+                now: NOW,
+                batchSize: 2,
+                deadlineAt: new Date(Date.now() - 1000)
+            });
+
+            expect(auditModel.purgeOlderThan).not.toHaveBeenCalled();
+            expect(result).toMatchObject({ deleted: 0, stoppedEarly: true });
+        });
+
+        it.each([
+            0, -1, 1.5
+        ])('refuses batchSize %s before deleting anything (L2)', async (batchSize) => {
+            await expect(service.purgeExpired({ now: NOW, batchSize })).rejects.toThrow();
+            expect(auditModel.purgeOlderThan).not.toHaveBeenCalled();
         });
     });
 });

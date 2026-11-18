@@ -21,14 +21,14 @@ import {
     mcpActivityModel
 } from '@repo/db';
 import {
+    ListMcpActivityInputSchema,
     MCP_AUDIT_RETENTION_MONTHS,
     MCP_TOOL_CALL_EVENT_TYPE,
-    McpActivityAllFilterSchema,
+    type McpActivityAllFilter,
     type McpActivityItem,
-    McpActivityOwnFilterSchema,
-    McpActivityPageSchema
+    type McpActivityOwnFilter,
+    PurgeMcpActivityInputSchema
 } from '@repo/schemas';
-import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { checkCanViewAllMcpActivity } from './mcpActivity.permissions.js';
@@ -47,33 +47,32 @@ import {
 export const MCP_AUDIT_RETENTION_BATCH_SIZE = 1000;
 
 /**
- * Input of {@link McpActivityService.list}, minus the actor. One strict
- * branch per scope: the `own` branch has no user filter at all.
+ * Arguments of {@link McpActivityService.list}. The filter type follows the
+ * scope: the `own` filter has no user field at all. The Zod schema
+ * (`ListMcpActivityInputSchema`) still validates every call at runtime.
  */
-export const ListMcpActivityInputSchema = z.union([
-    z
-        .object({
-            scope: z.object({ kind: z.literal('own') }).strict(),
-            filter: McpActivityOwnFilterSchema.default({}),
-            ...McpActivityPageSchema.shape
-        })
-        .strict(),
-    z
-        .object({
-            scope: z.object({ kind: z.literal('all') }).strict(),
-            filter: McpActivityAllFilterSchema.default({}),
-            ...McpActivityPageSchema.shape
-        })
-        .strict()
-]);
-
-/** Validated {@link ListMcpActivityInputSchema}. */
-export type ListMcpActivityInput = z.infer<typeof ListMcpActivityInputSchema>;
+export type ListMcpActivityArgs = {
+    /** The session actor. */
+    readonly actor: Actor;
+    /** 1-based page. */
+    readonly page: number;
+    /** Rows per page (at most 100). */
+    readonly pageSize: number;
+    /** Optional service context. */
+    readonly ctx?: ServiceContext;
+} & (
+    | { readonly scope: { readonly kind: 'own' }; readonly filter?: McpActivityOwnFilter }
+    | { readonly scope: { readonly kind: 'all' }; readonly filter?: McpActivityAllFilter }
+);
 
 /** Output of {@link McpActivityService.list}. */
 export interface ListMcpActivityOutput {
+    /** The page, projected. */
     readonly items: readonly McpActivityItem[];
+    /** Matching rows in the database, skipped ones included. */
     readonly total: number;
+    /** Rows of this page left out of `items` because their `data` did not parse. */
+    readonly skipped: number;
 }
 
 /** Output of {@link McpActivityService.purgeExpired}. */
@@ -84,6 +83,11 @@ export interface PurgeMcpActivityOutput {
     readonly deleted: number;
     /** Rows a dry run would delete; `0` on a real run. */
     readonly wouldDelete: number;
+    /**
+     * The run stopped before a short batch because it was aborted or its
+     * deadline passed. The rows left are deleted by the next run.
+     */
+    readonly stoppedEarly: boolean;
 }
 
 /** Collaborators of {@link McpActivityService}, injectable for tests. */
@@ -141,16 +145,13 @@ export class McpActivityService extends BaseService {
      * @param input.page - 1-based page.
      * @param input.pageSize - Rows per page.
      * @param input.ctx - Optional service context.
-     * @returns The page of items and the total count.
+     * @returns The page of items, the total count and the skipped count. A
+     *   row whose `data` does not parse (never written by the binder) is left
+     *   out of `items` and logged, but still counted in `total`, which is the
+     *   database count; `skipped` says how many rows of this page were left
+     *   out, so `items.length + skipped` is the page's row count.
      */
-    public async list(input: {
-        readonly actor: Actor;
-        readonly scope: ListMcpActivityInput['scope'];
-        readonly filter?: Record<string, unknown>;
-        readonly page: number;
-        readonly pageSize: number;
-        readonly ctx?: ServiceContext;
-    }): Promise<ServiceOutput<ListMcpActivityOutput>> {
+    public async list(input: ListMcpActivityArgs): Promise<ServiceOutput<ListMcpActivityOutput>> {
         const { actor, scope, filter, page, pageSize, ctx } = input;
         return this.runWithLoggingAndValidation({
             methodName: 'list',
@@ -201,7 +202,11 @@ export class McpActivityService extends BaseService {
                         buildTargetUrl: this.buildTargetUrl
                     })
                 );
-                return { items, total: result.total };
+                return {
+                    items,
+                    total: result.total,
+                    skipped: result.items.length - parsed.length
+                };
             }
         });
     }
@@ -214,36 +219,53 @@ export class McpActivityService extends BaseService {
      * actor). Idempotent: a second run over the same instant deletes nothing.
      *
      * Batched: {@link MCP_AUDIT_RETENTION_BATCH_SIZE} rows per statement until
-     * a batch comes back short. A dry run counts and deletes nothing.
+     * a batch comes back short. Before each statement the run checks `signal`
+     * and `deadlineAt` and stops (`stoppedEarly`) when either says so; the
+     * rows left go on the next run. A dry run counts and deletes nothing.
      *
      * @param input.now - Reference instant (the cron run's start).
      * @param input.dryRun - Count only.
-     * @param input.batchSize - Rows per statement (injectable for tests).
-     * @returns The cutoff and the counts.
+     * @param input.batchSize - Rows per statement, at least 1 (injectable for tests).
+     * @param input.signal - Aborts the run between statements (the cron's signal).
+     * @param input.deadlineAt - No statement starts after this instant.
+     * @returns The cutoff, the counts and whether the run stopped early.
+     * @throws {ZodError} On an invalid input (a `batchSize` below 1).
      */
     public async purgeExpired(input: {
         readonly now: Date;
         readonly dryRun?: boolean;
         readonly batchSize?: number;
+        readonly signal?: AbortSignal;
+        readonly deadlineAt?: Date;
     }): Promise<PurgeMcpActivityOutput> {
-        const cutoff = mcpAuditRetentionCutoff({ now: input.now });
+        const { signal, ...rest } = input;
+        const validated = PurgeMcpActivityInputSchema.parse(rest);
+        const cutoff = mcpAuditRetentionCutoff({ now: validated.now });
         const scope = { before: cutoff, eventType: MCP_TOOL_CALL_EVENT_TYPE };
-        if (input.dryRun) {
+        if (validated.dryRun) {
             const wouldDelete = await this.auditLogModel.countOlderThan(scope);
-            return { cutoff, deleted: 0, wouldDelete };
+            return { cutoff, deleted: 0, wouldDelete, stoppedEarly: false };
         }
-        const batchSize = input.batchSize ?? MCP_AUDIT_RETENTION_BATCH_SIZE;
+        const batchSize = validated.batchSize ?? MCP_AUDIT_RETENTION_BATCH_SIZE;
+        const mustStop = (): boolean =>
+            signal?.aborted === true ||
+            (validated.deadlineAt !== undefined && Date.now() >= validated.deadlineAt.getTime());
         let deleted = 0;
+        let stoppedEarly = false;
         for (;;) {
+            if (mustStop()) {
+                stoppedEarly = true;
+                break;
+            }
             const batch = await this.auditLogModel.purgeOlderThan({ ...scope, limit: batchSize });
             deleted += batch;
             if (batch < batchSize) break;
         }
         this.logger.info(
-            { deleted, cutoff: cutoff.toISOString() },
+            { deleted, stoppedEarly, cutoff: cutoff.toISOString() },
             'mcp.tool.call retention purge completed'
         );
-        return { cutoff, deleted, wouldDelete: 0 };
+        return { cutoff, deleted, wouldDelete: 0, stoppedEarly };
     }
 
     /** Parses each row's `data`; a row the binder never wrote is dropped and logged. */

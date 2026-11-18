@@ -7,38 +7,25 @@
  */
 import {
     type McpActivityItem,
-    McpActivityOutcomeSchema,
     type McpActivityScope,
-    type McpActivityTarget
+    type McpActivityTarget,
+    type McpToolCallData,
+    McpToolCallDataSchema,
+    VerticalEnum
 } from '@repo/schemas';
-import { z } from 'zod';
 
 /** Listing verticals whose targets resolve to a name. */
-export const MCP_ACTIVITY_LISTING_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
+export const MCP_ACTIVITY_LISTING_VERTICALS = [
+    VerticalEnum.ACCOMMODATION,
+    VerticalEnum.VENUE,
+    VerticalEnum.EXPERIENCE
+] as const;
 
 /** A vertical of {@link MCP_ACTIVITY_LISTING_VERTICALS}. */
 export type McpActivityListingVertical = (typeof MCP_ACTIVITY_LISTING_VERTICALS)[number];
 
 /** Target type of an inquiry: labelled by the UI ("Consulta"), never resolved. */
 export const MCP_ACTIVITY_CONVERSATION_TARGET = 'conversation';
-
-/**
- * What the reader takes from a row's `data` jsonb. Only these keys are ever
- * read; any other key in `data` (a future one included) never reaches an item.
- */
-export const McpToolCallDataSchema = z.object({
-    tool: z.string().min(1),
-    outcome: McpActivityOutcomeSchema,
-    clientId: z.string().min(1),
-    isWrite: z.boolean().optional(),
-    errorCode: z.string().optional(),
-    resourceType: z.string().min(1).optional(),
-    resourceId: z.string().min(1).optional(),
-    details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional()
-});
-
-/** Parsed {@link McpToolCallDataSchema}. */
-export type McpToolCallData = z.infer<typeof McpToolCallDataSchema>;
 
 /** The row fields the projection needs. */
 export interface McpToolCallRow {
