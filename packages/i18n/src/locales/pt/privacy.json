@@ -56,6 +56,10 @@
             "body": "Utilizamos cookies e tecnologias similares para melhorar a funcionalidade do nosso site, analisar o trafego e personalizar conteudo. Voce pode configurar seu navegador para rejeitar cookies, embora isso possa afetar algumas funcionalidades da plataforma.",
             "content": "Utilizamos cookies e tecnologias similares para melhorar sua experiencia, lembrar suas preferencias e analisar o uso do nosso site. Voce pode controlar os cookies por meio das configuracoes do seu navegador."
         },
+        "sessionRecording": {
+            "title": "Gravações de sessão e mapas de calor",
+            "body": "Se você aceitar os cookies de análise, a Hospeda pode gravar sessões de navegação anonimizadas e mapas de calor de cliques e rolagem com o Umami, uma ferramenta de análise que hospedamos por conta própria. A gravação só acontece se você aceitou os cookies de análise e apenas enquanto este recurso estiver ativado. Todo o texto e todos os campos de formulário são mascarados, portanto o que você digita não é registrado. Apenas uma amostra das sessões é gravada, não todas. As gravações são mantidas por um período limitado de até 60 dias e depois são excluídas automaticamente."
+        },
         "dataSecurity": {
             "title": "6. Seguranca dos Dados",
             "body": "Implementamos medidas de seguranca tecnicas e organizacionais para proteger suas informacoes pessoais contra acesso nao autorizado, perda ou destruicao. No entanto, nenhum sistema de transmissao pela internet e completamente seguro.",

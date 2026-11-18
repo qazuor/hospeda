@@ -2,7 +2,7 @@
     "title": "Cookie Policy",
     "description": "Learn how Hospeda uses cookies and similar technologies to improve your experience on the site.",
     "heading": "Cookie Policy",
-    "lastUpdated": "Last updated: April 28, 2026",
+    "lastUpdated": "Last updated: November 18, 2026",
     "sections": {
         "whatAreCookies": {
             "title": "1. What are cookies",
@@ -11,6 +11,10 @@
         "cookiesWeUse": {
             "title": "2. What cookies we use",
             "body": "Hospeda uses strictly necessary cookies for the site to function (such as user session and language preference), which do not require your consent. With your consent, we may use analytics cookies to understand how visitors interact with the site and improve the experience. We do not currently use marketing or advertising cookies."
+        },
+        "sessionRecording": {
+            "title": "Session recordings and heatmaps",
+            "body": "If you accept analytics cookies, Hospeda may record anonymised browsing sessions and click and scroll heatmaps using Umami, an analytics tool that we host ourselves. Recording only happens if you have accepted analytics cookies, and only while this feature is switched on. All text and all form inputs are masked, so what you type is not recorded. Only a sample of sessions is recorded, not all of them. Recordings are kept for a limited period of up to 60 days and are then deleted automatically."
         },
         "cookieList": {
             "title": "3. Cookie list",
