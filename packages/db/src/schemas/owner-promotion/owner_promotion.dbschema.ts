@@ -1,13 +1,40 @@
-import { relations } from 'drizzle-orm';
-import { index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { relations, sql } from 'drizzle-orm';
+import { check, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import {
     LifecycleStatusPgEnum,
     OwnerPromotionDiscountTypePgEnum,
+    OwnerPromotionEntityTypePgEnum,
     TouristAudiencePgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
+/**
+ * Owner promotions: a benefit an owner offers on one of their listings.
+ *
+ * ## Where a promotion hangs (HOS-2270, release N of an expand/contract)
+ *
+ * The target is the pair `entity_type` + `entity_id`, with no foreign key because
+ * the target is polymorphic. The semantics, which EVERY reader must apply:
+ *
+ * - `entity_type = 'accommodation'` with `entity_id`: promotion of that accommodation.
+ * - `entity_type = 'accommodation'` with `entity_id IS NULL`: promotion of ALL the
+ *   owner's accommodations (D-4 of SPEC-285).
+ * - `entity_type = 'venue'`: promotion of that venue. `entity_id` is mandatory
+ *   (CHECK `owner_promotions_venue_requires_entity_check`); there is no "all
+ *   venues" promotion.
+ *
+ * A reader that scopes by `accommodation_id IS NULL` reads a venue promotion as an
+ * owner-wide accommodation one: always filter by `entity_type` first.
+ *
+ * Without a foreign key nothing deletes a promotion when its listing goes away, so
+ * the service validates `entity_id` on create and the listing purge deletes the
+ * promotions by `(entity_type, entity_id)`.
+ *
+ * `accommodation_id` is the legacy column. It stays, with its FK and index, until
+ * the release N+1 (contract) drops it; every accommodation write fills both pairs so
+ * a rollback of the code to the previous release keeps working.
+ */
 export const ownerPromotions = pgTable(
     'owner_promotions',
     {
@@ -19,6 +46,11 @@ export const ownerPromotions = pgTable(
         accommodationId: uuid('accommodation_id').references(() => accommodations.id, {
             onDelete: 'set null'
         }),
+        // HOS-2270: the polymorphic target. Existing rows default to 'accommodation'.
+        entityType: OwnerPromotionEntityTypePgEnum('entity_type')
+            .notNull()
+            .default('accommodation'),
+        entityId: uuid('entity_id'),
         title: text('title').notNull(),
         description: text('description'),
         discountType: OwnerPromotionDiscountTypePgEnum('discount_type').notNull(),
@@ -43,6 +75,13 @@ export const ownerPromotions = pgTable(
     },
     (table) => ({
         ownerPromotions_ownerId_idx: index('ownerPromotions_ownerId_idx').on(table.ownerId),
+        ownerPromotions_entityType_entityId_idx: index(
+            'ownerPromotions_entityType_entityId_idx'
+        ).on(table.entityType, table.entityId),
+        owner_promotions_venue_requires_entity_check: check(
+            'owner_promotions_venue_requires_entity_check',
+            sql`${table.entityType} <> 'venue' OR ${table.entityId} IS NOT NULL`
+        ),
         ownerPromotions_accommodationId_idx: index('ownerPromotions_accommodationId_idx').on(
             table.accommodationId
         ),
