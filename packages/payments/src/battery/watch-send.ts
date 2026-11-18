@@ -24,6 +24,13 @@ import { assertHeadersAllowed } from './watch-headers';
 import { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
 import { guardWrite, releaseWrite, type WatchRunState } from './watch-write-guard';
 
+/**
+ * The statuses that are a definitive rejection: the provider refused the request and no money
+ * moved, so the reservation is given back. Every other status of a money write (408, 409, 425, 429,
+ * any other 4xx, 5xx) is an unknown outcome: the reservation stays and the run stops.
+ */
+const DEFINITIVE_REJECTION_STATUSES: ReadonlySet<number> = new Set([400, 401, 403, 404, 422]);
+
 /** Header the provider deduplicates a write by. */
 const IDEMPOTENCY_HEADER = 'X-Idempotency-Key';
 
@@ -179,7 +186,7 @@ export function createGuardedSend(args: {
             });
         }
         shapes[label] = shapeOf({ body: response.body });
-        if (movesMoney && response.status >= 400 && response.status < 500) {
+        if (movesMoney && DEFINITIVE_REJECTION_STATUSES.has(response.status)) {
             // A definitive refusal: nothing moved, so the reservation is given back and the
             // corrected ledger is persisted. (A 5xx or a lost answer keeps it, below.)
             releaseWrite({ operation, state });
@@ -188,7 +195,7 @@ export function createGuardedSend(args: {
             return response;
         }
         const id = idOf(response.body);
-        if (movesMoney && response.status >= 500) {
+        if (movesMoney && response.status >= 400) {
             throw new WatchGuardError({
                 code: 'WRITE_OUTCOME_UNKNOWN',
                 message: `${entry.id} sent ${request.method} ${pathname} (key ${key}) and the provider answered ${response.status}; money may have moved, the run stops`

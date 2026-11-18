@@ -840,7 +840,7 @@ describe('F2: a definitive 4xx releases its reservation, an unknown outcome keep
                 if (!refundPath.test(sent.path)) return undefined;
                 refunds += 1;
                 return refunds === 1
-                    ? { status: 400, body: { message: 'refused' } }
+                    ? { status: 422, body: { message: 'refused' } }
                     : { status: 201, body: {} };
             }
         });
@@ -851,12 +851,14 @@ describe('F2: a definitive 4xx releases its reservation, an unknown outcome keep
         expect(result.run.ledger).toEqual({ charged: CAP, refunded: CAP });
     });
 
-    it('lets a charge be retried after a 4xx without passing the cap', async () => {
+    it.each([
+        400, 401, 403, 404, 422
+    ])('lets a charge be retried after a definitive %s without passing the cap', async (status) => {
         let attempts = 0;
         const { transport } = provider({
             onWrite: () => {
                 attempts += 1;
-                return attempts === 1 ? { status: 422, body: { message: 'no' } } : undefined;
+                return attempts === 1 ? { status, body: { message: 'no' } } : undefined;
             }
         });
         const result = await run({
@@ -901,6 +903,9 @@ describe('F2: a definitive 4xx releases its reservation, an unknown outcome keep
 
     it.each([
         ['a 5xx', () => ({ status: 503, body: {} })],
+        ['a 409', () => ({ status: 409, body: {} })],
+        ['a 429', () => ({ status: 429, body: {} })],
+        ['a 408', () => ({ status: 408, body: {} })],
         ['a lost answer', () => new Error('socket hang up')],
         ['a 2xx create without an id', () => ({ status: 201, body: {} })]
     ])('keeps the reservation on %s and aborts with WRITE_OUTCOME_UNKNOWN', async (_name, answer) => {
@@ -920,6 +925,9 @@ describe('F2: a definitive 4xx releases its reservation, an unknown outcome keep
         });
         expect(result.run.outcome).toBe('aborted');
         expect(result.run.reason).toContain('WRITE_OUTCOME_UNKNOWN');
+        expect(result.run.reason).toContain(
+            watchWriteKey({ runId: result.runId, entryId: 'M1', label: 'charge', sequence: 0 })
+        );
         expect(result.run.ledger).toEqual({ charged: CAP, refunded: 0 });
     });
 });
