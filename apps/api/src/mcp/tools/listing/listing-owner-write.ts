@@ -40,7 +40,8 @@ import {
 import {
     experienceOwnerEditSections,
     experienceOwnerEditSectionTraits,
-    venueOwnerEditSections
+    venueOwnerEditSections,
+    venueOwnerEditSectionTraits
 } from '../../../utils/listing-access/owner-edit-listing-access';
 import type { ToolHandlerResult } from '../tool-definition';
 import {
@@ -69,7 +70,8 @@ function ownerEditDeclaration(vertical: ListingToolVertical): ListingAccessWithS
             vertical: VerticalEnum.VENUE,
             operation: 'EDIT',
             idParam: 'id',
-            listingSection: venueOwnerEditSections
+            listingSection: venueOwnerEditSections,
+            sectionTraits: venueOwnerEditSectionTraits
         };
     }
     return {

@@ -634,6 +634,79 @@ describe('TEST:V5:31 venue and experience content gates', () => {
         const plain = await request(row);
         expect((await plain.json()).error?.code).not.toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
     });
+    describe('venue PATCH videos trait (HOS-2258)', () => {
+        const youtube = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+        const venuePatch = () => {
+            const row = cases.find((item) => item.file === 'venue/patch');
+            if (!row) throw new Error('Venue patch route missing');
+            return row;
+        };
+
+        it('answers 403 can_embed_video for a non-empty videos array without the key (AC-2)', async () => {
+            configureSet(OWNER_A, ['edit_venue_info']);
+            mocks.service.mockResolvedValue({ data: validVenueResponse });
+
+            const res = await request(venuePatch(), OWNER_A, LISTING, {
+                videos: [{ url: youtube }]
+            });
+
+            expect(res.status).toBe(403);
+            expect((await res.json()).error).toMatchObject({
+                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                details: { entitlementKey: 'can_embed_video' }
+            });
+            expect(mocks.service).not.toHaveBeenCalled();
+        });
+
+        it('counts an empty videos array as touched (AC-2)', async () => {
+            configureSet(OWNER_A, ['edit_venue_info']);
+
+            const res = await request(venuePatch(), OWNER_A, LISTING, { videos: [] });
+
+            expect(res.status).toBe(403);
+            expect(mocks.service).not.toHaveBeenCalled();
+        });
+
+        it('does not ask for the key when the body has no videos or videos is null', async () => {
+            configureSet(OWNER_A, ['edit_venue_info']);
+            mocks.service.mockResolvedValue({ data: validVenueResponse });
+
+            const without = await request(venuePatch());
+            const nulled = await request(venuePatch(), OWNER_A, LISTING, { videos: null });
+
+            expect(without.status).toBe(200);
+            expect(nulled.status).not.toBe(403);
+        });
+
+        it('passes the videos with a server-stamped APPROVED state when the key is held (AC-6)', async () => {
+            configureSet(OWNER_A, ['edit_venue_info', 'can_embed_video']);
+            mocks.service.mockResolvedValue({ data: validVenueResponse });
+
+            const res = await request(venuePatch(), OWNER_A, LISTING, {
+                videos: [{ url: youtube, moderationState: 'REJECTED' }]
+            });
+
+            expect(res.status).toBe(200);
+            expect(mocks.service).toHaveBeenCalledWith(
+                LISTING,
+                expect.objectContaining({
+                    videos: [{ url: youtube, moderationState: 'APPROVED' }]
+                }),
+                expect.anything()
+            );
+        });
+
+        it('rejects more than six videos with a validation error (AC-7)', async () => {
+            configureSet(OWNER_A, ['edit_venue_info', 'can_embed_video']);
+
+            const res = await request(venuePatch(), OWNER_A, LISTING, {
+                videos: Array.from({ length: 7 }, () => ({ url: youtube }))
+            });
+
+            expect(res.status).toBe(400);
+            expect(mocks.service).not.toHaveBeenCalled();
+        });
+    });
     it('checks venue PATCH sections against resulting business lines and treats null as deletion', async () => {
         const row = cases.find((item) => item.file === 'venue/patch');
         if (!row) throw new Error('Venue patch route missing');
