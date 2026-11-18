@@ -288,6 +288,10 @@ describe('closing reads the stored measurements under a row lock (HOS-1512 G1c)'
             try {
                 // A progress write that has updated the row and not committed yet.
                 await writer.query('BEGIN');
+                const pidRow = await writer.query<{ pid: number }>(
+                    'SELECT pg_backend_pid() AS pid'
+                );
+                const writerPid = pidRow.rows[0]?.pid ?? 0;
                 await writer.query(
                     `UPDATE provider_watch_run
                         SET measurements = jsonb_build_object('M1', jsonb_build_object('providerIds', jsonb_build_array('late-1')))
@@ -297,7 +301,19 @@ describe('closing reads the stored measurements under a row lock (HOS-1512 G1c)'
                 const closing = db.transaction((tx) =>
                     model.close({ ...close(runId), tx: tx as unknown as DrizzleClient })
                 );
-                await new Promise((resolve) => setTimeout(resolve, 300));
+                // Wait until the closing backend is really blocked on a lock, then release it.
+                const deadline = Date.now() + 10_000;
+                for (;;) {
+                    const { rows } = await getTestPool().query(
+                        `SELECT 1 FROM pg_stat_activity
+                          WHERE wait_event_type = 'Lock' AND datname = current_database()
+                            AND pid <> pg_backend_pid() AND pid <> $1`,
+                        [writerPid]
+                    );
+                    if (rows.length > 0) break;
+                    if (Date.now() > deadline) throw new Error('close never blocked on the lock');
+                    await new Promise((resolve) => setTimeout(resolve, 20));
+                }
                 await writer.query('COMMIT');
                 await closing;
             } finally {

@@ -189,8 +189,9 @@ async function measureEntry(args: {
     // Whatever the measurement did, no send may still be in flight (nor start) when its ids are
     // read and the run is closed: settle first, then decide.
     const guardFailure = await guarded.settle();
-    if (failure instanceof WatchGuardError) throw failure;
+    // The guard that tripped FIRST is the cause; a later refusal (e.g. a send after it) is not.
     if (guardFailure !== null) throw guardFailure;
+    if (failure instanceof WatchGuardError) throw failure;
     if (failed) {
         return {
             record: {

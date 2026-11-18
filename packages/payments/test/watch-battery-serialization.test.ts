@@ -258,3 +258,80 @@ describe('G2: the release path keeps the id the provider answered', () => {
         expect(result.run.ledger).toEqual({ charged: 0, refunded: 0 });
     });
 });
+
+describe('H1: the guard that tripped first is the reason of the run', () => {
+    it('reports BUDGET_EXCEEDED when the measurement swallows it and a later send is refused', async () => {
+        const { transport } = provider();
+        const result = await run({
+            transport,
+            catalog: [
+                money('M1', async (ctx): Promise<JsonValue> => {
+                    // 2000 pesos is above the 1500 the run may charge.
+                    await ctx.send(create('a', 2000)).catch(() => undefined);
+                    await ctx.send(create('b', 100));
+                    return 'done';
+                })
+            ]
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toMatch(/^BUDGET_EXCEEDED/);
+    });
+});
+
+describe('H3: a send the measurement never awaits is not an unhandled rejection', () => {
+    it('raises no unhandledRejection for a non-awaited send that trips a guard', async () => {
+        const unhandled: unknown[] = [];
+        const listener = (reason: unknown) => unhandled.push(reason);
+        process.on('unhandledRejection', listener);
+        try {
+            const { transport } = provider();
+            const result = await run({
+                transport,
+                catalog: [
+                    money('M1', async (ctx): Promise<JsonValue> => {
+                        void ctx.send({
+                            label: 'bad',
+                            request: {
+                                method: 'PUT',
+                                path: '/preapproval/foreign-1',
+                                body: { status: 'paused' }
+                            },
+                            chargeMinor: 0
+                        });
+                        return 'done';
+                    })
+                ]
+            });
+            expect(result.run.outcome).toBe('aborted');
+            await sleep(50);
+            expect(unhandled).toEqual([]);
+        } finally {
+            process.off('unhandledRejection', listener);
+        }
+    });
+
+    it('raises no unhandledRejection for a non-awaited send refused after the measurement settled', async () => {
+        const unhandled: unknown[] = [];
+        const listener = (reason: unknown) => unhandled.push(reason);
+        process.on('unhandledRejection', listener);
+        try {
+            const { transport } = provider();
+            let late: WatchContext['send'] | undefined;
+            await run({
+                transport,
+                catalog: [
+                    money('M1', async (ctx): Promise<JsonValue> => {
+                        late = ctx.send;
+                        return 'done';
+                    })
+                ]
+            });
+            if (!late) throw new Error('the measurement did not run');
+            void late(create('a', 700));
+            await sleep(50);
+            expect(unhandled).toEqual([]);
+        } finally {
+            process.off('unhandledRejection', listener);
+        }
+    });
+});

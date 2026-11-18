@@ -262,8 +262,15 @@ export function createGuardedSend(args: {
             message: `${entry.id} tried to send after ${closedBecause ?? 'it settled'}; nothing more is sent`
         });
 
+    // A send the measurement never awaits must not become an unhandled rejection; a measurement
+    // that does await still sees the rejection (the no-op handler is a separate branch).
+    const unobserved = <T>(promise: Promise<T>): Promise<T> => {
+        promise.catch(() => undefined);
+        return promise;
+    };
+
     const send: WatchContext['send'] = (call) => {
-        if (closedBecause !== null) return Promise.reject(refuseClosed());
+        if (closedBecause !== null) return unobserved(Promise.reject(refuseClosed()));
         const result = tail.then(async () => {
             if (closedBecause !== null) throw refuseClosed();
             try {
@@ -277,7 +284,7 @@ export function createGuardedSend(args: {
             }
         });
         tail = result.catch(() => undefined);
-        return result;
+        return unobserved(result);
     };
 
     const settle = async (): Promise<WatchGuardError | null> => {
