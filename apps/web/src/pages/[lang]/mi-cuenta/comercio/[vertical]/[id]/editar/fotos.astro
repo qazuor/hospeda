@@ -21,7 +21,7 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { ListingVideoSection } from '@/components/listing/editor/ListingVideoSection.client';
+import { ListingVideoWidget } from '@/components/listing/editor/ListingVideoWidget.client';
 import { MediaSection } from '@/components/listing/editor/MediaSection.client';
 import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
 import { readListingMedia } from '@/lib/listing/listing-editor-detail';
@@ -69,7 +69,7 @@ const videosUpsellPlan =
 	/>
 
 	{videosState === 'available' && (
-		<ListingVideoSection
+		<ListingVideoWidget
 			client:load
 			locale={locale}
 			vertical={vertical}

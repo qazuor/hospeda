@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ListingVideoSection } from '@/components/listing/editor/ListingVideoSection.client';
+import { ListingVideoWidget } from '@/components/listing/editor/ListingVideoWidget.client';
 
 const { patchMock } = vi.hoisted(() => ({ patchMock: vi.fn() }));
 
@@ -19,7 +19,7 @@ vi.mock('@/lib/i18n', () => ({
 
 const mount = () =>
     render(
-        <ListingVideoSection
+        <ListingVideoWidget
             locale="es"
             vertical="venue"
             listingId="venue-1"
@@ -33,7 +33,7 @@ async function addAndSubmit(url: string) {
     fireEvent.click(screen.getByRole('button', { name: 'Guardar videos' }));
 }
 
-describe('ListingVideoSection (HOS-2258)', () => {
+describe('ListingVideoWidget (HOS-2258)', () => {
     beforeEach(() => {
         patchMock.mockReset();
     });

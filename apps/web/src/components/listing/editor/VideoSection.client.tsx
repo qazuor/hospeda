@@ -5,7 +5,7 @@
  *
  * It knows no endpoint. The accommodation page mounts it through
  * `host/editor/VideoSection.client.tsx` and the venue page through
- * `ListingVideoSection.client.tsx`; each wrapper builds the `save` function and
+ * `ListingVideoWidget.client.tsx`; each wrapper builds the `save` function and
  * picks the copy scope (`video-section-copy.ts`).
  *
  * Placed on the SAME page as the photo section rather than a new nav item: both
@@ -138,69 +138,72 @@ export function VideoSection({
     const atCap = maxVideos !== undefined && rows.length >= maxVideos;
 
     return (
-        <form
+        <section
             className={styles.section}
-            onSubmit={handleSubmit}
-            noValidate
             style={{ marginTop: '2rem' }}
         >
-            <h3 className={styles.sectionTitle}>
-                {t(copy.sectionTitle.key, copy.sectionTitle.fallback)}
-            </h3>
-            <p className={styles.sectionDescription}>
-                {t(copy.sectionDescription.key, copy.sectionDescription.fallback)}
-            </p>
-
-            {rows.length === 0 && (
+            <form
+                onSubmit={handleSubmit}
+                noValidate
+            >
+                <h3 className={styles.sectionTitle}>
+                    {t(copy.sectionTitle.key, copy.sectionTitle.fallback)}
+                </h3>
                 <p className={styles.sectionDescription}>
-                    {t(copy.empty.key, copy.empty.fallback)}
+                    {t(copy.sectionDescription.key, copy.sectionDescription.fallback)}
                 </p>
-            )}
 
-            {rows.map((row, index) => (
-                <VideoRowField
-                    // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until saved
-                    key={index}
-                    locale={locale}
-                    copy={copy}
-                    fieldPrefix={FIELD_PREFIX[copyScope]}
-                    index={index}
-                    row={row}
-                    disabled={isSaving}
-                    onChange={(field, value) => setRowField(index, field, value)}
-                    onRemove={() => removeRow(index)}
-                />
-            ))}
+                {rows.length === 0 && (
+                    <p className={styles.sectionDescription}>
+                        {t(copy.empty.key, copy.empty.fallback)}
+                    </p>
+                )}
 
-            {formError && (
-                <div
-                    className={styles.error}
-                    role="alert"
-                >
-                    {formError}
+                {rows.map((row, index) => (
+                    <VideoRowField
+                        // biome-ignore lint/suspicious/noArrayIndexKey: rows have no stable id until saved
+                        key={index}
+                        locale={locale}
+                        copy={copy}
+                        fieldPrefix={FIELD_PREFIX[copyScope]}
+                        index={index}
+                        row={row}
+                        disabled={isSaving}
+                        onChange={(field, value) => setRowField(index, field, value)}
+                        onRemove={() => removeRow(index)}
+                    />
+                ))}
+
+                {formError && (
+                    <div
+                        className={styles.error}
+                        role="alert"
+                    >
+                        {formError}
+                    </div>
+                )}
+
+                <div className={styles.videoSectionActions}>
+                    <button
+                        type="button"
+                        className={styles.videoAddButton}
+                        onClick={addRow}
+                        disabled={isSaving || atCap}
+                    >
+                        {t(copy.addButton.key, copy.addButton.fallback)}
+                    </button>
+
+                    <button
+                        type="submit"
+                        className={styles.videoSaveButton}
+                        disabled={isSaving || !isDirty}
+                    >
+                        {isSaving
+                            ? t(copy.saving.key, copy.saving.fallback)
+                            : t(copy.saveButton.key, copy.saveButton.fallback)}
+                    </button>
                 </div>
-            )}
-
-            <div className={styles.videoSectionActions}>
-                <button
-                    type="button"
-                    className={styles.videoAddButton}
-                    onClick={addRow}
-                    disabled={isSaving || atCap}
-                >
-                    {t(copy.addButton.key, copy.addButton.fallback)}
-                </button>
-
-                <button
-                    type="submit"
-                    className={styles.videoSaveButton}
-                    disabled={isSaving || !isDirty}
-                >
-                    {isSaving
-                        ? t(copy.saving.key, copy.saving.fallback)
-                        : t(copy.saveButton.key, copy.saveButton.fallback)}
-                </button>
-            </div>
-        </form>
+            </form>
+        </section>
     );
 }

@@ -1,5 +1,5 @@
 /**
- * @file ListingVideoSection.client.tsx
+ * @file ListingVideoWidget.client.tsx
  * @description Venue adapter of the shared video widget, mounted on the
  * "Fotos" page of the venue editor (HOS-2258).
  *
@@ -19,8 +19,8 @@ import { VideoSection } from './VideoSection.client';
 /** Most linked videos a venue may carry; mirrors `LISTING_VIDEOS_MAX` in `@repo/schemas`. */
 const MAX_VIDEOS = 6;
 
-/** Props for ListingVideoSection. */
-export interface ListingVideoSectionProps {
+/** Props for ListingVideoWidget. */
+export interface ListingVideoWidgetProps {
     readonly locale: SupportedLocale;
     readonly vertical: keyof typeof LISTING_VERTICAL_FORM_CONFIG;
     readonly listingId: string;
@@ -28,12 +28,12 @@ export interface ListingVideoSectionProps {
 }
 
 /** Video widget of the venue editor. */
-export function ListingVideoSection({
+export function ListingVideoWidget({
     locale,
     vertical,
     listingId,
     initialVideos
-}: ListingVideoSectionProps) {
+}: ListingVideoWidgetProps) {
     const { patchPath } = LISTING_VERTICAL_FORM_CONFIG[vertical];
     const save = useCallback(
         async (videos: readonly VideoPayload[]): Promise<VideoSaveResult> => {
