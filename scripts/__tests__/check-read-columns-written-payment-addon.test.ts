@@ -111,7 +111,8 @@ describe('TEST:1715:3 AC:1715:3 — each writer is required', () => {
     it('passes G-R6 across the real corpus', () => {
         expect(run()).toEqual({
             exitCode: 0,
-            output: 'OK GUARD:G-R6: verified 182 read columns.'
+            // 2026-11-18, HOS-2344: 183 (S40 reads subscription.succeeds_id).
+            output: 'OK GUARD:G-R6: verified 183 read columns.'
         });
     });
 
