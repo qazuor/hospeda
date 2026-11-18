@@ -12,48 +12,56 @@
  * - AC-C47: a target A no longer owns, or that is gone, has no label and no link.
  * - AC-C50a: writes only by default; `includeReads=true` adds reads, same order.
  */
+
+import type { McpActivityModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { z } from 'zod';
 
-type FakeRow = {
+/** One audit row, exactly as the real model returns it. */
+type FakeRow = Awaited<ReturnType<McpActivityModel['listToolCalls']>>['items'][number];
+
+/** The filter the real model receives. */
+type FakeFilter = Parameters<McpActivityModel['listToolCalls']>[0];
+
+/** A listing the fake knows, with its owner. */
+type FakeListing = {
+    readonly vertical: string;
     readonly id: string;
-    readonly loggedAt: Date;
-    readonly actorId: string | null;
-    readonly data: Record<string, unknown>;
+    readonly name: string;
+    readonly ownerId: string;
 };
 
-type FakeFilter = {
-    readonly actorId?: string;
-    readonly outcome?: string;
-    readonly clientId?: string;
-    readonly isWrite?: boolean;
-    readonly page: number;
-    readonly pageSize: number;
+type FakeState = {
+    rows: FakeRow[];
+    listings: FakeListing[];
+    lastFilter: FakeFilter | undefined;
 };
 
-const fake = vi.hoisted(() => ({
-    rows: [] as FakeRow[],
-    listings: [] as { vertical: string; id: string; name: string; ownerId: string }[],
-    lastFilter: undefined as FakeFilter | undefined
-}));
+const fake = vi.hoisted((): FakeState => ({ rows: [], listings: [], lastFilter: undefined }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const orig = await importOriginal<typeof import('@repo/service-core')>();
-    const model = {
-        listToolCalls: async (filter: FakeFilter) => {
+    // `@repo/db` is mocked globally (test/setup.ts) without these models, so
+    // the fakes extend the real classes: typed by inheritance, no cast. Only
+    // the methods the reader calls are replaced; none reaches a database.
+    const db = await vi.importActual<typeof import('@repo/db')>('@repo/db');
+
+    class FakeMcpActivityModel extends db.McpActivityModel {
+        override async listToolCalls(filter: FakeFilter) {
             fake.lastFilter = filter;
             const matching = fake.rows
                 .filter((row) => filter.actorId === undefined || row.actorId === filter.actorId)
                 .filter(
                     (row) =>
                         filter.isWrite === undefined ||
-                        (row.data.isWrite ?? true) === filter.isWrite
+                        (row.data?.isWrite ?? true) === filter.isWrite
                 )
                 .filter(
-                    (row) => filter.outcome === undefined || row.data.outcome === filter.outcome
+                    (row) => filter.outcome === undefined || row.data?.outcome === filter.outcome
                 )
                 .filter(
-                    (row) => filter.clientId === undefined || row.data.clientId === filter.clientId
+                    (row) => filter.clientId === undefined || row.data?.clientId === filter.clientId
                 )
                 .sort((a, b) => b.loggedAt.getTime() - a.loggedAt.getTime());
             const start = (filter.page - 1) * filter.pageSize;
@@ -61,15 +69,25 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 items: matching.slice(start, start + filter.pageSize),
                 total: matching.length
             };
-        },
-        findListingNames: async (input: { vertical: string; ids: readonly string[] }) =>
-            fake.listings.filter(
+        }
+
+        override async findListingNames(
+            input: Parameters<McpActivityModel['findListingNames']>[0]
+        ) {
+            return fake.listings.filter(
                 (listing) => listing.vertical === input.vertical && input.ids.includes(listing.id)
-            ),
-        findConversationOwners: async () => [],
-        findClientNames: async (input: { clientIds: readonly string[] }) =>
-            input.clientIds.map((clientId) => ({ clientId, name: `Name of ${clientId}` }))
-    };
+            );
+        }
+
+        override async findConversationOwners() {
+            return [];
+        }
+
+        override async findClientNames(input: Parameters<McpActivityModel['findClientNames']>[0]) {
+            return input.clientIds.map((clientId) => ({ clientId, name: `Name of ${clientId}` }));
+        }
+    }
+
     class ReaderOverFakeModel extends orig.McpActivityService {
         constructor(
             config: ConstructorParameters<typeof orig.McpActivityService>[0],
@@ -77,8 +95,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ) {
             super(config, {
                 ...deps,
-                model: model as unknown as NonNullable<typeof deps>['model'],
-                auditLogModel: {} as NonNullable<typeof deps>['auditLogModel']
+                model: new FakeMcpActivityModel(),
+                auditLogModel: new db.AuditLogEntryModel()
             });
         }
     }
@@ -126,10 +144,22 @@ function row(input: {
 }): FakeRow {
     sequence += 1;
     const suffix = String(sequence).padStart(12, '0');
+    const loggedAt = new Date(Date.UTC(2026, 10, 18, 10, 0, sequence));
     return {
         id: `cccccccc-cccc-4ccc-8ccc-${suffix}`,
-        loggedAt: new Date(Date.UTC(2026, 10, 18, 10, 0, sequence)),
+        logType: 'audit',
+        eventType: 'mcp.tool.call',
+        severity: 'info',
         actorId: input.actorId,
+        actorRole: null,
+        targetId: null,
+        ip: null,
+        method: null,
+        path: null,
+        statusCode: null,
+        message: 'mcp.tool.call',
+        loggedAt,
+        createdAt: loggedAt,
         data: {
             tool: input.tool,
             outcome: input.outcome ?? 'success',
@@ -150,16 +180,27 @@ function headers(actorId: string = USER_A): Record<string, string> {
     };
 }
 
-type Item = Record<string, unknown> & {
-    readonly id: string;
-    readonly tool: string;
-    readonly target?: Record<string, unknown>;
-};
+/** An item as the test reads it: the keys it asserts on, everything else kept. */
+const ItemSchema = z
+    .object({
+        id: z.string(),
+        tool: z.string(),
+        client: z.record(z.string(), z.unknown()),
+        target: z.record(z.string(), z.unknown()).optional()
+    })
+    .catchall(z.unknown());
+
+type Item = z.infer<typeof ItemSchema>;
+
+/** The items of a 200, or none for any other body. */
+const ItemsBodySchema = z.object({ data: z.object({ items: z.array(ItemSchema) }) });
 
 async function list(query = '', actorId: string = USER_A) {
     const res = await initApp().request(`${URL_BASE}${query}`, { headers: headers(actorId) });
     const body = await res.json();
-    return { res, body, items: (body.data?.items ?? []) as Item[] };
+    const parsed = ItemsBodySchema.safeParse(body);
+    const items: Item[] = parsed.success ? parsed.data.data.items : [];
+    return { res, body, items };
 }
 
 describe('GET /api/v1/protected/ai-connections/activity', () => {
@@ -306,9 +347,7 @@ describe('GET /api/v1/protected/ai-connections/activity', () => {
             );
             for (const item of items) {
                 expect(ITEM_KEYS).toEqual(expect.arrayContaining(Object.keys(item)));
-                expect(CLIENT_KEYS).toEqual(
-                    expect.arrayContaining(Object.keys(item.client as object))
-                );
+                expect(CLIENT_KEYS).toEqual(expect.arrayContaining(Object.keys(item.client)));
             }
             expect(JSON.stringify(items).toLowerCase()).not.toContain('secret');
         });

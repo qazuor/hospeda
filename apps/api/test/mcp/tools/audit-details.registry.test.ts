@@ -43,15 +43,15 @@ function longest(values: readonly unknown[]): unknown {
  * longest option. `required` mode leaves every optional field out, so both
  * branches of an "is this field present" check are exercised.
  */
-function sample(schema: z.ZodType, mode: SampleMode): unknown {
+function sample(schema: z.core.$ZodType, mode: SampleMode): unknown {
     if (schema instanceof z.ZodOptional) {
-        return mode === 'required' ? undefined : sample(schema.unwrap() as z.ZodType, mode);
+        return mode === 'required' ? undefined : sample(schema.unwrap(), mode);
     }
     if (schema instanceof z.ZodDefault || schema instanceof z.ZodPrefault) {
-        return mode === 'required' ? undefined : sample(schema.unwrap() as z.ZodType, mode);
+        return mode === 'required' ? undefined : sample(schema.unwrap(), mode);
     }
-    if (schema instanceof z.ZodNullable) return sample(schema.unwrap() as z.ZodType, mode);
-    if (schema instanceof z.ZodPipe) return sample(schema.in as z.ZodType, mode);
+    if (schema instanceof z.ZodNullable) return sample(schema.unwrap(), mode);
+    if (schema instanceof z.ZodPipe) return sample(schema.in, mode);
     if (schema instanceof z.ZodEnum) return longest(schema.options);
     if (schema instanceof z.ZodLiteral) return longest([...schema.values]);
     if (schema instanceof z.ZodUUID) return SAMPLE_UUID;
@@ -62,18 +62,19 @@ function sample(schema: z.ZodType, mode: SampleMode): unknown {
     if (schema instanceof z.ZodNumber) return schema.minValue ?? 1;
     if (schema instanceof z.ZodBoolean) return true;
     if (schema instanceof z.ZodArray) {
-        return mode === 'required' ? [] : [sample(schema.element as z.ZodType, mode)];
+        return mode === 'required' ? [] : [sample(schema.element, mode)];
     }
     if (schema instanceof z.ZodObject) return sampleObject(schema, mode);
     if (schema instanceof z.ZodUnion || schema instanceof z.ZodDiscriminatedUnion) {
-        return sample(schema.options[0] as z.ZodType, mode);
+        const [first] = schema.options;
+        if (first !== undefined) return sample(first, mode);
     }
-    throw new Error(`audit-details registry test cannot sample a ${schema.def.type} schema`);
+    throw new Error(`audit-details registry test cannot sample a ${schema._zod.def.type} schema`);
 }
 
 /** {@link sample} for an object schema: one sampled value per present field. */
 function sampleObject(schema: z.ZodObject, mode: SampleMode): Record<string, unknown> {
-    const entries = Object.entries(schema.shape as Record<string, z.ZodType>)
+    const entries = Object.entries(schema.shape)
         .map(([key, field]) => [key, sample(field, mode)] as const)
         .filter(([, value]) => value !== undefined);
     return Object.fromEntries(entries);
