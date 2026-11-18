@@ -186,6 +186,8 @@ export function VenueEventEntryCard({
                     <input
                         className={styles.input}
                         type="date"
+                        // Lets the editor focus the date of a freshly duplicated event (HOS-2254).
+                        id={`venue-event-date-${index}`}
                         value={entry.date}
                         aria-label={t('venue.owner.editor.venueEventsManager.date', 'Fecha')}
                         onChange={(event) => {

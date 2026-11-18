@@ -41,9 +41,17 @@ import { useSectionVaciar } from '@/hooks/useSectionVaciar';
 import { apiClient } from '@/lib/api/client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { EventDraft } from '@/lib/venue/venue-event-draft';
+import {
+    countCurrent,
+    draftFromRow,
+    EMPTY_DRAFT,
+    type EventDraft,
+    movedBy,
+    type VenueEventRow
+} from '@/lib/venue/venue-event-draft';
 import { VenueEventEntryCard } from './VenueEventEntryCard.client';
 import styles from './VenueEventsManager.module.css';
+import { VenueEventsPastGroup, VenueEventsReadOnlyList } from './VenueEventsPastGroup.client';
 import {
     translateUpsell,
     VenueSectionLockedPanel,
@@ -63,19 +71,6 @@ const VENUE_EVENTS_UPSELL_COPY = {
     noPlanKey: 'venue.owner.editor.venueEventsManager.lockedNoPlan',
     noPlanFallback: 'Mantener una agenda de eventos está disponible en un plan pago.'
 } as const;
-
-/** One agenda entry, as the API returns it. */
-interface VenueEventRow {
-    readonly id: string;
-    readonly title: string;
-    readonly description: string | null;
-    readonly recurrence: 'once' | 'weekly';
-    readonly date: string | null;
-    readonly weekday: number | null;
-    readonly startTime: string;
-    readonly endTime: string | null;
-    readonly isActive: boolean;
-}
 
 /** Shape of `GET`/`PUT .../events`. */
 interface EventsEnvelope {
@@ -104,33 +99,8 @@ export interface VenueEventsManagerProps {
     readonly upsellPlanName?: string | null;
 }
 
-const EMPTY_DRAFT: EventDraft = {
-    title: '',
-    description: '',
-    recurrence: 'weekly',
-    date: '',
-    weekday: 1,
-    startTime: '',
-    endTime: '',
-    isActive: true
-};
-
 /** What the panel is doing right now. */
 type PanelState = 'loading' | 'idle' | 'saving';
-
-/** Moves one entry of an array, returning a new array. Out-of-range is a no-op. */
-function movedBy<T>(list: readonly T[], index: number, delta: number): T[] {
-    const target = index + delta;
-    if (target < 0 || target >= list.length) {
-        return [...list];
-    }
-    const next = [...list];
-    const [moved] = next.splice(index, 1);
-    if (moved !== undefined) {
-        next.splice(target, 0, moved);
-    }
-    return next;
-}
 
 export function VenueEventsManager({
     listingId,
@@ -145,6 +115,8 @@ export function VenueEventsManager({
     const [state, setState] = useState<PanelState>('loading');
     const [message, setMessage] = useState<string | null>(null);
     const [isLocked, setIsLocked] = useState(false);
+    /** Index of a just-duplicated entry whose date field should take focus. */
+    const [focusIndex, setFocusIndex] = useState<number | null>(null);
     /** HOS-1854. See {@link VenueDailySpecialsManager} for the same wiring. */
     const { gate: readGate } = useListingPlanGate({
         vertical: 'venue',
@@ -172,19 +144,7 @@ export function VenueEventsManager({
                 return;
             }
             if (result.ok) {
-                setEntries(
-                    result.data.events.map((event) => ({
-                        id: event.id,
-                        title: event.title,
-                        description: event.description ?? '',
-                        recurrence: event.recurrence,
-                        date: event.date ?? '',
-                        weekday: event.weekday ?? 1,
-                        startTime: event.startTime,
-                        endTime: event.endTime ?? '',
-                        isActive: event.isActive
-                    }))
-                );
+                setEntries(result.data.events.map(draftFromRow));
             }
             setState('idle');
         })();
@@ -198,16 +158,67 @@ export function VenueEventsManager({
 
     const addEntry = useCallback(() => {
         setEntries((prev) =>
-            prev.length >= VENUE_EVENTS_MAX_ENTRIES ? prev : [...prev, { ...EMPTY_DRAFT }]
+            countCurrent(prev) >= VENUE_EVENTS_MAX_ENTRIES ? prev : [...prev, { ...EMPTY_DRAFT }]
         );
     }, []);
+
+    /**
+     * HOS-2254. Copies a past event into a new LIVE draft with the date cleared,
+     * so the owner has to pick a new one, and focuses that date field. The past
+     * original stays where it is until the owner removes it.
+     */
+    const duplicateEntry = useCallback(
+        (index: number) => {
+            const source = entries[index];
+            if (!source || countCurrent(entries) >= VENUE_EVENTS_MAX_ENTRIES) {
+                return;
+            }
+            const { id: _id, isPast: _isPast, ...rest } = source;
+            setEntries([...entries, { ...rest, date: '', isActive: true }]);
+            setFocusIndex(entries.length);
+        },
+        [entries]
+    );
+
+    const removeAllPast = useCallback(() => {
+        if (
+            !window.confirm(
+                t(
+                    'venue.owner.editor.venueEventsManager.removeAllPastConfirm',
+                    '¿Borrar todos los eventos pasados? Se quitan al guardar la agenda.'
+                )
+            )
+        ) {
+            return;
+        }
+        setEntries((prev) => prev.filter((entry) => !entry.isPast));
+    }, [t]);
+
+    // Focus the date input of the entry `duplicateEntry` just appended.
+    useEffect(() => {
+        if (focusIndex === null) {
+            return;
+        }
+        document.getElementById(`venue-event-date-${focusIndex}`)?.focus();
+        setFocusIndex(null);
+    }, [focusIndex]);
 
     const removeEntry = useCallback((index: number) => {
         setEntries((prev) => prev.filter((_, i) => i !== index));
     }, []);
 
     const moveEntry = useCallback((index: number, delta: number) => {
-        setEntries((prev) => movedBy(prev, index, delta));
+        // Past entries live in their own group, so a move steps over them: the
+        // target is the neighbouring LIVE entry, not the neighbouring array slot.
+        setEntries((prev) => {
+            const live = prev.flatMap((entry, i) => (entry.isPast ? [] : [i]));
+            const position = live.indexOf(index);
+            const target = live[position + delta];
+            if (position < 0 || target === undefined) {
+                return prev;
+            }
+            return movedBy(prev, index, target - index);
+        });
     }, []);
 
     const patchEntry = useCallback((index: number, patch: Partial<EventDraft>) => {
@@ -324,7 +335,9 @@ export function VenueEventsManager({
     const vaciar = useSectionVaciar({ clear: clearEvents });
 
     const busy = state !== 'idle';
-    const atMax = entries.length >= VENUE_EVENTS_MAX_ENTRIES;
+    // The ceiling counts the entries that are not past (HOS-2254).
+    const atMax = countCurrent(entries) >= VENUE_EVENTS_MAX_ENTRIES;
+    const pastIndexes = entries.flatMap((entry, i) => (entry.isPast ? [i] : []));
 
     return (
         <section
@@ -367,65 +380,33 @@ export function VenueEventsManager({
                             )}
                         </p>
                     ) : (
-                        entries.map((entry, index) => (
-                            <div
-                                // biome-ignore lint/suspicious/noArrayIndexKey: stored rows carry no id in this draft shape
-                                key={`locked-event-${index}`}
-                                className={styles.card}
-                            >
-                                <p className={styles.readOnlyName}>{entry.title}</p>
-                                {entry.description ? (
-                                    <p className={styles.intro}>{entry.description}</p>
-                                ) : null}
-                                <p className={styles.intro}>
-                                    {entry.recurrence === 'weekly'
-                                        ? t(
-                                              'venue.owner.editor.venueEventsManager.recurrenceWeekly',
-                                              'Todas las semanas'
-                                          )
-                                        : t(
-                                              'venue.owner.editor.venueEventsManager.recurrenceOnce',
-                                              'Un solo día'
-                                          )}
-                                    {entry.recurrence === 'weekly'
-                                        ? ` · ${weekdayLabels[entry.weekday] ?? ''}`
-                                        : entry.date
-                                          ? ` · ${entry.date}`
-                                          : ''}
-                                    {` · ${entry.startTime}${
-                                        entry.endTime ? ` – ${entry.endTime}` : ''
-                                    }`}
-                                </p>
-                                {entry.isActive ? null : (
-                                    <p className={styles.readOnlyNote}>
-                                        {t(
-                                            'venue.owner.editor.lockedSection.inactive',
-                                            'No se muestra'
-                                        )}
-                                    </p>
-                                )}
-                            </div>
-                        ))
+                        <VenueEventsReadOnlyList
+                            entries={entries}
+                            t={t}
+                            weekdayLabels={weekdayLabels}
+                        />
                     )}
                 </VenueSectionLockedPanel>
             ) : (
                 <>
-                    {entries.map((entry, index) => (
-                        <VenueEventEntryCard
-                            // Index-keyed on purpose: a draft row has no id, and the
-                            // whole list is re-submitted as a document.
-                            // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
-                            key={`event-${index}`}
-                            entry={entry}
-                            index={index}
-                            t={t}
-                            weekdayLabels={weekdayLabels}
-                            onPatch={patchEntry}
-                            onMove={moveEntry}
-                            onRemove={removeEntry}
-                            onSetRecurrence={setRecurrence}
-                        />
-                    ))}
+                    {entries.map((entry, index) =>
+                        entry.isPast ? null : (
+                            <VenueEventEntryCard
+                                // Index-keyed on purpose: a draft row has no id, and the
+                                // whole list is re-submitted as a document.
+                                // biome-ignore lint/suspicious/noArrayIndexKey: draft rows carry no stable id by design
+                                key={`event-${index}`}
+                                entry={entry}
+                                index={index}
+                                t={t}
+                                weekdayLabels={weekdayLabels}
+                                onPatch={patchEntry}
+                                onMove={moveEntry}
+                                onRemove={removeEntry}
+                                onSetRecurrence={setRecurrence}
+                            />
+                        )
+                    )}
 
                     <button
                         type="button"
@@ -452,6 +433,17 @@ export function VenueEventsManager({
                             )}
                         </p>
                     ) : null}
+
+                    <VenueEventsPastGroup
+                        entries={entries}
+                        pastIndexes={pastIndexes}
+                        atMax={atMax}
+                        t={t}
+                        tPlural={tPlural}
+                        onDuplicate={duplicateEntry}
+                        onRemove={removeEntry}
+                        onRemoveAll={removeAllPast}
+                    />
 
                     {/*
                      * `type="button"`, like every control here: this panel lives
