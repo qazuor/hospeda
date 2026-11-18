@@ -3,18 +3,21 @@ title: Rubros de ficha (BusinessLine) y renombrado de Gastronomía a «Comer y s
 linear: HOS-1787
 statusSource: linear
 created: 2026-10-25
-status: draft
+status: done
+closed: 2026-11-18
 ---
 
 # HOS-1787 · Rubros de ficha y «Comer y salir»
 
-> **Estado**: especificándose. Vuelta 1 de revisión adversarial consolidada (48 hallazgos) y respondida por el
-> owner (DEC-FAC-026…039). Vuelta 2 consolidada (69 → 58 hallazgos), con los arreglos aplicados
-> (DEC-FAC-040…059, objetables) y **respondida por el owner** (Q-11…Q-20 → DEC-FAC-060…069; OD-17…OD-26
-> cerradas). Vuelta 3, acotada a los deltas, con **0 CRÍTICA** (3 ALTA, 5 MEDIA, 7 BAJA), toda aplicada sin necesitar
-> al owner (DEC-FAC-070…076, objetables). **Revisiones cerradas.** Próximo: crear en Linear los hijos 1-9 de HOS-1787
-> (los crea el orquestador al cerrar la revisión) y descomponer en tareas. El estado macro vive en Linear (HOS-1787);
-> este archivo es el índice técnico.
+> **Estado**: implementada y cerrada (2026-11-18). Los hijos 1-9 están en Done en Linear.
+> Del 1 al 7 y el 9 entraron con la épica `epic/HOS-1787-comer-y-salir` (PR #4200) y ya están en `main`.
+> El renombrado físico entró por `epic/HOS-1801-renombrado-fisico`, y el 301 `gastronomia` → `comer-y-salir`
+> salió en HOS-1956. El hijo 8, migración del editor de alojamiento al catálogo, es HOS-1809: está mergeado
+> en `staging`, con el smoke de staging firmado el 2026-11-17, y entra a `main` con la próxima promoción.
+> La única hoja sin implementar es HOS-1857 (5.5, aviso antes de bajar de plan, post-MVP por DEC-FAC-083).
+> Se movió a la épica HOS-2252 («planes con valor para la noche»).
+> El estado macro vive en Linear (HOS-1787); este archivo es el índice técnico. La historia de la especificación
+> (tres vueltas de revisión adversarial, DEC-FAC-001…084) sigue en `docs/`.
 
 ## Qué es
 
@@ -43,7 +46,7 @@ Por qué y con qué alternativas: [`docs/00-PDR.md`](docs/00-PDR.md) y
 | `docs/10-revision-vuelta-1/` · `docs/11-resolucion-vuelta-1/` | vuelta 1: `00-consolidado.md`, `00-arreglos-aplicados.md`, `10-decisiones-del-owner.md` |
 | `docs/12-revision-vuelta-2/` · `docs/13-resolucion-vuelta-2/` | vuelta 2: revisiones A/B/C, `00-consolidado.md`, `00-arreglos-aplicados.md`, `10-decisiones-del-owner.md` (Q-11…Q-20, respondidas) |
 | `docs/14-revision-vuelta-3/` · `docs/15-resolucion-vuelta-3/` | vuelta 3 (deltas): `R-deltas.md`, `00-arreglos-aplicados.md` |
-| `sub-specs/1-renombrado.md` … `7-admin.md`, `9-copy-del-embudo.md` | una por hijo de Linear (el 8, migración del editor de alojamiento, todavía no tiene sub-spec). Los hijos de Linear se crean al cerrar la revisión |
+| `sub-specs/1-renombrado.md` … `7-admin.md`, `9-copy-del-embudo.md` | una por hijo de Linear. El 8 (HOS-1809, migración del editor de alojamiento) se especificó en su propio issue y no tiene sub-spec acá |
 
 ## Fases (hijos de HOS-1787)
 
@@ -92,6 +95,10 @@ bloqueante del corte (DEC-FAC-028); como prod salta de la `0124` al mundo nuevo 
 5. **Cambiar de rubro oculta, no borra**, y lo oculto no sale por ningún lector: la lista cerrada de
    lectores de contenido vive en el sub-spec 3.
 
-## Próximo paso
+## Cierre
 
-Descomposición en tareas de cada hijo. Ver `docs/03-handoff.md`.
+Implementada. No queda trabajo en esta épica:
+
+- **HOS-1809** (hijo 8): en `staging`, pendiente sólo de la promoción a `main`.
+- **HOS-1857** (5.5, aviso antes de bajar de plan): post-MVP. Pasó a HOS-2252 el 2026-11-18, por decisión del owner.
+- **HOS-1796** (diferencial de noche): se continúa en HOS-2252.
