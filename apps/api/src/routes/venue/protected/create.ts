@@ -143,7 +143,7 @@ export function venueCreateBusinessLines({
     body
 }: {
     readonly body: Record<string, unknown> | undefined;
-}): BusinessLine[] {
+}): readonly BusinessLine[] {
     if (Array.isArray(body?.businessLines))
         return body.businessLines.filter(
             (line): line is string => typeof line === 'string'
