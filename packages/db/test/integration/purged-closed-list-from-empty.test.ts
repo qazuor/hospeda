@@ -29,6 +29,8 @@ const PASSAGE_TABLE = 'cutover_v6_deleted_listing';
 const EXPECTED_ENTITY_TYPE = [
     'domain_event',
     'entity_comments',
+    'entity_interaction_monthly_rollups',
+    'entity_interactions',
     'entity_view_monthly_rollups',
     'entity_views',
     'fix_request',
@@ -131,7 +133,7 @@ afterAll(async () => {
 });
 
 describe('TEST:V6:15 the schema walk over a database built from empty', () => {
-    it('finds 29 tables by FK and the 13 expected by entity_type, plus the passage table', () => {
+    it('finds 29 tables by FK and the 15 expected by entity_type, plus the passage table', () => {
         expect(byFk).toHaveLength(29);
         // The passage table is seen by the catalog walk and excluded by name (see PASSAGE_TABLE).
         expect(byEntityType).toContain(PASSAGE_TABLE);
