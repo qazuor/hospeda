@@ -9,7 +9,12 @@
  */
 
 import { AnalyticsEvents } from '@repo/analytics';
-import { DUPLICATE_LOCATION_REASON, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import {
+    DUPLICATE_LOCATION_REASON,
+    ServiceErrorCode,
+    sectionsTouchedByBody,
+    VerticalEnum
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ACCOMMODATION_CACHE_INVALIDATION_PREFIXES } from '../../../../src/middlewares/accommodation-cache-invalidation';
@@ -357,6 +362,22 @@ describe('create_listing', () => {
             const [args] = decideSpy.mock.calls[0] ?? [];
             expect(args.config.businessLinesFromBody({ body: args.body })).toEqual(['food']);
             expect(args.body.businessLines).toEqual(['food']);
+        });
+
+        it('venue: the access step receives the sections the body writes, as the route', async () => {
+            // Arrange: a body with a location writes the location section.
+            const input = { ...VALID_INPUT.venue, street: 'Calle Falsa', number: '123' };
+
+            // Act
+            await run(input);
+
+            // Assert
+            const [args] = decideSpy.mock.calls[0] ?? [];
+            const expected = sectionsTouchedByBody({ vertical: 'venue', body: args.body }).map(
+                (id) => ({ id, intent: 'write' })
+            );
+            expect(expected.length).toBeGreaterThan(0);
+            expect(args.config.listingSection({ body: args.body })).toEqual(expected);
         });
 
         it('writes exactly the previewed point, never re-resolving the link (AC-C23b)', async () => {
