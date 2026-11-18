@@ -245,11 +245,17 @@ function refineRecurrenceShape(
 /**
  * One agenda entry as the owner submits it.
  *
- * Carries NO id. The agenda is written as a whole document (see
- * {@link VenueEventsReplacePayloadSchema}), so an id supplied by the
- * client would be an id the server has to either trust or ignore — and trusting
- * one is how a caller writes an event into somebody else's listing. Same
- * reasoning `venueMenuItemInputSchema` states.
+ * Carries an OPTIONAL `id` (HOS-2291). The agenda is still written as a whole
+ * document, but an entry that already exists must keep its identity across a
+ * save, because other features point at it (clicks, reminders, guest lists, a
+ * featured slot). An entry WITH an `id` updates that stored event; an entry
+ * WITHOUT one is created; a stored event the document no longer mentions is
+ * deleted.
+ *
+ * The id is never trusted: the service only honours one that belongs to THIS
+ * venue's stored agenda. An id of another venue, or one that does not exist,
+ * answers 404 and writes nothing, so a caller cannot update or re-parent an
+ * event that is not theirs.
  *
  * ## Why an end time earlier than the start is accepted
  *
@@ -262,6 +268,12 @@ function refineRecurrenceShape(
  */
 export const VenueEventInputSchema = z
     .object({
+        /**
+         * Id of the stored event this entry updates. Omit it for a new entry.
+         * See the note above: an id that is not one of this venue's own events
+         * is refused by the service, never created or re-parented.
+         */
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).optional(),
         /** What the event is called. */
         title: z
             .string()
