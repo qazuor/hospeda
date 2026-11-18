@@ -20,7 +20,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
-const locale = Astro.locals.locale as SupportedLocale;
+const locale: SupportedLocale = Astro.locals.locale;
 
 const { t } = createTranslations(locale);
 const title = t('account.aiAssistants.activity.title', 'Historial de tus asistentes');
