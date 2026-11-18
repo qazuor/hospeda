@@ -17,6 +17,7 @@ import {
     PartnerTypePgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { partnerTypes } from './partner-type.dbschema.ts';
 
 /**
  * Analytics data stored as JSONB
@@ -32,7 +33,23 @@ export const partners = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         slug: varchar('slug', { length: 255 }).notNull().unique(),
         name: varchar('name', { length: 255 }).notNull(),
-        type: PartnerTypePgEnum('type').notNull(),
+        /**
+         * Legacy closed type (HOS-2336 EXPAND).
+         *
+         * @deprecated Superseded by {@link typeId}. Nullable since release N so a
+         * catalog type with no legacy enum value (`media`, `person`, any admin-made
+         * type) can be stored; still dual-written with the legacy value whenever
+         * the type's slug has one, so an app rollback keeps reading it. Dropped,
+         * with `partner_type_enum`, in the N+1 contract release.
+         */
+        type: PartnerTypePgEnum('type'),
+        /**
+         * The partner's type in the admin-managed catalog (HOS-2336). Nullable in
+         * release N only (expand): the seed data-migration backfills it from
+         * {@link type}; the N+1 contract release makes it NOT NULL. `RESTRICT`:
+         * a type in use cannot disappear under its partners.
+         */
+        typeId: uuid('type_id').references(() => partnerTypes.id, { onDelete: 'restrict' }),
         logoUrl: text('logo_url'),
         websiteUrl: text('website_url'),
         description: text('description'),
@@ -167,6 +184,7 @@ export const partners = pgTable(
     (table) => ({
         partners_slug_idx: index('partners_slug_idx').on(table.slug),
         partners_type_idx: index('partners_type_idx').on(table.type),
+        partners_typeId_idx: index('partners_typeId_idx').on(table.typeId),
         partners_lifecycleState_idx: index('partners_lifecycleState_idx').on(table.lifecycleState),
         partners_ownerUserId_idx: index('partners_ownerUserId_idx').on(table.ownerUserId),
         uq_partners_owner_user_id: uniqueIndex('uq_partners_owner_user_id')
@@ -187,6 +205,7 @@ export const partnersRelations = relations(partners, ({ one }) => ({
         references: [users.id],
         relationName: 'partnerOwner'
     }),
+    partnerType: one(partnerTypes, { fields: [partners.typeId], references: [partnerTypes.id] }),
     createdBy: one(users, { fields: [partners.createdById], references: [users.id] }),
     updatedBy: one(users, { fields: [partners.updatedById], references: [users.id] }),
     deletedBy: one(users, { fields: [partners.deletedById], references: [users.id] })

@@ -255,13 +255,19 @@ export const partnerApplicationModel = {
         readonly tx: DrizzleClient;
         readonly name: string;
         readonly slug: string;
-        readonly type: string;
+        /**
+         * Legacy enum value, dual-written during release N (HOS-2336). `null`
+         * when the catalog type has no legacy value (e.g. `media`).
+         */
+        readonly type: string | null;
+        /** Catalog type id (HOS-2336). Always set. */
+        readonly typeId: string;
         readonly actorId: string;
         readonly claimEmail: string;
     }): Promise<{ readonly id: string }> {
         const result = await args.tx.execute(sql`
-            INSERT INTO partners (slug, name, type, lifecycle_state, created_by_id, updated_by_id, claim_email)
-            VALUES (${args.slug}, ${args.name}, ${args.type}, 'DRAFT', ${args.actorId}, ${args.actorId}, ${args.claimEmail})
+            INSERT INTO partners (slug, name, type, type_id, lifecycle_state, created_by_id, updated_by_id, claim_email)
+            VALUES (${args.slug}, ${args.name}, ${args.type}, ${args.typeId}, 'DRAFT', ${args.actorId}, ${args.actorId}, ${args.claimEmail})
             RETURNING id`);
         const row = result.rows[0];
         if (!row) throw new Error('Partner insert did not return an id');

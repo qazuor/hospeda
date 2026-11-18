@@ -1611,6 +1611,13 @@
       "when": 1794940750138,
       "tag": "0229_hos919_provider_trade_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 230,
+      "version": "7",
+      "when": 1794983089006,
+      "tag": "0230_hos2336_partner_types_catalog",
+      "breakpoints": true
     }
   ]
 }
