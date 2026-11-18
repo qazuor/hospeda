@@ -188,14 +188,14 @@ export function describeAgendaSaveError(input: {
     if (message.includes('zodError.venue.events.maxTotal')) {
         return t(
             'venue.owner.editor.venueEventsManager.errorMaxTotal',
-            'La agenda no puede tener más de {{max}} eventos en total',
+            'Límite de eventos en total: {{max}}',
             { max: VENUE_EVENTS_MAX_TOTAL_ENTRIES }
         );
     }
     if (message.includes('zodError.venue.events.max')) {
         return t(
             'venue.owner.editor.venueEventsManager.errorMaxCurrent',
-            'La agenda no puede tener más de {{max}} eventos',
+            'Límite de eventos vigentes: {{max}}',
             {
                 max: VENUE_EVENTS_MAX_ENTRIES
             }

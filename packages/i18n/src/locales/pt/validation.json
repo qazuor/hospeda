@@ -3330,7 +3330,7 @@
             "max": "A agenda não pode ter mais de {{max}} eventos",
             "max_one": "A agenda não pode ter mais de {{max}} evento",
             "max_other": "A agenda não pode ter mais de {{max}} eventos",
-            "maxTotal": "A agenda não pode ter mais de {{max}} eventos no total",
+            "maxTotal": "Limite de eventos no total: {{max}}",
             "newPast": "Não é possível criar um evento com data passada"
         },
         "featureIds": {

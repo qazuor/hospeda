@@ -3330,7 +3330,7 @@
             "max": "The schedule cannot have more than {{max}} events",
             "max_one": "The schedule cannot have more than {{max}} event",
             "max_other": "The schedule cannot have more than {{max}} events",
-            "maxTotal": "The schedule cannot have more than {{max}} events in total",
+            "maxTotal": "Limit of events in total: {{max}}",
             "newPast": "A new event cannot have a date in the past"
         },
         "featureIds": {
