@@ -18,7 +18,7 @@ import {
     ensureTestPartnerType,
     insertPending,
     readPartner,
-    TEST_BUSINESS_PARTNER_TYPE_ID
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const app = initApp();
@@ -27,8 +27,11 @@ const REASON = 'private admin reason';
 const BODY = {
     reason: REASON,
     name: 'HOS1485 Mail Partner',
-    typeId: TEST_BUSINESS_PARTNER_TYPE_ID
-} as const;
+    // Read lazily: the id is only known after `ensureTestPartnerType` runs.
+    get typeId(): string {
+        return testPartnerTypeId();
+    }
+};
 const permissions = [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.PARTNER_RESOLVE_APPLICATION];
 const emails: string[] = [];
 const applicationIds: string[] = [];

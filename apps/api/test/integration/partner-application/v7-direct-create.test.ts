@@ -13,7 +13,7 @@ import { actorHeaders, createOwner } from '../listing-publication/publication-ro
 import {
     createApplicationEmail,
     ensureTestPartnerType,
-    TEST_BUSINESS_PARTNER_TYPE_ID
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const app = initApp();
@@ -47,7 +47,7 @@ async function createDirect(input: { readonly name: string; readonly claimEmail?
         body: JSON.stringify({
             ...input,
             slug: input.name.toLowerCase().replaceAll(' ', '-'),
-            typeId: TEST_BUSINESS_PARTNER_TYPE_ID,
+            typeId: testPartnerTypeId(),
             lifecycleState: 'ACTIVE'
         })
     });

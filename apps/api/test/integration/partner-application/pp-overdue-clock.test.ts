@@ -21,7 +21,7 @@ import {
     createApplicationEmail,
     ensureTestPartnerType,
     insertPending,
-    TEST_BUSINESS_PARTNER_TYPE_ID
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const app = initApp();
@@ -66,7 +66,7 @@ async function approve(applicationId: string, actorId: string, name: string) {
         body: JSON.stringify({
             reason: 'Clock test approval',
             name,
-            typeId: TEST_BUSINESS_PARTNER_TYPE_ID
+            typeId: testPartnerTypeId()
         })
     });
 }

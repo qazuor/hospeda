@@ -14,7 +14,7 @@ import {
     deletePartners,
     ensureTestPartnerType,
     insertPending,
-    TEST_BUSINESS_PARTNER_TYPE_ID
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const app = initApp();
@@ -229,7 +229,7 @@ describe('TEST:V7:5 PP3 rejection', () => {
             body: {
                 reason: REASON,
                 name: 'PP3 Approved Fixture',
-                typeId: TEST_BUSINESS_PARTNER_TYPE_ID
+                typeId: testPartnerTypeId()
             }
         });
         expect(approval.status).toBe(200);

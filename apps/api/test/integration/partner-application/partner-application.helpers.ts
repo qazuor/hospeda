@@ -31,7 +31,7 @@ export async function insertPending({
 /** Reads a Partner row for assertions owned by the current test. */
 export async function readPartner({ id }: { readonly id: string }) {
     const result = await getDb().execute(sql`
-        SELECT id, slug, name, type, lifecycle_state, owner_user_id, claim_secret_hash, claim_email
+        SELECT id, slug, name, type, type_id, lifecycle_state, owner_user_id, claim_secret_hash, claim_email
         FROM partners WHERE id = ${id}::uuid`);
     return result.rows[0];
 }
@@ -92,23 +92,60 @@ export async function insertClaimablePartner(args: {
     return { partnerId, applicationId: String(application.rows[0]?.id) };
 }
 
-/**
- * Catalog id of the `business` partner type used by approval tests (HOS-2336).
- * The integration database is built by migrations only, so the catalog row the
- * seed would provide does not exist; {@link ensureTestPartnerType} inserts it.
- */
-export const TEST_BUSINESS_PARTNER_TYPE_ID = 'a2336000-0000-4000-8000-000000000001';
+/** Catalog rows the approval tests rely on, keyed by slug (HOS-2336). */
+const TEST_PARTNER_TYPES = {
+    business: { es: 'Comercio', en: 'Business', pt: 'Comércio', weight: 10 },
+    media: { es: 'Medio', en: 'Media outlet', pt: 'Meio de comunicação', weight: 40 }
+} as const;
+
+/** A partner type slug {@link ensureTestPartnerType} can provide. */
+export type TestPartnerTypeSlug = keyof typeof TEST_PARTNER_TYPES;
+
+const ensuredPartnerTypeIds = new Map<TestPartnerTypeSlug, string>();
 
 /**
- * Inserts the ACTIVE `business` partner type with {@link TEST_BUSINESS_PARTNER_TYPE_ID}
- * when it is missing. Idempotent and shared by every file that approves an
- * application or creates a partner (both now require `typeId`).
+ * Makes sure the ACTIVE catalog row for `slug` exists and returns ITS id.
+ *
+ * The integration database is built by migrations only, so the rows the seed
+ * would provide may be missing; another suite may also have created them with
+ * a different id. Upserting on the slug and reading the id back is the only
+ * answer that is right in both cases. Shared by every file that approves an
+ * application or creates a partner (both require `typeId`).
+ *
+ * @param input - The slug to ensure, `business` by default.
+ * @returns The catalog id of that type.
  */
-export async function ensureTestPartnerType(): Promise<string> {
-    await getDb().execute(sql`
-        INSERT INTO partner_types (id, slug, name_i18n, display_weight, lifecycle_state)
-        VALUES (${TEST_BUSINESS_PARTNER_TYPE_ID}::uuid, 'business',
-                '{"es":"Comercio","en":"Business","pt":"Comércio"}'::jsonb, 10, 'ACTIVE')
-        ON CONFLICT DO NOTHING`);
-    return TEST_BUSINESS_PARTNER_TYPE_ID;
+export async function ensureTestPartnerType({
+    slug = 'business'
+}: {
+    readonly slug?: TestPartnerTypeSlug;
+} = {}): Promise<string> {
+    const row = TEST_PARTNER_TYPES[slug];
+    const nameI18n = JSON.stringify({ es: row.es, en: row.en, pt: row.pt });
+    const result = await getDb().execute(sql`
+        INSERT INTO partner_types (slug, name_i18n, display_weight, lifecycle_state)
+        VALUES (${slug}, ${nameI18n}::jsonb, ${row.weight}, 'ACTIVE')
+        ON CONFLICT (slug) DO UPDATE
+            SET lifecycle_state = 'ACTIVE', deleted_at = NULL, updated_at = now()
+        RETURNING id`);
+    const id = String(result.rows[0]?.id);
+    ensuredPartnerTypeIds.set(slug, id);
+    return id;
+}
+
+/**
+ * The id {@link ensureTestPartnerType} returned for `slug` in this file.
+ *
+ * @param input - The slug, `business` by default.
+ * @returns The catalog id.
+ * @throws When the type was not ensured first (a `beforeAll` is missing).
+ */
+export function testPartnerTypeId({
+    slug = 'business'
+}: {
+    readonly slug?: TestPartnerTypeSlug;
+} = {}): string {
+    const id = ensuredPartnerTypeIds.get(slug);
+    if (!id) throw new Error(`ensureTestPartnerType({ slug: '${slug}' }) must run first`);
+    return id;
 }

@@ -15,7 +15,7 @@ import {
     deletePartners,
     ensureTestPartnerType,
     insertPending,
-    TEST_BUSINESS_PARTNER_TYPE_ID
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const { sendAppEmail, sentEmails } = vi.hoisted(() => {
@@ -41,7 +41,10 @@ const oldEmailApiKey = env.HOSPEDA_EMAIL_API_KEY;
 const BODY = {
     reason: 'Reviewed application',
     name: 'Claim Test Partner',
-    typeId: TEST_BUSINESS_PARTNER_TYPE_ID
+    // Read lazily: the id is only known after `ensureTestPartnerType` runs.
+    get typeId(): string {
+        return testPartnerTypeId();
+    }
 };
 const PERMISSIONS = [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.PARTNER_RESOLVE_APPLICATION];
 

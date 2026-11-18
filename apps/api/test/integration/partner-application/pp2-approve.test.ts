@@ -20,7 +20,7 @@ import {
     insertPending,
     readApplications,
     readPartner,
-    TEST_BUSINESS_PARTNER_TYPE_ID
+    testPartnerTypeId
 } from './partner-application.helpers';
 
 const app = initApp();
@@ -28,8 +28,11 @@ const REASON = '  The application was reviewed  ';
 const BODY = {
     reason: REASON,
     name: 'HOS1485 Example Partner',
-    typeId: TEST_BUSINESS_PARTNER_TYPE_ID
-} as const;
+    // Read lazily: the id is only known after `ensureTestPartnerType` runs.
+    get typeId(): string {
+        return testPartnerTypeId();
+    }
+};
 const GRANTED_PERMISSIONS = [
     PermissionEnum.ACCESS_PANEL_ADMIN,
     PermissionEnum.PARTNER_RESOLVE_APPLICATION
@@ -154,16 +157,18 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
             partner_id: partnerId
         });
         const partner = await readPartner({ id: partnerId });
-        expect(partner).toMatchObject({
+        // Exact on purpose: the dual-write (HOS-2336) must write BOTH columns.
+        expect(partner).toEqual({
             id: partnerId,
+            slug: expect.stringMatching(/^hos1485-example-partner-/),
             name: BODY.name,
             type: 'business',
+            type_id: testPartnerTypeId(),
             lifecycle_state: 'DRAFT',
             owner_user_id: null,
             claim_secret_hash: null,
             claim_email: applicantEmail
         });
-        expect(String(partner?.slug)).toMatch(/^hos1485-example-partner-/);
         const users = await getDb().execute(sql`
             SELECT id FROM users WHERE lower(email) = lower(${applicantEmail})`);
         expect(users.rows).toHaveLength(1);
@@ -332,6 +337,21 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         }
         expect(await application(id)).toMatchObject({ status: 'PENDING', partner_id: null });
         expect(await events(id)).toEqual([]);
+    });
+
+    it('(g1) approves with a non-legacy type: type_id set, legacy type NULL (HOS-2336)', async () => {
+        const actorId = await admin();
+        const id = await pending(email());
+        const mediaId = await ensureTestPartnerType({ slug: 'media' });
+
+        const response = await approve({ id, actorId, body: { ...BODY, typeId: mediaId } });
+
+        expect(response.status).toBe(200);
+        const partnerId = (response.body as { data: { partnerId: string } }).data.partnerId;
+        partnerIds.push(partnerId);
+        const partner = await readPartner({ id: partnerId });
+        expect(partner?.type_id).toBe(mediaId);
+        expect(partner?.type).toBeNull();
     });
 
     it('(g2) refuses an inactive or unknown partner type without approving (HOS-2336 AC-4.3)', async () => {
