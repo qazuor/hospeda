@@ -84,8 +84,8 @@ export function priceLabelOf({ input }: { readonly input: CreateListingInput }):
     return `Desde ${amount}${unit}`;
 }
 
-/** Spanish name of each vertical, as the portal names it. */
-const VERTICAL_LABELS: Readonly<Record<CreateListingInput['vertical'], string>> = {
+/** Spanish name of each vertical, as the portal names it (also the publish form's). */
+export const VERTICAL_LABELS: Readonly<Record<CreateListingInput['vertical'], string>> = {
     [VerticalEnum.ACCOMMODATION]: 'Alojamiento',
     [VerticalEnum.VENUE]: 'Comer y salir',
     [VerticalEnum.EXPERIENCE]: 'Experiencia'
@@ -98,10 +98,12 @@ const FACT_FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
     ['priceLabel', 'Precio']
 ];
 
-/** Fields the user (through the model) wrote, each a quoted one-line value. */
+/**
+ * Fields the user (through the model) wrote, each a quoted one-line value. Each
+ * cap is the create schemas' maximum, so the form shows everything written.
+ */
 const TEXT_FIELD_LABELS: ReadonlyArray<readonly [string, string, number]> = [
-    ['name', 'Nombre', 120],
-    ['summary', 'Resumen', 300],
+    ['name', 'Nombre', 100],
     ['maxGuests', 'Huéspedes como máximo', 20],
     ['bedrooms', 'Dormitorios', 20],
     ['bathrooms', 'Baños', 20],
@@ -109,8 +111,14 @@ const TEXT_FIELD_LABELS: ReadonlyArray<readonly [string, string, number]> = [
     ['businessLines', 'Líneas de negocio', 120]
 ];
 
-/** Cap of the description block in the form, in characters. */
-const DESCRIPTION_MAX_LENGTH = 1000;
+/**
+ * The long fields, shown as blocks (wrapped, every line prefixed), capped at the
+ * create schemas' maximum so the form shows everything written (HOS-2247 L1).
+ */
+const BLOCK_FIELD_LABELS: ReadonlyArray<readonly [string, string, number]> = [
+    ['summary', 'Resumen', 300],
+    ['description', 'Descripción', 2000]
+];
 
 /** Renders a preview value as text; anything else is left out. */
 function fieldText(value: unknown): string | undefined {
@@ -130,8 +138,9 @@ function fieldText(value: unknown): string | undefined {
  *
  * The facts the server resolved come FIRST (vertical, type, city, price, map
  * point, warning). The values the model supplied follow, each sanitized and
- * quoted on one line, and the description last, as a block whose every line is
- * prefixed (`confirmation-text.ts`), so no value can fake a line of the message.
+ * quoted on one line, and the summary and description last, as blocks whose
+ * every line is prefixed (`confirmation-text.ts`), so no value can fake a line
+ * of the message. Every cap is the schema maximum: the form shows all it writes.
  *
  * @param args - The vertical, the preview record and the location the preview resolved
  * @returns The Spanish form message
@@ -168,7 +177,10 @@ export function createListingConfirmationMessage(args: {
         }),
         ...(address === '' ? [] : [`Dirección: ${quoteForConfirmation({ text: address })}`])
     ];
-    const description = fieldText(args.listing.description);
+    const blocks = BLOCK_FIELD_LABELS.flatMap(([key, label, maxLength]) => {
+        const text = fieldText(args.listing[key]);
+        return text === undefined ? [] : [`${label}:`, blockForConfirmation({ text, maxLength })];
+    });
     return [
         'Vas a crear esta publicación en Hospeda como BORRADOR (no se publica).',
         `Categoría: ${VERTICAL_LABELS[args.vertical]}`,
@@ -176,12 +188,7 @@ export function createListingConfirmationMessage(args: {
         ...location,
         'Datos de la publicación:',
         ...written,
-        ...(description === undefined
-            ? []
-            : [
-                  'Descripción:',
-                  blockForConfirmation({ text: description, maxLength: DESCRIPTION_MAX_LENGTH })
-              ]),
+        ...blocks,
         '¿Confirmás que se cree?'
     ].join('\n');
 }

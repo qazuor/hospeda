@@ -191,7 +191,7 @@ function publicUrlFor(input: {
 async function getAccommodation(input: {
     readonly actor: Actor;
     readonly id: string;
-}): Promise<ToolHandlerResult<ListingDetail>> {
+}): Promise<ToolHandlerResult<OwnListingRead>> {
     const result = await listingToolAccommodationService.getById(input.actor, input.id);
     const admitted = admitOwnRow<Accommodation>({ actor: input.actor, result });
     if (admitted.error) {
@@ -205,21 +205,24 @@ async function getAccommodation(input: {
     ]);
     return {
         data: {
-            id: row.id,
-            vertical: VerticalEnum.ACCOMMODATION,
-            name: row.name,
-            publicationStatus: row.publicationStatus,
-            publicUrl: publicUrlFor({
+            row,
+            detail: {
+                id: row.id,
                 vertical: VerticalEnum.ACCOMMODATION,
-                slug: row.slug,
-                publicationStatus: row.publicationStatus
-            }),
-            summary: row.summary ?? null,
-            description: row.description ?? null,
-            phone: row.contactInfo?.mobilePhone ?? null,
-            website: row.contactInfo?.website ?? null,
-            amenities: amenities.map((a) => ({ id: a.id, slug: a.slug ?? null })),
-            features: features.map((f) => ({ id: f.id, slug: f.slug ?? null }))
+                name: row.name,
+                publicationStatus: row.publicationStatus,
+                publicUrl: publicUrlFor({
+                    vertical: VerticalEnum.ACCOMMODATION,
+                    slug: row.slug,
+                    publicationStatus: row.publicationStatus
+                }),
+                summary: row.summary ?? null,
+                description: row.description ?? null,
+                phone: row.contactInfo?.mobilePhone ?? null,
+                website: row.contactInfo?.website ?? null,
+                amenities: amenities.map((a) => ({ id: a.id, slug: a.slug ?? null })),
+                features: features.map((f) => ({ id: f.id, slug: f.slug ?? null }))
+            }
         }
     };
 }
@@ -229,7 +232,7 @@ async function getScheduledListing(input: {
     readonly actor: Actor;
     readonly id: string;
     readonly vertical: VerticalEnum.VENUE | VerticalEnum.EXPERIENCE;
-}): Promise<ToolHandlerResult<ListingDetail>> {
+}): Promise<ToolHandlerResult<OwnListingRead>> {
     const { actor, id, vertical } = input;
     const isVenue = vertical === VerticalEnum.VENUE;
     const result = isVenue
@@ -247,20 +250,23 @@ async function getScheduledListing(input: {
     );
     return {
         data: {
-            id: row.id,
-            vertical,
-            name: row.name,
-            publicationStatus: row.publicationStatus,
-            publicUrl: publicUrlFor({
+            row,
+            detail: {
+                id: row.id,
                 vertical,
-                slug: row.slug,
-                publicationStatus: row.publicationStatus
-            }),
-            description: row.description ?? null,
-            openingHours: row.openingHours ?? null,
-            contactInfo: row.contactInfo ?? null,
-            amenities: amenities.map((a) => ({ id: a.amenityId, slug: a.slug })),
-            features: features.map((f) => ({ id: f.featureId, slug: f.slug }))
+                name: row.name,
+                publicationStatus: row.publicationStatus,
+                publicUrl: publicUrlFor({
+                    vertical,
+                    slug: row.slug,
+                    publicationStatus: row.publicationStatus
+                }),
+                description: row.description ?? null,
+                openingHours: row.openingHours ?? null,
+                contactInfo: row.contactInfo ?? null,
+                amenities: amenities.map((a) => ({ id: a.amenityId, slug: a.slug })),
+                features: features.map((f) => ({ id: f.featureId, slug: f.slug }))
+            }
         }
     };
 }
@@ -279,15 +285,40 @@ export async function readOwnListingDetail(args: {
     readonly vertical: ListingToolVertical;
     readonly id: string;
 }): Promise<ToolHandlerResult<ListingDetail>> {
+    const read = await readOwnListingDetailWithRow(args);
+    return read.error ? read : { data: read.data.detail };
+}
+
+/** The owned row of any vertical, as the vertical service returns it. */
+export type OwnListingRow = Accommodation | Venue | Experience;
+
+/** One owned-listing read: the `get_listing` detail and the row it was built from. */
+export interface OwnListingRead {
+    /** What `get_listing` answers. */
+    readonly detail: ListingDetail;
+    /** The service row (server facts a caller may show, such as type or destination). */
+    readonly row: OwnListingRow;
+}
+
+/**
+ * {@link readOwnListingDetail}, also handing back the row, from the SAME single
+ * read. `set_listing_publication` uses it to show the listing's type and city in
+ * its publish confirmation without a second read (HOS-2247 L1).
+ *
+ * @param args - Actor, vertical and listing id
+ * @returns The detail and its row, or the error to answer with
+ */
+export async function readOwnListingDetailWithRow(args: {
+    readonly actor: Actor;
+    readonly vertical: ListingToolVertical;
+    readonly id: string;
+}): Promise<ToolHandlerResult<OwnListingRead>> {
     const { actor, vertical, id } = args;
     if (vertical === VerticalEnum.ACCOMMODATION) {
         return getAccommodation({ actor, id });
     }
     return getScheduledListing({ actor, id, vertical });
 }
-
-/** The owned row of any vertical, as the vertical service returns it. */
-export type OwnListingRow = Accommodation | Venue | Experience;
 
 /**
  * Gates a listing id through the same get-own authorization as `get_listing`

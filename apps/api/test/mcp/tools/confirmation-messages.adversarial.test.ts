@@ -96,13 +96,22 @@ describe.each(HOSTILE)('hostile value %j', (hostile) => {
         expect(message.split('\n').at(-1)).toBe('¿Confirmás que se cree?');
     });
 
-    it('set_listing_publication: the listing name', () => {
+    it('set_listing_publication: the listing name, type and city', () => {
+        // Arrange
+        const build = (value: string) =>
+            publishConfirmationMessage({
+                vertical: VerticalEnum.VENUE,
+                name: value,
+                typeLabel: value,
+                city: value
+            });
+
         // Act
-        const message = publishConfirmationMessage({ name: hostile });
+        const message = build(hostile);
 
         // Assert
         expectSafe(message);
-        expect(structure(message)).toEqual(structure(publishConfirmationMessage({ name: 'Bar' })));
+        expect(structure(message)).toEqual(structure(build('Bar')));
     });
 
     it.each([

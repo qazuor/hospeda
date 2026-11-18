@@ -35,6 +35,9 @@ import type {
     ToolHandlerOutput,
     ToolHandlerResult
 } from '../tool-definition';
+import { VERTICAL_LABELS } from './create-listing-preview';
+import type { OwnListingRow } from './get-listing';
+import { findCreationDestination, listingTypeLabel } from './listing-creation-catalog';
 import type { ListingToolVertical } from './listing-services';
 
 /** Tool name, also the binding's `tool`. */
@@ -68,6 +71,10 @@ export interface ListingPublicationPreview {
     readonly vertical: ListingToolVertical;
     /** Public name. */
     readonly name: string;
+    /** Type label (`Cabaña`, `Bar`...), or `null` when unknown. */
+    readonly typeLabel: string | null;
+    /** City, or `null` when unknown. */
+    readonly city: string | null;
     /** Always `resume`: only publishing is two steps. */
     readonly action: 'resume';
     /** State now. */
@@ -103,15 +110,63 @@ export function publishBinding(args: {
     };
 }
 
+/** What the publish form shows about the listing, beyond its name. */
+export interface PublishListingFacts {
+    /** Type label, or `null` when unknown. */
+    readonly typeLabel: string | null;
+    /** City, or `null` when unknown. */
+    readonly city: string | null;
+}
+
 /**
- * The text the client's confirmation form shows the human.
+ * The server facts the publish form shows (HOS-2247 L1): the type label and the
+ * city of the listing, from the row the call already read. A missing or
+ * unreadable fact is `null` (shown as unknown); it never blocks the preview.
  *
- * @param args - The listing's public name
+ * @param args - Vertical and the owned row
+ * @returns The facts
+ */
+export async function readPublishListingFacts(args: {
+    readonly vertical: ListingToolVertical;
+    readonly row: OwnListingRow;
+}): Promise<PublishListingFacts> {
+    const { vertical, row } = args;
+    const typeLabel =
+        typeof row.type === 'string' ? listingTypeLabel({ vertical, type: row.type }) : null;
+    let city: string | null = null;
+    if (typeof row.destinationId === 'string') {
+        try {
+            city = (await findCreationDestination({ id: row.destinationId }))?.name ?? null;
+        } catch {
+            city = null;
+        }
+    }
+    return { typeLabel, city };
+}
+
+/**
+ * The text the client's confirmation form shows the human: the server facts
+ * (vertical, type, city) first, then the owner-written name, quoted.
+ *
+ * @param args - Vertical, the listing's public name and its facts
  * @returns The Spanish form message
  */
-export function publishConfirmationMessage({ name }: { readonly name: string }): string {
+export function publishConfirmationMessage({
+    vertical,
+    name,
+    typeLabel,
+    city
+}: {
+    readonly vertical: ListingToolVertical;
+    readonly name: string;
+} & PublishListingFacts): string {
+    const unknown = 'sin dato';
     return [
-        `Vas a publicar ${quoteForConfirmation({ text: name, maxLength: 120 })} en Hospeda.`,
+        'Vas a publicar en Hospeda:',
+        `Categoría: ${VERTICAL_LABELS[vertical]}`,
+        `Tipo: ${typeLabel === null ? unknown : quoteForConfirmation({ text: typeLabel })}`,
+        `Ciudad: ${city === null ? unknown : quoteForConfirmation({ text: city })}`,
+        `Nombre: ${quoteForConfirmation({ text: name, maxLength: 100 })}`,
         'Va a quedar visible para cualquiera en el sitio público.',
         'Si todavía no usaste la prueba gratuita de esta categoría, publicar la inicia.',
         '¿Confirmás la publicación?'
@@ -162,7 +217,7 @@ export async function issuePublishPreview(args: {
         readonly vertical: ListingToolVertical;
         readonly name: string;
         readonly previousStatus: PublicationStatusEnum;
-    };
+    } & PublishListingFacts;
 }): Promise<ToolHandlerOutput<ListingPublicationPreview>> {
     const { binding, mode, listing } = args;
     if (mode === 'elicitation') {
@@ -171,7 +226,7 @@ export async function issuePublishPreview(args: {
             return storeUnavailable();
         }
         return needsConfirmation({
-            message: publishConfirmationMessage({ name: listing.name }),
+            message: publishConfirmationMessage(listing),
             stateId: state.stateId
         });
     }
@@ -185,6 +240,8 @@ export async function issuePublishPreview(args: {
             id: listing.id,
             vertical: listing.vertical,
             name: listing.name,
+            typeLabel: listing.typeLabel,
+            city: listing.city,
             action: 'resume',
             previousStatus: listing.previousStatus,
             publicationStatusAfter: PublicationStatusEnum.PUBLISHED,

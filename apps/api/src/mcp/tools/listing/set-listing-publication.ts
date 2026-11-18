@@ -63,7 +63,11 @@ import { captureAccommodationPublished } from '../../../services/listing-publica
 import { ListingPublicationService } from '../../../services/listing-publication/listing-publication.service';
 import { confirmationTokenRefused, planConfirmation } from '../elicitation-confirmation';
 import { defineTool, type ToolHandlerOutput, type ToolHandlerResult } from '../tool-definition';
-import { type ListingDetail, readOwnListingDetail } from './get-listing';
+import {
+    type ListingDetail,
+    readOwnListingDetail,
+    readOwnListingDetailWithRow
+} from './get-listing';
 import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import { type ListingToolVertical, ListingToolVerticalSchema } from './listing-services';
 import { LISTING_MODERATED_REASON, publicationRefusalLink } from './publication-refusal-link';
@@ -73,6 +77,7 @@ import {
     type ListingPublicationPreview,
     publicationAuditDetails,
     publishBinding,
+    readPublishListingFacts,
     refuseUnneededConfirmation,
     SET_LISTING_PUBLICATION_TOOL_NAME
 } from './publish-confirmation';
@@ -320,11 +325,12 @@ export const setListingPublicationTool = defineTool({
     }): Promise<ToolHandlerOutput<SetListingPublicationResult>> => {
         const { vertical, id, action, confirmationToken } = input;
 
-        const before = await readOwnListingDetail({ actor, vertical, id });
-        if (before.error) {
-            return before;
+        const read = await readOwnListingDetailWithRow({ actor, vertical, id });
+        if (read.error) {
+            return read;
         }
-        const previousStatus = before.data.publicationStatus;
+        const before = read.data.detail;
+        const previousStatus = before.publicationStatus;
         const plan = planListingPublication({ action, status: previousStatus });
 
         if (plan.kind === 'refuse') {
@@ -379,7 +385,13 @@ export const setListingPublicationTool = defineTool({
                 return issuePublishPreview({
                     binding,
                     mode: confirmation.mode,
-                    listing: { id, vertical, name: before.data.name, previousStatus }
+                    listing: {
+                        id,
+                        vertical,
+                        name: before.name,
+                        previousStatus,
+                        ...(await readPublishListingFacts({ vertical, row: read.data.row }))
+                    }
                 });
             }
             const refused = await confirmPublishCommit({ binding, plan: confirmation });
@@ -388,7 +400,7 @@ export const setListingPublicationTool = defineTool({
             }
         }
 
-        let current: ListingDetail = before.data;
+        let current: ListingDetail = before;
         if (plan.kind === 'run') {
             try {
                 const refused = await authorizeStep({ actor, vertical, id, step: plan.step });
