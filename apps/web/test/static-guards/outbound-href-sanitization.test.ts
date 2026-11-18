@@ -102,6 +102,8 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         'the same `resolvePlatformHref` output, for the "Ver las N reseñas en Google" CTA',
     'components/accommodation/WhatsAppContact.client.tsx#{waUrl}':
         '`buildWhatsAppLink` composes `https://wa.me/<digits>`; a non-dialable number yields null, not a URL',
+    'components/venue/VenueWhatsAppButton.client.tsx#{url}':
+        '`buildWhatsAppLink` composes `https://wa.me/<digits>` from the venue number (HOS-2256); a non-dialable number yields null, not a URL, and the number never reaches an href as a raw string',
     'components/account/ProfileCompletionConsentFields.tsx#{`/${locale}/legal/terminos/`}':
         'an internal path literal; it carries `rel="noopener"` only because it opens in a new tab',
     'components/shared/navigation/MobileMenu.client.tsx#{adminPanelItem.href}':

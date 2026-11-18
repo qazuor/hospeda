@@ -2,7 +2,7 @@
     "systemColumns": {
         "counts": {
             "accommodations": 34,
-            "venues": 27,
+            "venues": 28,
             "experiences": 22
         },
         "rows": [
@@ -337,6 +337,10 @@
             {
                 "key": "venues.location_exception_key",
                 "reason": "The location_key an exception was granted for (HOS-1810); audit/derived, not owner content."
+            },
+            {
+                "key": "venues.whatsapp_visibility",
+                "reason": "Owner display preference for who may see the WhatsApp button (HOS-2256); a setting that survives the purge like show_external_reputation. The number itself lives in contact_info, which the purge blanks, so no button can show."
             }
         ]
     },
