@@ -1486,9 +1486,11 @@ export class AccommodationService extends BaseCrudService<
      * up or auto-resumes an existing active DRAFT for the owner. The web now calls
      * `GET /host-onboarding/precheck` before showing the form and decides whether to
      * create, resume, delete, or upgrade; by the time this endpoint is hit, the
-     * caller has already committed to creating. Consequently, drafts count against
-     * `max_accommodations` like any other create (enforced by
-     * `enforceAccommodationLimit()` on the route, with no bypass).
+     * caller has already committed to creating. Creating a DRAFT is not capped:
+     * an owner may hold any number of drafts. The plan's listing limit applies at
+     * publish, where the publication machine refuses a DRAFT -> ACTIVE over the cap
+     * with `LIMIT_REACHED` (`publishListing` in `@repo/verticals`, answered to the
+     * owner as `LISTING_LIMIT_REACHED`).
      *
      * A fresh DRAFT is inserted with `ownerId = actor.id`, `publicationStatus = DRAFT` (the model's birth state),
      * `lastWarnedAt = null`, and the owner is atomically promoted USER -> HOST in the

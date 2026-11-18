@@ -15,7 +15,14 @@ import { AiConnectionListSchema, AiConnectionPendingResetReviewSchema } from '@r
 export const AI_CONNECTIONS_API_PATH = '/api/v1/protected/ai-connections';
 
 /** Capabilities a connection grants, shared with the consent screen copy. */
-export const AI_CAPABILITY_KEYS = ['read', 'edit', 'pause', 'reply', 'reviews'] as const;
+export const AI_CAPABILITY_KEYS = [
+    'read',
+    'edit',
+    'pause',
+    'reply',
+    'reviews',
+    'createListings'
+] as const;
 
 /** Spanish fallbacks for the capabilities (the locale files are the source). */
 export const AI_CAPABILITY_FALLBACKS: Readonly<
@@ -25,7 +32,8 @@ export const AI_CAPABILITY_FALLBACKS: Readonly<
     edit: 'Editar datos básicos (descripción, contacto, horarios, servicios)',
     pause: 'Pausar o reanudar tus publicaciones',
     reply: 'Responder consultas de tus alojamientos',
-    reviews: 'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas'
+    reviews: 'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas',
+    createListings: 'Crear borradores de publicaciones nuevas'
 };
 
 /**

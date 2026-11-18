@@ -10,8 +10,10 @@ import { getHelpTool } from './help/get-help';
 import { getInquiryTool } from './inquiry/get-inquiry';
 import { listInquiriesTool } from './inquiry/list-inquiries';
 import { replyInquiryTool } from './inquiry/reply-inquiry';
+import { createListingTool } from './listing/create-listing';
 import { getListingTool } from './listing/get-listing';
 import { getListingAmenitiesTool } from './listing/get-listing-amenities';
+import { getListingCreationGuideTool } from './listing/get-listing-creation-guide';
 import { getListingStatsTool } from './listing/get-listing-stats';
 import { listAmenitiesAndFeaturesTool } from './listing/list-amenities-and-features';
 import { listMyListingsTool } from './listing/list-my-listings';
@@ -31,6 +33,8 @@ export const MCP_TOOL_DEFINITIONS: readonly ToolDefinition[] = [
     setListingPublicationTool,
     listAmenitiesAndFeaturesTool,
     getListingStatsTool,
+    getListingCreationGuideTool,
+    createListingTool,
     listReviewsTool,
     getHelpTool,
     listInquiriesTool,

@@ -80,18 +80,20 @@ const FAIL_OPEN: PublishPrecheckResult = {
 /**
  * Resolves the publish precheck for one vertical.
  *
- * @param input.ctx - The request context, carrying the caller's limits.
+ * @param input.ctx - The request context. Unused since the cap is read through
+ *   the publication ports; optional so the owner assistant's `create_listing`
+ *   (HOS-2329), which has no HTTP context, runs the same precheck.
  * @param input.actor - The authenticated actor, who is also the owner.
  * @param input.vertical - The vertical being prechecked.
  * @returns The counts, the quota verdict, the drafts and the derived decision.
  *   Never throws: an unresolved input yields the fail-open result.
  */
 export async function resolvePublishPrecheck(input: {
-    ctx: Context<AppBindings>;
+    ctx?: Context<AppBindings>;
     actor: Actor;
     vertical: PublishVertical;
 }): Promise<PublishPrecheckResult> {
-    const { ctx: _ctx, actor, vertical } = input;
+    const { actor, vertical } = input;
     const publicationVertical = vertical as PublicationVertical;
 
     try {

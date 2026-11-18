@@ -100,6 +100,7 @@ describe('AiAssistantsPanel', () => {
                 'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas'
             )
         ).toBeTruthy();
+        expect(screen.getByText('Crear borradores de publicaciones nuevas')).toBeTruthy();
         expect(screen.getByText('Todavía no conectaste ningún asistente.')).toBeTruthy();
     });
 

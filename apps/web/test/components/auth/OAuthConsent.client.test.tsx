@@ -268,7 +268,7 @@ describe('OAuthConsent', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('lists the five capabilities', async () => {
+    it('lists the six capabilities', async () => {
         // Arrange
         fetchMock.mockResolvedValue(clientResponse({ client_name: 'Claude' }));
 
@@ -282,7 +282,8 @@ describe('OAuthConsent', () => {
             'Editar datos básicos (descripción, contacto, horarios, servicios)',
             'Pausar o reanudar tus publicaciones',
             'Responder consultas de tus alojamientos',
-            'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas'
+            'Ver todas las reseñas de tus publicaciones, también las pendientes y las rechazadas',
+            'Crear borradores de publicaciones nuevas'
         ]) {
             expect(screen.getByText(text)).toBeInTheDocument();
         }
