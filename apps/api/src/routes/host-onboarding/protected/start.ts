@@ -10,11 +10,12 @@
  * auto-resumes an existing active DRAFT. The web calls
  * `GET /host-onboarding/precheck` BEFORE showing the form and decides itself
  * whether to create, resume, delete, or upgrade; by the time `/start` is
- * called, the caller has already committed to creating. Consequently, DRAFTs
- * count against `max_accommodations` like any other create — the limit is
- * enforced with no bypass. When the actor is already HOST (or higher) the
- * role promotion is a no-op but the DRAFT is still created so their input is
- * not lost.
+ * called, the caller has already committed to creating. Creating a DRAFT is
+ * not capped: an owner may hold any number of drafts. The plan's listing limit
+ * applies at publish, where a DRAFT -> ACTIVE over the cap is refused with
+ * `LIMIT_REACHED` (answered to the owner as `LISTING_LIMIT_REACHED`). When the
+ * actor is already HOST (or higher) the role promotion is a no-op but the DRAFT
+ * is still created so their input is not lost.
  *
  * A USER who creates onboarding is promoted to HOST during the onboarding
  * flow so they can access host surfaces immediately. The billing trial still
