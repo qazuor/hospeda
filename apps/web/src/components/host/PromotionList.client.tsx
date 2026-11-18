@@ -21,6 +21,7 @@ import { getEntitlementsCached } from '@/lib/entitlements-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { buildUrl } from '@/lib/urls';
 import styles from './PromotionList.module.css';
 
@@ -95,19 +96,8 @@ function formatDiscountSummary({
     readonly locale: SupportedLocale;
     readonly freeNightLabel: string;
 }): string {
-    if (discountType === 'percentage') {
-        return `${discountValue}%`;
-    }
-    if (discountType === 'free_night') {
-        return freeNightLabel;
-    }
-    // fixed — format as ARS currency
-    return new Intl.NumberFormat(locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(discountValue);
+    void freeNightLabel;
+    return formatPromotionBenefit({ discountType, discountValue, locale, style: 'summary' });
 }
 
 /**

@@ -46,7 +46,9 @@
         "openNow": "Aberto agora",
         "closedNow": "Fechado",
         "opensAt": "Abre às {{time}}",
-        "featured": "Destaque"
+        "featured": "Destaque",
+        "promo": "Oferta",
+        "promoVip": "Oferta VIP"
     },
     "detail": {
         "address": {
@@ -151,6 +153,11 @@
             "play": "Reproduzir vídeo",
             "playNamed": "Reproduzir vídeo: {{caption}}",
             "openExternal": "Assistir no {{provider}} (abre em uma nova aba)"
+        },
+        "promotions": {
+            "title": "Promoções",
+            "validUntil": "Até {{date}}",
+            "noEndDate": "Sem data de término"
         }
     },
     "types": {
@@ -409,6 +416,40 @@
                 "inactive": "Não é exibido",
                 "unavailable": "Indisponível",
                 "fileUnavailable": "Não é possível abrir este arquivo."
+            },
+            "promotionsManager": {
+                "title": "Promoções",
+                "empty": "Você ainda não adicionou promoções.",
+                "count": "Promoções ativas: {{count}} / {{max}}",
+                "unlimitedCount": "Promoções ativas: {{count}} · sem limite",
+                "create": "Nova promoção",
+                "actions": {
+                    "delete": "Excluir",
+                    "edit": "Alterar",
+                    "pause": "Suspender",
+                    "activate": "Reativar",
+                    "save": "Salvar"
+                },
+                "name": "Nome da oferta",
+                "discountType": "Benefício",
+                "value": "Quantia",
+                "condition": "Condições",
+                "validFrom": "Válida a partir de",
+                "validUntil": "Válida até",
+                "invalid": "Confira os campos do formulário.",
+                "locked": "Disponível no plano {{plan}}.",
+                "lockedNoPlan": "Este recurso ainda não está disponível no seu plano.",
+                "cacheNotice": "Pode levar alguns minutos para aparecer no anúncio.",
+                "deleteTitle": "Excluir promoção",
+                "deleteConfirm": "Deseja excluir esta promoção?",
+                "states": {
+                    "active": "Ativa",
+                    "paused": "Interrompida",
+                    "expired": "Expirada",
+                    "draft": "Rascunho"
+                },
+                "limitReached": "Você atingiu o limite. O plano {{plan}} permite mais promoções.",
+                "limitReachedNoPlan": "Você atingiu o limite de promoções do seu plano."
             }
         }
     },

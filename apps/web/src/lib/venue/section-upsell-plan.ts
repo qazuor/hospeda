@@ -11,6 +11,8 @@ export interface VenueUpsellPlans {
     readonly translations: string | null;
     readonly dailySpecials: string | null;
     readonly venueEvents: string | null;
+    /** HOS-2271: `create_promotions`; null while the key is ungranted by the catalog. */
+    readonly promotions: string | null;
     /** HOS-2258: the `media.videos` trait. `null` while no plan grants it. */
     readonly videos: string | null;
 }
@@ -65,6 +67,7 @@ export function resolveVenueUpsellPlans(input: {
         translations: resolve(menuTraitEntitlement('translations')),
         dailySpecials: resolve(sectionEntitlement('dailySpecials')),
         venueEvents: resolve(sectionEntitlement('venueEvents')),
+        promotions: resolve(sectionEntitlement('promotions')),
         videos: resolve(traitEntitlement('media', 'videos'))
     };
 }

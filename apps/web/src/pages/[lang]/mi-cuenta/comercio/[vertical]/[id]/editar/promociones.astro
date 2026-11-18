@@ -1,0 +1,37 @@
+---
+/** Owner editor section for venue promotions (HOS-2271). */
+import { VenuePromotionsManager } from '@/components/venue/VenuePromotionsManager.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
+import { createTranslations } from '@/lib/i18n';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
+
+export const prerender = false;
+const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'promociones' });
+if (resolution.redirect) return resolution.redirect;
+if (resolution.error) return resolution.error;
+const { detail, locale, listingId, sectionId, registry, sectionStates } = resolution;
+const { t } = createTranslations(locale);
+const plans = await fetchAudiencePlans({ audience: 'venue' });
+const upsellPlans = resolveVenueUpsellPlans({ plans, t });
+const sectionState = sectionId ? sectionStates[sectionId]?.state ?? 'available' : 'available';
+---
+
+<ListingEditorSectionLayout
+    locale={locale}
+    registry={registry}
+    listingId={listingId}
+    listingName={detail.name}
+    currentSectionId={sectionId}
+    currentSectionSlug="promociones"
+    title={t('listing.owner.editor.sectionNav.venuePromotions', 'Promociones')}
+>
+    <VenuePromotionsManager
+        client:load
+        listingId={listingId}
+        locale={locale}
+        sectionState={sectionState === 'locked' ? 'locked' : 'available'}
+        upsellPlanName={upsellPlans.promotions}
+    />
+</ListingEditorSectionLayout>

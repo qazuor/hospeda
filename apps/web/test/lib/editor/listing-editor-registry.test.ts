@@ -108,12 +108,9 @@ describe('TEST:5.1:3 derived listing editor registry', () => {
     });
 });
 
-describe('HOS-2270 unreleased sections', () => {
-    it('never offers the venue promotions section, whatever its state, until its page ships', () => {
-        for (const state of ['available', 'locked'] as const) {
-            const ids = idsOf('venue', { promotions: { state } });
-
-            expect(ids).not.toContain('promotions');
-        }
+describe('HOS-2271 venue promotions section', () => {
+    it('offers the section according to its catalog state', () => {
+        expect(idsOf('venue', { promotions: { state: 'available' } })).toContain('promotions');
+        expect(idsOf('venue', { promotions: { state: 'locked' } })).toContain('promotions');
     });
 });

@@ -276,6 +276,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // the guard derives from a literal under that subtree; the three-segment
     // entry keeps the declaration honest about the only subtree the editor names.
     'venue.detail',
+    // HOS-2271: the venue promotions editor resolves this subtree in a client island.
+    'venue.owner.editor',
     'venue.detail.nightInfo',
     'venue.editOwn',
     // HOS-822 — venue half of the shared listing-type source above.

@@ -890,7 +890,8 @@
         "discountTypes": {
             "percentage": "Porcentaje",
             "fixed": "Monto fijo",
-            "free_night": "Noche gratis"
+            "free_night": "Noche gratis",
+            "special_offer": "Oferta especial"
         },
         "lifecycleStates": {
             "active": "Activa",
@@ -920,6 +921,10 @@
             "cancel": "Cancelar",
             "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer.",
             "upgradePlan": "Ver planes"
+        },
+        "specialOffer": {
+            "label": "Describí el beneficio",
+            "help": "Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos."
         }
     },
     "dashboard": {

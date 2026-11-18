@@ -12,6 +12,7 @@ import { publicGetVenueByIdRoute } from './getById';
 import { publicGetVenueBySlugRoute } from './getBySlug';
 import { publicGetVenueFaqsRoute } from './getFaqs';
 import { publicGetVenueFilterOptionsRoute } from './getFilterOptions';
+import { publicGetVenuePromotionsRoute } from './getPromotions';
 import { publicListVenueReviewsRoute } from './getReviews';
 import { publicListVenuesRoute } from './list';
 
@@ -37,5 +38,8 @@ app.route('/', publicListVenueReviewsRoute);
 
 // List FAQs for a venue.
 app.route('/', publicGetVenueFaqsRoute);
+
+// Venue promotions must be registered before the `/{id}` catch-all.
+app.route('/', publicGetVenuePromotionsRoute);
 
 export { app as publicVenueRoutes };

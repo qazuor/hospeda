@@ -203,6 +203,23 @@ export const VenuePromotionProtectedSchema = OwnerPromotionObjectSchema.pick({
 });
 export type VenuePromotionProtected = z.infer<typeof VenuePromotionProtectedSchema>;
 
+/** Narrow public shape for currently visible PLUS promotions on a venue detail. */
+export const VenuePromotionPublicSchema = OwnerPromotionObjectSchema.pick({
+    id: true,
+    title: true,
+    description: true,
+    discountType: true,
+    discountValue: true,
+    validFrom: true,
+    validUntil: true
+});
+export type VenuePromotionPublic = z.infer<typeof VenuePromotionPublicSchema>;
+
+/** Public response for GET /public/venues/{id}/promotions. */
+export const VenuePromotionPublicListSchema = z.object({
+    items: z.array(VenuePromotionPublicSchema)
+});
+
 /**
  * Response of `GET /protected/venues/{id}/promotions`: the owner's promotions of
  * the venue plus the quota counters the editor needs. `maxActive` is

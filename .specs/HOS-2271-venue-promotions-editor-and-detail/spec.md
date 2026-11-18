@@ -43,11 +43,13 @@ Con HOS-2270 las promos de local existen en la API, pero no hay forma de cargarl
 Verificado en `origin/staging` (`92994b9dc6`).
 
 **Componentes de alojamiento.**
+
 - `apps/web/src/components/host/PromotionForm.client.tsx` (945 líneas, pasa el límite de 500): arma el body con `accommodationId` (`:304`), `minNights` y `maxRedemptions` (`:291-303`), carga propiedades con `protectedAccommodationsApi.listOwn()` (`:34`, `:798-806`), valida con `OwnerPromotionCreateRequestSchema` y redirige a `/mi-cuenta/promociones/`.
 - `PromotionList.client.tsx:180` lee el effective set con `getEntitlementsCached({ vertical: 'accommodation' })` y `:182` mira `create_promotions`. Lista con `ownerPromotionApi.list()` (`:152`), que trae todas las promos del dueño.
 - `apps/web/src/components/accommodation/PromotionBanner.astro:35-52`: `formatDiscount` (percentage, fixed, free_night) duplicado también en `ExclusiveDealsList.client.tsx:163-167`.
 
 **Editor de local.**
+
 - Una página por sección: `apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/eventos.astro` (modelo a copiar). Usa `resolveListingEditorPage`, `ListingEditorSectionLayout`, `sectionStates`, `fetchAudiencePlans` y `resolveVenueUpsellPlans` (`apps/web/src/lib/venue/section-upsell-plan.ts:7-14`, `:51-62`) para el nombre del plan que desbloquea. Con la sección bloqueada, `VenueEventsManager` recibe `sectionState='locked'` y `upsellPlanName`.
 - El slug y la etiqueta salen de `apps/web/src/lib/editor/listing-section-presentation.ts:78-81`.
 - Antes de que algún plan liste `create_promotions` para local, `resolveUnlockingPlanName` devuelve `null`. La pantalla debe aguantar `upsellPlanName = null`.
@@ -63,6 +65,7 @@ Verificado en `origin/staging` (`92994b9dc6`).
 ### 6.1 Decisión de reuso (a confirmar, OQ-1)
 
 Los componentes de alojamiento no se parametrizan. Razones: el formulario ya supera las 500 líneas, está lleno de campos de alojamiento, y parametrizarlo por vertical (`vertical === 'venue'` dentro de un componente compartido) es justo lo que prohíbe G1. Se reusa lo que es puro:
+
 - Extraer `formatPromotionBenefit({ discountType, discountValue, locale })` a `apps/web/src/lib/promotions/format-benefit.ts` y usarlo en `PromotionBanner.astro`, `ExclusiveDealsList.client.tsx` y los componentes nuevos. Se agrega el caso `special_offer` (HOS-2270): muestra el texto libre de la oferta (escapado, sin HTML ni links), sin cifra.
 - Reusar los estilos base y los helpers de formularios (`zodIssuesToFieldErrors`, `@/lib/forms/field-errors`).
 - Componentes nuevos de local, cada uno por debajo de 500 líneas: `VenuePromotionsManager.client.tsx`, `VenuePromotionForm.client.tsx`, `VenuePromotions.astro`.
@@ -102,6 +105,7 @@ Los componentes de alojamiento no se parametrizan. Razones: el formulario ya sup
 ### 6.5 i18n (es, en, pt)
 
 Claves nuevas (los tres idiomas; prefijos ya expuestos al cliente o a sumar en `i18n-client-namespaces.ts`):
+
 - `listing.owner.editor.sectionNav.venuePromotions` («Promociones»).
 - `venue.owner.editor.promotionsManager.*`: título, vacío, contador, «Nueva promoción», campos, ayudas, estados, confirmación de borrado, errores, upsell. El prefijo `venue.owner.editor` hay que verificarlo contra `CLIENT_I18N_KEY_PREFIXES`, como lo hace `VenueEventsManager`.
 - `venue.detail.promotions.*`: título del bloque, vigencia, «sin fecha de fin».
@@ -158,6 +162,7 @@ Los textos van con la tilde correcta y sin inventar traducciones: pt y en con el
 ## 11. Riesgos y preguntas para el dueño
 
 Riesgos:
+
 - R-1. La promo nueva tarda en verse hasta que corra la revalidación de caché. Mitigación: test de AC-16 de HOS-2270 y mensaje en el editor («puede tardar unos minutos en verse»).
 - R-2. Dos sitios más de `formatDiscount` duplicados quedan sin migrar y se desfasan. Mitigación: la extracción de `format-benefit.ts` migra los tres sitios en este mismo PR.
 - R-3. El bloque público depende de una segunda llamada en SSR: un fallo no tumba la página.
@@ -165,6 +170,7 @@ Riesgos:
 Decidido (owner, 16/11/2026): se suma el tipo de beneficio «oferta especial» con texto libre moderado (HOS-2270, HOS-2271). Esta spec lo muestra y lo pide en el formulario.
 
 Preguntas abiertas (menores):
+
 - OQ-1. Reuso de formularios. Opciones: (a) componentes de local nuevos más helpers compartidos; (b) parametrizar `PromotionForm`/`PromotionList` por vertical. **Recomiendo (a)**: (b) rompe G1 y ya pasa las 500 líneas.
 - OQ-2. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #23): opción (a).** En la ficha, el bloque de promos va después de eventos, en el orden del catálogo. Posición del bloque en la ficha. Opciones: (a) por orden del catálogo, tras eventos; (b) arriba, antes de la carta, para que se vea más. **Recomiendo (a)**: cambiar el orden es una decisión de producto y el catálogo ya lo define; (b) se puede pedir después.
 - OQ-4. **Decidido (owner, 18/11/2026, HOS-2252 ronda 2, #24): opción (a).** La tarjeta del listado muestra solo «Promo», sin el texto de la oferta. Texto de la oferta en la tarjeta del listado: la marca queda en «Promo» fija (no se muestra el texto libre ahí). Opciones: (a) solo «Promo»; (b) mostrar el texto corto. **Recomiendo (a)**: la tarjeta es discreta y el texto libre no tiene largo controlado.
@@ -198,3 +204,9 @@ Preguntas abiertas (menores):
 ## 15. Linear
 
 Canonical tracking: HOS-2271. Épica: HOS-2252. Previa: HOS-2270.
+
+## Decisions taken
+
+- When no venue plan grants `create_promotions`, the owner editor renders no promotion section content. The upsell appears only once the catalog contains a plan that unlocks the section; its name always comes from that catalog. This applies HOS-2261 OQ-5 (owner, 2026-11-18) and keeps this PR from enabling free creation.
+- OQ-1: use venue-specific editor components and share only presentation/formatting helpers. The accommodation editor remains unchanged in shape because it carries accommodation-only fields and already exceeds 500 lines.
+- The public promotion read is a separate cacheable GET and returns only current PLUS rows. The card marker uses one batched read for the venue ids on each listing page and reveals only whether a PLUS offer exists (or that the active offers are VIP-only).

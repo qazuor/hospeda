@@ -321,7 +321,9 @@ export const VenuePublicSchema = VenueSchema.pick({
      * venue payload carrying a field by that name would read, to every
      * consumer that already knows the other one, as the wrong thing.
      */
-    venueEvents: z.array(VenueEventPublicSchema).optional()
+    venueEvents: z.array(VenueEventPublicSchema).optional(),
+    /** Presence-only card badge; reveals neither promotion titles nor benefits. */
+    promoBadge: z.object({ hasPromo: z.literal(true), vipOnly: z.boolean() }).optional()
 });
 
 /**

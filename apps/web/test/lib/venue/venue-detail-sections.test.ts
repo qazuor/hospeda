@@ -23,12 +23,13 @@ const EXPECTED_ORDER = [
     'menu',
     'dailySpecials',
     'venueEvents',
+    'promotions',
     'faqs',
     'nightInfo'
 ] as const;
 
-// HOS-2270: `promotions` is in the catalog but the public block is HOS-2271's.
-const EXCLUDED = ['price', 'media', 'translations', 'promotions'] as const;
+// Fixed header/gallery/management sections are outside the in-flow body.
+const EXCLUDED = ['price', 'media', 'translations'] as const;
 
 describe('VENUE_DETAIL_SECTION_BODY', () => {
     it('declares exactly the body sections as true and the fixed ones as false', () => {

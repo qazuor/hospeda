@@ -48,6 +48,7 @@ import type {
     UserProtected,
     UserPublic,
     UserStatsResponse,
+    VenuePromotionListOutput,
     VerticalEnum
 } from '@repo/schemas';
 import {
@@ -4536,6 +4537,61 @@ export const ownerPromotionApi = {
      */
     remove({ id }: { readonly id: string }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
+    }
+};
+
+/** Venue-scoped promotion endpoints (HOS-2271). */
+export const venuePromotionsApi = {
+    /** List every owner-managed promotion for a venue with quota metadata. */
+    list({ id }: { readonly id: string }): Promise<ApiResult<VenuePromotionListOutput>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/venues/${id}/promotions` });
+    },
+    /** Create a venue promotion. */
+    create({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/venues/${id}/promotions`, body });
+    },
+    /** Replace a venue promotion. */
+    update({
+        id,
+        promotionId,
+        body
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.put({ path: `${PROTECTED}/venues/${id}/promotions/${promotionId}`, body });
+    },
+    /** Change a venue promotion's lifecycle state. */
+    patch({
+        id,
+        promotionId,
+        body
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/venues/${id}/promotions/${promotionId}`,
+            body
+        });
+    },
+    /** Soft-delete a venue promotion. */
+    remove({
+        id,
+        promotionId
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/venues/${id}/promotions/${promotionId}` });
     }
 };
 

@@ -261,7 +261,7 @@ describe('TEST:6.5:6 — the venue table still renders', () => {
     });
 });
 
-describe('HOS-2270 unreleased catalog sections', () => {
+describe('HOS-2271 venue promotions plans row (HOS-2262)', () => {
     it('skips the venue promotions section: no venue plan grants create_promotions yet', () => {
         const promotions = LISTING_SECTIONS.venue.find((section) => section.id === 'promotions');
 
@@ -275,8 +275,8 @@ describe('HOS-2270 unreleased catalog sections', () => {
     });
 });
 
-describe('HOS-2270 promotions.unreleased', () => {
-    it('is only valid while no venue plan grants create_promotions (drop the flag once granted)', () => {
+describe('HOS-2271 venue promotions plan safety', () => {
+    it('keeps every venue plan without create_promotions while the plans row belongs to HOS-2262', () => {
         const granting = PRODUCTION_PLAN_CATALOG.filter(
             (plan) =>
                 plan.vertical === 'venue' &&
