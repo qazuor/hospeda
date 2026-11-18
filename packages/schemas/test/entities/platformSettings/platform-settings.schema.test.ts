@@ -23,7 +23,9 @@ import {
     PaidSignupsFreezeValueSchema,
     PlatformSettingsKeySchema,
     PlatformSettingsResponseSchema,
-    SeoDefaultsValueSchema
+    PublicSessionRecordingResponseSchema,
+    SeoDefaultsValueSchema,
+    SessionRecordingValueSchema
 } from '../../../src/entities/platformSettings/platform-settings.schema';
 
 const VALID_UUID = '11111111-1111-4111-8111-111111111111';
@@ -31,13 +33,14 @@ const VALID_ACTOR_UUID = '22222222-2222-4222-8222-222222222222';
 const VALID_TIMESTAMP = '2026-05-28T12:34:56.000Z';
 
 describe('PlatformSettingsKeySchema', () => {
-    it('accepts each of the 4 supported keys', () => {
+    it('accepts each of the supported keys', () => {
         for (const key of [
             'seo.defaults',
             'maintenance.mode',
             'announcements.global',
             'billing.paidSignupsFreeze',
-            'billing.addonPurchasesFreeze'
+            'billing.addonPurchasesFreeze',
+            'analytics.sessionRecording'
         ]) {
             expect(PlatformSettingsKeySchema.safeParse(key).success).toBe(true);
         }
@@ -45,6 +48,50 @@ describe('PlatformSettingsKeySchema', () => {
 
     it('rejects unknown keys', () => {
         const result = PlatformSettingsKeySchema.safeParse('seo.unknown');
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('HOS-2347 SessionRecordingValueSchema', () => {
+    it('accepts a boolean enabled value', () => {
+        expect(SessionRecordingValueSchema.safeParse({ enabled: true }).success).toBe(true);
+        expect(SessionRecordingValueSchema.safeParse({ enabled: false }).success).toBe(true);
+    });
+
+    it('AC-A6: rejects a non-boolean enabled value', () => {
+        // Arrange
+        const value = { enabled: 'yes' };
+
+        // Act
+        const result = SessionRecordingValueSchema.safeParse(value);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('routes the analytics.sessionRecording branch of the response union', () => {
+        const result = PlatformSettingsResponseSchema.safeParse({
+            key: 'analytics.sessionRecording',
+            value: { enabled: true },
+            updatedAt: VALID_TIMESTAMP,
+            updatedBy: VALID_ACTOR_UUID
+        });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('HOS-2347 PublicSessionRecordingResponseSchema', () => {
+    it('accepts exactly { enabled }', () => {
+        expect(PublicSessionRecordingResponseSchema.safeParse({ enabled: false }).success).toBe(
+            true
+        );
+    });
+
+    it('AC-P2: rejects any extra key (no updatedAt/updatedBy leak)', () => {
+        const result = PublicSessionRecordingResponseSchema.safeParse({
+            enabled: true,
+            updatedBy: VALID_ACTOR_UUID
+        });
         expect(result.success).toBe(false);
     });
 });
