@@ -7,7 +7,10 @@
 
 import { LISTING_SECTIONS, LISTING_VERTICALS } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { buildPortalUrl } from '../../../src/mcp/portal/build-portal-url';
+import {
+    buildPortalUrl,
+    portalDestinationTemplate
+} from '../../../src/mcp/portal/build-portal-url';
 import {
     isNonIdentifyingDestination,
     PORTAL_DESTINATION_LABELS
@@ -139,7 +142,9 @@ describe('buildPortalUrl', () => {
             ],
             ['benefit usages', { kind: 'benefitUsages' }, 'mi-cuenta/usos-de-beneficio'],
             ['provider panel', { kind: 'providerPanel' }, 'mi-cuenta/proveedor'],
-            ['AI assistants', { kind: 'aiAssistants' }, 'mi-cuenta/asistentes-ia']
+            ['AI assistants', { kind: 'aiAssistants' }, 'mi-cuenta/asistentes-ia'],
+            ['FAQ', { kind: 'faq' }, 'preguntas-frecuentes'],
+            ['contact', { kind: 'contact' }, 'contacto']
         ];
 
         it.each(cases)('%s', (_name, destination, path) => {
@@ -200,7 +205,9 @@ describe('the route map', () => {
                 'providerDirectory',
                 'benefitUsages',
                 'providerPanel',
-                'aiAssistants'
+                'aiAssistants',
+                'faq',
+                'contact'
             ].sort()
         );
     });
@@ -232,5 +239,52 @@ describe('isNonIdentifyingDestination', () => {
         expect(isNonIdentifyingDestination({ destination: { kind: 'providerDirectory' } })).toBe(
             true
         );
+        expect(isNonIdentifyingDestination({ destination: { kind: 'faq' } })).toBe(true);
+        expect(isNonIdentifyingDestination({ destination: { kind: 'contact' } })).toBe(true);
+    });
+});
+
+describe('portalDestinationTemplate', () => {
+    it('keeps the dynamic segments and puts the section slug in an editor path', () => {
+        // Assert
+        expect(
+            portalDestinationTemplate({
+                destination: { kind: 'listingEditor', vertical: 'venue', id: ID, section: 'media' }
+            })
+        ).toBe('mi-cuenta/comercio/[vertical]/[id]/editar/fotos');
+        expect(
+            portalDestinationTemplate({
+                destination: {
+                    kind: 'listingEditor',
+                    vertical: 'accommodation',
+                    id: ID,
+                    section: 'photos'
+                }
+            })
+        ).toBe('mi-cuenta/propiedades/[id]/editar/fotos');
+    });
+
+    it('is the hub for a section the vertical does not have, like the URL', () => {
+        // Assert
+        expect(
+            portalDestinationTemplate({
+                destination: {
+                    kind: 'listingEditor',
+                    vertical: 'venue',
+                    id: ID,
+                    section: 'capacityPricing'
+                }
+            })
+        ).toBe('mi-cuenta/comercio/[vertical]/[id]/editar');
+    });
+
+    it('is the plain path of a destination with no dynamic segment', () => {
+        // Assert
+        expect(portalDestinationTemplate({ destination: { kind: 'faq' } })).toBe(
+            'preguntas-frecuentes'
+        );
+        expect(
+            portalDestinationTemplate({ destination: { kind: 'plans', vertical: 'venue' } })
+        ).toBe('planes/comer-y-salir');
     });
 });

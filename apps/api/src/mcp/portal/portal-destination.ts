@@ -19,7 +19,9 @@ export const PORTAL_DESTINATION_LABELS: Readonly<Record<PortalDestinationKind, s
     providerDirectory: 'Ver el directorio de proveedores',
     benefitUsages: 'Ver mis usos de beneficio',
     providerPanel: 'Abrir mi panel de proveedor',
-    aiAssistants: 'Administrar mis asistentes de IA'
+    aiAssistants: 'Administrar mis asistentes de IA',
+    faq: 'Ver las preguntas frecuentes',
+    contact: 'Contactar a Hospeda'
 };
 
 /**

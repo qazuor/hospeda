@@ -81,7 +81,11 @@ export const PORTAL_ROUTE_TEMPLATES = {
     /** The provider's own panel. */
     providerPanel: 'mi-cuenta/proveedor',
     /** Connected AI assistants. */
-    aiAssistants: 'mi-cuenta/asistentes-ia'
+    aiAssistants: 'mi-cuenta/asistentes-ia',
+    /** The public frequently-asked-questions page (HOS-2333). */
+    faq: 'preguntas-frecuentes',
+    /** The public contact page, where support is reached (HOS-2333). */
+    contact: 'contacto'
 } as const;
 
 /** Name of one entry of {@link PORTAL_ROUTE_TEMPLATES}. */
@@ -168,6 +172,8 @@ export type PortalListingVertical = ListingVertical;
  * - `plans`: the plans of a vertical.
  * - `inquiry`: the inquiry inbox, or one thread when `conversationId` is given.
  * - `providerDirectory`: the directory, or one provider when `slug` is given.
+ * - `faq` and `contact`: the public FAQ and contact pages, the fallback of the
+ *   help tool (HOS-2333).
  */
 export type PortalDestination =
     | {
@@ -185,7 +191,9 @@ export type PortalDestination =
     | { readonly kind: 'providerDirectory'; readonly slug?: string }
     | { readonly kind: 'benefitUsages' }
     | { readonly kind: 'providerPanel' }
-    | { readonly kind: 'aiAssistants' };
+    | { readonly kind: 'aiAssistants' }
+    | { readonly kind: 'faq' }
+    | { readonly kind: 'contact' };
 
 /** Name of a destination kind. */
 export type PortalDestinationKind = PortalDestination['kind'];
