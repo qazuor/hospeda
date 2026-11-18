@@ -71,10 +71,11 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
     ) => {
         // Extract configuration
         const { id, label, description, placeholder, typeConfig } = config;
-        const entityConfig =
-            config.type === FieldTypeEnum.ENTITY_SELECT
-                ? (typeConfig as EntitySelectFieldConfig)
-                : null;
+        // ENTITY_MULTISELECT shares the same typeConfig shape as ENTITY_SELECT
+        const isEntitySelectType =
+            config.type === FieldTypeEnum.ENTITY_SELECT ||
+            config.type === FieldTypeEnum.ENTITY_MULTISELECT;
+        const entityConfig = isEntitySelectType ? (typeConfig as EntitySelectFieldConfig) : null;
 
         // Hooks
         const { addToast } = useToast();
@@ -104,7 +105,8 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
         }, [entityConfig?.searchFn, entityConfig?.loadByIdsFn, entityConfig?.loadAllFn]);
 
         // Determine if multiple selection is allowed
-        const isMultiple = entityConfig?.multiple || false;
+        const isMultiple =
+            config.type === FieldTypeEnum.ENTITY_MULTISELECT || entityConfig?.multiple || false;
         const values = Array.isArray(value) ? value : value ? [value] : [];
 
         // IDs for accessibility
