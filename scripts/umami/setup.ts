@@ -2,8 +2,10 @@
  * @file setup.ts
  * @description Idempotent Umami dashboards-as-code setup (HOS-2119, AC-6).
  *
- * Upserts every saved report first, then the boards that reference them by id.
- * Re-running changes nothing (second run reports everything as unchanged).
+ * Upserts every saved report first, then the boards that reference them by id,
+ * then the segments and cohorts. Re-running changes nothing (second run reports
+ * everything as unchanged). Items that exist in Umami but are not defined here
+ * are only listed ("unmanaged"), never modified or deleted.
  *
  * Usage: `pnpm umami:setup [--dry-run]`
  *
@@ -23,6 +25,8 @@
 import { fileURLToPath } from 'node:url';
 import { buildBoardDefinitions } from './boards.js';
 import {
+    listBoards,
+    listReports,
     loginUmami,
     UmamiApiError,
     type UmamiClientConfig,
@@ -31,6 +35,8 @@ import {
     upsertReport
 } from './client.js';
 import { buildReportDefinitions } from './definitions.js';
+import { buildSegmentDefinitions, type SegmentType } from './segment-definitions.js';
+import { listSegments, upsertSegment } from './segments-client.js';
 
 /** Prefix of the id used for a report a dry-run would create (it does not exist yet). */
 export const DRY_RUN_PLACEHOLDER_PREFIX = 'dry-run-placeholder:';
@@ -42,12 +48,22 @@ export interface ActionCounts {
     readonly unchanged: number;
 }
 
+/** A resource that exists in Umami but is not defined in the script. */
+export interface UnmanagedItem {
+    readonly kind: 'report' | 'board' | 'segment' | 'cohort';
+    readonly name: string;
+}
+
 /** Outcome of {@link runSetup}. */
 export interface SetupOutcome {
     /** 0 on success, 1 on any error. */
     readonly exitCode: 0 | 1;
     readonly reports: ActionCounts;
     readonly boards: ActionCounts;
+    readonly segments: ActionCounts;
+    readonly cohorts: ActionCounts;
+    /** Report-only: existing items not defined in the script. Left untouched. */
+    readonly unmanaged: readonly UnmanagedItem[];
 }
 
 /** Input of {@link runSetup}. */
@@ -90,8 +106,34 @@ function formatRow(input: { readonly label: string; readonly counts: ActionCount
     return `${label.padEnd(10)}${String(counts.created).padStart(8)}${String(counts.updated).padStart(8)}${String(counts.unchanged).padStart(11)}`;
 }
 
+async function findUnmanaged(input: {
+    readonly config: UmamiClientConfig;
+    readonly websiteId: string;
+    readonly reportNames: ReadonlySet<string>;
+    readonly boardNames: ReadonlySet<string>;
+    readonly segmentDefinitions: ReturnType<typeof buildSegmentDefinitions>;
+}): Promise<readonly UnmanagedItem[]> {
+    const { config, websiteId } = input;
+    const items: UnmanagedItem[] = [];
+    for (const r of await listReports({ config, websiteId })) {
+        if (!input.reportNames.has(r.name)) items.push({ kind: 'report', name: r.name });
+    }
+    for (const b of await listBoards({ config })) {
+        if (!input.boardNames.has(b.name)) items.push({ kind: 'board', name: b.name });
+    }
+    for (const type of ['segment', 'cohort'] as const satisfies readonly SegmentType[]) {
+        const defined = new Set(
+            input.segmentDefinitions.filter((d) => d.type === type).map((d) => d.name)
+        );
+        for (const s of await listSegments({ config, websiteId, type })) {
+            if (!defined.has(s.name)) items.push({ kind: type, name: s.name });
+        }
+    }
+    return items;
+}
+
 /**
- * Runs the setup: reports first, then boards. Never throws; failures are
+ * Runs the setup: reports, boards, then segments and cohorts. Never throws; failures are
  * printed (token-free) and reflected in `exitCode`.
  *
  * @param input - Connection, credentials and mode
@@ -107,10 +149,12 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
     const error = input.error ?? ((line: string) => console.error(line));
     const reports: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const boards: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
+    const segments: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
+    const cohorts: MutableCounts = { created: 0, updated: 0, unchanged: 0 };
     const secrets: string[] = [];
     const fail = (message: string): SetupOutcome => {
         error(`FAILED: ${message}`);
-        return { exitCode: 1, reports, boards };
+        return { exitCode: 1, reports, boards, segments, cohorts, unmanaged: [] };
     };
 
     let token: string;
@@ -179,14 +223,58 @@ export async function runSetup(input: RunSetupInput): Promise<SetupOutcome> {
         }
     }
 
+    let segmentDefinitions: ReturnType<typeof buildSegmentDefinitions>;
+    try {
+        segmentDefinitions = buildSegmentDefinitions();
+    } catch (cause) {
+        return fail(`building segments: ${describeError(cause, secrets)}`);
+    }
+    for (const definition of segmentDefinitions) {
+        try {
+            const result = await upsertSegment({
+                config,
+                websiteId: input.websiteId,
+                definition
+            });
+            (definition.type === 'cohort' ? cohorts : segments)[result.action]++;
+            log(`- ${definition.type} ${result.action}: ${definition.name}`);
+        } catch (cause) {
+            return fail(
+                `${definition.type} "${definition.name}": ${describeError(cause, secrets)}`
+            );
+        }
+    }
+
+    const unmanaged: UnmanagedItem[] = [];
+    try {
+        unmanaged.push(
+            ...(await findUnmanaged({
+                config,
+                websiteId: input.websiteId,
+                reportNames: new Set(buildReportDefinitions().map((d) => d.name)),
+                boardNames: new Set(boardDefinitions.map((d) => d.name)),
+                segmentDefinitions
+            }))
+        );
+    } catch (cause) {
+        return fail(`listing unmanaged items: ${describeError(cause, secrets)}`);
+    }
+    if (unmanaged.length > 0) {
+        log('');
+        log('Unmanaged (left untouched):');
+        for (const item of unmanaged) log(`- ${item.kind}: ${item.name}`);
+    }
+
     log('');
     log(
         `${'resource'.padEnd(10)}${'created'.padStart(8)}${'updated'.padStart(8)}${'unchanged'.padStart(11)}`
     );
     log(formatRow({ label: 'reports', counts: reports }));
     log(formatRow({ label: 'boards', counts: boards }));
+    log(formatRow({ label: 'segments', counts: segments }));
+    log(formatRow({ label: 'cohorts', counts: cohorts }));
     log(input.dryRun ? 'Dry run completed; nothing was written.' : 'Umami setup completed.');
-    return { exitCode: 0, reports, boards };
+    return { exitCode: 0, reports, boards, segments, cohorts, unmanaged };
 }
 
 /** Result of {@link resolveSetupInput}. */

@@ -262,7 +262,8 @@ export async function loginUmami(input: {
 const LIST_PAGE_SIZE = 100;
 const MAX_PAGES = 100;
 
-async function listAll<S extends z.ZodTypeAny>(input: {
+/** Lists every item of a paginated Umami endpoint, validating each item. */
+export async function listAll<S extends z.ZodTypeAny>(input: {
     readonly config: UmamiClientConfig;
     readonly path: string;
     readonly query?: Readonly<Record<string, string | number>>;
@@ -352,7 +353,8 @@ export function sameJson(a: unknown, b: unknown): boolean {
     return canonical(a) === canonical(b);
 }
 
-function pickUnique<T extends { readonly id: string }>(input: {
+/** Returns the single match, `undefined` for none, or throws `ambiguous` for several. */
+export function pickUnique<T extends { readonly id: string }>(input: {
     readonly matches: readonly T[];
     readonly label: string;
     readonly endpoint: string;

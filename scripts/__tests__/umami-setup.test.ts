@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { listReferencedReportNames } from '../umami/boards.js';
 import { buildReportDefinitions } from '../umami/definitions.js';
+import { buildSegmentDefinitions } from '../umami/segment-definitions.js';
 import {
     DRY_RUN_PLACEHOLDER_PREFIX,
     type RunSetupInput,
@@ -14,6 +15,8 @@ const FAKE_LOGIN = ['fixture', 'login', 'value'].join('-');
 const WEBSITE = 'site-1';
 const REPORT_COUNT = buildReportDefinitions().length;
 const BOARD_COUNT = 6;
+const SEGMENT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 'segment').length;
+const COHORT_COUNT = buildSegmentDefinitions().filter((d) => d.type === 'cohort').length;
 
 interface Call {
     readonly method: string;
@@ -32,9 +35,11 @@ function fakeUmami(input: { readonly failReportPosts?: boolean } = {}): {
     calls: Call[];
     reports: Stored[];
     boards: Stored[];
+    segments: Stored[];
 } {
     const reports: Stored[] = [];
     const boards: Stored[] = [];
+    const segments: Stored[] = [];
     const calls: Call[] = [];
     let seq = 0;
     const json = (status: number, body: unknown): Response =>
@@ -58,6 +63,24 @@ function fakeUmami(input: { readonly failReportPosts?: boolean } = {}): {
                 ? json(200, { token: TOKEN })
                 : json(401, { error: 'bad' });
         }
+        const segmentBase = `/api/websites/${WEBSITE}/segments`;
+        if (path.startsWith(segmentBase)) {
+            if (method === 'GET') {
+                const type = parsed.searchParams.get('type');
+                return json(200, envelope(segments.filter((s) => s['type'] === type)));
+            }
+            const segmentId = path.slice(segmentBase.length + 1);
+            if (segmentId) {
+                const target = segments.find((s) => s.id === segmentId);
+                if (!target) return json(404, {});
+                Object.assign(target, body);
+                return json(200, target);
+            }
+            seq++;
+            const created = { ...body, id: `id-${seq}`, name: String(body['name']) } as Stored;
+            segments.push(created);
+            return json(200, created);
+        }
         const store = path.startsWith('/api/reports') ? reports : boards;
         const base = path.startsWith('/api/reports') ? '/api/reports' : '/api/boards';
         if (method === 'GET') return json(200, envelope(store));
@@ -76,7 +99,7 @@ function fakeUmami(input: { readonly failReportPosts?: boolean } = {}): {
         store.push(created);
         return json(200, created);
     }) as typeof fetch;
-    return { fetchImpl, calls, reports, boards };
+    return { fetchImpl, calls, reports, boards, segments };
 }
 
 function baseInput(over: Partial<RunSetupInput> & { fetchImpl: typeof fetch }): {
@@ -116,6 +139,9 @@ describe('runSetup', () => {
         expect(result.boards).toEqual({ created: BOARD_COUNT, updated: 0, unchanged: 0 });
         expect(fake.reports).toHaveLength(REPORT_COUNT);
         expect(fake.boards).toHaveLength(BOARD_COUNT);
+        expect(result.segments).toEqual({ created: SEGMENT_COUNT, updated: 0, unchanged: 0 });
+        expect(result.cohorts).toEqual({ created: COHORT_COUNT, updated: 0, unchanged: 0 });
+        expect(fake.segments).toHaveLength(SEGMENT_COUNT + COHORT_COUNT);
     });
 
     it('should report everything unchanged and write nothing on the second run (AC-6)', async () => {
@@ -128,6 +154,8 @@ describe('runSetup', () => {
         expect(result.exitCode).toBe(0);
         expect(result.reports).toEqual({ created: 0, updated: 0, unchanged: REPORT_COUNT });
         expect(result.boards).toEqual({ created: 0, updated: 0, unchanged: BOARD_COUNT });
+        expect(result.segments).toEqual({ created: 0, updated: 0, unchanged: SEGMENT_COUNT });
+        expect(result.cohorts).toEqual({ created: 0, updated: 0, unchanged: COHORT_COUNT });
         expect(writes(fake.calls)).toEqual([]);
     });
 
@@ -141,6 +169,9 @@ describe('runSetup', () => {
         expect(writes(fake.calls)).toEqual([]);
         expect(result.reports.created).toBe(REPORT_COUNT);
         expect(result.boards.created).toBe(BOARD_COUNT);
+        expect(result.segments.created).toBe(SEGMENT_COUNT);
+        expect(result.cohorts.created).toBe(COHORT_COUNT);
+        expect(fake.segments).toEqual([]);
         expect(out.join('\n')).toContain('placeholder');
         expect(DRY_RUN_PLACEHOLDER_PREFIX.length).toBeGreaterThan(0);
     });
@@ -197,6 +228,114 @@ describe('runSetup', () => {
 
         expect(result.exitCode).toBe(1);
         expect(err.join('\n')).not.toContain('wrong');
+    });
+
+    it('should create only the new definition when one is added to the Umami state', async () => {
+        const fake = fakeUmami();
+        await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+        const removed = fake.segments.findIndex((s) => s.name === 'Brasil y Uruguay');
+        fake.segments.splice(removed, 1);
+        fake.calls.length = 0;
+
+        const result = await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+
+        expect(result.segments).toEqual({
+            created: 1,
+            updated: 0,
+            unchanged: SEGMENT_COUNT - 1
+        });
+        expect(result.cohorts).toEqual({ created: 0, updated: 0, unchanged: COHORT_COUNT });
+        expect(writes(fake.calls)).toEqual([
+            { method: 'POST', path: `/api/websites/${WEBSITE}/segments` }
+        ]);
+    });
+
+    it('should update in place, keeping the id, when stored parameters drift', async () => {
+        const fake = fakeUmami();
+        await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+        const target = fake.segments.find((s) => s.name === 'Se registraron (30 días)');
+        if (!target) throw new Error('fixture: cohort missing');
+        const idBefore = target.id;
+        target['parameters'] = {
+            action: { type: 'event', value: 'sign_up_completed' },
+            dateRange: '7day'
+        };
+        fake.calls.length = 0;
+
+        const result = await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+
+        expect(result.cohorts).toEqual({ created: 0, updated: 1, unchanged: COHORT_COUNT - 1 });
+        expect(writes(fake.calls)).toEqual([
+            { method: 'POST', path: `/api/websites/${WEBSITE}/segments/${idBefore}` }
+        ]);
+        expect(target.id).toBe(idBefore);
+        expect(target['parameters']).toEqual({
+            action: { type: 'event', value: 'sign_up_completed' },
+            dateRange: '30day'
+        });
+    });
+
+    it('should list unmanaged items, never touch them, and never delete', async () => {
+        const fake = fakeUmami();
+        await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+        fake.segments.push({
+            id: 'hand-1',
+            type: 'segment',
+            name: 'Hecho a mano',
+            parameters: { filters: [] }
+        });
+        fake.reports.push({
+            id: 'hand-r',
+            websiteId: WEBSITE,
+            name: 'Reporte manual',
+            type: 'goal',
+            parameters: {}
+        });
+        const snapshot = JSON.stringify(fake.segments);
+        fake.calls.length = 0;
+        const { input, out } = baseInput({ fetchImpl: fake.fetchImpl });
+
+        const result = await runSetup(input);
+
+        expect(result.exitCode).toBe(0);
+        expect(result.unmanaged).toEqual([
+            { kind: 'report', name: 'Reporte manual' },
+            { kind: 'segment', name: 'Hecho a mano' }
+        ]);
+        expect(out.join('\n')).toContain('Unmanaged (left untouched)');
+        expect(writes(fake.calls)).toEqual([]);
+        expect(fake.calls.some((c) => c.method === 'DELETE')).toBe(false);
+        expect(JSON.stringify(fake.segments)).toBe(snapshot);
+    });
+
+    it('should leave the old item as unmanaged when a definition is renamed', async () => {
+        const fake = fakeUmami();
+        await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+        const renamed = fake.segments.find((s) => s.name === 'Visitantes anónimos');
+        if (!renamed) throw new Error('fixture: segment missing');
+        renamed.name = 'Nombre viejo';
+
+        const result = await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+
+        expect(result.segments.created).toBe(1);
+        expect(result.unmanaged).toEqual([{ kind: 'segment', name: 'Nombre viejo' }]);
+        expect(fake.segments.some((s) => s.name === 'Nombre viejo')).toBe(true);
+    });
+
+    it('should fail without writing when a segment name is ambiguous', async () => {
+        const fake = fakeUmami();
+        await runSetup(baseInput({ fetchImpl: fake.fetchImpl }).input);
+        const original = fake.segments.find((s) => s.name === 'Celular y tablet');
+        if (!original) throw new Error('fixture: segment missing');
+        fake.segments.push({ ...original, id: 'dup-1' });
+        fake.calls.length = 0;
+        const { input, err } = baseInput({ fetchImpl: fake.fetchImpl });
+
+        const result = await runSetup(input);
+
+        expect(result.exitCode).toBe(1);
+        expect(err.join('\n')).toContain('[ambiguous]');
+        expect(writes(fake.calls)).toEqual([]);
     });
 
     it('should reference only reports that the setup upserts', () => {
