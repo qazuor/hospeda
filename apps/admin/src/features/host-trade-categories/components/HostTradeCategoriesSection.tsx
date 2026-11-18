@@ -18,16 +18,18 @@ import {
     PermissionEnum
 } from '@repo/schemas';
 import type { ColumnDef } from '@tanstack/react-table';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/ToastProvider';
 import {
     isCategoryInUseError,
+    isGroupStillDeletedError,
     useCreateHostTradeCategory,
     useDeleteHostTradeCategory,
     useHostTradeCategories,
     useHostTradeCategoryGroups,
+    useRestoreHostTradeCategory,
     useUpdateHostTradeCategory
 } from '@/hooks/use-host-trade-categories';
 import { useTranslations } from '@/hooks/use-translations';
@@ -38,6 +40,7 @@ import { CatalogDeleteDialog, type CatalogDeleteTarget } from './CatalogDeleteDi
 import { CatalogStateBadge } from './CatalogStateBadge';
 import { CatalogTable } from './CatalogTable';
 import { HostTradeCategoryDialog } from './HostTradeCategoryDialog';
+import { ShowDeletedToggle } from './ShowDeletedToggle';
 
 const PAGE_SIZE = 50;
 const GROUPS_PAGE_SIZE = 100;
@@ -58,7 +61,9 @@ export function HostTradeCategoriesSection() {
     const canCreate = permissions.includes(PermissionEnum.HOST_TRADE_CATEGORY_CREATE);
     const canUpdate = permissions.includes(PermissionEnum.HOST_TRADE_CATEGORY_UPDATE);
     const canDelete = permissions.includes(PermissionEnum.HOST_TRADE_CATEGORY_DELETE);
+    const canRestore = permissions.includes(PermissionEnum.HOST_TRADE_CATEGORY_RESTORE);
 
+    const [showDeleted, setShowDeleted] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [search, setSearch] = useState('');
     const [groupId, setGroupId] = useState('');
@@ -75,14 +80,21 @@ export function HostTradeCategoriesSection() {
         return () => clearTimeout(timer);
     }, [searchText]);
 
-    const groupsQuery = useHostTradeCategoryGroups({ page: 1, pageSize: GROUPS_PAGE_SIZE });
-    const groups = groupsQuery.data?.items ?? [];
+    // Deleted groups are fetched too while the toggle is on, so a deleted category still
+    // shows its group's name. The group select and the dialog only offer live groups.
+    const groupsQuery = useHostTradeCategoryGroups({
+        page: 1,
+        pageSize: GROUPS_PAGE_SIZE,
+        includeDeleted: showDeleted || undefined
+    });
+    const allGroups = groupsQuery.data?.items ?? [];
+    const groups = useMemo(() => allGroups.filter((group) => !group.deletedAt), [allGroups]);
     const groupNameById = useMemo(
         () =>
             new Map(
-                groups.map((group) => [group.id, resolveI18nText(group.nameI18n) || group.slug])
+                allGroups.map((group) => [group.id, resolveI18nText(group.nameI18n) || group.slug])
             ),
-        [groups]
+        [allGroups]
     );
 
     const listQuery = useHostTradeCategories({
@@ -90,14 +102,42 @@ export function HostTradeCategoriesSection() {
         pageSize: PAGE_SIZE,
         search: search || undefined,
         groupId: groupId || undefined,
-        lifecycleState: (lifecycleState || undefined) as LifecycleStatusEnum | undefined
+        lifecycleState: (lifecycleState || undefined) as LifecycleStatusEnum | undefined,
+        includeDeleted: showDeleted || undefined
     });
     const createMutation = useCreateHostTradeCategory();
     const updateMutation = useUpdateHostTradeCategory();
     const deleteMutation = useDeleteHostTradeCategory();
+    const restoreMutation = useRestoreHostTradeCategory();
+    const restoringId = restoreMutation.isPending ? restoreMutation.variables : undefined;
 
     const rows = listQuery.data?.items ?? [];
     const totalPages = listQuery.data?.pagination.totalPages ?? 1;
+
+    const handleRestore = useCallback(
+        async (id: string) => {
+            try {
+                await restoreMutation.mutateAsync(id);
+                addToast({
+                    message: t(catalogKey({ path: 'categories.messages.restored' })),
+                    variant: 'success'
+                });
+            } catch (error) {
+                addToast({
+                    message: t(
+                        catalogKey({
+                            path: isGroupStillDeletedError(error)
+                                ? 'categories.messages.restoreGroupDeleted'
+                                : 'messages.restoreError'
+                        })
+                    ),
+                    variant: 'error'
+                });
+                await listQuery.refetch();
+            }
+        },
+        [restoreMutation, addToast, t, listQuery]
+    );
 
     const handleSubmit = async (payload: Record<string, unknown>) => {
         if (!dialog) return;
@@ -182,46 +222,71 @@ export function HostTradeCategoriesSection() {
                 id: 'state',
                 header: t(catalogKey({ path: 'columns.state' })),
                 cell: ({ row }) => (
-                    <CatalogStateBadge lifecycleState={row.original.lifecycleState} />
+                    <CatalogStateBadge
+                        lifecycleState={row.original.lifecycleState}
+                        deletedAt={row.original.deletedAt}
+                    />
                 )
             },
             {
                 id: 'actions',
                 header: t(catalogKey({ path: 'columns.actions' })),
-                cell: ({ row }) => (
-                    <div className="flex gap-2">
-                        {canUpdate ? (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                data-testid={`category-edit-${row.original.id}`}
-                                onClick={() => setDialog({ mode: 'edit', row: row.original })}
-                            >
-                                {t(catalogKey({ path: 'actions.edit' }))}
-                            </Button>
-                        ) : null}
-                        {canDelete ? (
-                            <Button
-                                size="sm"
-                                variant="outline"
-                                data-testid={`category-delete-${row.original.id}`}
-                                onClick={() =>
-                                    setDeleteTarget({
-                                        id: row.original.id,
-                                        name:
-                                            resolveI18nText(row.original.nameI18n) ||
-                                            row.original.slug
-                                    })
-                                }
-                            >
-                                {t(catalogKey({ path: 'actions.delete' }))}
-                            </Button>
-                        ) : null}
-                    </div>
-                )
+                cell: ({ row }) =>
+                    row.original.deletedAt ? (
+                        <div className="flex gap-2">
+                            {canRestore ? (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    data-testid={`category-restore-${row.original.id}`}
+                                    disabled={restoringId === row.original.id}
+                                    onClick={() => handleRestore(row.original.id)}
+                                >
+                                    {t(
+                                        catalogKey({
+                                            path:
+                                                restoringId === row.original.id
+                                                    ? 'actions.restoring'
+                                                    : 'actions.restore'
+                                        })
+                                    )}
+                                </Button>
+                            ) : null}
+                        </div>
+                    ) : (
+                        <div className="flex gap-2">
+                            {canUpdate ? (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    data-testid={`category-edit-${row.original.id}`}
+                                    onClick={() => setDialog({ mode: 'edit', row: row.original })}
+                                >
+                                    {t(catalogKey({ path: 'actions.edit' }))}
+                                </Button>
+                            ) : null}
+                            {canDelete ? (
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    data-testid={`category-delete-${row.original.id}`}
+                                    onClick={() =>
+                                        setDeleteTarget({
+                                            id: row.original.id,
+                                            name:
+                                                resolveI18nText(row.original.nameI18n) ||
+                                                row.original.slug
+                                        })
+                                    }
+                                >
+                                    {t(catalogKey({ path: 'actions.delete' }))}
+                                </Button>
+                            ) : null}
+                        </div>
+                    )
             }
         ],
-        [t, canUpdate, canDelete, groupNameById]
+        [t, canUpdate, canDelete, canRestore, groupNameById, restoringId, handleRestore]
     );
 
     return (
@@ -276,6 +341,14 @@ export function HostTradeCategoriesSection() {
                         {t(catalogKey({ path: 'state.inactive' }))}
                     </option>
                 </select>
+                <ShowDeletedToggle
+                    testId="category-show-deleted"
+                    checked={showDeleted}
+                    onChange={(checked) => {
+                        setShowDeleted(checked);
+                        setPage(1);
+                    }}
+                />
                 {canCreate ? (
                     <Button
                         className="ml-auto"

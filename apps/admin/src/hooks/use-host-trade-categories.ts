@@ -53,6 +53,8 @@ export interface HostTradeCategoryGroupFilters {
     readonly pageSize?: number;
     readonly search?: string;
     readonly lifecycleState?: LifecycleStatusEnum;
+    /** Also list soft-deleted rows (HOS-2340). Only sent when `true`. */
+    readonly includeDeleted?: boolean;
 }
 
 /** Filters accepted by the category list (groups filters plus `groupId`). */
@@ -88,11 +90,26 @@ export function isCategoryInUseError(error: unknown): boolean {
     return (error.code as string) === 'CATEGORY_IN_USE' || error.status === 409;
 }
 
-/** Serialises defined filters into a query string. */
-function toQueryString(filters: Record<string, string | number | undefined>): string {
+/**
+ * Whether an error is the refusal to restore a category whose GROUP is still
+ * soft-deleted (HOS-2340). The service answers a `VALIDATION_ERROR` naming the
+ * `groupId` field; the 400/422 status is the fallback when the details are
+ * dropped, since the category restore route has no other business refusal.
+ *
+ * @param error - Anything a restore mutation rejected with.
+ */
+export function isGroupStillDeletedError(error: unknown): boolean {
+    if (!isApiError(error)) return false;
+    if (error.details?.field === 'groupId') return true;
+    return error.status === 400 || error.status === 422;
+}
+
+/** Serialises defined filters into a query string. A `false` boolean is omitted. */
+function toQueryString(filters: Record<string, string | number | boolean | undefined>): string {
     const params = new URLSearchParams();
     for (const [key, value] of Object.entries(filters)) {
-        if (value !== undefined && value !== '') params.set(key, String(value));
+        if (value === undefined || value === '' || value === false) continue;
+        params.set(key, String(value));
     }
     const query = params.toString();
     return query ? `?${query}` : '';
@@ -101,7 +118,7 @@ function toQueryString(filters: Record<string, string | number | undefined>): st
 /** Reads a list page from an admin endpoint. */
 async function fetchPage<TItem>(
     endpoint: string,
-    filters: Record<string, string | number | undefined>
+    filters: Record<string, string | number | boolean | undefined>
 ): Promise<CatalogPage<TItem>> {
     const result = await fetchApi<{ success: boolean; data: CatalogPage<TItem> }>({
         path: `${endpoint}${toQueryString(filters)}`
@@ -187,6 +204,21 @@ export const useDeleteHostTradeCategoryGroup = () => {
     });
 };
 
+/** Restores a soft-deleted category group (HOS-2340). */
+export const useRestoreHostTradeCategoryGroup = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await fetchApi<{ success: boolean }>({
+                path: `${HOST_TRADE_CATEGORY_GROUPS_ENDPOINT}/${id}/restore`,
+                method: 'POST'
+            });
+            return id;
+        },
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: hostTradeCategoryQueryKeys.all })
+    });
+};
+
 // ---------------------------------------------------------------------------
 // Categories
 // ---------------------------------------------------------------------------
@@ -227,6 +259,24 @@ export const useUpdateHostTradeCategory = () => {
                 method: 'PATCH',
                 body: input.data
             }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: hostTradeCategoryQueryKeys.all })
+    });
+};
+
+/**
+ * Restores a soft-deleted category (HOS-2340). Rejects while its group is still
+ * deleted, see {@link isGroupStillDeletedError}.
+ */
+export const useRestoreHostTradeCategory = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await fetchApi<{ success: boolean }>({
+                path: `${HOST_TRADE_CATEGORIES_ENDPOINT}/${id}/restore`,
+                method: 'POST'
+            });
+            return id;
+        },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: hostTradeCategoryQueryKeys.all })
     });
 };
