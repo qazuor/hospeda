@@ -231,12 +231,20 @@ correo de `DEC-MP-004`, que distingue el antifraude de la tarjeta, no salía.
 > evento de `S6` (§10.1).
 
 **Las guardas de `S4` y `S16` son complementarias por ~~un booleano~~ dos datos** —*«la fila tiene al menos un
-pago acreditado»*, y su predecesora tenía—, que es la forma que la regla 7 del núcleo exige (`NUCLEO/03` §1); ~~y es el
+pago acreditado»*, y su predecesora ~~tenía~~ **venía pagando**—, que es la forma que la regla 7 del núcleo exige (`NUCLEO/03` §1); ~~y es el
 mismo dato que el contrato transporta como `cobrada`~~ **el primero es el que el contrato transporta como
 `cobrada`** (`12-contrato…` §2.1), y los dos juntos son **«pagando»** (`NUCLEO/01` §2; FASE 9 vuelta 1,
 `F-8V1D1-002`: desde la decisión 3c son dos datos, como ya dice la fila `S16`). **Y el trial no se entera del rechazo**: la fila nunca llegó a `cobrada: sí`, así que
 tampoco lo había convertido (`12-contrato…` §2.1; `DEC-TRIAL-010`), y quien estaba en su trial
 sigue ahí.
+
+**«Venía pagando» se lee por toda la cadena de sucesiones, no sólo un salto** (owner 2026-11-17,
+HOS-2224). Después de dos cambios de plan seguidos, la predecesora directa también está en el
+crédito y no tiene ningún pago propio. Por eso la lectura sube por `sucede_a`, o por la
+`sucedida_por` de la predecesora una vez cerrada la sucesión (`INV:D15`), hasta una fila con un pago
+acreditado («pagando») o una fila sin predecesora («no pagando»). La forma (principal con tarjeta)
+se revisa sólo en la predecesora directa. Es la misma lectura que usan `A1` y el huérfano
+`USER`/`GLOBAL` (`B/16` §2.2). Un ciclo en los enlaces es un error, nunca un «no».
 
 **Lo que esto no toca**: la fila 11 de la tabla de la predecesora (abajo), `S4` durante una
 sucesión en curso, sigue valiendo para una predecesora que ya cobró; una que no cobró nunca —el alta

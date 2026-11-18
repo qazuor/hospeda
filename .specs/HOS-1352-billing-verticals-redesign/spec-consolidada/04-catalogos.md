@@ -3390,7 +3390,7 @@ correo de `DEC-MP-004`, que distingue el antifraude de la tarjeta, no salía.
 > evento de `S6` (§10.1).
 
 **Las guardas de `S4` y `S16` son complementarias por dos datos** —*«la fila tiene al menos un
-pago acreditado»*, y su predecesora tenía—, que es la forma que la regla 7 del núcleo exige (`NUCLEO/03` §1); **el primero es el que el contrato transporta como
+pago acreditado»*, y su predecesora venía pagando, leído por toda la cadena de sucesiones (owner 2026-11-17, HOS-2224; `B/03` §3.2)—, que es la forma que la regla 7 del núcleo exige (`NUCLEO/03` §1); **el primero es el que el contrato transporta como
 `cobrada`** (`12-contrato…` §2.1), y los dos juntos son **«pagando»** (`NUCLEO/01` §2; FASE 9 vuelta 1,
 `F-8V1D1-002`: desde la decisión 3c son dos datos, como ya dice la fila `S16`). **Y el trial no se entera del rechazo**: la fila nunca llegó a `cobrada: sí`, así que
 tampoco lo había convertido (`12-contrato…` §2.1; `DEC-TRIAL-010`), y quien estaba en su trial

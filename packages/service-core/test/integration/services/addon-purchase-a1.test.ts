@@ -2,6 +2,8 @@ import { addonInstances, domainEventModel, eq } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
+import { creditedPaymentsFromLedger } from '../../../src/services/billing/payment/payment-ledger';
+import { isPayingPrincipal } from '../../../src/services/billing/subscription/paying-predecessor-successor';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import {
     closedSuccessionFixture,
@@ -114,6 +116,76 @@ describe('TEST:B10:1 AC:B10:1 addon purchase eligibility', () => {
                 outcome: 'REFUSED',
                 reason: 'NO_VALID_TITLE'
             });
+        }
+    );
+
+    it.skipIf(skip)(
+        'HOS-2224: accepts a successor two closed hops in credit away from the paying row',
+        async () => {
+            const f = await purchaseFixture();
+            // The staging chain: a paying root, a middle successor in credit that never charged,
+            // and the current successor in credit, with BOTH successions closed (INV:D15).
+            const rootId = await principalFixture({
+                ownerId: f.ownerId,
+                status: 'CANCELLED',
+                credited: true
+            });
+            const middleId = await principalFixture({ ownerId: f.ownerId, status: 'CANCELLED' });
+            const successorId = await principalFixture({ ownerId: f.ownerId });
+            await closedSuccessionFixture({ predecessorId: rootId, successorId: middleId });
+            await closedSuccessionFixture({ predecessorId: middleId, successorId });
+            expect(await purchaseAddon(f.input(), f.ports)).toMatchObject({ outcome: 'CREATED' });
+        }
+    );
+
+    it.skipIf(skip)(
+        'HOS-2224: follows an in-progress last succession and a closed first one to the paying row',
+        async () => {
+            const f = await purchaseFixture();
+            // The current successor still names the middle by its own `succeeds_id`.
+            const rootId = await principalFixture({
+                ownerId: f.ownerId,
+                status: 'CANCELLED',
+                credited: true
+            });
+            const middleId = await principalFixture({ ownerId: f.ownerId, status: 'CANCELLED' });
+            await closedSuccessionFixture({ predecessorId: rootId, successorId: middleId });
+            await principalFixture({ ownerId: f.ownerId, predecessorId: middleId });
+            expect(await purchaseAddon(f.input(), f.ports)).toMatchObject({ outcome: 'CREATED' });
+        }
+    );
+
+    it.skipIf(skip)(
+        'HOS-2224: refuses a two-hop chain in which no row ever had a credited payment',
+        async () => {
+            const f = await purchaseFixture();
+            const rootId = await principalFixture({ ownerId: f.ownerId, status: 'CANCELLED' });
+            const middleId = await principalFixture({ ownerId: f.ownerId, status: 'CANCELLED' });
+            const successorId = await principalFixture({ ownerId: f.ownerId });
+            await closedSuccessionFixture({ predecessorId: rootId, successorId: middleId });
+            await closedSuccessionFixture({ predecessorId: middleId, successorId });
+            expect(await purchaseAddon(f.input(), f.ports)).toEqual({
+                outcome: 'REFUSED',
+                reason: 'NO_VALID_TITLE'
+            });
+        }
+    );
+
+    it.skipIf(skip)(
+        'HOS-2224: a cycle in the succession links is thrown, never read as paying or not',
+        async () => {
+            const f = await purchaseFixture();
+            // Corrupt links: each row names the other as its successor.
+            const aId = await principalFixture({ ownerId: f.ownerId, status: 'CANCELLED' });
+            const bId = await principalFixture({ ownerId: f.ownerId, status: 'CANCELLED' });
+            await closedSuccessionFixture({ predecessorId: aId, successorId: bId });
+            await closedSuccessionFixture({ predecessorId: bId, successorId: aId });
+            await expect(
+                isPayingPrincipal({
+                    principal: { id: aId, predecessorId: null },
+                    payments: creditedPaymentsFromLedger
+                })
+            ).rejects.toThrow(/cycle/i);
         }
     );
 
