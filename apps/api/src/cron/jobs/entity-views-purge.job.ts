@@ -6,9 +6,12 @@
  * minimisation principles.
  *
  * **Retention derivation:**
- * The widest analytics window exposed via the API is 30 days (SPEC-159 §5).
- * A 65-day buffer is added so the cron can miss several nightly runs without
- * silently truncating any live analytics window. 30 + 65 = 95 days.
+ * Owner decision 2026-11-16 (HOS-2256 OQ-2): 120 days. The widest analytics
+ * window the panels show is 90 days (HOS-2261), which leaves 30 days of margin
+ * for a nightly cron that did not run. Before that the horizon was 95 days (a
+ * 30-day window plus a 65-day buffer, SPEC-159 §5). The same horizon covers
+ * `entity_views`, `partner_logo_clicks` and `entity_interactions`. Cost
+ * accepted: pseudonymised hashes live 25 days longer.
  *
  * Schedule: Nightly at 3:30 Buenos Aires time — in the existing off-peak maintenance band
  * (03:00–04:00 Buenos Aires time) but 30 minutes after the 3:00 Buenos Aires time batch, avoiding thundering herd.
@@ -19,13 +22,12 @@
 import type { CronJobDefinition } from '../types.js';
 
 /**
- * TTL threshold in days for `entity_views` rows.
+ * TTL threshold in days for the telemetry tables this job purges.
  *
- * Derived from: 30-day widest analytics window (SPEC-159 §5)
- * + 65-day operational buffer to survive missed nightly runs
- * = 95 days total.
+ * 90-day widest panel window (HOS-2261) + 30-day margin for missed nightly
+ * runs = 120 days (owner decision 2026-11-16, HOS-2256 OQ-2).
  */
-const ENTITY_VIEWS_RETENTION_DAYS = 95;
+const ENTITY_VIEWS_RETENTION_DAYS = 120;
 
 /**
  * Entity views purge job definition.
@@ -35,7 +37,7 @@ const ENTITY_VIEWS_RETENTION_DAYS = 95;
  */
 export const entityViewsPurgeJob: CronJobDefinition = {
     name: 'entity-views-purge',
-    description: `Purge entity_views rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days (GDPR-lite data minimisation)`,
+    description: `Purge entity_views, partner_logo_clicks and entity_interactions rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days (GDPR-lite data minimisation)`,
     schedule: '30 3 * * *', // Daily at 3:30 Buenos Aires time
     enabled: true,
     timeoutMs: 120_000, // 2 minutes — table can grow large; allow for bulk deletes
@@ -64,7 +66,9 @@ export const entityViewsPurgeJob: CronJobDefinition = {
         try {
             // Lazy import keeps the singleton out of the module top-level, preventing
             // Vitest fork contamination when tests partially mock @repo/db.
-            const { entityViewModel, partnerLogoClickModel } = await import('@repo/db');
+            const { entityViewModel, partnerLogoClickModel, entityInteractionModel } = await import(
+                '@repo/db'
+            );
             const deleted = await entityViewModel.purgeOlderThan({
                 days: ENTITY_VIEWS_RETENTION_DAYS
             });
@@ -80,23 +84,34 @@ export const entityViewsPurgeJob: CronJobDefinition = {
                 days: ENTITY_VIEWS_RETENTION_DAYS
             });
 
+            // `entity_interactions` (HOS-2256) rides the same cron and horizon for
+            // the same reason: one more `visitor_hash` fingerprint, one more
+            // thing that must not drift out of step. Its monthly rollup
+            // (`view-monthly-rollup`) runs daily at 04:10, long before any row
+            // reaches the 120-day horizon.
+            const deletedInteractions = await entityInteractionModel.purgeOlderThan({
+                days: ENTITY_VIEWS_RETENTION_DAYS
+            });
+
             const durationMs = Date.now() - startedAt.getTime();
 
             logger.info('Entity views purge job completed', {
                 deleted,
                 deletedClicks,
+                deletedInteractions,
                 durationMs
             });
 
             return {
                 success: true,
-                message: `Purged ${deleted} entity_views rows and ${deletedClicks} partner_logo_clicks rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days`,
-                processed: deleted + deletedClicks,
+                message: `Purged ${deleted} entity_views rows ${deletedClicks} partner_logo_clicks rows and ${deletedInteractions} entity_interactions rows older than ${ENTITY_VIEWS_RETENTION_DAYS} days`,
+                processed: deleted + deletedClicks + deletedInteractions,
                 errors: 0,
                 durationMs,
                 details: {
                     deleted,
                     deletedClicks,
+                    deletedInteractions,
                     retentionDays: ENTITY_VIEWS_RETENTION_DAYS
                 }
             };

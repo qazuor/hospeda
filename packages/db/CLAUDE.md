@@ -687,6 +687,7 @@ Most tables extend `BaseModel` and carry full audit columns (`createdById`,
 |---|---|---|
 | `app_log_entries` | SPEC-??? | Structured log sink; never edited, never user-owned |
 | `entity_views` | SPEC-159 | High-write view capture; audit/FK overhead would bloat the hottest-write table |
+| `entity_interactions` | HOS-2256 | Listing taps (phone, map, ticket, WhatsApp); same shape and TTL cron as `entity_views`, plus `entity_interaction_monthly_rollups` |
 
 These tables use **TTL purge crons** (nightly `DELETE WHERE <time_col> < now() - interval
 'N days'`) instead of soft-delete, and they do NOT extend `BaseModel`. This is an approved,

@@ -12,6 +12,7 @@ export * from './destination/index.ts';
 export * from './domain-event/index.ts';
 export * from './email-outbox/index.ts';
 export * from './entity-comment/index.ts';
+export * from './entity-interaction/index.ts';
 export * from './entity-view/index.ts';
 export * from './enums.dbschema.ts';
 export * from './event/index.ts';

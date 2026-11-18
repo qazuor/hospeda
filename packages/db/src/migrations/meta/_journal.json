@@ -1625,6 +1625,13 @@
       "when": 1794987220228,
       "tag": "0231_hos2347_session_recording_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 232,
+      "version": "7",
+      "when": 1794996122220,
+      "tag": "0232_hos2256_entity_interactions",
+      "breakpoints": true
     }
   ]
 }

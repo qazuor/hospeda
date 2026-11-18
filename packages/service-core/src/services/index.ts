@@ -371,6 +371,7 @@ export { computeReviewAverageRating } from './destinationReview/destinationRevie
 export * from './destinationReview/destinationReview.service';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';
 export * from './entityComment/entityComment.service';
+export * from './entityInteraction/index.js';
 export * from './entityView/index.js';
 export * from './event/event.media';
 export * from './event/event.media-read';

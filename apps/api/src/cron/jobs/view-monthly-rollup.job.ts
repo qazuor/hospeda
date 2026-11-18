@@ -2,12 +2,13 @@
  * Monthly view/click rollup job (HOS-1063 A-6, OQ-1).
  *
  * Writes one aggregate row per (entity, month) into
- * `entity_view_monthly_rollups` and `partner_logo_click_monthly_rollups` before
- * the 95-day purge destroys the events they summarise.
+ * `entity_view_monthly_rollups` and `partner_logo_click_monthly_rollups`, and one
+ * per (entity, kind, event, month) into `entity_interaction_monthly_rollups`
+ * (HOS-2256), before the 120-day purge destroys the events they summarise.
  *
  * ## Why this exists at all
  *
- * `entity-views-purge.job.ts` deletes at `ENTITY_VIEWS_RETENTION_DAYS = 95` and
+ * `entity-views-purge.job.ts` deletes at `ENTITY_VIEWS_RETENTION_DAYS = 120` and
  * what it deletes cannot be reconstructed. Without a rollup, the question "how
  * did last season go?" has no answer, forever — and the decision to have no
  * answer would have been made by a cron rather than by the owner (R-4). The
@@ -34,7 +35,7 @@
  * Daily at 04:10 Buenos Aires time — inside the off-peak maintenance band, after the 03:30
  * purge. A month can only be rolled up while its rows still exist, and the purge
  * is the thing that removes them; running daily means the longest a month can go
- * un-summarised is one day, against a 95-day horizon. A monthly schedule would
+ * un-summarised is one day, against a 120-day horizon. A monthly schedule would
  * make a single failed run at the wrong moment unrecoverable, which is the exact
  * failure mode the job exists to prevent.
  *
@@ -63,7 +64,7 @@ function monthAnchor({ from, monthsAgo }: { from: Date; monthsAgo: number }): Da
 export const viewMonthlyRollupJob: CronJobDefinition = {
     name: 'view-monthly-rollup',
     description:
-        'Aggregate entity_views and partner_logo_clicks into their monthly rollups, so the 95-day purge does not destroy history',
+        'Aggregate entity_views, partner_logo_clicks and entity_interactions into their monthly rollups, so the 120-day purge does not destroy history',
     schedule: '10 4 * * *',
     enabled: true,
     timeoutMs: 120_000,
@@ -97,34 +98,40 @@ export const viewMonthlyRollupJob: CronJobDefinition = {
         try {
             // Lazy import keeps the singletons out of the module top-level,
             // preventing Vitest fork contamination when tests mock @repo/db.
-            const { entityViewModel, partnerLogoClickModel } = await import('@repo/db');
+            const { entityViewModel, partnerLogoClickModel, entityInteractionModel } = await import(
+                '@repo/db'
+            );
 
             let viewRows = 0;
             let clickRows = 0;
+            let interactionRows = 0;
 
             for (const month of months) {
                 viewRows += await entityViewModel.rollUpMonth({ month });
                 clickRows += await partnerLogoClickModel.rollUpMonth({ month });
+                interactionRows += await entityInteractionModel.rollUpMonth({ month });
             }
 
             const durationMs = Date.now() - startedAt.getTime();
-            const processed = viewRows + clickRows;
+            const processed = viewRows + clickRows + interactionRows;
 
             logger.info('Monthly view rollup job completed', {
                 viewRows,
                 clickRows,
+                interactionRows,
                 durationMs
             });
 
             return {
                 success: true,
-                message: `Rolled up ${viewRows} entity-view rows and ${clickRows} logo-click rows across ${months.length} months`,
+                message: `Rolled up ${viewRows} entity-view rows ${clickRows} logo-click rows and ${interactionRows} interaction rows across ${months.length} months`,
                 processed,
                 errors: 0,
                 durationMs,
                 details: {
                     viewRows,
                     clickRows,
+                    interactionRows,
                     months: months.map((m) => m.toISOString())
                 }
             };

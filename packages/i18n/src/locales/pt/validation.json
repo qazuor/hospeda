@@ -2606,6 +2606,9 @@
         "partnerLogoClickDestination": {
             "invalid": "O destino do clique no logo não é válido"
         },
+        "entityInteractionKind": {
+            "invalid": "O tipo de interação não é válido"
+        },
         "featureCategory": {
             "invalid": "Escolha uma categoria de característica válida"
         },
@@ -5202,6 +5205,23 @@
         "partnerId": {
             "invalidUuid": "O ID do parceiro deve ser um UUID válido",
             "required": "O ID do parceiro é obrigatório"
+        }
+    },
+    "entityInteraction": {
+        "entityType": {
+            "invalid": "Este tipo de entidade não admite registro de interações"
+        },
+        "entityId": {
+            "invalidUuid": "O ID do local deve ser um UUID válido",
+            "required": "O ID do local é obrigatório"
+        },
+        "eventId": {
+            "forbidden": "O ID do evento não corresponde a este tipo de interação",
+            "invalidUuid": "O ID do evento deve ser um UUID válido",
+            "required": "O ID do evento é obrigatório para este tipo de interação"
+        },
+        "kind": {
+            "notForEntityType": "Este tipo de interação não corresponde à entidade"
         }
     },
     "partnerStats": {

@@ -125,6 +125,7 @@ import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
+import { interactionRoutes } from './interactions';
 import { adminListingFixRequestRoutes } from './listing-fix-requests/admin/index.js';
 import { mcpRoutes } from './mcp';
 import { adminMediaRoutes } from './media/admin';
@@ -446,6 +447,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // `entity_views` would be indistinguishable from a page view of the same
         // partner and would inflate the views card (OQ-2).
         app.route('/api/v1/public', partnerLogoClickRoutes);
+
+        // Listing interaction capture (HOS-2256): taps on phone, map, web,
+        // ticket and WhatsApp of a venue page. Fire-and-forget, always 202, no auth.
+        app.route('/api/v1/public', interactionRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
