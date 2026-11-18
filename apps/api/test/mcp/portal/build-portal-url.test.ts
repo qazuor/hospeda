@@ -149,6 +149,11 @@ describe('buildPortalUrl', () => {
             ['benefit usages', { kind: 'benefitUsages' }, 'mi-cuenta/usos-de-beneficio'],
             ['provider panel', { kind: 'providerPanel' }, 'mi-cuenta/proveedor'],
             ['AI assistants', { kind: 'aiAssistants' }, 'mi-cuenta/asistentes-ia'],
+            [
+                'AI assistants history',
+                { kind: 'aiAssistantsHistory' },
+                'mi-cuenta/asistentes-ia/historial'
+            ],
             ['FAQ', { kind: 'faq' }, 'preguntas-frecuentes'],
             ['contact', { kind: 'contact' }, 'contacto']
         ];
@@ -217,6 +222,7 @@ describe('the route map', () => {
                 'benefitUsages',
                 'providerPanel',
                 'aiAssistants',
+                'aiAssistantsHistory',
                 'faq',
                 'contact'
             ].sort()
