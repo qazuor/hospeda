@@ -42,10 +42,14 @@ export { WATCH_ACCOUNTS, WATCH_EFFECTS, WatchGuardError } from './types';
 export { validateWatchCatalog, WATCH_CATALOG } from './watch-catalog';
 export {
     assertAccountMatches,
+    assertAuthorizationCoversMoneyCatalog,
     assertBudgetMatches,
     assertProductionAuthorized,
+    expectedAuthorizationSum,
     marketMonthOf,
     WATCH_TEST_ACCOUNT_TAG
 } from './watch-guards';
+export { assertHeadersAllowed, WATCH_ALLOWED_HEADERS } from './watch-headers';
 export { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
+export { watchWriteKey } from './watch-send';
 export { createWatchTransport } from './watch-transport';

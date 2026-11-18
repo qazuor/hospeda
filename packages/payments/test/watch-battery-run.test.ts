@@ -44,6 +44,19 @@ function scripted(
     };
 }
 
+/**
+ * A money-moving measurement that sends nothing: it only gives a production catalog the sum its
+ * authorization must equal (the authorized amount is EXACT at run level).
+ */
+const moneyEntry = (maxChargeMinor = 100): WatchEntry => ({
+    id: 'RP9',
+    accounts: ['sandbox', 'production'],
+    effect: 'moves-money',
+    maxChargeMinor,
+    expected: 'idle',
+    measure: async () => 'idle'
+});
+
 const readEntry = (args: Partial<WatchEntry> = {}): WatchEntry => ({
     id: 'RP7',
     accounts: ['sandbox', 'production'],
@@ -145,7 +158,7 @@ describe('catalog validation', () => {
 });
 
 describe('the production run needs the authorization of the current month', () => {
-    const catalog = [readEntry()];
+    const catalog = [readEntry(), moneyEntry()];
 
     it('is refused without any authorization, sending nothing', async () => {
         const { transport, sent } = scripted({ id: 'x' }, PRODUCTION_ME);
@@ -199,7 +212,7 @@ describe('the production run needs the authorization of the current month', () =
 
     it('does not ask a sandbox run for any authorization', async () => {
         const { transport } = scripted({ id: 'x' });
-        const result = await run({ catalog, transport, authorization: null });
+        const result = await run({ catalog: [readEntry()], transport, authorization: null });
         expect(result.run.outcome).toBe('completed');
     });
 });
@@ -411,25 +424,26 @@ describe('the run is written as part of the run', () => {
         ).rejects.toThrow('db down');
     });
 
-    it('rejects when the accepted baseline cannot be read', async () => {
+    it('leaves a FAILED run row, and burns nothing, when the accepted baseline cannot be read', async () => {
         const { transport } = scripted({ id: 'x' });
         const store = memoryRunStore();
-        await expect(
-            runWatchBattery({
-                account: 'sandbox',
-                catalog: [readEntry()],
-                transport,
-                authorization: null,
-                clock,
-                ...store.ports,
-                readBaseline: async () => {
-                    throw new Error('db down');
-                }
-            })
-        ).rejects.toThrow('db down');
-        // Nothing started, so a production run could not have burnt the authorization.
-        expect(store.started).toEqual([]);
-        expect(store.finished).toEqual([]);
+        const result = await runWatchBattery({
+            account: 'sandbox',
+            catalog: [readEntry()],
+            transport,
+            authorization: null,
+            clock,
+            ...store.ports,
+            readBaseline: async () => {
+                throw new Error('db down');
+            }
+        });
+        expect(result.run.outcome).toBe('failed');
+        expect(result.run.reason).toContain('BASELINE_UNREADABLE');
+        expect(result.mayPingWatchdog).toBe(false);
+        expect(store.started).toHaveLength(1);
+        expect(store.finished).toHaveLength(1);
+        expect(store.started[0]?.consume).toBeUndefined();
     });
 });
 
@@ -509,7 +523,7 @@ describe('createWatchTransport', () => {
 });
 
 describe('one authorization, one production run (HOS-1512 D3)', () => {
-    const catalog = [readEntry()];
+    const catalog = [readEntry(), moneyEntry()];
     const production = (store: MemoryRunStore) => {
         const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
         return run({ account: 'production', catalog, transport, authorization: AUTHORIZED, store });
@@ -555,7 +569,7 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         );
     });
 
-    it('does not burn the authorization on an empty or invalid catalog', async () => {
+    it('does not burn the authorization on an empty money catalog', async () => {
         const store = memoryRunStore();
         const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
         const empty = await run({
@@ -565,7 +579,8 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
             authorization: AUTHORIZED,
             store
         });
-        expect(empty.run.outcome).toBe('failed');
+        expect(empty.run.outcome).toBe('refused');
+        expect(empty.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
         expect(store.consumedBy()).toBeUndefined();
     });
 
@@ -579,7 +594,7 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         });
         const result = await run({
             account: 'production',
-            catalog: [broken],
+            catalog: [broken, moneyEntry()],
             transport,
             authorization: AUTHORIZED,
             store
@@ -614,24 +629,24 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         expect(store.started[0]?.consume).toBe('2026-11');
     });
 
-    it('does not burn the authorization when the baseline cannot be read', async () => {
+    it('does not burn the authorization when the baseline cannot be read, and records the failure', async () => {
         const store = memoryRunStore();
         const { transport } = scripted({ id: 'x' }, PRODUCTION_ME);
-        await expect(
-            runWatchBattery({
-                account: 'production',
-                catalog,
-                transport,
-                authorization: AUTHORIZED,
-                clock,
-                ...store.ports,
-                readBaseline: async () => {
-                    throw new Error('db down');
-                }
-            })
-        ).rejects.toThrow('db down');
+        const result = await runWatchBattery({
+            account: 'production',
+            catalog,
+            transport,
+            authorization: AUTHORIZED,
+            clock,
+            ...store.ports,
+            readBaseline: async () => {
+                throw new Error('db down');
+            }
+        });
+        expect(result.run.outcome).toBe('failed');
         expect(store.consumedBy()).toBeUndefined();
-        expect(store.started).toEqual([]);
+        expect(store.started[0]?.consume).toBeUndefined();
+        expect(store.finished).toHaveLength(1);
     });
 
     it('does not consume anything in a sandbox run', async () => {

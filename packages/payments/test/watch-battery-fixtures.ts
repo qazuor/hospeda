@@ -7,7 +7,8 @@ export interface MemoryRunStore {
     readonly progress: {
         readonly runId: string;
         readonly measurementId: string;
-        readonly providerIds: readonly string[];
+        readonly providerIds?: readonly string[];
+        readonly writeKeys?: readonly string[];
     }[];
     readonly finished: { readonly runId: string; readonly run: WatchRunRecord }[];
     /** The run that consumed the authorization, if any. */
@@ -26,7 +27,8 @@ export interface MemoryRunStore {
         readonly recordProgress: (args: {
             readonly runId: string;
             readonly measurementId: string;
-            readonly providerIds: readonly string[];
+            readonly providerIds?: readonly string[];
+            readonly writeKeys?: readonly string[];
         }) => Promise<void>;
         readonly finishRun: (args: { runId: string; run: WatchRunRecord }) => Promise<void>;
     };

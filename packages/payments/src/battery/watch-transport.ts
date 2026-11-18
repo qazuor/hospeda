@@ -5,6 +5,7 @@
  * @module battery/watch-transport
  */
 import type { WatchRequest, WatchResponse, WatchTransport } from './types';
+import { assertHeadersAllowed } from './watch-headers';
 import { normalizeRequestPath } from './watch-path';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
@@ -35,6 +36,9 @@ export function createWatchTransport(args: {
     const baseUrl = args.baseUrl.replace(/\/+$/, '');
     return async (request: WatchRequest): Promise<WatchResponse> => {
         const hasBody = request.body !== undefined;
+        // Defence in depth: the engine checks too, but the token must never share a request with a
+        // header of the caller's, whatever the caller did.
+        assertHeadersAllowed({ headers: request.headers });
         // The bearer token must never reach another host: the path is normalized against the
         // provider origin here too, whatever the caller's guards did.
         const { pathname, search } = normalizeRequestPath({

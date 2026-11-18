@@ -68,5 +68,6 @@ export function normalizeRequestPath(args: { readonly path: string; readonly ori
     }
     if (parsed.origin !== new URL(origin).origin) return refuse({ path, why: 'another origin' });
     if (parsed.pathname !== pathPart) return refuse({ path, why: 'not in canonical form' });
-    return { pathname: parsed.pathname, search: parsed.search };
+    // The query as typed: a bare `?` is still a query, and a write must carry none.
+    return { pathname: parsed.pathname, search: query };
 }

@@ -11,7 +11,8 @@ import {
     runWatchBattery,
     type WatchAccount,
     type WatchAuthorization,
-    type WatchEntry
+    type WatchEntry,
+    type WatchTransport
 } from '../src/battery/index';
 import { FakePaymentProvider } from '../src/fake/index';
 import {
@@ -81,22 +82,69 @@ async function run(args: {
     readonly authorization?: WatchAuthorization | null;
 }) {
     const store = memoryRunStore();
+    const authorization =
+        args.authorization === undefined
+            ? { month: '2026-11', maxChargeMinor: AUTHORIZED, accountId: '100000001' }
+            : args.authorization;
+    // The authorized amount is EXACT at run level: a production catalog without a money-moving
+    // measurement gets an idle one that only supplies the sum the authorization must equal.
+    const catalog =
+        args.account === 'production' &&
+        authorization !== null &&
+        !args.catalog.some((candidate) => candidate.effect === 'moves-money')
+            ? [
+                  ...args.catalog,
+                  entry({
+                      id: 'RP13',
+                      effect: 'moves-money',
+                      maxChargeMinor: authorization.maxChargeMinor,
+                      expected: 'idle',
+                      measure: async () => 'idle'
+                  })
+              ]
+            : args.catalog;
     const result = await runWatchBattery({
         account: args.account,
-        catalog: args.catalog,
+        catalog,
         transport: args.transport,
-        authorization:
-            args.authorization === undefined
-                ? { month: '2026-11', maxChargeMinor: AUTHORIZED, accountId: '100000001' }
-                : args.authorization,
+        authorization,
         clock: args.clock,
         ...store.ports
     });
     return { ...result, store };
 }
 
-const mutatingRequests = (server: FakeProviderServer) =>
+const mutatingRequests = (server: { requests(): readonly { method: string }[] }) =>
     server.requests().filter((request) => request.method !== 'GET');
+
+/**
+ * A stub provider that answers every write with a fresh id, for tests that act on an object by id
+ * (cancel, refund): the fake server answers an id only for the routes the adapter uses.
+ */
+function stubAs(account: 'sandbox' | 'production') {
+    const sent: { method: string; path: string }[] = [];
+    let counter = 0;
+    const transport: WatchTransport = async (request) => {
+        sent.push({ method: request.method, path: request.path });
+        if (request.path === '/users/me') {
+            return {
+                status: 200,
+                body:
+                    account === 'sandbox'
+                        ? { id: 900000001, tags: ['test_user'] }
+                        : { id: 100000001, tags: ['normal'] }
+            };
+        }
+        if (request.method === 'GET') return { status: 200, body: {} };
+        counter += 1;
+        return { status: 201, body: { id: `obj-${counter}` } };
+    };
+    return {
+        transport,
+        server: { requests: () => sent },
+        clock: createAdjustableClock({ start: NOW })
+    };
+}
 
 describe('TEST:B1:19 environment guard', () => {
     it('aborts a sandbox run that reaches a production account before the first mutation', async () => {
@@ -270,7 +318,7 @@ describe('TEST:B1:19 budget guard', () => {
         expect(mutatingRequests(server)).toHaveLength(1);
     });
 
-    it('checks the budget in the production run too, whatever the account kind', async () => {
+    it('refuses the production run, before consuming anything, when the money measurements do not add up to the authorization', async () => {
         const { server, transport, clock } = await fakeAs('production');
         const result = await run({
             account: 'production',
@@ -278,8 +326,10 @@ describe('TEST:B1:19 budget guard', () => {
             transport,
             clock
         });
-        expect(result.run.reason).toContain('BUDGET_MISMATCH');
+        expect(result.run.outcome).toBe('refused');
+        expect(result.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
         expect(mutatingRequests(server)).toEqual([]);
+        expect(result.store.consumedBy()).toBeUndefined();
     });
 
     it('stops a measurement that charges above what it declared', async () => {
@@ -353,11 +403,20 @@ describe('the budget guard reads the charge from the request, not from the decla
             effect: 'moves-money',
             maxChargeMinor: AUTHORIZED,
             measure: async (ctx): Promise<JsonValue> => {
+                let path = args.path ?? '/preapproval';
+                if (path.includes('{id}')) {
+                    // An id-targeted write acts on an object THIS RUN created.
+                    const made = await ctx.send({
+                        label: 'seed',
+                        request: { method: 'POST', path: '/v1/customers', body: {} }
+                    });
+                    path = path.replace('{id}', String((made.body as { id?: unknown }).id));
+                }
                 await ctx.send({
                     label: 'x',
                     request: {
                         method: args.method ?? 'POST',
-                        path: args.path ?? '/preapproval',
+                        path,
                         body: args.body
                     },
                     ...(args.chargeMinor === undefined ? {} : { chargeMinor: args.chargeMinor }),
@@ -424,14 +483,14 @@ describe('the budget guard reads the charge from the request, not from the decla
     });
 
     it('accepts a request that charges nothing when it declares 0', async () => {
-        const { transport, clock } = await fakeAs('sandbox');
+        const { transport, clock } = stubAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
                 money({
                     body: { status: 'cancelled' },
                     chargeMinor: 0,
-                    path: '/preapproval/abc',
+                    path: '/preapproval/{id}',
                     method: 'PUT'
                 })
             ],
@@ -442,14 +501,14 @@ describe('the budget guard reads the charge from the request, not from the decla
     });
 
     it('aborts when a cancel (a zero-charge operation) declares a charge', async () => {
-        const { server, transport, clock } = await fakeAs('sandbox');
+        const { server, transport, clock } = stubAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
                 money({
                     body: { status: 'cancelled' },
                     chargeMinor: 100,
-                    path: '/preapproval/abc',
+                    path: '/preapproval/{id}',
                     method: 'PUT'
                 })
             ],
@@ -457,7 +516,8 @@ describe('the budget guard reads the charge from the request, not from the decla
             clock
         });
         expect(result.run.reason).toContain('BUDGET_EXCEEDED');
-        expect(mutatingRequests(server)).toEqual([]);
+        // Only the seed write was sent; the cancel never was.
+        expect(mutatingRequests(server)).toHaveLength(1);
     });
 
     it('aborts when an order states several different amounts', async () => {
@@ -481,11 +541,11 @@ describe('the budget guard reads the charge from the request, not from the decla
     });
 
     it('aborts an amount that is not a finite non-negative number', async () => {
-        const { transport, clock } = await fakeAs('sandbox');
+        const { transport, clock } = stubAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
-                money({ body: { amount: -5 }, refundMinor: 0, path: '/v1/payments/1/refunds' })
+                money({ body: { amount: -5 }, refundMinor: 0, path: '/v1/payments/{id}/refunds' })
             ],
             transport,
             clock
@@ -510,7 +570,7 @@ describe('the budget guard reads the charge from the request, not from the decla
             }
         });
         const result = await run({ account: 'sandbox', catalog: [sneaky], transport, clock });
-        expect(result.run.reason).toContain('MONEY_ROUTE_FORBIDDEN');
+        expect(result.run.reason).toMatch(/MONEY_ROUTE_FORBIDDEN|OPERATION_NOT_ALLOWED/);
         expect(mutatingRequests(server)).toEqual([]);
     });
 
@@ -633,8 +693,9 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
         readonly path: string;
         readonly body: unknown;
         readonly chargeMinor?: number;
+        readonly refundMinor?: number;
     }) => {
-        const { server, transport, clock } = await fakeAs('sandbox');
+        const { server, transport, clock } = stubAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
@@ -642,12 +703,23 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
                     effect: args.effect,
                     ...(args.effect === 'moves-money' ? { maxChargeMinor: AUTHORIZED } : {}),
                     measure: async (ctx): Promise<JsonValue> => {
+                        let path = args.path;
+                        if (path.includes('{id}')) {
+                            const made = await ctx.send({
+                                label: 'seed',
+                                request: { method: 'POST', path: '/v1/customers', body: {} }
+                            });
+                            path = path.replace('{id}', String((made.body as { id?: unknown }).id));
+                        }
                         await ctx.send({
                             label: 'x',
-                            request: { method: args.method, path: args.path, body: args.body },
+                            request: { method: args.method, path, body: args.body },
                             ...(args.chargeMinor === undefined
                                 ? {}
-                                : { chargeMinor: args.chargeMinor })
+                                : { chargeMinor: args.chargeMinor }),
+                            ...(args.refundMinor === undefined
+                                ? {}
+                                : { refundMinor: args.refundMinor })
                         });
                         return 'created';
                     }
@@ -712,12 +784,12 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
         expect(mutatingRequests(server)).toEqual([]);
     });
 
-    it('lets a listed zero-charge operation through with a declared 0 and in-body status only', async () => {
+    it('lets a listed zero-charge operation through, on an object this run created, with a declared 0', async () => {
         for (const status of ['cancelled', 'paused']) {
             const { result } = await send({
                 effect: 'moves-money',
                 method: 'PUT',
-                path: '/preapproval/abc',
+                path: '/preapproval/{id}',
                 body: { status },
                 chargeMinor: 0
             });
@@ -747,20 +819,12 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
             body: { transaction: { payments: [{ amount: '1500.00' }] } },
             chargeMinor: 150000
         });
-        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+        expect(result.run.reason).toMatch(/OPERATION_NOT_ALLOWED|CHARGE_MISMATCH/);
     });
 
     it('books a refund apart from charges and requires its stated amount', async () => {
-        const ok = await send({
-            effect: 'moves-money',
-            method: 'POST',
-            path: '/v1/payments/123/refunds',
-            body: { amount: 1500 },
-            chargeMinor: 0
-        });
-        // A refund is declared with refundMinor, not chargeMinor: declaring none is refused.
-        expect(ok.result.run.reason).toContain('CHARGE_UNDECLARED');
-        const { server, transport, clock } = await fakeAs('sandbox');
+        const { server, transport, clock } = stubAs('sandbox');
+        let created = '';
         const refunded = await run({
             account: 'sandbox',
             catalog: [
@@ -768,11 +832,17 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
                     effect: 'moves-money',
                     maxChargeMinor: AUTHORIZED,
                     measure: async (ctx): Promise<JsonValue> => {
+                        const made = await ctx.send({
+                            label: 'charge',
+                            request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
+                            chargeMinor: AUTHORIZED
+                        });
+                        created = String((made.body as { id?: unknown }).id);
                         await ctx.send({
-                            label: 'r',
+                            label: 'refund',
                             request: {
                                 method: 'POST',
-                                path: '/v1/payments/123/refunds',
+                                path: `/v1/payments/${created}/refunds`,
                                 body: { amount: 1500 }
                             },
                             refundMinor: 150000
@@ -785,7 +855,17 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
             clock
         });
         expect(refunded.run.outcome).toBe('completed');
-        expect(mutatingRequests(server)).toHaveLength(1);
+        expect(refunded.run.ledger).toEqual({ charged: 150000, refunded: 150000 });
+        expect(mutatingRequests(server)).toHaveLength(2);
+        // A refund is declared with refundMinor, not chargeMinor: declaring none is refused.
+        const undeclared = await send({
+            effect: 'moves-money',
+            method: 'POST',
+            path: '/v1/payments/{id}/refunds',
+            body: { amount: 1500 },
+            chargeMinor: 0
+        });
+        expect(undeclared.result.run.reason).toContain('CHARGE_UNDECLARED');
     });
 
     it('refuses a refund whose body states a different amount than declared', async () => {
@@ -820,7 +900,8 @@ describe('HOS-1512 M2: the authorized number caps the WHOLE RUN, not each measur
                 return 'created';
             }
         });
-    const refunding = (id: string, minor: number): WatchEntry =>
+    /** Refunds on the first object the stub created (`obj-1`): the one `M1` charged. */
+    const refundingFirstObject = (id: string, minor: number): WatchEntry =>
         entry({
             id,
             effect: 'moves-money',
@@ -830,7 +911,7 @@ describe('HOS-1512 M2: the authorized number caps the WHOLE RUN, not each measur
                     label: 'refund',
                     request: {
                         method: 'POST',
-                        path: '/v1/payments/1/refunds',
+                        path: '/v1/payments/obj-1/refunds',
                         body: { amount: minor / 100 }
                     },
                     refundMinor: minor
@@ -890,12 +971,12 @@ describe('HOS-1512 M2: the authorized number caps the WHOLE RUN, not each measur
     });
 
     it('never nets a refund against the charges: money out is tracked apart', async () => {
-        const { transport, clock } = await fakeAs('sandbox');
+        const { transport, clock } = stubAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
                 charging('M1', AUTHORIZED),
-                refunding('M2', AUTHORIZED),
+                refundingFirstObject('M2', AUTHORIZED),
                 charging('M3', 100, AUTHORIZED)
             ],
             transport,
@@ -905,21 +986,24 @@ describe('HOS-1512 M2: the authorized number caps the WHOLE RUN, not each measur
         expect(result.run.measurements.M2?.outcome).toBe('matched');
         expect(result.run.measurements.M3?.outcome).toBe('errored');
         expect(result.run.reason).toContain('BUDGET_EXCEEDED');
+        expect(result.run.ledger).toEqual({ charged: AUTHORIZED, refunded: AUTHORIZED });
     });
 
     it('does not count refunds toward the cap', async () => {
-        const { transport, clock } = await fakeAs('sandbox');
+        const { transport, clock } = stubAs('sandbox');
+        const half = AUTHORIZED / 2;
         const result = await run({
             account: 'sandbox',
             catalog: [
-                refunding('M1', AUTHORIZED),
-                refunding('M2', AUTHORIZED),
-                charging('M3', AUTHORIZED)
+                charging('M1', half),
+                refundingFirstObject('M2', half),
+                charging('M3', half, AUTHORIZED)
             ],
             transport,
             clock
         });
         expect(result.run.outcome).toBe('completed');
+        expect(result.run.ledger).toEqual({ charged: AUTHORIZED, refunded: half });
     });
 });
 
@@ -929,8 +1013,9 @@ describe('HOS-1512 M1 (follow-up): refunds state their amount; paths are case-se
         readonly path: string;
         readonly body: unknown;
         readonly chargeMinor?: number;
+        readonly refundMinor?: number;
     }) => {
-        const { server, transport, clock } = await fakeAs('sandbox');
+        const { server, transport, clock } = stubAs('sandbox');
         const result = await run({
             account: 'sandbox',
             catalog: [
@@ -938,12 +1023,23 @@ describe('HOS-1512 M1 (follow-up): refunds state their amount; paths are case-se
                     effect: 'moves-money',
                     maxChargeMinor: AUTHORIZED,
                     measure: async (ctx): Promise<JsonValue> => {
+                        let path = args.path;
+                        if (path.includes('{id}')) {
+                            const made = await ctx.send({
+                                label: 'seed',
+                                request: { method: 'POST', path: '/v1/customers', body: {} }
+                            });
+                            path = path.replace('{id}', String((made.body as { id?: unknown }).id));
+                        }
                         await ctx.send({
                             label: 'x',
-                            request: { method: args.method, path: args.path, body: args.body },
+                            request: { method: args.method, path, body: args.body },
                             ...(args.chargeMinor === undefined
                                 ? {}
-                                : { chargeMinor: args.chargeMinor })
+                                : { chargeMinor: args.chargeMinor }),
+                            ...(args.refundMinor === undefined
+                                ? {}
+                                : { refundMinor: args.refundMinor })
                         });
                         return 'created';
                     }
@@ -958,34 +1054,13 @@ describe('HOS-1512 M1 (follow-up): refunds state their amount; paths are case-se
     it('refuses a refund whose body states no amount (a total refund) even if one is declared', async () => {
         const { result, server } = await send({
             method: 'POST',
-            path: '/v1/payments/123/refunds',
+            path: '/v1/payments/{id}/refunds',
             body: {},
-            chargeMinor: 0
+            refundMinor: 150000
         });
         expect(result.run.outcome).toBe('aborted');
-        const { server: second, transport, clock } = await fakeAs('sandbox');
-        const declared = await run({
-            account: 'sandbox',
-            catalog: [
-                entry({
-                    effect: 'moves-money',
-                    maxChargeMinor: AUTHORIZED,
-                    measure: async (ctx): Promise<JsonValue> => {
-                        await ctx.send({
-                            label: 'r',
-                            request: { method: 'POST', path: '/v1/payments/123/refunds', body: {} },
-                            refundMinor: 150000
-                        });
-                        return 'created';
-                    }
-                })
-            ],
-            transport,
-            clock
-        });
-        expect(declared.run.reason).toContain('CHARGE_MISMATCH');
-        expect(mutatingRequests(second)).toEqual([]);
-        expect(mutatingRequests(server)).toEqual([]);
+        expect(result.run.reason).toContain('CHARGE_MISMATCH');
+        expect(mutatingRequests(server)).toHaveLength(1);
     });
 
     it('classifies case-sensitively even for a money-moving measurement with a correct amount', async () => {

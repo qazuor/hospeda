@@ -17,7 +17,7 @@
  * @module battery/run-watch-battery
  */
 import type { Clock } from '@repo/billing-verticals-contract';
-import { diffMeasurementShapes, jsonEqual, shapeOf } from './shape';
+import { diffMeasurementShapes, jsonEqual } from './shape';
 import {
     type JsonValue,
     type MeasurementShapes,
@@ -25,7 +25,6 @@ import {
     type WatchAccount,
     type WatchAlert,
     type WatchAuthorization,
-    type WatchContext,
     type WatchEntry,
     WatchGuardError,
     type WatchMeasurementRecord,
@@ -37,11 +36,12 @@ import {
 import { validateWatchCatalog } from './watch-catalog';
 import {
     assertAccountMatches,
+    assertAuthorizationCoversMoneyCatalog,
     assertBudgetMatches,
     assertProductionAuthorized
 } from './watch-guards';
-import { normalizeRequestPath, WATCH_INTERNAL_ORIGIN } from './watch-path';
-import { guardWrite, type WatchLedger } from './watch-write-guard';
+import { createGuardedSend } from './watch-send';
+import { createWatchRunState, type WatchRunState } from './watch-write-guard';
 
 /** What {@link runWatchBattery} needs. */
 export interface RunWatchBatteryInput {
@@ -87,7 +87,9 @@ export interface RunWatchBatteryInput {
     readonly recordProgress: (args: {
         readonly runId: string;
         readonly measurementId: string;
-        readonly providerIds: readonly string[];
+        readonly providerIds?: readonly string[];
+        /** Idempotency keys of writes about to be sent, recorded BEFORE they are. */
+        readonly writeKeys?: readonly string[];
     }) => Promise<void>;
     /** Writes the end of the run. It is part of the run: when it rejects, the run rejects. */
     readonly finishRun: (args: {
@@ -110,72 +112,6 @@ export interface RunWatchBatteryResult {
 function describeError(error: unknown): string {
     if (error instanceof WatchGuardError) return `${error.code}: ${error.message}`;
     return error instanceof Error ? error.message : String(error);
-}
-
-function buildContext(args: {
-    readonly entry: WatchEntry;
-    readonly transport: WatchTransport;
-    readonly shapes: Record<string, ShapeMap>;
-    readonly providerIds: string[];
-    /** The RUN's money so far, shared by every measurement. */
-    readonly ledger: WatchLedger;
-    /** The most the whole run may charge: the authorized number. */
-    readonly runCap: number;
-    /** Persists a provider id as soon as a write answers it. */
-    readonly onProviderId: (id: string) => Promise<void>;
-}): WatchContext {
-    const { entry, transport, shapes, providerIds, ledger, runCap, onProviderId } = args;
-    let entryCharged = 0;
-    return {
-        send: async ({ label, request, chargeMinor, refundMinor }) => {
-            const { pathname } = normalizeRequestPath({
-                path: request.path,
-                origin: WATCH_INTERNAL_ORIGIN
-            });
-            if (request.method !== 'GET') {
-                const chargedBefore = ledger.charged;
-                guardWrite({
-                    entryId: entry.id,
-                    effect: entry.effect,
-                    request,
-                    pathname,
-                    chargeMinor,
-                    refundMinor,
-                    ledger,
-                    chargeCap: runCap
-                });
-                entryCharged += ledger.charged - chargedBefore;
-                if (entryCharged > (entry.maxChargeMinor ?? 0)) {
-                    throw new WatchGuardError({
-                        code: 'BUDGET_EXCEEDED',
-                        message: `${entry.id} would charge ${entryCharged}, above the ${entry.maxChargeMinor ?? 0} it declared`
-                    });
-                }
-            }
-            const response = await transport(request);
-            shapes[label] = shapeOf({ body: response.body });
-            if (request.method !== 'GET') {
-                const id =
-                    typeof response.body === 'object' &&
-                    response.body !== null &&
-                    'id' in response.body
-                        ? (response.body as { readonly id: unknown }).id
-                        : undefined;
-                if (typeof id === 'string' || typeof id === 'number') {
-                    providerIds.push(String(id));
-                    try {
-                        await onProviderId(String(id));
-                    } catch (error) {
-                        throw new WatchGuardError({
-                            code: 'PROGRESS_NOT_RECORDED',
-                            message: `${entry.id} created provider id ${String(id)} and it could not be recorded (${describeError(error)}); nothing more is sent`
-                        });
-                    }
-                }
-            }
-            return response;
-        }
-    };
 }
 
 function shapeAlerts(args: {
@@ -213,10 +149,10 @@ async function measureEntry(args: {
     readonly baseline: WatchShapeBaseline | null;
     /** Filled while the measurement runs, so a guard that aborts it midway keeps what it saw. */
     readonly sink: { readonly shapes: Record<string, ShapeMap>; readonly providerIds: string[] };
-    readonly ledger: WatchLedger;
-    readonly onProviderId: (id: string) => Promise<void>;
+    readonly state: WatchRunState;
+    readonly runId: string;
 }): Promise<{ readonly record: WatchMeasurementRecord; readonly alerts: readonly WatchAlert[] }> {
-    const { entry, input, baseline, sink, ledger, onProviderId } = args;
+    const { entry, input, baseline, sink, state, runId } = args;
     // The guards open the measurement: nothing is sent before they pass.
     if (entry.effect === 'moves-money') {
         assertBudgetMatches({ entry, authorization: input.authorization });
@@ -231,17 +167,19 @@ async function measureEntry(args: {
     const { shapes, providerIds } = sink;
     let obtained: JsonValue;
     try {
-        obtained = await entry.measure(
-            buildContext({
+        obtained = await entry.measure({
+            send: createGuardedSend({
                 entry,
                 transport: input.transport,
+                runId,
+                state,
+                runCap: input.authorization?.maxChargeMinor ?? 0,
                 shapes,
                 providerIds,
-                ledger,
-                runCap: input.authorization?.maxChargeMinor ?? 0,
-                onProviderId
+                record: (progress) =>
+                    input.recordProgress({ runId, measurementId: entry.id, ...progress })
             })
-        );
+        });
     } catch (error) {
         if (error instanceof WatchGuardError) throw error;
         return {
@@ -317,8 +255,8 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
     const startedAt = input.clock.now();
     const measurements: Record<string, WatchMeasurementRecord> = {};
     const alerts: WatchAlert[] = [];
-    /** One ledger for the whole run: the authorized number caps the SUM of its charges. */
-    const ledger: WatchLedger = { charged: 0, refunded: 0 };
+    /** One state for the whole run: the authorized number caps the SUM of its charges. */
+    const state = createWatchRunState();
     let outcome: WatchRunOutcome = 'completed';
     let reason: string | undefined;
 
@@ -329,6 +267,12 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
     try {
         if (input.account === 'production') {
             assertProductionAuthorized({ authorization: input.authorization, now: startedAt });
+            if (input.authorization) {
+                assertAuthorizationCoversMoneyCatalog({
+                    entries,
+                    authorization: input.authorization
+                });
+            }
         }
     } catch (error) {
         outcome = 'refused';
@@ -354,9 +298,17 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         }
     }
 
-    // Read BEFORE the run starts: an infrastructure error here must not burn the authorization.
-    const baseline =
-        outcome === 'completed' ? await input.readBaseline({ account: input.account }) : null;
+    // Read BEFORE the run starts: an infrastructure error here must not burn the authorization, and
+    // must still leave a run row (as failed) so the failure is on record.
+    let baseline: WatchShapeBaseline | null = null;
+    if (outcome === 'completed') {
+        try {
+            baseline = await input.readBaseline({ account: input.account });
+        } catch (error) {
+            outcome = 'failed';
+            reason = `BASELINE_UNREADABLE: ${describeError(error)}`;
+        }
+    }
     const preflightPassed = outcome === 'completed';
     const started = await input.startRun({
         account: input.account,
@@ -393,13 +345,8 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
                     input,
                     baseline,
                     sink,
-                    ledger,
-                    onProviderId: (id) =>
-                        input.recordProgress({
-                            runId: started.runId,
-                            measurementId: entry.id,
-                            providerIds: [id]
-                        })
+                    state,
+                    runId: started.runId
                 });
                 measurements[entry.id] = measured.record;
                 alerts.push(...measured.alerts);
@@ -439,7 +386,8 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         outcome,
         ...(reason === undefined ? {} : { reason }),
         measurements,
-        alerts
+        alerts,
+        ledger: { charged: state.ledger.charged, refunded: state.ledger.refunded }
     };
     await input.finishRun({ runId: started.runId, run });
     return {

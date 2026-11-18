@@ -180,6 +180,8 @@ export interface WatchRunRecord {
     readonly reason?: string;
     readonly measurements: Readonly<Record<string, WatchMeasurementRecord>>;
     readonly alerts: readonly WatchAlert[];
+    /** Money the run moved: charges and refunds, kept apart. A refund never offsets a charge. */
+    readonly ledger: { readonly charged: number; readonly refunded: number };
 }
 
 /** Codes of {@link WatchGuardError}. */
@@ -200,6 +202,10 @@ export type WatchGuardCode =
     | 'OPERATION_NOT_ALLOWED'
     | 'PATH_REJECTED'
     | 'PROGRESS_NOT_RECORDED'
+    | 'HEADER_REJECTED'
+    | 'TARGET_NOT_CREATED_BY_RUN'
+    | 'WRITE_OUTCOME_UNKNOWN'
+    | 'AUTHORIZATION_SUM_MISMATCH'
     | 'READ_ENTRY_MUTATED';
 
 /** Raised when a guard stops an operation. A guard never retries and never adjusts. */

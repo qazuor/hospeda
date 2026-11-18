@@ -150,6 +150,48 @@ export function assertBudgetMatches(args: {
 }
 
 /**
+ * The sum of the declared maximum charges of the money-moving measurements that run against an
+ * account: the exact amount the owner authorizes for ONE run of it (D3, decision 2026-11-18).
+ *
+ * @param args.catalog - The measurements
+ * @param args.account - The account
+ * @returns The sum, in minor units; 0 when the account has no money-moving measurement
+ */
+export function expectedAuthorizationSum(args: {
+    readonly catalog: readonly WatchEntry[];
+    readonly account: WatchAccount;
+}): number {
+    return args.catalog
+        .filter((entry) => entry.accounts.includes(args.account) && entry.effect === 'moves-money')
+        .reduce((sum, entry) => sum + (entry.maxChargeMinor ?? 0), 0);
+}
+
+/**
+ * The authorized amount must EQUAL the sum of the money-moving measurements of the account. Checked in
+ * pre-flight, BEFORE the authorization is consumed: a mismatch (the owner authorized an amount of
+ * another catalog, or the catalog changed) refuses the run and burns nothing. The per-run cap stays
+ * as a second layer.
+ *
+ * @param args.entries - The measurements of the account
+ * @param args.authorization - The authorization in force
+ * @throws {WatchGuardError} `AUTHORIZATION_SUM_MISMATCH`, naming both numbers
+ */
+export function assertAuthorizationCoversMoneyCatalog(args: {
+    readonly entries: readonly WatchEntry[];
+    readonly authorization: WatchAuthorization;
+}): void {
+    const expected = args.entries
+        .filter((entry) => entry.effect === 'moves-money')
+        .reduce((sum, entry) => sum + (entry.maxChargeMinor ?? 0), 0);
+    if (expected !== args.authorization.maxChargeMinor) {
+        throw new WatchGuardError({
+            code: 'AUTHORIZATION_SUM_MISMATCH',
+            message: `The authorized amount is ${args.authorization.maxChargeMinor} and the money-moving measurements add up to ${expected}; they must be exactly equal, so the authorization was not consumed`
+        });
+    }
+}
+
+/**
  * The production run does not start without the authorization of the current month.
  *
  * @param args.authorization - The authorization in force, if any
