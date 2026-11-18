@@ -409,6 +409,15 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         }
     }
 
+    // A run cut short AFTER its last measurement started is still cut short: never `completed`.
+    if (outcome === 'completed') {
+        const stopped = stopReason(input);
+        if (stopped !== null) {
+            outcome = 'failed';
+            reason = stopped;
+        }
+    }
+
     const run: WatchRunRecord = {
         account: input.account,
         startedAt,

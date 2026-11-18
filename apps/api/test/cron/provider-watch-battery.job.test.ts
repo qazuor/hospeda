@@ -347,7 +347,7 @@ describe('provider watch battery cron', () => {
             expect(pingWatchdog).not.toHaveBeenCalled();
         });
 
-        it('does not ping a run whose signal aborted while it was finishing', async () => {
+        it('fails, and does not ping, a run whose signal aborted during its last measurement', async () => {
             const controller = new AbortController();
             const last: WatchEntry = {
                 ...readEntry,
@@ -360,7 +360,8 @@ describe('provider watch battery cron', () => {
             const result = await createProviderWatchBatteryJob(d).handler(
                 context({ signal: controller.signal })
             );
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
+            expect(result.details).toMatchObject({ outcome: 'failed' });
             expect(pingWatchdog).not.toHaveBeenCalled();
         });
     });

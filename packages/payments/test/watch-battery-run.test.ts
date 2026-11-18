@@ -694,7 +694,7 @@ describe('cancellation and the deadline (HOS-1512)', () => {
         expect(result.mayPingWatchdog).toBe(false);
     });
 
-    it('does not report a run aborted at the very end as pingable', async () => {
+    it('stores a run aborted during its LAST measurement as failed, never completed or pingable', async () => {
         const controller = new AbortController();
         const last: WatchEntry = readEntry({
             measure: async () => {
@@ -702,8 +702,34 @@ describe('cancellation and the deadline (HOS-1512)', () => {
                 return { found: true };
             }
         });
-        const result = await run({ catalog: [last], transport, signal: controller.signal });
-        expect(result.run.outcome).toBe('completed');
+        const result = await run({
+            catalog: [last],
+            transport,
+            signal: controller.signal,
+            previous: accepted({ id: 'x' })
+        });
+        expect(result.run.outcome).toBe('failed');
+        expect(result.run.reason).toContain('TIMED_OUT');
+        expect(result.recorded[0]?.outcome).toBe('failed');
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('stores a run whose deadline passed during its last measurement as failed', async () => {
+        const deadlineClock = createAdjustableClock({ start: NOW });
+        const slow: WatchEntry = readEntry({
+            measure: async () => {
+                deadlineClock.advance({ ms: 60_000 });
+                return { found: true };
+            }
+        });
+        const result = await run({
+            catalog: [slow],
+            transport,
+            clock: deadlineClock,
+            deadlineAt: new Date(NOW.getTime() + 30_000),
+            previous: accepted({ id: 'x' })
+        });
+        expect(result.run.outcome).toBe('failed');
         expect(result.mayPingWatchdog).toBe(false);
     });
 });
