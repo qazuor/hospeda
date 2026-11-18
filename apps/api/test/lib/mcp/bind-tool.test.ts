@@ -398,9 +398,9 @@ describe('handleMcpToolCall', () => {
             inputSchema,
             isWrite: true,
             auditTarget: ({ input: parsed }) => ({ type: 'accommodation', id: parsed.listingId }),
-            auditResultTarget: ({ data }: { data: { createdId: string } }) => ({
+            auditResultTarget: ({ data }) => ({
                 type: 'accommodation',
-                id: data.createdId
+                id: z.object({ createdId: z.string() }).parse(data).createdId
             }),
             handler: async () =>
                 fail

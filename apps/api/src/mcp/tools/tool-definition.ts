@@ -183,10 +183,13 @@ export interface ToolDefinition<TSchema extends z.ZodObject = z.ZodObject, TData
      * Entity a SUCCESSFUL call created, read from its result, for the audit
      * record (e.g. the listing `create_listing` just inserted, whose id the input
      * cannot carry). Wins over {@link auditTarget} on success; ignored on failure.
+     * `data` is typed `unknown` on purpose: typing it `TData` would make this
+     * optional callback an inference site for `TData` and break definitions that
+     * spread another one; read it with a schema or a guard.
      */
     auditResultTarget?(args: {
         readonly input: z.output<TSchema>;
-        readonly data: TData;
+        readonly data: unknown;
     }): ToolTarget | undefined;
     /** Length of user content the call carries (never the content), for the audit record. */
     auditContentLength?(args: { readonly input: z.output<TSchema> }): number | undefined;
