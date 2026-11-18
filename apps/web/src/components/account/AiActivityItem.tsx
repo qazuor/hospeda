@@ -36,7 +36,8 @@ const RESULT_CLASS = {
     done: styles.resultDone,
     deniedByHospeda: styles.resultDenied,
     declinedByYou: styles.resultDeclined,
-    error: styles.resultError
+    error: styles.resultError,
+    unknown: styles.resultUnknown
 } as const;
 
 /** Spanish fallbacks of the result labels (the locale files are the source). */
@@ -44,7 +45,8 @@ const RESULT_FALLBACK = {
     done: 'Hecho',
     deniedByHospeda: 'Rechazado por Hospeda',
     declinedByYou: 'Rechazado por vos',
-    error: 'Error'
+    error: 'Error',
+    unknown: 'Resultado desconocido'
 } as const;
 
 /**
@@ -62,16 +64,20 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
     const assistant =
         item.client.name?.trim() || t(`${KEY}.unnamedAssistant`, 'Asistente sin nombre');
     const showReason = result === 'deniedByHospeda' || result === 'error';
+    const action = t(
+        `${KEY}.tools.${item.tool}`,
+        t(`${KEY}.unknownTool`, 'Otra acción del asistente')
+    );
+    const when = formatDate({
+        date: item.loggedAt,
+        locale,
+        options: { dateStyle: 'medium', timeStyle: 'short' }
+    });
 
     return (
         <li className={styles.item}>
             <div className={styles.itemHead}>
-                <p className={styles.action}>
-                    {t(
-                        `${KEY}.tools.${item.tool}`,
-                        t(`${KEY}.unknownTool`, 'Otra acción del asistente')
-                    )}
-                </p>
+                <p className={styles.action}>{action}</p>
                 <span className={cn(styles.result, RESULT_CLASS[result])}>
                     {t(`${KEY}.result.${result}`, RESULT_FALLBACK[result])}
                 </span>
@@ -108,13 +114,7 @@ export function AiActivityItem({ item, locale, t }: AiActivityItemProps) {
                 ))}
 
             <p className={styles.meta}>
-                <time dateTime={item.loggedAt.toISOString()}>
-                    {formatDate({
-                        date: item.loggedAt,
-                        locale,
-                        options: { dateStyle: 'medium', timeStyle: 'short' }
-                    })}
-                </time>
+                <time dateTime={item.loggedAt.toISOString()}>{when}</time>
                 <span aria-hidden="true">·</span>
                 <span>{assistant}</span>
                 {step && (

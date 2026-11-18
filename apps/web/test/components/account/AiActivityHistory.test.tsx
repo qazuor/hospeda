@@ -188,6 +188,22 @@ describe('AiActivityHistory', () => {
         );
     });
 
+    it('renders the rest when an item has an unknown key, outcome or shape (M2)', async () => {
+        await renderHistory(
+            page([
+                item({ client: { id: 'client-claude', name: 'Claude', version: '2' } }),
+                item({ outcome: 'cancelled_by_policy', tool: 'get_listing', isWrite: false }),
+                { id: 'broken' }
+            ])
+        );
+
+        const rows = screen.getAllByRole('listitem');
+        expect(rows).toHaveLength(2);
+        expect(within(rows[0] as HTMLElement).getByText('Hecho')).toBeTruthy();
+        expect(within(rows[1] as HTMLElement).getByText('Resultado desconocido')).toBeTruthy();
+        expect(document.body.textContent).not.toContain('cancelled_by_policy');
+    });
+
     it('refetches page 1 with includeReads=true when the toggle is turned on', async () => {
         await renderHistory(page([item()], { page: 1, totalPages: 1 }));
         vi.mocked(fetch).mockResolvedValueOnce(

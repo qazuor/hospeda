@@ -84,6 +84,36 @@ describe('parseAiActivityPage', () => {
         expect(parsed.ok && Object.keys(parsed.items[0] ?? {})).not.toContain('futureField');
     });
 
+    it('keeps the page when an item carries a nested key or an outcome it does not know', () => {
+        const parsed = parseAiActivityPage({
+            body: {
+                success: true,
+                data: {
+                    items: [
+                        { ...item, client: { id: 'client-1', name: 'Claude', version: '2' } },
+                        {
+                            ...item,
+                            id: '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b8',
+                            outcome: 'cancelled_by_policy',
+                            target: { type: 'venue', id: ID, label: 'Bar', vertical: 'venue' }
+                        },
+                        { ...item, id: 'not-a-uuid' },
+                        'not an object'
+                    ],
+                    pagination: { page: 1, totalPages: 1, total: 4 }
+                }
+            }
+        });
+
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) return;
+        expect(parsed.items).toHaveLength(2);
+        expect(parsed.dropped).toBe(2);
+        expect(parsed.items[0]?.client).toEqual({ id: 'client-1', name: 'Claude' });
+        expect(parsed.items[1]?.outcome).toBe('unknown');
+        expect(parsed.items[1]?.target).toEqual({ type: 'venue', id: ID, label: 'Bar' });
+    });
+
     it.each([
         null,
         { success: false },
@@ -117,7 +147,8 @@ describe('resolveAiActivityResult', () => {
         ['denied', 'FORBIDDEN', 'deniedByHospeda'],
         ['denied', undefined, 'deniedByHospeda'],
         ['denied', 'USER_DECLINED', 'declinedByYou'],
-        ['denied', 'USER_CANCELLED', 'declinedByYou']
+        ['denied', 'USER_CANCELLED', 'declinedByYou'],
+        ['unknown', undefined, 'unknown']
     ] as const)('%s with %s is %s', (outcome, errorCode, expected) => {
         expect(resolveAiActivityResult({ outcome, errorCode })).toBe(expected);
     });

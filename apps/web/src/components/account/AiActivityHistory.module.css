@@ -137,6 +137,11 @@
     color: var(--destructive);
 }
 
+.resultUnknown {
+    background-color: var(--core-foreground-a08);
+    color: var(--core-muted-foreground);
+}
+
 .target {
     margin: 0;
     font-size: 0.9375rem;

@@ -59,21 +59,52 @@ export function buildAiActivityUrl({
     return `${apiUrl.replace(/\/$/, '')}${AI_ACTIVITY_API_PATH}?${query.toString()}`;
 }
 
+/** The outcome of an item: a known one, or `unknown` for a value this web does not know. */
+export type AiActivityItemOutcome = AiActivityOutcome | 'unknown';
+
+/** Narrows a recorded outcome to a known one, or `unknown`. */
+function toItemOutcome(value: string): AiActivityItemOutcome {
+    return AI_ACTIVITY_OUTCOMES.find((outcome) => outcome === value) ?? 'unknown';
+}
+
 /**
- * One history item as the API serialises it: the owner item with `loggedAt`
- * as an ISO string. Built from the shared schema's fields, not strict at the
- * top level, so a web deployed behind a newer API still renders.
+ * One history item as the API serialises it. The API side is strict
+ * (`McpActivityOwnItemSchema`, AC-C46); this side is tolerant on purpose, so a
+ * web deployed behind a newer API still renders:
+ * - an unknown key, top-level or inside `client` / `target`, is dropped;
+ * - an outcome this web does not know reads as `unknown`;
+ * - `target.url` is any string here, and `toSafeLink` keeps it only when it
+ *   is an absolute http(s) URL.
+ * The scalar fields reuse the shared schema, so their rules stay in one place.
  */
 const AiActivityItemResponseSchema = z.object({
-    ...McpActivityOwnItemSchema.shape,
-    loggedAt: z.coerce.date()
+    id: McpActivityOwnItemSchema.shape.id,
+    loggedAt: z.coerce.date(),
+    tool: McpActivityOwnItemSchema.shape.tool,
+    isWrite: McpActivityOwnItemSchema.shape.isWrite,
+    outcome: z.string().transform(toItemOutcome),
+    errorCode: McpActivityOwnItemSchema.shape.errorCode,
+    step: McpActivityOwnItemSchema.shape.step,
+    client: z.object({
+        id: z.string().min(1),
+        name: z.string().optional()
+    }),
+    target: z
+        .object({
+            type: z.string().min(1),
+            id: z.string().min(1),
+            label: z.string().optional(),
+            url: z.string().optional()
+        })
+        .optional()
 });
 
 /** One validated history item. */
 export type AiActivityItem = z.infer<typeof AiActivityItemResponseSchema>;
 
 const AiActivityPageResponseSchema = z.object({
-    items: z.array(AiActivityItemResponseSchema),
+    /** Validated one by one in {@link parseAiActivityPage}. */
+    items: z.array(z.unknown()),
     pagination: z.object({
         page: z.number().int().min(1),
         totalPages: z.number().int().min(0),
@@ -86,13 +117,18 @@ export type ParseAiActivityPageResult =
     | {
           readonly ok: true;
           readonly items: readonly AiActivityItem[];
+          /** Items left out because they did not validate. */
+          readonly dropped: number;
           readonly page: number;
           readonly totalPages: number;
       }
     | { readonly ok: false };
 
 /**
- * Validates the body of `GET /protected/ai-connections/activity`.
+ * Validates the body of `GET /protected/ai-connections/activity`. The
+ * envelope must be the expected one; each item is validated on its own, and
+ * one that does not validate is left out (and counted in `dropped`) instead of
+ * failing the whole page.
  *
  * @param params.body - Parsed JSON body (unknown shape).
  * @returns The page, or `{ ok: false }` when the envelope is not the expected one.
@@ -112,9 +148,14 @@ export function parseAiActivityPage({
     }
     const parsed = AiActivityPageResponseSchema.safeParse('data' in body ? body.data : undefined);
     if (!parsed.success) return { ok: false };
+    const items = parsed.data.items.flatMap((raw) => {
+        const item = AiActivityItemResponseSchema.safeParse(raw);
+        return item.success ? [item.data] : [];
+    });
     return {
         ok: true,
-        items: parsed.data.items,
+        items,
+        dropped: parsed.data.items.length - items.length,
         page: parsed.data.pagination.page,
         totalPages: parsed.data.pagination.totalPages
     };
@@ -142,14 +183,14 @@ export function normalizeAiActivityStep({
 }
 
 /** What the result column says. */
-export type AiActivityResult = 'done' | 'deniedByHospeda' | 'declinedByYou' | 'error';
+export type AiActivityResult = 'done' | 'deniedByHospeda' | 'declinedByYou' | 'error' | 'unknown';
 
 /** Error codes of a confirmation the user declined or cancelled (§5.7). */
 const USER_DECLINE_CODES: ReadonlySet<string> = new Set(['USER_DECLINED', 'USER_CANCELLED']);
 
 /**
  * The result of a call: done, refused by Hospeda, declined by the user in the
- * confirmation, or failed.
+ * confirmation, failed, or unknown (an outcome this web does not know).
  *
  * @param params.outcome - The recorded outcome.
  * @param params.errorCode - The recorded error code, if any.
@@ -159,11 +200,12 @@ export function resolveAiActivityResult({
     outcome,
     errorCode
 }: {
-    readonly outcome: AiActivityOutcome;
+    readonly outcome: AiActivityItemOutcome;
     readonly errorCode?: string;
 }): AiActivityResult {
     if (outcome === 'success') return 'done';
     if (outcome === 'error') return 'error';
+    if (outcome === 'unknown') return 'unknown';
     return errorCode !== undefined && USER_DECLINE_CODES.has(errorCode)
         ? 'declinedByYou'
         : 'deniedByHospeda';
