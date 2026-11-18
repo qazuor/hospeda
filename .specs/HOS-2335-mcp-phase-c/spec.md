@@ -628,8 +628,9 @@ Claude desktop, Claude Code and ChatGPT.
     token MUST declare `confirmation: { elicitation: true }` and pass the tests
     of both paths.
   - **Not covered:** edits without a token (D-2: `update_listing_basic`,
-    `update_listing_amenities`, `set_listing_publication`). They stay out of
-    HOS-2247. D-19 asks the owner about `set_listing_publication`.
+    `update_listing_amenities`, and `set_listing_publication` when it pauses).
+    They stay out of HOS-2247. Per D-19, `set_listing_publication` with
+    `publish` becomes token-confirmed and IS covered.
 - **Flow on a capable client (2026-07-28, form elicitation declared):**
   1. The first call validates and dry-runs exactly as the P1 preview does.
      Instead of a token it returns `input_required` with one form elicitation:
@@ -1336,7 +1337,7 @@ entity-list framework, TanStack Query, Tailwind). The new screen is
 `create_listing`, and (with PR-7) `confirm_benefit_usage` and
 `reject_benefit_usage`. Edits without a token (D-2), including the one-step
 `undo_benefit_rejection`,
-stay out (D-19 is the one open question). It starts with measurement M-1.
+stay out; `set_listing_publication` with `publish` joins (D-19). It starts with measurement M-1.
 Docs: the "Security limit" section of `apps/api/docs/mcp-server.md` is
 rewritten. It names the clients measured to support elicitation and keeps the
 limit documented for the others.
@@ -1440,7 +1441,7 @@ PR-6 may split the resolver into its own PR first (it is self-contained and carr
 | PR-11 | HOS-2348 protected route + web history island with the reads toggle + i18n es/en/pt + `check-portal-routes` entry | PR-10, PR-1 | now |
 | PR-12 | HOS-2349: `MCP_ACTIVITY_VIEW` enum migration + SUPER_ADMIN seed dual-write (D-15, AC-C51a) + admin route + admin screen; the extras index only if the staging `EXPLAIN` needs it (D-16) | PR-10 | now |
 | PR-13a | M-1 measurement: capability logging on `/mcp` (no token, no content); staging sessions with the four clients; results table (no magic word) | — | now |
-| PR-13 | HOS-2247 §5.7: binder `inputRequired` outcome, 2026-07-28 flow only (D-18), strict policy + `ELICITATION_STRICT` (D-17), for `reply_inquiry` and `create_listing`; docs "Security limit" rewrite | PR-2, PR-6, PR-13a | now |
+| PR-13 | HOS-2247 §5.7: binder `inputRequired` outcome, 2026-07-28 flow only (D-18), strict policy + `ELICITATION_STRICT` (D-17), for `reply_inquiry` and `create_listing`, plus the new two-step `publish` in `set_listing_publication` (D-19); docs "Security limit" rewrite | PR-2, PR-6, PR-13a | now |
 | PR-14 | Elicitation for `confirm_benefit_usage` and `reject_benefit_usage`. Folded into PR-7 if PR-13 merges first; no magic word if HOS-2247 is already closed | PR-7, PR-13 | now |
 
 HOS-2247 closes on whichever of PR-13 and PR-14 merges last.
@@ -1469,7 +1470,7 @@ The spec's last PR carries `Closes HOS-2335`. With this delta that is PR-9
 - **R-17 Elicitation is only as strong as the client:** the guarantee holds only if the client shows the form to the human and never lets the model answer it. That is a client property we cannot test from the server; M-1 records per client what it does (AC-C63a). The token path remains the floor.
 - **R-18 Downgrade by capability:** a manipulated model cannot change the client's declared capabilities, but a client that drops the capability falls back to tokens. D-17 (strict) closes the token path for capable clients; `ELICITATION_STRICT` reopens it per tool only by a code change.
 - **R-20 Strict policy blocks a user:** a client that declares elicitation and renders it badly leaves the user unable to confirm a covered write. M-1 is meant to find it before PR-13; the per-tool constant is the remedy.
-- **R-21 Unconfirmed edits stay model-driven:** the D-2 edits without a token, `set_listing_publication` included, are still confirmed only by the client's per-tool approval prompt (D-19).
+- **R-21 Unconfirmed edits stay model-driven:** the D-2 edits without a token, including pausing through `set_listing_publication`, are still confirmed only by the client's per-tool approval prompt. Publishing is covered (D-19).
 - **R-19 Stale target labels:** labels resolve at read time through owner-scoped readers; a lost or deleted target shows no name (AC-C47).
 
 ## 10. Owner decisions (2026-11-17)
@@ -1504,28 +1505,7 @@ The options considered are in this file's history (commit `f4d5a84c36`).
 | D-16 | How are tool, outcome and client filtered? | **Over the `data` jsonb.** An extras expression index is added only if the staging query plan needs one | §6.10, §7 |
 | D-17 | Elicitation policy on a capable client | **Strict.** A client that supports elicitation must confirm through it. The per-tool `ELICITATION_STRICT` constant relaxes it | §5.7, AC-C63, R-20 |
 | D-18 | 2025-era clients | **Only the 2026-07-28 flow.** 2025-era clients keep the current token | §5.7, AC-C62 |
-
-**Still open.**
-
-**D-19 — Does `set_listing_publication` join HOS-2247?** It is a D-2 edit with no
-token, so by default it stays out of HOS-2247. One reason to reconsider it: a
-publish makes a listing public and fires the trial activation event
-(`listing_published`), which starts the vertical's trial. A steered model can
-cause that, and the client's per-tool approval prompt is the only check (R-21).
-The amenity and basic-field edits are reversible and private, so they stay out
-without a question.
-
-1. *Keep it out (today).* Pros: no change; publishing stays one call. Cons: a
-   steered model can publish and start a trial. Impact: none.
-2. *Add a confirmation to `publish` only (not to `pause`), with a token and an
-   elicitation like the other covered tools.* Pros: the one public, billing-relevant
-   transition gets a confirmation the model cannot answer. Cons: one more step
-   for every publish from the chat; it changes `set_listing_publication`'s
-   contract (phase A). Impact: the tool joins the PR-13 registry set and needs
-   its own preview.
-3. *Elicitation only, with no token fallback.* Pros: no new token flow. Cons:
-   unconfirmed on clients without elicitation, so it is inconsistent across
-   clients. Impact: a second policy shape.
+| D-19 | Does `set_listing_publication` join HOS-2247? | **`publish` only.** Publishing becomes two steps: a preview plus a token, and elicitation on a capable client, like the other covered tools. `pause` stays one step. Reason: publishing makes a listing public and fires `listing_published`, which starts the trial; pausing is reversible and private. It changes the phase A contract of `set_listing_publication` and joins the PR-13 registry set | §5.7, R-21 |
 
 **Recommendation: 2**, publish only. Pausing removes exposure and is safe to
 leave unconfirmed. Until the owner answers, HOS-2247 excludes the tool.
