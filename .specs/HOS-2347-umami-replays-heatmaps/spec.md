@@ -348,9 +348,15 @@ One exported constant in `apps/web/src/lib/analytics/recording-exclusions.ts`:
 RECORDING_EXCLUDED_ROUTE_PREFIXES = [
   'auth', 'mi-cuenta', 'guest', 'suscriptores/checkout', 'publicar',
   'feedback', 'colaborar', 'contacto', 'partners/reclamar',
-  'sumate/proveedor', 'newsletter'
+  'sumate', 'newsletter'
 ] as const
 ```
+
+> **Implementation decision after review (2026-11-18).** The first draft listed
+> only `sumate/proveedor`. `sumate/sponsor` renders the same `AllianceLead` form,
+> and `sumate/partner` renders `PartnerApplication`, another free-text lead form.
+> Under the privacy doc's rule that free-text forms are never recorded, the whole
+> `sumate` prefix is excluded instead.
 
 Matching rules for `isRecordingExcludedPath({ pathname })`:
 
@@ -650,11 +656,12 @@ means a `script#umami-recorder` exists with
   locale, e.g. `/es/auth/signin/`, `/en/mi-cuenta/favoritos/`,
   `/pt/guest/messages/abc`, `/es/suscriptores/checkout/?plan=x`,
   `/es/publicar/nueva`, `/es/feedback/`, `/es/colaborar/fotos/`,
-  `/es/contacto/`, `/es/partners/reclamar/`, `/es/sumate/proveedor/`, and
-  `/es/newsletter/confirmado`.
+  `/es/contacto/`, `/es/partners/reclamar/`, `/es/sumate/proveedor/`,
+  `/es/sumate/sponsor/`, `/es/sumate/partner/`, and `/es/newsletter/confirmado`.
 - **AC-R2** It returns `false` for `/es/`, `/es/alojamientos/x/`,
   `/es/publicaciones/`, `/es/partners/foo/`, `/es/suscriptores/planes/`,
-  `/es/sumate/partner/` and `/es/contactos-utiles/` (prefix-boundary check).
+  `/es/sumatoria/` and `/es/contactos-utiles/` (prefix-boundary check).
+  (`/es/sumate/partner/` moved to AC-R1 by the 2026-11-18 review decision in §6.5.)
 - **AC-R3** Given all other conditions hold and the current path is excluded,
   then nothing is injected and `fetch` is not called.
 - **AC-R4** Guard: every entry of `RECORDING_EXCLUDED_ROUTE_PREFIXES` maps to an

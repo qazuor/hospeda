@@ -26,6 +26,9 @@ describe('isRecordingExcludedPath (HOS-2347)', () => {
         '/es/contacto/',
         '/es/partners/reclamar/',
         '/es/sumate/proveedor/',
+        '/es/sumate/sponsor/',
+        '/es/sumate/partner/',
+        '/en/sumate/',
         '/es/newsletter/confirmado'
     ])('AC-R1: excludes %s', (pathname) => {
         expect(isRecordingExcludedPath({ pathname })).toBe(true);
@@ -45,7 +48,7 @@ describe('isRecordingExcludedPath (HOS-2347)', () => {
         '/es/publicaciones/',
         '/es/partners/foo/',
         '/es/suscriptores/planes/',
-        '/es/sumate/partner/',
+        '/es/sumatoria/',
         '/es/contactos-utiles/'
     ])('AC-R2: allows %s (prefix boundary)', (pathname) => {
         expect(isRecordingExcludedPath({ pathname })).toBe(false);

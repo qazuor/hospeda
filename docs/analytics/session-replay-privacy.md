@@ -54,8 +54,14 @@ recorded.
 The single list is `RECORDING_EXCLUDED_ROUTE_PREFIXES` in
 `apps/web/src/lib/analytics/recording-exclusions.ts`. It is not copied here so it cannot drift.
 It covers sign-in, the account area, guest conversations, checkout, publishing, feedback,
-contributions, contact, partner claims, provider sign-up and the newsletter flow, in every
-locale. A test fails if any entry stops matching a real page directory.
+contributions, contact, partner claims, the whole `sumate` family (partner, provider and
+sponsor sign-ups) and the newsletter flow, in every locale. A test fails if any entry stops
+matching a real page directory.
+
+**Rule: free-text forms are never recorded.** A page whose main content is a form where a
+visitor types free text (a lead, an application, a message) is excluded as a whole route,
+not just masked. That is why the whole `sumate` prefix is excluded: all three sign-ups are
+free-text lead forms (review decision, 2026-11-18).
 
 While the recorder is loaded, a soft navigation into an excluded route is turned into a full
 page load. The unload ends the recording, and the new page never loads the recorder.
