@@ -115,11 +115,27 @@ export const LISTING_SECTIONS = {
             group: 'content'
         },
         {
+            // HOS-2270: the venue's promotions. They are NOT part of the venue payload:
+            // they have their own routes (`/venues/{id}/promotions`) and their own public
+            // read (HOS-2271), so no field is listed. That is deliberate: the public
+            // projector therefore never hides them when the section is locked, and they
+            // stay in force after a plan downgrade (the owner keeps what they loaded; only
+            // creating, editing and re-activating are gated, by `create_promotions`).
+            id: 'promotions',
+            vertical: 'venue',
+            common: true,
+            entitlementKey: K.CREATE_PROMOTIONS,
+            fields: [],
+            readOnlyFields: [],
+            order: 11,
+            group: 'content'
+        },
+        {
             id: 'faqs',
             vertical: 'venue',
             common: true,
             fields: ['faqs'],
-            order: 11,
+            order: 12,
             group: 'content'
         },
         {
@@ -138,7 +154,7 @@ export const LISTING_SECTIONS = {
             // DEC-FAC-050 / DEC-FAC-068: an i18n key, never the Spanish text.
             // The component resolves it through `t()`.
             headingWhenMultiLineKey: 'venue.detail.nightInfo.headingMultiLine',
-            order: 12,
+            order: 13,
             group: 'property'
         },
         {
@@ -152,7 +168,7 @@ export const LISTING_SECTIONS = {
                 'richDescriptionI18n',
                 'translationMeta'
             ],
-            order: 13,
+            order: 14,
             group: 'management'
         }
     ] as const satisfies readonly ListingSectionDefinitionBase<'venue'>[],

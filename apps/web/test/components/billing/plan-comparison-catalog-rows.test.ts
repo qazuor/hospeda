@@ -255,3 +255,17 @@ describe('TEST:6.5:6 — the venue table still renders', () => {
         expect(groups.flatMap((group) => group.rows).map((row) => row.id)).toContain('venueMenu');
     });
 });
+
+describe('HOS-2270 unreleased catalog sections', () => {
+    it('skips the venue promotions section: no venue plan grants create_promotions yet', () => {
+        const promotions = LISTING_SECTIONS.venue.find((section) => section.id === 'promotions');
+
+        expect(promotions?.entitlementKey).toBe(EntitlementKeyEnum.CREATE_PROMOTIONS);
+        expect(
+            venueGroup.rows.some(
+                (row) => row.cell.kind === 'entitlement' && row.cell.key === 'create_promotions'
+            )
+        ).toBe(false);
+        expect(venueGroup.rows.map((row) => row.id)).not.toContain('promotions');
+    });
+});

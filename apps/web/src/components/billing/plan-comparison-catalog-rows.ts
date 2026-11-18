@@ -59,6 +59,12 @@ interface CatalogRowPresentation {
 
 /** Presentation of one section and its optional traits. */
 interface SectionCatalogPresentation {
+    /**
+     * The section is in the catalog but its comparison row is not designed yet: the
+     * table skips it instead of showing a row with a raw i18n key (HOS-2270; the row
+     * itself is HOS-2262).
+     */
+    readonly unreleased?: boolean;
     readonly section?: CatalogRowPresentation;
     readonly traits?: Readonly<Record<string, CatalogRowPresentation>>;
 }
@@ -126,6 +132,9 @@ const VENUE_CATALOG_PRESENTATION = {
             icon: COMPARISON_ROW_ICONS.venueEvents
         }
     },
+    // HOS-2270: no venue plan grants `create_promotions` yet (HOS-2282) and the row is
+    // designed by HOS-2262, so the plans table must not show it.
+    promotions: { unreleased: true },
     faqs: {},
     nightInfo: {},
     translations: {}
@@ -220,6 +229,7 @@ export function buildCatalogComparisonGroup<V extends CatalogComparisonVertical>
     const rows: RowConfig[] = [];
 
     for (const section of catalog) {
+        if (presentation[section.id]?.unreleased) continue;
         const lineMarks = resolveSectionBusinessLines({
             vertical,
             sectionId: section.id as ListingSectionId<V>

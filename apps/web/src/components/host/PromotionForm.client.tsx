@@ -26,6 +26,7 @@
  */
 
 import {
+    ACCOMMODATION_PROMOTION_DISCOUNT_TYPES,
     OwnerPromotionCreateRequestSchema,
     OwnerPromotionDiscountTypeEnum,
     OwnerPromotionUpdateInputSchema
@@ -96,7 +97,9 @@ function buildInitialFields(data?: OwnerPromotionData): FormFields {
     };
 }
 
-const DISCOUNT_TYPE_VALUES = Object.values(OwnerPromotionDiscountTypeEnum);
+// HOS-2270: the accommodation form offers ITS benefit types only; `special_offer` is
+// a venue benefit and must never appear here (AC-21).
+const DISCOUNT_TYPE_VALUES = ACCOMMODATION_PROMOTION_DISCOUNT_TYPES;
 
 // ─── Data-load state (edit mode without initialData) ─────────────────────────
 

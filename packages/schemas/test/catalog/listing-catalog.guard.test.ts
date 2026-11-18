@@ -96,11 +96,16 @@ function violations(
             )
                 errors.push('r5');
         }
-        const prodKeys = new Set<string>(
-            PRODUCTION_PLAN_CATALOG.filter((p) => p.vertical === vertical).flatMap((p) =>
+        const prodKeys = new Set<string>([
+            ...PRODUCTION_PLAN_CATALOG.filter((p) => p.vertical === vertical).flatMap((p) =>
                 p.version.entitlements.map((e) => e.key)
-            )
-        );
+            ),
+            // HOS-2270 ships the venue `promotions` section (gated by `create_promotions`)
+            // BEFORE any venue plan grants the key: that is HOS-2282's additive grant.
+            // Until it lands the section is unlockable on purpose ("hidden phase 1": the
+            // gate answers 403 to every venue owner). REMOVE this line with HOS-2282.
+            ...(vertical === 'venue' ? PENDING_PLAN_GRANT_VENUE_KEYS : [])
+        ]);
         for (const section of owned)
             for (const key of [
                 section.entitlementKey,
@@ -212,6 +217,9 @@ function violations(
     errors.push(...reviewErrors);
     return errors;
 }
+
+/** Venue section keys declared in the catalog whose plan grant comes later (HOS-2282). */
+const PENDING_PLAN_GRANT_VENUE_KEYS: readonly string[] = ['create_promotions'];
 
 describe('G-FAC-02 listing catalog integrity', () => {
     it('satisfies all twelve catalog rules', () =>
