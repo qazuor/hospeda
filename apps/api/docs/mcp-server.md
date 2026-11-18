@@ -255,20 +255,29 @@ Tool-specific rules:
     vertical's plans (owner decision D-9). The note names no plan until HOS-2066
     exposes which plan versions carry the entitlement (HOS-1967 forbids
     hardcoding names). Listings and attention are never gated.
-  - Metric sources, all owner-wide:
+  - Metric sources:
     - views: `getStatsForHostAccommodations` / `getStatsForOwnListings`, summed;
     - new reviews in the period, every moderation state: `readOwnerListingReviews`
       with `since`;
     - accommodation inquiries and reply speed: `getHostMonthlyInquiries` /
       `getHostResponseRate`;
-    - unanswered inquiries: the host dashboard's `getUnreadCount`;
+    - unanswered inquiries: conversations in `PENDING_OWNER`, the `total` of the
+      `listForOwner` read `list_inquiries` makes, over the same scope
+      (`readOwnerAccommodationIds`) and behind the same `CONVERSATION_VIEW_OWN`
+      permission. It is the number `list_inquiries` returns for that status;
     - favorites, advanced stats only: one batched count with the where of
-      `countBookmarksForEntity`.
+      `countBookmarksForEntity`. It sums live bookmarks over the accommodations,
+      so a user who saved two counts twice.
     A metric that cannot be read for a permission reason is left out and listed in
     `omitted`, never zero.
+  - Counts and metrics skip `PURGED` listings: a vertical whose only listings are
+    purged gets no metrics entry.
+  - A vertical with more than 100 listings marks its metrics entry `partial: true`
+    too. `newReviews` and `favorites` then cover only the listings read, while
+    views and inquiries are owner-wide.
   - The period is `7d` or `30d`, because those are the windows the owner-wide view
     reads offer. For 90 days, use `get_listing_stats` per listing.
-  - `attention`: most urgent first, capped at 10, with `moreAttention` counting the
+  - `attention`: most urgent first, capped at 10, with `more` counting the
     rest. The kinds:
     - `unanswered_inquiries`, linked to the inbox;
     - `pending_benefit_usages` (owner decision D-11). Side `host` comes from
