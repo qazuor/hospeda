@@ -1,6 +1,11 @@
 import type { PartnerModel, PartnerTypeModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
-import { LifecycleStatusEnum, type Partner, PartnerTypeSlugSchema } from '@repo/schemas';
+import {
+    type AllianceLeadPartnerProvisionSkipReason,
+    LifecycleStatusEnum,
+    type Partner,
+    PartnerTypeSlugSchema
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import { legacyPartnerTypeFor } from '../partner-type/partner-type.helpers';
 
@@ -37,18 +42,15 @@ export interface ProvisionPartnerInput {
     readonly tx?: Parameters<PartnerModel['create']>[1];
 }
 
-/** Why provisioning did not produce a partner row, when it did not. */
-export type PartnerProvisionSkipReason =
-    | 'not-a-partner'
-    | 'already-provisioned'
-    | 'legacy-lead-without-typed-fields'
-    /**
-     * The lead's `partnerType` slug names no ACTIVE, non-deleted type at
-     * approval time: it was deactivated or deleted after the lead was
-     * submitted (HOS-2336 AC-2.2). The lead is still approved; no partner is
-     * created.
-     */
-    | 'no-active-partner-type';
+/**
+ * Why provisioning did not produce a partner row, when it did not. Derived
+ * from the closed `@repo/schemas` set so the API response enum and this type
+ * cannot drift. `no-active-partner-type`: the lead's `partnerType` slug names
+ * no ACTIVE, non-deleted type at approval time, because it was deactivated or
+ * deleted after the lead was submitted (HOS-2336 AC-2.2). The lead is still
+ * approved; no partner is created.
+ */
+export type PartnerProvisionSkipReason = AllianceLeadPartnerProvisionSkipReason;
 
 /**
  * What provisioning this lead will produce, decided WITHOUT touching the

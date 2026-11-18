@@ -15,7 +15,11 @@
  * @module routes/alliance/admin/approve-and-provision-partner
  */
 
-import { AllianceLeadSchema, PermissionEnum } from '@repo/schemas';
+import {
+    AllianceLeadPartnerProvisionSkipReasonSchema,
+    AllianceLeadSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -69,9 +73,9 @@ const ApproveAndProvisionPartnerResponseSchema = z.object({
      * `provisioned` is true). `no-active-partner-type` means the lead's type
      * was deactivated or deleted after submission (AC-2.2).
      */
-    reason: z
-        .enum(['already-provisioned', 'legacy-lead-without-typed-fields', 'no-active-partner-type'])
-        .optional()
+    // `not-a-partner` never reaches this response: a non-partner lead is
+    // refused before provisioning runs.
+    reason: AllianceLeadPartnerProvisionSkipReasonSchema.exclude(['not-a-partner']).optional()
 });
 
 /**
