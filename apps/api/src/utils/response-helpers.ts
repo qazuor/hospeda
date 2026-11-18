@@ -479,7 +479,11 @@ export const createPaginatedResponse = (
  */
 const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
     ServiceErrorCode.LIMIT_REACHED,
-    ServiceErrorCode.ENTITLEMENT_REQUIRED
+    ServiceErrorCode.ENTITLEMENT_REQUIRED,
+    // HOS-2336 AC-3.4: the admin catalog names how many partners still use the
+    // type (`details.count`) so the confirm dialog can say it. Only the count
+    // and the type id travel; no partner data.
+    ServiceErrorCode.PARTNER_TYPE_IN_USE
 ]);
 
 /**

@@ -148,6 +148,7 @@ import {
     publicPartnerClaimRoutes
 } from './partner-application/index.js';
 import { partnerLogoClickRoutes } from './partner-logo-clicks';
+import { adminPartnerTypeRoutes, publicPartnerTypeRoutes } from './partner-type';
 import {
     adminConfigurePartnerBillingRoute,
     adminCreatePartnerMentionsRoute,
@@ -382,6 +383,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/poi-categories', publicPoiCategoryRoutes);
         // Provider trade catalog: public read tier for the selectors (HOS-919)
         app.route('/api/v1/public/host-trade-categories', publicHostTradeCategoryRoutes);
+        app.route('/api/v1/public/partner-types', publicPartnerTypeRoutes);
         app.route('/api/v1/public/event-locations', publicEventLocationRoutes);
         app.route('/api/v1/public/event-organizers', publicEventOrganizerRoutes);
 
@@ -645,6 +647,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Provider trade catalog: one set of permissions gates groups and categories (HOS-919)
         app.route('/api/v1/admin/host-trade-category-groups', adminHostTradeCategoryGroupRoutes);
         app.route('/api/v1/admin/host-trade-categories', adminHostTradeCategoryRoutes);
+        app.route('/api/v1/admin/partner-types', adminPartnerTypeRoutes);
 
         // User-tag admin routes (SPEC-086 T-025..T-028)
         // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE

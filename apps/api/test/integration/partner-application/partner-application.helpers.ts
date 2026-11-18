@@ -91,3 +91,24 @@ export async function insertClaimablePartner(args: {
         RETURNING id`);
     return { partnerId, applicationId: String(application.rows[0]?.id) };
 }
+
+/**
+ * Catalog id of the `business` partner type used by approval tests (HOS-2336).
+ * The integration database is built by migrations only, so the catalog row the
+ * seed would provide does not exist; {@link ensureTestPartnerType} inserts it.
+ */
+export const TEST_BUSINESS_PARTNER_TYPE_ID = 'a2336000-0000-4000-8000-000000000001';
+
+/**
+ * Inserts the ACTIVE `business` partner type with {@link TEST_BUSINESS_PARTNER_TYPE_ID}
+ * when it is missing. Idempotent and shared by every file that approves an
+ * application or creates a partner (both now require `typeId`).
+ */
+export async function ensureTestPartnerType(): Promise<string> {
+    await getDb().execute(sql`
+        INSERT INTO partner_types (id, slug, name_i18n, display_weight, lifecycle_state)
+        VALUES (${TEST_BUSINESS_PARTNER_TYPE_ID}::uuid, 'business',
+                '{"es":"Comercio","en":"Business","pt":"Comércio"}'::jsonb, 10, 'ACTIVE')
+        ON CONFLICT DO NOTHING`);
+    return TEST_BUSINESS_PARTNER_TYPE_ID;
+}

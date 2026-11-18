@@ -16,14 +16,20 @@ import {
     createApplicationEmail,
     deleteApplications,
     deletePartners,
+    ensureTestPartnerType,
     insertPending,
     readApplications,
-    readPartner
+    readPartner,
+    TEST_BUSINESS_PARTNER_TYPE_ID
 } from './partner-application.helpers';
 
 const app = initApp();
 const REASON = '  The application was reviewed  ';
-const BODY = { reason: REASON, name: 'HOS1485 Example Partner', type: 'business' } as const;
+const BODY = {
+    reason: REASON,
+    name: 'HOS1485 Example Partner',
+    typeId: TEST_BUSINESS_PARTNER_TYPE_ID
+} as const;
 const GRANTED_PERMISSIONS = [
     PermissionEnum.ACCESS_PANEL_ADMIN,
     PermissionEnum.PARTNER_RESOLVE_APPLICATION
@@ -99,6 +105,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
     validateApiEnv();
+    await ensureTestPartnerType();
     await checkDatabasePreconditions();
 });
 afterEach(async () => {
@@ -150,7 +157,7 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         expect(partner).toMatchObject({
             id: partnerId,
             name: BODY.name,
-            type: BODY.type,
+            type: 'business',
             lifecycle_state: 'DRAFT',
             owner_user_id: null,
             claim_secret_hash: null,
@@ -318,13 +325,33 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         const id = await pending(email());
         for (const body of [
             { ...BODY, reason: '   ' },
-            { reason: BODY.reason, type: BODY.type },
-            { ...BODY, type: 'invalid' }
+            { reason: BODY.reason, typeId: BODY.typeId },
+            { ...BODY, typeId: 'invalid' }
         ]) {
             expect((await approve({ id, actorId, body })).status).toBe(400);
         }
         expect(await application(id)).toMatchObject({ status: 'PENDING', partner_id: null });
         expect(await events(id)).toEqual([]);
+    });
+
+    it('(g2) refuses an inactive or unknown partner type without approving (HOS-2336 AC-4.3)', async () => {
+        const actorId = await admin();
+        const id = await pending(email());
+        const inactiveId = crypto.randomUUID();
+        await getDb().execute(sql`
+            INSERT INTO partner_types (id, slug, name_i18n, display_weight, lifecycle_state)
+            VALUES (${inactiveId}::uuid, ${`inactive-${inactiveId.slice(0, 8)}`},
+                    '{"es":"Inactivo","en":"Inactive","pt":"Inativo"}'::jsonb, 90, 'INACTIVE')`);
+        try {
+            for (const typeId of [inactiveId, crypto.randomUUID()]) {
+                expect((await approve({ id, actorId, body: { ...BODY, typeId } })).status).toBe(
+                    400
+                );
+            }
+            expect(await application(id)).toMatchObject({ status: 'PENDING', partner_id: null });
+        } finally {
+            await getDb().execute(sql`DELETE FROM partner_types WHERE id = ${inactiveId}::uuid`);
+        }
     });
 
     it('(h) forbids an admin whose email is the applicant email', async () => {

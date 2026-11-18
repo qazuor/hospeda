@@ -15,14 +15,20 @@ import {
     createApplicationEmail,
     deleteApplications,
     deletePartners,
+    ensureTestPartnerType,
     insertPending,
-    readPartner
+    readPartner,
+    TEST_BUSINESS_PARTNER_TYPE_ID
 } from './partner-application.helpers';
 
 const app = initApp();
 const CLAIM = 'verticals.partner-claim-notice';
 const REASON = 'private admin reason';
-const BODY = { reason: REASON, name: 'HOS1485 Mail Partner', type: 'business' } as const;
+const BODY = {
+    reason: REASON,
+    name: 'HOS1485 Mail Partner',
+    typeId: TEST_BUSINESS_PARTNER_TYPE_ID
+} as const;
 const permissions = [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.PARTNER_RESOLVE_APPLICATION];
 const emails: string[] = [];
 const applicationIds: string[] = [];
@@ -96,6 +102,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
     validateApiEnv();
+    await ensureTestPartnerType();
 });
 afterEach(async () => {
     // Preserve the addresses before cleanup drains the collection.

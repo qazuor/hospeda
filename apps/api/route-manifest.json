@@ -1543,6 +1543,30 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/partner-types"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-types"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-types/:id/restore"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/partners"
         },
         {
@@ -4248,6 +4272,10 @@
         {
             "method": "POST",
             "path": "/api/v1/public/partner-logo-clicks"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/partner-types"
         },
         {
             "method": "GET",

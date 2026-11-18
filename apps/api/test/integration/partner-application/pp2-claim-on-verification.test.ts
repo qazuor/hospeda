@@ -13,7 +13,9 @@ import {
     createApplicationEmail,
     deleteApplications,
     deletePartners,
-    insertPending
+    ensureTestPartnerType,
+    insertPending,
+    TEST_BUSINESS_PARTNER_TYPE_ID
 } from './partner-application.helpers';
 
 const { sendAppEmail, sentEmails } = vi.hoisted(() => {
@@ -36,7 +38,11 @@ const emails: string[] = [];
 const partners: string[] = [];
 const users: string[] = [];
 const oldEmailApiKey = env.HOSPEDA_EMAIL_API_KEY;
-const BODY = { reason: 'Reviewed application', name: 'Claim Test Partner', type: 'business' };
+const BODY = {
+    reason: 'Reviewed application',
+    name: 'Claim Test Partner',
+    typeId: TEST_BUSINESS_PARTNER_TYPE_ID
+};
 const PERMISSIONS = [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.PARTNER_RESOLVE_APPLICATION];
 
 async function createUser(email: string): Promise<string> {
@@ -104,6 +110,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     await testDb.setup();
     validateApiEnv();
+    await ensureTestPartnerType();
 });
 beforeEach(() => {
     env.HOSPEDA_EMAIL_API_KEY = 'test-key';

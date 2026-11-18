@@ -1,4 +1,9 @@
-import { domainEventModel, PartnerModel, type SearchPartnerFilters } from '@repo/db';
+import {
+    domainEventModel,
+    PartnerModel,
+    partnerTypeModel,
+    type SearchPartnerFilters
+} from '@repo/db';
 import type { PartnerOwnerPresence } from '@repo/schemas';
 import {
     EntitlementKeyEnum,
@@ -8,9 +13,28 @@ import {
     PartnerPublicSchema,
     VerticalEnum
 } from '@repo/schemas';
+import { hydratePartnerTypeRefs, toPartnerPublicType } from '@repo/service-core';
 import { getListingAccessPorts } from '../../utils/listing-access/ports';
 
 const partnerModel = new PartnerModel();
+
+/**
+ * Replaces each row's legacy enum `type` with the public catalog type
+ * (HOS-2336 D5): `{ slug, name, nameI18n }`, resolved for the whole batch in
+ * ONE query. The type is shown whatever its state, so a partner whose type was
+ * deactivated keeps its label (AC-5.3). A row not backfilled yet has `null`.
+ */
+async function withPublicType<T extends { readonly typeId?: string | null }>(
+    rows: readonly T[]
+): Promise<Array<Omit<T, 'type'> & { type: ReturnType<typeof toPartnerPublicType> }>> {
+    const hydrated = await hydratePartnerTypeRefs({ items: rows, model: partnerTypeModel });
+    return hydrated.map(({ partnerType, ...row }) => {
+        // TYPE-WORKAROUND: TS cannot see that dropping `partnerType` from
+        // `T & { partnerType }` yields `T`; the spread is exactly the row.
+        const rest = row as unknown as Omit<T, 'type'>;
+        return { ...rest, type: toPartnerPublicType({ ref: partnerType }) };
+    });
+}
 
 /**
  * Read the effective presence keys used by every Partner surface.
@@ -94,7 +118,8 @@ export async function getPublicPartnerPage(args: {
     if (!(await readPartnerPresenceKeys({ userId: candidate.ownerUserId })).publicPage) {
         return null;
     }
-    return { partner: PartnerPublicSchema.parse(candidate) };
+    const [withType] = await withPublicType([candidate]);
+    return { partner: PartnerPublicSchema.parse(withType) };
 }
 
 /**
@@ -106,7 +131,9 @@ export async function listCarouselPartners(args: {
     readonly page: number;
     readonly pageSize: number;
 }): Promise<{ readonly items: PartnerCarouselItem[]; readonly total: number }> {
-    const candidates = await partnerModel.findPresenceCandidates({ filters: args.filters });
+    const candidates = await withPublicType(
+        await partnerModel.findPresenceCandidates({ filters: args.filters })
+    );
     const keysByOwner = new Map<
         string,
         Promise<{ readonly publicPage: boolean; readonly carousel: boolean }>
