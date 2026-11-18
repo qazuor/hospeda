@@ -1306,7 +1306,26 @@
             "cacheClearError": "Error al limpiar caché",
             "dangerZone": "Zona de Peligro",
             "dangerZoneDesc": "Restablecimiento de base de datos y otras operaciones peligrosas",
-            "dangerZoneDevOnly": "Solo disponible en entorno de desarrollo"
+            "dangerZoneDevOnly": "Solo disponible en entorno de desarrollo",
+            "sessionRecording": {
+                "title": "Grabaciones de sesión y mapas de calor",
+                "description": "Interruptor general del grabador de Umami en la web. Apagado, la web nunca carga el grabador.",
+                "statusOn": "ENCENDIDO",
+                "statusOff": "APAGADO",
+                "lastChanged": "Último cambio: {{date}}",
+                "neverChanged": "Nunca se cambió",
+                "help": "Replay o mapa de calor, muestreo y enmascarado se configuran en Umami con `pnpm umami:setup`, no acá.",
+                "enable": "Encender",
+                "disable": "Apagar",
+                "enableAria": "Encender las grabaciones de sesión",
+                "disableAria": "Apagar las grabaciones de sesión",
+                "confirmEnable": "Producción tiene que tener una verificación de privacidad firmada (docs/analytics/session-replay-privacy.md). ¿Encender las grabaciones?",
+                "confirmDisable": "El cambio llega a la web en hasta 60 segundos, y las páginas ya abiertas siguen con su replay hasta 5 minutos y con los clics del mapa de calor hasta que se cierran. ¿Apagar las grabaciones?",
+                "cancel": "Cancelar",
+                "saveError": "No se pudo guardar el cambio. El estado mostrado es el último confirmado.",
+                "readError": "No se pudo leer el estado actual.",
+                "retry": "Reintentar"
+            }
         },
         "seo": {
             "title": "Configuración SEO",
