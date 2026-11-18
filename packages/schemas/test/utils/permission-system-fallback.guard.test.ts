@@ -10,7 +10,8 @@
  * becomes near-impossible to find.
  *
  * Making the fallback throw was considered and rejected on evidence: 101 of the
- * 712 permissions rely on it TODAY, and they are not mistakes. Whole live
+ * 712 permissions relied on it when this guard landed (104 of 691 at the HOS-2349
+ * recount, 2026-11-18), and they are not mistakes. Whole live
  * families sit there — `AMENITY_*`, `FEATURE_*`, `TAG_*`, `AD_SLOT_*`,
  * `AD_MEDIA_ASSET_*`, `PRICING_TIER_*` — and giving each one a
  * category is a taxonomy decision about how the permissions screen should read,
@@ -98,6 +99,9 @@ const KNOWN_SYSTEM_FALLBACK_KEYS: readonly string[] = [
     'MANAGE_PRODUCTS',
     'MANAGE_PURCHASES',
     'MANAGE_USERS',
+    // HOS-2349 (D-15): deliberate. The admin assistant log is a platform read
+    // next to AUDIT_LOG_VIEW and AI_CONVERSATION_VIEW_ANY, both filed here too.
+    'MCP_ACTIVITY_VIEW',
     'MULTILANGUAGE_CONTENT_EDIT',
     'PRICING_TIER_CREATE',
     'PRICING_TIER_DELETE',

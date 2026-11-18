@@ -7,6 +7,7 @@
  * scope the route injects (decision D-14).
  */
 import { z } from 'zod';
+import { createBooleanQueryParamWithDefault } from '../../common/boolean-params.js';
 import { AiConnectionClientIdSchema } from '../ai-connection/ai-connection.schema.js';
 
 /** `event_type` of the audit rows the assistant activity reads and purges. */
@@ -55,14 +56,45 @@ export const McpActivityScopeSchema = z.discriminatedUnion('kind', [
 export type McpActivityScope = z.infer<typeof McpActivityScopeSchema>;
 
 /**
- * Tool name as recorded. The route narrows it to the registered tool names
- * (an enum the API owns); the reader only bounds its shape.
+ * Names of the assistant (MCP) tools the API registers, in registry order.
+ * The API registry (`apps/api/src/mcp/tools/registry.ts`) owns the tools; this
+ * tuple publishes their names so the admin filter can offer them as options.
+ * A guard test in `apps/api` asserts the two are equal in both directions, so
+ * a new tool cannot drift from this list (HOS-2349).
  */
-export const McpActivityToolNameSchema = z
-    .string()
-    .min(1)
-    .max(64)
-    .regex(/^[a-z][a-z0-9_]*$/);
+export const MCP_TOOL_NAMES = [
+    'list_my_listings',
+    'get_owner_summary',
+    'get_listing',
+    'update_listing_basic',
+    'get_listing_amenities',
+    'update_listing_amenities',
+    'set_listing_publication',
+    'list_amenities_and_features',
+    'get_listing_stats',
+    'get_listing_creation_guide',
+    'create_listing',
+    'list_reviews',
+    'get_help',
+    'list_inquiries',
+    'get_inquiry',
+    'reply_inquiry',
+    'search_providers',
+    'list_benefit_usages',
+    'confirm_benefit_usage',
+    'reject_benefit_usage',
+    'undo_benefit_rejection'
+] as const;
+
+/** A registered tool name. */
+export type McpToolName = (typeof MCP_TOOL_NAMES)[number];
+
+/**
+ * Tool name filter: one of {@link MCP_TOOL_NAMES}, so an unregistered value is
+ * a validation error (400), never an empty page (AC-C53). Recorded rows keep
+ * any string (`McpToolCallDataSchema`): a retired tool's rows stay readable.
+ */
+export const McpActivityToolNameSchema = z.enum(MCP_TOOL_NAMES);
 
 /** A calendar date with no time (`YYYY-MM-DD`). */
 const DATE_ONLY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -135,7 +167,7 @@ export type McpActivityPage = z.infer<typeof McpActivityPageSchema>;
 /**
  * Entity a call targeted. `label` and `url` are present only while the row's
  * actor still owns a live target (AC-C47). A conversation never carries a
- * label: the UI shows a fixed "Consulta", and the guest's name and messages
+ * label: the UI shows a fixed "Consulta de huésped", and the guest's name and messages
  * are never resolved.
  */
 export const McpActivityTargetSchema = z
@@ -176,12 +208,88 @@ export const McpActivityItemSchema = z
             .strict(),
         target: McpActivityTargetSchema.optional(),
         /** The user the assistant acted for. `all` scope only. */
-        actorId: z.string().uuid().optional()
+        actorId: z.string().uuid().optional(),
+        /**
+         * Display name of that user, while the account is live. `all` scope
+         * only: staff-facing, as the admin users list shows it (HOS-2349).
+         */
+        actorName: z.string().min(1).optional(),
+        /** Email of that user, while the account is live. `all` scope only (HOS-2349). */
+        actorEmail: z.string().min(1).optional()
     })
     .strict();
 
 /** TypeScript type inferred from {@link McpActivityItemSchema}. */
 export type McpActivityItem = z.infer<typeof McpActivityItemSchema>;
+
+/**
+ * One item of the owner's history (HOS-2348): the item minus `actorId`, which
+ * only the `all` scope carries. Strict, so a key outside the allowlist fails
+ * the response instead of reaching the owner (AC-C46).
+ */
+export const McpActivityOwnItemSchema = McpActivityItemSchema.omit({ actorId: true }).strict();
+
+/** TypeScript type inferred from {@link McpActivityOwnItemSchema}. */
+export type McpActivityOwnItem = z.infer<typeof McpActivityOwnItemSchema>;
+
+/** Largest page of the owner's history (HOS-2335 §6.9). */
+export const MCP_ACTIVITY_OWN_MAX_PAGE_SIZE = 20;
+
+/**
+ * Query of `GET /api/v1/protected/ai-connections/activity` (HOS-2335 §6.9).
+ * Strict: only these keys exist, so a `userId`, `actorId` or `scope` param is
+ * a 400 and the own scope cannot be widened by input (AC-C45, AC-C54).
+ *
+ * `includeReads` is the "mostrar también lo que solo miró" toggle (D-12):
+ * absent or `false` lists writes only; `true` lists reads too.
+ */
+export const McpActivityOwnQuerySchema = z
+    .object({
+        /** 1-based page. */
+        page: z.coerce.number().int().min(1).default(1),
+        /** Rows per page, at most {@link MCP_ACTIVITY_OWN_MAX_PAGE_SIZE}. */
+        pageSize: z.coerce
+            .number()
+            .int()
+            .min(1)
+            .max(MCP_ACTIVITY_OWN_MAX_PAGE_SIZE)
+            .default(MCP_ACTIVITY_OWN_MAX_PAGE_SIZE),
+        /** OAuth `client_id` of one assistant. */
+        clientId: AiConnectionClientIdSchema.optional(),
+        /** Result of the call. */
+        outcome: McpActivityOutcomeSchema.optional(),
+        /** Also list read-only calls (D-12). Writes only when absent. */
+        includeReads: createBooleanQueryParamWithDefault('Also list read-only calls', false),
+        /** Calls logged on or after this instant. */
+        fromDate: z.coerce.date().optional(),
+        /** Calls logged on or before this instant; a bare date covers its whole day. */
+        toDate: McpActivityToDateSchema.optional()
+    })
+    .strict();
+
+/** Validated {@link McpActivityOwnQuerySchema}. */
+export type McpActivityOwnQuery = z.infer<typeof McpActivityOwnQuerySchema>;
+
+/**
+ * Maps the owner's query to the reader's `own` filter. The toggle becomes the
+ * `access` filter: off is `write`, on is no access filter (both). Nothing here
+ * can name a user: the reader takes the actor from the session.
+ *
+ * @param input.query - The validated query.
+ * @returns The `own` filter.
+ */
+export function toMcpActivityOwnFilter(input: {
+    readonly query: Omit<McpActivityOwnQuery, 'page' | 'pageSize'>;
+}): McpActivityOwnFilter {
+    const { clientId, outcome, includeReads, fromDate, toDate } = input.query;
+    return {
+        ...(clientId === undefined ? {} : { clientId }),
+        ...(outcome === undefined ? {} : { outcome }),
+        ...(includeReads ? {} : { access: 'write' as const }),
+        ...(fromDate === undefined ? {} : { fromDate }),
+        ...(toDate === undefined ? {} : { toDate })
+    };
+}
 
 /**
  * Input of `McpActivityService.list`, minus the actor. One strict branch per
@@ -246,3 +354,39 @@ export const PurgeMcpActivityInputSchema = z
 
 /** Validated {@link PurgeMcpActivityInputSchema}. */
 export type PurgeMcpActivityInput = z.infer<typeof PurgeMcpActivityInputSchema>;
+
+/** `sort` values the admin log accepts: `loggedAt`, either direction (HOS-2349). */
+export const McpActivityAdminSortSchema = z.enum(['loggedAt:desc', 'loggedAt:asc']);
+
+/** TypeScript type inferred from {@link McpActivityAdminSortSchema}. */
+export type McpActivityAdminSort = z.infer<typeof McpActivityAdminSortSchema>;
+
+/**
+ * Query of `GET /api/v1/admin/mcp-activity` (HOS-2349), minus `page` and
+ * `pageSize`, which the admin list factory adds. Every filter of the `all`
+ * scope, plus `sort` in the entity-list `field:direction` shape. `tool` is one
+ * of {@link MCP_TOOL_NAMES}, so a typo is a 400 (AC-C53).
+ */
+export const McpActivityAdminQuerySchema = z
+    .object({
+        /** The user the assistant acted for. */
+        userId: z.string().uuid().optional(),
+        /** Recorded tool name. */
+        tool: McpActivityToolNameSchema.optional(),
+        /** Result of the call. */
+        outcome: McpActivityOutcomeSchema.optional(),
+        /** Reads, writes, or (absent) both: the admin sees everything by default (D-12). */
+        access: McpActivityAccessSchema.optional(),
+        /** OAuth `client_id` of the assistant. */
+        clientId: AiConnectionClientIdSchema.optional(),
+        /** Calls logged on or after this instant. */
+        fromDate: z.coerce.date().optional(),
+        /** Calls logged on or before this instant; a bare date covers its whole day. */
+        toDate: McpActivityToDateSchema.optional(),
+        /** `loggedAt` order. Defaults to `loggedAt:desc`. */
+        sort: McpActivityAdminSortSchema.optional()
+    })
+    .strict();
+
+/** TypeScript type inferred from {@link McpActivityAdminQuerySchema}. */
+export type McpActivityAdminQuery = z.infer<typeof McpActivityAdminQuerySchema>;

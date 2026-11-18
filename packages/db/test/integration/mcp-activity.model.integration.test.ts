@@ -354,3 +354,24 @@ describe('McpActivityModel label lookups (real DB)', () => {
         });
     });
 });
+
+describe('McpActivityModel.findUsers (real DB, HOS-2349)', () => {
+    const model = new McpActivityModel();
+
+    it('returns name and email of live users only', async () => {
+        await withTestTransaction(async (tx) => {
+            const { a, b } = await twoUsers(tx);
+            await tx.update(users).set({ displayName: 'Ana Host' }).where(eq(users.id, a));
+            await tx.update(users).set({ deletedAt: NOW }).where(eq(users.id, b));
+            const [live] = await tx
+                .select({ email: users.email })
+                .from(users)
+                .where(inArray(users.id, [a]));
+
+            const found = await model.findUsers({ ids: [a, b, crypto.randomUUID()] }, tx);
+
+            expect(found).toEqual([{ id: a, displayName: 'Ana Host', email: live?.email }]);
+            expect(await model.findUsers({ ids: [] }, tx)).toEqual([]);
+        });
+    });
+});

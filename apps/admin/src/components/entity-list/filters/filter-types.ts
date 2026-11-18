@@ -155,6 +155,15 @@ export type TextFilterConfig = BaseFilterConfig & {
     readonly debounceMs?: number;
     /** Maximum number of characters accepted by the input. */
     readonly maxLength?: number;
+    /**
+     * Only a value matching this pattern reaches the URL (HOS-2349). While the
+     * typed value does not match, the param is omitted (so a half-typed id
+     * never fires a 400 on every debounce) and `invalidHintKey` is shown.
+     * Omit to keep the plain free-text behaviour.
+     */
+    readonly validPattern?: RegExp;
+    /** i18n key of the hint shown while the typed value misses `validPattern`. */
+    readonly invalidHintKey?: string;
 };
 
 /**

@@ -1636,8 +1636,15 @@
     {
       "idx": 233,
       "version": "7",
-      "when": 1795013222541,
-      "tag": "0233_hos2336_partner_types_catalog",
+      "when": 1795013865711,
+      "tag": "0233_hos2349_mcp_activity_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 234,
+      "version": "7",
+      "when": 1795020497828,
+      "tag": "0234_hos2336_partner_types_catalog",
       "breakpoints": true
     }
   ]

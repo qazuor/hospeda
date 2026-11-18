@@ -3,7 +3,7 @@
  * backfill has not reached yet (HOS-2336, AC-3.4).
  *
  * A row written with only the legacy `type` (by the pre-HOS-2336 container
- * during a rollout, or before 0183 ran) still belongs to the type whose slug
+ * during a rollout, or before 0184 ran) still belongs to the type whose slug
  * equals that enum value. If the count ignored it, the admin could deactivate
  * or delete the type under the row, and the N+1 backfill would point the row at
  * a type that is gone.

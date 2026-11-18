@@ -69,13 +69,15 @@ describe('McpActivityService', () => {
             'listToolCalls',
             'findListingNames',
             'findConversationOwners',
-            'findClientNames'
+            'findClientNames',
+            'findUsers'
         ]);
         auditModel = createTypedModelMock(AuditLogEntryModel, ['purgeOlderThan', 'countOlderThan']);
         asMock(model.listToolCalls).mockResolvedValue({ items: [], total: 0 });
         asMock(model.findListingNames).mockResolvedValue([]);
         asMock(model.findConversationOwners).mockResolvedValue([]);
         asMock(model.findClientNames).mockResolvedValue([]);
+        asMock(model.findUsers).mockResolvedValue([]);
         service = new McpActivityService(
             { logger: createLoggerMock() },
             {
@@ -85,7 +87,7 @@ describe('McpActivityService', () => {
             }
         );
         owner = createActor({ id: OWNER, permissions: [] });
-        staff = createActor({ id: OTHER, permissions: [PermissionEnum.AUDIT_LOG_VIEW] });
+        staff = createActor({ id: OTHER, permissions: [PermissionEnum.MCP_ACTIVITY_VIEW] });
     });
 
     /** The filter the model received on its only call. */
@@ -128,6 +130,17 @@ describe('McpActivityService', () => {
 
         it('all: refused without the permission, before any read', async () => {
             const result = await service.list({ actor: owner, scope: { kind: 'all' }, ...PAGE });
+
+            expectForbiddenError(result);
+            expect(model.listToolCalls).not.toHaveBeenCalled();
+        });
+
+        it('all: the interim AUDIT_LOG_VIEW alone no longer opens it (D-15)', async () => {
+            const auditor = createActor({
+                id: OTHER,
+                permissions: [PermissionEnum.AUDIT_LOG_VIEW]
+            });
+            const result = await service.list({ actor: auditor, scope: { kind: 'all' }, ...PAGE });
 
             expectForbiddenError(result);
             expect(model.listToolCalls).not.toHaveBeenCalled();

@@ -81,6 +81,12 @@ export interface McpActivityLookups {
     readonly listings: ReadonlyMap<string, { readonly name: string; readonly ownerId: string }>;
     /** Live conversations by id: the owner of their accommodation. */
     readonly conversationOwners: ReadonlyMap<string, string>;
+    /**
+     * Live users by id: display name and email. Filled for the `all` scope
+     * only (the admin log, HOS-2349); empty for `own`, so an owner's items
+     * never carry them.
+     */
+    readonly users: ReadonlyMap<string, { readonly name?: string; readonly email: string }>;
 }
 
 /** Builds the portal URL of a target the row's actor still owns. */
@@ -149,7 +155,25 @@ export function projectMcpActivityItem(input: {
         ...(typeof step === 'string' ? { step } : {}),
         client: { id: data.clientId, ...(clientName === undefined ? {} : { name: clientName }) },
         ...(target === undefined ? {} : { target }),
-        ...(scope.kind === 'all' && row.actorId !== null ? { actorId: row.actorId } : {})
+        ...(scope.kind === 'all' && row.actorId !== null
+            ? projectActor({ actorId: row.actorId, lookups })
+            : {})
+    };
+}
+
+/**
+ * The acting user of an `all`-scope item: always its id, plus the display
+ * name and email while the account is live.
+ */
+function projectActor(input: {
+    readonly actorId: string;
+    readonly lookups: McpActivityLookups;
+}): Pick<McpActivityItem, 'actorId' | 'actorName' | 'actorEmail'> {
+    const user = input.lookups.users.get(input.actorId);
+    return {
+        actorId: input.actorId,
+        ...(user?.name === undefined ? {} : { actorName: user.name }),
+        ...(user === undefined ? {} : { actorEmail: user.email })
     };
 }
 
@@ -158,6 +182,8 @@ export interface McpActivityLookupRequest {
     readonly clientIds: readonly string[];
     readonly listingIds: ReadonlyMap<McpActivityListingVertical, readonly string[]>;
     readonly conversationIds: readonly string[];
+    /** Distinct acting users of the page. */
+    readonly actorIds: readonly string[];
 }
 
 /**
@@ -172,9 +198,11 @@ export function collectLookupRequest(input: {
 }): McpActivityLookupRequest {
     const clientIds = new Set<string>();
     const conversationIds = new Set<string>();
+    const actorIds = new Set<string>();
     const listingIds = new Map<McpActivityListingVertical, Set<string>>();
-    for (const { data } of input.rows) {
+    for (const { row, data } of input.rows) {
         clientIds.add(data.clientId);
+        if (row.actorId !== null) actorIds.add(row.actorId);
         const { resourceType, resourceId } = data;
         if (resourceType === undefined || resourceId === undefined) continue;
         if (resourceType === MCP_ACTIVITY_CONVERSATION_TARGET) {
@@ -190,6 +218,7 @@ export function collectLookupRequest(input: {
     return {
         clientIds: [...clientIds],
         listingIds: new Map([...listingIds].map(([vertical, ids]) => [vertical, [...ids]])),
-        conversationIds: [...conversationIds]
+        conversationIds: [...conversationIds],
+        actorIds: [...actorIds]
     };
 }

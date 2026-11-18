@@ -1382,6 +1382,10 @@
             "path": "/api/v1/admin/logs"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/mcp-activity"
+        },
+        {
             "method": "DELETE",
             "path": "/api/v1/admin/media"
         },
@@ -2840,6 +2844,10 @@
         {
             "method": "GET",
             "path": "/api/v1/protected/ai-connections"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/protected/ai-connections/activity"
         },
         {
             "method": "POST",
