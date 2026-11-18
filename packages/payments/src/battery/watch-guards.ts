@@ -112,8 +112,9 @@ export async function assertAccountMatches(args: {
 }
 
 /**
- * Budget guard: a money-moving entry must declare its maximum charge and it must equal
- * the authorized number exactly.
+ * Budget guard: a money-moving entry must declare an integer maximum charge, and it must fit under
+ * the authorized number, which caps the WHOLE RUN. No entry has to equal it: the sum of all charges
+ * of the run is what the engine keeps under the cap.
  *
  * @param args.entry - The entry about to run
  * @param args.authorization - The authorization in force, if any
@@ -127,19 +128,23 @@ export function assertBudgetMatches(args: {
     if (authorization === null) {
         throw new WatchGuardError({
             code: 'AUTHORIZATION_MISSING',
-            message: `${entry.id} moves money and there is no authorized maximum charge`
+            message: `${entry.id} moves money and there is no authorized cap for the run`
         });
     }
-    if (entry.maxChargeMinor === undefined || !Number.isInteger(entry.maxChargeMinor)) {
+    if (
+        entry.maxChargeMinor === undefined ||
+        !Number.isInteger(entry.maxChargeMinor) ||
+        entry.maxChargeMinor <= 0
+    ) {
         throw new WatchGuardError({
             code: 'BUDGET_UNDECLARED',
-            message: `${entry.id} moves money and declares no integer maximum charge`
+            message: `${entry.id} moves money and declares no integer maximum charge above zero`
         });
     }
-    if (entry.maxChargeMinor !== authorization.maxChargeMinor) {
+    if (entry.maxChargeMinor > authorization.maxChargeMinor) {
         throw new WatchGuardError({
             code: 'BUDGET_MISMATCH',
-            message: `${entry.id} can charge ${entry.maxChargeMinor} and ${authorization.maxChargeMinor} is authorized; they must be exactly equal`
+            message: `${entry.id} can charge ${entry.maxChargeMinor}, above the ${authorization.maxChargeMinor} that caps the whole run`
         });
     }
 }

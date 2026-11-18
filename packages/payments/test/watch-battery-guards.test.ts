@@ -217,8 +217,7 @@ describe('TEST:B1:19 budget guard', () => {
 
     it.each([
         ['a different number', AUTHORIZED + 1],
-        ['an order of magnitude more', AUTHORIZED * 10],
-        ['an order of magnitude less', AUTHORIZED / 10]
+        ['an order of magnitude more', AUTHORIZED * 10]
     ])('aborts without sending anything when the maximum charge is %s', async (_name, maxCharge) => {
         const { server, transport, clock } = await fakeAs('sandbox');
         const result = await run({
@@ -799,5 +798,127 @@ describe('HOS-1512 M1: only listed operations may be sent, whatever the measurem
         });
         expect(result.run.outcome).toBe('aborted');
         expect(mutatingRequests(server)).toEqual([]);
+    });
+});
+
+describe('HOS-1512 M2: the authorized number caps the WHOLE RUN, not each measurement', () => {
+    const POSTS = (amountPesos: number) => ({
+        ...PREAPPROVAL,
+        auto_recurring: { ...PREAPPROVAL.auto_recurring, transaction_amount: amountPesos }
+    });
+    const charging = (id: string, minor: number, maxChargeMinor = minor): WatchEntry =>
+        entry({
+            id,
+            effect: 'moves-money',
+            maxChargeMinor,
+            measure: async (ctx): Promise<JsonValue> => {
+                await ctx.send({
+                    label: 'create',
+                    request: { method: 'POST', path: '/preapproval', body: POSTS(minor / 100) },
+                    chargeMinor: minor
+                });
+                return 'created';
+            }
+        });
+    const refunding = (id: string, minor: number): WatchEntry =>
+        entry({
+            id,
+            effect: 'moves-money',
+            maxChargeMinor: AUTHORIZED,
+            measure: async (ctx): Promise<JsonValue> => {
+                await ctx.send({
+                    label: 'refund',
+                    request: {
+                        method: 'POST',
+                        path: '/v1/payments/1/refunds',
+                        body: { amount: minor / 100 }
+                    },
+                    refundMinor: minor
+                });
+                return 'created';
+            }
+        });
+
+    it('lets an entry declare less than the cap: no entry has to equal it', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [charging('M1', AUTHORIZED / 10)],
+            transport,
+            clock
+        });
+        expect(result.run.outcome).toBe('completed');
+    });
+
+    it('aborts the measurement that would take the SUM of the run past the cap, though each fits alone', async () => {
+        const { server, transport, clock } = await fakeAs('sandbox');
+        const half = AUTHORIZED / 2;
+        const result = await run({
+            account: 'sandbox',
+            catalog: [charging('M1', half + 1000), charging('M2', half + 1000)],
+            transport,
+            clock
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
+        expect(result.run.measurements.M1?.outcome).toBe('matched');
+        expect(mutatingRequests(server)).toHaveLength(1);
+    });
+
+    it('lets measurements fill the cap exactly, and no more', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const exact = await run({
+            account: 'sandbox',
+            catalog: [charging('M1', AUTHORIZED / 2), charging('M2', AUTHORIZED / 2)],
+            transport,
+            clock
+        });
+        expect(exact.run.outcome).toBe('completed');
+        const { transport: second, clock: clock2 } = await fakeAs('sandbox');
+        const over = await run({
+            account: 'sandbox',
+            catalog: [
+                charging('M1', AUTHORIZED / 2),
+                charging('M2', AUTHORIZED / 2),
+                charging('M3', 100, AUTHORIZED)
+            ],
+            transport: second,
+            clock: clock2
+        });
+        expect(over.run.outcome).toBe('aborted');
+        expect(over.run.reason).toContain('BUDGET_EXCEEDED');
+    });
+
+    it('never nets a refund against the charges: money out is tracked apart', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                charging('M1', AUTHORIZED),
+                refunding('M2', AUTHORIZED),
+                charging('M3', 100, AUTHORIZED)
+            ],
+            transport,
+            clock
+        });
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.measurements.M2?.outcome).toBe('matched');
+        expect(result.run.measurements.M3?.outcome).toBe('errored');
+        expect(result.run.reason).toContain('BUDGET_EXCEEDED');
+    });
+
+    it('does not count refunds toward the cap', async () => {
+        const { transport, clock } = await fakeAs('sandbox');
+        const result = await run({
+            account: 'sandbox',
+            catalog: [
+                refunding('M1', AUTHORIZED),
+                refunding('M2', AUTHORIZED),
+                charging('M3', AUTHORIZED)
+            ],
+            transport,
+            clock
+        });
+        expect(result.run.outcome).toBe('completed');
     });
 });

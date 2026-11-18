@@ -103,9 +103,13 @@ function buildContext(args: {
     readonly transport: WatchTransport;
     readonly shapes: Record<string, ShapeMap>;
     readonly providerIds: string[];
+    /** The RUN's money so far, shared by every measurement. */
+    readonly ledger: WatchLedger;
+    /** The most the whole run may charge: the authorized number. */
+    readonly runCap: number;
 }): WatchContext {
-    const { entry, transport, shapes, providerIds } = args;
-    const ledger: WatchLedger = { charged: 0, refunded: 0 };
+    const { entry, transport, shapes, providerIds, ledger, runCap } = args;
+    let entryCharged = 0;
     return {
         send: async ({ label, request, chargeMinor, refundMinor }) => {
             const { pathname } = normalizeRequestPath({
@@ -113,6 +117,7 @@ function buildContext(args: {
                 origin: WATCH_INTERNAL_ORIGIN
             });
             if (request.method !== 'GET') {
+                const chargedBefore = ledger.charged;
                 guardWrite({
                     entryId: entry.id,
                     effect: entry.effect,
@@ -121,8 +126,15 @@ function buildContext(args: {
                     chargeMinor,
                     refundMinor,
                     ledger,
-                    chargeCap: entry.maxChargeMinor ?? 0
+                    chargeCap: runCap
                 });
+                entryCharged += ledger.charged - chargedBefore;
+                if (entryCharged > (entry.maxChargeMinor ?? 0)) {
+                    throw new WatchGuardError({
+                        code: 'BUDGET_EXCEEDED',
+                        message: `${entry.id} would charge ${entryCharged}, above the ${entry.maxChargeMinor ?? 0} it declared`
+                    });
+                }
             }
             const response = await transport(request);
             shapes[label] = shapeOf({ body: response.body });
@@ -182,8 +194,9 @@ async function measureEntry(args: {
     readonly baseline: WatchShapeBaseline | null;
     /** Filled while the measurement runs, so a guard that aborts it midway keeps what it saw. */
     readonly sink: { readonly shapes: Record<string, ShapeMap>; readonly providerIds: string[] };
+    readonly ledger: WatchLedger;
 }): Promise<{ readonly record: WatchMeasurementRecord; readonly alerts: readonly WatchAlert[] }> {
-    const { entry, input, baseline, sink } = args;
+    const { entry, input, baseline, sink, ledger } = args;
     // The guards open the measurement: nothing is sent before they pass.
     if (entry.effect === 'moves-money') {
         assertBudgetMatches({ entry, authorization: input.authorization });
@@ -199,7 +212,14 @@ async function measureEntry(args: {
     let obtained: JsonValue;
     try {
         obtained = await entry.measure(
-            buildContext({ entry, transport: input.transport, shapes, providerIds })
+            buildContext({
+                entry,
+                transport: input.transport,
+                shapes,
+                providerIds,
+                ledger,
+                runCap: input.authorization?.maxChargeMinor ?? 0
+            })
         );
     } catch (error) {
         if (error instanceof WatchGuardError) throw error;
@@ -276,6 +296,8 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
     const startedAt = input.clock.now();
     const measurements: Record<string, WatchMeasurementRecord> = {};
     const alerts: WatchAlert[] = [];
+    /** One ledger for the whole run: the authorized number caps the SUM of its charges. */
+    const ledger: WatchLedger = { charged: 0, refunded: 0 };
     let outcome: WatchRunOutcome = 'completed';
     let reason: string | undefined;
 
@@ -335,7 +357,7 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
             }
             const sink = { shapes: {} as Record<string, ShapeMap>, providerIds: [] as string[] };
             try {
-                const measured = await measureEntry({ entry, input, baseline, sink });
+                const measured = await measureEntry({ entry, input, baseline, sink, ledger });
                 measurements[entry.id] = measured.record;
                 alerts.push(...measured.alerts);
                 if (measured.record.outcome === 'errored' && outcome === 'completed') {
