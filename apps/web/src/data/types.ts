@@ -1223,6 +1223,8 @@ export interface VenueEvent {
     readonly startTime: string;
     /** `HH:MM`, or `null` when the venue does not say. */
     readonly endTime: string | null;
+    /** External «Comprar entrada» link (`https`), or `null` (HOS-2255). */
+    readonly ticketUrl: string | null;
 }
 
 /**

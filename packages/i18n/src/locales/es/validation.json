@@ -3317,7 +3317,13 @@
             "dateForbiddenForWeekly": "Un evento semanal no lleva fecha: se repite todas las semanas",
             "weekdayRequiredForWeekly": "Un evento semanal necesita un día de la semana",
             "weekdayForbiddenForOnce": "Un evento con fecha no lleva día de la semana",
-            "endTimeEqualsStart": "La hora de fin no puede ser igual a la de inicio"
+            "endTimeEqualsStart": "La hora de fin no puede ser igual a la de inicio",
+            "ticketUrl": {
+                "max": "El link de entradas no puede superar los {{max}} caracteres",
+                "invalid": "El link de entradas no es una URL válida",
+                "httpsRequired": "El link de entradas tiene que empezar con https://",
+                "credentials": "El link de entradas no puede llevar usuario ni contraseña"
+            }
         },
         "eventDate": {
             "invalid": "La fecha del evento no es válida (formato AAAA-MM-DD)"

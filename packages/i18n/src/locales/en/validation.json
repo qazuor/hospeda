@@ -3317,7 +3317,13 @@
             "dateForbiddenForWeekly": "A weekly event takes no date: it repeats every week",
             "weekdayRequiredForWeekly": "A weekly event needs a day of the week",
             "weekdayForbiddenForOnce": "A one-off event takes no day of the week",
-            "endTimeEqualsStart": "The end time cannot be the same as the start time"
+            "endTimeEqualsStart": "The end time cannot be the same as the start time",
+            "ticketUrl": {
+                "max": "The ticket link cannot exceed {{max}} characters",
+                "invalid": "The ticket link is not a valid URL",
+                "httpsRequired": "The ticket link must start with https://",
+                "credentials": "The ticket link cannot contain a username or password"
+            }
         },
         "eventDate": {
             "invalid": "The event date is not valid (YYYY-MM-DD format)"

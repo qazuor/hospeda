@@ -112,7 +112,8 @@
             "title": "Agenda del local",
             "weekly": "Todos los {{weekday}}",
             "range": "{{when}}, {{start}} a {{end}}",
-            "fromOnly": "{{when}}, desde las {{start}}"
+            "fromOnly": "{{when}}, desde las {{start}}",
+            "buyTicket": "Comprar entrada"
         },
         "nightInfo": {
             "headingMultiLine": "De noche",
@@ -364,6 +365,9 @@
                 "date": "Fecha",
                 "startTime": "Hora de inicio",
                 "endTime": "Hora de fin (opcional)",
+                "ticketUrl": "Link de entradas (opcional)",
+                "ticketUrlHelp": "Si vendés entradas por Passline, Venti u otra, pegá el link acá.",
+                "ticketUrlInvalid": "El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.",
                 "active": "Activo",
                 "addEntry": "Agregar evento",
                 "maxReached": "Llegaste al máximo de {{max}} eventos.",
