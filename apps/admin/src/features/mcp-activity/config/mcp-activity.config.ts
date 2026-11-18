@@ -5,10 +5,11 @@
  * One row per assistant (MCP) tool call of every user, from
  * `GET /api/v1/admin/mcp-activity` (gated server-side by `MCP_ACTIVITY_VIEW`).
  * Only `loggedAt` is sortable; search and the grid view are disabled.
- * Filters: user, tool, outcome, access (read/write), client and date range.
+ * Filters: user (a complete UUID only), tool (a select over `MCP_TOOL_NAMES`),
+ * outcome, access (read/write), client and date range (UTC days).
  */
 
-import { McpActivityItemSchema } from '@repo/schemas';
+import { MCP_TOOL_NAMES, McpActivityItemSchema } from '@repo/schemas';
 import { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import type { EntityConfig } from '@/components/entity-list/types';
@@ -20,6 +21,9 @@ import { createMcpActivityColumns } from './mcp-activity.columns';
 export const McpActivityListItemSchema = McpActivityItemSchema.extend({
     loggedAt: z.coerce.date()
 }).strict();
+
+/** A complete UUID (any version), case-insensitive. */
+export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Inferred item type of the list. */
 export type McpActivityListItem = z.infer<typeof McpActivityListItemSchema>;
@@ -68,15 +72,20 @@ export const mcpActivityConfig: EntityConfig<McpActivityListItem> = {
                 labelKey: 'admin-filters.mcpActivity.userId.label',
                 placeholderKey: 'admin-filters.mcpActivity.userId.placeholder',
                 debounceMs: 400,
-                maxLength: 36
+                maxLength: 36,
+                // Only a complete UUID reaches the query: a half-typed id
+                // would answer 400 on every debounce.
+                validPattern: UUID_PATTERN,
+                invalidHintKey: 'admin-filters.mcpActivity.userId.invalidHint'
             },
             {
-                type: 'text',
+                type: 'select',
                 paramKey: 'tool',
                 labelKey: 'admin-filters.mcpActivity.tool.label',
-                placeholderKey: 'admin-filters.mcpActivity.tool.placeholder',
-                debounceMs: 400,
-                maxLength: 64
+                options: MCP_TOOL_NAMES.map((name) => ({
+                    value: name,
+                    labelKey: `admin-filters.mcpActivity.tool.options.${name}`
+                }))
             },
             {
                 type: 'select',
@@ -120,5 +129,15 @@ export const mcpActivityConfig: EntityConfig<McpActivityListItem> = {
 
 const mcpActivityPage = createEntityListPage(mcpActivityConfig);
 
+/**
+ * The assistant activity list page, rendered by
+ * `routes/_authed/platform/ops/mcp-activity.tsx`. The route guards it with
+ * `MCP_ACTIVITY_VIEW` before it renders.
+ */
 export const McpActivityPageComponent = mcpActivityPage.component;
+
+/**
+ * The framework route of the list page. The file route borrows its
+ * `validateSearch` (page, pageSize, sort and the filter params).
+ */
 export const McpActivityRoute = mcpActivityPage.route;

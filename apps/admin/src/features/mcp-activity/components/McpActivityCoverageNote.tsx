@@ -1,8 +1,9 @@
 /**
  * McpActivityCoverageNote (HOS-2349, spec HOS-2335 R-16)
  *
- * "Every use" is not literally every use: rate-limited calls and calls that
- * crash before the tool leave no row. The screen says so in its header.
+ * "Every use" is not literally every use: rate-limited calls, calls that
+ * crash before the tool and fire-and-forget inserts that fail leave no row.
+ * The screen says so in its header.
  */
 
 import { useTranslations } from '@/hooks/use-translations';
