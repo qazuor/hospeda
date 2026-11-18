@@ -13,6 +13,7 @@ export * from './event-location-api.utils';
 export * from './event-organizer-api.utils';
 export * from './feature-api.utils';
 export * from './host-trade-category-api.utils';
+export * from './partner-type-api.utils';
 export * from './poi-category-api.utils';
 export * from './post-sponsorship-api.utils';
 export * from './user-api.utils';

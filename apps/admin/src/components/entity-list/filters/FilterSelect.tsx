@@ -6,6 +6,7 @@
  */
 
 import type { TranslationKey } from '@repo/i18n';
+import { useEffect, useState } from 'react';
 import {
     Select,
     SelectContent,
@@ -49,8 +50,22 @@ export interface FilterSelectProps {
  */
 export function FilterSelect({ config, value, onChange }: FilterSelectProps) {
     const { t } = useTranslations();
+    const [loaded, setLoaded] = useState<
+        ReadonlyArray<{ readonly value: string; readonly label: string }>
+    >([]);
 
-    if (import.meta.env.DEV && config.options.length === 0) {
+    useEffect(() => {
+        if (!config.loadOptions) return;
+        let cancelled = false;
+        void config.loadOptions().then((options) => {
+            if (!cancelled) setLoaded(options);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [config]);
+
+    if (import.meta.env.DEV && config.options.length === 0 && !config.loadOptions) {
         console.warn(`[FilterBar] Select filter "${config.paramKey}" has no options configured`);
     }
 
@@ -73,7 +88,7 @@ export function FilterSelect({ config, value, onChange }: FilterSelectProps) {
                 )}
                 aria-label={
                     isActive
-                        ? `${t(config.labelKey as TranslationKey)}: ${config.options.find((o) => o.value === value)?.labelKey ? t(config.options.find((o) => o.value === value)?.labelKey as TranslationKey) : value}`
+                        ? `${t(config.labelKey as TranslationKey)}: ${config.options.find((o) => o.value === value)?.labelKey ? t(config.options.find((o) => o.value === value)?.labelKey as TranslationKey) : (loaded.find((o) => o.value === value)?.label ?? value)}`
                         : t(config.labelKey as TranslationKey)
                 }
             >
@@ -92,6 +107,14 @@ export function FilterSelect({ config, value, onChange }: FilterSelectProps) {
                         value={option.value}
                     >
                         {t(option.labelKey as TranslationKey)}
+                    </SelectItem>
+                ))}
+                {loaded.map((option) => (
+                    <SelectItem
+                        key={option.value}
+                        value={option.value}
+                    >
+                        {option.label}
                     </SelectItem>
                 ))}
             </SelectContent>

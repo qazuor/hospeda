@@ -956,6 +956,18 @@ const plataformaSidebar: SidebarInput = {
             route: '/content/host-trade-categories',
             permissions: ['HOST_TRADE_CATEGORY_VIEW']
         },
+        {
+            type: 'link',
+            id: 'partner-types',
+            label: {
+                es: 'Tipos de partner',
+                en: 'Partner types',
+                pt: 'Tipos de parceiro'
+            },
+            icon: 'OffersIcon',
+            route: '/content/partner-types',
+            permissions: ['PARTNER_TYPE_VIEW']
+        },
         { type: 'separator', id: 'sep-ai' },
         // ── Inteligencia Artificial ────────────────────────────────────────
         {

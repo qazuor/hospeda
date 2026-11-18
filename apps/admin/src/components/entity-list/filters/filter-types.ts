@@ -43,6 +43,13 @@ export type SelectFilterConfig = BaseFilterConfig & {
     }>;
     /** i18n key for the "all" option. Defaults to "admin-filters.allOption" */
     readonly allLabelKey?: string;
+    /**
+     * Loads catalog-driven options at runtime (HOS-2336), appended after
+     * `options`. Their labels are display text (catalog data), not i18n keys.
+     */
+    readonly loadOptions?: () => Promise<
+        ReadonlyArray<{ readonly value: string; readonly label: string }>
+    >;
 };
 
 /**
