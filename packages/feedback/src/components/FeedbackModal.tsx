@@ -45,6 +45,15 @@ export interface FeedbackModalProps {
     readonly onClose: () => void;
     /** All props passed through to FeedbackForm (onClose is injected automatically) */
     readonly formProps: Omit<FeedbackFormProps, 'onClose'>;
+    /**
+     * Extra `data-*` attributes spread onto the modal's root `<dialog>` (the
+     * element the host portals into `document.body`). Lets a host mark the
+     * whole modal for its own tooling, e.g. the web passes
+     * `{ 'data-umami-block': '' }` so the session recorder never captures it
+     * (HOS-2347), without this package knowing about that tooling. They never
+     * override the modal's own attributes.
+     */
+    readonly rootDataAttributes?: Readonly<Record<`data-${string}`, string>>;
 }
 
 const TITLE_ID = 'feedback-modal-title';
@@ -85,7 +94,12 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
  *
  * @param props - See {@link FeedbackModalProps}
  */
-export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps) {
+export function FeedbackModal({
+    isOpen,
+    onClose,
+    formProps,
+    rootDataAttributes
+}: FeedbackModalProps) {
     // SPEC-099 B-1: always start with `false` so SSR and the first client
     // render produce identical markup (no drag handle). The post-mount
     // `useEffect` below syncs the real value from window.matchMedia and
@@ -230,6 +244,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
 
     return (
         <dialog
+            {...rootDataAttributes}
             ref={dialogRef}
             aria-labelledby={TITLE_ID}
             onClick={handleDialogClick}
