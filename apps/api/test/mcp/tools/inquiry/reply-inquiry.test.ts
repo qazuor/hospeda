@@ -349,7 +349,7 @@ describe('reply_inquiry', () => {
                 replyInquiryTool.auditDetails?.({
                     input: { inquiryId: CONV_OWN, text: 'x', confirmationToken: 't' }
                 })
-            ).toEqual({ step: 'send' });
+            ).toEqual({ step: 'commit' });
         });
 
         it('sends exactly the previewed text as the owner and returns the message id', async () => {

@@ -251,7 +251,8 @@ export const replyInquiryTool = defineTool({
     auditTarget: ({ input }) => ({ type: 'conversation', id: input.inquiryId }),
     auditContentLength: ({ input }) => input.text.length,
     auditDetails: ({ input, context }) => ({
-        step: input.confirmationToken === undefined ? 'preview' : 'send',
+        // `commit` like every two-step tool; rows before HOS-2247 L3 say `send`.
+        step: input.confirmationToken === undefined ? 'preview' : 'commit',
         ...confirmationAuditDetails({
             tool: REPLY_INQUIRY_TOOL_NAME,
             confirmationToken: input.confirmationToken,
