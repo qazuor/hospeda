@@ -92,6 +92,26 @@ describe('planRecorderChange (HOS-2347)', () => {
         expect(plan).toEqual({ action: 'unchanged', changes: [], unmanagedKeys: [] });
     });
 
+    it('derives recorderEnabled from the config when the read omits it (no false "updated")', () => {
+        // Arrange: a website read with no recorderEnabled field at all.
+        const plan = planRecorderChange({
+            website: { id: WEBSITE, replayConfig: DECLARED },
+            desired: DECLARED
+        });
+
+        // Assert
+        expect(plan).toEqual({ action: 'unchanged', changes: [], unmanagedKeys: [] });
+    });
+
+    it('a read that omits recorderEnabled over a disabled config still plans the enable', () => {
+        const plan = planRecorderChange({
+            website: { id: WEBSITE, replayConfig: { sampleRate: 0.5 } },
+            desired: DECLARED
+        });
+
+        expect(plan.changes[0]).toEqual({ field: 'recorderEnabled', from: false, to: true });
+    });
+
     it('lists every differing field, recorderEnabled included', () => {
         const plan = planRecorderChange({
             website: { id: WEBSITE, recorderEnabled: false, replayConfig: null },
@@ -158,10 +178,12 @@ describe('runSetup recorder step (HOS-2347)', () => {
         expect(text).toContain('recorderEnabled: false -> true');
     });
 
-    it('AC-S4: keeps an undeclared key, lists it as unmanaged, never sends name or domain', async () => {
-        // Arrange
+    it('AC-S4: lists a stored undeclared key as unmanaged and never sends it, name or domain', async () => {
+        // Arrange: a stored key this script does not declare. Real Umami drops
+        // unknown keys on any write (the fake does too), so the guarantee the
+        // script can give is that it never SENDS one, nor any website field.
         const fake = fakeUmami({
-            website: { replayConfig: { sampleRate: 0.15, futureKey: 'kept' } }
+            website: { replayConfig: { sampleRate: 0.15, futureKey: 'stored' } }
         });
         const before = { name: fake.website.name, domain: fake.website.domain };
         const bodies: unknown[] = [];
@@ -177,9 +199,13 @@ describe('runSetup recorder step (HOS-2347)', () => {
 
         // Assert
         expect(result.unmanaged).toContainEqual({ kind: 'recorder-config-key', name: 'futureKey' });
-        expect(fake.website.replayConfig?.['futureKey']).toBe('kept');
-        expect({ name: fake.website.name, domain: fake.website.domain }).toEqual(before);
         expect(bodies).toEqual([{ replayConfig: DECLARED }]);
+        expect(Object.keys((bodies[0] as { replayConfig: object }).replayConfig).sort()).toEqual(
+            Object.keys(DECLARED).sort()
+        );
+        expect({ name: fake.website.name, domain: fake.website.domain }).toEqual(before);
+        // Umami's own normalization dropped the unknown key on the write.
+        expect(fake.website.replayConfig).toEqual(DECLARED);
     });
 
     it('fails with exit 1 (token-free) when the website read fails', async () => {

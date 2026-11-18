@@ -62,7 +62,12 @@ export function planRecorderChange(input: {
         config: normalizeReplayConfig({ raw: website.replayConfig ?? null })
     });
     const changes: RecorderFieldChange[] = [];
-    const storedEnabled = website.recorderEnabled === true;
+    // Umami derives `recorderEnabled` from the config; a read that omits it is
+    // judged by the same rule, so it never produces a false "updated".
+    const storedEnabled =
+        typeof website.recorderEnabled === 'boolean'
+            ? website.recorderEnabled
+            : stored.replayEnabled || stored.heatmapEnabled;
     const desiredEnabled = desired.replayEnabled || desired.heatmapEnabled;
     if (storedEnabled !== desiredEnabled) {
         changes.push({ field: 'recorderEnabled', from: storedEnabled, to: desiredEnabled });

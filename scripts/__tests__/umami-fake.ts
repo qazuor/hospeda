@@ -7,6 +7,17 @@ import { buildReportDefinitions } from '../umami/definitions.js';
 import { buildSegmentDefinitions } from '../umami/segment-definitions.js';
 import type { RunSetupInput } from '../umami/setup.js';
 
+/** The `replay_config` keys Umami 3.5 keeps on a write (measured; written out, not imported). */
+const UMAMI_KNOWN_REPLAY_KEYS: ReadonlySet<string> = new Set([
+    'replayEnabled',
+    'heatmapEnabled',
+    'sampleRate',
+    'heatmapSampleRate',
+    'maskLevel',
+    'maxDuration',
+    'blockSelector'
+]);
+
 /** Bearer token the fake accepts; must never appear in output. */
 export const TOKEN = 'tok-SECRET-xyz';
 /** Fake login credential, built at runtime so the pre-commit secret scanner does not flag a fixture. */
@@ -49,9 +60,8 @@ export interface StoredWebsite {
  *
  * `POST /api/websites/:id` follows the measured Umami 3.5 semantics: only
  * `replayConfig` is read, it is MERGED over the stored config, `false` booleans
- * are dropped, and `recorderEnabled` is derived from `replayEnabled ||
- * heatmapEnabled`. Unlike real Umami it keeps unknown keys, so a test can prove
- * the script never clobbers a key it does not declare.
+ * are dropped, unknown keys are dropped (like real Umami), and
+ * `recorderEnabled` is derived from `replayEnabled || heatmapEnabled`.
  */
 export function fakeUmami(
     input: {
@@ -108,8 +118,10 @@ export function fakeUmami(
                     ...(website.replayConfig ?? {}),
                     ...(body['replayConfig'] as Record<string, unknown>)
                 };
+                // Measured Umami 3.5: the merged config is normalized, which
+                // keeps only the seven known keys and drops `false` booleans.
                 for (const [key, value] of Object.entries(merged)) {
-                    if (value === false) delete merged[key];
+                    if (value === false || !UMAMI_KNOWN_REPLAY_KEYS.has(key)) delete merged[key];
                 }
                 website.replayConfig = merged;
                 website.recorderEnabled =

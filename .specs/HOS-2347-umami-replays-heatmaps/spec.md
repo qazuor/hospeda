@@ -705,8 +705,12 @@ means a `script#umami-recorder` exists with
 - **AC-S3** Given `--dry-run`, then only GET requests are sent and the planned
   per-field diff is printed.
 - **AC-S4** Given `replay_config` holds an undeclared key, when setup writes,
-  then that key is preserved verbatim and listed as unmanaged. The website's
-  name and domain are byte-identical before and after.
+  then that key is listed as unmanaged and the write body carries exactly the
+  seven declared keys: never the undeclared key, never `name`, `domain` or any
+  other website field. The website's name and domain are byte-identical before
+  and after. (Rewritten after review, 2026-11-18: measured Umami drops unknown
+  keys on any write, so "preserved verbatim" is not something the script can
+  promise; the test fake reproduces that drop.)
 - **AC-S5** `sampleRate` and `heatmapSampleRate` both equal the single constant
   `RECORDER_SAMPLE_RATE = 0.5`. `maxDuration` is `300000`.
 - **AC-S6** No env var for a write-capable Umami credential is added to
