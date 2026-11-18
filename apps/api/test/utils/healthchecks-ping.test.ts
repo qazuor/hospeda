@@ -90,8 +90,43 @@ describe('pingHealthchecks — no-op when a var is missing (TEST:1742:1)', () =>
         const fetchFn = makeFetch();
         await pingHealthchecks({ job: JOB, signal: 'success', fetch: fetchFn });
         expect(fetchFn).not.toHaveBeenCalled();
+    });
 
-        expect(mockWarn).not.toHaveBeenCalled();
+    it('warns, naming only the missing vars and never the key, when it skips a ping', async () => {
+        await pingHealthchecks({
+            job: JOB,
+            signal: 'success',
+            config: { pingKey: 'k1' },
+            fetch: makeFetch()
+        });
+        await pingHealthchecks({
+            job: JOB,
+            signal: 'start',
+            config: { slugPrefix: 'staging' },
+            fetch: makeFetch()
+        });
+        await pingHealthchecks({ job: JOB, signal: 'fail', fetch: makeFetch() });
+        expect(mockWarn.mock.calls.map(([entry]) => entry)).toEqual([
+            {
+                message: 'Healthchecks ping skipped: not configured',
+                job: JOB,
+                signal: 'success',
+                missing: ['HOSPEDA_HEALTHCHECKS_SLUG_PREFIX']
+            },
+            {
+                message: 'Healthchecks ping skipped: not configured',
+                job: JOB,
+                signal: 'start',
+                missing: ['HOSPEDA_HEALTHCHECKS_PING_KEY']
+            },
+            {
+                message: 'Healthchecks ping skipped: not configured',
+                job: JOB,
+                signal: 'fail',
+                missing: ['HOSPEDA_HEALTHCHECKS_PING_KEY', 'HOSPEDA_HEALTHCHECKS_SLUG_PREFIX']
+            }
+        ]);
+        expect(JSON.stringify(mockWarn.mock.calls)).not.toContain('k1');
     });
 
     it('reads the two vars from the injected env fallback', async () => {

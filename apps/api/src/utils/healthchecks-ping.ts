@@ -9,8 +9,9 @@
  * The free plan allows ONE project, shared by staging and prod under the same
  * project ping key. The environment is therefore encoded in the check slug:
  * `<HOSPEDA_HEALTHCHECKS_SLUG_PREFIX>-<job>`. Both env vars are required; when
- * either is missing the helper is a no-op, so staging can never feed the prod
- * checks.
+ * either is missing the helper sends nothing, so staging can never feed the
+ * prod checks, and logs a warning naming the missing var (HOS-1512): a silent
+ * no-op let a watchdog go dark without anybody noticing.
  *
  * Pings are best-effort: they use a short timeout, and every failure (network,
  * timeout, non-2xx) is logged without the ping key or the full URL and then
@@ -87,7 +88,7 @@ export function buildHealthchecksPingUrl(args: BuildHealthchecksPingUrlArgs): st
 /**
  * Sends one best-effort ping to Healthchecks.io.
  *
- * Resolves in every path, including a missing config, a rejected fetch, an
+ * Resolves in every path, including a missing config (logged as a warning), a rejected fetch, an
  * aborted timeout, and a non-2xx response. Failures are logged with the job,
  * the signal, and the status or error message only — never the ping key or the
  * full URL.
@@ -100,7 +101,18 @@ export async function pingHealthchecks(args: PingHealthchecksArgs): Promise<void
         slugPrefix: env.HOSPEDA_HEALTHCHECKS_SLUG_PREFIX
     };
 
-    if (!config.pingKey || !config.slugPrefix) return;
+    if (!config.pingKey || !config.slugPrefix) {
+        apiLogger.warn({
+            message: 'Healthchecks ping skipped: not configured',
+            job: args.job,
+            signal: args.signal,
+            missing: [
+                ...(config.pingKey ? [] : ['HOSPEDA_HEALTHCHECKS_PING_KEY']),
+                ...(config.slugPrefix ? [] : ['HOSPEDA_HEALTHCHECKS_SLUG_PREFIX'])
+            ]
+        });
+        return;
+    }
 
     const fetchFn = args.fetch ?? globalThis.fetch.bind(globalThis);
     const controller = new AbortController();
