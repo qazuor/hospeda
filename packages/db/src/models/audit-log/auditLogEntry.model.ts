@@ -1,4 +1,4 @@
-import { gte, lt, lte, type SQL } from 'drizzle-orm';
+import { and, count, eq, gte, inArray, lt, lte, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { auditLogEntries } from '../../schemas/audit-log/audit_log_entry.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -129,21 +129,76 @@ export class AuditLogEntryModel extends BaseModelImpl<AuditLogEntry> {
     }
 
     /**
+     * The rows a purge selects: `loggedAt` strictly before `before`, and, when
+     * `eventType` is given, that event type only.
+     */
+    private purgeCondition(input: { before: Date; eventType?: string }): SQL {
+        const olderThan = lt(auditLogEntries.loggedAt, input.before);
+        if (input.eventType === undefined) return olderThan;
+        return and(eq(auditLogEntries.eventType, input.eventType), olderThan) ?? olderThan;
+    }
+
+    /**
      * Hard-deletes entries emitted strictly before the given date.
-     * Provided for a future retention purge (out of scope for the initial SPEC-162
-     * shipment but mirrors the app_log_entries model surface).
+     *
+     * With `eventType`, only that event type is deleted: the MCP retention
+     * (HOS-2335 D-13) purges `mcp.tool.call` and leaves every admin and
+     * security row alone. Without it the delete spans every family, which is
+     * why no cron calls it unscoped.
+     *
+     * With `limit`, at most that many rows go per call (a bounded batch: the
+     * caller repeats until a batch comes back short). The batch is selected by
+     * key inside the statement; no id is loaded into memory.
      *
      * @param input.before - Delete entries with `loggedAt` strictly before this date.
+     * @param input.eventType - Only this event type, when given.
+     * @param input.limit - Most rows deleted by this call, when given.
      * @param tx - Optional transaction client.
      * @returns The number of deleted rows.
      */
-    async purgeOlderThan(input: { before: Date }, tx?: DrizzleClient): Promise<number> {
+    async purgeOlderThan(
+        input: { before: Date; eventType?: string; limit?: number },
+        tx?: DrizzleClient
+    ): Promise<number> {
         const db = this.getClient(tx);
+        const condition = this.purgeCondition(input);
+        const where =
+            input.limit === undefined
+                ? condition
+                : inArray(
+                      auditLogEntries.id,
+                      db
+                          .select({ id: auditLogEntries.id })
+                          .from(auditLogEntries)
+                          .where(condition)
+                          .limit(input.limit)
+                  );
         const result = await db
             .delete(auditLogEntries)
-            .where(lt(auditLogEntries.loggedAt, input.before))
+            .where(where)
             .returning({ id: auditLogEntries.id });
         return result.length;
+    }
+
+    /**
+     * Counts the entries {@link purgeOlderThan} would delete with the same
+     * `before` and `eventType` (a dry run reports it and deletes nothing).
+     *
+     * @param input.before - Entries with `loggedAt` strictly before this date.
+     * @param input.eventType - Only this event type, when given.
+     * @param tx - Optional transaction client.
+     * @returns The number of matching rows.
+     */
+    async countOlderThan(
+        input: { before: Date; eventType?: string },
+        tx?: DrizzleClient
+    ): Promise<number> {
+        const db = this.getClient(tx);
+        const [row] = await db
+            .select({ total: count() })
+            .from(auditLogEntries)
+            .where(this.purgeCondition(input));
+        return row?.total ?? 0;
     }
 }
 
