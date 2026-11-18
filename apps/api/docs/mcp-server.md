@@ -235,6 +235,20 @@ it, the listing name and portal link. A bare `toDate` (`2026-11-18`) covers that
 whole day in UTC. A row whose `data` does not parse is left out of `items` but
 stays in `total`; the output's `skipped` counts those rows for the page.
 
+**Admin log (HOS-2349).** `GET /api/v1/admin/mcp-activity`
+(`routes/mcp-activity/admin/list.ts`) calls the reader with `scope: { kind: 'all' }`.
+It is gated by `MCP_ACTIVITY_VIEW` (`'mcpActivity.view'`, D-15), granted to
+SUPER_ADMIN only: ADMIN answers 403, even holding `AUDIT_LOG_VIEW`. The all-scope
+permission of the reader (`MCP_ACTIVITY_ALL_SCOPE_PERMISSION`) is the same value.
+Filters: `userId`, `tool` (a Zod enum of the registered tool names, so a typo is a
+400), `outcome`, `access` (`read | write`, absent = both), `clientId`, `fromDate`,
+`toDate`; `sort` is `loggedAt:desc` (default) or `loggedAt:asc`; `page` + `pageSize`.
+Unknown params are a 400. Rows add the user's display name and email while the
+account is live (`all` scope only; the owner's history never reads `users`), and
+the raw `errorCode`. Items carry no portal link: those are owner links. The admin
+screen is `apps/admin/src/routes/_authed/platform/ops/mcp-activity.tsx`, and its
+header says that rate-limited and crashed calls leave no row (R-16).
+
 ## Tool catalog
 
 Twenty tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
