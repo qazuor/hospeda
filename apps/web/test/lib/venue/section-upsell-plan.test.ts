@@ -88,6 +88,7 @@ describe('venue section upsell plan resolution', () => {
             translations: 'Plan completo',
             dailySpecials: 'Plan completo',
             venueEvents: 'Plan completo',
+            promotions: 'Plan completo',
             videos: 'Plan completo'
         });
     });
@@ -104,6 +105,7 @@ describe('venue section upsell plan resolution', () => {
         });
 
         expect(none.videos).toBeNull();
+        expect(none.promotions).toBeNull();
         expect(some.videos).toBe('Pro');
     });
 });

@@ -96,6 +96,10 @@ class GenericMockModel {
     async count(_filters?: unknown) {
         return 0;
     }
+    /** HOS-2271: batch lookup for public venue promotion badges. */
+    async findVenueIdsWithActivePromo(_args: { readonly venueIds: readonly string[] }) {
+        return new Map();
+    }
     getTable() {
         return {};
     }
