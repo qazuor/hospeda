@@ -46,6 +46,7 @@ import {
     planMigrationNoticeJob,
     pollApifyReputationRunsJob,
     providerNotificationRetentionJob,
+    providerWatchBatteryJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
@@ -72,6 +73,8 @@ export const cronJobs: CronJobDefinition[] = [
     billingDeferredCancellationRetryJob,
     billingPromoEndingNoticeJob,
     providerNotificationRetentionJob,
+    // HOS-1512: the provider watch battery (weekly in staging, monthly in production).
+    providerWatchBatteryJob,
     alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,

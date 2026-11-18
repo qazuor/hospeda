@@ -4181,13 +4181,13 @@ Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:
 ### `TRANS:B:S40` · `S40` — `PENDING_AUTHORIZATION` → `ABANDONED`
 
 - **Pieza dueña**: B3
-- **Fuente de la asignación**: HOS-1735 (fuera del corpus de fuentes; regla nueva, decisión D-1 del kit; decisión del owner del 2026-10-21, opción 2)
+- **Fuente de la asignación**: HOS-1735 (fuera del corpus de fuentes; regla nueva, decisión D-1 del kit; decisión del owner del 2026-10-21, opción 2); HOS-2344, decisión del owner 2026-11-18 (P1 a P4, todas las recomendadas)
 - **Test mínimo**: integración con DB.
 - **desde**: `PENDING_AUTHORIZATION`
-- **evento**: la persona cancela su intento de alta pendiente
+- **evento**: la persona cancela su intento de alta pendiente, o su cambio de plan con el checkout abierto
 - **hacia**: `ABANDONED`
-- **condición**: la fila es el origen vivo de esa persona (`PRINCIPAL`, sin `sucede_a`), vinculada y con la clave de creación completada; la ventana no se mira; y la relectura del preapproval por id lo ve `pending` o `cancelled` con nuestro `external_reference`: si lo ve `authorized`, `S40` no ocurre
-- **efectos**: como `S39`: se cancela el preapproval con la regla de relectura de `S17` y el correo antes (`ATTEMPT_CANCELLED`); la fila llega a `ABANDONED` pase lo que pase con la llamada y conserva su `provider_link`, y el barrido reintenta la cancelación (salvedad 4); no sale el aviso de alta incompleta; el compromiso de esa vertical queda libre para un `S1` nuevo.
+- **condición**: la fila es el origen vivo de esa persona (`PRINCIPAL`, sin `sucede_a`) **o su sucesora `PENDING_AUTHORIZATION`, de cualquier base de sucesión, incluida `CARD_SUSPENDED_CONFIRMED_CANCELLED`** (HOS-2344); vinculada y con la clave de creación completada; la ventana no se mira; y la relectura del preapproval por id lo ve `pending` o `cancelled` con nuestro `external_reference`: si lo ve `authorized`, `S40` no ocurre
+- **efectos**: como `S39`: se cancela el preapproval con la regla de relectura de `S17` y el correo antes (`ATTEMPT_CANCELLED`, cuyo texto dice «el alta o el cambio de plan»); la fila llega a `ABANDONED` pase lo que pase con la llamada y conserva su `provider_link`, y el barrido reintenta la cancelación (salvedad 4); no sale el aviso de alta incompleta; el compromiso de esa vertical queda libre para un `S1` nuevo. **En una sucesora** (HOS-2344): la sucesora conserva su `sucede_a`; **en la misma transacción el `succeeded_by_id` de la predecesora vuelve a NULL**, sólo si todavía la nombra (único escritor que lo limpia, registrado en `G-R1-C` regla c6: `releaseCancelledSuccessionPredecessor`); **la cortesía diferida de la predecesora se conserva**, como en `S39`; y, como en `S3`, los pagos que `S19` retuvo en la predecesora se reevalúan en el acto. Sobre una predecesora `ACTIVE` vuelve «Cambiar de plan». `S3` y `S39` siguen dejando el puntero apuntando a la sucesora `ABANDONED` (HOS-2351).
 
 ## Transiciones que no existen (`B/03` §3.3)
 

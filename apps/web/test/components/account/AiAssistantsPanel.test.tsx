@@ -101,6 +101,12 @@ describe('AiAssistantsPanel', () => {
             )
         ).toBeTruthy();
         expect(screen.getByText('Crear borradores de publicaciones nuevas')).toBeTruthy();
+        expect(
+            screen.getByText('Buscar en el directorio de proveedores para anfitriones')
+        ).toBeTruthy();
+        expect(
+            screen.getByText('Ver tus usos de beneficios y confirmarlos o rechazarlos')
+        ).toBeTruthy();
         expect(screen.getByText('Todavía no conectaste ningún asistente.')).toBeTruthy();
     });
 

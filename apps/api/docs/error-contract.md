@@ -51,6 +51,8 @@ check answers 403 to someone the server never identified.
 | Deleting a provider trade category that live providers still use, or a catalog group that still has categories (HOS-919; deactivate instead) | **409** | `CATEGORY_IN_USE` |
 | Deactivating or soft-deleting a partner type that non-deleted partners still use (HOS-2336; reassign them first) | **409** | `PARTNER_TYPE_IN_USE` (`details.count` is public) |
 | Plan change while the next charge date is still being confirmed | **409** | `CONFLICT`, `error.details.reason: CYCLE_END_PENDING` |
+| Provider watch (HOS-1512): the provider account is not the one the owner confirmed; accepting a shape from a run that is not completed or does not hold the measurement | **409** | `ALREADY_EXISTS` |
+| Provider watch (HOS-1512): accepting a shape from a run of another account, or an unknown run | **404** | `NOT_FOUND` |
 | Exclusive manual cron trigger is already running | **409** | `CONFLICT`; public `error.details.holderRunId` is the active run ID or `null` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |

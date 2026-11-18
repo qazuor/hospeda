@@ -108,6 +108,12 @@ export interface CronJobDefinition {
     handler: CronJobHandler;
     /** Whether the job is enabled (disabled jobs won't be scheduled) */
     enabled: boolean;
+    /**
+     * Whether the in-process scheduler ticks this job. Defaults to `true`. `false` keeps the job
+     * enabled for the admin manual trigger but never schedules it: a job that ships before the
+     * thing it measures (HOS-1512 D4). `enabled: false` would also refuse the manual trigger.
+     */
+    scheduled?: boolean;
     /** Maximum execution time in milliseconds (default: 30000ms) */
     timeoutMs?: number;
     /** Prevent overlapping executions and let manual triggers return asynchronously. */

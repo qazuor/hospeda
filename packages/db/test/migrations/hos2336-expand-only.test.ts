@@ -1,5 +1,5 @@
 /**
- * Migration tests: HOS-2336 partner types catalog (0230), EXPAND step.
+ * Migration tests: HOS-2336 partner types catalog (0231), EXPAND step.
  *
  * This release only ADDS the catalog table and the nullable `partners.type_id`
  * FK, and relaxes the legacy `partners.type` to nullable. Everything that
@@ -15,7 +15,7 @@ import { describe, expect, it } from 'vitest';
 
 const MIGRATION_PATH = join(
     dirname(fileURLToPath(import.meta.url)),
-    '../../src/migrations/0230_hos2336_partner_types_catalog.sql'
+    '../../src/migrations/0231_hos2336_partner_types_catalog.sql'
 );
 
 /** Statements only: `--` comment lines are dropped so prose cannot trip a regex. */
@@ -24,7 +24,7 @@ const sql = readFileSync(MIGRATION_PATH, 'utf8')
     .filter((line) => !line.trimStart().startsWith('--'))
     .join('\n');
 
-describe('0230 partner types catalog migration (expand only)', () => {
+describe('0231 partner types catalog migration (expand only)', () => {
     it('drops no table, column, index, constraint or type', () => {
         const destructive = sql.match(
             /DROP\s+(TABLE|COLUMN|INDEX|CONSTRAINT|TYPE)|ALTER\s+TABLE\s+\S+\s+DROP\s+COLUMN/gi

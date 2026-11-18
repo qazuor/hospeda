@@ -877,6 +877,7 @@ export enum PermissionEnum {
     BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
     BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
     BILLING_SETTLE_EXTERNAL = 'billing.settleExternal', // Allows settling a charge or a refund that already happened outside our flow (RF4 and the P1 settlement); NUCLEO/08 §3 action 14.
+    BILLING_PROVIDER_WATCH_MANAGE = 'billing.providerWatch.manage', // Allows authorizing the provider watch battery's monthly production run and accepting a changed response shape (HOS-1512). SUPER_ADMIN-only.
     BILLING_CANCEL_SUBSCRIPTION = 'billing.cancelSubscription', // Allows cancelling a subscription with administrative action 8 (NUCLEO/08 §3); with the revocation motive it runs S36.
     BILLING_LIFT_RECONCILIATION_MARK = 'billing.liftReconciliationMark', // Allows lifting one reconciliation mark (S15) with administrative action 7 (NUCLEO/08 §3), resolving without refund only the hung payments the person names. SUPER_ADMIN-only.
     BILLING_REFUND = 'billing.refund', // Allows confirming a refund request so it is sent to the provider (RF2) with administrative action 13 (NUCLEO/08 §3). SUPER_ADMIN-only.

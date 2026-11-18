@@ -27,6 +27,7 @@ import type {
     MaintenanceModeValue,
     PaidSignupsFreezeValue,
     PlatformSettingsKey,
+    ProviderWatchAuthorizationValue,
     SeoDefaultsValue
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -52,7 +53,9 @@ export type PlatformSettingValue<K extends PlatformSettingsKey> = K extends 'seo
           ? PaidSignupsFreezeValue
           : K extends 'billing.addonPurchasesFreeze'
             ? AddonPurchasesFreezeValue
-            : never;
+            : K extends 'billing.providerWatchAuthorization'
+              ? ProviderWatchAuthorizationValue
+              : never;
 
 /**
  * Shape of a single row returned by `GET /api/v1/admin/platform-settings/{key}`.

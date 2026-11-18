@@ -55,6 +55,7 @@ export { planMigrationApplicationJob } from './plan-migration-application.job.js
 export { planMigrationNoticeJob } from './plan-migration-notice.job.js';
 export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';
 export { providerNotificationRetentionJob } from './provider-notification-retention.job.js';
+export { providerWatchBatteryJob } from './provider-watch-battery.job.js';
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';

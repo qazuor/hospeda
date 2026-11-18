@@ -17,6 +17,7 @@ export * from './promo.dbschema.ts';
 export * from './provider-charge-snapshot.dbschema.ts';
 export * from './provider-link.dbschema.ts';
 export * from './provider-notification.dbschema.ts';
+export * from './provider-watch-run.dbschema.ts';
 export * from './quota-window.dbschema.ts';
 export * from './receipt.dbschema.ts';
 export * from './receipt-counter.dbschema.ts';

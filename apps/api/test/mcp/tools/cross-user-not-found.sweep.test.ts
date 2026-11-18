@@ -1,7 +1,7 @@
 /**
  * HOS-2184 T-030, AC-6 and AC-12 — the cross-user "not found" sweep.
  *
- * Every registered tool that takes a listing or inquiry id is called, through
+ * Every registered tool that takes a listing, inquiry or benefit-usage id is called, through
  * the MCP binding (`handleMcpToolCall`), by a user who does not own the
  * resource and by staff (ADMIN, SUPER_ADMIN, every permission). The answer must
  * be exactly the one a non-existent id gets, so the caller learns nothing about
@@ -40,6 +40,7 @@ import {
     type Actor,
     ConversationService,
     ExperienceService,
+    HostTradeUsageService,
     MessageService,
     ServiceError,
     VenueService
@@ -64,7 +65,10 @@ const mocks = vi.hoisted(() => ({
     readThreadContext: vi.fn(),
     issueToken: vi.fn(),
     consumeToken: vi.fn(),
-    catalog: vi.fn()
+    catalog: vi.fn(),
+    notifyUsageConfirmed: vi.fn(),
+    notifyUsageRejected: vi.fn(),
+    notifyUsageDeclared: vi.fn()
 }));
 
 vi.mock('../../../src/utils/listing-access/ports', () => ({
@@ -104,6 +108,16 @@ vi.mock('../../../src/mcp/tools/inquiry/confirmation-token-store', async (import
     issueConfirmationToken: mocks.issueToken,
     consumeConfirmationToken: mocks.consumeToken
 }));
+vi.mock('../../../src/mcp/tools/confirmation-token-store', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('../../../src/mcp/tools/confirmation-token-store')>()),
+    issueConfirmationToken: mocks.issueToken,
+    consumeConfirmationToken: mocks.consumeToken
+}));
+vi.mock('../../../src/lib/host-trade-notifications', () => ({
+    notifyUsageConfirmed: mocks.notifyUsageConfirmed,
+    notifyUsageRejected: mocks.notifyUsageRejected,
+    notifyUsageDeclared: mocks.notifyUsageDeclared
+}));
 vi.mock('../../../src/utils/listing-catalog-relations', () => ({
     fetchVenueAmenities: mocks.catalog,
     fetchVenueFeatures: mocks.catalog,
@@ -128,6 +142,7 @@ const USER_B = '2a3b4c5d-6e7f-4a8b-9c0d-1e2f3a4b5c6d';
 const STAFF_ID = '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b';
 const LISTING_ID = '9a1f5c2e-6b7d-4e8f-a0b1-c2d3e4f5a6b7';
 const CONVERSATION_ID = 'c9999999-9999-4999-8999-999999999999';
+const USAGE_ID = 'b3333333-3333-4333-8333-333333333333';
 const FOREIGN_ACCOMMODATION = 'a1111111-1111-4111-8111-111111111111';
 const CALLERS_ACCOMMODATION = 'a2222222-2222-4222-8222-222222222222';
 const CLIENT_ID = 'https://claude.ai/oauth/mcp-client-metadata';
@@ -236,7 +251,9 @@ function buildForbiddenSpies() {
         reactivate: vi.spyOn(ListingPublicationService.prototype, 'reactivate'),
         createMessage: vi.spyOn(MessageService.prototype, 'createMessage'),
         getThread: vi.spyOn(ConversationService.prototype, 'getThread'),
-        markRead: vi.spyOn(ConversationService.prototype, 'markReadByOwner')
+        markRead: vi.spyOn(ConversationService.prototype, 'markReadByOwner'),
+        confirmUsage: vi.spyOn(HostTradeUsageService.prototype, 'confirmUsage'),
+        rejectUsage: vi.spyOn(HostTradeUsageService.prototype, 'rejectUsage')
     };
 }
 
@@ -365,7 +382,22 @@ function arrange(world: World) {
         undefined as never
     );
 
-    return { ...spies, getById, findOwned, listForOwner };
+    // Benefit usages: the counterpart rule lives in the service
+    // (`requireAnswerableBy`), so its read and the undo are stubbed to what it
+    // answers for a usage the caller may not answer. A FORBIDDEN from it must
+    // still reach the caller as not-found.
+    const usageRefusal = async () =>
+        resource === 'foreign' && mode === 'forbidden'
+            ? { error: { code: ServiceErrorCode.FORBIDDEN, message: 'refused' } }
+            : { error: { code: ServiceErrorCode.NOT_FOUND, message: 'Usage not found' } };
+    const getAnswerableUsage = vi
+        .spyOn(HostTradeUsageService.prototype, 'getAnswerableUsage')
+        .mockImplementation(usageRefusal as never);
+    const undoRejection = vi
+        .spyOn(HostTradeUsageService.prototype, 'undoRejection')
+        .mockImplementation(usageRefusal as never);
+
+    return { ...spies, getById, findOwned, listForOwner, getAnswerableUsage, undoRejection };
 }
 
 type Spies = ReturnType<typeof arrange>;
@@ -458,6 +490,45 @@ const ID_TOOL_CASES: readonly IdToolCase[] = [
             expect(spies.findOwned.mock.calls[0]?.[0]).toMatchObject({ id: actor.id });
         }
     },
+    ...(['confirm_benefit_usage', 'reject_benefit_usage'] as const).flatMap((tool) =>
+        (
+            [
+                ['preview', {}],
+                ['commit with a token', { confirmationToken: 'a-token-the-caller-somehow-holds' }]
+            ] as const
+        ).map(
+            ([variant, extra]): IdToolCase => ({
+                tool,
+                variant,
+                args: {
+                    usageId: USAGE_ID,
+                    ...(tool === 'reject_benefit_usage' ? { note: 'No vino.' } : {}),
+                    ...extra
+                },
+                expects: 'not-found',
+                verify: ({ spies, actor }) => {
+                    // The service's counterpart check, asked for THIS caller.
+                    expect(spies.getAnswerableUsage).toHaveBeenCalledTimes(1);
+                    expect(spies.getAnswerableUsage.mock.calls[0]?.[0]).toEqual({
+                        usageId: USAGE_ID
+                    });
+                    expect(spies.getAnswerableUsage.mock.calls[0]?.[1]).toMatchObject({
+                        id: actor.id
+                    });
+                }
+            })
+        )
+    ),
+    {
+        tool: 'undo_benefit_rejection',
+        variant: 'usage',
+        args: { usageId: USAGE_ID },
+        expects: 'not-found',
+        verify: ({ spies, actor }) => {
+            expect(spies.undoRejection).toHaveBeenCalledTimes(1);
+            expect(spies.undoRejection.mock.calls[0]?.[1]).toMatchObject({ id: actor.id });
+        }
+    },
     {
         tool: 'list_inquiries',
         variant: 'listingId filter',
@@ -487,7 +558,11 @@ const NO_RESOURCE_INPUT_TOOLS: Readonly<Record<string, string>> = {
     get_listing_creation_guide:
         "reads the public catalog and the caller's own drafts; the vertical is its only input",
     create_listing:
-        'creates a new listing owned by the caller; its only id is destinationId, a public catalog entry (HOS-2329)'
+        'creates a new listing owned by the caller; its only id is destinationId, a public catalog entry (HOS-2329)',
+    search_providers:
+        "reads the directory scoped by the service to the caller's own destinations; destinationId only narrows that list (HOS-2332)",
+    list_benefit_usages:
+        'lists the usages the service scopes to the caller (host side by hostUserId, provider side by the caller-owned listing); takes no id (HOS-2332)'
 };
 
 /**
@@ -515,6 +590,8 @@ function idLikeKeys(tool: (typeof MCP_TOOL_DEFINITIONS)[number]): string[] {
 }
 
 const WRITE_SPY_KEYS = [
+    'confirmUsage',
+    'rejectUsage',
     'accommodationUpdate',
     'venueUpdateOwn',
     'experienceUpdateOwn',
@@ -696,6 +773,9 @@ describe('cross-user not found, tool by tool', () => {
                             expect(mocks.reviewerNames).not.toHaveBeenCalled();
                             expect(mocks.statsExtras).not.toHaveBeenCalled();
                             expect(mocks.readThreadContext).not.toHaveBeenCalled();
+                            expect(mocks.notifyUsageConfirmed).not.toHaveBeenCalled();
+                            expect(mocks.notifyUsageRejected).not.toHaveBeenCalled();
+                            expect(mocks.notifyUsageDeclared).not.toHaveBeenCalled();
 
                             // Assert (AC-12): a write tool leaves a `denied` audit record
                             if (definition?.isWrite && plan === 'full') {
