@@ -27,7 +27,8 @@ const EXPECTED_ORDER = [
     'nightInfo'
 ] as const;
 
-const EXCLUDED = ['price', 'media', 'translations'] as const;
+// HOS-2270: `promotions` is in the catalog but the public block is HOS-2271's.
+const EXCLUDED = ['price', 'media', 'translations', 'promotions'] as const;
 
 describe('VENUE_DETAIL_SECTION_BODY', () => {
     it('declares exactly the body sections as true and the fixed ones as false', () => {

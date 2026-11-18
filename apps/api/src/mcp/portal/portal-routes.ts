@@ -109,11 +109,28 @@ export const EDITOR_SECTION_TEMPLATE_BY_VERTICAL = {
 } as const satisfies Record<ListingVertical, PortalRouteKey>;
 
 /**
+ * Catalog sections that exist in `LISTING_SECTIONS` but whose editor page has not
+ * shipped, per vertical. They have no slug in {@link EDITOR_SECTION_SLUGS}: the assistant
+ * must not link to a page that is a 404 (`check-portal-routes` would fail on it anyway).
+ * The web flags the same sections `unreleased` in `listing-section-presentation.ts`; the
+ * leaf that ships the page removes the section from BOTH lists and adds its slug.
+ *
+ * - `venue.promotions`: the API exists (HOS-2270), the editor page is HOS-2271's.
+ */
+export const UNRELEASED_EDITOR_SECTIONS = {
+    accommodation: [],
+    venue: ['promotions'],
+    experience: []
+} as const satisfies { readonly [V in ListingVertical]: readonly ListingSectionId<V>[] };
+
+/**
  * Per vertical, the editor URL slug of every catalog section
- * (`LISTING_SECTIONS` ids, `packages/schemas/src/catalog/listing-sections.ts`).
+ * (`LISTING_SECTIONS` ids, `packages/schemas/src/catalog/listing-sections.ts`)
+ * whose page has shipped.
  *
  * Exhaustive on purpose: a section added to the catalog stops the typecheck
- * here, the same way it stops the web's own presentation map.
+ * here, the same way it stops the web's own presentation map. A section that has
+ * no page yet is named in {@link UNRELEASED_EDITOR_SECTIONS} instead.
  */
 export const EDITOR_SECTION_SLUGS = {
     accommodation: {
@@ -156,7 +173,12 @@ export const EDITOR_SECTION_SLUGS = {
         faqs: 'preguntas',
         translations: 'traducciones'
     }
-} as const satisfies { readonly [V in ListingVertical]: Record<ListingSectionId<V>, string> };
+} as const satisfies {
+    readonly [V in ListingVertical]: Record<
+        Exclude<ListingSectionId<V>, (typeof UNRELEASED_EDITOR_SECTIONS)[V][number]>,
+        string
+    >;
+};
 
 /** Any editor section id, of any vertical. */
 export type PortalSectionId = ListingSectionId<ListingVertical>;

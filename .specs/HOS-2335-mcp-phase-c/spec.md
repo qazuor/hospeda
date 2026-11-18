@@ -160,10 +160,12 @@ These hold for every tool in this spec. Each PR proves them with tests.
   rules live in a `superRefine`, the pattern of `UpdateListingBasicInputSchema`.
   A test runs `buildToolInputJsonSchema` on every registered tool and fails on
   `oneOf`/`anyOf` at the top level.
-- **C-3: Write tools are audited.** `isWrite: true` ⇒ `recordMcpToolCall`
-  (`lib/mcp/record-tool-call.ts`), with `auditTarget`. Two-step tools set
-  `auditDetails` to `{ step: 'preview' | 'commit' }`. Content length is recorded,
-  never the content.
+- **C-3: Every call is audited (D-12).** The binder records every call that
+  reaches `parseToolInput`, read or write, in success, denied or error, through
+  `recordMcpToolCall` (`lib/mcp/record-tool-call.ts`), with `isWrite` in the row.
+  A write carries its `auditTarget`, and two-step tools set `auditDetails` to
+  `{ step: 'preview' | 'commit' }`. Content length is recorded, never the content.
+  A read records only its `auditTarget`: no details and no length.
 - **C-4: Same authorization as the route.** Same PermissionEnum, ownership and
   `resolveListingAccess` declaration, and the same `emailUnverifiedOperation`.
   A foreign or missing resource ⇒ the uniform not-found result (error contract).
@@ -471,7 +473,7 @@ experiences.
 
 ### 5.6 Assistant activity read model (HOS-2348, HOS-2349; delta 2026-11-18)
 
-**Survey: what is recorded today (staging `28082ce04e`).**
+**Survey: what was recorded before PR-10 (staging `28082ce04e`). The Design below replaced it; C-3 states the current rule.**
 
 - **Writer.** `handleMcpToolCall` (`apps/api/src/lib/mcp/bind-tool.ts:243`)
   calls `recordMcpToolCall` (`lib/mcp/record-tool-call.ts:64`) once per call,
@@ -534,15 +536,19 @@ query plan needs one (D-16).
   - Returns rows already projected to an `McpActivityItem`: `id`, `loggedAt`,
     `tool`, `outcome`, `errorCode?`, `step?`, `confirmation?` (§5.7),
     `client: { id, name? }`, `target?: { type, id, label?, url? }`, and for
-    `all` also `actorId`.
+    `all` also `actorId`. The reader's output also carries `total` and `skipped`
+    (rows of the page that did not parse); the owner route does not expose
+    `skipped`.
   - The client name is resolved at read time from the OAuth client registry the
     `ai-connections` list already uses (`AiConnectionService`). It is untrusted
     text and rendered as plain text.
   - The target label is resolved at read time through the owner-scoped readers
     (`readOwnListingDetail`-style), batched per page. A target the row's actor
-    no longer owns, or that is deleted, gets no label and no link. For
-    conversations the label is a fixed "Consulta" plus the inbox link; the guest
-    name and message are never resolved.
+    no longer owns, or that is deleted, gets no label and no link. A
+    conversation never carries a label in the item, only the inbox link while the
+    actor owns its accommodation; the screens render a fixed text for it (the
+    web history reads "Consulta de huésped"). The guest name and message are
+    never resolved.
 - **Recording reads (D-12).** The binder change:
   - `handleMcpToolCall` drops the `if (definition.isWrite)` guard
     (`bind-tool.ts:269`) and records every call that reaches `parseToolInput`,
@@ -1051,10 +1057,17 @@ verified in code (§11 U-7). `location_key` follows §5.5.
 **Tool** `get_owner_summary` (read, `READ_OWN`). It is one tool and not prompt
 guidance, because the alternative is N calls to `get_listing_stats`.
 
-- Input: `{ period?: '7d'|'30d'|'90d' }`, the stats periods.
+- Input: `{ period?: '7d'|'30d' }`, default `30d`. These are the two periods the
+  portal's owner-wide stats offer; there is no `90d` (the tool's input schema says to use
+  `get_listing_stats` per listing for 90 days).
 - Output:
-  - `listings`: `{ [vertical]: { total, byStatus: { DRAFT, PUBLISHED, UNPUBLISHED_BY_BILLING, ARCHIVED, MODERATED } } }`.
-    It comes from one grouped count per vertical, and `PURGED` is excluded.
+  - `listings`: `{ [vertical]: { total, byStatus: { DRAFT, PUBLISHED, UNPUBLISHED_BY_BILLING, ARCHIVED, MODERATED }, partial? } }`,
+    all three verticals present, zeros included.
+    The counts are computed over the rows `readMyListingRows` loads, the same read
+    `list_my_listings` makes (at most 100 listings per vertical), not by a grouped
+    count query, so the two tools cannot disagree. `PURGED` is excluded and `total` is
+    the number of rows counted. `partial: true` is set on a vertical whose rows read
+    are fewer than the owner's total there, so the counts are truncated.
   - `metrics`, gated exactly like `get_listing_stats` (`view_basic_stats`, and
     `view_advanced_stats` for favorites). Owner decision D-9: without
     `view_basic_stats`, only this block is hidden. It is replaced by
@@ -1064,13 +1077,26 @@ guidance, because the alternative is N calls to `get_listing_stats`.
       Until HOS-2066 it says "incluido en los planes que muestran estadísticas"
       with no names;
     - `action` links to the plans page.
-    The block contains:
-    - views from `EntityViewService.getStatsForOwnListings`;
-    - accommodation inquiries and response time from `ConversationService`;
-    - unanswered inquiries, from the same unread count the host dashboard uses;
-    - new reviews in the period, a count from the §6.5 reader;
-    - favorites (accommodation, advanced gate).
-  - `attention`: `[{ kind, listing, actionUrl }]`. Kinds:
+    The block is built per vertical the owner has listings in, over all its
+    listings, and contains:
+    - `views` for the period: `EntityViewService.getStatsForHostAccommodations`
+      (accommodation) or `getStatsForOwnListings` (venue, experience);
+    - accommodation `inquiries` (per month, reply rate and average time, scope
+      `all_my_accommodations`) from `ConversationService`;
+    - accommodation `unansweredInquiries`: the `total` of the `list_inquiries` read
+      for `PENDING_OWNER`, so the two tools give the same number;
+    - `newReviews` in the period, `{ total, byModerationState }` over every
+      moderation state, from the §6.5 reader;
+    - `favorites` (accommodation, advanced gate): live bookmarks summed over the
+      accommodations, not distinct users.
+    A metric that cannot be read is left out and named in `omitted`
+    (`not_in_plan` or `not_permitted`), never zero. When the vertical has more
+    listings than one read covers, the entry carries `partial: true`: `newReviews`
+    and `favorites` then cover only the listings read, while `views`, `inquiries`
+    and `unansweredInquiries` cover all of them.
+  - `attention`: `[{ kind, actionUrl, listing?, count?, side?, missing?, reportedFixed? }]`
+    (`listing` is absent on the owner-wide kinds), most urgent first: people
+    waiting on the owner come first. Kinds:
     - `unanswered_inquiries` (the inbox link);
     - `open_fix_request` (from `fix_request` open rows; editor hub);
     - `incomplete` (`resolveListingCompleteness` on drafts; first missing
@@ -1079,7 +1105,9 @@ guidance, because the alternative is N calls to `get_listing_stats`.
     - `pending_benefit_usages` (D-11). It comes from `countPendingForHost`, plus
       the provider-side pending count when `getOwn` finds a provider listing,
       and links to `usos-de-beneficio`. It is omitted when zero.
-    It is capped at 10 entries with a `more` count.
+    It is capped at 10 entries. `more` (not `moreAttention`) counts the items left
+    out, by the cap or because the serialized result had to fit
+    `MCP_RESULT_MAX_CHARS` (the least urgent items give way first).
   - `subscription`: present only after HOS-2328, built from the `get_my_plan`
     reader.
 - Budget: §5.3. No per-listing service calls. Completeness runs on the rows
@@ -1451,7 +1479,7 @@ The spec's last PR carries `Closes HOS-2335`. With this delta that is PR-9
 
 ## 9. Risks
 
-- **R-1 Missed route side effect (C-1):** each PR lists its route's side effects; one test each; reviewer greps the route for `void `, `notify`, `invalidate`, router `app.use`.
+- **R-1 Missed route side effect (C-1):** each PR lists its route's side effects; one test each; reviewer greps the route for `void`, `notify`, `invalidate`, router `app.use`.
 - **R-2 Portal paths drift:** the API map is a copy by decision D-1; `check-portal-routes` in the CI `Guards` job is the only thing keeping it honest, so its own mutation test is mandatory (AC-C5).
 - **R-3 Model alters `create_listing` between calls:** token bound to payload hash + resolved point; mismatch burns it (AC-C17, AC-C23b).
 - **R-4 Duplicate drafts:** single-use token stops retries; accommodation precheck surfaces open drafts; venue/experience have none (U-3).

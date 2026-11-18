@@ -27,6 +27,7 @@ import {
     getComparisonGroups,
     getVisibleRows
 } from '@/components/billing/plan-comparison-table.helpers';
+import { PRODUCTION_PLAN_CATALOG } from '../../../../../scripts/production-catalog/catalog.js';
 
 const venueGroup = buildCatalogComparisonGroup({ vertical: 'venue' });
 const experienceGroup = buildCatalogComparisonGroup({ vertical: 'experience' });
@@ -257,6 +258,32 @@ describe('TEST:6.5:6 — the venue table still renders', () => {
         const ids = groups.map((group) => group.id);
         expect(ids).toContain('catalogSections');
         expect(groups.flatMap((group) => group.rows).map((row) => row.id)).toContain('venueMenu');
+    });
+});
+
+describe('HOS-2270 unreleased catalog sections', () => {
+    it('skips the venue promotions section: no venue plan grants create_promotions yet', () => {
+        const promotions = LISTING_SECTIONS.venue.find((section) => section.id === 'promotions');
+
+        expect(promotions?.entitlementKey).toBe(EntitlementKeyEnum.CREATE_PROMOTIONS);
+        expect(
+            venueGroup.rows.some(
+                (row) => row.cell.kind === 'entitlement' && row.cell.key === 'create_promotions'
+            )
+        ).toBe(false);
+        expect(venueGroup.rows.map((row) => row.id)).not.toContain('promotions');
+    });
+});
+
+describe('HOS-2270 promotions.unreleased', () => {
+    it('is only valid while no venue plan grants create_promotions (drop the flag once granted)', () => {
+        const granting = PRODUCTION_PLAN_CATALOG.filter(
+            (plan) =>
+                plan.vertical === 'venue' &&
+                plan.version.entitlements.some((entry) => entry.key === 'create_promotions')
+        ).map((plan) => plan.slug);
+
+        expect(granting).toEqual([]);
     });
 });
 

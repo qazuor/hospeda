@@ -1,4 +1,9 @@
-import { AccommodationModel, OwnerPromotionModel } from '@repo/db';
+import {
+    AccommodationModel,
+    accommodationTargetCondition,
+    OwnerPromotionModel,
+    VenueModel
+} from '@repo/db';
 import { ownerPromotions } from '@repo/db/schemas';
 import type {
     OwnerPromotion,
@@ -11,6 +16,7 @@ import {
     LifecycleStatusEnum,
     OwnerPromotionAdminSearchSchema,
     OwnerPromotionCreateInputSchema,
+    OwnerPromotionEntityTypeEnum,
     OwnerPromotionSearchSchema,
     OwnerPromotionUpdateInputSchema,
     TouristAudienceEnumSchema
@@ -38,6 +44,11 @@ import {
     checkCanUpdateVisibility,
     checkCanView
 } from './ownerPromotion.permissions';
+import {
+    assertCreateBenefit,
+    resolvePromotionTarget,
+    validatePromotionUpdate
+} from './ownerPromotion.target';
 import { buildAccommodationVisibilityCondition } from './ownerPromotion.visibility';
 
 /**
@@ -97,29 +108,29 @@ export class OwnerPromotionService extends BaseCrudService<
      */
     private readonly accommodationModel: AccommodationModel;
 
+    /** Validates the target of a venue promotion (HOS-2270). */
+    private readonly venueModel: VenueModel;
+
     constructor(
         ctx: ServiceConfig & {
             model?: OwnerPromotionModel;
             accommodationModel?: AccommodationModel;
+            venueModel?: VenueModel;
         }
     ) {
         super(ctx, OwnerPromotionService.ENTITY_NAME);
         this.model = ctx.model ?? new OwnerPromotionModel();
         this.accommodationModel = ctx.accommodationModel ?? new AccommodationModel();
+        this.venueModel = ctx.venueModel ?? new VenueModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = OwnerPromotionAdminSearchSchema;
     }
 
     /**
-     * Builds the SQL condition that enforces G-3 active-window filtering:
-     *   `validFrom <= now AND (validUntil IS NULL OR validUntil >= now)`
-     *
-     * `validFrom IS NOT NULL` by schema constraint so no null-guard needed.
-     * `validUntil IS NULL` means the promo has no expiry — treated as always valid.
-     *
-     * The `?? sql\`1=1\`` fallback avoids an unsafe `as SQL` cast: `and()`
-     * returns `SQL | undefined` when all args are undefined, which cannot
-     * happen here because both sub-expressions are always defined.
+     * Builds the G-3 active-window condition:
+     * `validFrom <= now AND (validUntil IS NULL OR validUntil >= now)`.
+     * A NULL `validUntil` means no expiry. The `?? sql\`1=1\`` fallback avoids an
+     * unsafe `as SQL` cast (`and()` is never actually undefined here).
      */
     private buildActiveWindowCondition(now: Date): SQL {
         return (
@@ -144,19 +155,32 @@ export class OwnerPromotionService extends BaseCrudService<
     }
 
     /**
-     * Lifecycle hook: generates a unique slug before creating a promotion.
-     *
-     * The `slug` column is NOT NULL and has no DB default; without this hook the
-     * INSERT sends `DEFAULT` for slug and fails with a not-null violation. When
-     * the caller does not supply a slug, derive a unique one from the title.
+     * Lifecycle hook before create. Validates the target (no FK: the listing must
+     * exist and be the owner's, and `accommodationId` is dual-written equal to
+     * `entityId`, HOS-2270), checks the benefit (a `special_offer` text is moderated)
+     * and derives a unique slug (NOT NULL, no DB default) when none is supplied.
      */
     protected async _beforeCreate(
         data: OwnerPromotionCreateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Partial<OwnerPromotion>> {
+        const target = await resolvePromotionTarget({
+            ownerId: data.ownerId,
+            entityType: data.entityType,
+            entityId: data.entityId,
+            accommodationId: data.accommodationId,
+            accommodationModel: this.accommodationModel,
+            venueModel: this.venueModel,
+            tx: ctx.tx
+        });
+        await assertCreateBenefit({
+            entityType: target.entityType,
+            discountType: data.discountType,
+            description: data.description
+        });
         const slug = data.slug ?? (await generateOwnerPromotionSlug(data.title, this.model));
-        return { ...data, slug };
+        return { ...data, ...target, slug };
     }
 
     protected _canUpdate(actor: Actor, entity: OwnerPromotion): void {
@@ -226,7 +250,12 @@ export class OwnerPromotionService extends BaseCrudService<
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
         // SPEC-285 FIX 2: deletedAt: null guards against soft-deleted promos leaking
         // through the generic path (the D-4 path already filters these in the model).
-        const publicFilter = { ...filterParams, deletedAt: null };
+        // HOS-2270: the ACCOMMODATION door; venue promotions never show up here.
+        const publicFilter = {
+            ...filterParams,
+            deletedAt: null,
+            entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION
+        };
 
         // G-3 active-window: only return promos that are currently valid.
         // Added in SPEC-285 T-003a — previously the service did not filter by date.
@@ -261,8 +290,13 @@ export class OwnerPromotionService extends BaseCrudService<
         const filterParams = { ...params };
         filterParams.lifecycleState = LifecycleStatusEnum.ACTIVE;
         // SPEC-285 FIX 2: mirror deletedAt: null from _executeSearch so counts
-        // and items never diverge on soft-deleted rows.
-        const publicFilter = { ...filterParams, deletedAt: null };
+        // and items never diverge on soft-deleted rows. HOS-2270: and the same
+        // accommodation-only type filter (the accommodation quota counts only these).
+        const publicFilter = {
+            ...filterParams,
+            deletedAt: null,
+            entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION
+        };
 
         // G-3 active-window: mirror _executeSearch so count and items never diverge.
         const now = new Date();
@@ -331,14 +365,22 @@ export class OwnerPromotionService extends BaseCrudService<
         if (id && ctx.hookState) {
             const prev = await this.model.findById(id, ctx.tx);
             ctx.hookState.previousLifecycleState = prev?.lifecycleState ?? undefined;
+            if (prev) {
+                // HOS-2270: target-dependent rules + dual write on re-target.
+                const extra = await validatePromotionUpdate({
+                    previous: prev,
+                    data,
+                    accommodationModel: this.accommodationModel,
+                    venueModel: this.venueModel,
+                    tx: ctx.tx
+                });
+                return { ...data, ...extra } as Partial<OwnerPromotion>;
+            }
         }
         return data as Partial<OwnerPromotion>;
     }
 
-    /**
-     * Emits the `owner_promotion.created` lifecycle event after a promotion is
-     * successfully persisted (G-4, SPEC-285).
-     */
+    /** Emits `owner_promotion.created` after a promotion is persisted (G-4, SPEC-285). */
     protected override async _afterCreate(
         entity: OwnerPromotion,
         _actor: Actor,
@@ -356,13 +398,8 @@ export class OwnerPromotionService extends BaseCrudService<
     }
 
     /**
-     * Emits the `owner_promotion.activated` lifecycle event when a promotion
-     * transitions from a non-ACTIVE lifecycle state to ACTIVE (G-4, SPEC-285).
-     *
-     * Does NOT fire for:
-     * - Updates that do not change the lifecycle state.
-     * - Updates that start and end in ACTIVE state (no-op transition).
-     * - Create-as-ACTIVE (handled by `_afterCreate`).
+     * Emits `owner_promotion.activated` when a promotion goes from a non-ACTIVE state
+     * to ACTIVE (G-4, SPEC-285). Not on no-op updates nor create-as-ACTIVE.
      */
     protected override async _afterUpdate(
         entity: OwnerPromotion,
@@ -437,11 +474,10 @@ export class OwnerPromotionService extends BaseCrudService<
 
                 const publicFilter: Record<string, unknown> = {
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
-                    deletedAt: null
+                    deletedAt: null,
+                    // HOS-2270: an accommodation list; venues get theirs in HOS-2273.
+                    entityType: OwnerPromotionEntityTypeEnum.ACCOMMODATION
                 };
-                if (validated.accommodationId) {
-                    publicFilter.accommodationId = validated.accommodationId;
-                }
 
                 const now = new Date();
                 const windowCondition = this.buildActiveWindowCondition(now);
@@ -449,12 +485,13 @@ export class OwnerPromotionService extends BaseCrudService<
                     validated.audienceScope
                 );
                 const visibilityCondition = buildAccommodationVisibilityCondition();
+                const conditions = [windowCondition, audienceCondition, visibilityCondition];
+                if (validated.accommodationId) {
+                    // Dual read (HOS-2270, release N).
+                    conditions.push(accommodationTargetCondition(validated.accommodationId));
+                }
 
-                return this.model.findAll(publicFilter, { page, pageSize }, [
-                    windowCondition,
-                    audienceCondition,
-                    visibilityCondition
-                ]);
+                return this.model.findAll(publicFilter, { page, pageSize }, conditions);
             }
         });
     }

@@ -24,8 +24,8 @@ export const partnerNormalizer = (data: Record<string, unknown>) => {
     // HOS-2336: fixtures name their type by catalog slug. This normalizer keeps
     // producing the LEGACY `type` column value, because the HOS-172
     // data-migration (0019) inserts its output straight through the model,
-    // before the partner type catalog (0184) exists: it must not write a
-    // `type_id`. 0184 backfills `type_id` from `type` afterwards.
+    // before the partner type catalog (0186) exists: it must not write a
+    // `type_id`. 0186 backfills `type_id` from `type` afterwards.
     const slug = typeof typeSlug === 'string' ? typeSlug : undefined;
     return {
         ...cleanData,
