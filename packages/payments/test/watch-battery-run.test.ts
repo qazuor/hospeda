@@ -8,6 +8,7 @@ import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import {
     createWatchTransport,
+    diffMeasurementShapes,
     runWatchBattery,
     shapeOf,
     validateWatchCatalog,
@@ -204,12 +205,18 @@ describe('the production run needs the authorization of the current month', () =
 });
 
 /** An accepted baseline for RP7, so these tests see no baseline-missing alert. */
-const ACCEPTED_RP7: WatchShapeBaseline = { RP7: {} };
+const accepted = (body: unknown): WatchShapeBaseline => ({
+    RP7: { get: shapeOf({ body }) }
+});
 
 describe('comparison and alerts', () => {
     it('records a matching run with no alert and its shapes', async () => {
         const { transport } = scripted({ id: 'x', status: 'authorized' });
-        const result = await run({ catalog: [readEntry()], transport, previous: ACCEPTED_RP7 });
+        const result = await run({
+            catalog: [readEntry()],
+            transport,
+            previous: accepted({ id: 'x', status: 'authorized' })
+        });
         expect(result.run.outcome).toBe('completed');
         expect(result.run.alerts).toEqual([]);
         expect(result.run.measurements.RP7?.outcome).toBe('matched');
@@ -223,7 +230,11 @@ describe('comparison and alerts', () => {
 
     it('alerts with what it expected and what it got when the value changed, and still completes', async () => {
         const { transport } = scripted({ other: 1 });
-        const result = await run({ catalog: [readEntry()], transport, previous: ACCEPTED_RP7 });
+        const result = await run({
+            catalog: [readEntry()],
+            transport,
+            previous: accepted({ other: 1 })
+        });
         expect(result.run.outcome).toBe('completed');
         expect(result.run.measurements.RP7?.outcome).toBe('changed');
         expect(result.run.alerts).toEqual([
@@ -290,11 +301,66 @@ describe('comparison and alerts', () => {
         expect(second.run.alerts).toEqual([]);
     });
 
-    it('ignores previous shapes of labels the measurement no longer sends', async () => {
-        const previous: WatchShapeBaseline = { RP7: { gone: { $: 'object', a: 'string' } } };
+    it('alerts, on every run, for a request label that is NEW for an accepted measurement', async () => {
+        const accepted: WatchShapeBaseline = { RP7: { get: shapeOf({ body: { id: 'x' } }) } };
+        const store = memoryRunStore({ baseline: accepted });
+        const entry = readEntry({
+            measure: async (ctx) => {
+                await ctx.send({
+                    label: 'get',
+                    request: { method: 'GET', path: '/preapproval/abc' }
+                });
+                await ctx.send({
+                    label: 'extra',
+                    request: { method: 'GET', path: '/preapproval/def' }
+                });
+                return { found: true };
+            }
+        });
+        const { transport } = scripted({ id: 'x' });
+        const first = await run({ catalog: [entry], transport, store });
+        const second = await run({ catalog: [entry], transport, store });
+        for (const result of [first, second]) {
+            expect(result.run.alerts).toEqual([
+                {
+                    measurementId: 'RP7',
+                    kind: 'shape_changed',
+                    label: 'extra',
+                    expected: {},
+                    obtained: { $: 'object', id: 'string' },
+                    details: ['new request: extra']
+                }
+            ]);
+        }
+    });
+
+    it('alerts for a request label that is GONE from an accepted measurement', async () => {
+        const previous: WatchShapeBaseline = {
+            RP7: { get: shapeOf({ body: { id: 'x' } }), gone: { $: 'object', a: 'string' } }
+        };
         const { transport } = scripted({ id: 'x' });
         const result = await run({ catalog: [readEntry()], transport, previous });
-        expect(result.run.alerts).toEqual([]);
+        expect(result.run.alerts).toEqual([
+            {
+                measurementId: 'RP7',
+                kind: 'shape_changed',
+                label: 'gone',
+                expected: { $: 'object', a: 'string' },
+                obtained: {},
+                details: ['request no longer observed: gone']
+            }
+        ]);
+    });
+
+    it('says the same thing the admin review says: one rule for both', async () => {
+        const accepted = { a: { $: 'object', x: 'string' }, gone: { $: 'object' } };
+        const observed = { a: { $: 'object', y: 'string' }, extra: { $: 'object' } };
+        expect(diffMeasurementShapes({ accepted, observed }).flatMap((d) => d.formatted)).toEqual([
+            'a: removed: x (string)',
+            'a: added: y (string)',
+            'new request: extra',
+            'request no longer observed: gone'
+        ]);
     });
 
     it('fails the run, after running the others, when a measurement cannot be read', async () => {

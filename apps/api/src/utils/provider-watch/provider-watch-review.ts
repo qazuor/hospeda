@@ -6,34 +6,22 @@
  * @module utils/provider-watch/provider-watch-review
  */
 import { providerWatchRunModel } from '@repo/db';
-import { diffShapes, type WatchAccount } from '@repo/payments';
+import { diffMeasurementShapes, type WatchAccount } from '@repo/payments';
 import type { ProviderWatchShapeReview } from '@repo/schemas';
 import { z } from 'zod';
 
 const shapesSchema = z.record(z.string(), z.record(z.string(), z.string()));
 const measurementsSchema = z.record(z.string(), z.object({ shapes: shapesSchema }));
 
-/** Differences between the accepted shapes and an observation, one line per field. */
+/** Differences between the accepted shapes and an observation: the SAME rule the engine alerts with. */
 function differencesOf(args: {
     readonly accepted: z.infer<typeof shapesSchema> | null;
     readonly observed: z.infer<typeof shapesSchema>;
 }): readonly string[] {
     if (args.accepted === null) return ['no accepted baseline yet'];
-    const lines: string[] = [];
-    for (const [label, observed] of Object.entries(args.observed)) {
-        const accepted = args.accepted[label];
-        if (accepted === undefined) {
-            lines.push(`new request: ${label}`);
-            continue;
-        }
-        for (const line of diffShapes({ previous: accepted, current: observed })) {
-            lines.push(`${label}: ${line}`);
-        }
-    }
-    for (const label of Object.keys(args.accepted)) {
-        if (args.observed[label] === undefined) lines.push(`request no longer observed: ${label}`);
-    }
-    return lines;
+    return diffMeasurementShapes({ accepted: args.accepted, observed: args.observed }).flatMap(
+        (difference) => difference.formatted
+    );
 }
 
 /**

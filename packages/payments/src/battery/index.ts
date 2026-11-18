@@ -9,7 +9,13 @@ export {
     type RunWatchBatteryResult,
     runWatchBattery
 } from './run-watch-battery';
-export { diffShapes, jsonEqual, shapeOf } from './shape';
+export {
+    diffMeasurementShapes,
+    diffShapes,
+    jsonEqual,
+    type MeasurementShapeDifference,
+    shapeOf
+} from './shape';
 export type {
     JsonValue,
     MeasurementShapes,

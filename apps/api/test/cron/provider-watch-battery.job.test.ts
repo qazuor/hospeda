@@ -123,7 +123,7 @@ describe('provider watch battery cron', () => {
             pingWatchdog
         } = deps({
             catalog: [changed],
-            readBaseline: async () => ({ RP7: {} })
+            readBaseline: async () => ({ RP7: { get: { $: 'object', id: 'string' } } })
         });
         const result = await createProviderWatchBatteryJob(d).handler(context());
         expect(result.success).toBe(true);

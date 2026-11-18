@@ -133,6 +133,50 @@ export function diffShapes(args: {
     return lines;
 }
 
+/** One request label whose shape differs between the accepted baseline and an observation. */
+export interface MeasurementShapeDifference {
+    readonly label: string;
+    /** What changed, without the label. */
+    readonly details: readonly string[];
+    /** The same lines as the admin review shows them: field changes carry the label as a prefix. */
+    readonly formatted: readonly string[];
+}
+
+/**
+ * Compares ALL the shapes of one measurement with its accepted baseline: a label that changed, a
+ * label that is NEW (a request the measurement did not send before) and a label that is GONE.
+ * The engine alerts with it and the admin review lists with it, so both always agree.
+ *
+ * @param args.accepted - The accepted shapes, by request label
+ * @param args.observed - The shapes this run observed, by request label
+ * @returns One entry per label that differs; empty when they agree
+ */
+export function diffMeasurementShapes(args: {
+    readonly accepted: Readonly<Record<string, ShapeMap>>;
+    readonly observed: Readonly<Record<string, ShapeMap>>;
+}): readonly MeasurementShapeDifference[] {
+    const out: MeasurementShapeDifference[] = [];
+    for (const [label, observed] of Object.entries(args.observed)) {
+        const accepted = args.accepted[label];
+        if (accepted === undefined) {
+            const line = `new request: ${label}`;
+            out.push({ label, details: [line], formatted: [line] });
+            continue;
+        }
+        const details = diffShapes({ previous: accepted, current: observed });
+        if (details.length > 0) {
+            out.push({ label, details, formatted: details.map((line) => `${label}: ${line}`) });
+        }
+    }
+    for (const label of Object.keys(args.accepted)) {
+        if (args.observed[label] === undefined) {
+            const line = `request no longer observed: ${label}`;
+            out.push({ label, details: [line], formatted: [line] });
+        }
+    }
+    return out;
+}
+
 /**
  * Structural equality of two JSON values, independent of key order.
  *

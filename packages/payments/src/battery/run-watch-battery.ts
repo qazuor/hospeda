@@ -17,7 +17,7 @@
  * @module battery/run-watch-battery
  */
 import type { Clock } from '@repo/billing-verticals-contract';
-import { diffShapes, jsonEqual, shapeOf } from './shape';
+import { diffMeasurementShapes, jsonEqual, shapeOf } from './shape';
 import {
     type JsonValue,
     type MeasurementShapes,
@@ -191,23 +191,16 @@ function shapeAlerts(args: {
             }
         ];
     }
-    const alerts: WatchAlert[] = [];
-    for (const [label, previousShape] of Object.entries(args.previous)) {
-        const currentShape = args.current[label];
-        if (currentShape === undefined) continue;
-        const details = diffShapes({ previous: previousShape, current: currentShape });
-        if (details.length > 0) {
-            alerts.push({
-                measurementId: args.id,
-                kind: 'shape_changed',
-                label,
-                expected: previousShape,
-                obtained: currentShape,
-                details
-            });
-        }
-    }
-    return alerts;
+    return diffMeasurementShapes({ accepted: args.previous, observed: args.current }).map(
+        ({ label, details }) => ({
+            measurementId: args.id,
+            kind: 'shape_changed' as const,
+            label,
+            expected: args.previous?.[label] ?? {},
+            obtained: args.current[label] ?? {},
+            details
+        })
+    );
 }
 
 async function measureEntry(args: {
