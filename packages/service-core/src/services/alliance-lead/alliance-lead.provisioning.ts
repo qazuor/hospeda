@@ -1,6 +1,8 @@
 import type { HostTradeCategoryModel, HostTradeModel, SelectAllianceLead } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import {
+    type AllianceLeadProvisioningOutcome,
+    type AllianceLeadProvisionSkipReason,
     type HostTradeBenefitTypeEnum,
     HostTradeBenefitTypeEnumSchema,
     LifecycleStatusEnum,
@@ -41,11 +43,7 @@ export interface ProvisionListingInput {
 }
 
 /** Why provisioning did not produce a new listing, when it did not. */
-export type ProvisionSkipReason =
-    | 'not-a-service-provider'
-    | 'already-provisioned'
-    | 'legacy-lead-without-typed-fields'
-    | 'no-active-category';
+export type ProvisionSkipReason = AllianceLeadProvisionSkipReason;
 
 /**
  * What a lead's approval will produce, decided WITHOUT touching the database.
@@ -136,6 +134,25 @@ export type ProvisionListingResult =
           readonly reason: ProvisionSkipReason;
           readonly hostTradeId?: string;
       };
+
+/**
+ * Maps a {@link ProvisionListingResult} to the outcome reported by the admin
+ * API (HOS-2339). The one mapping shared by `markHandled` and `provisionListing`.
+ *
+ * @param params - `{ result }`.
+ * @returns The wire-shaped outcome.
+ */
+export const toProvisioningOutcome = (params: {
+    readonly result: ProvisionListingResult;
+}): AllianceLeadProvisioningOutcome => {
+    const { result } = params;
+    if (result.provisioned) return { provisioned: true, hostTradeId: result.hostTradeId };
+    return {
+        provisioned: false,
+        reason: result.reason,
+        ...(result.hostTradeId === undefined ? {} : { hostTradeId: result.hostTradeId })
+    };
+};
 
 /**
  * Composes the listing's `contact` free-text field from the lead's contact

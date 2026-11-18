@@ -8,8 +8,9 @@
  * `service_provider`). It records the applicant's contact info + a
  * free-text message (kind-specific fields are serialized into `message` by
  * the submitting form, HOS-277 §7.3) so an admin can review and, if
- * approved, provision the corresponding role/entity BY HAND (HOS-277
- * NG-1 — approving never auto-provisions anything).
+ * approved, provision the corresponding role/entity. Approving a
+ * `service_provider` provisions its `host_trades` listing (HOS-278); the other
+ * kinds are provisioned separately (partner) or by hand.
  *
  * ## Design decisions
  * - Extends `BaseService` (not `BaseCrudService`), mirroring
@@ -44,7 +45,9 @@ import {
     type AllianceLeadCreateInput,
     type AllianceLeadKind,
     AllianceLeadMarkHandledSchema,
+    type AllianceLeadProvisioningOutcome,
     AllianceLeadSubmissionSchema,
+    type AllianceLeadWithProvisioning,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -68,7 +71,8 @@ import {
 } from './alliance-lead.partner-provisioning';
 import {
     provisionServiceProviderListing,
-    resolveProvisionPlan
+    resolveProvisionPlan,
+    toProvisioningOutcome
 } from './alliance-lead.provisioning';
 
 // ---------------------------------------------------------------------------
@@ -220,6 +224,14 @@ export interface MarkAllianceLeadHandledInput {
     };
 }
 
+/** Input for {@link AllianceLeadService.provisionListing} (HOS-2339). */
+export interface ProvisionAllianceLeadListingInput {
+    /** The admin actor retrying provisioning. */
+    readonly actor: Actor;
+    /** UUID of the approved `service_provider` lead. */
+    readonly id: string;
+}
+
 /** Input for {@link AllianceLeadService.approveAndProvisionPartner}. */
 export interface ApproveAndProvisionPartnerInput {
     /** The admin actor performing the action. */
@@ -253,6 +265,11 @@ export interface ApproveAndProvisionPartnerOutput {
 
 /** Validates the `{ id, status, adminNote? }` shape for `markHandled`. */
 const markHandledInputSchema = AllianceLeadMarkHandledSchema.extend({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+/** Validates the `{ id }` shape for the provisioning retry. */
+const provisionListingInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
@@ -462,8 +479,10 @@ const resolveApplicantUserId = (actor: Actor): string | null => {
  * - `listForAdmin({ actor, query })` — list leads with optional kind/status
  *   filters (admin, requires `ALLIANCE_LEAD_VIEW_ALL`).
  * - `markHandled({ actor, id, input })` — approve or reject a lead (admin,
- *   requires `ALLIANCE_LEAD_MANAGE`). NEVER auto-provisions any role/entity
- *   (HOS-277 NG-1) — it only records the workflow decision.
+ *   requires `ALLIANCE_LEAD_MANAGE`). Approving a `service_provider` also
+ *   provisions its listing and reports the outcome (HOS-2339).
+ * - `provisionListing({ actor, id })` — retry provisioning for an approved
+ *   `service_provider` lead; never re-sends the approval email (HOS-2339).
  *
  * @example
  * ```ts
@@ -1014,13 +1033,14 @@ export class AllianceLeadService extends BaseService {
      *
      * @param params - `{ actor, id, input }`.
      * @param ctx - Optional service execution context.
-     * @returns `ServiceOutput<AllianceLead>` wrapping the updated lead.
+     * @returns `ServiceOutput<AllianceLeadWithProvisioning>`: the updated lead plus,
+     *   for an approved `service_provider`, the provisioning outcome (HOS-2339).
      * @throws `NOT_FOUND` when the lead does not exist.
      */
     public async markHandled(
         params: MarkAllianceLeadHandledInput,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<AllianceLead>> {
+    ): Promise<ServiceOutput<AllianceLeadWithProvisioning>> {
         const { actor, id, input } = params;
         return this.runWithLoggingAndValidation({
             methodName: 'markHandled',
@@ -1105,7 +1125,10 @@ export class AllianceLeadService extends BaseService {
                 // use savepoints), which is exactly the atomicity we are buying.
                 const applyDecision = async (
                     txCtx: ServiceContext | undefined
-                ): Promise<SelectAllianceLead> => {
+                ): Promise<{
+                    row: SelectAllianceLead;
+                    outcome: AllianceLeadProvisioningOutcome | undefined;
+                }> => {
                     const provisioning =
                         validated.status === 'approved'
                             ? await provisionServiceProviderListing({
@@ -1158,10 +1181,22 @@ export class AllianceLeadService extends BaseService {
                         );
                     }
 
-                    return row as SelectAllianceLead;
+                    return {
+                        row: row as SelectAllianceLead,
+                        // HOS-2339: only a service_provider approval reports an
+                        // outcome. Rejections and the other kinds add nothing.
+                        outcome:
+                            provisioning &&
+                            !(
+                                !provisioning.provisioned &&
+                                provisioning.reason === 'not-a-service-provider'
+                            )
+                                ? toProvisioningOutcome({ result: provisioning })
+                                : undefined
+                    };
                 };
 
-                const updated = execCtx?.tx
+                const { row: updated, outcome } = execCtx?.tx
                     ? await applyDecision(execCtx)
                     : willProvision
                       ? await withServiceTransaction(applyDecision)
@@ -1222,7 +1257,178 @@ export class AllianceLeadService extends BaseService {
                         });
                 }
 
-                return lead;
+                return outcome ? { ...lead, provisioning: outcome } : lead;
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // provisionListing — admin (requires ALLIANCE_LEAD_MANAGE), HOS-2339
+    // -----------------------------------------------------------------------
+
+    /**
+     * Re-runs `host_trades` provisioning for an already-approved
+     * `service_provider` lead, and NOTHING else (HOS-2339).
+     *
+     * The dedicated retry for an approval that skipped provisioning (no active
+     * category, legacy lead). It never calls the decision notifier: the
+     * applicant already got the approval email and must not get another. It
+     * DOES mint and send a claim invite, but only when this call newly creates
+     * the listing for a lead with no applicant user (HOS-599: otherwise the
+     * listing would be ownerless with nobody invited to claim it).
+     *
+     * One transaction: the lead row is locked `FOR UPDATE` and its
+     * `provisionedHostTradeId` is read AFTER the lock, so two concurrent
+     * retries create exactly one listing.
+     *
+     * @param params - `{ actor, id }`.
+     * @param ctx - Optional service execution context.
+     * @returns `ServiceOutput<AllianceLeadWithProvisioning>`.
+     * @throws `FORBIDDEN` without `ALLIANCE_LEAD_MANAGE`.
+     * @throws `NOT_FOUND` when the lead does not exist.
+     * @throws `VALIDATION_ERROR` (reason `NOT_A_SERVICE_PROVIDER`) for another kind.
+     * @throws `ALREADY_EXISTS` (reason `LEAD_NOT_APPROVED`) when not approved.
+     */
+    public async provisionListing(
+        params: ProvisionAllianceLeadListingInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AllianceLeadWithProvisioning>> {
+        const { actor, id } = params;
+        return this.runWithLoggingAndValidation({
+            methodName: 'provisionListing',
+            input: { actor, id },
+            schema: provisionListingInputSchema,
+            ctx,
+            execute: async (validated, a, execCtx) => {
+                if (!hasPermission(a, PermissionEnum.ALLIANCE_LEAD_MANAGE)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ALLIANCE_LEAD_MANAGE required to handle alliance leads'
+                    );
+                }
+
+                const run = async (
+                    txCtx: ServiceContext | undefined
+                ): Promise<{
+                    row: SelectAllianceLead;
+                    outcome: AllianceLeadProvisioningOutcome;
+                    freshClaim: { token: string; expiresAt: Date } | null;
+                }> => {
+                    const locked = await this._model.findByIdForUpdate(validated.id, txCtx?.tx);
+                    if (!locked || locked.deletedAt) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `Alliance lead not found: ${validated.id}`
+                        );
+                    }
+                    // Kind BEFORE status, so a sponsor lead never reads "not approved".
+                    if (locked.kind !== 'service_provider') {
+                        throw new ServiceError(
+                            ServiceErrorCode.VALIDATION_ERROR,
+                            `Alliance lead ${validated.id} is not a service provider application`,
+                            { reason: 'NOT_A_SERVICE_PROVIDER' },
+                            'NOT_A_SERVICE_PROVIDER'
+                        );
+                    }
+                    if (locked.status !== 'approved') {
+                        throw new ServiceError(
+                            ServiceErrorCode.ALREADY_EXISTS,
+                            `Alliance lead ${validated.id} is not approved`,
+                            { reason: 'LEAD_NOT_APPROVED' },
+                            'LEAD_NOT_APPROVED'
+                        );
+                    }
+
+                    const result = await provisionServiceProviderListing({
+                        lead: locked,
+                        hostTradeModel: this._hostTradeModel,
+                        categoryModel: this._categoryModel,
+                        actorId: a.id,
+                        logger: this.logger,
+                        tx: txCtx?.tx
+                    });
+                    const outcome = toProvisioningOutcome({ result });
+                    if (!result.provisioned) {
+                        return { row: locked, outcome, freshClaim: null };
+                    }
+
+                    const freshClaim =
+                        locked.applicantUserId === null
+                            ? {
+                                  token: generateClaimToken(),
+                                  expiresAt: new Date(
+                                      Date.now() + CLAIM_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000
+                                  )
+                              }
+                            : null;
+
+                    // TYPE-WORKAROUND: `claimToken` is a real column the entity schema omits (see markHandled).
+                    const updatePayload: Partial<AllianceLead> &
+                        Partial<Pick<SelectAllianceLead, 'claimToken'>> = {
+                        updatedById: a.id,
+                        provisionedHostTradeId: result.hostTradeId,
+                        ...(freshClaim
+                            ? {
+                                  claimToken: digestClaimToken(freshClaim.token),
+                                  claimExpiresAt: freshClaim.expiresAt
+                              }
+                            : {})
+                    };
+                    const row = await this._model.update(
+                        { id: validated.id },
+                        updatePayload,
+                        txCtx?.tx
+                    );
+                    if (!row) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `Alliance lead not found: ${validated.id}`
+                        );
+                    }
+                    return { row: row as SelectAllianceLead, outcome, freshClaim };
+                };
+
+                let done: Awaited<ReturnType<typeof run>>;
+                try {
+                    done = execCtx?.tx ? await run(execCtx) : await withServiceTransaction(run);
+                } catch (error) {
+                    if (!(error instanceof ServiceError)) {
+                        this.logger.error(
+                            {
+                                leadId: validated.id,
+                                error: error instanceof Error ? error.message : String(error)
+                            },
+                            '[alliance-lead] provisioning retry failed; nothing persisted'
+                        );
+                    }
+                    throw error;
+                }
+
+                const lead = toAllianceLead(done.row);
+
+                if (done.freshClaim !== null && this._claimInviter !== null) {
+                    const claim = done.freshClaim;
+                    void this._claimInviter
+                        .inviteToClaim({
+                            leadId: lead.id,
+                            email: lead.email,
+                            contactName: lead.contactName,
+                            kind: lead.kind,
+                            token: claim.token,
+                            expiresAt: claim.expiresAt
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                {
+                                    leadId: lead.id,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                '[alliance-lead] claim invitation failed to send at provisioning retry'
+                            );
+                        });
+                }
+
+                return { ...lead, provisioning: done.outcome };
             }
         });
     }
