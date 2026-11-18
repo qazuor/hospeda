@@ -2609,6 +2609,9 @@
         "entityInteractionKind": {
             "invalid": "El tipo de interacción no es válido"
         },
+        "venueWhatsappVisibility": {
+            "invalid": "La visibilidad del WhatsApp no es válida"
+        },
         "featureCategory": {
             "invalid": "Elegí una categoría de característica válida"
         },

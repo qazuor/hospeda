@@ -42,7 +42,7 @@ import { LISTING_FIELD_ID_SUFFIXES, LISTING_FIELD_PREFIX } from './field-ids';
  * The `contactInfo` phone keys this control can edit: the main (mobile) phone
  * and the optional landline (HOS-2042).
  */
-export type ListingPhoneKey = 'mobilePhone' | 'workPhone';
+export type ListingPhoneKey = 'mobilePhone' | 'workPhone' | 'whatsapp';
 
 /** Default label text per key, used as the i18n fallback. */
 const PHONE_LABELS: Readonly<Record<ListingPhoneKey, { key: string; fallback: string }>> = {
@@ -50,7 +50,9 @@ const PHONE_LABELS: Readonly<Record<ListingPhoneKey, { key: string; fallback: st
     workPhone: {
         key: 'listing.owner.editor.contactField.landlinePhone',
         fallback: 'Teléfono fijo'
-    }
+    },
+    // HOS-2256: the venue WhatsApp number, same country + number pair.
+    whatsapp: { key: 'listing.owner.editor.contactField.whatsapp', fallback: 'WhatsApp' }
 };
 
 /** Builds the id identity of one phone control from its `contactInfo` key. */

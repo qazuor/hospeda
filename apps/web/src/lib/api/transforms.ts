@@ -37,7 +37,8 @@ import type {
     VenueEvent,
     VenueMenuSection,
     VenueOpeningHoursEntry,
-    VenueSocialNetworks
+    VenueSocialNetworks,
+    VenueWhatsappState
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { parseListingPolicyValues } from '../listing/listing-policies';
@@ -2983,6 +2984,22 @@ function toVenueDetailLocation(raw: unknown): VenueDetailLocation | null {
 }
 
 /**
+ * Reads the public WhatsApp block of a venue (HOS-2256). Fail-closed: anything
+ * that is not exactly one of the two documented shapes is "no button", and the
+ * number is kept only for `PUBLIC`, so a malformed payload can never turn a
+ * `LOGGED_IN_ONLY` block into a published number.
+ */
+function parseVenueWhatsapp(raw: unknown): VenueWhatsappState | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    if (obj.mode === 'LOGGED_IN_ONLY') return { mode: 'LOGGED_IN_ONLY' };
+    if (obj.mode === 'PUBLIC' && typeof obj.number === 'string' && obj.number.trim()) {
+        return { mode: 'PUBLIC', number: obj.number.trim() };
+    }
+    return null;
+}
+
+/**
  * Transforms a raw API venue item to VenueDetailData props.
  *
  * Used on the venue detail page where the full `VenuePublic` shape
@@ -3015,6 +3032,7 @@ export function toVenueDetailPageProps({
         ),
         richDescription: item.richDescription == null ? null : String(item.richDescription),
         contactInfo: normalizeVenueContactInfo(item.contactInfo),
+        whatsapp: parseVenueWhatsapp(item.whatsapp),
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold

@@ -74,6 +74,12 @@
         "contactLandlineAriaLabel": "Llamar al teléfono fijo del comercio",
         "contactEmailAriaLabel": "Enviar email al comercio",
         "contactWebsiteAriaLabel": "Visitar el sitio web del comercio",
+        "whatsapp": {
+            "cta": "Escribir por WhatsApp",
+            "signInCta": "Iniciá sesión para escribir por WhatsApp",
+            "loading": "Cargando WhatsApp",
+            "messageTemplate": "Hola, vi tu ficha de {{name}} en Hospeda y quería consultarte algo."
+        },
         "menuCarta": {
             "title": "Carta",
             "attachmentImage": "Carta en imagen",

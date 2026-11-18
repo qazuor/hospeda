@@ -9,6 +9,7 @@ import {
     getVenueDailySpecials,
     getVenueEvents,
     getVenueMenu,
+    resolveVenuePublicWhatsapp,
     ServiceError,
     VenueService
 } from '@repo/service-core';
@@ -139,6 +140,13 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                     ...withPublicVisibleFaqs(venue),
                     // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
                     isFeatured: resolvePublicIsFeatured(venue),
+                    // HOS-2256: the WhatsApp block. The number is in the payload
+                    // ONLY when the owner chose PUBLIC; `contactInfo` is still
+                    // narrowed by the schema and never names it.
+                    whatsapp: resolveVenuePublicWhatsapp({
+                        contactInfo: venue.contactInfo,
+                        mode: venue.whatsappVisibility
+                    }),
                     amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
                     features: featuresData.length > 0 ? featuresData : undefined,
                     menuSections:

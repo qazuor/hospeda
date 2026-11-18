@@ -1,5 +1,5 @@
 {
-  "id": "72ac64f3-3246-47af-ad57-2e4660f7b444",
+  "id": "f44de924-0d2f-4e09-84fe-716922ab25cf",
   "prevId": "974899a4-6421-43a5-aca0-000bc3d59f0a",
   "version": "7",
   "dialect": "postgresql",
@@ -27624,6 +27624,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "whatsapp_visibility": {
+          "name": "whatsapp_visibility",
+          "type": "venue_whatsapp_visibility_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
         "location": {
           "name": "location",
           "type": "jsonb",
@@ -28315,12 +28322,6 @@
         "end_time": {
           "name": "end_time",
           "type": "time",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "ticket_url": {
-          "name": "ticket_url",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         },
@@ -36945,6 +36946,14 @@
         "FOOD_TRUCK",
         "PUB",
         "BOLICHE"
+      ]
+    },
+    "public.venue_whatsapp_visibility_enum": {
+      "name": "venue_whatsapp_visibility_enum",
+      "schema": "public",
+      "values": [
+        "PUBLIC",
+        "LOGGED_IN_ONLY"
       ]
     },
     "public.visibility_enum": {

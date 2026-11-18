@@ -1643,8 +1643,15 @@
     {
       "idx": 234,
       "version": "7",
-      "when": 1795021429359,
-      "tag": "0234_hos2255_venue_event_ticket_url",
+      "when": 1795019853854,
+      "tag": "0234_hos2256_venue_whatsapp_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1795023776524,
+      "tag": "0237_hos2255_venue_event_ticket_url",
       "breakpoints": true
     }
   ]
