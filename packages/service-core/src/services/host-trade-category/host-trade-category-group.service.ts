@@ -36,6 +36,13 @@ import { buildCatalogSearchCondition } from './host-trade-category.search';
 const ADMIN_SEARCH_TERM_KEY = 'adminSearchTerm';
 
 /**
+ * `hookState` key telling `_executeAdminSearch` whether the caller sent an explicit
+ * `sort` (HOS-2340). `AdminSearchBaseSchema.sort` has a Zod default, so after
+ * validation an omitted sort and an explicit `createdAt:desc` are indistinguishable.
+ */
+const ADMIN_HAS_EXPLICIT_SORT_KEY = 'adminHasExplicitSort';
+
+/**
  * Service for the provider-trade category GROUPS (HOS-919): the headings under
  * which categories are listed in the selector and on the marketing page.
  *
@@ -180,7 +187,8 @@ export class HostTradeCategoryGroupService extends BaseCrudService<
     /**
      * Admin list. Carries the raw `search` term to {@link _executeAdminSearch}
      * through `hookState`, because the base class only turns it into SQL over
-     * plain columns.
+     * plain columns, and whether the caller sent an explicit `sort` (read from the
+     * RAW params, before the schema default hides it).
      */
     public override async adminList(
         actor: Actor,
@@ -190,7 +198,11 @@ export class HostTradeCategoryGroupService extends BaseCrudService<
         const term = typeof params.search === 'string' ? params.search : undefined;
         return super.adminList(actor, params, {
             ...ctx,
-            hookState: { ...ctx?.hookState, [ADMIN_SEARCH_TERM_KEY]: term }
+            hookState: {
+                ...ctx?.hookState,
+                [ADMIN_SEARCH_TERM_KEY]: term,
+                [ADMIN_HAS_EXPLICIT_SORT_KEY]: typeof params.sort === 'string'
+            }
         });
     }
 
@@ -204,7 +216,17 @@ export class HostTradeCategoryGroupService extends BaseCrudService<
         });
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
         if (textCondition) extraConditions.push(textCondition);
-        return super._executeAdminSearch({ ...params, extraConditions });
+        if (params.ctx?.hookState?.[ADMIN_HAS_EXPLICIT_SORT_KEY] === true) {
+            return super._executeAdminSearch({ ...params, extraConditions });
+        }
+        // No explicit sort: display weight, Spanish name, id (HOS-2340 D3).
+        return this.model.findAdminPage({
+            where: { ...params.where, ...params.entityFilters },
+            additionalConditions: [...(params.search ? [params.search] : []), ...extraConditions],
+            page: params.pagination.page,
+            pageSize: params.pagination.pageSize,
+            tx: params.ctx?.tx
+        });
     }
 
     protected async _executeSearch(

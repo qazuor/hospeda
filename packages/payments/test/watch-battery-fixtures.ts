@@ -9,6 +9,7 @@ export interface MemoryRunStore {
         readonly measurementId: string;
         readonly providerIds?: readonly string[];
         readonly writeKeys?: readonly string[];
+        readonly ledger?: { readonly charged: number; readonly refunded: number };
     }[];
     readonly finished: { readonly runId: string; readonly run: WatchRunRecord }[];
     /** The run that consumed the authorization, if any. */
@@ -29,6 +30,7 @@ export interface MemoryRunStore {
             readonly measurementId: string;
             readonly providerIds?: readonly string[];
             readonly writeKeys?: readonly string[];
+            readonly ledger: { readonly charged: number; readonly refunded: number };
         }) => Promise<void>;
         readonly finishRun: (args: { runId: string; run: WatchRunRecord }) => Promise<void>;
     };

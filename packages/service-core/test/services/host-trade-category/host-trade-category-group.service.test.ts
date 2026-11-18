@@ -1,4 +1,4 @@
-import { HostTradeCategoryGroupModel } from '@repo/db';
+import { HostTradeCategoryGroupModel, hostTradeCategoryGroups } from '@repo/db';
 import type { HostTradeCategoryGroup } from '@repo/schemas';
 import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -64,10 +64,13 @@ describe('HostTradeCategoryGroupService', () => {
             'softDelete',
             'restore',
             'findAll',
+            'findAdminPage',
             'count',
             'countActiveChildren',
-            'lockForUpdate'
+            'lockForUpdate',
+            'getTable'
         ]);
+        asMock(model.getTable).mockReturnValue(hostTradeCategoryGroups);
         txState.calls = 0;
         service = new HostTradeCategoryGroupService({ logger: createLoggerMock() }, model);
         vi.clearAllMocks();
@@ -250,6 +253,55 @@ describe('HostTradeCategoryGroupService', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.count).toBe(1);
+        });
+    });
+
+    describe('adminList ordering (HOS-2340)', () => {
+        const admin = createActor({
+            permissions: [
+                PermissionEnum.HOST_TRADE_CATEGORY_VIEW,
+                PermissionEnum.ACCESS_PANEL_ADMIN
+            ]
+        });
+
+        it('should use the catalog default order when no sort is sent (AC-3.2)', async () => {
+            asMock(model.findAdminPage).mockResolvedValue({ items: [group], total: 1 });
+
+            await service.adminList(admin, { page: 1, pageSize: 100 });
+
+            expect(model.findAll).not.toHaveBeenCalled();
+            expect(asMock(model.findAdminPage).mock.calls[0]?.[0]).toMatchObject({
+                page: 1,
+                pageSize: 100,
+                where: { deletedAt: null }
+            });
+        });
+
+        it('should include deleted rows only when includeDeleted is true (AC-3.5)', async () => {
+            asMock(model.findAdminPage).mockResolvedValue({ items: [], total: 0 });
+
+            await service.adminList(admin, { includeDeleted: true });
+
+            const [input] = asMock(model.findAdminPage).mock.calls[0] as [
+                { where: Record<string, unknown> }
+            ];
+            expect(input.where).not.toHaveProperty('deletedAt');
+        });
+
+        it.each([
+            'displayWeight:desc',
+            'createdAt:desc'
+        ])('should honour an explicit sort as sent: %s (AC-3.4)', async (sort) => {
+            asMock(model.findAll).mockResolvedValue({ items: [group], total: 1 });
+
+            await service.adminList(admin, { sort });
+
+            expect(model.findAdminPage).not.toHaveBeenCalled();
+            const [field, direction] = sort.split(':');
+            expect(asMock(model.findAll).mock.calls[0]?.[1]).toMatchObject({
+                sortBy: field,
+                sortOrder: direction
+            });
         });
     });
 

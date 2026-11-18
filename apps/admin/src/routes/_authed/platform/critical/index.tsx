@@ -5,6 +5,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SessionRecordingCard } from '@/features/session-recording/components/SessionRecordingCard';
 import {
     legacyAdapters,
     usePlatformSetting,
@@ -98,6 +99,9 @@ function CriticalSettingsPage() {
                         {t('admin-pages.systemSettings.critical.subtitle')}
                     </p>
                 </div>
+
+                {/* HOS-2347: renders only for ANALYTICS_SESSION_RECORDING_MANAGE. */}
+                <SessionRecordingCard />
 
                 <Card>
                     <CardHeader>

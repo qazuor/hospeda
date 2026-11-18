@@ -36,6 +36,7 @@ import {
     listingRetentionPassJob,
     manualGraceExpiryJob,
     manualInstallmentOpenJob,
+    mcpAuditRetentionJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
@@ -127,6 +128,8 @@ export const cronJobs: CronJobDefinition[] = [
     // HOS-2101: the host AI questions panel's 12-month retention and weekly digest.
     aiListingQuestionsRetentionJob,
     aiQuestionsWeeklyDigestJob,
+    // HOS-2335 D-13: 12-month retention of the assistant activity (mcp.tool.call only).
+    mcpAuditRetentionJob,
     // HOS-2254: past one-off venue events are deleted after 60 days.
     venueEventsPastCleanupJob
 ];

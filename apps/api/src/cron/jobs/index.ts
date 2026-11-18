@@ -45,6 +45,7 @@ export { listingRemoteDeletionRetryJob } from './listing-remote-deletion-retry.j
 export { listingRetentionPassJob } from './listing-retention-pass.job.js';
 export { manualGraceExpiryJob } from './manual-grace-expiry.job.js';
 export { manualInstallmentOpenJob } from './manual-installment-open.job.js';
+export { mcpAuditRetentionJob } from './mcp-audit-retention.job.js';
 export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
 export { notificationLogPurgeJob } from './notification-log-purge.job.js';

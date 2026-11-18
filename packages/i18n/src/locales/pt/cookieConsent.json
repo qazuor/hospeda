@@ -12,7 +12,7 @@
         },
         "analytics": {
             "label": "Análise de uso",
-            "description": "Estatísticas anônimas sobre como os visitantes navegam o site (páginas mais vistas, fluxos de busca). Não inclui monitoramento de erros."
+            "description": "Estatísticas anônimas sobre como os visitantes navegam o site (páginas mais vistas, fluxos de busca). Quando ativo, pode incluir gravações de sessão e mapas de calor com todo o texto e os campos ocultos; nunca no login, na sua conta, no pagamento, na publicação nem nos formulários de contato. Não inclui monitoramento de erros."
         },
         "marketing": {
             "label": "Marketing",
