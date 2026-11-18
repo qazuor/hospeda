@@ -153,7 +153,12 @@ describe('TrafficStatsCards (HOS-2119)', () => {
         expect(screen.queryByTestId('traffic-stats-cards')).not.toBeInTheDocument();
     });
 
-    it('renders nothing when available is false', async () => {
+    it.each([
+        EntityTypeEnum.ACCOMMODATION,
+        EntityTypeEnum.VENUE,
+        EntityTypeEnum.EXPERIENCE,
+        EntityTypeEnum.PARTNER
+    ] as const)('shows the unavailable message, not cards, when available is false (%s) (HOS-2346)', async (entityType) => {
         mockGetTrafficStats.mockResolvedValue(
             ok({
                 window: '30d',
@@ -164,9 +169,19 @@ describe('TrafficStatsCards (HOS-2119)', () => {
                 contactFunnel: null
             })
         );
-        const { container } = renderCards();
-        await waitFor(() => expect(mockGetTrafficStats).toHaveBeenCalled());
-        await waitFor(() => expect(container).toBeEmptyDOMElement());
+        renderCards({ entityType });
+        const notice = await screen.findByTestId('traffic-stats-unavailable');
+        expect(notice).toHaveTextContent('listing.owner.traffic.unavailable');
+        expect(notice).not.toHaveAttribute('role', 'alert');
+        expect(screen.queryByTestId('traffic-stats-cards')).not.toBeInTheDocument();
+        expect(screen.queryByTestId('traffic-stats-empty')).not.toBeInTheDocument();
+    });
+
+    it('does not show the unavailable message when available is true', async () => {
+        mockGetTrafficStats.mockResolvedValue(ok(FULL));
+        renderCards();
+        expect(await screen.findByTestId('traffic-stats-cards')).toBeInTheDocument();
+        expect(screen.queryByTestId('traffic-stats-unavailable')).not.toBeInTheDocument();
     });
 
     it('renders nothing when the request fails', async () => {
