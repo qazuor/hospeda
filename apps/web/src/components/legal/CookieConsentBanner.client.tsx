@@ -19,6 +19,7 @@
 
 import { isBotUserAgent } from '@repo/utils';
 import { useEffect, useId, useRef, useState } from 'react';
+import { UMAMI_BLOCK_PROPS } from '@/lib/analytics/recording-block';
 import { getConsent, saveConsent } from '@/lib/cookie-consent';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -185,6 +186,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
             <div
                 className={`overlay-base overlay-light ${styles.backdrop}`}
                 aria-hidden="true"
+                {...UMAMI_BLOCK_PROPS}
             />
             <dialog
                 ref={bannerRef}
@@ -192,6 +194,7 @@ export function CookieConsentBanner({ locale, cookiesPolicyUrl }: CookieConsentB
                 open
                 tabIndex={-1}
                 className={`${styles.banner} dialog-panel`}
+                {...UMAMI_BLOCK_PROPS}
             >
                 <div className={styles.inner}>
                     {view === 'main' ? (
