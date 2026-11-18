@@ -100,7 +100,7 @@ function segment(input: {
         name: input.name,
         parameters: {
             filters: [...input.filters],
-            ...(input.match === undefined ? {} : { match: input.match })
+            match: input.match ?? 'all'
         }
     };
 }

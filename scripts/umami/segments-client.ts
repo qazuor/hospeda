@@ -41,6 +41,20 @@ export const segmentSchema = z.object({
 export type UmamiSegment = z.infer<typeof segmentSchema>;
 
 /**
+ * True when every key the definition declares deep-equals the stored value.
+ * Extra stored keys (defaults the server adds, such as `match` or `filters: []`)
+ * are ignored, so they never cause a false "updated".
+ */
+function declaredKeysMatch(input: {
+    readonly stored: Readonly<Record<string, unknown>>;
+    readonly declared: Readonly<Record<string, unknown>>;
+}): boolean {
+    return Object.entries(input.declared)
+        .filter(([, value]) => value !== undefined)
+        .every(([key, value]) => sameJson(input.stored[key], value));
+}
+
+/**
  * Lists every segment or cohort of a website (all pages).
  *
  * @param input.config - Client configuration
@@ -104,7 +118,7 @@ export async function upsertSegment(input: {
         return { action: 'created', dryRun, resource: created };
     }
 
-    if (sameJson(existing.parameters, body.parameters)) {
+    if (declaredKeysMatch({ stored: existing.parameters, declared: body.parameters })) {
         return { action: 'unchanged', dryRun, resource: existing };
     }
     if (dryRun) return { action: 'updated', dryRun, resource: existing };

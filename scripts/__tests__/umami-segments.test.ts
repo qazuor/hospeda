@@ -203,6 +203,51 @@ describe('upsertSegment', () => {
         expect(writes(calls)).toHaveLength(0);
     });
 
+    it('should be unchanged when the server adds defaults the definition omits', async () => {
+        const cohort: SegmentDefinition = {
+            type: 'cohort',
+            name: 'Se registraron (30 días)',
+            parameters: {
+                action: { type: 'event', value: 'sign_up_completed' },
+                dateRange: '30day'
+            }
+        };
+        const withDefaults = {
+            id: 'c1',
+            type: 'cohort',
+            name: cohort.name,
+            parameters: { ...cohort.parameters, match: 'all', filters: [] }
+        };
+        const { config, calls } = setup({ pages: [[withDefaults]] });
+
+        const result = await upsertSegment({ config, websiteId: WEBSITE, definition: cohort });
+
+        expect(result.action).toBe('unchanged');
+        expect(writes(calls)).toHaveLength(0);
+    });
+
+    it('should update when a declared key differs even if extra keys are stored', async () => {
+        const { config, calls } = setup({
+            pages: [
+                [
+                    {
+                        ...stored,
+                        parameters: { match: 'all', filters: definition.parameters.filters }
+                    }
+                ]
+            ]
+        });
+
+        const result = await upsertSegment({ config, websiteId: WEBSITE, definition });
+
+        expect(result.action).toBe('updated');
+        expect(writes(calls)).toHaveLength(1);
+    });
+
+    it('should set match explicitly on every segment', () => {
+        for (const s of HOSPEDA_SEGMENTS) expect(s.parameters.match).toBeDefined();
+    });
+
     it('should update in place when parameters differ', async () => {
         const { config, calls } = setup({
             pages: [[{ ...stored, parameters: { match: 'all' } }]]
