@@ -621,9 +621,9 @@ Claude desktop, Claude Code and ChatGPT.
 - **Covered tools:** every MCP tool that writes with a confirmation token
   (HOS-2247 comment, coordinator 2026-11-18):
   - `reply_inquiry` and `create_listing` (on staging);
-  - `confirm_benefit_usage`, `reject_benefit_usage` and `undo_benefit_rejection`
-    (PR-7). §6.7 still describes `undo_benefit_rejection` as one step; U-13
-    aligns it with what PR-7 ships.
+  - `confirm_benefit_usage` and `reject_benefit_usage` (PR-7).
+    `undo_benefit_rejection` ships as one step with no token (§6.7), so it
+    falls under D-2 and stays out (U-13, closed).
   - A registry test makes the set explicit. A tool that issues a confirmation
     token MUST declare `confirmation: { elicitation: true }` and pass the tests
     of both paths.
@@ -1333,8 +1333,9 @@ entity-list framework, TanStack Query, Tailwind). The new screen is
 ### 6.11 HOS-2247 — confirmation the model cannot answer (delta 2026-11-18)
 
 **Scope.** §5.7 applied to every token-confirmed write tool: `reply_inquiry`,
-`create_listing`, and (with PR-7) `confirm_benefit_usage`,
-`reject_benefit_usage` and `undo_benefit_rejection`. Edits without a token (D-2)
+`create_listing`, and (with PR-7) `confirm_benefit_usage` and
+`reject_benefit_usage`. Edits without a token (D-2), including the one-step
+`undo_benefit_rejection`,
 stay out (D-19 is the one open question). It starts with measurement M-1.
 Docs: the "Security limit" section of `apps/api/docs/mcp-server.md` is
 rewritten. It names the clients measured to support elicitation and keeps the
@@ -1440,7 +1441,7 @@ PR-6 may split the resolver into its own PR first (it is self-contained and carr
 | PR-12 | HOS-2349: `MCP_ACTIVITY_VIEW` enum migration + SUPER_ADMIN seed dual-write (D-15, AC-C51a) + admin route + admin screen; the extras index only if the staging `EXPLAIN` needs it (D-16) | PR-10 | now |
 | PR-13a | M-1 measurement: capability logging on `/mcp` (no token, no content); staging sessions with the four clients; results table (no magic word) | — | now |
 | PR-13 | HOS-2247 §5.7: binder `inputRequired` outcome, 2026-07-28 flow only (D-18), strict policy + `ELICITATION_STRICT` (D-17), for `reply_inquiry` and `create_listing`; docs "Security limit" rewrite | PR-2, PR-6, PR-13a | now |
-| PR-14 | Elicitation for `confirm_benefit_usage`, `reject_benefit_usage` and `undo_benefit_rejection`. Folded into PR-7 if PR-13 merges first; no magic word if HOS-2247 is already closed | PR-7, PR-13 | now |
+| PR-14 | Elicitation for `confirm_benefit_usage` and `reject_benefit_usage`. Folded into PR-7 if PR-13 merges first; no magic word if HOS-2247 is already closed | PR-7, PR-13 | now |
 
 HOS-2247 closes on whichever of PR-13 and PR-14 merges last.
 
@@ -1543,7 +1544,7 @@ leave unconfirmed. Until the owner answers, HOS-2247 excludes the tool.
 - **U-10** ~~Whether a 2025-era push elicitation can reach the client through the stateless legacy fallback.~~ Moot: D-18 builds no 2025 push path.
 - **U-11** Whether the low-level `Server` (`lib/mcp/server.ts:66`) hands `inputResponses`, `requestState` and the per-request `clientCapabilities` to the `tools/call` handler, or only `McpServer` does.
 - **U-12** ~~Reconcile §5.7/§6.11 with the HOS-2247 Linear comment.~~ **Closed 2026-11-18.** The comment widens the scope to every MCP tool that writes with a confirmation token, starting with `create_listing`. It leaves the D-2 edits without a token to the spec, asks to measure client support first (Claude.ai web and desktop, Claude Code, ChatGPT), and keeps the token with a documented limit where elicitation is missing. §5.7 (covered tools, M-1, fallback), §6.11, AC-C63a and D-19 reflect it.
-- **U-13** §6.7 specifies `undo_benefit_rejection` as one step, with no token. The coordinator reports that PR-7 makes it token-confirmed. Align §6.7 with what PR-7 ships. If it ships with a token, the AC-C65 registry rule covers it under HOS-2247; if not, it falls under D-2 and stays out.
+- **U-13** (closed 2026-11-18) PR-7 ships `undo_benefit_rejection` as one step with no token, matching §6.7. It falls under D-2 and stays out of HOS-2247.
 
 ## 12. Implementation notes
 
