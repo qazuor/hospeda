@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, lt, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     type ProviderWatchAccount,
@@ -21,6 +21,10 @@ export class ProviderWatchRunModel {
      * @param input.account - The account the run targets
      * @param input.startedAt - The run's instant
      * @param input.consumeAuthorizationOfMonth - Consume that month's authorization for this run
+     * @param input.abandonRunsStartedBefore - In the same transaction, every `running` row of this
+     *   account that started before this instant is past its deadline: it is closed as `failed`
+     *   with reason `abandoned`. Its measurements are left untouched, so the provider ids it
+     *   already recorded stay findable.
      * @param input.tx - Optional enclosing transaction
      * @returns The run id and whether the authorization was consumed by THIS run. When it was
      *   wanted and lost, the row is still written (as `running`, for the caller to close as refused).
@@ -29,9 +33,26 @@ export class ProviderWatchRunModel {
         readonly account: ProviderWatchAccount;
         readonly startedAt: Date;
         readonly consumeAuthorizationOfMonth?: string;
+        readonly abandonRunsStartedBefore?: Date;
         readonly tx?: DrizzleClient;
     }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
         const work = async (tx: DrizzleClient) => {
+            if (input.abandonRunsStartedBefore !== undefined) {
+                await tx
+                    .update(providerWatchRuns)
+                    .set({
+                        outcome: 'failed',
+                        reason: 'abandoned',
+                        finishedAt: input.startedAt
+                    })
+                    .where(
+                        and(
+                            eq(providerWatchRuns.account, input.account),
+                            eq(providerWatchRuns.outcome, 'running'),
+                            lt(providerWatchRuns.startedAt, input.abandonRunsStartedBefore)
+                        )
+                    );
+            }
             const [row] = await tx
                 .insert(providerWatchRuns)
                 .values({

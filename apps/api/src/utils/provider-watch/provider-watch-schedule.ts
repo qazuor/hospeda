@@ -12,6 +12,12 @@ import type { WatchAccount } from '@repo/payments';
 
 const MARKET_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 
+/**
+ * How long a run may take (the job's timeout). A run still `running` this long after it started is
+ * abandoned: its process died or was killed without closing it.
+ */
+export const PROVIDER_WATCH_RUN_DEADLINE_MS = 600_000;
+
 /** Name of the job, also the slug suffix of its watchdog check. */
 export const PROVIDER_WATCH_JOB_NAME = 'provider-watch-battery';
 

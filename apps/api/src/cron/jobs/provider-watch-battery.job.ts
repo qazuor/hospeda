@@ -39,6 +39,7 @@ import {
 import {
     isScheduledTickDue,
     PROVIDER_WATCH_JOB_NAME,
+    PROVIDER_WATCH_RUN_DEADLINE_MS,
     resolveWatchAccount
 } from '../../utils/provider-watch/provider-watch-schedule.js';
 import { buildWatchTransport } from '../../utils/provider-watch/provider-watch-transport.js';
@@ -140,7 +141,7 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
         // Ships NOT scheduled (HOS-1512 D4): the catalog is empty until PR 2, so a tick can only fail.
         // The admin manual trigger keeps working. PR 2 removes this line.
         scheduled: false,
-        timeoutMs: 600_000,
+        timeoutMs: PROVIDER_WATCH_RUN_DEADLINE_MS,
         handler: async (ctx) => {
             const { logger, dryRun } = ctx;
             if (dryRun) {

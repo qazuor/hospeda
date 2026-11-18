@@ -93,7 +93,8 @@ describe('openWatchRun', () => {
         expect(h.open).toHaveBeenCalledWith({
             account: 'production',
             startedAt: START,
-            consumeAuthorizationOfMonth: '2026-11'
+            consumeAuthorizationOfMonth: '2026-11',
+            abandonRunsStartedBefore: new Date(START.getTime() - 600_000)
         });
     });
 });

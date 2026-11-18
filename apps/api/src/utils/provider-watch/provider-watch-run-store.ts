@@ -13,6 +13,7 @@ import {
     enqueueProviderWatchAlerts,
     PROVIDER_WATCH_ALERT_CHANNEL
 } from './provider-watch-alert-outbox.js';
+import { PROVIDER_WATCH_RUN_DEADLINE_MS } from './provider-watch-schedule.js';
 
 const shapesSchema = z.record(z.string(), z.record(z.string(), z.string()));
 
@@ -51,6 +52,11 @@ export async function readAcceptedBaseline(args: {
  * @param args.account - The account the run targets
  * @param args.startedAt - The run's instant
  * @param args.consumeAuthorizationOfMonth - Month of the authorization to consume
+ *
+ * In the same transaction, any `running` row of this environment's account that is already past
+ * the run deadline is closed as `failed` (reason `abandoned`) so a dead run never lingers; the
+ * provider ids it recorded are kept.
+ *
  * @returns The run id and whether this run consumed the authorization
  */
 export async function openWatchRun(args: {
@@ -58,7 +64,12 @@ export async function openWatchRun(args: {
     readonly startedAt: Date;
     readonly consumeAuthorizationOfMonth?: string;
 }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
-    return providerWatchRunModel.open(args);
+    return providerWatchRunModel.open({
+        ...args,
+        abandonRunsStartedBefore: new Date(
+            args.startedAt.getTime() - PROVIDER_WATCH_RUN_DEADLINE_MS
+        )
+    });
 }
 
 /**

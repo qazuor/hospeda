@@ -2,10 +2,11 @@
  * HOS-1512: the watch battery's run lifecycle, the one-shot authorization and the accepted
  * baseline, against a real database.
  */
+import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { platformSettingsModel } from '../../src/models/platform/platform-settings.model.ts';
 import { providerWatchRunModel as model } from '../../src/models/provider-watch-run/provider-watch-run.model.ts';
-import { users } from '../../src/schemas/index.ts';
+import { providerWatchRuns, users } from '../../src/schemas/index.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import {
     closeTestPool,
@@ -127,6 +128,80 @@ describe('run lifecycle', () => {
         await expect(insert('sandbox', 'completed', '2026-11-17T09:00:00Z')).rejects.toThrow(
             /ck_provider_watch_run_span/
         );
+    });
+});
+
+describe('a run that opens abandons the stale running rows of its account', () => {
+    const at = (iso: string) => new Date(iso);
+
+    it('closes them as failed with reason abandoned, in that transaction, keeping their provider ids', async () => {
+        await withTestTransaction(async (tx) => {
+            const stale = await model.open({
+                account: 'sandbox',
+                startedAt: at('2026-11-17T08:00:00.000Z'),
+                tx
+            });
+            await tx
+                .update(providerWatchRuns)
+                .set({ measurements: { M1: { providerIds: ['pre-123'] } } })
+                .where(eq(providerWatchRuns.id, stale.runId));
+            const fresh = await model.open({
+                account: 'sandbox',
+                startedAt: START,
+                abandonRunsStartedBefore: at('2026-11-17T09:50:00.000Z'),
+                tx
+            });
+            const abandoned = await model.findById({ id: stale.runId, tx });
+            expect(abandoned).toMatchObject({
+                outcome: 'failed',
+                reason: 'abandoned',
+                measurements: { M1: { providerIds: ['pre-123'] } }
+            });
+            expect(abandoned?.finishedAt?.toISOString()).toBe(START.toISOString());
+            expect((await model.findById({ id: fresh.runId, tx }))?.outcome).toBe('running');
+        });
+    });
+
+    it('leaves a running row that is still within its deadline, another account and a closed run alone', async () => {
+        await withTestTransaction(async (tx) => {
+            const recent = await model.open({
+                account: 'sandbox',
+                startedAt: at('2026-11-17T09:55:00.000Z'),
+                tx
+            });
+            const other = await model.open({
+                account: 'production',
+                startedAt: at('2026-11-17T08:00:00.000Z'),
+                tx
+            });
+            const done = await model.open({
+                account: 'sandbox',
+                startedAt: at('2026-11-17T08:00:00.000Z'),
+                tx
+            });
+            await model.close({ ...close(done.runId), tx });
+            await model.open({
+                account: 'sandbox',
+                startedAt: START,
+                abandonRunsStartedBefore: at('2026-11-17T09:50:00.000Z'),
+                tx
+            });
+            expect((await model.findById({ id: recent.runId, tx }))?.outcome).toBe('running');
+            expect((await model.findById({ id: other.runId, tx }))?.outcome).toBe('running');
+            expect((await model.findById({ id: done.runId, tx }))?.outcome).toBe('completed');
+        });
+    });
+
+    it('abandons nothing when no cut-off is given', async () => {
+        await withTestTransaction(async (tx) => {
+            const old = await model.open({
+                account: 'sandbox',
+                startedAt: at('2026-01-01T00:00:00.000Z'),
+                tx
+            });
+            await model.open({ account: 'sandbox', startedAt: START, tx });
+            expect((await model.findById({ id: old.runId, tx }))?.outcome).toBe('running');
+        });
     });
 });
 
