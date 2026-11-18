@@ -30,3 +30,14 @@ describe('TrafficStatsCards device translations (HOS-2119)', () => {
         expect(t(key)).not.toBe(key);
     });
 });
+
+describe('TrafficStatsCards unavailable message (HOS-2346)', () => {
+    it.each([
+        ['es', 'Estadísticas no disponibles en este momento. Intentá nuevamente más tarde.'],
+        ['en', 'Statistics are not available right now. Please try again later.'],
+        ['pt', 'Estatísticas indisponíveis no momento. Tente novamente mais tarde.']
+    ] as const)('resolves the unavailable message in %s', (locale, expected) => {
+        const { t } = createTranslations(locale);
+        expect(t('listing.owner.traffic.unavailable')).toBe(expected);
+    });
+});
