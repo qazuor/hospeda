@@ -30,6 +30,7 @@ export type {
     WatchAlert,
     WatchAlertKind,
     WatchAuthorization,
+    WatchAuthorizationMiss,
     WatchContext,
     WatchEffect,
     WatchEntry,
@@ -47,6 +48,7 @@ export type {
 } from './types';
 export { WATCH_ACCOUNTS, WATCH_EFFECTS, WatchGuardError } from './types';
 export {
+    REPORTED_ONLY_KEYS,
     rowsOf,
     validateWatchCatalog,
     validateWatchCoverage,
