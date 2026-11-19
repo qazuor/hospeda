@@ -167,6 +167,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'Si le pedís al asistente algo que no puede hacer desde el chat, como cambiar el nombre de tu publicación o publicarla sin plan, ahora te responde con un link directo a la página de Hospeda donde lo resolvés: la sección exacta del editor, la página de planes o la parte de la ficha que falta completar. El link respeta el idioma de tu cuenta.',
             en: 'If you ask the assistant for something it cannot do from the chat, such as renaming your listing or publishing it without a plan, it now answers with a direct link to the Hospeda page where you can fix it: the exact editor section, the plans page or the part of the listing that is still missing. The link follows your account language.',
             pt: 'Se você pedir ao assistente algo que ele não pode fazer pelo chat, como mudar o nome do seu anúncio ou publicá-lo sem plano, agora ele responde com um link direto para a página do Hospeda onde você resolve: a seção exata do editor, a página de planos ou a parte do anúncio que falta preencher. O link respeita o idioma da sua conta.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4512
     {
         id: '2026-11-18-admin-trade-categories-restore-and-search',
