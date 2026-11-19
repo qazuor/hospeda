@@ -53,7 +53,11 @@ test.describe('TEST:B9b:9 AC:B9b:9 promo code editor creates and closes a code @
     test.beforeAll(async () => {
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: randomUUID() }),
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: randomUUID()
+            }),
             clock
         });
         world = { clock, fakeServer, mailCapture: await startE2eMailCapture() };

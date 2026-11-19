@@ -56,6 +56,7 @@ test.describe('TEST:B13b:1 AC:B13b:1 AC:B13b:4 moderating a listing with a live 
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: namespace,
                 honestAbout: [

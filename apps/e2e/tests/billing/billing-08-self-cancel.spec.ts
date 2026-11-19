@@ -41,6 +41,7 @@ test.describe('TEST:B13a:1 self-service cancellation @p0 @billing @clock', () =>
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

@@ -143,6 +143,7 @@ export {
     OrderRefSchema,
     OrderRefundInputSchema,
     OrderSearchInputSchema,
+    oneTimePaymentInputSchemaFor,
     PaymentPageRefSchema,
     PaymentProviderOptionsSchema,
     parseProviderInput,
