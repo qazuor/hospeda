@@ -15,6 +15,7 @@ import {
     SUBSCRIPTION_STATUSES,
     sql,
     subscriptionPauses,
+    subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -96,6 +97,21 @@ export async function readOwnSubscriptions(userId: string) {
                       )
                   );
     const pausesById = new Map(openPauses.map((pause) => [pause.subscriptionId, pause]));
+    // HOS-2381: the queued change is read back, so its notice survives a page reload. The
+    // unique subscription FK allows at most one queued row per subscription.
+    const queuedChanges =
+        ids.length === 0
+            ? []
+            : await getDb()
+                  .select({
+                      subscriptionId: subscriptionScheduledChanges.subscriptionId,
+                      effectiveAt: subscriptionScheduledChanges.effectiveAt
+                  })
+                  .from(subscriptionScheduledChanges)
+                  .where(inArray(subscriptionScheduledChanges.subscriptionId, ids));
+    const queuedEffectiveAtById = new Map(
+        queuedChanges.map((queued) => [queued.subscriptionId, queued.effectiveAt])
+    );
     // HOS-2351: an open succession is read from its successor's `succeeds_id`, never from the
     // predecessor's `succeeded_by_id`, which S18 writes only when the succession closes.
     const successors =
@@ -215,6 +231,7 @@ export async function readOwnSubscriptions(userId: string) {
             const openPause = pausesById.get(row.id);
             const livePromos = await readLivePromos({ subscriptionId: row.id, at: now });
             const successor = openSuccessorsByPredecessor.get(row.id);
+            const queuedEffectiveAt = queuedEffectiveAtById.get(row.id);
             if (
                 row.subscription.nextChargeAt !== null &&
                 isNextChargeShown({
@@ -276,6 +293,9 @@ export async function readOwnSubscriptions(userId: string) {
                         : null,
                 promo: livePromos.length > 0 ? { endsAt: null } : null,
                 liveCourtesyMonths: liveCourtesyBySubscription.get(row.id) ?? 0,
+                scheduledChange: queuedEffectiveAt
+                    ? { effectiveAt: queuedEffectiveAt.toISOString() }
+                    : null,
                 succession: successor
                     ? {
                           checkoutOpen: true as const,

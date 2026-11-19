@@ -91,6 +91,20 @@ describe('MySubscriptions SSR block', () => {
         expect(source).toContain('row.succession?.checkoutDeadline');
         expect(source).toContain('date: date(row.succession.checkoutDeadline)');
     });
+    it('HOS-2381 shows the queued plan change date from the read, so it survives a reload', () => {
+        const article = source.slice(source.indexOf('<article'), source.indexOf('</article>'));
+        const notice = article.match(
+            /\{([^{}]+) && <p class=\{styles\.line\} data-testid="my-subscription-scheduled-change">\{t\('account\.subscription\.mine\.planChange\.downgrade', undefined, \{ date: date\(row\.scheduledChange\.effectiveAt\) \}\)\}<\/p>\}/u
+        );
+        expect(notice).not.toBeNull();
+        const shows = (row: { status: string; scheduledChange?: { effectiveAt: string } | null }) =>
+            Boolean(runInNewContext(notice?.[1] ?? 'false', { row }));
+        const queued = { effectiveAt: '2026-12-05T22:10:44.000Z' };
+        expect(shows({ status: 'ACTIVE', scheduledChange: queued })).toBe(true);
+        expect(shows({ status: 'ACTIVE', scheduledChange: null })).toBe(false);
+        expect(shows({ status: 'ACTIVE' })).toBe(false);
+        expect(shows({ status: 'PAUSED', scheduledChange: queued })).toBe(false);
+    });
     it('HOS-2344 offers resume and cancel for an open successor checkout in any status', () => {
         expect(source).toContain(
             "import { PlanChangeCheckoutPending } from './PlanChangeCheckoutPending.client';"
