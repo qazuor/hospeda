@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     formatPromotionWindow,
     isPromotionLive,
@@ -6,6 +6,8 @@ import {
 } from '../../../src/lib/venue/promotion-window';
 
 const window = { weekdays: [4, 5, 6], startTime: '23:00', endTime: '00:30' };
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe('promotion window client logic', () => {
     it('uses the Buenos Aires day and overnight schedule', () => {
@@ -41,10 +43,8 @@ describe('promotion window client logic', () => {
 
     it('formats short weekday runs and localized text', () => {
         expect(formatPromotionWindow({ window, locale: 'es' })).toBe('Jue a sáb, 23 a 00:30');
-        expect(formatPromotionWindow({ window, locale: 'en' })).toBe('Thu to sat, 23 to 00:30');
-        expect(formatPromotionWindow({ window, locale: 'pt' })).toBe(
-            'Qui até sábado, 23 até 00:30'
-        );
+        expect(formatPromotionWindow({ window, locale: 'en' })).toBe('Thu to Sat, 23 to 00:30');
+        expect(formatPromotionWindow({ window, locale: 'pt' })).toBe('Qui até sáb., 23 até 00:30');
         expect(
             formatPromotionWindow({
                 window: { weekdays: [1, 5, 6, 0], startTime: '18:00', endTime: '20:00' },
@@ -63,5 +63,17 @@ describe('promotion window client logic', () => {
                 locale: 'pt'
             })
         ).toContain('Todos os dias');
+    });
+
+    it('keeps the Ahora result independent of the visitor browser timezone', () => {
+        const now = new Date('2026-11-20T02:30:00.000Z');
+        vi.stubEnv('TZ', 'Europe/Madrid');
+        const madridVisitorResult = isPromotionWindowActive({ window, now });
+
+        vi.stubEnv('TZ', 'UTC');
+        const utcVisitorResult = isPromotionWindowActive({ window, now });
+
+        expect(madridVisitorResult).toBe(true);
+        expect(utcVisitorResult).toBe(madridVisitorResult);
     });
 });

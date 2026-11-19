@@ -22,7 +22,9 @@ export function VenuePromoBadge({
     const t = createT(locale);
     return (
         <span
-            className={`venue-card__promo-badge${active ? 'venue-card__promo-badge--active' : ''}`}
+            className={['venue-card__promo-badge', active && 'venue-card__promo-badge--active']
+                .filter(Boolean)
+                .join(' ')}
         >
             {active
                 ? t('venue.card.promoNow', 'Ahora')

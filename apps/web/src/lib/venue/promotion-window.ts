@@ -95,7 +95,8 @@ export function formatPromotionWindow({
             .map((run, runIndex) => {
                 const rawFirst = dayNames[run[0] ?? 0] ?? '';
                 const first = runIndex === 0 ? rawFirst : rawFirst.toLocaleLowerCase(locale);
-                const last = (dayNames[run[run.length - 1] ?? 0] ?? '').toLocaleLowerCase(locale);
+                const rawLast = dayNames[run[run.length - 1] ?? 0] ?? '';
+                const last = locale === 'en' ? rawLast : rawLast.toLocaleLowerCase(locale);
                 if (run.length >= 3)
                     return `${first} ${t('venue.detail.promotions.window.to', 'a')} ${last}`;
                 if (run.length === 2)
