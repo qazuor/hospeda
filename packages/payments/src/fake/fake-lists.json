@@ -122,6 +122,13 @@
             "does": "Refuses a refund as not refundable (code 2084) when the same charge does accept another amount.",
             "measured": [{ "row": "RF-8", "date": "2026-09-15", "accounts": ["production"] }],
             "defenseTest": "TEST:B6:3"
+        },
+        {
+            "id": "M14",
+            "name": "the order search counts in text",
+            "does": "The order search answers paging.total as a string of digits, not as a number.",
+            "measured": [{ "row": "order-search", "date": "2026-11-19", "accounts": ["sandbox"] }],
+            "defenseTest": "TEST:2384:1"
         }
     ],
     "rules": [

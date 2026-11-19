@@ -746,6 +746,14 @@ export class FakePaymentProvider implements PaymentProvider {
         return this.orders.search(value);
     }
 
+    /**
+     * What the fake HTTP server writes as `paging.total` of an order search. The real provider
+     * answers a string of digits (M14); honest, it is the number.
+     */
+    orderSearchTotalOnWire(args: { readonly count: number }): number | string {
+        return this.lying({ lie: 'M14' }) ? String(args.count) : args.count;
+    }
+
     /** Test handle (not a PaymentProvider method): the customer places an order, paid or not. */
     placeOrder(input: {
         readonly reference: string;

@@ -75,4 +75,31 @@ describe('fake server search and orders routes', () => {
             }
         });
     });
+
+    it('TEST:2384:1 M14: the order search total is text by default, a number when honest', async () => {
+        const url = (base: string) =>
+            `${base}/v1/orders?begin_date=2026-10-01T00:00:00.000Z&end_date=2026-10-20T00:00:00.000Z&external_reference=m14`;
+        const lying = await setup();
+        lying.provider.placeOrder({ reference: 'm14', paid: true });
+        const lyingBody = (await (await request(url(lying.server.url))).json()) as {
+            paging: { total: unknown };
+        };
+        expect(lyingBody.paging.total).toBe('1');
+
+        const honestProvider = new FakePaymentProvider({
+            clock,
+            idNamespace: crypto.randomUUID(),
+            honestAbout: [
+                { lie: 'M4', why: 'HTTP route assertions require complete search results' },
+                { lie: 'M14', why: 'show the numeric total the lie replaces' }
+            ]
+        });
+        const honestServer = await startFakeProviderServer({ provider: honestProvider, clock });
+        servers.push(honestServer);
+        honestProvider.placeOrder({ reference: 'm14', paid: true });
+        const honestBody = (await (await request(url(honestServer.url))).json()) as {
+            paging: { total: unknown };
+        };
+        expect(honestBody.paging.total).toBe(1);
+    });
 });

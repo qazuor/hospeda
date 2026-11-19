@@ -53,10 +53,10 @@ describe('TEST:B1:9 turning a lie off', () => {
     });
 
     it('refuses a lie that is not in the closed list', () => {
-        expect(() => build({ clock, honestAbout: [{ lie: 'M14', why: 'invented' }] })).toThrow(
+        expect(() => build({ clock, honestAbout: [{ lie: 'M99', why: 'invented' }] })).toThrow(
             /not a lie of the closed list/
         );
-        expect(FAKE_LIES.some((lie) => lie.id === 'M14')).toBe(false);
+        expect(FAKE_LIES.some((lie) => lie.id === 'M99')).toBe(false);
     });
 
     it('refuses a lie turned off without saying why', () => {

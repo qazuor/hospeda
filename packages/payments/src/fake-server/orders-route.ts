@@ -180,7 +180,13 @@ export async function handleOrdersRoute(args: {
                 };
             })
         );
-        return { status: 200, body: { data, paging: { total: data.length } } };
+        return {
+            status: 200,
+            body: {
+                data,
+                paging: { total: args.provider.orderSearchTotalOnWire({ count: data.length }) }
+            }
+        };
     }
     const match = /^\/v1\/orders\/([^/]+)$/.exec(args.url.pathname);
     if (!match) return null;
