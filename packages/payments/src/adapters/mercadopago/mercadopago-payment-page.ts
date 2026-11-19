@@ -103,16 +103,20 @@ export function buildMercadoPagoPaymentPageBody(args: {
 }
 
 /**
- * Why a created page is refused: it must expire, and no later than we asked (plus
- * `PAGE_EXPIRY_TOLERANCE_MS`). A page that does not expire would take payments forever.
+ * Why a created page is refused: it must expire, after now, and no later than we asked
+ * (plus `PAGE_EXPIRY_TOLERANCE_MS`). A page that does not expire would take payments
+ * forever; one already expired can never be paid.
  */
 function checkExpiry(args: {
     readonly created: z.infer<typeof CreatedPageSchema>;
     readonly requested: string;
+    readonly now: Date;
 }): { readonly expiresAt: string } | { readonly refusal: string } {
     if (args.created.expires !== true) return { refusal: 'a payment page that does not expire' };
     const expiresAt = toIsoInstant(args.created.expiration_date_to);
     if (expiresAt === null) return { refusal: 'a payment page without expiry' };
+    if (Date.parse(expiresAt) <= args.now.getTime())
+        return { refusal: 'a payment page that has already expired' };
     if (Date.parse(expiresAt) > Date.parse(args.requested) + PAGE_EXPIRY_TOLERANCE_MS)
         return { refusal: 'a payment page that expires later than requested' };
     return { expiresAt };
@@ -135,7 +139,11 @@ export async function createMercadoPagoPaymentPage(args: {
         headers: { 'X-Idempotency-Key': args.input.idempotencyKey }
     });
     const created = await parseResponse(CreatedPageSchema, response, 'charge', () => args.now);
-    const expiry = checkExpiry({ created, requested: args.input.expiresAt });
+    const expiry = checkExpiry({
+        created,
+        requested: args.input.expiresAt,
+        now: args.now
+    });
     if ('refusal' in expiry) {
         const error = providerError(
             'UNAVAILABLE',

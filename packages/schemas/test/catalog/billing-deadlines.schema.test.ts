@@ -62,11 +62,22 @@ describe('HOS-2179 optional PLAZO 21: the one-time payment page (P-2)', () => {
         ['a negative margin', { ...page, windowMarginMinutes: -60 }],
         ['a missing margin', { pageMinutes: 60 }],
         ['a missing page', { windowMarginMinutes: 60 }],
-        ['an extra value', { ...page, extra: true }]
+        ['an extra value', { ...page, extra: true }],
+        ['a page over 24 hours (R-3)', { ...page, pageMinutes: 1441 }],
+        ['a margin over 24 hours (R-3)', { ...page, windowMarginMinutes: 1441 }]
     ])('rejects %s', (_, value) => {
         expect(BillingDeadlineValuesSchema.safeParse({ ...baseline, '21': value }).success).toBe(
             false
         );
+    });
+
+    it('accepts exactly 24 hours for the page and for the margin', () => {
+        expect(
+            BillingDeadlineValuesSchema.safeParse({
+                ...baseline,
+                '21': { pageMinutes: 1440, windowMarginMinutes: 1440 }
+            }).success
+        ).toBe(true);
     });
 
     it('is a key an admin can change, and 22 is not', () => {

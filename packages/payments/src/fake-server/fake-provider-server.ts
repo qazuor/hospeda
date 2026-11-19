@@ -8,6 +8,8 @@ import {
     type MercadoPagoDeliveriesResult,
     translateMercadoPagoDeliveries
 } from './mercadopago-deliveries';
+import { handlePaymentPageScreen } from './payment-page-screen';
+import { fakePaymentScreenOrigin } from './payment-pages-route';
 import { serializeAuthorization } from './serialize-authorization';
 import { serializeCharge } from './serialize-charge';
 import type { FakeProviderAccount } from './users-me-route';
@@ -27,6 +29,8 @@ export interface FakeProviderServerOptions {
     readonly throttle?: FakeProviderThrottle;
     /** The kind of account `GET /users/me` answers as. Defaults to `sandbox` (a test account). */
     readonly account?: FakeProviderAccount;
+    /** The https origin a payment page's `init_point` advertises (see `DEFAULT_FAKE_PAYMENT_SCREEN_ORIGIN`). */
+    readonly paymentScreenOrigin?: string;
 }
 
 /** Configures deterministic HTTP 429 responses from the fake provider server. */
@@ -123,6 +127,7 @@ async function writeClockFile(args: { readonly path: string; readonly now: Date 
 export async function startFakeProviderServer(
     options: FakeProviderServerOptions
 ): Promise<FakeProviderServer> {
+    const paymentScreenOrigin = fakePaymentScreenOrigin(options.paymentScreenOrigin);
     const requests: FakeProviderRequest[] = [];
     const initPoints = new Map<string, string>();
     const refundAmounts = new Map<string, number>();
@@ -168,6 +173,18 @@ export async function startFakeProviderServer(
     const server: Server = createServer(async (request, response) => {
         const method = request.method ?? 'GET';
         const path = request.url ?? '/';
+        // The fake payment screen is opened by a browser: no bearer, no JSON body.
+        const screen = handlePaymentPageScreen({
+            provider,
+            method,
+            url: new URL(path, 'http://fake.invalid'),
+            now: options.clock.now()
+        });
+        if (screen !== null) {
+            recordRequest({ method, path, body: null });
+            response.writeHead(screen.status, screen.headers).end(screen.body);
+            return;
+        }
         const validAuthorization = /^Bearer .+\S$/.test(request.headers.authorization ?? '');
         const missingRefundKey =
             method === 'POST' &&
@@ -234,6 +251,7 @@ export async function startFakeProviderServer(
                 body,
                 refundAmounts,
                 now: options.clock.now(),
+                paymentScreenOrigin,
                 ...(options.account === undefined ? {} : { account: options.account })
             });
             if (extra !== null) {
