@@ -17,6 +17,8 @@ import { logError, logQuery } from '../../utils/logger.ts';
  */
 export class HostTradeCategoryGroupModel extends BaseModelImpl<HostTradeCategoryGroup> {
     protected table = hostTradeCategoryGroups;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'hostTradeCategoryGroup';
 
     protected getTableName(): string {
