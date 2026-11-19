@@ -59,6 +59,7 @@ import {
     type ToolHandlerResult,
     type ToolRefusalLink
 } from '../tool-definition';
+import { carryIssueParams } from '../tool-errors';
 import { type ListingDetail, readOwnListingDetail } from './get-listing';
 import {
     authorizeOwnerEdit,
@@ -235,7 +236,12 @@ function refineForVertical(
         ) {
             continue; // already reported by the published field
         }
-        ctx.addIssue({ code: 'custom', path: [...issue.path], message: issue.message });
+        ctx.addIssue({
+            code: 'custom',
+            path: [...issue.path],
+            message: issue.message,
+            ...carryIssueParams({ issue })
+        });
     }
 }
 
