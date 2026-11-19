@@ -58,6 +58,10 @@ import { activateAuthorizedPending } from './complement-authorized.js';
 import { logProviderNoticeFailure } from './log-provider-notice-failure.js';
 import { mirrorOurCancellationOnActive } from './mirror-our-cancellation-on-active.js';
 import {
+    type OneTimePagePaymentNoticeOutcome,
+    routeOneTimePagePaymentNotice
+} from './one-time-page-payment-notice.js';
+import {
     getProviderNoticeMirror,
     type ProviderNoticeMirror,
     type ReadState
@@ -102,6 +106,7 @@ type Outcome =
     | 'CHARGEBACK_ON_UNCREDITED'
     | 'REFUNDED_NOT_CREDITED'
     | 'DEFERRED'
+    | OneTimePagePaymentNoticeOutcome
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
@@ -253,8 +258,17 @@ export async function processProviderNotice(
             }
             if (result.outcome === 'CARD_VALIDATION_IGNORED')
                 return { ack: 'OK', outcome: 'CARD_VALIDATION_IGNORED' };
-            if (result.outcome === 'NO_SUBSCRIPTION')
-                return { ack: 'OK', outcome: 'UNKNOWN_RESOURCE' };
+            if (result.outcome === 'NO_SUBSCRIPTION') {
+                // HOS-2179 §5.3: a charge with no authorization may be a one-time page payment.
+                const page =
+                    result.authorizationId === null
+                        ? await routeOneTimePagePaymentNotice(
+                              { chargeId: notice.resourceId, reference: result.reference },
+                              ports
+                          )
+                        : null;
+                return { ack: 'OK', outcome: page ?? 'UNKNOWN_RESOURCE' };
+            }
             await executeConfirmedRefundsOnNotice(
                 {
                     paymentId: result.paymentId,
