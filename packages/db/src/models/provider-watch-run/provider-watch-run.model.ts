@@ -260,6 +260,31 @@ export class ProviderWatchRunModel {
     }
 
     /**
+     * The run that recorded a provider id, if any (HOS-1512, owner decision on the webhook noise):
+     * the webhook drops the notice of an authorization the battery created, and only of one it
+     * RECORDED. The ids are the `providerIds` a run persists per measurement, as each write
+     * answers (`appendProgress`) and when it closes, so a run that died midway still counts.
+     *
+     * @param input.providerId - The provider id the notice names
+     * @param input.tx - Optional transaction
+     * @returns The run id, or `null` when no run recorded it
+     */
+    async findRunRecordingProviderId(input: {
+        readonly providerId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ readonly runId: string } | null> {
+        const [row] = await (input.tx ?? getDb())
+            .select({ runId: providerWatchRuns.id })
+            .from(providerWatchRuns)
+            .where(
+                sql`jsonb_path_exists(${providerWatchRuns.measurements}, '$.*.providerIds[*] ? (@ == $id)', jsonb_build_object('id', ${input.providerId}::text))`
+            )
+            .orderBy(desc(providerWatchRuns.startedAt))
+            .limit(1);
+        return row ?? null;
+    }
+
+    /**
      * The latest run of an account that completed: what the owner reviews and may accept.
      *
      * @param input.account - The account the run targeted
