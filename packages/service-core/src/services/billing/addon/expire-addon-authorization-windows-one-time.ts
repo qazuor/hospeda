@@ -6,6 +6,8 @@ import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { confirmOneTimeOrder } from './addon-instance-a2-one-time';
 import type { A5Ports } from './addon-instance-a5';
+import { closeOneTimePaymentPage } from './close-one-time-payment-page';
+import { confirmOneTimePageByReference } from './confirm-one-time-page-by-reference';
 
 const abandonInputSchema = z.object({
     instanceId: z.uuid(),
@@ -84,4 +86,37 @@ export async function expireOneTimeAddon(
     }))
         ? 'ABANDONED'
         : 'DEFERRED';
+}
+
+/**
+ * A3 for a payment page purchase (HOS-2179 §5.4): it only confirms, never creates. It searches
+ * the payments by the purchase's reference and re-reads each id (through A2); an approved one
+ * activates the purchase. Only when every id re-read is not an approved payment does the
+ * purchase become `ABANDONED`, and then its page is closed (§5.7). A search or a read that does
+ * not answer, or an approved payment that cannot activate, leaves it pending for the next run.
+ *
+ * @param input.instanceId - The pending page purchase whose window elapsed
+ * @param ports - A2's ports plus the coverage notices
+ * @returns What this run did
+ */
+export async function expireOneTimePageAddon(
+    input: { readonly instanceId: string },
+    ports: A5Ports & {
+        readonly provider: PaymentProvider;
+        readonly clock: Clock;
+        readonly coverageNotices: CoverageNotices;
+    }
+): Promise<'ACTIVATED' | 'ABANDONED' | 'DEFERRED'> {
+    z.object({ instanceId: z.uuid() }).parse(input);
+    const found = await confirmOneTimePageByReference(input, ports);
+    if (found === 'ACTIVATED') return 'ACTIVATED';
+    if (found !== 'NONE_APPROVED') return 'DEFERRED';
+    const abandoned = await abandonOneTimeAddon({
+        instanceId: input.instanceId,
+        expectedProviderOrderId: null,
+        now: ports.clock.now()
+    });
+    if (!abandoned) return 'DEFERRED';
+    await closeOneTimePaymentPage(input, ports);
+    return 'ABANDONED';
 }

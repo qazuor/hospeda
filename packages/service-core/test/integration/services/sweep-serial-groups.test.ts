@@ -27,6 +27,16 @@ describe('sweep serial lock planning', () => {
             ]
         );
     });
+    it('serializes every file that drives the A3 window pass (HOS-2179)', () => {
+        for (const file of ['addon-a3-window.test.ts', 'addon-one-time-page.test.ts'])
+            expect(
+                planSerialLocks({ source: source(file) }).some(
+                    ({ key, mode }) => key === 1_999_003 && mode === 'exclusive'
+                ),
+                file
+            ).toBe(true);
+        expect(planSerialLocks({ source: 'expireAddonAuthorizationWindowsX(' })).toEqual([]);
+    });
     it('guards every transitive fixture victim', () => {
         const support = path.join(here, 'support');
         const files = readdirSync(support).filter((file) => file.endsWith('.ts'));

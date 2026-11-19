@@ -7,6 +7,9 @@ import {
     domainEventModel,
     eq,
     getDb,
+    idempotencyKeys,
+    isNotNull,
+    isNull,
     lte,
     or,
     providerLinks,
@@ -22,7 +25,12 @@ import { recordProviderCancellationDecided } from '../reconciliation/provider-ca
 import type { BeforeCancelNotice } from '../subscription/start-subscription.service';
 import { applyA2Recurring, emitAddonCoverageAdded } from './addon-instance-a2';
 import type { A5Ports } from './addon-instance-a5';
-import { expireOneTimeAddon } from './expire-addon-authorization-windows-one-time';
+import {
+    expireOneTimeAddon,
+    expireOneTimePageAddon
+} from './expire-addon-authorization-windows-one-time';
+import { PAYMENT_PAGE_OPERATION } from './one-time-payment-page';
+import { optionalPaymentPageTiming } from './one-time-payment-page-deadline';
 
 const logger = createLogger('addon-authorization-window-expiry');
 const limitSchema = z.number().int().positive();
@@ -129,17 +137,31 @@ export async function expireAddonAuthorizationWindows(
     const now = ports.clock.now();
     const deadlines = ports.deadlines ?? (await getCurrentBillingDeadlines());
     const oneTimeCutoff = new Date(now.getTime() - deadlines.values['10'].cardHours * 3_600_000);
+    // HOS-2179 §5.2: a page purchase waits for its page plus a margin (PLAZO:21). Without that
+    // deadline its end is unknown, so no page purchase is selected rather than a guessed one.
+    const pageTiming = optionalPaymentPageTiming(deadlines);
+    const pageCutoff = pageTiming
+        ? new Date(now.getTime() - pageTiming.pageMs - pageTiming.windowMarginMs)
+        : null;
     const rows = await getDb()
         .select({
             instance: addonInstances,
             chargeKind: addonProducts.chargeKind,
             complement: subscriptions,
-            link: providerLinks
+            link: providerLinks,
+            pageKey: idempotencyKeys.key
         })
         .from(addonInstances)
         .innerJoin(addonProducts, eq(addonProducts.id, addonInstances.productId))
         .leftJoin(subscriptions, eq(subscriptions.id, addonInstances.complementSubscriptionId))
         .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))
+        .leftJoin(
+            idempotencyKeys,
+            and(
+                eq(idempotencyKeys.subjectId, addonInstances.id),
+                eq(idempotencyKeys.operation, PAYMENT_PAGE_OPERATION)
+            )
+        )
         .where(
             and(
                 eq(addonInstances.status, 'PENDING_AUTHORIZATION'),
@@ -150,8 +172,16 @@ export async function expireAddonAuthorizationWindows(
                     ),
                     and(
                         eq(addonProducts.chargeKind, 'UNA_VEZ'),
+                        isNull(idempotencyKeys.key),
                         lte(addonInstances.createdAt, oneTimeCutoff)
-                    )
+                    ),
+                    pageCutoff
+                        ? and(
+                              eq(addonProducts.chargeKind, 'UNA_VEZ'),
+                              isNotNull(idempotencyKeys.key),
+                              lte(addonInstances.createdAt, pageCutoff)
+                          )
+                        : undefined
                 )
             )
         )
@@ -165,10 +195,15 @@ export async function expireAddonAuthorizationWindows(
     for (const row of rows) {
         try {
             if (row.chargeKind === 'UNA_VEZ') {
-                const outcome = await expireOneTimeAddon(
-                    { instanceId: row.instance.id, providerOrderId: row.instance.providerOrderId },
-                    ports
-                );
+                const outcome = row.pageKey
+                    ? await expireOneTimePageAddon({ instanceId: row.instance.id }, ports)
+                    : await expireOneTimeAddon(
+                          {
+                              instanceId: row.instance.id,
+                              providerOrderId: row.instance.providerOrderId
+                          },
+                          ports
+                      );
                 if (outcome === 'ACTIVATED') activated++;
                 else if (outcome === 'ABANDONED') abandoned++;
                 else deferred++;
