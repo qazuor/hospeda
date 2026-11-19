@@ -750,14 +750,14 @@
             "confirmTitleDaily": "Autorizar las corridas diarias",
             "confirmTitle": "Autorizar una corrida",
             "confirmSave": "¿Autorizar UNA corrida de {month} contra la cuenta {account}, por exactamente {amount}? Es la suma de las mediciones que mueven plata y también el tope de lo que la corrida puede cobrar. La autorización se consume cuando la corrida empieza.",
-            "confirmSaveReadOnly": "¿Autorizar las corridas diarias de {month} contra la cuenta {account}? El catálogo no tiene mediciones que muevan plata: las corridas no mueven plata (monto autorizado: {amount}). Cada una puede crear objetos que no pueden cobrar (preaprobaciones pendientes, sin tarjeta) y los cancela en la misma corrida. La autorización no se consume: cubre una corrida por día hasta que termine el mes, y deja de cubrirlas si aparece una medición que mueve plata.",
+            "confirmSaveReadOnly": "¿Autorizar las corridas diarias de {month} contra la cuenta {account}? El catálogo no tiene mediciones que muevan plata: las corridas no mueven plata (monto autorizado: {amount}). Cada una puede crear objetos que no pueden cobrar (preaprobaciones pendientes, sin tarjeta) y los cancela en la misma corrida. La autorización no se consume: cubre una corrida por día hasta que termine el mes, y deja de cubrirlas si aparece una medición que mueve plata. Una corrida manual ocupa la corrida de ese día: la programada de ese día se saltea.",
             "cancel": "Cancelar",
             "invalidValue": "Ingresá un mes con formato AAAA-MM y exactamente el monto que calcula el catálogo: la suma de los máximos a cobrar de sus mediciones que mueven plata (0 si no tiene ninguna).",
             "noWritePermission": "Solo un SUPER_ADMIN puede cambiar esta autorización.",
             "saveError": "No se pudo guardar la autorización. Probá de nuevo.",
             "expectedTitle": "Monto que necesita una corrida",
             "expectedValue": "{amount} ({minor} centavos): suma de {count} mediciones que mueven plata ({ids}).",
-            "noMoneyCatalog": "El catálogo no tiene mediciones que muevan plata en esta cuenta: las corridas no mueven plata. Cada una puede crear objetos que no pueden cobrar (preaprobaciones pendientes, sin tarjeta) y los cancela en la misma corrida. Se autoriza con monto 0 y cubre una corrida por día durante todo el mes.",
+            "noMoneyCatalog": "El catálogo no tiene mediciones que muevan plata en esta cuenta: las corridas no mueven plata. Cada una puede crear objetos que no pueden cobrar (preaprobaciones pendientes, sin tarjeta) y los cancela en la misma corrida. Se autoriza con monto 0 y cubre una corrida por día durante todo el mes. Una corrida manual ocupa la corrida de ese día: la programada de ese día se saltea.",
             "previewError": "No se pudo calcular el monto que necesita la corrida. No se puede autorizar."
         },
         "providerWatchShapes": {

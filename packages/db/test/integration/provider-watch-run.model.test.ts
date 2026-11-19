@@ -591,6 +591,46 @@ describe('an authorization of 0 covers one run a day for its month, unconsumed (
         });
     });
 
+    it('refuses a day already behind the last one taken: A, then B, then A again (A1)', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const take = (day: string) =>
+                model.open({
+                    account: 'production',
+                    startedAt: START,
+                    consumeAuthorization: takeZero(day),
+                    tx
+                });
+            const first = await take('2026-11-17');
+            const second = await take('2026-11-18');
+            const again = await take('2026-11-17');
+            expect([first, second, again].map((r) => r.authorizationConsumed)).toEqual([
+                true,
+                true,
+                false
+            ]);
+            expect((await authorizationRow(tx))?.value).toMatchObject({
+                lastRunDay: '2026-11-18',
+                runIds: [first.runId, second.runId]
+            });
+        });
+    });
+
+    it("refuses a day of the next month under this month's authorization (A1)", async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            // The month the run was pre-flighted with matches; only the day is out of it.
+            const result = await model.open({
+                account: 'production',
+                startedAt: new Date('2026-12-01T10:00:00.000Z'),
+                consumeAuthorization: takeZero('2026-12-01'),
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('runIds');
+        });
+    });
+
     it('is not taken for another month', async () => {
         await withTestTransaction(async (tx) => {
             await seedAuthorization(tx, ZERO);
@@ -650,6 +690,78 @@ describe('an authorization of 0 covers one run a day for its month, unconsumed (
                 );
             const results = await Promise.all([attempt(), attempt(), attempt()]);
             expect(results.filter((result) => result.authorizationConsumed)).toHaveLength(1);
+        });
+    });
+});
+
+describe('re-authorizing keeps the daily use of an authorization of 0 only when it is the same (A3)', () => {
+    async function takeToday(tx: DrizzleClient) {
+        return model.open({
+            account: 'production',
+            startedAt: START,
+            consumeAuthorization: takeZero('2026-11-17'),
+            tx
+        });
+    }
+
+    it('keeps lastRunDay and runIds for the same month and account, so today stays taken', async () => {
+        await withTestTransaction(async (tx) => {
+            const user = await seedAuthorization(tx, ZERO);
+            const first = await takeToday(tx);
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value: { ...ZERO, accountNickname: 'HOSPEDA' },
+                actorId: user.id,
+                tx
+            });
+            expect((await authorizationRow(tx))?.value).toEqual({
+                ...ZERO,
+                accountNickname: 'HOSPEDA',
+                lastRunDay: '2026-11-17',
+                runIds: [first.runId]
+            });
+            expect((await takeToday(tx)).authorizationConsumed).toBe(false);
+        });
+    });
+
+    it.each([
+        ['another month', { month: '2026-12' }],
+        ['another account', { accountId: '999999999' }],
+        ['an amount above 0', { maxChargeMinor: 150000 }]
+    ])('starts afresh for %s', async (_name, change) => {
+        await withTestTransaction(async (tx) => {
+            const user = await seedAuthorization(tx, ZERO);
+            await takeToday(tx);
+            const value = { ...ZERO, ...change };
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value,
+                actorId: user.id,
+                tx
+            });
+            expect((await authorizationRow(tx))?.value).toEqual(value);
+        });
+    });
+
+    it('starts afresh over a consumed authorization above 0, and writes a first one', async () => {
+        await withTestTransaction(async (tx) => {
+            const user = testData.user();
+            await tx.insert(users).values(user);
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value: AUTHORIZATION,
+                actorId: user.id,
+                tx
+            });
+            await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: CONSUME,
+                tx
+            });
+            await platformSettingsModel.writeProviderWatchAuthorization({
+                value: ZERO,
+                actorId: user.id,
+                tx
+            });
+            expect((await authorizationRow(tx))?.value).toEqual(ZERO);
         });
     });
 });

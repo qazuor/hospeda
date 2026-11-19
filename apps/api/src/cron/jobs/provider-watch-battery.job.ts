@@ -229,6 +229,22 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                     alerts: run.alerts.length,
                     ...(run.reason === undefined ? {} : { reason: run.reason })
                 };
+                // B1: an authorization of 0 covers one run a day. A second run the same day (a manual
+                // one, or a tick after one) finds the day taken: an expected skip, not a failure, so
+                // it is logged at info, never sent to Sentry, and the job is not failed (re-review of
+                // #4538, A2). The run row stays closed as refused, with its reason.
+                if (
+                    run.outcome === 'refused' &&
+                    run.reason?.startsWith('AUTHORIZATION_DAY_TAKEN') === true
+                ) {
+                    logger.info('Provider watch battery skipped: today already ran', details);
+                    return result({
+                        ctx,
+                        success: true,
+                        message: 'Skipped: the authorization of 0 already covered a run today',
+                        details: { ...details, skipped: 'day-taken' }
+                    });
+                }
                 if (run.outcome !== 'completed') {
                     logger.error(
                         `Provider watch battery ${run.outcome}: ${run.reason ?? 'no reason recorded'}`,

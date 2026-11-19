@@ -137,11 +137,69 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
     }
 
     /**
+     * Writes the owner's provider watch authorization (HOS-1512). Always a new, unconsumed
+     * authorization, with one exception (re-review of #4538, A3): re-authorizing 0 for the SAME
+     * month and account as a stored authorization of 0 keeps its daily use (`lastRunDay`,
+     * `runIds`), or a re-authorization would let a second run go the same day. The carry-over is
+     * decided by the database against the row as it is when the write lands, in the same
+     * statement, so a run taking the day concurrently is never lost.
+     *
+     * @param input.value - The authorization: month, amount, account id and nickname
+     * @param input.actorId - Who wrote it
+     * @param input.tx - Optional transaction
+     * @returns The stored row
+     */
+    async writeProviderWatchAuthorization(input: {
+        readonly value: {
+            readonly month: string;
+            readonly maxChargeMinor: number;
+            readonly accountId: string;
+            readonly accountNickname?: string;
+        };
+        readonly actorId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<PlatformSettingRecord> {
+        const now = new Date();
+        const fresh = JSON.stringify(input.value);
+        const stored = sql.raw(`"platform_settings"."value"`);
+        const [row] = await this.getClient(input.tx)
+            .insert(platformSettings)
+            .values({
+                key: 'billing.providerWatchAuthorization',
+                value: input.value,
+                updatedAt: now,
+                updatedBy: input.actorId
+            })
+            .onConflictDoUpdate({
+                target: platformSettings.key,
+                set: {
+                    value: sql`${fresh}::jsonb || CASE
+                        WHEN ${input.value.maxChargeMinor} = 0
+                            AND ${stored}->>'maxChargeMinor' = '0'
+                            AND ${stored}->>'month' = ${input.value.month}
+                            AND ${stored}->>'accountId' = ${input.value.accountId}
+                        THEN jsonb_strip_nulls(jsonb_build_object(
+                            'lastRunDay', ${stored}->'lastRunDay',
+                            'runIds', ${stored}->'runIds'
+                        ))
+                        ELSE '{}'::jsonb
+                    END`,
+                    updatedAt: now,
+                    updatedBy: input.actorId
+                }
+            })
+            .returning();
+        if (!row) throw new Error('writeProviderWatchAuthorization returned no row');
+        return row;
+    }
+
+    /**
      * Takes an authorization of 0 for ONE market day (owner decision on B1, 2026-11-19): an
      * authorization whose catalog moves no money is not consumed; it covers one run a day for its
      * month. A conditional update, like the one-shot consumption: it matches only the exact values
-     * the run was pre-flighted with, an amount of 0, an unconsumed row, and a day not yet taken, so
-     * two runs on the same day cannot both take it. The run id is appended to `runIds`, the audit
+     * the run was pre-flighted with, an amount of 0, an unconsumed row, and a day of that month
+     * later than the last one taken, so two runs on the same day cannot both take it, nor can a day
+     * already behind. The run id is appended to `runIds`, the audit
      * of the runs it covered.
      *
      * @param input.month - The month the run was pre-flighted with
@@ -173,7 +231,11 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
                     sql`${platformSettings.value}->>'maxChargeMinor' = '0'`,
                     sql`${platformSettings.value}->>'accountId' = ${input.accountId}`,
                     sql`${platformSettings.value}->>'consumedByRunId' IS NULL`,
-                    sql`${platformSettings.value}->>'lastRunDay' IS DISTINCT FROM ${input.day}`
+                    // The day belongs to the authorized month, and is LATER than the last one taken:
+                    // a day already taken (or an earlier one, from a clock that went back) is refused
+                    // (re-review of #4538, A1). `YYYY-MM-DD` orders as text.
+                    sql`left(${input.day}::text, 7) = ${platformSettings.value}->>'month'`,
+                    sql`(${platformSettings.value}->>'lastRunDay' IS NULL OR ${platformSettings.value}->>'lastRunDay' < ${input.day}::text)`
                 )
             )
             .returning({ key: platformSettings.key });

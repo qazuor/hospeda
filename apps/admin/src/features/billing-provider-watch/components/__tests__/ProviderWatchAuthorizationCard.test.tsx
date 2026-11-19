@@ -300,6 +300,10 @@ describe('HOS-1512 the billing settings card authorizes one provider watch run',
         expect(dialog).toHaveTextContent(copy.confirmTitleDaily);
         expect(dialog).toHaveTextContent(/una corrida por día|one run a day/i);
         expect(dialog).not.toHaveTextContent(/se consume cuando|consumed when the run starts/i);
+        // A2: a manual run takes up that day's run.
+        expect(dialog).toHaveTextContent(
+            /corrida manual ocupa la corrida de ese día|manual run takes up/i
+        );
         expect(dialog).toHaveTextContent(
             /cancela en la misma corrida|cancels them in the same run/i
         );

@@ -238,6 +238,45 @@ describe('provider watch battery cron', () => {
             expect(pingWatchdog).toHaveBeenCalledTimes(1);
         });
 
+        it('treats a day already taken under an authorization of 0 as an expected skip (A2)', async () => {
+            const { deps: d, pingWatchdog } = production({
+                readAuthorization: async () => ({ ...AUTHORIZED, maxChargeMinor: 0 }),
+                startRun: async () => ({
+                    runId: crypto.randomUUID(),
+                    authorizationConsumed: false
+                })
+            });
+            const ctx = context({ executionMode: 'manual' });
+            const result = await createProviderWatchBatteryJob(d).handler(ctx);
+            expect(result.success).toBe(true);
+            expect(result.details).toMatchObject({ outcome: 'refused', skipped: 'day-taken' });
+            expect(ctx.logger.error).not.toHaveBeenCalled();
+            expect(ctx.logger.info).toHaveBeenCalledWith(
+                'Provider watch battery skipped: today already ran',
+                expect.objectContaining({ outcome: 'refused' })
+            );
+            expect(pingWatchdog).not.toHaveBeenCalled();
+        });
+
+        it('still FAILS loudly when an authorization above 0 was already consumed (A2)', async () => {
+            const { deps: d } = production({
+                catalog: [readEntry, moneyEntry],
+                readAuthorization: async () => AUTHORIZED,
+                startRun: async () => ({
+                    runId: crypto.randomUUID(),
+                    authorizationConsumed: false
+                })
+            });
+            const ctx = context();
+            const result = await createProviderWatchBatteryJob(d).handler(ctx);
+            expect(result.success).toBe(false);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                expect.stringContaining('AUTHORIZATION_CONSUMED'),
+                expect.anything(),
+                { capture: true }
+            );
+        });
+
         it('refuses a consumed authorization', async () => {
             const { deps: d, pingWatchdog } = production({
                 readAuthorization: async () => ({ ...AUTHORIZED, consumedByRunId: 'run-1' })
