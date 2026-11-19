@@ -170,6 +170,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4478
+    {
+        id: '2026-11-17-assistant-amenities-by-category',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya puede revisar y cambiar los servicios de tu alojamiento por categoría',
+            en: 'Your AI assistant can now review and change your listing amenities by category',
+            pt: 'Seu assistente de IA agora pode revisar e alterar as comodidades da sua hospedagem por categoria'
+        },
+        body: {
+            es: 'Con el asistente de IA conectado a Hospeda, podés ver los servicios y amenidades de tu alojamiento o comercio agrupados por categoría y con sus nombres en español. También podés agregar o quitar servicios de una categoría sin tocar el resto. El cambio se ve enseguida en el editor y en la página pública.',
+            en: 'With the AI assistant connected to Hospeda, you can see the amenities of your accommodation or venue grouped by category and with Spanish labels. You can also add or remove amenities in one category without touching the rest. The change shows up right away in the editor and on the public page.',
+            pt: 'Com o assistente de IA conectado ao Hospeda, você pode ver as comodidades da sua hospedagem ou estabelecimento agrupadas por categoria e com nomes em espanhol. Também pode adicionar ou remover comodidades de uma categoria sem mexer nas demais. A mudança aparece na hora no editor e na página pública.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4523
     {
         id: '2026-11-18-admin-provider-lead-approval-categories',

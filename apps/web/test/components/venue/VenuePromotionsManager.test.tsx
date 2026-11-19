@@ -36,7 +36,8 @@ vi.mock('../../../src/lib/i18n', () => ({
                 'venue.owner.editor.promotionsManager.actions.edit': 'Editar',
                 'venue.owner.editor.promotionsManager.actions.pause': 'Pausar',
                 'venue.owner.editor.promotionsManager.actions.activate': 'Reactivar',
-                'venue.owner.editor.promotionsManager.actions.save': 'Guardar'
+                'venue.owner.editor.promotionsManager.actions.save': 'Guardar',
+                'venue.owner.editor.menuManager.seePlans': 'Ver planes'
             };
             return (fallback ?? messages[key] ?? key).replace(
                 /\{\{(\w+)\}\}/g,
@@ -99,7 +100,7 @@ describe('VenuePromotionsManager', () => {
         expect(screen.queryByText('2147483647')).not.toBeInTheDocument();
     });
 
-    it('renders a generic locked message when no catalog plan grants the locked section', async () => {
+    it('renders the neutral no-plan message without editing actions while locked', async () => {
         mocks.list.mockResolvedValue({
             ok: true,
             data: { items: [], meta: { activeCount: 0, maxActive: 0 } }
@@ -114,8 +115,51 @@ describe('VenuePromotionsManager', () => {
         );
         await waitFor(() => expect(mocks.list).toHaveBeenCalled());
         expect(await screen.findByRole('status')).toHaveTextContent(
-            'Esta función todavía no está disponible para tu plan.'
+            'Las promociones todavía no están disponibles para tu plan.'
         );
+        expect(screen.queryByRole('button', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Ver planes' })).not.toBeInTheDocument();
+    });
+
+    it('names the catalog plan and links to compare plans when one grants promotions', async () => {
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [], meta: { activeCount: 0, maxActive: 0 } }
+        });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="locked"
+                upsellPlanName="Plan Profesional"
+            />
+        );
+        expect(await screen.findByRole('status')).toHaveTextContent(
+            'Disponible desde el plan Plan Profesional.'
+        );
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
+            'href',
+            '/es/planes/comer-y-salir/precios/'
+        );
+    });
+
+    it('keeps locked promotions listed with pause and delete, but no create or edit actions', async () => {
+        listWithPromotion();
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="locked"
+                upsellPlanName="Plan Profesional"
+            />
+        );
+
+        expect(await screen.findByText('Oferta')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Pausar' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Borrar' })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Reactivar' })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: 'Nueva promoción' })).not.toBeInTheDocument();
     });
 
     it('locks creation at the active limit and names the plan from the catalog', async () => {
@@ -179,7 +223,7 @@ describe('VenuePromotionsManager', () => {
 
         fireEvent.click(await screen.findByRole('button', { name: 'Pausar' }));
         expect(
-            await screen.findByText('Esta función todavía no está disponible para tu plan.')
+            await screen.findByText('Las promociones todavía no están disponibles para tu plan.')
         ).toBeInTheDocument();
         expect(screen.queryByText('raw api message')).not.toBeInTheDocument();
     });
