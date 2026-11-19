@@ -170,6 +170,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4528
+    {
+        id: '2026-11-19-venue-event-ticket-link',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Tus eventos ya pueden tener un botón «Comprar entrada»',
+            en: 'Your events can now have a «Buy tickets» button',
+            pt: 'Seus eventos agora podem ter um botão «Comprar ingresso»'
+        },
+        body: {
+            es: 'En **Mi comercio → Eventos** podés pegar el link de la ticketera donde ya vendés las entradas (Passline, Venti o tu web). En la ficha, ese evento muestra el botón «Comprar entrada», que abre la venta en una pestaña nueva.',
+            en: 'In **My business → Events** you can paste the link to the ticketing site where you already sell tickets (Passline, Venti or your own website). On your listing, that event shows a «Buy tickets» button that opens the sale in a new tab.',
+            pt: 'Em **Meu comércio → Eventos** você pode colar o link da plataforma onde já vende os ingressos (Passline, Venti ou seu site). Na ficha, esse evento mostra o botão «Comprar ingresso», que abre a venda em uma nova aba.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4500
     {
         id: '2026-11-18-plan-change-checkout-resume-or-cancel',
