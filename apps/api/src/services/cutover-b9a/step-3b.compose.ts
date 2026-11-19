@@ -69,13 +69,17 @@ export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
             stopTrial();
             stopListing();
             stopEffectiveSetInvalidation();
-            await drainListingCoverageRecalculations();
             try {
-                await disconnectRedis();
-            } catch (error) {
-                apiLogger.error({ error }, 'Failed to disconnect Redis after cutover step 3b');
+                await drainListingCoverageRecalculations();
+            } finally {
+                // Release every handle even when the drain rejects, or the process hangs.
+                try {
+                    await disconnectRedis();
+                } catch (error) {
+                    apiLogger.error({ error }, 'Failed to disconnect Redis after cutover step 3b');
+                }
+                await shutdownMercadoPagoTrafficGovernor();
             }
-            await shutdownMercadoPagoTrafficGovernor();
         }
     };
 }

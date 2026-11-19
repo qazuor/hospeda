@@ -135,4 +135,18 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
             mocks.shutdownGovernor.mock.invocationCallOrder[0]!
         );
     });
+
+    it('TEST:2115:3 releases Redis and the governor even when the drain rejects', async () => {
+        // Arrange
+        mocks.drain.mockRejectedValue(new Error('drain failed'));
+        mocks.disconnectRedis.mockResolvedValue(undefined);
+
+        // Act
+        const stopping = composeStep3bProcess().stop();
+
+        // Assert
+        await expect(stopping).rejects.toThrow('drain failed');
+        expect(mocks.disconnectRedis).toHaveBeenCalledTimes(1);
+        expect(mocks.shutdownGovernor).toHaveBeenCalledTimes(1);
+    });
 });
