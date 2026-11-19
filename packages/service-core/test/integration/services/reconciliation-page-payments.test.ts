@@ -15,7 +15,8 @@ import {
     pageMarkEvents,
     pageMarks,
     pagePriceIs,
-    pageSetup
+    pageSetup,
+    retirePageMarks
 } from './support/one-time-page-fixtures';
 import { orderDeadlines } from './support/paid-order-fixtures';
 
@@ -24,6 +25,7 @@ const skip = !isServiceTestDbAvailable();
 
 afterEach(async () => {
     vi.restoreAllMocks();
+    await retirePageMarks();
     await retirePurchaseFixtures();
 });
 afterAll(closeServiceTestPool);

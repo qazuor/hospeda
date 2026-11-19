@@ -13,13 +13,15 @@ import {
     pagePayments,
     pagePriceIs,
     pageSetup,
-    refusePageMarks
+    refusePageMarks,
+    retirePageMarks
 } from './support/one-time-page-fixtures';
 
 const skip = !isServiceTestDbAvailable();
 
 afterEach(async () => {
     vi.restoreAllMocks();
+    await retirePageMarks();
     await retirePurchaseFixtures();
 });
 afterAll(closeServiceTestPool);

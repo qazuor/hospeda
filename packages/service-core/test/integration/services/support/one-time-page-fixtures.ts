@@ -20,6 +20,9 @@ import { payingPrincipal } from './addon-a2-fixtures';
 import { purchaseFixture } from './addon-purchase-fixtures';
 import { outboxBeforeCancelNotice } from './outbox-before-cancel-notice';
 
+/** Every page purchase bought in the running file, so its marks can be lifted afterwards. */
+const boughtInstances: { readonly id: string; readonly ownerId: string }[] = [];
+
 /** A paying owner with a one-time product, ready to buy through a payment page. */
 export async function pageSetup() {
     const f = await purchaseFixture();
@@ -39,6 +42,7 @@ export async function boughtPage(s: Awaited<ReturnType<typeof pageSetup>>) {
     if (result.outcome !== 'CREATED') throw new Error(`Purchase returned ${result.outcome}`);
     const instance = await pageInstance(result.instanceId);
     if (!instance.paymentPageId) throw new Error('Payment page missing');
+    boughtInstances.push({ id: instance.id, ownerId: instance.ownerId });
     // The principal's own notices are not this purchase's: a test sees only what it pays.
     s.f.fake.takeDeliveries();
     return { instance, paymentPageId: instance.paymentPageId };
@@ -116,6 +120,15 @@ export async function liftPageMarks(instanceId: string, liftedBy: string) {
                 isNull(reconciliationMarks.liftedAt)
             )
         );
+}
+
+/**
+ * Lifts the marks this file's page purchases left open. The integration files share one
+ * database, and other files page through every open mark (listActionableReconciliationMarks),
+ * so open marks left here would push theirs off the page.
+ */
+export async function retirePageMarks() {
+    for (const bought of boughtInstances.splice(0)) await liftPageMarks(bought.id, bought.ownerId);
 }
 
 /** Makes every mark insert for this one instance fail while `run` runs; other files are untouched. */
