@@ -45,7 +45,7 @@ afterEach(async () => {
     activeServer = undefined;
 });
 
-async function fakeAs(account: WatchAccount) {
+async function fakeAs(account: WatchAccount, seedReal = true) {
     const clock = createAdjustableClock({ start: NOW });
     const provider = new FakePaymentProvider({
         clock,
@@ -57,7 +57,31 @@ async function fakeAs(account: WatchAccount) {
         ]
     });
     activeServer = await startFakeProviderServer({ provider, clock, account });
+    if (seedReal) await seedRealObjects(provider);
     return { clock, provider, server: activeServer };
+}
+
+/**
+ * Real customers' objects, as an account has them: the re-reads (recent-auths, recent-payments)
+ * fail on an account with none (review of #4538, R1). Seeded straight into the fake, so they are
+ * not requests of the run.
+ */
+async function seedRealObjects(provider: FakePaymentProvider): Promise<void> {
+    for (let index = 0; index < 5; index += 1) {
+        const { authorizationId } = await provider.authorize({
+            reference: `real-subscription-${index}`,
+            amount: { amountMinor: FAKE_AMOUNT_FLOOR_MINOR, currency: FAKE_CURRENCY },
+            cadence: { everyMonths: 1 },
+            reason: 'Plan',
+            returnUrl: 'https://hospeda.test'
+        });
+        await provider.approve({ authorizationId });
+        await provider.charge({
+            authorizationId,
+            amount: { amountMinor: FAKE_AMOUNT_FLOOR_MINOR, currency: FAKE_CURRENCY },
+            reference: `real-charge-${index}`
+        });
+    }
 }
 
 async function runCatalog(args: {

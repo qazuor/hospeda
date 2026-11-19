@@ -24,6 +24,16 @@ export const RECENT_SUBJECTS = 5;
 /** How many recent payments the payment search returns, to pick the subjects from. */
 const PAYMENT_SEARCH_PAGE = 30;
 
+/** The authorization search page, as the adapter pages it (`mercadopago-search.ts`). */
+const AUTHORIZATION_SEARCH_PAGE = 20;
+
+/**
+ * The most search pages a re-read walks, as the adapter's own search (50 pages of 20). The
+ * battery's own authorizations are the most recent ones, so they come first; the real ones are
+ * found behind them (review of #4538, R1).
+ */
+const MAX_SEARCH_PAGES = 50;
+
 /** RP13 / EX-57: the order search window may span at most 30 days. */
 const ORDER_WINDOW_MAX_DAYS = 30;
 
@@ -119,6 +129,68 @@ function totalOf(response: WatchResponse): number | null {
 /** A reference nobody ever wrote: the garbage control of RC-1 and EX-57. */
 function garbageReference(ctx: WatchContext): string {
     return `${WATCH_REFERENCE_PREFIX}${ctx.runId}-never-written`;
+}
+
+/**
+ * Whether the `date_created` of every result, in the order the search answered, never increases.
+ * The re-reads ask for `date_created` descending and pick the first subjects: an order the
+ * provider does not honor would pick other subjects silently (review of #4538, R1). A result
+ * without a readable date breaks the order too.
+ */
+function sortedDescending(results: readonly Readonly<Record<string, unknown>>[]): boolean {
+    const dates = results.map((item) =>
+        typeof item.date_created === 'string' ? Date.parse(item.date_created) : Number.NaN
+    );
+    return dates.every(
+        (date, index) => !Number.isNaN(date) && (index === 0 || date <= (dates[index - 1] ?? date))
+    );
+}
+
+/**
+ * Walks a search page by page, through `offset`, until `enough` holds over what was read, the
+ * search runs out (an empty page, or `paging.total` reached), or {@link MAX_SEARCH_PAGES}. Every
+ * page is recorded under the same label: each one but an empty first page has the same shape.
+ */
+async function walkSearch(args: {
+    readonly ctx: WatchContext;
+    readonly label: string;
+    readonly path: (offset: number) => string;
+    readonly pageSize: number;
+    readonly shapePaths: readonly string[];
+    readonly enough: (results: readonly Readonly<Record<string, unknown>>[]) => boolean;
+}): Promise<readonly Readonly<Record<string, unknown>>[]> {
+    const results: Readonly<Record<string, unknown>>[] = [];
+    for (let page = 0; page < MAX_SEARCH_PAGES; page += 1) {
+        const offset = page * args.pageSize;
+        const response = await args.ctx.send({
+            label: args.label,
+            request: { method: 'GET', path: args.path(offset) },
+            shapePaths: args.shapePaths
+        });
+        const found = listOf(recordOf(response.body).results).map(recordOf);
+        results.push(...found);
+        const total = totalOf(response);
+        if (found.length === 0 || args.enough(results)) break;
+        if (total !== null && offset + found.length >= total) break;
+    }
+    return results;
+}
+
+/** The ids of the results, in order, without blanks or repeats. */
+function idsOf(results: readonly Readonly<Record<string, unknown>>[]): string[] {
+    return [...new Set(results.map((item) => String(item.id ?? '')).filter((id) => id !== ''))];
+}
+
+/**
+ * A re-read over zero real subjects measures nothing: it is a finding, never a green (review of
+ * #4538, R1). The measurement errors, so the run fails and says why.
+ */
+function requireSubjects(args: { readonly what: string; readonly ids: readonly string[] }): void {
+    if (args.ids.length === 0) {
+        throw new Error(
+            `no real ${args.what} to re-read: the search answered none outside the battery's own, so this re-read measured nothing`
+        );
+    }
 }
 
 /** Whether an adapter error is a refusal BY DESIGN (a foreign object), not a drift. */
@@ -228,22 +300,26 @@ const recentAuthorizations: WatchEntry = {
     rows: ['RP7'],
     accounts: ['sandbox', 'production'],
     effect: 'read',
-    expected: { unreadableByAdapter: [], renewalsWithoutExpiry: [] },
+    expected: {
+        subjectsRead: RECENT_SUBJECTS,
+        sortedDescending: true,
+        unreadableByAdapter: [],
+        renewalsWithoutExpiry: []
+    },
     measure: async (ctx): Promise<JsonValue> => {
-        const search = await ctx.send({
+        const real = (results: readonly Readonly<Record<string, unknown>>[]) =>
+            idsOf(results.filter((item) => !isWatchReference(item.external_reference)));
+        const results = await walkSearch({
+            ctx,
             label: 'recent',
-            request: {
-                method: 'GET',
-                path: `/preapproval/search?limit=${RECENT_SUBJECTS * 4}&offset=0&sort=date_created:desc`
-            },
-            shapePaths: AUTHORIZATION_SEARCH_PATHS
+            path: (offset) =>
+                `/preapproval/search?limit=${AUTHORIZATION_SEARCH_PAGE}&offset=${offset}&sort=date_created:desc`,
+            pageSize: AUTHORIZATION_SEARCH_PAGE,
+            shapePaths: AUTHORIZATION_SEARCH_PATHS,
+            enough: (read) => real(read).length >= RECENT_SUBJECTS
         });
-        const subjects = listOf(recordOf(search.body).results)
-            .map(recordOf)
-            .filter((item) => !isWatchReference(item.external_reference))
-            .map((item) => String(item.id ?? ''))
-            .filter((id) => id !== '')
-            .slice(0, RECENT_SUBJECTS);
+        const subjects = real(results).slice(0, RECENT_SUBJECTS);
+        requireSubjects({ what: 'authorization', ids: subjects });
         const bridge = createWatchAdapterBridge({ ctx });
         const unreadable: string[] = [];
         const withoutExpiry: string[] = [];
@@ -253,14 +329,18 @@ const recentAuthorizations: WatchEntry = {
                 (provider) => provider.readAuthorization({ authorizationId: id }),
                 { shapePaths: AUTHORIZATION_PATHS, oneLabel: true }
             );
-            if (read.error !== undefined && !isByDesign(read.error)) unreadable.push(id);
+            // Review of #4538 (L1): an authorization the adapter refuses BY DESIGN (a foreign one:
+            // no reference of ours, or a cadence it does not support) is not a drift, and its
+            // charge records are not ours to judge either: they are not read.
+            if (read.error !== undefined && isByDesign(read.error)) continue;
+            if (read.error !== undefined) unreadable.push(id);
             const records = await bridge.callWithSend(
                 'charge-records',
                 (send) => readMercadoPagoChargeRecords({ authorizationId: id, send }),
                 { shapePaths: CHARGE_RECORD_PATHS, oneLabel: true }
             );
             if (records.value === undefined) {
-                unreadable.push(id);
+                if (!isByDesign(records.error)) unreadable.push(id);
                 continue;
             }
             const renewals = [...records.value]
@@ -270,7 +350,12 @@ const recentAuthorizations: WatchEntry = {
                 .slice(1);
             if (renewals.some((record) => !record.expire_date)) withoutExpiry.push(id);
         }
-        return { unreadableByAdapter: unreadable, renewalsWithoutExpiry: withoutExpiry };
+        return {
+            subjectsRead: subjects.length,
+            sortedDescending: sortedDescending(results),
+            unreadableByAdapter: [...new Set(unreadable)],
+            renewalsWithoutExpiry: withoutExpiry
+        };
     }
 };
 
@@ -284,25 +369,28 @@ const recentPayments: WatchEntry = {
     rows: [],
     accounts: ['sandbox', 'production'],
     effect: 'read',
-    expected: { unreadableByAdapter: [] },
+    expected: { subjectsRead: RECENT_SUBJECTS, sortedDescending: true, unreadableByAdapter: [] },
     measure: async (ctx): Promise<JsonValue> => {
-        const search = await ctx.send({
+        // The battery creates no payment: every payment the search answers is a real one.
+        const results = await walkSearch({
+            ctx,
             label: 'recent',
-            request: {
-                method: 'GET',
-                path: `/v1/payments/search?sort=date_created&criteria=desc&limit=${PAYMENT_SEARCH_PAGE}`
-            },
-            shapePaths: PAYMENT_SEARCH_PATHS
+            path: (offset) =>
+                `/v1/payments/search?sort=date_created&criteria=desc&limit=${PAYMENT_SEARCH_PAGE}&offset=${offset}`,
+            pageSize: PAYMENT_SEARCH_PAGE,
+            shapePaths: PAYMENT_SEARCH_PATHS,
+            enough: (read) => idsOf(read).length >= RECENT_SUBJECTS
         });
-        const results = listOf(recordOf(search.body).results).map(recordOf);
-        const idOf = (item: Readonly<Record<string, unknown>>) => String(item.id ?? '');
-        const recent = results.slice(0, RECENT_SUBJECTS).map(idOf);
-        const refunded = results
-            .filter((item) => typeof item.transaction_amount_refunded === 'number')
-            .filter((item) => (item.transaction_amount_refunded as number) > 0)
-            .slice(0, RECENT_SUBJECTS)
-            .map(idOf);
-        const subjects = [...new Set([...recent, ...refunded])].filter((id) => id !== '');
+        const recent = idsOf(results).slice(0, RECENT_SUBJECTS);
+        requireSubjects({ what: 'payment', ids: recent });
+        const refunded = idsOf(
+            results.filter(
+                (item) =>
+                    typeof item.transaction_amount_refunded === 'number' &&
+                    item.transaction_amount_refunded > 0
+            )
+        ).slice(0, RECENT_SUBJECTS);
+        const subjects = [...new Set([...recent, ...refunded])];
         const bridge = createWatchAdapterBridge({ ctx });
         const unreadable: string[] = [];
         for (const id of subjects) {
@@ -316,7 +404,11 @@ const recentPayments: WatchEntry = {
             );
             if (read.error !== undefined && !isByDesign(read.error)) unreadable.push(id);
         }
-        return { unreadableByAdapter: unreadable };
+        return {
+            subjectsRead: recent.length,
+            sortedDescending: sortedDescending(results),
+            unreadableByAdapter: unreadable
+        };
     }
 };
 
