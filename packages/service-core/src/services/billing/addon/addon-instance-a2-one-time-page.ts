@@ -1,6 +1,18 @@
 import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
-import { addonInstances, addonProducts, and, eq, getDb, idempotencyKeys, payments } from '@repo/db';
+import {
+    addonInstances,
+    addonProducts,
+    and,
+    domainEvent,
+    eq,
+    getDb,
+    idempotencyKeys,
+    isNotNull,
+    payments,
+    reconciliationMarks,
+    sql
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
@@ -73,11 +85,45 @@ async function settledOutcome(input: {
 }
 
 /**
+ * Whether a lifted `DIVERGENCIA_DE_MONTO` on the instance already names this provider charge in
+ * one of its opening events. The open-mark uniqueness is per (instance, reason) over OPEN marks
+ * only, so without this a lifted mark would be reopened by the next read of the same charge.
+ */
+async function divergenceLiftedFor(input: {
+    readonly instanceId: string;
+    readonly chargeId: string;
+}): Promise<boolean> {
+    const [lifted] = await getDb()
+        .select({ id: reconciliationMarks.id })
+        .from(reconciliationMarks)
+        .innerJoin(
+            domainEvent,
+            and(
+                eq(domainEvent.eventType, 'reconciliation.mark_opened'),
+                eq(domainEvent.entityType, 'addon_instance'),
+                eq(domainEvent.entityId, input.instanceId),
+                sql`${domainEvent.changes} @> jsonb_build_array(jsonb_build_object('field', 'reconciliation_mark.id', 'new', ${reconciliationMarks.id}::text))`,
+                sql`${domainEvent.changes} @> ${JSON.stringify([{ field: 'provider.charge_id', new: input.chargeId }])}::jsonb`
+            )
+        )
+        .where(
+            and(
+                eq(reconciliationMarks.addonInstanceId, input.instanceId),
+                eq(reconciliationMarks.reason, 'DIVERGENCIA_DE_MONTO'),
+                isNotNull(reconciliationMarks.liftedAt)
+            )
+        )
+        .limit(1);
+    return lifted !== undefined;
+}
+
+/**
  * Opens `DIVERGENCIA_DE_MONTO` (MOT:5, AC-8) on the instance for an approved payment of another
  * amount or currency than the anchored price. The provider's id and both amounts travel in the
  * mark's event; there is no `payment` row to hang, since the money activated nothing. A repeated
- * notice or a later A3 accumulates on the same open mark. `AMOUNT_MISMATCH` is returned only once
- * the mark is open, so a caller may treat it as decided; a failure to open it is `UNKNOWN`.
+ * notice or a later A3 accumulates on the same open mark, and a charge whose mark a person
+ * already lifted does not reopen it. `AMOUNT_MISMATCH` is returned only once the mark is open
+ * or was lifted for this charge, so a caller may treat it as decided; a failure to open it is `UNKNOWN`.
  */
 async function recordAmountMismatch(input: {
     readonly instanceId: string;
@@ -87,6 +133,9 @@ async function recordAmountMismatch(input: {
 }): Promise<{ readonly outcome: 'AMOUNT_MISMATCH' | 'UNKNOWN' }> {
     logger.error(input, 'Approved page payment differs from the anchored price; not activated');
     try {
+        // A person lifted MOT:5 for this very charge: it is settled. Re-reading the same
+        // still-approved charge (a repeated notice, A3, the sweep) must not reopen it.
+        if (await divergenceLiftedFor(input)) return { outcome: 'AMOUNT_MISMATCH' };
         await openReconciliationMark({
             subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
             reason: 'DIVERGENCIA_DE_MONTO',

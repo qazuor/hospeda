@@ -5,6 +5,7 @@ import {
     domainEvent,
     eq,
     idempotencyKeys,
+    isNull,
     payments,
     reconciliationMarks
 } from '@repo/db';
@@ -101,6 +102,26 @@ async function marksOf(instanceId: string) {
         .where(eq(reconciliationMarks.addonInstanceId, instanceId));
 }
 
+async function priceIs(productId: string, price: number) {
+    await getServiceTestDb()
+        .update(addonProducts)
+        .set({ price })
+        .where(eq(addonProducts.id, productId));
+}
+
+/** Lifts every open mark of the instance, as a person settling it without a refund would. */
+async function liftMarksOf(instanceId: string, liftedBy: string) {
+    await getServiceTestDb()
+        .update(reconciliationMarks)
+        .set({ liftedAt: new Date(), liftedBy })
+        .where(
+            and(
+                eq(reconciliationMarks.addonInstanceId, instanceId),
+                isNull(reconciliationMarks.liftedAt)
+            )
+        );
+}
+
 async function markEventsOf(instanceId: string) {
     return getServiceTestDb()
         .select({ changes: domainEvent.changes })
@@ -110,7 +131,8 @@ async function markEventsOf(instanceId: string) {
                 eq(domainEvent.entityId, instanceId),
                 eq(domainEvent.eventType, 'reconciliation.mark_opened')
             )
-        );
+        )
+        .orderBy(domainEvent.occurredAt, domainEvent.id);
 }
 
 /** Makes every mark insert for this one instance fail while `run` runs; other files are untouched. */
@@ -564,14 +586,134 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
                 { field: 'provider.charge_amount_minor', new: 10000 }
             ])
         );
-        // A repeated notice accumulates on the same open mark.
+    });
+
+    it.skipIf(skip)('accumulates a repeated notice of one divergent payment', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        for (let i = 0; i < 2; i++)
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        expect(await marksOf(instance.id)).toEqual([
+            { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+        ]);
+        expect(await markEventsOf(instance.id)).toHaveLength(2);
+    });
+
+    it.skipIf(skip)('keeps one open divergence mark for two divergent payments', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const first = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        const second = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        for (const paid of [first, second])
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        expect(await marksOf(instance.id)).toEqual([
+            { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+        ]);
+        const charged = (await markEventsOf(instance.id)).map(
+            (event) =>
+                (event.changes as readonly { field: string; new?: unknown }[]).find(
+                    (change) => change.field === 'provider.charge_id'
+                )?.new
+        );
+        expect(charged).toEqual([first.chargeId, second.chargeId]);
+        expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+    });
+
+    it.skipIf(skip)(
+        'activates a correct payment after a divergent one and keeps the divergence open',
+        async () => {
+            const s = await setup();
+            const { instance, paymentPageId } = await bought(s);
+            const divergent = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            await priceIs(instance.productId, 12000);
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: divergent.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+            expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+
+            await priceIs(instance.productId, 10000);
+            const correct = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: correct.chargeId },
+                    s.ports
+                )
+            ).toMatchObject({ outcome: 'ACTIVATED' });
+            expect((await instanceOf(instance.id)).status).toBe('ACTIVE');
+            expect((await paymentsOf(instance.id)).map((p) => p.providerFactId)).toEqual([
+                correct.chargeId
+            ]);
+            expect(await marksOf(instance.id)).toEqual([
+                { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+            ]);
+        }
+    );
+
+    it.skipIf(skip)('does not reopen a lifted divergence for the same charge', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: paid.chargeId },
+            s.ports
+        );
+        await liftMarksOf(instance.id, instance.ownerId);
+
         expect(
             await confirmOneTimePagePayment(
                 { instanceId: instance.id, chargeId: paid.chargeId },
                 s.ports
             )
         ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
-        expect(await marksOf(instance.id)).toHaveLength(1);
+        const marks = await marksOf(instance.id);
+        expect(marks).toHaveLength(1);
+        expect(marks[0]?.liftedAt).not.toBeNull();
+    });
+
+    it.skipIf(skip)('opens a new divergence for another charge after one was lifted', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const first = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        const second = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: first.chargeId },
+            s.ports
+        );
+        await liftMarksOf(instance.id, instance.ownerId);
+
+        expect(
+            await confirmOneTimePagePayment(
+                { instanceId: instance.id, chargeId: second.chargeId },
+                s.ports
+            )
+        ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        const marks = await marksOf(instance.id);
+        expect(marks).toHaveLength(2);
+        expect(marks.filter((mark) => mark.liftedAt === null)).toHaveLength(1);
+        // The lifted mark names only the first charge: the open one still accumulates.
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: second.chargeId },
+            s.ports
+        );
+        expect(await markEventsOf(instance.id)).toHaveLength(3);
     });
 
     it.skipIf(skip)(
