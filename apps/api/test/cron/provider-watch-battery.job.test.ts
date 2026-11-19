@@ -13,10 +13,8 @@ import {
 } from '../../src/cron/jobs/provider-watch-battery.job';
 import type { CronJobContext } from '../../src/cron/types';
 
-/** A Monday: the sandbox account's day. */
+/** A Monday; every day is due, so the day only matters for the month of the authorization. */
 const MONDAY = new Date('2026-11-02T10:00:00.000Z');
-/** The 1st of the month: production's day. */
-const FIRST = new Date('2026-11-01T10:00:00.000Z');
 const SANDBOX_ME = { id: 900000001, tags: ['test_user'] };
 const PRODUCTION_ME = { id: 100000001, tags: ['normal'] };
 const AUTHORIZED = { month: '2026-11', maxChargeMinor: 100, accountId: '100000001' };
@@ -68,6 +66,10 @@ function deps(overrides: Partial<ProviderWatchBatteryDeps> = {}, me: unknown = S
     const base: ProviderWatchBatteryDeps = {
         resolveAccount: () => 'sandbox',
         catalog: [readEntry],
+        readSettings: () => ({
+            payerEmail: 'watch-payer@hospeda.test',
+            returnUrl: 'https://hospeda.test'
+        }),
         buildTransport: () => transport,
         readAuthorization: async () => null,
         readBaseline: async () => null,
@@ -88,18 +90,37 @@ function deps(overrides: Partial<ProviderWatchBatteryDeps> = {}, me: unknown = S
 describe('provider watch battery cron', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('registers an exclusive job that ships NOT scheduled but stays enabled for the manual trigger', () => {
+    it('registers an exclusive, enabled and SCHEDULED daily job', () => {
         const job = createProviderWatchBatteryJob(deps().deps);
         expect(job).toMatchObject({
             name: 'provider-watch-battery',
             schedule: PROVIDER_WATCH_SCHEDULE,
             exclusive: true,
             enabled: true,
-            scheduled: false,
             budgetMs: 540_000,
             timeoutMs: 600_000
         });
+        expect(job.scheduled).not.toBe(false);
         expect(PROVIDER_WATCH_SCHEDULE).toBe('17 7 * * *');
+    });
+
+    it('hands the configured settings to the measurements', async () => {
+        const seen: unknown[] = [];
+        const { deps: d } = deps({
+            catalog: [
+                {
+                    ...readEntry,
+                    measure: async (ctx) => {
+                        seen.push(ctx.settings);
+                        return readEntry.measure(ctx);
+                    }
+                }
+            ]
+        });
+        await createProviderWatchBatteryJob(d).handler(context());
+        expect(seen).toEqual([
+            { payerEmail: 'watch-payer@hospeda.test', returnUrl: 'https://hospeda.test' }
+        ]);
     });
 
     it('FAILS loudly and never pings the watchdog when the catalog is empty', async () => {
@@ -176,7 +197,7 @@ describe('provider watch battery cron', () => {
     describe('production', () => {
         const production = (overrides: Partial<ProviderWatchBatteryDeps> = {}) =>
             deps(
-                { resolveAccount: () => 'production', now: () => FIRST, ...overrides },
+                { resolveAccount: () => 'production', now: () => MONDAY, ...overrides },
                 PRODUCTION_ME
             );
 
@@ -217,6 +238,45 @@ describe('provider watch battery cron', () => {
             expect(pingWatchdog).toHaveBeenCalledTimes(1);
         });
 
+        it('treats a day already taken under an authorization of 0 as an expected skip (A2)', async () => {
+            const { deps: d, pingWatchdog } = production({
+                readAuthorization: async () => ({ ...AUTHORIZED, maxChargeMinor: 0 }),
+                startRun: async () => ({
+                    runId: crypto.randomUUID(),
+                    authorizationConsumed: false
+                })
+            });
+            const ctx = context({ executionMode: 'manual' });
+            const result = await createProviderWatchBatteryJob(d).handler(ctx);
+            expect(result.success).toBe(true);
+            expect(result.details).toMatchObject({ outcome: 'refused', skipped: 'day-taken' });
+            expect(ctx.logger.error).not.toHaveBeenCalled();
+            expect(ctx.logger.info).toHaveBeenCalledWith(
+                'Provider watch battery skipped: today already ran',
+                expect.objectContaining({ outcome: 'refused' })
+            );
+            expect(pingWatchdog).not.toHaveBeenCalled();
+        });
+
+        it('still FAILS loudly when an authorization above 0 was already consumed (A2)', async () => {
+            const { deps: d } = production({
+                catalog: [readEntry, moneyEntry],
+                readAuthorization: async () => AUTHORIZED,
+                startRun: async () => ({
+                    runId: crypto.randomUUID(),
+                    authorizationConsumed: false
+                })
+            });
+            const ctx = context();
+            const result = await createProviderWatchBatteryJob(d).handler(ctx);
+            expect(result.success).toBe(false);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                expect.stringContaining('AUTHORIZATION_CONSUMED'),
+                expect.anything(),
+                { capture: true }
+            );
+        });
+
         it('refuses a consumed authorization', async () => {
             const { deps: d, pingWatchdog } = production({
                 readAuthorization: async () => ({ ...AUTHORIZED, consumedByRunId: 'run-1' })
@@ -227,38 +287,16 @@ describe('provider watch battery cron', () => {
             expect(pingWatchdog).not.toHaveBeenCalled();
         });
 
-        it('is due on the 1st of the month and not on any other day', async () => {
-            const handle = (now: Date) =>
-                createProviderWatchBatteryJob(
-                    production({ now: () => now, readAuthorization: async () => AUTHORIZED }).deps
-                ).handler(context());
-            expect((await handle(FIRST)).message).not.toBe('Not due today');
-            expect((await handle(new Date('2026-11-02T10:00:00.000Z'))).message).toBe(
-                'Not due today'
-            );
-            expect((await handle(new Date('2026-11-09T10:00:00.000Z'))).message).toBe(
-                'Not due today'
-            );
-            expect((await handle(new Date('2026-11-30T10:00:00.000Z'))).message).toBe(
-                'Not due today'
-            );
-        });
-
-        it('skips a not-due scheduled tick without recording, consuming or pinging', async () => {
-            const {
-                deps: d,
-                recorded,
-                started,
-                pingWatchdog
-            } = production({
-                now: () => new Date('2026-11-16T10:00:00.000Z'),
-                readAuthorization: async () => AUTHORIZED
-            });
-            const result = await createProviderWatchBatteryJob(d).handler(context());
-            expect(result).toMatchObject({ success: true, message: 'Not due today' });
-            expect(recorded).toEqual([]);
-            expect(started).toEqual([]);
-            expect(pingWatchdog).not.toHaveBeenCalled();
+        it('runs a scheduled tick on any day of the month, with the authorization', async () => {
+            for (const iso of ['2026-11-01', '2026-11-03', '2026-11-16', '2026-11-30']) {
+                const { deps: d, recorded } = production({
+                    now: () => new Date(`${iso}T10:00:00.000Z`),
+                    readAuthorization: async () => AUTHORIZED
+                });
+                const result = await createProviderWatchBatteryJob(d).handler(context());
+                expect(result.message).not.toBe('Not due today');
+                expect(recorded).toHaveLength(1);
+            }
         });
 
         it('runs a manual trigger on any day', async () => {
@@ -271,11 +309,12 @@ describe('provider watch battery cron', () => {
         });
     });
 
-    it('ticks the sandbox account on Mondays only', async () => {
-        const handle = (now: Date) =>
-            createProviderWatchBatteryJob(deps({ now: () => now }).deps).handler(context());
-        expect((await handle(MONDAY)).message).not.toBe('Not due today');
-        expect((await handle(new Date('2026-11-03T10:00:00.000Z'))).message).toBe('Not due today');
+    it('ticks the sandbox account every day', async () => {
+        for (const iso of ['2026-11-02', '2026-11-03', '2026-11-08']) {
+            const { deps: d, recorded } = deps({ now: () => new Date(`${iso}T10:00:00.000Z`) });
+            await createProviderWatchBatteryJob(d).handler(context());
+            expect(recorded).toHaveLength(1);
+        }
     });
 
     it('fails when the environment does not say which account to watch', async () => {

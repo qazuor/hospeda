@@ -36,6 +36,81 @@ function walk(args: {
     }
 }
 
+/** A tree of the paths a projection keeps: `true` is a leaf, `'[]'` holds an array's item tree. */
+interface ProjectionTree {
+    readonly [key: string]: ProjectionTree | true;
+}
+
+function buildProjectionTree(paths: readonly string[]): ProjectionTree {
+    const root: Record<string, ProjectionTree | true> = {};
+    for (const path of paths) {
+        let node: Record<string, ProjectionTree | true> = root;
+        const segments = path
+            .split('.')
+            .flatMap((segment) =>
+                segment.endsWith('[]') ? [segment.slice(0, -2), '[]'] : [segment]
+            );
+        segments.forEach((segment, index) => {
+            const existing = node[segment];
+            if (index === segments.length - 1) {
+                if (existing === undefined) node[segment] = true;
+                return;
+            }
+            const child: Record<string, ProjectionTree | true> =
+                existing === undefined || existing === true
+                    ? {}
+                    : (existing as Record<string, ProjectionTree | true>);
+            node[segment] = child;
+            node = child;
+        });
+    }
+    return root;
+}
+
+function projectValue(value: unknown, tree: ProjectionTree | true): unknown {
+    if (tree === true) {
+        // A leaf keeps scalars and only the TYPE of a container, never its contents.
+        if (value === undefined || value === null) return null;
+        if (Array.isArray(value)) return [];
+        return typeof value === 'object' ? {} : value;
+    }
+    const itemTree = tree['[]'];
+    if (itemTree !== undefined) {
+        // An empty or absent list still shows one item of nulls, so its item paths are stable.
+        const items = Array.isArray(value) && value.length > 0 ? value : [undefined];
+        return items.map((item) => projectValue(item, itemTree));
+    }
+    const record =
+        typeof value === 'object' && value !== null && !Array.isArray(value)
+            ? (value as Record<string, unknown>)
+            : {};
+    return Object.fromEntries(
+        Object.entries(tree).map(([key, child]) => [key, projectValue(record[key], child)])
+    );
+}
+
+/**
+ * Projects a body onto the given paths, for the SHAPE of a re-read of real objects only (never for
+ * a value). Real objects carry different optional fields from one to the next, so their raw shape
+ * would differ between two runs without the provider changing anything. The projection keeps every
+ * listed path, reads a missing one as `null` (the shape diff never alerts on null against a scalar)
+ * and an empty list as one item of nulls; what it keeps is the type of each listed path, so a field
+ * that changes type still alerts. The trade-off, declared: a listed field the provider stops
+ * sending reads as `null` and does not alert by shape; the adapter's own parse is what catches a
+ * required field going missing.
+ *
+ * @param args.body - The parsed body
+ * @param args.paths - Dotted paths, `[]` after a list (`results[].id`)
+ * @returns The projected body
+ */
+export function projectForShape(args: {
+    readonly body: unknown;
+    readonly paths: readonly string[];
+}): unknown {
+    if (args.body === undefined) return undefined;
+    return projectValue(args.body, buildProjectionTree(args.paths));
+}
+
 /**
  * Flattens a response body into `path -> types`. Array elements share one path
  * (`items[]`) and merge their types, so the shape does not depend on how many

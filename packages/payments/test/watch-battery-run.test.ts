@@ -100,13 +100,13 @@ async function run(args: {
 }
 
 describe('the shipped catalog', () => {
-    it('is empty in this release', () => {
-        expect(WATCH_CATALOG).toEqual([]);
+    it('is valid', () => {
+        expect(validateWatchCatalog({ catalog: WATCH_CATALOG }).problems).toEqual([]);
     });
 
     it('FAILS a run, loudly, and never allows the watchdog ping when it measures nothing', async () => {
         const { transport, sent } = scripted({});
-        const result = await run({ catalog: WATCH_CATALOG, transport });
+        const result = await run({ catalog: [], transport });
         expect(result.run.outcome).toBe('failed');
         expect(result.run.reason).toContain('measures nothing is a failure');
         expect(result.mayPingWatchdog).toBe(false);
@@ -533,7 +533,9 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         const store = memoryRunStore();
         const result = await production(store);
         expect(result.run.outcome).toBe('completed');
-        expect(store.started).toEqual([{ runId: result.runId, consume: '2026-11' }]);
+        expect(store.started).toEqual([
+            { runId: result.runId, consume: '2026-11', day: '2026-11-17' }
+        ]);
         expect(store.consumedBy()).toBe(result.runId);
     });
 

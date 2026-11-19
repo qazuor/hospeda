@@ -472,8 +472,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'billing',
         schedule: '17 7 * * *',
         description:
-            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Ticks daily; sandbox runs on Mondays (staging), production on the 1st of the month, manual on either. Ships NOT scheduled until PR 2 adds the measurements (HOS-1512, AC:B1:15).',
-        scheduled: false
+            'Repeat the provider measurements, compare values and response shapes and mail the administrator what changed. Runs daily in both accounts (sandbox on staging, production on prod, which needs the month authorization) and moves no money; manual on either (HOS-1512, AC:B1:15).'
     },
     {
         name: 'social-publish-dispatch',
