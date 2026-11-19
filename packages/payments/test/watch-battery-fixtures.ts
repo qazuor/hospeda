@@ -31,7 +31,11 @@ export interface MemoryRunStore {
                 readonly accountId: string;
                 readonly day: string;
             };
-        }) => Promise<{ runId: string; authorizationConsumed: boolean }>;
+        }) => Promise<{
+            runId: string;
+            authorizationConsumed: boolean;
+            authorizationMiss?: 'DAY_TAKEN' | 'CHANGED';
+        }>;
         readonly recordProgress: (args: {
             readonly runId: string;
             readonly measurementId: string;
@@ -100,12 +104,23 @@ export function memoryRunStore(
                     const taken =
                         matchesStored &&
                         consumed === undefined &&
-                        lastRunDay !== consumeAuthorization.day;
+                        consumeAuthorization.day.slice(0, 7) === consumeAuthorization.month &&
+                        (lastRunDay === undefined || lastRunDay < consumeAuthorization.day);
                     if (taken) {
                         lastRunDay = consumeAuthorization.day;
                         dailyRuns.push(runId);
                     }
-                    return { runId, authorizationConsumed: taken };
+                    if (taken) return { runId, authorizationConsumed: true };
+                    // As the database: only the same day against the unchanged one is DAY_TAKEN.
+                    const sameDay =
+                        matchesStored &&
+                        consumed === undefined &&
+                        lastRunDay === consumeAuthorization.day;
+                    return {
+                        runId,
+                        authorizationConsumed: false,
+                        authorizationMiss: sameDay ? 'DAY_TAKEN' : 'CHANGED'
+                    };
                 }
                 let authorizationConsumed = false;
                 if (

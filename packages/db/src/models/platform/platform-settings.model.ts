@@ -207,7 +207,11 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
      * @param input.day - The run's market day, `YYYY-MM-DD`
      * @param input.runId - The run taking the day
      * @param input.tx - Optional transaction
-     * @returns Whether THIS run took the day
+     * @returns Whether THIS run took the day and, when it did not, why: `DAY_TAKEN` when the
+     *   authorization is still the one the run was pre-flighted with and that very day is already
+     *   taken (the expected second run of a day); `CHANGED` for any other miss: no row, revoked,
+     *   replaced, consumed, another account or amount, or a day behind the last one taken (a clock
+     *   that went back). The cause is read in the same transaction, after the update missed
      */
     async takeProviderWatchAuthorizationDay(input: {
         readonly month: string;
@@ -215,7 +219,7 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
         readonly day: string;
         readonly runId: string;
         readonly tx?: DrizzleClient;
-    }): Promise<{ readonly taken: boolean }> {
+    }): Promise<{ readonly taken: boolean; readonly miss?: 'DAY_TAKEN' | 'CHANGED' }> {
         const rows = await this.getClient(input.tx)
             .update(platformSettings)
             .set({
@@ -239,7 +243,22 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
                 )
             )
             .returning({ key: platformSettings.key });
-        return { taken: rows.length === 1 };
+        if (rows.length === 1) return { taken: true };
+        // Follow-up of #4538 (A2b): name the cause of the miss. Only a duplicate run on the SAME day,
+        // against the unchanged authorization, is the expected skip; everything else stays loud.
+        const [stored] = await this.getClient(input.tx)
+            .select({ value: platformSettings.value })
+            .from(platformSettings)
+            .where(eq(platformSettings.key, 'billing.providerWatchAuthorization'));
+        const value = (stored?.value ?? null) as Record<string, unknown> | null;
+        const sameDayTaken =
+            value !== null &&
+            value.month === input.month &&
+            value.maxChargeMinor === 0 &&
+            value.accountId === input.accountId &&
+            value.consumedByRunId === undefined &&
+            value.lastRunDay === input.day;
+        return { taken: false, miss: sameDayTaken ? 'DAY_TAKEN' : 'CHANGED' };
     }
 }
 

@@ -25,6 +25,7 @@ import {
     type WatchAccount,
     type WatchAlert,
     type WatchAuthorization,
+    type WatchAuthorizationMiss,
     type WatchContext,
     type WatchEntry,
     WatchGuardError,
@@ -90,7 +91,11 @@ export interface RunWatchBatteryInput {
             /** The market day of the run (`YYYY-MM-DD`): what an authorization of 0 is taken for. */
             readonly day: string;
         };
-    }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
+    }) => Promise<{
+        readonly runId: string;
+        readonly authorizationConsumed: boolean;
+        readonly authorizationMiss?: WatchAuthorizationMiss;
+    }>;
     /**
      * Persists a provider id the moment the write that created it answers, OUTSIDE the closing of
      * the run, so a run that dies or whose closing fails still leaves the ids a human needs to
@@ -416,7 +421,9 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
         outcome = 'refused';
         reason =
             input.authorization?.maxChargeMinor === 0
-                ? 'AUTHORIZATION_DAY_TAKEN: another run already took the production authorization today; an authorization of 0 covers one run a day'
+                ? started.authorizationMiss === 'DAY_TAKEN'
+                    ? 'AUTHORIZATION_DAY_TAKEN: another run already took the production authorization today; an authorization of 0 covers one run a day'
+                    : 'AUTHORIZATION_CHANGED: the production authorization is no longer the one this run was pre-flighted with (revoked, replaced, another account or amount, or a day behind the last one taken)'
                 : 'AUTHORIZATION_CONSUMED: another run consumed the production authorization first';
     }
 
