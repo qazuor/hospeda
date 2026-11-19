@@ -103,5 +103,13 @@ export const WATCHED_BY_HAND: readonly WatchedByHand[] = [
     {
         row: 'RP16',
         reason: 'a declined one-time order needs a card token, which is not the subscription path'
+    },
+    {
+        row: 'RP18',
+        reason: 'a second approved payment on one payment page needs a person paying twice on the provider page (HOS-2179)'
+    },
+    {
+        row: 'RP19',
+        reason: 'an expired payment page taking no payment needs a person trying to pay it; the read-and-expire measurement is a later battery addition (HOS-2179 §9)'
     }
 ];
