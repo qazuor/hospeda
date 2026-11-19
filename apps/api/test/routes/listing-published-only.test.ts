@@ -1,5 +1,7 @@
 /** TEST:V5:6 — public detail responses for published and hidden foreign listings. */
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { APP_IMPORT_TIMEOUT_MS } from '../helpers/app-import-timeout';
 
 const { addMedia } = vi.hoisted(() => ({ addMedia: vi.fn() }));
 
@@ -77,58 +79,62 @@ const row = VenueSchema.parse({
 });
 
 describe('TEST:V5:6 published foreign venue writes', () => {
-    it('pairs PATCH and POST media refusals with an invented id', async () => {
-        const { initApp } = await import('../../src/app.js');
-        const app = initApp();
-        vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({ data: row });
-        const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
-        updateOwn.mockResolvedValue({
-            error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
-        });
-        addMedia.mockResolvedValue({
-            error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
-        });
-        const headers = {
-            'content-type': 'application/json',
-            'user-agent': 'vitest',
-            'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
-            'x-mock-actor-role': 'USER',
-            'x-mock-actor-permissions': JSON.stringify(['venue.editOwn'])
-        };
-        for (const [method, suffix, body] of [
-            ['PATCH', '', { name: 'Changed' }],
-            ['POST', '/media', { url: 'https://example.com/photo.jpg' }]
-        ] as const) {
-            const send = async (id: string) => {
-                const response = await app.request(`/api/v1/protected/venues/${id}${suffix}`, {
-                    method,
-                    headers,
-                    body: JSON.stringify(body)
-                });
-                const result: unknown = await response.json();
-                if (result && typeof result === 'object' && 'metadata' in result) {
-                    const { metadata, ...rest } = result;
-                    return {
-                        status: response.status,
-                        body: {
-                            ...rest,
-                            metadataKeys:
-                                metadata && typeof metadata === 'object'
-                                    ? Object.keys(metadata).sort()
-                                    : []
-                        }
-                    };
-                }
-                return { status: response.status, body: result };
+    it(
+        'pairs PATCH and POST media refusals with an invented id',
+        async () => {
+            const { initApp } = await import('../../src/app.js');
+            const app = initApp();
+            vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({ data: row });
+            const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
+            updateOwn.mockResolvedValue({
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
+            });
+            addMedia.mockResolvedValue({
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
+            });
+            const headers = {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
+                'x-mock-actor-role': 'USER',
+                'x-mock-actor-permissions': JSON.stringify(['venue.editOwn'])
             };
-            const foreign = await send(LISTING_ID);
-            const missing = await send(MISSING_ID);
-            expect(foreign).toEqual(missing);
-            expect(foreign.status).toBe(404);
-        }
-        expect(updateOwn).toHaveBeenCalled();
-        expect(addMedia).toHaveBeenCalled();
-    });
+            for (const [method, suffix, body] of [
+                ['PATCH', '', { name: 'Changed' }],
+                ['POST', '/media', { url: 'https://example.com/photo.jpg' }]
+            ] as const) {
+                const send = async (id: string) => {
+                    const response = await app.request(`/api/v1/protected/venues/${id}${suffix}`, {
+                        method,
+                        headers,
+                        body: JSON.stringify(body)
+                    });
+                    const result: unknown = await response.json();
+                    if (result && typeof result === 'object' && 'metadata' in result) {
+                        const { metadata, ...rest } = result;
+                        return {
+                            status: response.status,
+                            body: {
+                                ...rest,
+                                metadataKeys:
+                                    metadata && typeof metadata === 'object'
+                                        ? Object.keys(metadata).sort()
+                                        : []
+                            }
+                        };
+                    }
+                    return { status: response.status, body: result };
+                };
+                const foreign = await send(LISTING_ID);
+                const missing = await send(MISSING_ID);
+                expect(foreign).toEqual(missing);
+                expect(foreign.status).toBe(404);
+            }
+            expect(updateOwn).toHaveBeenCalled();
+            expect(addMedia).toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });
 
 async function probe(app: Hono<AppBindings>, id: string) {

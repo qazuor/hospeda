@@ -17,6 +17,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../src/types';
+import { APP_IMPORT_TIMEOUT_MS } from '../../helpers/app-import-timeout';
 
 const { mockGetPublicList } = vi.hoisted(() => ({ mockGetPublicList: vi.fn() }));
 
@@ -111,23 +112,31 @@ describe('GET /api/v1/public/partner-types', () => {
 describe('Route registration (real app)', () => {
     const HEADERS = { 'user-agent': 'vitest', accept: 'application/json' };
 
-    it('mounts the public list without an auth gate', async () => {
-        const { initApp } = await import('../../../src/app.js');
-        const res = await initApp().request('/api/v1/public/partner-types', {
-            method: 'GET',
-            headers: HEADERS
-        });
-        expect(res.status).not.toBe(404);
-        expect(res.status).not.toBe(401);
-        expect(res.status).not.toBe(403);
-    });
+    it(
+        'mounts the public list without an auth gate',
+        async () => {
+            const { initApp } = await import('../../../src/app.js');
+            const res = await initApp().request('/api/v1/public/partner-types', {
+                method: 'GET',
+                headers: HEADERS
+            });
+            expect(res.status).not.toBe(404);
+            expect(res.status).not.toBe(401);
+            expect(res.status).not.toBe(403);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 
-    it('exposes no write verb on the public tier', async () => {
-        const { initApp } = await import('../../../src/app.js');
-        const res = await initApp().request('/api/v1/public/partner-types', {
-            method: 'POST',
-            headers: HEADERS
-        });
-        expect(res.status).toBe(404);
-    });
+    it(
+        'exposes no write verb on the public tier',
+        async () => {
+            const { initApp } = await import('../../../src/app.js');
+            const res = await initApp().request('/api/v1/public/partner-types', {
+                method: 'POST',
+                headers: HEADERS
+            });
+            expect(res.status).toBe(404);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });

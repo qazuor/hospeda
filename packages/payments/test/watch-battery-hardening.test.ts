@@ -583,6 +583,24 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
             expect(second.run.reason).toContain('AUTHORIZATION_DAY_TAKEN');
         });
 
+        it('names AUTHORIZATION_CHANGED when the authorization was replaced, never DAY_TAKEN (A2b)', async () => {
+            // Same month and amount of 0, but another account stored: not the expected skip.
+            const store = memoryRunStore({
+                stored: { month: '2026-11', maxChargeMinor: 0, accountId: '999999999' }
+            });
+            const result = await readOnly(0, store).go();
+            expect(result.run.outcome).toBe('refused');
+            expect(result.run.reason).toContain('AUTHORIZATION_CHANGED');
+            expect(result.run.reason).not.toContain('AUTHORIZATION_DAY_TAKEN');
+        });
+
+        it('names AUTHORIZATION_CHANGED for a day behind the last one taken (A2b)', async () => {
+            const store = memoryRunStore();
+            await readOnly(0, store, new Date('2026-11-18T12:00:00.000Z')).go();
+            const behind = await readOnly(0, store).go();
+            expect(behind.run.reason).toContain('AUTHORIZATION_CHANGED');
+        });
+
         it('refuses an authorization of 0 the next month (B1)', async () => {
             const store = memoryRunStore();
             await readOnly(0, store).go();

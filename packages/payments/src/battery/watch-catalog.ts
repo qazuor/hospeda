@@ -48,12 +48,20 @@ export function rowsOf(entry: WatchEntry): readonly string[] {
 }
 
 /**
+ * The only keys a measurement may record without comparing them (`reportedOnly`): counts of what a
+ * re-read could not judge. Widening it hides a comparison, so a new key must be added here and
+ * reviewed (follow-up of #4538, RO1).
+ */
+export const REPORTED_ONLY_KEYS: ReadonlySet<string> = new Set(['foreignSkipped']);
+
+/**
  * Checks a catalog before a run uses it.
  *
  * Every id must be unique and fit the baseline key (16 characters); every row an entry re-checks
  * must be a row of the fake's lists (an entry without `rows` is itself a row); accounts and
  * effects must be known; a money-moving entry must declare an integer maximum charge above zero;
- * a declared pending amount must be one of `PENDING_AMOUNTS_MINOR`, on an entry that mutates.
+ * a declared pending amount must be one of `PENDING_AMOUNTS_MINOR`, on an entry that mutates; a
+ * `reportedOnly` key must be in {@link REPORTED_ONLY_KEYS} and never also expected.
  *
  * @param args.catalog - The catalog to check
  * @returns The problems found, one line each; empty when the catalog is valid
@@ -106,6 +114,9 @@ export function validateWatchCatalog(args: { readonly catalog: readonly WatchEnt
         for (const key of entry.reportedOnly ?? []) {
             if (expectedKeys.includes(key)) {
                 problems.push(`${entry.id}: ${key} is both expected and reported only`);
+            }
+            if (!REPORTED_ONLY_KEYS.has(key)) {
+                problems.push(`${entry.id}: ${key} is not a key that may be reported only`);
             }
         }
     }

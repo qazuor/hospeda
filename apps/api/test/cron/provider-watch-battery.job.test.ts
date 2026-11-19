@@ -243,7 +243,8 @@ describe('provider watch battery cron', () => {
                 readAuthorization: async () => ({ ...AUTHORIZED, maxChargeMinor: 0 }),
                 startRun: async () => ({
                     runId: crypto.randomUUID(),
-                    authorizationConsumed: false
+                    authorizationConsumed: false,
+                    authorizationMiss: 'DAY_TAKEN'
                 })
             });
             const ctx = context({ executionMode: 'manual' });
@@ -254,6 +255,27 @@ describe('provider watch battery cron', () => {
             expect(ctx.logger.info).toHaveBeenCalledWith(
                 'Provider watch battery skipped: today already ran',
                 expect.objectContaining({ outcome: 'refused' })
+            );
+            expect(pingWatchdog).not.toHaveBeenCalled();
+        });
+
+        it('FAILS loudly, to Sentry, when an authorization of 0 changed under the run (A2b)', async () => {
+            const { deps: d, pingWatchdog } = production({
+                readAuthorization: async () => ({ ...AUTHORIZED, maxChargeMinor: 0 }),
+                startRun: async () => ({
+                    runId: crypto.randomUUID(),
+                    authorizationConsumed: false,
+                    authorizationMiss: 'CHANGED'
+                })
+            });
+            const ctx = context();
+            const result = await createProviderWatchBatteryJob(d).handler(ctx);
+            expect(result.success).toBe(false);
+            expect(result.details).not.toHaveProperty('skipped');
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                expect.stringContaining('AUTHORIZATION_CHANGED'),
+                expect.anything(),
+                { capture: true }
             );
             expect(pingWatchdog).not.toHaveBeenCalled();
         });

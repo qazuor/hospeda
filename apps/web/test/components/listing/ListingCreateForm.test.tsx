@@ -73,6 +73,18 @@ beforeEach(() => {
 });
 
 describe('ListingCreateForm', () => {
+    it('announces hydration after mount', () => {
+        const { container } = render(
+            <ListingCreateForm
+                vertical="venue"
+                locale="es"
+                destinations={[]}
+            />
+        );
+
+        expect(container.querySelector('form')).toHaveAttribute('data-hydrated', 'true');
+    });
+
     it('shows the selected venue type description and updates it when the type changes', () => {
         render(
             <ListingCreateForm

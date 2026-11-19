@@ -2,10 +2,12 @@
  * HOS-1512: the watch battery's run lifecycle, the one-shot authorization and the accepted
  * baseline, against a real database.
  */
+
+import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import { platformSettingsModel } from '../../src/models/platform/platform-settings.model.ts';
 import { providerWatchRunModel as model } from '../../src/models/provider-watch-run/provider-watch-run.model.ts';
-import { users } from '../../src/schemas/index.ts';
+import { platformSettings, users } from '../../src/schemas/index.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import {
     closeTestPool,
@@ -690,6 +692,98 @@ describe('an authorization of 0 covers one run a day for its month, unconsumed (
                 );
             const results = await Promise.all([attempt(), attempt(), attempt()]);
             expect(results.filter((result) => result.authorizationConsumed)).toHaveLength(1);
+        });
+    });
+});
+
+describe('a missed take of an authorization of 0 names its cause (follow-up of #4538, A2b)', () => {
+    const take = (tx: DrizzleClient, day: string, change: Record<string, unknown> = {}) =>
+        model.open({
+            account: 'production',
+            startedAt: START,
+            consumeAuthorization: { ...takeZero(day), ...change },
+            tx
+        });
+
+    it('answers DAY_TAKEN only for the same day against the unchanged authorization', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const first = await take(tx, '2026-11-17');
+            const second = await take(tx, '2026-11-17');
+            expect(first).not.toHaveProperty('authorizationMiss');
+            expect(second).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'DAY_TAKEN'
+            });
+        });
+    });
+
+    it('answers CHANGED for a day behind the last one taken (a clock that went back)', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            await take(tx, '2026-11-18');
+            expect(await take(tx, '2026-11-17')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it.each([
+        ['another account stored', { accountId: '999999999' }],
+        ['an amount above 0 stored', { maxChargeMinor: 150000 }],
+        ['another month stored', { month: '2026-10' }],
+        ['a consumed authorization stored', { consumedByRunId: crypto.randomUUID() }]
+    ])('answers CHANGED with %s, even when that day was already taken', async (_name, stored) => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, { ...ZERO, ...stored, lastRunDay: '2026-11-17' });
+            expect(await take(tx, '2026-11-17')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it('answers CHANGED when there is no authorization at all (revoked)', async () => {
+        await withTestTransaction(async (tx) => {
+            // The concurrent-take test commits a row through withCleanSlate; remove it here.
+            await tx
+                .delete(platformSettings)
+                .where(eq(platformSettings.key, 'billing.providerWatchAuthorization'));
+            expect(await take(tx, '2026-11-17')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it('answers CHANGED for a day outside the authorized month', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            expect(await take(tx, '2026-12-01')).toMatchObject({
+                authorizationConsumed: false,
+                authorizationMiss: 'CHANGED'
+            });
+        });
+    });
+
+    it('names no cause for a one-shot authorization above 0', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx);
+            await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: CONSUME,
+                tx
+            });
+            const again = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: CONSUME,
+                tx
+            });
+            expect(again.authorizationConsumed).toBe(false);
+            expect(again).not.toHaveProperty('authorizationMiss');
         });
     });
 });
