@@ -18,8 +18,10 @@ import { accommodations } from '../../src/schemas/accommodation/accommodation.db
 import { auditLogEntries } from '../../src/schemas/audit-log/audit_log_entry.dbschema.ts';
 import { conversations } from '../../src/schemas/conversation/conversations.dbschema.ts';
 import { destinations } from '../../src/schemas/destination/destination.dbschema.ts';
+import { experiences } from '../../src/schemas/experience/experiences.dbschema.ts';
 import { oauthClients } from '../../src/schemas/oauth-provider/oauth-client.dbschema.ts';
 import { users } from '../../src/schemas/user/user.dbschema.ts';
+import { venues } from '../../src/schemas/venue/venue.dbschema.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 
@@ -351,6 +353,91 @@ describe('McpActivityModel label lookups (real DB)', () => {
             expect(names).toEqual([{ id: live.id, name: 'Cabaña del río', ownerId: a }]);
             expect(owners).toEqual([{ id: conversation.id, ownerId: a }]);
             expect(clients).toEqual([{ clientId: CLAUDE, name: 'Claude' }]);
+        });
+    });
+});
+
+describe('McpActivityModel label lookups and PURGED listings (real DB, HOS-2380)', () => {
+    const model = new McpActivityModel();
+
+    /** Statuses whose content is still there: the owner can open them, so they keep name and link. */
+    const OPENABLE = [
+        'DRAFT',
+        'PUBLISHED',
+        'UNPUBLISHED_BY_BILLING',
+        'ARCHIVED',
+        'MODERATED'
+    ] as const;
+
+    it('treats a PURGED listing as deleted in every vertical, and keeps every openable status', async () => {
+        await withTestTransaction(async (tx) => {
+            const { a } = await twoUsers(tx);
+            const [destination] = await tx
+                .insert(destinations)
+                .values(testData.destination())
+                .returning({ id: destinations.id });
+            if (!destination) throw new Error('destination');
+            const uid = crypto.randomUUID().slice(0, 8);
+            const base = (status: string, tag: string) => ({
+                ownerId: a,
+                destinationId: destination.id,
+                publicationStatus: status as 'DRAFT',
+                inactiveSince: NOW,
+                deadlinesVersion: 1,
+                slug: `hos2380-${tag}-${status.toLowerCase()}-${uid}`,
+                name: `${tag} ${status}`,
+                summary: 'Listing for the HOS-2380 purged lookup test.',
+                description: 'Listing inserted for the HOS-2380 purged lookup test.'
+            });
+            const statuses = [...OPENABLE, 'PURGED'] as const;
+            const accs = await tx
+                .insert(accommodations)
+                .values(statuses.map((st) => ({ ...base(st, 'acc'), type: 'HOUSE' as const })))
+                .returning({ id: accommodations.id, name: accommodations.name });
+            const vens = await tx
+                .insert(venues)
+                .values(
+                    statuses.map((st) => ({
+                        ...base(st, 'ven'),
+                        type: 'RESTAURANT' as const,
+                        businessLines: ['food']
+                    }))
+                )
+                .returning({ id: venues.id, name: venues.name });
+            const exps = await tx
+                .insert(experiences)
+                .values(
+                    statuses.map((st) => ({ ...base(st, 'exp'), type: 'KAYAK_RENTAL' as const }))
+                )
+                .returning({ id: experiences.id, name: experiences.name });
+
+            const purgedConversation = await tx
+                .insert(conversations)
+                .values({ accommodationId: accs[accs.length - 1]?.id as string })
+                .returning({ id: conversations.id });
+
+            for (const [vertical, rows] of [
+                [VerticalEnum.ACCOMMODATION, accs],
+                [VerticalEnum.VENUE, vens],
+                [VerticalEnum.EXPERIENCE, exps]
+            ] as const) {
+                const found = await model.findListingNames(
+                    { vertical, ids: rows.map((r) => r.id) },
+                    tx
+                );
+                expect(found.map((f) => f.name).sort()).toEqual(
+                    rows
+                        .filter((r) => !r.name.endsWith('PURGED'))
+                        .map((r) => r.name)
+                        .sort()
+                );
+                expect(found).toHaveLength(OPENABLE.length);
+            }
+            const owners = await model.findConversationOwners(
+                { ids: purgedConversation.map((c) => c.id) },
+                tx
+            );
+            expect(owners).toEqual([]);
         });
     });
 });

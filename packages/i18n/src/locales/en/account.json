@@ -523,6 +523,7 @@
                 "CATEGORY_IN_USE": "That category is still in use.",
                 "PARTNER_TYPE_IN_USE": "That partner type is still in use.",
                 "RATE_LIMIT_EXCEEDED": "The assistant made too many requests in a row.",
+                "LISTING_INCOMPLETE": "The listing is missing required information.",
                 "UNEXPECTED": "An unexpected error happened.",
                 "USER_DECLINED": "You didn’t confirm it.",
                 "USER_CANCELLED": "You cancelled the confirmation."

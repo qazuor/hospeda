@@ -271,6 +271,9 @@ describe('set_listing_publication — refusals in Spanish', () => {
             // Assert
             expect(failure).toMatchObject({
                 code: 'VALIDATION_ERROR',
+                // HOS-2375: a refusal by Hospeda, not an assistant error in the audit.
+                kind: 'denied',
+                auditCode: 'LISTING_INCOMPLETE',
                 message: MESSAGES.LISTING_INCOMPLETE
             });
         });

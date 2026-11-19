@@ -287,7 +287,9 @@ function recordToolCall<TSchema extends z.ZodObject, TData>({
         isWrite,
         outcome: outcome.ok ? 'success' : outcome.failure.kind,
         ...(target ? { target } : {}),
-        ...(outcome.ok ? {} : { errorCode: String(outcome.failure.code) }),
+        ...(outcome.ok
+            ? {}
+            : { errorCode: outcome.failure.auditCode ?? String(outcome.failure.code) }),
         ...(contentLength === undefined ? {} : { contentLength }),
         ...(details ? { details } : {})
     });
