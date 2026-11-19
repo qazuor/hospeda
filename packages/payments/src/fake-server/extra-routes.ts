@@ -2,6 +2,7 @@ import type { IncomingHttpHeaders } from 'node:http';
 import type { FakePaymentProvider } from '../fake/fake-payment-provider';
 import { handleAuthorizedPaymentsRoute } from './authorized-payments-route';
 import { handleOrdersRoute } from './orders-route';
+import { handlePaymentPagesRoute } from './payment-pages-route';
 import { handlePaymentsSearchRoute } from './payments-search-route';
 import { handlePreapprovalSearchRoute } from './preapproval-search-route';
 import { handleRefundsRoute } from './refunds-route';
@@ -25,6 +26,7 @@ export async function handleExtraRoutes(args: {
         handleUsersMeRoute({ ...args, account: args.account ?? 'sandbox' }) ??
         (await handlePreapprovalSearchRoute(args)) ??
         (await handleOrdersRoute(args)) ??
+        (await handlePaymentPagesRoute(args)) ??
         (await handleAuthorizedPaymentsRoute(args)) ??
         (await handlePaymentsSearchRoute(args)) ??
         handleRefundsRoute(args)

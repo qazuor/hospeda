@@ -8,6 +8,7 @@ import {
     type MercadoPagoDeliveriesResult,
     translateMercadoPagoDeliveries
 } from './mercadopago-deliveries';
+import { handlePaymentPageScreen } from './payment-page-screen';
 import { serializeAuthorization } from './serialize-authorization';
 import { serializeCharge } from './serialize-charge';
 import type { FakeProviderAccount } from './users-me-route';
@@ -168,6 +169,18 @@ export async function startFakeProviderServer(
     const server: Server = createServer(async (request, response) => {
         const method = request.method ?? 'GET';
         const path = request.url ?? '/';
+        // The fake payment screen is opened by a browser: no bearer, no JSON body.
+        const screen = handlePaymentPageScreen({
+            provider,
+            method,
+            url: new URL(path, 'http://fake.invalid'),
+            now: options.clock.now()
+        });
+        if (screen !== null) {
+            recordRequest({ method, path, body: null });
+            response.writeHead(screen.status, screen.headers).end(screen.body);
+            return;
+        }
         const validAuthorization = /^Bearer .+\S$/.test(request.headers.authorization ?? '');
         const missingRefundKey =
             method === 'POST' &&

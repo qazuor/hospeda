@@ -33,9 +33,9 @@ function setup() {
 }
 
 describe('the rows behind the pages', () => {
-    it('lists RP18 and RP19 as provider rules measured in sandbox on 2026-11-18', () => {
-        const rows = FAKE_RULES.filter((rule) => ['RP18', 'RP19'].includes(rule.id));
-        expect(rows.map((rule) => rule.kind)).toEqual(['rule', 'rule']);
+    it('lists RP18, RP19 and RP20 as provider rules measured in sandbox on 2026-11-18', () => {
+        const rows = FAKE_RULES.filter((rule) => ['RP18', 'RP19', 'RP20'].includes(rule.id));
+        expect(rows.map((rule) => rule.kind)).toEqual(['rule', 'rule', 'rule']);
         for (const row of rows)
             expect(row.measured).toEqual([
                 expect.objectContaining({ date: '2026-11-18', accounts: ['sandbox'] })

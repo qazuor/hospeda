@@ -111,5 +111,9 @@ export const WATCHED_BY_HAND: readonly WatchedByHand[] = [
     {
         row: 'RP19',
         reason: 'an expired payment page taking no payment needs a person trying to pay it; the read-and-expire measurement is a later battery addition (HOS-2179 §9)'
+    },
+    {
+        row: 'RP20',
+        reason: 'the return parameters of a payment page need a person paying on the provider page (HOS-2179)'
     }
 ];

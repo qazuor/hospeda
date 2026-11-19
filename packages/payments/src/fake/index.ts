@@ -45,7 +45,8 @@ export {
 export {
     PAGE_DECLINE_REASON,
     PAYMENT_PAGE_BASE_URL,
-    type PagePaymentOutcome
+    type PagePaymentOutcome,
+    type StoredPaymentPage
 } from './fake-payment-pages';
 export {
     FAKE_CAPABILITY_SUPPORT,

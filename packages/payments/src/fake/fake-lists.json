@@ -247,6 +247,12 @@
             "kind": "rule",
             "name": "an expired one-time payment page shows the provider's fatal page and creates no payment; a read of the page carries no expired flag",
             "measured": [{ "row": "EX-66", "date": "2026-11-18", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP20",
+            "kind": "rule",
+            "name": "the return from a one-time payment page carries payment_id, status, external_reference, merchant_order_id and preference_id",
+            "measured": [{ "row": "EX-68", "date": "2026-11-18", "accounts": ["sandbox"] }]
         }
     ],
     "simulations": [

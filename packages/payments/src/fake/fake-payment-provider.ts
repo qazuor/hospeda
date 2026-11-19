@@ -92,7 +92,11 @@ import { chargeFakeOrder } from './fake-order-charge';
 import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
 import * as pauseCycle from './fake-pause-cycle';
-import { FakePaymentPages, type PagePaymentOutcome } from './fake-payment-pages';
+import {
+    FakePaymentPages,
+    type PagePaymentOutcome,
+    type StoredPaymentPage
+} from './fake-payment-pages';
 import * as refundOutcome from './fake-refund-outcome';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
@@ -478,6 +482,11 @@ export class FakePaymentProvider implements PaymentProvider {
     }): PagePaymentOutcome {
         this.catchUp();
         return this.pages.pay(input);
+    }
+
+    /** Test and server handle: the stored page, with its amount, copy and return link. */
+    paymentPage(input: PaymentPageRef): Readonly<StoredPaymentPage> {
+        return this.pages.stored(input);
     }
 
     /**

@@ -33,7 +33,7 @@ export const PAYMENT_PAGE_BASE_URL = 'https://payments-fake.invalid/pay/';
 export const PAGE_DECLINE_REASON = 'declined on the payment page';
 
 /** A payment page as the fake keeps it. */
-interface StoredPaymentPage {
+export interface StoredPaymentPage {
     snapshot: PaymentPageSnapshot;
     readonly amount: Money;
     readonly reason: string;
@@ -41,7 +41,7 @@ interface StoredPaymentPage {
     readonly approvalUrl: string;
 }
 
-/** The outcome of the customer paying a page, for the test. */
+/** The outcome of the customer paying a page, for the test and the fake HTTP server. */
 export interface PagePaymentOutcome {
     readonly chargeId: string;
     readonly status: ChargeStatus;
@@ -78,6 +78,11 @@ export class FakePaymentPages {
     /** One page by id, or `NOT_FOUND`. No expired flag: RP19. */
     read(input: { readonly paymentPageId: string }): PaymentPageSnapshot {
         return structuredClone(this.pageOrThrow({ ...input, capability: 'read' }).snapshot);
+    }
+
+    /** Test and server side: the stored page, with what the customer sees on it. */
+    stored(input: { readonly paymentPageId: string }): Readonly<StoredPaymentPage> {
+        return structuredClone(this.pageOrThrow({ ...input, capability: 'read' }));
     }
 
     /** Moves the expiry to now; an already earlier expiry is kept. */
