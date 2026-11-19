@@ -314,6 +314,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4514, #4527
+    {
+        id: '2026-11-18-admin-assistant-activity-log',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['SUPER_ADMIN'],
+        title: {
+            es: 'Nuevo log en el admin con todo lo que hicieron los asistentes de IA',
+            en: 'New admin log of everything the AI assistants did',
+            pt: 'Novo log no admin com tudo o que os assistentes de IA fizeram'
+        },
+        body: {
+            es: 'En Plataforma, la pantalla «Uso de asistentes IA» te muestra cada uso de los asistentes de IA de todas las cuentas, con usuario, asistente, herramienta, resultado y fecha. Podés filtrar por usuario, herramienta, resultado, asistente y rango de fechas. Solo lo ven los Super Admin.',
+            en: 'In Platform, the «AI assistant activity» screen shows you every use of the AI assistants across all accounts, with user, assistant, tool, result and date. You can filter by user, tool, result, assistant and date range. Only Super Admins can see it.',
+            pt: 'Em Plataforma, a tela «Uso de assistentes IA» mostra cada uso dos assistentes de IA de todas as contas, com usuário, assistente, ferramenta, resultado e data. Você pode filtrar por usuário, ferramenta, resultado, assistente e intervalo de datas. Só os Super Admins podem ver.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4500
     {
         id: '2026-11-18-plan-change-checkout-resume-or-cancel',
