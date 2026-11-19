@@ -170,6 +170,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4552
+    {
+        id: '2026-11-19-reconciliation-prices-promos-at-charge-time',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'La conciliación ya no marca cobros de menos por promos agotadas',
+            en: 'Reconciliation no longer flags undercharges for used-up promos',
+            pt: 'A conciliação não marca mais cobranças a menos por promoções esgotadas'
+        },
+        body: {
+            es: 'Cada cobro con promo queda registrado con la promo que estaba vigente en ese momento, así que la conciliación ya no reporta un cobro de menos cuando la promo se agotó después. Además, al encolar una baja de plan, la promo termina en ese momento, como avisa la pantalla del cliente.',
+            en: 'Each charge with a promo is recorded with the promo that was in force at that moment, so reconciliation no longer reports an undercharge when the promo ran out later. Also, when a plan downgrade is queued, the promo ends right then, as the customer screen warns.',
+            pt: 'Cada cobrança com promoção fica registrada com a promoção vigente naquele momento, então a conciliação não reporta mais uma cobrança a menos quando a promoção se esgotou depois. Além disso, ao agendar um downgrade de plano, a promoção termina nesse momento, como avisa a tela do cliente.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4553
     {
         id: '2026-11-19-unfinished-plan-change-stops-blocking',
