@@ -9,6 +9,7 @@
 import { ApiInfoSchema } from '@repo/schemas';
 import { mountAccommodationCacheInvalidation } from '../middlewares/accommodation-cache-invalidation';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
+import { mountPartnerCacheInvalidation } from '../middlewares/partner-cache-invalidation';
 import { createSlidingWindowPerUserRateLimit } from '../middlewares/rate-limit';
 import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import type { AppOpenAPI } from '../types';
@@ -529,6 +530,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
+        // Evict the public partner cache after any successful partner or partner-type
+        // write (HOS-2368). Covers the admin and protected tiers, so it is registered
+        // here, ahead of the first partner router.
+        mountPartnerCacheInvalidation({ app });
         // Partner self-service: the caller's OWN listing (HOS-278 D3).
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/partner-claims', protectedPartnerClaimRoutes);

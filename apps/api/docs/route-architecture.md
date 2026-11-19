@@ -806,7 +806,10 @@ Rules worth knowing before touching them:
   `type: { slug, name, nameI18n } | null`. `?type=` filters take a catalog slug.
 - **Every catalog write purges the `catalog-partner-types` cache tag**
   (`CACHE_TAG_PARTNER_TYPES`, `purgePartnerTypesCache`). The public partner page
-  carries the tag, so a rename reaches it.
+  carries the tag, so a rename reaches it. Admin and protected partner writes
+  and admin partner-type writes also evict the API's in-process cache for
+  `/api/v1/public/partners` (`mountPartnerCacheInvalidation`, HOS-2368), so the
+  re-render after the edge purge does not refetch a stale `type.name`.
 - Approve-and-provision of a partner alliance lead re-validates the lead's slug
   against ACTIVE types and answers `201` with `reason: 'no-active-partner-type'`
   when it is not.
