@@ -18,10 +18,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getListingSectionStates = vi.fn();
 const fetchOwnerListingDetail = vi.fn();
 const buildListingEditorRegistry = vi.fn();
-const findLockedSectionsWithoutUnlockingPlan = vi.fn();
 const buildEditorHubUrl = vi.fn();
 const findEditorSectionBySlug = vi.fn();
-const fetchAudiencePlansWithStatus = vi.fn();
 
 vi.mock('@/lib/api/endpoints', () => ({
     destinationsApi: { list: vi.fn() }
@@ -38,13 +36,7 @@ vi.mock('@/lib/listing/owner-listings', () => ({
 }));
 
 vi.mock('@/lib/editor/listing-editor-registry', () => ({
-    buildListingEditorRegistry: (args: unknown) => buildListingEditorRegistry(args),
-    findLockedSectionsWithoutUnlockingPlan: (args: unknown) =>
-        findLockedSectionsWithoutUnlockingPlan(args)
-}));
-
-vi.mock('@/lib/billing/audience-plans', () => ({
-    fetchAudiencePlansWithStatus: (args: unknown) => fetchAudiencePlansWithStatus(args)
+    buildListingEditorRegistry: (args: unknown) => buildListingEditorRegistry(args)
 }));
 
 vi.mock('@/lib/editor/editor-registry', () => ({
@@ -100,10 +92,8 @@ describe('resolveListingEditorPage — an absent section slug fails to the hub',
             data: { sections: { menu: { state: 'absent' } } }
         });
         buildListingEditorRegistry.mockReturnValue({ sections: [], buildHubPath: '/hub' });
-        findLockedSectionsWithoutUnlockingPlan.mockReturnValue(new Set());
         buildEditorHubUrl.mockReturnValue('/es/mi-cuenta/comercio/venue/listing-1/editar/');
         findEditorSectionBySlug.mockReturnValue(undefined);
-        fetchAudiencePlansWithStatus.mockResolvedValue({ ok: true, plans: [] });
     });
 
     it('redirects the absent slug to the hub and renders no section', async () => {
@@ -119,30 +109,7 @@ describe('resolveListingEditorPage — an absent section slug fails to the hub',
         expect(result.detail).toBeUndefined();
     });
 
-    it('redirects the direct URL when a locked section has no unlocking plan', async () => {
-        const hiddenSectionIds = new Set(['promotions']);
-        findLockedSectionsWithoutUnlockingPlan.mockReturnValue(hiddenSectionIds);
-        getListingSectionStates.mockResolvedValue({
-            ok: true,
-            data: { sections: { promotions: { state: 'locked' } } }
-        });
-
-        const result = await resolveListingEditorPage({
-            astro: createAstro({ sectionSlug: 'promociones' }) as never,
-            sectionSlug: 'promociones'
-        });
-
-        expect(buildListingEditorRegistry).toHaveBeenCalledWith(
-            expect.objectContaining({ hiddenLockedSectionIds: hiddenSectionIds })
-        );
-        expect(result.redirect?.status).toBe(302);
-        expect(result.redirect?.headers.get('Location')).toBe(
-            '/es/mi-cuenta/comercio/venue/listing-1/editar/'
-        );
-    });
-
-    it('keeps a locked section in the registry when the plan catalog read fails', async () => {
-        fetchAudiencePlansWithStatus.mockResolvedValue({ ok: false, error: 'catalog unavailable' });
+    it('renders the direct URL for a locked section and keeps it in the registry', async () => {
         getListingSectionStates.mockResolvedValue({
             ok: true,
             data: { sections: { promotions: { state: 'locked' } } }
@@ -154,9 +121,10 @@ describe('resolveListingEditorPage — an absent section slug fails to the hub',
             sectionSlug: 'promociones'
         });
 
-        expect(buildListingEditorRegistry).toHaveBeenCalledWith(
-            expect.objectContaining({ hiddenLockedSectionIds: new Set() })
-        );
+        expect(buildListingEditorRegistry).toHaveBeenCalledWith({
+            vertical: 'venue',
+            sectionStates: { promotions: { state: 'locked' } }
+        });
         expect(result.redirect).toBeUndefined();
         expect(result.sectionId).toBe('promotions');
     });
