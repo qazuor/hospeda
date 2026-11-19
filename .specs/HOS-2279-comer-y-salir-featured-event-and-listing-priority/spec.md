@@ -56,7 +56,7 @@ Fuera:
   HOS-2292).
 - Experiencias: el destacado y la prioridad para **experiencias Premium** van **en un issue aparte, HOS-2180** (decidido el 18/11/2026, HOS-2252 ronda 2, #47 ✱); no entran acá (ver pregunta 3).
 - Reordenar el listado con otra regla que no sea «destacados primero» (ya existe).
-- Habilitar la compra web del add-on de visibilidad (HOS-2094).
+- Habilitar la compra web del add-on de visibilidad (HOS-2179).
 
 ## 4. Estado actual del código (verificado en `origin/staging`)
 
