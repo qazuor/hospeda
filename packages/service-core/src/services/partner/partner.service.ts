@@ -52,6 +52,9 @@ const PARTNER_OWNER_SCOPE_KEY = 'ownerUserId' as const;
 /** `hookState` key carrying the id being updated to `_beforeUpdate` (HOS-2336). */
 const PARTNER_UPDATE_ID_KEY = 'partnerUpdateId';
 
+/** `hookState` key carrying `{ id, slug }` from a `_before` hook to its `_after` hook (HOS-2368). */
+const PARTNER_LIFECYCLE_TARGET_KEY = 'partnerLifecycleTarget';
+
 /**
  * Resolves the actor to the account id a partner may be owned by, or null.
  *
@@ -549,7 +552,7 @@ export class PartnerService extends BaseCrudService<
      *
      * @param entity - The partner as it now stands after the write.
      */
-    private _schedulePartnerRevalidation(entity: Partner): void {
+    private _schedulePartnerRevalidation(entity: Pick<Partner, 'id' | 'slug'>): void {
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'partner',
@@ -580,6 +583,84 @@ export class PartnerService extends BaseCrudService<
     ): Promise<Partner> {
         this._schedulePartnerRevalidation(entity);
         return this.hydrateOne(entity, ctx);
+    }
+
+    /**
+     * Captures the partner's identity before it is soft-deleted (HOS-2368).
+     * The after hook only receives `{ count }`, so the page's `id` and `slug`
+     * travel through `hookState`.
+     */
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<string> {
+        await this._captureLifecycleTarget({ id, ctx });
+        return id;
+    }
+
+    /** Purges the partner's page and the home carousel once a soft delete landed (HOS-2368). */
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<{ count: number }> {
+        this._scheduleLifecycleRevalidation({ count: result.count, ctx });
+        return result;
+    }
+
+    /** Captures the partner's identity before it is restored (HOS-2368). */
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<string> {
+        await this._captureLifecycleTarget({ id, ctx });
+        return id;
+    }
+
+    /** Purges the partner's page and the home carousel once a restore landed (HOS-2368). */
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<{ count: number }> {
+        this._scheduleLifecycleRevalidation({ count: result.count, ctx });
+        return result;
+    }
+
+    /** Stores `{ id, slug }` of the partner a delete or restore is about to touch. */
+    private async _captureLifecycleTarget({
+        id,
+        ctx
+    }: {
+        readonly id: string;
+        readonly ctx: ServiceContext;
+    }): Promise<void> {
+        const entity = await this.model.findById(id, ctx?.tx);
+        if (entity && ctx.hookState) {
+            ctx.hookState[PARTNER_LIFECYCLE_TARGET_KEY] = { id: entity.id, slug: entity.slug };
+        }
+    }
+
+    /**
+     * Schedules the purge for a delete or restore, only when a row actually
+     * changed and the identity was captured (a purge of `{ id: undefined }`
+     * would be a purge of nothing, HOS-389).
+     */
+    private _scheduleLifecycleRevalidation({
+        count,
+        ctx
+    }: {
+        readonly count: number;
+        readonly ctx: ServiceContext;
+    }): void {
+        const target = ctx?.hookState?.[PARTNER_LIFECYCLE_TARGET_KEY] as
+            | { readonly id: string; readonly slug: string }
+            | undefined;
+        if (count > 0 && target) {
+            this._schedulePartnerRevalidation(target);
+        }
     }
 
     /**
