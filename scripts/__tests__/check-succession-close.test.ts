@@ -3,19 +3,13 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-    CLOSER_FILE,
-    OPENERS,
-    RELEASE_WRITERS,
-    run,
-    WRITES_FILE
-} from '../check-succession-close.js';
+import { CLOSER_FILE, OPENERS, run, WRITES_FILE } from '../check-succession-close.js';
 
 const repo = path.resolve(import.meta.dirname, '../..');
 const dirs: string[] = [];
 const real = (file: string): string => readFileSync(path.join(repo, file), 'utf8');
-const RELEASE = RELEASE_WRITERS[0];
-const anchors = [CLOSER_FILE, WRITES_FILE, OPENERS[0].file, RELEASE.file, RELEASE.caller.file];
+const OPENER = OPENERS[0];
+const anchors = [CLOSER_FILE, WRITES_FILE, OPENER.file];
 function write(root: string, file: string, source: string): void {
     const full = path.join(root, file);
     mkdirSync(path.dirname(full), { recursive: true });
@@ -245,59 +239,45 @@ describe('TEST:B8b:21 AC:B8b:21 GUARD:G-R1-C', () => {
             'c5 promo immobility'
         );
     });
-    it('(c6) rejects clearing succeededById outside the registered release writer', () => {
+    it('(c1) rejects startSuccession writing the predecessor pointer when the succession opens', () => {
+        red(
+            OPENER.file,
+            mutate(
+                OPENER.file,
+                '.set({ updatedAt: ports.clock.now() })',
+                '.set({ succeededById: subscription.id, updatedAt: ports.clock.now() })'
+            ),
+            'c1 pointer writer'
+        );
+    });
+    it('(c6) rejects clearing succeededById anywhere', () => {
         const file = 'packages/service-core/src/services/billing/subscription/other.ts';
         red(
             file,
             'export function other(tx: Tx) { return tx.update(subscriptions).set({ succeededById: null }); }',
-            'c6 pointer release'
+            'c6 pointer clear'
         );
     });
-    it('(c6) rejects a second caller of the release writer', () => {
-        const file = 'apps/api/src/other-release.ts';
+    it('(c6) rejects clearing succeededById even from S40', () => {
+        const file =
+            'packages/service-core/src/services/billing/subscription/cancel-pending-attempt.service.ts';
         red(
             file,
-            'export function other() { return releaseCancelledSuccessionPredecessor({}); }',
-            'c6 pointer release'
+            'export async function cancelPendingAttempt(tx: Tx) { return tx.update(subscriptions).set({ succeededById: null, updatedAt: new Date() }); }',
+            'c6 pointer clear'
         );
     });
-    it('(c6) rejects a release writer that stops clearing succeededById', () => {
+    it('(c6) rejects clearing succeededById from the close writers file', () => {
         red(
-            RELEASE.file,
-            mutate(
-                RELEASE.file,
-                '.set({ succeededById: null, updatedAt: value.now })',
-                '.set({ updatedAt: value.now })'
-            ),
-            'c6 pointer release'
-        );
-    });
-    it('(c6) rejects a release writer that ignores which successor the pointer names', () => {
-        red(
-            RELEASE.file,
-            mutate(
-                RELEASE.file,
-                'eq(subscriptions.succeededById, value.successorId)',
-                'eq(subscriptions.id, value.predecessorId)'
-            ),
-            'c6 pointer release'
-        );
-    });
-    it('(c6) rejects S40 no longer calling the release writer', () => {
-        red(
-            RELEASE.caller.file,
-            mutate(
-                RELEASE.caller.file,
-                'await releaseCancelledSuccessionPredecessor({',
-                'await removedRelease({'
-            ),
-            'c6 pointer release'
+            WRITES_FILE,
+            `${real(WRITES_FILE)}\nexport async function releasePredecessor(tx: Tx) { return tx.update(subscriptions).set({ succeededById: null }); }\n`,
+            'c6 pointer clear'
         );
     });
     it('rejects a tree below the production file floor', () => {
         const result = run({ root: tree() });
         expect(result.exitCode).toBe(1);
-        expect(result.output).toContain('G-R1-C: scanned 5 files; expected at least 1000');
+        expect(result.output).toContain('G-R1-C: scanned 3 files; expected at least 1000');
     });
     it('wires the script after retention, before role, and into the Guards job', () => {
         const pkg = JSON.parse(real('package.json'));

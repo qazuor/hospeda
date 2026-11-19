@@ -90,7 +90,9 @@ describe('HOS-2218: replace unapplied successor', () => {
         expect(current).toMatchObject({ status: 'PENDING_AUTHORIZATION' });
         expect(current?.firstChargeAt?.getMilliseconds()).toBe(0);
         expect(successors.filter((row) => row.status === 'ABANDONED')).toHaveLength(1);
-        expect(predecessor[0]?.succeededById).toBe(current?.id);
+        // HOS-2351: neither S39 nor S1 writes the predecessor pointer; S18 does at close.
+        expect(predecessor[0]?.succeededById).toBeNull();
+        expect(current?.succeedsId).toBe(predecessor[0]?.id);
         expect(oldKey[0]?.result).toMatchObject({ applied: false });
         expect(oldAuthorization.snapshot.status).toBe('cancelled');
         expect(beforeCancel).toHaveBeenCalledWith(

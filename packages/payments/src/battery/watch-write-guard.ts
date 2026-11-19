@@ -5,7 +5,7 @@
  *
  * @module battery/watch-write-guard
  */
-import { type WatchEffect, WatchGuardError, type WatchRequest } from './types';
+import { type WatchEffect, WatchGuardError, type WatchRequest, type WatchSettings } from './types';
 import { classifyOperation, isMoneyWrite, type WatchOperation } from './watch-operations';
 
 /** Money moved so far. Charges and refunds are tracked apart: a refund never offsets a charge. */
@@ -25,6 +25,10 @@ export interface WatchRunState {
     readonly chargedById: Map<string, number>;
     /** Minor units refunded on each object. */
     readonly refundedById: Map<string, number>;
+    /** Pending preapprovals this run created, by id, with the measurement and the derived key. */
+    readonly pendingCreated: Map<string, { readonly entryId: string; readonly key: string }>;
+    /** Ids the provider confirmed cancelled (a 2xx to the exact cancel). */
+    readonly cancelledIds: Set<string>;
 }
 
 /** A fresh state for one run. */
@@ -33,7 +37,9 @@ export function createWatchRunState(): WatchRunState {
         ledger: { charged: 0, refunded: 0 },
         createdIds: new Set(),
         chargedById: new Map(),
-        refundedById: new Map()
+        refundedById: new Map(),
+        pendingCreated: new Map(),
+        cancelledIds: new Set()
     };
 }
 
@@ -71,6 +77,8 @@ export function guardWrite(args: {
     readonly refundMinor?: number | undefined;
     readonly state: WatchRunState;
     readonly chargeCap: number;
+    /** The deployment's payer email and return URL: a pending creation must state them exactly. */
+    readonly settings: WatchSettings;
     /** What this measurement has charged so far, and the most it declared it would. */
     readonly entryCharged: number;
     readonly entryCap: number;
@@ -87,7 +95,7 @@ export function guardWrite(args: {
             `${entryId} sent ${where} with a query string; a write carries everything in its body`
         );
     }
-    const operation = classifyOperation({ request, pathname });
+    const operation = classifyOperation({ request, pathname, settings: args.settings });
     if (operation === null) {
         throw refuse(
             isMoneyWrite({ request, pathname }) && effect !== 'moves-money'

@@ -296,10 +296,7 @@ describe('TEST:B9b:2 AC:B9b:2 redeeming a discount code respects the provider fl
             .returning({ id: subscriptions.id });
         if (!successor) throw new Error('Could not create succession fixture');
         owned.push({ subscriptionId: successor.id, userId: owner.seeded.subscription.userId! });
-        await getDb()
-            .update(subscriptions)
-            .set({ succeededById: successor.id })
-            .where(eq(subscriptions.id, owner.seeded.subscription.id));
+        // HOS-2351: no predecessor pointer; the live successor alone blocks the redemption.
         const authorization = await owner.fake.authorize({
             reference: successor.id,
             amount: { amountMinor: 10_000, currency: 'ARS' },

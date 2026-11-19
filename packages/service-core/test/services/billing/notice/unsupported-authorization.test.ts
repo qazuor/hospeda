@@ -15,6 +15,8 @@ vi.mock('@repo/db', async (importOriginal) => {
     const original = await importOriginal<typeof import('@repo/db')>();
     return {
         ...original,
+        // HOS-1512: no battery run recorded these ids.
+        providerWatchRunModel: { findRunRecordingProviderId: async () => null },
         reconciliationInventoryModel: {
             ...original.reconciliationInventoryModel,
             findLinkByProviderId: async () => null
