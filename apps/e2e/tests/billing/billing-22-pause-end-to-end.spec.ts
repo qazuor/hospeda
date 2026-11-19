@@ -41,6 +41,7 @@ test.describe('TEST:B8b:26 AC:B8b:26 pause and both resumptions end to end; sin 
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [

@@ -49,6 +49,7 @@ test.describe('TEST:B10:13 AC:B10:11 the hidden-listing notice before buying a f
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [

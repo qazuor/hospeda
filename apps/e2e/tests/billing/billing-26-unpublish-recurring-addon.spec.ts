@@ -37,6 +37,7 @@ test.describe('TEST:B13b:2 AC:B13b:2 AC:B13b:4 unpublishing a listing with a liv
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: namespace,
                 honestAbout: [

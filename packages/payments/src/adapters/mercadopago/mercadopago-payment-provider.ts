@@ -59,10 +59,10 @@ import {
     ChargeSearchInputSchema,
     NoticeDeliverySchema,
     OneTimeChargeInputSchema,
-    OneTimePaymentInputSchema,
     OrderRefSchema,
     OrderRefundInputSchema,
     OrderSearchInputSchema,
+    oneTimePaymentInputSchemaFor,
     PaymentPageRefSchema,
     PaymentProviderOptionsSchema,
     parseProviderInput,
@@ -116,7 +116,8 @@ const MercadoPagoOptionsSchema = z.strictObject({
         .optional(),
     governor: z
         .custom<ProviderTrafficGovernor>((value) => value instanceof ProviderTrafficGovernor)
-        .optional()
+        .optional(),
+    allowLocalHttpReturnUrl: z.boolean().optional().default(false)
 });
 
 function isReadRetryPolicy(value: unknown): value is MercadoPagoReadRetryPolicy {
@@ -146,6 +147,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     private readonly readRetry: MercadoPagoReadRetryPolicy | undefined;
     private readonly sleep: (ms: number) => Promise<void>;
     private readonly governor: ProviderTrafficGovernor | undefined;
+    private readonly oneTimePaymentSchema: z.ZodType<OneTimePaymentInput>;
 
     private async send(args: {
         readonly capability: PaymentCapability;
@@ -251,6 +253,11 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         readonly sleep?: (ms: number) => Promise<void>;
         /** Optional request governor; omit it for legacy/off behavior. */
         readonly governor?: ProviderTrafficGovernor;
+        /**
+         * Accept a plain-http return URL on `localhost` or `127.0.0.1` (HOS-2179). The
+         * composition root sets it only outside production; omitted, it is https only.
+         */
+        readonly allowLocalHttpReturnUrl?: boolean;
     }) {
         const parsed = MercadoPagoOptionsSchema.parse(options);
         this.clock = PaymentProviderOptionsSchema.parse({ clock: parsed.clock }).clock;
@@ -262,6 +269,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         this.sleep =
             parsed.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
         this.governor = parsed.governor;
+        this.oneTimePaymentSchema = oneTimePaymentInputSchemaFor({
+            allowLocalHttpReturnUrl: parsed.allowLocalHttpReturnUrl
+        });
     }
 
     /** Capability 1 · authorize. */
@@ -315,7 +325,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
 
     /** Capability 2 · open a one-time payment page (HOS-2179 §5.1); moves no money. */
     async requestOneTimePayment(input: OneTimePaymentInput): Promise<OneTimePaymentResult> {
-        const ref = { schema: OneTimePaymentInputSchema, input, capability: 'charge' } as const;
+        const ref = { schema: this.oneTimePaymentSchema, input, capability: 'charge' } as const;
         const { value } = parseProviderInput(ref);
         const send: MercadoPagoSend = (args) => this.send(args);
         return createMercadoPagoPaymentPage({ input: value, now: this.clock.now(), send });

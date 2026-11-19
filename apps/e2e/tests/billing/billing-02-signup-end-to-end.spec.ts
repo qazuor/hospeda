@@ -55,6 +55,7 @@ test.describe('TEST:B3:35 AC:B3:33 AC:B3:9 the signup end to end with two abando
         const baseTime = clock.now();
         fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: crypto.randomUUID(),
                 honestAbout: [

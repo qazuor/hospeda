@@ -17,6 +17,7 @@ export async function startAddonWorld(): Promise<{
     const clock = createAdjustableClock({ start: new Date() });
     const fakeServer = await startE2eFakeProvider({
         provider: new FakePaymentProvider({
+            allowLocalHttpReturnUrl: true,
             clock,
             idNamespace: namespace,
             honestAbout: [

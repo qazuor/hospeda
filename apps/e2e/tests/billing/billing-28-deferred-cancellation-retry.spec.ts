@@ -134,7 +134,11 @@ test.describe('TEST:2157:1 TEST:2157:2 TEST:2157:3 TEST:2157:4 a cancelled signu
         await ensureDeadlineVersion();
         const clock = createAdjustableClock({ start: new Date() });
         fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: randomUUID() }),
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: randomUUID()
+            }),
             clock
         });
         try {

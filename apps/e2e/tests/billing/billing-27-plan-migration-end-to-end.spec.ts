@@ -111,6 +111,7 @@ test.describe('TEST:B12:12 AC:B12:11 la migración de un plan retirado, de punta
         });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [

@@ -51,6 +51,7 @@ test.describe('TEST:1624:1 a suspended card subscriber comes back: S23, a new S1
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [
