@@ -1,4 +1,4 @@
-import type { ProtectedEffectiveSetResponse } from '@repo/schemas';
+import { type ProtectedEffectiveSetResponse, VenuePromoBadgeSchema } from '@repo/schemas';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -2735,10 +2735,7 @@ export function toVenueCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
-        promoBadge:
-            item.promoBadge && typeof item.promoBadge === 'object'
-                ? (item.promoBadge as { readonly hasPromo: true; readonly vipOnly: boolean })
-                : undefined,
+        promoBadge: VenuePromoBadgeSchema.safeParse(item.promoBadge).data,
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,
         // SPEC-098: pass through favorite/bookmark enrichment when present.

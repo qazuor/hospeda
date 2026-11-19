@@ -10,6 +10,7 @@
  * All fields are `readonly` to prevent accidental mutation of shared data.
  */
 
+import type { VenuePromoBadge } from '@repo/schemas';
 import type { ListingPolicyValues } from '../lib/listing/listing-policies';
 import type { MediaAttribution } from '../lib/media';
 import type { I18nTextLike } from '../lib/resolve-i18n-text';
@@ -1105,7 +1106,7 @@ export interface VenueCardData {
     /** Whether this listing appears in featured/promoted slots. */
     readonly isFeatured: boolean;
     /** Presence-only promotion marker (HOS-2271). */
-    readonly promoBadge?: { readonly hasPromo: true; readonly vipOnly: boolean };
+    readonly promoBadge?: VenuePromoBadge;
     /** Structured opening hours by day. Null when not configured by the owner. */
     readonly openingHours: Record<string, VenueOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */

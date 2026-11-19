@@ -3753,6 +3753,12 @@
         "validUntil": {
             "beforeValidFrom": "A data de fim deve ser posterior à de início",
             "invalid": "La fecha de fin no es válida"
+        },
+        "window": {
+            "duplicateWeekday": "Não repita os dias no horário semanal",
+            "incomplete": "Escolha os dias e o horário completo da faixa",
+            "invalid": "Confira os dias e o horário da faixa",
+            "sameTime": "O horário final deve ser diferente do inicial"
         }
     },
     "pagination": {

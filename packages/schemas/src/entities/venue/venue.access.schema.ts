@@ -1,4 +1,15 @@
 import { z } from 'zod';
+import { PromotionWindowSchema } from '../ownerPromotion/owner-promotion.venue.schema.js';
+
+/** Presence-only venue promotion summary attached to public cards. */
+export const VenuePromoBadgeSchema = z.object({
+    hasPromo: z.literal(true),
+    vipOnly: z.boolean(),
+    hasUnscheduled: z.boolean(),
+    windows: z.array(PromotionWindowSchema).max(10)
+});
+export type VenuePromoBadge = z.infer<typeof VenuePromoBadgeSchema>;
+
 import { VENUE_BUSINESS_LINE_VALUES } from '../../catalog/business-lines.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
@@ -323,7 +334,7 @@ export const VenuePublicSchema = VenueSchema.pick({
      */
     venueEvents: z.array(VenueEventPublicSchema).optional(),
     /** Presence-only card badge; reveals neither promotion titles nor benefits. */
-    promoBadge: z.object({ hasPromo: z.literal(true), vipOnly: z.boolean() }).optional()
+    promoBadge: VenuePromoBadgeSchema.optional()
 });
 
 /**

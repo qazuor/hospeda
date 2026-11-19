@@ -1,11 +1,12 @@
 import type { OwnerPromotion } from '@repo/schemas';
-import { and, desc, eq, gte, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, gte, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
+import { OwnerPromotionVenueModel } from './ownerPromotion.venue.model.ts';
 
 /**
  * SQL condition: the promotion targets this accommodation, read DUAL (HOS-2270,
@@ -42,6 +43,7 @@ export function ownerWideAccommodationCondition(ownerId: string): SQL {
 export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     protected table = ownerPromotions;
     public entityName = 'ownerPromotions';
+    private readonly venueQueries = new OwnerPromotionVenueModel();
 
     protected override readonly validRelationKeys = [
         'owner',
@@ -55,84 +57,14 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
         return 'ownerPromotions';
     }
 
-    /**
-     * Find currently active venue promotions for a batch of venue ids.
-     *
-     * @param params.venueIds - Venue IDs in the current page.
-     * @returns A compact map with whether each venue has a PLUS promotion.
-     */
-    async findVenueIdsWithActivePromo({
-        venueIds
-    }: {
-        readonly venueIds: readonly string[];
-    }): Promise<ReadonlyMap<string, { readonly hasPromo: true; readonly vipOnly: boolean }>> {
-        if (venueIds.length === 0) return new Map();
-        const db = this.getClient();
-        const now = new Date();
-        const method = 'findVenueIdsWithActivePromo';
-        try {
-            const rows = await db
-                .select({
-                    entityId: ownerPromotions.entityId,
-                    hasPlus: sql<boolean>`bool_or(${ownerPromotions.touristAudience} = 'plus')`
-                })
-                .from(ownerPromotions)
-                .where(
-                    and(
-                        eq(ownerPromotions.entityType, 'venue'),
-                        inArray(ownerPromotions.entityId, [...venueIds]),
-                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                        isNull(ownerPromotions.deletedAt),
-                        lte(ownerPromotions.validFrom, now),
-                        or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
-                    )
-                )
-                .groupBy(ownerPromotions.entityId);
-            const badges = new Map<
-                string,
-                { readonly hasPromo: true; readonly vipOnly: boolean }
-            >();
-            for (const row of rows) {
-                if (row.entityId)
-                    badges.set(row.entityId, { hasPromo: true, vipOnly: !row.hasPlus });
-            }
-            return badges;
-        } catch (error) {
-            logError(this.entityName, method, { venueCount: venueIds.length }, error as Error);
-            throw new DbError(
-                this.entityName,
-                method,
-                { venueCount: venueIds.length },
-                (error as Error).message
-            );
-        }
+    /** Find current venue promotion badges for a batch of venue ids. */
+    async findVenueIdsWithActivePromo({ venueIds }: { readonly venueIds: readonly string[] }) {
+        return this.venueQueries.findVenueIdsWithActivePromo({ venueIds });
     }
 
     /** Find current public PLUS promotions for a published venue detail. */
     async findActiveForVenue({ venueId }: { readonly venueId: string }): Promise<OwnerPromotion[]> {
-        const db = this.getClient();
-        const now = new Date();
-        const method = 'findActiveForVenue';
-        try {
-            const rows = await db
-                .select()
-                .from(ownerPromotions)
-                .where(
-                    and(
-                        eq(ownerPromotions.entityType, 'venue'),
-                        eq(ownerPromotions.entityId, venueId),
-                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                        eq(ownerPromotions.touristAudience, 'plus'),
-                        isNull(ownerPromotions.deletedAt),
-                        lte(ownerPromotions.validFrom, now),
-                        or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
-                    )
-                );
-            return rows as OwnerPromotion[];
-        } catch (error) {
-            logError(this.entityName, method, { venueId }, error as Error);
-            throw new DbError(this.entityName, method, { venueId }, (error as Error).message);
-        }
+        return this.venueQueries.findActiveForVenue({ venueId });
     }
 
     /**
@@ -404,123 +336,28 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
         }
     }
 
-    /**
-     * Counts the promotions of an owner's VENUES that occupy a slot of the plan's
-     * `max_active_promotions` limit (HOS-2270).
-     *
-     * A promotion occupies a slot while it is `ACTIVE`, not soft-deleted and not
-     * expired. A promotion scheduled for the future (`validFrom` ahead) DOES
-     * count: leaving it out would let an owner stack unlimited scheduled
-     * promotions and have them all go live at once. Accommodation promotions are
-     * never counted here, so the two verticals do not spend each other's quota.
-     *
-     * @param params.ownerId - The owner whose venue promotions are counted.
-     * @param tx - Optional transaction client.
-     * @returns The number of venue promotions holding a slot.
-     */
+    /** Counts the owner's active venue promotions that occupy quota slots. */
     async countActiveForVenueOwner(
-        { ownerId }: { ownerId: string },
+        { ownerId }: { readonly ownerId: string },
         tx?: DrizzleClient
     ): Promise<number> {
-        const db = this.getClient(tx);
-        const method = 'countActiveForVenueOwner';
-        try {
-            const now = new Date();
-            const rows = await db
-                .select({ id: ownerPromotions.id })
-                .from(ownerPromotions)
-                .where(
-                    and(
-                        eq(ownerPromotions.ownerId, ownerId),
-                        eq(ownerPromotions.entityType, 'venue'),
-                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
-                        isNull(ownerPromotions.deletedAt),
-                        or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
-                    )
-                );
-            logQuery(this.entityName, method, { ownerId }, { total: rows.length });
-            return rows.length;
-        } catch (error) {
-            logError(this.entityName, method, { ownerId }, error as Error);
-            throw new DbError(this.entityName, method, { ownerId }, (error as Error).message);
-        }
+        return this.venueQueries.countActiveForVenueOwner({ ownerId }, tx);
     }
 
-    /**
-     * Lists every non-deleted promotion of one venue, in any lifecycle state, newest
-     * first (HOS-2270). The owner's editor reads this; the public venue page reads
-     * its own filtered path.
-     *
-     * @param params.venueId - The venue the promotions hang from.
-     * @param tx - Optional transaction client.
-     * @returns The venue's promotions.
-     */
+    /** Lists every non-deleted promotion for one venue, newest first. */
     async findByVenue(
-        { venueId }: { venueId: string },
+        { venueId }: { readonly venueId: string },
         tx?: DrizzleClient
     ): Promise<OwnerPromotion[]> {
-        const db = this.getClient(tx);
-        const method = 'findByVenue';
-        try {
-            const rows = await db
-                .select()
-                .from(ownerPromotions)
-                .where(
-                    and(
-                        eq(ownerPromotions.entityType, 'venue'),
-                        eq(ownerPromotions.entityId, venueId),
-                        isNull(ownerPromotions.deletedAt)
-                    )
-                )
-                .orderBy(desc(ownerPromotions.createdAt));
-            logQuery(this.entityName, method, { venueId }, { total: rows.length });
-            return rows as OwnerPromotion[];
-        } catch (error) {
-            logError(this.entityName, method, { venueId }, error as Error);
-            throw new DbError(this.entityName, method, { venueId }, (error as Error).message);
-        }
+        return this.venueQueries.findByVenue({ venueId }, tx);
     }
 
-    /**
-     * Finds one non-deleted promotion by id, only if it hangs from the given venue.
-     * A promotion of another venue, of an accommodation, or one that does not exist
-     * all answer `null`: the caller turns every one of them into the same 404.
-     *
-     * @param params.promotionId - The promotion id.
-     * @param params.venueId - The venue it must hang from.
-     * @param tx - Optional transaction client.
-     * @returns The promotion, or `null`.
-     */
+    /** Finds one non-deleted promotion only when it hangs from the given venue. */
     async findOneOfVenue(
         { promotionId, venueId }: { promotionId: string; venueId: string },
         tx?: DrizzleClient
     ): Promise<OwnerPromotion | null> {
-        const db = this.getClient(tx);
-        const method = 'findOneOfVenue';
-        try {
-            const rows = await db
-                .select()
-                .from(ownerPromotions)
-                .where(
-                    and(
-                        eq(ownerPromotions.id, promotionId),
-                        eq(ownerPromotions.entityType, 'venue'),
-                        eq(ownerPromotions.entityId, venueId),
-                        isNull(ownerPromotions.deletedAt)
-                    )
-                )
-                .limit(1);
-            logQuery(this.entityName, method, { promotionId, venueId }, rows);
-            return (rows[0] as OwnerPromotion | undefined) ?? null;
-        } catch (error) {
-            logError(this.entityName, method, { promotionId, venueId }, error as Error);
-            throw new DbError(
-                this.entityName,
-                method,
-                { promotionId, venueId },
-                (error as Error).message
-            );
-        }
+        return this.venueQueries.findOneOfVenue({ promotionId, venueId }, tx);
     }
 
     /**

@@ -10,7 +10,7 @@
  *
  * @module routes/venue/protected/listPromotions
  */
-import { VenuePromotionListOutputSchema, VerticalEnum } from '@repo/schemas';
+import { toPromotionWindow, VenuePromotionListOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ServiceError, VenuePromotionService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -34,7 +34,10 @@ export async function handleListVenuePromotions(ctx: Context, params: Record<str
         key: MAX_ACTIVE_PROMOTIONS_KEY
     });
     return {
-        items: result.data.items,
+        items: result.data.items.map(({ windowWeekdays, windowStart, windowEnd, ...item }) => ({
+            ...item,
+            window: toPromotionWindow({ windowWeekdays, windowStart, windowEnd })
+        })),
         meta: { activeCount: result.data.activeCount, maxActive }
     };
 }

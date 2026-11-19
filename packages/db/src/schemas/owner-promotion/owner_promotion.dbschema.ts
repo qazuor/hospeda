@@ -1,5 +1,15 @@
 import { relations, sql } from 'drizzle-orm';
-import { check, index, integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+    check,
+    index,
+    integer,
+    pgTable,
+    smallint,
+    text,
+    time,
+    timestamp,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import {
     LifecycleStatusPgEnum,
@@ -58,6 +68,9 @@ export const ownerPromotions = pgTable(
         minNights: integer('min_nights'),
         validFrom: timestamp('valid_from', { withTimezone: true }).notNull(),
         validUntil: timestamp('valid_until', { withTimezone: true }),
+        windowWeekdays: smallint('window_weekdays').array(),
+        windowStart: time('window_start', { precision: 0 }),
+        windowEnd: time('window_end', { precision: 0 }),
         maxRedemptions: integer('max_redemptions'),
         currentRedemptions: integer('current_redemptions').notNull().default(0),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
@@ -81,6 +94,10 @@ export const ownerPromotions = pgTable(
         owner_promotions_venue_requires_entity_check: check(
             'owner_promotions_venue_requires_entity_check',
             sql`${table.entityType} <> 'venue' OR ${table.entityId} IS NOT NULL`
+        ),
+        owner_promotions_window_venue_check: check(
+            'owner_promotions_window_venue_check',
+            sql`${table.windowWeekdays} IS NULL OR ${table.entityType} = 'venue'`
         ),
         ownerPromotions_accommodationId_idx: index('ownerPromotions_accommodationId_idx').on(
             table.accommodationId
