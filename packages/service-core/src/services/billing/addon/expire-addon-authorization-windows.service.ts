@@ -146,7 +146,7 @@ export async function expireAddonAuthorizationWindows(
     // selected rather than a guessed one.
     const pageTiming = optionalPaymentPageTiming(deadlines);
     const pageWindowElapsed = pageTiming
-        ? sql`coalesce(${addonInstances.paymentPageExpiresAt}, ${addonInstances.createdAt} + (${pageTiming.pageMs}::integer * interval '1 millisecond')) + (${pageTiming.windowMarginMs}::integer * interval '1 millisecond') <= ${now.toISOString()}::timestamptz`
+        ? sql`coalesce(${addonInstances.paymentPageExpiresAt}, ${addonInstances.createdAt} + (${pageTiming.pageMs}::bigint * interval '1 millisecond')) + (${pageTiming.windowMarginMs}::bigint * interval '1 millisecond') <= ${now.toISOString()}::timestamptz`
         : null;
     const rows = await getDb()
         .select({
