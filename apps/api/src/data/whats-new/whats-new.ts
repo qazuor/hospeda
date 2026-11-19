@@ -278,6 +278,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4511
+    {
+        id: '2026-11-18-assistant-owner-summary',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Preguntale a tu asistente de IA «¿cómo vengo?» y recibí un resumen de tus publicaciones',
+            en: 'Ask your AI assistant «how am I doing?» and get a summary of your listings',
+            pt: 'Pergunte ao seu assistente de IA «como estou indo?» e receba um resumo dos seus anúncios'
+        },
+        body: {
+            es: 'En una sola respuesta, el asistente te dice cuántas publicaciones tenés por tipo y en qué estado están, los números principales del período y lo que necesita tu atención: consultas sin responder, pedidos de arreglo y usos de beneficios pendientes, cada uno con el link para resolverlo.',
+            en: 'In a single answer, the assistant tells you how many listings you have of each type and their status, the key numbers for the period, and what needs your attention: unanswered inquiries, fix requests and pending benefit usages, each with the link to handle it.',
+            pt: 'Em uma única resposta, o assistente diz quantos anúncios você tem de cada tipo e em que estado estão, os números principais do período e o que precisa da sua atenção: consultas sem resposta, pedidos de ajuste e usos de benefícios pendentes, cada um com o link para resolver.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4523
     {
         id: '2026-11-18-admin-provider-lead-approval-categories',
