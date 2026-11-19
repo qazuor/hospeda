@@ -314,6 +314,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4514, #4526, #4532, #4535
+    {
+        id: '2026-11-18-assistant-activity-history',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'USER'],
+        title: {
+            es: 'Mirá en tu cuenta todo lo que hizo tu asistente de IA',
+            en: 'See in your account everything your AI assistant did',
+            pt: 'Veja na sua conta tudo o que seu assistente de IA fez'
+        },
+        body: {
+            es: 'En Mi cuenta › Asistentes de IA › Historial ves cada acción que hizo un asistente conectado con tu cuenta: qué hizo, sobre qué publicación, cuándo, desde qué asistente y si salió bien, fue rechazada o tuvo un error. Podés filtrar por resultado y elegir si mostrar también lo que solo miró. Nunca guardamos el texto de tus mensajes.',
+            en: 'In My account › AI assistants › History you see every action an assistant connected to your account took: what it did, on which listing, when, from which assistant, and whether it worked, was refused or failed. You can filter by result and choose whether to also show what it only viewed. We never store the text of your messages.',
+            pt: 'Em Minha conta › Assistentes de IA › Histórico você vê cada ação que um assistente conectado à sua conta realizou: o que fez, em qual anúncio, quando, de qual assistente e se deu certo, foi recusada ou teve erro. Você pode filtrar por resultado e escolher se também quer ver o que ele apenas consultou. Nunca guardamos o texto das suas mensagens.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4528
     {
         id: '2026-11-19-venue-event-ticket-link',
