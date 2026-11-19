@@ -14,12 +14,15 @@ import type {
     ChangeAmountInput,
     ChargeInput,
     ChargeRef,
+    ChargeSearchInput,
     Money,
     NoticeDelivery,
     OneTimeChargeInput,
+    OneTimePaymentInput,
     OrderRef,
     OrderRefundInput,
     OrderSearchInput,
+    PaymentPageRef,
     RefundInput
 } from './payment-provider';
 
@@ -72,6 +75,34 @@ export const OneTimeChargeInputSchema: z.ZodType<OneTimeChargeInput> = z.strictO
     paymentBrand: NonEmptyId,
     paymentKind: z.enum(['credit', 'debit'])
 });
+
+/** Validates a one-time payment page request; it has no field for card data (HOS-2179 §6.2). */
+export const OneTimePaymentInputSchema: z.ZodType<OneTimePaymentInput> = z.strictObject({
+    reference: NonEmptyId,
+    idempotencyKey: NonEmptyId,
+    amount: PositiveMoneySchema,
+    reason: z.string().trim().min(1),
+    /** The customer comes back here from the provider's page: only https. */
+    returnUrl: z.url({ protocol: /^https$/ }),
+    expiresAt: z.iso.datetime({ offset: true })
+});
+
+/** Identifies one payment page (capabilities 5 and 7). */
+export const PaymentPageRefSchema: z.ZodType<PaymentPageRef> = z.strictObject({
+    paymentPageId: NonEmptyId
+});
+
+/** Charge search criteria (capability 7): an ordered, inclusive creation range. */
+export const ChargeSearchInputSchema: z.ZodType<ChargeSearchInput> = z
+    .strictObject({
+        reference: NonEmptyId,
+        createdFrom: z.iso.datetime({ offset: true }),
+        createdTo: z.iso.datetime({ offset: true })
+    })
+    .refine((input) => Date.parse(input.createdFrom) <= Date.parse(input.createdTo), {
+        message: 'the search range ends before it starts',
+        path: ['createdTo']
+    });
 
 /** Input of capability 3. */
 export const ChangeAmountInputSchema: z.ZodType<ChangeAmountInput> = z.strictObject({

@@ -355,6 +355,15 @@ describe('TEST:1734 rejected charge edges', () => {
                 own.provider.readOrder(input),
             searchOrders: (input: Parameters<PaymentProvider['searchOrders']>[0]) =>
                 own.provider.searchOrders(input),
+            requestOneTimePayment: (
+                input: Parameters<PaymentProvider['requestOneTimePayment']>[0]
+            ) => own.provider.requestOneTimePayment(input),
+            closeOneTimePayment: (input: Parameters<PaymentProvider['closeOneTimePayment']>[0]) =>
+                own.provider.closeOneTimePayment(input),
+            readOneTimePayment: (input: Parameters<PaymentProvider['readOneTimePayment']>[0]) =>
+                own.provider.readOneTimePayment(input),
+            searchCharges: (input: Parameters<PaymentProvider['searchCharges']>[0]) =>
+                own.provider.searchCharges(input),
             decodeNotice: (input: Parameters<PaymentProvider['decodeNotice']>[0]) =>
                 own.provider.decodeNotice(input)
         } satisfies PaymentProvider;

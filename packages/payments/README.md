@@ -21,7 +21,9 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
     exported only from `@repo/payments/fake`, for tests.
   - `MercadoPagoPaymentProvider`: `authorize`, `cancel`, `changeAmount`,
     `pause`, `resume`, `refund`, authorization and charge reads, charge listing,
-    authorization search, and order reads/search call Mercado Pago over native
+    authorization search, order reads/search, one-time payment pages
+    (`requestOneTimePayment`, `readOneTimePayment`, `closeOneTimePayment`) and
+    the charge search by reference (`searchCharges`) call Mercado Pago over native
     `fetch`. `charge` is deliberately rejected because recurring charges run
     on Mercado Pago's schedule. `decodeNotice` reads Mercado Pago Webhooks
     (`subscription_preapproval` and `payment`; other types are `INVALID_NOTICE`).
@@ -64,7 +66,7 @@ closed lists and one apart, validated at load (`FAKE_LISTS`):
 - **`lies`, M1..M13**: each row has its name, the matrix rows it comes from
   (date and account) and the test that proves our code resists it
   (`defenseTest`).
-- **`rules`, RP1..RP13**: provider rules and measured behaviour. Rules stay on;
+- **`rules`, RP1..RP19**: provider rules and measured behaviour. Rules stay on;
   measured behaviour can be turned off by name with a reason.
 - **`simulations`**: network cases nobody measured (`lostResponse`,
   `networkCut`, `noticesOutOfOrder`). Not lies, never counted as such.
@@ -88,6 +90,12 @@ deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
 expires), M13 (the first partial refund refused as not refundable), M1 on
 creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP8 and RP11 are switchable by name; RP13, the order search bounds of EX-57, is a rule). One-time orders enter the fake only through the test handle `placeOrder`; the fake HTTP server serves provider-shaped `readOrder`/`searchOrders` responses from those orders.
+One-time payment pages (HOS-2179) follow RP18 (a page takes more than one
+approved payment until it expires) and RP19 (an expired page takes no payment,
+and its read carries no expired flag). The test handle
+`payOnPage({ paymentPageId, outcome })` stands for the customer paying on the
+page. Whether the provider honours the creation key is not measured (EX-61), so
+the fake does not deduplicate by key: a repeated request opens another page.
 The other rows (M2, M12; RP10, RP12) stay in the list and arrive with the units that add their surface to the interface. The fake implements M7 and RP7, RP8 and RP11.
 
 Every delay of the fake runs on the injected clock: advance it to see a late
