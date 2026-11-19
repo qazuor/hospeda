@@ -13,7 +13,13 @@ import {
     isNull
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { type PaymentProvider, PaymentProviderError, sanitizeApprovalUrl } from '@repo/payments';
+import {
+    actStartInstant,
+    assertFreshForAct,
+    type PaymentProvider,
+    PaymentProviderError,
+    sanitizeApprovalUrl
+} from '@repo/payments';
 import { z } from 'zod';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import {
@@ -142,6 +148,32 @@ async function abandonRefusedPage(input: {
 }
 
 /**
+ * Best effort: closes a page no purchase recorded and confirms it by a fresh re-read by id.
+ * Never throws; a page left open carries our reference, so the reference search still finds
+ * any payment on it (§5.10).
+ */
+async function closeUnrecordedPage(input: {
+    readonly paymentPageId: string;
+    readonly ports: OpenOneTimePaymentPagePorts;
+}): Promise<void> {
+    const { paymentPageId, ports } = input;
+    try {
+        await ports.provider.closeOneTimePayment({ paymentPageId });
+        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+        actStartInstant({ act });
+        const read = await ports.provider.readOneTimePayment({ paymentPageId });
+        const { snapshot, readAt } = assertFreshForAct({ read, act });
+        if (snapshot.expiresAt === null || Date.parse(snapshot.expiresAt) > readAt.getTime())
+            logger.warn({ paymentPageId }, 'Unrecorded payment page still open after close');
+    } catch (error) {
+        logger.warn(
+            { paymentPageId, error: error instanceof Error ? error.message : String(error) },
+            'Unrecorded payment page close failed'
+        );
+    }
+}
+
+/**
  * Opens the payment page of a pending one-time purchase (HOS-2179 §5.1), or resumes one whose
  * creation answer was lost (§5.6). It sends the key A1 persisted and an expiry derived from
  * the instance, so a repeat sends the same body; the provider may still open a second page
@@ -235,7 +267,11 @@ export async function openOneTimePaymentPage(
                 updatedAt: ports.clock.now()
             })
             .where(
-                and(eq(addonInstances.id, found.instance.id), isNull(addonInstances.paymentPageId))
+                and(
+                    eq(addonInstances.id, found.instance.id),
+                    eq(addonInstances.status, 'PENDING_AUTHORIZATION'),
+                    isNull(addonInstances.paymentPageId)
+                )
             )
             .returning({ id: addonInstances.id });
         if (rows.length !== 1) return false;
@@ -255,12 +291,30 @@ export async function openOneTimePaymentPage(
         return true;
     });
     if (!recorded) {
-        // A concurrent resume recorded its page first; ours carries the same reference, so any
-        // payment on it is still found by the reference search (§5.6, §5.10).
+        // Not recorded: a concurrent resume recorded its page first, or the purchase stopped
+        // waiting meanwhile (a concurrent refusal released it). Nobody holds the page we just
+        // got, so it is closed rather than left open for a payment no purchase would claim
+        // (§5.6, §5.7). A provider that deduplicated by key handed back the recorded page
+        // itself, which must stay open.
+        const [current] = await getDb()
+            .select({
+                status: addonInstances.status,
+                paymentPageId: addonInstances.paymentPageId
+            })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, found.instance.id))
+            .limit(1);
+        if (current?.paymentPageId !== created.paymentPageId)
+            await closeUnrecordedPage({ paymentPageId: created.paymentPageId, ports });
         logger.warn(
-            { instanceId: found.instance.id, paymentPageId: created.paymentPageId },
-            'Another payment page was recorded for this purchase'
+            {
+                instanceId: found.instance.id,
+                paymentPageId: created.paymentPageId,
+                status: current?.status
+            },
+            'Payment page not recorded for this purchase'
         );
+        if (current?.status !== 'PENDING_AUTHORIZATION') return { outcome: 'NOT_APPLICABLE' };
         return {
             outcome: 'ALREADY_OPEN',
             checkoutUrl: await paymentPageCheckoutUrlOf({ instanceId: found.instance.id })
