@@ -28,7 +28,11 @@ test.describe('RES-04: duplicate signed webhook is idempotent @p0 @resilience @b
 
     test.beforeAll(async () => {
         fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() }),
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            }),
             clock
         });
         await execSQL(

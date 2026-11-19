@@ -69,6 +69,7 @@ test.describe('TEST:B7:20 AC:B7:32 the arrears cycle end to end @p0 @billing @cl
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

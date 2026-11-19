@@ -45,6 +45,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
         const clock = createAdjustableClock({ start: new Date() });
         const provider = testInfo.title.startsWith('fila 5')
             ? new FakePaymentProvider({
+                  allowLocalHttpReturnUrl: true,
                   clock,
                   idNamespace: providerNamespace,
                   honestAbout: [
@@ -60,6 +61,7 @@ test.describe('TEST:B8b:25 AC:B8b:25 act notices @p0 @billing @clock', () => {
                   ]
               })
             : new FakePaymentProvider({
+                  allowLocalHttpReturnUrl: true,
                   clock,
                   idNamespace: providerNamespace,
                   honestAbout: [

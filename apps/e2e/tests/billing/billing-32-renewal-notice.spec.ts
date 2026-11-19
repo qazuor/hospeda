@@ -55,6 +55,7 @@ test.describe('HOS-2136 TEST:B13a:13 AC:B13a:13 renewal notice at five and one d
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

@@ -79,6 +79,7 @@ test.describe('TEST:B13a:5 — the permanent grant confirmations say what happen
         providerNamespace = randomUUID();
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: providerNamespace,
                 honestAbout: [

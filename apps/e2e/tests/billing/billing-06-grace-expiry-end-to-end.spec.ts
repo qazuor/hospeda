@@ -61,6 +61,7 @@ test.describe('TEST:B7:17 AC:B7:29 the grace expires against the fake provider s
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

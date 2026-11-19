@@ -47,6 +47,7 @@ test.describe('TEST:B5:22 AC:B5:39 admin revocation (S36) end to end @p0 @billin
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [
