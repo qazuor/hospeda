@@ -43,6 +43,11 @@ export {
     type FakeNoticeChannel
 } from './fake-outbox';
 export {
+    PAGE_DECLINE_REASON,
+    PAYMENT_PAGE_BASE_URL,
+    type PagePaymentOutcome
+} from './fake-payment-pages';
+export {
     FAKE_CAPABILITY_SUPPORT,
     FAKE_HONEST_LINK_LIFETIME_MS,
     FakePaymentProvider,

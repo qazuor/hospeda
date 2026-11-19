@@ -235,6 +235,18 @@
             "kind": "rule",
             "name": "the stored first charge date (`start_date`) is truncated to the whole second",
             "measured": [{ "row": "EX-60", "date": "2026-11-16", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP18",
+            "kind": "rule",
+            "name": "a one-time payment page takes more than one approved payment until it expires; each payment gets its own merchant order and carries the page's reference",
+            "measured": [{ "row": "EX-67", "date": "2026-11-18", "accounts": ["sandbox"] }]
+        },
+        {
+            "id": "RP19",
+            "kind": "rule",
+            "name": "an expired one-time payment page shows the provider's fatal page and creates no payment; a read of the page carries no expired flag",
+            "measured": [{ "row": "EX-66", "date": "2026-11-18", "accounts": ["sandbox"] }]
         }
     ],
     "simulations": [

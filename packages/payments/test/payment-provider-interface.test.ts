@@ -73,7 +73,7 @@ describe('the eight capabilities', () => {
         expect(Object.keys(CAPABILITY_METHODS)).toEqual([...PAYMENT_CAPABILITIES]);
         expect(new Set(mapped).size).toBe(mapped.length);
         expect([...PROVIDER_METHODS]).toEqual(mapped);
-        expect(PROVIDER_METHODS).toHaveLength(16);
+        expect(PROVIDER_METHODS).toHaveLength(20);
     });
 });
 
@@ -140,7 +140,7 @@ describe('what each implementation declares', () => {
             return entry.level === 'partial' ? entry.gaps.map((gap) => gap.handling) : [];
         };
         expect(handlingOf('pauseAndResume')).toEqual(['emulate']);
-        expect(handlingOf('read')).toEqual(['block']);
+        expect(handlingOf('read')).toEqual(['block', 'emulate']);
         expect(handlingOf('notify')).toEqual(['emulate', 'emulate']);
     });
 });

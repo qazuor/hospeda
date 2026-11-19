@@ -26,7 +26,11 @@ describe('HOS-1554 TEST:B6:9 AC:B6:11 charge interface', () => {
             'authorizationId' | 'amount' | 'reference'
         >();
         expectTypeOf<keyof ChargeResult>().toEqualTypeOf<'chargeId'>();
-        expect(CAPABILITY_METHODS.charge).toEqual(['charge', 'chargeOnce']);
+        expect(CAPABILITY_METHODS.charge).toEqual([
+            'charge',
+            'chargeOnce',
+            'requestOneTimePayment'
+        ]);
     });
 
     it('rejects recurring charge and sends one-time charge to one order URL', async () => {

@@ -75,10 +75,14 @@ function stripComments(source: string): string {
     return result;
 }
 
-// readOrder is a read by id like readCharge (HOS-1605), not a search.
-const searchMethods = CAPABILITY_METHODS.read.filter(
-    (name) => name !== 'readAuthorization' && name !== 'readCharge' && name !== 'readOrder'
-);
+// readOrder (HOS-1605) and readOneTimePayment (HOS-2179) are reads by id like readCharge, not searches.
+const READS_BY_ID: readonly string[] = [
+    'readAuthorization',
+    'readCharge',
+    'readOrder',
+    'readOneTimePayment'
+];
+const searchMethods = CAPABILITY_METHODS.read.filter((name) => !READS_BY_ID.includes(name));
 
 /**
  * AC:B11:13 + EX-57 (HOS-1605): the paid-orders check lists its instances from our
@@ -92,6 +96,8 @@ const SEARCH_ALLOWED_IN: Readonly<Record<string, string>> = {
 describe('TEST:B11:1 ningún barrido lista desde el buscador', () => {
     it('derives all search methods from the read capability and excludes them from the sweep sources', () => {
         expect(searchMethods).toContain('searchAuthorizations');
+        expect(searchMethods).toContain('searchCharges');
+        expect(searchMethods).not.toContain('readOneTimePayment');
         expect(searchMethods.length).toBeGreaterThan(0);
         const files = [...sourceFiles(SWEEP_DIR), JOB];
         expect(files.length).toBeGreaterThanOrEqual(3);

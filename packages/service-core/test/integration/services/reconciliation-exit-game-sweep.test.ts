@@ -249,6 +249,10 @@ function providerWithoutAppliedAmount(fake: FakePaymentProvider): PaymentProvide
         listCharges: (input) => fake.listCharges(input),
         readOrder: (input) => fake.readOrder(input),
         searchOrders: (input) => fake.searchOrders(input),
+        requestOneTimePayment: (input) => fake.requestOneTimePayment(input),
+        closeOneTimePayment: (input) => fake.closeOneTimePayment(input),
+        readOneTimePayment: (input) => fake.readOneTimePayment(input),
+        searchCharges: (input) => fake.searchCharges(input),
         decodeNotice: (input) => fake.decodeNotice(input)
     };
 }
