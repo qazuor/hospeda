@@ -97,6 +97,17 @@ export function validateWatchCatalog(args: { readonly catalog: readonly WatchEnt
         ) {
             problems.push(`${entry.id}: moves money without an integer maximum charge above zero`);
         }
+        const expectedKeys =
+            entry.expected !== null &&
+            typeof entry.expected === 'object' &&
+            !Array.isArray(entry.expected)
+                ? Object.keys(entry.expected)
+                : [];
+        for (const key of entry.reportedOnly ?? []) {
+            if (expectedKeys.includes(key)) {
+                problems.push(`${entry.id}: ${key} is both expected and reported only`);
+            }
+        }
     }
     return { problems };
 }

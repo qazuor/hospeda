@@ -138,6 +138,7 @@ describe('recent-auths', () => {
         ]);
         expect(result.run.measurements['recent-auths']?.obtained).toEqual({
             subjectsRead: 5,
+            foreignSkipped: 0,
             sortedDescending: true,
             unreadableByAdapter: [],
             renewalsWithoutExpiry: []
@@ -167,6 +168,51 @@ describe('recent-auths', () => {
         expect(result.run.measurements['recent-auths']?.outcome).toBe('changed');
     });
 
+    it('is not green when every subject is refused by design: none was really read (R2)', async () => {
+        const listed = Array.from({ length: 5 }, (_, index) => real(index));
+        const fake = authorizationProvider({ listed, frequencyTypeOf: () => 'days' });
+        const result = await run(shipped('recent-auths'), fake.transport);
+        expect(result.run.measurements['recent-auths']?.outcome).toBe('errored');
+        expect(result.run.measurements['recent-auths']?.error).toContain('5 skipped as foreign');
+        expect(result.run.outcome).toBe('failed');
+        expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('walks on past foreign subjects until five are really read, and reports them (R2)', async () => {
+        // Three foreign among the most recent: the walk reads past them to five real reads.
+        const listed = Array.from({ length: 28 }, (_, index) => real(index));
+        const foreign = new Set(['real-0', 'real-2', 'real-4']);
+        const fake = authorizationProvider({
+            listed,
+            frequencyTypeOf: (id) => (foreign.has(id) ? 'days' : 'months')
+        });
+        const result = await run(shipped('recent-auths'), fake.transport);
+        expect(result.run.measurements['recent-auths']?.obtained).toEqual({
+            subjectsRead: 5,
+            foreignSkipped: 3,
+            sortedDescending: true,
+            unreadableByAdapter: [],
+            renewalsWithoutExpiry: []
+        });
+        // Foreign subjects are reported only: the measurement still matches.
+        expect(result.run.measurements['recent-auths']?.outcome).toBe('matched');
+    });
+
+    it('does not count an unreadable subject as read (R2)', async () => {
+        const listed = Array.from({ length: 5 }, (_, index) => real(index));
+        const fake = authorizationProvider({ listed });
+        const transport: WatchTransport = async (request) =>
+            request.path === '/preapproval/real-1'
+                ? { status: 200, body: { id: 'real-1' } }
+                : fake.transport(request);
+        const result = await run(shipped('recent-auths'), transport);
+        expect(result.run.measurements['recent-auths']?.obtained).toMatchObject({
+            subjectsRead: 4,
+            unreadableByAdapter: ['real-1']
+        });
+        expect(result.run.measurements['recent-auths']?.outcome).toBe('changed');
+    });
+
     it('does not read the charge records of an authorization refused by design', async () => {
         const listed = Array.from({ length: 5 }, (_, index) => real(index));
         // A cadence the adapter does not support: refused BY DESIGN, not a drift.
@@ -188,8 +234,37 @@ describe('recent-auths', () => {
     });
 });
 
+describe('reported-only keys (R2)', () => {
+    const entry = (reportedOnly?: readonly string[]): WatchEntry => ({
+        id: 'recent-auths',
+        rows: [],
+        accounts: ['sandbox'],
+        effect: 'read',
+        expected: { subjectsRead: 5 },
+        ...(reportedOnly === undefined ? {} : { reportedOnly }),
+        measure: async () => ({ subjectsRead: 5, foreignSkipped: 7 })
+    });
+    const silent: WatchTransport = async () => ({ status: 404, body: {} });
+
+    it('records a reported-only key without comparing it', async () => {
+        const result = await run(entry(['foreignSkipped']), silent);
+        expect(result.run.measurements['recent-auths']).toMatchObject({
+            outcome: 'matched',
+            obtained: { subjectsRead: 5, foreignSkipped: 7 }
+        });
+    });
+
+    it('compares every key an entry does not declare as reported only', async () => {
+        const result = await run(entry(), silent);
+        expect(result.run.measurements['recent-auths']?.outcome).toBe('changed');
+    });
+});
+
 /** Serves a payment search (honoring limit and offset only) and reads by id. */
-function paymentProvider(listed: readonly { readonly id: string; readonly minutesAgo: number }[]) {
+function paymentProvider(
+    listed: readonly { readonly id: string; readonly minutesAgo: number }[],
+    failId?: (id: string) => boolean
+) {
     const sent: WatchRequest[] = [];
     const transport: WatchTransport = async (request): Promise<WatchResponse> => {
         sent.push(request);
@@ -207,6 +282,22 @@ function paymentProvider(listed: readonly { readonly id: string; readonly minute
                         date_created: iso(item.minutesAgo),
                         transaction_amount_refunded: 0
                     }))
+                }
+            };
+        }
+        const read = /^\/v1\/payments\/([^/]+)$/.exec(url.pathname);
+        const item = listed.find((candidate) => candidate.id === read?.[1]);
+        if (item !== undefined && failId?.(item.id) !== true) {
+            return {
+                status: 200,
+                body: {
+                    id: item.id,
+                    date_created: iso(item.minutesAgo),
+                    external_reference: `order-${item.id}`,
+                    status: 'approved',
+                    transaction_amount: 15,
+                    currency_id: 'ARS',
+                    transaction_amount_refunded: 0
                 }
             };
         }
@@ -249,6 +340,19 @@ describe('recent-payments', () => {
         const result = await run(shipped('recent-payments'), fake.transport);
         expect(result.run.measurements['recent-payments']?.obtained).toMatchObject({
             subjectsRead: 2
+        });
+        expect(result.run.measurements['recent-payments']?.outcome).toBe('changed');
+    });
+
+    it('does not count a payment the adapter could not read (R2)', async () => {
+        const fake = paymentProvider(
+            Array.from({ length: 5 }, (_, index) => ({ id: `${index + 1}`, minutesAgo: index })),
+            (id) => id === '3'
+        );
+        const result = await run(shipped('recent-payments'), fake.transport);
+        expect(result.run.measurements['recent-payments']?.obtained).toMatchObject({
+            subjectsRead: 4,
+            unreadableByAdapter: ['3']
         });
         expect(result.run.measurements['recent-payments']?.outcome).toBe('changed');
     });

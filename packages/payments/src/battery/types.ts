@@ -160,6 +160,12 @@ export interface WatchEntry {
     readonly pendingAmountMinor?: number;
     /** The value the fake's list says the provider yields. */
     readonly expected: JsonValue;
+    /**
+     * Keys of the obtained object that are recorded but NOT compared with `expected`: counts that
+     * vary from run to run and say what the measurement could not judge, such as the foreign
+     * subjects a re-read skipped (re-review of #4538, R2). They must not be keys of `expected`.
+     */
+    readonly reportedOnly?: readonly string[];
     /** Runs the measurement and reads its result. Every request goes through `ctx.send`. */
     readonly measure: (ctx: WatchContext) => Promise<JsonValue>;
 }

@@ -263,7 +263,7 @@ async function measureEntry(args: {
         };
     }
     const alerts: WatchAlert[] = [];
-    const matches = jsonEqual({ left: obtained, right: entry.expected });
+    const matches = jsonEqual({ left: comparedPart({ entry, obtained }), right: entry.expected });
     if (!matches) {
         alerts.push({
             measurementId: entry.id,
@@ -284,6 +284,23 @@ async function measureEntry(args: {
         },
         alerts
     };
+}
+
+/**
+ * What of the obtained value is compared with `expected`: all of it, less the entry's
+ * `reportedOnly` keys, which stay in the record.
+ */
+function comparedPart(args: {
+    readonly entry: WatchEntry;
+    readonly obtained: JsonValue;
+}): JsonValue {
+    const { entry, obtained } = args;
+    if (entry.reportedOnly === undefined || entry.reportedOnly.length === 0) return obtained;
+    if (obtained === null || typeof obtained !== 'object' || Array.isArray(obtained))
+        return obtained;
+    return Object.fromEntries(
+        Object.entries(obtained).filter(([key]) => !entry.reportedOnly?.includes(key))
+    );
 }
 
 /** Why no measurement may start now, or `null` when one may. */

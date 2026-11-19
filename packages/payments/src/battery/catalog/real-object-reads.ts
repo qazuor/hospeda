@@ -147,9 +147,10 @@ function sortedDescending(results: readonly Readonly<Record<string, unknown>>[])
 }
 
 /**
- * Walks a search page by page, through `offset`, until `enough` holds over what was read, the
- * search runs out (an empty page, or `paging.total` reached), or {@link MAX_SEARCH_PAGES}. Every
- * page is recorded under the same label: each one but an empty first page has the same shape.
+ * Walks a search page by page, through `offset`, handing each page to `onPage` as it arrives,
+ * until `onPage` answers that it has enough, the search runs out (an empty page, or
+ * `paging.total` reached), or {@link MAX_SEARCH_PAGES}. Every page is recorded under the same
+ * label: each one but an empty first page has the same shape.
  */
 async function walkSearch(args: {
     readonly ctx: WatchContext;
@@ -157,7 +158,7 @@ async function walkSearch(args: {
     readonly path: (offset: number) => string;
     readonly pageSize: number;
     readonly shapePaths: readonly string[];
-    readonly enough: (results: readonly Readonly<Record<string, unknown>>[]) => boolean;
+    readonly onPage: (found: readonly Readonly<Record<string, unknown>>[]) => Promise<boolean>;
 }): Promise<readonly Readonly<Record<string, unknown>>[]> {
     const results: Readonly<Record<string, unknown>>[] = [];
     for (let page = 0; page < MAX_SEARCH_PAGES; page += 1) {
@@ -170,7 +171,7 @@ async function walkSearch(args: {
         const found = listOf(recordOf(response.body).results).map(recordOf);
         results.push(...found);
         const total = totalOf(response);
-        if (found.length === 0 || args.enough(results)) break;
+        if (found.length === 0 || (await args.onPage(found))) break;
         if (total !== null && offset + found.length >= total) break;
     }
     return results;
@@ -182,13 +183,18 @@ function idsOf(results: readonly Readonly<Record<string, unknown>>[]): string[] 
 }
 
 /**
- * A re-read over zero real subjects measures nothing: it is a finding, never a green (review of
- * #4538, R1). The measurement errors, so the run fails and says why.
+ * A re-read that attempted no read of a real subject measures nothing: it is a finding, never a
+ * green (review of #4538, R1). A subject the adapter refuses by design (a foreign one) is no read
+ * either (re-review, R2). The measurement errors, so the run fails and says why.
  */
-function requireSubjects(args: { readonly what: string; readonly ids: readonly string[] }): void {
-    if (args.ids.length === 0) {
+function requireSubjects(args: {
+    readonly what: string;
+    readonly attempted: number;
+    readonly foreignSkipped: number;
+}): void {
+    if (args.attempted === 0) {
         throw new Error(
-            `no real ${args.what} to re-read: the search answered none outside the battery's own, so this re-read measured nothing`
+            `no real ${args.what} to re-read: the search answered none outside the battery's own that the adapter reads (${args.foreignSkipped} skipped as foreign), so this re-read measured nothing`
         );
     }
 }
@@ -306,24 +312,18 @@ const recentAuthorizations: WatchEntry = {
         unreadableByAdapter: [],
         renewalsWithoutExpiry: []
     },
+    reportedOnly: ['foreignSkipped'],
     measure: async (ctx): Promise<JsonValue> => {
-        const real = (results: readonly Readonly<Record<string, unknown>>[]) =>
-            idsOf(results.filter((item) => !isWatchReference(item.external_reference)));
-        const results = await walkSearch({
-            ctx,
-            label: 'recent',
-            path: (offset) =>
-                `/preapproval/search?limit=${AUTHORIZATION_SEARCH_PAGE}&offset=${offset}&sort=date_created:desc`,
-            pageSize: AUTHORIZATION_SEARCH_PAGE,
-            shapePaths: AUTHORIZATION_SEARCH_PATHS,
-            enough: (read) => real(read).length >= RECENT_SUBJECTS
-        });
-        const subjects = real(results).slice(0, RECENT_SUBJECTS);
-        requireSubjects({ what: 'authorization', ids: subjects });
         const bridge = createWatchAdapterBridge({ ctx });
         const unreadable: string[] = [];
         const withoutExpiry: string[] = [];
-        for (const id of subjects) {
+        const seen = new Set<string>();
+        // Re-review of #4538 (R2): a subject counts once the adapter really read it. The walk goes
+        // on until RECENT_SUBJECTS real reads were attempted or the search runs out.
+        let attempted = 0;
+        let subjectsRead = 0;
+        let foreignSkipped = 0;
+        const readOne = async (id: string): Promise<void> => {
             const read = await bridge.call(
                 'authorization',
                 (provider) => provider.readAuthorization({ authorizationId: id }),
@@ -332,8 +332,13 @@ const recentAuthorizations: WatchEntry = {
             // Review of #4538 (L1): an authorization the adapter refuses BY DESIGN (a foreign one:
             // no reference of ours, or a cadence it does not support) is not a drift, and its
             // charge records are not ours to judge either: they are not read.
-            if (read.error !== undefined && isByDesign(read.error)) continue;
-            if (read.error !== undefined) unreadable.push(id);
+            if (read.error !== undefined && isByDesign(read.error)) {
+                foreignSkipped += 1;
+                return;
+            }
+            attempted += 1;
+            if (read.error === undefined) subjectsRead += 1;
+            else unreadable.push(id);
             const records = await bridge.callWithSend(
                 'charge-records',
                 (send) => readMercadoPagoChargeRecords({ authorizationId: id, send }),
@@ -341,7 +346,7 @@ const recentAuthorizations: WatchEntry = {
             );
             if (records.value === undefined) {
                 if (!isByDesign(records.error)) unreadable.push(id);
-                continue;
+                return;
             }
             const renewals = [...records.value]
                 .sort((left, right) =>
@@ -349,9 +354,31 @@ const recentAuthorizations: WatchEntry = {
                 )
                 .slice(1);
             if (renewals.some((record) => !record.expire_date)) withoutExpiry.push(id);
-        }
+        };
+        const results = await walkSearch({
+            ctx,
+            label: 'recent',
+            path: (offset) =>
+                `/preapproval/search?limit=${AUTHORIZATION_SEARCH_PAGE}&offset=${offset}&sort=date_created:desc`,
+            pageSize: AUTHORIZATION_SEARCH_PAGE,
+            shapePaths: AUTHORIZATION_SEARCH_PATHS,
+            onPage: async (found) => {
+                const real = idsOf(
+                    found.filter((item) => !isWatchReference(item.external_reference))
+                );
+                for (const id of real) {
+                    if (attempted >= RECENT_SUBJECTS) break;
+                    if (seen.has(id)) continue;
+                    seen.add(id);
+                    await readOne(id);
+                }
+                return attempted >= RECENT_SUBJECTS;
+            }
+        });
+        requireSubjects({ what: 'authorization', attempted, foreignSkipped });
         return {
-            subjectsRead: subjects.length,
+            subjectsRead,
+            foreignSkipped,
             sortedDescending: sortedDescending(results),
             unreadableByAdapter: [...new Set(unreadable)],
             renewalsWithoutExpiry: withoutExpiry
@@ -370,7 +397,27 @@ const recentPayments: WatchEntry = {
     accounts: ['sandbox', 'production'],
     effect: 'read',
     expected: { subjectsRead: RECENT_SUBJECTS, sortedDescending: true, unreadableByAdapter: [] },
+    reportedOnly: ['foreignSkipped'],
     measure: async (ctx): Promise<JsonValue> => {
+        const bridge = createWatchAdapterBridge({ ctx });
+        const unreadable: string[] = [];
+        const seen = new Set<string>();
+        // Re-review of #4538 (R2): as in `recent-auths`, a payment counts once the adapter read it.
+        let attempted = 0;
+        let subjectsRead = 0;
+        let foreignSkipped = 0;
+        /** Reads one payment; answers whether it was a real read (attempted, not foreign). */
+        const readOne = async (id: string): Promise<'read' | 'unreadable' | 'foreign'> => {
+            const read = await bridge.call(
+                'payment',
+                (provider) => provider.readCharge({ chargeId: id }),
+                { shapePaths: PAYMENT_PATHS, oneLabel: true }
+            );
+            if (read.error === undefined) return 'read';
+            if (isByDesign(read.error)) return 'foreign';
+            unreadable.push(id);
+            return 'unreadable';
+        };
         // The battery creates no payment: every payment the search answers is a real one.
         const results = await walkSearch({
             ctx,
@@ -379,33 +426,34 @@ const recentPayments: WatchEntry = {
                 `/v1/payments/search?sort=date_created&criteria=desc&limit=${PAYMENT_SEARCH_PAGE}&offset=${offset}`,
             pageSize: PAYMENT_SEARCH_PAGE,
             shapePaths: PAYMENT_SEARCH_PATHS,
-            enough: (read) => idsOf(read).length >= RECENT_SUBJECTS
+            onPage: async (found) => {
+                for (const id of idsOf(found)) {
+                    if (attempted >= RECENT_SUBJECTS) break;
+                    if (seen.has(id)) continue;
+                    seen.add(id);
+                    const outcome = await readOne(id);
+                    if (outcome === 'foreign') foreignSkipped += 1;
+                    else attempted += 1;
+                    if (outcome === 'read') subjectsRead += 1;
+                }
+                return attempted >= RECENT_SUBJECTS;
+            }
         });
-        const recent = idsOf(results).slice(0, RECENT_SUBJECTS);
-        requireSubjects({ what: 'payment', ids: recent });
+        requireSubjects({ what: 'payment', attempted, foreignSkipped });
+        // The most recent refunded payments among those the walk saw, also re-read by id.
         const refunded = idsOf(
             results.filter(
                 (item) =>
                     typeof item.transaction_amount_refunded === 'number' &&
                     item.transaction_amount_refunded > 0
             )
-        ).slice(0, RECENT_SUBJECTS);
-        const subjects = [...new Set([...recent, ...refunded])];
-        const bridge = createWatchAdapterBridge({ ctx });
-        const unreadable: string[] = [];
-        for (const id of subjects) {
-            const read = await bridge.call(
-                'payment',
-                (provider) => provider.readCharge({ chargeId: id }),
-                {
-                    shapePaths: PAYMENT_PATHS,
-                    oneLabel: true
-                }
-            );
-            if (read.error !== undefined && !isByDesign(read.error)) unreadable.push(id);
-        }
+        )
+            .filter((id) => !seen.has(id))
+            .slice(0, RECENT_SUBJECTS);
+        for (const id of refunded) await readOne(id);
         return {
-            subjectsRead: recent.length,
+            subjectsRead,
+            foreignSkipped,
             sortedDescending: sortedDescending(results),
             unreadableByAdapter: unreadable
         };
