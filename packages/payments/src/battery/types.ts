@@ -179,7 +179,10 @@ export interface WatchAuthorization {
      * nothing, when `GET /users/me` answers another id, or when this is absent.
      */
     readonly accountId?: string;
-    /** The run that consumed this authorization. One authorization allows ONE run. */
+    /**
+     * The run that consumed this authorization. An authorization above 0 allows ONE run; one of 0
+     * is never consumed (owner decision on B1, 2026-11-19).
+     */
     readonly consumedByRunId?: string;
 }
 

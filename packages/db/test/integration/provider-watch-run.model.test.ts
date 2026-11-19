@@ -21,6 +21,11 @@ afterAll(closeTestPool);
 const START = new Date('2026-11-17T10:00:00.000Z');
 const END = new Date('2026-11-17T10:05:00.000Z');
 const AUTHORIZATION = { month: '2026-11', maxChargeMinor: 150000, accountId: '100000001' };
+/** What the run takes the authorization with: the stored values plus its market day. */
+const CONSUME = { ...AUTHORIZATION, day: '2026-11-17' };
+/** An authorization of 0: a catalog that moves no money (owner decision on B1, 2026-11-19). */
+const ZERO = { month: '2026-11', maxChargeMinor: 0, accountId: '100000001' };
+const takeZero = (day: string) => ({ ...ZERO, day });
 
 async function seedAuthorization(tx: DrizzleClient, value: unknown = AUTHORIZATION) {
     const user = testData.user();
@@ -411,7 +416,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const { runId, authorizationConsumed } = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(authorizationConsumed).toBe(true);
@@ -430,13 +435,13 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const first = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             const second = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(second.authorizationConsumed).toBe(false);
@@ -452,7 +457,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: { ...AUTHORIZATION, month: '2026-10' },
+                consumeAuthorization: { ...CONSUME, month: '2026-10' },
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -469,7 +474,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -482,7 +487,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const result = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(result.authorizationConsumed).toBe(false);
@@ -495,7 +500,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             await platformSettingsModel.upsertByKey(
@@ -507,7 +512,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
             const again = await model.open({
                 account: 'production',
                 startedAt: START,
-                consumeAuthorization: AUTHORIZATION,
+                consumeAuthorization: CONSUME,
                 tx
             });
             expect(again.authorizationConsumed).toBe(true);
@@ -522,7 +527,7 @@ describe('the authorization is consumed by the run that starts, once', () => {
                     model.open({
                         account: 'production',
                         startedAt: START,
-                        consumeAuthorization: AUTHORIZATION,
+                        consumeAuthorization: CONSUME,
                         tx: tx as unknown as DrizzleClient
                     })
                 );
@@ -532,6 +537,119 @@ describe('the authorization is consumed by the run that starts, once', () => {
             expect((await authorizationRow(getTestDb()))?.value).toMatchObject({
                 consumedByRunId: winners[0]?.runId
             });
+        });
+    });
+});
+
+describe('an authorization of 0 covers one run a day for its month, unconsumed (B1)', () => {
+    it('lets two consecutive daily runs both take it, and records each run', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const monday = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            const tuesday = await model.open({
+                account: 'production',
+                startedAt: new Date('2026-11-18T10:00:00.000Z'),
+                consumeAuthorization: takeZero('2026-11-18'),
+                tx
+            });
+            expect(monday.authorizationConsumed).toBe(true);
+            expect(tuesday.authorizationConsumed).toBe(true);
+            const value = (await authorizationRow(tx))?.value;
+            expect(value).toMatchObject({
+                ...ZERO,
+                lastRunDay: '2026-11-18',
+                runIds: [monday.runId, tuesday.runId]
+            });
+            expect(value).not.toHaveProperty('consumedByRunId');
+            expect(value).not.toHaveProperty('consumedAt');
+        });
+    });
+
+    it('refuses a second run the same day', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const first = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            const second = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            expect(first.authorizationConsumed).toBe(true);
+            expect(second.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).toMatchObject({ runIds: [first.runId] });
+        });
+    });
+
+    it('is not taken for another month', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const next = await model.open({
+                account: 'production',
+                startedAt: new Date('2026-12-01T10:00:00.000Z'),
+                consumeAuthorization: { ...takeZero('2026-12-01'), month: '2026-12' },
+                tx
+            });
+            expect(next.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('runIds');
+        });
+    });
+
+    it('is not taken by a run pre-flighted with an amount above 0', async () => {
+        await withTestTransaction(async (tx) => {
+            await seedAuthorization(tx, ZERO);
+            const result = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: { ...takeZero('2026-11-17'), maxChargeMinor: 150000 },
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            expect((await authorizationRow(tx))?.value).not.toHaveProperty('consumedByRunId');
+        });
+    });
+
+    it('is not taken when the owner rewrote it above 0 while the run pre-flighted with 0', async () => {
+        await withTestTransaction(async (tx) => {
+            // Same month and account, the amount rewritten: a daily take would cover a money run.
+            await seedAuthorization(tx, { ...ZERO, maxChargeMinor: 150000 });
+            const result = await model.open({
+                account: 'production',
+                startedAt: START,
+                consumeAuthorization: takeZero('2026-11-17'),
+                tx
+            });
+            expect(result.authorizationConsumed).toBe(false);
+            const value = (await authorizationRow(tx))?.value;
+            expect(value).not.toHaveProperty('runIds');
+            expect(value).not.toHaveProperty('consumedByRunId');
+        });
+    });
+
+    it('lets exactly one of two CONCURRENT runs the same day take it', async () => {
+        await withCleanSlate(async (db) => {
+            await seedAuthorization(db, ZERO);
+            const attempt = () =>
+                db.transaction(async (tx) =>
+                    model.open({
+                        account: 'production',
+                        startedAt: START,
+                        consumeAuthorization: takeZero('2026-11-17'),
+                        tx: tx as unknown as DrizzleClient
+                    })
+                );
+            const results = await Promise.all([attempt(), attempt(), attempt()]);
+            expect(results.filter((result) => result.authorizationConsumed)).toHaveLength(1);
         });
     });
 });

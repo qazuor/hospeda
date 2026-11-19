@@ -40,7 +40,8 @@ import {
     assertAccountMatches,
     assertAuthorizationCoversMoneyCatalog,
     assertBudgetMatches,
-    assertProductionAuthorized
+    assertProductionAuthorized,
+    marketDayOf
 } from './watch-guards';
 import { createGuardedSend } from './watch-send';
 import { createWatchRunState, type WatchRunState } from './watch-write-guard';
@@ -71,8 +72,13 @@ export interface RunWatchBatteryInput {
     }) => Promise<WatchShapeBaseline | null>;
     /**
      * Opens the run's row. For a production run that passed every pre-flight check
-     * (`consumeAuthorization` set) it ALSO consumes the authorization, atomically with the
-     * insert; `authorizationConsumed` is false when another run consumed it first.
+     * (`consumeAuthorization` set) it ALSO takes the authorization, atomically with the insert;
+     * `authorizationConsumed` is false when it could not be taken.
+     *
+     * Owner decision on B1 (2026-11-19): an authorization ABOVE 0 is one-shot, consumed by the run
+     * that takes it. An authorization of 0 (a catalog that moves no money) is NOT consumed: it
+     * covers one run per market `day` for its whole month, and the run that takes the day is
+     * recorded against it; a second run the same day cannot take it.
      */
     readonly startRun: (args: {
         readonly account: WatchAccount;
@@ -81,6 +87,8 @@ export interface RunWatchBatteryInput {
             readonly month: string;
             readonly maxChargeMinor: number;
             readonly accountId: string;
+            /** The market day of the run (`YYYY-MM-DD`): what an authorization of 0 is taken for. */
+            readonly day: string;
         };
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
     /**
@@ -381,14 +389,18 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
                   consumeAuthorization: {
                       month: input.authorization.month,
                       maxChargeMinor: input.authorization.maxChargeMinor,
-                      accountId: input.authorization.accountId ?? ''
+                      accountId: input.authorization.accountId ?? '',
+                      day: marketDayOf({ at: startedAt })
                   }
               }
             : {})
     });
     if (preflightPassed && input.account === 'production' && !started.authorizationConsumed) {
         outcome = 'refused';
-        reason = 'AUTHORIZATION_CONSUMED: another run consumed the production authorization first';
+        reason =
+            input.authorization?.maxChargeMinor === 0
+                ? 'AUTHORIZATION_DAY_TAKEN: another run already took the production authorization today; an authorization of 0 covers one run a day'
+                : 'AUTHORIZATION_CONSUMED: another run consumed the production authorization first';
     }
 
     if (outcome === 'completed') {

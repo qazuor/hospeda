@@ -60,6 +60,7 @@ export {
     assertBudgetMatches,
     assertProductionAuthorized,
     expectedAuthorizationSum,
+    marketDayOf,
     marketMonthOf,
     WATCH_TEST_ACCOUNT_TAG
 } from './watch-guards';

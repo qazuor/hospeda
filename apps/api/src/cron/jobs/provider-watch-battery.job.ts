@@ -66,7 +66,10 @@ export interface ProviderWatchBatteryDeps {
     readonly readBaseline: (args: {
         readonly account: WatchAccount;
     }) => Promise<WatchShapeBaseline | null>;
-    /** Opens the run's row; a production run consumes the authorization atomically with it. */
+    /**
+     * Opens the run's row; a production run takes the authorization atomically with it: consumed
+     * when above 0, taken for the market day when 0 (owner decision on B1, 2026-11-19).
+     */
     readonly startRun: (args: {
         readonly account: WatchAccount;
         readonly startedAt: Date;
@@ -74,6 +77,7 @@ export interface ProviderWatchBatteryDeps {
             readonly month: string;
             readonly maxChargeMinor: number;
             readonly accountId: string;
+            readonly day: string;
         };
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
     /** Persists a provider id the moment a write answers it. */

@@ -533,7 +533,9 @@ describe('one authorization, one production run (HOS-1512 D3)', () => {
         const store = memoryRunStore();
         const result = await production(store);
         expect(result.run.outcome).toBe('completed');
-        expect(store.started).toEqual([{ runId: result.runId, consume: '2026-11' }]);
+        expect(store.started).toEqual([
+            { runId: result.runId, consume: '2026-11', day: '2026-11-17' }
+        ]);
         expect(store.consumedBy()).toBe(result.runId);
     });
 

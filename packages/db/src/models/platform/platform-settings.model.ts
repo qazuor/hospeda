@@ -135,6 +135,50 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
             .returning({ key: platformSettings.key });
         return { consumed: rows.length === 1 };
     }
+
+    /**
+     * Takes an authorization of 0 for ONE market day (owner decision on B1, 2026-11-19): an
+     * authorization whose catalog moves no money is not consumed; it covers one run a day for its
+     * month. A conditional update, like the one-shot consumption: it matches only the exact values
+     * the run was pre-flighted with, an amount of 0, an unconsumed row, and a day not yet taken, so
+     * two runs on the same day cannot both take it. The run id is appended to `runIds`, the audit
+     * of the runs it covered.
+     *
+     * @param input.month - The month the run was pre-flighted with
+     * @param input.accountId - The account id the run was pre-flighted with
+     * @param input.day - The run's market day, `YYYY-MM-DD`
+     * @param input.runId - The run taking the day
+     * @param input.tx - Optional transaction
+     * @returns Whether THIS run took the day
+     */
+    async takeProviderWatchAuthorizationDay(input: {
+        readonly month: string;
+        readonly accountId: string;
+        readonly day: string;
+        readonly runId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ readonly taken: boolean }> {
+        const rows = await this.getClient(input.tx)
+            .update(platformSettings)
+            .set({
+                value: sql`${platformSettings.value} || jsonb_build_object(
+                    'lastRunDay', ${input.day}::text,
+                    'runIds', COALESCE(${platformSettings.value} -> 'runIds', '[]'::jsonb) || jsonb_build_array(${input.runId}::text)
+                )`
+            })
+            .where(
+                and(
+                    eq(platformSettings.key, 'billing.providerWatchAuthorization'),
+                    sql`${platformSettings.value}->>'month' = ${input.month}`,
+                    sql`${platformSettings.value}->>'maxChargeMinor' = '0'`,
+                    sql`${platformSettings.value}->>'accountId' = ${input.accountId}`,
+                    sql`${platformSettings.value}->>'consumedByRunId' IS NULL`,
+                    sql`${platformSettings.value}->>'lastRunDay' IS DISTINCT FROM ${input.day}`
+                )
+            )
+            .returning({ key: platformSettings.key });
+        return { taken: rows.length === 1 };
+    }
 }
 
 /** Singleton instance of PlatformSettingsModel for use across the application. */
