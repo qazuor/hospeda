@@ -278,6 +278,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4577
+    {
+        id: '2026-11-19-assistant-listing-location-and-amenities',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya sabe dónde queda tu publicación y qué comodidades tiene',
+            en: 'Your AI assistant now knows where your listing is and what amenities it has',
+            pt: 'Seu assistente de IA agora sabe onde fica seu anúncio e quais comodidades ele tem'
+        },
+        body: {
+            es: 'Preguntale «¿qué características tiene mi alojamiento y dónde queda?» y te responde con la dirección, el destino y las comodidades y servicios por nombre, sin que tengas que buscarlos.',
+            en: 'Ask it «what features does my listing have and where is it?» and it answers with the address, the destination and the amenities and services by name, without you having to look them up.',
+            pt: 'Pergunte «quais características tem meu anúncio e onde fica?» e ele responde com o endereço, o destino e as comodidades e serviços pelo nome, sem que você precise procurar.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4478
     {
         id: '2026-11-17-assistant-amenities-by-category',
