@@ -25,7 +25,8 @@ import {
     openOneTimePaymentPage,
     PAYMENT_PAGE_OPERATION,
     paymentPageCheckoutUrlOf,
-    paymentPageKey
+    paymentPageKey,
+    paymentPageRequestOf
 } from './one-time-payment-page';
 import { paymentPageTiming } from './one-time-payment-page-deadline';
 import { authorizePendingComplement, insertPendingComplement } from './purchase-addon-complement';
@@ -234,7 +235,8 @@ export async function purchaseAddon(
                 await tx.insert(idempotencyKeys).values({
                     key: paymentPageKey(request.orderRequestId),
                     operation: PAYMENT_PAGE_OPERATION,
-                    subjectId: instance.id
+                    subjectId: instance.id,
+                    request: paymentPageRequestOf(request)
                 });
                 created = { instanceId: instance.id };
             } else if (product.chargeKind === 'UNA_VEZ') {

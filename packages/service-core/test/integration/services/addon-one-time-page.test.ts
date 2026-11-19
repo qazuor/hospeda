@@ -206,7 +206,8 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             key: `page:${s.request.orderRequestId}`,
             operation: 'PAYMENT_PAGE_CREATE',
             completedAt: expect.any(Date),
-            result: { paymentPageId, checkoutUrl: expect.any(String) }
+            result: { paymentPageId, checkoutUrl: expect.any(String) },
+            request: { returnUrl: s.request.returnUrl }
         });
     });
 
@@ -412,6 +413,69 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
         const instance = await instanceOf(lost?.id ?? '');
         expect(instance.paymentPageId).not.toBeNull();
         expect((await keysOf(instance.id))[0]?.completedAt).not.toBeNull();
+    });
+
+    it.skipIf(skip)(
+        'resumes from another locale with the body stored before the lost call',
+        async () => {
+            const s = await setup();
+            const first = { ...s.request, reason: 'Destacado (es)' };
+            const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            const request = vi
+                .spyOn(s.f.fake, 'requestOneTimePayment')
+                .mockImplementationOnce(async (input) => {
+                    await original(input);
+                    throw new PaymentProviderError({
+                        code: 'UNAVAILABLE',
+                        capability: 'charge',
+                        message: 'simulated: the answer was lost'
+                    });
+                });
+            await expect(purchaseAddon(first, s.f.ports)).rejects.toMatchObject({
+                code: 'UNAVAILABLE'
+            });
+
+            const otherLocale = {
+                ...first,
+                returnUrl: 'https://hospeda.invalid/en/my-account/addons/return',
+                reason: 'Featured (en)'
+            };
+            expect(otherLocale.returnUrl).not.toBe(first.returnUrl);
+            const again = await purchaseAddon(otherLocale, s.f.ports);
+            expect(again).toMatchObject({ outcome: 'EXISTING', checkoutUrl: expect.any(String) });
+            expect(request).toHaveBeenCalledTimes(2);
+            expect(request.mock.calls[1]?.[0]).toMatchObject({
+                returnUrl: first.returnUrl,
+                reason: 'Destacado (es)'
+            });
+            expect(request.mock.calls[1]?.[0]).toEqual(request.mock.calls[0]?.[0]);
+        }
+    );
+
+    it.skipIf(skip)('resumes a key written before the stored body with this request', async () => {
+        const s = await setup();
+        const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+        const request = vi
+            .spyOn(s.f.fake, 'requestOneTimePayment')
+            .mockImplementationOnce(async (input) => {
+                await original(input);
+                throw new PaymentProviderError({
+                    code: 'UNAVAILABLE',
+                    capability: 'charge',
+                    message: 'simulated: the answer was lost'
+                });
+            });
+        await expect(purchaseAddon(s.request, s.f.ports)).rejects.toMatchObject({
+            code: 'UNAVAILABLE'
+        });
+        await getServiceTestDb()
+            .update(idempotencyKeys)
+            .set({ request: null })
+            .where(eq(idempotencyKeys.key, `page:${s.request.orderRequestId}`));
+        const returnUrl = 'https://hospeda.invalid/pt/minha-conta/addons/return';
+        await purchaseAddon({ ...s.request, returnUrl }, s.f.ports);
+        expect(request).toHaveBeenCalledTimes(2);
+        expect(request.mock.calls[1]?.[0]).toMatchObject({ returnUrl });
     });
 
     it.skipIf(skip)('opens no page once the page time of the purchase elapsed', async () => {
