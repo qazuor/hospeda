@@ -17,11 +17,13 @@
  * absence).
  */
 
+import { LISTING_SECTIONS } from '@repo/schemas';
 import type { AstroGlobal } from 'astro';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { AmenityData } from '@/lib/api/types';
+import { fetchAudiencePlansWithStatus } from '@/lib/billing/audience-plans';
 import {
     buildEditorHubUrl,
     type EditorRegistry,
@@ -31,9 +33,11 @@ import { loadListingCatalogs } from '@/lib/editor/listing-catalogs';
 import { buildListingEditorErrorResponse } from '@/lib/editor/listing-editor-error-page';
 import {
     buildListingEditorRegistry,
+    findLockedSectionsWithoutUnlockingPlan,
     type ListingSectionStates
 } from '@/lib/editor/listing-editor-registry';
 import { isListingEditorVertical } from '@/lib/editor/listing-editor-sections';
+import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
 import type { SupportedLocale } from '@/lib/i18n';
 import {
     fetchOwnerListingDetail,
@@ -147,7 +151,25 @@ export async function resolveListingEditorPage({
     }
     const sectionStates: ListingSectionStates = statesResult.data.sections;
 
-    const registry = buildListingEditorRegistry({ vertical, sectionStates });
+    const hasLockedPlanGatedSections = LISTING_SECTIONS[vertical].some(
+        ({ id }) =>
+            LISTING_SECTION_PRESENTATION[vertical][id].hideWhenLockedWithoutPlan &&
+            sectionStates[id]?.state === 'locked'
+    );
+    const planCatalog = hasLockedPlanGatedSections
+        ? await fetchAudiencePlansWithStatus({ audience: vertical })
+        : { ok: true as const, plans: [] };
+    const hiddenLockedSectionIds = findLockedSectionsWithoutUnlockingPlan({
+        vertical,
+        sectionStates,
+        plans: planCatalog.ok ? planCatalog.plans : [],
+        catalogReadSucceeded: planCatalog.ok
+    });
+    const registry = buildListingEditorRegistry({
+        vertical,
+        sectionStates,
+        hiddenLockedSectionIds
+    });
     const hubUrl = buildEditorHubUrl({ locale, registry, entityId: listingId });
 
     // An unknown slug must not render a page claiming to be a section that does

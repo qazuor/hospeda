@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VenuePromotionsManager } from '../../../src/components/venue/VenuePromotionsManager.client';
+import {
+    resolvePromotionLifecycleState,
+    VenuePromotionsManager
+} from '../../../src/components/venue/VenuePromotionsManager.client';
 
 const mocks = vi.hoisted(() => ({
     list: vi.fn(),
@@ -64,6 +67,21 @@ function listWithPromotion() {
 }
 
 describe('VenuePromotionsManager', () => {
+    it('does not assign an active or expired label before the client clock is set', () => {
+        expect(
+            resolvePromotionLifecycleState(
+                { ...promotion, validUntil: '2026-11-01T00:00:00.000Z' } as never,
+                null
+            )
+        ).toBeNull();
+        expect(
+            resolvePromotionLifecycleState(
+                { ...promotion, validUntil: '2026-11-01T00:00:00.000Z' } as never,
+                Date.parse('2026-11-18T00:00:00.000Z')
+            )
+        ).toBe('expired');
+    });
+
     it('renders the unlimited count without printing the catalog sentinel', async () => {
         mocks.list.mockResolvedValue({
             ok: true,
@@ -81,12 +99,12 @@ describe('VenuePromotionsManager', () => {
         expect(screen.queryByText('2147483647')).not.toBeInTheDocument();
     });
 
-    it('renders nothing while no catalog plan grants the locked section', async () => {
+    it('renders a generic locked message when no catalog plan grants the locked section', async () => {
         mocks.list.mockResolvedValue({
             ok: true,
             data: { items: [], meta: { activeCount: 0, maxActive: 0 } }
         });
-        const { container } = render(
+        render(
             <VenuePromotionsManager
                 listingId="venue-id"
                 locale="es"
@@ -95,7 +113,9 @@ describe('VenuePromotionsManager', () => {
             />
         );
         await waitFor(() => expect(mocks.list).toHaveBeenCalled());
-        expect(container).toBeEmptyDOMElement();
+        expect(await screen.findByRole('status')).toHaveTextContent(
+            'Esta función todavía no está disponible para tu plan.'
+        );
     });
 
     it('locks creation at the active limit and names the plan from the catalog', async () => {

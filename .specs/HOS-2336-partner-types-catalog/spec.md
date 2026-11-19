@@ -37,6 +37,7 @@ need: no groups, no keywords, no many-to-many. A partner has exactly one type.
 | Tier (gold/silver) changes | Tiers are unrelated to type (`apps/web/CLAUDE.md`, HOS-294) |
 | A button in the admin inbox to approve-and-provision a partner lead | The endpoint exists, the UI does not (§10, R3). Separate follow-up |
 | Hard delete of a type | Soft delete only, and only when unused (AC-3.4) |
+| A public `?type=` filter on the partner list | Dropped (AC-5.2, owner decision 2026-11-18). The endpoint keeps answering `400` on purpose |
 | The N+1 contract release | Specified here (§5.3) but shipped as its own PR after the data-migration ran everywhere |
 
 ## 2. Current state (verified on this branch, 2026-11-18)
@@ -65,7 +66,7 @@ need: no groups, no keywords, no many-to-many. A partner has exactly one type.
 | D3 | `alliance_leads.partner_type` stays a **slug varchar**. It is validated against ACTIVE types at submission and again at approval. |
 | D4 | Seed five types with deterministic ids (like the HOS-919 seeder), as baseline plus data-migration (dual-write): `business` Comercio, `ngo` ONG, `institution` Institución, `media` Medio, `person` Persona, each with `es`, `en` and `pt` names (§11). |
 | D5 | The public partner page renders the type name from the table's `nameI18n`, delivered in the partner payload: `PartnerPublicSchema` returns `type: { slug, name }`. The `partners.types.*` i18n keys are removed once unused. |
-| D6 | The public `?type=` filter on the partner list keeps accepting **slugs**. |
+| D6 | ~~The public `?type=` filter on the partner list keeps accepting **slugs**.~~ **Dropped 2026-11-18** (see AC-5.2). The public list gets no `type` filter. |
 | D7 | Admin: CRUD plus a restore screen under `/content`, following `host-trade-categories`. Permissions `partnerType.*` granted to `SUPER_ADMIN` and `ADMIN` only. In-use guard (409 when deactivating or deleting a type that a partner uses). Cache-tag purge on every write. |
 | D8 | Admin `PartnerForm`, the partner list column and filter, and `PartnerApplicationActionDialog` read the catalog. |
 | D9 | The web lead form reads a new public endpoint `GET /api/v1/public/partner-types`. |
@@ -94,7 +95,7 @@ need: no groups, no keywords, no many-to-many. A partner has exactly one type.
 - **AC-3.2** Given `partnerType.create`, when creating a type with `slug`, `nameI18n.es` and a weight, then it is stored ACTIVE, appears in the public endpoint, and the slug matches `^[a-z0-9]+(?:-[a-z0-9]+)*$`. A slug that already exists (even on a soft-deleted row) answers `409 ALREADY_EXISTS`.
 - **AC-3.3** Given an existing type, when editing, then `slug` is read-only (immutable, because leads store slugs) and a body that includes `slug` answers `400`.
 - **AC-3.4** Given a type used by at least one non-deleted partner, when the admin deactivates it, soft-deletes it or both, then the API answers `409 PARTNER_TYPE_IN_USE`, naming the count in `details.count`, and nothing changes. A type with zero partners can be deactivated and deleted.
-- **AC-3.5** Given a soft-deleted type, when the admin turns on "Mostrar borrados" and restores it, then it returns with its old slug and lifecycle state. Given `partnerType.restore` is missing, the button is hidden and the API answers `403`.
+- **AC-3.5** *(moved to HOS-2366, not part of this release)* Given a soft-deleted type, when the admin turns on "Mostrar borrados" and restores it, then it returns with its old slug and lifecycle state. Given `partnerType.restore` is missing, the button is hidden and the API answers `403`.
 - **AC-3.6** Given an actor with none of the `partnerType.*` permissions (for example an editor), then every admin endpoint answers `403` and the menu entry is hidden.
 - **AC-3.7** Given any admin write, then the cache tag `CACHE_TAG_PARTNER_TYPES` is purged once after commit, and a purge failure never fails the write.
 
@@ -104,10 +105,11 @@ need: no groups, no keywords, no many-to-many. A partner has exactly one type.
 - **AC-4.2** Given the partner list, then the type column shows the localized name and the filter lists every type (all lifecycle states) and sends the **slug** (`?type=media`).
 - **AC-4.3** Given an admin sends `typeId` of an inactive type for a partner whose current type is another one, then the API answers `400 VALIDATION_ERROR` (`details.field = typeId`). Sending the partner's own current inactive type is accepted.
 
-### US-5. A visitor reads a partner page and filters partners
+### US-5. A visitor reads a partner page
 
 - **AC-5.1** Given `/{lang}/partners/<slug>/`, then the type label is the type's `nameI18n[locale] ?? es`, rendered in the SSR HTML (no client fetch).
-- **AC-5.2** Given `GET /api/v1/public/partners?type=media`, then only partners of that type are returned. An unknown slug returns an empty list (`200`), not an error (current behaviour for an enum miss is preserved: the value was never rejected as a 400 here).
+- ~~**AC-5.2** Given `GET /api/v1/public/partners?type=media`, then only partners of that type are returned. An unknown slug returns an empty list (`200`), not an error (current behaviour for an enum miss is preserved: the value was never rejected as a 400 here).~~
+  **DROPPED (owner decision, 2026-11-18).** HOS-294 decision D-5 retired the filtered partner directory: only the carousel and the gold-partner page exist, and nothing in the web consumes a type-filtered list. The public list stays unimplemented for `?type=` and keeps answering `400` "Unknown query parameters: type" on purpose. Recorded in the HOS-2336 sign-off comment of 2026-11-18.
 - **AC-5.3** Given a partner whose type was deactivated, then the partner stays visible and keeps its type label (deactivating a type only stops new assignments).
 
 ## 5. Data model
@@ -164,7 +166,7 @@ Step 2 is one data-migration so catalog, grants and backfill run in a guaranteed
 | `DELETE /api/v1/admin/partner-types/:id` | admin | `PARTNER_TYPE_DELETE` | soft; guarded (AC-3.4) |
 | `POST /api/v1/admin/partner-types/:id/restore` | admin | `PARTNER_TYPE_RESTORE` | |
 | existing partner admin create/update, partner-application approve | admin | unchanged | body `typeId` |
-| existing partner public list | public | none | `?type=<slug>` |
+| existing partner public list | public | none | unchanged; no `type` filter (AC-5.2 dropped, `?type=` keeps answering `400`) |
 | existing alliance-lead submit (`routes/alliance/public/create-lead.ts`) | public | none | `partnerType` slug validated against ACTIVE types |
 
 New files under `apps/api/src/routes/partner-type/{public,admin}/` (mirror `apps/api/src/routes/host-trade-category/`), registered in the route index and `apps/api/route-manifest.json`.
@@ -184,6 +186,8 @@ New permissions: `PARTNER_TYPE_VIEW|CREATE|UPDATE|DELETE|RESTORE` with values `p
 Order 401, 403, 400, 404, 409 (`apps/api/docs/error-contract.md`). Add one row to the table there: *Deleting or deactivating a partner type that partners still use (HOS-2336)* returns **409** `PARTNER_TYPE_IN_USE`, next to `CATEGORY_IN_USE`. The new code is added exactly where `CATEGORY_IN_USE` lives: `packages/schemas/src/enums/service-error-code.enum.ts`, `apps/api/src/middlewares/response.ts` and `apps/api/src/utils/response-helpers.ts`. A 4xx is never `INTERNAL_ERROR`. Unknown id on admin routes is 404 after the permission check (403 first).
 
 ### 6.5 Cache
+
+> Note: decision 17 of the 2026-11-18 sign-off (no Cache-Tag on the public route) has a follow-up in HOS-2368. Check it before implementing the emission described below.
 
 Add `CACHE_TAG_PARTNER_TYPES = 'partner-types'` to `packages/cache-tags/src/vocabulary.ts` (and the barrel `index.ts` plus `vocabulary.test.ts`, which enforces the tag shape and that no prefix collides). The public endpoint emits it. Partner pages emit it too, because they render the type name (D5); every admin type write purges it. A type rename must also refresh `/{lang}/partners/<slug>/`: the partner page response carries both its own partner tag and `CACHE_TAG_PARTNER_TYPES`.
 
@@ -246,7 +250,7 @@ Ids: `deterministicFixtureId({ seedKey: 'partnerType:<slug>' })`, exported as `p
 | AC-4.1, 4.2 | component (admin) | `PartnerForm` keeps an inactive current type; column/filter use slugs |
 | AC-4.3 | service | `PartnerService` update with inactive foreign type vs own current type |
 | AC-5.1 | static + unit | `[slug].astro` source guard (no `partners.types`), payload schema test |
-| AC-5.2, 5.3 | route | public list `?type=` known/unknown/inactive-type partner |
+| AC-5.3 | route | public partner whose type is inactive stays visible with its type label (AC-5.2 dropped: `?type=` on the public list stays a `400`) |
 | §5 | DB integration | data-migration over seeded old rows (backfill, idempotent re-run, `requiresColumns` abort when the column is gone and rows exist), `partner-application` INSERT sets both columns, FK RESTRICT |
 | §6.2 | guards | permission inventory recount, `check-seed-dual-write`, `scripts/check-catalog-sql.ts` untouched, route manifest |
 
@@ -256,8 +260,14 @@ Smoke (staging, label `status-needs-smoke-staging`): create a type in the admin,
 
 **Phase 1, setup:** permissions enum + inventory recount; `CACHE_TAG_PARTNER_TYPES`; Zod schemas for `partner-type`.
 **Phase 2, data:** `partner-type.dbschema.ts` + `partners.type_id`; `pnpm db:generate`; data-migration (catalog, grants, backfill); baseline seed + fixtures; DB integration tests.
-**Phase 3, core:** `PartnerTypeService` (+ in-use guard, cache); model changes (`partner.model.ts:33` filter by slug via join, dual-write, `partner-application.model.ts:263`); `PartnerService` type validation and hydration; provisioning skip reason; lead slug validation.
+**Phase 3, core:** `PartnerTypeService` (+ in-use guard, cache); model changes (`partner.model.ts:33` filter by slug via join, for the admin list only: the public list exposes no `type` filter, dual-write, `partner-application.model.ts:263`); `PartnerService` type validation and hydration; provisioning skip reason; lead slug validation.
 **Phase 4, API:** public and admin routes, manifest, partner and approval schemas, error-contract row.
 **Phase 5, UI:** admin screen + hooks; `PartnerForm`, column/filter, `PartnerApplicationActionDialog`; web lead form, partner page; i18n removals.
 **Phase 6, verification:** run tests, guards, staging smoke, sign-off comment.
 **Phase 7, N+1 contract (separate PR, later):** precondition query, `type_id` NOT NULL, drops, delete enum code and tests.
+
+## 14. Revision history
+
+- 2026-11-18: AC-5.2 (public `?type=` filter) dropped by the owner. Reason: HOS-294 decision D-5 retired the filtered partner directory, and nothing in the web consumes a type-filtered list. The public list keeps answering `400` "Unknown query parameters: type". D6, §1.1, §6.2, §12 and Phase 3 adjusted to match.
+- 2026-11-18: AC-3.5 (restore keeps lifecycle state) moved to HOS-2366.
+- 2026-11-18: decision 17 (no Cache-Tag on the public route) has a follow-up in HOS-2368.
