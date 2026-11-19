@@ -993,14 +993,19 @@ export class HostTradeUsageService extends BaseCrudService<
     }
 
     /**
-     * Attaches each row's host display name, for the PROVIDER-facing list
-     * (HOS-2376). Without it the provider cannot tell which host a pending row
-     * is about, while the confirmation e-mail does name the host.
+     * Attaches the host's display name to the HOST-DECLARED rows of the
+     * PROVIDER-facing list (HOS-2376). Without it the provider cannot tell which
+     * host a pending row is about, while the confirmation e-mail does name them.
      *
-     * ONE query for the page, de-duplicated by host. Only the label
-     * ({@link resolveHostLabel}, the same one the linked-hosts selector uses) is
-     * kept: never the e-mail. A host that does not resolve yields `null`, so
-     * one missing user cannot fail the page.
+     * SCOPE IS THE PRIVACY PROPERTY: only rows with `declaredBy === HOST` get a
+     * name, because there the host identified themselves to this provider by
+     * declaring. On a provider-declared row the host was named BY the provider
+     * (possibly by e-mail), so naming them back would turn the list into an
+     * e-mail-to-real-name oracle. Those rows carry `null`, exactly as before.
+     *
+     * ONE query for the page, only for the hosts that need it. The label is the
+     * display name, else first plus last name, else `null`: never the e-mail and
+     * never the id (unlike {@link resolveHostLabel}, which falls back to it).
      *
      * @param items - The page of usage rows.
      * @param ctx - Optional service context, for transaction propagation.
@@ -1011,23 +1016,28 @@ export class HostTradeUsageService extends BaseCrudService<
     ): Promise<(HostTradeBenefitUsage & { hostDisplayName: string | null })[]> {
         if (items.length === 0) return [];
 
-        const hostIds = [...new Set(items.map((item) => item.hostUserId))];
-        const hosts = await this.userModel.findByIds(hostIds, ctx?.tx);
-        const nameById = new Map(
-            hosts.map((host) => [
-                host.id,
-                resolveHostLabel({
-                    id: host.id,
-                    displayName: host.displayName ?? null,
-                    firstName: host.firstName ?? null,
-                    lastName: host.lastName ?? null
-                })
-            ])
-        );
+        const hostIds = [
+            ...new Set(
+                items
+                    .filter((item) => item.declaredBy === HostTradeUsageDeclaredByEnum.HOST)
+                    .map((item) => item.hostUserId)
+            )
+        ];
+        const hosts = hostIds.length > 0 ? await this.userModel.findByIds(hostIds, ctx?.tx) : [];
+        const nameById = new Map<string, string>();
+        for (const host of hosts) {
+            const label =
+                host.displayName ||
+                [host.firstName, host.lastName].filter(Boolean).join(' ').trim();
+            if (label) nameById.set(host.id, label);
+        }
 
         return items.map((item) => ({
             ...item,
-            hostDisplayName: nameById.get(item.hostUserId) ?? null
+            hostDisplayName:
+                item.declaredBy === HostTradeUsageDeclaredByEnum.HOST
+                    ? (nameById.get(item.hostUserId) ?? null)
+                    : null
         }));
     }
 

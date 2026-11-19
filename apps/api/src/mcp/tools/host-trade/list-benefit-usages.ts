@@ -21,9 +21,11 @@
  *
  * The counterpart's name: on the host side, the provider's name (the ref the
  * host lists carry); on the provider side, the host's display name, which
- * `listForProvider` attaches to every row (HOS-2376, owner decision: the
- * provider must see which host to confirm or reject; a display name only, never
- * an e-mail). `null` only when the host does not resolve.
+ * `listForProvider` attaches to HOST-DECLARED rows (HOS-2376, owner decision:
+ * the provider must see which host to confirm or reject; a display name only,
+ * never an e-mail). On a provider-declared row the host is named only when in
+ * the provider's linked-hosts selector (a confirmed pair), as before: naming it
+ * otherwise would be an e-mail-to-name oracle. Else `null`.
  *
  * Notes and provider names are third-party text, wrapped as untrusted (C-5).
  */
@@ -339,25 +341,38 @@ async function readProviderSide({
         return { page: null };
     }
     const service = getHostTradeUsageToolService();
-    const listed = await service.listForProvider(
-        {
-            hostTradeId: trade.id,
-            status: pendingMine ? HostTradeUsageStatusEnum.PENDING : status,
-            declaredBy: pendingMine ? HostTradeUsageDeclaredByEnum.HOST : undefined,
-            ...window
-        },
-        actor
-    );
+    const [listed, linked] = await Promise.all([
+        service.listForProvider(
+            {
+                hostTradeId: trade.id,
+                status: pendingMine ? HostTradeUsageStatusEnum.PENDING : status,
+                declaredBy: pendingMine ? HostTradeUsageDeclaredByEnum.HOST : undefined,
+                ...window
+            },
+            actor
+        ),
+        service.listLinkedHosts({ hostTradeId: trade.id }, actor)
+    ]);
     if (listed.error) {
         return { error: listed.error };
     }
+    const linkedHostNames = new Map(
+        (linked.data?.hosts ?? []).map((host) => [host.id, host.displayName])
+    );
     return {
         page: {
             total: listed.data.total,
             rows: ({ noteChars }) =>
                 listed.data.items.map((row) => {
                     const providerName = wrapName(trade.name, 'provider_listing', noteChars);
-                    const hostName = wrapName(row.hostDisplayName, 'host_name', noteChars);
+                    const hostName = wrapName(
+                        // Host-declared rows carry the host's own name; a
+                        // provider-declared row names the host only when the pair
+                        // is linked (the selector), as before.
+                        row.hostDisplayName ?? linkedHostNames.get(row.hostUserId),
+                        'host_name',
+                        noteChars
+                    );
                     return {
                         ...baseSummary({ row, noteChars, names: [providerName, hostName] }),
                         side: 'provider',

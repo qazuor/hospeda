@@ -220,7 +220,7 @@ describe('what each row says', () => {
         expect(row?.note).toContain('<untrusted_data source="usage_note">');
     });
 
-    it('names the host on every provider-side row, declared by either party (HOS-2376)', async () => {
+    it('names the host on a host-declared provider-side row only (HOS-2376)', async () => {
         // Act
         const data = await listData({ side: 'provider' });
 
@@ -229,7 +229,10 @@ describe('what each row says', () => {
         const providerDeclared = data.items.find((item) => item.id === OWN_PROVIDER_DECLARATION.id);
         expect(hostDeclared?.counterpartName).toContain('<untrusted_data source="host_name">');
         expect(hostDeclared?.counterpartName).toContain('Ana');
-        expect(providerDeclared?.counterpartName).toContain('Bea');
+        // The provider named this host itself and the pair is not linked: no
+        // name comes back (it would be an e-mail-to-name oracle).
+        expect(providerDeclared?.counterpartName).toBeNull();
+        expect(JSON.stringify(data)).not.toContain('Bea');
         expect(JSON.stringify(data)).not.toContain('@example.test');
     });
 

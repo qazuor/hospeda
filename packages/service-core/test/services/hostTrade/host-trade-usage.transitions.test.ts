@@ -691,16 +691,21 @@ describe('listForProvider', () => {
     }
 
     /**
-     * HOS-2376: the provider must be able to tell WHICH host to answer. Every row
-     * carries the host's display name, and nothing else of the host (no e-mail).
+     * HOS-2376: the provider must be able to tell WHICH host to answer, so a
+     * HOST-declared row carries the host's display name (and nothing else).
      */
-    it('names the host on every row, with a display name and no e-mail', async () => {
+    it('names the host on a host-declared row, with no e-mail and no id fallback', async () => {
         const { service, userModel } = buildProviderList(
-            [makeUsage(), makeUsage({ id: 'usage-2', hostUserId: 'host-2' })],
-            2,
+            [
+                makeUsage({ declaredBy: 'HOST', declaredById: HOST_ID }),
+                makeUsage({ id: 'usage-2', hostUserId: 'host-2', declaredBy: 'HOST' }),
+                makeUsage({ id: 'usage-3', hostUserId: 'host-3', declaredBy: 'HOST' })
+            ],
+            3,
             [
                 { id: HOST_ID, displayName: 'Host Basico', email: 'a@b.c' },
-                { id: 'host-2', displayName: null, firstName: 'Ana', lastName: 'Perez' }
+                { id: 'host-2', displayName: null, firstName: 'Ana', lastName: 'Perez' },
+                { id: 'host-3', displayName: null, firstName: null, lastName: null }
             ]
         );
 
@@ -710,9 +715,32 @@ describe('listForProvider', () => {
         );
 
         const items = result.data?.items as unknown as Record<string, unknown>[];
-        expect(items.map((i) => i.hostDisplayName)).toEqual(['Host Basico', 'Ana Perez']);
+        expect(items.map((i) => i.hostDisplayName)).toEqual(['Host Basico', 'Ana Perez', null]);
         expect(JSON.stringify(items)).not.toContain('a@b.c');
         expect(userModel.findByIds).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * Regression (security review of HOS-2376): on a PROVIDER-declared row the
+     * provider named the host, possibly by e-mail. Naming them back would be an
+     * e-mail-to-real-name oracle, so the read exposes no name it did not have.
+     */
+    it('never names the host on a provider-declared row, and never even reads the user', async () => {
+        const { service, userModel } = buildProviderList(
+            [makeUsage({ declaredBy: 'PROVIDER', status: 'PENDING' })],
+            1,
+            [{ id: HOST_ID, displayName: 'Nombre Real', email: 'a@b.c' }]
+        );
+
+        const result = await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const items = result.data?.items as unknown as Record<string, unknown>[];
+        expect(items[0]?.hostDisplayName).toBeNull();
+        expect(JSON.stringify(items)).not.toContain('Nombre Real');
+        expect(userModel.findByIds).not.toHaveBeenCalled();
     });
 
     it('scopes every row to the listing it was told about', async () => {
