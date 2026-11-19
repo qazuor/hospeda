@@ -404,10 +404,13 @@ describe('BaseModel', () => {
         expect(result).toBe(0);
     });
 
-    // T-001 / GAP-022 (CRITICAL): restore() must reset lifecycleState=ACTIVE
-    // when the table tracks lifecycle, otherwise restoring an archived+deleted
-    // record silently returns it to ARCHIVED and re-leaks via the public path.
-    describe('T-001 — restore() resets lifecycleState=ACTIVE on lifecycle-aware tables', () => {
+    // T-001 / GAP-063-022 (CRITICAL): by default restore() resets
+    // lifecycleState=ACTIVE when the table tracks lifecycle. Otherwise an
+    // archived+deleted record comes back ARCHIVED and stays HIDDEN from every
+    // ACTIVE-only public read while the admin is told it was restored.
+    // HOS-2366: admin catalogs opt out with `restoreKeepsLifecycleState` and
+    // keep the state the row had when it was deleted.
+    describe('T-001 / HOS-2366 — restore() lifecycleState: reset by default, kept when the model opts out', () => {
         class LifecycleAwareModel extends BaseModel<{ id: string; lifecycleState?: string }> {
             // @ts-expect-error: mock table with lifecycleState column
             protected table = {

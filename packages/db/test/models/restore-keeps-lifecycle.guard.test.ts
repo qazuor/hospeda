@@ -17,107 +17,154 @@
  *
  * Adding a model to (or removing one from) that set changes what a restore
  * does to real rows, so it must be a deliberate edit of this list, not a
- * side effect of copying a model file.
+ * side effect of copying or subclassing a model.
  *
  * ## How
  *
- * 1. A static scan of `packages/db/src/models/**` finds every class that sets
- *    the flag to `true` and compares it with the frozen list.
- * 2. Each listed model is instantiated (no DB) to prove the flag is live at
- *    runtime and that its table really has both `lifecycleState` and
- *    `deletedAt` — otherwise the flag would be dead code.
+ * 1. Runtime: every class exported by the models barrel
+ *    (`src/models/index.ts`) that extends `BaseModelImpl` is instantiated (no
+ *    DB) and its effective `restoreKeepsLifecycleState` is read. The set that
+ *    reads `true` must equal the frozen list. Reading the live value catches
+ *    any spelling of the override (`= true`, `: boolean = true`, a computed
+ *    expression) and a subclass that inherits the flag from an opted-in model.
+ * 2. Runtime: each frozen model's table really has `lifecycleState` and
+ *    `deletedAt`, otherwise the flag would be dead code.
+ * 3. Static: across `packages/<pkg>/src` and `apps/<app>/src`, the only files
+ *    that mention `restoreKeepsLifecycleState` are `base.model.ts` and the
+ *    frozen models' own files. This catches a flag set on a model outside
+ *    `packages/db/src/models` or on one the barrel does not export.
  *
- * Blind spot: a model that sets the flag through a computed expression rather
- * than the literal `restoreKeepsLifecycleState = true` escapes step 1.
+ * ## Blind spots
+ *
+ * - A subclass of an opted-in model that does NOT mention the flag (so it
+ *   escapes check 3) AND is not exported by the models barrel (so it escapes
+ *   check 1) inherits `true` unseen. No such subclass exists today: no class
+ *   outside `packages/db/src/models` extends a concrete model.
+ * - The flag is read through a cast, because it is `protected`. Renaming it
+ *   without updating this file makes check 1 read `undefined` for every model,
+ *   so the frozen list no longer matches and the guard goes red.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import type { BaseModelImpl } from '../../src/base/base.model';
-import { AmenityModel } from '../../src/models/accommodation/amenity.model';
-import { FeatureModel } from '../../src/models/accommodation/feature.model';
-import { PoiCategoryModel } from '../../src/models/destination/poi-category.model';
-import { HostTradeCategoryModel } from '../../src/models/hostTrade/host-trade-category.model';
-import { HostTradeCategoryGroupModel } from '../../src/models/hostTrade/host-trade-category-group.model';
-import { PartnerTypeModel } from '../../src/models/partner/partner-type.model';
-import { PostTagModel } from '../../src/models/tag/post-tag.model';
-import { TagModel } from '../../src/models/tag/tag.model';
+import { BaseModelImpl } from '../../src/base/base.model';
+import * as models from '../../src/models';
 
-const MODELS_DIR = resolve(__dirname, '../../src/models');
+const REPO_ROOT = resolve(__dirname, '../../../..');
+const FLAG = 'restoreKeepsLifecycleState';
 
-/** Frozen set (owner decision 2026-11-19, HOS-2366). Keep sorted. */
-const KEEPS_LIFECYCLE_ON_RESTORE = [
-    'AmenityModel',
-    'FeatureModel',
-    'HostTradeCategoryGroupModel',
-    'HostTradeCategoryModel',
-    'PartnerTypeModel',
-    'PoiCategoryModel',
-    'PostTagModel',
-    'TagModel'
-] as const;
-
-const INSTANCES: Readonly<Record<string, () => BaseModelImpl<Record<string, unknown>>>> = {
-    AmenityModel: () => new AmenityModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    FeatureModel: () => new FeatureModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    HostTradeCategoryGroupModel: () =>
-        new HostTradeCategoryGroupModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    HostTradeCategoryModel: () =>
-        new HostTradeCategoryModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    PartnerTypeModel: () =>
-        new PartnerTypeModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    PoiCategoryModel: () =>
-        new PoiCategoryModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    PostTagModel: () => new PostTagModel() as unknown as BaseModelImpl<Record<string, unknown>>,
-    TagModel: () => new TagModel() as unknown as BaseModelImpl<Record<string, unknown>>
+/**
+ * Frozen set (owner decision 2026-11-19, HOS-2366): class name → the file
+ * that declares it, relative to the repo root. Keep sorted by class name.
+ */
+const KEEPS_LIFECYCLE_ON_RESTORE: Readonly<Record<string, string>> = {
+    AmenityModel: 'packages/db/src/models/accommodation/amenity.model.ts',
+    FeatureModel: 'packages/db/src/models/accommodation/feature.model.ts',
+    HostTradeCategoryGroupModel:
+        'packages/db/src/models/hostTrade/host-trade-category-group.model.ts',
+    HostTradeCategoryModel: 'packages/db/src/models/hostTrade/host-trade-category.model.ts',
+    PartnerTypeModel: 'packages/db/src/models/partner/partner-type.model.ts',
+    PoiCategoryModel: 'packages/db/src/models/destination/poi-category.model.ts',
+    PostTagModel: 'packages/db/src/models/tag/post-tag.model.ts',
+    TagModel: 'packages/db/src/models/tag/tag.model.ts'
 };
+const FROZEN_NAMES = Object.keys(KEEPS_LIFECYCLE_ON_RESTORE).sort();
 
-/** Recursively lists every `.ts` file under `dir`. */
-function listTsFiles(dir: string): string[] {
+/** What the guard reads off an instance (the flag is `protected`). */
+interface FlagView {
+    readonly restoreKeepsLifecycleState?: unknown;
+    getTable(): object;
+}
+
+type ModelClass = new () => BaseModelImpl<Record<string, unknown>>;
+
+/** Every concrete `BaseModelImpl` subclass exported by the models barrel, by class name. */
+function exportedModelClasses(): ReadonlyMap<string, ModelClass> {
+    const found = new Map<string, ModelClass>();
+    for (const value of Object.values(models)) {
+        if (typeof value !== 'function') continue;
+        if (!(value.prototype instanceof BaseModelImpl)) continue;
+        found.set(value.name, value as unknown as ModelClass);
+    }
+    return found;
+}
+
+/** Recursively lists every `.ts`/`.tsx` file under `dir` (skipping build output). */
+function listSourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((entry) => {
+        if (entry === 'node_modules' || entry === 'dist') return [];
         const full = join(dir, entry);
-        if (statSync(full).isDirectory()) return listTsFiles(full);
-        return full.endsWith('.ts') ? [full] : [];
+        if (statSync(full).isDirectory()) return listSourceFiles(full);
+        return /\.tsx?$/.test(entry) ? [full] : [];
     });
 }
 
-/** Class names whose body sets `restoreKeepsLifecycleState = true`. */
-function findFlaggedModels(): string[] {
-    const flagged: string[] = [];
-    for (const file of listTsFiles(MODELS_DIR)) {
-        const source = readFileSync(file, 'utf8');
-        const classRegex = /export\s+class\s+(\w+)\s+extends\s+BaseModelImpl\b/g;
-        const matches = [...source.matchAll(classRegex)];
-        for (const [index, match] of matches.entries()) {
-            const start = match.index ?? 0;
-            const end = matches[index + 1]?.index ?? source.length;
-            const body = source.slice(start, end);
-            if (/\brestoreKeepsLifecycleState\s*=\s*true\b/.test(body) && match[1]) {
-                flagged.push(match[1]);
-            }
-        }
-    }
-    return flagged.sort();
+/** `src` directories of every package and app in the monorepo. */
+function workspaceSrcDirs(): string[] {
+    return ['packages', 'apps'].flatMap((group) => {
+        const groupDir = join(REPO_ROOT, group);
+        return readdirSync(groupDir)
+            .map((name) => join(groupDir, name, 'src'))
+            .filter((dir) => {
+                try {
+                    return statSync(dir).isDirectory();
+                } catch {
+                    return false;
+                }
+            });
+    });
 }
 
 describe('restoreKeepsLifecycleState guard (HOS-2366)', () => {
-    it('only the frozen admin catalogs keep lifecycleState on restore', () => {
-        expect(findFlaggedModels()).toEqual([...KEEPS_LIFECYCLE_ON_RESTORE]);
+    const classes = exportedModelClasses();
+
+    it('the barrel exposes the models this guard instantiates', () => {
+        // A broken barrel import would leave nothing to check and pass vacuously.
+        expect(classes.size).toBeGreaterThan(50);
+    });
+
+    it('only the frozen admin catalogs keep lifecycleState on restore (runtime value)', () => {
+        const flagged: string[] = [];
+        const failedToInstantiate: string[] = [];
+        for (const [name, ModelCtor] of classes) {
+            let instance: FlagView;
+            try {
+                instance = new ModelCtor() as unknown as FlagView;
+            } catch {
+                failedToInstantiate.push(name);
+                continue;
+            }
+            if (instance.restoreKeepsLifecycleState === true) flagged.push(name);
+        }
+
+        expect(failedToInstantiate).toEqual([]);
+        expect(flagged.sort()).toEqual(FROZEN_NAMES);
     });
 
     it.each(
-        KEEPS_LIFECYCLE_ON_RESTORE
-    )('%s has the flag live and a table with lifecycleState + deletedAt', (name) => {
-        const create = INSTANCES[name];
-        expect(create).toBeDefined();
-        const model = create?.() as unknown as {
-            readonly restoreKeepsLifecycleState: boolean;
-            getTable(): object;
-        };
+        FROZEN_NAMES
+    )('%s is exported, has the flag live and a table with lifecycleState + deletedAt', (name) => {
+        const ModelCtor = classes.get(name);
+        expect(ModelCtor).toBeDefined();
+        const model = new (ModelCtor as ModelClass)() as unknown as FlagView;
 
         expect(model.restoreKeepsLifecycleState).toBe(true);
         const table = model.getTable();
         expect('lifecycleState' in table).toBe(true);
         expect('deletedAt' in table).toBe(true);
+    });
+
+    it('no file outside base.model.ts and the frozen models mentions the flag (static scan)', () => {
+        const allowed = new Set([
+            'packages/db/src/base/base.model.ts',
+            ...Object.values(KEEPS_LIFECYCLE_ON_RESTORE)
+        ]);
+        const mentions = workspaceSrcDirs()
+            .flatMap(listSourceFiles)
+            .filter((file) => readFileSync(file, 'utf8').includes(FLAG))
+            .map((file) => relative(REPO_ROOT, file))
+            .sort();
+
+        expect(mentions).toEqual([...allowed].sort());
     });
 });
