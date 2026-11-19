@@ -9,7 +9,7 @@
  */
 import type { DrizzleClient } from '@repo/db';
 import { buildEmailDedupKey, buildEventOccurrence, emailOutboxModel } from '@repo/db';
-import type { JsonValue, WatchAccount, WatchAlert } from '@repo/payments';
+import type { JsonValue, WatchAccount, WatchAlert, WatchRunOutcome } from '@repo/payments';
 
 /** Template of the alert mail. Its renderer lives in `@repo/notifications`. */
 export const PROVIDER_WATCH_ALERT_TEMPLATE = 'billing.provider-watch-alert';
@@ -42,13 +42,17 @@ export interface EnqueueProviderWatchAlertsInput {
     readonly account: WatchAccount;
     readonly finishedAt: Date;
     readonly alerts: readonly WatchAlert[];
+    /** How the run ended; a run that did not complete says so in the mail, with its reason. */
+    readonly outcome: WatchRunOutcome;
+    readonly reason?: string | undefined;
     readonly recipients: readonly { readonly userId: string; readonly email: string }[];
     readonly correlationId: string;
     readonly tx: DrizzleClient;
 }
 
 /**
- * Queues one alert mail per recipient, carrying every alert of the run.
+ * Queues one alert mail per recipient (one per SUPER_ADMIN, deduplicated by recipient and run),
+ * carrying every alert of the run and, when the run failed or was aborted, how and why.
  *
  * @param input - See {@link EnqueueProviderWatchAlertsInput}
  * @returns How many mails were queued
@@ -59,6 +63,14 @@ export async function enqueueProviderWatchAlerts(
     const payload = {
         account: input.account,
         finishedAt: input.finishedAt.toISOString(),
+        ...(input.outcome === 'failed' || input.outcome === 'aborted'
+            ? {
+                  run: {
+                      outcome: input.outcome,
+                      ...(input.reason === undefined ? {} : { reason: input.reason })
+                  }
+              }
+            : {}),
         omitted: Math.max(0, input.alerts.length - MAX_ALERTS_PER_MAIL),
         alerts: input.alerts.slice(0, MAX_ALERTS_PER_MAIL).map((alert) => ({
             measurementId: alert.measurementId,
