@@ -107,6 +107,14 @@ export const SERIAL_GROUPS: readonly SerialGroup[] = [
     {
         key: 1_999_002,
         drives: /\bapplyDueScheduledChanges\b|\bseedScheduledChange\b|\bseedDifferentScheduledAmount\b|\bseedPriceIncrease\b|\binsert\(subscriptionScheduledChanges\)/
+    },
+    {
+        // HOS-2179: the A3 pass (`expireAddonAuthorizationWindows`) expires EVERY pending addon
+        // purchase whose window elapsed on the caller's clock. A payment page purchase is anchored
+        // on the fixture clock, so another file's A3 run (its clock days ahead) would abandon it
+        // mid-case through a fake that never saw its page. Files that drive A3 run one at a time.
+        key: 1_999_003,
+        drives: /\bexpireAddonAuthorizationWindows\b/
     }
 ];
 

@@ -334,12 +334,12 @@
         "reason": "A2 activates the complement alongside its addon; emitAddonCoverageAdded sends coverage after commit."
     },
     {
-        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time.ts",
-        "symbol": "confirmOneTimeOrder",
+        "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time-activation.ts",
+        "symbol": "activateOneTimeInstance",
         "table": "addonInstances",
         "effect": "turns-on",
         "via": "notice",
-        "reason": "A2 activates an approved one-time addon; emitAddonCoverageAdded sends coverage after commit."
+        "reason": "A2 activates an approved one-time addon (order or payment page, HOS-2179); emitAddonCoverageAdded sends coverage after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/expire-addon-authorization-windows-one-time.ts",
@@ -348,6 +348,30 @@
         "effect": "neutral",
         "via": null,
         "reason": "A3 abandons a still pending one-time addon; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/one-time-payment-page.ts",
+        "symbol": "abandonRefusedPage",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2179: releases a one-time purchase still in PENDING_AUTHORIZATION whose payment page the provider refused; pending instances emit no ADDON coverage source."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/one-time-payment-page.ts",
+        "symbol": "openOneTimePaymentPage",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2179: records the payment page id and expiry of a pending one-time purchase; status is untouched, so no coverage source changes."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/addon/close-one-time-payment-page.ts",
+        "symbol": "closeOneTimePaymentPage",
+        "table": "addonInstances",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-2179: records the re-read expiry of a closed payment page; status is untouched, so no coverage source changes."
     },
     {
         "file": "packages/service-core/src/services/billing/addon/addon-instance-a7.ts",
