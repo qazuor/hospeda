@@ -162,3 +162,15 @@
     cursor: wait;
     opacity: 0.7;
 }
+
+.listPrice {
+    margin-inline-start: var(--space-2);
+    color: var(--core-muted-foreground);
+    text-decoration: line-through;
+}
+
+.promoLine {
+    margin: var(--space-2) 0 0;
+    color: var(--core-foreground);
+    font-weight: 600;
+}
