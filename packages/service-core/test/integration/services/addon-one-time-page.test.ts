@@ -1,4 +1,14 @@
-import { addonInstances, addonProducts, eq, idempotencyKeys, payments } from '@repo/db';
+import {
+    addonInstances,
+    addonProducts,
+    and,
+    domainEvent,
+    eq,
+    idempotencyKeys,
+    isNull,
+    payments,
+    reconciliationMarks
+} from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { confirmOneTimePagePayment } from '../../../src/services/billing/addon/addon-instance-a2-one-time-page';
@@ -8,7 +18,12 @@ import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-
 import { openOneTimePaymentPage } from '../../../src/services/billing/addon/one-time-payment-page';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { getCurrentBillingDeadlines } from '../../../src/services/billing/deadlines/billing-deadlines.service';
-import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
+import {
+    closeServiceTestPool,
+    getServiceTestDb,
+    getServiceTestPool,
+    isServiceTestDbAvailable
+} from './helpers';
 import { payingPrincipal } from './support/addon-a2-fixtures';
 import {
     purchaseFixture,
@@ -78,6 +93,64 @@ async function recordPageDirectly(input: {
             completedAt: new Date()
         })
         .where(eq(idempotencyKeys.subjectId, row.id));
+}
+
+async function marksOf(instanceId: string) {
+    return getServiceTestDb()
+        .select({ reason: reconciliationMarks.reason, liftedAt: reconciliationMarks.liftedAt })
+        .from(reconciliationMarks)
+        .where(eq(reconciliationMarks.addonInstanceId, instanceId));
+}
+
+async function priceIs(productId: string, price: number) {
+    await getServiceTestDb()
+        .update(addonProducts)
+        .set({ price })
+        .where(eq(addonProducts.id, productId));
+}
+
+/** Lifts every open mark of the instance, as a person settling it without a refund would. */
+async function liftMarksOf(instanceId: string, liftedBy: string) {
+    await getServiceTestDb()
+        .update(reconciliationMarks)
+        .set({ liftedAt: new Date(), liftedBy })
+        .where(
+            and(
+                eq(reconciliationMarks.addonInstanceId, instanceId),
+                isNull(reconciliationMarks.liftedAt)
+            )
+        );
+}
+
+async function markEventsOf(instanceId: string) {
+    return getServiceTestDb()
+        .select({ changes: domainEvent.changes })
+        .from(domainEvent)
+        .where(
+            and(
+                eq(domainEvent.entityId, instanceId),
+                eq(domainEvent.eventType, 'reconciliation.mark_opened')
+            )
+        )
+        .orderBy(domainEvent.occurredAt, domainEvent.id);
+}
+
+/** Makes every mark insert for this one instance fail while `run` runs; other files are untouched. */
+async function refuseMarksFor(instanceId: string, run: () => Promise<void>) {
+    const pool = getServiceTestPool();
+    const name = `refuse_marks_${instanceId.replaceAll('-', '')}`;
+    await pool.query(
+        `CREATE FUNCTION ${name}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.addon_instance_id = '${instanceId}' THEN RAISE EXCEPTION 'mark refused by test'; END IF; RETURN NEW; END $$`
+    );
+    await pool.query(
+        `CREATE TRIGGER ${name} BEFORE INSERT ON reconciliation_mark FOR EACH ROW EXECUTE FUNCTION ${name}()`
+    );
+    try {
+        await run();
+    } finally {
+        await pool.query(`DROP TRIGGER ${name} ON reconciliation_mark`);
+        await pool.query(`DROP FUNCTION ${name}()`);
+    }
 }
 
 async function setup() {
@@ -502,6 +575,192 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
         ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
         expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
         expect(await paymentsOf(instance.id)).toHaveLength(0);
+        expect(await marksOf(instance.id)).toEqual([
+            { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+        ]);
+        const [event] = await markEventsOf(instance.id);
+        expect(event?.changes).toEqual(
+            expect.arrayContaining([
+                { field: 'provider.charge_id', new: paid.chargeId },
+                { field: 'reconciliation_mark.expected_minor', new: 12000 },
+                { field: 'provider.charge_amount_minor', new: 10000 }
+            ])
+        );
+    });
+
+    it.skipIf(skip)('accumulates a repeated notice of one divergent payment', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        for (let i = 0; i < 2; i++)
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        expect(await marksOf(instance.id)).toEqual([
+            { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+        ]);
+        expect(await markEventsOf(instance.id)).toHaveLength(2);
+    });
+
+    it.skipIf(skip)('keeps one open divergence mark for two divergent payments', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const first = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        const second = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        for (const paid of [first, second])
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        expect(await marksOf(instance.id)).toEqual([
+            { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+        ]);
+        const charged = (await markEventsOf(instance.id)).map(
+            (event) =>
+                (event.changes as readonly { field: string; new?: unknown }[]).find(
+                    (change) => change.field === 'provider.charge_id'
+                )?.new
+        );
+        expect(charged).toEqual([first.chargeId, second.chargeId]);
+        expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+    });
+
+    it.skipIf(skip)(
+        'activates a correct payment after a divergent one and keeps the divergence open',
+        async () => {
+            const s = await setup();
+            const { instance, paymentPageId } = await bought(s);
+            const divergent = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            await priceIs(instance.productId, 12000);
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: divergent.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+            expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+
+            await priceIs(instance.productId, 10000);
+            const correct = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: correct.chargeId },
+                    s.ports
+                )
+            ).toMatchObject({ outcome: 'ACTIVATED' });
+            expect((await instanceOf(instance.id)).status).toBe('ACTIVE');
+            expect((await paymentsOf(instance.id)).map((p) => p.providerFactId)).toEqual([
+                correct.chargeId
+            ]);
+            expect(await marksOf(instance.id)).toEqual([
+                { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+            ]);
+        }
+    );
+
+    it.skipIf(skip)('does not reopen a lifted divergence for the same charge', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: paid.chargeId },
+            s.ports
+        );
+        await liftMarksOf(instance.id, instance.ownerId);
+
+        expect(
+            await confirmOneTimePagePayment(
+                { instanceId: instance.id, chargeId: paid.chargeId },
+                s.ports
+            )
+        ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        const marks = await marksOf(instance.id);
+        expect(marks).toHaveLength(1);
+        expect(marks[0]?.liftedAt).not.toBeNull();
+    });
+
+    it.skipIf(skip)('opens a new divergence for another charge after one was lifted', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const first = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        const second = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await priceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: first.chargeId },
+            s.ports
+        );
+        await liftMarksOf(instance.id, instance.ownerId);
+
+        expect(
+            await confirmOneTimePagePayment(
+                { instanceId: instance.id, chargeId: second.chargeId },
+                s.ports
+            )
+        ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+        const marks = await marksOf(instance.id);
+        expect(marks).toHaveLength(2);
+        expect(marks.filter((mark) => mark.liftedAt === null)).toHaveLength(1);
+        // The lifted mark names only the first charge: the open one still accumulates.
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: second.chargeId },
+            s.ports
+        );
+        expect(await markEventsOf(instance.id)).toHaveLength(3);
+    });
+
+    it.skipIf(skip)(
+        'marks another amount as a divergence even after the purchase was abandoned',
+        async () => {
+            const s = await setup();
+            const { instance, paymentPageId } = await bought(s);
+            const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            await getServiceTestDb()
+                .update(addonProducts)
+                .set({ price: 12000 })
+                .where(eq(addonProducts.id, instance.productId));
+            await abandonOneTimeAddon({
+                instanceId: instance.id,
+                expectedProviderOrderId: null,
+                now: s.f.ports.clock.now()
+            });
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
+            expect(await marksOf(instance.id)).toEqual([
+                { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+            ]);
+        }
+    );
+
+    it.skipIf(skip)('leaves another amount undecided when its mark cannot open', async () => {
+        const s = await setup();
+        const { instance, paymentPageId } = await bought(s);
+        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await getServiceTestDb()
+            .update(addonProducts)
+            .set({ price: 12000 })
+            .where(eq(addonProducts.id, instance.productId));
+        await refuseMarksFor(instance.id, async () => {
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'UNKNOWN' });
+        });
+        expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+        expect(await marksOf(instance.id)).toHaveLength(0);
     });
 
     it.skipIf(skip)('refuses a payment of another purchase', async () => {
@@ -670,7 +929,7 @@ describe('HOS-2179 §5.4 A3 confirms by search and re-read, or abandons and clos
         expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
     });
 
-    it.skipIf(skip)('defers when an approved payment cannot activate', async () => {
+    it.skipIf(skip)('defers another amount whose mark cannot open', async () => {
         const s = await setup();
         const { instance, paymentPageId } = await bought(s);
         s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
@@ -679,9 +938,32 @@ describe('HOS-2179 §5.4 A3 confirms by search and re-read, or abandons and clos
             .set({ price: 12000 })
             .where(eq(addonProducts.id, instance.productId));
         s.f.advanceTo(windowEnd());
-        await expireAddonAuthorizationWindows(100, s.ports);
+        await refuseMarksFor(instance.id, async () => {
+            await expireAddonAuthorizationWindows(100, s.ports);
+        });
         expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+        expect(await marksOf(instance.id)).toHaveLength(0);
     });
+
+    it.skipIf(skip)(
+        'abandons once another amount is marked, instead of waiting forever',
+        async () => {
+            const s = await setup();
+            const { instance, paymentPageId } = await bought(s);
+            s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            await getServiceTestDb()
+                .update(addonProducts)
+                .set({ price: 12000 })
+                .where(eq(addonProducts.id, instance.productId));
+            s.f.advanceTo(windowEnd());
+            await expireAddonAuthorizationWindows(100, s.ports);
+            expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
+            expect(await paymentsOf(instance.id)).toHaveLength(0);
+            expect(await marksOf(instance.id)).toEqual([
+                { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+            ]);
+        }
+    );
 });
 
 describe('HOS-2179 §5.7 closing a page', () => {

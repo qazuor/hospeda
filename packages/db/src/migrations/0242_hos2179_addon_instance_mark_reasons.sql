@@ -1,0 +1,2 @@
+ALTER TABLE "reconciliation_mark" DROP CONSTRAINT "ck_reconciliation_mark_instance_only_for_order";--> statement-breakpoint
+ALTER TABLE "reconciliation_mark" ADD CONSTRAINT "ck_reconciliation_mark_instance_reasons" CHECK (("reconciliation_mark"."reason" <> 'ORDEN_PAGADA_SIN_INSTANCIA' OR "reconciliation_mark"."addon_instance_id" IS NOT NULL) AND ("reconciliation_mark"."addon_instance_id" IS NULL OR "reconciliation_mark"."reason" IN ('DIVERGENCIA_DE_MONTO', 'COBRO_DUPLICADO', 'ORDEN_PAGADA_SIN_INSTANCIA')));

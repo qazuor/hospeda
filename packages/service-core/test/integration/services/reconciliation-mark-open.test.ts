@@ -426,7 +426,7 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
         ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
     });
 
-    it('hangs MOT:23 from an addon instance and rejects mismatched or missing subjects', async () => {
+    it('hangs MOT:23, MOT:5 and MOT:20 from an addon instance and rejects mismatched or missing subjects', async () => {
         const { userId } = await fixture();
         const addonId = (
             await getServiceTestPool().query<{ id: string }>(
@@ -470,14 +470,41 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
                 correlationId: mismatchCorrelationId
             })
         ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
+        // HOS-2179: an addon instance also carries MOT:5 (AC-8) and MOT:20 (AC-11)...
+        for (const reason of ['DIVERGENCIA_DE_MONTO', 'COBRO_DUPLICADO'] as const) {
+            const opened = await openReconciliationMark({
+                subject: { kind: 'ADDON_INSTANCE', addonInstanceId },
+                reason,
+                actor: actor(userId),
+                correlationId: crypto.randomUUID()
+            });
+            expect(opened.mark).toMatchObject({ addonInstanceId, reason, liftedAt: null });
+        }
+        // ...and nothing else.
         await expect(
             openReconciliationMark({
                 subject: { kind: 'ADDON_INSTANCE', addonInstanceId },
-                reason: 'DIVERGENCIA_DE_MONTO',
+                reason: 'CONTRACARGO',
                 actor: actor(userId),
                 correlationId: crypto.randomUUID()
             })
         ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
+        // The CHECK holds the same rule below the service.
+        await expect(
+            getServiceTestPool().query(
+                "INSERT INTO reconciliation_mark (addon_instance_id, reason) VALUES ($1, 'CONTRACARGO')",
+                [addonInstanceId]
+            )
+        ).rejects.toMatchObject({
+            code: '23514',
+            constraint: 'ck_reconciliation_mark_instance_reasons'
+        });
+        await expect(
+            getServiceTestPool().query(
+                "INSERT INTO reconciliation_mark (subscription_id, reason) VALUES ($1, 'ORDEN_PAGADA_SIN_INSTANCIA')",
+                [crypto.randomUUID()]
+            )
+        ).rejects.toMatchObject({ code: '23514' });
         await expect(
             openReconciliationMark({
                 subject: { kind: 'SUBSCRIPTION', subscriptionId },
