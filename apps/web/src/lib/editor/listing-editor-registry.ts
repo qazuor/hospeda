@@ -15,7 +15,6 @@
  */
 
 import { LISTING_SECTIONS, type ListingSectionState, type ListingVertical } from '@repo/schemas';
-import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
 import { createListingEditorRegistry } from '@/lib/editor/listing-editor-sections';
 import { LISTING_SECTION_PRESENTATION } from '@/lib/editor/listing-section-presentation';
@@ -39,34 +38,6 @@ export interface ListingSectionStateEntry {
  */
 export type ListingSectionStates = Readonly<Record<string, ListingSectionStateEntry>>;
 
-/** Sections opted into hiding when locked until a catalog plan grants them. */
-export function findLockedSectionsWithoutUnlockingPlan({
-    vertical,
-    sectionStates,
-    plans,
-    catalogReadSucceeded
-}: {
-    readonly vertical: ListingVertical;
-    readonly sectionStates: ListingSectionStates;
-    readonly plans: readonly PublicPlanData[];
-    readonly catalogReadSucceeded: boolean;
-}): ReadonlySet<string> {
-    if (!catalogReadSucceeded) return new Set();
-
-    return new Set(
-        LISTING_SECTIONS[vertical]
-            .filter(
-                (definition) =>
-                    LISTING_SECTION_PRESENTATION[vertical][definition.id]
-                        .hideWhenLockedWithoutPlan &&
-                    sectionStates[definition.id]?.state === 'locked' &&
-                    'entitlementKey' in definition &&
-                    !plans.some((plan) => plan.entitlements.includes(definition.entitlementKey))
-            )
-            .map(({ id }) => id)
-    );
-}
-
 /**
  * Maps one vertical's catalog sections to editor sections, in catalog order,
  * without the web-only pages.
@@ -77,17 +48,14 @@ export function findLockedSectionsWithoutUnlockingPlan({
  */
 export function buildCatalogEditorSections({
     vertical,
-    sectionStates,
-    hiddenLockedSectionIds = new Set<string>()
+    sectionStates
 }: {
     readonly vertical: ListingVertical;
     readonly sectionStates: ListingSectionStates;
-    readonly hiddenLockedSectionIds?: ReadonlySet<string>;
 }): readonly EditorSection[] {
     return (
         LISTING_SECTIONS[vertical]
             .filter((definition) => sectionStates[definition.id]?.state !== 'absent')
-            .filter((definition) => !hiddenLockedSectionIds.has(definition.id))
             // A section whose editor page has not shipped is not offered (HOS-2270).
             .filter(
                 (definition) => !LISTING_SECTION_PRESENTATION[vertical][definition.id].unreleased
@@ -119,18 +87,16 @@ export function buildCatalogEditorSections({
  */
 export function buildListingEditorSections({
     vertical,
-    sectionStates,
-    hiddenLockedSectionIds
+    sectionStates
 }: {
     readonly vertical: VenueOrExperience;
     readonly sectionStates: ListingSectionStates;
-    readonly hiddenLockedSectionIds?: ReadonlySet<string>;
 }): readonly EditorSection[] {
     // Appended, not placed by section id: this file is under G-FAC-05 (no
     // dispatch by section id). The nav groups by `group`, so it renders as the
     // last «content» page.
     return [
-        ...buildCatalogEditorSections({ vertical, sectionStates, hiddenLockedSectionIds }),
+        ...buildCatalogEditorSections({ vertical, sectionStates }),
         LISTING_AI_QUESTIONS_SECTION
     ];
 }
@@ -156,15 +122,13 @@ export const LISTING_AI_QUESTIONS_SECTION: EditorSection = {
  */
 export function buildListingEditorRegistry({
     vertical,
-    sectionStates,
-    hiddenLockedSectionIds
+    sectionStates
 }: {
     readonly vertical: VenueOrExperience;
     readonly sectionStates: ListingSectionStates;
-    readonly hiddenLockedSectionIds?: ReadonlySet<string>;
 }): EditorRegistry {
     return createListingEditorRegistry({
         vertical,
-        sections: buildListingEditorSections({ vertical, sectionStates, hiddenLockedSectionIds })
+        sections: buildListingEditorSections({ vertical, sectionStates })
     });
 }
