@@ -129,6 +129,7 @@
         "EMPTY_FILE": "El archivo está vacío. Elegí otra imagen.",
         "NEW_PAID_SIGNUPS_FROZEN": "Por el momento pausamos las suscripciones nuevas. Si ya tenés una suscripción, sigue funcionando con normalidad.",
         "ADDON_PURCHASES_FROZEN": "Por el momento pausamos la compra de complementos. Lo que ya compraste sigue funcionando con normalidad.",
+        "ADDON_ALREADY_ACTIVE": "Ya tenés este complemento activo. No hace falta comprarlo de nuevo.",
         "FIRST_PUBLISH_PAUSED": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden.",
         "PROMO_CODE_NOT_FOUND": "No encontramos ese código.",
         "PROMO_CODE_NOT_A_TRIAL_EXTENSION": "Este código no extiende una prueba gratis.",

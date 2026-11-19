@@ -152,3 +152,59 @@ export function eligibleSubscriptionTargets(input: {
         )
         .map((item) => ({ id: item.id, vertical: item.vertical, planName: item.plan.name }));
 }
+
+/** The slice of an owner's live recurring addon needed to tell what is already bought. */
+export interface ActiveAddonInstance {
+    readonly slug: string;
+    readonly status: string;
+    readonly targetId: string | null;
+}
+
+/**
+ * HOS-2362: whether the owner already holds an ACTIVE instance of this addon on this target.
+ * Mirrors the API rule (one live recurring instance per owner + product + target, refused as
+ * `ALREADY_ACTIVE`), so the screen never offers a purchase the server will refuse.
+ * A pending instance is not "active": the API answers that one differently.
+ */
+export function isAddonActiveOnTarget(input: {
+    readonly active: readonly ActiveAddonInstance[];
+    readonly slug: string;
+    readonly targetId: string | null;
+}): boolean {
+    return input.active.some(
+        (item) =>
+            item.status === 'ACTIVE' && item.slug === input.slug && item.targetId === input.targetId
+    );
+}
+
+/**
+ * HOS-2362: whether an offer has nothing left to buy. Untargeted addons (USER/GLOBAL) are
+ * covered by one active instance; a subscription-scoped addon is covered only when every
+ * compatible live subscription already has it. Listing-scoped offers are decided per listing
+ * in the picker, so they are never covered at offer level.
+ */
+export function isOfferFullyActive(input: {
+    readonly offer: {
+        readonly slug: string;
+        readonly scopeType: 'LISTING' | 'VERTICAL_SUBSCRIPTION' | 'USER' | 'GLOBAL';
+        readonly compatibleVerticals: readonly string[];
+    };
+    readonly active: readonly ActiveAddonInstance[];
+    readonly subscriptionTargets: readonly AddonSubscriptionTarget[] | null;
+}): boolean {
+    const { offer, active, subscriptionTargets } = input;
+    if (offer.scopeType === 'USER' || offer.scopeType === 'GLOBAL')
+        return isAddonActiveOnTarget({ active, slug: offer.slug, targetId: null });
+    if (offer.scopeType === 'VERTICAL_SUBSCRIPTION') {
+        const eligible = (subscriptionTargets ?? []).filter((item) =>
+            offer.compatibleVerticals.includes(item.vertical)
+        );
+        return (
+            eligible.length > 0 &&
+            eligible.every((item) =>
+                isAddonActiveOnTarget({ active, slug: offer.slug, targetId: item.id })
+            )
+        );
+    }
+    return false;
+}

@@ -35,6 +35,7 @@ describe('AC:B10:11 browser API composition', () => {
                         }
                     ]
                 });
+            if (url.includes('/billing/addons/instances')) return success({ items: [] });
             if (url.includes('/publish/listing-notices/accommodation'))
                 return success({
                     trialRunning: false,
@@ -63,8 +64,9 @@ describe('AC:B10:11 browser API composition', () => {
         expect(
             screen.getByTestId('addon-hidden-listing-notice').getAttribute('data-notice-kind')
         ).toBe('RECURRING');
-        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
-        expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname)).toEqual([
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+        expect(fetchMock.mock.calls.map(([url]) => new URL(url).pathname).sort()).toEqual([
+            '/api/v1/protected/billing/addons/instances',
             '/api/v1/protected/billing/addons/offers',
             '/api/v1/protected/publish/listing-notices/accommodation'
         ]);

@@ -7,6 +7,7 @@ type Translate = ReturnType<typeof createTranslations>['t'];
 /** Select the principal subscription a `VERTICAL_SUBSCRIPTION` addon hangs from. */
 export function AddonSubscriptionPicker(input: {
     readonly items: readonly AddonSubscriptionTarget[];
+    readonly isActive?: (item: AddonSubscriptionTarget) => boolean;
     readonly onSelect: (item: AddonSubscriptionTarget) => void;
     readonly t: Translate;
 }) {
@@ -24,9 +25,15 @@ export function AddonSubscriptionPicker(input: {
                         type="button"
                         className={styles.card}
                         data-testid={`addon-subscription-${item.id}`}
+                        disabled={input.isActive?.(item) === true}
                         onClick={() => input.onSelect(item)}
                     >
                         <strong>{item.planName}</strong>
+                        {input.isActive?.(item) && (
+                            <span className={styles.activeBadge}>
+                                {input.t('billing.addonPurchase.active')}
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>
