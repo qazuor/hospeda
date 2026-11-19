@@ -249,12 +249,15 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         await seedCookieConsent(replayPage);
         await attachSession({ page: replayPage, sessionCookie: otherClaimant.sessionCookie });
         await replayPage.goto(claimUrl);
-        await replayPage.getByRole('button', { name: 'Reclamar el Partner' }).click();
+        // HOS-2353: the pre-check answers before any click, so there is no claim button.
         await expect(
             replayPage.getByText(
                 'Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte'
             )
         ).toBeVisible();
+        await expect(replayPage.getByRole('button', { name: 'Reclamar el Partner' })).toHaveCount(
+            0
+        );
         await replayPage.close();
 
         const tamperedPage = await page.context().newPage();
@@ -263,7 +266,6 @@ test.describe('TEST:V7:22 AC:V7:19 AC:V7:7 Partner application, claim, and Gold 
         await tamperedPage.goto(
             `${WEB_URL}/es/partners/reclamar/#partner=${partnerId}&secret=${encodeURIComponent(`${secret}x`)}`
         );
-        await tamperedPage.getByRole('button', { name: 'Reclamar el Partner' }).click();
         await expect(
             tamperedPage.getByText('No encontramos este Partner. Revisá que el link esté completo.')
         ).toBeVisible();
