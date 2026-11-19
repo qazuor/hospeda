@@ -26,6 +26,7 @@
 import {
     HostTradeBenefitUsageProtectedSchema,
     HostTradeBenefitUsageProviderCreateBodySchema,
+    HostTradeBenefitUsageWithHostNameSchema,
     HostTradeUsageDeclaredByEnumSchema,
     HostTradeUsageStatusEnumSchema,
     ServiceErrorCode
@@ -214,7 +215,7 @@ export const protectedListOwnUsagesRoute = createProtectedListRoute({
         status: HostTradeUsageStatusEnumSchema.optional(),
         declaredBy: HostTradeUsageDeclaredByEnumSchema.optional()
     },
-    responseSchema: HostTradeBenefitUsageProtectedSchema,
+    responseSchema: HostTradeBenefitUsageWithHostNameSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

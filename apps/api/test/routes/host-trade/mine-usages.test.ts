@@ -232,6 +232,26 @@ describe('GET /mine/usages', () => {
         );
     });
 
+    /** HOS-2376: the provider sees WHICH host a row is about, by display name only. */
+    it('serialises the host display name and never an email', async () => {
+        mockListForProvider.mockResolvedValue({
+            data: {
+                items: [
+                    { ...MOCK_USAGE, hostDisplayName: 'Host Basico', hostEmail: 'h@example.test' }
+                ],
+                total: 1
+            }
+        });
+        const app = buildApp();
+
+        const res = await app.request('/mine/usages');
+        const body = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(body.data.items[0].hostDisplayName).toBe('Host Basico');
+        expect(JSON.stringify(body)).not.toContain('example.test');
+    });
+
     it('passes the status filter through', async () => {
         const app = buildApp();
 

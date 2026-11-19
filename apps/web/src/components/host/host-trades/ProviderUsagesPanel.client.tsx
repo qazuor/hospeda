@@ -292,8 +292,10 @@ export function ProviderUsagesPanel({
         setDeclared(true);
     }
 
-    /** The counterpart's label for the dialog. The payload carries no host name. */
-    const hostLabel = t('host-trades.provider.usages.counterpart', 'el anfitrión');
+    /** The counterpart's label for the dialog: the host's name, else a generic one. */
+    const hostLabel =
+        rejectTarget?.hostDisplayName ??
+        t('host-trades.provider.usages.counterpart', 'el anfitrión');
 
     return (
         <div className={styles.panel}>
@@ -339,10 +341,16 @@ export function ProviderUsagesPanel({
                                                 : usage.servicedAt}
                                         </p>
                                         <p className={styles.rowMeta}>
-                                            {t(
-                                                'host-trades.provider.usages.pending.declaredByHost',
-                                                'Lo registró el anfitrión. Confirmalo para que cuente en tus números.'
-                                            )}
+                                            {usage.hostDisplayName
+                                                ? t(
+                                                      'host-trades.provider.usages.pending.declaredByHostNamed',
+                                                      '{{name}} lo registró. Confirmalo para que cuente en tus números.',
+                                                      { name: usage.hostDisplayName }
+                                                  )
+                                                : t(
+                                                      'host-trades.provider.usages.pending.declaredByHost',
+                                                      'Lo registró el anfitrión. Confirmalo para que cuente en tus números.'
+                                                  )}
                                         </p>
                                         {usage.note ? (
                                             <p className={styles.rowMeta}>“{usage.note}”</p>
@@ -601,10 +609,16 @@ export function ProviderUsagesPanel({
                                                       'host-trades.provider.usages.list.declaredByYou',
                                                       'Lo registraste vos'
                                                   )
-                                                : t(
-                                                      'host-trades.provider.usages.list.declaredByHost',
-                                                      'Lo registró el anfitrión'
-                                                  )}
+                                                : usage.hostDisplayName
+                                                  ? t(
+                                                        'host-trades.provider.usages.list.declaredByHostNamed',
+                                                        'Lo registró {{name}}',
+                                                        { name: usage.hostDisplayName }
+                                                    )
+                                                  : t(
+                                                        'host-trades.provider.usages.list.declaredByHost',
+                                                        'Lo registró el anfitrión'
+                                                    )}
                                         </p>
                                         {usage.note ? (
                                             <p className={styles.rowMeta}>“{usage.note}”</p>

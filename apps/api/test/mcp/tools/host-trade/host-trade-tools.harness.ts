@@ -134,16 +134,29 @@ export function buildUsageService(rows: readonly Record<string, unknown>[] = [])
         hydrateCategories: vi.fn(async () => new Map())
     };
     const reviewModel = { findAll: vi.fn(async () => ({ items: [], total: 0 })) };
+    /** Every host the fake table can name (HOS-2376: the provider sees host names). */
+    const HOSTS: Record<string, { displayName: string | null; email: string }> = {
+        [OTHER_HOST_ID]: { displayName: 'Ana', email: 'ana@example.test' },
+        'f0000000-0000-4000-8000-000000000000': { displayName: 'Bea', email: 'bea@example.test' }
+    };
+    const userModel = {
+        findByIds: vi.fn(async (ids: readonly string[]) =>
+            ids.flatMap((id) => {
+                const host = HOSTS[id];
+                return host ? [{ id, firstName: null, lastName: null, ...host }] : [];
+            })
+        )
+    };
     const logger = { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
     const service = new HostTradeUsageService(
         { logger: logger as never },
         usageModel as unknown as HostTradeBenefitUsageModel,
         hostTradeModel as unknown as HostTradeModel,
-        {} as unknown as UserModel,
+        userModel as unknown as UserModel,
         async () => true,
         reviewModel as unknown as HostTradeReviewModel
     );
-    return { service, usageModel, hostTradeModel };
+    return { service, usageModel, hostTradeModel, userModel };
 }
 
 /** The host-provider's own listing, as `HostTradeService.getOwn` returns it. */
