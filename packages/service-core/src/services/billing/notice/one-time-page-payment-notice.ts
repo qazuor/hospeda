@@ -1,10 +1,11 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { addonInstances, addonProducts, and, eq, getDb, idempotencyKeys } from '@repo/db';
+import { addonInstances, addonProducts, and, eq, getDb, idempotencyKeys, payments } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { confirmOneTimePagePayment } from '../addon/addon-instance-a2-one-time-page.js';
 import { PAYMENT_PAGE_OPERATION } from '../addon/one-time-payment-page.js';
 import type { CoverageNotices } from '../payment/payment-ports.js';
 import type { ComplementPolicyPorts } from '../subscription/complement-ports.js';
+import { executeConfirmedRefundsOnNotice } from './refund-execution-on-notice.js';
 
 /**
  * What the notice receiver answers for the `payment` notice of a one-time page purchase
@@ -57,6 +58,10 @@ export class OneTimePagePaymentUndecidedError extends Error {
  * receiver answers it as it did before. An undecided A2 (the read or the mark did not answer)
  * throws, so the receiver acks an error and the provider delivers the notice again.
  *
+ * When the charge already holds the purchase's `payment` row, RF3 runs first for its confirmed
+ * refunds (HOS-2179 §5.11), as the subscription path does: the notice of a refunded page charge
+ * is what executes its refund. RF3 never throws; a failure waits for the next notice.
+ *
  * @param input.chargeId - The charge the notice names
  * @param input.reference - The charge's reference, from the receiver's fresh read
  * @param ports - Provider, clock, coverage notices and the complement policy readers
@@ -87,6 +92,25 @@ export async function routeOneTimePagePaymentNotice(
         )
         .limit(1);
     if (!purchase) return null;
+    const [held] = await getDb()
+        .select({ id: payments.id })
+        .from(payments)
+        .where(
+            and(
+                eq(payments.addonInstanceId, purchase.id),
+                eq(payments.providerFactId, input.chargeId)
+            )
+        )
+        .limit(1);
+    if (held)
+        await executeConfirmedRefundsOnNotice(
+            {
+                paymentId: held.id,
+                providerFactId: input.chargeId,
+                correlationId: crypto.randomUUID()
+            },
+            { provider: ports.provider, clock: ports.clock }
+        );
     if (!ports.complements)
         throw new Error('A one-time page payment notice needs the complement policy ports');
     const result = await confirmOneTimePagePayment(
