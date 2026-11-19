@@ -188,6 +188,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4491, #4476
+    {
+        id: '2026-11-17-assistant-creates-listing-drafts',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'USER'],
+        title: {
+            es: 'Creá un borrador de tu alojamiento, comercio o experiencia conversando con tu asistente de IA',
+            en: 'Create a draft of your accommodation, venue or experience by chatting with your AI assistant',
+            pt: 'Crie um rascunho da sua hospedagem, comércio ou experiência conversando com seu assistente de IA'
+        },
+        body: {
+            es: 'Contale al asistente qué querés publicar y te va pidiendo los datos de a uno, te muestra cómo va a quedar y recién crea el borrador cuando confirmás. Podés pegarle un link de Google Maps para la ubicación. El asistente nunca publica solo: cuando quieras publicar, te deja el link a la página donde lo hacés.',
+            en: 'Tell the assistant what you want to list and it asks for the details one at a time, shows you a preview, and only creates the draft once you confirm. You can paste a Google Maps link for the location. The assistant never publishes on its own: when you want to publish, it leaves you the link to the page where you do it.',
+            pt: 'Conte ao assistente o que você quer publicar e ele pede os dados um de cada vez, mostra uma prévia e só cria o rascunho quando você confirma. Você pode colar um link do Google Maps para a localização. O assistente nunca publica sozinho: quando você quiser publicar, ele deixa o link para a página onde você faz isso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4483
     {
         id: '2026-11-18-ai-assistant-answers-photo-upload-help',
