@@ -13,7 +13,8 @@
  * on purpose (it stops being assignable), and a delete + restore must not undo
  * that decision (HOS-2366, AC-3.5 of HOS-2336). Those models set
  * `restoreKeepsLifecycleState = true`. Owner decision 2026-11-19: exactly the
- * eight models below.
+ * nine models below (the eight first chosen, plus attractions added the same
+ * day).
  *
  * Adding a model to (or removing one from) that set changes what a restore
  * does to real rows, so it must be a deliberate edit of this list, not a
@@ -59,6 +60,7 @@ const FLAG = 'restoreKeepsLifecycleState';
  */
 const KEEPS_LIFECYCLE_ON_RESTORE: Readonly<Record<string, string>> = {
     AmenityModel: 'packages/db/src/models/accommodation/amenity.model.ts',
+    AttractionModel: 'packages/db/src/models/destination/attraction.model.ts',
     FeatureModel: 'packages/db/src/models/accommodation/feature.model.ts',
     HostTradeCategoryGroupModel:
         'packages/db/src/models/hostTrade/host-trade-category-group.model.ts',
