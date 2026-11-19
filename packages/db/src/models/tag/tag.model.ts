@@ -45,6 +45,8 @@ export interface FindPickerTagsInput {
  */
 export class TagModel extends BaseModelImpl<Tag> {
     protected table = tags;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'tags';
 
     protected getTableName(): string {

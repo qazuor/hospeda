@@ -452,6 +452,26 @@ describe('BaseModel', () => {
             expect(payload.updatedAt).toBeInstanceOf(Date);
             expect('lifecycleState' in payload).toBe(false);
         });
+
+        // HOS-2366 (AC-3.5 of HOS-2336): an admin catalog opts out of the
+        // reset, so a row deactivated on purpose comes back INACTIVE.
+        it('omits lifecycleState from the UPDATE SET when the model keeps it on restore (HOS-2366)', async () => {
+            class KeepsLifecycleModel extends LifecycleAwareModel {
+                protected override readonly restoreKeepsLifecycleState = true;
+            }
+            const setSpy = vi.fn(() => ({ where: () => ({ returning: () => [{ id: 'r1' }] }) }));
+            getDb.mockReturnValue({
+                update: () => ({ set: setSpy })
+            });
+
+            await new KeepsLifecycleModel().restore({ id: 'r1' });
+
+            expect(setSpy).toHaveBeenCalledTimes(1);
+            const payload = setSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(payload.deletedAt).toBeNull();
+            expect(payload.updatedAt).toBeInstanceOf(Date);
+            expect('lifecycleState' in payload).toBe(false);
+        });
     });
 
     it('findAll handles where with wrong type', async () => {
