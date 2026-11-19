@@ -26,6 +26,17 @@ const OrderSchema = z.object({
         })
     })
 });
+/**
+ * The real order search answers `paging.total` as a STRING of digits (HOS-2384, measured
+ * 2026-11-19, `order-search`); a number is read too. Anything else (negative, decimal, a
+ * non-numeric string, null) is refused. Digits only, so `' 1'`, `'1e2'` and `'0x1'` never
+ * coerce. A digit string too large to be exact reads as a total past the rows, so it fails as
+ * an incomplete search.
+ */
+const PagingTotalSchema = z.union([
+    z.number().int().nonnegative(),
+    z.string().regex(/^\d+$/).transform(Number)
+]);
 const OrderSearchSchema = z.object({
     data: z.array(
         z.object({
@@ -35,7 +46,7 @@ const OrderSearchSchema = z.object({
             date_created: nullAsAbsent({ schema: z.string() })
         })
     ),
-    paging: z.object({ total: z.number().int().nonnegative() })
+    paging: z.object({ total: PagingTotalSchema })
 });
 
 function hasApprovedPayment(status: string): boolean {

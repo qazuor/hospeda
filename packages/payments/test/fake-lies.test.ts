@@ -5,7 +5,7 @@
  * brings the honest path back.
  *
  * SCOPE (B1.4a, HOS-1510): the lies whose surface the payment interface carries
- * today: M1, M3, M5, M6, M7, M8, M9, M10, M11, M12 and M13. M2 and M4 keep their
+ * today: M1, M3, M5, M6, M7, M8, M9, M10, M11, M12, M13 and M14. M2 and M4 keep their
  * row in the closed list and arrive with the units that add their surface.
  *
  * Every assertion reads the state back by id or takes the deliveries, never a
@@ -111,9 +111,9 @@ async function noticesOf({
 }
 
 describe('TEST:B1:13 the closed list of measured lies', () => {
-    it('holds thirteen rows, M1 to M13, each with its three data', () => {
+    it('holds fourteen rows, M1 to M14, each with its three data', () => {
         expect(FAKE_LIES.map((row) => row.id)).toEqual(
-            Array.from({ length: 13 }, (_, i) => `M${i + 1}`)
+            Array.from({ length: 14 }, (_, i) => `M${i + 1}`)
         );
         for (const row of FAKE_LIES) {
             expect(row.name.trim(), row.id).not.toBe('');
