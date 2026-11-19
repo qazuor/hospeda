@@ -27,7 +27,11 @@ function escapeHtml(value: string): string {
     return value.replace(/[&<>"']/g, (char) => `&#${char.charCodeAt(0)};`);
 }
 
-/** The return link with the RP20 parameters, as Mercado Pago builds it. */
+/**
+ * The return link with the RP20 parameters, as Mercado Pago builds it. Mercado Pago
+ * returns to the exact back_url: the `/es/` seen in the EX-68 probe came from
+ * Hospeda's own root redirect (`/` → `/es/`), not from the provider.
+ */
 export function fakeReturnUrl(args: {
     readonly returnUrl: string;
     readonly chargeId: string;

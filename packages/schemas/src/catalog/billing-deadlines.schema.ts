@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 const positiveMinutes = z.number().int().positive();
 const positiveDays = z.number().int().positive();
+/** At most one day: a payment page, or its window margin, must not stay open longer (R-3). */
+const MAX_PAGE_MINUTES = 1440;
+const pageMinutes = positiveMinutes.max(MAX_PAGE_MINUTES);
 
 /** The closed billing half of the configurable deadline catalog (PLAZO:10–21). */
 export const BillingDeadlineValuesSchema = z
@@ -25,11 +28,10 @@ export const BillingDeadlineValuesSchema = z
         '20': z.strictObject({ daysBefore: z.array(positiveDays).min(1).max(5) }).optional(),
         /**
          * The one-time add-on payment page (HOS-2179 §5.2, P-2): how long the page lives, and the
-         * margin after it before the purchase window closes. Window = page + margin.
+         * margin after it before the purchase window closes. Window = page + margin. Each is
+         * capped at 1440 minutes (24 h) so a typo cannot hold a purchase identity for weeks (R-3).
          */
-        '21': z
-            .strictObject({ pageMinutes: positiveMinutes, windowMarginMinutes: positiveMinutes })
-            .optional()
+        '21': z.strictObject({ pageMinutes, windowMarginMinutes: pageMinutes }).optional()
     })
     .superRefine((values, ctx) => {
         for (const key of ['11', '12'] as const) {

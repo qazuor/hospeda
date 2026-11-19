@@ -93,7 +93,8 @@ creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP
 One-time payment pages (HOS-2179) follow RP18 (a page takes more than one
 approved payment until it expires), RP19 (an expired page takes no payment, and
 its read carries no expired flag) and, over HTTP, RP20 (the return carries the
-payment, status, reference, merchant order and page ids). The test handle
+payment, status, reference, merchant order and page ids, appended to the exact
+back_url; the `/es/` seen in the EX-68 probe was Hospeda's own root redirect). The test handle
 `payOnPage({ paymentPageId, outcome })` stands for the customer paying on the
 page. Whether the provider honours the creation key is not measured (EX-61), so
 the fake does not deduplicate by key: a repeated request opens another page.
@@ -132,7 +133,7 @@ receiver. `deliverDue` continues to send the fake's original notice format.
 | `POST /preapproval` | `authorize` then read by id | `201` resource with raw `init_point` |
 | `GET /preapproval/{id}` | `readAuthorization` | serialized resource, including `free_trial` when present |
 | `PUT /preapproval/{id}` with `{"status":"cancelled"}` | `cancel` then read by id | serialized resource |
-| `POST /checkout/preferences` | `requestOneTimePayment` then read by id | `201` resource whose `init_point` is the server's own `/fake-checkout/{id}` |
+| `POST /checkout/preferences` with the exact §5.1 body (strict: a `payer`, a `notification_url` or any unknown field is `400`) | `requestOneTimePayment` then read by id | `201` resource whose `init_point` is `{paymentScreenOrigin}/fake-checkout/{id}` |
 | `GET /checkout/preferences/{id}` | `readOneTimePayment` | serialized resource, no expired flag (RP19) |
 | `PUT /checkout/preferences/{id}` with `expiration_date_to` at or before now | `closeOneTimePayment` then read by id | serialized resource; any other update is `400` |
 | `GET /fake-checkout/{id}` | the fake payment screen (no `Authorization` needed) | HTML with approve and reject buttons; fatal screen once expired |
@@ -140,6 +141,20 @@ receiver. `deliverDue` continues to send the fake's original notice format.
 
 Every route but the fake payment screen requires a non-empty `Authorization: Bearer …` header. This
 subpath is test-only; it is not exported from the package root.
+
+**Reaching the fake payment screen.** The approval link must be `https:` (`sanitizeApprovalUrl`
+refuses anything else, and it is not loosened for tests), while this server speaks plain http. So
+the `init_point` advertises an https origin, `paymentScreenOrigin`: a bare https origin passed to
+`startFakeProviderServer`, `https://payments-fake.invalid` by default (any other value refuses to
+start). The screen itself is served at the same path on `server.url`. A browser test reaches it in
+one of two ways:
+
+- pass a real https origin that proxies to `server.url`; or
+- intercept the advertised origin and forward each request to `server.url` with the same path and
+  query, without following redirects, so the `302` back to the site reaches the browser. With
+  Playwright: `page.route(`${DEFAULT_FAKE_PAYMENT_SCREEN_ORIGIN}/**`, ...)`, rewriting the URL and
+  calling `route.fetch({ url, maxRedirects: 0 })` before `route.fulfill({ response })`. The screen's
+  forms post to relative paths, so the same interception covers approve and reject.
 
 ## The approval link is shown only sanitized
 
