@@ -25,6 +25,7 @@ import {
     type WatchAccount,
     type WatchAlert,
     type WatchAuthorization,
+    type WatchContext,
     type WatchEntry,
     WatchGuardError,
     type WatchMeasurementRecord,
@@ -148,6 +149,43 @@ function shapeAlerts(args: {
     );
 }
 
+/** The label the engine's own cleanup cancels are recorded under. */
+export const CLEANUP_CANCEL_LABEL = 'engine-cleanup-cancel';
+
+/**
+ * Cancels every pending preapproval this measurement created and did not cancel (review of #4538,
+ * K1). A measurement can lose track of one it created: the adapter may throw while parsing a 2xx
+ * create (no `init_point`, say) after the guarded send already recorded the id. The engine holds
+ * the id, so the engine sends the exact `{status: 'cancelled'}`, through the measurement's own
+ * send (the cleanup exemption lets it pass a tripped guard), BEFORE the send is settled. A cancel
+ * that fails is left for the close of the run, which reports it as `PENDING_NOT_CANCELLED`.
+ */
+async function cancelLeftPending(args: {
+    readonly entry: WatchEntry;
+    readonly state: WatchRunState;
+    readonly send: WatchContext['send'];
+}): Promise<void> {
+    const left = [...args.state.pendingCreated]
+        .filter(
+            ([id, { entryId }]) => entryId === args.entry.id && !args.state.cancelledIds.has(id)
+        )
+        .map(([id]) => id);
+    for (const id of left) {
+        try {
+            await args.send({
+                label: CLEANUP_CANCEL_LABEL,
+                request: {
+                    method: 'PUT',
+                    path: `/preapproval/${encodeURIComponent(id)}`,
+                    body: { status: 'cancelled' }
+                }
+            });
+        } catch {
+            // Not cancelled: the close of the run names it (PENDING_NOT_CANCELLED).
+        }
+    }
+}
+
 async function measureEntry(args: {
     readonly entry: WatchEntry;
     readonly input: RunWatchBatteryInput;
@@ -176,6 +214,7 @@ async function measureEntry(args: {
         runId,
         state,
         runCap: input.authorization?.maxChargeMinor ?? 0,
+        settings: input.settings ?? {},
         shapes,
         providerIds,
         record: (progress) => input.recordProgress({ runId, measurementId: entry.id, ...progress })
@@ -195,6 +234,7 @@ async function measureEntry(args: {
         failed = true;
         failure = error;
     }
+    await cancelLeftPending({ entry, state, send: guarded.send });
     // Whatever the measurement did, no send may still be in flight (nor start) when its ids are
     // read and the run is closed: settle first, then decide.
     const guardFailure = await guarded.settle();

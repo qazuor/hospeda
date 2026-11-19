@@ -7,6 +7,7 @@
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
 import {
+    CLEANUP_CANCEL_LABEL,
     runWatchBattery,
     type WatchContext,
     type WatchEntry,
@@ -101,6 +102,7 @@ async function run(catalog: readonly WatchEntry[], transport: WatchTransport) {
         transport,
         authorization: null,
         clock,
+        settings: { payerEmail: 'watch-payer@hospeda.test', returnUrl: 'https://hospeda.test' },
         ...store.ports
     });
     return { ...result, store };
@@ -173,7 +175,7 @@ describe('one pending creation per measurement', () => {
     });
 
     it('refuses the cleanup cancel once the measurement has settled', async () => {
-        const fake = provider();
+        const fake = provider({ cancelStatus: 500 });
         let late: WatchContext | undefined;
         let id = '';
         const result = await run(
@@ -186,9 +188,11 @@ describe('one pending creation per measurement', () => {
             ],
             fake.transport
         );
+        // The engine's own cancel failed; a late one from the measurement is refused all the same.
         await expect(cancel(late as WatchContext, id)).rejects.toMatchObject({
             code: 'SEND_AFTER_SETTLED'
         });
+        expect(fake.writes().filter((item) => item.method === 'PUT')).toHaveLength(1);
         expect(result.run.reason).toContain('PENDING_NOT_CANCELLED');
     });
 
@@ -296,8 +300,90 @@ describe('traceability', () => {
 });
 
 describe('every created pending preapproval is cancelled', () => {
-    it('aborts the run, naming the id, the measurement and the key, when one is left', async () => {
+    // Review of #4538 (K1): the engine, not the measurement, guarantees the cancel.
+    it('cancels, from the engine, one the measurement left behind, and completes', async () => {
         const fake = provider();
+        const result = await run(
+            [
+                entry(async (ctx) => {
+                    await create(ctx);
+                    return 'done';
+                })
+            ],
+            fake.transport
+        );
+        expect(fake.writes().map((item) => `${item.method} ${item.path}`)).toEqual([
+            'POST /preapproval',
+            'PUT /preapproval/pre-1'
+        ]);
+        expect(result.run.measurements['lifecycle-sbx']?.shapes).toHaveProperty(
+            CLEANUP_CANCEL_LABEL
+        );
+        expect(result.run.outcome).toBe('completed');
+        expect(result.run.reason).toBeUndefined();
+    });
+
+    it('cancels, from the engine, one left by a measurement that threw, and keeps its failure', async () => {
+        const fake = provider();
+        const result = await run(
+            [
+                entry(async (ctx) => {
+                    await create(ctx);
+                    throw new Error('the read failed');
+                })
+            ],
+            fake.transport
+        );
+        expect(fake.writes().filter((item) => item.method === 'PUT')).toHaveLength(1);
+        expect(result.run.outcome).toBe('failed');
+        expect(result.run.reason).toContain('the read failed');
+        expect(result.run.reason).not.toContain('PENDING_NOT_CANCELLED');
+    });
+
+    it('cancels, from the engine, one left after a guard tripped', async () => {
+        const fake = provider();
+        const result = await run(
+            [
+                entry(async (ctx) => {
+                    await create(ctx);
+                    await create(ctx);
+                    return 'done';
+                })
+            ],
+            fake.transport
+        );
+        expect(fake.writes().map((item) => `${item.method} ${item.path}`)).toEqual([
+            'POST /preapproval',
+            'PUT /preapproval/pre-1'
+        ]);
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('PENDING_CREATE_LIMIT');
+        expect(result.run.reason).not.toContain('PENDING_NOT_CANCELLED');
+    });
+
+    it('never cancels, from the engine, one another measurement created', async () => {
+        // The first one's cancel fails, so its preapproval is still uncancelled when the second ends.
+        const fake = provider({ cancelStatus: 500 });
+        const result = await run(
+            [
+                entry(async (ctx) => {
+                    await create(ctx);
+                    return 'done';
+                }),
+                entry(async () => 'done', { id: 'first-charge-sec', rows: ['RP17'] })
+            ],
+            fake.transport
+        );
+        // One cancel, by the first measurement's cleanup: the second has nothing of its own.
+        expect(fake.writes().filter((item) => item.method === 'PUT')).toHaveLength(1);
+        expect(result.run.reason).toContain('PENDING_NOT_CANCELLED');
+        expect(result.run.measurements['first-charge-sec']?.shapes).not.toHaveProperty(
+            CLEANUP_CANCEL_LABEL
+        );
+    });
+
+    it('aborts the run, naming the id, the measurement and the key, when the cancel fails', async () => {
+        const fake = provider({ cancelStatus: 500 });
         const result = await run(
             [
                 entry(async (ctx) => {
@@ -312,6 +398,25 @@ describe('every created pending preapproval is cancelled', () => {
             /^PENDING_NOT_CANCELLED: the run created and did not cancel pre-1 \(lifecycle-sbx, key hw-[0-9a-f]{40}\)$/
         );
         expect(result.mayPingWatchdog).toBe(false);
+    });
+
+    it('aborts the run when the engine cancel loses its answer', async () => {
+        const base = provider();
+        const transport: WatchTransport = async (request) => {
+            if (request.method === 'PUT') throw new Error('socket hang up');
+            return base.transport(request);
+        };
+        const result = await run(
+            [
+                entry(async (ctx) => {
+                    await create(ctx);
+                    return 'done';
+                })
+            ],
+            transport
+        );
+        expect(result.run.outcome).toBe('aborted');
+        expect(result.run.reason).toContain('PENDING_NOT_CANCELLED');
     });
 
     it('does not count a cancel the provider did not confirm', async () => {
@@ -330,7 +435,7 @@ describe('every created pending preapproval is cancelled', () => {
     });
 
     it('keeps the first failure in the reason when a run is cut short with one left', async () => {
-        const fake = provider();
+        const fake = provider({ cancelStatus: 500 });
         const result = await run(
             [
                 entry(async (ctx) => {
@@ -345,7 +450,7 @@ describe('every created pending preapproval is cancelled', () => {
         expect(result.run.reason).toContain('the read failed');
     });
 
-    it('completes when every one it created was cancelled', async () => {
+    it('completes, sending one cancel, when every one it created was cancelled', async () => {
         const fake = provider();
         const result = await run(
             [
@@ -356,6 +461,7 @@ describe('every created pending preapproval is cancelled', () => {
             ],
             fake.transport
         );
+        expect(fake.writes().filter((item) => item.method === 'PUT')).toHaveLength(1);
         expect(result.run.outcome).toBe('completed');
         expect(result.mayPingWatchdog).toBe(true);
     });

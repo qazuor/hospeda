@@ -9,6 +9,7 @@ export {
     WATCH_REFERENCE_PREFIX
 } from './catalog/watch-subjects';
 export {
+    CLEANUP_CANCEL_LABEL,
     type RunWatchBatteryInput,
     type RunWatchBatteryResult,
     runWatchBattery

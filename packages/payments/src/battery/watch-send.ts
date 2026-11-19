@@ -24,6 +24,7 @@ import {
     type WatchEntry,
     WatchGuardError,
     type WatchRequest,
+    type WatchSettings,
     type WatchTransport
 } from './types';
 import { assertHeadersAllowed } from './watch-headers';
@@ -129,6 +130,8 @@ export interface GuardedSend {
  * @param args.runId - The run
  * @param args.state - The run's state, shared by all its measurements
  * @param args.runCap - The most the whole run may charge
+ * @param args.settings - The deployment's payer email and return URL, which a pending creation
+ *   must state exactly
  * @param args.shapes - Filled with the shape of every answer, by label
  * @param args.providerIds - Filled with the ids of what writes created
  * @param args.record - Persists write keys (before sending), provider ids (as they answer) and
@@ -141,6 +144,8 @@ export function createGuardedSend(args: {
     readonly runId: string;
     readonly state: WatchRunState;
     readonly runCap: number;
+    /** What a pending creation's `back_url` and `payer_email` are pinned to (review of #4538, L2). */
+    readonly settings: WatchSettings;
     readonly shapes: Record<string, ShapeMap>;
     readonly providerIds: string[];
     readonly record: (arg: {
@@ -149,7 +154,7 @@ export function createGuardedSend(args: {
         readonly ledger: { readonly charged: number; readonly refunded: number };
     }) => Promise<void>;
 }): GuardedSend {
-    const { entry, transport, runId, state, runCap, shapes, providerIds, record } = args;
+    const { entry, transport, runId, state, runCap, settings, shapes, providerIds, record } = args;
     let entryCharged = 0;
     let pendingCreates = 0;
     const sequences = new Map<string, number>();
@@ -205,6 +210,7 @@ export function createGuardedSend(args: {
             refundMinor,
             state,
             chargeCap: runCap,
+            settings,
             entryCharged,
             entryCap: entry.maxChargeMinor ?? 0
         });

@@ -40,7 +40,12 @@ import {
     FAKE_AMOUNT_FLOOR_MINOR,
     FAKE_CURRENCY
 } from '../fake/fake-rules';
-import { type WatchGuardCode, WatchGuardError, type WatchRequest } from './types';
+import {
+    type WatchGuardCode,
+    WatchGuardError,
+    type WatchRequest,
+    type WatchSettings
+} from './types';
 
 /** What an allowed operation does with money. */
 export type WatchOperationKind = 'charge' | 'zero-charge' | 'refund' | 'non-money';
@@ -73,8 +78,8 @@ interface Rule {
     readonly kind: WatchOperationKind;
     /** The EXACT keys the body may carry. */
     readonly shape?: Shape;
-    /** Values that are pinned to what the adapter sends. */
-    readonly pins?: (body: Body) => boolean;
+    /** Values that are pinned to what the adapter sends (and, for some, to the deployment's settings). */
+    readonly pins?: (body: Body, settings: WatchSettings) => boolean;
     /** Whether the body fits the rule beyond its keys (exact-match rules). */
     readonly accepts?: (body: Body) => boolean;
     /** The pesos amounts the body states, for `charge` and `refund`. */
@@ -207,10 +212,15 @@ const RULES: readonly Rule[] = [
                 start_date: true
             }
         },
-        pins: (body) => {
+        pins: (body, settings) => {
             const recurring = nested(body, 'auto_recurring');
             const amount = pendingAmountMinorOf(body);
             return (
+                // Review of #4538 (L2): back_url and payer_email are OURS, never a measurement's.
+                settings.returnUrl !== undefined &&
+                body.back_url === settings.returnUrl &&
+                settings.payerEmail !== undefined &&
+                body.payer_email === settings.payerEmail &&
                 recurring.frequency_type === 'months' &&
                 recurring.currency_id === PENDING_CURRENCY &&
                 amount !== null &&
@@ -439,20 +449,23 @@ function statedMinorOf(args: { readonly rule: Rule; readonly body: Body }): numb
  *
  * @param args.request - The request
  * @param args.pathname - The normalized pathname
+ * @param args.settings - The deployment's payer email and return URL (a pending creation's pins)
  * @returns The operation, or `null`: the request must then be refused
  * @throws {WatchGuardError} `CHARGE_MISMATCH` when the body states a malformed or ambiguous amount
  */
 export function classifyOperation(args: {
     readonly request: WatchRequest;
     readonly pathname: string;
+    readonly settings?: WatchSettings;
 }): WatchOperation | null {
+    const settings = args.settings ?? {};
     const body = bodyOf(args.request.body);
     for (const rule of RULES) {
         if (rule.method !== args.request.method) continue;
         const match = rule.path.exec(args.pathname);
         if (!match) continue;
         if (rule.shape && !conforms(args.request.body ?? {}, rule.shape)) continue;
-        if (rule.pins && !rule.pins(body)) continue;
+        if (rule.pins && !rule.pins(body, settings)) continue;
         if (rule.accepts && !rule.accepts(body)) continue;
         const stated =
             rule.kind === 'charge' || rule.kind === 'refund' ? statedMinorOf({ rule, body }) : null;

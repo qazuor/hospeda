@@ -4,6 +4,7 @@
  * non-money only with the exact body `{status: 'cancelled'}`.
  */
 import { describe, expect, it } from 'vitest';
+import type { WatchSettings } from '../src/battery/types';
 import { classifyOperation, PENDING_AMOUNTS_MINOR } from '../src/battery/watch-operations';
 import { FAKE_AMOUNT_CEILING_MINOR, FAKE_AMOUNT_FLOOR_MINOR } from '../src/fake/fake-rules';
 
@@ -20,10 +21,13 @@ const PENDING = {
     }
 } as const;
 
-const create = (body: unknown) =>
+const SETTINGS = { payerEmail: PENDING.payer_email, returnUrl: PENDING.back_url } as const;
+
+const create = (body: unknown, settings: WatchSettings = SETTINGS) =>
     classifyOperation({
         request: { method: 'POST', path: '/preapproval', body: body as never },
-        pathname: '/preapproval'
+        pathname: '/preapproval',
+        settings
     });
 
 const put = (body: unknown) =>
@@ -122,6 +126,22 @@ describe('preapproval.create-pending', () => {
     it('is not pending without a payer email', () => {
         const { payer_email: _dropped, ...body } = PENDING;
         expect(create(body)?.rule).not.toBe('preapproval.create-pending');
+    });
+
+    // Review of #4538 (L2): the link sends its payer back to OUR site and names OUR payer.
+    it.each([
+        ['another back_url', { ...PENDING, back_url: 'https://elsewhere.test' }],
+        ['another payer email', { ...PENDING, payer_email: 'someone@elsewhere.test' }]
+    ])('is never non-money with %s than the settings', (_name, body) => {
+        expect(create(body)?.kind).not.toBe('non-money');
+    });
+
+    it.each([
+        ['no return URL', { payerEmail: PENDING.payer_email }],
+        ['no payer email', { returnUrl: PENDING.back_url }],
+        ['no settings', {}]
+    ])('is never non-money with %s set', (_name, settings) => {
+        expect(create(PENDING, settings)?.kind).not.toBe('non-money');
     });
 });
 
