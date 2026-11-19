@@ -147,7 +147,7 @@ export const getListingAmenitiesTool = defineTool({
     name: 'get_listing_amenities',
     title: 'Comodidades y características de una publicación',
     description:
-        'Shows the amenities and features a listing of the connected Hospeda user can have, grouped by category (kitchen, parking, views, …), each item marked selected when the listing already has it. Only items that apply to the listing vertical appear. Use it to guide the user category by category: show the items of a category with the selected ones marked, ask what to add or remove, then call update_listing_amenities for that category with the item ids. When the result is truncated, the omitted categories are listed: ask for each with category. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings.',
+        'Shows the full catalog of comodidades, servicios and características (amenities and features) a listing of the connected Hospeda user can have, grouped by category (kitchen, parking, views, …), each item marked selected when the listing already has it. Only items that apply to the listing vertical appear. Use it to guide the user category by category: show the items of a category with the selected ones marked, ask what to add or remove, then call update_listing_amenities for that category with the item ids. When the result is truncated, the omitted categories are listed: ask for each with category. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings.',
     inputSchema: GetListingAmenitiesInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
