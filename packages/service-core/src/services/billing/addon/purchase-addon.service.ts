@@ -3,6 +3,7 @@ import {
     addonInstances,
     addonProducts,
     and,
+    type DrizzleClient,
     domainEventModel,
     eq,
     getDb,
@@ -20,6 +21,13 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { assertAddonPurchasesOpen, platformAddonPurchasesFreeze } from './addon-purchases-freeze';
 import { findIncludesAddonsAnchor } from './includes-addons-anchor';
+import {
+    openOneTimePaymentPage,
+    PAYMENT_PAGE_OPERATION,
+    paymentPageCheckoutUrlOf,
+    paymentPageKey
+} from './one-time-payment-page';
+import { paymentPageTiming } from './one-time-payment-page-deadline';
 import { authorizePendingComplement, insertPendingComplement } from './purchase-addon-complement';
 import { resolvePurchaseTitle } from './purchase-addon-eligibility';
 import type { PurchaseAddonPorts } from './purchase-addon-ports';
@@ -41,9 +49,13 @@ function chargeKindOf(product: SelectAddonProduct): 'UNA_VEZ' | 'PERIODICO' {
     throw new Error('Unknown addon charge kind');
 }
 
-async function checkoutUrlOf(instance: SelectAddonInstance): Promise<string | undefined> {
-    if (!instance.complementSubscriptionId) return undefined;
-    const [key] = await getDb()
+async function checkoutUrlOf(
+    instance: SelectAddonInstance,
+    tx?: DrizzleClient
+): Promise<string | undefined> {
+    if (!instance.complementSubscriptionId)
+        return paymentPageCheckoutUrlOf({ instanceId: instance.id, tx });
+    const [key] = await (tx ?? getDb())
         .select({ result: idempotencyKeys.result })
         .from(idempotencyKeys)
         .where(
@@ -87,6 +99,42 @@ async function resolveExisting(
     };
 }
 
+/**
+ * HOS-2179 §5.1/§5.6: after A1 commits a page purchase, opens its page, or resumes one whose
+ * creation answer was lost, and answers with the stored sanitized link. A replay whose page is
+ * already open answers that page's link and creates nothing.
+ */
+async function withPaymentPage(
+    result: PurchaseAddonResult,
+    context: {
+        readonly request: PurchaseAddonInput;
+        readonly ports: PurchaseAddonPorts;
+        readonly deadlines: Awaited<ReturnType<typeof getCurrentBillingDeadlines>> | undefined;
+    }
+): Promise<PurchaseAddonResult> {
+    if (
+        (result.outcome !== 'CREATED' && result.outcome !== 'EXISTING') ||
+        result.chargeKind !== 'UNA_VEZ' ||
+        result.checkoutUrl
+    )
+        return result;
+    const page = await openOneTimePaymentPage(
+        {
+            instanceId: result.instanceId,
+            returnUrl: context.request.returnUrl,
+            ...(context.request.reason ? { reason: context.request.reason } : {})
+        },
+        {
+            provider: context.ports.provider,
+            clock: context.ports.clock,
+            ...(context.deadlines ? { deadlines: context.deadlines } : {})
+        }
+    );
+    return 'checkoutUrl' in page && page.checkoutUrl
+        ? { ...result, checkoutUrl: page.checkoutUrl }
+        : result;
+}
+
 /** A1: buys one addon with a durable purchase identity and a provider call after commit. */
 export async function purchaseAddon(
     input: PurchaseAddonInput,
@@ -108,8 +156,13 @@ export async function purchaseAddon(
             'Target must be null for person or global addons'
         );
     const now = ports.clock.now();
+    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ' && request.oneTimeChannel === 'PAGE';
     const deadlines =
-        chargeKindOf(product) === 'PERIODICO' ? await getCurrentBillingDeadlines() : undefined;
+        chargeKindOf(product) === 'PERIODICO' || pagePurchase
+            ? await getCurrentBillingDeadlines()
+            : undefined;
+    // HOS-2179 §5.2: a page purchase cannot be created without PLAZO:21; refuse before writing.
+    if (pagePurchase && deadlines) paymentPageTiming(deadlines);
     let created:
         | {
               readonly instanceId: string;
@@ -151,26 +204,7 @@ export async function purchaseAddon(
                 // checkout that no longer exists.
                 if (existing.status === 'ABANDONED')
                     return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' };
-                const [key] = existing.complementSubscriptionId
-                    ? await tx
-                          .select({ result: idempotencyKeys.result })
-                          .from(idempotencyKeys)
-                          .where(
-                              and(
-                                  eq(idempotencyKeys.subjectId, existing.complementSubscriptionId),
-                                  eq(idempotencyKeys.operation, 'PREAPPROVAL_CREATE')
-                              )
-                          )
-                          .limit(1)
-                    : [];
-                const value = key?.result;
-                const checkoutUrl =
-                    value &&
-                    typeof value === 'object' &&
-                    'checkoutUrl' in value &&
-                    typeof value.checkoutUrl === 'string'
-                        ? value.checkoutUrl
-                        : undefined;
+                const checkoutUrl = await checkoutUrlOf(existing, tx);
                 return {
                     outcome: 'EXISTING',
                     instanceId: existing.id,
@@ -189,11 +223,21 @@ export async function purchaseAddon(
                     addonVersionId: product.versionId,
                     targetId: request.targetId,
                     orderRequestId: request.orderRequestId,
-                    status: 'PENDING_AUTHORIZATION'
+                    status: 'PENDING_AUTHORIZATION',
+                    // The page expiry and the A3 window are measured from this instant on the
+                    // same clock A3 reads, so it is written rather than left to the database.
+                    ...(pagePurchase ? { createdAt: now } : {})
                 })
                 .returning({ id: addonInstances.id });
             if (!instance) throw new Error('Addon instance insert returned no row');
-            if (product.chargeKind === 'UNA_VEZ') {
+            if (pagePurchase) {
+                await tx.insert(idempotencyKeys).values({
+                    key: paymentPageKey(request.orderRequestId),
+                    operation: PAYMENT_PAGE_OPERATION,
+                    subjectId: instance.id
+                });
+                created = { instanceId: instance.id };
+            } else if (product.chargeKind === 'UNA_VEZ') {
                 await tx.insert(idempotencyKeys).values({
                     key: `order:${request.orderRequestId}`,
                     operation: 'ORDER_CREATE',
@@ -237,6 +281,7 @@ export async function purchaseAddon(
                 chargeKind: chargeKindOf(product)
             };
         });
+        if (pagePurchase) return withPaymentPage(result, { request, ports, deadlines });
         if (result.outcome !== 'CREATED' || !created?.complementId || !created.idempotencyKey)
             return result;
         let authorization: Awaited<ReturnType<typeof authorizePendingComplement>>;
@@ -292,7 +337,12 @@ export async function purchaseAddon(
                 .from(addonInstances)
                 .where(eq(addonInstances.orderRequestId, request.orderRequestId))
                 .limit(1);
-            if (existing) return resolveExisting(existing, request, product);
+            if (existing) {
+                const resolved = await resolveExisting(existing, request, product);
+                return pagePurchase
+                    ? withPaymentPage(resolved, { request, ports, deadlines })
+                    : resolved;
+            }
         }
         if (cause.constraint === 'uq_addon_instance_purchase_identity') {
             const [occupant] = await getDb()
