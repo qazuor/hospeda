@@ -1,5 +1,5 @@
-import { MCP_TOOL_CALL_EVENT_TYPE, VerticalEnum } from '@repo/schemas';
-import { and, eq, gte, inArray, isNull, lte, type SQL, sql } from 'drizzle-orm';
+import { MCP_TOOL_CALL_EVENT_TYPE, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { and, eq, gte, inArray, isNull, lte, ne, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { auditLogEntries } from '../../schemas/audit-log/audit_log_entry.dbschema.ts';
@@ -149,7 +149,16 @@ export class McpActivityModel extends BaseModelImpl<AuditLogEntryRow> {
         return this.getClient(tx)
             .select({ id: table.id, name: table.name, ownerId: table.ownerId })
             .from(table)
-            .where(and(inArray(table.id, [...input.ids]), isNull(table.deletedAt)));
+            .where(
+                and(
+                    inArray(table.id, [...input.ids]),
+                    isNull(table.deletedAt),
+                    // PURGED is final: the content is gone (day 180 or deleted at the
+                    // owner's request) and `deleted_at` stays NULL (HOS-2380). Every
+                    // other status, MODERATED and ARCHIVED included, is still openable.
+                    ne(table.publicationStatus, PublicationStatusEnum.PURGED)
+                )
+            );
     }
 
     /**
@@ -174,7 +183,8 @@ export class McpActivityModel extends BaseModelImpl<AuditLogEntryRow> {
                 and(
                     inArray(conversations.id, [...input.ids]),
                     isNull(conversations.deletedAt),
-                    isNull(accommodations.deletedAt)
+                    isNull(accommodations.deletedAt),
+                    ne(accommodations.publicationStatus, PublicationStatusEnum.PURGED)
                 )
             );
     }
