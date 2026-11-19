@@ -197,7 +197,8 @@
                 "title": "Recorded usages",
                 "empty": "You have not recorded any benefit usage yet.",
                 "declaredByYou": "You recorded it",
-                "declaredByHost": "The host recorded it"
+                "declaredByHost": "The host recorded it",
+                "declaredByHostNamed": "Recorded by {{name}}"
             },
             "suspended": {
                 "title": "You cannot record usages right now",
@@ -213,7 +214,8 @@
             "pending": {
                 "title": "Awaiting your confirmation",
                 "empty": "You have no usages awaiting confirmation.",
-                "declaredByHost": "The host recorded this one. Confirm it so it counts towards your numbers."
+                "declaredByHost": "The host recorded this one. Confirm it so it counts towards your numbers.",
+                "declaredByHostNamed": "{{name}} recorded this one. Confirm it so it counts towards your numbers."
             },
             "counterpart": "the host"
         },

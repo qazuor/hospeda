@@ -952,7 +952,12 @@ export class HostTradeUsageService extends BaseCrudService<
         },
         actor: Actor,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+    ): Promise<
+        ServiceOutput<{
+            items: (HostTradeBenefitUsage & { hostDisplayName: string | null })[];
+            total: number;
+        }>
+    > {
         return this.runWithLoggingAndValidation({
             methodName: 'listForProvider',
             input: { ...input, actor },
@@ -979,9 +984,51 @@ export class HostTradeUsageService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                return { items: items as HostTradeBenefitUsage[], total };
+                return {
+                    items: await this.attachHostNames(items as HostTradeBenefitUsage[], ctx),
+                    total
+                };
             }
         });
+    }
+
+    /**
+     * Attaches each row's host display name, for the PROVIDER-facing list
+     * (HOS-2376). Without it the provider cannot tell which host a pending row
+     * is about, while the confirmation e-mail does name the host.
+     *
+     * ONE query for the page, de-duplicated by host. Only the label
+     * ({@link resolveHostLabel}, the same one the linked-hosts selector uses) is
+     * kept: never the e-mail. A host that does not resolve yields `null`, so
+     * one missing user cannot fail the page.
+     *
+     * @param items - The page of usage rows.
+     * @param ctx - Optional service context, for transaction propagation.
+     */
+    private async attachHostNames(
+        items: HostTradeBenefitUsage[],
+        ctx?: ServiceContext
+    ): Promise<(HostTradeBenefitUsage & { hostDisplayName: string | null })[]> {
+        if (items.length === 0) return [];
+
+        const hostIds = [...new Set(items.map((item) => item.hostUserId))];
+        const hosts = await this.userModel.findByIds(hostIds, ctx?.tx);
+        const nameById = new Map(
+            hosts.map((host) => [
+                host.id,
+                resolveHostLabel({
+                    id: host.id,
+                    displayName: host.displayName ?? null,
+                    firstName: host.firstName ?? null,
+                    lastName: host.lastName ?? null
+                })
+            ])
+        );
+
+        return items.map((item) => ({
+            ...item,
+            hostDisplayName: nameById.get(item.hostUserId) ?? null
+        }));
     }
 
     /**

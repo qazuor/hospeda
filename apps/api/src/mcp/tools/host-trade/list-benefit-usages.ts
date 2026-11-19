@@ -20,10 +20,10 @@
  * accept.
  *
  * The counterpart's name: on the host side, the provider's name (the ref the
- * host lists carry); on the provider side, the host's display name ONLY when
- * that host is in the provider's linked-hosts selector (a confirmed pair), the
- * one place the portal names hosts to a provider. Otherwise `null`, as the
- * provider panel shows "el anfitrión".
+ * host lists carry); on the provider side, the host's display name, which
+ * `listForProvider` attaches to every row (HOS-2376, owner decision: the
+ * provider must see which host to confirm or reject; a display name only, never
+ * an e-mail). `null` only when the host does not resolve.
  *
  * Notes and provider names are third-party text, wrapped as untrusted (C-5).
  */
@@ -339,35 +339,25 @@ async function readProviderSide({
         return { page: null };
     }
     const service = getHostTradeUsageToolService();
-    const [listed, linked] = await Promise.all([
-        service.listForProvider(
-            {
-                hostTradeId: trade.id,
-                status: pendingMine ? HostTradeUsageStatusEnum.PENDING : status,
-                declaredBy: pendingMine ? HostTradeUsageDeclaredByEnum.HOST : undefined,
-                ...window
-            },
-            actor
-        ),
-        service.listLinkedHosts({ hostTradeId: trade.id }, actor)
-    ]);
+    const listed = await service.listForProvider(
+        {
+            hostTradeId: trade.id,
+            status: pendingMine ? HostTradeUsageStatusEnum.PENDING : status,
+            declaredBy: pendingMine ? HostTradeUsageDeclaredByEnum.HOST : undefined,
+            ...window
+        },
+        actor
+    );
     if (listed.error) {
         return { error: listed.error };
     }
-    const hostNames = new Map(
-        (linked.data?.hosts ?? []).map((host) => [host.id, host.displayName])
-    );
     return {
         page: {
             total: listed.data.total,
             rows: ({ noteChars }) =>
                 listed.data.items.map((row) => {
                     const providerName = wrapName(trade.name, 'provider_listing', noteChars);
-                    const hostName = wrapName(
-                        hostNames.get(row.hostUserId),
-                        'host_name',
-                        noteChars
-                    );
+                    const hostName = wrapName(row.hostDisplayName, 'host_name', noteChars);
                     return {
                         ...baseSummary({ row, noteChars, names: [providerName, hostName] }),
                         side: 'provider',

@@ -145,6 +145,34 @@ describe('ProviderUsagesPanel — answering what the host declared', () => {
         expect(screen.getByRole('button', { name: /rechazar/i })).toBeInTheDocument();
     });
 
+    /** HOS-2376: the provider must be able to tell WHICH host to answer. */
+    it('names the host on a pending row, and falls back when there is no name', () => {
+        const { unmount } = renderUsages({
+            initialPending: [{ ...(hostDeclared as object), hostDisplayName: 'Host Basico' }]
+        });
+        expect(screen.getByText(/Host Basico lo registró/)).toBeInTheDocument();
+        unmount();
+
+        renderUsages({ initialPending: [hostDeclared] });
+        expect(screen.getByText(/Lo registró el anfitrión\./)).toBeInTheDocument();
+    });
+
+    it('names the host in the history list too', () => {
+        renderUsages({
+            initialUsages: [
+                makeUsage({
+                    id: 'hist-1',
+                    declaredBy: 'HOST',
+                    status: 'CONFIRMED',
+                    hostDisplayName: 'Host Pro'
+                })
+            ],
+            initialTotal: 1
+        });
+
+        expect(screen.getByText('Lo registró Host Pro')).toBeInTheDocument();
+    });
+
     it('confirms it through the API', async () => {
         const user = userEvent.setup();
         renderUsages({ initialPending: [hostDeclared] });

@@ -669,20 +669,51 @@ describe('listPendingForHost', () => {
 // ---------------------------------------------------------------------------
 
 describe('listForProvider', () => {
-    function buildProviderList(rows: Record<string, unknown>[] = [], total = rows.length) {
+    function buildProviderList(
+        rows: Record<string, unknown>[] = [],
+        total = rows.length,
+        hosts: Record<string, unknown>[] = []
+    ) {
         const model = createModelMock();
         model.findAll = vi.fn(async () => ({ items: rows, total }));
         model.count = vi.fn(async () => total);
+        const userModel = createModelMock();
+        userModel.findByIds = vi.fn(async () => hosts);
 
         const service = new HostTradeUsageService(
             { logger: mockLogger },
             model as unknown as HostTradeBenefitUsageModel,
             createModelMock() as unknown as HostTradeModel,
-            createModelMock() as unknown as UserModel,
+            userModel as unknown as UserModel,
             async () => true
         );
-        return { service, model };
+        return { service, model, userModel };
     }
+
+    /**
+     * HOS-2376: the provider must be able to tell WHICH host to answer. Every row
+     * carries the host's display name, and nothing else of the host (no e-mail).
+     */
+    it('names the host on every row, with a display name and no e-mail', async () => {
+        const { service, userModel } = buildProviderList(
+            [makeUsage(), makeUsage({ id: 'usage-2', hostUserId: 'host-2' })],
+            2,
+            [
+                { id: HOST_ID, displayName: 'Host Basico', email: 'a@b.c' },
+                { id: 'host-2', displayName: null, firstName: 'Ana', lastName: 'Perez' }
+            ]
+        );
+
+        const result = await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const items = result.data?.items as unknown as Record<string, unknown>[];
+        expect(items.map((i) => i.hostDisplayName)).toEqual(['Host Basico', 'Ana Perez']);
+        expect(JSON.stringify(items)).not.toContain('a@b.c');
+        expect(userModel.findByIds).toHaveBeenCalledTimes(1);
+    });
 
     it('scopes every row to the listing it was told about', async () => {
         const { service, model } = buildProviderList([makeUsage()]);

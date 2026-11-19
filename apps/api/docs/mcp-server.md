@@ -436,8 +436,9 @@ Tool-specific rules:
   - `search_providers` reads `listForHost`, so a provider outside the host's
     destinations never appears; a non-host gets FORBIDDEN with a link to the
     directory. Hidden columns (pending benefit, suspension, owner) are never
-    returned. On the provider side of `list_benefit_usages`, a host is named only
-    when the pair is already linked; otherwise `counterpartName` is `null`. Long
+    returned. On the provider side of `list_benefit_usages`, every row names its
+    host in `counterpartName` (display name only, never an e-mail), so the
+    provider knows which host to confirm or reject (HOS-2376). Long
     texts step down to the response budget and `textTruncated` says so. The floor
     is measured too (`fitPageToBudget`): if it still overflows, trailing items are
     dropped, `hasMore` is `true` and `omittedItems` says how many, to be re-read
