@@ -23,6 +23,19 @@ export const PartnerClaimLookupResponseSchema = z.object({
     accountExists: z.boolean()
 });
 
+/** Protected request to check whether the signed-in account may claim a Partner. */
+export const PartnerClaimCheckRequestSchema = PartnerClaimRequestSchema.strict();
+
+/**
+ * Protected check result. It carries only a boolean: the claim mailbox must never
+ * reach an account that is not its owner (HOS-2353).
+ */
+export const PartnerClaimCheckResponseSchema = z
+    .object({
+        emailMatches: z.boolean()
+    })
+    .strict();
+
 /** Public token-bound signup request. Email is deliberately absent and unknown fields fail. */
 export const PartnerClaimSignUpRequestSchema = PartnerClaimRequestSchema.extend({
     password: StrongPasswordSchema

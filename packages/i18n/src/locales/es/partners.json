@@ -36,7 +36,8 @@
         "notFound": "No encontramos este Partner. Revisá que el link esté completo.",
         "alreadyClaimed": "Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte",
         "accountAlreadyOwns": "Tu cuenta ya es dueña de un Partner. Cada cuenta administra un solo Partner: el segundo negocio se reclama con otra cuenta. Si necesitás ayuda, escribinos a soporte.",
-        "emailMismatch": "Este Partner solo se puede reclamar con la cuenta del correo con el que se hizo la solicitud. Cerrá sesión e iniciá sesión con esa cuenta. Si el Partner es tuyo pero querés administrarlo con otro correo, escribinos a Hospeda.",
+        "emailMismatch": "Este Partner solo se puede reclamar con la cuenta del correo al que se envió el link de reclamo. Cerrá sesión e iniciá sesión con esa cuenta. Si el Partner es tuyo pero querés administrarlo con otro correo, escribinos a Hospeda.",
+        "wrongAccount": "Este Partner solo se puede reclamar con la cuenta del correo al que llegó el link. Ahora estás con otra cuenta.",
         "emailMismatchSignedInAs": "Iniciaste sesión como {{email}}.",
         "supportCta": "Escribir a soporte",
         "genericError": "No pudimos completar el reclamo. Probá de nuevo en unos minutos."
