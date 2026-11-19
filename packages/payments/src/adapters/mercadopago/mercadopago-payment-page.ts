@@ -37,9 +37,24 @@ export const NON_INSTANT_PAYMENT_TYPES = [
     'digital_currency'
 ] as const;
 
+/**
+ * Payment methods excluded one by one, a second layer under the type blacklist (P-5):
+ * Mercado Crédito (`consumer_credits`) stays out even if Mercado Pago files it under a type
+ * we do not exclude.
+ *
+ * TODO(HOS-2179 EX-62): inventory `/v1/payment_methods` and make the provider watch battery
+ * fail on any payment type that is neither excluded here nor allowed (card, account money).
+ * Follow-up, not implemented in T-1.
+ */
+export const EXCLUDED_PAYMENT_METHODS = ['consumer_credits'] as const;
+
+/** How much later than requested the provider may echo the expiry before the page is refused. */
+export const PAGE_EXPIRY_TOLERANCE_MS = 5_000;
+
 const CreatedPageSchema = z.object({
     id: z.string().min(1),
     init_point: z.string().url(),
+    expires: z.boolean().nullish(),
     expiration_date_to: z.string().nullish()
 });
 
@@ -78,7 +93,8 @@ export function buildMercadoPagoPaymentPageBody(args: {
         binary_mode: true,
         payment_methods: {
             installments: 1,
-            excluded_payment_types: NON_INSTANT_PAYMENT_TYPES.map((id) => ({ id }))
+            excluded_payment_types: NON_INSTANT_PAYMENT_TYPES.map((id) => ({ id })),
+            excluded_payment_methods: EXCLUDED_PAYMENT_METHODS.map((id) => ({ id }))
         },
         expires: true,
         expiration_date_from: args.now.toISOString(),
@@ -86,7 +102,26 @@ export function buildMercadoPagoPaymentPageBody(args: {
     };
 }
 
-/** Creates the preference with the persisted key; fails closed when no expiry comes back. */
+/**
+ * Why a created page is refused: it must expire, and no later than we asked (plus
+ * `PAGE_EXPIRY_TOLERANCE_MS`). A page that does not expire would take payments forever.
+ */
+function checkExpiry(args: {
+    readonly created: z.infer<typeof CreatedPageSchema>;
+    readonly requested: string;
+}): { readonly expiresAt: string } | { readonly refusal: string } {
+    if (args.created.expires !== true) return { refusal: 'a payment page that does not expire' };
+    const expiresAt = toIsoInstant(args.created.expiration_date_to);
+    if (expiresAt === null) return { refusal: 'a payment page without expiry' };
+    if (Date.parse(expiresAt) > Date.parse(args.requested) + PAGE_EXPIRY_TOLERANCE_MS)
+        return { refusal: 'a payment page that expires later than requested' };
+    return { expiresAt };
+}
+
+/**
+ * Creates the preference with the persisted key. A page whose expiry is refused is closed
+ * (best effort) before the call fails, so nobody can pay it; §5.6 makes the retry safe.
+ */
 export async function createMercadoPagoPaymentPage(args: {
     readonly input: OneTimePaymentInput;
     readonly now: Date;
@@ -100,28 +135,43 @@ export async function createMercadoPagoPaymentPage(args: {
         headers: { 'X-Idempotency-Key': args.input.idempotencyKey }
     });
     const created = await parseResponse(CreatedPageSchema, response, 'charge', () => args.now);
-    const expiresAt = toIsoInstant(created.expiration_date_to);
-    // A page without an expiry would take payments forever: refuse it (§5.6 makes a retry safe).
-    if (expiresAt === null)
-        throw providerError(
+    const expiry = checkExpiry({ created, requested: args.input.expiresAt });
+    if ('refusal' in expiry) {
+        const error = providerError(
             'UNAVAILABLE',
             'charge',
-            'Mercado Pago created a payment page without expiry'
+            `Mercado Pago created ${expiry.refusal}`
         );
-    return { paymentPageId: created.id, approvalUrl: created.init_point, expiresAt };
+        try {
+            await closeMercadoPagoPaymentPage({
+                paymentPageId: created.id,
+                now: args.now,
+                send: args.send
+            });
+        } catch {
+            // The original refusal is what the caller must see; the close was best effort.
+        }
+        throw error;
+    }
+    return {
+        paymentPageId: created.id,
+        approvalUrl: created.init_point,
+        expiresAt: expiry.expiresAt
+    };
 }
 
 /** Reads a preference by id; one without our reference is foreign and UNSUPPORTED. */
 export async function readMercadoPagoPaymentPage(args: {
     readonly paymentPageId: string;
     readonly send: MercadoPagoSend;
+    readonly now: () => Date;
 }): Promise<PaymentPageSnapshot> {
     const response = await args.send({
         capability: 'read',
         path: `/checkout/preferences/${encodeURIComponent(args.paymentPageId)}`,
         method: 'GET'
     });
-    const parsed = await parseResponse(ReadPageSchema, response, 'read');
+    const parsed = await parseResponse(ReadPageSchema, response, 'read', args.now);
     const reference = parsed.external_reference?.trim() ?? '';
     if (reference === '')
         throw new PaymentProviderError({

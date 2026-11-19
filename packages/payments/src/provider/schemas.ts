@@ -82,7 +82,8 @@ export const OneTimePaymentInputSchema: z.ZodType<OneTimePaymentInput> = z.stric
     idempotencyKey: NonEmptyId,
     amount: PositiveMoneySchema,
     reason: z.string().trim().min(1),
-    returnUrl: z.url(),
+    /** The customer comes back here from the provider's page: only https. */
+    returnUrl: z.url({ protocol: /^https$/ }),
     expiresAt: z.iso.datetime({ offset: true })
 });
 
