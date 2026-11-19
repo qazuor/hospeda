@@ -85,7 +85,11 @@ test.describe('TEST:B9b:12 TEST:B9b:2 AC:B9b:12 AC:B9b:2 promo redemption notice
     test.beforeAll(async () => {
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: randomUUID() }),
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: randomUUID()
+            }),
             clock
         });
         const { startE2eMailCapture } = await import('../../fixtures/mail-capture-server.ts');

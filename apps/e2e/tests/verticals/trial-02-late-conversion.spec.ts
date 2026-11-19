@@ -69,6 +69,7 @@ test.describe('TEST:V4:23 AC:V4:17 the late conversion of an expired trial (T5) 
         const clock = createAdjustableClock({ start: t0 });
         fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: crypto.randomUUID(),
                 honestAbout: [

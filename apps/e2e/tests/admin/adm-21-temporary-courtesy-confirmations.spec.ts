@@ -75,6 +75,7 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
         providerNamespace = randomUUID();
         const provider = testInfo.title.startsWith('annual plan')
             ? new FakePaymentProvider({
+                  allowLocalHttpReturnUrl: true,
                   clock,
                   idNamespace: providerNamespace,
                   honestAbout: [
@@ -87,6 +88,7 @@ test.describe('TEST:B9b:13 — the temporary courtesy confirmations say what hap
                   ]
               })
             : new FakePaymentProvider({
+                  allowLocalHttpReturnUrl: true,
                   clock,
                   idNamespace: providerNamespace,
                   honestAbout: [
