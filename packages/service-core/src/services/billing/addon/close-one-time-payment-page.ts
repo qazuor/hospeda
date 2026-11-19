@@ -19,7 +19,9 @@ export type CloseOneTimePaymentPageOutcome =
 
 /**
  * Closes the payment page of a one-time purchase that no longer waits on it, after its first
- * approved payment or its abandonment (HOS-2179 §5.7). It moves the page's expiry to now and
+ * approved payment (HOS-2179 §5.7). A2 is its only caller. A3 does not call it on abandonment:
+ * A3 abandons only once the page's stored expiry plus the window margin has passed, so the
+ * page is already closed by its own expiry and this would answer `NOT_NEEDED`. It moves the page's expiry to now and
  * confirms by re-reading the page by id (INV:D5: accepted is not applied). The durable decision
  * is the instance leaving `PENDING_AUTHORIZATION`, committed before this call; the provider call
  * is a repeatable expiry move, so a retry after a lost answer is safe. A page whose purchase is

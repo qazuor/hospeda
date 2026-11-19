@@ -59,6 +59,7 @@ import {
     MAX_BULK_CHECK_ENTITY_IDS,
     type OwnManualInstallmentsResponse,
     type OwnSubscriptionsResponseSchema,
+    type PartnerClaimCheckResponseSchema,
     type PartnerClaimResponseSchema,
     type SelfSubscriptionPausePreviewResponseSchema,
     type SelfSubscriptionPauseResponseSchema,
@@ -1237,6 +1238,12 @@ export interface BenefitUsage {
      * is the recoverable direction.
      */
     readonly hasReview: boolean;
+    /**
+     * The host's display name, on the PROVIDER's own list only (HOS-2376,
+     * `GET /mine/usages`). Never an e-mail. Absent on the host's lists and
+     * `null` when the host did not resolve.
+     */
+    readonly hostDisplayName?: string | null;
 }
 
 /** Response envelope shared by the three usage transitions. */
@@ -2139,6 +2146,27 @@ export const partnersApi = {
     }): Promise<ApiResult<z.infer<typeof PartnerClaimResponseSchema>>> {
         return apiClient.postProtected({
             path: '/api/v1/protected/partner-claims',
+            body: { partnerId, secret }
+        });
+    },
+
+    /**
+     * Asks whether the signed-in account is the account of a claim link's mailbox
+     * (HOS-2353). Answers a boolean only; never the mailbox itself.
+     *
+     * @param params - Partner UUID and the secret from the URL fragment.
+     * @returns `{ emailMatches }`, or an error (404 invalid link, 409 already
+     * claimed, 401 unauthenticated).
+     */
+    checkClaim({
+        partnerId,
+        secret
+    }: {
+        readonly partnerId: string;
+        readonly secret: string;
+    }): Promise<ApiResult<z.infer<typeof PartnerClaimCheckResponseSchema>>> {
+        return apiClient.postProtected({
+            path: '/api/v1/protected/partner-claims/check',
             body: { partnerId, secret }
         });
     },

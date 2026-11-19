@@ -133,6 +133,25 @@ function describeError(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
+/**
+ * The alert for a measurement that could not be read. A provider that changed the shape of an
+ * answer is the most useful divergence a run can find, and it is exactly what makes a
+ * measurement throw, so it must reach the administrator and not only the stored run.
+ */
+function erroredAlert(args: {
+    readonly id: string;
+    readonly expected: JsonValue;
+    readonly error: string;
+}): WatchAlert {
+    return {
+        measurementId: args.id,
+        kind: 'measurement_errored',
+        expected: args.expected,
+        obtained: null,
+        details: [args.error]
+    };
+}
+
 function shapeAlerts(args: {
     readonly id: string;
     readonly previous: MeasurementShapes | undefined;
@@ -264,7 +283,13 @@ async function measureEntry(args: {
                 providerIds,
                 error: describeError(failure)
             },
-            alerts: []
+            alerts: [
+                erroredAlert({
+                    id: entry.id,
+                    expected: entry.expected,
+                    error: describeError(failure)
+                })
+            ]
         };
     }
     const alerts: WatchAlert[] = [];
@@ -460,6 +485,13 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
                     providerIds: sink.providerIds,
                     error: describeError(error)
                 };
+                alerts.push(
+                    erroredAlert({
+                        id: entry.id,
+                        expected: entry.expected,
+                        error: describeError(error)
+                    })
+                );
                 outcome = error instanceof WatchGuardError ? 'aborted' : 'failed';
                 reason = describeError(error);
                 break;

@@ -669,20 +669,79 @@ describe('listPendingForHost', () => {
 // ---------------------------------------------------------------------------
 
 describe('listForProvider', () => {
-    function buildProviderList(rows: Record<string, unknown>[] = [], total = rows.length) {
+    function buildProviderList(
+        rows: Record<string, unknown>[] = [],
+        total = rows.length,
+        hosts: Record<string, unknown>[] = []
+    ) {
         const model = createModelMock();
         model.findAll = vi.fn(async () => ({ items: rows, total }));
         model.count = vi.fn(async () => total);
+        const userModel = createModelMock();
+        userModel.findByIds = vi.fn(async () => hosts);
 
         const service = new HostTradeUsageService(
             { logger: mockLogger },
             model as unknown as HostTradeBenefitUsageModel,
             createModelMock() as unknown as HostTradeModel,
-            createModelMock() as unknown as UserModel,
+            userModel as unknown as UserModel,
             async () => true
         );
-        return { service, model };
+        return { service, model, userModel };
     }
+
+    /**
+     * HOS-2376: the provider must be able to tell WHICH host to answer, so a
+     * HOST-declared row carries the host's display name (and nothing else).
+     */
+    it('names the host on a host-declared row, with no e-mail and no id fallback', async () => {
+        const { service, userModel } = buildProviderList(
+            [
+                makeUsage({ declaredBy: 'HOST', declaredById: HOST_ID }),
+                makeUsage({ id: 'usage-2', hostUserId: 'host-2', declaredBy: 'HOST' }),
+                makeUsage({ id: 'usage-3', hostUserId: 'host-3', declaredBy: 'HOST' })
+            ],
+            3,
+            [
+                { id: HOST_ID, displayName: 'Host Basico', email: 'a@b.c' },
+                { id: 'host-2', displayName: null, firstName: 'Ana', lastName: 'Perez' },
+                { id: 'host-3', displayName: null, firstName: null, lastName: null }
+            ]
+        );
+
+        const result = await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const items = result.data?.items as unknown as Record<string, unknown>[];
+        expect(items.map((i) => i.hostDisplayName)).toEqual(['Host Basico', 'Ana Perez', null]);
+        expect(JSON.stringify(items)).not.toContain('a@b.c');
+        expect(userModel.findByIds).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * Regression (security review of HOS-2376): on a PROVIDER-declared row the
+     * provider named the host, possibly by e-mail. Naming them back would be an
+     * e-mail-to-real-name oracle, so the read exposes no name it did not have.
+     */
+    it('never names the host on a provider-declared row, and never even reads the user', async () => {
+        const { service, userModel } = buildProviderList(
+            [makeUsage({ declaredBy: 'PROVIDER', status: 'PENDING' })],
+            1,
+            [{ id: HOST_ID, displayName: 'Nombre Real', email: 'a@b.c' }]
+        );
+
+        const result = await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const items = result.data?.items as unknown as Record<string, unknown>[];
+        expect(items[0]?.hostDisplayName).toBeNull();
+        expect(JSON.stringify(items)).not.toContain('Nombre Real');
+        expect(userModel.findByIds).not.toHaveBeenCalled();
+    });
 
     it('scopes every row to the listing it was told about', async () => {
         const { service, model } = buildProviderList([makeUsage()]);

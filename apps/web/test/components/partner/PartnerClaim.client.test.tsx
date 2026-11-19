@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
     user: { id: 'signed-in-user', name: 'Test', email: 'test@example.test' },
     permissions: [] as string[],
     claim: vi.fn(),
+    checkClaim: vi.fn(),
     refresh: vi.fn(),
     lookup: vi.fn(),
     signUp: vi.fn(),
@@ -35,7 +36,11 @@ vi.mock('../../../src/lib/api/endpoints-protected', async (importOriginal) => {
         await importOriginal<typeof import('../../../src/lib/api/endpoints-protected')>();
     return {
         ...actual,
-        partnersApi: { ...actual.partnersApi, claim: mocks.claim }
+        partnersApi: {
+            ...actual.partnersApi,
+            claim: mocks.claim,
+            checkClaim: mocks.checkClaim
+        }
     };
 });
 
@@ -89,6 +94,7 @@ describe('PartnerClaim', () => {
         ) as PropertyDescriptor;
         mocks.authenticated = false;
         mocks.claim.mockReset().mockResolvedValue({ ok: true, data: CLAIMED });
+        mocks.checkClaim.mockReset().mockResolvedValue({ ok: true, data: { emailMatches: true } });
         mocks.refresh.mockReset().mockResolvedValue(undefined);
         mocks.lookup.mockReset().mockResolvedValue({
             ok: true,
@@ -291,7 +297,7 @@ describe('PartnerClaim', () => {
         expect(mocks.refresh).not.toHaveBeenCalled();
     });
 
-    it('tells an account with a different email to use the application account or contact Hospeda (HOS-2222)', async () => {
+    it('tells an account that slipped past the check to use the claim-mailbox account (403 safety net) (HOS-2222)', async () => {
         // Arrange
         setAuthenticated(true);
         setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
@@ -311,7 +317,7 @@ describe('PartnerClaim', () => {
         // Assert
         expect(
             await screen.findByText(
-                'Este Partner solo se puede reclamar con la cuenta del correo con el que se hizo la solicitud. Cerrá sesión e iniciá sesión con esa cuenta. Si el Partner es tuyo pero querés administrarlo con otro correo, escribinos a Hospeda.'
+                'Este Partner solo se puede reclamar con la cuenta del correo al que se envió el link de reclamo. Cerrá sesión e iniciá sesión con esa cuenta. Si el Partner es tuyo pero querés administrarlo con otro correo, escribinos a Hospeda.'
             )
         ).toBeInTheDocument();
         expect(screen.getByText('Iniciaste sesión como test@example.test.')).toBeInTheDocument();
@@ -408,12 +414,12 @@ describe('PartnerClaim', () => {
         for (const [locale, copy, signedInAs] of [
             [
                 'en',
-                'This Partner can only be claimed with the account for the email address used in the application. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.',
+                'This Partner can only be claimed with the account for the email address the claim link was sent to. Sign out and sign in with that account. If the Partner is yours but you want to manage it with a different email address, contact Hospeda.',
                 'You are signed in as test@example.test.'
             ],
             [
                 'pt',
-                'Este Partner só pode ser reivindicado com a conta do e-mail usado na solicitação. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.',
+                'Este Partner só pode ser reivindicado com a conta do e-mail para o qual o link de reivindicação foi enviado. Saia e entre com essa conta. Se o Partner é seu, mas você quer administrá-lo com outro e-mail, fale com a Hospeda.',
                 'Você entrou como test@example.test.'
             ]
         ] as const) {
@@ -489,5 +495,142 @@ describe('PartnerClaim', () => {
         expect(
             await screen.findByText('Listo: el Partner quedó vinculado a tu cuenta.')
         ).toBeInTheDocument();
+    });
+
+    describe('wrong account detected before the claim (HOS-2353)', () => {
+        const WARNING =
+            'Este Partner solo se puede reclamar con la cuenta del correo al que llegó el link. Ahora estás con otra cuenta.';
+
+        beforeEach(() => {
+            setAuthenticated(true);
+            setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+            mocks.checkClaim.mockResolvedValue({ ok: true, data: { emailMatches: false } });
+        });
+
+        it('warns before any click, offers sign-out, and never offers or calls the claim', async () => {
+            renderClaim();
+
+            expect(await screen.findByText(WARNING)).toBeInTheDocument();
+            expect(mocks.checkClaim).toHaveBeenCalledExactlyOnceWith({
+                partnerId: PARTNER_ID,
+                secret: SECRET
+            });
+            expect(
+                screen.getByText('Iniciaste sesión como test@example.test.')
+            ).toBeInTheDocument();
+            expect(
+                screen.getByRole('button', { name: 'Cerrar sesión y continuar' })
+            ).toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: 'Reclamar el Partner' })).toBeNull();
+            expect(mocks.claim).not.toHaveBeenCalled();
+            expect(document.body.textContent).not.toContain('claim@example.test');
+        });
+
+        it('still reaches the sign-in flow after signing out, dropping the cached account (HOS-2338)', async () => {
+            renderClaim();
+            const button = await screen.findByRole('button', { name: 'Cerrar sesión y continuar' });
+            window.sessionStorage.setItem(
+                AUTH_ME_CACHE_KEY,
+                JSON.stringify({
+                    isAuthenticated: true,
+                    user: mocks.user,
+                    permissions: [],
+                    roles: ['USER'],
+                    cachedAt: Date.now()
+                })
+            );
+            const reload = vi.fn();
+            Object.defineProperty(window, 'location', {
+                configurable: true,
+                writable: true,
+                value: { pathname: PATH, hash: '', reload }
+            });
+
+            await userEvent.click(button);
+
+            expect(mocks.signOut).toHaveBeenCalledOnce();
+            expect(window.sessionStorage.getItem(AUTH_ME_CACHE_KEY)).toBeNull();
+            expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).not.toBeNull();
+            expect(reload).toHaveBeenCalledOnce();
+
+            // After the reload the guest resumes through the pending action and lookup.
+            setAuthenticated(false);
+            mocks.lookup.mockResolvedValue({
+                ok: true,
+                data: { email: 'claim@example.test', accountExists: true }
+            });
+            Object.defineProperty(window, 'location', locationDescriptor);
+            window.history.replaceState(null, '', PATH);
+            renderClaim();
+            expect(
+                await screen.findByText('Iniciá sesión para reclamar el Partner.')
+            ).toBeInTheDocument();
+        });
+
+        it('goes to confirm when the account matches', async () => {
+            mocks.checkClaim.mockResolvedValue({ ok: true, data: { emailMatches: true } });
+            renderClaim();
+
+            expect(
+                await screen.findByRole('button', { name: 'Reclamar el Partner' })
+            ).toBeInTheDocument();
+            expect(screen.queryByText(WARNING)).toBeNull();
+        });
+
+        it('shows not-found on a 404 check', async () => {
+            mocks.checkClaim.mockResolvedValue({
+                ok: false,
+                error: { status: 404, message: 'x' }
+            });
+            renderClaim();
+
+            expect(
+                await screen.findByText(
+                    'No encontramos este Partner. Revisá que el link esté completo.'
+                )
+            ).toBeInTheDocument();
+            expect(screen.queryByRole('button', { name: 'Reclamar el Partner' })).toBeNull();
+        });
+
+        it('shows the generic error on a network failure', async () => {
+            mocks.checkClaim.mockRejectedValue(new Error('network'));
+            renderClaim();
+
+            expect(await screen.findByRole('alert')).toBeInTheDocument();
+            expect(mocks.claim).not.toHaveBeenCalled();
+        });
+
+        it('renders the warning in English and Portuguese', async () => {
+            for (const [locale, copy] of [
+                [
+                    'en',
+                    'This Partner can only be claimed with the account for the email address the link was sent to. You are currently signed in with a different account.'
+                ],
+                [
+                    'pt',
+                    'Este Partner só pode ser reivindicado com a conta do e-mail para o qual o link foi enviado. Agora você está com outra conta.'
+                ]
+            ] as const) {
+                setFragment(`partner=${PARTNER_ID}&secret=${SECRET}`);
+                const view = render(<PartnerClaim locale={locale} />);
+                expect(await screen.findByText(copy)).toBeInTheDocument();
+                view.unmount();
+            }
+        });
+
+        it.each([
+            'es',
+            'en',
+            'pt'
+        ] as const)('keeps the application wording out of the %s claim copy', async (locale) => {
+            const { createTranslations } = await import('../../../src/lib/i18n');
+            const { t } = createTranslations(locale);
+            for (const key of [
+                'partners.claim.emailMismatch',
+                'partners.claim.wrongAccount'
+            ] as const) {
+                expect(t(key)).not.toMatch(/solicitud|application|solicita[cç][aã]o/i);
+            }
+        });
     });
 });

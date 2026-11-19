@@ -1,0 +1,1 @@
+ALTER TABLE "idempotency_key" ADD COLUMN "request" jsonb;

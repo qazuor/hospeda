@@ -188,6 +188,60 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4553
+    {
+        id: '2026-11-19-unfinished-plan-change-stops-blocking',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Un cambio de plan que no terminaste ya no te traba la suscripción',
+            en: 'A plan change you did not finish no longer blocks your subscription',
+            pt: 'Uma troca de plano que você não terminou não trava mais sua assinatura'
+        },
+        body: {
+            es: 'Si empezaste un cambio de plan y no completaste el pago, cuando ese intento vence o lo reiniciás tu suscripción vuelve a la normalidad: podés usar códigos promocionales y registrar pagos como siempre.',
+            en: 'If you started a plan change and did not complete the payment, once that attempt expires or you start it again your subscription goes back to normal: you can use promo codes and payments are recorded as usual.',
+            pt: 'Se você começou uma troca de plano e não concluiu o pagamento, quando essa tentativa vence ou você a reinicia sua assinatura volta ao normal: você pode usar códigos promocionais e os pagamentos são registrados como sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4549
+    {
+        id: '2026-11-19-addon-purchase-errors-explained',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Si una compra de complemento no sale, te decimos por qué',
+            en: 'If an add-on purchase fails, we tell you why',
+            pt: 'Se a compra de um complemento não der certo, dizemos por quê'
+        },
+        body: {
+            es: 'En **Comprar complementos**, cuando una compra no se puede hacer ves un mensaje claro en lugar de un código de error: por ejemplo, que necesitás un plan activo que lo permita, o que el complemento cambió y conviene recargar la página.',
+            en: 'In **Buy add-ons**, when a purchase cannot go through you see a clear message instead of an error code: for example, that you need an active plan that allows it, or that the add-on changed and you should reload the page.',
+            pt: 'Em **Comprar complementos**, quando uma compra não pode ser feita você vê uma mensagem clara em vez de um código de erro: por exemplo, que precisa de um plano ativo que o permita, ou que o complemento mudou e é melhor recarregar a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4531
+    {
+        id: '2026-11-19-active-addons-show-as-active',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los complementos que ya tenés aparecen como «Activo»',
+            en: 'Add-ons you already have show as «Active»',
+            pt: 'Os complementos que você já tem aparecem como «Ativo»'
+        },
+        body: {
+            es: 'En **Comprar complementos**, un complemento que ya tenés activo muestra la etiqueta «Activo» y no se puede volver a comprar. Si igual intentás comprarlo, te avisamos con un mensaje claro en lugar de un código de error.',
+            en: 'In **Buy add-ons**, an add-on you already have active shows an «Active» label and cannot be bought again. If you still try to buy it, you get a clear message instead of an error code.',
+            pt: 'Em **Comprar complementos**, um complemento que você já tem ativo mostra a etiqueta «Ativo» e não pode ser comprado de novo. Se mesmo assim tentar comprá-lo, você recebe uma mensagem clara em vez de um código de erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4474, #4532
     {
         id: '2026-11-17-assistant-refusals-link-to-the-fix',
@@ -275,6 +329,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'El asistente te lista las reseñas de tus alojamientos, comercios y experiencias, de la más nueva a la más vieja, con la calificación, el texto y si está aprobada, pendiente o rechazada. Podés filtrar por publicación, calificación, fecha o estado.',
             en: 'The assistant lists the reviews of your accommodations, venues and experiences, newest first, with the rating, the text and whether each one is approved, pending or rejected. You can filter by listing, rating, date or status.',
             pt: 'O assistente lista as avaliações das suas hospedagens, comércios e experiências, da mais nova para a mais antiga, com a nota, o texto e se cada uma está aprovada, pendente ou rejeitada. Você pode filtrar por anúncio, nota, data ou status.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4577
+    {
+        id: '2026-11-19-assistant-listing-location-and-amenities',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya sabe dónde queda tu publicación y qué comodidades tiene',
+            en: 'Your AI assistant now knows where your listing is and what amenities it has',
+            pt: 'Seu assistente de IA agora sabe onde fica seu anúncio e quais comodidades ele tem'
+        },
+        body: {
+            es: 'Preguntale «¿qué características tiene mi alojamiento y dónde queda?» y te responde con la dirección, el destino y las comodidades y servicios por nombre, sin que tengas que buscarlos.',
+            en: 'Ask it «what features does my listing have and where is it?» and it answers with the address, the destination and the amenities and services by name, without you having to look them up.',
+            pt: 'Pergunte «quais características tem meu anúncio e onde fica?» e ele responde com o endereço, o destino e as comodidades e serviços pelo nome, sem que você precise procurar.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },

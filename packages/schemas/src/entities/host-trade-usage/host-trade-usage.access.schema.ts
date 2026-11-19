@@ -53,6 +53,25 @@ export const HostTradeBenefitUsageProtectedSchema = HostTradeBenefitUsageSchema.
 export type HostTradeBenefitUsageProtected = z.infer<typeof HostTradeBenefitUsageProtectedSchema>;
 
 /**
+ * A usage as the PROVIDER's own screens read it (HOS-2376): the protected row
+ * plus the display name of the host it concerns.
+ *
+ * Without it a provider facing a host-declared row cannot tell which host to
+ * confirm or reject. ONLY the display name travels (the same label the
+ * linked-hosts selector shows): no e-mail and no id beyond the `hostUserId`
+ * the row already carries. Nullable and defaulted for the same reason as
+ * `hostTrade`: one unresolved name must not 500 the whole page.
+ */
+export const HostTradeBenefitUsageWithHostNameSchema = HostTradeBenefitUsageProtectedSchema.extend({
+    hostDisplayName: z.string().min(1).nullable().default(null)
+});
+
+/** Inferred type for {@link HostTradeBenefitUsageWithHostNameSchema}. */
+export type HostTradeBenefitUsageWithHostName = z.infer<
+    typeof HostTradeBenefitUsageWithHostNameSchema
+>;
+
+/**
  * The provider's identity, as a host's own usage rows carry it.
  *
  * Four fields plus the category refs (HOS-919), and no more: enough to name the provider, link to its QR landing

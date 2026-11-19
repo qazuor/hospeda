@@ -235,3 +235,60 @@ describe('HOS-1669 TEST:1669:11 AC:1669:1 deliberate charge rejection', () => {
         expect(fetch).not.toHaveBeenCalled();
     });
 });
+
+describe('HOS-2384 TEST:2384:1 the real order search answers paging.total as a string', () => {
+    const from = '2026-10-01T00:00:00.000Z';
+    const to = '2026-10-29T00:00:00.000Z';
+    const search = (body: unknown) =>
+        new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'test-token',
+            fetch: async () => new Response(JSON.stringify(body))
+        }).searchOrders({ reference: 'r', createdFrom: from, createdTo: to });
+    const row = { id: 'ORD1', external_reference: 'r', created_date: from };
+
+    it('reads the measured empty body, total "0" as text', async () => {
+        expect(await search({ data: [], paging: { total: '0' } })).toEqual({ orders: [] });
+    });
+
+    it('reads a text total that matches the rows, and a numeric one too', async () => {
+        const expected = { orders: [{ orderId: 'ORD1', reference: 'r', createdAt: from }] };
+        expect(await search({ data: [row], paging: { total: '1' } })).toEqual(expected);
+        expect(await search({ data: [row], paging: { total: 1 } })).toEqual(expected);
+    });
+
+    it('still fails an incomplete page when the total is text', async () => {
+        await expect(search({ data: [row], paging: { total: '2' } })).rejects.toMatchObject({
+            code: 'UNAVAILABLE'
+        });
+    });
+
+    it.each([
+        ['a negative number', -1],
+        ['a decimal number', 1.5],
+        ['a negative string', '-1'],
+        ['a decimal string', '1.5'],
+        ['a non-numeric string', 'many'],
+        ['an empty string', ''],
+        ['a padded string', ' 1'],
+        ['an exponent string', '1e0'],
+        ['a hexadecimal string', '0x1'],
+        ['null', null],
+        ['a boolean', true],
+        ['a digit string past the safe integer range', '9007199254740993'],
+        ['a digit string that reads as Infinity', '9'.repeat(400)]
+    ])('rejects %s as an invalid response', async (_name, total) => {
+        // Two rows, so a coerced small total (1) would be ACCEPTED: the rejection must come from the schema.
+        await expect(
+            search({ data: [row, { ...row, id: 'ORD2' }], paging: { total } })
+        ).rejects.toMatchObject({
+            code: 'UNAVAILABLE'
+        });
+    });
+
+    it('rejects a body without paging.total', async () => {
+        await expect(search({ data: [], paging: {} })).rejects.toMatchObject({
+            code: 'UNAVAILABLE'
+        });
+    });
+});

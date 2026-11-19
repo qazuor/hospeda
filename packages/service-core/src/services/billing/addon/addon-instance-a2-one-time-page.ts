@@ -1,9 +1,23 @@
+import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
-import { addonInstances, addonProducts, and, eq, getDb, idempotencyKeys, payments } from '@repo/db';
+import {
+    addonInstances,
+    addonProducts,
+    and,
+    domainEvent,
+    eq,
+    getDb,
+    idempotencyKeys,
+    isNotNull,
+    payments,
+    reconciliationMarks,
+    sql
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports';
+import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import { activateOneTimeInstance } from './addon-instance-a2-one-time-activation';
 import type { A5Ports } from './addon-instance-a5';
 import { closeOneTimePaymentPage } from './close-one-time-payment-page';
@@ -30,10 +44,12 @@ export type ConfirmOneTimePagePaymentPorts = A5Ports & {
  *   collection on the same page (§5.8). It activates nothing; the duplicate mark is the caller's.
  * - `LATE_PAYMENT`: the purchase closed with no payment (abandoned, for one): the payment
  *   arrived after it closed (§5.9). It activates nothing; mark 23 is the caller's.
- * - `AMOUNT_MISMATCH`: approved with another amount or currency than the anchored price (AC-8).
+ * - `AMOUNT_MISMATCH`: approved with another amount or currency than the anchored price (AC-8),
+ *   whatever state the purchase is in. It activates nothing, and `DIVERGENCIA_DE_MONTO` is
+ *   already open on the instance when this is returned.
  * - `NOT_APPROVED`: rejected, pending or refunded; the purchase keeps waiting (AC-9).
  * - `NOT_THIS_PURCHASE`: the payment carries another reference or hangs from an authorization.
- * - `UNKNOWN`: the provider did not answer the read.
+ * - `UNKNOWN`: the provider did not answer the read, or the divergence mark could not be opened.
  * - `NOT_APPLICABLE`: the instance is not a page purchase.
  */
 export type ConfirmOneTimePagePaymentResult =
@@ -66,6 +82,85 @@ async function settledOutcome(input: {
     if (held.some((payment) => payment.providerFactId === input.chargeId))
         return 'ALREADY_CONFIRMED';
     return held.length > 0 ? 'DUPLICATE_PAYMENT' : 'LATE_PAYMENT';
+}
+
+/**
+ * Whether a lifted `DIVERGENCIA_DE_MONTO` on the instance already names this provider charge in
+ * one of its opening events. The open-mark uniqueness is per (instance, reason) over OPEN marks
+ * only, so without this a lifted mark would be reopened by the next read of the same charge.
+ */
+async function divergenceLiftedFor(input: {
+    readonly instanceId: string;
+    readonly chargeId: string;
+}): Promise<boolean> {
+    const [lifted] = await getDb()
+        .select({ id: reconciliationMarks.id })
+        .from(reconciliationMarks)
+        .innerJoin(
+            domainEvent,
+            and(
+                eq(domainEvent.eventType, 'reconciliation.mark_opened'),
+                eq(domainEvent.entityType, 'addon_instance'),
+                eq(domainEvent.entityId, input.instanceId),
+                sql`${domainEvent.changes} @> jsonb_build_array(jsonb_build_object('field', 'reconciliation_mark.id', 'new', ${reconciliationMarks.id}::text))`,
+                sql`${domainEvent.changes} @> ${JSON.stringify([{ field: 'provider.charge_id', new: input.chargeId }])}::jsonb`
+            )
+        )
+        .where(
+            and(
+                eq(reconciliationMarks.addonInstanceId, input.instanceId),
+                eq(reconciliationMarks.reason, 'DIVERGENCIA_DE_MONTO'),
+                isNotNull(reconciliationMarks.liftedAt)
+            )
+        )
+        .limit(1);
+    return lifted !== undefined;
+}
+
+/**
+ * Opens `DIVERGENCIA_DE_MONTO` (MOT:5, AC-8) on the instance for an approved payment of another
+ * amount or currency than the anchored price. The provider's id and both amounts travel in the
+ * mark's event; there is no `payment` row to hang, since the money activated nothing. A repeated
+ * notice or a later A3 accumulates on the same open mark, and a charge whose mark a person
+ * already lifted does not reopen it. `AMOUNT_MISMATCH` is returned only once the mark is open
+ * or was lifted for this charge, so a caller may treat it as decided; a failure to open it is `UNKNOWN`.
+ */
+async function recordAmountMismatch(input: {
+    readonly instanceId: string;
+    readonly chargeId: string;
+    readonly expected: { readonly amountMinor: number; readonly currency: string };
+    readonly actual: { readonly amountMinor: number; readonly currency: string };
+}): Promise<{ readonly outcome: 'AMOUNT_MISMATCH' | 'UNKNOWN' }> {
+    logger.error(input, 'Approved page payment differs from the anchored price; not activated');
+    try {
+        // A person lifted MOT:5 for this very charge: it is settled. Re-reading the same
+        // still-approved charge (a repeated notice, A3, the sweep) must not reopen it.
+        if (await divergenceLiftedFor(input)) return { outcome: 'AMOUNT_MISMATCH' };
+        await openReconciliationMark({
+            subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
+            reason: 'DIVERGENCIA_DE_MONTO',
+            actor: { type: 'provider' },
+            correlationId: randomUUID(),
+            detail: [
+                { field: 'provider.charge_id', new: input.chargeId },
+                { field: 'reconciliation_mark.expected_minor', new: input.expected.amountMinor },
+                { field: 'reconciliation_mark.expected_currency', new: input.expected.currency },
+                { field: 'provider.charge_amount_minor', new: input.actual.amountMinor },
+                { field: 'provider.charge_currency', new: input.actual.currency }
+            ]
+        });
+    } catch (error) {
+        logger.error(
+            {
+                instanceId: input.instanceId,
+                chargeId: input.chargeId,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Could not open the amount divergence mark; left undecided'
+        );
+        return { outcome: 'UNKNOWN' };
+    }
+    return { outcome: 'AMOUNT_MISMATCH' };
 }
 
 /**
@@ -126,6 +221,18 @@ export async function confirmOneTimePagePayment(
         return { outcome: 'NOT_THIS_PURCHASE' };
     if (snapshot.status !== 'approved') return { outcome: 'NOT_APPROVED' };
 
+    // The amount goes first, whatever the purchase became: money of another amount is MOT:5
+    // and only MOT:5, so the same payment never also raises MOT:20 or MOT:23 later.
+    if (
+        snapshot.amount.amountMinor !== found.product.price ||
+        snapshot.amount.currency !== found.product.currency
+    )
+        return await recordAmountMismatch({
+            instanceId: found.instance.id,
+            chargeId: snapshot.chargeId,
+            expected: { amountMinor: found.product.price, currency: found.product.currency },
+            actual: snapshot.amount
+        });
     if (found.instance.status !== 'PENDING_AUTHORIZATION')
         return {
             outcome: await settledOutcome({
@@ -133,21 +240,6 @@ export async function confirmOneTimePagePayment(
                 chargeId: snapshot.chargeId
             })
         };
-    if (
-        snapshot.amount.amountMinor !== found.product.price ||
-        snapshot.amount.currency !== found.product.currency
-    ) {
-        logger.error(
-            {
-                instanceId: found.instance.id,
-                chargeId: snapshot.chargeId,
-                expected: { amountMinor: found.product.price, currency: found.product.currency },
-                actual: snapshot.amount
-            },
-            'Approved page payment differs from the anchored price; not activated'
-        );
-        return { outcome: 'AMOUNT_MISMATCH' };
-    }
 
     const activation = await activateOneTimeInstance(
         {

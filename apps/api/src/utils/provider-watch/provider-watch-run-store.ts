@@ -131,8 +131,12 @@ export async function closeWatchRun(args: {
 }): Promise<{ readonly mailsQueued: number }> {
     const { run } = args;
     const outcome = await getDb().transaction(async (tx) => {
-        const recipients = run.alerts.length > 0 ? await listSuperAdminRecipients({ tx }) : [];
-        const undeliverable = run.alerts.length > 0 && recipients.length === 0;
+        // A run that failed or was aborted is mailed even with no alert: the administrator has to
+        // learn it, and the external watchdog (a day late) cannot say which measurement fell.
+        const mustMail =
+            run.alerts.length > 0 || run.outcome === 'failed' || run.outcome === 'aborted';
+        const recipients = mustMail ? await listSuperAdminRecipients({ tx }) : [];
+        const undeliverable = mustMail && recipients.length === 0;
         await providerWatchRunModel.close({
             id: args.runId,
             finishedAt: run.finishedAt,
@@ -152,18 +156,19 @@ export async function closeWatchRun(args: {
             tx
         });
         if (undeliverable) return { undeliverable: true as const, mailsQueued: 0 };
-        const { queued } =
-            run.alerts.length > 0
-                ? await enqueueProviderWatchAlerts({
-                      runId: args.runId,
-                      account: run.account,
-                      finishedAt: run.finishedAt,
-                      alerts: run.alerts,
-                      recipients,
-                      correlationId: args.correlationId,
-                      tx
-                  })
-                : { queued: 0 };
+        const { queued } = mustMail
+            ? await enqueueProviderWatchAlerts({
+                  runId: args.runId,
+                  account: run.account,
+                  finishedAt: run.finishedAt,
+                  alerts: run.alerts,
+                  outcome: run.outcome,
+                  reason: run.reason,
+                  recipients,
+                  correlationId: args.correlationId,
+                  tx
+              })
+            : { queued: 0 };
         return { undeliverable: false as const, mailsQueued: queued };
     });
     if (outcome.undeliverable) {

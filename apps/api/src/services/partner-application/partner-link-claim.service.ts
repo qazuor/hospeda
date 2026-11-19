@@ -201,3 +201,36 @@ export async function claimPartnerByLink(input: {
         throw error;
     }
 }
+
+/**
+ * Tells the signed-in account whether it is the claim mailbox's account, without
+ * disclosing the mailbox. Verifies the secret exactly as the claim does and applies
+ * the same {@link isSameClaimEmail} rule, so the pre-check and the claim cannot
+ * disagree. Writes nothing and consumes nothing (HOS-2353).
+ */
+export async function checkPartnerClaimEmail(input: {
+    readonly actorUserId: string;
+    readonly partnerId: string;
+    readonly secret: string;
+}): Promise<{ readonly emailMatches: boolean }> {
+    return getDb().transaction(async (rawTx) => {
+        const tx = rawTx as DrizzleClient;
+        const verifiedLink = await verifyPartnerClaimLink({
+            tx,
+            partnerId: input.partnerId,
+            secret: input.secret,
+            allowMissingClaimEmail: true
+        });
+        const account = await partnerApplicationModel.readAccountForClaim({
+            tx,
+            userId: input.actorUserId
+        });
+        if (!account) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Account not found');
+        return {
+            emailMatches: isSameClaimEmail({
+                accountEmail: account.email,
+                claimEmail: verifiedLink.claimEmail
+            }).matches
+        };
+    });
+}

@@ -391,6 +391,36 @@ describe('comparison and alerts', () => {
         expect(result.mayPingWatchdog).toBe(false);
     });
 
+    it('raises one measurement_errored alert, with the error, for a measurement that cannot be read (HOS-2385)', async () => {
+        const { transport } = scripted({ id: 'x' });
+        const broken = readEntry({
+            id: 'RP8',
+            measure: async () => {
+                throw new Error('socket hang up');
+            }
+        });
+        const result = await run({ catalog: [broken, readEntry()], transport });
+        const errored = result.run.alerts.filter((alert) => alert.kind === 'measurement_errored');
+        expect(errored).toHaveLength(1);
+        expect(errored[0]).toMatchObject({
+            measurementId: 'RP8',
+            obtained: null,
+            details: ['socket hang up']
+        });
+    });
+
+    it('raises a measurement_errored alert for the measurement a guard aborted (HOS-2385)', async () => {
+        const { transport } = scripted({ id: 'x' });
+        const mutating = readEntry({ id: 'RP8', effect: 'mutates', measure: async () => 'never' });
+        const failingAccount: WatchTransport = async (request) =>
+            request.path === '/users/me' ? { status: 200, body: { tags: [] } } : transport(request);
+        const result = await run({ catalog: [readEntry(), mutating], transport: failingAccount });
+        expect(result.run.outcome).toBe('aborted');
+        expect(
+            result.run.alerts.filter((alert) => alert.kind === 'measurement_errored')
+        ).toMatchObject([{ measurementId: 'RP8' }]);
+    });
+
     it('keeps what was read when a guard aborts later in the run', async () => {
         const { transport } = scripted({ id: 'x' });
         const mutating = readEntry({

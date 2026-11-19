@@ -181,6 +181,39 @@ describe('handleMcpToolCall', () => {
         );
     });
 
+    it('audits a validation error the tool classifies as a refusal as denied, under its reason (HOS-2375)', async () => {
+        // Arrange
+        const { ctx } = ctxFor();
+        const definition = defineTool({
+            name: 'probe_write',
+            title: 'Probe write',
+            description: 'Probe',
+            inputSchema,
+            isWrite: true,
+            reasonMessages: { LISTING_INCOMPLETE: 'Faltan datos obligatorios.' },
+            handler: async () => ({
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: 'Listing incomplete: media',
+                    reason: 'LISTING_INCOMPLETE',
+                    kind: 'denied' as const
+                }
+            })
+        });
+
+        // Act
+        const result = await handleMcpToolCall({ definition, input, ctx });
+
+        // Assert
+        expect(result).toEqual({
+            content: [{ type: 'text', text: 'Faltan datos obligatorios.' }],
+            isError: true
+        });
+        expect(mockRecord).toHaveBeenCalledWith(
+            expect.objectContaining({ outcome: 'denied', errorCode: 'LISTING_INCOMPLETE' })
+        );
+    });
+
     it('audits an unverified-email refusal as denied without running the handler', async () => {
         // Arrange
         const { ctx } = ctxFor(false);

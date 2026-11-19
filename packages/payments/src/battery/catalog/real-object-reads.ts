@@ -242,7 +242,7 @@ const authorizationSearch: WatchEntry = {
  */
 const orderSearchBounds: WatchEntry = {
     id: 'order-search',
-    rows: ['RP13'],
+    rows: ['RP13', 'M14'],
     accounts: ['sandbox', 'production'],
     effect: 'read',
     expected: {

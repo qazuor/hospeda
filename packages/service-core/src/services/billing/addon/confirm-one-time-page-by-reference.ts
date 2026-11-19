@@ -19,9 +19,10 @@ const SEARCH_SKEW_MS = 3_600_000;
  * - `ACTIVATED`: an approved payment, re-read by id, activated the purchase.
  * - `SETTLED`: the purchase stopped waiting meanwhile (another entry decided it).
  * - `NONE_APPROVED`: every id the search yielded, re-read by id, is not an approved payment of
- *   this purchase. The only outcome that lets A3 abandon.
- * - `UNDECIDED`: the search or a read did not answer, or an approved payment could not activate
- *   (another amount). Nothing may be decided this run.
+ *   this purchase for its price: none at all, or one of another amount whose
+ *   `DIVERGENCIA_DE_MONTO` is open (AC-8). The only outcome that lets A3 abandon.
+ * - `UNDECIDED`: the search or a read did not answer, or a divergence mark could not be opened.
+ *   Nothing may be decided this run.
  */
 export type ConfirmOneTimePageByReferenceOutcome =
     | 'ACTIVATED'
@@ -81,11 +82,13 @@ export async function confirmOneTimePageByReference(
             case 'DUPLICATE_PAYMENT':
             case 'LATE_PAYMENT':
                 return 'SETTLED';
-            case 'AMOUNT_MISMATCH':
             case 'UNKNOWN':
             case 'NOT_APPLICABLE':
                 undecided = true;
                 break;
+            // Another amount is decided: it activates nothing and MOT:5 is already open on
+            // the instance (AC-8), so it does not keep the purchase waiting forever.
+            case 'AMOUNT_MISMATCH':
             case 'NOT_APPROVED':
             case 'NOT_THIS_PURCHASE':
                 break;

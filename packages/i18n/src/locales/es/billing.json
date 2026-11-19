@@ -243,6 +243,11 @@
             "title": "Confirmá tu suscripción",
             "intro": "Vas a autorizar el pago en Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "promo": {
+                "limited_one": "Con el código {{code}}: {{amount}} {{cycle}} durante {{count}} cobro (después {{listAmount}}).",
+                "limited_other": "Con el código {{code}}: {{amount}} {{cycle}} durante {{count}} cobros (después {{listAmount}}).",
+                "forever": "Con el código {{code}}: {{amount}} {{cycle}}."
+            },
             "cycle": {
                 "monthly": "por mes",
                 "quarterly": "por trimestre",
