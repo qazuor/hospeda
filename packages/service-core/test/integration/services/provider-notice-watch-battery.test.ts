@@ -154,6 +154,41 @@ describe('HOS-1512 notices of the provider watch battery', () => {
         expect(cancel).not.toHaveBeenCalled();
     });
 
+    it('drops the notice of a recorded battery authorization already cancelled', async () => {
+        const { fake, provider } = createChargingFake();
+        const authorizationId = await authorization(fake, watchReference());
+        await recordedByRun(authorizationId);
+        await fake.cancel({ authorizationId });
+
+        const answer = await processProviderNotice(
+            webhook({ resourceKind: 'authorization', resourceId: authorizationId, version: '1' }),
+            receiverPorts(provider)
+        );
+
+        expect(answer).toEqual({ ack: 'OK', outcome: 'WATCH_BATTERY_DROPPED' });
+        expect(await linkOf(authorizationId)).toBeUndefined();
+    });
+
+    it('takes the loud path for a recorded battery authorization someone AUTHORIZED (W1)', async () => {
+        const { fake, provider } = createChargingFake();
+        const authorizationId = await authorization(fake, watchReference());
+        await recordedByRun(authorizationId);
+        // The battery never authorizes: an active one means someone opened its link and paid.
+        await fake.approve({ authorizationId });
+
+        const answer = await processProviderNotice(
+            webhook({ resourceKind: 'authorization', resourceId: authorizationId, version: '1' }),
+            receiverPorts(provider)
+        );
+
+        expect(answer).not.toEqual({ ack: 'OK', outcome: 'WATCH_BATTERY_DROPPED' });
+        const link = await linkOf(authorizationId);
+        if (!link) throw new Error('Expected the tombstone link');
+        subjects.add(link.subscriptionId);
+        const rows = await tombstoneRows(link.subscriptionId);
+        expect(rows.marks.map((mark) => mark.reason)).toEqual(['TRANSICION_NO_DECLARADA']);
+    });
+
     it('writes the tombstone and the mark for a watch-looking id no battery run recorded', async () => {
         const { fake, provider } = createChargingFake();
         const authorizationId = await authorization(fake, watchReference());

@@ -18,18 +18,24 @@ import {
 } from '@repo/payments';
 import type { UnknownAuthorizationArrival } from '../reconciliation/handle-unknown-authorization.service.js';
 
+/** The only states a battery authorization lives in: created pending, then cancelled. */
+const BATTERY_STATUSES: ReadonlySet<string> = new Set(['pending', 'cancelled']);
+
 const logger = createLogger('watch-battery-notice');
 
 /**
  * Whether a notice for an authorization with no `provider_link` is one of the battery's, to drop.
  *
- * All three must hold, in this order:
+ * All four must hold, in this order:
  * 1. It is an AUTHORIZATION arrival. A battery authorization never charges, so the charge of one is
  *    a real event and takes the normal path, loudly.
  * 2. A battery run RECORDED this very id (`provider_watch_run`). That is the decision; a reference
  *    that only looks like the battery's (`hospeda-watch-…`) proves nothing, since anyone can write
  *    one. The lookup is a database read, so a real notice costs no extra provider read.
  * 3. The authorization, RE-READ by id (never the notice body), carries a watch reference.
+ * 4. That re-read is still `pending` or already `cancelled`: the only states a battery
+ *    authorization lives in. One that is `active` or `paused` was authorized by someone, which the
+ *    battery never does, so it takes the normal loud path (re-review of #4538, W1).
  *
  * A read that fails leaves the notice to the normal path, which re-reads it and answers for it.
  *
@@ -51,16 +57,19 @@ export async function watchBatteryNoticeToDrop(
     // The decision reads the provider's state as every decision does: a fresh read by id (G17).
     const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
     actStartInstant({ act });
-    let reference: string;
+    let isBatteryState: boolean;
     try {
         const read = await ports.provider.readAuthorization({
             authorizationId: input.authorizationId
         });
-        reference = assertFreshForAct({ read, act }).snapshot.reference;
+        const fresh = assertFreshForAct({ read, act });
+        isBatteryState =
+            isWatchReference(fresh.snapshot.reference) &&
+            BATTERY_STATUSES.has(fresh.snapshot.status);
     } catch {
         return null;
     }
-    if (!isWatchReference(reference)) return null;
+    if (!isBatteryState) return null;
     logger.info(
         { authorizationId: input.authorizationId, runId: recorded.runId },
         'Notice of a provider watch battery authorization dropped: no tombstone and no mark'
