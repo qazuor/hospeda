@@ -33,6 +33,7 @@ import {
 } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_IMPORT_TIMEOUT_MS } from '../../helpers/app-import-timeout';
 import { createAuthenticatedRequest, createMockUserActor } from '../../helpers/auth';
 
 const mocks = vi.hoisted(() => ({
@@ -205,157 +206,183 @@ beforeEach(() => {
 });
 
 describe('TEST:M1682:1 upload-entity runs listing access with the vertical of the service branch', () => {
-    it.each(VERTICALS)('$entityType loads the listing facts of its own vertical', async (row) => {
-        for (const role of ['gallery', 'featured'] as const) {
-            mocks.loadFacts.mockClear();
-            const response = await upload({ entityType: row.entityType, role });
-            expect(response.status, `${row.entityType} ${role}`).toBe(200);
-            expect(mocks.loadFacts).toHaveBeenCalledTimes(1);
-            expect(mocks.loadFacts).toHaveBeenCalledWith({
-                vertical: row.vertical,
-                listingId: LISTING_ID
-            });
-        }
-    });
+    it.each(VERTICALS)(
+        '$entityType loads the listing facts of its own vertical',
+        async (row) => {
+            for (const role of ['gallery', 'featured'] as const) {
+                mocks.loadFacts.mockClear();
+                const response = await upload({ entityType: row.entityType, role });
+                expect(response.status, `${row.entityType} ${role}`).toBe(200);
+                expect(mocks.loadFacts).toHaveBeenCalledTimes(1);
+                expect(mocks.loadFacts).toHaveBeenCalledWith({
+                    vertical: row.vertical,
+                    listingId: LISTING_ID
+                });
+            }
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 
-    it('does not run the chain for a post, which is not a listing', async () => {
-        // `featured`: a post gallery counts rows of a model this harness does not stub.
-        const response = await upload({ entityType: 'post', role: 'featured' });
-        expect(response.status).toBe(200);
-        expect(mocks.loadFacts).not.toHaveBeenCalled();
-        expect(mocks.coverage).not.toHaveBeenCalled();
-    });
+    it(
+        'does not run the chain for a post, which is not a listing',
+        async () => {
+            // `featured`: a post gallery counts rows of a model this harness does not stub.
+            const response = await upload({ entityType: 'post', role: 'featured' });
+            expect(response.status).toBe(200);
+            expect(mocks.loadFacts).not.toHaveBeenCalled();
+            expect(mocks.coverage).not.toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });
 
 describe('TEST:M1682:2 coverage and the plan photo limit gate the upload', () => {
-    it.each(
-        VERTICALS
-    )('$entityType without coverage answers NO_COVERAGE on both roles', async (row) => {
-        configure({ covered: false });
-        for (const role of ['gallery', 'featured'] as const) {
-            const response = await upload({ entityType: row.entityType, role });
-            expect(response.status, `${row.entityType} ${role}`).toBe(403);
-            expect(response.body.error).toMatchObject({
-                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                details: { entitlementKey: null, reason: 'NO_COVERAGE' }
-            });
-        }
-        expect(mocks.upload).not.toHaveBeenCalled();
-    });
-
-    it('answers LIMIT_REACHED for a full accommodation plan before the general gallery cap', async () => {
-        const cap = getGalleryCap('accommodation');
-        configure({ maxPhotos: 5 });
-        vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
-            items: [],
-            total: cap
-        } as never);
-        const response = await upload({ entityType: 'accommodation', role: 'gallery' });
-        expect(response.status).toBe(403);
-        expect(response.body.error).toMatchObject({
-            code: ServiceErrorCode.LIMIT_REACHED,
-            details: { limitKey: 'max_photos_per_accommodation', maxAllowed: 5 }
-        });
-        expect(mocks.upload).not.toHaveBeenCalled();
-    });
-
-    it('accepts a 15th gallery photo with a cover present and rejects the 16th', async () => {
-        configure({ maxPhotos: 15 });
-        const cover = { id: 'cover', isFeatured: true };
-        let rows = [
-            cover,
-            ...Array.from({ length: 14 }, (_, index) => ({
-                id: `gallery-${index}`,
-                isFeatured: false
-            }))
-        ];
-        vi.mocked(accommodationMediaModel.findByAccommodation).mockImplementation(
-            async ({ isFeatured }) => {
-                const items = rows.filter((row) => row.isFeatured === isFeatured);
-                return { items, total: items.length } as never;
+    it.each(VERTICALS)(
+        '$entityType without coverage answers NO_COVERAGE on both roles',
+        async (row) => {
+            configure({ covered: false });
+            for (const role of ['gallery', 'featured'] as const) {
+                const response = await upload({ entityType: row.entityType, role });
+                expect(response.status, `${row.entityType} ${role}`).toBe(403);
+                expect(response.body.error).toMatchObject({
+                    code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                    details: { entitlementKey: null, reason: 'NO_COVERAGE' }
+                });
             }
-        );
+            expect(mocks.upload).not.toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 
-        const fifteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
-        rows = [
-            cover,
-            ...Array.from({ length: 15 }, (_, index) => ({
-                id: `gallery-${index}`,
+    it(
+        'answers LIMIT_REACHED for a full accommodation plan before the general gallery cap',
+        async () => {
+            const cap = getGalleryCap('accommodation');
+            configure({ maxPhotos: 5 });
+            vi.mocked(accommodationMediaModel.findByAccommodation).mockResolvedValue({
+                items: [],
+                total: cap
+            } as never);
+            const response = await upload({ entityType: 'accommodation', role: 'gallery' });
+            expect(response.status).toBe(403);
+            expect(response.body.error).toMatchObject({
+                code: ServiceErrorCode.LIMIT_REACHED,
+                details: { limitKey: 'max_photos_per_accommodation', maxAllowed: 5 }
+            });
+            expect(mocks.upload).not.toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it(
+        'accepts a 15th gallery photo with a cover present and rejects the 16th',
+        async () => {
+            configure({ maxPhotos: 15 });
+            const cover = { id: 'cover', isFeatured: true };
+            let rows = [
+                cover,
+                ...Array.from({ length: 14 }, (_, index) => ({
+                    id: `gallery-${index}`,
+                    isFeatured: false
+                }))
+            ];
+            vi.mocked(accommodationMediaModel.findByAccommodation).mockImplementation(
+                async ({ isFeatured }) => {
+                    const items = rows.filter((row) => row.isFeatured === isFeatured);
+                    return { items, total: items.length } as never;
+                }
+            );
+
+            const fifteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
+            rows = [
+                cover,
+                ...Array.from({ length: 15 }, (_, index) => ({
+                    id: `gallery-${index}`,
+                    isFeatured: false
+                }))
+            ];
+            const sixteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
+
+            expect(fifteenth.status).toBe(200);
+            expect(sixteenth.status).toBe(403);
+            expect(sixteenth.body.error).toMatchObject({
+                code: ServiceErrorCode.LIMIT_REACHED,
+                details: { limitKey: 'max_photos_per_accommodation', maxAllowed: 15 }
+            });
+            expect(accommodationMediaModel.findByAccommodation).toHaveBeenNthCalledWith(1, {
+                accommodationId: LISTING_ID,
+                state: 'visible',
                 isFeatured: false
-            }))
-        ];
-        const sixteenth = await upload({ entityType: 'accommodation', role: 'gallery' });
-
-        expect(fifteenth.status).toBe(200);
-        expect(sixteenth.status).toBe(403);
-        expect(sixteenth.body.error).toMatchObject({
-            code: ServiceErrorCode.LIMIT_REACHED,
-            details: { limitKey: 'max_photos_per_accommodation', maxAllowed: 15 }
-        });
-        expect(accommodationMediaModel.findByAccommodation).toHaveBeenNthCalledWith(1, {
-            accommodationId: LISTING_ID,
-            state: 'visible',
-            isFeatured: false
-        });
-        expect(mocks.upload).toHaveBeenCalledTimes(1);
-    });
+            });
+            expect(mocks.upload).toHaveBeenCalledTimes(1);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });
 
 describe('TEST:M1682:3 the listing state gates the upload', () => {
-    it.each(
-        VERTICALS
-    )('$entityType ARCHIVED and PURGED answer the whole 404 of a missing id', async (row) => {
-        const missing = await upload({
-            entityType: row.entityType,
-            role: 'gallery',
-            entityId: MISSING_ID
-        });
-        expect(missing.status).toBe(404);
-        for (const status of [PublicationStatusEnum.ARCHIVED, PublicationStatusEnum.PURGED]) {
-            configure({ status });
-            const refused = await upload({ entityType: row.entityType, role: 'gallery' });
-            expect(refused.status, `${row.entityType} ${status}`).toBe(404);
-            expect(withoutMetadata(refused.body)).toEqual(withoutMetadata(missing.body));
-        }
-        expect(mocks.upload).not.toHaveBeenCalled();
-    });
+    it.each(VERTICALS)(
+        '$entityType ARCHIVED and PURGED answer the whole 404 of a missing id',
+        async (row) => {
+            const missing = await upload({
+                entityType: row.entityType,
+                role: 'gallery',
+                entityId: MISSING_ID
+            });
+            expect(missing.status).toBe(404);
+            for (const status of [PublicationStatusEnum.ARCHIVED, PublicationStatusEnum.PURGED]) {
+                configure({ status });
+                const refused = await upload({ entityType: row.entityType, role: 'gallery' });
+                expect(refused.status, `${row.entityType} ${status}`).toBe(404);
+                expect(withoutMetadata(refused.body)).toEqual(withoutMetadata(missing.body));
+            }
+            expect(mocks.upload).not.toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 
-    it.each(
-        VERTICALS
-    )('$entityType DRAFT, UNPUBLISHED_BY_BILLING and MODERATED pass with coverage', async (row) => {
-        for (const status of [
-            PublicationStatusEnum.DRAFT,
-            PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
-            PublicationStatusEnum.MODERATED
-        ]) {
-            configure({ status });
-            const response = await upload({ entityType: row.entityType, role: 'gallery' });
-            expect(response.status, `${row.entityType} ${status}`).toBe(200);
-        }
-    });
+    it.each(VERTICALS)(
+        '$entityType DRAFT, UNPUBLISHED_BY_BILLING and MODERATED pass with coverage',
+        async (row) => {
+            for (const status of [
+                PublicationStatusEnum.DRAFT,
+                PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                PublicationStatusEnum.MODERATED
+            ]) {
+                configure({ status });
+                const response = await upload({ entityType: row.entityType, role: 'gallery' });
+                expect(response.status, `${row.entityType} ${status}`).toBe(200);
+            }
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });
 
 describe('TEST:M1682:4 a featured upload never reuses a fixed public id', () => {
-    it('two featured uploads on the same listing get two distinct featured/ ids', async () => {
-        const first = await upload({ entityType: 'venue', role: 'featured', overwrite: true });
-        const second = await upload({
-            entityType: 'venue',
-            role: 'featured',
-            overwrite: true
-        });
-        expect(first.status).toBe(200);
-        expect(second.status).toBe(200);
-        expect(mocks.upload).toHaveBeenCalledTimes(2);
-        const firstId = mocks.upload.mock.calls[0]?.[0].publicId as string;
-        const secondId = mocks.upload.mock.calls[1]?.[0].publicId as string;
-        expect(firstId).not.toBe('featured');
-        expect(secondId).not.toBe('featured');
-        expect(firstId.startsWith('featured/')).toBe(true);
-        expect(secondId.startsWith('featured/')).toBe(true);
-        expect(firstId).not.toBe(secondId);
-        expect(mocks.upload.mock.calls[0]?.[0].overwrite).toBe(true);
-        const firstUrl = (first.body.data as { url: string }).url;
-        const secondUrl = (second.body.data as { url: string }).url;
-        expect(firstUrl).not.toBe(secondUrl);
-    });
+    it(
+        'two featured uploads on the same listing get two distinct featured/ ids',
+        async () => {
+            const first = await upload({ entityType: 'venue', role: 'featured', overwrite: true });
+            const second = await upload({
+                entityType: 'venue',
+                role: 'featured',
+                overwrite: true
+            });
+            expect(first.status).toBe(200);
+            expect(second.status).toBe(200);
+            expect(mocks.upload).toHaveBeenCalledTimes(2);
+            const firstId = mocks.upload.mock.calls[0]?.[0].publicId as string;
+            const secondId = mocks.upload.mock.calls[1]?.[0].publicId as string;
+            expect(firstId).not.toBe('featured');
+            expect(secondId).not.toBe('featured');
+            expect(firstId.startsWith('featured/')).toBe(true);
+            expect(secondId.startsWith('featured/')).toBe(true);
+            expect(firstId).not.toBe(secondId);
+            expect(mocks.upload.mock.calls[0]?.[0].overwrite).toBe(true);
+            const firstUrl = (first.body.data as { url: string }).url;
+            const secondUrl = (second.body.data as { url: string }).url;
+            expect(firstUrl).not.toBe(secondUrl);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });
