@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4512
+    {
+        id: '2026-11-18-admin-trade-categories-restore-and-search',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Restaurá categorías de proveedores borradas y encontrá rubros más fácil',
+            en: 'Restore deleted provider categories and find trades more easily',
+            pt: 'Restaure categorias de fornecedores apagadas e encontre ramos com mais facilidade'
+        },
+        body: {
+            es: 'En Categorías de proveedores, el interruptor «Mostrar borrados» te deja ver grupos y categorías borrados, con su etiqueta «Borrado» y un botón «Restaurar». Si el grupo de una categoría sigue borrado, te avisa que primero tenés que restaurar el grupo. En el formulario de proveedores, el selector de rubros ahora busca por palabras relacionadas, sin importar tildes ni mayúsculas, en español, inglés y portugués: «pozo» encuentra Destapaciones y desagotes y «aire» encuentra Climatización, y las coincidencias por nombre salen primero. Además, las listas de grupos y categorías ahora tienen un orden estable: peso del grupo, peso de la categoría y nombre.',
+            en: 'In Provider categories, the «Show deleted» toggle lets you see deleted groups and categories, with a «Deleted» badge and a «Restore» button. If the group of a category is still deleted, it warns you that you need to restore the group first. In the provider form, the trade selector now searches by related words, ignoring accents and case, in Spanish, English and Portuguese: «pozo» finds Destapaciones y desagotes and «aire» finds Climatización, and name matches come first. The group and category lists also now have a stable order: group weight, category weight and name.',
+            pt: 'Em Categorias de fornecedores, o interruptor «Mostrar apagados» permite ver grupos e categorias apagados, com o selo «Apagado» e um botão «Restaurar». Se o grupo de uma categoria ainda estiver apagado, o sistema avisa que você precisa restaurar o grupo primeiro. No formulário de fornecedores, o seletor de ramos agora busca por palavras relacionadas, sem diferenciar acentos nem maiúsculas, em espanhol, inglês e português: «pozo» encontra Destapaciones y desagotes e «aire» encontra Climatización, e as correspondências por nome aparecem primeiro. Além disso, as listas de grupos e categorias agora têm uma ordem estável: peso do grupo, peso da categoria e nome.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4500
     {
         id: '2026-11-18-plan-change-checkout-resume-or-cancel',
