@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4548
+    {
+        id: '2026-11-19-admin-restored-records-come-back-inactive',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Lo que restaurás en el admin vuelve inactivo, como estaba',
+            en: 'What you restore in the admin comes back inactive, as it was',
+            pt: 'O que você restaura no admin volta inativo, como estava'
+        },
+        body: {
+            es: 'Si desactivás, eliminás y restaurás un tipo de partner, un grupo de categorías de proveedores o una categoría de rubro, ahora vuelve como INACTIVO y no como ACTIVO: conserva el estado que tenía. Lo mismo vale para amenities, características, categorías de puntos de interés, atracciones y etiquetas.',
+            en: 'If you deactivate, delete and restore a partner type, a provider trade category group or a trade category, it now comes back as INACTIVE instead of ACTIVE: it keeps the state it had. The same applies to amenities, features, point of interest categories, attractions and tags.',
+            pt: 'Se você desativar, excluir e restaurar um tipo de parceiro, um grupo de categorias de prestadores ou uma categoria de ofício, agora ele volta como INATIVO e não como ATIVO: mantém o estado que tinha. O mesmo vale para comodidades, características, categorias de pontos de interesse, atrações e etiquetas.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4474, #4532
     {
         id: '2026-11-17-assistant-refusals-link-to-the-fix',
