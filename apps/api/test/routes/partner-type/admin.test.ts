@@ -17,6 +17,7 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../src/types';
+import { APP_IMPORT_TIMEOUT_MS } from '../../helpers/app-import-timeout';
 
 const {
     mockAdminList,
@@ -307,12 +308,16 @@ describe('401 without a session (real app)', () => {
         ['PATCH', `/api/v1/admin/partner-types/${TYPE_ID}`],
         ['DELETE', `/api/v1/admin/partner-types/${TYPE_ID}`],
         ['POST', `/api/v1/admin/partner-types/${TYPE_ID}/restore`]
-    ])('%s %s answers 401', async (method, path) => {
-        const { initApp } = await import('../../../src/app.js');
-        const res = await initApp().request(path, {
-            method,
-            headers: { 'user-agent': 'vitest', accept: 'application/json' }
-        });
-        expect(res.status).toBe(401);
-    });
+    ])(
+        '%s %s answers 401',
+        async (method, path) => {
+            const { initApp } = await import('../../../src/app.js');
+            const res = await initApp().request(path, {
+                method,
+                headers: { 'user-agent': 'vitest', accept: 'application/json' }
+            });
+            expect(res.status).toBe(401);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });

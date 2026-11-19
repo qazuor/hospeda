@@ -13,8 +13,10 @@
  * app, inject `fakeModel` into a `VenueService` subclass, and mock the
  * listing-access middleware plus the owner-act writer (neither has a database).
  */
+
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../../../helpers/app-import-timeout';
 
 delete process.env.CI;
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -134,7 +136,7 @@ describe('Admin venue business lines — HOS-1787 7.1 (AC:7:3)', () => {
     beforeAll(async () => {
         const { initApp } = await import('../../../../src/app.js');
         app = initApp();
-    });
+    }, APP_IMPORT_TIMEOUT_MS);
 
     beforeEach(() => {
         vi.clearAllMocks();

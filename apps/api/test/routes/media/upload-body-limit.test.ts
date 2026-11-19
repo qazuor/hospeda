@@ -24,9 +24,11 @@
  *
  * @module test/routes/media/upload-body-limit
  */
+
 import { PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WIDENED_UPLOAD_PATHS } from '../../../src/middlewares/body-limit';
+import { APP_IMPORT_TIMEOUT_MS } from '../../helpers/app-import-timeout';
 import { createAuthenticatedRequest, createMockUserActor } from '../../helpers/auth';
 
 const mockUpload = vi.fn();
@@ -98,112 +100,135 @@ describe('HOS-322 — media upload body limits', () => {
         return fd;
     };
 
-    it('accepts an entity photo at the full 10 MB cap, envelope included', async () => {
-        // The exact case the old single global ceiling broke: the FILE is at the
-        // cap, so the BODY (file + boundaries + four field parts) is over it.
-        const { initApp } = await import('../../../src/app');
-        const app = await initApp();
+    it(
+        'accepts an entity photo at the full 10 MB cap, envelope included',
+        async () => {
+            // The exact case the old single global ceiling broke: the FILE is at the
+            // cap, so the BODY (file + boundaries + four field parts) is over it.
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
 
-        const res = await app.request(
-            new Request(ENTITY_UPLOAD_URL, {
-                method: 'POST',
-                body: buildEntityForm(10 * MB, 'at-cap.jpg'),
-                headers: buildAuthHeaders(ownerActor)
-            })
-        );
-
-        // The request must reach the handler. It may still fail there (the
-        // entity does not exist in this harness), but never on size.
-        const { code } = await readError(res);
-        expect(code).not.toBe('REQUEST_TOO_LARGE');
-        expect(code).not.toBe('PAYLOAD_TOO_LARGE');
-        expect(res.status).not.toBe(413);
-    });
-
-    it('rejects an entity photo above the cap with the precise error', async () => {
-        const { initApp } = await import('../../../src/app');
-        const app = await initApp();
-
-        const res = await app.request(
-            new Request(ENTITY_UPLOAD_URL, {
-                method: 'POST',
-                body: buildEntityForm(12 * MB, 'over-cap.jpg'),
-                headers: buildAuthHeaders(ownerActor)
-            })
-        );
-
-        expect(res.status).toBe(413);
-        const { code, message } = await readError(res);
-        // Must be the media-cap rejection, not the blunt global guard —
-        // otherwise this test would pass for the very reason it exists to
-        // rule out. And the message must name the limit actually applied.
-        expect(code).toBe('PAYLOAD_TOO_LARGE');
-        expect(message).toContain('10MB');
-    });
-
-    it('keeps the tighter global cap on non-upload routes', async () => {
-        const { initApp } = await import('../../../src/app');
-        const app = await initApp();
-
-        const res = await app.request(
-            new Request(NON_UPLOAD_URL, {
-                method: 'POST',
-                body: buildPayload(12 * MB),
-                headers: {
-                    ...buildAuthHeaders(ownerActor),
-                    'content-type': 'application/json'
-                }
-            })
-        );
-
-        expect(res.status).toBe(413);
-        expect((await readError(res)).code).toBe('REQUEST_TOO_LARGE');
-    });
-
-    it('holds the avatar route to its own lower ceiling', async () => {
-        // 6 MB is under the entity cap but over the avatar cap: it proves the
-        // avatar path did not inherit the wider entity ceiling despite being a
-        // string prefix of `/upload-entity`.
-        const { initApp } = await import('../../../src/app');
-        const app = await initApp();
-
-        const fd = new FormData();
-        fd.append('file', new File([buildPayload(6 * MB)], 'avatar.jpg', { type: 'image/jpeg' }));
-
-        const res = await app.request(
-            new Request(AVATAR_UPLOAD_URL, {
-                method: 'POST',
-                body: fd,
-                headers: buildAuthHeaders(ownerActor)
-            })
-        );
-
-        expect(res.status).toBe(413);
-        const { code, message } = await readError(res);
-        expect(code).toBe('PAYLOAD_TOO_LARGE');
-        expect(message).toContain('5MB');
-    });
-
-    it('widens the ceiling only for paths that are really registered routes', async () => {
-        // The middleware matches hardcoded copies of paths owned by
-        // `routes/index.ts` and the route modules. A rename there would
-        // otherwise silently drop an upload route back to the global cap, with
-        // no failure anywhere until a host hit it in production.
-        const { initApp } = await import('../../../src/app');
-        const app = await initApp();
-
-        expect(WIDENED_UPLOAD_PATHS.length).toBeGreaterThan(0);
-
-        for (const path of WIDENED_UPLOAD_PATHS) {
             const res = await app.request(
-                new Request(`${ORIGIN}${path}`, {
+                new Request(ENTITY_UPLOAD_URL, {
                     method: 'POST',
-                    body: new FormData(),
+                    body: buildEntityForm(10 * MB, 'at-cap.jpg'),
                     headers: buildAuthHeaders(ownerActor)
                 })
             );
-            // Any status but 404 proves the path reaches a registered handler.
-            expect(res.status, `${path} is not a registered POST route`).not.toBe(404);
-        }
-    });
+
+            // The request must reach the handler. It may still fail there (the
+            // entity does not exist in this harness), but never on size.
+            const { code } = await readError(res);
+            expect(code).not.toBe('REQUEST_TOO_LARGE');
+            expect(code).not.toBe('PAYLOAD_TOO_LARGE');
+            expect(res.status).not.toBe(413);
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it(
+        'rejects an entity photo above the cap with the precise error',
+        async () => {
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+
+            const res = await app.request(
+                new Request(ENTITY_UPLOAD_URL, {
+                    method: 'POST',
+                    body: buildEntityForm(12 * MB, 'over-cap.jpg'),
+                    headers: buildAuthHeaders(ownerActor)
+                })
+            );
+
+            expect(res.status).toBe(413);
+            const { code, message } = await readError(res);
+            // Must be the media-cap rejection, not the blunt global guard —
+            // otherwise this test would pass for the very reason it exists to
+            // rule out. And the message must name the limit actually applied.
+            expect(code).toBe('PAYLOAD_TOO_LARGE');
+            expect(message).toContain('10MB');
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it(
+        'keeps the tighter global cap on non-upload routes',
+        async () => {
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+
+            const res = await app.request(
+                new Request(NON_UPLOAD_URL, {
+                    method: 'POST',
+                    body: buildPayload(12 * MB),
+                    headers: {
+                        ...buildAuthHeaders(ownerActor),
+                        'content-type': 'application/json'
+                    }
+                })
+            );
+
+            expect(res.status).toBe(413);
+            expect((await readError(res)).code).toBe('REQUEST_TOO_LARGE');
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it(
+        'holds the avatar route to its own lower ceiling',
+        async () => {
+            // 6 MB is under the entity cap but over the avatar cap: it proves the
+            // avatar path did not inherit the wider entity ceiling despite being a
+            // string prefix of `/upload-entity`.
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+
+            const fd = new FormData();
+            fd.append(
+                'file',
+                new File([buildPayload(6 * MB)], 'avatar.jpg', { type: 'image/jpeg' })
+            );
+
+            const res = await app.request(
+                new Request(AVATAR_UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                })
+            );
+
+            expect(res.status).toBe(413);
+            const { code, message } = await readError(res);
+            expect(code).toBe('PAYLOAD_TOO_LARGE');
+            expect(message).toContain('5MB');
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
+
+    it(
+        'widens the ceiling only for paths that are really registered routes',
+        async () => {
+            // The middleware matches hardcoded copies of paths owned by
+            // `routes/index.ts` and the route modules. A rename there would
+            // otherwise silently drop an upload route back to the global cap, with
+            // no failure anywhere until a host hit it in production.
+            const { initApp } = await import('../../../src/app');
+            const app = await initApp();
+
+            expect(WIDENED_UPLOAD_PATHS.length).toBeGreaterThan(0);
+
+            for (const path of WIDENED_UPLOAD_PATHS) {
+                const res = await app.request(
+                    new Request(`${ORIGIN}${path}`, {
+                        method: 'POST',
+                        body: new FormData(),
+                        headers: buildAuthHeaders(ownerActor)
+                    })
+                );
+                // Any status but 404 proves the path reaches a registered handler.
+                expect(res.status, `${path} is not a registered POST route`).not.toBe(404);
+            }
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });

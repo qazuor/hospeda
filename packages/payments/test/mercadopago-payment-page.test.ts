@@ -6,7 +6,6 @@
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { NON_INSTANT_PAYMENT_TYPES } from '../src/adapters/mercadopago/mercadopago-payment-page';
 import {
     CAPABILITY_METHODS,
     MercadoPagoPaymentProvider,
@@ -33,6 +32,17 @@ function setup(responses: readonly { readonly status: number; readonly body: unk
     return {
         fetch,
         adapter: new MercadoPagoPaymentProvider({ clock, accessToken: 'test-token', fetch })
+    };
+}
+
+/** A created-page answer, valid unless a test changes a field. */
+function created(change: Readonly<Record<string, unknown>> = {}) {
+    return {
+        id: 'P',
+        init_point: 'https://mp.example/p',
+        expires: true,
+        expiration_date_to: input.expiresAt,
+        ...change
     };
 }
 
@@ -72,6 +82,7 @@ describe('requestOneTimePayment', () => {
                     id: 'PREF-1',
                     init_point:
                         'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=PREF-1',
+                    expires: true,
                     expiration_date_to: '2026-11-19T10:00:00.000-03:00'
                 }
             }
@@ -115,7 +126,8 @@ describe('requestOneTimePayment', () => {
                     { id: 'atm' },
                     { id: 'bank_transfer' },
                     { id: 'digital_currency' }
-                ]
+                ],
+                excluded_payment_methods: [{ id: 'consumer_credits' }]
             },
             expires: true,
             expiration_date_from: NOW.toISOString(),
@@ -123,37 +135,69 @@ describe('requestOneTimePayment', () => {
         });
     });
 
-    it('never asks for a delayed method, a payer or a notification url (D-3, P-5, P-8)', async () => {
-        const { adapter, fetch } = setup([
-            {
-                status: 201,
-                body: {
-                    id: 'P',
-                    init_point: 'https://mp.example/p',
-                    expiration_date_to: input.expiresAt
-                }
-            }
-        ]);
+    it('sends no payer and no notification url (P-8, EX-61)', async () => {
+        const { adapter, fetch } = setup([{ status: 201, body: created() }]);
         await adapter.requestOneTimePayment(input);
         const { body } = sent(fetch);
-        expect(NON_INSTANT_PAYMENT_TYPES).not.toContain('credit_card');
-        expect(NON_INSTANT_PAYMENT_TYPES).not.toContain('debit_card');
-        expect(NON_INSTANT_PAYMENT_TYPES).not.toContain('account_money');
         expect(body).not.toHaveProperty('payer');
         expect(body).not.toHaveProperty('notification_url');
     });
 
-    it('fails closed when the provider reads back no expiry: such a page is payable forever', async () => {
-        const { adapter } = setup([
-            {
-                status: 201,
-                body: { id: 'P', init_point: 'https://mp.example/p', expiration_date_to: null }
-            }
+    it.each([
+        ['does not expire', { expires: false }],
+        ['expires is absent', { expires: undefined }],
+        ['comes back without expiry', { expiration_date_to: null }],
+        ['expires later than requested', { expiration_date_to: '2026-11-19T13:00:05.001Z' }]
+    ])('refuses a page that %s, closing it with the received id first', async (_, change) => {
+        // Arrange
+        const { adapter, fetch } = setup([
+            { status: 201, body: created(change) },
+            { status: 200, body: { id: 'P' } }
         ]);
+
+        // Act / Assert
         await expect(adapter.requestOneTimePayment(input)).rejects.toMatchObject({
             code: 'UNAVAILABLE',
             capability: 'charge'
         });
+        expect(fetch).toHaveBeenCalledTimes(2);
+        expect(sent(fetch, 1)).toEqual({
+            url: 'https://api.mercadopago.com/checkout/preferences/P',
+            method: 'PUT',
+            key: null,
+            body: { expires: true, expiration_date_to: NOW.toISOString() }
+        });
+    });
+
+    it('accepts an echoed expiry inside the tolerance', async () => {
+        const { adapter, fetch } = setup([
+            { status: 201, body: created({ expiration_date_to: '2026-11-19T13:00:05.000Z' }) }
+        ]);
+        expect((await adapter.requestOneTimePayment(input)).expiresAt).toBe(
+            '2026-11-19T13:00:05.000Z'
+        );
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws the original refusal when the best-effort close also fails', async () => {
+        const { adapter, fetch } = setup([
+            { status: 201, body: created({ expires: false }) },
+            { status: 500, body: { message: 'down' } }
+        ]);
+        await expect(adapter.requestOneTimePayment(input)).rejects.toMatchObject({
+            code: 'UNAVAILABLE',
+            capability: 'charge',
+            message: 'Mercado Pago created a payment page that does not expire'
+        });
+        expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('refuses a return link that is not https', async () => {
+        const { adapter, fetch } = setup([]);
+        await expect(
+            adapter.requestOneTimePayment({ ...input, returnUrl: 'http://hospeda.example/back' })
+        ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+        expect(fetch).not.toHaveBeenCalled();
     });
 
     it('refuses any card field before calling the provider (AC-2, §6.2)', async () => {
@@ -242,9 +286,10 @@ describe('closeOneTimePayment', () => {
             accepted: true,
             resourceId: 'PREF-1'
         });
-        expect(sent(fetch)).toMatchObject({
+        expect(sent(fetch)).toEqual({
             url: 'https://api.mercadopago.com/checkout/preferences/PREF-1',
             method: 'PUT',
+            key: null,
             body: { expires: true, expiration_date_to: NOW.toISOString() }
         });
     });
@@ -270,18 +315,19 @@ describe('searchCharges', () => {
         createdTo: '2026-11-19T14:00:00.000Z'
     };
 
-    it('keeps ids inside the inclusive range, drops other references and keeps unnamed ones', async () => {
+    it('keeps ids inside the inclusive range with exactly our reference, dropping other and unnamed ones', async () => {
         // Arrange
         const { adapter, fetch } = setup([
             {
                 status: 200,
                 body: {
-                    paging: { total: 6 },
+                    paging: { total: 7 },
                     results: [
                         payment('before', '2026-11-19T11:59:59.999Z', 'purchase-1'),
                         payment('from-edge', '2026-11-19T09:00:00.000-03:00', 'purchase-1'),
                         payment('other', '2026-11-19T13:00:00.000Z', 'purchase-2'),
                         payment('unnamed', '2026-11-19T13:00:00.000Z'),
+                        payment('null-reference', '2026-11-19T13:00:00.000Z', null),
                         payment('to-edge', '2026-11-19T14:00:00.000Z', 'purchase-1'),
                         payment('after', '2026-11-19T14:00:00.001Z', 'purchase-1')
                     ]
@@ -293,7 +339,7 @@ describe('searchCharges', () => {
         const result = await adapter.searchCharges(range);
 
         // Assert
-        expect(result).toEqual({ chargeIds: ['from-edge', 'unnamed', 'to-edge'] });
+        expect(result).toEqual({ chargeIds: ['from-edge', 'to-edge'] });
         expect(sent(fetch).url).toBe(
             'https://api.mercadopago.com/v1/payments/search?external_reference=purchase-1'
         );
@@ -315,5 +361,45 @@ describe('searchCharges', () => {
             }
         ]);
         await expect(adapter.searchCharges(range)).rejects.toMatchObject({ code: 'UNAVAILABLE' });
+    });
+});
+
+describe('a throttled read or search measures Retry-After on the injected clock', () => {
+    /** A provider that always answers 429 with an HTTP-date 30 s after the injected now. */
+    function throttled() {
+        const fetch = vi.fn<typeof globalThis.fetch>().mockImplementation(
+            async () =>
+                new Response(JSON.stringify({ message: 'slow down' }), {
+                    status: 429,
+                    headers: { 'Retry-After': new Date(NOW.getTime() + 30_000).toUTCString() }
+                })
+        );
+        const adapter = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'test-token',
+            fetch,
+            readRetry: { maxAttempts: 1, baseDelayMs: 0, maxDelayMs: 0, maxTotalDelayMs: 0 }
+        });
+        return adapter;
+    }
+
+    it.each([
+        [
+            'readOneTimePayment',
+            (a: MercadoPagoPaymentProvider) => a.readOneTimePayment({ paymentPageId: 'P' })
+        ],
+        [
+            'searchCharges',
+            (a: MercadoPagoPaymentProvider) =>
+                a.searchCharges({
+                    reference: 'r',
+                    createdFrom: NOW.toISOString(),
+                    createdTo: NOW.toISOString()
+                })
+        ]
+    ])('%s', async (_, call) => {
+        await expect(call(throttled())).rejects.toMatchObject({
+            transient: { kind: 'RATE_LIMITED', retryAfterSeconds: 30 }
+        });
     });
 });

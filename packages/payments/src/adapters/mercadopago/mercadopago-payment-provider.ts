@@ -443,7 +443,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         const { paymentPageId } = input;
         const snapshot = await readMercadoPagoPaymentPage({
             paymentPageId,
-            send: (args) => this.send(args)
+            send: (args) => this.send(args),
+            now: () => this.clock.now()
         });
         return stampProviderRead({ clock: this.clock, snapshot });
     }
@@ -455,7 +456,11 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             input,
             capability: 'read'
         });
-        return searchMercadoPagoCharges({ input: value, send: (args) => this.send(args) });
+        return searchMercadoPagoCharges({
+            input: value,
+            send: (args) => this.send(args),
+            now: () => this.clock.now()
+        });
     }
 
     /** Capability 8 · decode a delivery into a notice. */

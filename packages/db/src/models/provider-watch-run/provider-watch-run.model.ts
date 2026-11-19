@@ -78,7 +78,11 @@ export class ProviderWatchRunModel {
         };
         readonly abandonRunsStartedBefore?: Date;
         readonly tx?: DrizzleClient;
-    }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
+    }): Promise<{
+        readonly runId: string;
+        readonly authorizationConsumed: boolean;
+        readonly authorizationMiss?: 'DAY_TAKEN' | 'CHANGED';
+    }> {
         const work = async (tx: DrizzleClient) => {
             if (input.abandonRunsStartedBefore !== undefined) {
                 await tx
@@ -111,14 +115,19 @@ export class ProviderWatchRunModel {
             const { month, maxChargeMinor, accountId, day } = input.consumeAuthorization;
             // Owner decision on B1 (2026-11-19): 0 covers one run a day, above 0 is one-shot.
             if (maxChargeMinor === 0) {
-                const { taken } = await platformSettingsModel.takeProviderWatchAuthorizationDay({
-                    month,
-                    accountId,
-                    day,
+                const { taken, miss } =
+                    await platformSettingsModel.takeProviderWatchAuthorizationDay({
+                        month,
+                        accountId,
+                        day,
+                        runId: row.id,
+                        tx
+                    });
+                return {
                     runId: row.id,
-                    tx
-                });
-                return { runId: row.id, authorizationConsumed: taken };
+                    authorizationConsumed: taken,
+                    ...(miss === undefined ? {} : { authorizationMiss: miss })
+                };
             }
             const { consumed } = await platformSettingsModel.consumeProviderWatchAuthorization({
                 month,

@@ -6,7 +6,12 @@
  * @module utils/provider-watch/provider-watch-run-store
  */
 import { getDb, listSuperAdminRecipients, providerWatchRunModel } from '@repo/db';
-import type { WatchAccount, WatchRunRecord, WatchShapeBaseline } from '@repo/payments';
+import type {
+    WatchAccount,
+    WatchAuthorizationMiss,
+    WatchRunRecord,
+    WatchShapeBaseline
+} from '@repo/payments';
 import { z } from 'zod';
 import { apiLogger } from '../logger.js';
 import {
@@ -68,7 +73,11 @@ export async function openWatchRun(args: {
         readonly accountId: string;
         readonly day: string;
     };
-}): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
+}): Promise<{
+    readonly runId: string;
+    readonly authorizationConsumed: boolean;
+    readonly authorizationMiss?: WatchAuthorizationMiss;
+}> {
     return providerWatchRunModel.open({
         ...args,
         abandonRunsStartedBefore: new Date(

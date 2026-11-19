@@ -27,6 +27,7 @@ import {
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { waitForListingCreateFormHydration } from '../../fixtures/listing-create-form-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
@@ -97,6 +98,7 @@ async function createVenue(
     }
 ): Promise<string> {
     await page.goto(`${WEB_URL}${VENUE_FORM_PATH}`, { waitUntil: 'load' });
+    await waitForListingCreateFormHydration({ page });
 
     await page.getByLabel('Categoría').selectOption(input.type);
     await selectDestination(page);
@@ -149,6 +151,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         await authenticateContext(context, barOwner.sessionCookie);
 
         await page.goto(`${WEB_URL}${VENUE_FORM_PATH}`, { waitUntil: 'load' });
+        await waitForListingCreateFormHydration({ page });
         await page.getByLabel('Categoría').selectOption('BAR');
 
         await expect(page.getByTestId('business-line-food')).toBeChecked();
@@ -168,6 +171,7 @@ test.describe('LISTING-OWNER-08: owner creates venues with business lines presel
         await authenticateContext(context, iceCreamOwner.sessionCookie);
 
         await page.goto(`${WEB_URL}${VENUE_FORM_PATH}`, { waitUntil: 'load' });
+        await waitForListingCreateFormHydration({ page });
         await page.getByLabel('Categoría').selectOption('HELADERIA');
 
         await expect(page.getByTestId('business-line-nightlife')).toHaveCount(0);

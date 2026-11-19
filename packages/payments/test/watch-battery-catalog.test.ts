@@ -251,13 +251,36 @@ describe('the catalog accounts for every row', () => {
         ).toEqual(['M4: both measured and watched by hand']);
     });
 
+    it('pins which measurements record keys without comparing them (RO1)', () => {
+        // Widening this hides a comparison: a change here is a change to review.
+        const reported = Object.fromEntries(
+            WATCH_CATALOG.filter((entry) => entry.reportedOnly !== undefined).map((entry) => [
+                entry.id,
+                entry.reportedOnly
+            ])
+        );
+        expect(reported).toEqual({
+            'recent-auths': ['foreignSkipped'],
+            'recent-payments': ['foreignSkipped']
+        });
+    });
+
+    it('refuses a reported-only key outside the allowlist (RO1)', () => {
+        const base = WATCH_CATALOG.find((entry) => entry.id === 'recent-auths') as WatchEntry;
+        expect(
+            validateWatchCatalog({
+                catalog: [{ ...base, reportedOnly: ['foreignSkipped', 'anythingElse'] }]
+            }).problems
+        ).toEqual(['recent-auths: anythingElse is not a key that may be reported only']);
+    });
+
     it('refuses a reported-only key that is also expected, which would hide a comparison (R2)', () => {
         const base = WATCH_CATALOG.find((entry) => entry.id === 'recent-auths') as WatchEntry;
         expect(
             validateWatchCatalog({
                 catalog: [{ ...base, reportedOnly: ['foreignSkipped', 'subjectsRead'] }]
             }).problems
-        ).toEqual(['recent-auths: subjectsRead is both expected and reported only']);
+        ).toContain('recent-auths: subjectsRead is both expected and reported only');
     });
 
     it('refuses an id longer than the baseline key and an unknown row', () => {

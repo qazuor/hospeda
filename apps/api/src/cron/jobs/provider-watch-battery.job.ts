@@ -21,6 +21,7 @@ import {
     WATCH_CATALOG,
     type WatchAccount,
     type WatchAuthorization,
+    type WatchAuthorizationMiss,
     type WatchEntry,
     type WatchRunRecord,
     type WatchSettings,
@@ -79,7 +80,11 @@ export interface ProviderWatchBatteryDeps {
             readonly accountId: string;
             readonly day: string;
         };
-    }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
+    }) => Promise<{
+        readonly runId: string;
+        readonly authorizationConsumed: boolean;
+        readonly authorizationMiss?: WatchAuthorizationMiss;
+    }>;
     /** Persists a provider id the moment a write answers it. */
     readonly recordProgress: (args: {
         readonly runId: string;
