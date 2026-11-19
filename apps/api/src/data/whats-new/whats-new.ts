@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4483
+    {
+        id: '2026-11-18-ai-assistant-answers-photo-upload-help',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya sabe explicarte cómo cargar fotos en Hospeda',
+            en: 'Your AI assistant can now explain how to upload photos on Hospeda',
+            pt: 'Seu assistente de IA agora sabe explicar como enviar fotos na Hospeda'
+        },
+        body: {
+            es: 'Si conectás el asistente de Claude con Hospeda y le preguntás «¿cómo subo fotos de mi ficha?», te responde con los pasos de Hospeda y links directos a la sección de fotos del editor de cada ficha. Si preguntás algo que no está en la ayuda, te comparte las preguntas frecuentes y el soporte, sin inventar pasos.',
+            en: "If you connect the Claude assistant to Hospeda and ask «how do I upload photos to my listing?», it answers with Hospeda's own steps and direct links to the photos section of each listing's editor. If you ask something outside the help content, it shares the FAQ and support links without inventing steps.",
+            pt: 'Se você conectar o assistente do Claude à Hospeda e perguntar «como envio fotos da minha ficha?», ele responde com os passos da Hospeda e links diretos para a seção de fotos do editor de cada ficha. Se você perguntar algo fora da ajuda, ele compartilha as perguntas frequentes e o suporte, sem inventar passos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4528
     {
         id: '2026-11-19-venue-event-ticket-link',
