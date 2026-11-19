@@ -32,7 +32,9 @@ describe('TEST:1707:3-4 AC:1707:3-4 grace reminders', () => {
             expect(rows[0]?.payload).toMatchObject({
                 subscriptionId: fixture.started.subscriptionId,
                 daysBefore: 3,
-                deadlinesVersion: 2,
+                // The latest version the migrations publish: 2 added PLAZO 20 (HOS-1707) and
+                // 3 added PLAZO 21 (HOS-2179) on top of it, keeping 20.
+                deadlinesVersion: 3,
                 paymentMethod: 'CARD'
             });
             await configureGraceReminderSubscription({

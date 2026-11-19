@@ -10,10 +10,12 @@
  * that writes `nightInfo` on a `food`-only listing is 409 for its owner and
  * 404 for a third party.
  */
+
 import { PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../../../helpers/app-import-timeout';
 
 delete process.env.CI;
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -200,7 +202,7 @@ describe('nightInfo over the protected venue routes (HOS-1846)', () => {
     beforeAll(async () => {
         const { initApp } = await import('../../../../src/app.js');
         app = initApp();
-    });
+    }, APP_IMPORT_TIMEOUT_MS);
 
     beforeEach(() => {
         vi.clearAllMocks();

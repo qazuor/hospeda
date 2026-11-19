@@ -36,6 +36,8 @@ export type PostTagWithCount = PostTag & { usageCount: number };
  */
 export class PostTagModel extends BaseModelImpl<PostTag> {
     protected table = postTags;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'postTags';
 
     protected getTableName(): string {

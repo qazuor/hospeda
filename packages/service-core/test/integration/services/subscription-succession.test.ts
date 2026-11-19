@@ -97,7 +97,8 @@ describe('TEST:B3:39 S1 succession branch, seeded rows, no route', () => {
             .from(subscriptions)
             .where(eq(subscriptions.id, seeded.predecessor.id));
         expect(predecessor?.status).toBe('ACTIVE');
-        expect(predecessor?.succeededById).toBe(result.subscriptionId);
+        // HOS-2351: S1 leaves the pointer to S18; the successor's succeeds_id marks the succession.
+        expect(predecessor?.succeededById).toBeNull();
     });
 
     it('creates over CANCEL_SCHEDULED without reading its preapproval in the gate', async () => {

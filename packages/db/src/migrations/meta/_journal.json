@@ -1681,6 +1681,20 @@
       "when": 1795048579974,
       "tag": "0239_hos2272_promotion_window",
       "breakpoints": true
+    },
+    {
+      "idx": 240,
+      "version": "7",
+      "when": 1795059224505,
+      "tag": "0240_hos2352_promo_redemption_charge_ledger",
+      "breakpoints": true
+    },
+    {
+      "idx": 241,
+      "version": "7",
+      "when": 1795085998580,
+      "tag": "0241_hos2179_one_time_payment_page",
+      "breakpoints": true
     }
   ]
 }

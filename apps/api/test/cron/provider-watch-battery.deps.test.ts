@@ -6,7 +6,9 @@ const h = vi.hoisted(() => ({
         HOSPEDA_HEALTHCHECKS_SLUG_PREFIX: 'staging' as string | undefined,
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'fixture-credential' as string | undefined,
         HOSPEDA_MERCADO_PAGO_API_BASE_URL: 'https://api.mercadopago.test',
-        HOSPEDA_MERCADO_PAGO_TIMEOUT: 5000
+        HOSPEDA_MERCADO_PAGO_TIMEOUT: 5000,
+        HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL: 'watch-payer@hospeda.test' as string | undefined,
+        HOSPEDA_SITE_URL: 'https://hospeda.test'
     },
     ping: vi.fn(async () => undefined),
     authorization: vi.fn(async () => ({
@@ -85,6 +87,19 @@ describe('createProviderWatchBatteryDeps', () => {
         h.authorization.mockResolvedValueOnce(null as never);
         await expect(deps.readAuthorization()).resolves.toBeNull();
         expect(deps.now().toISOString()).toBe('2026-11-02T10:00:00.000Z');
+    });
+
+    it('takes the payer email and the return URL from the environment', () => {
+        expect(createProviderWatchBatteryDeps().readSettings()).toEqual({
+            payerEmail: 'watch-payer@hospeda.test',
+            returnUrl: 'https://hospeda.test'
+        });
+    });
+
+    it('measures the shipped catalog', async () => {
+        const { WATCH_CATALOG } = await import('@repo/payments');
+        expect(createProviderWatchBatteryDeps().catalog).toBe(WATCH_CATALOG);
+        expect(WATCH_CATALOG.length).toBeGreaterThan(0);
     });
 
     it('pings the watchdog check named after the job', async () => {

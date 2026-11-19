@@ -152,6 +152,150 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4474, #4532
+    {
+        id: '2026-11-17-assistant-refusals-link-to-the-fix',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Cuando tu asistente de IA no puede hacer algo, te deja el link para hacerlo vos',
+            en: 'When your AI assistant cannot do something, it leaves you the link to do it yourself',
+            pt: 'Quando seu assistente de IA não pode fazer algo, ele deixa o link para você fazer'
+        },
+        body: {
+            es: 'Si le pedís al asistente algo que no puede hacer desde el chat, como cambiar el nombre de tu publicación o publicarla sin plan, ahora te responde con un link directo a la página de Hospeda donde lo resolvés: la sección exacta del editor, la página de planes o la parte de la ficha que falta completar. El link respeta el idioma de tu cuenta.',
+            en: 'If you ask the assistant for something it cannot do from the chat, such as renaming your listing or publishing it without a plan, it now answers with a direct link to the Hospeda page where you can fix it: the exact editor section, the plans page or the part of the listing that is still missing. The link follows your account language.',
+            pt: 'Se você pedir ao assistente algo que ele não pode fazer pelo chat, como mudar o nome do seu anúncio ou publicá-lo sem plano, agora ele responde com um link direto para a página do Hospeda onde você resolve: a seção exata do editor, a página de planos ou a parte do anúncio que falta preencher. O link respeita o idioma da sua conta.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4512
+    {
+        id: '2026-11-18-admin-trade-categories-restore-and-search',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Restaurá categorías de proveedores borradas y encontrá rubros más fácil',
+            en: 'Restore deleted provider categories and find trades more easily',
+            pt: 'Restaure categorias de fornecedores apagadas e encontre ramos com mais facilidade'
+        },
+        body: {
+            es: 'En Categorías de proveedores, el interruptor «Mostrar borrados» te deja ver grupos y categorías borrados, con su etiqueta «Borrado» y un botón «Restaurar». Si el grupo de una categoría sigue borrado, te avisa que primero tenés que restaurar el grupo. En el formulario de proveedores, el selector de rubros ahora busca por palabras relacionadas, sin importar tildes ni mayúsculas, en español, inglés y portugués: «pozo» encuentra Destapaciones y desagotes y «aire» encuentra Climatización, y las coincidencias por nombre salen primero. Además, las listas de grupos y categorías ahora tienen un orden estable: peso del grupo, peso de la categoría y nombre.',
+            en: 'In Provider categories, the «Show deleted» toggle lets you see deleted groups and categories, with a «Deleted» badge and a «Restore» button. If the group of a category is still deleted, it warns you that you need to restore the group first. In the provider form, the trade selector now searches by related words, ignoring accents and case, in Spanish, English and Portuguese: «pozo» finds Destapaciones y desagotes and «aire» finds Climatización, and name matches come first. The group and category lists also now have a stable order: group weight, category weight and name.',
+            pt: 'Em Categorias de fornecedores, o interruptor «Mostrar apagados» permite ver grupos e categorias apagados, com o selo «Apagado» e um botão «Restaurar». Se o grupo de uma categoria ainda estiver apagado, o sistema avisa que você precisa restaurar o grupo primeiro. No formulário de fornecedores, o seletor de ramos agora busca por palavras relacionadas, sem diferenciar acentos nem maiúsculas, em espanhol, inglês e português: «pozo» encontra Destapaciones y desagotes e «aire» encontra Climatización, e as correspondências por nome aparecem primeiro. Além disso, as listas de grupos e categorias agora têm uma ordem estável: peso do grupo, peso da categoria e nome.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4491, #4476
+    {
+        id: '2026-11-17-assistant-creates-listing-drafts',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'USER'],
+        title: {
+            es: 'Creá un borrador de tu alojamiento, comercio o experiencia conversando con tu asistente de IA',
+            en: 'Create a draft of your accommodation, venue or experience by chatting with your AI assistant',
+            pt: 'Crie um rascunho da sua hospedagem, comércio ou experiência conversando com seu assistente de IA'
+        },
+        body: {
+            es: 'Contale al asistente qué querés publicar y te va pidiendo los datos de a uno, te muestra cómo va a quedar y recién crea el borrador cuando confirmás. Podés pegarle un link de Google Maps para la ubicación. El asistente nunca publica solo: cuando quieras publicar, te deja el link a la página donde lo hacés.',
+            en: 'Tell the assistant what you want to list and it asks for the details one at a time, shows you a preview, and only creates the draft once you confirm. You can paste a Google Maps link for the location. The assistant never publishes on its own: when you want to publish, it leaves you the link to the page where you do it.',
+            pt: 'Conte ao assistente o que você quer publicar e ele pede os dados um de cada vez, mostra uma prévia e só cria o rascunho quando você confirma. Você pode colar um link do Google Maps para a localização. O assistente nunca publica sozinho: quando você quiser publicar, ele deixa o link para a página onde você faz isso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4483
+    {
+        id: '2026-11-18-ai-assistant-answers-photo-upload-help',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya sabe explicarte cómo cargar fotos en Hospeda',
+            en: 'Your AI assistant can now explain how to upload photos on Hospeda',
+            pt: 'Seu assistente de IA agora sabe explicar como enviar fotos na Hospeda'
+        },
+        body: {
+            es: 'Si conectás el asistente de Claude con Hospeda y le preguntás «¿cómo subo fotos de mi ficha?», te responde con los pasos de Hospeda y links directos a la sección de fotos del editor de cada ficha. Si preguntás algo que no está en la ayuda, te comparte las preguntas frecuentes y el soporte, sin inventar pasos.',
+            en: "If you connect the Claude assistant to Hospeda and ask «how do I upload photos to my listing?», it answers with Hospeda's own steps and direct links to the photos section of each listing's editor. If you ask something outside the help content, it shares the FAQ and support links without inventing steps.",
+            pt: 'Se você conectar o assistente do Claude à Hospeda e perguntar «como envio fotos da minha ficha?», ele responde com os passos da Hospeda e links diretos para a seção de fotos do editor de cada ficha. Se você perguntar algo fora da ajuda, ele compartilha as perguntas frequentes e o suporte, sem inventar passos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4479
+    {
+        id: '2026-11-17-assistant-reads-your-reviews',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Preguntale a tu asistente de IA qué dicen las reseñas de tus publicaciones',
+            en: 'Ask your AI assistant what the reviews of your listings say',
+            pt: 'Pergunte ao seu assistente de IA o que dizem as avaliações dos seus anúncios'
+        },
+        body: {
+            es: 'El asistente te lista las reseñas de tus alojamientos, comercios y experiencias, de la más nueva a la más vieja, con la calificación, el texto y si está aprobada, pendiente o rechazada. Podés filtrar por publicación, calificación, fecha o estado.',
+            en: 'The assistant lists the reviews of your accommodations, venues and experiences, newest first, with the rating, the text and whether each one is approved, pending or rejected. You can filter by listing, rating, date or status.',
+            pt: 'O assistente lista as avaliações das suas hospedagens, comércios e experiências, da mais nova para a mais antiga, com a nota, o texto e se cada uma está aprovada, pendente ou rejeitada. Você pode filtrar por anúncio, nota, data ou status.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4478
+    {
+        id: '2026-11-17-assistant-amenities-by-category',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya puede revisar y cambiar los servicios de tu alojamiento por categoría',
+            en: 'Your AI assistant can now review and change your listing amenities by category',
+            pt: 'Seu assistente de IA agora pode revisar e alterar as comodidades da sua hospedagem por categoria'
+        },
+        body: {
+            es: 'Con el asistente de IA conectado a Hospeda, podés ver los servicios y amenidades de tu alojamiento o comercio agrupados por categoría y con sus nombres en español. También podés agregar o quitar servicios de una categoría sin tocar el resto. El cambio se ve enseguida en el editor y en la página pública.',
+            en: 'With the AI assistant connected to Hospeda, you can see the amenities of your accommodation or venue grouped by category and with Spanish labels. You can also add or remove amenities in one category without touching the rest. The change shows up right away in the editor and on the public page.',
+            pt: 'Com o assistente de IA conectado ao Hospeda, você pode ver as comodidades da sua hospedagem ou estabelecimento agrupadas por categoria e com nomes em espanhol. Também pode adicionar ou remover comodidades de uma categoria sem mexer nas demais. A mudança aparece na hora no editor e na página pública.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4501, #4476
+    {
+        id: '2026-11-17-assistant-provider-search-and-benefit-usages',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Buscá proveedores y respondé usos de beneficios desde tu asistente de IA',
+            en: 'Search providers and answer benefit usages from your AI assistant',
+            pt: 'Busque fornecedores e responda usos de benefícios pelo seu assistente de IA'
+        },
+        body: {
+            es: 'Preguntale al asistente por un proveedor, por ejemplo «plomeros con descuento», y te muestra los mismos proveedores del directorio, con su beneficio y contacto. También te lista los usos de beneficios pendientes y te deja confirmarlos o rechazarlos, siempre después de mostrarte qué va a hacer.',
+            en: 'Ask the assistant for a provider, for example «plumbers with a discount», and it shows you the same providers as the directory, with their benefit and contact. It also lists your pending benefit usages and lets you confirm or reject them, always after showing you what it is about to do.',
+            pt: 'Pergunte ao assistente por um fornecedor, por exemplo «encanadores com desconto», e ele mostra os mesmos fornecedores do diretório, com o benefício e o contato. Ele também lista os usos de benefícios pendentes e deixa você confirmá-los ou rejeitá-los, sempre depois de mostrar o que vai fazer.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4523
+    {
+        id: '2026-11-18-admin-provider-lead-approval-categories',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Aprobar un lead de prestador ahora te avisa si no se pudo crear el proveedor',
+            en: 'Approving a provider lead now tells you if the provider could not be created',
+            pt: 'Aprovar um lead de prestador agora avisa se o fornecedor não pôde ser criado'
+        },
+        body: {
+            es: 'En Leads de aliados, al aprobar un lead de prestador de servicios el diálogo lista los rubros que eligió el solicitante y marca los que están inactivos, eliminados o inexistentes. Si ninguno está activo, el lead se aprueba igual, pero te aparece un aviso amarillo con el motivo de que el proveedor no se creó. Esos leads muestran la etiqueta Proveedor no creado en el listado y un botón Crear proveedor: reactivá un rubro y reintentá desde ahí, sin que se vuelva a enviar el mail de aprobación.',
+            en: 'In Partner leads, when you approve a service provider lead the dialog lists the categories the applicant chose and marks any that are inactive, deleted or missing. If none of them is active, the lead is still approved, but you get a yellow warning with the reason the provider was not created. Those leads show a Provider not created badge in the list and a Create provider button: reactivate a category and retry from there, without the approval email being sent again.',
+            pt: 'Em Leads de parceiros, ao aprovar um lead de prestador de serviços o diálogo lista as categorias escolhidas pelo solicitante e marca as que estão inativas, excluídas ou inexistentes. Se nenhuma estiver ativa, o lead é aprovado mesmo assim, mas aparece um aviso amarelo com o motivo de o fornecedor não ter sido criado. Esses leads mostram o selo Fornecedor não criado na lista e um botão Criar fornecedor: reative uma categoria e tente de novo a partir dali, sem que o e-mail de aprovação seja enviado outra vez.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4528
     {
         id: '2026-11-19-venue-event-ticket-link',

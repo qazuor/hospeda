@@ -6,7 +6,7 @@
  * and exactly which mutations reached Linear.
  */
 import { execFile, execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -275,25 +275,46 @@ describe('espera-prod-sync.sh', () => {
 
     it('lists every declared SHA in the comment, comma-separated', async () => {
         // Arrange
-        const second = git({ cwd: repo, args: ['rev-parse', 'HEAD~1'] });
+        const numericSha = '4615593593';
+        const fakeBin = path.join(root, 'fake-bin');
+        mkdirSync(fakeBin);
+        const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();
+        const gitWrapper = path.join(fakeBin, 'git');
+        writeFileSync(
+            gitWrapper,
+            `#!/bin/sh
+if [ "$1" = "rev-parse" ] && [ "$2" = "--verify" ] && [ "$3" = "-q" ] && [ "$4" = "${numericSha}^{commit}" ]; then
+    exit 0
+fi
+if [ "$1" = "merge-base" ] && [ "$2" = "--is-ancestor" ] && [ "$3" = "${numericSha}" ]; then
+    exit 0
+fi
+exec "${realGit}" "$@"
+`
+        );
+        chmodSync(gitWrapper, 0o755);
         fake = await startFakeLinear({
             issues: [
                 {
                     identifier: 'HOS-10',
-                    description: `Espera en prod: ${second.slice(0, 10)} ${mergedSha.slice(0, 10)}`
+                    description: `Espera en prod: ${numericSha} ${mergedSha.slice(0, 10)} (20261117, defaced)`
                 }
             ]
         });
 
         // Act
-        const result = await runScript({ cwd: repo, url: fake.url });
+        const result = await runScript({
+            cwd: repo,
+            url: fake.url,
+            extraEnv: { PATH: `${fakeBin}:${process.env.PATH ?? ''}` }
+        });
 
         // Assert
         expect(result.exitCode).toBe(0);
         const body = String(
             mutations({ requests: fake.requests, kind: 'commentCreate' })[0]?.variables.body
         );
-        const expected = [second.slice(0, 10), mergedSha.slice(0, 10)]
+        const expected = [numericSha, mergedSha.slice(0, 10)]
             .sort()
             .map((s) => `\`${s}\``)
             .join(', ');

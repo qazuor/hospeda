@@ -97,6 +97,70 @@ export interface OneTimeChargeResult {
     readonly declined: boolean;
 }
 
+/**
+ * Capability 2 input: open a page where the customer pays ONE amount once (HOS-2179 §7.2).
+ * It carries no card data: the customer pays on the provider's page, never through us.
+ * The provider offers only instant methods there; that is the adapter's rule, not a field,
+ * so a caller cannot ask for a delayed method.
+ */
+export interface OneTimePaymentInput {
+    /** Our purchase identifier; every payment made on the page carries it back. */
+    readonly reference: string;
+    /** The key persisted before the call, sent so a repeat can be recognized. */
+    readonly idempotencyKey: string;
+    readonly amount: Money;
+    /** Customer-facing text shown on the page (copy, never an identifier: INV:D9). */
+    readonly reason: string;
+    /** Where the customer lands after paying, or after giving up. */
+    readonly returnUrl: string;
+    /** ISO 8601 instant after which the page takes no payment (RP19). */
+    readonly expiresAt: string;
+}
+
+/** Capability 2 output: the page opened. Creating it moves no money. */
+export interface OneTimePaymentResult {
+    readonly paymentPageId: string;
+    /** Where the customer goes to pay, RAW: shown only through `sanitizeApprovalUrl` (GUARD:G10). */
+    readonly approvalUrl: string;
+    /** The expiry the provider read back, ISO 8601. */
+    readonly expiresAt: string;
+}
+
+/** Identifies one payment page (capabilities 5 and 7). */
+export interface PaymentPageRef {
+    readonly paymentPageId: string;
+}
+
+/**
+ * Capability 7 output: a payment page read by id. It carries no "expired" flag
+ * (RP19): whether it still takes payments is `expiresAt` against the caller's clock.
+ * It says nothing of payments either: those are found with `searchCharges`.
+ */
+export interface PaymentPageSnapshot {
+    readonly paymentPageId: string;
+    readonly reference: string;
+    /** ISO 8601 instant the page stops taking payments; null when the provider reads none. */
+    readonly expiresAt: string | null;
+    /** ISO 8601 instant the page was created. */
+    readonly createdAt: string;
+}
+
+/**
+ * Capability 7 input: find the charges made with our reference. Not a source of
+ * truth (INV:D6): it only yields ids, each re-read with `readCharge` before any
+ * decision. Both creation dates are ISO 8601 and bound the result inclusively.
+ */
+export interface ChargeSearchInput {
+    readonly reference: string;
+    readonly createdFrom: string;
+    readonly createdTo: string;
+}
+
+/** Capability 7 output of a charge search: ids to re-read, never state. */
+export interface ChargeSearchResult {
+    readonly chargeIds: readonly string[];
+}
+
 /** Identifies one authorization. */
 export interface AuthorizationRef {
     readonly authorizationId: string;
@@ -231,7 +295,7 @@ export interface ChargeSnapshot {
     readonly expiresAt: string | null;
     /** A card validation is zero-amount, does not charge anything and is not a charge from any authorization (RP12). */
     readonly purpose: ChargePurpose;
-    /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
+    /** Null for card validation (RP12) and for a payment made on a one-time payment page (HOS-2179). */
     readonly authorizationId: string | null;
     /** Null only for card validation, which names neither an authorization nor our reference (RP12). */
     readonly reference: string | null;
@@ -319,7 +383,7 @@ export interface ProviderNotice {
 
 /**
  * The eight capabilities as methods. `pauseAndResume` is two methods and `read`
- * is several (an authorization, a charge and an order, plus their listings); `CAPABILITY_METHODS` maps each method
+ * is several (an authorization, a charge, an order and a payment page, plus their listings); `CAPABILITY_METHODS` maps each method
  * to its capability. Every method receives one object and resolves one object;
  * a refusal rejects with `PaymentProviderError`.
  */
@@ -333,6 +397,8 @@ export interface PaymentProvider {
     charge(input: ChargeInput): Promise<ChargeResult>;
     /** Capability 2 · create one order with the request's stable key (AC:B6:11/12, MP:EX-41). */
     chargeOnce(input: OneTimeChargeInput): Promise<OneTimeChargeResult>;
+    /** Capability 2 · open a one-time payment page. Moves no money; a page can be paid twice (RP18). */
+    requestOneTimePayment(input: OneTimePaymentInput): Promise<OneTimePaymentResult>;
     /** Capability 3 · change the amount. Accepted is not applied: re-read. */
     changeAmount(input: ChangeAmountInput): Promise<MutationAcknowledgement>;
     /** Capability 4 · pause. Accepted is not applied: re-read. */
@@ -341,6 +407,8 @@ export interface PaymentProvider {
     resume(input: AuthorizationRef): Promise<MutationAcknowledgement>;
     /** Capability 5 · cancel. Accepted is not applied: re-read. */
     cancel(input: AuthorizationRef): Promise<MutationAcknowledgement>;
+    /** Capability 5 · close a payment page by moving its expiry to now. Accepted is not applied: re-read. */
+    closeOneTimePayment(input: PaymentPageRef): Promise<MutationAcknowledgement>;
     /** Capability 6 · refund. */
     refund(input: RefundInput): Promise<RefundResult>;
     /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
@@ -376,6 +444,16 @@ export interface PaymentProvider {
      * `readOrder`.
      */
     searchOrders(input: OrderSearchInput): Promise<OrderSearchResult>;
+    /**
+     * Capability 7 · read a payment page by id. The read carries its instant
+     * (AC:B1:4): a decision takes it through `assertFreshForAct`.
+     */
+    readOneTimePayment(input: PaymentPageRef): Promise<ProviderRead<PaymentPageSnapshot>>;
+    /**
+     * Capability 7 · search charges by our reference inside a creation range. Not a
+     * ProviderRead: no decision may rely on it (INV:D6); re-read each id with `readCharge`.
+     */
+    searchCharges(input: ChargeSearchInput): Promise<ChargeSearchResult>;
     /** Capability 8 · turn a delivery into a notice (kind, id, version only). */
     decodeNotice(input: NoticeDelivery): Promise<ProviderNotice>;
 }

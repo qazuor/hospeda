@@ -10,9 +10,12 @@
 #
 #     Espera en prod: f86c23272e
 #
-# Any number of such lines and of SHAs per line (7-40 hex chars with at least
-# one digit and one letter; backticks and Markdown bold are fine). Every SHA on
-# every line must be in `main` for the issue to fire.
+# Any number of such lines and of SHAs per line (7-40 hex chars; backticks and
+# Markdown bold are fine). Every SHA on every line must be in `main` for the
+# issue to fire. A token with both digits and letters is always a SHA; a token
+# that is only digits or only letters (a date such as 20261117, a word such as
+# defaced, or a SHA that happens to be all digits) counts only if it resolves
+# to a commit in this repository.
 #
 # On each push to `main` (.github/workflows/espera-prod-sync.yml) this script
 # lists the open issues carrying the label and, for every issue whose SHAs are
@@ -115,11 +118,22 @@ while IFS= read -r NODE; do
     # `**Espera en prod**:` are both accepted.
     DECLARED="$(printf '%s' "$NODE" | jq -r '.description // ""' |
         sed -nE 's/.*[Ee][Ss][Pp][Ee][Rr][Aa] [Ee][Nn] [Pp][Rr][Oo][Dd][*_ ]*:(.*)/\1/p')"
-    # A SHA token is 7-40 hex chars with at least one digit and one letter, so
-    # a date (20261117) or a hex-looking word (defaced) on the same line is
-    # not mistaken for a commit.
-    SHAS="$(printf '%s\n' "$DECLARED" | grep -oiE '\b[0-9a-f]{7,40}\b' | grep -E '[0-9]' | grep -iE '[a-f]' |
-        tr '[:upper:]' '[:lower:]' | sort -u || true)"
+    # A SHA token is 7-40 hex chars. One with both a digit and a letter is
+    # always taken, so a typo still fails loudly as an unknown SHA below. One
+    # that is only digits or only letters is ambiguous: a date (20261117) or a
+    # hex-looking word (defaced) must not be read as a commit, but a real short
+    # SHA can be all digits (HOS-2363). Those are taken only when they resolve
+    # to a commit; the workflow checks out with fetch-depth 0, so every pushed
+    # commit resolves.
+    SHAS=""
+    for TOKEN in $(printf '%s\n' "$DECLARED" | grep -oiE '\b[0-9a-f]{7,40}\b' | tr '[:upper:]' '[:lower:]' | sort -u || true); do
+        if printf '%s' "$TOKEN" | grep -qE '[0-9]' && printf '%s' "$TOKEN" | grep -qE '[a-f]'; then
+            SHAS="$SHAS$TOKEN"$'\n'
+        elif git rev-parse --verify -q "${TOKEN}^{commit}" >/dev/null; then
+            SHAS="$SHAS$TOKEN"$'\n'
+        fi
+    done
+    SHAS="$(printf '%s' "$SHAS" | sed '/^$/d')"
 
     if [ -z "$SHAS" ]; then
         fail "$ID has the '$ESPERA_LABEL' label but no 'Espera en prod: <sha>' line in its description, so it can never fire. Add the line or remove the label." "$ID"

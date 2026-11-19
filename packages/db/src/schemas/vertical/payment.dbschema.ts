@@ -1,5 +1,14 @@
 import { sql } from 'drizzle-orm';
-import { check, integer, pgTable, timestamp, unique, uuid, varchar } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    check,
+    integer,
+    pgTable,
+    timestamp,
+    unique,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import { addonInstances } from './addon-product.dbschema.ts';
 import { quotedList } from './quoted-list.ts';
 import { subscriptions } from './subscription.dbschema.ts';
@@ -45,6 +54,12 @@ export const payments = pgTable(
         refundedAmount: integer('refunded_amount').notNull().default(0),
         /** versión optimista */
         version: integer('version').notNull().default(1),
+        /**
+         * True once P1 credited the payment with the per-charge promo ledger in place
+         * (HOS-2352). A credited payment left `false` predates the ledger: its promo
+         * history is unknown, so the reconciliation never reports it as undercharged.
+         */
+        promoChargesRecorded: boolean('promo_charges_recorded').notNull().default(false),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
     },

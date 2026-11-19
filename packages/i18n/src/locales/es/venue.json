@@ -466,7 +466,7 @@
                 },
                 "invalid": "Revisá los campos del formulario.",
                 "locked": "Disponible desde el plan {{plan}}.",
-                "lockedNoPlan": "Esta función todavía no está disponible para tu plan.",
+                "lockedNoPlan": "Las promociones todavía no están disponibles para tu plan.",
                 "cacheNotice": "Puede tardar unos minutos en verse en la ficha.",
                 "deleteTitle": "Borrar promoción",
                 "deleteConfirm": "¿Querés borrar esta promoción?",

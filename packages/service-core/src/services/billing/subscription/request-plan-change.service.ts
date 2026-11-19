@@ -231,7 +231,8 @@ export async function requestPlanChange(
                     targetPlanVersionId: target.planVersionId,
                     targetBillingOptionId: target.id,
                     effectiveAt,
-                    keepSelection
+                    keepSelection,
+                    now: ports.clock.now()
                 });
                 return {
                     path: 'DOWNGRADE',
@@ -246,7 +247,8 @@ export async function requestPlanChange(
                 targetPlanVersionId: target.planVersionId,
                 targetBillingOptionId: target.id,
                 effectiveAt,
-                keepSelection
+                keepSelection,
+                now: ports.clock.now()
             });
         } catch (error) {
             const cause = extractPostgresErrorCause(error);

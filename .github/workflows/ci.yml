@@ -348,6 +348,11 @@ jobs:
       # addon_product.version_id: re-pointing it is an act of billing.
       - name: Check verticals never writes addon_product.version_id (TEST:V2:8)
         run: pnpm check:verticals-no-addon-product-write
+      # HOS-2352. Its own step, like every guard here. A writer that zeroes
+      # promo_redemption.remaining_charges goes through endPromoRedemptions(), so
+      # ended_at and ended_reason keep the promo on the charges it already priced.
+      - name: Check a zeroed promo counter records its end (HOS-2352)
+        run: pnpm check:promo-redemption-end
       # GUARD:G9, G10, G11 (HOS-1508, AC:B1:5/6/7). One step each, like every
       # guard here. G9: the reason sent to the provider is copy, not an id.
       # G10: the approval link is read only through sanitizeApprovalUrl (EX-37).

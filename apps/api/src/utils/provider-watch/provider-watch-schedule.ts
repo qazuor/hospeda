@@ -3,14 +3,12 @@
  *
  * One job, one DAILY tick: the account and the cadence come from the environment. The
  * environment is the one the external watchdog already uses (`HOSPEDA_HEALTHCHECKS_SLUG_PREFIX`):
- * staging watches the sandbox test account every week, production watches production once a
- * month, so the account a run targets and the watchdog check it pings always agree.
+ * staging watches the sandbox test account, production watches production, both every day, so
+ * the account a run targets and the watchdog check it pings always agree.
  *
  * @module utils/provider-watch/provider-watch-schedule
  */
 import type { WatchAccount } from '@repo/payments';
-
-const MARKET_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 
 /**
  * The most a live run may take: the job's timeout. A `running` row older than this is abandoned.
@@ -45,36 +43,20 @@ export function resolveWatchAccount(args: {
     return null;
 }
 
-/** Parts of an instant on the market clock. */
-function marketParts(args: { readonly at: Date }): {
-    readonly day: number;
-    readonly weekday: string;
-} {
-    const parts = new Intl.DateTimeFormat('en-US', {
-        timeZone: MARKET_TIME_ZONE,
-        day: 'numeric',
-        weekday: 'short'
-    }).formatToParts(args.at);
-    return {
-        day: Number(parts.find((part) => part.type === 'day')?.value),
-        weekday: parts.find((part) => part.type === 'weekday')?.value ?? ''
-    };
-}
-
 /**
- * Whether a SCHEDULED tick runs the battery. The job ticks DAILY and the environment picks its
- * day: the sandbox account runs every Monday (weekly), production runs on the 1st of every
- * month (monthly). A fixed day, not "the first Monday", keeps the gap between two production
- * runs under the watchdog's one month plus one day. A manual run is always due.
+ * Whether a SCHEDULED tick runs the battery. Every daily tick is due, in both accounts (owner
+ * decision 2026-11-18: the battery moves no money, so nothing argues for running it less often
+ * than the provider can change). Production still needs the current month's authorization,
+ * which the job checks separately. Kept as a function, taking the account and the instant, so a
+ * future cadence per account changes one place.
  *
  * @param args.account - The account the environment targets
  * @param args.now - The tick's instant
- * @returns Whether the battery runs
+ * @returns Whether the battery runs: always
  */
-export function isScheduledTickDue(args: {
+export function isScheduledTickDue(_args: {
     readonly account: WatchAccount;
     readonly now: Date;
 }): boolean {
-    const { day, weekday } = marketParts({ at: args.now });
-    return args.account === 'sandbox' ? weekday === 'Mon' : day === 1;
+    return true;
 }

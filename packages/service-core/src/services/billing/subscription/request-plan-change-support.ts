@@ -29,6 +29,7 @@ import {
 import { addCalendarMonths } from '@repo/utils';
 import { ServiceError } from '../../../types/index.js';
 import { exitPlanMigration } from '../plan-migration/plan-migration-exit.js';
+import { endPromoRedemptions } from '../promo/end-promo-redemptions.js';
 import { computeSuccessorCreditDays } from './successor-credit.js';
 
 /** Reads only the caller's subscription and its provider link. */
@@ -168,11 +169,14 @@ export async function queueDowngrade(input: {
     readonly targetBillingOptionId: string;
     readonly effectiveAt: Date;
     readonly keepSelection?: Record<string, string[]>;
+    /** The instant the downgrade was decided; it ends the promos (HOS-2352). */
+    readonly now: Date;
 }): Promise<void> {
+    const { now, ...queued } = input;
     await getDb().transaction(async (tx) => {
         await tx
             .insert(subscriptionScheduledChanges)
-            .values({ ...input, keepSelection: input.keepSelection ?? null });
+            .values({ ...queued, keepSelection: queued.keepSelection ?? null });
         await exitPlanMigration({
             tx,
             subscriptionId: input.subscriptionId,
@@ -180,7 +184,7 @@ export async function queueDowngrade(input: {
         });
         await tx
             .update(promoRedemptions)
-            .set({ remainingCharges: 0 })
+            .set(endPromoRedemptions({ endedAt: input.now, reason: 'DOWNGRADE' }))
             .where(eq(promoRedemptions.subscriptionId, input.subscriptionId));
     });
 }
@@ -223,6 +227,8 @@ export async function replaceQueuedDowngrade(input: {
     readonly targetBillingOptionId: string;
     readonly effectiveAt: Date;
     readonly keepSelection?: Record<string, string[]>;
+    /** The instant the downgrade was decided; it ends the promos (HOS-2352). */
+    readonly now: Date;
 }): Promise<void> {
     await getDb().transaction(async (tx) => {
         const [subscription] = await tx
@@ -274,7 +280,7 @@ export async function replaceQueuedDowngrade(input: {
         });
         await tx
             .update(promoRedemptions)
-            .set({ remainingCharges: 0 })
+            .set(endPromoRedemptions({ endedAt: input.now, reason: 'DOWNGRADE' }))
             .where(eq(promoRedemptions.subscriptionId, input.subscriptionId));
     });
 }

@@ -21,7 +21,9 @@ gateway (DEC-ARCH-004, HOS-1352 unit B1).
     exported only from `@repo/payments/fake`, for tests.
   - `MercadoPagoPaymentProvider`: `authorize`, `cancel`, `changeAmount`,
     `pause`, `resume`, `refund`, authorization and charge reads, charge listing,
-    authorization search, and order reads/search call Mercado Pago over native
+    authorization search, order reads/search, one-time payment pages
+    (`requestOneTimePayment`, `readOneTimePayment`, `closeOneTimePayment`) and
+    the charge search by reference (`searchCharges`) call Mercado Pago over native
     `fetch`. `charge` is deliberately rejected because recurring charges run
     on Mercado Pago's schedule. `decodeNotice` reads Mercado Pago Webhooks
     (`subscription_preapproval` and `payment`; other types are `INVALID_NOTICE`).
@@ -64,7 +66,7 @@ closed lists and one apart, validated at load (`FAKE_LISTS`):
 - **`lies`, M1..M13**: each row has its name, the matrix rows it comes from
   (date and account) and the test that proves our code resists it
   (`defenseTest`).
-- **`rules`, RP1..RP13**: provider rules and measured behaviour. Rules stay on;
+- **`rules`, RP1..RP20**: provider rules and measured behaviour. Rules stay on;
   measured behaviour can be turned off by name with a reason.
 - **`simulations`**: network cases nobody measured (`lostResponse`,
   `networkCut`, `noticesOutOfOrder`). Not lies, never counted as such.
@@ -88,6 +90,14 @@ deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
 expires), M13 (the first partial refund refused as not refundable), M1 on
 creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP8 and RP11 are switchable by name; RP13, the order search bounds of EX-57, is a rule). One-time orders enter the fake only through the test handle `placeOrder`; the fake HTTP server serves provider-shaped `readOrder`/`searchOrders` responses from those orders.
+One-time payment pages (HOS-2179) follow RP18 (a page takes more than one
+approved payment until it expires), RP19 (an expired page takes no payment, and
+its read carries no expired flag) and, over HTTP, RP20 (the return carries the
+payment, status, reference, merchant order and page ids, appended to the exact
+back_url; the `/es/` seen in the EX-68 probe was Hospeda's own root redirect). The test handle
+`payOnPage({ paymentPageId, outcome })` stands for the customer paying on the
+page. Whether the provider honours the creation key is not measured (EX-61), so
+the fake does not deduplicate by key: a repeated request opens another page.
 The other rows (M2, M12; RP10, RP12) stay in the list and arrive with the units that add their surface to the interface. The fake implements M7 and RP7, RP8 and RP11.
 
 Every delay of the fake runs on the injected clock: advance it to see a late
@@ -123,9 +133,28 @@ receiver. `deliverDue` continues to send the fake's original notice format.
 | `POST /preapproval` | `authorize` then read by id | `201` resource with raw `init_point` |
 | `GET /preapproval/{id}` | `readAuthorization` | serialized resource, including `free_trial` when present |
 | `PUT /preapproval/{id}` with `{"status":"cancelled"}` | `cancel` then read by id | serialized resource |
+| `POST /checkout/preferences` with the exact §5.1 body (strict: a `payer`, a `notification_url` or any unknown field is `400`) | `requestOneTimePayment` then read by id | `201` resource whose `init_point` is `{paymentScreenOrigin}/fake-checkout/{id}` |
+| `GET /checkout/preferences/{id}` | `readOneTimePayment` | serialized resource, no expired flag (RP19) |
+| `PUT /checkout/preferences/{id}` with `expiration_date_to` at or before now | `closeOneTimePayment` then read by id | serialized resource; any other update is `400` |
+| `GET /fake-checkout/{id}` | the fake payment screen (no `Authorization` needed) | HTML with approve and reject buttons; fatal screen once expired |
+| `POST /fake-checkout/{id}/pay?outcome=approved\|rejected` | `payOnPage` | approved: `302` to the return link with the RP20 parameters; rejected: the screen again, to retry |
 
-Every route requires a non-empty `Authorization: Bearer …` header. This
+Every route but the fake payment screen requires a non-empty `Authorization: Bearer …` header. This
 subpath is test-only; it is not exported from the package root.
+
+**Reaching the fake payment screen.** The approval link must be `https:` (`sanitizeApprovalUrl`
+refuses anything else, and it is not loosened for tests), while this server speaks plain http. So
+the `init_point` advertises an https origin, `paymentScreenOrigin`: a bare https origin passed to
+`startFakeProviderServer`, `https://payments-fake.invalid` by default (any other value refuses to
+start). The screen itself is served at the same path on `server.url`. A browser test reaches it in
+one of two ways:
+
+- pass a real https origin that proxies to `server.url`; or
+- intercept the advertised origin and forward each request to `server.url` with the same path and
+  query, without following redirects, so the `302` back to the site reaches the browser. With
+  Playwright: `page.route(`${DEFAULT_FAKE_PAYMENT_SCREEN_ORIGIN}/**`, ...)`, rewriting the URL and
+  calling `route.fetch({ url, maxRedirects: 0 })` before `route.fulfill({ response })`. The screen's
+  forms post to relative paths, so the same interception covers approve and reject.
 
 ## The approval link is shown only sanitized
 

@@ -151,7 +151,8 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:11 first-charge predecess
             .from(subscriptions)
             .where(eq(subscriptions.id, ids.successorId));
         expect(predecessor?.status).toBe('ACTIVE');
-        expect(predecessor?.succeededById).toBe(ids.successorId);
+        // HOS-2351: the rolled-back close leaves the open shape: no pointer, successor names it.
+        expect(predecessor?.succeededById).toBeNull();
         expect(successor?.succeedsId).toBe(ids.predecessorId);
     });
 

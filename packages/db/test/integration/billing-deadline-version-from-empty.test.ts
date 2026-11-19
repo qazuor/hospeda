@@ -14,12 +14,12 @@ const migration = readFileSync(
 afterAll(async () => closeTestPool());
 
 describe('TEST:B2:8 structural migration from zero', () => {
-    it('creates the base deadline version and publishes grace reminders as the latest version', async () => {
+    it('creates the base deadline version, then publishes grace reminders and the one-time payment page', async () => {
         const rows = await getTestDb()
             .select()
             .from(billingDeadlineVersions)
             .orderBy(asc(billingDeadlineVersions.version));
-        expect(rows).toHaveLength(2);
+        expect(rows).toHaveLength(3);
         expect(rows[0]?.version).toBe(1);
         expect(Object.keys(rows[0]?.values ?? {}).sort()).toEqual([
             '10',
@@ -51,6 +51,13 @@ describe('TEST:B2:8 structural migration from zero', () => {
             ...rows[0]?.values,
             '20': { daysBefore: [3, 1] }
         });
+        // HOS-2179 (P-2): page of 60 minutes, window margin of 60 minutes, everything else kept.
+        expect(rows[2]?.version).toBe(3);
+        expect(rows[2]?.values).toEqual({
+            ...rows[1]?.values,
+            '21': { pageMinutes: 60, windowMarginMinutes: 60 }
+        });
+        expect(rows[2]?.changedKey).toBeNull();
     });
 
     it.each(

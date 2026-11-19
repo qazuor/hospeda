@@ -38,6 +38,10 @@ export function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
         readCharge: (input) => fake.readCharge(input),
         readOrder: (input) => fake.readOrder(input),
         searchOrders: (input) => fake.searchOrders(input),
+        requestOneTimePayment: (input) => fake.requestOneTimePayment(input),
+        closeOneTimePayment: (input) => fake.closeOneTimePayment(input),
+        readOneTimePayment: (input) => fake.readOneTimePayment(input),
+        searchCharges: (input) => fake.searchCharges(input),
         decodeNotice: (input) => fake.decodeNotice(input)
     };
 }

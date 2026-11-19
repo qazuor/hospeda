@@ -20,7 +20,7 @@ export const MERCADOPAGO_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freez
     },
     charge: {
         level: 'full',
-        note: 'The provider executes each cycle charge on its own, with a variable and unpredictable delay.'
+        note: 'The provider executes each cycle charge on its own, with a variable and unpredictable delay. A one-time payment page moves no money when created and takes a second approved payment until it expires (RP18, measured 2026-11-18).'
     },
     changeAmount: {
         level: 'full',
@@ -38,7 +38,7 @@ export const MERCADOPAGO_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freez
     },
     cancel: {
         level: 'full',
-        note: 'Irreversible (PA-5).'
+        note: 'Irreversible (PA-5). Closing a one-time payment page moves its expiry to now; the update is documented, not measured (EX-66): confirm by re-reading.'
     },
     refund: {
         level: 'full',
@@ -51,6 +51,11 @@ export const MERCADOPAGO_CAPABILITY_SUPPORT: CapabilitySupportMap = Object.freez
                 gap: 'Search is not reliable: it ignores our reference (RC-1). Read by id is.',
                 handling: 'block',
                 how: 'The domain only reads by id; the inventory to reconcile is ours (B/09).'
+            },
+            {
+                gap: 'A one-time payment page read carries no expired flag, and an expired page takes no payment (RP19, measured 2026-11-18).',
+                handling: 'emulate',
+                how: "The domain compares the page's expiry with its own clock (HOS-2179 §5.2)."
             }
         ]
     },

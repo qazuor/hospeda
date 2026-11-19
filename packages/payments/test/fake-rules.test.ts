@@ -73,9 +73,9 @@ async function approvedCharge(): Promise<string> {
 }
 
 describe('TEST:B1:14 the list of rules and measured behaviour', () => {
-    it('holds seventeen rows, RP1 to RP17: eleven rules and six measured behaviours', () => {
+    it('holds twenty rows, RP1 to RP20: fourteen rules and six measured behaviours', () => {
         expect(FAKE_RULES.map((row) => row.id)).toEqual(
-            Array.from({ length: 17 }, (_, i) => `RP${i + 1}`)
+            Array.from({ length: 20 }, (_, i) => `RP${i + 1}`)
         );
         expect(FAKE_RULES.filter((row) => row.kind === 'rule').map((row) => row.id)).toEqual([
             'RP1',
@@ -88,7 +88,10 @@ describe('TEST:B1:14 the list of rules and measured behaviour', () => {
             'RP14',
             'RP15',
             'RP16',
-            'RP17'
+            'RP17',
+            'RP18',
+            'RP19',
+            'RP20'
         ]);
         expect(
             FAKE_RULES.filter((row) => row.kind === 'measuredBehaviour').map((row) => row.id)

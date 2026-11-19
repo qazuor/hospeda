@@ -31,6 +31,8 @@ function partnerOfTypeCondition(): SQL {
  */
 export class PartnerTypeModel extends BaseModelImpl<PartnerType> {
     protected table = partnerTypes;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'partnerType';
 
     protected getTableName(): string {

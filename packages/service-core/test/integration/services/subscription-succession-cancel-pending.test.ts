@@ -60,8 +60,8 @@ async function seedPendingSuccession(input: {
     return { choice, seeded, ports, request, beforeCancel, successorId: successor.subscriptionId };
 }
 
-describe('HOS-2344: S40 cancels a pending successor and releases its predecessor', () => {
-    it('abandons the successor, clears succeeded_by_id, cancels the authorization and allows a new plan change', async () => {
+describe('HOS-2344: S40 cancels a pending successor and frees its predecessor', () => {
+    it('abandons the successor, leaves succeeded_by_id NULL, cancels the authorization and allows a new plan change', async () => {
         const { choice, seeded, ports, request, beforeCancel, successorId } =
             await seedPendingSuccession({ status: 'ACTIVE' });
         const successorLink = await linkOf(successorId);
@@ -102,7 +102,9 @@ describe('HOS-2344: S40 cancels a pending successor and releases its predecessor
 
         const next = await startSuccession(request, ports);
         expect(next.subscriptionId).not.toBe(successorId);
-        expect((await row(seeded.predecessor.id)).succeededById).toBe(next.subscriptionId);
+        // HOS-2351: S1 leaves the pointer to S18; the new successor's succeeds_id marks it.
+        expect((await row(seeded.predecessor.id)).succeededById).toBeNull();
+        expect((await row(next.subscriptionId)).succeedsId).toBe(seeded.predecessor.id);
     });
 
     it('keeps the predecessor deferred courtesy open', async () => {
@@ -150,7 +152,7 @@ describe('HOS-2344: S40 cancels a pending successor and releases its predecessor
         expect(predecessor.succeededById).toBeNull();
     });
 
-    it('does not cancel a successor the payer already authorized and keeps the pointer', async () => {
+    it('does not cancel a successor the payer already authorized and keeps the succession open', async () => {
         const { choice, seeded, ports, successorId } = await seedPendingSuccession({
             status: 'ACTIVE'
         });
@@ -161,7 +163,8 @@ describe('HOS-2344: S40 cancels a pending successor and releases its predecessor
         ).rejects.toMatchObject({ reason: 'COMMITMENT_TAKEN' });
 
         expect((await row(successorId)).status).toBe('PENDING_AUTHORIZATION');
-        expect((await row(seeded.predecessor.id)).succeededById).toBe(successorId);
+        expect((await row(successorId)).succeedsId).toBe(seeded.predecessor.id);
+        expect((await row(seeded.predecessor.id)).succeededById).toBeNull();
     });
 
     it('answers NOT_FOUND to another person', async () => {

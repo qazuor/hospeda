@@ -138,10 +138,8 @@ export async function cutSuccessorWrites(
             .returning({ id: manualPayments.id });
         manualInstallmentClosed = rows.length > 0;
     }
-    const predecessorRows = input.tx
-        .select({ id: subscriptions.id })
-        .from(subscriptions)
-        .where(eq(subscriptions.succeededById, successor.id));
+    // The deferred balance waiting for this successor lives on its predecessor, which an open
+    // succession names through the successor's succeeds_id (HOS-2351: no pointer until S18).
     const grants = await input.tx
         .update(courtesyGrants)
         .set({
@@ -151,7 +149,7 @@ export async function cutSuccessorWrites(
         })
         .where(
             and(
-                inArray(courtesyGrants.subscriptionId, predecessorRows),
+                eq(courtesyGrants.subscriptionId, predecessorSubscriptionId),
                 isNotNull(courtesyGrants.balanceMonths),
                 isNull(courtesyGrants.balanceClosedAt)
             )

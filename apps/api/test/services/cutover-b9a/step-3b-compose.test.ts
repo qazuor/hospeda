@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
     injectClock: vi.fn(),
     injectProvider: vi.fn(),
     disconnectRedis: vi.fn(),
+    shutdownGovernor: vi.fn(),
     loggerError: vi.fn(),
     buildPorts: vi.fn(),
     defaultProvider: vi.fn(),
@@ -43,6 +44,9 @@ vi.mock('../../../src/middlewares/actor.js', () => ({
 }));
 vi.mock('@repo/service-core', () => ({ getUserRoles: mocks.getUserRoles }));
 vi.mock('../../../src/utils/redis.js', () => ({ disconnectRedis: mocks.disconnectRedis }));
+vi.mock('../../../src/utils/mp-traffic-governor.js', () => ({
+    shutdownMercadoPagoTrafficGovernor: mocks.shutdownGovernor
+}));
 vi.mock('../../../src/utils/logger.js', () => ({ apiLogger: { error: mocks.loggerError } }));
 
 import { composeStep3bProcess } from '../../../src/services/cutover-b9a/step-3b.compose.js';
@@ -68,6 +72,7 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
         mocks.buildPorts.mockReturnValue({});
         mocks.defaultProvider.mockReturnValue({});
         mocks.disconnectRedis.mockResolvedValue(undefined);
+        mocks.shutdownGovernor.mockResolvedValue(undefined);
     });
 
     it('TEST:1698:3 AC:1698:2 waits for listing recalculations when stopping', async () => {
@@ -114,5 +119,34 @@ describe('TEST:1698:3 AC:1698:2 step 3b composition drain', () => {
 
         await expect(composeStep3bProcess().stop()).resolves.toBeUndefined();
         expect(mocks.loggerError).toHaveBeenCalledTimes(1);
+        expect(mocks.shutdownGovernor).toHaveBeenCalledTimes(1);
+    });
+
+    it('TEST:2115:2 shuts the Mercado Pago traffic governor down after draining', async () => {
+        // Arrange
+        mocks.drain.mockResolvedValue(undefined);
+
+        // Act
+        await composeStep3bProcess().stop();
+
+        // Assert
+        expect(mocks.shutdownGovernor).toHaveBeenCalledTimes(1);
+        expect(mocks.drain.mock.invocationCallOrder[0]!).toBeLessThan(
+            mocks.shutdownGovernor.mock.invocationCallOrder[0]!
+        );
+    });
+
+    it('TEST:2115:3 releases Redis and the governor even when the drain rejects', async () => {
+        // Arrange
+        mocks.drain.mockRejectedValue(new Error('drain failed'));
+        mocks.disconnectRedis.mockResolvedValue(undefined);
+
+        // Act
+        const stopping = composeStep3bProcess().stop();
+
+        // Assert
+        await expect(stopping).rejects.toThrow('drain failed');
+        expect(mocks.disconnectRedis).toHaveBeenCalledTimes(1);
+        expect(mocks.shutdownGovernor).toHaveBeenCalledTimes(1);
     });
 });
