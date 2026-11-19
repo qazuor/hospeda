@@ -145,7 +145,8 @@
             "17": "Escalonamento de uma marca aberta",
             "18": "Verificações de pagamentos creditados",
             "19": "Janela do resumo de conciliação",
-            "20": "Marcos do aviso de fim de carência"
+            "20": "Marcos do aviso de fim de carência",
+            "21": "Página de pagamento de complemento avulso"
         },
         "fields": {
             "days": "Dias",
@@ -159,7 +160,9 @@
             "noticeDays": "Dias de aviso",
             "contactDays": "Contatos (dias antes)",
             "hoursRemaining": "Horas restantes",
-            "minutes": "Minutos"
+            "minutes": "Minutos",
+            "pageMinutes": "Minutos da página de pagamento",
+            "windowMarginMinutes": "Margem da janela (minutos)"
         },
         "listHelp": "Separados por vírgula",
         "noValue": "Sem valor publicado: não pode ser alterado aqui.",

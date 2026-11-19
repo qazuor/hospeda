@@ -145,7 +145,8 @@
             "17": "Open mark escalation",
             "18": "Credited-payment checks window",
             "19": "Reconciliation summary window",
-            "20": "Grace-ending reminder milestones"
+            "20": "Grace-ending reminder milestones",
+            "21": "One-time add-on payment page"
         },
         "fields": {
             "days": "Days",
@@ -159,7 +160,9 @@
             "noticeDays": "Notice days",
             "contactDays": "Contacts (days before)",
             "hoursRemaining": "Hours remaining",
-            "minutes": "Minutes"
+            "minutes": "Minutes",
+            "pageMinutes": "Payment page minutes",
+            "windowMarginMinutes": "Window margin (minutes)"
         },
         "listHelp": "Comma-separated",
         "noValue": "No published value: it cannot be changed here.",
