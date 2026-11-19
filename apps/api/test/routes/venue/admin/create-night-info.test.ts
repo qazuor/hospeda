@@ -15,6 +15,7 @@
  * (`BUSINESS_LINE_RULES`, `listPublicBusinessLines`,
  * `resolveSectionBusinessLines`), never written as literals (G-FAC-03).
  */
+
 import {
     BUSINESS_LINE_RULES,
     listPublicBusinessLines,
@@ -23,6 +24,7 @@ import {
 } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../../../helpers/app-import-timeout';
 
 delete process.env.CI;
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -200,7 +202,7 @@ describe('Admin venue create — nightInfo section presence (HOS-2052)', () => {
     beforeAll(async () => {
         const { initApp } = await import('../../../../src/app.js');
         app = initApp();
-    });
+    }, APP_IMPORT_TIMEOUT_MS);
 
     beforeEach(() => {
         vi.clearAllMocks();

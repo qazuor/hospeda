@@ -3,6 +3,7 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, VenueService } from '@repo/service-core';
 import { describe, expect, it, vi } from 'vitest';
+import { APP_IMPORT_TIMEOUT_MS } from '../helpers/app-import-timeout';
 
 const { countGallery } = vi.hoisted(() => ({ countGallery: vi.fn() }));
 
@@ -53,19 +54,23 @@ async function request(id: string) {
 }
 
 describe('TEST:V5:4 declared vertical on media upload', () => {
-    it('pairs a venue id declared as accommodation with an invented id', async () => {
-        const accommodation = vi
-            .spyOn(AccommodationService.prototype, 'getById')
-            .mockResolvedValue({
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'accommodation not found' }
-            });
-        const venue = vi.spyOn(VenueService.prototype, 'getById');
-        const foreign = await request(VENUE_ID);
-        const missing = await request(MISSING_ID);
-        expect(foreign).toEqual(missing);
-        expect(foreign.status).toBe(404);
-        expect(accommodation).toHaveBeenCalledTimes(2);
-        expect(venue).not.toHaveBeenCalled();
-        expect(countGallery).not.toHaveBeenCalled();
-    });
+    it(
+        'pairs a venue id declared as accommodation with an invented id',
+        async () => {
+            const accommodation = vi
+                .spyOn(AccommodationService.prototype, 'getById')
+                .mockResolvedValue({
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'accommodation not found' }
+                });
+            const venue = vi.spyOn(VenueService.prototype, 'getById');
+            const foreign = await request(VENUE_ID);
+            const missing = await request(MISSING_ID);
+            expect(foreign).toEqual(missing);
+            expect(foreign.status).toBe(404);
+            expect(accommodation).toHaveBeenCalledTimes(2);
+            expect(venue).not.toHaveBeenCalled();
+            expect(countGallery).not.toHaveBeenCalled();
+        },
+        APP_IMPORT_TIMEOUT_MS
+    );
 });
