@@ -194,9 +194,10 @@ export const ProviderWatchAuthorizationInputSchema = z.object({
 export type ProviderWatchAuthorizationInput = z.infer<typeof ProviderWatchAuthorizationInputSchema>;
 
 /**
- * Value shape for `billing.providerWatchAuthorization`: the input plus the one-shot consumption
- * state. One authorization allows ONE run within its month; the run that STARTS consumes it,
- * atomically, and a re-run needs a new authorization. `accountId` is optional here only so a
+ * Value shape for `billing.providerWatchAuthorization`: the input plus its use. An amount above 0
+ * allows ONE run within its month; the run that STARTS consumes it, atomically, and a re-run needs
+ * a new authorization. An amount of 0 (a catalog that moves no money) is not consumed: it covers
+ * one run per market day for its whole month (owner decision on B1, 2026-11-19). `accountId` is optional here only so a
  * hand-edited row without it still parses: the run refuses it.
  */
 export const ProviderWatchAuthorizationValueSchema = ProviderWatchAuthorizationInputSchema.partial({
@@ -204,8 +205,18 @@ export const ProviderWatchAuthorizationValueSchema = ProviderWatchAuthorizationI
 }).extend({
     /** When the authorization was consumed (ISO-8601). Absent while unconsumed. */
     consumedAt: z.string().datetime({ offset: true }).optional(),
-    /** The run that consumed it. Absent while unconsumed. */
-    consumedByRunId: z.string().uuid().optional()
+    /** The run that consumed it. Absent while unconsumed, and always for an amount of 0. */
+    consumedByRunId: z.string().uuid().optional(),
+    /**
+     * An amount of 0 is never consumed (owner decision on B1, 2026-11-19): it covers one run per
+     * market day for its month. The last market day a run took it, `YYYY-MM-DD`.
+     */
+    lastRunDay: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD')
+        .optional(),
+    /** The runs an amount of 0 covered, in order: the audit of its daily runs. */
+    runIds: z.array(z.string().uuid()).optional()
 });
 
 /** Inferred type for the `billing.providerWatchAuthorization` value. */

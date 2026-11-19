@@ -25,11 +25,13 @@ import {
     type WatchAccount,
     type WatchAlert,
     type WatchAuthorization,
+    type WatchContext,
     type WatchEntry,
     WatchGuardError,
     type WatchMeasurementRecord,
     type WatchRunOutcome,
     type WatchRunRecord,
+    type WatchSettings,
     type WatchShapeBaseline,
     type WatchTransport
 } from './types';
@@ -38,7 +40,8 @@ import {
     assertAccountMatches,
     assertAuthorizationCoversMoneyCatalog,
     assertBudgetMatches,
-    assertProductionAuthorized
+    assertProductionAuthorized,
+    marketDayOf
 } from './watch-guards';
 import { createGuardedSend } from './watch-send';
 import { createWatchRunState, type WatchRunState } from './watch-write-guard';
@@ -58,6 +61,8 @@ export interface RunWatchBatteryInput {
     readonly signal?: AbortSignal | undefined;
     /** No measurement starts at or after this instant. */
     readonly deadlineAt?: Date | undefined;
+    /** Per-deployment values the measurements need (payer email, return URL). */
+    readonly settings?: WatchSettings | undefined;
     /**
      * The shapes the owner ACCEPTED for this account; `null` when none was accepted yet. A shape
      * that differs from it alerts on EVERY run until the owner accepts the new one.
@@ -67,8 +72,13 @@ export interface RunWatchBatteryInput {
     }) => Promise<WatchShapeBaseline | null>;
     /**
      * Opens the run's row. For a production run that passed every pre-flight check
-     * (`consumeAuthorization` set) it ALSO consumes the authorization, atomically with the
-     * insert; `authorizationConsumed` is false when another run consumed it first.
+     * (`consumeAuthorization` set) it ALSO takes the authorization, atomically with the insert;
+     * `authorizationConsumed` is false when it could not be taken.
+     *
+     * Owner decision on B1 (2026-11-19): an authorization ABOVE 0 is one-shot, consumed by the run
+     * that takes it. An authorization of 0 (a catalog that moves no money) is NOT consumed: it
+     * covers one run per market `day` for its whole month, and the run that takes the day is
+     * recorded against it; a second run the same day cannot take it.
      */
     readonly startRun: (args: {
         readonly account: WatchAccount;
@@ -77,6 +87,8 @@ export interface RunWatchBatteryInput {
             readonly month: string;
             readonly maxChargeMinor: number;
             readonly accountId: string;
+            /** The market day of the run (`YYYY-MM-DD`): what an authorization of 0 is taken for. */
+            readonly day: string;
         };
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
     /**
@@ -145,6 +157,43 @@ function shapeAlerts(args: {
     );
 }
 
+/** The label the engine's own cleanup cancels are recorded under. */
+export const CLEANUP_CANCEL_LABEL = 'engine-cleanup-cancel';
+
+/**
+ * Cancels every pending preapproval this measurement created and did not cancel (review of #4538,
+ * K1). A measurement can lose track of one it created: the adapter may throw while parsing a 2xx
+ * create (no `init_point`, say) after the guarded send already recorded the id. The engine holds
+ * the id, so the engine sends the exact `{status: 'cancelled'}`, through the measurement's own
+ * send (the cleanup exemption lets it pass a tripped guard), BEFORE the send is settled. A cancel
+ * that fails is left for the close of the run, which reports it as `PENDING_NOT_CANCELLED`.
+ */
+async function cancelLeftPending(args: {
+    readonly entry: WatchEntry;
+    readonly state: WatchRunState;
+    readonly send: WatchContext['send'];
+}): Promise<void> {
+    const left = [...args.state.pendingCreated]
+        .filter(
+            ([id, { entryId }]) => entryId === args.entry.id && !args.state.cancelledIds.has(id)
+        )
+        .map(([id]) => id);
+    for (const id of left) {
+        try {
+            await args.send({
+                label: CLEANUP_CANCEL_LABEL,
+                request: {
+                    method: 'PUT',
+                    path: `/preapproval/${encodeURIComponent(id)}`,
+                    body: { status: 'cancelled' }
+                }
+            });
+        } catch {
+            // Not cancelled: the close of the run names it (PENDING_NOT_CANCELLED).
+        }
+    }
+}
+
 async function measureEntry(args: {
     readonly entry: WatchEntry;
     readonly input: RunWatchBatteryInput;
@@ -173,6 +222,7 @@ async function measureEntry(args: {
         runId,
         state,
         runCap: input.authorization?.maxChargeMinor ?? 0,
+        settings: input.settings ?? {},
         shapes,
         providerIds,
         record: (progress) => input.recordProgress({ runId, measurementId: entry.id, ...progress })
@@ -181,11 +231,18 @@ async function measureEntry(args: {
     let failed = false;
     let failure: unknown;
     try {
-        obtained = await entry.measure({ send: guarded.send });
+        obtained = await entry.measure({
+            send: guarded.send,
+            replay: guarded.replay,
+            runId,
+            now: () => input.clock.now(),
+            settings: input.settings ?? {}
+        });
     } catch (error) {
         failed = true;
         failure = error;
     }
+    await cancelLeftPending({ entry, state, send: guarded.send });
     // Whatever the measurement did, no send may still be in flight (nor start) when its ids are
     // read and the run is closed: settle first, then decide.
     const guardFailure = await guarded.settle();
@@ -206,7 +263,7 @@ async function measureEntry(args: {
         };
     }
     const alerts: WatchAlert[] = [];
-    const matches = jsonEqual({ left: obtained, right: entry.expected });
+    const matches = jsonEqual({ left: comparedPart({ entry, obtained }), right: entry.expected });
     if (!matches) {
         alerts.push({
             measurementId: entry.id,
@@ -227,6 +284,23 @@ async function measureEntry(args: {
         },
         alerts
     };
+}
+
+/**
+ * What of the obtained value is compared with `expected`: all of it, less the entry's
+ * `reportedOnly` keys, which stay in the record.
+ */
+function comparedPart(args: {
+    readonly entry: WatchEntry;
+    readonly obtained: JsonValue;
+}): JsonValue {
+    const { entry, obtained } = args;
+    if (entry.reportedOnly === undefined || entry.reportedOnly.length === 0) return obtained;
+    if (obtained === null || typeof obtained !== 'object' || Array.isArray(obtained))
+        return obtained;
+    return Object.fromEntries(
+        Object.entries(obtained).filter(([key]) => !entry.reportedOnly?.includes(key))
+    );
 }
 
 /** Why no measurement may start now, or `null` when one may. */
@@ -332,14 +406,18 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
                   consumeAuthorization: {
                       month: input.authorization.month,
                       maxChargeMinor: input.authorization.maxChargeMinor,
-                      accountId: input.authorization.accountId ?? ''
+                      accountId: input.authorization.accountId ?? '',
+                      day: marketDayOf({ at: startedAt })
                   }
               }
             : {})
     });
     if (preflightPassed && input.account === 'production' && !started.authorizationConsumed) {
         outcome = 'refused';
-        reason = 'AUTHORIZATION_CONSUMED: another run consumed the production authorization first';
+        reason =
+            input.authorization?.maxChargeMinor === 0
+                ? 'AUTHORIZATION_DAY_TAKEN: another run already took the production authorization today; an authorization of 0 covers one run a day'
+                : 'AUTHORIZATION_CONSUMED: another run consumed the production authorization first';
     }
 
     if (outcome === 'completed') {
@@ -389,6 +467,17 @@ export async function runWatchBattery(input: RunWatchBatteryInput): Promise<RunW
             outcome = 'failed';
             reason = stopped;
         }
+    }
+
+    // Security review 2026-11-18: a pending preapproval left behind could still be authorized by
+    // whoever opens its link. Whatever else happened, a run that leaves one fails loudly.
+    const uncancelled = [...state.pendingCreated].filter(([id]) => !state.cancelledIds.has(id));
+    if (uncancelled.length > 0) {
+        outcome = 'aborted';
+        const listed = uncancelled
+            .map(([id, { entryId, key }]) => `${id} (${entryId}, key ${key})`)
+            .join(', ');
+        reason = `PENDING_NOT_CANCELLED: the run created and did not cancel ${listed}${reason === undefined ? '' : `; ${reason}`}`;
     }
 
     const run: WatchRunRecord = {

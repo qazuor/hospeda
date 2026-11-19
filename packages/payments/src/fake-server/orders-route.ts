@@ -1,5 +1,6 @@
 import type { IncomingHttpHeaders } from 'node:http';
 import { z } from 'zod';
+import { FAKE_ORDER_SEARCH_MAX_MS } from '../fake/fake-orders';
 import type { FakePaymentProvider } from '../fake/fake-payment-provider';
 import { PaymentProviderError } from '../provider/errors';
 
@@ -148,6 +149,16 @@ export async function handleOrdersRoute(args: {
         const begin = args.url.searchParams.get('begin_date');
         const end = args.url.searchParams.get('end_date');
         if (!begin || !end) return { status: 400, body: { code: 'missing_required_params' } };
+        // RP13 / EX-57: a window over a month is refused with this code and message.
+        if (Date.parse(end) - Date.parse(begin) > FAKE_ORDER_SEARCH_MAX_MS) {
+            return {
+                status: 400,
+                body: {
+                    code: 'invalid_search_params',
+                    message: 'date range: maximum allowed is 1 month'
+                }
+            };
+        }
         const reference = args.url.searchParams.get('external_reference') ?? '';
         const found = await args.provider.searchOrders({
             createdFrom: begin,

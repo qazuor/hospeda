@@ -94,7 +94,8 @@ describe('openWatchRun', () => {
                 consumeAuthorization: {
                     month: '2026-11',
                     maxChargeMinor: 150000,
-                    accountId: '100000001'
+                    accountId: '100000001',
+                    day: '2026-11-17'
                 }
             })
         ).resolves.toEqual({ runId: 'run-1', authorizationConsumed: true });
@@ -104,7 +105,8 @@ describe('openWatchRun', () => {
             consumeAuthorization: {
                 month: '2026-11',
                 maxChargeMinor: 150000,
-                accountId: '100000001'
+                accountId: '100000001',
+                day: '2026-11-17'
             },
             abandonRunsStartedBefore: new Date(START.getTime() - 600_000)
         });

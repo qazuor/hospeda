@@ -93,6 +93,7 @@ async function run(args: {
     readonly store?: ReturnType<typeof memoryRunStore>;
     readonly account?: 'sandbox' | 'production';
     readonly authorization?: WatchAuthorization | null;
+    readonly now?: Date;
 }) {
     const store = args.store ?? memoryRunStore();
     const account = args.account ?? 'sandbox';
@@ -104,7 +105,7 @@ async function run(args: {
             args.authorization === undefined
                 ? { month: '2026-11', maxChargeMinor: CAP, accountId: '100000001' }
                 : args.authorization,
-        clock: createAdjustableClock({ start: NOW }),
+        clock: createAdjustableClock({ start: args.now ?? NOW }),
         ...store.ports
     });
     return { ...result, store };
@@ -501,7 +502,12 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
     });
 
     describe('a read-only battery (no money-moving measurement, sum 0)', () => {
-        const readOnly = (authorizedMinor: number, store = memoryRunStore()) => {
+        const readOnly = (
+            authorizedMinor: number,
+            store = memoryRunStore(),
+            now = NOW,
+            month = '2026-11'
+        ) => {
             const { transport, sent } = provider({ account: 'production' });
             const catalog: readonly WatchEntry[] = [
                 {
@@ -521,8 +527,9 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
                         transport,
                         store,
                         account: 'production',
+                        now,
                         authorization: {
-                            month: '2026-11',
+                            month,
                             maxChargeMinor: authorizedMinor,
                             accountId: '100000001'
                         }
@@ -530,11 +537,13 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
             };
         };
 
-        it('runs with an authorization of 0 and consumes it once', async () => {
+        it('runs with an authorization of 0 and does not consume it (B1)', async () => {
             const { go, store } = readOnly(0);
             const result = await go();
             expect(result.run.outcome).toBe('completed');
-            expect(store.consumedBy()).toBe(result.runId);
+            expect(store.consumedBy()).toBeUndefined();
+            expect(store.dailyRuns()).toEqual([result.runId]);
+            expect(store.started[0]?.day).toBe('2026-11-17');
         });
 
         it('refuses an authorization above 0, naming both numbers, and does not consume it', async () => {
@@ -546,14 +555,87 @@ describe('N3: the authorized amount equals the sum of the money-moving measureme
             expect(store.consumedBy()).toBeUndefined();
         });
 
-        it('does not let a consumed authorization of 0 start a second run', async () => {
+        it('lets two consecutive daily ticks run against the same authorization of 0 (B1)', async () => {
+            const store = memoryRunStore();
+            const first = await readOnly(0, store).go();
+            const second = await readOnly(0, store, new Date('2026-11-18T12:00:00.000Z')).go();
+            expect(first.run.outcome).toBe('completed');
+            expect(second.run.outcome).toBe('completed');
+            expect(store.dailyRuns()).toEqual([first.runId, second.runId]);
+            expect(store.started.map((entry) => entry.day)).toEqual(['2026-11-17', '2026-11-18']);
+        });
+
+        it('takes the day on the market clock, not UTC (B1)', async () => {
+            // 01:30 UTC on the 18th is still the 17th in Buenos Aires: the day already taken.
+            const store = memoryRunStore();
+            await readOnly(0, store).go();
+            const late = await readOnly(0, store, new Date('2026-11-18T01:30:00.000Z')).go();
+            expect(late.run.outcome).toBe('refused');
+            expect(store.started[1]?.day).toBe('2026-11-17');
+        });
+
+        it('refuses a second run the same day against an authorization of 0 (B1)', async () => {
             const store = memoryRunStore();
             const first = await readOnly(0, store).go();
             expect(first.run.outcome).toBe('completed');
             const second = await readOnly(0, store).go();
             expect(second.run.outcome).toBe('refused');
+            expect(second.run.reason).toContain('AUTHORIZATION_DAY_TAKEN');
+        });
+
+        it('refuses an authorization of 0 the next month (B1)', async () => {
+            const store = memoryRunStore();
+            await readOnly(0, store).go();
+            const december = await readOnly(0, store, new Date('2026-12-01T12:00:00.000Z')).go();
+            expect(december.run.outcome).toBe('refused');
+            expect(december.run.reason).toContain('AUTHORIZATION_STALE');
+            expect(store.dailyRuns()).toHaveLength(1);
+        });
+
+        it('still refuses a second run against an authorization above 0 (B1)', async () => {
+            const { go, store } = production([100000], 100000);
+            const first = await go();
+            const second = await run({
+                catalog: [money('RP1', async () => 'done', 100000)],
+                transport: provider({ account: 'production' }).transport,
+                store,
+                account: 'production',
+                now: new Date('2026-11-18T12:00:00.000Z'),
+                authorization: { month: '2026-11', maxChargeMinor: 100000, accountId: '100000001' }
+            });
+            expect(first.run.outcome).toBe('completed');
+            expect(store.consumedBy()).toBe(first.runId);
+            expect(second.run.outcome).toBe('refused');
             expect(second.run.reason).toContain('AUTHORIZATION_CONSUMED');
         });
+    });
+
+    it('refuses an authorization of 0 mid-month once a money-moving measurement appears (B1)', async () => {
+        // Day 1: a read-only catalog runs against 0. Day 2: a money measurement was added.
+        const store = memoryRunStore();
+        const readOnlyCatalog: readonly WatchEntry[] = [
+            {
+                id: 'RP7',
+                accounts: ['sandbox', 'production'],
+                effect: 'read',
+                expected: 'done',
+                measure: async () => 'done'
+            }
+        ];
+        const zero = { month: '2026-11', maxChargeMinor: 0, accountId: '100000001' };
+        const first = await run({
+            catalog: readOnlyCatalog,
+            transport: provider({ account: 'production' }).transport,
+            store,
+            account: 'production',
+            authorization: zero
+        });
+        const { go } = production([100000], 0, store);
+        const second = await go();
+        expect(first.run.outcome).toBe('completed');
+        expect(second.run.outcome).toBe('refused');
+        expect(second.run.reason).toContain('AUTHORIZATION_SUM_MISMATCH');
+        expect(store.dailyRuns()).toEqual([first.runId]);
     });
 
     it('refuses an authorization of 0 when the money-moving measurements add up to more than 0', async () => {
