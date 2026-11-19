@@ -28,6 +28,22 @@ export const WATCH_TEST_ACCOUNT_TAG = 'test_user';
 const MARKET_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 
 /**
+ * The day of an instant on the market clock (owner decision on B1, 2026-11-19): a zero-sum
+ * authorization covers one run per market day.
+ *
+ * @param args.at - The instant
+ * @returns `YYYY-MM-DD` as read in Buenos Aires
+ */
+export function marketDayOf(args: { readonly at: Date }): string {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: MARKET_TIME_ZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(args.at);
+}
+
+/**
  * The month of an instant on the market clock.
  *
  * @param args.at - The instant

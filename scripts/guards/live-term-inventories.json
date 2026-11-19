@@ -482,7 +482,7 @@
             "file": "packages/service-core/src/services/billing/subscription/successor-cut-writes.ts",
             "symbol": "cutSuccessorWrites",
             "row": null,
-            "why": "AC:B8b:13 closes only open non-null courtesy balances whose subscription row has succeeded_by_id pointing to the successor.",
+            "why": "AC:B8b:13 closes only open non-null courtesy balances of the predecessor its live successor names through succeeds_id (HOS-2351: no succeeded_by_id until S18).",
             "subject": "courtesy_grant"
         },
         {

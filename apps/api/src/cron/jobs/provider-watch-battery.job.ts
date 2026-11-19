@@ -5,10 +5,10 @@
  * what changed, mails the administrator and adjusts nothing. This file only wires ports: the
  * engine, its guards and the catalog live in `@repo/payments`.
  *
- * One job, one DAILY tick. The environment decides the account and the cadence: staging
- * watches the sandbox test account on Mondays (weekly), production watches production on the 1st
- * of each month (monthly), and a manual trigger runs either at any time. Production does not start
- * without the owner's authorization of the current month.
+ * One job, one DAILY tick, in both accounts (owner decision 2026-11-18). The environment decides
+ * the account: staging watches the sandbox test account, production watches production, and a
+ * manual trigger runs either at any time. No measurement moves money. Production still does not
+ * start without the owner's authorization of the current month.
  *
  * The external watchdog is pinged ONLY by a run that completed and measured at least one
  * entry. A run that failed, was aborted by a guard or measured nothing (the catalog is empty)
@@ -23,6 +23,7 @@ import {
     type WatchAuthorization,
     type WatchEntry,
     type WatchRunRecord,
+    type WatchSettings,
     type WatchShapeBaseline,
     type WatchTransport
 } from '@repo/payments';
@@ -47,13 +48,15 @@ import {
 import { buildWatchTransport } from '../../utils/provider-watch/provider-watch-transport.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
-/** Daily 07:17 market time; the environment picks its day (sandbox Mondays, production the 1st). */
+/** Daily 07:17, in both accounts. */
 export const PROVIDER_WATCH_SCHEDULE = '17 7 * * *';
 
 /** What the job reads and writes; every one is replaceable in tests. */
 export interface ProviderWatchBatteryDeps {
     readonly resolveAccount: () => WatchAccount | null;
     readonly catalog: readonly WatchEntry[];
+    /** What the creating measurements need: the payer email and the return URL. Read per run. */
+    readonly readSettings: () => WatchSettings;
     /** Builds the transport; the run's signal is combined with each request's timeout. */
     readonly buildTransport: (args: {
         readonly signal?: AbortSignal | undefined;
@@ -63,7 +66,10 @@ export interface ProviderWatchBatteryDeps {
     readonly readBaseline: (args: {
         readonly account: WatchAccount;
     }) => Promise<WatchShapeBaseline | null>;
-    /** Opens the run's row; a production run consumes the authorization atomically with it. */
+    /**
+     * Opens the run's row; a production run takes the authorization atomically with it: consumed
+     * when above 0, taken for the market day when 0 (owner decision on B1, 2026-11-19).
+     */
     readonly startRun: (args: {
         readonly account: WatchAccount;
         readonly startedAt: Date;
@@ -71,6 +77,7 @@ export interface ProviderWatchBatteryDeps {
             readonly month: string;
             readonly maxChargeMinor: number;
             readonly accountId: string;
+            readonly day: string;
         };
     }) => Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }>;
     /** Persists a provider id the moment a write answers it. */
@@ -98,6 +105,10 @@ export function createProviderWatchBatteryDeps(): ProviderWatchBatteryDeps {
         resolveAccount: () =>
             resolveWatchAccount({ slugPrefix: env.HOSPEDA_HEALTHCHECKS_SLUG_PREFIX }),
         catalog: WATCH_CATALOG,
+        readSettings: () => ({
+            payerEmail: env.HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL,
+            returnUrl: env.HOSPEDA_SITE_URL
+        }),
         buildTransport: buildWatchTransport,
         readAuthorization: async () => {
             const stored = await settings.getProviderWatchAuthorization();
@@ -152,9 +163,6 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
         schedule: PROVIDER_WATCH_SCHEDULE,
         exclusive: true,
         enabled: true,
-        // Ships NOT scheduled (HOS-1512 D4): the catalog is empty until PR 2, so a tick can only fail.
-        // The admin manual trigger keeps working. PR 2 removes this line.
-        scheduled: false,
         timeoutMs: PROVIDER_WATCH_RUN_DEADLINE_MS,
         budgetMs: PROVIDER_WATCH_RUN_BUDGET_MS,
         handler: async (ctx) => {
@@ -197,6 +205,7 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                 const { run, mayPingWatchdog } = await runWatchBattery({
                     account,
                     catalog: deps.catalog,
+                    settings: deps.readSettings(),
                     transport: deps.buildTransport({ signal: ctx.signal }),
                     authorization: await deps.readAuthorization(),
                     clock: { now: deps.now },
@@ -220,6 +229,22 @@ export function createProviderWatchBatteryJob(deps: ProviderWatchBatteryDeps): C
                     alerts: run.alerts.length,
                     ...(run.reason === undefined ? {} : { reason: run.reason })
                 };
+                // B1: an authorization of 0 covers one run a day. A second run the same day (a manual
+                // one, or a tick after one) finds the day taken: an expected skip, not a failure, so
+                // it is logged at info, never sent to Sentry, and the job is not failed (re-review of
+                // #4538, A2). The run row stays closed as refused, with its reason.
+                if (
+                    run.outcome === 'refused' &&
+                    run.reason?.startsWith('AUTHORIZATION_DAY_TAKEN') === true
+                ) {
+                    logger.info('Provider watch battery skipped: today already ran', details);
+                    return result({
+                        ctx,
+                        success: true,
+                        message: 'Skipped: the authorization of 0 already covered a run today',
+                        details: { ...details, skipped: 'day-taken' }
+                    });
+                }
                 if (run.outcome !== 'completed') {
                     logger.error(
                         `Provider watch battery ${run.outcome}: ${run.reason ?? 'no reason recorded'}`,

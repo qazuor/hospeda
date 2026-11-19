@@ -244,7 +244,8 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.fixture.started.subscriptionId));
             expect(predecessor?.status).toBe('CANCELLED');
-            expect(predecessor?.succeededById).toBe(successor.subscriptionId);
+            // HOS-2351: S31 drops the succession like S3, without S18, so no pointer is written.
+            expect(predecessor?.succeededById).toBeNull();
         }
     );
 
@@ -307,7 +308,8 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, seeded.fixture.started.subscriptionId));
             expect(before?.status).toBe('CANCEL_SCHEDULED');
-            expect(before?.succeededById).toBe(successor.subscriptionId);
+            // HOS-2351: an open succession carries no predecessor pointer.
+            expect(before?.succeededById).toBeNull();
             await seeded.fixture.provider.chargeBack({ chargeId: seeded.chargeId });
             const result = await scheduledChargebackDetection({ fixture: seeded.fixture }).detect({
                 payment: seeded.payment,

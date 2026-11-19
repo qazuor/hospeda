@@ -45,6 +45,33 @@ const coverageNotices = { emitCoverageChanged: async () => undefined };
 afterEach(cleanupS37Cases);
 afterAll(closeServiceTestPool);
 
+/** A principal successor of the case row, in the given status, with no predecessor pointer. */
+async function seedSuccessor(
+    caseRow: S37Case,
+    status: 'PENDING_AUTHORIZATION' | 'ABANDONED'
+): Promise<string> {
+    const [origin] = await db
+        .select()
+        .from(subscriptions)
+        .where(eq(subscriptions.id, caseRow.subscriptionId));
+    if (!origin) throw new Error('S37 case subscription missing');
+    const [successor] = await db
+        .insert(subscriptions)
+        .values({
+            userId: origin.userId,
+            vertical: origin.vertical,
+            planVersionId: caseRow.targetPlanVersionId,
+            billingOptionId: caseRow.targetOptionId,
+            paymentMethod: 'CARD',
+            class: 'PRINCIPAL',
+            status,
+            succeedsId: origin.id
+        })
+        .returning({ id: subscriptions.id });
+    if (!successor) throw new Error('S37 successor fixture missing');
+    return successor.id;
+}
+
 function run(caseRow: S37Case) {
     return runPlanMigrationS37ForRow(
         {
@@ -344,22 +371,35 @@ describe.skipIf(!isServiceTestDbAvailable())(
 
         it('SUCCESSION_IN_PROGRESS espera una suscripción en sucesión sin escribir', async () => {
             const caseRow = await createS37MigrationCase();
-            // Declared seed: the subscription is its own successor, so one of the
-            // two succession slots is non-null without a second live principal.
-            await db
-                .update(subscriptions)
-                .set({ succeededById: caseRow.subscriptionId })
-                .where(eq(subscriptions.id, caseRow.subscriptionId));
-            const before = await scopeRow(caseRow.scope.id);
+            // Declared seed (HOS-2351): an open succession is a live successor whose
+            // succeeds_id names the row; the predecessor's succeeded_by_id stays NULL
+            // until S18 closes it.
+            const successorId = await seedSuccessor(caseRow, 'PENDING_AUTHORIZATION');
+            try {
+                const before = await scopeRow(caseRow.scope.id);
 
-            expect(await run(caseRow)).toEqual({
-                outcome: 'WAITING',
-                reason: 'SUCCESSION_IN_PROGRESS'
-            });
+                expect(await run(caseRow)).toEqual({
+                    outcome: 'WAITING',
+                    reason: 'SUCCESSION_IN_PROGRESS'
+                });
 
-            expect(await upcomingRows(caseRow)).toHaveLength(0);
-            expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
-            expect(await scopeRow(caseRow.scope.id)).toEqual(before);
+                expect(await upcomingRows(caseRow)).toHaveLength(0);
+                expect(await queueRows(caseRow.subscriptionId)).toHaveLength(0);
+                expect(await scopeRow(caseRow.scope.id)).toEqual(before);
+            } finally {
+                await db.delete(subscriptions).where(eq(subscriptions.id, successorId));
+            }
+        });
+
+        it('HOS-2351: un sucesor muerto (ABANDONED) no deja la fila esperando', async () => {
+            const caseRow = await createS37MigrationCase();
+            const successorId = await seedSuccessor(caseRow, 'ABANDONED');
+            try {
+                expect(await run(caseRow)).toEqual({ outcome: 'NOTICE_PENDING' });
+                expect(await upcomingRows(caseRow)).toHaveLength(1);
+            } finally {
+                await db.delete(subscriptions).where(eq(subscriptions.id, successorId));
+            }
         });
 
         it('D-5: con el destinatario del tercer correo borrado, la mutación sale escalada', async () => {

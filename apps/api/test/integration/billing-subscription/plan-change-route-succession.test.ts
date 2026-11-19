@@ -130,7 +130,8 @@ describe('TEST:B8b:8 TEST:B8b:24 succession declared through the route', () => {
             expect(successor?.succeedsId).toBe(row.subscriptionId);
             expect(successor?.firstChargeAt?.getTime()).toBe(clock.now().getTime());
             expect(predecessor?.status).toBe('SUSPENDED');
-            expect(predecessor?.succeededById).toBe(result.subscriptionId);
+            // HOS-2351: S1 leaves the pointer to S18.
+            expect(predecessor?.succeededById).toBeNull();
             const [link] = await tx
                 .select()
                 .from(providerLinks)

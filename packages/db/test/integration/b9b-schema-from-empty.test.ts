@@ -32,7 +32,10 @@ const columns: Readonly<Record<string, readonly string[]>> = {
         'user_id',
         'redeemed_at',
         'subscription_id',
-        'remaining_charges'
+        'remaining_charges',
+        'initial_charges',
+        'ended_at',
+        'ended_reason'
     ],
     courtesy_grant: [
         'id',

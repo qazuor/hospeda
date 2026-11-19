@@ -153,10 +153,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
             if (result.suspension?.outcome !== 'SUSPENDED')
                 throw new Error('Chargeback did not suspend the predecessor');
             expect(result.suspension.successorCut?.outcome).toBe('CUT');
-            expect(pred).toMatchObject({
-                status: 'SUSPENDED',
-                succeededById: started.subscriptionId
-            });
+            // HOS-2351: S31 drops the succession like S3, without S18, so no pointer is written.
+            expect(pred).toMatchObject({ status: 'SUSPENDED', succeededById: null });
             expect(succ).toMatchObject({
                 status: 'ABANDONED',
                 succeedsId: fixture.started.subscriptionId

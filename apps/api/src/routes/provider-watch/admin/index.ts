@@ -93,8 +93,23 @@ export const adminProviderWatchAuthorizationPreviewRoute = createAdminRoute({
     tags: ['Provider watch'],
     requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
     responseSchema: ProviderWatchAuthorizationPreviewSchema,
-    handler: async () => previewAuthorization({ account: environmentAccount() })
+    handler: async () => {
+        const previewed = previewAuthorization({ account: environmentAccount() });
+        if (!previewed.ok) throw catalogInvalid(previewed.problems);
+        return previewed.preview;
+    }
 });
+
+/**
+ * A catalog that `validateWatchCatalog` rejects is a defect of the deployed code, not of the
+ * owner's input: nothing can be previewed or authorized against it.
+ */
+function catalogInvalid(problems: readonly string[]): ServiceError {
+    return new ServiceError(
+        ServiceErrorCode.CONFIGURATION_ERROR,
+        `The provider watch catalog is invalid, so nothing can be authorized: ${problems.join('; ')}`
+    );
+}
 
 /**
  * POST /api/v1/admin/provider-watch/authorization: authorizes ONE run of the month. The API reads
@@ -123,12 +138,16 @@ export const adminAuthorizeProviderWatchRoute = createAdminRoute({
         const input = ProviderWatchAuthorizeInputSchema.parse(body);
         const actor = getActorFromContext(ctx);
         const environment = environmentAccount();
-        // The amount is EXACT: the sum of the money-moving measurements, never typed. A read-only
-        // battery has a sum of 0 and 0 is then the one valid amount; any other value is refused.
+        // The amount is EXACT: the sum of the money-moving measurements, never typed. A valid catalog
+        // with no money-moving measurement sums 0 and 0 is then the one valid amount; an invalid
+        // catalog is never authorized (a money measurement without its maximum would also sum 0).
         const amount = checkAuthorizedAmount({
             account: environment,
             amountMinor: input.maxChargeMinor
         });
+        if (!amount.ok && amount.refusal === 'CATALOG_INVALID') {
+            throw catalogInvalid(amount.problems);
+        }
         if (!amount.ok) {
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,

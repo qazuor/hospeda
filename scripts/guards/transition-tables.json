@@ -1038,11 +1038,7 @@
             "guard": {},
             "reads": ["subscription.status", "subscription.succeeds_id"],
             "inputs": ["provider:read_by_id"],
-            "writes": [
-                "subscription.status",
-                "subscription.succeeded_by_id",
-                "domain_event.changes"
-            ]
+            "writes": ["subscription.status", "domain_event.changes"]
         },
         {
             "id": "TRANS:B:P0",
