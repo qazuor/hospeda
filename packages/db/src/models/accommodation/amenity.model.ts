@@ -8,6 +8,8 @@ import { warnUnknownRelationKeys } from '../../utils/relations-validator.ts';
 
 export class AmenityModel extends BaseModelImpl<Amenity> {
     protected table = amenities;
+    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'amenities';
 
     protected override readonly validRelationKeys = ['accommodationAmenities'] as const;

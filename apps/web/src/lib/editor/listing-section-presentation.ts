@@ -33,8 +33,6 @@ export interface ListingSectionPresentation {
      * the leaf that adds the page. Data, not dispatch by section id (G-FAC-05).
      */
     readonly unreleased?: boolean;
-    /** Hide this section when locked and no catalog plan grants its entitlement. */
-    readonly hideWhenLockedWithoutPlan?: boolean;
 }
 
 /**
@@ -89,8 +87,7 @@ const VENUE_SECTION_PRESENTATION = {
     },
     promotions: {
         slug: 'promociones',
-        labelKey: 'listing.owner.editor.sectionNav.venuePromotions',
-        hideWhenLockedWithoutPlan: true
+        labelKey: 'listing.owner.editor.sectionNav.venuePromotions'
     },
     faqs: {
         slug: 'preguntas',

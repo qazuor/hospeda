@@ -466,7 +466,7 @@
                 },
                 "invalid": "Check the form fields.",
                 "locked": "Available with the {{plan}} plan.",
-                "lockedNoPlan": "This feature is not available on your plan yet.",
+                "lockedNoPlan": "Promotions are not available on your plan yet.",
                 "cacheNotice": "It may take a few minutes to appear on the listing.",
                 "deleteTitle": "Delete promotion",
                 "deleteConfirm": "Do you want to delete this promotion?",
