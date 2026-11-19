@@ -25,10 +25,6 @@ describe('isRecordingExcludedPath (HOS-2347)', () => {
         '/es/colaborar/fotos/',
         '/es/contacto/',
         '/es/partners/reclamar/',
-        '/es/sumate/proveedor/',
-        '/es/sumate/sponsor/',
-        '/es/sumate/partner/',
-        '/en/sumate/',
         '/es/newsletter/confirmado'
     ])('AC-R1: excludes %s', (pathname) => {
         expect(isRecordingExcludedPath({ pathname })).toBe(true);
@@ -49,9 +45,30 @@ describe('isRecordingExcludedPath (HOS-2347)', () => {
         '/es/partners/foo/',
         '/es/suscriptores/planes/',
         '/es/sumatoria/',
+        '/es/sumate/',
+        '/en/sumate/proveedor/',
+        '/es/sumate/sponsor/',
+        '/pt/sumate/partner/',
         '/es/contactos-utiles/'
     ])('AC-R2: allows %s (prefix boundary)', (pathname) => {
         expect(isRecordingExcludedPath({ pathname })).toBe(false);
+    });
+
+    it('regression: sumate pages are recorded, not excluded (owner decision 2026-11-18)', () => {
+        // Arrange
+        const pathname = '/es/sumate/partner/';
+
+        // Act
+        const excluded = isRecordingExcludedPath({ pathname });
+
+        // Assert
+        expect(excluded).toBe(false);
+        expect(RECORDING_EXCLUDED_ROUTE_PREFIXES).not.toContain('sumate');
+    });
+
+    it('still excludes another free-text surface (contacto, partners/reclamar)', () => {
+        expect(isRecordingExcludedPath({ pathname: '/es/contacto/' })).toBe(true);
+        expect(isRecordingExcludedPath({ pathname: '/es/partners/reclamar/' })).toBe(true);
     });
 
     it('is case-insensitive and ignores the query string and the hash', () => {
@@ -64,7 +81,7 @@ describe('isRecordingExcludedPath (HOS-2347)', () => {
         '/es/%61uth/signin',
         '/es/mi%2Dcuenta/',
         '/%65s/contacto/',
-        '/es/sumate%2Fpartner/'
+        '/es/partners%2Freclamar/'
     ])('decodes percent-encoding before matching: %s', (pathname) => {
         expect(isRecordingExcludedPath({ pathname })).toBe(true);
     });
@@ -108,8 +125,8 @@ describe('RECORDING_EXCLUDED_ROUTE_PREFIXES guard (HOS-2347 AC-R4)', () => {
         );
     });
 
-    it('holds the eleven agreed route families, without duplicates', () => {
-        expect(RECORDING_EXCLUDED_ROUTE_PREFIXES).toHaveLength(11);
-        expect(new Set(RECORDING_EXCLUDED_ROUTE_PREFIXES).size).toBe(11);
+    it('holds the ten agreed route families, without duplicates', () => {
+        expect(RECORDING_EXCLUDED_ROUTE_PREFIXES).toHaveLength(10);
+        expect(new Set(RECORDING_EXCLUDED_ROUTE_PREFIXES).size).toBe(10);
     });
 });
