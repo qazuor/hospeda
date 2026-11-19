@@ -48,6 +48,14 @@ export interface ToolErrorPayload {
     readonly link?: ToolRefusalLink;
     /** Id of the help topic that explains this refusal (`get_help`, HOS-2333). */
     readonly helpTopicId?: string;
+    /**
+     * Audit classification the handler knows better than the code does: a
+     * `VALIDATION_ERROR` that is really a refusal by Hospeda (an incomplete
+     * listing, HOS-2375) names `denied` so the history does not read it as bad
+     * data from the assistant. Applied only together with a matching
+     * `reasonMessages` entry; absent keeps the code's classification.
+     */
+    readonly kind?: 'denied' | 'error';
 }
 
 /** A portal page a refusal points the user to. */

@@ -50,6 +50,12 @@ export interface ToolFailure {
     readonly action?: ToolAction;
     /** Id of the help topic that explains it. */
     readonly helpTopicId?: string;
+    /**
+     * The code the audit row records instead of {@link code} (HOS-2375): the
+     * tool's named reason, when the tool classified the failure itself. The
+     * answer to the model keeps `code`.
+     */
+    readonly auditCode?: string;
 }
 
 /** One mapped code: its message and audit classification. */
@@ -247,9 +253,12 @@ export function toToolFailure({ error, reasonMessages }: ToToolFailureArgs): Too
     if (reasonMessage !== undefined) {
         return {
             ...base,
-            kind: mapping?.kind ?? (isValidation ? 'error' : 'denied'),
+            kind: error.kind ?? mapping?.kind ?? (isValidation ? 'error' : 'denied'),
             message: reasonMessage,
-            unexpected: false
+            unexpected: false,
+            ...(error.kind === undefined || error.reason === undefined
+                ? {}
+                : { auditCode: error.reason })
         };
     }
 
