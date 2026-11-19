@@ -27,6 +27,7 @@ import { ServiceError } from '../../../types/index.js';
 import { AMOUNT_MUTATION_RETRY_WINDOW_MS } from '../reconciliation/sweep/comparisons/amount-comparison.js';
 import { recordAmountMutationDecided } from '../reconciliation/sweep/comparisons/amount-mutation-decision.js';
 import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount.js';
+import { isLiveSuccessionPredecessor } from '../subscription/late-payment-conditions.js';
 import { evaluateS37Guards } from './plan-migration-s37-guards.js';
 
 const logger = createLogger('plan-migration-s37-card');
@@ -296,7 +297,6 @@ async function decide(
             class: subscriptions.class,
             status: subscriptions.status,
             succeedsId: subscriptions.succeedsId,
-            succeededById: subscriptions.succeededById,
             cycle: billingOptions.cycle
         })
         .from(planMigrationSubscriptions)
@@ -329,7 +329,11 @@ async function decide(
         subscription: {
             class: row.class,
             status: row.status,
-            successionInProgress: row.succeedsId !== null || row.succeededById !== null
+            // In progress is read from a live successor; `succeeded_by_id` only marks a
+            // closed succession (HOS-2351).
+            successionInProgress:
+                row.succeedsId !== null ||
+                (await isLiveSuccessionPredecessor({ subscriptionId: input.subscriptionId, tx }))
         },
         hasQueuedChange: queued !== undefined,
         targetOffersCycle: targetOption !== undefined,

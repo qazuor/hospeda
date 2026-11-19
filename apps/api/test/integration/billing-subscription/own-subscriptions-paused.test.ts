@@ -180,14 +180,11 @@ describe('TEST:B8b:25 Mi Suscripción pause, promo and succession reads', () => 
             })
             .returning({ id: subscriptions.id });
         if (!successor) throw new Error('Expected successor');
-        await getDb()
-            .update(subscriptions)
-            .set({ succeededById: successor.id })
-            .where(eq(subscriptions.id, origin.id));
+        // HOS-2351: an open succession has no predecessor pointer; it is read from succeeds_id.
         cleanup.push(async () => {
             await getDb()
                 .update(subscriptions)
-                .set({ succeededById: null, status: 'CANCELLED' })
+                .set({ status: 'CANCELLED' })
                 .where(eq(subscriptions.id, origin.id));
             await getDb().delete(subscriptions).where(eq(subscriptions.id, successor.id));
         });

@@ -97,11 +97,10 @@ export async function readOwnSubscriptions(userId: string) {
                       )
                   );
     const pausesById = new Map(openPauses.map((pause) => [pause.subscriptionId, pause]));
-    const successorIds = rows.flatMap((row) =>
-        row.subscription.succeededById ? [row.subscription.succeededById] : []
-    );
-    const successors =
-        successorIds.length === 0
+    // HOS-2351: an open succession is read from its successor's `succeeds_id`, never from the
+    // predecessor's `succeeded_by_id`, which S18 writes only when the succession closes.
+    const successors = (
+        ids.length === 0
             ? []
             : await getDb()
                   .select({
@@ -111,22 +110,28 @@ export async function readOwnSubscriptions(userId: string) {
                       authorizationWindowEndsAt: subscriptions.authorizationWindowEndsAt
                   })
                   .from(subscriptions)
-                  .where(inArray(subscriptions.id, successorIds));
-    const successorsById = new Map(successors.map((successor) => [successor.id, successor]));
+                  .where(
+                      and(
+                          inArray(subscriptions.succeedsId, ids),
+                          eq(subscriptions.class, 'PRINCIPAL')
+                      )
+                  )
+    ).filter((successor) => isSuccessionCheckoutOpen(successor.status));
+    const openSuccessorsByPredecessor = new Map(
+        successors.map((successor) => [successor.succeedsId, successor])
+    );
     // HOS-2344: the open successor checkout can be resumed from Mi suscripción.
     const successorCheckoutUrls = new Map(
         await Promise.all(
-            successors
-                .filter((successor) => isSuccessionCheckoutOpen(successor.status))
-                .map(async (successor) => {
-                    const commitment = await findPendingAttemptById({
-                        subscriptionId: successor.id
-                    });
-                    return [
-                        successor.id,
-                        commitment ? readResumableCheckoutUrl({ commitment }) : null
-                    ] as const;
-                })
+            successors.map(async (successor) => {
+                const commitment = await findPendingAttemptById({
+                    subscriptionId: successor.id
+                });
+                return [
+                    successor.id,
+                    commitment ? readResumableCheckoutUrl({ commitment }) : null
+                ] as const;
+            })
         )
     );
     const marks =
@@ -209,9 +214,7 @@ export async function readOwnSubscriptions(userId: string) {
             let nextCharge: { at: Date; amount: number; currency: 'ARS' } | null = null;
             const openPause = pausesById.get(row.id);
             const livePromos = await readLivePromos({ subscriptionId: row.id, at: now });
-            const successor = row.subscription.succeededById
-                ? successorsById.get(row.subscription.succeededById)
-                : undefined;
+            const successor = openSuccessorsByPredecessor.get(row.id);
             if (
                 row.subscription.nextChargeAt !== null &&
                 isNextChargeShown({
@@ -273,16 +276,15 @@ export async function readOwnSubscriptions(userId: string) {
                         : null,
                 promo: livePromos.length > 0 ? { endsAt: null } : null,
                 liveCourtesyMonths: liveCourtesyBySubscription.get(row.id) ?? 0,
-                succession:
-                    successor?.succeedsId === row.id && isSuccessionCheckoutOpen(successor.status)
-                        ? {
-                              checkoutOpen: true as const,
-                              checkoutDeadline:
-                                  successor.authorizationWindowEndsAt?.toISOString() ?? null,
-                              successorId: successor.id,
-                              checkoutUrl: successorCheckoutUrls.get(successor.id) ?? null
-                          }
-                        : null
+                succession: successor
+                    ? {
+                          checkoutOpen: true as const,
+                          checkoutDeadline:
+                              successor.authorizationWindowEndsAt?.toISOString() ?? null,
+                          successorId: successor.id,
+                          checkoutUrl: successorCheckoutUrls.get(successor.id) ?? null
+                      }
+                    : null
             };
         })
     );
