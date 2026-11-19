@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-review-state.enum.js';
-import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { createPartnerSchema } from '../partner.create.schema.js';
 import {
     PARTNER_REVIEW_MANAGED_FIELDS,
@@ -32,7 +31,7 @@ const REVIEW_FIELDS = [
 const baseCreate = {
     slug: 'acme-turismo',
     name: 'Acme Turismo',
-    type: PartnerTypeEnum.BUSINESS,
+    typeId: '00000000-0000-4000-a000-000000000009',
     lifecycleState: 'DRAFT'
 };
 

@@ -266,6 +266,26 @@ describe('validatePromotionUpdate', () => {
         expect(moderate).toHaveBeenCalledWith({ text: 'Nuevo combo', context: 'promotion' });
     });
 
+    it('refuses an edited flagged offer before a write, preserving the stored text', async () => {
+        const previousOffer = {
+            ...previous,
+            discountType: OwnerPromotionDiscountTypeEnum.SPECIAL_OFFER,
+            description: 'Oferta aprobada'
+        };
+        moderate.mockResolvedValue({ score: 0.5, degraded: false } as never);
+
+        await expect(
+            validatePromotionUpdate({
+                previous: previousOffer,
+                data: { description: 'Oferta marcada' },
+                ...models({ ownerId: OWNER })
+            })
+        ).rejects.toMatchObject({ code: ServiceErrorCode.VALIDATION_ERROR });
+
+        expect(previousOffer.description).toBe('Oferta aprobada');
+        expect(moderate).toHaveBeenCalledWith({ text: 'Oferta marcada', context: 'promotion' });
+    });
+
     it('does not moderate an untouched special_offer (a pause, a title edit)', async () => {
         await validatePromotionUpdate({
             previous: {

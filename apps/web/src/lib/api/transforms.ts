@@ -1,4 +1,4 @@
-import type { ProtectedEffectiveSetResponse } from '@repo/schemas';
+import { type ProtectedEffectiveSetResponse, VenuePromoBadgeSchema } from '@repo/schemas';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -2735,6 +2735,7 @@ export function toVenueCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
+        promoBadge: VenuePromoBadgeSchema.safeParse(item.promoBadge).data,
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,
         // SPEC-098: pass through favorite/bookmark enrichment when present.
@@ -2948,7 +2949,8 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
             date: event.date == null ? null : String(event.date),
             weekday: typeof event.weekday === 'number' ? event.weekday : null,
             startTime: String(event.startTime ?? ''),
-            endTime: event.endTime == null ? null : String(event.endTime)
+            endTime: event.endTime == null ? null : String(event.endTime),
+            ticketUrl: typeof event.ticketUrl === 'string' ? event.ticketUrl : null
         }))
         .filter((event) => event.id.length > 0 && event.title.length > 0);
 }
@@ -3372,6 +3374,29 @@ export function toExperienceDetailPageProps({
  * @param locale - Active locale for i18n field resolution
  * @returns Typed PartnerDetailData for the partner detail page
  */
+/**
+ * Resolves the public partner type `{ slug, name, nameI18n }` (HOS-2336 D5) to
+ * the label the page renders: `nameI18n[locale]`, then Spanish, then `name`.
+ * A bare string (an API older than HOS-2336) yields `null` here and is carried
+ * as `legacyType` instead, so it never renders as "[object Object]" or a raw
+ * enum value.
+ *
+ * @param input - The raw `type` value and the page locale.
+ * @returns The label, or `null` when the payload carries no type.
+ */
+function resolvePartnerTypeLabel({
+    type,
+    locale
+}: {
+    readonly type: unknown;
+    readonly locale: string;
+}): string | null {
+    if (!type || typeof type !== 'object') return null;
+    const { name, nameI18n } = type as { name?: unknown; nameI18n?: I18nTextLike };
+    const label = resolveI18nTextWithLegacyFallback({ i18n: nameI18n, legacy: name, locale });
+    return label || null;
+}
+
 export function toPartnerDetailProps({
     item,
     locale = 'es'
@@ -3386,7 +3411,8 @@ export function toPartnerDetailProps({
             legacy: item.name,
             locale
         }),
-        type: String(item.type || ''),
+        typeLabel: resolvePartnerTypeLabel({ type: item.type, locale }),
+        legacyType: typeof item.type === 'string' && item.type !== '' ? item.type : null,
         description:
             item.description == null
                 ? null

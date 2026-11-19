@@ -26,7 +26,7 @@ add-on, para no vaciar premium.
 Decidido (owner, 16/11/2026): pack **mensual** (`PERIODICO`) y **no apilable** (es un
 entitlement, no hay cantidad). Precio **provisorio** $9.000/mes, a revisar con el owner antes
 de crear el producto en producción. Se crea desde el admin existente, con runbook
-(HOS-2285, 6.2). La variante por temporada se evalúa cuando se resuelva HOS-2094.
+(HOS-2285, 6.2). La variante por temporada se evalúa cuando se resuelva HOS-2179.
 
 Comparte la venta con `.specs/HOS-2285-comer-y-salir-addon-pack-eventos/spec.md`
 (secciones 5 y 6.1 a 6.3, 6.5 y 6.6). La **elegibilidad** (capacidad base, rubro,
@@ -56,7 +56,7 @@ clave es premium. Hoy tiene que pagar la diferencia entera por una sola función
   del owner, no se venden.
 - Cambiar la carta, la edición de traducciones o los idiomas disponibles.
 - El mecanismo de elegibilidad (HOS-2292).
-- Variante por temporada (se evalúa cuando se resuelva HOS-2094).
+- Variante por temporada (se evalúa cuando se resuelva HOS-2179).
 
 ## 5. Estado actual verificado (`origin/staging`)
 

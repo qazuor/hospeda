@@ -16,11 +16,11 @@ export function usePartnerApplicationActions() {
     const invalidate = () =>
         queryClient.invalidateQueries({ queryKey: ['partner-application-panel'] });
     const approve = useMutation({
-        mutationFn: async ({ id, name, type, reason }: { id: string } & ApproveBody) =>
+        mutationFn: async ({ id, name, typeId, reason }: { id: string } & ApproveBody) =>
             fetchApi({
                 path: `/api/v1/admin/partner-applications/${id}/approve`,
                 method: 'POST',
-                body: { name, type, reason }
+                body: { name, typeId, reason }
             }),
         onSuccess: invalidate
     });

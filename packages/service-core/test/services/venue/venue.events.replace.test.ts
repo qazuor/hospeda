@@ -112,6 +112,7 @@ const seed = (id: string, venueId: string, title: string, displayOrder: number) 
         weekday: 4,
         startTime: '21:00:00',
         endTime: null,
+        ticketUrl: null,
         isActive: true,
         displayOrder,
         createdAt: new Date('2026-01-01T00:00:00Z'),
@@ -387,5 +388,59 @@ describe('replaceVenueEvents: the ceiling counts non-past entries (HOS-2254)', (
         });
 
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+});
+
+describe('replaceVenueEvents: ticket link (HOS-2255)', () => {
+    beforeEach(() => {
+        store.clear();
+        calls.length = 0;
+        nextId = 1;
+        vi.clearAllMocks();
+    });
+
+    it('persists the link on create and on update, and returns it', async () => {
+        // Arrange
+        seed(A, VENUE_ID, 'Uno', 0);
+        const link = 'https://www.passline.com/e/x';
+
+        // Act
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: {
+                events: [
+                    weekly('Uno', { id: A, ticketUrl: link }),
+                    weekly('Dos', { ticketUrl: link })
+                ]
+            }
+        });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(result.data?.events.map((e) => e.ticketUrl)).toStrictEqual([link, link]);
+    });
+
+    it('stores an empty or absent link as null', async () => {
+        // Act
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [weekly('Uno', { ticketUrl: '' }), weekly('Dos')] }
+        });
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        expect(result.data?.events.map((e) => e.ticketUrl)).toStrictEqual([null, null]);
+    });
+
+    it('refuses an http link and writes nothing', async () => {
+        // Act
+        const result = await replaceVenueEvents(MODEL, ACTOR, {
+            venueId: VENUE_ID,
+            agenda: { events: [weekly('Uno', { ticketUrl: 'http://x.com/e' })] }
+        });
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(store.size).toBe(0);
     });
 });

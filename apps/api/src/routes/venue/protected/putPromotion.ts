@@ -15,6 +15,7 @@
  */
 import {
     PermissionEnum,
+    toPromotionWindow,
     VenuePromotionProtectedSchema,
     VenuePromotionUpdateRequestSchema,
     VerticalEnum
@@ -44,7 +45,8 @@ export async function handleEditVenuePromotion(
         request: body as never
     });
     if (result.error) throw new ServiceError(result.error.code, result.error.message);
-    return result.data;
+    const { windowWeekdays, windowStart, windowEnd, ...item } = result.data;
+    return { ...item, window: toPromotionWindow({ windowWeekdays, windowStart, windowEnd }) };
 }
 
 /** Path parameters shared by PUT, PATCH and DELETE. */

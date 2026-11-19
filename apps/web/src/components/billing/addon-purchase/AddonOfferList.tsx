@@ -9,6 +9,7 @@ type Translate = ReturnType<typeof createTranslations>['t'];
 /** Select a saleable addon product. */
 export function AddonOfferList(input: {
     readonly offers: readonly Offer[];
+    readonly isActive?: (offer: Offer) => boolean;
     readonly onSelect: (offer: Offer) => void;
     readonly t: Translate;
 }) {
@@ -22,16 +23,23 @@ export function AddonOfferList(input: {
             <div className={styles.grid}>
                 {input.offers.map((offer) => {
                     const description = getAddonDescription({ offer, t: input.t });
+                    const active = input.isActive?.(offer) === true;
                     return (
                         <button
                             key={offer.productId}
                             type="button"
                             className={styles.card}
                             data-testid={`addon-offer-${offer.productId}`}
+                            disabled={active}
                             onClick={() => input.onSelect(offer)}
                         >
                             <strong>{getAddonName({ offer, t: input.t })}</strong>
                             {description && <span>{description}</span>}
+                            {active && (
+                                <span className={styles.activeBadge}>
+                                    {input.t('billing.addonPurchase.active')}
+                                </span>
+                            )}
                         </button>
                     );
                 })}

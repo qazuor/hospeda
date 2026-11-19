@@ -48,6 +48,9 @@ import type {
     UserProtected,
     UserPublic,
     UserStatsResponse,
+    VenueListingStats,
+    VenuePromotionListOutput,
+    VenueStatsWindow,
     VerticalEnum
 } from '@repo/schemas';
 import {
@@ -1971,7 +1974,15 @@ export interface MyPartner {
     readonly id: string;
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /** Catalog type id (HOS-2336). `null` until the release-N backfill reaches the row. */
+    readonly typeId?: string | null;
+    /** The hydrated catalog type row (HOS-2336), as `PartnerTypeRefSchema` serializes it. */
+    readonly partnerType?: {
+        readonly id: string;
+        readonly slug: string;
+        readonly nameI18n: Readonly<Record<string, string | undefined>>;
+        readonly lifecycleState: string;
+    } | null;
     readonly logoUrl: string | null;
     readonly description: string | null;
     readonly websiteUrl: string | null;
@@ -2686,6 +2697,25 @@ export const listingAnalyticsApi = {
     > {
         return apiClient.getProtected({
             path: `${PROTECTED}/venues/${venueId}/menu-qr/scans`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
+     * Get advanced daily views and click metrics for one venue listing (HOS-2261).
+     *
+     * @param params - Venue id and requested rolling window.
+     * @returns The venue metrics response or the protected route error.
+     */
+    getVenueStats({
+        id,
+        window: windowParam
+    }: {
+        readonly id: string;
+        readonly window: VenueStatsWindow;
+    }): Promise<ApiResult<VenueListingStats>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/venues/${id}/stats`,
             params: { window: windowParam }
         });
     }
@@ -4536,6 +4566,61 @@ export const ownerPromotionApi = {
      */
     remove({ id }: { readonly id: string }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
+    }
+};
+
+/** Venue-scoped promotion endpoints (HOS-2271). */
+export const venuePromotionsApi = {
+    /** List every owner-managed promotion for a venue with quota metadata. */
+    list({ id }: { readonly id: string }): Promise<ApiResult<VenuePromotionListOutput>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/venues/${id}/promotions` });
+    },
+    /** Create a venue promotion. */
+    create({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/venues/${id}/promotions`, body });
+    },
+    /** Replace a venue promotion. */
+    update({
+        id,
+        promotionId,
+        body
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.put({ path: `${PROTECTED}/venues/${id}/promotions/${promotionId}`, body });
+    },
+    /** Change a venue promotion's lifecycle state. */
+    patch({
+        id,
+        promotionId,
+        body
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+        readonly body: Record<string, unknown>;
+    }): Promise<ApiResult<unknown>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/venues/${id}/promotions/${promotionId}`,
+            body
+        });
+    },
+    /** Soft-delete a venue promotion. */
+    remove({
+        id,
+        promotionId
+    }: {
+        readonly id: string;
+        readonly promotionId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/venues/${id}/promotions/${promotionId}` });
     }
 };
 

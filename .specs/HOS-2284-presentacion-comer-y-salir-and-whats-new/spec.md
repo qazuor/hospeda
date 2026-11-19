@@ -30,7 +30,7 @@ otro para Noche) y deja su entrada en Novedades.
    no de detalle: dice que el destacado lo maneja el dueño y lista funciones de plan como
    complementos. **Decidido (owner, 16/11/2026):** «Destacar tu local por 7 o 30 días» y la
    frase de «desde Mi cuenta» **quedan como están**: pasan a ser verdaderas cuando salga
-   HOS-2094 (pago único comprable por web). Las otras 3 afirmaciones falsas **sí** se
+   HOS-2179 (pago único comprable por web). Las otras 3 afirmaciones falsas **sí** se
    corrigen: el video (L390), el destacado «Vos» (L434) y las funciones de plan bajo
    «Complementos que vienen» (L309-328).
 3. **El comentario de cabecera está vencido.** Su lista «ahead of the code as of 2026-10-31»
@@ -69,7 +69,7 @@ hermanas `presentacion/alojamientos` y `presentacion/experiencias`.
   - Ningún plan de venue otorga `featured_listing`, `can_embed_video` ni `create_promotions`.
 - Otros hechos: `ENTITY_GALLERY_CAPS.venue = 30` (`packages/schemas/src/common/media-upload.schema.ts:37`);
   la compra web de complementos solo admite recurrentes
-  (`apps/web/src/lib/billing/addon-purchase.ts:10-13`, HOS-2094).
+  (`apps/web/src/lib/billing/addon-purchase.ts:10-13`, HOS-2179).
 
 ## 5. Qué dice la página hoy: verdadero y falso (con línea)
 
@@ -88,8 +88,8 @@ Referencia: `apps/web/src/pages/[lang]/presentacion/comer-y-salir/index.astro`.
 
 | Línea | Afirmación | Por qué se queda |
 |---|---|---|
-| 297-302 | «Destacar tu local por 7 o 30 días», en «Estos son los que hay para vos». | Hoy no se puede comprar por web (pago único, HOS-2094). Se vuelve verdadero cuando salga HOS-2094; no se toca. |
-| 304 | «Desde Mi cuenta > Complementos... Ves qué hay disponible, elegís el que necesitás y listo.» | Mismo motivo: falso para el pago único hasta HOS-2094, verdadero para «1 local más». |
+| 297-302 | «Destacar tu local por 7 o 30 días», en «Estos son los que hay para vos». | Hoy no se puede comprar por web (pago único, HOS-2179). Se vuelve verdadero cuando salga HOS-2179; no se toca. |
+| 304 | «Desde Mi cuenta > Complementos... Ves qué hay disponible, elegís el que necesitás y listo.» | Mismo motivo: falso para el pago único hasta HOS-2179, verdadero para «1 local más». |
 
 ### 5.2 Verdadero hoy (se conserva)
 
@@ -133,7 +133,7 @@ Corrige 5.1: sacar «y videos si tenés» (L390; vuelve cuando HOS-2280 otorgue
 `can_embed_video`, en el PR del bloque «Video»); cambiar la fila de destacado de L434 a «Lo
 define tu plan o un complemento» o quitarla; mover las funciones de plan fuera de
 «Complementos que vienen». **No se toca** «Destacar tu local por 7 o 30 días» ni la frase de
-«Desde Mi cuenta» (5.1b, decisión del owner: se vuelven verdaderas con HOS-2094). Es el único
+«Desde Mi cuenta» (5.1b, decisión del owner: se vuelven verdaderas con HOS-2179). Es el único
 PR que se puede hacer **ya**.
 
 ### 6.3 Plan de copy por bloque
@@ -150,7 +150,7 @@ los aprueba en el PR.
 | **Métricas** (estadísticas de eventos HOS-2265, día por día) | «Cuánta gente mira cada evento.» | «Cuánta gente mira cada fecha.» | Mover «estadísticas día por día» de «Lo que se viene» a la tabla si ya existe |
 | **Video** (HOS-2258 construye, HOS-2280 otorga) | «Mostrá tu cocina y tu salón con un video.» | «Mostrá cómo se vive la noche en tu local.» | Fila «Videos de tu local» con los planes que lo reciban; hasta el grant la fila no existe (igual que en la tabla pública de planes, HOS-2262) |
 | **Destacado premium** (HOS-2279) | «Premium aparece primero en la lista de su rubro.» | igual | Fila «Aparecés primero en el listado» (— / — / sí). **No nombrar el plan en la ficha**; en la presentación comercial sí se nombra el plan |
-| **Evento destacado, complemento** (HOS-2288, elegibilidad en HOS-2292) | «Destacá el evento de esta semana por 7 días.» | igual | Pasar de «Complementos que vienen» a la tabla de complementos, **solo cuando HOS-2094 permita pagarlo**. El complemento se aplica al local (alcance listing, guarda el `event_id` de la compra) y **no se ofrece a Premium**: la presentación no lo lista en la columna Premium |
+| **Evento destacado, complemento** (HOS-2288, elegibilidad en HOS-2292) | «Destacá el evento de esta semana por 7 días.» | igual | Pasar de «Complementos que vienen» a la tabla de complementos, **solo cuando HOS-2179 permita pagarlo**. El complemento se aplica al local (alcance listing, guarda el `event_id` de la compra) y **no se ofrece a Premium**: la presentación no lo lista en la columna Premium |
 | **Baja de plan** (decisión 6 de HOS-2253) | Párrafo «Si bajás de plan, no perdés nada»: lo cargado se guarda, los eventos únicos siguen hasta su fecha, los semanales vuelven a borrador y vuelven si subís; lo confirmado se respeta. | igual | Sin fila |
 
 Durante el trial las funciones nuevas corren con límites mínimos (1 promo activa, 10 lugares
@@ -223,7 +223,7 @@ PDF (la página se exporta). Sin e2e. Guards: `pnpm check:guards`.
    español, por diseño. Novedades (What's New) sale en es, en y pt. Se aclara en la issue
    que «es, en y pt» aplica a Novedades y a las claves de i18n, no a la página.
 2. **Decidido (owner, 16/11/2026): «Destacar tu local por 7 o 30 días».** Queda como está en
-   la página; se vuelve verdadero cuando salga HOS-2094. Las otras 3 afirmaciones falsas sí
+   la página; se vuelve verdadero cuando salga HOS-2179. Las otras 3 afirmaciones falsas sí
    se corrigen (PR 0).
 3. **¿La presentación cita cifras (1 / 10 / sin tope eventos, 5 promos, 100 anotados) o solo
    describe?** Las cifras vienen de las decisiones de HOS-2253.
@@ -240,8 +240,8 @@ PDF (la página se exporta). Sin e2e. Guards: `pnpm check:guards`.
 - HOS-2280 (habilitar eventos, métricas y video): bloqueante declarada; es el primer bloque.
 - Las demás issues de concesiones de la épica HOS-2252/HOS-2253 (promos, lista de invitados,
   topes de eventos): un PR de bloque por cada una.
-- HOS-2279 y HOS-2288 (destacado; elegibilidad del add-on en HOS-2292), HOS-2094 (pago
-  único): condicionan dos filas. HOS-2094 además vuelve verdadero lo que 5.1b conserva.
+- HOS-2279 y HOS-2288 (destacado; elegibilidad del add-on en HOS-2292), HOS-2179 (pago
+  único): condicionan dos filas. HOS-2179 además vuelve verdadero lo que 5.1b conserva.
 - HOS-2258 (video) y HOS-2262 (tabla de planes con filas ocultas hasta tener grant).
 - HOS-2290: informe que sostiene las correcciones de 5.1.
 

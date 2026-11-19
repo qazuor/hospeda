@@ -42,6 +42,61 @@ describe('OwnerPromotionModel', () => {
         });
     });
 
+    describe('findVenueIdsWithActivePromo (HOS-2271)', () => {
+        it('returns a compact per-venue badge map from the single grouped query', async () => {
+            const db = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            groupBy: vi.fn().mockResolvedValue([
+                                {
+                                    entityId: 'venue-plus',
+                                    hasPlus: true,
+                                    windowWeekdays: [4, 5],
+                                    windowStart: '18:00:00',
+                                    windowEnd: '20:00:00'
+                                },
+                                {
+                                    entityId: 'venue-vip',
+                                    hasPlus: false,
+                                    windowWeekdays: null,
+                                    windowStart: null,
+                                    windowEnd: null
+                                }
+                            ])
+                        })
+                    })
+                })
+            };
+            getDb.mockReturnValue(db);
+
+            const badges = await model.findVenueIdsWithActivePromo({
+                venueIds: ['venue-plus', 'venue-vip']
+            });
+
+            expect(badges.get('venue-plus')).toEqual({
+                hasPromo: true,
+                vipOnly: false,
+                hasUnscheduled: false,
+                windows: [{ weekdays: [4, 5], startTime: '18:00', endTime: '20:00' }]
+            });
+            expect(badges.get('venue-vip')).toEqual({
+                hasPromo: true,
+                vipOnly: true,
+                hasUnscheduled: true,
+                windows: []
+            });
+            expect(db.select).toHaveBeenCalledTimes(1);
+        });
+
+        it('avoids a database query when the page has no venue ids', async () => {
+            await expect(model.findVenueIdsWithActivePromo({ venueIds: [] })).resolves.toEqual(
+                new Map()
+            );
+            expect(getDb).not.toHaveBeenCalled();
+        });
+    });
+
     describe('findBySlug', () => {
         it('should return a promotion when found', async () => {
             const mockPromotion = { id: '1', slug: 'test-promo', name: 'Test Promo' };

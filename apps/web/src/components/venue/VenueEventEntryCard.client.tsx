@@ -18,6 +18,7 @@ import type { JSX } from 'react';
 import type { TranslationFn } from '@/lib/i18n';
 import {
     type EventDraft,
+    isTicketUrlValid,
     todayInVenueZone,
     WEEKDAY_I18N_KEYS
 } from '@/lib/venue/venue-event-draft';
@@ -63,6 +64,7 @@ export function VenueEventEntryCard({
     onRemove,
     onSetRecurrence
 }: VenueEventEntryCardProps): JSX.Element {
+    const ticketUrlInvalid = !isTicketUrlValid(entry.ticketUrl);
     return (
         <fieldset className={styles.card}>
             <legend className={styles.srOnly}>
@@ -135,6 +137,38 @@ export function VenueEventEntryCard({
                     onPatch(index, { description: event.target.value });
                 }}
             />
+
+            <div className={styles.row}>
+                <input
+                    className={styles.input}
+                    type="url"
+                    inputMode="url"
+                    value={entry.ticketUrl}
+                    placeholder="https://"
+                    aria-label={t(
+                        'venue.owner.editor.venueEventsManager.ticketUrl',
+                        'Link de entradas (opcional)'
+                    )}
+                    aria-invalid={ticketUrlInvalid}
+                    onChange={(event) => {
+                        onPatch(index, { ticketUrl: event.target.value });
+                    }}
+                />
+            </div>
+            <p
+                className={ticketUrlInvalid ? styles.fieldError : styles.fieldHint}
+                role={ticketUrlInvalid ? 'alert' : undefined}
+            >
+                {ticketUrlInvalid
+                    ? t(
+                          'venue.owner.editor.venueEventsManager.ticketUrlInvalid',
+                          'El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.'
+                      )
+                    : t(
+                          'venue.owner.editor.venueEventsManager.ticketUrlHelp',
+                          'Si vendés entradas por Passline, Venti u otra, pegá el link acá.'
+                      )}
+            </p>
 
             <div className={styles.row}>
                 <label className={styles.radioLabel}>

@@ -9,6 +9,7 @@ type Translate = ReturnType<typeof createTranslations>['t'];
 /** Select one listing without interpreting its publication state locally. */
 export function AddonTargetPicker(input: {
     readonly items: readonly AddonTarget[];
+    readonly isActive?: (item: AddonTarget) => boolean;
     readonly onSelect: (item: AddonTarget) => void;
     readonly t: Translate;
 }) {
@@ -27,12 +28,18 @@ export function AddonTargetPicker(input: {
                         className={styles.card}
                         data-testid={`addon-target-${item.listingId}`}
                         data-publication-status={item.publicationStatus}
+                        disabled={input.isActive?.(item) === true}
                         onClick={() => input.onSelect(item)}
                     >
                         <span>{item.name}</span>
                         <span>
                             {input.t(`billing.addonPurchase.status.${item.publicationStatus}`)}
                         </span>
+                        {input.isActive?.(item) && (
+                            <span className={styles.activeBadge}>
+                                {input.t('billing.addonPurchase.active')}
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>

@@ -1,5 +1,5 @@
 import type { AddonOffersResponse } from '@repo/schemas';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
 import {
     billingSubscriptionApi,
@@ -7,11 +7,14 @@ import {
     publishApi
 } from '@/lib/api/endpoints-protected';
 import { billingAddonApi } from '@/lib/api/endpoints-protected-addons';
-import { visibleApiMessage } from '@/lib/api-errors';
+import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/api-errors';
 import {
+    type ActiveAddonInstance,
     type AddonSubscriptionTarget,
     eligibleSubscriptionTargets,
     eligibleTargets,
+    isAddonActiveOnTarget,
+    isOfferFullyActive,
     mintOrderRequestId,
     orderIdentityReleased,
     purchasableOffers,
@@ -64,6 +67,10 @@ export function AddonPurchase(input: {
     const [purchasesPaused, setPurchasesPaused] = useState(false);
     const [payerEmail, setPayerEmail] = useState(input.accountEmail);
     const [pollAttempt, setPollAttempt] = useState(0);
+    const [activeInstances, setActiveInstances] = useState<readonly ActiveAddonInstance[]>([]);
+    const [liveSubscriptions, setLiveSubscriptions] = useState<
+        readonly AddonSubscriptionTarget[] | null
+    >(null);
     const targetVertical = target?.vertical ?? subscriptionTarget?.vertical ?? null;
     const free =
         !!offer &&
@@ -100,6 +107,32 @@ export function AddonPurchase(input: {
             alive = false;
         };
     }, [input.returnOrderRequestId, t]);
+
+    // HOS-2362: what the account already holds, so a bought addon shows as active instead of
+    // inviting a purchase the API refuses. Best effort: if the read fails the screen simply
+    // behaves as before and the server stays the authority.
+    const refreshActive = useCallback(async () => {
+        try {
+            const result = await billingAddonApi.listRecurringAddons();
+            if (!result.ok) return;
+            setActiveInstances(result.data.items);
+            if (!result.data.items.some((item) => item.status === 'ACTIVE')) return;
+            const subs = await billingSubscriptionApi.listMine({});
+            if (subs.ok)
+                setLiveSubscriptions(
+                    eligibleSubscriptionTargets({
+                        subscriptions: subs.data.subscriptions,
+                        compatibleVerticals: subs.data.subscriptions.map((item) => item.vertical)
+                    })
+                );
+        } catch {
+            // Leave the screen on its pre-read behavior.
+        }
+    }, []);
+
+    useEffect(() => {
+        void refreshActive();
+    }, [refreshActive]);
 
     useEffect(() => {
         if (
@@ -164,7 +197,16 @@ export function AddonPurchase(input: {
                 });
                 setSubscriptionTargets(items);
                 const [only] = items;
-                if (items.length === 1 && only) selectSubscription(only);
+                if (
+                    items.length === 1 &&
+                    only &&
+                    !isAddonActiveOnTarget({
+                        active: activeInstances,
+                        slug: selected.slug,
+                        targetId: only.id
+                    })
+                )
+                    selectSubscription(only);
                 else setView('SUBSCRIPTIONS');
             } catch (cause) {
                 setError(
@@ -221,6 +263,17 @@ export function AddonPurchase(input: {
         setView('SUMMARY');
     };
 
+    /** Known refusal codes and reasons get their localized copy; anything else keeps the API text. */
+    const purchaseErrorMessage = (params: { readonly error: ApiErrorShape }): string => {
+        const { error } = params;
+        const generic = t('billing.addonPurchase.loadError');
+        return translateApiError({
+            error,
+            t,
+            fallback: visibleApiMessage({ error }) ?? generic
+        });
+    };
+
     const confirmPurchase = async () => {
         if (!offer || !orderRequestId || busy) return;
         setBusy(true);
@@ -236,11 +289,7 @@ export function AddonPurchase(input: {
             if (free) {
                 const result = await billingAddonApi.chooseFree({ body });
                 if (result.ok) setView('ACTIVE');
-                else
-                    setError(
-                        visibleApiMessage({ error: result.error }) ??
-                            t('billing.addonPurchase.loadError')
-                    );
+                else setError(purchaseErrorMessage({ error: result.error }));
             } else if (offer.chargeKind === 'PERIODICO') {
                 const email = z.email().safeParse(payerEmail);
                 if (!email.success) {
@@ -269,9 +318,14 @@ export function AddonPurchase(input: {
                     setError(
                         result.error.code === 'ADDON_ORDER_REQUEST_ABANDONED'
                             ? t('billing.addonPurchase.attemptExpired')
-                            : (visibleApiMessage({ error: result.error }) ??
-                                  t('billing.addonPurchase.loadError'))
+                            : purchaseErrorMessage({ error: result.error })
                     );
+                    // HOS-2362: lost a race with another purchase; re-read so the addon shows
+                    // as active and send the owner back to the offers.
+                    if (result.error.code === 'ADDON_ALREADY_ACTIVE') {
+                        void refreshActive();
+                        setView('OFFERS');
+                    }
                 }
             }
         } catch (cause) {
@@ -305,6 +359,13 @@ export function AddonPurchase(input: {
             {view === 'OFFERS' && (
                 <AddonOfferList
                     offers={offers}
+                    isActive={(candidate) =>
+                        isOfferFullyActive({
+                            offer: candidate,
+                            active: activeInstances,
+                            subscriptionTargets: liveSubscriptions
+                        })
+                    }
                     onSelect={(selected) => {
                         void selectOffer(selected);
                     }}
@@ -314,6 +375,14 @@ export function AddonPurchase(input: {
             {view === 'TARGETS' && (
                 <AddonTargetPicker
                     items={targets}
+                    isActive={(item) =>
+                        !!offer &&
+                        isAddonActiveOnTarget({
+                            active: activeInstances,
+                            slug: offer.slug,
+                            targetId: item.listingId
+                        })
+                    }
                     onSelect={selectTarget}
                     t={t}
                 />
@@ -321,6 +390,14 @@ export function AddonPurchase(input: {
             {view === 'SUBSCRIPTIONS' && (
                 <AddonSubscriptionPicker
                     items={subscriptionTargets}
+                    isActive={(item) =>
+                        !!offer &&
+                        isAddonActiveOnTarget({
+                            active: activeInstances,
+                            slug: offer.slug,
+                            targetId: item.id
+                        })
+                    }
                     onSelect={selectSubscription}
                     t={t}
                 />

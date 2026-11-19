@@ -25,11 +25,13 @@ import type {
     VenuePromotionUpdateRequest
 } from '@repo/schemas';
 import {
+    fromPromotionWindow,
     LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
     OwnerPromotionEntityTypeEnum,
     ServiceErrorCode,
-    TouristAudienceEnum
+    TouristAudienceEnum,
+    toPromotionWindow
 } from '@repo/schemas';
 import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -101,6 +103,7 @@ export function buildVenueCreateInput(args: {
         maxRedemptions: null,
         validFrom: request.validFrom,
         validUntil: request.validUntil ?? null,
+        ...fromPromotionWindow(request.window),
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         touristAudience: TouristAudienceEnum.PLUS
     };
@@ -128,6 +131,7 @@ export function buildVenueUpdateInput(args: {
     if (request.title !== undefined) input.title = request.title;
     if (request.validFrom !== undefined) input.validFrom = request.validFrom;
     if (request.validUntil !== undefined) input.validUntil = request.validUntil;
+    if (request.window !== undefined) Object.assign(input, fromPromotionWindow(request.window));
     if (request.lifecycleState !== undefined) input.lifecycleState = request.lifecycleState;
     if (request.touristAudience !== undefined) input.touristAudience = request.touristAudience;
     if (changesType) input.discountType = request.discountType;
@@ -161,6 +165,16 @@ export function buildVenueUpdateInput(args: {
     const until = request.validUntil === undefined ? existing.validUntil : request.validUntil;
     if (until && new Date(until).getTime() <= new Date(from).getTime()) {
         invalid('zodError.ownerPromotion.validUntil.beforeValidFrom');
+    }
+    // Validate the resulting window too: an omitted update preserves the stored value.
+    const resultingWindow =
+        request.window === undefined ? toPromotionWindow(existing) : request.window;
+    if (
+        resultingWindow &&
+        (resultingWindow.startTime === resultingWindow.endTime ||
+            new Set(resultingWindow.weekdays).size !== resultingWindow.weekdays.length)
+    ) {
+        invalid('zodError.ownerPromotion.window.invalid');
     }
     return input;
 }

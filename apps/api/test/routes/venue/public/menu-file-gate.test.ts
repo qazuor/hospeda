@@ -22,6 +22,19 @@ const mockGetById = vi.fn();
 const mockGetBySlug = vi.fn();
 const mockSearch = vi.fn();
 const mockReadEffectiveSet = vi.fn();
+const { mockFindVenueIdsWithActivePromo } = vi.hoisted(() => ({
+    mockFindVenueIdsWithActivePromo: vi.fn(async () => new Map())
+}));
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        ownerPromotionModel: Object.assign(Object.create(actual.ownerPromotionModel), {
+            findVenueIdsWithActivePromo: mockFindVenueIdsWithActivePromo
+        })
+    };
+});
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();

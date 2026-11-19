@@ -1551,6 +1551,30 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/partner-types"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-types"
+        },
+        {
+            "method": "DELETE",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "PATCH",
+            "path": "/api/v1/admin/partner-types/:id"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-types/:id/restore"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/partners"
         },
         {
@@ -1948,6 +1972,10 @@
         {
             "method": "GET",
             "path": "/api/v1/admin/security-logs"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/session-recording/purge"
         },
         {
             "method": "GET",
@@ -3903,6 +3931,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/protected/venues/:id/stats"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/protected/venues/:id/support-edits"
         },
         {
@@ -4311,6 +4343,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/partner-types"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/partners"
         },
         {
@@ -4444,6 +4480,10 @@
         {
             "method": "GET",
             "path": "/api/v1/public/venues/:venueId/faqs"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/public/venues/:venueId/promotions"
         },
         {
             "method": "GET",

@@ -44,7 +44,8 @@ export const updatePartnerSchema = z
                     createdById: true,
                     ownerUserId: true,
                     presenceModerated: true,
-                    claimSecretHash: true
+                    claimSecretHash: true,
+                    partnerType: true // Read-only hydration (HOS-2336)
                 })
                 .extend(PARTNER_SAFE_WRITE_URL_FIELDS).shape
         )

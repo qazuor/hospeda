@@ -46,7 +46,10 @@
         "openNow": "Abierto ahora",
         "closedNow": "Cerrado",
         "opensAt": "Abre a las {{time}}",
-        "featured": "Destacado"
+        "featured": "Destacado",
+        "promo": "Promo",
+        "promoVip": "Promo VIP",
+        "promoNow": "Ahora"
     },
     "detail": {
         "address": {
@@ -118,7 +121,8 @@
             "title": "Agenda del local",
             "weekly": "Todos los {{weekday}}",
             "range": "{{when}}, {{start}} a {{end}}",
-            "fromOnly": "{{when}}, desde las {{start}}"
+            "fromOnly": "{{when}}, desde las {{start}}",
+            "buyTicket": "Comprar entrada"
         },
         "nightInfo": {
             "headingMultiLine": "De noche",
@@ -151,6 +155,26 @@
             "play": "Reproducir video",
             "playNamed": "Reproducir video: {{caption}}",
             "openExternal": "Ver en {{provider}} (se abre en una pestaña nueva)"
+        },
+        "promotions": {
+            "title": "Promociones",
+            "validUntil": "Hasta el {{date}}",
+            "noEndDate": "Sin fecha de fin",
+            "window": {
+                "days": {
+                    "0": "Lun",
+                    "1": "Mar",
+                    "2": "Mié",
+                    "3": "Jue",
+                    "4": "Vie",
+                    "5": "Sáb",
+                    "6": "Dom"
+                },
+                "to": "a",
+                "and": "y",
+                "everyDay": "Todos los días",
+                "now": "Ahora"
+            }
         }
     },
     "types": {
@@ -370,6 +394,9 @@
                 "date": "Fecha",
                 "startTime": "Hora de inicio",
                 "endTime": "Hora de fin (opcional)",
+                "ticketUrl": "Link de entradas (opcional)",
+                "ticketUrlHelp": "Si vendés entradas por Passline, Venti u otra, pegá el link acá.",
+                "ticketUrlInvalid": "El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.",
                 "active": "Activo",
                 "addEntry": "Agregar evento",
                 "maxReached": "Llegaste al máximo de {{max}} eventos.",
@@ -409,6 +436,48 @@
                 "inactive": "No se muestra",
                 "unavailable": "No disponible",
                 "fileUnavailable": "No se puede abrir este archivo."
+            },
+            "promotionsManager": {
+                "title": "Promociones",
+                "empty": "Todavía no cargaste promociones.",
+                "count": "Promociones activas: {{count}} / {{max}}",
+                "unlimitedCount": "Promociones activas: {{count}} · sin tope",
+                "create": "Nueva promoción",
+                "actions": {
+                    "delete": "Borrar",
+                    "edit": "Editar",
+                    "pause": "Pausar",
+                    "activate": "Reactivar",
+                    "save": "Guardar"
+                },
+                "name": "Título",
+                "discountType": "Beneficio",
+                "value": "Valor",
+                "condition": "Condición",
+                "validFrom": "Válida desde",
+                "validUntil": "Válida hasta",
+                "window": {
+                    "title": "Solo en ciertos días y horas",
+                    "enable": "Activar franja semanal",
+                    "start": "Desde",
+                    "end": "Hasta",
+                    "overnight": "Termina después de la medianoche, el día siguiente",
+                    "eventsHint": "Si es una entrada fija de tu agenda, cargala en Eventos. Acá va el beneficio."
+                },
+                "invalid": "Revisá los campos del formulario.",
+                "locked": "Disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "Esta función todavía no está disponible para tu plan.",
+                "cacheNotice": "Puede tardar unos minutos en verse en la ficha.",
+                "deleteTitle": "Borrar promoción",
+                "deleteConfirm": "¿Querés borrar esta promoción?",
+                "states": {
+                    "active": "Activa",
+                    "paused": "Pausada",
+                    "expired": "Vencida",
+                    "draft": "Borrador"
+                },
+                "limitReached": "Alcanzaste el tope. El plan {{plan}} permite más promociones.",
+                "limitReachedNoPlan": "Alcanzaste el tope de promociones de tu plan."
             }
         }
     },

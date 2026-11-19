@@ -1,0 +1,12 @@
+{
+    "$schema": "../../schemas/partnerType.schema.json",
+    "id": "002-partner-type-ngo",
+    "slug": "ngo",
+    "nameI18n": {
+        "es": "ONG",
+        "en": "NGO",
+        "pt": "ONG"
+    },
+    "displayWeight": 20,
+    "lifecycleState": "ACTIVE"
+}

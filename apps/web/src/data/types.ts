@@ -10,6 +10,7 @@
  * All fields are `readonly` to prevent accidental mutation of shared data.
  */
 
+import type { VenuePromoBadge } from '@repo/schemas';
 import type { ListingPolicyValues } from '../lib/listing/listing-policies';
 import type { MediaAttribution } from '../lib/media';
 import type { I18nTextLike } from '../lib/resolve-i18n-text';
@@ -1104,6 +1105,8 @@ export interface VenueCardData {
     readonly reviewsCount: number;
     /** Whether this listing appears in featured/promoted slots. */
     readonly isFeatured: boolean;
+    /** Presence-only promotion marker (HOS-2271). */
+    readonly promoBadge?: VenuePromoBadge;
     /** Structured opening hours by day. Null when not configured by the owner. */
     readonly openingHours: Record<string, VenueOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
@@ -1223,6 +1226,8 @@ export interface VenueEvent {
     readonly startTime: string;
     /** `HH:MM`, or `null` when the venue does not say. */
     readonly endTime: string | null;
+    /** External «Comprar entrada» link (`https`), or `null` (HOS-2255). */
+    readonly ticketUrl: string | null;
 }
 
 /**
@@ -1645,7 +1650,19 @@ export interface ExperienceDetailData extends ExperienceCardData {
 export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;
-    readonly type: string;
+    /**
+     * The catalog type's name in the page locale, falling back to Spanish
+     * (HOS-2336 AC-5.1). `null` for a partner the release-N backfill has not
+     * reached yet.
+     */
+    readonly typeLabel: string | null;
+    /**
+     * The bare legacy enum value (`business` / `ngo` / `institution`) when the
+     * API still answers `type` as a string, i.e. an API older than HOS-2336
+     * during a web-first rollout. The page labels it through `partners.types.*`.
+     * `null` whenever {@link typeLabel} came from the catalog.
+     */
+    readonly legacyType: string | null;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;

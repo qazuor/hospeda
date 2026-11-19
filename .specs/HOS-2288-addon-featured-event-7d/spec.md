@@ -48,7 +48,7 @@ producción. El producto se crea desde el admin existente, con runbook (HOS-2285
    un evento quedaría colgado al primer guardado. Esto se resuelve en **HOS-2291** (ids
    estables de eventos, extraído de HOS-2255 T-1), prerrequisito de este add-on.
 4. **Es de pago único (`UNA_VEZ`)** y por lo tanto **no se puede comprar desde la web hasta que
-   se resuelva HOS-2094** (`apps/web/src/lib/billing/addon-purchase.ts:10-13`). Hoy los 6
+   se resuelva HOS-2179** (`apps/web/src/lib/billing/addon-purchase.ts:10-13`). Hoy los 6
    add-ons de visibilidad tienen el mismo bloqueo.
 5. `addon_instance.target_id` es un `uuid` sin FK (`addon-product.dbschema.ts:101`, polimórfico),
    así que puede apuntar a cualquier tabla sin cambio estructural.
@@ -59,7 +59,7 @@ Dentro: clave de catálogo y producto (creado desde el admin con runbook), compr
 de evento, lectura pública del destacado por evento, orden y marca, expiración, tests, i18n,
 Novedades.
 
-Fuera: habilitar el pago único en la web (HOS-2094), destacar un evento por plan (HOS-2279),
+Fuera: habilitar el pago único en la web (HOS-2179), destacar un evento por plan (HOS-2279),
 destacado en la página del destino, otros add-ons de Comer y salir de la épica, el
 mecanismo de elegibilidad (HOS-2292) y los ids estables de eventos (HOS-2291).
 
@@ -144,7 +144,7 @@ HOS-2291 no toca catálogo y puede entrar antes del pase de HOS-1352.
   define el mecanismo.
 - Orden de chequeos del contrato de errores: auth 401, permiso 403, forma 400, existencia/propiedad
   404, reglas de negocio 409.
-- Pago: igual que los otros `UNA_VEZ` (token de tarjeta hoy). **Depende de HOS-2094.**
+- Pago: igual que los otros `UNA_VEZ` (token de tarjeta hoy). **Depende de HOS-2179.**
 - Elegibilidad de título: igual (`hasTitle`, un principal que paga; `NO_VALID_TITLE`).
   Un trial no compra. Varias compras en paralelo sobre eventos distintos están permitidas; el
   índice único parcial de 5.2 impide dos destacados vivos sobre el mismo evento.
@@ -244,7 +244,7 @@ lectura es correcto aunque la revalidación falle (solo se ve tarde).
 
 ## 9. Riesgos
 
-- R-1. Depende de HOS-2094 para vender. Si el owner decide salir al corte sin pago único,
+- R-1. Depende de HOS-2179 para vender. Si el owner decide salir al corte sin pago único,
   este add-on **no se puede vender** y la presentación no puede listarlo como disponible.
 - R-2. `LISTING` con evento opcional estira el significado de `scope_type`. Mitigación: comentario
   en `ADDON_SCOPE_TYPES`, y un test que falla si `event_id` aparece en una versión sin la clave.
@@ -280,7 +280,7 @@ Abiertas (menores):
 - **HOS-2291** (ids estables de eventos): prerrequisito; entra primero.
 - **HOS-2292** (elegibilidad de add-ons): para excluir a premium.
 - HOS-2279 (campo `isFeatured` por evento, insignia, orden) debe entrar antes o con esta.
-- HOS-2094 (pago único en la web): sin ella no se vende.
+- HOS-2179 (pago único en la web): sin ella no se vende.
 - Pase final de HOS-1352 (la clave de catálogo no se mergea antes).
 - HOS-2280 / HOS-2263: coordinar migraciones de catálogo y el tope de eventos.
 - El código muerto `syncFeaturedByEntitlementFor*` lo maneja la sesión epica-billing; este

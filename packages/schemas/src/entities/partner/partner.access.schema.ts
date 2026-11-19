@@ -1,5 +1,6 @@
 import type { z as Zod } from 'zod';
 import { z } from 'zod';
+import { PartnerPublicTypeSchema } from '../partner-type/partner-type.access.schema.js';
 import { partnerSchema } from './partner.schema.js';
 
 /**
@@ -16,19 +17,27 @@ import { partnerSchema } from './partner.schema.js';
  * (`PartnerModel.findByFilters` requires `ACTIVE`), but dropping a shipped field
  * is a three-phase migration under the schema-compat policy. The former
  * `subscriptionStatus` field left with its column (HOS-1419).
+ *
+ * `type` is NOT picked from `partnerSchema` (HOS-2336): the entity no longer
+ * carries the closed enum. It is the catalog row reduced to its slug and the
+ * name resolved for the request locale (spec D5). `null` only for a partner
+ * the release-N backfill has not reached yet.
  */
-export const PartnerPublicSchema = partnerSchema.pick({
-    id: true,
-    slug: true,
-    name: true,
-    description: true,
-    type: true,
-    logoUrl: true,
-    websiteUrl: true,
-    lifecycleState: true,
-    contactInfo: true,
-    socialNetworks: true
-});
+export const PartnerPublicSchema = partnerSchema
+    .pick({
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        logoUrl: true,
+        websiteUrl: true,
+        lifecycleState: true,
+        contactInfo: true,
+        socialNetworks: true
+    })
+    .extend({
+        type: PartnerPublicTypeSchema.nullable()
+    });
 
 export type PartnerPublic = Zod.infer<typeof PartnerPublicSchema>;
 

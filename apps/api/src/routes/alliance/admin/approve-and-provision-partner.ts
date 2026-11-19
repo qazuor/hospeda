@@ -15,7 +15,11 @@
  * @module routes/alliance/admin/approve-and-provision-partner
  */
 
-import { AllianceLeadSchema, PermissionEnum } from '@repo/schemas';
+import {
+    AllianceLeadPartnerProvisionSkipReasonSchema,
+    AllianceLeadSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -63,7 +67,15 @@ const ApproveAndProvisionPartnerResponseSchema = z.object({
     /** UUID of the provisioned partner, or null when the lead was too incomplete. */
     partnerId: z.string().uuid().nullable(),
     /** `true` when this call created the partner; `false` when it already existed. */
-    provisioned: z.boolean()
+    provisioned: z.boolean(),
+    /**
+     * Why THIS call created no partner (HOS-2336, additive; absent when
+     * `provisioned` is true). `no-active-partner-type` means the lead's type
+     * was deactivated or deleted after submission (AC-2.2).
+     */
+    // `not-a-partner` never reaches this response: a non-partner lead is
+    // refused before provisioning runs.
+    reason: AllianceLeadPartnerProvisionSkipReasonSchema.exclude(['not-a-partner']).optional()
 });
 
 /**
@@ -76,6 +88,9 @@ const ApproveAndProvisionPartnerResponseSchema = z.object({
  * - `400` — the lead is not a `partner` application.
  * - `403` — actor lacks `ALLIANCE_LEAD_MANAGE`.
  * - `404` — lead not found.
+ *
+ * A lead whose partner type is no longer ACTIVE also returns `201` with
+ * `partnerId: null` and `reason: 'no-active-partner-type'` (HOS-2336 AC-2.2).
  *
  * A lead with no usable typed organization data returns `201` with
  * `partnerId: null` — it is approved, and the partner is left for the admin to

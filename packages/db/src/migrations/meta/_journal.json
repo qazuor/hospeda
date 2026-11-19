@@ -1660,6 +1660,27 @@
       "when": 1795023790143,
       "tag": "0236_hos2270_owner_promotions_entity",
       "breakpoints": true
+    },
+    {
+      "idx": 237,
+      "version": "7",
+      "when": 1795034446162,
+      "tag": "0237_hos2336_partner_types_catalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 238,
+      "version": "7",
+      "when": 1795041949646,
+      "tag": "0238_hos2255_venue_event_ticket_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 239,
+      "version": "7",
+      "when": 1795048579974,
+      "tag": "0239_hos2272_promotion_window",
+      "breakpoints": true
     }
   ]
 }

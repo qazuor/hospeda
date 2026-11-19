@@ -3323,7 +3323,13 @@
             "dateForbiddenForWeekly": "Um evento semanal não leva data: ele se repete toda semana",
             "weekdayRequiredForWeekly": "Um evento semanal precisa de um dia da semana",
             "weekdayForbiddenForOnce": "Um evento com data não leva dia da semana",
-            "endTimeEqualsStart": "O horário de término não pode ser igual ao de início"
+            "endTimeEqualsStart": "O horário de término não pode ser igual ao de início",
+            "ticketUrl": {
+                "max": "O link de ingressos não pode ter mais de {{max}} caracteres",
+                "invalid": "O link de ingressos não é uma URL válida",
+                "httpsRequired": "O link de ingressos deve começar com https://",
+                "credentials": "O link de ingressos não pode conter usuário nem senha"
+            }
         },
         "eventDate": {
             "invalid": "A data do evento não é válida (formato AAAA-MM-DD)"
@@ -3747,6 +3753,12 @@
         "validUntil": {
             "beforeValidFrom": "A data de fim deve ser posterior à de início",
             "invalid": "La fecha de fin no es válida"
+        },
+        "window": {
+            "duplicateWeekday": "Não repita os dias no horário semanal",
+            "incomplete": "Escolha os dias e o horário completo da faixa",
+            "invalid": "Confira os dias e o horário da faixa",
+            "sameTime": "O horário final deve ser diferente do inicial"
         }
     },
     "pagination": {
@@ -3869,6 +3881,23 @@
                 "required": "Informe o motivo da moderação",
                 "max": "O motivo da moderação não pode exceder {{max}} caracteres"
             }
+        }
+    },
+    "partnerType": {
+        "slug": {
+            "required": "O slug é obrigatório",
+            "min": "O slug deve ter pelo menos {{min}} caracteres",
+            "max": "O slug não pode ultrapassar {{max}} caracteres",
+            "pattern": "O slug só aceita letras minúsculas, números e hífens"
+        },
+        "nameI18n": {
+            "esRequired": "O nome em espanhol é obrigatório"
+        },
+        "displayWeight": {
+            "required": "A ordem é obrigatória",
+            "int": "A ordem deve ser um número inteiro",
+            "min": "A ordem deve ser pelo menos {{min}}",
+            "max": "A ordem não pode ultrapassar {{max}}"
         }
     },
     "poiCategory": {
@@ -5253,6 +5282,11 @@
         },
         "kind": {
             "notForEntityType": "Este tipo de interação não corresponde à entidade"
+        },
+        "venueStats": {
+            "window": {
+                "invalid": "O período deve ser de 7, 30 ou 90 dias"
+            }
         }
     },
     "partnerStats": {

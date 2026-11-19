@@ -34,6 +34,8 @@ const HTTPS_ONLY_EXEMPTIONS: Readonly<Record<string, string>> = Object.freeze({
     'entities/venue/venue.schema.ts':
         'menuUrl must be HTTPS only: stricter than the http/https allow-list, not a copy of it',
     'entities/venue/venue.http.schema.ts': 'menuUrl input mirror of venue.schema.ts (HTTPS only)',
+    'entities/venue/subtypes/venue.event.schema.ts':
+        'ticketUrl must be HTTPS only (HOS-2255 spec): a ticket purchase link never goes over plain http',
     'entities/accommodation-calendar-sync/accommodation-calendar-sync.http.schema.ts':
         'iCal feedUrl is fetched server-side and must be HTTPS only'
 });

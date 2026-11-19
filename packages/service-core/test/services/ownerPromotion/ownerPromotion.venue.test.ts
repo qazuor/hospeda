@@ -56,6 +56,25 @@ function stored(overrides: Partial<OwnerPromotion> = {}): OwnerPromotion {
 }
 
 describe('buildVenueCreateInput', () => {
+    it('maps a recurring window to the three nullable database fields', () => {
+        const input = buildVenueCreateInput({
+            venue,
+            request: {
+                title: 'Happy hour',
+                discountType: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
+                discountValue: 20,
+                validFrom: FROM,
+                touristAudience: TouristAudienceEnum.PLUS,
+                window: { weekdays: [4, 5, 6], startTime: '23:00', endTime: '00:30' }
+            }
+        });
+        expect(input).toMatchObject({
+            windowWeekdays: [4, 5, 6],
+            windowStart: '23:00',
+            windowEnd: '00:30'
+        });
+    });
+
     it('AC-1: the owner and the target come from the venue, never the body', () => {
         const input = buildVenueCreateInput({
             venue,
@@ -98,6 +117,23 @@ describe('buildVenueCreateInput', () => {
 });
 
 describe('buildVenueUpdateInput', () => {
+    it('preserves an omitted window and clears it when given null', () => {
+        const window = { windowWeekdays: [4, 5], windowStart: '18:00', windowEnd: '20:00' };
+        expect(
+            buildVenueUpdateInput({
+                existing: stored(window),
+                request: { lifecycleState: LifecycleStatusEnum.ARCHIVED }
+            })
+        ).toEqual({ lifecycleState: LifecycleStatusEnum.ARCHIVED });
+        expect(
+            buildVenueUpdateInput({ existing: stored(window), request: { window: null } })
+        ).toMatchObject({
+            windowWeekdays: null,
+            windowStart: null,
+            windowEnd: null
+        });
+    });
+
     it('maps only what the body carries', () => {
         const input = buildVenueUpdateInput({
             existing: stored(),

@@ -18,6 +18,7 @@ import { OwnerPromotionEntityTypeEnumSchema } from '../../enums/owner-promotion-
 import { TouristAudienceEnum } from '../../enums/tourist-audience.enum.js';
 import { TouristAudienceEnumSchema } from '../../enums/tourist-audience.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { VenueEventTimeSchema } from '../venue/subtypes/venue.event.schema.js';
 
 /**
  * Refinement shared by every schema that carries the promotion target (HOS-2270).
@@ -160,6 +161,10 @@ export const OwnerPromotionObjectSchema = z.object({
         .nullable()
         .optional(),
 
+    windowWeekdays: z.array(z.number().int().min(0).max(6)).min(1).max(7).nullable().optional(),
+    windowStart: VenueEventTimeSchema.nullable().optional(),
+    windowEnd: VenueEventTimeSchema.nullable().optional(),
+
     maxRedemptions: z
         .number()
         .int({ message: 'zodError.ownerPromotion.maxRedemptions.int' })
@@ -184,9 +189,39 @@ export const OwnerPromotionObjectSchema = z.object({
 /**
  * Owner Promotion entity schema: the object plus the target refinement.
  */
-export const OwnerPromotionSchema = OwnerPromotionObjectSchema.superRefine(
-    refineOwnerPromotionTarget
-);
+export const OwnerPromotionSchema = OwnerPromotionObjectSchema.superRefine((value, ctx) => {
+    refineOwnerPromotionTarget(value, ctx);
+    const values = [value.windowWeekdays, value.windowStart, value.windowEnd];
+    const presentCount = values.filter((entry) => entry !== undefined && entry !== null).length;
+    if (presentCount !== 0 && presentCount !== 3) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['windowWeekdays'],
+            message: 'zodError.ownerPromotion.window.incomplete'
+        });
+    }
+    if (
+        value.windowWeekdays &&
+        new Set(value.windowWeekdays).size !== value.windowWeekdays.length
+    ) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['windowWeekdays'],
+            message: 'zodError.ownerPromotion.window.duplicateWeekday'
+        });
+    }
+    if (
+        value.windowStart !== null &&
+        value.windowStart !== undefined &&
+        value.windowStart === value.windowEnd
+    ) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['windowEnd'],
+            message: 'zodError.ownerPromotion.window.sameTime'
+        });
+    }
+});
 export type OwnerPromotion = z.infer<typeof OwnerPromotionObjectSchema>;
 
 /**
@@ -252,22 +287,29 @@ export type OwnerPromotionUpdateInput = z.infer<typeof OwnerPromotionUpdateInput
  */
 export const OwnerPromotionCreateRequestSchema = OwnerPromotionCreateInputBaseSchema.omit({
     ownerId: true,
+    windowWeekdays: true,
+    windowStart: true,
+    windowEnd: true,
     // The accommodation route fixes the target (HOS-2270): the type is its own and
     // the id keeps travelling as `accommodationId` in the public contract.
     entityType: true,
     entityId: true
-}).superRefine((value, ctx) => {
-    if (
-        value.discountType !== undefined &&
-        !(ACCOMMODATION_PROMOTION_DISCOUNT_TYPES as readonly string[]).includes(value.discountType)
-    ) {
-        ctx.addIssue({
-            code: 'custom',
-            path: ['discountType'],
-            message: 'zodError.ownerPromotion.discountType.notForAccommodation'
-        });
-    }
-});
+})
+    .strict()
+    .superRefine((value, ctx) => {
+        if (
+            value.discountType !== undefined &&
+            !(ACCOMMODATION_PROMOTION_DISCOUNT_TYPES as readonly string[]).includes(
+                value.discountType
+            )
+        ) {
+            ctx.addIssue({
+                code: 'custom',
+                path: ['discountType'],
+                message: 'zodError.ownerPromotion.discountType.notForAccommodation'
+            });
+        }
+    });
 export type OwnerPromotionCreateRequest = z.infer<typeof OwnerPromotionCreateRequestSchema>;
 
 /**

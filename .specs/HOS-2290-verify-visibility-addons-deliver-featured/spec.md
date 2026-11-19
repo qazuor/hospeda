@@ -23,18 +23,18 @@ areas:
 | Pregunta | Veredicto |
 |---|---|
 | ¿El destacado se **entrega** cuando existe un add-on de visibilidad activo? (alojamiento, local y experiencia) | **SÍ.** Existe un escritor de `featuredByEntitlement` desde HOS-1718 (mergeado el 2026-11-12). La frase del `CLAUDE.md` raíz «`featuredByEntitlement` currently has NO writer» está **vencida**. |
-| ¿Esos add-ons se pueden **comprar** hoy? | **NO desde la web, en ningún entorno.** Los 6 productos son de pago único (`UNA_VEZ`) y la pantalla de compra web los esconde hasta HOS-2094. Solo se compran llamando a la API con un token de tarjeta, que la web no genera. |
+| ¿Esos add-ons se pueden **comprar** hoy? | **NO desde la web, en ningún entorno.** Los 6 productos son de pago único (`UNA_VEZ`) y la pantalla de compra web los esconde hasta HOS-2179. Solo se compran llamando a la API con un token de tarjeta, que la web no genera. |
 
 Consecuencia: **el escenario de la issue («un local paga y no aparece destacado») no puede
 ocurrir por la web**, porque nadie puede pagar. El riesgo real es otro y es doble:
 
-1. Cuando HOS-2094 habilite la compra web, el destacado **ya funciona**: no hay que
+1. Cuando HOS-2179 habilite la compra web, el destacado **ya funciona**: no hay que
    adelantar HOS-929 (está Done) ni retirar productos.
 2. Mientras tanto, **hay copy que promete lo que no se puede comprar** (página de
    presentación, `/funcionalidades`, comparador de planes). Eso se trata en HOS-2284.
 
 **Recomendación:** no retirar los productos y no adelantar nada. Cerrar la verificación
-con este informe, corregir el `CLAUDE.md`, y dejar la habilitación de compra en HOS-2094.
+con este informe, corregir el `CLAUDE.md`, y dejar la habilitación de compra en HOS-2179.
 Lo único urgente es confirmar con SQL (sección 7) que no hay instancias de pago único
 activas en producción comprobables por API.
 
@@ -50,7 +50,7 @@ la venta o adelantar el mecanismo.
 Dentro: informe, corrección de docs vencidos, SQL de verificación en producción,
 y los arreglos chicos que el informe justifique (sección 9).
 
-Fuera: habilitar el pago único en la web (HOS-2094), el destacado de evento
+Fuera: habilitar el pago único en la web (HOS-2179), el destacado de evento
 (HOS-2279, HOS-2288), cualquier cambio de catálogo, y el borrado del código muerto
 `syncFeaturedByEntitlementFor*`, que maneja la sesión epica-billing (decidido por el owner,
 16/11/2026; no es parte de este programa).
@@ -154,10 +154,10 @@ solo `owner-pro` y `owner-premium` (`scripts/production-catalog/catalog.ts:272` 
   `purchasableOffers` filtra a `chargeKind === 'PERIODICO'` («Only recurring addons can be
   purchased from the web screen»), y `AddonPurchase.client.tsx:81` lo aplica a la lista
   que ve el usuario. Commit `26ab20073d` «exclude one-time addons from web purchase until
-  HOS-2094». Los 6 son `UNA_VEZ`: **no aparecen en `/mi-cuenta/complementos/`**.
+  HOS-2179». Los 6 son `UNA_VEZ`: **no aparecen en `/mi-cuenta/complementos/`**.
 - **Admin web:** no hay pantalla de compra de add-ons en `apps/admin`; el admin solo
   gestiona el catálogo (`features/billing-addon-catalog`). No existe oferta alternativa.
-- **HOS-2094** (Backlog, sin dueño): medir Checkout Pro como redirect y habilitar la compra
+- **HOS-2179** (Backlog, sin dueño): medir Checkout Pro como redirect y habilitar la compra
   web de los 6. Debe resolverse «antes del corte o aceptar salir sin esos add-ons».
 - **Reglas que se aplican cuando se habilite:**
   - Hace falta un principal que **paga** o un ancla de grant vivo en la vertical
@@ -197,13 +197,13 @@ solo `owner-pro` y `owner-premium` (`scripts/production-catalog/catalog.ts:272` 
     complemento vigente y dice «desde Mi cuenta > Complementos... sin llamar a nadie» (L304).
   - `plan-comparison-rows.ts:262-272` dice que cualquier plan puede comprar el boost.
   - Decidido (owner, 16/11/2026): «Destacar 7 o 30 días» queda como está en la página; se
-    vuelve verdadero cuando salga HOS-2094. Las otras tres afirmaciones falsas se corrigen en
-    HOS-2284. Mientras HOS-2094 siga abierta, esa frase promete algo no comprable (aceptado).
+    vuelve verdadero cuando salga HOS-2179. Las otras tres afirmaciones falsas se corrigen en
+    HOS-2284. Mientras HOS-2179 siga abierta, esa frase promete algo no comprable (aceptado).
 - **R-2. Al habilitar el pago único, comprar para una ficha oculta quema días.** La alerta de
   ficha oculta solo existe para `PERIODICO` (`addon-purchase.ts:17-32`,
   `hiddenListingNoticeKind` devuelve `null` si `chargeKind !== 'PERIODICO'`). Un boost de
   7 días comprado sobre un borrador corre el reloj sin que nadie lo vea. Va como criterio
-  de aceptación de HOS-2094.
+  de aceptación de HOS-2179.
 - **R-3. Selector de ficha muestra el UUID**, no el nombre (`AddonTargetPicker.tsx:32`).
   Mala UX pero no de entrega.
 - **R-4. Latencia de hasta 15 min** al vencer (cron `7-59/15`).
@@ -284,7 +284,7 @@ Para el tamaño del catálogo en la tabla: los nombres exactos de tabla/columna 
   (`syncListingFeatured`, listener, reconciliador diario) y que `syncFeaturedByEntitlementFor*`
   es código muerto (su borrado lo maneja la sesión epica-billing, fuera de este programa).
 - AC-4. El comentario de `plan-comparison-rows.ts` ya no habla de «per-accommodation» ni de SPEC-309.
-- AC-5. HOS-2094 lleva como criterio explícito: alerta de ficha oculta también para `UNA_VEZ`
+- AC-5. HOS-2179 lleva como criterio explícito: alerta de ficha oculta también para `UNA_VEZ`
   (R-2) y selector por nombre de ficha (R-3), y un e2e con los productos reales de 0176.
 
 ## 9. Plan de trabajo (tareas atómicas)
@@ -292,7 +292,7 @@ Para el tamaño del catálogo en la tabla: los nombres exactos de tabla/columna 
 1. Correr Q1-Q5 en producción y pegar el resultado en la issue. (coordinador, 30 min)
 2. Actualizar `CLAUDE.md` (bloque de `featuredByEntitlement`) y el comentario de
    `plan-comparison-rows.ts`. Commit aparte de docs. (1 h)
-3. Comentar en HOS-2094 los criterios nuevos de AC-5. (30 min)
+3. Comentar en HOS-2179 los criterios nuevos de AC-5. (30 min)
 4. (Fuera de este programa) El borrado de `syncFeaturedByEntitlementFor*` lo maneja la sesión
    epica-billing, ya avisada; acá no se crea issue.
 5. Cerrar HOS-2290 con el informe.
@@ -302,9 +302,9 @@ Para el tamaño del catálogo en la tabla: los nombres exactos de tabla/columna 
 Decidido (owner, 16/11/2026):
 
 1. **Copy actual de la presentación y de `/funcionalidades` sobre el boost.** «Destacar 7 o
-   30 días» queda como está y se vuelve verdadero cuando salga HOS-2094. Las otras tres
+   30 días» queda como está y se vuelve verdadero cuando salga HOS-2179. Las otras tres
    afirmaciones falsas sí se corrigen en HOS-2284. Es la opción C del informe original
-   (priorizar HOS-2094), sin retirar el copy.
+   (priorizar HOS-2179), sin retirar el copy.
 2. **`syncFeaturedByEntitlementFor{Owner,Accommodation}` (vestigio sin llamador).** Lo maneja
    la sesión epica-billing; no se crea issue en este programa.
 
@@ -312,7 +312,7 @@ Sin preguntas abiertas.
 
 ## 11. Dependencias
 
-- HOS-2094 (compra web del pago único): bloquea que el destacado sea comprable.
+- HOS-2179 (compra web del pago único): bloquea que el destacado sea comprable.
 - HOS-929 y HOS-1357 están **Done**: no bloquean nada. La issue HOS-2279 los marca como
   bloqueantes y esa marca está vencida (ver spec de HOS-2279).
 - HOS-1352 (pase final del catálogo): este informe no toca catálogo.

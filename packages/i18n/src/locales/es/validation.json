@@ -3323,7 +3323,13 @@
             "dateForbiddenForWeekly": "Un evento semanal no lleva fecha: se repite todas las semanas",
             "weekdayRequiredForWeekly": "Un evento semanal necesita un día de la semana",
             "weekdayForbiddenForOnce": "Un evento con fecha no lleva día de la semana",
-            "endTimeEqualsStart": "La hora de fin no puede ser igual a la de inicio"
+            "endTimeEqualsStart": "La hora de fin no puede ser igual a la de inicio",
+            "ticketUrl": {
+                "max": "El link de entradas no puede superar los {{max}} caracteres",
+                "invalid": "El link de entradas no es una URL válida",
+                "httpsRequired": "El link de entradas tiene que empezar con https://",
+                "credentials": "El link de entradas no puede llevar usuario ni contraseña"
+            }
         },
         "eventDate": {
             "invalid": "La fecha del evento no es válida (formato AAAA-MM-DD)"
@@ -3747,6 +3753,12 @@
         "validUntil": {
             "beforeValidFrom": "La fecha de fin debe ser posterior a la de inicio",
             "invalid": "La fecha de fin no es válida"
+        },
+        "window": {
+            "duplicateWeekday": "No repitas días en la franja semanal",
+            "incomplete": "Elegí los días y el horario completo de la franja",
+            "invalid": "Revisá los días y el horario de la franja",
+            "sameTime": "La hora de fin debe ser distinta de la de inicio"
         }
     },
     "pagination": {
@@ -3869,6 +3881,23 @@
                 "required": "Indicá el motivo de la moderación",
                 "max": "El motivo de la moderación no puede superar los {{max}} caracteres"
             }
+        }
+    },
+    "partnerType": {
+        "slug": {
+            "required": "El slug es obligatorio",
+            "min": "El slug debe tener al menos {{min}} caracteres",
+            "max": "El slug no puede superar los {{max}} caracteres",
+            "pattern": "El slug sólo admite minúsculas, números y guiones"
+        },
+        "nameI18n": {
+            "esRequired": "El nombre en español es obligatorio"
+        },
+        "displayWeight": {
+            "required": "El orden es obligatorio",
+            "int": "El orden debe ser un número entero",
+            "min": "El orden debe ser al menos {{min}}",
+            "max": "El orden no puede superar {{max}}"
         }
     },
     "poiCategory": {
@@ -5253,6 +5282,11 @@
         },
         "kind": {
             "notForEntityType": "Este tipo de interacción no corresponde a la entidad"
+        },
+        "venueStats": {
+            "window": {
+                "invalid": "La ventana debe ser de 7, 30 o 90 días"
+            }
         }
     },
     "partnerStats": {

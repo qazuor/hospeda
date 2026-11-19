@@ -29,3 +29,15 @@ describe('pages reading the effective-set-gated public payload (HOS-2009)', () =
         expect(src).toMatch(/markResponseDegradedFromApi\(\{[\s\S]*?results:\s*\[/);
     });
 });
+
+describe('venue detail optional promotion read', () => {
+    it('marks failed or rejected promotion reads degraded before rendering an empty list', () => {
+        const src = readFileSync(
+            resolve(__dirname, '../../src/pages/[lang]/comer-y-salir/[slug].astro'),
+            'utf8'
+        );
+
+        expect(src).toContain('markResponseDegraded({ locals: Astro.locals })');
+        expect(src).toMatch(/if \(promotionsResult\?\.ok\)[\s\S]*?else \{\s*markResponseDegraded/);
+    });
+});

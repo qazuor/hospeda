@@ -66,7 +66,7 @@ never captures six marked UI surfaces.
 - G-4 Recorder parameters are code: `pnpm umami:setup` declares them,
   idempotently, with `--dry-run`, touching only what it declares.
 - G-5 Strict masking (all text, all inputs) plus element-level blocking of four
-  surfaces plus route exclusion of eleven route families.
+  surfaces plus route exclusion of ten route families.
 - G-6 Admin, api and mobile are never recorded.
 - G-7 The privacy doc describes the real recorder, and a manual privacy
   verification is signed before production is ever switched ON.
@@ -351,15 +351,16 @@ One exported constant in `apps/web/src/lib/analytics/recording-exclusions.ts`:
 RECORDING_EXCLUDED_ROUTE_PREFIXES = [
   'auth', 'mi-cuenta', 'guest', 'suscriptores/checkout', 'publicar',
   'feedback', 'colaborar', 'contacto', 'partners/reclamar',
-  'sumate', 'newsletter'
+  'newsletter'
 ] as const
 ```
 
-> **Implementation decision after review (2026-11-18).** The first draft listed
-> only `sumate/proveedor`. `sumate/sponsor` renders the same `AllianceLead` form,
-> and `sumate/partner` renders `PartnerApplication`, another free-text lead form.
-> Under the privacy doc's rule that free-text forms are never recorded, the whole
-> `sumate` prefix is excluded instead.
+> **Owner decision (2026-11-18, supersedes the review decision of the same day).**
+> The first draft listed only `sumate/proveedor`; the review widened it to the whole
+> `sumate` prefix. The owner then decided that `sumate/*` (partner, provider and
+> sponsor sign-ups) is recorded, to study the conversion funnel. The prefix is
+> removed from the list: ten route families remain. Those pages rely on strict
+> masking of all text and inputs.
 
 Matching rules for `isRecordingExcludedPath({ pathname })`:
 
@@ -465,10 +466,10 @@ replay_config: {
 >   undeclared key" can only mean "never send one": the script sends only the
 >   seven declared keys.
 > - **Retention is not configurable, and nothing in Umami ever deletes replays**
->   (only a website reset or delete does). There is no 30-day default either. No
->   retention job was built; the privacy doc states indefinite retention, and the
->   mechanism is an open owner decision (§12). AC-S7 is satisfied by that
->   statement.
+>   (only a website reset or delete does). There is no 30-day default either. The
+>   spike found this; the owner then decided (2026-11-18, OQ-8) that Hospeda purges
+>   them itself: configurable 14, 30 or 60 days (default 30), a daily cron plus a
+>   manual action, saved replays included. See the privacy doc and AC-S7.
 
 ### 6.9 Admin card
 
@@ -659,12 +660,12 @@ means a `script#umami-recorder` exists with
   locale, e.g. `/es/auth/signin/`, `/en/mi-cuenta/favoritos/`,
   `/pt/guest/messages/abc`, `/es/suscriptores/checkout/?plan=x`,
   `/es/publicar/nueva`, `/es/feedback/`, `/es/colaborar/fotos/`,
-  `/es/contacto/`, `/es/partners/reclamar/`, `/es/sumate/proveedor/`,
-  `/es/sumate/sponsor/`, `/es/sumate/partner/`, and `/es/newsletter/confirmado`.
+  `/es/contacto/`, `/es/partners/reclamar/`, and `/es/newsletter/confirmado`.
 - **AC-R2** It returns `false` for `/es/`, `/es/alojamientos/x/`,
   `/es/publicaciones/`, `/es/partners/foo/`, `/es/suscriptores/planes/`,
-  `/es/sumatoria/` and `/es/contactos-utiles/` (prefix-boundary check).
-  (`/es/sumate/partner/` moved to AC-R1 by the 2026-11-18 review decision in §6.5.)
+  `/es/sumatoria/` and `/es/contactos-utiles/` (prefix-boundary check). It also
+  returns `false` for `/es/sumate/`, `/es/sumate/proveedor/`,
+  `/es/sumate/sponsor/` and `/es/sumate/partner/` (owner decision, 2026-11-18, §6.5).
 - **AC-R3** Given all other conditions hold and the current path is excluded,
   then nothing is injected and `fetch` is not called.
 - **AC-R4** Guard: every entry of `RECORDING_EXCLUDED_ROUTE_PREFIXES` maps to an
@@ -716,10 +717,11 @@ means a `script#umami-recorder` exists with
 - **AC-S6** No env var for a write-capable Umami credential is added to
   `packages/config` or to any app env schema (`pnpm env:check:registry` green,
   plus a grep guard over the api).
-- **AC-S7** Given T-001 found a configurable recording retention, then it reads
-  14 days on staging and on prod, wherever it lives (declared by `umami:setup`,
-  or set on the Umami app). Given T-001 found none, then the privacy doc states
-  that Umami's default retention of 30 days applies.
+- **AC-S7** (rewritten by the retention decision, 2026-11-18, OQ-8) Umami 3.5 has no
+  retention setting, so the privacy doc states the retention Hospeda enforces itself:
+  configurable 14, 30 or 60 days (default 30), a daily purge that also runs while
+  recording is OFF, saved replays included, and a manual "clean up now" action. A test
+  (`apps/web/test/docs/session-replay-privacy-doc.test.ts`) pins those statements.
 
 ### 9.7 Permission and seed
 
@@ -854,19 +856,26 @@ The six open questions of the first draft were answered by the owner on
 
 ### 12.2 Open questions
 
-- **OQ-7 Legal pages.** The first draft's OQ-1 also asked whether the legal
-  cookies and privacy pages (`/{lang}/legal/cookies`, `/{lang}/legal/privacidad`)
-  need to mention session recordings. D-1 covers only the consent-banner
-  description. Whether those legal texts change too is still open, and it is the
-  owner's legal call. It does not block implementation; it must be answered
-  before the first prod ON (AC-SM6).
-- **OQ-8 Replay retention (opened by the T-001 spike).** D-5 assumed either a
-  configurable retention or a 30-day Umami default. Neither exists: Umami 3.5
-  keeps replays forever. Options: (a) a VPS cron that deletes replay rows older
-  than 14 days directly in the Umami database; (b) accept indefinite retention;
-  (c) a Hospeda cron with read/write access to the Umami database. Not built;
-  it must be answered before the first prod ON. Until then, production stays ON
-  only for bounded windows.
+- **OQ-7 Legal pages. RESOLVED (2026-11-18).** The owner approved mentioning
+  session recordings and heatmaps in both legal pages. A new section
+  "Session recordings and heatmaps" (`sections.sessionRecording`) was added to
+  the privacy and cookie policies in es, en and pt (`packages/i18n/src/locales/*/privacy.json`
+  and `cookies.json`). It says: pseudonymous replays (tied to the account id for logged-in users) and click/scroll heatmaps with
+  self-hosted Umami; only with analytics consent and only while enabled; all text
+  and inputs masked; a sample of sessions; retention "a limited period of up to
+  60 days" (no fixed number, because the period is configurable; see OQ-8). `CONSENT_VERSION` is not bumped (D-1). Guard:
+  `packages/i18n/test/session-recording-legal-copy.guard.test.ts`.
+- **OQ-8 Replay retention (opened by the T-001 spike). RESOLVED 2026-11-18 (owner).**
+  Umami 3.5 keeps replays forever, so D-5 does not hold. Decision: replays and
+  heatmaps are deleted automatically after a configurable period of 14, 30 or
+  60 days (default 30), plus a manual "clean up now" action. Both live in the
+  existing admin card behind `analytics.sessionRecording.manage`. The api purges
+  through a direct Postgres connection (`HOSPEDA_UMAMI_DATABASE_URL`, a role with
+  only SELECT and DELETE on `session_replay`, `heatmap_event` and
+  `session_replay_saved`), scoped by
+  website id and `created_at`, in batches. The api still holds no Umami API write
+  key. Delivered by the retention follow-up PR; see
+  `docs/analytics/session-replay-privacy.md`.
 
 No other questions remain open.
 

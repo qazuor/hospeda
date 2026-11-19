@@ -1,0 +1,52 @@
+---
+import type { VenuePromotionPublic } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
+import { formatPromotionWindow } from '@/lib/venue/promotion-window';
+import { PromotionWindowStatus } from './PromotionWindowStatus.client';
+
+interface Props { readonly items?: readonly VenuePromotionPublic[]; readonly locale: SupportedLocale; }
+const { items = [], locale } = Astro.props;
+const { t } = createTranslations(locale);
+if (items.length === 0) return;
+---
+
+<section class="venue-promotions" aria-labelledby="venue-promotions-heading">
+    <h2 id="venue-promotions-heading">{t('venue.detail.promotions.title', 'Promociones')}</h2>
+    <ul>
+        {items.map((item) => <li>
+            <article>
+                <h3>{item.title}</h3>
+                <p>{formatPromotionBenefit({ discountType: item.discountType, discountValue: item.discountValue, locale, specialOfferText: item.description })}</p>
+                {item.discountType !== 'special_offer' && item.description && <p>{item.description}</p>}
+                {item.window && <p>{formatPromotionWindow({ window: item.window, locale })} <PromotionWindowStatus client:visible window={item.window} validFrom={item.validFrom} validUntil={item.validUntil} locale={locale} /></p>}
+                <p>{item.validUntil
+                    ? t('venue.detail.promotions.validUntil', 'Hasta el {{date}}', { date: formatCalendarDate({ value: item.validUntil, locale, options: { dateStyle: 'long' } }) })
+                    : t('venue.detail.promotions.noEndDate', 'Sin fecha de fin')}</p>
+            </article>
+        </li>)}
+    </ul>
+</section>
+
+<style>
+    .venue-promotions {
+        padding: var(--space-5, 1.25rem);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card);
+        background: var(--surface-warm);
+    }
+
+    .venue-promotions h2 { margin: 0 0 var(--space-4, 1rem); }
+    .venue-promotions ul { display: grid; gap: var(--space-3, 0.75rem); margin: 0; padding: 0; list-style: none; }
+    .venue-promotions article {
+        padding: var(--space-4, 1rem);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 0.625rem);
+        background: var(--core-card);
+    }
+    .venue-promotions h3 { margin: 0 0 var(--space-2, 0.5rem); }
+    .venue-promotions p { margin: var(--space-2, 0.5rem) 0 0; color: var(--core-muted-foreground); }
+    :global(.venue-promotion-now) { display: inline-flex; min-width: 3.25rem; justify-content: center; margin-inline-start: var(--space-2); color: var(--brand-accent-strong); font-weight: 700; }
+</style>

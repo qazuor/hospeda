@@ -30,7 +30,7 @@
 import { HostTradeCatalogSlugSchema, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { env } from '../../../utils/env';
-import { buildPortalUrl } from '../../portal/build-portal-url';
+import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import { contentWordsOf, tokenizeHelpText } from '../help/help-search';
 import { listCreationDestinations } from '../listing/listing-creation-catalog';
 import { excerptText, MCP_LIST_MAX_PAGE_SIZE, MCP_TEXT_EXCERPT_CHARS } from '../response-budget';
@@ -193,11 +193,13 @@ export function matchesProviderQuery({
 function toSummary({
     row,
     destinationNames,
-    textChars
+    textChars,
+    locale
 }: {
     readonly row: DirectoryRow;
     readonly destinationNames: ReadonlyMap<string, string>;
     readonly textChars: number;
+    readonly locale: PortalLocale | undefined;
 }): ProviderSummary {
     const shortChars = Math.min(textChars, SHORT_TEXT_MAX_CHARS);
     const name = excerptText({ text: row.name, maxChars: shortChars });
@@ -235,10 +237,12 @@ function toSummary({
         averageRating: row.averageRating ?? 0,
         directoryUrl: buildPortalUrl({
             destination: { kind: 'providerDirectory', slug: row.slug },
+            locale,
             siteUrl
         }),
         declareUsageUrl: buildPortalUrl({
             destination: { kind: 'declareBenefitUsage', slug: row.slug },
+            locale,
             siteUrl
         })
     };
@@ -265,7 +269,11 @@ export const searchProvidersTool = defineTool({
         error.code === ServiceErrorCode.FORBIDDEN
             ? { destination: { kind: 'providerDirectory' } }
             : undefined,
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<SearchProvidersResult>> => {
+    handler: async ({
+        actor,
+        input,
+        context
+    }): Promise<ToolHandlerResult<SearchProvidersResult>> => {
         const { query, category, destinationId, page, pageSize } = input;
 
         const listed = await getHostTradeToolService().listForHost(
@@ -290,7 +298,9 @@ export const searchProvidersTool = defineTool({
             pageRows.length === 0 ? new Map<string, string>() : await readDestinationNames();
 
         const build = (textChars: number): SearchProvidersResult => ({
-            items: pageRows.map((row) => toSummary({ row, destinationNames, textChars })),
+            items: pageRows.map((row) =>
+                toSummary({ row, destinationNames, textChars, locale: context.locale })
+            ),
             total: matching.length,
             page,
             pageSize,

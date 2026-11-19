@@ -1,6 +1,5 @@
 import type { TranslationKey } from '@repo/i18n';
 import type { AdminPartnerApplicationPanelItem } from '@repo/schemas';
-import { PartnerTypeEnum } from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import { useState } from 'react';
 import {
@@ -16,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { usePartnerTypeOptions } from '@/hooks/use-partner-types';
 import { useTranslations } from '@/hooks/use-translations';
 import type { usePartnerApplicationActions } from '../hooks/usePartnerApplicationActions';
 
@@ -37,12 +37,15 @@ export function PartnerApplicationActionDialog({
     const { t } = useTranslations();
     const [apiError, setApiError] = useState(false);
     const pending = actions[action].isPending;
+    // HOS-2336 AC-2.4: the approval picks an ACTIVE catalog type and sends its id.
+    const typeOptions = usePartnerTypeOptions();
     const form = useForm({
-        // The select shows its first option, so the form must start from that same value.
+        // `typeId` starts empty: the select shows the first catalog option (lowest
+        // weight) until the operator picks one, and submit falls back to it.
         defaultValues: {
             reason: '',
             name: '',
-            type: PartnerTypeEnum.BUSINESS as PartnerTypeEnum
+            typeId: ''
         },
         onSubmit: async ({ value }) => {
             setApiError(false);
@@ -52,7 +55,7 @@ export function PartnerApplicationActionDialog({
                         id: item.id,
                         reason: value.reason.trim(),
                         name: value.name.trim(),
-                        type: value.type
+                        typeId: value.typeId || (typeOptions.options[0]?.value ?? '')
                     });
                 else if (action === 'reject')
                     await actions.reject.mutateAsync({
@@ -111,26 +114,24 @@ export function PartnerApplicationActionDialog({
                             <Label htmlFor="partner-type">
                                 {t('admin-entities.partnerApplicationPanel.dialogs.partnerType')}
                             </Label>
-                            <form.Field name="type">
+                            <form.Field name="typeId">
                                 {(field) => (
                                     <select
                                         id="partner-type"
                                         className="w-full rounded-md border px-3 py-2"
-                                        value={field.state.value}
-                                        onChange={(event) =>
-                                            field.handleChange(
-                                                event.target.value as PartnerTypeEnum
-                                            )
+                                        value={
+                                            field.state.value ||
+                                            (typeOptions.options[0]?.value ?? '')
                                         }
+                                        disabled={typeOptions.isLoading}
+                                        onChange={(event) => field.handleChange(event.target.value)}
                                     >
-                                        {Object.values(PartnerTypeEnum).map((type) => (
+                                        {typeOptions.options.map((option) => (
                                             <option
-                                                key={type}
-                                                value={type}
+                                                key={option.value}
+                                                value={option.value}
                                             >
-                                                {t(
-                                                    `admin-entities.partnerApplicationPanel.types.${type}` as TranslationKey
-                                                )}
+                                                {option.label}
                                             </option>
                                         ))}
                                     </select>
@@ -168,7 +169,9 @@ export function PartnerApplicationActionDialog({
                                     type="submit"
                                     disabled={
                                         pending ||
-                                        (action === 'approve' && !values.name.trim()) ||
+                                        (action === 'approve' &&
+                                            (!values.name.trim() ||
+                                                typeOptions.options.length === 0)) ||
                                         !values.reason.trim()
                                     }
                                 >

@@ -56,6 +56,7 @@ const WEEKLY_ENTRY: EventDraft = {
     weekday: 4,
     startTime: '18:00',
     endTime: '20:00',
+    ticketUrl: '',
     isActive: true
 };
 

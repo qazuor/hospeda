@@ -46,7 +46,10 @@
         "openNow": "Open now",
         "closedNow": "Closed",
         "opensAt": "Opens at {{time}}",
-        "featured": "Featured"
+        "featured": "Featured",
+        "promo": "Deal",
+        "promoVip": "VIP deal",
+        "promoNow": "Now"
     },
     "detail": {
         "address": {
@@ -118,7 +121,8 @@
             "title": "Venue schedule",
             "weekly": "Every {{weekday}}",
             "range": "{{when}}, {{start}} to {{end}}",
-            "fromOnly": "{{when}}, from {{start}}"
+            "fromOnly": "{{when}}, from {{start}}",
+            "buyTicket": "Buy tickets"
         },
         "nightInfo": {
             "headingMultiLine": "At night",
@@ -151,6 +155,26 @@
             "play": "Play video",
             "playNamed": "Play video: {{caption}}",
             "openExternal": "Watch on {{provider}} (opens in a new tab)"
+        },
+        "promotions": {
+            "title": "Promotions",
+            "validUntil": "Until {{date}}",
+            "noEndDate": "No end date",
+            "window": {
+                "days": {
+                    "0": "Mon",
+                    "1": "Tue",
+                    "2": "Wed",
+                    "3": "Thu",
+                    "4": "Fri",
+                    "5": "Sat",
+                    "6": "Sun"
+                },
+                "to": "to",
+                "and": "and",
+                "everyDay": "Every day",
+                "now": "Now"
+            }
         }
     },
     "types": {
@@ -370,6 +394,9 @@
                 "date": "Date",
                 "startTime": "Start time",
                 "endTime": "End time (optional)",
+                "ticketUrl": "Ticket link (optional)",
+                "ticketUrlHelp": "If you sell tickets through Passline, Venti or another seller, paste the link here.",
+                "ticketUrlInvalid": "The ticket link must start with https:// and cannot contain a username or password.",
                 "active": "Active",
                 "addEntry": "Add event",
                 "maxReached": "You reached the limit of {{max}} events.",
@@ -409,6 +436,48 @@
                 "inactive": "Not shown",
                 "unavailable": "Unavailable",
                 "fileUnavailable": "This file cannot be opened."
+            },
+            "promotionsManager": {
+                "title": "Promotions",
+                "empty": "You have not added any promotions yet.",
+                "count": "Active promotions: {{count}} / {{max}}",
+                "unlimitedCount": "Active promotions: {{count}} · no limit",
+                "create": "New promotion",
+                "actions": {
+                    "delete": "Delete",
+                    "edit": "Edit",
+                    "pause": "Pause",
+                    "activate": "Reactivate",
+                    "save": "Save"
+                },
+                "name": "Title",
+                "discountType": "Benefit",
+                "value": "Value",
+                "condition": "Conditions",
+                "validFrom": "Valid from",
+                "validUntil": "Valid until",
+                "window": {
+                    "title": "Only on certain days and times",
+                    "enable": "Set a weekly time window",
+                    "start": "From",
+                    "end": "Until",
+                    "overnight": "Ends after midnight on the following day",
+                    "eventsHint": "For a regular agenda event, add it under Events. Use this field for the benefit."
+                },
+                "invalid": "Check the form fields.",
+                "locked": "Available with the {{plan}} plan.",
+                "lockedNoPlan": "This feature is not available on your plan yet.",
+                "cacheNotice": "It may take a few minutes to appear on the listing.",
+                "deleteTitle": "Delete promotion",
+                "deleteConfirm": "Do you want to delete this promotion?",
+                "states": {
+                    "active": "Active",
+                    "paused": "Paused",
+                    "expired": "Expired",
+                    "draft": "Draft"
+                },
+                "limitReached": "You reached the limit. The {{plan}} plan allows more promotions.",
+                "limitReachedNoPlan": "You reached your plan’s promotion limit."
             }
         }
     },

@@ -230,8 +230,11 @@ writes only by default; `includeReads=true` is the web's "mostrar también lo
 que solo miró" toggle (D-12) and maps to no `access` filter. In es "consulta"
 is kept for guest inquiries only, so the toggle never uses the word. The route wires the
 reader's `buildTargetUrl` port to `mcp/portal/activity-target-url.ts`: a listing
-links to its editor and a conversation to its inquiry thread, always in `es`
-(U-5). The response does not carry `skipped`. The web page is
+links to its editor and a conversation to its inquiry thread, in the language
+the page is rendered in: the web sends it as the optional `locale` query param
+(`es|en|pt`, anything else is a 400, absent means `es`). The source is the page
+language, not the stored user setting (U-5, owner decision 2026-11-18). The admin
+log passes no locale and keeps `es` links. The response does not carry `skipped`. The web page is
 `/{lang}/mi-cuenta/asistentes-ia/historial/` (portal destination
 `aiAssistantsHistory`). It labels every tool and error code through i18n and
 renders a `reply_inquiry` row with `step: 'send'` (written before HOS-2247) the
@@ -239,6 +242,18 @@ same as one with `step: 'commit'`. The web parser is tolerant where the API
 schema is strict: each item is validated on its own, an invalid one is left
 out, an unknown nested key is dropped and an unknown outcome renders as
 "Resultado desconocido", so a newer API never blanks the page.
+
+## Portal link locale
+
+Every portal link a tool call emits (refusal links, `get_help` links, the links
+of `get_owner_summary`, `get_listing_creation_guide`, `create_listing`,
+`search_providers` and `list_benefit_usages`) is prefixed with the user's web
+language: `users.settings.languageWeb`, the same source the add-on emails use
+(`resolveRecipientLocale`). `handleMcpToolCall` reads it once per call and hands
+it to the tool as `context.locale`; the executor passes it to the refusal link
+builder too, so a malformed call links in the same language. An unset or
+unsupported value, a missing user or a failed read falls back to `es`. Labels and
+texts stay Spanish: only the page the link opens changes.
 
 ## Tool catalog
 

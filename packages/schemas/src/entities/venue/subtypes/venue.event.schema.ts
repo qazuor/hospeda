@@ -31,8 +31,9 @@
  * entries today; making that one entry is a follow-up, and it is an added enum
  * value plus a branch, not a rewrite.
  *
- * No price, no capacity, no ticketing either. An agenda entry announces that
- * something happens; selling a seat for it is a different product.
+ * No price and no capacity. The only ticketing it knows is an optional external
+ * link (`ticketUrl`, HOS-2255) to wherever the venue already sells entries;
+ * selling a seat here is a different product.
  *
  * @module entities/venue/subtypes/venue.event.schema
  */
@@ -120,6 +121,36 @@ export const VenueEventDateSchema = z
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'zodError.venue.eventDate.invalid' });
 
 // ----------------------------------------------------------------------------
+// Ticket link
+// ----------------------------------------------------------------------------
+
+/**
+ * The external «Comprar entrada» link of an event (HOS-2255).
+ *
+ * Any `https` URL, no allow-list of ticket sellers (owner decision, 2026-11-16),
+ * and no credentials in it. `http` is refused on purpose: the link is rendered
+ * on a public page and opened by strangers. Rendering still goes through
+ * `resolveSafeExternalUrl()` on the web side; this schema is the write-side half.
+ */
+export const VenueEventTicketUrlSchema = z
+    .string()
+    .trim()
+    .max(2048, { message: 'zodError.venue.event.ticketUrl.max' })
+    .url({ message: 'zodError.venue.event.ticketUrl.invalid' })
+    .startsWith('https://', { message: 'zodError.venue.event.ticketUrl.httpsRequired' })
+    .refine(
+        (value) => {
+            try {
+                const parsed = new URL(value);
+                return parsed.username === '' && parsed.password === '';
+            } catch {
+                return false;
+            }
+        },
+        { message: 'zodError.venue.event.ticketUrl.credentials' }
+    );
+
+// ----------------------------------------------------------------------------
 // Stored row
 // ----------------------------------------------------------------------------
 
@@ -157,6 +188,8 @@ export const VenueEventSchema = z.object({
     startTime: VenueEventTimeSchema,
     /** When it ends, or `null` when the venue does not say. */
     endTime: VenueEventTimeSchema.nullable(),
+    /** External link to buy tickets, or `null` when the event has none (HOS-2255). */
+    ticketUrl: VenueEventTicketUrlSchema.nullable(),
     /** Whether the entry is currently shown. */
     isActive: z.boolean(),
     /** Position within the agenda. */
@@ -306,6 +339,15 @@ export const VenueEventInputSchema = z
         startTime: VenueEventTimeSchema,
         /** When it ends, or omitted when the venue does not say. */
         endTime: VenueEventTimeSchema.nullish(),
+        /**
+         * Optional external ticket link (HOS-2255). Omitted, `null` and `''` all
+         * mean "none" (the service stores `NULL`); `''` is turned into `null`
+         * here so the empty input of the editor is not an `https` violation.
+         */
+        ticketUrl: z.preprocess(
+            (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+            VenueEventTicketUrlSchema.nullish()
+        ),
         /** Whether the entry is shown. Defaults to `true`. */
         isActive: z.boolean().default(true)
     })

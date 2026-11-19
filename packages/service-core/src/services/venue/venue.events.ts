@@ -150,6 +150,7 @@ export function projectEvent(row: StoredVenueEvent): VenueEventPublic {
         weekday: row.weekday,
         startTime: toClockTime(row.startTime),
         endTime: toClockTime(row.endTime),
+        ticketUrl: row.ticketUrl,
         isActive: row.isActive,
         displayOrder: row.displayOrder,
         createdAt: row.createdAt,
@@ -362,6 +363,9 @@ export async function replaceVenueEvents(
                     weekday: event.recurrence === 'weekly' ? (event.weekday ?? null) : null,
                     startTime: event.startTime,
                     endTime: event.endTime || null,
+                    // `''` is already `null` after the schema; `|| null` keeps a
+                    // caller that skipped it from persisting an empty link.
+                    ticketUrl: event.ticketUrl || null,
                     isActive: event.isActive,
                     displayOrder: index,
                     updatedById: actor.id

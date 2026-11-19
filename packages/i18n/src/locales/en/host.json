@@ -890,7 +890,8 @@
         "discountTypes": {
             "percentage": "Percentage",
             "fixed": "Fixed amount",
-            "free_night": "Free night"
+            "free_night": "Free night",
+            "special_offer": "Special offer"
         },
         "lifecycleStates": {
             "active": "Active",
@@ -920,6 +921,10 @@
             "cancel": "Cancel",
             "confirmDelete": "Delete this promotion? This action cannot be undone.",
             "upgradePlan": "View plans"
+        },
+        "specialOffer": {
+            "label": "Describe the benefit",
+            "help": "Describe the benefit briefly, for example, two drinks for the price of one."
         }
     },
     "dashboard": {

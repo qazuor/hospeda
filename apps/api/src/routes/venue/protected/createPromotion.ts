@@ -19,6 +19,7 @@
  */
 import {
     PermissionEnum,
+    toPromotionWindow,
     VenuePromotionCreateRequestSchema,
     VenuePromotionProtectedSchema,
     VerticalEnum
@@ -47,7 +48,8 @@ export async function handleCreateVenuePromotion(
         request: body as never
     });
     if (result.error) throw new ServiceError(result.error.code, result.error.message);
-    return result.data;
+    const { windowWeekdays, windowStart, windowEnd, ...item } = result.data;
+    return { ...item, window: toPromotionWindow({ windowWeekdays, windowStart, windowEnd }) };
 }
 
 export const protectedCreateVenuePromotionRoute = createProtectedRoute({
