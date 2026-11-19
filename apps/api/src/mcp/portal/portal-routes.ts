@@ -115,11 +115,11 @@ export const EDITOR_SECTION_TEMPLATE_BY_VERTICAL = {
  * The web flags the same sections `unreleased` in `listing-section-presentation.ts`; the
  * leaf that ships the page removes the section from BOTH lists and adds its slug.
  *
- * - `venue.promotions`: the API exists (HOS-2270), the editor page is HOS-2271's.
+ * - No venue section remains unreleased after HOS-2271.
  */
 export const UNRELEASED_EDITOR_SECTIONS = {
     accommodation: [],
-    venue: ['promotions'],
+    venue: [],
     experience: []
 } as const satisfies { readonly [V in ListingVertical]: readonly ListingSectionId<V>[] };
 
@@ -157,6 +157,7 @@ export const EDITOR_SECTION_SLUGS = {
         menu: 'carta',
         dailySpecials: 'menu-del-dia',
         venueEvents: 'eventos',
+        promotions: 'promociones',
         faqs: 'preguntas',
         nightInfo: 'de-noche',
         translations: 'traducciones'

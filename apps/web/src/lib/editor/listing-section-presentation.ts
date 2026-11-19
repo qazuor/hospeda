@@ -85,12 +85,9 @@ const VENUE_SECTION_PRESENTATION = {
         slug: 'eventos',
         labelKey: 'listing.owner.editor.sectionNav.venueEvents'
     },
-    // HOS-2270: the API and the catalog section exist, the editor page is HOS-2271.
-    // `unreleased` keeps it out of the nav and the hub until that page ships.
     promotions: {
         slug: 'promociones',
-        labelKey: 'listing.owner.editor.sectionNav.venuePromotions',
-        unreleased: true
+        labelKey: 'listing.owner.editor.sectionNav.venuePromotions'
     },
     faqs: {
         slug: 'preguntas',

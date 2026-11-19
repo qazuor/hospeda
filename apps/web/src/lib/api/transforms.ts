@@ -2735,6 +2735,10 @@ export function toVenueCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
+        promoBadge:
+            item.promoBadge && typeof item.promoBadge === 'object'
+                ? (item.promoBadge as { readonly hasPromo: true; readonly vipOnly: boolean })
+                : undefined,
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,
         // SPEC-098: pass through favorite/bookmark enrichment when present.

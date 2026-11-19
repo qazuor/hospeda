@@ -97,6 +97,15 @@ describe('VenueCard.astro', () => {
         });
     });
 
+    describe('promotion badge (HOS-2271)', () => {
+        it('shows only the fixed Promo or Promo VIP label when a badge is present', () => {
+            expect(src).toContain('data.promoBadge?.hasPromo');
+            expect(src).toContain('venue.card.promoVip');
+            expect(src).toContain('venue.card.promo');
+            expect(src).not.toContain('specialOfferText');
+        });
+    });
+
     describe('open-now badge', () => {
         it('TEST:6.3:3 mounts the badge island with client:idle only when openingHours is present', () => {
             expect(src).toMatch(

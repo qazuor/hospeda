@@ -75,6 +75,7 @@ export type ListingEditorSection =
     // is a page no browser test can ever open.
     | 'menu-del-dia'
     | 'eventos'
+    | 'promociones'
     | 'preguntas'
     // HOS-2101 — every vertical: the web-only, read-only «Preguntas a la IA»
     // page, right after the FAQs.

@@ -146,8 +146,7 @@ const VENUE_CATALOG_PRESENTATION = {
             icon: COMPARISON_ROW_ICONS.venueEvents
         }
     },
-    // HOS-2270: no venue plan grants `create_promotions` yet (HOS-2282) and the row is
-    // designed by HOS-2262, so the plans table must not show it.
+    // HOS-2262 owns the plan-table row. Keep it out until that issue designs it.
     promotions: { unreleased: true },
     faqs: {},
     nightInfo: {},

@@ -1,5 +1,5 @@
 import type { OwnerPromotion } from '@repo/schemas';
-import { and, desc, eq, gte, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -53,6 +53,86 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
 
     protected getTableName(): string {
         return 'ownerPromotions';
+    }
+
+    /**
+     * Find currently active venue promotions for a batch of venue ids.
+     *
+     * @param params.venueIds - Venue IDs in the current page.
+     * @returns A compact map with whether each venue has a PLUS promotion.
+     */
+    async findVenueIdsWithActivePromo({
+        venueIds
+    }: {
+        readonly venueIds: readonly string[];
+    }): Promise<ReadonlyMap<string, { readonly hasPromo: true; readonly vipOnly: boolean }>> {
+        if (venueIds.length === 0) return new Map();
+        const db = this.getClient();
+        const now = new Date();
+        const method = 'findVenueIdsWithActivePromo';
+        try {
+            const rows = await db
+                .select({
+                    entityId: ownerPromotions.entityId,
+                    hasPlus: sql<boolean>`bool_or(${ownerPromotions.touristAudience} = 'plus')`
+                })
+                .from(ownerPromotions)
+                .where(
+                    and(
+                        eq(ownerPromotions.entityType, 'venue'),
+                        inArray(ownerPromotions.entityId, [...venueIds]),
+                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
+                        isNull(ownerPromotions.deletedAt),
+                        lte(ownerPromotions.validFrom, now),
+                        or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
+                    )
+                )
+                .groupBy(ownerPromotions.entityId);
+            const badges = new Map<
+                string,
+                { readonly hasPromo: true; readonly vipOnly: boolean }
+            >();
+            for (const row of rows) {
+                if (row.entityId)
+                    badges.set(row.entityId, { hasPromo: true, vipOnly: !row.hasPlus });
+            }
+            return badges;
+        } catch (error) {
+            logError(this.entityName, method, { venueCount: venueIds.length }, error as Error);
+            throw new DbError(
+                this.entityName,
+                method,
+                { venueCount: venueIds.length },
+                (error as Error).message
+            );
+        }
+    }
+
+    /** Find current public PLUS promotions for a published venue detail. */
+    async findActiveForVenue({ venueId }: { readonly venueId: string }): Promise<OwnerPromotion[]> {
+        const db = this.getClient();
+        const now = new Date();
+        const method = 'findActiveForVenue';
+        try {
+            const rows = await db
+                .select()
+                .from(ownerPromotions)
+                .where(
+                    and(
+                        eq(ownerPromotions.entityType, 'venue'),
+                        eq(ownerPromotions.entityId, venueId),
+                        eq(ownerPromotions.lifecycleState, 'ACTIVE'),
+                        eq(ownerPromotions.touristAudience, 'plus'),
+                        isNull(ownerPromotions.deletedAt),
+                        lte(ownerPromotions.validFrom, now),
+                        or(isNull(ownerPromotions.validUntil), gte(ownerPromotions.validUntil, now))
+                    )
+                );
+            return rows as OwnerPromotion[];
+        } catch (error) {
+            logError(this.entityName, method, { venueId }, error as Error);
+            throw new DbError(this.entityName, method, { venueId }, (error as Error).message);
+        }
     }
 
     /**

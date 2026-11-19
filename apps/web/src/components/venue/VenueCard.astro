@@ -160,6 +160,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             <!-- Type + Location row -->
             <div class="venue-card__category-row">
                 <span class="venue-card__type-badge">{typeLabel}</span>
+                {data.promoBadge?.hasPromo && <span class="venue-card__promo-badge">{t(data.promoBadge.vipOnly ? 'venue.card.promoVip' : 'venue.card.promo', data.promoBadge.vipOnly ? 'Promo VIP' : 'Promo')}</span>}
                 <div class="venue-card__location-bar">
                     <LocationIcon size={12} weight="fill" aria-hidden="true" />
                     <span>{data.destinationName}</span>
@@ -370,6 +371,20 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         line-height: 1.4;
         white-space: nowrap;
         border: 1px solid var(--brand-primary-a25);
+    }
+
+    .venue-card__promo-badge {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        border: 1px solid var(--brand-accent);
+        border-radius: var(--radius-pill);
+        color: var(--core-foreground);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
     }
 
     .venue-card__location-bar {

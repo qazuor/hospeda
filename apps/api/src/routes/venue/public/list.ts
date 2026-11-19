@@ -9,6 +9,8 @@
  * Sorting: `featuredFirst` is FORCED to `true` server-side. The client cannot
  * opt out; featured venues stay ahead of non-featured venues within any sort.
  */
+
+import { ownerPromotionModel } from '@repo/db';
 import {
     httpToDomainVenueSearch,
     VenuePublicListItemSchema,
@@ -62,12 +64,16 @@ export const publicListVenuesRoute = createPublicListRoute({
         }
 
         // HOS-1792: withhold the menu file of unentitled owners.
+        const projectedItems = await projectPublicListings({
+            vertical: 'venue',
+            listings: result.data?.items || [],
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
+        });
+        const badges = await ownerPromotionModel.findVenueIdsWithActivePromo({
+            venueIds: projectedItems.map((item) => item.id)
+        });
         const items = withPublicIsFeaturedList(
-            await projectPublicListings({
-                vertical: 'venue',
-                listings: result.data?.items || [],
-                onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
-            })
+            projectedItems.map((item) => ({ ...item, promoBadge: badges.get(item.id) }))
         );
 
         return {

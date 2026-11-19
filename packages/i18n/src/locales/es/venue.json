@@ -46,7 +46,9 @@
         "openNow": "Abierto ahora",
         "closedNow": "Cerrado",
         "opensAt": "Abre a las {{time}}",
-        "featured": "Destacado"
+        "featured": "Destacado",
+        "promo": "Promo",
+        "promoVip": "Promo VIP"
     },
     "detail": {
         "address": {
@@ -152,6 +154,11 @@
             "play": "Reproducir video",
             "playNamed": "Reproducir video: {{caption}}",
             "openExternal": "Ver en {{provider}} (se abre en una pestaña nueva)"
+        },
+        "promotions": {
+            "title": "Promociones",
+            "validUntil": "Hasta el {{date}}",
+            "noEndDate": "Sin fecha de fin"
         }
     },
     "types": {
@@ -413,6 +420,40 @@
                 "inactive": "No se muestra",
                 "unavailable": "No disponible",
                 "fileUnavailable": "No se puede abrir este archivo."
+            },
+            "promotionsManager": {
+                "title": "Promociones",
+                "empty": "Todavía no cargaste promociones.",
+                "count": "Promociones activas: {{count}} / {{max}}",
+                "unlimitedCount": "Promociones activas: {{count}} · sin tope",
+                "create": "Nueva promoción",
+                "actions": {
+                    "delete": "Borrar",
+                    "edit": "Editar",
+                    "pause": "Pausar",
+                    "activate": "Reactivar",
+                    "save": "Guardar"
+                },
+                "name": "Título",
+                "discountType": "Beneficio",
+                "value": "Valor",
+                "condition": "Condición",
+                "validFrom": "Válida desde",
+                "validUntil": "Válida hasta",
+                "invalid": "Revisá los campos del formulario.",
+                "locked": "Disponible desde el plan {{plan}}.",
+                "lockedNoPlan": "Esta función todavía no está disponible para tu plan.",
+                "cacheNotice": "Puede tardar unos minutos en verse en la ficha.",
+                "deleteTitle": "Borrar promoción",
+                "deleteConfirm": "¿Querés borrar esta promoción?",
+                "states": {
+                    "active": "Activa",
+                    "paused": "Pausada",
+                    "expired": "Vencida",
+                    "draft": "Borrador"
+                },
+                "limitReached": "Alcanzaste el tope. El plan {{plan}} permite más promociones.",
+                "limitReachedNoPlan": "Alcanzaste el tope de promociones de tu plan."
             }
         }
     },

@@ -1104,6 +1104,8 @@ export interface VenueCardData {
     readonly reviewsCount: number;
     /** Whether this listing appears in featured/promoted slots. */
     readonly isFeatured: boolean;
+    /** Presence-only promotion marker (HOS-2271). */
+    readonly promoBadge?: { readonly hasPromo: true; readonly vipOnly: boolean };
     /** Structured opening hours by day. Null when not configured by the owner. */
     readonly openingHours: Record<string, VenueOpeningHoursEntry> | null;
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */

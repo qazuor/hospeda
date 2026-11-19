@@ -42,10 +42,7 @@ export const VENUE_DETAIL_SECTION_BODY = {
     menu: true,
     dailySpecials: true,
     venueEvents: true,
-    // HOS-2270: the model and API exist, the public block does not (HOS-2271). Until
-    // that leaf paints it the page shows nothing new, even for a venue that has
-    // promotions loaded through the API.
-    promotions: false,
+    promotions: true,
     faqs: true,
     nightInfo: true,
     translations: false

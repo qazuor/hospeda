@@ -890,7 +890,8 @@
         "discountTypes": {
             "percentage": "Porcentagem",
             "fixed": "Valor fixo",
-            "free_night": "Noite grátis"
+            "free_night": "Noite grátis",
+            "special_offer": "Oferta diferenciada"
         },
         "lifecycleStates": {
             "active": "Ativa",
@@ -920,6 +921,10 @@
             "cancel": "Cancelar",
             "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita.",
             "upgradePlan": "Ver planos"
+        },
+        "specialOffer": {
+            "label": "Descreva a vantagem",
+            "help": "Descreva o benefício em poucas palavras, por exemplo, dois drinks pelo preço de um."
         }
     },
     "dashboard": {
