@@ -19,6 +19,25 @@ import styles from './VenuePromotionsManager.module.css';
 type PromotionRow = VenuePromotionListOutput['items'][number];
 type VenueDiscountType = PromotionRow['discountType'];
 
+/** Lifecycle status waits for a client clock so SSR cannot guess active/expired. */
+export function resolvePromotionLifecycleState(
+    item: PromotionRow,
+    now: number | null
+): 'expired' | 'active' | 'draft' | 'paused' | null {
+    if (now === null) return null;
+    const isExpired =
+        item.lifecycleState === 'ACTIVE' &&
+        item.validUntil != null &&
+        toTimestamp(item.validUntil) < now;
+    return isExpired
+        ? 'expired'
+        : item.lifecycleState === 'ACTIVE'
+          ? 'active'
+          : item.lifecycleState === 'DRAFT'
+            ? 'draft'
+            : 'paused';
+}
+
 /** Converts a serialized or parsed API date to the native date input format. */
 function toDateInputValue(value: Date | string): string {
     return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
@@ -68,7 +87,9 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
     const [validUntil, setValidUntil] = useState('');
     const [message, setMessage] = useState('');
     const [offerError, setOfferError] = useState('');
-    const lockedWithoutPlan = sectionState === 'locked' && upsellPlanName === null;
+    const [now, setNow] = useState<number | null>(null);
+
+    useEffect(() => setNow(Date.now()), []);
 
     const lockedMessage = () =>
         upsellPlanName
@@ -216,17 +237,8 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
     };
 
     const lifecycleLabel = (item: PromotionRow): string => {
-        const isExpired =
-            item.lifecycleState === 'ACTIVE' &&
-            item.validUntil != null &&
-            toTimestamp(item.validUntil) < Date.now();
-        const key = isExpired
-            ? 'expired'
-            : item.lifecycleState === 'ACTIVE'
-              ? 'active'
-              : item.lifecycleState === 'DRAFT'
-                ? 'draft'
-                : 'paused';
+        const key = resolvePromotionLifecycleState(item, now);
+        if (key === null) return '';
         const fallback =
             key === 'active'
                 ? 'Activa'
@@ -238,7 +250,6 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
         return t(`venue.owner.editor.promotionsManager.states.${key}`, fallback);
     };
 
-    if (lockedWithoutPlan) return null;
     return (
         <section
             className={fieldStyles.section}
@@ -263,15 +274,7 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                           { count: activeCount, max: maxActive }
                       )}
             </p>
-            {sectionState === 'locked' && (
-                <p role="status">
-                    {t(
-                        'venue.owner.editor.promotionsManager.locked',
-                        'Disponible desde el plan {{plan}}.',
-                        { plan: upsellPlanName ?? '' }
-                    )}
-                </p>
-            )}
+            {sectionState === 'locked' && <p role="status">{lockedMessage()}</p>}
             {!loading &&
                 sectionState === 'available' &&
                 !isUnlimitedLimit({ value: maxActive }) &&
@@ -321,7 +324,7 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                                     specialOfferText: item.description
                                 })}
                             </span>
-                            <span>{lifecycleLabel(item)}</span>
+                            {lifecycleLabel(item) && <span>{lifecycleLabel(item)}</span>}
                             <small>
                                 {formatCalendarDate({
                                     value: item.validFrom,

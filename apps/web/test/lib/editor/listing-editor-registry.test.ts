@@ -15,6 +15,7 @@ import { findEditorSectionBySlug } from '@/lib/editor/editor-registry';
 import {
     buildListingEditorRegistry,
     buildListingEditorSections,
+    findLockedSectionsWithoutUnlockingPlan,
     type ListingSectionStates
 } from '@/lib/editor/listing-editor-registry';
 
@@ -112,5 +113,64 @@ describe('HOS-2271 venue promotions section', () => {
     it('offers the section according to its catalog state', () => {
         expect(idsOf('venue', { promotions: { state: 'available' } })).toContain('promotions');
         expect(idsOf('venue', { promotions: { state: 'locked' } })).toContain('promotions');
+    });
+
+    it('hides a locked opted-in section only while no catalog plan grants it', () => {
+        const sectionStates = { promotions: { state: 'locked' as const } };
+        const noPlan = findLockedSectionsWithoutUnlockingPlan({
+            vertical: 'venue',
+            sectionStates,
+            plans: [],
+            catalogReadSucceeded: true
+        });
+        const unlocked = findLockedSectionsWithoutUnlockingPlan({
+            vertical: 'venue',
+            sectionStates,
+            plans: [{ entitlements: ['create_promotions'] } as never],
+            catalogReadSucceeded: true
+        });
+        const catalogFailed = findLockedSectionsWithoutUnlockingPlan({
+            vertical: 'venue',
+            sectionStates,
+            plans: [],
+            catalogReadSucceeded: false
+        });
+        const unoptedSection = findLockedSectionsWithoutUnlockingPlan({
+            vertical: 'venue',
+            sectionStates: { nightInfo: { state: 'locked' } },
+            plans: [],
+            catalogReadSucceeded: true
+        });
+
+        expect(
+            buildListingEditorRegistry({
+                vertical: 'venue',
+                sectionStates,
+                hiddenLockedSectionIds: noPlan
+            }).sections.map(({ id }) => id)
+        ).not.toContain('promotions');
+        expect(
+            buildListingEditorRegistry({
+                vertical: 'venue',
+                sectionStates,
+                hiddenLockedSectionIds: unlocked
+            }).sections.map(({ id }) => id)
+        ).toContain('promotions');
+        expect(catalogFailed).toEqual(new Set());
+        expect(
+            buildListingEditorRegistry({
+                vertical: 'venue',
+                sectionStates,
+                hiddenLockedSectionIds: catalogFailed
+            }).sections.map(({ id }) => id)
+        ).toContain('promotions');
+        expect(unoptedSection).toEqual(new Set());
+        expect(
+            buildListingEditorRegistry({
+                vertical: 'venue',
+                sectionStates: { nightInfo: { state: 'locked' } },
+                hiddenLockedSectionIds: unoptedSection
+            }).sections.map(({ id }) => id)
+        ).toContain('nightInfo');
     });
 });
