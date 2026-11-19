@@ -539,7 +539,8 @@ describe.skipIf(!isServiceTestDbAvailable())(
                     subscriptionId: seeded.predecessor.id,
                     targetPlanVersionId: seeded.targetPlanVersionId,
                     targetBillingOptionId: seeded.targetBillingOptionId,
-                    effectiveAt: clock.now()
+                    effectiveAt: clock.now(),
+                    now: clock.now()
                 })
             ).rejects.toThrow();
             expect(await scope(seeded.predecessor.id)).toEqual(before);

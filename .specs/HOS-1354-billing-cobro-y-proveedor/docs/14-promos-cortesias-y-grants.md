@@ -310,7 +310,23 @@ se termina en el pedido, §2.2).
 
 **Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)** (verificación corta, 2026-09-29, lote M-C). En la migración por retiro es la ventana gemela de la del downgrade, sin promos: `S37` ya mutó el monto (`B/03` §3.2) y la fila sigue en la versión retirada hasta `S38`, así que derivarlo de la versión de la fila le abría `DIVERGENCIA_DE_MONTO` a cada cliente migrado, o hacía que el reintento deshiciera la mutación. **Y el motivo 24 deriva el precio de la versión que rige el período que cubre el cobro**: la destino, si una migración encoló su cambio para ese período (`B/02` §2.5).
 
-**Sin columna nueva.**
+**Y las promos de ese esperado son las vigentes al momento del cobro, no las de hoy** (HOS-2352,
+owner 2026-11-19), en todos los caminos del esperado de un período: la versión anclada, el cambio
+encolado y el cambio que `S38` ya aplicó. Una promo está vigente en un cobro si se canjeó antes,
+ningún escritor la terminó antes y le quedaban cobros. Para poder responderlo sin el contador de
+hoy: `P1` escribe, en la misma transacción que el decremento, una fila por cobro que gastó la promo
+(`promo_redemption_charge`); la redención guarda los cobros con los que empezó ese registro
+(`initial_charges`); y el pedido de un downgrade y `S37` por retiro, que dejan el contador en 0,
+escriben también cuándo y por qué la terminaron (`ended_at`, `ended_reason`). Por eso el destino de
+un downgrade o de un retiro ya no necesita un «sin promos» propio: la promo terminó en el pedido o en
+`S37`, antes del cobro del destino, y una canjeada después sí cuenta, igual antes y después de `S38`.
+El esperado de la **autorización** sigue con el estado de hoy, como dicen los dos párrafos de
+arriba. **Sin backfill**: el registro arranca con los pagos nuevos, y un pago acreditado antes
+(`payment.promo_charges_recorded` en falso) no se informa como cobrado de menos; el motivo 24 no
+cambia.
+
+~~**Sin columna nueva.**~~ **Columnas nuevas** (HOS-2352): `promo_redemption.initial_charges`,
+`ended_at`, `ended_reason`, `payment.promo_charges_recorded` y la tabla `promo_redemption_charge`.
 
 **Si la promo se agota con la fila `PAUSED`, ese mes sale con descuento, y se acepta** (FASE 8
 completa, pendiente 7, owner 2026-09-25). Sobre una pausada el proveedor rechaza toda modificación

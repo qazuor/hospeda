@@ -172,7 +172,9 @@ export async function redeemDiscountCode(
                     userId: input.userId,
                     subscriptionId: subscription.id,
                     redeemedAt: ports.clock.now(),
-                    remainingCharges
+                    remainingCharges,
+                    // HOS-2352: the ledger covers this redemption from its first charge.
+                    initialCharges: remainingCharges
                 })
                 .returning({ id: promoRedemptions.id });
             if (!redemption) throw new Error('Promo redemption insert returned no row');

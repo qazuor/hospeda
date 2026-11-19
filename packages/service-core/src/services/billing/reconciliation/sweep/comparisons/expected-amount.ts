@@ -12,7 +12,7 @@ import {
     type SelectSubscription,
     subscriptionScheduledChanges
 } from '@repo/db';
-import { readLivePromos } from '../../../promo/live-promos.js';
+import { readLivePromos, readPromosInForceAt } from '../../../promo/live-promos.js';
 import { composePromoAmount } from '../../../promo/promo-composition.js';
 import {
     type AnchoredBillingOption,
@@ -43,7 +43,8 @@ interface MigrationDecidedDestination {
  * AC:B11:9 and AC:B11:11: derives the amount to compare for authorization or
  * for a charge period. It must use the same calculation as the mutating writer.
  * AC:B9b:1 (HOS-1588) composes live promos through the shared promo arithmetic
- * and rounds once down; callers keep using this policy (B/14 §1.2).
+ * and rounds once down; callers keep using this policy (B/14 §1.2). A period
+ * charge composes the promos in force at the charge instant (HOS-2352).
  */
 export interface ExpectedAmountPolicy {
     expectedAmount(input: {
@@ -250,18 +251,27 @@ export function createCutExpectedAmountPolicy(
             }
             if (!option) return { kind: 'NOT_COMPARABLE', reason: 'NO_ANCHOR' };
 
-            const promoApplies = destination
-                ? await preservesPromo(destination, executor)
-                : migration
-                  ? migration.reason === 'PRICE_INCREASE'
-                  : true;
-            const promos = promoApplies
-                ? await readLivePromos({
-                      subscriptionId: subscription.id,
-                      executor,
-                      ...(purpose.kind === 'PERIOD' ? { at: purpose.chargeCreatedAt } : {})
-                  })
-                : [];
+            // HOS-2352: a period charge is priced with the promos in force when it was
+            // made, on every path. A downgrade or a retirement ends its promos at the
+            // moment it is decided (`ended_at`), so the destination needs no promo fork
+            // of its own and S38 applying the change cannot move the expected amount.
+            // Authorization keeps today's state: it is what the provider charges next.
+            const promos =
+                purpose.kind === 'PERIOD'
+                    ? await readPromosInForceAt({
+                          subscriptionId: subscription.id,
+                          at: purpose.chargeCreatedAt,
+                          executor
+                      })
+                    : (
+                            destination
+                                ? await preservesPromo(destination, executor)
+                                : migration
+                                  ? migration.reason === 'PRICE_INCREASE'
+                                  : true
+                        )
+                      ? await readLivePromos({ subscriptionId: subscription.id, executor })
+                      : [];
             const composed = composePromoAmount({
                 listAmountMinor: option.amount,
                 promos: promos.map(({ discountKind, value }) => ({ discountKind, value }))
