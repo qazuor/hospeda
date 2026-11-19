@@ -224,6 +224,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4479
+    {
+        id: '2026-11-17-assistant-reads-your-reviews',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Preguntale a tu asistente de IA qué dicen las reseñas de tus publicaciones',
+            en: 'Ask your AI assistant what the reviews of your listings say',
+            pt: 'Pergunte ao seu assistente de IA o que dizem as avaliações dos seus anúncios'
+        },
+        body: {
+            es: 'El asistente te lista las reseñas de tus alojamientos, comercios y experiencias, de la más nueva a la más vieja, con la calificación, el texto y si está aprobada, pendiente o rechazada. Podés filtrar por publicación, calificación, fecha o estado.',
+            en: 'The assistant lists the reviews of your accommodations, venues and experiences, newest first, with the rating, the text and whether each one is approved, pending or rejected. You can filter by listing, rating, date or status.',
+            pt: 'O assistente lista as avaliações das suas hospedagens, comércios e experiências, da mais nova para a mais antiga, com a nota, o texto e se cada uma está aprovada, pendente ou rejeitada. Você pode filtrar por anúncio, nota, data ou status.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4478
     {
         id: '2026-11-17-assistant-amenities-by-category',
