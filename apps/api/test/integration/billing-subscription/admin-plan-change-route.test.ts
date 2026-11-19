@@ -150,15 +150,12 @@ describe('TEST:B8b:22 AC:B8b:22 administrative plan change (ACC:10)', () => {
                 .from(subscriptions)
                 .where(eq(subscriptions.id, row.subscriptionId));
             expect(predecessor?.status).toBe('ACTIVE');
+            // HOS-2351: S1 leaves the pointer to S18; the open successor is found by succeeds_id.
+            expect(predecessor?.succeededById).toBeNull();
             const [successor] = await tx
                 .select({ userId: subscriptions.userId, status: subscriptions.status })
                 .from(subscriptions)
-                .where(
-                    eq(
-                        subscriptions.id,
-                        predecessor?.succeededById ?? '00000000-0000-4000-8000-000000000000'
-                    )
-                );
+                .where(eq(subscriptions.succeedsId, row.subscriptionId));
             expect(successor).toEqual({ userId: row.userId, status: 'PENDING_AUTHORIZATION' });
             expect(mutationAudits()).toEqual([
                 expect.objectContaining({
