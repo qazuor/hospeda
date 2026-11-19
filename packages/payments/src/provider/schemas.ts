@@ -81,14 +81,19 @@ const LOCAL_RETURN_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1
 
 /**
  * Whether a return URL is acceptable: https always; plain http only when the caller allows
- * local development and the host is exactly `localhost` or `127.0.0.1`.
+ * local development, the host is exactly `localhost` or `127.0.0.1`, and it carries no
+ * credentials. An unparseable string is refused here too: zod 4 runs a refinement even after
+ * `z.url()` failed, so this must not throw.
  */
 function isAcceptableReturnUrl(input: { readonly url: string; readonly allowLocalHttp: boolean }) {
+    if (!URL.canParse(input.url)) return false;
     const parsed = new URL(input.url);
     if (parsed.protocol === 'https:') return true;
     return (
         input.allowLocalHttp &&
         parsed.protocol === 'http:' &&
+        parsed.username === '' &&
+        parsed.password === '' &&
         LOCAL_RETURN_HOSTS.has(parsed.hostname)
     );
 }

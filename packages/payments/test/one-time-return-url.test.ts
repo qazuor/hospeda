@@ -22,6 +22,9 @@ const LOCAL_HTTP = [
 ] as const;
 
 const FOREIGN_HTTP = [
+    'http://evil@localhost:4321/return',
+    'http://user:secret@127.0.0.1:4321/return',
+    'http://:secret@127.0.0.1:4321/return',
     'http://hospeda.example/es/mi-cuenta/complementos/',
     'http://localhost.evil.example/return',
     'http://127.0.0.1.nip.io/return',
@@ -132,5 +135,21 @@ describe('any other http host, in every environment', () => {
                 fake({ allowLocalHttpReturnUrl }).requestOneTimePayment(input(url))
             ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
         }
+    });
+});
+
+describe('a string that is not a URL', () => {
+    it('is INVALID_INPUT in the adapter and the fake, never a thrown TypeError', async () => {
+        for (const allowLocalHttpReturnUrl of [true, false]) {
+            const { fetch, provider } = adapter({ allowLocalHttpReturnUrl });
+            await expect(provider.requestOneTimePayment(input('not a url'))).rejects.toMatchObject({
+                code: 'INVALID_INPUT'
+            });
+            expect(fetch).not.toHaveBeenCalled();
+            await expect(
+                fake({ allowLocalHttpReturnUrl }).requestOneTimePayment(input('not a url'))
+            ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+        }
+        expect(OneTimePaymentInputSchema.safeParse(input('not a url')).success).toBe(false);
     });
 });
