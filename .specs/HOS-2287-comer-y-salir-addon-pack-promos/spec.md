@@ -22,7 +22,7 @@ cuando el local llega al tope. Que el producto sea de venue no debe afectar las 
 alojamiento.
 
 Decidido (owner, 16/11/2026): pack **mensual** y **no apilable** (si hace falta más, se crea
-un pack más grande; la variante por temporada se evalúa cuando se resuelva HOS-2094). Precio
+un pack más grande; la variante por temporada se evalúa cuando se resuelva HOS-2179). Precio
 **provisorio** $5.000/mes, a revisar con el owner antes de crear el producto en producción.
 Se crea desde el admin existente, con runbook (HOS-2285, 6.2).
 
@@ -50,7 +50,7 @@ necesitar más de 5 a la vez. Sin pack, la única salida es premium.
 - Las promos de venue, el editor y el happy hour (HOS-2270 a HOS-2272).
 - El pack de alojamiento (no existe; ver 5).
 - El mecanismo de elegibilidad (HOS-2292).
-- Variante por temporada (se evalúa cuando se resuelva HOS-2094).
+- Variante por temporada (se evalúa cuando se resuelva HOS-2179).
 
 ## 5. Estado actual verificado (`origin/staging`)
 
@@ -159,7 +159,7 @@ Sin esquema ni migración. Filas creadas desde el admin: 1 `addon`, 1 `addon_ver
 Decidido (owner, 16/11/2026):
 
 1. **Precio y ciclo.** Mensual periódico, no apilable, $5.000/mes provisorio a revisar con el
-   owner antes de producción; la variante por temporada se evalúa con HOS-2094.
+   owner antes de producción; la variante por temporada se evalúa con HOS-2179.
 2. **¿Se ofrece a básico?** No: básico no tiene promos y la regla de capacidad base
    (HOS-2292) lo excluye sola.
 

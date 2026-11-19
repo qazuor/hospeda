@@ -56,6 +56,10 @@
             "body": "We use cookies and similar technologies to improve the functionality of our website, analyze traffic, and personalize content. You can configure your browser to reject cookies, although this may affect some platform features.",
             "content": "We use cookies and similar technologies to improve your experience, remember your preferences, and analyze how our site is used. You can control cookies through your browser settings."
         },
+        "sessionRecording": {
+            "title": "Session recordings and heatmaps",
+            "body": "If you accept analytics cookies, Hospeda may record browsing sessions and click and scroll heatmaps using Umami, an analytics tool that we host ourselves. Recordings are pseudonymous: if you are logged in, they may be associated with your account identifier. Recording only happens if you have accepted analytics cookies, and only while this feature is switched on. All text and all form inputs are masked, so what you type is not recorded. Only a sample of sessions is recorded, not all of them. Recordings are kept for a limited period of up to 60 days and are then deleted automatically."
+        },
         "dataSecurity": {
             "title": "6. Data Security",
             "body": "We implement technical and organizational security measures to protect your personal information against unauthorized access, loss, or destruction. However, no internet transmission system is completely secure.",
