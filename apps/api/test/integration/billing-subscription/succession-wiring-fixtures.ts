@@ -197,7 +197,8 @@ export async function startSettlementSuccession(
         predecessor.status !== 'ACTIVE' ||
         successor.status !== 'PENDING_AUTHORIZATION' ||
         successor.succeedsId !== predecessor.id ||
-        predecessor.succeededById !== successor.id
+        // HOS-2351: S1 leaves the predecessor pointer to S18.
+        predecessor.succeededById !== null
     )
         throw new Error('Fixture succession did not pass through S1/S2');
     let addonId: string | null = null;

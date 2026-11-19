@@ -176,6 +176,12 @@ describe('TEST:B3:12 S3 courtesy closure and notice', () => {
             .where(eq(courtesyGrants.id, own.grantId!));
         expect(grant?.balanceClosedAt).toEqual(current);
         expect(grant?.closeReason).toBe('VENTANA_DE_AUTORIZACION_VENCIDA');
+        // HOS-2351: on a closed succession S3 keeps the historic pointer S18 wrote.
+        const [predecessor] = await getServiceTestDb()
+            .select({ succeededById: subscriptions.succeededById })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, own.predecessorId));
+        expect(predecessor?.succeededById).toBe(own.subscriptionId);
         const mails = await ownOutbox(own.userId, own.subscriptionId);
         expect(mails).toHaveLength(1);
         expect(mails[0]).toMatchObject({

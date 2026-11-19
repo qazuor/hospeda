@@ -10,6 +10,7 @@ import {
 import { ServiceErrorCode } from '@repo/schemas';
 import { and as drizzleAnd, isNull } from 'drizzle-orm';
 import { ServiceError } from '../../../types/index.js';
+import { isLiveSuccessionPredecessor } from '../subscription/late-payment-conditions.js';
 import { PromoRedemptionReason } from './promo-redemption-reasons.js';
 
 function fail(reason: string, code = ServiceErrorCode.VALIDATION_ERROR): never {
@@ -69,7 +70,9 @@ export async function readPromoCode(input: { tx: DrizzleClient; code: string; ve
 
 /**
  * Reads the active principal subscription for the user and vertical, locks it
- * `FOR UPDATE`, and rejects manual payers or subscriptions with pending changes.
+ * `FOR UPDATE`, and rejects manual payers, subscriptions with pending changes, and the
+ * predecessor of a succession in progress. In progress is read from a live successor, never
+ * from `succeeded_by_id`, which S18 writes only when the succession closes (HOS-2351).
  * @param input - The transaction, user id, and vertical.
  * @returns The subscription row and its provider link id.
  * @throws ServiceError VALIDATION_ERROR `PROMO_NO_ELIGIBLE_SUBSCRIPTION` when no
@@ -91,8 +94,7 @@ export async function readEligibleSubscription(input: {
                 eq(subscriptions.vertical, input.vertical),
                 eq(subscriptions.class, 'PRINCIPAL'),
                 eq(subscriptions.status, 'ACTIVE'),
-                isNull(subscriptions.succeedsId),
-                isNull(subscriptions.succeededById)
+                isNull(subscriptions.succeedsId)
             )
         )
         .for('update', { of: subscriptions });
@@ -101,6 +103,8 @@ export async function readEligibleSubscription(input: {
     if (row.subscription.paymentMethod === 'MANUAL')
         fail(PromoRedemptionReason.PROMO_NOT_OFFERED_TO_MANUAL_PAYER);
     if (!row.providerId) fail(PromoRedemptionReason.PROMO_NO_ELIGIBLE_SUBSCRIPTION);
+    if (await isLiveSuccessionPredecessor({ subscriptionId: row.subscription.id, tx: input.tx }))
+        fail(PromoRedemptionReason.PROMO_NO_ELIGIBLE_SUBSCRIPTION);
     const [scheduled] = await input.tx
         .select({ id: subscriptionScheduledChanges.id })
         .from(subscriptionScheduledChanges)
