@@ -110,10 +110,35 @@ describe('AC:1704:10 TEST:1704:9 DeadlinesScreen', () => {
             Promise.resolve({ data: { data: path.includes('vertical') ? vertical : billing } })
         );
         renderScreen();
-        const row = await screen.findByTestId('deadline-row-20');
-        expect(row).toHaveTextContent(es.deadlinesEditor.noValue);
+        for (const key of ['20', '21']) {
+            const row = await screen.findByTestId(`deadline-row-${key}`);
+            expect(row).toHaveTextContent(es.deadlinesEditor.noValue);
+            expect(
+                within(row).queryByRole('button', { name: es.deadlinesEditor.edit })
+            ).not.toBeInTheDocument();
+        }
+    });
+
+    it('HOS-2179 renders the one-time payment page deadline (PLAZO 21) once published', async () => {
+        // Arrange
+        const published = {
+            ...billing,
+            values: { ...billing.values, '21': { pageMinutes: 60, windowMarginMinutes: 45 } }
+        };
+        fetchApi.mockImplementation(({ path }: { path: string }) =>
+            Promise.resolve({ data: { data: path.includes('vertical') ? vertical : published } })
+        );
+
+        // Act
+        renderScreen();
+
+        // Assert
+        const row = await screen.findByTestId('deadline-row-21');
+        expect(row).toHaveTextContent(es.deadlinesEditor.keys['21']);
+        expect(row).toHaveTextContent('60');
+        expect(row).toHaveTextContent('45');
         expect(
-            within(row).queryByRole('button', { name: es.deadlinesEditor.edit })
-        ).not.toBeInTheDocument();
+            within(row).getByRole('button', { name: es.deadlinesEditor.edit })
+        ).toBeInTheDocument();
     });
 });

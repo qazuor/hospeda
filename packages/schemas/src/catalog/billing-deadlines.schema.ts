@@ -3,7 +3,7 @@ import { z } from 'zod';
 const positiveMinutes = z.number().int().positive();
 const positiveDays = z.number().int().positive();
 
-/** The closed billing half of the configurable deadline catalog (PLAZO:10–20). */
+/** The closed billing half of the configurable deadline catalog (PLAZO:10–21). */
 export const BillingDeadlineValuesSchema = z
     .strictObject({
         '10': z.strictObject({ cardHours: positiveMinutes, manualDays: positiveDays }),
@@ -22,7 +22,14 @@ export const BillingDeadlineValuesSchema = z
         '17': z.strictObject({ days: positiveDays }),
         '18': z.strictObject({ days: positiveDays }),
         '19': z.strictObject({ minutes: positiveMinutes }),
-        '20': z.strictObject({ daysBefore: z.array(positiveDays).min(1).max(5) }).optional()
+        '20': z.strictObject({ daysBefore: z.array(positiveDays).min(1).max(5) }).optional(),
+        /**
+         * The one-time add-on payment page (HOS-2179 §5.2, P-2): how long the page lives, and the
+         * margin after it before the purchase window closes. Window = page + margin.
+         */
+        '21': z
+            .strictObject({ pageMinutes: positiveMinutes, windowMarginMinutes: positiveMinutes })
+            .optional()
     })
     .superRefine((values, ctx) => {
         for (const key of ['11', '12'] as const) {
@@ -54,8 +61,8 @@ export const BillingDeadlineValuesSchema = z
         }
     });
 
-/** One billing deadline key, including grace reminders 20. */
-export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(20);
+/** One billing deadline key, including grace reminders 20 and the one-time payment page 21. */
+export const BillingDeadlineKeySchema = z.coerce.number().int().min(10).max(21);
 
 /** Request to publish a new billing deadline version. */
 export const ChangeBillingDeadlineSchema = z.strictObject({

@@ -5,7 +5,8 @@ import { quotedList } from './quoted-list.ts';
 export const IDEMPOTENCY_OPERATIONS = [
     'PREAPPROVAL_CREATE',
     'ORDER_CREATE',
-    'REFUND_CREATE'
+    'REFUND_CREATE',
+    'PAYMENT_PAGE_CREATE'
 ] as const;
 
 /**

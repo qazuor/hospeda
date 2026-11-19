@@ -177,4 +177,25 @@ describe('HOS-1516 billing deadlines', () => {
         expect(version2).toMatchObject({ version: 2, changedKey: 20 });
         expect(version2.values['20']).toEqual({ daysBefore: [3, 1] });
     });
+
+    it('HOS-2179 publishes and changes the one-time payment page deadline at key 21', async () => {
+        // Arrange
+        const page = { pageMinutes: 60, windowMarginMinutes: 60 };
+        const confirmation = await previewBillingDeadlineChange({ actor, key: 21, value: page });
+        expect(confirmation.currentValue).toBeUndefined();
+
+        // Act
+        const version2 = await changeBillingDeadline({
+            actor,
+            key: 21,
+            value: page,
+            expectedVersion: confirmation.currentVersion,
+            confirmed: true
+        });
+
+        // Assert
+        expect(version2).toMatchObject({ version: 2, changedKey: 21 });
+        expect(version2.values['21']).toEqual(page);
+        expect(version2.values['10']).toEqual(version1Values['10']);
+    });
 });
