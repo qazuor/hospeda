@@ -147,7 +147,12 @@ describe('requestOneTimePayment', () => {
         ['does not expire', { expires: false }],
         ['expires is absent', { expires: undefined }],
         ['comes back without expiry', { expiration_date_to: null }],
-        ['expires later than requested', { expiration_date_to: '2026-11-19T13:00:05.001Z' }]
+        ['expires later than requested', { expiration_date_to: '2026-11-19T13:00:05.001Z' }],
+        ['has already expired (expiry equals now)', { expiration_date_to: NOW.toISOString() }],
+        [
+            'has already expired (expiry before now)',
+            { expiration_date_to: '2026-11-19T11:59:59.999Z' }
+        ]
     ])('refuses a page that %s, closing it with the received id first', async (_, change) => {
         // Arrange
         const { adapter, fetch } = setup([
@@ -176,6 +181,48 @@ describe('requestOneTimePayment', () => {
         expect((await adapter.requestOneTimePayment(input)).expiresAt).toBe(
             '2026-11-19T13:00:05.000Z'
         );
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('accepts an expiry one millisecond after now', async () => {
+        const { adapter } = setup([
+            { status: 201, body: created({ expiration_date_to: '2026-11-19T12:00:00.001Z' }) }
+        ]);
+        expect((await adapter.requestOneTimePayment(input)).expiresAt).toBe(
+            '2026-11-19T12:00:00.001Z'
+        );
+    });
+
+    it('parses the literal expiry of the 2026-11-18 sandbox probe (+00:00 offset)', async () => {
+        // Arrange: the POST /checkout/preferences answer measured in the sandbox, verbatim.
+        const probeNow = new Date('2026-11-18T22:42:31.000Z');
+        const fetch = vi.fn<typeof globalThis.fetch>();
+        fetch.mockResolvedValueOnce(
+            new Response(
+                JSON.stringify({
+                    id: 'PROBE-PREF',
+                    init_point:
+                        'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=PROBE-PREF',
+                    expires: true,
+                    expiration_date_to: '2026-11-18T23:42:31.000+00:00'
+                }),
+                { status: 201 }
+            )
+        );
+        const adapter = new MercadoPagoPaymentProvider({
+            clock: createAdjustableClock({ start: probeNow }),
+            accessToken: 'test-token',
+            fetch
+        });
+
+        // Act
+        const result = await adapter.requestOneTimePayment({
+            ...input,
+            expiresAt: '2026-11-18T23:42:31.000Z'
+        });
+
+        // Assert
+        expect(result.expiresAt).toBe('2026-11-18T23:42:31.000Z');
         expect(fetch).toHaveBeenCalledTimes(1);
     });
 
