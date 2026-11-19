@@ -466,7 +466,7 @@
                 },
                 "invalid": "Confira os campos do formulário.",
                 "locked": "Disponível no plano {{plan}}.",
-                "lockedNoPlan": "Este recurso ainda não está disponível no seu plano.",
+                "lockedNoPlan": "As promoções ainda não estão disponíveis no seu plano.",
                 "cacheNotice": "Pode levar alguns minutos para aparecer no anúncio.",
                 "deleteTitle": "Excluir promoção",
                 "deleteConfirm": "Deseja excluir esta promoção?",

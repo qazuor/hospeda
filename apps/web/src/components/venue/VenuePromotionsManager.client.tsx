@@ -13,7 +13,9 @@ import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
+import { buildUrl } from '@/lib/urls';
 import { VenuePromotionForm } from './VenuePromotionForm.client';
 import styles from './VenuePromotionsManager.module.css';
 
@@ -95,7 +97,7 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
               )
             : t(
                   'venue.owner.editor.promotionsManager.lockedNoPlan',
-                  'Esta función todavía no está disponible para tu plan.'
+                  'Las promociones todavía no están disponibles para tu plan.'
               );
 
     const apiErrorMessage = (apiError: ApiError): string => {
@@ -280,7 +282,24 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                           { count: activeCount, max: maxActive }
                       )}
             </p>
-            {sectionState === 'locked' && <p role="status">{lockedMessage()}</p>}
+            {sectionState === 'locked' && (
+                <p role="status">
+                    {lockedMessage()}
+                    {upsellPlanName && (
+                        <>
+                            {' '}
+                            <a
+                                href={buildUrl({
+                                    locale,
+                                    path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
+                                })}
+                            >
+                                {t('venue.owner.editor.menuManager.seePlans', 'Ver planes')}
+                            </a>
+                        </>
+                    )}
+                </p>
+            )}
             {!loading &&
                 sectionState === 'available' &&
                 !isUnlimitedLimit({ value: maxActive }) &&
@@ -346,12 +365,14 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                                       })
                                     : t('venue.detail.promotions.noEndDate', 'Sin fecha de fin')}
                             </small>
-                            <button
-                                type="button"
-                                onClick={() => openEdit(item)}
-                            >
-                                {t('venue.owner.editor.promotionsManager.actions.edit')}
-                            </button>
+                            {sectionState === 'available' && (
+                                <button
+                                    type="button"
+                                    onClick={() => openEdit(item)}
+                                >
+                                    {t('venue.owner.editor.promotionsManager.actions.edit')}
+                                </button>
+                            )}
                             {item.lifecycleState === 'ACTIVE' ? (
                                 <button
                                     type="button"
@@ -359,14 +380,14 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                                 >
                                     {t('venue.owner.editor.promotionsManager.actions.pause')}
                                 </button>
-                            ) : (
+                            ) : sectionState === 'available' ? (
                                 <button
                                     type="button"
                                     onClick={() => void changeState(item, 'ACTIVE')}
                                 >
                                     {t('venue.owner.editor.promotionsManager.actions.activate')}
                                 </button>
-                            )}
+                            ) : null}
                             <button
                                 type="button"
                                 onClick={() => void remove(item)}
@@ -377,17 +398,15 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                     ))}
                 </ul>
             )}
-            <button
-                type="button"
-                disabled={sectionState === 'locked' || activeCount >= maxActive}
-                onClick={() => {
-                    if (sectionState === 'locked' || activeCount >= maxActive)
-                        setMessage(lockedMessage());
-                    else setFormOpen(true);
-                }}
-            >
-                {t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
-            </button>
+            {sectionState === 'available' && (
+                <button
+                    type="button"
+                    disabled={activeCount >= maxActive}
+                    onClick={() => setFormOpen(true)}
+                >
+                    {t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
+                </button>
+            )}
             {message && <p role="status">{message}</p>}
             {(formOpen || editing) && (
                 <VenuePromotionForm

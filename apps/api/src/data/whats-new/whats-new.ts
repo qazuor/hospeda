@@ -170,6 +170,42 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4478
+    {
+        id: '2026-11-17-assistant-amenities-by-category',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tu asistente de IA ya puede revisar y cambiar los servicios de tu alojamiento por categoría',
+            en: 'Your AI assistant can now review and change your listing amenities by category',
+            pt: 'Seu assistente de IA agora pode revisar e alterar as comodidades da sua hospedagem por categoria'
+        },
+        body: {
+            es: 'Con el asistente de IA conectado a Hospeda, podés ver los servicios y amenidades de tu alojamiento o comercio agrupados por categoría y con sus nombres en español. También podés agregar o quitar servicios de una categoría sin tocar el resto. El cambio se ve enseguida en el editor y en la página pública.',
+            en: 'With the AI assistant connected to Hospeda, you can see the amenities of your accommodation or venue grouped by category and with Spanish labels. You can also add or remove amenities in one category without touching the rest. The change shows up right away in the editor and on the public page.',
+            pt: 'Com o assistente de IA conectado ao Hospeda, você pode ver as comodidades da sua hospedagem ou estabelecimento agrupadas por categoria e com nomes em espanhol. Também pode adicionar ou remover comodidades de uma categoria sem mexer nas demais. A mudança aparece na hora no editor e na página pública.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4523
+    {
+        id: '2026-11-18-admin-provider-lead-approval-categories',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Aprobar un lead de prestador ahora te avisa si no se pudo crear el proveedor',
+            en: 'Approving a provider lead now tells you if the provider could not be created',
+            pt: 'Aprovar um lead de prestador agora avisa se o fornecedor não pôde ser criado'
+        },
+        body: {
+            es: 'En Leads de aliados, al aprobar un lead de prestador de servicios el diálogo lista los rubros que eligió el solicitante y marca los que están inactivos, eliminados o inexistentes. Si ninguno está activo, el lead se aprueba igual, pero te aparece un aviso amarillo con el motivo de que el proveedor no se creó. Esos leads muestran la etiqueta Proveedor no creado en el listado y un botón Crear proveedor: reactivá un rubro y reintentá desde ahí, sin que se vuelva a enviar el mail de aprobación.',
+            en: 'In Partner leads, when you approve a service provider lead the dialog lists the categories the applicant chose and marks any that are inactive, deleted or missing. If none of them is active, the lead is still approved, but you get a yellow warning with the reason the provider was not created. Those leads show a Provider not created badge in the list and a Create provider button: reactivate a category and retry from there, without the approval email being sent again.',
+            pt: 'Em Leads de parceiros, ao aprovar um lead de prestador de serviços o diálogo lista as categorias escolhidas pelo solicitante e marca as que estão inativas, excluídas ou inexistentes. Se nenhuma estiver ativa, o lead é aprovado mesmo assim, mas aparece um aviso amarelo com o motivo de o fornecedor não ter sido criado. Esses leads mostram o selo Fornecedor não criado na lista e um botão Criar fornecedor: reative uma categoria e tente de novo a partir dali, sem que o e-mail de aprovação seja enviado outra vez.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4528
     {
         id: '2026-11-19-venue-event-ticket-link',
