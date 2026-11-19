@@ -5,7 +5,11 @@ import { EmailLayout } from '../components/layout.js';
 /** One change the watch battery found, as the mail shows it. */
 export interface ProviderWatchAlertLine {
     readonly measurementId: string;
-    readonly kind: 'value_changed' | 'shape_changed' | 'shape_baseline_missing';
+    readonly kind:
+        | 'value_changed'
+        | 'shape_changed'
+        | 'shape_baseline_missing'
+        | 'measurement_errored';
     /** For a shape change: the request whose response changed. */
     readonly label?: string;
     /** What the battery expected, already rendered as text. */
@@ -22,6 +26,11 @@ export interface ProviderWatchAlertProps {
     /** ISO instant the run finished. */
     readonly finishedAt: string;
     readonly alerts: readonly ProviderWatchAlertLine[];
+    /** Present when the run did not complete: how it ended and why. */
+    readonly run?: {
+        readonly outcome: 'failed' | 'aborted';
+        readonly reason?: string;
+    };
     /** How many further alerts the run found that this mail does not carry. */
     readonly omitted?: number;
 }
@@ -37,12 +46,18 @@ const ACCOUNT_LABEL: Readonly<Record<ProviderWatchAlertProps['account'], string>
  *
  * @param props.account - The account the run targeted
  * @param props.count - How many changes the run found
+ * @param props.outcome - `failed` or `aborted` when the run did not complete
  * @returns The subject line
  */
 export function providerWatchAlertSubject(props: {
     readonly account: ProviderWatchAlertProps['account'];
     readonly count: number;
+    readonly outcome?: 'failed' | 'aborted';
 }): string {
+    if (props.outcome !== undefined) {
+        const state = props.outcome === 'aborted' ? 'se abortó' : 'falló';
+        return `Vigilancia del proveedor (${ACCOUNT_LABEL[props.account]}): la corrida ${state}, ${props.count} ${props.count === 1 ? 'alerta' : 'alertas'}`;
+    }
     return `Vigilancia del proveedor (${ACCOUNT_LABEL[props.account]}): ${props.count} ${props.count === 1 ? 'cambio' : 'cambios'}`;
 }
 
@@ -54,7 +69,8 @@ export function providerWatchAlertSubject(props: {
 export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
     const subject = providerWatchAlertSubject({
         account: props.account,
-        count: props.alerts.length
+        count: props.alerts.length,
+        ...(props.run === undefined ? {} : { outcome: props.run.outcome })
     });
     return (
         <EmailLayout previewText={subject}>
@@ -64,15 +80,25 @@ export function ProviderWatchAlert(props: ProviderWatchAlertProps) {
                 {props.finishedAt} y encontró lo siguiente. No ajustó nada: decidí vos si el falso,
                 la lista o el código tienen que cambiar.
             </Text>
+            {props.run !== undefined && (
+                <Text>
+                    <strong>
+                        La corrida {props.run.outcome === 'aborted' ? 'se abortó' : 'falló'}
+                    </strong>
+                    : {props.run.reason ?? 'no registró un motivo'}.
+                </Text>
+            )}
             {props.alerts.map((alert) => (
                 <div key={`${alert.measurementId}:${alert.kind}:${alert.label ?? ''}`}>
                     <Text>
                         <strong>{alert.measurementId}</strong>{' '}
                         {alert.kind === 'value_changed'
                             ? 'devolvió otro valor'
-                            : alert.kind === 'shape_baseline_missing'
-                              ? 'no tiene una forma de respuesta aceptada: revisala y aceptala en el panel'
-                              : `cambió la forma de la respuesta${alert.label ? ` (${alert.label})` : ''}`}
+                            : alert.kind === 'measurement_errored'
+                              ? 'no se pudo medir: la medición falló y no hay respuesta que comparar'
+                              : alert.kind === 'shape_baseline_missing'
+                                ? 'no tiene una forma de respuesta aceptada: revisala y aceptala en el panel'
+                                : `cambió la forma de la respuesta${alert.label ? ` (${alert.label})` : ''}`}
                     </Text>
                     <Text>Esperaba: {alert.expected}</Text>
                     <Text>Obtuvo: {alert.obtained}</Text>
