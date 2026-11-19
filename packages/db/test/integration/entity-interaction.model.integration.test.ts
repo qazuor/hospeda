@@ -25,6 +25,34 @@ afterAll(async () => closeTestPool());
 const model = new EntityInteractionModel();
 const AUG_10 = new Date('2026-08-10T12:00:00.000Z');
 const AUG_20 = new Date('2026-08-20T12:00:00.000Z');
+const BUCKET_MS = 30 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Start of a 30-minute bucket (aligned to the epoch, like the model's
+ * `FLOOR(epoch / 1800)`) that lies `daysAgo` days back from now. Callers
+ * offset from it, so no timestamp depends on where the wall clock sits
+ * relative to a :00/:30 boundary (HOS-2378).
+ */
+function bucketStartDaysAgo(daysAgo: number): Date {
+    const target = Date.now() - daysAgo * DAY_MS;
+    return new Date(Math.floor(target / BUCKET_MS) * BUCKET_MS);
+}
+
+/** Inserts one PHONE_CLICK per timestamp for the same visitor and returns the stats. */
+async function statsForClicksAt(tx: DrizzleClient, occurredAts: readonly Date[]) {
+    const entityId = crypto.randomUUID();
+    await tx.insert(entityInteractions).values(
+        occurredAts.map((occurredAt) => ({
+            entityType: 'VENUE' as const,
+            entityId,
+            kind: 'PHONE_CLICK' as const,
+            visitorHash: 'same-visit',
+            occurredAt
+        }))
+    );
+    return model.getClickStatsForEntity({ entityType: 'VENUE', entityId, windowDays: 90 }, tx);
+}
 
 /** Inserts an owner, a destination, a venue and one event; returns the venue and event ids. */
 async function seedVenueWithEvent(tx: DrizzleClient) {
@@ -92,8 +120,10 @@ describe('EntityInteractionModel (HOS-2256)', () => {
     it('aggregates click kinds by 30-minute bucket and honors a 90-day window', async () => {
         await withTestTransaction(async (tx) => {
             const entityId = crypto.randomUUID();
-            const recent = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000);
-            const sameBucket = new Date(recent.getTime() + 5 * 60 * 1000);
+            // Both clicks sit well inside one bucket (+5 and +7 minutes from its start).
+            const bucketStart = bucketStartDaysAgo(89);
+            const recent = new Date(bucketStart.getTime() + 5 * 60 * 1000);
+            const sameBucket = new Date(bucketStart.getTime() + 7 * 60 * 1000);
             const outsideWindow = new Date(Date.now() - 110 * 24 * 60 * 60 * 1000);
             await tx.insert(entityInteractions).values([
                 {
@@ -132,6 +162,38 @@ describe('EntityInteractionModel (HOS-2256)', () => {
                 ])
             );
             expect(stats.byKind).toHaveLength(2);
+        });
+    });
+
+    it('counts two clicks inside one 30-minute bucket as one visit', async () => {
+        await withTestTransaction(async (tx) => {
+            const start = bucketStartDaysAgo(10);
+
+            const stats = await statsForClicksAt(tx, [
+                new Date(start.getTime() + 10 * 60 * 1000),
+                new Date(start.getTime() + 12 * 60 * 1000)
+            ]);
+
+            expect(stats.visitsWithClick).toBe(1);
+            expect(stats.byKind).toEqual([
+                expect.objectContaining({ kind: 'PHONE_CLICK', unique: 1, total: 1 })
+            ]);
+        });
+    });
+
+    it('counts two clicks one second apart across a 30-minute boundary as two visits', async () => {
+        await withTestTransaction(async (tx) => {
+            const boundary = new Date(bucketStartDaysAgo(10).getTime() + BUCKET_MS);
+
+            const stats = await statsForClicksAt(tx, [
+                new Date(boundary.getTime() - 1000),
+                boundary
+            ]);
+
+            expect(stats.visitsWithClick).toBe(2);
+            expect(stats.byKind).toEqual([
+                expect.objectContaining({ kind: 'PHONE_CLICK', unique: 1, total: 2 })
+            ]);
         });
     });
 
