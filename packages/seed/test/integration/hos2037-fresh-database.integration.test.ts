@@ -18,6 +18,32 @@ import { repoRoot, scratchDatabase } from './support/scratch-database.js';
 
 const database = scratchDatabase({ name: 'hospeda_it_hos2037_fresh' });
 let scratch: Pool | undefined;
+let promoRowsBeforeDataMigrations: string[] = [];
+
+/**
+ * Distinct promotion grants per plan (not per version): other data-migrations
+ * publish new accommodation versions that copy their parent's rows, so a
+ * per-version comparison would report those copies as changes.
+ */
+async function promotionCatalogRows(pool: Pool): Promise<string[]> {
+    const result = await pool.query<{ row: string }>(`
+        SELECT DISTINCT row FROM (
+        SELECT concat_ws('|', p.vertical, p.slug, 'entitlement', e.key, coalesce(e.plan_quota::text, 'null')) AS row
+          FROM plan p
+          JOIN plan_version v ON v.plan_id = p.id
+          JOIN plan_version_entitlement e ON e.plan_version_id = v.id
+         WHERE e.key IN ('create_promotions', 'venue_vip_promotions')
+        UNION ALL
+        SELECT concat_ws('|', p.vertical, p.slug, 'limit', l.key, l.value::text) AS row
+          FROM plan p
+          JOIN plan_version v ON v.plan_id = p.id
+          JOIN plan_version_limit l ON l.plan_version_id = v.id
+         WHERE l.key = 'max_active_promotions'
+        ) AS grants
+         ORDER BY row
+    `);
+    return result.rows.map(({ row }) => row);
+}
 
 beforeAll(async () => {
     await database.create();
@@ -30,12 +56,13 @@ beforeAll(async () => {
         args: ['--filter', '@repo/seed', 'seed', '--required', '--poi-catalog'],
         timeout: 300_000
     });
+    scratch = new Pool({ connectionString: database.url });
+    promoRowsBeforeDataMigrations = await promotionCatalogRows(scratch);
     database.pnpm({
         cwd: repoRoot,
         args: ['--filter', '@repo/seed', 'seed', '--data-migrate', '--baseline-stamp'],
         timeout: 300_000
     });
-    scratch = new Pool({ connectionString: database.url });
 }, 900_000);
 
 afterAll(async () => {
@@ -100,6 +127,62 @@ describe('HOS-2037 fresh database (migrate, seed, data-migrate)', () => {
         }
         const ledger = await scratch.query<{ n: string }>(
             `SELECT count(*)::text AS n FROM seed_migrations WHERE name = '0156-hos-2077-ai-chat-venue-experience-basic-pro'`
+        );
+        expect(ledger.rows[0]?.n).toBe('1');
+    }, 60_000);
+
+    it('grants all venue Pro/Premium versions and leaves other verticals and venue Básico unchanged', async () => {
+        if (!scratch) throw new Error('scratch database was not initialized');
+        const grants = await scratch.query<{
+            slug: string;
+            versions: string;
+            entitlements: string;
+            limits: string;
+            min_limit: string | null;
+            max_limit: string | null;
+        }>(`
+            SELECT p.slug,
+                   count(DISTINCT v.id)::text AS versions,
+                   count(DISTINCT e.plan_version_id)::text AS entitlements,
+                   count(DISTINCT l.plan_version_id)::text AS limits,
+                   min(l.value)::text AS min_limit,
+                   max(l.value)::text AS max_limit
+              FROM plan p
+              JOIN plan_version v ON v.plan_id = p.id
+         LEFT JOIN plan_version_entitlement e ON e.plan_version_id = v.id AND e.key = 'create_promotions'
+         LEFT JOIN plan_version_limit l ON l.plan_version_id = v.id AND l.key = 'max_active_promotions'
+             WHERE p.vertical = 'venue' AND p.slug IN ('venue-pro', 'venue-premium')
+          GROUP BY p.slug
+        `);
+        const bySlug = new Map(grants.rows.map((row) => [row.slug, row]));
+        for (const [slug, limit] of [
+            ['venue-pro', '5'],
+            ['venue-premium', '2147483647']
+        ] as const) {
+            const row = bySlug.get(slug);
+            expect(row?.versions, slug).toBeTruthy();
+            expect(row?.entitlements, slug).toBe(row?.versions);
+            expect(row?.limits, slug).toBe(row?.versions);
+            expect(row?.min_limit, slug).toBe(limit);
+            expect(row?.max_limit, slug).toBe(limit);
+        }
+
+        const protectedSlugs = new Set(['venue-basico']);
+        const protectedVerticals = new Set(['accommodation', 'experience']);
+        const protectedBefore = promoRowsBeforeDataMigrations.filter((row) => {
+            const [vertical, slug] = row.split('|');
+            return protectedSlugs.has(slug ?? '') || protectedVerticals.has(vertical ?? '');
+        });
+        const after = await promotionCatalogRows(scratch);
+        const protectedAfter = after.filter((row) => {
+            const [vertical, slug] = row.split('|');
+            return protectedSlugs.has(slug ?? '') || protectedVerticals.has(vertical ?? '');
+        });
+        expect(protectedAfter).toEqual(protectedBefore);
+        expect(protectedAfter.filter((row) => row.startsWith('venue|venue-basico|'))).toEqual([]);
+
+        const ledger = await scratch.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM seed_migrations WHERE name = '0187-hos-2282-venue-promotions-grant'`
         );
         expect(ledger.rows[0]?.n).toBe('1');
     }, 60_000);
