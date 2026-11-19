@@ -35,9 +35,14 @@ export function createMercadoPagoRedisCoolDownStore(args: {
     client?.on('error', () => {
         initialConnectionSettled = true;
     });
+    // Set by `close`. The owned client is created after an async import, so a close that
+    // lands first must stop `initialize` from creating a client nobody would ever close:
+    // its never-ending retry strategy would keep the process alive (HOS-2115).
+    let closed = false;
     const initialize = async (): Promise<void> => {
         if (client) return;
         const { default: RedisClient } = await import('ioredis');
+        if (closed) return;
         client = new RedisClient(args.redisUrl, {
             lazyConnect: true,
             enableOfflineQueue: false,
@@ -58,11 +63,14 @@ export function createMercadoPagoRedisCoolDownStore(args: {
             }
         );
     };
-    void initialize().catch(() => undefined);
+    const initialized = initialize().catch(() => undefined);
     return {
         close: async () => {
-            if (!ownsClient || !client) return;
+            if (!ownsClient) return;
+            closed = true;
             closePromise ??= (async () => {
+                await initialized;
+                if (!client) return;
                 try {
                     await client?.quit();
                 } catch {
