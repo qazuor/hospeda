@@ -21,6 +21,7 @@ export async function handleExtraRoutes(args: {
     readonly refundAmounts: Map<string, number>;
     readonly now: Date;
     readonly account?: FakeProviderAccount;
+    readonly paymentScreenOrigin?: string;
 }): Promise<ExtraRouteResult | null> {
     return (
         handleUsersMeRoute({ ...args, account: args.account ?? 'sandbox' }) ??
