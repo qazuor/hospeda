@@ -170,6 +170,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4549
+    {
+        id: '2026-11-19-addon-purchase-errors-explained',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Si una compra de complemento no sale, te decimos por qué',
+            en: 'If an add-on purchase fails, we tell you why',
+            pt: 'Se a compra de um complemento não der certo, dizemos por quê'
+        },
+        body: {
+            es: 'En **Comprar complementos**, cuando una compra no se puede hacer ves un mensaje claro en lugar de un código de error: por ejemplo, que necesitás un plan activo que lo permita, o que el complemento cambió y conviene recargar la página.',
+            en: 'In **Buy add-ons**, when a purchase cannot go through you see a clear message instead of an error code: for example, that you need an active plan that allows it, or that the add-on changed and you should reload the page.',
+            pt: 'Em **Comprar complementos**, quando uma compra não pode ser feita você vê uma mensagem clara em vez de um código de erro: por exemplo, que precisa de um plano ativo que o permita, ou que o complemento mudou e é melhor recarregar a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4531
     {
         id: '2026-11-19-active-addons-show-as-active',
