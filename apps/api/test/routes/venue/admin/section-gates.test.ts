@@ -13,10 +13,12 @@
  * write path stays in-memory; the foreign-owner case lives in the integration
  * suite (TEST:7.2:2), where the action-15 audit and email have a database.
  */
+
 import { EntitlementKeyEnum, PublicationStatusEnum, type VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../../../helpers/app-import-timeout';
 
 delete process.env.CI;
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -223,7 +225,7 @@ describe('Admin venue section gates (HOS-1874)', () => {
     beforeAll(async () => {
         const { initApp } = await import('../../../../src/app.js');
         app = initApp();
-    });
+    }, APP_IMPORT_TIMEOUT_MS);
 
     beforeEach(() => {
         vi.clearAllMocks();

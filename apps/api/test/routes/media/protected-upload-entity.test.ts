@@ -26,6 +26,7 @@ import { AccommodationService } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearSlidingWindowStore } from '../../../src/middlewares/rate-limit';
+import { APP_IMPORT_TIMEOUT_MS } from '../../helpers/app-import-timeout';
 import { createAuthenticatedRequest, createMockUserActor } from '../../helpers/auth';
 
 const mockUpload = vi.fn();
@@ -154,68 +155,84 @@ describe('Protected media upload-entity endpoint', () => {
     });
 
     describe('validation', () => {
-        it('should reject request with missing required fields', async () => {
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
-            const fd = new FormData();
-            fd.append('file', VALID_PNG_FILE);
+        it(
+            'should reject request with missing required fields',
+            async () => {
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
+                const fd = new FormData();
+                fd.append('file', VALID_PNG_FILE);
 
-            const req = new Request(UPLOAD_URL, {
-                method: 'POST',
-                body: fd,
-                headers: buildAuthHeaders(ownerActor)
-            });
+                const req = new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                });
 
-            const res = await app.request(req);
-            // Without entityType/entityId/role, schema validation fails (400)
-            // OR entity lookup fails (404) depending on middleware order
-            expect([400, 404]).toContain(res.status);
-        });
+                const res = await app.request(req);
+                // Without entityType/entityId/role, schema validation fails (400)
+                // OR entity lookup fails (404) depending on middleware order
+                expect([400, 404]).toContain(res.status);
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
 
-        it('should reject invalid role (avatar not allowed in protected tier)', async () => {
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
-            const fd = buildMultipartBody({ role: 'avatar' });
+        it(
+            'should reject invalid role (avatar not allowed in protected tier)',
+            async () => {
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
+                const fd = buildMultipartBody({ role: 'avatar' });
 
-            const req = new Request(UPLOAD_URL, {
-                method: 'POST',
-                body: fd,
-                headers: buildAuthHeaders(ownerActor)
-            });
+                const req = new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                });
 
-            const res = await app.request(req);
-            expect(res.status).toBe(400);
-        });
+                const res = await app.request(req);
+                expect(res.status).toBe(400);
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
 
-        it('should reject invalid entityType', async () => {
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
-            const fd = buildMultipartBody({ entityType: 'invalid' });
+        it(
+            'should reject invalid entityType',
+            async () => {
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
+                const fd = buildMultipartBody({ entityType: 'invalid' });
 
-            const req = new Request(UPLOAD_URL, {
-                method: 'POST',
-                body: fd,
-                headers: buildAuthHeaders(ownerActor)
-            });
+                const req = new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                });
 
-            const res = await app.request(req);
-            expect(res.status).toBe(400);
-        });
+                const res = await app.request(req);
+                expect(res.status).toBe(400);
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
 
-        it('should reject invalid entityId (not UUID)', async () => {
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
-            const fd = buildMultipartBody({ entityId: 'not-a-uuid' });
+        it(
+            'should reject invalid entityId (not UUID)',
+            async () => {
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
+                const fd = buildMultipartBody({ entityId: 'not-a-uuid' });
 
-            const req = new Request(UPLOAD_URL, {
-                method: 'POST',
-                body: fd,
-                headers: buildAuthHeaders(ownerActor)
-            });
+                const req = new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                });
 
-            const res = await app.request(req);
-            expect(res.status).toBe(400);
-        });
+                const res = await app.request(req);
+                expect(res.status).toBe(400);
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
     });
 
     // -------------------------------------------------------------------------
@@ -241,59 +258,75 @@ describe('Protected media upload-entity endpoint', () => {
             return { status: res.status, body: (await res.json()) as ErrorBody };
         };
 
-        it('tags a bad form field payload with reason INVALID_FORM_FIELDS', async () => {
-            const { status, body } = await post(buildMultipartBody({ role: 'avatar' }));
+        it(
+            'tags a bad form field payload with reason INVALID_FORM_FIELDS',
+            async () => {
+                const { status, body } = await post(buildMultipartBody({ role: 'avatar' }));
 
-            expect(status).toBe(400);
-            expect(body.error?.code).toBe('VALIDATION_ERROR');
-            expect(body.error?.reason).toBe('INVALID_FORM_FIELDS');
-        });
+                expect(status).toBe(400);
+                expect(body.error?.code).toBe('VALIDATION_ERROR');
+                expect(body.error?.reason).toBe('INVALID_FORM_FIELDS');
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
 
-        it('tags a missing file with reason MISSING_FILE', async () => {
-            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildOwnedEntityStub()
-            );
-            const fd = new FormData();
-            fd.append('role', 'featured');
-            fd.append('entityType', 'accommodation');
-            fd.append('entityId', ENTITY_ID);
+        it(
+            'tags a missing file with reason MISSING_FILE',
+            async () => {
+                vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                    buildOwnedEntityStub()
+                );
+                const fd = new FormData();
+                fd.append('role', 'featured');
+                fd.append('entityType', 'accommodation');
+                fd.append('entityId', ENTITY_ID);
 
-            const { status, body } = await post(fd);
+                const { status, body } = await post(fd);
 
-            expect(status).toBe(400);
-            expect(body.error?.code).toBe('VALIDATION_ERROR');
-            expect(body.error?.reason).toBe('MISSING_FILE');
-        });
+                expect(status).toBe(400);
+                expect(body.error?.code).toBe('VALIDATION_ERROR');
+                expect(body.error?.reason).toBe('MISSING_FILE');
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
 
-        it('answers an empty file with code EMPTY_FILE', async () => {
-            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildOwnedEntityStub()
-            );
+        it(
+            'answers an empty file with code EMPTY_FILE',
+            async () => {
+                vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                    buildOwnedEntityStub()
+                );
 
-            const { status, body } = await post(
-                buildMultipartBody({ file: new File([], 'empty.jpg', { type: 'image/jpeg' }) })
-            );
+                const { status, body } = await post(
+                    buildMultipartBody({ file: new File([], 'empty.jpg', { type: 'image/jpeg' }) })
+                );
 
-            expect(status).toBe(422);
-            expect(body.error?.code).toBe('EMPTY_FILE');
-        });
+                expect(status).toBe(422);
+                expect(body.error?.code).toBe('EMPTY_FILE');
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
     });
 
     describe('Cache-Control header', () => {
-        it('should set Cache-Control: no-store on error responses', async () => {
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
-            const fd = new FormData(); // missing required fields
+        it(
+            'should set Cache-Control: no-store on error responses',
+            async () => {
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
+                const fd = new FormData(); // missing required fields
 
-            const req = new Request(UPLOAD_URL, {
-                method: 'POST',
-                body: fd,
-                headers: buildAuthHeaders(ownerActor)
-            });
+                const req = new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: fd,
+                    headers: buildAuthHeaders(ownerActor)
+                });
 
-            const res = await app.request(req);
-            expect(res.headers.get('cache-control')).toBe('no-store');
-        });
+                const res = await app.request(req);
+                expect(res.headers.get('cache-control')).toBe('no-store');
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
     });
 
     // -------------------------------------------------------------------------
@@ -302,40 +335,44 @@ describe('Protected media upload-entity endpoint', () => {
     // timeout page — non-JSON — reach the client instead).
     // -------------------------------------------------------------------------
     describe('Cloudinary upload failure resiliency (BETA-134)', () => {
-        it('returns a typed 502 UPSTREAM_ERROR JSON body when Cloudinary persistently times out', async () => {
-            // Arrange
-            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildOwnedEntityStub()
-            );
-            mockUpload.mockRejectedValue(new Error('ETIMEDOUT'));
+        it(
+            'returns a typed 502 UPSTREAM_ERROR JSON body when Cloudinary persistently times out',
+            async () => {
+                // Arrange
+                vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
+                    buildOwnedEntityStub()
+                );
+                mockUpload.mockRejectedValue(new Error('ETIMEDOUT'));
 
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
-            const req = new Request(UPLOAD_URL, {
-                method: 'POST',
-                body: buildMultipartBody({ file: REAL_PNG_FILE }),
-                headers: buildAuthHeaders(ownerActor)
-            });
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
+                const req = new Request(UPLOAD_URL, {
+                    method: 'POST',
+                    body: buildMultipartBody({ file: REAL_PNG_FILE }),
+                    headers: buildAuthHeaders(ownerActor)
+                });
 
-            // Act
-            const res = await app.request(req);
-            const body = (await res.json()) as {
-                success: boolean;
-                error?: { code: string; message: string };
-            };
+                // Act
+                const res = await app.request(req);
+                const body = (await res.json()) as {
+                    success: boolean;
+                    error?: { code: string; message: string };
+                };
 
-            // Assert: a clean, parseable JSON error — this is the exact
-            // contract the client's `JSON.parse(xhr.responseText)` relies on.
-            expect(res.status).toBe(502);
-            expect(body.success).toBe(false);
-            expect(body.error?.code).toBe('UPSTREAM_ERROR');
-            expect(typeof body.error?.message).toBe('string');
+                // Assert: a clean, parseable JSON error — this is the exact
+                // contract the client's `JSON.parse(xhr.responseText)` relies on.
+                expect(res.status).toBe(502);
+                expect(body.success).toBe(false);
+                expect(body.error?.code).toBe('UPSTREAM_ERROR');
+                expect(typeof body.error?.message).toBe('string');
 
-            // Single attempt only — no retry (uploads are not provably
-            // idempotent, so an automatic retry could leak an orphaned
-            // Cloudinary asset version).
-            expect(mockUpload).toHaveBeenCalledOnce();
-        });
+                // Single attempt only — no retry (uploads are not provably
+                // idempotent, so an automatic retry could leak an orphaned
+                // Cloudinary asset version).
+                expect(mockUpload).toHaveBeenCalledOnce();
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
     });
 
     describe('rate limit copy (HOS-785)', () => {
@@ -350,62 +387,66 @@ describe('Protected media upload-entity endpoint', () => {
             vi.useRealTimers();
         });
 
-        it('lets a full album through, then returns the translated rate-limit message with Retry-After', async () => {
-            vi.spyOn(AccommodationService.prototype, 'getById').mockImplementation(
-                buildOwnedEntityStub()
-            );
-            mockUpload.mockResolvedValue({
-                url: 'https://example.com/photo.png',
-                publicId: 'accommodations/test/gallery/photo',
-                width: 1,
-                height: 1
-            });
+        it(
+            'lets a full album through, then returns the translated rate-limit message with Retry-After',
+            async () => {
+                vi.spyOn(AccommodationService.prototype, 'getById').mockImplementation(
+                    buildOwnedEntityStub()
+                );
+                mockUpload.mockResolvedValue({
+                    url: 'https://example.com/photo.png',
+                    publicId: 'accommodations/test/gallery/photo',
+                    width: 1,
+                    height: 1
+                });
 
-            const { initApp } = await import('../../../src/app');
-            const app = await initApp();
+                const { initApp } = await import('../../../src/app');
+                const app = await initApp();
 
-            for (let i = 0; i < PROTECTED_UPLOAD_RATE_LIMIT_MAX; i++) {
-                const okRes = await app.request(
+                for (let i = 0; i < PROTECTED_UPLOAD_RATE_LIMIT_MAX; i++) {
+                    const okRes = await app.request(
+                        new Request(UPLOAD_URL, {
+                            method: 'POST',
+                            body: buildMultipartBody({ role: 'gallery', file: REAL_PNG_FILE }),
+                            headers: buildAuthHeaders(ownerActor)
+                        })
+                    );
+                    expect(okRes.status).toBe(200);
+                }
+
+                const limitedRes = await app.request(
                     new Request(UPLOAD_URL, {
                         method: 'POST',
                         body: buildMultipartBody({ role: 'gallery', file: REAL_PNG_FILE }),
                         headers: buildAuthHeaders(ownerActor)
                     })
                 );
-                expect(okRes.status).toBe(200);
-            }
 
-            const limitedRes = await app.request(
-                new Request(UPLOAD_URL, {
-                    method: 'POST',
-                    body: buildMultipartBody({ role: 'gallery', file: REAL_PNG_FILE }),
-                    headers: buildAuthHeaders(ownerActor)
-                })
-            );
+                expect(limitedRes.status).toBe(429);
 
-            expect(limitedRes.status).toBe(429);
+                const retryAfter = limitedRes.headers.get('Retry-After');
+                expect(retryAfter).not.toBeNull();
 
-            const retryAfter = limitedRes.headers.get('Retry-After');
-            expect(retryAfter).not.toBeNull();
-
-            const body = (await limitedRes.json()) as {
-                success: boolean;
-                error: {
-                    code: string;
-                    reason?: string;
-                    message: string;
-                    details?: { retryAfter?: number };
+                const body = (await limitedRes.json()) as {
+                    success: boolean;
+                    error: {
+                        code: string;
+                        reason?: string;
+                        message: string;
+                        details?: { retryAfter?: number };
+                    };
                 };
-            };
 
-            expect(body.success).toBe(false);
-            expect(body.error.code).toBe('RATE_LIMIT_EXCEEDED');
-            expect(body.error.reason).toBe('RATE_LIMIT_EXCEEDED');
-            expect(body.error.message).toContain('límite temporal de subida de fotos');
-            expect(body.error.message).toContain('Intentá de nuevo en');
-            expect(body.error.message).not.toContain('Too many requests');
-            expect(body.error.details?.retryAfter).toBe(Number(retryAfter));
-            expect(Number(retryAfter)).toBeGreaterThan(0);
-        });
+                expect(body.success).toBe(false);
+                expect(body.error.code).toBe('RATE_LIMIT_EXCEEDED');
+                expect(body.error.reason).toBe('RATE_LIMIT_EXCEEDED');
+                expect(body.error.message).toContain('límite temporal de subida de fotos');
+                expect(body.error.message).toContain('Intentá de nuevo en');
+                expect(body.error.message).not.toContain('Too many requests');
+                expect(body.error.details?.retryAfter).toBe(Number(retryAfter));
+                expect(Number(retryAfter)).toBeGreaterThan(0);
+            },
+            APP_IMPORT_TIMEOUT_MS
+        );
     });
 });

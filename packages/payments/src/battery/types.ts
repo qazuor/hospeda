@@ -192,6 +192,13 @@ export interface WatchAuthorization {
     readonly consumedByRunId?: string;
 }
 
+/**
+ * Why a production run could not take an authorization of 0 (follow-up of #4538, A2b):
+ * `DAY_TAKEN` is the expected second run of a day against the unchanged authorization; `CHANGED`
+ * is any other miss (no authorization, revoked, replaced, another account or amount, a day behind).
+ */
+export type WatchAuthorizationMiss = 'DAY_TAKEN' | 'CHANGED';
+
 /** What went wrong in one measurement. */
 export type WatchMeasurementOutcome = 'matched' | 'changed' | 'errored';
 

@@ -39,7 +39,7 @@
  */
 
 import { ExperiencePriceUnitEnum, resolveBusinessLineOptions } from '@repo/schemas';
-import { type FormEvent, type JSX, useState } from 'react';
+import { type FormEvent, type JSX, useEffect, useRef, useState } from 'react';
 import type { DestinationOption } from '@/components/listing/destination-option';
 import { BusinessLinesField } from '@/components/listing/editor/BusinessLinesField.client';
 import { MinAgeField } from '@/components/listing/editor/MinAgeField.client';
@@ -112,6 +112,14 @@ export function ListingCreateForm({
     const [businessLinesTouched, setBusinessLinesTouched] = useState(false);
     const [minAge, setMinAge] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // The form controls are server-rendered, so their presence alone does not
+    // mean React has attached its handlers yet. Set this marker after mount so
+    // browser tests can wait before interacting without changing SSR markup.
+    const formRef = useRef<HTMLFormElement>(null);
+    useEffect(() => {
+        formRef.current?.setAttribute('data-hydrated', 'true');
+    }, []);
 
     const typeOptions = config.typeOptions;
     const typeDefaults = config.showsBusinessLines
@@ -226,6 +234,7 @@ export function ListingCreateForm({
 
     return (
         <form
+            ref={formRef}
             className={styles.form}
             onSubmit={(event) => void handleSubmit(event)}
             noValidate

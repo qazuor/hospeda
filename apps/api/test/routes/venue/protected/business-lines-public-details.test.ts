@@ -16,9 +16,11 @@
  * `result.error.reason` into the thrown `ServiceError`; a gate on the shape of
  * `details` would let an unrelated `VALIDATION_ERROR` through.
  */
+
 import { PermissionEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppOpenAPI } from '../../../../src/types.js';
+import { APP_IMPORT_TIMEOUT_MS } from '../../../helpers/app-import-timeout';
 
 delete process.env.CI;
 process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -131,7 +133,7 @@ describe('POST /api/v1/protected/venues — public business-line details', () =>
     beforeAll(async () => {
         const { initApp } = await import('../../../../src/app.js');
         app = initApp();
-    });
+    }, APP_IMPORT_TIMEOUT_MS);
 
     beforeEach(() => {
         vi.clearAllMocks();
