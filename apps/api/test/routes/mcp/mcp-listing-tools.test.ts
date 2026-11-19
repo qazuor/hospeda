@@ -344,7 +344,11 @@ describe('/mcp listing tools (end to end)', () => {
             openingHours: null,
             contactInfo: null,
             amenities: [{ id: '44444444-4444-4444-8444-444444444444', slug: 'wifi' }],
-            features: []
+            features: [],
+            address: null,
+            destination: null,
+            amenityNames: { names: [expect.any(String)], total: 1 },
+            featureNames: { names: [], total: 0 }
         });
     });
 

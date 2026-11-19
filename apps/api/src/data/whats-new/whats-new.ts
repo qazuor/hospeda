@@ -188,6 +188,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4531
+    {
+        id: '2026-11-19-active-addons-show-as-active',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Los complementos que ya tenés aparecen como «Activo»',
+            en: 'Add-ons you already have show as «Active»',
+            pt: 'Os complementos que você já tem aparecem como «Ativo»'
+        },
+        body: {
+            es: 'En **Comprar complementos**, un complemento que ya tenés activo muestra la etiqueta «Activo» y no se puede volver a comprar. Si igual intentás comprarlo, te avisamos con un mensaje claro en lugar de un código de error.',
+            en: 'In **Buy add-ons**, an add-on you already have active shows an «Active» label and cannot be bought again. If you still try to buy it, you get a clear message instead of an error code.',
+            pt: 'Em **Comprar complementos**, um complemento que você já tem ativo mostra a etiqueta «Ativo» e não pode ser comprado de novo. Se mesmo assim tentar comprá-lo, você recebe uma mensagem clara em vez de um código de erro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4474, #4532
     {
         id: '2026-11-17-assistant-refusals-link-to-the-fix',
