@@ -13,7 +13,7 @@
  */
 import { PublicationStatusEnum } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { EntityInteractionModel } from '../../src/models/entity-interaction/entity-interaction.model.ts';
 import { entityInteractions } from '../../src/schemas/entity-interaction/entity_interaction.dbschema.ts';
 import { destinations, users, venueEvents, venues } from '../../src/schemas/index.ts';
@@ -23,6 +23,8 @@ import { closeTestPool, testData, withTestTransaction } from './helpers.ts';
 afterAll(async () => closeTestPool());
 
 const model = new EntityInteractionModel();
+/** Width of the model's visit bucket (HOS-2256). */
+const BUCKET_MS = 30 * 60 * 1000;
 const AUG_10 = new Date('2026-08-10T12:00:00.000Z');
 const AUG_20 = new Date('2026-08-20T12:00:00.000Z');
 
@@ -89,10 +91,27 @@ async function readRollup(tx: DrizzleClient, entityId: string) {
 }
 
 describe('EntityInteractionModel (HOS-2256)', () => {
-    it('aggregates click kinds by 30-minute bucket and honors a 90-day window', async () => {
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    // HOS-2383: the instants are derived from "now"; pin it to wall-clock moments just
+    // before a :00/:30 boundary, where an unaligned `+5min` offset used to cross buckets.
+    it.each([
+        '2026-11-19T10:27:00.000Z',
+        '2026-11-19T10:29:59.000Z',
+        '2026-11-19T10:00:30.000Z',
+        '2026-11-19T10:30:00.000Z'
+    ])('aggregates click kinds by 30-minute bucket and honors a 90-day window (now=%s)', async (now) => {
+        vi.useFakeTimers({ toFake: ['Date'], now: new Date(now) });
         await withTestTransaction(async (tx) => {
             const entityId = crypto.randomUUID();
-            const recent = new Date(Date.now() - 89 * 24 * 60 * 60 * 1000);
+            // Align to the model's 30-minute epoch bucket (FLOOR(epoch / 1800)) so the
+            // two instants never straddle a :00/:30 boundary, whatever time the test runs.
+            const recent = new Date(
+                Math.floor((Date.now() - 89 * 24 * 60 * 60 * 1000) / BUCKET_MS) * BUCKET_MS +
+                    60 * 1000
+            );
             const sameBucket = new Date(recent.getTime() + 5 * 60 * 1000);
             const outsideWindow = new Date(Date.now() - 110 * 24 * 60 * 60 * 1000);
             await tx.insert(entityInteractions).values([
