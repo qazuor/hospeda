@@ -6,6 +6,8 @@
  * - Fix 4: deleting a category locks its row, so a concurrent link insert
  *   waits instead of slipping past the in-use check.
  * - Fix 6: the admin keyword search matches keywords, not JSON punctuation.
+ * - HOS-2366: a delete + restore keeps the lifecycle state an admin set
+ *   (an INACTIVE category or group does not come back ACTIVE).
  *
  * @module host-trade-category-integrity.integration.test
  */
@@ -81,13 +83,17 @@ function errorChainCodes(error: unknown): string[] {
     return codes;
 }
 
-async function insertGroup(tx: DrizzleClient, input: { slug: string; deleted?: boolean }) {
+async function insertGroup(
+    tx: DrizzleClient,
+    input: { slug: string; deleted?: boolean; lifecycleState?: LifecycleStatusEnum }
+) {
     const id = crypto.randomUUID();
     await tx.insert(hostTradeCategoryGroups).values({
         id,
         slug: `g-${RUN}-${input.slug}`,
         nameI18n: { es: input.slug, en: input.slug, pt: input.slug },
         displayWeight: 10,
+        lifecycleState: input.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
         deletedAt: input.deleted ? new Date('2026-01-01T00:00:00Z') : null
     });
     return id;
@@ -95,7 +101,13 @@ async function insertGroup(tx: DrizzleClient, input: { slug: string; deleted?: b
 
 async function insertCategory(
     tx: DrizzleClient,
-    input: { groupId: string; slug: string; keywords?: string[]; deleted?: boolean }
+    input: {
+        groupId: string;
+        slug: string;
+        keywords?: string[];
+        deleted?: boolean;
+        lifecycleState?: LifecycleStatusEnum;
+    }
 ) {
     const id = crypto.randomUUID();
     await tx.insert(hostTradeCategories).values({
@@ -105,7 +117,7 @@ async function insertCategory(
         nameI18n: { es: input.slug, en: input.slug, pt: input.slug },
         keywordsI18n: { es: input.keywords ?? [], en: [], pt: [] },
         displayWeight: 10,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
+        lifecycleState: input.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
         deletedAt: input.deleted ? new Date('2026-01-01T00:00:00Z') : null
     } as typeof hostTradeCategories.$inferInsert);
     return id;
@@ -214,6 +226,61 @@ describe.skipIf(!dbAvailable)('Catalog integrity — real DB (HOS-919 review)', 
                 expect(await categoryModel.findIdsInDeletedGroups([category], tx)).toEqual([
                     category
                 ]);
+            });
+        });
+    });
+
+    describe('restore keeps the lifecycle state (HOS-2366)', () => {
+        it('an INACTIVE category comes back INACTIVE after soft delete + restore', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const group = await insertGroup(tx, { slug: 'keep-cat' });
+                const category = await insertCategory(tx, {
+                    groupId: group,
+                    slug: 'keep-cat',
+                    lifecycleState: LifecycleStatusEnum.INACTIVE
+                });
+                const service = new HostTradeCategoryService({ logger: createLoggerMock() });
+                const ctx = { tx, hookState: {} } as ServiceContext;
+
+                const deleted = await service.softDelete(actor, category, ctx);
+                const restored = await service.restore(actor, category, ctx);
+
+                expect(deleted.error).toBeUndefined();
+                expect(restored.error).toBeUndefined();
+                expect(restored.data).toEqual({ count: 1 });
+                const [row] = await tx
+                    .select()
+                    .from(hostTradeCategories)
+                    .where(eq(hostTradeCategories.id, category));
+                expect(row?.deletedAt).toBeNull();
+                expect(row?.slug).toBe(`c-${RUN}-keep-cat`);
+                expect(row?.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
+            });
+        });
+
+        it('an INACTIVE group comes back INACTIVE after soft delete + restore', async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const group = await insertGroup(tx, {
+                    slug: 'keep-group',
+                    lifecycleState: LifecycleStatusEnum.INACTIVE
+                });
+                const service = new HostTradeCategoryGroupService({
+                    logger: createLoggerMock()
+                });
+                const ctx = { tx, hookState: {} } as ServiceContext;
+
+                const deleted = await service.softDelete(actor, group, ctx);
+                const restored = await service.restore(actor, group, ctx);
+
+                expect(deleted.error).toBeUndefined();
+                expect(restored.error).toBeUndefined();
+                expect(restored.data).toEqual({ count: 1 });
+                const [row] = await tx
+                    .select()
+                    .from(hostTradeCategoryGroups)
+                    .where(eq(hostTradeCategoryGroups.id, group));
+                expect(row?.deletedAt).toBeNull();
+                expect(row?.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
             });
         });
     });
