@@ -170,13 +170,28 @@ export async function fetchAudiencePlans({
 }: {
     readonly audience: AudienceCardId;
 }): Promise<readonly PublicPlanData[]> {
+    const result = await fetchAudiencePlansWithStatus({ audience });
+    return result.ok ? result.plans : [];
+}
+
+/** Fetch audience plans while preserving whether the catalog read succeeded. */
+export async function fetchAudiencePlansWithStatus({
+    audience
+}: {
+    readonly audience: AudienceCardId;
+}): Promise<FetchPlansResult> {
     const vertical = AUDIENCE_PLAN_VERTICALS[audience];
     const result = await fetchPublicPlans({ vertical });
 
-    return (result.ok ? result.plans : [])
-        .filter((plan) => plan.isActive)
-        .slice()
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+    if (!result.ok) return result;
+
+    return {
+        ok: true,
+        plans: result.plans
+            .filter((plan) => plan.isActive)
+            .slice()
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+    };
 }
 
 /**
