@@ -339,8 +339,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = HOSPEDA_UMAMI_DATABASE_URL (monitoring category, api only, secret) - the
  * restricted Umami DB role of the recording retention purge (HOS-2347).
  * 289 + 1 = 290.
+ *
+ * +1 = HOSPEDA_PROVIDER_WATCH_PAYER_EMAIL (billing category, api only) — the
+ * payer email of the pending preapprovals the provider watch battery creates
+ * and cancels (HOS-1512). 290 + 1 = 291.
  */
-const EXPECTED_VAR_COUNT = 290;
+const EXPECTED_VAR_COUNT = 291;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

@@ -33,7 +33,11 @@ describe('PlatformSettingsService provider watch authorization', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(PlatformSettingsModel, ['findByKey', 'upsertByKey']);
+        modelMock = createTypedModelMock(PlatformSettingsModel, [
+            'findByKey',
+            'upsertByKey',
+            'writeProviderWatchAuthorization'
+        ]);
         loggerMock = createLoggerMock();
         service = new PlatformSettingsService({ logger: loggerMock }, modelMock);
     });
@@ -48,14 +52,17 @@ describe('PlatformSettingsService provider watch authorization', () => {
         });
 
         it('writes with BILLING_PROVIDER_WATCH_MANAGE, the dedicated SUPER_ADMIN-only permission', async () => {
-            asMock(modelMock.upsertByKey).mockResolvedValue(ROW);
+            asMock(modelMock.writeProviderWatchAuthorization).mockResolvedValue(ROW);
             const actor = createActor({
                 id: VALID_UUID,
                 permissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]
             });
             const result = await service.setProviderWatchAuthorization({ actor, value: VALUE });
             expectSuccess(result);
-            expect(modelMock.upsertByKey).toHaveBeenCalledWith(KEY, VALUE, VALID_UUID, undefined);
+            expect(modelMock.writeProviderWatchAuthorization).toHaveBeenCalledWith({
+                value: VALUE,
+                actorId: VALID_UUID
+            });
         });
 
         it.each([
@@ -65,7 +72,7 @@ describe('PlatformSettingsService provider watch authorization', () => {
             const actor = createActor({ permissions: [permission] });
             const result = await service.setProviderWatchAuthorization({ actor, value: VALUE });
             expectForbiddenError(result);
-            expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
+            expect(modelMock.writeProviderWatchAuthorization).toHaveBeenCalledTimes(0);
         });
 
         it('rejects a value without a numeric account id or with a decimal maximum charge', async () => {
@@ -83,11 +90,11 @@ describe('PlatformSettingsService provider watch authorization', () => {
                 });
                 expectValidationError(result);
             }
-            expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
+            expect(modelMock.writeProviderWatchAuthorization).toHaveBeenCalledTimes(0);
         });
 
         it('never stores the consumption fields: a new authorization is unconsumed', async () => {
-            asMock(modelMock.upsertByKey).mockResolvedValue(ROW);
+            asMock(modelMock.writeProviderWatchAuthorization).mockResolvedValue(ROW);
             const actor = createActor({
                 id: VALID_UUID,
                 permissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE]
@@ -96,7 +103,10 @@ describe('PlatformSettingsService provider watch authorization', () => {
                 actor,
                 value: { ...VALUE, consumedByRunId: VALID_UUID } as never
             });
-            expect(modelMock.upsertByKey).toHaveBeenCalledWith(KEY, VALUE, VALID_UUID, undefined);
+            expect(modelMock.writeProviderWatchAuthorization).toHaveBeenCalledWith({
+                value: VALUE,
+                actorId: VALID_UUID
+            });
         });
 
         it('refuses to write this key through the generic upsert', async () => {
@@ -108,7 +118,7 @@ describe('PlatformSettingsService provider watch authorization', () => {
             });
             const result = await service.upsert({ actor, key: KEY, value: VALUE });
             expectValidationError(result);
-            expect(modelMock.upsertByKey).toHaveBeenCalledTimes(0);
+            expect(modelMock.writeProviderWatchAuthorization).toHaveBeenCalledTimes(0);
         });
     });
 

@@ -56,7 +56,8 @@ export class ProviderWatchRunModel {
      *
      * @param input.account - The account the run targets
      * @param input.startedAt - The run's instant
-     * @param input.consumeAuthorization - Consume the authorization with exactly these values for this run
+     * @param input.consumeAuthorization - Take the authorization with exactly these values for this
+     *   run: consumed when above 0, taken for the run's market day when 0 (B1)
      * @param input.abandonRunsStartedBefore - In the same transaction, every `running` row of this
      *   account that started before this instant is past its deadline: it is closed as `failed`
      *   with reason `abandoned`. Its measurements are left untouched, so the provider ids it
@@ -72,6 +73,8 @@ export class ProviderWatchRunModel {
             readonly month: string;
             readonly maxChargeMinor: number;
             readonly accountId: string;
+            /** The run's market day: what an authorization of 0 is taken for (B1). */
+            readonly day: string;
         };
         readonly abandonRunsStartedBefore?: Date;
         readonly tx?: DrizzleClient;
@@ -105,8 +108,22 @@ export class ProviderWatchRunModel {
             if (input.consumeAuthorization === undefined) {
                 return { runId: row.id, authorizationConsumed: false };
             }
+            const { month, maxChargeMinor, accountId, day } = input.consumeAuthorization;
+            // Owner decision on B1 (2026-11-19): 0 covers one run a day, above 0 is one-shot.
+            if (maxChargeMinor === 0) {
+                const { taken } = await platformSettingsModel.takeProviderWatchAuthorizationDay({
+                    month,
+                    accountId,
+                    day,
+                    runId: row.id,
+                    tx
+                });
+                return { runId: row.id, authorizationConsumed: taken };
+            }
             const { consumed } = await platformSettingsModel.consumeProviderWatchAuthorization({
-                ...input.consumeAuthorization,
+                month,
+                maxChargeMinor,
+                accountId,
                 runId: row.id,
                 consumedAt: input.startedAt,
                 tx
@@ -255,6 +272,31 @@ export class ProviderWatchRunModel {
             .select()
             .from(providerWatchRuns)
             .where(eq(providerWatchRuns.id, input.id))
+            .limit(1);
+        return row ?? null;
+    }
+
+    /**
+     * The run that recorded a provider id, if any (HOS-1512, owner decision on the webhook noise):
+     * the webhook drops the notice of an authorization the battery created, and only of one it
+     * RECORDED. The ids are the `providerIds` a run persists per measurement, as each write
+     * answers (`appendProgress`) and when it closes, so a run that died midway still counts.
+     *
+     * @param input.providerId - The provider id the notice names
+     * @param input.tx - Optional transaction
+     * @returns The run id, or `null` when no run recorded it
+     */
+    async findRunRecordingProviderId(input: {
+        readonly providerId: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<{ readonly runId: string } | null> {
+        const [row] = await (input.tx ?? getDb())
+            .select({ runId: providerWatchRuns.id })
+            .from(providerWatchRuns)
+            .where(
+                sql`jsonb_path_exists(${providerWatchRuns.measurements}, '$.*.providerIds[*] ? (@ == $id)', jsonb_build_object('id', ${input.providerId}::text))`
+            )
+            .orderBy(desc(providerWatchRuns.startedAt))
             .limit(1);
         return row ?? null;
     }

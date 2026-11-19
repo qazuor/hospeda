@@ -68,6 +68,7 @@ import {
     executeConfirmedRefundsOnNotice
 } from './refund-execution-on-notice.js';
 import { UnsupportedProviderAuthorizationError } from './unsupported-provider-authorization.error.js';
+import { watchBatteryNoticeToDrop } from './watch-battery-notice.js';
 
 const logger = createLogger('process-provider-notice');
 
@@ -94,6 +95,7 @@ type Outcome =
     | 'RELINKED'
     | 'UNKNOWN_BECAME_KNOWN'
     | 'TOMBSTONE_WRITTEN'
+    | 'WATCH_BATTERY_DROPPED'
     | 'RESOURCE_KIND_NOT_HANDLED'
     | 'UNSUPPORTED_NOTICE'
     | 'CHARGEBACK_MARKED'
@@ -162,6 +164,9 @@ async function resolveUnknownAuthorization(
     input: { readonly authorizationId: string; readonly arrival: UnknownAuthorizationArrival },
     ports: ProcessProviderNoticePorts
 ): Promise<UnknownResourceResolution> {
+    // HOS-1512: the battery's own pending preapprovals are dropped, with no tombstone and no mark.
+    if ((await watchBatteryNoticeToDrop(input, ports)) !== null)
+        return { kind: 'OUTCOME', outcome: 'WATCH_BATTERY_DROPPED' };
     const correlationId = crypto.randomUUID();
     let result: Awaited<ReturnType<typeof handleUnknownAuthorization>>;
     try {

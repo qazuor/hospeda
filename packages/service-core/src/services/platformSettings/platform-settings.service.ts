@@ -391,7 +391,8 @@ export class PlatformSettingsService extends BaseService {
 
     /**
      * Writes the owner's monthly authorization for the provider watch battery (HOS-1512). Always a
-     * NEW authorization: the consumption fields are never accepted, so it is unconsumed. Requires
+     * NEW authorization: the consumption fields are never accepted, so it is unconsumed. Re-authorizing
+     * 0 for the same month and account keeps the day already taken and the runs it covered (A3). Requires
      * `BILLING_PROVIDER_WATCH_MANAGE`. The caller (the admin route) has already read the provider account
      * and confirmed `accountId` with the owner.
      *
@@ -410,12 +411,11 @@ export class PlatformSettingsService extends BaseService {
             ctx,
             execute: async (data, actor, resolvedCtx) => {
                 this.checkWritePermission(actor, 'billing.providerWatchAuthorization');
-                return this.model.upsertByKey(
-                    'billing.providerWatchAuthorization',
-                    data.value,
-                    actor.id,
-                    resolvedCtx.tx
-                );
+                return this.model.writeProviderWatchAuthorization({
+                    value: data.value,
+                    actorId: actor.id,
+                    ...(resolvedCtx.tx === undefined ? {} : { tx: resolvedCtx.tx })
+                });
             }
         });
     }

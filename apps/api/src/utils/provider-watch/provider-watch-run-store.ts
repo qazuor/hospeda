@@ -66,6 +66,7 @@ export async function openWatchRun(args: {
         readonly month: string;
         readonly maxChargeMinor: number;
         readonly accountId: string;
+        readonly day: string;
     };
 }): Promise<{ readonly runId: string; readonly authorizationConsumed: boolean }> {
     return providerWatchRunModel.open({
