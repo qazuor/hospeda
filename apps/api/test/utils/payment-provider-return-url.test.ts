@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 const { env } = vi.hoisted(() => ({
     env: {
-        NODE_ENV: 'development' as 'development' | 'production' | 'test',
+        NODE_ENV: 'development' as 'development' | 'production' | 'test' | undefined,
         HOSPEDA_MERCADO_PAGO_API_BASE_URL: 'http://127.0.0.1:9/unreachable',
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token',
         HOSPEDA_MERCADO_PAGO_TIMEOUT: 200
@@ -43,8 +43,11 @@ async function failureCodeFor(nodeEnv: typeof env.NODE_ENV): Promise<unknown> {
 }
 
 describe('default provider: local http return URL by environment (HOS-2179)', () => {
-    it('refuses a localhost http return URL in production before any call', async () => {
-        expect(await failureCodeFor('production')).toBe('INVALID_INPUT');
+    it.each([
+        'production',
+        undefined
+    ] as const)('refuses a localhost http return URL when NODE_ENV is %s, before any call', async (nodeEnv) => {
+        expect(await failureCodeFor(nodeEnv)).toBe('INVALID_INPUT');
     });
 
     it.each([
