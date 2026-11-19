@@ -1,11 +1,12 @@
+import { addonInstances, eq } from '@repo/db';
 import type { NoticeDelivery } from '@repo/payments';
 import { FAKE_NOTICE_CHANNEL_HEADER } from '@repo/payments/fake';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { receiveProviderDelivery } from '../../../src/services/billing/notice/receive-provider-delivery.service';
-import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
-import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
+import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
+import { createProduct, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import {
     boughtPage,
     pageInstance,
@@ -284,5 +285,42 @@ describe('HOS-2179 §5.3 path 1: the payment notice of a page purchase reaches A
         expect(await deliver(s, notice)).toEqual({ ack: 'OK', outcome: 'UNKNOWN_RESOURCE' });
         expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
         expect(await pagePayments(instance.id)).toHaveLength(0);
+    });
+
+    it.skipIf(skip)('leaves a page reference of a periodic product on the old path', async () => {
+        const s = await pageSetup();
+        const { instance, paymentPageId } = await boughtPage(s);
+        const periodic = await createProduct({
+            scopeType: 'USER',
+            chargeKind: 'PERIODICO',
+            cycle: 'monthly',
+            verticals: ['accommodation']
+        });
+        await getServiceTestDb()
+            .update(addonInstances)
+            .set({ productId: periodic.productId })
+            .where(eq(addonInstances.id, instance.id));
+        s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        const [notice] = webhooksDeliveries(s);
+        if (!notice) throw new Error('notice missing');
+
+        expect(await deliver(s, notice)).toEqual({ ack: 'OK', outcome: 'UNKNOWN_RESOURCE' });
+        expect(await pageMarks(instance.id)).toHaveLength(0);
+    });
+
+    it.skipIf(skip)('acks an error when A2 finds the page purchase is not one', async () => {
+        const s = await pageSetup();
+        const { instance, paymentPageId } = await boughtPage(s);
+        // A page purchase never carries an order id: A2 answers NOT_APPLICABLE.
+        await getServiceTestDb()
+            .update(addonInstances)
+            .set({ providerOrderId: `order-${crypto.randomUUID()}` })
+            .where(eq(addonInstances.id, instance.id));
+        s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        const [notice] = webhooksDeliveries(s);
+        if (!notice) throw new Error('notice missing');
+
+        expect(await deliver(s, notice)).toEqual({ ack: 'ERROR', outcome: 'FAILED' });
+        expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
     });
 });

@@ -4,10 +4,7 @@ import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { ServiceError } from '../../../../types';
 import { confirmOneTimePagePayment } from '../../addon/addon-instance-a2-one-time-page';
-import {
-    chargeNamedByMark,
-    ONE_TIME_PAGE_CHARGE_MARK_REASONS
-} from '../../addon/one-time-page-charge-marks';
+import { chargeNamedByMark } from '../../addon/one-time-page-charge-marks';
 import type { CanChargeDeadlines } from '../../coverage/can-charge';
 import type { CoverageNotices } from '../../payment/payment-ports';
 import type { ComplementPolicyPorts } from '../../subscription/complement-ports';
@@ -171,9 +168,7 @@ async function checkPurchase(
         if (
             await chargeNamedByMark({
                 instanceId: instance.id,
-                chargeId,
-                reasons: ONE_TIME_PAGE_CHARGE_MARK_REASONS,
-                liftedOnly: false
+                chargeId
             })
         )
             continue;

@@ -5,8 +5,9 @@ import {
     domainEvent,
     eq,
     getDb,
-    inArray,
     isNotNull,
+    ne,
+    or,
     type ReconciliationMarkReason,
     reconciliationMarks,
     sql
@@ -27,13 +28,6 @@ export type OneTimePageChargeMarkReason = Extract<
     'DIVERGENCIA_DE_MONTO' | 'COBRO_DUPLICADO' | 'ORDEN_PAGADA_SIN_INSTANCIA'
 >;
 
-/** Every reason a one-time page payment can raise, in A2's decision order. */
-export const ONE_TIME_PAGE_CHARGE_MARK_REASONS = [
-    'DIVERGENCIA_DE_MONTO',
-    'COBRO_DUPLICADO',
-    'ORDEN_PAGADA_SIN_INSTANCIA'
-] as const satisfies readonly OneTimePageChargeMarkReason[];
-
 /** Who opens the mark: the notice receiver (`provider`) or the reconciliation sweep (`job`). */
 export interface OneTimePageMarkTrigger {
     readonly actor: 'provider' | 'job';
@@ -41,21 +35,23 @@ export interface OneTimePageMarkTrigger {
 }
 
 /**
- * Whether a mark of one of `reasons` on the instance already names this provider charge in one
- * of its opening events. The open-mark uniqueness is per (instance, reason) over OPEN marks only,
- * so a charge is tied to its mark only through the `provider.charge_id` of the event.
+ * Whether a mark on the instance already holds this provider charge, so no other mark may open
+ * for the same money: one payment raises at most one mark (§5.8-§5.10), even when a later re-read
+ * would classify it differently (a price fixed after a divergence). No reason filter is needed:
+ * ck_reconciliation_mark_instance_reasons admits only these three reasons on an instance. A charge is tied to its mark
+ * only through the `provider.charge_id` of an opening event, because the open-mark uniqueness is
+ * per (instance, reason) over OPEN marks only.
  *
  * @param input.instanceId - The one-time page purchase
  * @param input.chargeId - The provider's id of the payment
- * @param input.reasons - The reasons to look at
- * @param input.liftedOnly - Only marks a person already lifted count
+ * @param input.accumulatesOn - A reason whose OPEN mark does not count: a repeat of that reason
+ *   accumulates on it instead. Lifted marks of it still count, so a lift is never undone.
  * @returns True when such a mark names the charge
  */
 export async function chargeNamedByMark(input: {
     readonly instanceId: string;
     readonly chargeId: string;
-    readonly reasons: readonly OneTimePageChargeMarkReason[];
-    readonly liftedOnly: boolean;
+    readonly accumulatesOn?: OneTimePageChargeMarkReason;
 }): Promise<boolean> {
     const [named] = await getDb()
         .select({ id: reconciliationMarks.id })
@@ -73,8 +69,12 @@ export async function chargeNamedByMark(input: {
         .where(
             and(
                 eq(reconciliationMarks.addonInstanceId, input.instanceId),
-                inArray(reconciliationMarks.reason, [...input.reasons]),
-                input.liftedOnly ? isNotNull(reconciliationMarks.liftedAt) : undefined
+                input.accumulatesOn
+                    ? or(
+                          ne(reconciliationMarks.reason, input.accumulatesOn),
+                          isNotNull(reconciliationMarks.liftedAt)
+                      )
+                    : undefined
             )
         )
         .limit(1);
@@ -84,7 +84,7 @@ export async function chargeNamedByMark(input: {
 /**
  * Opens (or accumulates on) one mark for one payment of a page purchase, with the provider's id
  * first in its event. A repeated notice, A3 or the sweep accumulates on the same open mark; a
- * charge whose mark of this reason a person already lifted does not reopen it. There is no
+ * charge already held by a lifted mark, or by a mark of another reason, opens nothing. There is no
  * `payment` row to hang: the money activated nothing, so the charge id and amounts (and, for a
  * refundable reason, the proposed refund) travel in the event.
  *
@@ -93,7 +93,7 @@ export async function chargeNamedByMark(input: {
  * @param input.reason - The reason to open
  * @param input.detail - What else travels in the event
  * @param input.trigger - Who opens it
- * @returns `MARKED` once the mark is open or was lifted for this charge; `UNKNOWN` when it could not be opened
+ * @returns `MARKED` once a mark holds this charge; `UNKNOWN` when it could not be opened
  */
 export async function openOneTimePageChargeMark(input: {
     readonly instanceId: string;
@@ -107,8 +107,7 @@ export async function openOneTimePageChargeMark(input: {
             await chargeNamedByMark({
                 instanceId: input.instanceId,
                 chargeId: input.chargeId,
-                reasons: [input.reason],
-                liftedOnly: true
+                accumulatesOn: input.reason
             })
         )
             return 'MARKED';

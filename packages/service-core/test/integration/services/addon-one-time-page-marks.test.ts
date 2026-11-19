@@ -189,6 +189,21 @@ describe('HOS-2179 §5.9 AC-12 a payment after the purchase closed opens mark 23
         ).toBe(10000);
     });
 
+    it.skipIf(skip)('accumulates a repeated late notice on one open mark 23', async () => {
+        const { s, instance, paid } = await paidAfterAbandon();
+        for (let i = 0; i < 2; i++)
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: paid.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'LATE_PAYMENT' });
+        expect(await pageMarks(instance.id)).toEqual([
+            { reason: 'ORDEN_PAGADA_SIN_INSTANCIA', liftedAt: null }
+        ]);
+        expect(await pageMarkEvents(instance.id)).toHaveLength(2);
+    });
+
     it.skipIf(skip)('records the sweep as the actor when the sweep opens it', async () => {
         const { s, instance, paid } = await paidAfterAbandon();
         const correlationId = crypto.randomUUID();
@@ -252,4 +267,47 @@ describe('HOS-2179 §5.9 AC-12 a payment after the purchase closed opens mark 23
             ]);
         }
     );
+});
+
+describe('HOS-2179 one payment holds at most one mark, even after the price changes', () => {
+    it.skipIf(skip)('opens no mark 23 for a charge an open divergence holds', async () => {
+        const { s, instance, paid } = await paidAfterAbandon();
+        await pagePriceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: paid.chargeId },
+            s.ports
+        );
+        await pagePriceIs(instance.productId, 10000);
+
+        expect(
+            await confirmOneTimePagePayment(
+                { instanceId: instance.id, chargeId: paid.chargeId },
+                s.ports
+            )
+        ).toEqual({ outcome: 'LATE_PAYMENT' });
+        expect(await pageMarks(instance.id)).toEqual([
+            { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
+        ]);
+        expect(await pageMarkEvents(instance.id)).toHaveLength(1);
+    });
+
+    it.skipIf(skip)('opens no duplicate for a charge a lifted divergence holds', async () => {
+        const { s, instance, second } = await paidTwice();
+        await pagePriceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: second.chargeId },
+            s.ports
+        );
+        await liftPageMarks(instance.id, instance.ownerId);
+        await pagePriceIs(instance.productId, 10000);
+
+        expect(
+            await confirmOneTimePagePayment(
+                { instanceId: instance.id, chargeId: second.chargeId },
+                s.ports
+            )
+        ).toEqual({ outcome: 'DUPLICATE_PAYMENT' });
+        const marks = await pageMarks(instance.id);
+        expect(marks.map((mark) => mark.reason)).toEqual(['DIVERGENCIA_DE_MONTO']);
+    });
 });
