@@ -6,7 +6,6 @@ import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { confirmOneTimeOrder } from './addon-instance-a2-one-time';
 import type { A5Ports } from './addon-instance-a5';
-import { closeOneTimePaymentPage } from './close-one-time-payment-page';
 import { confirmOneTimePageByReference } from './confirm-one-time-page-by-reference';
 
 const abandonInputSchema = z.object({
@@ -92,8 +91,12 @@ export async function expireOneTimeAddon(
  * A3 for a payment page purchase (HOS-2179 §5.4): it only confirms, never creates. It searches
  * the payments by the purchase's reference and re-reads each id (through A2); an approved one
  * activates the purchase. Only when every id re-read is not an approved payment does the
- * purchase become `ABANDONED`, and then its page is closed (§5.7). A search or a read that does
- * not answer, or an approved payment that cannot activate, leaves it pending for the next run.
+ * purchase become `ABANDONED`. A search or a read that does not answer, or an approved payment
+ * that cannot activate, leaves it pending for the next run.
+ *
+ * There is no page to close here (§5.7): A3 selects a page purchase only once its stored page
+ * expiry plus the margin has passed, so the page already takes no payment (RP19). A purchase
+ * without a stored expiry never recorded a page id.
  *
  * @param input.instanceId - The pending page purchase whose window elapsed
  * @param ports - A2's ports plus the coverage notices
@@ -116,7 +119,5 @@ export async function expireOneTimePageAddon(
         expectedProviderOrderId: null,
         now: ports.clock.now()
     });
-    if (!abandoned) return 'DEFERRED';
-    await closeOneTimePaymentPage(input, ports);
-    return 'ABANDONED';
+    return abandoned ? 'ABANDONED' : 'DEFERRED';
 }

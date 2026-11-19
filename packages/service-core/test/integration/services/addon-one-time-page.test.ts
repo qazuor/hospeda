@@ -5,6 +5,7 @@ import { confirmOneTimePagePayment } from '../../../src/services/billing/addon/a
 import { closeOneTimePaymentPage } from '../../../src/services/billing/addon/close-one-time-payment-page';
 import { expireAddonAuthorizationWindows } from '../../../src/services/billing/addon/expire-addon-authorization-windows.service';
 import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
+import { openOneTimePaymentPage } from '../../../src/services/billing/addon/one-time-payment-page';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { getCurrentBillingDeadlines } from '../../../src/services/billing/deadlines/billing-deadlines.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
@@ -46,6 +47,37 @@ async function paymentsOf(instanceId: string) {
         .select()
         .from(payments)
         .where(eq(payments.addonInstanceId, instanceId));
+}
+
+/** Records a page on the purchase the way a concurrent resume would have, ahead of the caller. */
+async function recordPageDirectly(input: {
+    readonly reference: string;
+    readonly page: { paymentPageId: string; approvalUrl: string; expiresAt: string };
+}) {
+    const db = getServiceTestDb();
+    const [row] = await db
+        .select()
+        .from(addonInstances)
+        .where(eq(addonInstances.orderRequestId, input.reference));
+    if (!row) throw new Error('Instance missing');
+    await db
+        .update(addonInstances)
+        .set({
+            paymentPageId: input.page.paymentPageId,
+            paymentPageExpiresAt: new Date(input.page.expiresAt)
+        })
+        .where(eq(addonInstances.id, row.id));
+    await db
+        .update(idempotencyKeys)
+        .set({
+            result: {
+                paymentPageId: input.page.paymentPageId,
+                expiresAt: input.page.expiresAt,
+                checkoutUrl: input.page.approvalUrl
+            },
+            completedAt: new Date()
+        })
+        .where(eq(idempotencyKeys.subjectId, row.id));
 }
 
 async function setup() {
@@ -149,6 +181,121 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
         });
         expect(request).toHaveBeenCalledTimes(1);
     });
+
+    it.skipIf(skip)(
+        'closes a page that arrives after a concurrent refusal released the purchase',
+        async () => {
+            const s = await setup();
+            const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            let received: string | undefined;
+            vi.spyOn(s.f.fake, 'requestOneTimePayment').mockImplementationOnce(async (input) => {
+                const page = await original(input);
+                received = page.paymentPageId;
+                // Request B's refusal released the purchase while request A's page was in flight.
+                const [row] = await getServiceTestDb()
+                    .select()
+                    .from(addonInstances)
+                    .where(eq(addonInstances.orderRequestId, input.reference));
+                await abandonOneTimeAddon({
+                    instanceId: row?.id ?? '',
+                    expectedProviderOrderId: null,
+                    now: s.f.ports.clock.now()
+                });
+                return page;
+            });
+            const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
+            const result = await purchaseAddon(s.request, s.f.ports);
+            expect(result).toMatchObject({ outcome: 'CREATED' });
+            expect('checkoutUrl' in result && result.checkoutUrl).toBeFalsy();
+            expect(close).toHaveBeenCalledWith({ paymentPageId: received });
+            const page = await s.f.fake.readOneTimePayment({ paymentPageId: received ?? '' });
+            expect(Date.parse(page.snapshot.expiresAt ?? '')).toBeLessThanOrEqual(
+                s.f.ports.clock.now().getTime()
+            );
+            const instance = await instanceOf(
+                result.outcome === 'CREATED' ? result.instanceId : ''
+            );
+            expect(instance).toMatchObject({ status: 'ABANDONED', paymentPageId: null });
+        }
+    );
+
+    it.skipIf(skip)(
+        'answers NOT_APPLICABLE to a resume whose purchase was released meanwhile',
+        async () => {
+            const s = await setup();
+            vi.spyOn(s.f.fake, 'requestOneTimePayment').mockRejectedValueOnce(
+                new PaymentProviderError({
+                    code: 'UNAVAILABLE',
+                    capability: 'charge',
+                    message: 'lost'
+                })
+            );
+            await expect(purchaseAddon(s.request, s.f.ports)).rejects.toThrow();
+            const [row] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.orderRequestId, s.request.orderRequestId));
+            const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            vi.spyOn(s.f.fake, 'requestOneTimePayment').mockImplementationOnce(async (input) => {
+                const page = await original(input);
+                await abandonOneTimeAddon({
+                    instanceId: row?.id ?? '',
+                    expectedProviderOrderId: null,
+                    now: s.f.ports.clock.now()
+                });
+                return page;
+            });
+            expect(
+                await openOneTimePaymentPage(
+                    { instanceId: row?.id ?? '', returnUrl: s.request.returnUrl },
+                    s.f.ports
+                )
+            ).toEqual({ outcome: 'NOT_APPLICABLE' });
+        }
+    );
+
+    it.skipIf(skip)(
+        'closes its own page when a concurrent resume recorded another first',
+        async () => {
+            const s = await setup();
+            const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            let first: string | undefined;
+            let second: string | undefined;
+            vi.spyOn(s.f.fake, 'requestOneTimePayment').mockImplementationOnce(async (input) => {
+                const winner = await original(input);
+                first = winner.paymentPageId;
+                await recordPageDirectly({ reference: input.reference, page: winner });
+                const ours = await original(input);
+                second = ours.paymentPageId;
+                return ours;
+            });
+            const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
+            const result = await purchaseAddon(s.request, s.f.ports);
+            expect(result).toMatchObject({
+                outcome: 'CREATED',
+                checkoutUrl: `https://payments-fake.invalid/pay/${first}`
+            });
+            expect(close).toHaveBeenCalledTimes(1);
+            expect(close).toHaveBeenCalledWith({ paymentPageId: second });
+        }
+    );
+
+    it.skipIf(skip)(
+        'keeps the recorded page open when the provider handed it back again',
+        async () => {
+            const s = await setup();
+            const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            vi.spyOn(s.f.fake, 'requestOneTimePayment').mockImplementationOnce(async (input) => {
+                const page = await original(input);
+                await recordPageDirectly({ reference: input.reference, page });
+                return page;
+            });
+            const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
+            const result = await purchaseAddon(s.request, s.f.ports);
+            expect(result).toMatchObject({ outcome: 'CREATED', checkoutUrl: expect.any(String) });
+            expect(close).not.toHaveBeenCalled();
+        }
+    );
 
     it.skipIf(skip)('keeps the order channel as the default', async () => {
         const s = await setup();
@@ -452,22 +599,49 @@ describe('HOS-2179 §5.4 A3 confirms by search and re-read, or abandons and clos
         expect(close).not.toHaveBeenCalled();
     });
 
-    it.skipIf(skip)('closes a page the provider read back as still open', async () => {
+    it.skipIf(skip)(
+        'keeps a page purchase whose stored expiry has not passed when PLAZO 21 drops',
+        async () => {
+            const s = await setup();
+            const { instance } = await bought(s);
+            const current = await getCurrentBillingDeadlines();
+            const lowered = {
+                ...current,
+                values: { ...current.values, '21': { pageMinutes: 10, windowMarginMinutes: 30 } }
+            };
+            // Today's PLAZO 21 would end the window at +40 min; the stored expiry (+60) plus the
+            // margin (+30) ends it at +90.
+            s.f.advanceTo(new Date(purchaseNow.getTime() + 50 * MINUTE));
+            const search = vi.spyOn(s.f.fake, 'searchCharges');
+            await expireAddonAuthorizationWindows(100, { ...s.ports, deadlines: lowered });
+            expect(search).not.toHaveBeenCalled();
+            expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+            s.f.advanceTo(new Date(purchaseNow.getTime() + 90 * MINUTE));
+            await expireAddonAuthorizationWindows(100, { ...s.ports, deadlines: lowered });
+            expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
+        }
+    );
+
+    it.skipIf(skip)('waits for a later read-back expiry before abandoning', async () => {
         const s = await setup();
         const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
         vi.spyOn(s.f.fake, 'requestOneTimePayment').mockImplementationOnce(async (input) => ({
             ...(await original(input)),
             expiresAt: new Date(purchaseNow.getTime() + 86_400_000).toISOString()
         }));
-        const { instance, paymentPageId } = await bought(s);
-        s.f.advanceTo(windowEnd());
+        const { instance } = await bought(s);
+        // A3 waits for the stored expiry plus the margin, not for today's page duration.
+        s.f.advanceTo(new Date(purchaseNow.getTime() + 86_400_000 + 60 * MINUTE - 1));
+        const early = vi.spyOn(s.f.fake, 'searchCharges');
+        await expireAddonAuthorizationWindows(100, s.ports);
+        expect(early).not.toHaveBeenCalled();
+        expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+        s.f.advanceTo(new Date(purchaseNow.getTime() + 86_400_000 + 60 * MINUTE));
+        // The stored expiry has passed, so the page already takes no payment: nothing to close.
         const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
         await expireAddonAuthorizationWindows(100, s.ports);
         expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
-        expect(close).toHaveBeenCalledWith({ paymentPageId });
-        expect((await instanceOf(instance.id)).paymentPageExpiresAt?.getTime()).toBeLessThanOrEqual(
-            windowEnd().getTime()
-        );
+        expect(close).not.toHaveBeenCalled();
     });
 
     it.skipIf(skip)('activates through A2 when the search finds an approved payment', async () => {

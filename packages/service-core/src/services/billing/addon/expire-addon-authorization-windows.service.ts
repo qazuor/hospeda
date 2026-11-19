@@ -13,6 +13,7 @@ import {
     lte,
     or,
     providerLinks,
+    sql,
     subscriptions
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
@@ -137,11 +138,15 @@ export async function expireAddonAuthorizationWindows(
     const now = ports.clock.now();
     const deadlines = ports.deadlines ?? (await getCurrentBillingDeadlines());
     const oneTimeCutoff = new Date(now.getTime() - deadlines.values['10'].cardHours * 3_600_000);
-    // HOS-2179 §5.2: a page purchase waits for its page plus a margin (PLAZO:21). Without that
-    // deadline its end is unknown, so no page purchase is selected rather than a guessed one.
+    // HOS-2179 §5.2: a page purchase waits until its page stopped taking payments plus a margin
+    // (PLAZO:21). The page end is the expiry the instance stored at creation; only a purchase
+    // whose creation answer was lost (no stored expiry) falls back to createdAt plus today's
+    // page duration, which is the expiry a resume would send. The margin is today's: the margin
+    // in force at creation is not recorded anywhere. Without PLAZO:21 no page purchase is
+    // selected rather than a guessed one.
     const pageTiming = optionalPaymentPageTiming(deadlines);
-    const pageCutoff = pageTiming
-        ? new Date(now.getTime() - pageTiming.pageMs - pageTiming.windowMarginMs)
+    const pageWindowElapsed = pageTiming
+        ? sql`coalesce(${addonInstances.paymentPageExpiresAt}, ${addonInstances.createdAt} + (${pageTiming.pageMs}::integer * interval '1 millisecond')) + (${pageTiming.windowMarginMs}::integer * interval '1 millisecond') <= ${now.toISOString()}::timestamptz`
         : null;
     const rows = await getDb()
         .select({
@@ -175,11 +180,11 @@ export async function expireAddonAuthorizationWindows(
                         isNull(idempotencyKeys.key),
                         lte(addonInstances.createdAt, oneTimeCutoff)
                     ),
-                    pageCutoff
+                    pageWindowElapsed
                         ? and(
                               eq(addonProducts.chargeKind, 'UNA_VEZ'),
                               isNotNull(idempotencyKeys.key),
-                              lte(addonInstances.createdAt, pageCutoff)
+                              pageWindowElapsed
                           )
                         : undefined
                 )
