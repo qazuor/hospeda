@@ -58,6 +58,7 @@ test.describe('TEST:2149:1 TEST:2149:2 TEST:2149:3 declined signup notice on my 
         const clock = createAdjustableClock({ start: new Date() });
         fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

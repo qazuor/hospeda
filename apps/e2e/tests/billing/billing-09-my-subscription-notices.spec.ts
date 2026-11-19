@@ -36,6 +36,7 @@ test.describe('TEST:B13a:6 TEST:B8b:14 TEST:B13a:7 Mi Suscripción notices @p0 @
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

@@ -1,6 +1,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { SelectPayment, SelectRefund } from '@repo/db';
-import { addonInstances, and, eq, getDb, refunds } from '@repo/db';
+import { and, eq, getDb, refunds } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -9,6 +9,7 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import type { ChargebackDetection } from '../reconciliation/chargeback/chargeback-detection';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
+import { readAddonRefundChannel } from './refund-addon-channel';
 import { detectRefundChargeback } from './refund-chargeback';
 import { canRefundTransition } from './refund-machine';
 import { confirmOrderRefund } from './refund-order-call';
@@ -138,17 +139,20 @@ async function confirmInTransaction(
                 'Refund is no longer open',
                 'REFUND_NOT_OPEN'
             );
-        /** AC:B6:8 allows an add-on payment only when its instance has a provider order. */
-        const [instance] =
+        /**
+         * An add-on payment is refunded through its order (AC:B6:8, instances bought before
+         * HOS-2179) or, when its instance was bought on a payment page, as a plain payment
+         * (HOS-2179 §5.11). An instance that proves neither is never sent.
+         */
+        const addon =
             locked.payment.addonInstanceId === null
-                ? []
-                : await tx
-                      .select({ providerOrderId: addonInstances.providerOrderId })
-                      .from(addonInstances)
-                      .where(eq(addonInstances.id, locked.payment.addonInstanceId))
-                      .limit(1)
-                      .for('share');
-        if (locked.payment.addonInstanceId !== null && !instance?.providerOrderId)
+                ? null
+                : await readAddonRefundChannel({
+                      db: tx,
+                      addonInstanceId: locked.payment.addonInstanceId,
+                      lock: 'share'
+                  });
+        if (addon?.channel === 'NONE')
             throw reject(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'Refund source is not provider refundable',
@@ -195,7 +199,7 @@ async function confirmInTransaction(
             refund: updated,
             payment: locked.payment,
             subjectId,
-            providerOrderId: instance?.providerOrderId ?? null
+            providerOrderId: addon?.providerOrderId ?? null
         };
     });
 }

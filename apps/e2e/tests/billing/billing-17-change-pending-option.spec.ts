@@ -39,6 +39,7 @@ test.describe('TEST:1735:16 AC:1735:16 change the billing option with a pending 
     test.beforeAll(async () => {
         fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

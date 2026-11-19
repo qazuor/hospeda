@@ -25,6 +25,9 @@ export function defaultPaymentProvider(input: { readonly clock: Clock }): Paymen
         baseUrl: env.HOSPEDA_MERCADO_PAGO_API_BASE_URL,
         accessToken: env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN,
         timeoutMs: env.HOSPEDA_MERCADO_PAGO_TIMEOUT,
+        // HOS-2179 (owner): a plain-http return URL on localhost is for local development
+        // only. Allow-listed, so an absent or unknown NODE_ENV keeps https only.
+        allowLocalHttpReturnUrl: env.NODE_ENV === 'development' || env.NODE_ENV === 'test',
         ...(governor ? { governor } : {})
     });
 }

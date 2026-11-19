@@ -36,6 +36,7 @@ test.describe('TEST:B8b:14 plan-change offer @p0 @billing @clock', () => {
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: randomUUID(),
                 honestAbout: [

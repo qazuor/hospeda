@@ -57,6 +57,7 @@ test.describe('TEST:B13b:3 AC:B13b:3 AC:B13b:4 the action 20 editor @p0 @admin @
         const clock = createAdjustableClock({ start: new Date() });
         const fakeServer = await startE2eFakeProvider({
             provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
                 clock,
                 idNamespace: namespace,
                 honestAbout: [

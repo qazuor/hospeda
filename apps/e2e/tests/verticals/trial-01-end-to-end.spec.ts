@@ -107,7 +107,11 @@ test.describe('TEST:V4:23 AC:V4:17 the trial end to end @p0 @verticals @clock', 
         t0.setSeconds(0, 0);
         const clock = createAdjustableClock({ start: t0 });
         fakeServer = await startE2eFakeProvider({
-            provider: new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() }),
+            provider: new FakePaymentProvider({
+                allowLocalHttpReturnUrl: true,
+                clock,
+                idNamespace: crypto.randomUUID()
+            }),
             clock
         });
         capture = await startE2eMailCapture();

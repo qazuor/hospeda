@@ -55,6 +55,11 @@ export interface FakePaymentProviderOptions {
     readonly withoutBehaviour?: readonly WithoutBehaviour[];
     /** The simulations this test turns on. Empty: none. */
     readonly simulate?: readonly Simulate[];
+    /**
+     * Accept a plain-http page return URL on `localhost` or `127.0.0.1`, like the adapter
+     * outside production (HOS-2179). Omitted: https only, as in production.
+     */
+    readonly allowLocalHttpReturnUrl?: boolean;
 }
 
 const LIE_IDS = FAKE_LIES.map((lie) => lie.id);
@@ -109,7 +114,8 @@ export const FakePaymentProviderOptionsSchema = z.strictObject({
         .refine((entries) => new Set(entries.map((e) => e.behaviour)).size === entries.length, {
             message: 'each behaviour is turned off once'
         })
-        .default([])
+        .default([]),
+    allowLocalHttpReturnUrl: z.boolean().default(false)
 });
 
 /**
@@ -125,9 +131,11 @@ export function parseFakeOptions(args: { readonly options: FakePaymentProviderOp
     readonly honest: ReadonlySet<string>;
     readonly simulating: ReadonlySet<string>;
     readonly without: ReadonlySet<string>;
+    readonly allowLocalHttpReturnUrl: boolean;
 } {
     const parsed = FakePaymentProviderOptionsSchema.parse(args.options);
     return {
+        allowLocalHttpReturnUrl: parsed.allowLocalHttpReturnUrl,
         clock: parsed.clock,
         idNamespace: parsed.idNamespace,
         honest: new Set(parsed.honestAbout.map((entry) => entry.lie)),

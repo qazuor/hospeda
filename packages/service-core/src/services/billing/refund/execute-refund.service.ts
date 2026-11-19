@@ -7,6 +7,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import type { ApplyExecutedRefundResult } from '../payment/apply-executed-refund.service';
 import { executeAccreditedRefund, executeOrderRefund } from './execute-refund-order';
+import { readAddonRefundChannel } from './refund-addon-channel';
 
 const logger = createLogger('execute-refund');
 
@@ -108,16 +109,25 @@ export async function executeRefundFromProviderRead(
         acceptedIds.length + rejectedCount !== calls.length;
     const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
     if (!payment) throw new Error('Confirmed refund payment is missing');
-    if (payment.addonInstanceId !== null)
-        return executeOrderRefund({
-            input,
-            candidate,
-            payment,
-            acceptedIds,
-            awaitingProviderAnswer,
-            ports,
-            result
+    if (payment.addonInstanceId !== null) {
+        // HOS-2179 §5.11: a page-bought instance's payment is an ordinary charge and falls
+        // through to the charge read below; an old instance keeps the order path.
+        const { channel } = await readAddonRefundChannel({
+            db,
+            addonInstanceId: payment.addonInstanceId
         });
+        if (channel === 'ORDER')
+            return executeOrderRefund({
+                input,
+                candidate,
+                payment,
+                acceptedIds,
+                awaitingProviderAnswer,
+                ports,
+                result
+            });
+        if (channel === 'NONE') return result(input, 'NOT_APPLICABLE');
+    }
     if (calls.some((call) => call.addonInstanceId !== null)) return result(input, 'NOT_APPLICABLE');
     if (!awaitingProviderAnswer && acceptedIds.length === 0)
         return result(input, 'NOTHING_ACCEPTED');
