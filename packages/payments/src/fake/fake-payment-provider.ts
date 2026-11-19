@@ -23,6 +23,7 @@
  * `takeDeliveries` hands over the notices the fake sent and that are due.
  */
 import type { Clock } from '@repo/billing-verticals-contract';
+import type { z } from 'zod';
 import type { CapabilitySupportMap, PaymentCapability } from '../provider/capabilities';
 import type {
     AuthorizationRef,
@@ -69,10 +70,10 @@ import {
     ChargeRefSchema,
     ChargeSearchInputSchema,
     NoticeDeliverySchema,
-    OneTimePaymentInputSchema,
     OrderRefSchema,
     OrderRefundInputSchema,
     OrderSearchInputSchema,
+    oneTimePaymentInputSchemaFor,
     PaymentPageRefSchema,
     parseProviderInput,
     RefundInputSchema
@@ -121,6 +122,7 @@ export class FakePaymentProvider implements PaymentProvider {
     private readonly ledger: FakeLedger;
     private readonly orders: FakeOrders;
     private readonly pages: FakePaymentPages;
+    private readonly oneTimePaymentSchema: z.ZodType<OneTimePaymentInput>;
     private readonly clock: Clock;
     private readonly honest: Set<string>;
     private readonly simulating: ReadonlySet<string>;
@@ -156,6 +158,9 @@ export class FakePaymentProvider implements PaymentProvider {
         this.ledger = new FakeLedger({ outbox: this.outbox, idNamespace: parsed.idNamespace });
         this.orders = new FakeOrders({ ledger: this.ledger, clock: this.clock });
         this.pages = new FakePaymentPages({ ledger: this.ledger, clock: this.clock });
+        this.oneTimePaymentSchema = oneTimePaymentInputSchemaFor({
+            allowLocalHttpReturnUrl: parsed.allowLocalHttpReturnUrl
+        });
     }
 
     /** Restore a measured lie after an honest fixture setup, without replacing its ledger. */
@@ -441,7 +446,7 @@ export class FakePaymentProvider implements PaymentProvider {
     }
     /** Capability 2 · open a one-time payment page (HOS-2179); moves no money, no key dedupe (EX-61). */
     async requestOneTimePayment(input: OneTimePaymentInput): Promise<OneTimePaymentResult> {
-        const ref = { schema: OneTimePaymentInputSchema, input, capability: 'charge' } as const;
+        const ref = { schema: this.oneTimePaymentSchema, input, capability: 'charge' } as const;
         const { value } = parseProviderInput(ref);
         const run = () => this.pages.create(value);
         return throughNetwork({ simulating: this.simulating, capability: 'charge', run });

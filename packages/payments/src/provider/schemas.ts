@@ -76,16 +76,58 @@ export const OneTimeChargeInputSchema: z.ZodType<OneTimeChargeInput> = z.strictO
     paymentKind: z.enum(['credit', 'debit'])
 });
 
-/** Validates a one-time payment page request; it has no field for card data (HOS-2179 §6.2). */
-export const OneTimePaymentInputSchema: z.ZodType<OneTimePaymentInput> = z.strictObject({
-    reference: NonEmptyId,
-    idempotencyKey: NonEmptyId,
-    amount: PositiveMoneySchema,
-    reason: z.string().trim().min(1),
-    /** The customer comes back here from the provider's page: only https. */
-    returnUrl: z.url({ protocol: /^https$/ }),
-    expiresAt: z.iso.datetime({ offset: true })
-});
+/** The only hosts a plain-http return URL may name, and only outside production (HOS-2179). */
+const LOCAL_RETURN_HOSTS: ReadonlySet<string> = new Set(['localhost', '127.0.0.1']);
+
+/**
+ * Whether a return URL is acceptable: https always; plain http only when the caller allows
+ * local development and the host is exactly `localhost` or `127.0.0.1`.
+ */
+function isAcceptableReturnUrl(input: { readonly url: string; readonly allowLocalHttp: boolean }) {
+    const parsed = new URL(input.url);
+    if (parsed.protocol === 'https:') return true;
+    return (
+        input.allowLocalHttp &&
+        parsed.protocol === 'http:' &&
+        LOCAL_RETURN_HOSTS.has(parsed.hostname)
+    );
+}
+
+/**
+ * Builds the one-time payment page request schema (HOS-2179 §6.2: no field for card data).
+ * The customer comes back to `returnUrl` from the provider's page: https only, except that
+ * outside production `http://localhost` and `http://127.0.0.1` are accepted for local
+ * development (owner decision). The flag comes from the provider's own configuration.
+ *
+ * @param input.allowLocalHttpReturnUrl - True only outside production
+ * @returns The request schema
+ */
+export function oneTimePaymentInputSchemaFor(input: {
+    readonly allowLocalHttpReturnUrl: boolean;
+}): z.ZodType<OneTimePaymentInput> {
+    return z.strictObject({
+        reference: NonEmptyId,
+        idempotencyKey: NonEmptyId,
+        amount: PositiveMoneySchema,
+        reason: z.string().trim().min(1),
+        returnUrl: z
+            .url()
+            .refine(
+                (url) =>
+                    isAcceptableReturnUrl({ url, allowLocalHttp: input.allowLocalHttpReturnUrl }),
+                {
+                    message: input.allowLocalHttpReturnUrl
+                        ? 'returnUrl must be https, or http on localhost or 127.0.0.1'
+                        : 'returnUrl must be https'
+                }
+            ),
+        expiresAt: z.iso.datetime({ offset: true })
+    });
+}
+
+/** Validates a one-time payment page request with the production rule: https only. */
+export const OneTimePaymentInputSchema: z.ZodType<OneTimePaymentInput> =
+    oneTimePaymentInputSchemaFor({ allowLocalHttpReturnUrl: false });
 
 /** Identifies one payment page (capabilities 5 and 7). */
 export const PaymentPageRefSchema: z.ZodType<PaymentPageRef> = z.strictObject({
