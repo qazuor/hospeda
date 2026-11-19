@@ -294,7 +294,7 @@ root.
     (`packages/service-core/src/services/accommodation/accommodation.sync-featured-by-entitlement.ts`)
     still has no production caller and is dead code.
   - One-time (`UNA_VEZ`) visibility add-ons are hidden from the web purchase page
-    (`apps/web/src/lib/billing/addon-purchase.ts`) until HOS-2094.
+    (`apps/web/src/lib/billing/addon-purchase.ts`) until HOS-2179.
   - Public reads serialize `isFeatured` from that flag alone, through
     `resolvePublicIsFeatured` (`apps/api/src/utils/accommodation-featured.ts`).
   - There is still no owner-facing toggle (HOS-929).
