@@ -5,10 +5,10 @@ import {
     SIGNUP_CYCLE_LABEL_KEY,
     type SignupPendingAttempt
 } from '@/lib/billing/signup-checkout';
-import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './SignupCheckout.module.css';
+import { formatSignupAmount, SignupPromoLine } from './SignupPromoLine';
 
 /** Present the pending attempt returned by signupNotice and its available actions. */
 export function PendingAttemptPanel({
@@ -28,11 +28,10 @@ export function PendingAttemptPanel({
             ? attempt.checkoutUrl
             : undefined
     );
-    const amount = formatPrice({
-        amount: attempt.plan.amount / 100,
+    const amount = formatSignupAmount({
+        amount: attempt.plan.promo?.amount ?? attempt.plan.amount,
         currency: attempt.plan.currency,
-        locale,
-        showDecimals: attempt.plan.amount % 100 !== 0
+        locale
     });
     const cycle = t(SIGNUP_CYCLE_LABEL_KEY[attempt.plan.cycle]);
     const date = formatSignupWindowEnd({ iso: attempt.authorizationWindowEndsAt, locale });
@@ -52,6 +51,10 @@ export function PendingAttemptPanel({
                     date
                 })}
             </p>
+            <SignupPromoLine
+                plan={attempt.plan}
+                locale={locale}
+            />
             {attempt.takenBy === 'LIVE_PRINCIPAL' && (
                 <p data-testid="signup-checkout-taken-by">
                     {t('account.subscription.signupTakenBy.livePrincipal')}

@@ -64,6 +64,17 @@ export type SignupPlanSummary = {
     readonly currency: 'ARS';
     /** Billing cycle of the option (monthly or annual). */
     readonly cycle: BillingCycle;
+    /**
+     * Live promo on the pending subscription of this option (HOS-2382). Its
+     * `amount` is what the provider will charge, computed by the API.
+     */
+    readonly promo?: {
+        readonly codes: readonly string[];
+        /** Amount that will be charged, in minor units. */
+        readonly amount: number;
+        /** Charges the discount still covers; `null` when it lasts forever. */
+        readonly chargesLeft: number | null;
+    };
 };
 
 /** Pending attempt returned by the signup notice for another billing option. */

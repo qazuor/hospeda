@@ -243,6 +243,11 @@
             "title": "Confirm your subscription",
             "intro": "You will authorize the payment with Mercado Pago.",
             "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "promo": {
+                "limited_one": "With code {{code}}: {{amount}} {{cycle}} for {{count}} charge (then {{listAmount}}).",
+                "limited_other": "With code {{code}}: {{amount}} {{cycle}} for {{count}} charges (then {{listAmount}}).",
+                "forever": "With code {{code}}: {{amount}} {{cycle}}."
+            },
             "cycle": {
                 "monthly": "per month",
                 "quarterly": "per quarter",

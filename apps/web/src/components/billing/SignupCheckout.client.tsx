@@ -15,12 +15,12 @@ import {
     type SignupTouristVipNotice,
     type SignupTrialNotice
 } from '@/lib/billing/signup-checkout';
-import { formatPrice } from '@/lib/format-utils';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { PaidSignupsPausedNotice } from './PaidSignupsPausedNotice';
 import { PendingAttemptPanel } from './PendingAttemptPanel';
 import styles from './SignupCheckout.module.css';
+import { formatSignupAmount, SignupPromoLine } from './SignupPromoLine';
 
 /** Props for the minimum protected signup checkout island. */
 export interface SignupCheckoutProps {
@@ -228,14 +228,29 @@ export function SignupCheckout({
                         >
                             {t('billing.checkout.signup.planSummary', undefined, {
                                 plan: resolveSignupPlanName({ plan: planSummary, t }),
-                                amount: formatPrice({
-                                    amount: planSummary.amount / 100,
+                                amount: formatSignupAmount({
+                                    amount: planSummary.promo?.amount ?? planSummary.amount,
                                     currency: planSummary.currency,
-                                    locale,
-                                    showDecimals: planSummary.amount % 100 !== 0
+                                    locale
                                 }),
                                 cycle: t(SIGNUP_CYCLE_LABEL_KEY[planSummary.cycle])
                             })}
+                            {planSummary.promo && (
+                                <del
+                                    className={styles.listPrice}
+                                    data-testid="signup-checkout-list-price"
+                                >
+                                    {formatSignupAmount({
+                                        amount: planSummary.amount,
+                                        currency: planSummary.currency,
+                                        locale
+                                    })}
+                                </del>
+                            )}
+                            <SignupPromoLine
+                                plan={planSummary}
+                                locale={locale}
+                            />
                         </div>
                     )}
                     <div className={styles.payerEmailField}>
