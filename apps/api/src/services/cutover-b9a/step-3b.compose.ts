@@ -10,6 +10,7 @@ import {
     subscribeListingCoverageRecalculation
 } from '../../utils/listing-publication/coverage-listener.js';
 import { apiLogger } from '../../utils/logger.js';
+import { shutdownMercadoPagoTrafficGovernor } from '../../utils/mp-traffic-governor.js';
 import { defaultPaymentProvider, injectPaymentProvider } from '../../utils/payment-provider.js';
 import { disconnectRedis } from '../../utils/redis.js';
 import { subscribeTrialCoverageConversion } from '../../utils/trial/trial-coverage-listener.js';
@@ -43,7 +44,15 @@ export class Step3bOperatorUnresolvedError extends Error {
     }
 }
 
-/** Injects process dependencies and builds grant ports; stop waits for in-flight listing recalculations. */
+/**
+ * Injects process dependencies and builds grant ports.
+ *
+ * `stop` waits for in-flight listing recalculations, then releases every handle the
+ * composition opened so the operator script can exit by itself (HOS-2115): the shared
+ * Redis client and the Mercado Pago traffic governor that `defaultPaymentProvider`
+ * creates. In `enforce` mode the governor owns a Redis cool-down client whose retry
+ * strategy never gives up, so an unreachable Redis left a reconnect timer alive forever.
+ */
 export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
     readonly ports: ReturnType<typeof buildPermanentGrantPorts>;
     readonly stop: () => Promise<void>;
@@ -66,6 +75,7 @@ export function composeStep3bProcess(options: ComposeStep3bOptions = {}): {
             } catch (error) {
                 apiLogger.error({ error }, 'Failed to disconnect Redis after cutover step 3b');
             }
+            await shutdownMercadoPagoTrafficGovernor();
         }
     };
 }
