@@ -22,7 +22,6 @@ import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import {
     computeCourtesyBalanceMonths,
     createCutExpectedAmountPolicy,
-    isSuccessionCheckoutOpen,
     PAID_AFTER_CANCELLATION_TEMPLATE,
     readLivePromos,
     readResumableCheckoutUrl,
@@ -99,7 +98,7 @@ export async function readOwnSubscriptions(userId: string) {
     const pausesById = new Map(openPauses.map((pause) => [pause.subscriptionId, pause]));
     // HOS-2351: an open succession is read from its successor's `succeeds_id`, never from the
     // predecessor's `succeeded_by_id`, which S18 writes only when the succession closes.
-    const successors = (
+    const successors =
         ids.length === 0
             ? []
             : await getDb()
@@ -113,10 +112,11 @@ export async function readOwnSubscriptions(userId: string) {
                   .where(
                       and(
                           inArray(subscriptions.succeedsId, ids),
-                          eq(subscriptions.class, 'PRINCIPAL')
+                          eq(subscriptions.class, 'PRINCIPAL'),
+                          // The only live successor state with an open checkout (S1).
+                          eq(subscriptions.status, 'PENDING_AUTHORIZATION')
                       )
-                  )
-    ).filter((successor) => isSuccessionCheckoutOpen(successor.status));
+                  );
     const openSuccessorsByPredecessor = new Map(
         successors.map((successor) => [successor.succeedsId, successor])
     );
