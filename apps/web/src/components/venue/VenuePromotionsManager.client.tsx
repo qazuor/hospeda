@@ -14,6 +14,7 @@ import { showConfirmationDialog } from '@/lib/forms/show-confirmation-dialog';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
+import { VenuePromotionForm } from './VenuePromotionForm.client';
 import styles from './VenuePromotionsManager.module.css';
 
 type PromotionRow = VenuePromotionListOutput['items'][number];
@@ -27,16 +28,6 @@ function toDateInputValue(value: Date | string): string {
 /** Returns a timestamp for a serialized or parsed API date. */
 function toTimestamp(value: Date | string): number {
     return value instanceof Date ? value.getTime() : new Date(value).getTime();
-}
-
-/** Narrows a native select value to the venue promotion benefits in the schema. */
-function parseVenueDiscountType(value: string): VenueDiscountType | null {
-    if (value === OwnerPromotionDiscountTypeEnum.PERCENTAGE)
-        return OwnerPromotionDiscountTypeEnum.PERCENTAGE;
-    if (value === OwnerPromotionDiscountTypeEnum.FIXED) return OwnerPromotionDiscountTypeEnum.FIXED;
-    if (value === OwnerPromotionDiscountTypeEnum.SPECIAL_OFFER)
-        return OwnerPromotionDiscountTypeEnum.SPECIAL_OFFER;
-    return null;
 }
 
 interface Props {
@@ -66,6 +57,10 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
     const [discountValue, setDiscountValue] = useState('');
     const [validFrom, setValidFrom] = useState('');
     const [validUntil, setValidUntil] = useState('');
+    const [windowEnabled, setWindowEnabled] = useState(false);
+    const [windowWeekdays, setWindowWeekdays] = useState<number[]>([]);
+    const [windowStart, setWindowStart] = useState('');
+    const [windowEnd, setWindowEnd] = useState('');
     const [message, setMessage] = useState('');
     const [offerError, setOfferError] = useState('');
     const lockedWithoutPlan = sectionState === 'locked' && upsellPlanName === null;
@@ -121,6 +116,10 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
         setDiscountValue('');
         setValidFrom('');
         setValidUntil('');
+        setWindowEnabled(false);
+        setWindowWeekdays([]);
+        setWindowStart('');
+        setWindowEnd('');
         setFormOpen(false);
         setMessage('');
         setOfferError('');
@@ -138,6 +137,10 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
         setDiscountValue(item.discountValue === null ? '' : String(item.discountValue));
         setValidFrom(toDateInputValue(item.validFrom));
         setValidUntil(item.validUntil ? toDateInputValue(item.validUntil) : '');
+        setWindowEnabled(item.window !== null);
+        setWindowWeekdays(item.window?.weekdays ?? []);
+        setWindowStart(item.window?.startTime ?? '');
+        setWindowEnd(item.window?.endTime ?? '');
         setFormOpen(true);
     };
 
@@ -151,7 +154,10 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                 ? { specialOfferText: description }
                 : { discountValue: Number(discountValue) }),
             validFrom,
-            validUntil: validUntil || null
+            validUntil: validUntil || null,
+            window: windowEnabled
+                ? { weekdays: windowWeekdays, startTime: windowStart, endTime: windowEnd }
+                : null
         };
         const parsed = VenuePromotionCreateRequestSchema.safeParse(body);
         if (!parsed.success) {
@@ -381,114 +387,34 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
             </button>
             {message && <p role="status">{message}</p>}
             {(formOpen || editing) && (
-                <form
-                    className={styles.form}
+                <VenuePromotionForm
+                    locale={locale}
+                    titleInputRef={titleInputRef}
                     onSubmit={(event) => void submit(event)}
-                >
-                    <label>
-                        {t('venue.owner.editor.promotionsManager.name', 'Título')}
-                        <input
-                            ref={titleInputRef}
-                            required
-                            maxLength={200}
-                            value={title}
-                            onChange={(event) => setTitle(event.target.value)}
-                        />
-                    </label>
-                    <label>
-                        {t('venue.owner.editor.promotionsManager.discountType', 'Beneficio')}
-                        <select
-                            value={discountType}
-                            onChange={(event) => {
-                                const value = parseVenueDiscountType(event.target.value);
-                                if (value) setDiscountType(value);
-                            }}
-                        >
-                            <option value="percentage">
-                                {t('host.promotions.discountTypes.percentage', 'Porcentaje')}
-                            </option>
-                            <option value="fixed">
-                                {t('host.promotions.discountTypes.fixed', 'Monto')}
-                            </option>
-                            <option value="special_offer">
-                                {t(
-                                    'host.promotions.discountTypes.special_offer',
-                                    'Oferta especial'
-                                )}
-                            </option>
-                        </select>
-                    </label>
-                    {discountType === 'special_offer' ? (
-                        <label>
-                            {t('host.promotions.specialOffer.label', 'Contá el beneficio')}
-                            <textarea
-                                required
-                                maxLength={1000}
-                                value={description}
-                                onChange={(event) => {
-                                    setDescription(event.target.value);
-                                    setOfferError('');
-                                }}
-                            />
-                            <small>
-                                {t(
-                                    'host.promotions.specialOffer.help',
-                                    'Contá el beneficio en pocas palabras, por ejemplo 2x1 en tragos.'
-                                )}
-                            </small>
-                            <small>{description.length}/1000</small>
-                            {offerError && <small role="alert">{offerError}</small>}
-                        </label>
-                    ) : (
-                        <>
-                            <label>
-                                {t('venue.owner.editor.promotionsManager.value', 'Valor')}
-                                <input
-                                    required
-                                    type="number"
-                                    min="0"
-                                    max={discountType === 'percentage' ? 100 : undefined}
-                                    value={discountValue}
-                                    onChange={(event) => setDiscountValue(event.target.value)}
-                                />
-                            </label>
-                            <label>
-                                {t('venue.owner.editor.promotionsManager.condition', 'Condición')}
-                                <textarea
-                                    maxLength={1000}
-                                    value={description}
-                                    onChange={(event) => setDescription(event.target.value)}
-                                />
-                            </label>
-                        </>
-                    )}
-                    <label>
-                        {t('venue.owner.editor.promotionsManager.validFrom', 'Válida desde')}
-                        <input
-                            required
-                            type="date"
-                            value={validFrom}
-                            onChange={(event) => setValidFrom(event.target.value)}
-                        />
-                    </label>
-                    <label>
-                        {t('venue.owner.editor.promotionsManager.validUntil', 'Válida hasta')}
-                        <input
-                            type="date"
-                            value={validUntil}
-                            onChange={(event) => setValidUntil(event.target.value)}
-                        />
-                    </label>
-                    <button type="submit">
-                        {t('venue.owner.editor.promotionsManager.actions.save')}
-                    </button>
-                    <button
-                        type="button"
-                        onClick={resetForm}
-                    >
-                        {t('common.cancel', 'Cancelar')}
-                    </button>
-                </form>
+                    onCancel={resetForm}
+                    title={title}
+                    setTitle={setTitle}
+                    description={description}
+                    setDescription={setDescription}
+                    discountType={discountType}
+                    setDiscountType={setDiscountType}
+                    discountValue={discountValue}
+                    setDiscountValue={setDiscountValue}
+                    validFrom={validFrom}
+                    setValidFrom={setValidFrom}
+                    validUntil={validUntil}
+                    setValidUntil={setValidUntil}
+                    offerError={offerError}
+                    setOfferError={setOfferError}
+                    windowEnabled={windowEnabled}
+                    setWindowEnabled={setWindowEnabled}
+                    windowWeekdays={windowWeekdays}
+                    setWindowWeekdays={setWindowWeekdays}
+                    windowStart={windowStart}
+                    setWindowStart={setWindowStart}
+                    windowEnd={windowEnd}
+                    setWindowEnd={setWindowEnd}
+                />
             )}
         </section>
     );

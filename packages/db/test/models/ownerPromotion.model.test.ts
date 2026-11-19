@@ -49,8 +49,20 @@ describe('OwnerPromotionModel', () => {
                     from: vi.fn().mockReturnValue({
                         where: vi.fn().mockReturnValue({
                             groupBy: vi.fn().mockResolvedValue([
-                                { entityId: 'venue-plus', hasPlus: true },
-                                { entityId: 'venue-vip', hasPlus: false }
+                                {
+                                    entityId: 'venue-plus',
+                                    hasPlus: true,
+                                    windowWeekdays: [4, 5],
+                                    windowStart: '18:00:00',
+                                    windowEnd: '20:00:00'
+                                },
+                                {
+                                    entityId: 'venue-vip',
+                                    hasPlus: false,
+                                    windowWeekdays: null,
+                                    windowStart: null,
+                                    windowEnd: null
+                                }
                             ])
                         })
                     })
@@ -62,8 +74,18 @@ describe('OwnerPromotionModel', () => {
                 venueIds: ['venue-plus', 'venue-vip']
             });
 
-            expect(badges.get('venue-plus')).toEqual({ hasPromo: true, vipOnly: false });
-            expect(badges.get('venue-vip')).toEqual({ hasPromo: true, vipOnly: true });
+            expect(badges.get('venue-plus')).toEqual({
+                hasPromo: true,
+                vipOnly: false,
+                hasUnscheduled: false,
+                windows: [{ weekdays: [4, 5], startTime: '18:00', endTime: '20:00' }]
+            });
+            expect(badges.get('venue-vip')).toEqual({
+                hasPromo: true,
+                vipOnly: true,
+                hasUnscheduled: true,
+                windows: []
+            });
             expect(db.select).toHaveBeenCalledTimes(1);
         });
 

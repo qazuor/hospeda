@@ -13,7 +13,68 @@ import { z } from 'zod';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnum } from '../../enums/owner-promotion-discount-type.enum.js';
 import { TouristAudienceEnum } from '../../enums/tourist-audience.enum.js';
+import { VenueEventTimeSchema } from '../venue/subtypes/venue.event.schema.js';
 import { OwnerPromotionObjectSchema } from './owner-promotion.schema.js';
+
+/** Weekly recurring time range for a venue promotion. Sunday is 0. */
+export const PromotionWindowSchema = z.object({
+    weekdays: z.array(z.number().int().min(0).max(6)).min(1).max(7),
+    startTime: VenueEventTimeSchema,
+    endTime: VenueEventTimeSchema
+});
+export type PromotionWindow = z.infer<typeof PromotionWindowSchema>;
+
+/** Maps the additive database columns to the public window object. */
+export function toPromotionWindow(value: {
+    readonly windowWeekdays?: readonly number[] | null;
+    readonly windowStart?: string | null;
+    readonly windowEnd?: string | null;
+}): PromotionWindow | null {
+    if (value.windowWeekdays == null || value.windowStart == null || value.windowEnd == null)
+        return null;
+    return {
+        weekdays: [...value.windowWeekdays],
+        startTime: value.windowStart.slice(0, 5),
+        endTime: value.windowEnd.slice(0, 5)
+    };
+}
+
+/** Maps a public window object to nullable database columns. */
+export function fromPromotionWindow(window: PromotionWindow | null | undefined): {
+    readonly windowWeekdays: number[] | null;
+    readonly windowStart: string | null;
+    readonly windowEnd: string | null;
+} {
+    return window == null
+        ? { windowWeekdays: null, windowStart: null, windowEnd: null }
+        : {
+              windowWeekdays: [...window.weekdays],
+              windowStart: window.startTime,
+              windowEnd: window.endTime
+          };
+}
+
+/** Adds window completeness and non-ambiguous interval validation. */
+const refinePromotionWindow = (
+    value: { window?: PromotionWindow | null },
+    ctx: z.RefinementCtx
+): void => {
+    const window = value.window;
+    if (window && new Set(window.weekdays).size !== window.weekdays.length) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['window', 'weekdays'],
+            message: 'zodError.ownerPromotion.window.duplicateWeekday'
+        });
+    }
+    if (window && window.startTime === window.endTime) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['window', 'endTime'],
+            message: 'zodError.ownerPromotion.window.sameTime'
+        });
+    }
+};
 
 /** Upper bound of a `special_offer` text; it is stored in `description` (max 1000). */
 export const VENUE_SPECIAL_OFFER_TEXT_MAX_LENGTH = 1000;
@@ -68,7 +129,8 @@ const venuePromotionFields = {
         .literal(TouristAudienceEnum.PLUS, {
             error: () => ({ message: 'zodError.ownerPromotion.touristAudience.venuePlusOnly' })
         })
-        .default(TouristAudienceEnum.PLUS)
+        .default(TouristAudienceEnum.PLUS),
+    window: PromotionWindowSchema.nullable().optional()
 };
 
 /** Validates the benefit of a venue promotion body (types, value and free text). */
@@ -157,7 +219,10 @@ const refineVenueBenefit = (
 export const VenuePromotionCreateRequestSchema = z
     .object(venuePromotionFields)
     .strict()
-    .superRefine(refineVenueBenefit);
+    .superRefine((value, ctx) => {
+        refineVenueBenefit(value, ctx);
+        refinePromotionWindow(value, ctx);
+    });
 export type VenuePromotionCreateRequest = z.infer<typeof VenuePromotionCreateRequestSchema>;
 
 const { touristAudience: _touristAudience, ...updatableFields } = venuePromotionFields;
@@ -180,7 +245,10 @@ export const VenuePromotionUpdateRequestSchema = z
     })
     .partial()
     .strict()
-    .superRefine(refineVenueBenefit);
+    .superRefine((value, ctx) => {
+        refineVenueBenefit(value, ctx);
+        refinePromotionWindow(value, ctx);
+    });
 export type VenuePromotionUpdateRequest = z.infer<typeof VenuePromotionUpdateRequestSchema>;
 
 /** A venue promotion as the owner sees it. */
@@ -200,7 +268,7 @@ export const VenuePromotionProtectedSchema = OwnerPromotionObjectSchema.pick({
     validUntil: true,
     createdAt: true,
     updatedAt: true
-});
+}).extend({ window: PromotionWindowSchema.nullable() });
 export type VenuePromotionProtected = z.infer<typeof VenuePromotionProtectedSchema>;
 
 /** Narrow public shape for currently visible PLUS promotions on a venue detail. */
@@ -212,7 +280,7 @@ export const VenuePromotionPublicSchema = OwnerPromotionObjectSchema.pick({
     discountValue: true,
     validFrom: true,
     validUntil: true
-});
+}).extend({ window: PromotionWindowSchema.nullable() });
 export type VenuePromotionPublic = z.infer<typeof VenuePromotionPublicSchema>;
 
 /** Public response for GET /public/venues/{id}/promotions. */

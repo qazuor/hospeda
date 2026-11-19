@@ -1674,6 +1674,13 @@
       "when": 1795041949646,
       "tag": "0238_hos2255_venue_event_ticket_url",
       "breakpoints": true
+    },
+    {
+      "idx": 239,
+      "version": "7",
+      "when": 1795048579974,
+      "tag": "0239_hos2272_promotion_window",
+      "breakpoints": true
     }
   ]
 }

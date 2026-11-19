@@ -3753,6 +3753,12 @@
         "validUntil": {
             "beforeValidFrom": "The end date must be after the start date",
             "invalid": "La fecha de fin no es válida"
+        },
+        "window": {
+            "duplicateWeekday": "Do not repeat days in the weekly window",
+            "incomplete": "Choose the days and complete time range for the window",
+            "invalid": "Check the days and time range for the window",
+            "sameTime": "The end time must differ from the start time"
         }
     },
     "pagination": {

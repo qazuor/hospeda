@@ -1,6 +1,6 @@
 /** Public, session-blind read of a venue's current PLUS promotions (HOS-2271). */
 import { ownerPromotionModel } from '@repo/db';
-import { ServiceErrorCode, VenuePromotionPublicListSchema } from '@repo/schemas';
+import { ServiceErrorCode, toPromotionWindow, VenuePromotionPublicListSchema } from '@repo/schemas';
 import { ServiceError, VenueService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -42,7 +42,10 @@ export const publicGetVenuePromotionsRoute = createPublicRoute({
                     discountType,
                     discountValue,
                     validFrom,
-                    validUntil
+                    validUntil,
+                    windowWeekdays,
+                    windowStart,
+                    windowEnd
                 }) => ({
                     id,
                     title,
@@ -50,7 +53,8 @@ export const publicGetVenuePromotionsRoute = createPublicRoute({
                     discountType,
                     discountValue,
                     validFrom,
-                    validUntil
+                    validUntil,
+                    window: toPromotionWindow({ windowWeekdays, windowStart, windowEnd })
                 })
             )
         };

@@ -48,7 +48,8 @@
         "opensAt": "Abre às {{time}}",
         "featured": "Destaque",
         "promo": "Oferta",
-        "promoVip": "Oferta VIP"
+        "promoVip": "Oferta VIP",
+        "promoNow": "Agora"
     },
     "detail": {
         "address": {
@@ -158,7 +159,22 @@
         "promotions": {
             "title": "Promoções",
             "validUntil": "Até {{date}}",
-            "noEndDate": "Sem data de término"
+            "noEndDate": "Sem data de término",
+            "window": {
+                "days": {
+                    "0": "Seg",
+                    "1": "Ter",
+                    "2": "Qua",
+                    "3": "Qui",
+                    "4": "Sex",
+                    "5": "Sáb.",
+                    "6": "Dom."
+                },
+                "to": "até",
+                "and": "e",
+                "everyDay": "Todos os dias",
+                "now": "Agora"
+            }
         }
     },
     "types": {
@@ -440,6 +456,14 @@
                 "condition": "Condições",
                 "validFrom": "Válida a partir de",
                 "validUntil": "Válida até",
+                "window": {
+                    "title": "Somente em certos dias e horários",
+                    "enable": "Definir horário semanal",
+                    "start": "A partir de",
+                    "end": "Até",
+                    "overnight": "Termina depois da meia-noite do dia seguinte",
+                    "eventsHint": "Para um evento fixo da agenda, adicione em Eventos. Use este campo para o benefício."
+                },
                 "invalid": "Confira os campos do formulário.",
                 "locked": "Disponível no plano {{plan}}.",
                 "lockedNoPlan": "Este recurso ainda não está disponível no seu plano.",

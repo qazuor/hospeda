@@ -48,7 +48,8 @@
         "opensAt": "Opens at {{time}}",
         "featured": "Featured",
         "promo": "Deal",
-        "promoVip": "VIP deal"
+        "promoVip": "VIP deal",
+        "promoNow": "Now"
     },
     "detail": {
         "address": {
@@ -158,7 +159,22 @@
         "promotions": {
             "title": "Promotions",
             "validUntil": "Until {{date}}",
-            "noEndDate": "No end date"
+            "noEndDate": "No end date",
+            "window": {
+                "days": {
+                    "0": "Mon",
+                    "1": "Tue",
+                    "2": "Wed",
+                    "3": "Thu",
+                    "4": "Fri",
+                    "5": "Sat",
+                    "6": "Sun"
+                },
+                "to": "to",
+                "and": "and",
+                "everyDay": "Every day",
+                "now": "Now"
+            }
         }
     },
     "types": {
@@ -440,6 +456,14 @@
                 "condition": "Conditions",
                 "validFrom": "Valid from",
                 "validUntil": "Valid until",
+                "window": {
+                    "title": "Only on certain days and times",
+                    "enable": "Set a weekly time window",
+                    "start": "From",
+                    "end": "Until",
+                    "overnight": "Ends after midnight on the following day",
+                    "eventsHint": "For a regular agenda event, add it under Events. Use this field for the benefit."
+                },
                 "invalid": "Check the form fields.",
                 "locked": "Available with the {{plan}} plan.",
                 "lockedNoPlan": "This feature is not available on your plan yet.",
