@@ -170,6 +170,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4553
+    {
+        id: '2026-11-19-unfinished-plan-change-stops-blocking',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Un cambio de plan que no terminaste ya no te traba la suscripción',
+            en: 'A plan change you did not finish no longer blocks your subscription',
+            pt: 'Uma troca de plano que você não terminou não trava mais sua assinatura'
+        },
+        body: {
+            es: 'Si empezaste un cambio de plan y no completaste el pago, cuando ese intento vence o lo reiniciás tu suscripción vuelve a la normalidad: podés usar códigos promocionales y registrar pagos como siempre.',
+            en: 'If you started a plan change and did not complete the payment, once that attempt expires or you start it again your subscription goes back to normal: you can use promo codes and payments are recorded as usual.',
+            pt: 'Se você começou uma troca de plano e não concluiu o pagamento, quando essa tentativa vence ou você a reinicia sua assinatura volta ao normal: você pode usar códigos promocionais e os pagamentos são registrados como sempre.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4549
     {
         id: '2026-11-19-addon-purchase-errors-explained',
