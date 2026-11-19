@@ -2,7 +2,7 @@
  * The fake's two closed lists (DEC-TEST-003, AC:B1:9), and what it simulates
  * apart.
  *
- * - **The measured lies**, M1..M13: what the real provider does on purpose that
+ * - **The measured lies**, M1..M14: what the real provider does on purpose that
  *   a reasonable provider would not. Each row carries its three data: its name,
  *   the matrix rows it comes from (with date and account), and the test that
  *   proves our code resists it. By default the fake tells every lie it
@@ -133,7 +133,7 @@ export function parseFakeLists(args: { readonly input: unknown }): { readonly li
 /** The lists, validated at load: a broken file fails the import, never empties a list. */
 export const FAKE_LISTS: FakeLists = Object.freeze(parseFakeLists({ input: fakeListsJson }).lists);
 
-/** The closed list of measured lies, M1..M13. */
+/** The closed list of measured lies, M1..M14. */
 export const FAKE_LIES: readonly FakeLie[] = FAKE_LISTS.lies;
 
 /** The provider's own rules and measured behaviour, RP1..RP20. */
@@ -142,7 +142,7 @@ export const FAKE_RULES: readonly FakeRule[] = FAKE_LISTS.rules;
 /** What the fake simulates without having measured it. */
 export const FAKE_SIMULATIONS: readonly FakeSimulation[] = FAKE_LISTS.simulations;
 
-/** The id of a measured lie (`M1`..`M13`); membership is checked at runtime. */
+/** The id of a measured lie (`M1`..`M14`); membership is checked at runtime. */
 export type FakeLieId = `M${number}`;
 
 /** The id of a simulation; membership is checked at runtime. */

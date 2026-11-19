@@ -185,6 +185,59 @@ describe('closeWatchRun', () => {
         expect(h.enqueue).not.toHaveBeenCalled();
     });
 
+    it('mails a failed run with its reason and the errored alert, one mail per SUPER_ADMIN (HOS-2385)', async () => {
+        h.listSuperAdminRecipients.mockResolvedValue([
+            { userId: 'u1', email: 'a@example.test' },
+            { userId: 'u2', email: 'b@example.test' }
+        ]);
+        const errored = {
+            measurementId: 'M1',
+            kind: 'measurement_errored' as const,
+            expected: 1,
+            obtained: null,
+            details: ['bad paging']
+        };
+        await closeWatchRun({
+            runId: 'run-1',
+            run: run({
+                outcome: 'failed',
+                reason: 'M1 could not be read: bad paging',
+                alerts: [errored]
+            }),
+            correlationId: 'c-1'
+        });
+        expect(h.enqueue).toHaveBeenCalledTimes(2);
+        expect(h.enqueue.mock.calls.map((call) => call[0].recipientUserId)).toEqual(['u1', 'u2']);
+        expect(h.enqueue.mock.calls[0]?.[0].payload).toMatchObject({
+            run: { outcome: 'failed', reason: 'M1 could not be read: bad paging' },
+            alerts: [{ measurementId: 'M1', kind: 'measurement_errored', details: ['bad paging'] }]
+        });
+    });
+
+    it('mails a failed run even when it has no alert (HOS-2385)', async () => {
+        h.listSuperAdminRecipients.mockResolvedValue([{ userId: 'u1', email: 'a@example.test' }]);
+        await closeWatchRun({
+            runId: 'run-1',
+            run: run({ outcome: 'failed', reason: 'deadline' }),
+            correlationId: 'c-1'
+        });
+        expect(h.enqueue).toHaveBeenCalledTimes(1);
+        expect(h.enqueue.mock.calls[0]?.[0].payload.run).toEqual({
+            outcome: 'failed',
+            reason: 'deadline'
+        });
+    });
+
+    it('does not state a run on the mail of a completed run (HOS-2385)', async () => {
+        h.listSuperAdminRecipients.mockResolvedValue([{ userId: 'u1', email: 'a@example.test' }]);
+        await closeWatchRun({
+            runId: 'run-1',
+            run: run({ alerts: [alert] }),
+            correlationId: 'c-1'
+        });
+        expect(h.enqueue.mock.calls[0]?.[0].payload).not.toHaveProperty('run');
+    });
+
     it('closes the run and queues one mail per SUPER_ADMIN in ONE transaction, recording the channel', async () => {
         h.listSuperAdminRecipients.mockResolvedValue([
             { userId: 'u1', email: 'a@example.test' },
@@ -298,6 +351,7 @@ describe('closeWatchRun', () => {
     });
 
     it('stores the reason and outcome of a run that did not complete', async () => {
+        h.listSuperAdminRecipients.mockResolvedValue([{ userId: 'u1', email: 'a@example.test' }]);
         await closeWatchRun({
             runId: 'run-1',
             run: run({ outcome: 'aborted', reason: 'WRONG_ACCOUNT: x' }),

@@ -293,7 +293,7 @@ describe('update_listing_basic (venue, experience)', () => {
 
             // Assert
             expect(failure.code).toBe('VALIDATION_ERROR');
-            expect(failure.message).toContain('zodError.listing.description.min');
+            expect(failure.message).toContain('La descripción debe tener al menos');
             expect(failure.message.match(/campo «description»/g)).toHaveLength(1);
         });
 

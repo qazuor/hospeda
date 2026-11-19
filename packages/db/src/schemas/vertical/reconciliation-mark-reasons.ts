@@ -29,6 +29,21 @@ export const RECONCILIATION_MARK_REASONS = [
 /** One value of the closed MOT:1–MOT:24 catalog (B3.md AC:B3:16). */
 export type ReconciliationMarkReason = (typeof RECONCILIATION_MARK_REASONS)[number];
 
+/**
+ * The reasons a mark may carry when it hangs from a one-time addon instance instead of a
+ * subscription (HOS-2179): the paid order or page without a live instance (MOT:23), an
+ * approved payment of another amount (MOT:5, AC-8) and a second approved payment (MOT:20,
+ * AC-11). MOT:23 hangs only from an instance; the other two may hang from either.
+ */
+export const ADDON_INSTANCE_MARK_REASONS = [
+    'DIVERGENCIA_DE_MONTO',
+    'COBRO_DUPLICADO',
+    'ORDEN_PAGADA_SIN_INSTANCIA'
+] as const satisfies readonly ReconciliationMarkReason[];
+
+/** One reason a mark on an addon instance may carry (HOS-2179). */
+export type AddonInstanceMarkReason = (typeof ADDON_INSTANCE_MARK_REASONS)[number];
+
 /** Closed default proposals for MOT:1–MOT:24 (B3.md AC:B3:16). */
 export const RECONCILIATION_MARK_DEFAULT_PROPOSALS = [
     'REFUND',

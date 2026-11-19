@@ -52,6 +52,7 @@ import {
     fetchVenueFeatures
 } from '../../../utils/listing-catalog-relations';
 import { defineTool, type ToolErrorPayload, type ToolHandlerResult } from '../tool-definition';
+import { buildListingContext, type ListingContext } from './get-listing-context';
 import { listingRefusalLink, readListingRef } from './listing-refusal-actions';
 import {
     type ListingToolVertical,
@@ -320,6 +321,9 @@ export async function readOwnListingRow(args: {
     });
 }
 
+/** `get_listing` result: the detail plus where it is and what it offers (HOS-2377). */
+export type ListingDetailWithContext = ListingDetail & ListingContext;
+
 /**
  * `get_listing`: read-only, available to an unverified email exactly as the
  * HTTP get-own routes are (`READ_OWN`).
@@ -328,7 +332,7 @@ export const getListingTool = defineTool({
     name: 'get_listing',
     title: 'Ver publicación',
     description:
-        'Reads one listing the connected Hospeda user owns: its name, publication status, public URL (only when published) and the fields update_listing_basic can change. Accommodations return summary, description, phone, website, amenities and features (accommodations have no opening hours). Venues and experiences return description, openingHours, contactInfo, amenities and features. Amenities and features come as { id, slug }. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings.',
+        'Reads one listing the connected Hospeda user owns: its name, publication status, public URL (only when published), where it is (address and destination name) and what it offers (amenityNames and featureNames: the características, servicios and comodidades as Spanish names, capped; get_listing_amenities has the full grouped catalog). Use it for «qué características tiene», «qué servicios/comodidades ofrece» and «dónde queda». It also returns the fields update_listing_basic can change. Accommodations return summary, description, phone, website, amenities and features (accommodations have no opening hours). Venues and experiences return description, openingHours, contactInfo, amenities and features. Amenities and features come as { id, slug }. A listing that does not exist or belongs to someone else is reported as not found. Take vertical and id from list_my_listings.',
     inputSchema: GetListingInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
@@ -336,6 +340,25 @@ export const getListingTool = defineTool({
         const ref = readListingRef({ input });
         return ref === undefined ? undefined : listingRefusalLink({ error, ref });
     },
-    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetail>> =>
-        readOwnListingDetail({ actor, vertical: input.vertical, id: input.id })
+    handler: async ({ actor, input }): Promise<ToolHandlerResult<ListingDetailWithContext>> => {
+        const detail = await readOwnListingDetail({
+            actor,
+            vertical: input.vertical,
+            id: input.id
+        });
+        if (!detail.data) {
+            return detail as ToolHandlerResult<never>;
+        }
+        // Owner-only: the same get-own gate again, for the row's address and destination.
+        const owned = await readOwnListingRow({ actor, vertical: input.vertical, id: input.id });
+        if (owned.error) {
+            return owned.error;
+        }
+        const context = await buildListingContext({
+            row: owned.row,
+            amenities: detail.data.amenities,
+            features: detail.data.features
+        });
+        return { data: { ...detail.data, ...context } };
+    }
 });

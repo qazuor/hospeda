@@ -335,7 +335,7 @@ describe('update_listing_basic (accommodation)', () => {
         });
 
         // Assert
-        expect(failure.message).toContain('zodError.accommodation.description.min');
+        expect(failure.message).toContain('La descripción debe tener al menos 30 caracteres');
     });
 
     it("answers another user's accommodation as not found, without writing (AC-6)", async () => {

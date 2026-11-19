@@ -63,7 +63,7 @@ The fake does not simulate a reasonable provider: it reproduces what the real
 one was MEASURED doing (DEC-TEST-003). `src/fake/fake-lists.json` holds two
 closed lists and one apart, validated at load (`FAKE_LISTS`):
 
-- **`lies`, M1..M13**: each row has its name, the matrix rows it comes from
+- **`lies`, M1..M14**: each row has its name, the matrix rows it comes from
   (date and account) and the test that proves our code resists it
   (`defenseTest`).
 - **`rules`, RP1..RP20**: provider rules and measured behaviour. Rules stay on;
@@ -88,7 +88,7 @@ payment interface carries, M3 (a duplicate per equal request), M5 (no notice of
 an amount change), M6 (notices late, repeated or never; a refund in three
 deliveries and two formats; a charge once per channel), M8 (a charge lands at
 minute :02 of the next hour), M10 (the broken link), M11 (an open link never
-expires), M13 (the first partial refund refused as not refundable), M1 on
+expires), M13 (the first partial refund refused as not refundable), M14 (the order search counts in text: `paging.total` is a string of digits), M1 on
 creation and M9 on a future first charge; and RP1 to RP9, RP11 and RP13 (RP7, RP8 and RP11 are switchable by name; RP13, the order search bounds of EX-57, is a rule). One-time orders enter the fake only through the test handle `placeOrder`; the fake HTTP server serves provider-shaped `readOrder`/`searchOrders` responses from those orders.
 One-time payment pages (HOS-2179) follow RP18 (a page takes more than one
 approved payment until it expires), RP19 (an expired page takes no payment, and

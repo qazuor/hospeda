@@ -197,7 +197,8 @@
                 "title": "Usos registrados",
                 "empty": "Você ainda não registrou nenhum uso do benefício.",
                 "declaredByYou": "Você registrou",
-                "declaredByHost": "O anfitrião registrou"
+                "declaredByHost": "O anfitrião registrou",
+                "declaredByHostNamed": "Registrado por {{name}}"
             },
             "suspended": {
                 "title": "Você não pode registrar usos por enquanto",
@@ -213,7 +214,8 @@
             "pending": {
                 "title": "Aguardam a sua confirmação",
                 "empty": "Você não tem usos pendentes de confirmação.",
-                "declaredByHost": "O anfitrião registrou este uso. Confirme para que conte nos seus números."
+                "declaredByHost": "O anfitrião registrou este uso. Confirme para que conte nos seus números.",
+                "declaredByHostNamed": "{{name}} registrou este uso. Confirme para que conte nos seus números."
             },
             "counterpart": "o anfitrião"
         },

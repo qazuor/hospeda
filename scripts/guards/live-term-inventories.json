@@ -447,6 +447,12 @@
             "symbol": "readReconciliationSubjects",
             "row": null,
             "why": "El mail de resumen de conciliación (HOS-1971) lee las marcas abiertas (levantada_en nula) de los sujetos que nombra, sólo para mostrar desde cuándo están abiertas y enlazar a su detalle en el panel; no decide nada con el término."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time-page.ts",
+            "symbol": "divergenceLiftedFor",
+            "row": null,
+            "why": "HOS-2179: A2 de página busca una DIVERGENCIA_DE_MONTO ya levantada que nombre este mismo cobro del proveedor, para no reabrirla al releer el mismo cobro todavía aprobado; lee lifted_at sólo como «una persona ya la resolvió», no como estado de origen."
         }
     ],
     "cortesia_diferida": [

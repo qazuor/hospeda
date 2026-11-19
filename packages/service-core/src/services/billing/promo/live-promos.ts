@@ -18,6 +18,8 @@ import {
 export interface LivePromo {
     readonly redemptionId: string;
     readonly promoCodeId: string;
+    /** The customer-facing code, shown on the checkout confirmation (HOS-2382). */
+    readonly code: string;
     readonly discountKind: 'PERCENTAGE' | 'FIXED';
     readonly value: number;
     readonly remainingCharges: number | null;
@@ -47,6 +49,7 @@ export async function readLivePromos(input: {
         .select({
             redemptionId: promoRedemptions.id,
             promoCodeId: promoCodes.id,
+            code: promoCodes.code,
             discountKind: promoCodes.discountKind,
             value: promoCodes.value,
             remainingCharges: promoRedemptions.remainingCharges,
@@ -92,6 +95,7 @@ export async function readPromosInForceAt(input: {
         .select({
             redemptionId: promoRedemptions.id,
             promoCodeId: promoCodes.id,
+            code: promoCodes.code,
             discountKind: promoCodes.discountKind,
             value: promoCodes.value,
             remainingCharges: promoRedemptions.remainingCharges,
@@ -134,6 +138,7 @@ export async function readPromosInForceAt(input: {
             {
                 redemptionId: row.redemptionId,
                 promoCodeId: row.promoCodeId,
+                code: row.code,
                 discountKind,
                 value,
                 remainingCharges: remainingAtCharge,

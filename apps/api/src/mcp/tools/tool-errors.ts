@@ -14,6 +14,7 @@
  *   from structured `details`, and Spanish `reasonMessages`, are shown.
  */
 
+import { resolveValidationMessage, trans } from '@repo/i18n';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ToolAction, ToolErrorCode, ToolErrorPayload } from './tool-definition';
 
@@ -133,6 +134,72 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Message shown for an i18n key that has no translation (never the raw key). */
+const UNTRANSLATED_MESSAGE = 'valor inválido';
+
+/** Matches the `zodError.*` / `validationError.*` keys schemas emit as messages. */
+const VALIDATION_KEY_PATTERN = /^(zodError|validationError)\.[\w.]+$/;
+
+/**
+ * Spanish `t` over the `@repo/i18n` catalogue. The MCP surface always answers
+ * in Spanish (see `SPANISH_PARSE_PARAMS`), so there is no locale to select.
+ * An absent key is echoed back, which `resolveValidationMessage` detects.
+ */
+function translateEs(key: string, params?: Record<string, unknown>): string {
+    const text = trans.es?.[key];
+    if (typeof text !== 'string' || text.length === 0) {
+        return key;
+    }
+    return params === undefined
+        ? text
+        : text.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, name: string) =>
+              name in params ? String(params[name]) : match
+          );
+}
+
+/**
+ * Resolves a validator message to Spanish with the same resolver the web form
+ * uses (`resolveValidationMessage`). A message that is not a validation key
+ * passes through unchanged; a key with no translation, or one whose
+ * placeholders could not be filled, becomes {@link UNTRANSLATED_MESSAGE}.
+ */
+function localizeMessage({
+    message,
+    params
+}: {
+    readonly message: string;
+    readonly params?: Record<string, unknown>;
+}): string {
+    if (!VALIDATION_KEY_PATTERN.test(message)) {
+        return message;
+    }
+    const resolved = resolveValidationMessage({ key: message, t: translateEs, params });
+    return resolved === message || resolved.includes('{{') ? UNTRANSLATED_MESSAGE : resolved;
+}
+
+/** Interpolation params a Zod issue can supply to a message. */
+function issueParams(issue: Readonly<Record<string, unknown>>): Record<string, unknown> {
+    const params: Record<string, unknown> = isRecord(issue.params) ? { ...issue.params } : {};
+    if (issue.minimum !== undefined) params.min = issue.minimum;
+    if (issue.maximum !== undefined) params.max = issue.maximum;
+    return params;
+}
+
+/**
+ * The `params` a re-added `custom` issue must carry so the original issue's
+ * `min`/`max` still fill the message placeholders (`addIssue({ code: 'custom' })`
+ * drops `minimum`/`maximum`). Spread it into the re-added issue.
+ *
+ * @param args - The issue being re-added
+ * @returns `{ params }` when it has bounds, otherwise an empty object
+ */
+export function carryIssueParams({ issue }: { readonly issue: object }): {
+    readonly params?: Record<string, unknown>;
+} {
+    const params = issueParams(issue as Readonly<Record<string, unknown>>);
+    return Object.keys(params).length > 0 ? { params } : {};
+}
+
 /** Reads `[{ path, message }]` (Zod issues). */
 function readIssueList(details: unknown): FieldDetail[] {
     if (!Array.isArray(details)) {
@@ -143,7 +210,12 @@ function readIssueList(details: unknown): FieldDetail[] {
             return [];
         }
         const path = Array.isArray(issue.path) ? issue.path.map(String).join('.') : '';
-        return [{ field: path, message: issue.message }];
+        return [
+            {
+                field: path,
+                message: localizeMessage({ message: issue.message, params: issueParams(issue) })
+            }
+        ];
     });
 }
 
@@ -157,7 +229,7 @@ function readFlattened(details: Readonly<Record<string, unknown>>): FieldDetail[
         Array.isArray(messages)
             ? messages
                   .filter((m): m is string => typeof m === 'string')
-                  .map((message) => ({ field, message }))
+                  .map((message) => ({ field, message: localizeMessage({ message }) }))
             : []
     );
 }
@@ -168,6 +240,19 @@ function readFlattened(details: Readonly<Record<string, unknown>>): FieldDetail[
  * result, `{ issues }`, or `{ field, message? }`. Unknown shapes yield none.
  */
 function extractFieldDetails(details: unknown): FieldDetail[] {
+    const seen = new Set<string>();
+    return extractRawFieldDetails(details).filter(({ field, message }) => {
+        const id = `${field}\u0000${message}`;
+        if (seen.has(id)) {
+            return false;
+        }
+        seen.add(id);
+        return true;
+    });
+}
+
+/** Reads the field problems of every supported `details` shape, duplicates included. */
+function extractRawFieldDetails(details: unknown): FieldDetail[] {
     if (Array.isArray(details)) {
         return readIssueList(details);
     }
@@ -182,7 +267,10 @@ function extractFieldDetails(details: unknown): FieldDetail[] {
         return flattened;
     }
     if (typeof details.field === 'string') {
-        const message = typeof details.message === 'string' ? details.message : 'valor inválido';
+        const message =
+            typeof details.message === 'string'
+                ? localizeMessage({ message: details.message })
+                : UNTRANSLATED_MESSAGE;
         return [{ field: details.field, message }];
     }
     return [];

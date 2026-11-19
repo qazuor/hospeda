@@ -1237,6 +1237,12 @@ export interface BenefitUsage {
      * is the recoverable direction.
      */
     readonly hasReview: boolean;
+    /**
+     * The host's display name, on the PROVIDER's own list only (HOS-2376,
+     * `GET /mine/usages`). Never an e-mail. Absent on the host's lists and
+     * `null` when the host did not resolve.
+     */
+    readonly hostDisplayName?: string | null;
 }
 
 /** Response envelope shared by the three usage transitions. */

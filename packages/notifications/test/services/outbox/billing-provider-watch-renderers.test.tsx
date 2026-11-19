@@ -102,10 +102,54 @@ describe('HOS-1512 provider watch alert mail', () => {
         expect(renderToStaticMarkup(result.react)).not.toContain('no se muestra');
     });
 
+    it('names the errored measurement, its error and that the run failed (HOS-2385)', async () => {
+        const result = await renderer({
+            row: row({
+                template: PROVIDER_WATCH_ALERT_TEMPLATE,
+                payload: {
+                    ...payload,
+                    run: {
+                        outcome: 'failed',
+                        reason: 'order-search could not be read: bad paging'
+                    },
+                    alerts: [
+                        {
+                            measurementId: 'order-search',
+                            kind: 'measurement_errored',
+                            expected: '{"results":1}',
+                            obtained: 'null',
+                            details: ['bad paging.total']
+                        }
+                    ]
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toBe(
+            'Vigilancia del proveedor (cuenta de pruebas): la corrida falló, 1 alerta'
+        );
+        expect(html).toContain('order-search');
+        expect(html).toContain('no se pudo medir');
+        expect(html).toContain('bad paging.total');
+        expect(html).toContain('La corrida falló');
+        expect(html).toContain('order-search could not be read: bad paging');
+    });
+
+    it('renders a failed run that has no alert at all (HOS-2385)', async () => {
+        const result = await renderer({
+            row: row({
+                template: PROVIDER_WATCH_ALERT_TEMPLATE,
+                payload: { ...payload, alerts: [], run: { outcome: 'aborted', reason: 'GUARD' } }
+            })
+        });
+        expect(result.subject).toContain('la corrida se abortó');
+        expect(renderToStaticMarkup(result.react)).toContain('GUARD');
+    });
+
     it.each([
         ['a negative omitted count', { ...payload, omitted: -1 }],
         ['an empty payload', {}],
-        ['no alerts', { ...payload, alerts: [] }],
+        ['no alerts and no failed run', { ...payload, alerts: [] }],
         ['an unknown account', { ...payload, account: 'staging' }]
     ])('rejects %s', (_name, bad) => {
         expect(() =>
