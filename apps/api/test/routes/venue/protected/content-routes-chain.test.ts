@@ -330,6 +330,7 @@ describe('HOS-2254 owner agenda read: isPast', () => {
         weekday: null,
         startTime: '21:00',
         endTime: '23:00',
+        ticketUrl: null,
         isActive: true,
         displayOrder: 0,
         createdAt: '2026-10-01T00:00:00.000Z',
@@ -365,5 +366,72 @@ describe('HOS-2254 owner agenda read: isPast', () => {
             ['Futuro', false, true],
             ['Apagado', false, false]
         ]);
+    });
+});
+
+describe('HOS-2255 ticket link on the agenda routes', () => {
+    it('GET returns the stored ticketUrl', async () => {
+        mocks.getEvents.mockResolvedValue({
+            data: {
+                events: [
+                    {
+                        id: 'bbbbbbbb-0000-4000-8000-000000002255',
+                        venueId: VENUE,
+                        title: 'Jazz',
+                        description: null,
+                        recurrence: 'weekly',
+                        date: null,
+                        weekday: 4,
+                        startTime: '21:00',
+                        endTime: null,
+                        ticketUrl: 'https://www.passline.com/e/x',
+                        isActive: true,
+                        displayOrder: 0,
+                        createdAt: '2026-10-01T00:00:00.000Z',
+                        updatedAt: '2026-10-01T00:00:00.000Z'
+                    }
+                ]
+            }
+        });
+
+        const response = await app().request(`/${VENUE}/events`);
+
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+            data: { events: Array<{ ticketUrl: string | null }> };
+        };
+        expect(body.data.events[0]?.ticketUrl).toBe('https://www.passline.com/e/x');
+    });
+
+    it('PUT accepts a payload with an https ticketUrl and one without it', async () => {
+        const withLink = await app().request(`/${VENUE}/events`, {
+            method: 'PUT',
+            ...json,
+            body: JSON.stringify({
+                events: [{ ...payloads.events.events[0], ticketUrl: 'https://venti.com.ar/e/1' }]
+            })
+        });
+        const withoutLink = await app().request(`/${VENUE}/events`, {
+            method: 'PUT',
+            ...json,
+            body: JSON.stringify(payloads.events)
+        });
+
+        expect(withLink.status).toBe(200);
+        expect(withoutLink.status).toBe(200);
+    });
+
+    it.each([
+        'http://venti.com.ar/e/1',
+        'javascript:alert(1)',
+        'https://user:pass@venti.com.ar/e/1'
+    ])('PUT rejects %s with 400', async (ticketUrl) => {
+        const response = await app().request(`/${VENUE}/events`, {
+            method: 'PUT',
+            ...json,
+            body: JSON.stringify({ events: [{ ...payloads.events.events[0], ticketUrl }] })
+        });
+
+        expect(response.status).toBe(400);
     });
 });

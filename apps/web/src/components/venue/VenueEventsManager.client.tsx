@@ -48,6 +48,7 @@ import {
     draftFromRow,
     EMPTY_DRAFT,
     type EventDraft,
+    isTicketUrlValid,
     movedBy,
     type VenueEventRow
 } from '@/lib/venue/venue-event-draft';
@@ -254,6 +255,17 @@ export function VenueEventsManager({
     );
 
     const saveEvents = useCallback(async () => {
+        // A malformed ticket link blocks the save (HOS-2255); the card shows
+        // the field-level message, this one says why nothing was sent.
+        if (entries.some((entry) => !entry.isPast && !isTicketUrlValid(entry.ticketUrl))) {
+            setMessage(
+                t(
+                    'venue.owner.editor.venueEventsManager.ticketUrlInvalid',
+                    'El link de entradas tiene que empezar con https:// y no puede llevar usuario ni contraseña.'
+                )
+            );
+            return;
+        }
         setState('saving');
         setMessage(null);
 
@@ -288,6 +300,7 @@ export function VenueEventsManager({
                         : { weekday: entry.weekday }),
                     startTime: entry.startTime,
                     endTime: entry.endTime || null,
+                    ticketUrl: entry.ticketUrl.trim() || null,
                     isActive: entry.isActive
                 }))
         };

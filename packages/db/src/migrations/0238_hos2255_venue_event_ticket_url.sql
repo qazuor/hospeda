@@ -1,0 +1,1 @@
+ALTER TABLE "venue_events" ADD COLUMN "ticket_url" text;

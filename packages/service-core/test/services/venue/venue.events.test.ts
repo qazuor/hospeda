@@ -58,6 +58,7 @@ describe('projectEvent (HOS-1042)', () => {
         weekday: null,
         startTime: '22:00:00',
         endTime: '02:00:00',
+        ticketUrl: null,
         isActive: true,
         displayOrder: 0,
         createdAt: new Date('2026-09-01T00:00:00Z'),
@@ -77,6 +78,12 @@ describe('projectEvent (HOS-1042)', () => {
         // is the whole reason the column is a `date` and not a `timestamp`. If
         // this ever fails, something started parsing it as an instant.
         expect(projectEvent(storedRow).date).toBe('2026-09-12');
+    });
+
+    it('carries the ticket link through as stored (HOS-2255)', () => {
+        const link = 'https://www.passline.com/e/jazz';
+        expect(projectEvent({ ...storedRow, ticketUrl: link }).ticketUrl).toBe(link);
+        expect(projectEvent(storedRow).ticketUrl).toBeNull();
     });
 
     it('keeps a null end time null rather than inventing one', () => {
@@ -104,6 +111,7 @@ describe('projectEvent (HOS-1042)', () => {
                 'weekday',
                 'startTime',
                 'endTime',
+                'ticketUrl',
                 'isActive',
                 'displayOrder',
                 'createdAt',

@@ -86,6 +86,22 @@
     white-space: nowrap;
 }
 
+/* Ticket link hint and inline error (HOS-2255). */
+.fieldHint,
+.fieldError {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    margin: 0;
+}
+
+.fieldHint {
+    color: var(--core-muted-foreground);
+}
+
+.fieldError {
+    color: var(--destructive, #b91c1c);
+}
+
 /* ── Buttons ──────────────────────────────────────────────────────────── */
 
 .primaryButton,

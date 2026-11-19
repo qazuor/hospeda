@@ -104,6 +104,7 @@ function event(over: Record<string, unknown>): Record<string, unknown> {
         weekday: null,
         startTime: '21:00',
         endTime: '23:00',
+        ticketUrl: null,
         isActive: true,
         displayOrder: eventSeq,
         createdAt: new Date('2026-10-01T00:00:00Z'),
@@ -154,6 +155,31 @@ beforeEach(async () => {
 
 afterEach(() => {
     vi.useRealTimers();
+});
+
+describe('GET /public/venues/slug/:slug: ticket link (HOS-2255)', () => {
+    it('exposes the ticketUrl of an event to the public payload', async () => {
+        serve([
+            event({
+                title: 'Con link',
+                date: '2026-11-18',
+                ticketUrl: 'https://www.passline.com/e/x'
+            }),
+            event({ title: 'Sin link', date: '2026-11-18' })
+        ]);
+
+        const res = await app.request('/api/v1/public/venues/slug/boliche', {
+            headers: PUBLIC_HEADERS
+        });
+        const body = (await res.json()) as {
+            data: { venueEvents: Array<{ title: string; ticketUrl: string | null }> };
+        };
+
+        expect(body.data.venueEvents.map((e) => [e.title, e.ticketUrl])).toEqual([
+            ['Con link', 'https://www.passline.com/e/x'],
+            ['Sin link', null]
+        ]);
+    });
 });
 
 describe('GET /public/venues/slug/:slug: past one-off events (HOS-2254)', () => {

@@ -2948,7 +2948,8 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
             date: event.date == null ? null : String(event.date),
             weekday: typeof event.weekday === 'number' ? event.weekday : null,
             startTime: String(event.startTime ?? ''),
-            endTime: event.endTime == null ? null : String(event.endTime)
+            endTime: event.endTime == null ? null : String(event.endTime),
+            ticketUrl: typeof event.ticketUrl === 'string' ? event.ticketUrl : null
         }))
         .filter((event) => event.id.length > 0 && event.title.length > 0);
 }

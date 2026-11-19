@@ -118,7 +118,8 @@
             "title": "Venue schedule",
             "weekly": "Every {{weekday}}",
             "range": "{{when}}, {{start}} to {{end}}",
-            "fromOnly": "{{when}}, from {{start}}"
+            "fromOnly": "{{when}}, from {{start}}",
+            "buyTicket": "Buy tickets"
         },
         "nightInfo": {
             "headingMultiLine": "At night",
@@ -370,6 +371,9 @@
                 "date": "Date",
                 "startTime": "Start time",
                 "endTime": "End time (optional)",
+                "ticketUrl": "Ticket link (optional)",
+                "ticketUrlHelp": "If you sell tickets through Passline, Venti or another seller, paste the link here.",
+                "ticketUrlInvalid": "The ticket link must start with https:// and cannot contain a username or password.",
                 "active": "Active",
                 "addEntry": "Add event",
                 "maxReached": "You reached the limit of {{max}} events.",

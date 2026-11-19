@@ -13,7 +13,8 @@ import {
     getVenueEventZonedNow,
     isVenueEventPast,
     VENUE_EVENTS_MAX_ENTRIES,
-    VENUE_EVENTS_MAX_TOTAL_ENTRIES
+    VENUE_EVENTS_MAX_TOTAL_ENTRIES,
+    VenueEventTicketUrlSchema
 } from '@repo/schemas';
 import type { TranslationFn } from '@/lib/i18n';
 
@@ -34,6 +35,8 @@ export interface EventDraft {
     weekday: number;
     startTime: string;
     endTime: string;
+    /** External ticket link, `''` when none (HOS-2255). */
+    ticketUrl: string;
     isActive: boolean;
     /**
      * Whether the API reported this stored event as past (HOS-2254). Calculated
@@ -69,6 +72,7 @@ export const EMPTY_DRAFT: EventDraft = {
     weekday: 1,
     startTime: '',
     endTime: '',
+    ticketUrl: '',
     isActive: true
 };
 
@@ -82,6 +86,7 @@ export interface VenueEventRow {
     readonly weekday: number | null;
     readonly startTime: string;
     readonly endTime: string | null;
+    readonly ticketUrl?: string | null;
     readonly isActive: boolean;
     /** Calculated by the API in the venue's zone (HOS-2254). */
     readonly isPast?: boolean;
@@ -104,9 +109,22 @@ export function draftFromRow(event: VenueEventRow): EventDraft {
         weekday: event.weekday ?? 1,
         startTime: event.startTime,
         endTime: event.endTime ?? '',
+        ticketUrl: event.ticketUrl ?? '',
         isActive: event.isActive,
         isPast: event.isPast === true
     };
+}
+
+/**
+ * Whether a typed ticket link is acceptable: empty (none) or an `https` URL
+ * without credentials, judged by the same schema the API uses (HOS-2255).
+ *
+ * @param value - The raw input value.
+ * @returns `true` when empty or valid.
+ */
+export function isTicketUrlValid(value: string): boolean {
+    const trimmed = value.trim();
+    return trimmed.length === 0 || VenueEventTicketUrlSchema.safeParse(trimmed).success;
 }
 
 /** How many entries count against the agenda ceiling: every one that is not past. */
