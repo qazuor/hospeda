@@ -29,6 +29,7 @@ describe('TEST:1607:6 persisted undercharge summary', () => {
             await compareCreditedChargeAmount({
                 subscription,
                 paymentId: comparedPaymentId,
+                promoChargesRecorded: true,
                 chargeId: 'actual-charge-under-expected',
                 chargedMinor: 10_000,
                 chargeCurrency: 'ARS',

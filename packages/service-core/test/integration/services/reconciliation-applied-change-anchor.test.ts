@@ -67,6 +67,7 @@ async function compare(input: {
     const divergences = await compareCreditedChargeAmount({
         subscription: input.subscription,
         paymentId: payment.id,
+        promoChargesRecorded: payment.promoChargesRecorded,
         chargeId: `charge-${crypto.randomUUID()}`,
         chargedMinor: input.chargedMinor,
         chargeCurrency: 'ARS',

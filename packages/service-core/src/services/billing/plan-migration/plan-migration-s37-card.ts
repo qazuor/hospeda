@@ -24,6 +24,7 @@ import {
 import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import { getLocalDateString } from '@repo/utils';
 import { ServiceError } from '../../../types/index.js';
+import { endPromoRedemptions } from '../promo/end-promo-redemptions.js';
 import { AMOUNT_MUTATION_RETRY_WINDOW_MS } from '../reconciliation/sweep/comparisons/amount-comparison.js';
 import { recordAmountMutationDecided } from '../reconciliation/sweep/comparisons/amount-mutation-decision.js';
 import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount.js';
@@ -148,7 +149,7 @@ export async function applyS37ClosureInTx(input: {
     if (migration.reason === 'RETIREMENT')
         await tx
             .update(promoRedemptions)
-            .set({ remainingCharges: 0 })
+            .set(endPromoRedemptions({ endedAt: input.now, reason: 'PLAN_RETIREMENT' }))
             .where(eq(promoRedemptions.subscriptionId, row.subscriptionId));
     await tx
         .update(planMigrationSubscriptions)
