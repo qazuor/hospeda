@@ -197,14 +197,8 @@ export async function trySendNotification(
         const result = await notificationService.send(payload, options);
 
         if (result.success) {
-            apiLogger.info(
-                {
-                    type: payload.type,
-                    recipientEmail: payload.recipientEmail,
-                    messageId: result.messageId
-                },
-                'Notification sent successfully'
-            );
+            // No success log here: `NotificationService.send` already logs it (once, honouring
+            // `options.skipLogging`) right after the transport call (HOS-2369).
             return { delivered: true, disposition: 'sent' };
         }
         apiLogger.warn(
