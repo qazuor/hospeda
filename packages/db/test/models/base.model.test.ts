@@ -408,7 +408,7 @@ describe('BaseModel', () => {
     // lifecycleState=ACTIVE when the table tracks lifecycle. Otherwise an
     // archived+deleted record comes back ARCHIVED and stays HIDDEN from every
     // ACTIVE-only public read while the admin is told it was restored.
-    // HOS-2366: admin catalogs opt out with `restoreKeepsLifecycleState` and
+    // HOS-2366: catalogs and tags opt out with `restoreKeepsLifecycleState` and
     // keep the state the row had when it was deleted.
     describe('T-001 / HOS-2366 — restore() lifecycleState: reset by default, kept when the model opts out', () => {
         class LifecycleAwareModel extends BaseModel<{ id: string; lifecycleState?: string }> {
@@ -456,7 +456,7 @@ describe('BaseModel', () => {
             expect('lifecycleState' in payload).toBe(false);
         });
 
-        // HOS-2366 (AC-3.5 of HOS-2336): an admin catalog opts out of the
+        // HOS-2366 (AC-3.5 of HOS-2336): a catalog or tag model opts out of the
         // reset, so a row deactivated on purpose comes back INACTIVE.
         it('omits lifecycleState from the UPDATE SET when the model keeps it on restore (HOS-2366)', async () => {
             class KeepsLifecycleModel extends LifecycleAwareModel {

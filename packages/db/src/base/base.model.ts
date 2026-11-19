@@ -164,9 +164,11 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      *   archived and then soft-deleted must come back ACTIVE. Otherwise the
      *   admin sees "restored" while the row stays hidden from every
      *   ACTIVE-only public read.
-     * - `true` is for admin catalogs (HOS-2366, AC-3.5 of HOS-2336). There an
+     * - `true` is for catalogs and tags (HOS-2366, AC-3.5 of HOS-2336). There an
      *   INACTIVE row was deactivated on purpose, so it is no longer assignable.
-     *   A delete + restore must not quietly make it assignable again.
+     *   A delete + restore must not quietly make it assignable again. Tags opt
+     *   in for every tag type (SYSTEM, INTERNAL and personal USER tags with an
+     *   `ownerId`), not only for the ones an admin manages.
      *
      * The set of models that opt in is frozen by
      * `test/models/restore-keeps-lifecycle.guard.test.ts` (owner decision
@@ -787,7 +789,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             // lifecycle to ACTIVE. Without this, a record that was archived and then
             // soft-deleted would come back ARCHIVED and stay HIDDEN from every
             // ACTIVE-only public read, while the admin was told it was restored.
-            // Models that set `restoreKeepsLifecycleState` (admin catalogs,
+            // Models that set `restoreKeepsLifecycleState` (catalogs and tags,
             // HOS-2366) opt out and keep the state the row had when deleted. The
             // Drizzle column-metadata probe (`'lifecycleState' in this.table`)
             // keeps this a no-op for tables that don't track lifecycle state.

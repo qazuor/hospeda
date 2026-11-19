@@ -45,7 +45,11 @@ export interface FindPickerTagsInput {
  */
 export class TagModel extends BaseModelImpl<Tag> {
     protected table = tags;
-    /** Admin catalog: restore keeps an admin-set INACTIVE state (HOS-2366). */
+    /**
+     * Restore keeps the tag's lifecycle state (HOS-2366) for every tag type:
+     * SYSTEM, INTERNAL and personal USER tags (with an `ownerId`) alike. An
+     * INACTIVE tag stays INACTIVE after delete + restore.
+     */
     protected override readonly restoreKeepsLifecycleState = true;
     public entityName = 'tags';
 

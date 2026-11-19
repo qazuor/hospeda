@@ -9,12 +9,13 @@
  * promotions and reviews must come back visible after a restore, or the admin
  * sees "restored" while the row stays hidden from the public tier.
  *
- * The admin catalogs are the opposite case. An admin deactivates a catalog row
- * on purpose (it stops being assignable), and a delete + restore must not undo
- * that decision (HOS-2366, AC-3.5 of HOS-2336). Those models set
+ * Catalogs and tags are the opposite case. A row deactivated on purpose stops
+ * being assignable, and a delete + restore must not undo that decision
+ * (HOS-2366, AC-3.5 of HOS-2336). Those models set
  * `restoreKeepsLifecycleState = true`. Owner decision 2026-11-19: exactly the
  * nine models below (the eight first chosen, plus attractions added the same
- * day).
+ * day). `TagModel` covers every tag type: SYSTEM, INTERNAL and personal USER
+ * tags (with an `ownerId`), not only the ones an admin manages.
  *
  * Adding a model to (or removing one from) that set changes what a restore
  * does to real rows, so it must be a deliberate edit of this list, not a
@@ -125,7 +126,7 @@ describe('restoreKeepsLifecycleState guard (HOS-2366)', () => {
         expect(classes.size).toBeGreaterThan(50);
     });
 
-    it('only the frozen admin catalogs keep lifecycleState on restore (runtime value)', () => {
+    it('only the frozen catalogs and tags keep lifecycleState on restore (runtime value)', () => {
         const flagged: string[] = [];
         const failedToInstantiate: string[] = [];
         for (const [name, ModelCtor] of classes) {
