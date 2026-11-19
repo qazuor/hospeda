@@ -29,6 +29,7 @@ import {
 import { z } from 'zod';
 import type { CanonicalJsonValue } from '../canonical-json';
 import { SPANISH_PARSE_PARAMS } from '../run-tool';
+import { carryIssueParams } from '../tool-errors';
 import { MAPS_LINK_MAX_URL_LENGTH } from './google-maps-link-guard';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from './listing-services';
 
@@ -205,7 +206,12 @@ function addIssues(
     result: { readonly success: boolean; readonly error?: z.ZodError }
 ): void {
     for (const issue of result.error?.issues ?? []) {
-        ctx.addIssue({ code: 'custom', path: [...issue.path], message: issue.message });
+        ctx.addIssue({
+            code: 'custom',
+            path: [...issue.path],
+            message: issue.message,
+            ...carryIssueParams({ issue })
+        });
     }
 }
 

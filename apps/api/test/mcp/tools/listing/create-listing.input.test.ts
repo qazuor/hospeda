@@ -13,6 +13,7 @@ import {
     bindingPayloadOf,
     CreateListingInputSchema
 } from '../../../../src/mcp/tools/listing/create-listing-input';
+import { formatValidationMessage } from '../../../../src/mcp/tools/tool-errors';
 import { VALID_INPUT, VERTICALS, type Vertical } from './create-listing.harness';
 
 /** The field paths a failed parse names. */
@@ -116,5 +117,26 @@ describe('create_listing input', () => {
             confirmationToken: 'tok'
         });
         expect(bindingPayloadOf({ input: parsed })).toEqual({ ...VALID_INPUT.venue });
+    });
+
+    it('an experience without a price answers translated, one issue per field (HOS-2373)', () => {
+        // Arrange
+        const {
+            priceFrom: _priceFrom,
+            priceUnit: _priceUnit,
+            ...withoutPrice
+        } = VALID_INPUT.experience as Record<string, unknown>;
+        const result = CreateListingInputSchema.safeParse(withoutPrice);
+
+        // Act
+        const message = result.success
+            ? ''
+            : formatValidationMessage({ details: result.error.issues });
+
+        // Assert
+        expect(result.success).toBe(false);
+        expect(message).not.toContain('zodError.');
+        expect(message.match(/campo «priceFrom»/g)).toHaveLength(1);
+        expect(message).toContain('El precio es obligatorio');
     });
 });

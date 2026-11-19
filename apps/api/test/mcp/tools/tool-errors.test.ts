@@ -202,6 +202,70 @@ describe('formatValidationMessage', () => {
         );
     });
 
+    it('translates zodError keys and collapses duplicate field issues (HOS-2373)', () => {
+        // Arrange: the exact payload of the staging smoke, priceFrom twice
+        const details = [
+            { path: ['priceFrom'], message: 'zodError.experience.priceFrom.required' },
+            {
+                path: ['priceUnit'],
+                message: 'zodError.experience.priceUnit.requiredUnlessOnRequest'
+            },
+            { path: ['priceFrom'], message: 'zodError.experience.priceFrom.required' }
+        ];
+
+        // Act
+        const message = formatValidationMessage({ details });
+
+        // Assert
+        expect(message).not.toContain('zodError.');
+        expect(message.match(/campo «priceFrom»/g)).toHaveLength(1);
+        expect(message).toContain('campo «priceFrom»: El precio es obligatorio.');
+        expect(message).toContain('campo «priceUnit»: Elegí la unidad de precio');
+    });
+
+    it('translates keys of a second schema, interpolating issue params', () => {
+        // Arrange
+        const details = [
+            { path: ['name'], message: 'zodError.accommodation.name.min', minimum: 3 }
+        ];
+
+        // Act
+        const message = formatValidationMessage({ details });
+
+        // Assert
+        expect(message).not.toContain('zodError.');
+        expect(message).not.toContain('{{');
+        expect(message).toMatch(/campo «name»: .*3/);
+    });
+
+    it('passes a message that is not an i18n key through unchanged', () => {
+        expect(
+            formatValidationMessage({
+                details: [{ path: ['mapsUrl'], message: 'El enlace no es de Google Maps' }]
+            })
+        ).toBe(
+            'Los datos enviados no son válidos: campo «mapsUrl»: El enlace no es de Google Maps.'
+        );
+    });
+
+    it('falls back to a generic Spanish phrase for a key with no translation', () => {
+        // Act
+        const message = formatValidationMessage({
+            details: [{ path: ['x'], message: 'zodError.nope.missing.key' }]
+        });
+
+        // Assert
+        expect(message).toBe('Los datos enviados no son válidos: campo «x»: valor inválido.');
+    });
+
+    it('collapses duplicates from a flatten() result too', () => {
+        expect(
+            formatValidationMessage({
+                details: { fieldErrors: { a: ['Mal', 'Mal'] } }
+            })
+        ).toBe('Los datos enviados no son válidos: campo «a»: Mal.');
+    });
+
     it('caps the number of listed fields at ten', () => {
         // Arrange
         const details = Array.from({ length: 15 }, (_, i) => ({ path: [`f${i}`], message: 'm' }));
