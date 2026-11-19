@@ -206,6 +206,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4501, #4476
+    {
+        id: '2026-11-17-assistant-provider-search-and-benefit-usages',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Buscá proveedores y respondé usos de beneficios desde tu asistente de IA',
+            en: 'Search providers and answer benefit usages from your AI assistant',
+            pt: 'Busque fornecedores e responda usos de benefícios pelo seu assistente de IA'
+        },
+        body: {
+            es: 'Preguntale al asistente por un proveedor, por ejemplo «plomeros con descuento», y te muestra los mismos proveedores del directorio, con su beneficio y contacto. También te lista los usos de beneficios pendientes y te deja confirmarlos o rechazarlos, siempre después de mostrarte qué va a hacer.',
+            en: 'Ask the assistant for a provider, for example «plumbers with a discount», and it shows you the same providers as the directory, with their benefit and contact. It also lists your pending benefit usages and lets you confirm or reject them, always after showing you what it is about to do.',
+            pt: 'Pergunte ao assistente por um fornecedor, por exemplo «encanadores com desconto», e ele mostra os mesmos fornecedores do diretório, com o benefício e o contato. Ele também lista os usos de benefícios pendentes e deixa você confirmá-los ou rejeitá-los, sempre depois de mostrar o que vai fazer.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4523
     {
         id: '2026-11-18-admin-provider-lead-approval-categories',
