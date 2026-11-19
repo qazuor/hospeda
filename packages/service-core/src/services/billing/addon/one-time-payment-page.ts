@@ -48,6 +48,35 @@ export function paymentPageKey(orderRequestId: string): string {
     return `page:${orderRequestId}`;
 }
 
+/**
+ * The caller's part of a page creation body, stored on the key before any provider call so a
+ * resume sends the same body whatever the resuming request carried (HOS-2179 §5.6).
+ */
+export const paymentPageRequestSchema = z.strictObject({
+    returnUrl: z.url(),
+    reason: z.string().min(1).optional()
+});
+
+/** The stored caller's part of a page creation body (HOS-2179 §5.6). */
+export type PaymentPageRequest = z.infer<typeof paymentPageRequestSchema>;
+
+/**
+ * The body part to store with a new page creation key.
+ *
+ * @param input.returnUrl - Where the customer lands after the page
+ * @param input.reason - Customer-facing text, if the caller set one
+ * @returns The value for `idempotency_key.request`
+ */
+export function paymentPageRequestOf(input: {
+    readonly returnUrl: string;
+    readonly reason?: string | undefined;
+}): PaymentPageRequest {
+    return paymentPageRequestSchema.parse({
+        returnUrl: input.returnUrl,
+        ...(input.reason ? { reason: input.reason } : {})
+    });
+}
+
 /** Ports of the payment page creation. */
 export interface OpenOneTimePaymentPagePorts {
     readonly provider: PaymentProvider;
@@ -225,6 +254,15 @@ export async function openOneTimePaymentPage(
             outcome: 'ALREADY_OPEN',
             checkoutUrl: await paymentPageCheckoutUrlOf({ instanceId: found.instance.id })
         };
+    // A resume sends the body stored with the key, not this request's: the resuming screen may
+    // carry another locale's return URL (§5.6). A key written before the column falls back.
+    const stored = paymentPageRequestSchema.safeParse(found.key.request);
+    if (found.key.request !== null && !stored.success)
+        logger.warn(
+            { instanceId: found.instance.id },
+            'Stored page request is unreadable; using this one'
+        );
+    const body: PaymentPageRequest = stored.success ? stored.data : request;
     const timing = paymentPageTiming(ports.deadlines ?? (await getCurrentBillingDeadlines()));
     const expiresAt = paymentPageExpiry({ createdAt: found.instance.createdAt, timing });
     if (expiresAt.getTime() <= ports.clock.now().getTime())
@@ -236,8 +274,8 @@ export async function openOneTimePaymentPage(
             reference: found.instance.orderRequestId,
             idempotencyKey: found.key.key,
             amount: { amountMinor: found.product.price, currency: found.product.currency },
-            reason: request.reason ?? found.addonName,
-            returnUrl: request.returnUrl,
+            reason: body.reason ?? found.addonName,
+            returnUrl: body.returnUrl,
             expiresAt: expiresAt.toISOString()
         });
     } catch (error) {

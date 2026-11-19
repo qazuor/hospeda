@@ -26,6 +26,12 @@ export const idempotencyKeys = pgTable(
         subjectId: uuid('subject_id').notNull(),
         /** su resultado */
         result: jsonb('result'),
+        /**
+         * The caller's part of the request body, written with the key before the provider
+         * call, so a resume after a lost answer sends the same body (HOS-2179 §5.6). Null on
+         * keys written before it and on operations that need none.
+         */
+        request: jsonb('request'),
         completedAt: timestamp('completed_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
     },
