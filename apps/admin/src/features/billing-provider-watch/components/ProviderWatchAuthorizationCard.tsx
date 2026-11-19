@@ -179,7 +179,13 @@ export function ProviderWatchAuthorizationCard() {
             : consumedBy
               ? translate('statusConsumed', { runId: consumedBy })
               : stored.month === month
-                ? translate('statusActive', { month: stored.month })
+                ? stored.maxChargeMinor === 0
+                    ? // Owner decision on B1 (2026-11-19): 0 is never consumed, it covers a run a day.
+                      translate('statusDaily', {
+                          month: stored.month,
+                          count: String(stored.runIds?.length ?? 0)
+                      })
+                    : translate('statusActive', { month: stored.month })
                 : translate('statusStale', { month: stored.month });
     const usable = stored !== null && !consumedBy && stored.month === month;
     const accountLabel = account.data
@@ -328,7 +334,13 @@ export function ProviderWatchAuthorizationCard() {
                 >
                     <AlertDialogContent data-testid="provider-watch-confirm">
                         <AlertDialogHeader>
-                            <AlertDialogTitle>{translate('confirmTitle')}</AlertDialogTitle>
+                            <AlertDialogTitle>
+                                {translate(
+                                    preview.data?.measurements.length === 0
+                                        ? 'confirmTitleDaily'
+                                        : 'confirmTitle'
+                                )}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
                                 {pending
                                     ? translate(
