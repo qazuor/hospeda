@@ -18,15 +18,16 @@ import { protectedExperienceRoutes } from '../../src/routes/experience/protected
 import { protectedUserRoutes } from '../../src/routes/user/protected/index';
 import { protectedVenueRoutes } from '../../src/routes/venue/protected/index';
 import type { AppBindings } from '../../src/types';
+import { injectClock } from '../../src/utils/clock';
 
 const cancellationRouteMocks = vi.hoisted(() => ({
-    readOwnSubscriptions: vi.fn(async () => []),
-    readOwnDeferredCourtesies: vi.fn(async () => []),
+    readOwnPlanState: vi.fn(async () => ({ subscriptions: [], deferredCourtesies: [] })),
     readSubscription: vi.fn(async () => null)
 }));
-vi.mock('../../src/routes/billing-subscription/read-own-subscriptions', () => ({
-    readOwnSubscriptions: cancellationRouteMocks.readOwnSubscriptions,
-    readOwnDeferredCourtesies: cancellationRouteMocks.readOwnDeferredCourtesies
+// HOS-2328: the own-subscriptions read moved to the service-core plan-state reader.
+vi.mock('@repo/service-core', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/service-core')>()),
+    readOwnPlanState: cancellationRouteMocks.readOwnPlanState
 }));
 vi.mock('../../src/routes/billing-subscription/read-own-declined-signups', () => ({
     readOwnDeclinedSignups: vi.fn(async () => [])
@@ -34,6 +35,9 @@ vi.mock('../../src/routes/billing-subscription/read-own-declined-signups', () =>
 vi.mock('../../src/routes/billing-subscription/read-subscription', () => ({
     readSubscription: cancellationRouteMocks.readSubscription
 }));
+
+// The Mi suscripción route reads the injected clock before calling the reader (HOS-2328).
+injectClock({ clock: { now: () => new Date('2026-11-19T12:00:00.000Z') } });
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const LISTING_ID = '22222222-2222-4222-8222-222222222222';
@@ -162,7 +166,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
         expect(covered.filter(({ path }) => path.includes('/venues/'))).toHaveLength(4);
     });
     it.each(covered)('$op passes step 2 on $path', async ({ path, method, permissions = [] }) => {
-        cancellationRouteMocks.readOwnSubscriptions.mockClear();
+        cancellationRouteMocks.readOwnPlanState.mockClear();
         cancellationRouteMocks.readSubscription.mockClear();
         const unverified = await probe({
             target: app({ emailVerified: false, permissions }),
@@ -178,7 +182,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
         expect(unverified.error.code).not.toBe(ServiceErrorCode.EMAIL_NOT_VERIFIED);
         if (path.endsWith('/billing-subscription')) {
             expect(unverified.status).toBe(200);
-            expect(cancellationRouteMocks.readOwnSubscriptions).toHaveBeenCalled();
+            expect(cancellationRouteMocks.readOwnPlanState).toHaveBeenCalled();
         } else if (path.endsWith('/cancellation') && method === 'POST') {
             expect(cancellationRouteMocks.readSubscription).toHaveBeenCalled();
             expect(unverified.status).toBe(404);

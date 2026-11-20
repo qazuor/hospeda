@@ -308,6 +308,7 @@ export * from './billing/subscription/price-increase-after-pause.js';
 export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
+export * from './billing/subscription/read-own-plan-state.js';
 export * from './billing/subscription/reevaluate-succession-predecessors.service.js';
 export * from './billing/subscription/refuse-undeclared-transition.js';
 export * from './billing/subscription/register-late-manual-payment.service.js';

@@ -547,7 +547,7 @@
             "why": "El contrato de respuesta incluye el saldo en meses de la cortesía diferida para mostrarlo en Mi Suscripción (AC:B13a:8); no decide nada con el término."
         },
         {
-            "file": "apps/api/src/routes/billing-subscription/read-own-subscriptions.ts",
+            "file": "packages/service-core/src/services/billing/subscription/read-own-plan-state.ts",
             "symbol": "readOwnDeferredCourtesies",
             "row": 10,
             "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."
