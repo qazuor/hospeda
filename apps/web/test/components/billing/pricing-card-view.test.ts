@@ -441,24 +441,12 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
         ]);
     });
 
-    it.each([
-        {
-            inheritsTouristVip: false,
-            touristVipBenefits: {
-                entitlements: new Set(['vip_feature']),
-                limits: new Set(['vip_cap'])
-            }
-        },
-        { inheritsTouristVip: true, touristVipBenefits: null }
-    ])('TEST:1765:3 does not collapse a non-inheriting plan or when catalog keys are unavailable', ({
-        inheritsTouristVip,
-        touristVipBenefits
-    }) => {
+    it('TEST:1765:3 does not collapse a non-inheriting plan', () => {
         const { cards } = buildPricingCardViews({
             plans: [
                 plan({
                     slug: 'venue-basic',
-                    inheritsTouristVip,
+                    inheritsTouristVip: false,
                     entitlements: ['vip_feature', 'local_feature'],
                     limits: { vip_cap: 10 }
                 })
@@ -466,11 +454,94 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
             audience: 'venue',
             intlLocale: 'es-AR',
             t,
-            touristVipBenefits
+            touristVipBenefits: {
+                entitlements: new Set(['vip_feature']),
+                limits: new Set(['vip_cap'])
+            }
         });
 
         expect(
             [...cards[0]!.visibleItems, ...cards[0]!.hiddenItems].map((item) => item.id)
         ).toEqual(['vip_cap', 'vip_feature', 'local_feature']);
+    });
+});
+
+describe('HOS-2398 — Tourist VIP line when the tourist catalog is unavailable', () => {
+    it('still announces the inherited VIP offer from the plan flag, filtering nothing', () => {
+        // Arrange: the owner plan no longer carries tourist rows, and the
+        // tourist catalog read failed, so no VIP key set is known.
+        const input = {
+            plans: [
+                plan({
+                    slug: 'owner-basico',
+                    inheritsTouristVip: true,
+                    entitlements: ['local_feature'],
+                    limits: { local_cap: 10 }
+                })
+            ],
+            audience: 'owner' as const,
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: null
+        };
+
+        // Act
+        const { cards } = buildPricingCardViews(input);
+
+        // Assert
+        expect(
+            [...cards[0]!.visibleItems, ...cards[0]!.hiddenItems].map((item) => item.id)
+        ).toEqual(['group-tourist-vip', 'local_cap', 'local_feature']);
+    });
+
+    it('shows the line once across an inheriting ladder, as with a known key set', () => {
+        // Act
+        const { cards } = buildPricingCardViews({
+            plans: [
+                plan({
+                    slug: 'basic',
+                    sortOrder: 1,
+                    inheritsTouristVip: true,
+                    entitlements: ['a']
+                }),
+                plan({
+                    slug: 'pro',
+                    sortOrder: 2,
+                    inheritsTouristVip: true,
+                    entitlements: ['a', 'b']
+                })
+            ],
+            audience: 'owner',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: null
+        });
+
+        // Assert
+        expect(
+            cards.map((card) => card.visibleItems.some((item) => item.id === 'group-tourist-vip'))
+        ).toEqual([true, false]);
+    });
+
+    it('never adds the line to a non-inheriting plan or a tourist card', () => {
+        // Act
+        const commercial = buildPricingCardViews({
+            plans: [plan({ slug: 'venue-basic', inheritsTouristVip: false, entitlements: ['a'] })],
+            audience: 'venue',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: null
+        });
+        const tourist = buildPricingCardViews({
+            plans: [plan({ slug: 'tourist-vip', inheritsTouristVip: true, entitlements: ['a'] })],
+            audience: 'tourist',
+            intlLocale: 'es-AR',
+            t,
+            touristVipBenefits: null
+        });
+
+        // Assert
+        expect(commercial.cards[0]?.visibleItems.map((item) => item.id)).toEqual(['a']);
+        expect(tourist.cards[0]?.visibleItems.map((item) => item.id)).toEqual(['a']);
     });
 });

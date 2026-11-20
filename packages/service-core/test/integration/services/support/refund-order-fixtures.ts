@@ -6,22 +6,21 @@ import { getServiceTestDb } from '../helpers.js';
 import { seedOrderInstance } from './paid-order-fixtures.js';
 import { paymentFixture } from './payment-fixtures.js';
 
-/** Seeds a paid one-time order and a requested refund (AC:B6:8, TRANS:B:RF2). */
+/**
+ * Seeds a one-time instance bought through the retired order path (it holds a provider
+ * order and no payment page), its payment, and a requested refund. HOS-2179 T-7 retired
+ * the order refund channel, so tests use it to prove such a refund is never sent.
+ */
 export async function refundOrderFixture(
     input: {
         readonly amount?: number;
         readonly refundAmount?: number;
-        readonly paid?: boolean;
         readonly withOrder?: boolean;
     } = {}
 ) {
     const amount = input.amount ?? 10000;
     const fixture = await paymentFixture();
-    const { orderId } = fixture.provider.placeOrder({
-        reference: `refund-order-${crypto.randomUUID()}`,
-        paid: input.paid ?? true,
-        amount: { amountMinor: amount, currency: 'ARS' }
-    });
+    const orderId = `order-${crypto.randomUUID()}`;
     const instance = await seedOrderInstance({
         providerOrderId: input.withOrder === false ? null : orderId,
         status: 'ACTIVE',
@@ -66,7 +65,7 @@ export async function refundOrderFixture(
     return { fixture, orderId, instance, payment, actor, refundId: request.refundId };
 }
 
-/** Reads only this refund's persisted RF2 rows (AC:B6:8, TRANS:B:RF2). */
+/** Reads only this refund's persisted RF2 rows (TRANS:B:RF2). */
 export async function orderRefundRows(refundId: string) {
     const db = getServiceTestDb();
     const [refund] = await db.select().from(refunds).where(eq(refunds.id, refundId));

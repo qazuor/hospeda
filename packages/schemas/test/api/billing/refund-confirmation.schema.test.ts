@@ -19,9 +19,6 @@ describe('refund confirmation schemas', () => {
         'PROVIDER_REJECTED_KEPT_CONFIRMED',
         'PROVIDER_REJECTED_FAILED',
         'AWAITING_PROVIDER_ANSWER',
-        'ORDER_REFUND_HELD',
-        'PROVIDER_KEY_CONFLICT',
-        'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED',
         'CHARGED_BACK'
     ] as const)('accepts the %s service outcome', (outcome) => {
         const status =
@@ -32,5 +29,20 @@ describe('refund confirmation schemas', () => {
             RefundConfirmationResponseSchema.safeParse({ refundId, status, outcome, calls: [] })
                 .success
         ).toBe(true);
+    });
+
+    it.each([
+        'ORDER_REFUND_HELD',
+        'PROVIDER_KEY_CONFLICT',
+        'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
+    ])('rejects the %s outcome of the retired order refund channel (HOS-2179 T-7)', (outcome) => {
+        // Arrange
+        const response = { refundId, status: 'CONFIRMED', outcome, calls: [] };
+
+        // Act
+        const parsed = RefundConfirmationResponseSchema.safeParse(response);
+
+        // Assert
+        expect(parsed.success).toBe(false);
     });
 });

@@ -13,7 +13,7 @@ describe('HOS-2179 §5.11 add-on refund channel', () => {
         expect(channel).toBe('PAYMENT');
     });
 
-    it('keeps the order path for an instance bought through an order', () => {
+    it('sends nothing for an instance bought through the retired order path (T-7)', () => {
         // Arrange
         const instance = { providerOrderId: 'order-1', paymentPageId: null };
 
@@ -21,7 +21,7 @@ describe('HOS-2179 §5.11 add-on refund channel', () => {
         const { channel } = resolveAddonRefundChannel(instance);
 
         // Assert
-        expect(channel).toBe('ORDER');
+        expect(channel).toBe('NONE');
     });
 
     it('sends nothing for an instance with neither an order nor a page', () => {

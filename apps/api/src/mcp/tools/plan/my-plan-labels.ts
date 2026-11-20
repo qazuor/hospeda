@@ -6,6 +6,7 @@
  */
 
 import type { Locale } from '@repo/i18n';
+import { isUnlimitedLimit } from '@repo/schemas';
 import { translateCatalogKey } from '../../../services/ai-context/listing-labels';
 import type { toEffectiveSetView } from '../../../utils/listing-access/effective-set-view';
 import type { MyPlanIncludes } from './my-plan-types';
@@ -31,7 +32,8 @@ export function label(input: {
  *
  * @param view - The view `toEffectiveSetView` builds.
  * @param locale - The caller's locale.
- * @returns Granted entitlements as labels and limits with their values.
+ * @returns Granted entitlements as labels and limits with their values; a limit
+ * that is `Infinity` or at/above the catalog sentinel is `unlimited` (HOS-2403).
  */
 export function labelView(
     view: ReturnType<typeof toEffectiveSetView>,
@@ -42,7 +44,7 @@ export function labelView(
         .map(([key]) => label({ key: `billing.entitlement.${key}`, locale, fallback: key }));
     const limits = Object.entries(view.limits).map(([key, value]) => ({
         label: label({ key: `billing.comparison.limitLabel.${key}`, locale, fallback: key }),
-        value: value === 'Infinity' ? ('unlimited' as const) : value
+        value: value === 'Infinity' || isUnlimitedLimit({ value }) ? ('unlimited' as const) : value
     }));
     return { entitlements, limits };
 }

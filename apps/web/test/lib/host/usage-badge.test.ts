@@ -22,6 +22,10 @@ describe('TEST:B13a:25 usage badge on the effective set', () => {
     });
     it('omits unlimited, absent, and failed capacity reads', () => {
         expect(buildUsageBadge({ effectiveSet: effective(Infinity), currentUsage: 2 })).toBeNull();
+        // HOS-2403: the catalog's unlimited sentinel is unlimited too, never "2 / 2147483647".
+        expect(
+            buildUsageBadge({ effectiveSet: effective(2147483647), currentUsage: 2 })
+        ).toBeNull();
         expect(
             buildUsageBadge({ effectiveSet: { ...effective(3), limits: {} }, currentUsage: 2 })
         ).toBeNull();

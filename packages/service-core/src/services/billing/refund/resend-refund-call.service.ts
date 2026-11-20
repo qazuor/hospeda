@@ -1,6 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import {
-    addonInstances,
     and,
     eq,
     getDb,
@@ -15,8 +14,6 @@ import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
 import { AmbiguousRefundAnswerError } from './ambiguous-refund-answer.error';
-import { sendOrderRefundCall } from './refund-order-call';
-import { rereadOrderForRefund } from './refund-order-reread';
 import { completeCall } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
 
@@ -35,8 +32,7 @@ export type ResendRefundCallOutcome = {
         | 'SENT'
         | 'AWAITING_PROVIDER_ANSWER'
         | 'PROVIDER_KEY_CONFLICT'
-        | 'PROVIDER_REJECTED_FAILED'
-        | 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED';
+        | 'PROVIDER_REJECTED_FAILED';
 };
 
 /** AC:B6:10 / TRANS:B:RF2: outcomes retain the original idempotency keys. */
@@ -73,55 +69,14 @@ export async function resendUnansweredRefundCalls(
     for (const call of pending) {
         const key = call.idempotencyKey;
         if (call.addonInstanceId) {
-            const [instance] = await db
-                .select({ orderId: addonInstances.providerOrderId })
-                .from(addonInstances)
-                .where(eq(addonInstances.id, call.addonInstanceId))
-                .limit(1);
-            if (!instance?.orderId) throw new Error('Persisted order refund has no order id');
-            const reread =
-                call.amount === payment.amount
-                    ? null
-                    : await rereadOrderForRefund({ orderId: instance.orderId, ...ports });
-            if (reread && reread.kind !== 'READY') {
-                outcomes.push({
-                    idempotencyKey: key,
-                    outcome:
-                        reread.kind === 'UNAVAILABLE'
-                            ? 'AWAITING_PROVIDER_ANSWER'
-                            : 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
-                });
-                continue;
-            }
-            const order = reread?.kind === 'READY' ? reread.order : { paymentTransactionId: null };
-            const sent = await sendOrderRefundCall({
-                refund,
-                payment,
-                orderId: instance.orderId,
-                order,
-                ...ports,
-                existingCall: { idempotencyKey: key, amount: call.amount }
-            });
-            if (sent.outcome === 'PROVIDER_REJECTED_FAILED')
-                await failProviderRejectedRefund({
-                    refund,
-                    payment,
-                    clock: ports.clock,
-                    correlationId: input.correlationId ?? crypto.randomUUID()
-                });
-            outcomes.push({
-                idempotencyKey: key,
-                outcome:
-                    sent.outcome === 'SENT'
-                        ? 'SENT'
-                        : sent.outcome === 'PROVIDER_KEY_CONFLICT'
-                          ? 'PROVIDER_KEY_CONFLICT'
-                          : sent.outcome === 'PROVIDER_REJECTED_FAILED'
-                            ? 'PROVIDER_REJECTED_FAILED'
-                            : sent.outcome === 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
-                              ? 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
-                              : 'AWAITING_PROVIDER_ANSWER'
-            });
+            // A call tied to an instance was an order refund call. The order channel was
+            // retired (HOS-2179 T-7) with none left unanswered, so it is never replayed: a
+            // person settles it outside our flow (action 14).
+            logger.error(
+                { refundId: input.refundId, key, addonInstanceId: call.addonInstanceId },
+                'Order refund call left unanswered after the order channel was retired'
+            );
+            outcomes.push({ idempotencyKey: key, outcome: 'AWAITING_PROVIDER_ANSWER' });
             continue;
         }
         let providerCallPending = true;
@@ -164,7 +119,6 @@ export async function resendUnansweredRefundCalls(
                         refundCallKey: key,
                         paymentId: payment.id,
                         providerFactId: payment.providerFactId,
-                        orderId: null,
                         expectedAmountMinor: call.amount,
                         reason:
                             candidates.length === 0

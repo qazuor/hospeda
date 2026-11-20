@@ -1,8 +1,5 @@
 /** Why a provider refund answer could not be bound to our refund call (HOS-2007, HOS-1553 Q-5). */
 export const AMBIGUOUS_REFUND_ANSWER_REASONS = [
-    'NO_NEW_ORDER_REFUND',
-    'SEVERAL_NEW_ORDER_REFUNDS',
-    'ORDER_REFUND_AMOUNT_MISMATCH',
     'NO_UNNAMED_PAYMENT_REFUND',
     'SEVERAL_UNNAMED_PAYMENT_REFUNDS'
 ] as const;
@@ -18,12 +15,12 @@ export interface AmbiguousRefundCandidate {
 
 /** Everything an operator needs to settle the ambiguous refund by hand. */
 export interface AmbiguousRefundAnswerInput {
-    readonly kind: 'ORDER' | 'PAYMENT';
+    /** The order refund channel was retired (HOS-2179 T-7): only payment refunds remain. */
+    readonly kind: 'PAYMENT';
     readonly refundId: string;
     readonly refundCallKey: string;
     readonly paymentId: string;
     readonly providerFactId: string;
-    readonly orderId: string | null;
     readonly expectedAmountMinor: number;
     readonly reason: AmbiguousRefundAnswerReason;
     readonly candidates: readonly AmbiguousRefundCandidate[];
@@ -43,7 +40,6 @@ export class AmbiguousRefundAnswerError extends Error {
     readonly refundCallKey: string;
     readonly paymentId: string;
     readonly providerFactId: string;
-    readonly orderId: string | null;
     readonly expectedAmountMinor: number;
     readonly reason: AmbiguousRefundAnswerReason;
     readonly candidates: readonly AmbiguousRefundCandidate[];
@@ -62,7 +58,6 @@ export class AmbiguousRefundAnswerError extends Error {
         this.refundCallKey = input.refundCallKey;
         this.paymentId = input.paymentId;
         this.providerFactId = input.providerFactId;
-        this.orderId = input.orderId;
         this.expectedAmountMinor = input.expectedAmountMinor;
         this.reason = input.reason;
         this.candidates = input.candidates.map((candidate) => ({ ...candidate }));
