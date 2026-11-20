@@ -14,8 +14,8 @@
  * (`scripts/guards/held-payment-readers.json`) with a reason. The enclosing function is the
  * nearest NAMED one (declaration, method, or a variable holding a function), so a reader inside
  * an anonymous transaction callback counts against the function that owns it. The table is
- * recognised under its own name, under an import alias from `@repo/db`
- * (`import { payments as p }`), and through a namespace import (`import * as db`, then
+ * recognised under its own name, under an import alias from `@repo/db` or any `@repo/db/...`
+ * subpath (`import { payments as p }`), and through a namespace import (`import * as db`, then
  * `db.payments.addonInstanceId`). An allowlist entry that no longer matches a reader, that
  * carries no reason, or whose `readers` count differs from the reads found in that function is
  * an error too, so the list cannot rot into a blanket exemption: a NEW read added to an
@@ -26,6 +26,9 @@
  * - Relational queries (`db.query.payments...`) and raw SQL naming `addon_instance_id`.
  * - A local alias of the table (`const p = payments; p.addonInstanceId`) or a re-export of it
  *   under another name from a module other than `@repo/db`.
+ * - Element access with a string key (`payments['addonInstanceId']`) and destructuring the
+ *   column out of the table (`const { addonInstanceId } = payments`): only the property access
+ *   `payments.addonInstanceId` is matched.
  * - Readers that reach a held row by ANOTHER key, never naming `payments.addonInstanceId`: by
  *   `payments.providerFactId` or `payments.id`, or through a join such as
  *   `refunds.paymentId = payments.id`. Such a reader can still pick a held row; it is covered
@@ -114,7 +117,12 @@ function callsPredicate(node: ts.Node): boolean {
     return found;
 }
 
-/** The local names the `payments` table of `@repo/db` goes by in one file. */
+/** Whether a module specifier is `@repo/db` or one of its subpaths (`@repo/db/schemas`). */
+function isRepoDbModule(text: string): boolean {
+    return text === '@repo/db' || text.startsWith('@repo/db/');
+}
+
+/** The local names the `payments` table of `@repo/db` (or a subpath) goes by in one file. */
 function paymentsBindings(sf: ts.SourceFile): {
     readonly tableNames: ReadonlySet<string>;
     readonly namespaces: ReadonlySet<string>;
@@ -125,7 +133,7 @@ function paymentsBindings(sf: ts.SourceFile): {
         if (
             !ts.isImportDeclaration(statement) ||
             !ts.isStringLiteral(statement.moduleSpecifier) ||
-            statement.moduleSpecifier.text !== '@repo/db'
+            !isRepoDbModule(statement.moduleSpecifier.text)
         )
             continue;
         const bindings = statement.importClause?.namedBindings;

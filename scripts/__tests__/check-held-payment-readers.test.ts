@@ -142,6 +142,22 @@ export async function aliased(id: string) {
         ]);
     });
 
+    it('recognises payments imported from a @repo/db subpath, and no look-alike module', () => {
+        const source = `
+import { payments as fromSchemas } from '@repo/db/schemas';
+import { payments as lookalike } from '@repo/dbx';
+export async function subpathed(id: string) {
+    return getDb().select().from(fromSchemas).where(eq(fromSchemas.addonInstanceId, id));
+}
+export async function elsewhere(id: string) {
+    return lookalike.addonInstanceId;
+}
+`;
+        expect(readersIn({ file: 'f.ts', source })).toEqual([
+            { file: 'f.ts', function: 'subpathed', line: 5, filtered: false }
+        ]);
+    });
+
     it('recognises a namespace import of @repo/db', () => {
         const source = `
 import * as db from '@repo/db';
