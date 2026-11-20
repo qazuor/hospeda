@@ -9,11 +9,18 @@
  * HOS-2077 asserts on the same run that `contentOnly` migration 0156 left chat on the
  * venue and experience Basic and Pro plans.
  *
+ * HOS-2398 asserts on the same run that `contentOnly` migration 0188 left the nine sellable
+ * owner plans without the tourist keys, with `ai_chat` intact and Tourist VIP untouched.
+ *
  * Builds its own scratch database (`hospeda_it_hos2037_fresh`, dropped afterwards) so
  * that the shared integration database stays untouched by the runner.
  */
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import {
+    OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS,
+    OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS
+} from '../../src/catalog/next-version-entitlements.js';
 import { repoRoot, scratchDatabase } from './support/scratch-database.js';
 
 const database = scratchDatabase({ name: 'hospeda_it_hos2037_fresh' });
@@ -183,6 +190,48 @@ describe('HOS-2037 fresh database (migrate, seed, data-migrate)', () => {
 
         const ledger = await scratch.query<{ n: string }>(
             `SELECT count(*)::text AS n FROM seed_migrations WHERE name = '0187-hos-2282-venue-promotions-grant'`
+        );
+        expect(ledger.rows[0]?.n).toBe('1');
+    }, 60_000);
+
+    // HOS-2398 rides the same fresh-database run: 0188 is `contentOnly`, so a fresh database
+    // must end with the owner plans clean of tourist keys, not baseline-stamp it.
+    it('ends with the owner plans free of tourist keys, ai_chat kept and Tourist VIP untouched', async () => {
+        if (!scratch) throw new Error('scratch database was not initialized');
+        const rows = await scratch.query<{
+            vertical: string;
+            slug: string;
+            tourist_entitlements: string;
+            tourist_limits: string;
+            ai_chat: string;
+        }>(
+            `SELECT p.vertical, p.slug,
+                    (SELECT count(*) FROM plan_version_entitlement e
+                      WHERE e.plan_version_id = v.id AND e.key = ANY($1::text[]))::text AS tourist_entitlements,
+                    (SELECT count(*) FROM plan_version_limit l
+                      WHERE l.plan_version_id = v.id AND l.key = ANY($2::text[]))::text AS tourist_limits,
+                    (SELECT count(*) FROM plan_version_entitlement e
+                      WHERE e.plan_version_id = v.id AND e.key = 'ai_chat')::text AS ai_chat
+               FROM plan p
+               JOIN plan_version v ON v.plan_id = p.id AND v.current
+              WHERE v.sellable AND p.vertical IN ('accommodation', 'venue', 'experience', 'tourist')`,
+            [
+                [...OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS],
+                [...OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS]
+            ]
+        );
+        const owners = rows.rows.filter((row) => row.vertical !== 'tourist');
+        expect(owners).toHaveLength(9);
+        for (const row of owners) {
+            expect(row.tourist_entitlements, row.slug).toBe('0');
+            expect(row.tourist_limits, row.slug).toBe('0');
+            expect(row.ai_chat, row.slug).toBe('1');
+        }
+        const vip = rows.rows.find((row) => row.slug === 'tourist-vip');
+        expect(vip?.tourist_entitlements).toBe('15');
+        expect(vip?.tourist_limits).toBe('7');
+        const ledger = await scratch.query<{ n: string }>(
+            `SELECT count(*)::text AS n FROM seed_migrations WHERE name = '0188-hos-2398-drop-tourist-keys-from-owner-plans'`
         );
         expect(ledger.rows[0]?.n).toBe('1');
     }, 60_000);
