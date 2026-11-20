@@ -113,7 +113,12 @@
         "ownerInboxTitle": "Mensagens de hospedes",
         "status": "Status",
         "title": "Caixa de entrada",
-        "unreadCount": "{count} nao lida(s)"
+        "unreadCount": "{count} nao lida(s)",
+        "loadError": {
+            "title": "Não conseguimos carregar suas consultas",
+            "body": "Houve um problema ao ler sua caixa de entrada. Suas consultas continuam aí: tente novamente em instantes.",
+            "retry": "Tentar novamente"
+        }
     },
     "notifications": {
         "conversationArchived": "Conversa arquivada.",
