@@ -18,15 +18,22 @@ const SEARCH_SKEW_MS = 3_600_000;
  *
  * - `ACTIVATED`: an approved payment, re-read by id, activated the purchase.
  * - `SETTLED`: the purchase stopped waiting meanwhile (another entry decided it).
- * - `NONE_APPROVED`: every id the search yielded, re-read by id, is not an approved payment of
- *   this purchase for its price: none at all, or one of another amount whose
- *   `DIVERGENCIA_DE_MONTO` is open (AC-8). The only outcome that lets A3 abandon.
+ * - `NONE_FOUND`: the search yielded no id at all. A search may answer only part of the matches
+ *   (M4), so this is "nothing seen", not "nothing paid".
+ * - `NONE_APPROVED`: the search yielded ids, and each, re-read by id, is not an approved payment
+ *   of this purchase for its price: none approved, or one of another amount whose
+ *   `DIVERGENCIA_DE_MONTO` is open (AC-8).
  * - `UNDECIDED`: the search or a read did not answer, or a divergence mark could not be opened.
  *   Nothing may be decided this run.
+ *
+ * `NONE_FOUND` and `NONE_APPROVED` are the only outcomes that let a purchase be abandoned (A3,
+ * and the owner's retry over an expired page); a payment that lands after that follows the
+ * late-payment path.
  */
 export type ConfirmOneTimePageByReferenceOutcome =
     | 'ACTIVATED'
     | 'SETTLED'
+    | 'NONE_FOUND'
     | 'NONE_APPROVED'
     | 'UNDECIDED';
 
@@ -69,6 +76,7 @@ export async function confirmOneTimePageByReference(
         );
         return 'UNDECIDED';
     }
+    if (chargeIds.length === 0) return 'NONE_FOUND';
     let undecided = false;
     for (const chargeId of chargeIds) {
         const result = await confirmOneTimePagePayment(

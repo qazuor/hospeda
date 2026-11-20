@@ -395,19 +395,25 @@ describe('AC:B10:11 / TEST:B10:13 purchase screen', () => {
             }
         });
     });
-    it('shows processing for PENDING_ELSEWHERE', async () => {
+    it.each([
+        'PERIODICO',
+        'UNA_VEZ'
+    ] as const)('ends a %s PENDING_ELSEWHERE wait with the come-back-later copy, reading nothing', async (chargeKind) => {
         purchase.mockResolvedValue({
             ok: true,
             data: {
                 outcome: 'PENDING_ELSEWHERE',
                 instanceId: listingId,
-                chargeKind: 'PERIODICO',
+                chargeKind,
                 processing: true
             }
         });
         await selectListing('DRAFT');
         fireEvent.click(screen.getByTestId('addon-purchase-confirm'));
-        expect(await screen.findByTestId('addon-purchase-processing')).toBeTruthy();
+        const status = await screen.findByTestId('addon-purchase-processing');
+        expect(status.getAttribute('data-exhausted')).toBe('true');
+        expect(status.textContent).toContain('Volvé a esta pantalla en unos minutos');
+        expect(readPurchase).not.toHaveBeenCalled();
     });
     it('filters PURGED and MODERATED targets', async () => {
         listingNotices.mockResolvedValue({
