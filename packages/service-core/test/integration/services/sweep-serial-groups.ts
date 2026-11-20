@@ -63,6 +63,7 @@ const ADDON_WRITER_FIXTURES = [
     'complement',
     'courtesy',
     'coverage',
+    'held-charge-refund',
     'next-charge-sync',
     'paid-order',
     'pause',
@@ -115,6 +116,14 @@ export const SERIAL_GROUPS: readonly SerialGroup[] = [
         // mid-case through a fake that never saw its page. Files that drive A3 run one at a time.
         key: 1_999_003,
         drives: /\bexpireAddonAuthorizationWindows\b/
+    },
+    {
+        // HOS-2406: `listProposedRefunds` pages over EVERY `MARK_PROPOSAL` refund in the database.
+        // A file that commits, confirms or closes one while the list file pages shifts the offsets
+        // (an id listed twice, another skipped). The list file runs alone; the writers share.
+        key: 1_999_004,
+        drives: /\blistProposedRefunds\(/,
+        shares: /held-charge-refund-fixtures|\bMARK_PROPOSAL\b/
     }
 ];
 
