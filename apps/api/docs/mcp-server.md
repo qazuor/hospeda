@@ -263,7 +263,7 @@ Twenty-two tools. `readOnlyHint` is derived from `isWrite`, so the two cannot di
 |---|---|---|---|
 | `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. |
 | `get_owner_summary` | read | read-only | One summary of all the user's listings: counts per vertical and state, plan-gated metrics per vertical, and up to 10 "needs your attention" items with portal links. Period `7d` or `30d`. |
-| `get_my_plan` | read | read-only | The user's plan per vertical (live subscription or running trial): catalog plan name and version, status with its label, next charge, service end, grace end, trial days left, labelled `includes`, recurring add-ons and the subscription page link. Optional `vertical`. Needs `BILLING_VIEW_OWN`. With no plan: an empty list and the plans pages. |
+| `get_my_plan` | read | read-only | The user's plan per vertical (live subscription, permanent grant, courtesy or running trial): catalog plan name and version, status with its label, next charge, service end, grace end, trial days left, labelled `includes`, recurring add-ons and the subscription page link. Optional `vertical`. Needs `BILLING_VIEW_OWN`. With no plan: an empty list and the plans pages. |
 | `get_listing` | read | read-only | Editable fields, amenities and features as `{ id, slug }`. |
 | `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. Each entry carries its `category`. |
 | `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
@@ -316,20 +316,31 @@ Tool-specific rules:
     adapter: subscriptions from `readOwnPlanState` (service-core, the reader of
     Mi suscripción), the trial from `readTrialSummary` and `readOwnTrialPlan`, `includes`
     from the cached effective set (`toEffectiveSetView`), add-ons from
-    `readOwnerAddonHoldings` (the read behind `GET /billing-addon/instances`). No raw
-    table is read in the tool, and no plan name comes from code (HOS-1967).
+    `readOwnerAddonHoldings` (the read behind `GET /billing-addon/instances`), a
+    courtesy or a permanent grant from billing's `coverage` (`COURTESY` and `GRANT`
+    sources) with the plan from `readPlanOfVersion`. No raw table is read in the tool,
+    and no plan name comes from code (HOS-1967).
+  - One item per vertical (AC-C16): a live subscription, unless a courtesy pauses it,
+    wins; then a permanent grant (`PERMANENT_GRANT`, «Acceso permanente»,
+    `coverageEndsAt: null`), then a courtesy (`COURTESY`, «Cortesía», `coverageEndsAt`
+    its end), then a running trial.
   - Labels in `context.locale`: entitlements `billing.entitlement.<key>`, limits
     `billing.comparison.limitLabel.<key>`, plans `billing.plan.<slug>.name` (else the
     catalog name), add-ons `billing.addon.<slug>.name`, statuses
     `account.subscription.mine.status.*` (`account.subscription.statusTrial` for a
     trial), verticals `account.subscription.mine.vertical.*`.
-  - A recurring add-on with no `ends_at` (until HOS-2116 writes it) has `endsAt: null`
-    and `renewsWithSubscription: true`; no date is invented.
+  - A live recurring add-on with no `ends_at` (until HOS-2116 writes it) has
+    `endsAt: null` and `renewsWithSubscription: true`; no date is invented. One still in
+    `PENDING_AUTHORIZATION` does not renew.
   - `includes` is `null` when the effective set cannot be read; it is never guessed.
 - `get_owner_summary` (HOS-2331, spec HOS-2335 §6.6). It is one call instead of one
   `get_listing_stats` per listing.
   - `subscription` (HOS-2328, AC-C33): per vertical, the same item `get_my_plan`
-    returns, built by the same `readMyPlan`. Present only with `BILLING_VIEW_OWN`.
+    returns, built by the same `readMyPlan`. Present only with `BILLING_VIEW_OWN`. If
+    the plan read fails, the block is left out and `omitted: { subscription:
+    'unavailable' }` says so; the rest of the summary still answers. Over the response
+    budget, each plan's `includes` gives way first (an `over_budget` marker pointing to
+    `get_my_plan`), before any attention item.
   - `listings`: counts per vertical and publication state. They are computed over the
     rows `list_my_listings` reads (`readMyListingRows`), so the two always agree.
     `PURGED` is not counted. `partial: true` means a vertical has more than 100

@@ -29,8 +29,8 @@ This spec is a delta on **HOS-2335 §6.3**, which already designs the tool. The 
 - **Output.** One item for each vertical where the owner holds a live title or a trial:
   - `vertical`;
   - `plan { slug, name, version }`, where `name` is the catalog row's name with the `billing.plan.<slug>.name` label when one exists. It never comes from a code map (HOS-1967);
-  - `status`: the subscription status, or `TRIAL` with the trial state, plus an owner-facing label (`account.json` `subscription.mine.status.*`);
-  - `nextChargeAt`, `serviceEndsAt`, `graceEndsAt` and `trialDaysLeft`, each null when it does not apply;
+  - `status`: the subscription status, `COURTESY` or `PERMANENT_GRANT` (AC-C16), or `TRIAL` with the trial state, plus an owner-facing label (`account.json` `subscription.mine.status.*`);
+  - `nextChargeAt`, `serviceEndsAt`, `graceEndsAt`, `trialDaysLeft` and `coverageEndsAt` (when a courtesy ends), each null when it does not apply;
   - `includes`:
     - entitlements as labels (`billing.json` `entitlement.<key>`);
     - limits as `{ label, value }` (`billing.json` `comparison.limitLabel.<key>`);
@@ -45,8 +45,19 @@ This spec is a delta on **HOS-2335 §6.3**, which already designs the tool. The 
 2. **Trial.** The trial comes from `readTrialSummary`, the service behind `GET /protected/publish/trial-summary/{vertical}`.
 3. **Includes.** They come from `getListingAccessPorts().effectiveSet` plus `toEffectiveSetView`: the cached effective set, per user and vertical.
 4. **Add-ons.** They come from the reader behind `GET /billing-addon/instances`.
+5. **Courtesy and permanent grant (AC-C16).** They come from billing's own `coverage(user, vertical)` (`getListingAccessPorts().billing.coverage`, contract §2): its `COURTESY` and `GRANT` sources. The plan is the catalog row of the plan version the source points at (`readPlanOfVersion`). `includes` still come from the effective set.
 
 The tool never reads raw tables.
+
+## Precedence (AC-C16)
+
+One item per vertical, never two. The first that applies wins:
+
+1. **A live principal subscription**, unless a courtesy is what pauses it. The owner pays for it, and its status says what is happening.
+2. **A permanent grant.** It never ends, and its anchor is the floor the effective set resolves from. A grant also cancels the owner's subscriptions and closes their courtesies when it is given (S13), so it rarely meets them.
+3. **A courtesy.** It is the reason the subscription is paused, and it ends on a date (`coverageEndsAt`).
+4. **A running trial.** It is free and short. Anything above covers the owner more durably.
+5. **A courtesy-paused subscription whose courtesy billing no longer reports.** It is shown as the `PAUSED` subscription it is, rather than dropped.
 
 ## Wiring a new tool
 
@@ -67,7 +78,8 @@ These files must change:
 - **AC-C15b:** The `get_owner_summary` subscription block calls the same reader as `get_my_plan`, and a test asserts that both import the same function. HOS-2184 AC-16 has to import the same reader when it is built; the shared reader is the export it imports.
 - **AC-C33:** In `get_owner_summary`, the `subscription` block for each vertical equals the `get_my_plan` output.
 - **AC-P1 (new):** `GET /protected/billing-subscription/` answers exactly as before the reader extraction. A snapshot test covers it.
-- **AC-P2 (new):** A recurring add-on with no `ends_at` is shown as renewing with the subscription, with no invented date.
+- **AC-P2 (new):** A recurring add-on with no `ends_at` is shown as renewing with the subscription, with no invented date. Only a live (`ACTIVE`) one renews; one still in `PENDING_AUTHORIZATION` does not.
+- **AC-C16 (new, owner decision 2026-11-19):** An owner covered only by a permanent grant or a courtesy has a plan. The vertical's item shows the plan of the version the grant or courtesy points at, with the status «Acceso permanente» (`PERMANENT_GRANT`) or «Cortesía» (`COURTESY`), labelled in es, en and pt. `coverageEndsAt` is the courtesy's end, and null for a grant, which never ends. A live subscription in the same vertical wins, and there is one item per vertical (see Precedence). AC-C33 still holds.
 
 ## Out of scope
 
