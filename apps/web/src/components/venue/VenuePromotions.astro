@@ -21,7 +21,7 @@ if (items.length === 0) return;
                 <h3>{item.title}</h3>
                 <p>{formatPromotionBenefit({ discountType: item.discountType, discountValue: item.discountValue, locale, specialOfferText: item.description })}</p>
                 {item.discountType !== 'special_offer' && item.description && <p>{item.description}</p>}
-                {item.window && <p>{formatPromotionWindow({ window: item.window, locale })} <PromotionWindowStatus client:visible window={item.window} validFrom={item.validFrom} validUntil={item.validUntil} locale={locale} /></p>}
+                {item.window && <p>{formatPromotionWindow({ window: item.window, locale })} <PromotionWindowStatus client:idle window={item.window} validFrom={item.validFrom} validUntil={item.validUntil} locale={locale} /></p>}
                 <p>{item.validUntil
                     ? t('venue.detail.promotions.validUntil', 'Hasta el {{date}}', { date: formatCalendarDate({ value: item.validUntil, locale, options: { dateStyle: 'long' } }) })
                     : t('venue.detail.promotions.noEndDate', 'Sin fecha de fin')}</p>

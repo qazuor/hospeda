@@ -188,6 +188,23 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4551
+    {
+        id: '2026-11-19-partner-claim-warns-wrong-account',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El link para reclamar tu Partner te avisa si entraste con otra cuenta',
+            en: 'The link to claim your Partner warns you if you signed in with another account',
+            pt: 'O link para reivindicar seu Partner avisa se você entrou com outra conta'
+        },
+        body: {
+            es: 'Si abrís el link con una cuenta distinta a la del correo donde lo recibiste, lo ves antes de tocar nada y podés cerrar sesión y seguir con la cuenta correcta en un solo paso.',
+            en: 'If you open the link with an account other than the one for the email where you received it, you see it before touching anything and can sign out and continue with the right account in one step.',
+            pt: 'Se você abrir o link com uma conta diferente da do e-mail onde o recebeu, verá isso antes de tocar em qualquer coisa e poderá sair e continuar com a conta certa em um único passo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4584
     {
         id: '2026-11-19-checkout-shows-promo-price',

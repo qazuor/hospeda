@@ -237,27 +237,36 @@ function extractComponentBody({
 }
 
 /**
- * The bug shape itself: a state variable seeded `true` (i.e. "loading" by
- * default) with an unconditional `if (<var>) { return null; }` gating the
- * component's render.
+ * The bug shape itself, in its two mirrored spellings:
+ *   - a state variable seeded `true` (i.e. "loading" by default) with an
+ *     unconditional `if (<var>) { return null; }` (HOS-1031);
+ *   - a state variable seeded `false` (i.e. "not mounted/ready yet") with an
+ *     unconditional `if (!<var>) { return null; }` (HOS-2392:
+ *     `PromotionWindowStatus.client.tsx` waits for the client clock this way,
+ *     so the venue detail page's «Ahora» badge never hydrated).
  *
  * @returns The offending state variable's name, or `null` if the body is clean.
  */
 function findNullOnLoadVariable(body: string): string | null {
-    const stateBindingRe =
-        /const\s*\[\s*(\w+)\s*,\s*set\w+\s*]\s*=\s*useState(?:<[^>]*>)?\(\s*true\s*\)/g;
-    const candidates: string[] = [];
-    let bindingMatch: RegExpExecArray | null;
-    // biome-ignore lint/suspicious/noAssignInExpressions: standard regex-exec loop
-    while ((bindingMatch = stateBindingRe.exec(body))) {
-        candidates.push(bindingMatch[1]);
-    }
+    const shapes = [
+        { seed: 'true', negation: '' },
+        { seed: 'false', negation: '!\\s*' }
+    ] as const;
 
-    for (const varName of candidates) {
-        const nullReturnRe = new RegExp(
-            `if\\s*\\(\\s*${varName}\\s*\\)\\s*\\{?\\s*return null\\s*;`
+    for (const { seed, negation } of shapes) {
+        const stateBindingRe = new RegExp(
+            `const\\s*\\[\\s*(\\w+)\\s*,\\s*set\\w+\\s*]\\s*=\\s*useState(?:<[^>]*>)?\\(\\s*${seed}\\s*\\)`,
+            'g'
         );
-        if (nullReturnRe.test(body)) return varName;
+        let bindingMatch: RegExpExecArray | null;
+        // biome-ignore lint/suspicious/noAssignInExpressions: standard regex-exec loop
+        while ((bindingMatch = stateBindingRe.exec(body))) {
+            const varName = bindingMatch[1];
+            const nullReturnRe = new RegExp(
+                `if\\s*\\(\\s*${negation}${varName}\\s*\\)\\s*\\{?\\s*return null\\s*;`
+            );
+            if (nullReturnRe.test(body)) return varName;
+        }
     }
     return null;
 }
@@ -312,7 +321,7 @@ function findViolations({ exemptions }: { readonly exemptions: readonly string[]
 }
 
 describe('a client:visible island never renders null on its first paint', () => {
-    it('no mounted component renders null while a useState(true) loading flag is set', () => {
+    it('no mounted component renders null while a loading or not-ready flag is set', () => {
         const violations = findViolations({ exemptions: EXEMPTIONS });
         expect(violations).toEqual([]);
     });
@@ -333,6 +342,34 @@ export function FeaturedToggleSection({ locale, accommodationId }: Props) {
         });
         expect(body).not.toBeNull();
         expect(findNullOnLoadVariable(body ?? '')).toBe('isLoading');
+    });
+
+    it('recognises the mirrored shape that caused HOS-2392 (useState(false) + if (!x) return null)', () => {
+        const removedShape = `
+export function PromotionWindowStatus({ window, locale }: Props) {
+    const [live, setLive] = useState(false);
+    useEffect(() => {}, []);
+    if (!live) return null;
+    return <span />;
+}`;
+        const body = extractComponentBody({
+            source: removedShape,
+            exportedName: 'PromotionWindowStatus'
+        });
+        expect(body).not.toBeNull();
+        expect(findNullOnLoadVariable(body ?? '')).toBe('live');
+    });
+
+    it('does not fire on a false-seeded flag whose null return is not negated', () => {
+        const unrelatedShape = `
+export function Toggle({ locale }: Props) {
+    const [open, setOpen] = useState(false);
+    if (open) return null;
+    return <div />;
+}`;
+        const body = extractComponentBody({ source: unrelatedShape, exportedName: 'Toggle' });
+        expect(body).not.toBeNull();
+        expect(findNullOnLoadVariable(body ?? '')).toBeNull();
     });
 
     it('does not fire on a loading state that renders a placeholder instead of null', () => {
