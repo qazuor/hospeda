@@ -18,7 +18,8 @@ const state = vi.hoisted(() => ({
     },
     confirm: vi.fn(),
     decline: vi.fn(),
-    addToast: vi.fn()
+    addToast: vi.fn(),
+    pages: [] as number[]
 }));
 
 vi.mock('@/hooks/use-user-permissions', () => ({
@@ -40,7 +41,10 @@ vi.mock('@/components/ui/ToastProvider', () => ({
     useToast: () => ({ addToast: state.addToast })
 }));
 vi.mock('../../hooks/useProposedRefunds', () => ({
-    useProposedRefunds: () => state.list
+    useProposedRefunds: ({ page }: { page: number }) => {
+        state.pages.push(page);
+        return state.list;
+    }
 }));
 vi.mock('../../hooks/useRefundDecision', () => ({
     useConfirmRefundMutation: () => ({ mutateAsync: state.confirm, isPending: false }),
@@ -105,6 +109,7 @@ beforeEach(() => {
     });
     state.decline.mockReset().mockResolvedValue({ refundId: REFUND_ID, status: 'FAILED' });
     state.addToast.mockReset();
+    state.pages.length = 0;
     listOf(refundWith());
 });
 
@@ -290,5 +295,105 @@ describe('HOS-2400 decline (action 13 refusal)', () => {
             tr('admin-billing.proposedRefunds.rejections.REFUND_HAS_PROVIDER_CALLS')
         );
         expect(screen.getByTestId('proposed-refund-decline')).toBeEnabled();
+    });
+});
+
+describe('HOS-2400 confirm is only for REQUESTED refunds', () => {
+    it('hides Confirm on a CONFIRMED row and says it can only be declined', () => {
+        listOf(refundWith({ status: 'CONFIRMED' }));
+        render(<ProposedRefundsScreen />);
+
+        expect(screen.queryByTestId('proposed-refund-confirm')).not.toBeInTheDocument();
+        expect(screen.getByTestId('proposed-refund-confirmed-only-decline')).toHaveTextContent(
+            tr('admin-billing.proposedRefunds.confirmedOnlyDecline')
+        );
+        expect(screen.getByTestId('proposed-refund-decline')).toBeEnabled();
+    });
+
+    it('keeps Confirm and no such line on a REQUESTED row', () => {
+        render(<ProposedRefundsScreen />);
+
+        expect(screen.getByTestId('proposed-refund-confirm')).toBeInTheDocument();
+        expect(
+            screen.queryByTestId('proposed-refund-confirmed-only-decline')
+        ).not.toBeInTheDocument();
+    });
+});
+
+describe('HOS-2400 a double click sends one request', () => {
+    it('posts one confirm for two clicks in the same tick', async () => {
+        let release: (value: unknown) => void = () => undefined;
+        state.confirm.mockReturnValue(new Promise((resolve) => (release = resolve)));
+        render(<ProposedRefundsScreen />);
+
+        fireEvent.click(screen.getByTestId('proposed-refund-confirm'));
+        const submit = screen.getByTestId('proposed-refund-confirm-submit');
+        fireEvent.click(submit);
+        fireEvent.click(submit);
+
+        expect(state.confirm).toHaveBeenCalledTimes(1);
+        release({ refundId: REFUND_ID, status: 'CONFIRMED', outcome: 'SENT', calls: [] });
+        await waitFor(() => expect(state.addToast).toHaveBeenCalled());
+    });
+
+    it('posts one decline for two clicks in the same tick', async () => {
+        let release: (value: unknown) => void = () => undefined;
+        state.decline.mockReturnValue(new Promise((resolve) => (release = resolve)));
+        render(<ProposedRefundsScreen />);
+
+        fireEvent.click(screen.getByTestId('proposed-refund-decline'));
+        const submit = screen.getByTestId('proposed-refund-decline-submit');
+        fireEvent.click(submit);
+        fireEvent.click(submit);
+
+        expect(state.decline).toHaveBeenCalledTimes(1);
+        release({ refundId: REFUND_ID, status: 'FAILED' });
+        await waitFor(() => expect(state.addToast).toHaveBeenCalled());
+    });
+
+    it('accepts a new click once the first request failed', async () => {
+        state.confirm.mockRejectedValueOnce(conflict('REFUND_STATE_CHANGED'));
+        render(<ProposedRefundsScreen />);
+
+        fireEvent.click(screen.getByTestId('proposed-refund-confirm'));
+        fireEvent.click(screen.getByTestId('proposed-refund-confirm-submit'));
+        await screen.findByTestId('proposed-refund-error');
+        fireEvent.click(screen.getByTestId('proposed-refund-confirm-submit'));
+
+        await waitFor(() => expect(state.confirm).toHaveBeenCalledTimes(2));
+    });
+});
+
+describe('HOS-2400 derived state', () => {
+    it('unlocks decline when a refetch says the refund no longer closes a held charge', () => {
+        listOf(refundWith({ closesHeldCharge: true }));
+        const view = render(<ProposedRefundsScreen />);
+        expect(screen.getByTestId('proposed-refund-decline')).toBeDisabled();
+
+        listOf(refundWith({ closesHeldCharge: false }));
+        view.rerender(<ProposedRefundsScreen />);
+
+        expect(screen.getByTestId('proposed-refund-decline')).toBeEnabled();
+    });
+
+    it('steps back to the new last page when the last row of the last page is resolved', async () => {
+        state.list.data = {
+            items: [refundWith()],
+            pagination: { page: 1, pageSize: 50, total: 51, totalPages: 2 }
+        };
+        const view = render(<ProposedRefundsScreen />);
+        fireEvent.click(screen.getByText(tr('admin-billing.proposedRefunds.next')));
+        expect(state.pages.at(-1)).toBe(2);
+
+        state.list.data = {
+            items: [],
+            pagination: { page: 2, pageSize: 50, total: 50, totalPages: 1 }
+        };
+        view.rerender(<ProposedRefundsScreen />);
+
+        await waitFor(() => expect(state.pages.at(-1)).toBe(1));
+        listOf(refundWith());
+        view.rerender(<ProposedRefundsScreen />);
+        expect(screen.getByTestId('proposed-refund')).toBeInTheDocument();
     });
 });
