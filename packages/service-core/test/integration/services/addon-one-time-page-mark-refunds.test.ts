@@ -429,7 +429,9 @@ describe('HOS-2179 D1 the shared activation refuses a held row', () => {
         );
 
         // Assert
-        await expect(attempt).rejects.toThrow('held by a reconciliation mark');
+        await expect(attempt).rejects.toMatchObject({
+            reason: 'HELD_PAYMENT_ACTIVATION_REFUSED'
+        });
         expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
         expect(await activationPagePayments(instance.id)).toHaveLength(0);
         const [stored] = await getServiceTestDb()
