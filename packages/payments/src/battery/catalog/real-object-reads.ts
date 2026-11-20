@@ -34,11 +34,6 @@ const AUTHORIZATION_SEARCH_PAGE = 20;
  */
 const MAX_SEARCH_PAGES = 50;
 
-/** RP13 / EX-57: the order search window may span at most 30 days. */
-const ORDER_WINDOW_MAX_DAYS = 30;
-
-const DAY_MS = 86_400_000;
-
 /** The fields the adapter reads from `GET /preapproval/{id}` (`ReadResponseSchema`). */
 const AUTHORIZATION_PATHS = [
     'id',
@@ -100,15 +95,6 @@ const PAYMENT_PATHS = [
     'refunds[].id',
     'refunds[].amount',
     'refunds[].status'
-] as const;
-
-/** The fields the adapter reads from `GET /v1/orders` (`OrderSearchSchema`). */
-const ORDER_SEARCH_PATHS = [
-    'paging.total',
-    'data[].id',
-    'data[].external_reference',
-    'data[].created_date',
-    'data[].date_created'
 ] as const;
 
 function recordOf(value: unknown): Readonly<Record<string, unknown>> {
@@ -232,67 +218,6 @@ const authorizationSearch: WatchEntry = {
         const unfiltered = totalOf(all);
         if (unfiltered === null) throw new Error('the authorization search answered no total');
         return { referenceFilterIgnored: totalOf(garbage) === unfiltered };
-    }
-};
-
-/**
- * RP13 / EX-57: the order search needs both creation dates, spans at most 30 days and matches the
- * reference exactly. Measured in sandbox; EX-57 leaves production to be measured without mutating,
- * which is what this does there.
- */
-const orderSearchBounds: WatchEntry = {
-    id: 'order-search',
-    rows: ['RP13', 'M14'],
-    accounts: ['sandbox', 'production'],
-    effect: 'read',
-    expected: {
-        withoutDatesNames: 'missing_required_params',
-        overAMonthNames: 'invalid_search_params',
-        exactReferenceMatches: 0
-    },
-    measure: async (ctx): Promise<JsonValue> => {
-        const reference = garbageReference(ctx);
-        const now = ctx.now().getTime();
-        const iso = (ms: number) => new Date(ms).toISOString();
-        const withoutDates = await ctx.send({
-            label: 'without-dates',
-            request: {
-                method: 'GET',
-                path: `/v1/orders?${new URLSearchParams({ external_reference: reference })}`
-            }
-        });
-        const overAMonth = await ctx.send({
-            label: 'over-a-month',
-            request: {
-                method: 'GET',
-                path: `/v1/orders?${new URLSearchParams({
-                    begin_date: iso(now - (ORDER_WINDOW_MAX_DAYS + 1) * DAY_MS),
-                    end_date: iso(now),
-                    external_reference: reference
-                })}`
-            }
-        });
-        const bridge = createWatchAdapterBridge({ ctx });
-        const within = await bridge.call(
-            'within-a-month',
-            (provider) =>
-                provider.searchOrders({
-                    reference,
-                    createdFrom: iso(now - (ORDER_WINDOW_MAX_DAYS - 1) * DAY_MS),
-                    createdTo: iso(now)
-                }),
-            { shapePaths: ORDER_SEARCH_PATHS, oneLabel: true }
-        );
-        if (within.value === undefined) {
-            throw new Error(`the adapter could not search orders: ${String(within.error)}`);
-        }
-        const names = (response: WatchResponse, code: string): string =>
-            JSON.stringify(response.body ?? null).includes(code) ? code : 'another answer';
-        return {
-            withoutDatesNames: names(withoutDates, 'missing_required_params'),
-            overAMonthNames: names(overAMonth, 'invalid_search_params'),
-            exactReferenceMatches: within.value.orders.length
-        };
     }
 };
 
@@ -463,7 +388,6 @@ const recentPayments: WatchEntry = {
 /** The read-only re-reads. */
 export const REAL_OBJECT_READ_ENTRIES: readonly WatchEntry[] = [
     authorizationSearch,
-    orderSearchBounds,
     recentAuthorizations,
     recentPayments
 ];

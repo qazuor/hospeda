@@ -12,18 +12,16 @@ import type { PaymentProviderMethod } from './payment-provider';
 /** Capability → the interface methods that implement it. */
 export const CAPABILITY_METHODS = {
     authorize: ['authorize'],
-    charge: ['charge', 'chargeOnce', 'requestOneTimePayment'],
+    charge: ['charge', 'requestOneTimePayment'],
     changeAmount: ['changeAmount'],
     pauseAndResume: ['pause', 'resume'],
     cancel: ['cancel', 'closeOneTimePayment'],
-    refund: ['refund', 'refundOrder'],
+    refund: ['refund'],
     read: [
         'readAuthorization',
         'readCharge',
         'listCharges',
         'searchAuthorizations',
-        'readOrder',
-        'searchOrders',
         'readOneTimePayment',
         'searchCharges'
     ],

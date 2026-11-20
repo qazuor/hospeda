@@ -122,13 +122,6 @@
             "does": "Refuses a refund as not refundable (code 2084) when the same charge does accept another amount.",
             "measured": [{ "row": "RF-8", "date": "2026-09-15", "accounts": ["production"] }],
             "defenseTest": "TEST:B6:3"
-        },
-        {
-            "id": "M14",
-            "name": "the order search counts in text",
-            "does": "The order search answers paging.total as a string of digits, not as a number.",
-            "measured": [{ "row": "order-search", "date": "2026-11-19", "accounts": ["sandbox"] }],
-            "defenseTest": "TEST:2384:1"
         }
     ],
     "rules": [
@@ -212,30 +205,6 @@
                 { "row": "EX-36", "date": "2026-09-29", "accounts": ["sandbox"] },
                 { "row": "PA-3", "date": "2026-09-15", "accounts": ["production"] }
             ]
-        },
-        {
-            "id": "RP13",
-            "kind": "rule",
-            "name": "an order search needs both creation dates, spans at most 30 days and matches the reference exactly",
-            "measured": [{ "row": "EX-57", "date": "2026-09-30", "accounts": ["sandbox"] }]
-        },
-        {
-            "id": "RP14",
-            "kind": "rule",
-            "name": "MP:EX-58 order refunds require an idempotency key; identical replays return the first full response, changed amounts return 409, and responses list all order refunds",
-            "measured": [{ "row": "EX-58", "date": "2026-09-30", "accounts": ["sandbox"] }]
-        },
-        {
-            "id": "RP15",
-            "kind": "rule",
-            "name": "one-time order creation is idempotent by key; another body returns 409 and the reference does not deduplicate",
-            "measured": [{ "row": "EX-41", "date": "2026-09-25", "accounts": ["sandbox"] }]
-        },
-        {
-            "id": "RP16",
-            "kind": "rule",
-            "name": "a declined one-time payment creates a failed order and returns its id",
-            "measured": [{ "row": "EX-30", "date": "2026-09-29", "accounts": ["sandbox"] }]
         },
         {
             "id": "RP17",

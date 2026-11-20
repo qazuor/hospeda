@@ -1,7 +1,8 @@
 /**
- * HOS-1512 PR 2: G3 (a 402 to `orders.create` that names the failed order is a definitive
- * decline, read as the adapter reads it) and F4 (an explicit replay resends a key this run
- * already sent, verbatim, booking nothing).
+ * HOS-1512 PR 2, F4: an explicit replay resends a key this run already sent, verbatim, booking
+ * nothing. G3 (a 402 to `orders.create` naming the failed order was a definitive decline) was
+ * retired with the Orders rules (HOS-2179 T-7, owner decision 2026-11-20): an Orders write is now
+ * unlisted and refused before it leaves.
  */
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it } from 'vitest';
@@ -53,40 +54,19 @@ function provider(args: { readonly onWrite?: (sent: Sent, index: number) => Answ
     return { transport, writes: () => sent.filter((entry) => entry.method !== 'GET') };
 }
 
-const ORDER = {
-    type: 'online',
-    total_amount: '15.00',
-    processing_mode: 'automatic',
-    payer: { email: 'test_user@testuser.com' },
-    transactions: {
-        payments: [
-            {
-                amount: '15.00',
-                payment_method: {
-                    id: 'visa',
-                    type: 'credit_card',
-                    token: 'tok',
-                    installments: 1
-                }
-            }
-        ]
-    }
+/** A one-time payment as `payments.create` lists it: the amount in pesos, one installment. */
+const PAYMENT = {
+    transaction_amount: 15,
+    description: 'watch',
+    payment_method_id: 'visa',
+    token: 'tok',
+    installments: 1,
+    payer: { email: 'test_user@testuser.com' }
 };
 
-const PREAPPROVAL = {
-    reason: 'watch',
-    back_url: 'https://hospeda.test/return',
-    auto_recurring: {
-        frequency: 1,
-        frequency_type: 'months',
-        transaction_amount: 15,
-        currency_id: 'ARS'
-    }
-};
-
-const order = (label: string) => ({
+const payment = (label: string) => ({
     label,
-    request: { method: 'POST' as const, path: '/v1/orders', body: ORDER },
+    request: { method: 'POST' as const, path: '/v1/payments', body: PAYMENT },
     chargeMinor: MINIMUM
 });
 
@@ -122,107 +102,22 @@ async function run(args: {
     return { ...result, store };
 }
 
-describe('G3: a 402 to orders.create with a readable data.id is a definitive decline', () => {
-    const declined = { status: 402, body: { data: { id: 'ORD-FAILED-1' } } };
-
-    it('releases the reservation and records the failed order in providerIds', async () => {
+describe('HOS-2179 T-7: an Orders write is no longer a listed operation', () => {
+    it('refuses an order creation before it leaves, booking nothing', async () => {
         // Arrange
-        const { transport } = provider({ onWrite: () => declined });
+        const { transport, writes } = provider();
 
         // Act
         const result = await run({
             catalog: [
-                money('RP16', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('charge'));
-                    return 'done';
-                })
-            ],
-            transport
-        });
-
-        // Assert
-        expect(result.run.outcome).toBe('completed');
-        expect(result.run.ledger).toEqual({ charged: 0, refunded: 0 });
-        expect(result.run.measurements.RP16?.providerIds).toEqual(['ORD-FAILED-1']);
-        const last = result.store.progress[result.store.progress.length - 1];
-        expect(last?.providerIds).toEqual(['ORD-FAILED-1']);
-        expect(last?.ledger).toEqual({ charged: 0, refunded: 0 });
-    });
-
-    it('gives the money back: a second charge fits the same cap after the decline', async () => {
-        const { transport, writes } = provider({
-            onWrite: (_sent, index) => (index === 0 ? declined : undefined)
-        });
-        const result = await run({
-            catalog: [
-                money('RP16', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('first'));
-                    await ctx.send(order('second'));
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('completed');
-        expect(writes()).toHaveLength(2);
-        expect(result.run.ledger).toEqual({ charged: MINIMUM, refunded: 0 });
-    });
-
-    it('never makes the failed order a target: a refund on it is refused, sending nothing', async () => {
-        const { transport, writes } = provider({ onWrite: () => declined });
-        const result = await run({
-            catalog: [
-                money('RP16', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('charge'));
+                money('RP19', async (ctx): Promise<JsonValue> => {
                     await ctx.send({
-                        label: 'refund',
+                        label: 'charge',
                         request: {
                             method: 'POST',
-                            path: '/v1/orders/ORD-FAILED-1/refund',
-                            body: { transactions: [{ id: 'PAY-1', amount: '15.00' }] }
+                            path: '/v1/orders',
+                            body: { total_amount: '15.00' }
                         },
-                        refundMinor: MINIMUM
-                    });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('aborted');
-        expect(result.run.reason).toContain('TARGET_NOT_CREATED_BY_RUN');
-        expect(writes()).toHaveLength(1);
-    });
-
-    it.each([
-        ['no body', undefined],
-        ['no data', { message: 'declined' }],
-        ['an empty id', { data: { id: '' } }],
-        ['a numeric id', { data: { id: 123 } }],
-        ['a top-level id only', { id: 'ORD-1' }]
-    ])('keeps the reservation and aborts on a 402 with %s', async (_name, body) => {
-        const { transport } = provider({ onWrite: () => ({ status: 402, body }) });
-        const result = await run({
-            catalog: [
-                money('RP16', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('charge'));
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('aborted');
-        expect(result.run.reason).toContain('WRITE_OUTCOME_UNKNOWN');
-        expect(result.run.ledger).toEqual({ charged: MINIMUM, refunded: 0 });
-    });
-
-    it('applies to orders.create only: a 402 to preapproval.create with data.id stays unknown', async () => {
-        const { transport } = provider({ onWrite: () => declined });
-        const result = await run({
-            catalog: [
-                money('M3', async (ctx): Promise<JsonValue> => {
-                    await ctx.send({
-                        label: 'create',
-                        request: { method: 'POST', path: '/preapproval', body: PREAPPROVAL },
                         chargeMinor: MINIMUM
                     });
                     return 'done';
@@ -230,26 +125,29 @@ describe('G3: a 402 to orders.create with a readable data.id is a definitive dec
             ],
             transport
         });
+
+        // Assert
         expect(result.run.outcome).toBe('aborted');
-        expect(result.run.reason).toContain('WRITE_OUTCOME_UNKNOWN');
-        expect(result.run.ledger).toEqual({ charged: MINIMUM, refunded: 0 });
+        expect(result.run.reason).toContain('OPERATION_NOT_ALLOWED');
+        expect(writes()).toEqual([]);
+        expect(result.run.ledger).toEqual({ charged: 0, refunded: 0 });
     });
 });
 
 describe('F4: an explicit replay resends a key this run already sent, booking nothing', () => {
     it('resends the identical request with the same derived key and books it once', async () => {
-        // Arrange: the provider answers the replay with the first object (EX-58, RP15).
+        // Arrange: the provider answers the replay with the first object.
         const { transport, writes } = provider({
-            onWrite: () => ({ status: 201, body: { id: 'ORD-1', status: 'processed' } })
+            onWrite: () => ({ status: 201, body: { id: 'PAY-1', status: 'approved' } })
         });
 
         // Act: the entry may charge the minimum ONCE; a booked replay would pass its cap.
         const result = await run({
             catalog: [
-                money('RP15', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('create'));
+                money('RP17', async (ctx): Promise<JsonValue> => {
+                    await ctx.send(payment('create'));
                     const again = await ctx.replay({ label: 'create-replay', of: 'create' });
-                    return (again.body as { id: string }).id === 'ORD-1' ? 'done' : 'other';
+                    return (again.body as { id: string }).id === 'PAY-1' ? 'done' : 'other';
                 })
             ],
             transport
@@ -262,13 +160,13 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
         expect(replayed).toEqual(first);
         const key = watchWriteKey({
             runId: result.runId,
-            entryId: 'RP15',
+            entryId: 'RP17',
             label: 'create',
             sequence: 0
         });
         expect(replayed?.headers?.['X-Idempotency-Key']).toBe(key);
         expect((replayed?.body as { external_reference?: string }).external_reference).toBe(key);
-        expect(Object.keys(result.run.measurements.RP15?.shapes ?? {}).sort()).toEqual([
+        expect(Object.keys(result.run.measurements.RP17?.shapes ?? {}).sort()).toEqual([
             'create',
             'create-replay'
         ]);
@@ -277,19 +175,19 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
     it('replays a refund without booking it again', async () => {
         const { transport, writes } = provider({
             onWrite: (sent) =>
-                sent.path.endsWith('/refund') ? { status: 201, body: { refunds: [] } } : undefined
+                sent.path.endsWith('/refunds') ? { status: 201, body: { id: 'REF-1' } } : undefined
         });
         const result = await run({
             catalog: [
-                money('RP14', async (ctx): Promise<JsonValue> => {
-                    const made = await ctx.send(order('create'));
+                money('RP18', async (ctx): Promise<JsonValue> => {
+                    const made = await ctx.send(payment('create'));
                     const id = (made.body as { id: string }).id;
                     await ctx.send({
                         label: 'refund',
                         request: {
                             method: 'POST',
-                            path: `/v1/orders/${id}/refund`,
-                            body: { transactions: [{ id: 'PAY-1', amount: '15.00' }] }
+                            path: `/v1/payments/${id}/refunds`,
+                            body: { amount: 15 }
                         },
                         refundMinor: MINIMUM
                     });
@@ -311,7 +209,7 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
         const { transport, writes } = provider();
         const result = await run({
             catalog: [
-                money('RP15', async (ctx): Promise<JsonValue> => {
+                money('RP17', async (ctx): Promise<JsonValue> => {
                     await ctx.send({
                         label: 'customer',
                         request: { method: 'POST', path: '/v1/customers', body: {} }
@@ -331,12 +229,12 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
         const { transport, writes } = provider();
         const result = await run({
             catalog: [
-                money('RP15', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('create'));
+                money('RP17', async (ctx): Promise<JsonValue> => {
+                    await ctx.send(payment('create'));
                     return 'done';
                 }),
                 {
-                    id: 'RP14',
+                    id: 'RP18',
                     accounts: ['sandbox'],
                     effect: 'mutates',
                     expected: 'done',
@@ -354,19 +252,19 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
     });
 
     it.each([
-        ['another object', { status: 201, body: { id: 'ORD-2' } }],
+        ['another object', { status: 201, body: { id: 'PAY-2' } }],
         ['no id', { status: 201, body: {} }],
         ['a 5xx', { status: 503, body: {} }],
         ['a lost answer', new Error('socket hang up')]
     ] as const)('stops the run when the replay answers %s', async (_name, answer) => {
         const { transport } = provider({
             onWrite: (_sent, index) =>
-                index === 0 ? { status: 201, body: { id: 'ORD-1' } } : answer
+                index === 0 ? { status: 201, body: { id: 'PAY-1' } } : answer
         });
         const result = await run({
             catalog: [
-                money('RP15', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('create'));
+                money('RP17', async (ctx): Promise<JsonValue> => {
+                    await ctx.send(payment('create'));
                     await ctx.replay({ label: 'create-replay', of: 'create' });
                     return 'done';
                 })
@@ -380,12 +278,12 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
 
     it('records the unexpected object of a replay so a human can find it', async () => {
         const { transport } = provider({
-            onWrite: (_sent, index) => ({ status: 201, body: { id: `ORD-${index + 1}` } })
+            onWrite: (_sent, index) => ({ status: 201, body: { id: `PAY-${index + 1}` } })
         });
         const result = await run({
             catalog: [
-                money('RP15', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('create'));
+                money('RP17', async (ctx): Promise<JsonValue> => {
+                    await ctx.send(payment('create'));
                     await ctx.replay({ label: 'create-replay', of: 'create' });
                     return 'done';
                 })
@@ -393,48 +291,9 @@ describe('F4: an explicit replay resends a key this run already sent, booking no
             transport
         });
         expect(result.run.outcome).toBe('aborted');
-        expect(result.run.measurements.RP15?.providerIds).toEqual(['ORD-1', 'ORD-2']);
+        expect(result.run.measurements.RP17?.providerIds).toEqual(['PAY-1', 'PAY-2']);
         expect(result.store.progress.flatMap((entry) => entry.providerIds ?? [])).toContain(
-            'ORD-2'
+            'PAY-2'
         );
-    });
-
-    it('accepts a refused create replayed with the same failed order (G3 + F4)', async () => {
-        const { transport } = provider({
-            onWrite: () => ({ status: 402, body: { data: { id: 'ORD-FAILED-1' } } })
-        });
-        const result = await run({
-            catalog: [
-                money('RP16', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('create'));
-                    await ctx.replay({ label: 'create-replay', of: 'create' });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('completed');
-        expect(result.run.ledger).toEqual({ charged: 0, refunded: 0 });
-    });
-
-    it('accepts a 2xx replay of a declined create when it names the same failed order', async () => {
-        const { transport } = provider({
-            onWrite: (_sent, index) =>
-                index === 0
-                    ? { status: 402, body: { data: { id: 'ORD-FAILED-1' } } }
-                    : { status: 201, body: { id: 'ORD-FAILED-1', status: 'failed' } }
-        });
-        const result = await run({
-            catalog: [
-                money('RP16', async (ctx): Promise<JsonValue> => {
-                    await ctx.send(order('create'));
-                    await ctx.replay({ label: 'create-replay', of: 'create' });
-                    return 'done';
-                })
-            ],
-            transport
-        });
-        expect(result.run.outcome).toBe('completed');
-        expect(result.run.ledger).toEqual({ charged: 0, refunded: 0 });
     });
 });
