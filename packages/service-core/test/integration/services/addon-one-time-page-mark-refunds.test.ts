@@ -19,6 +19,7 @@ import type { NoticeDelivery } from '@repo/payments';
 import { FAKE_NOTICE_CHANNEL_HEADER } from '@repo/payments/fake';
 import { PermissionEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { activateOneTimeInstance } from '../../../src/services/billing/addon/addon-instance-a2-one-time-activation';
 import { confirmOneTimePagePayment } from '../../../src/services/billing/addon/addon-instance-a2-one-time-page';
 import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-addon-authorization-windows-one-time';
 import { receiveProviderDelivery } from '../../../src/services/billing/notice/receive-provider-delivery.service';
@@ -400,6 +401,48 @@ describe('HOS-2179 D1 safeguard 1: the held row never blocks nor fakes an activa
             expect(await heldPagePayments(instance.id)).toHaveLength(0);
         }
     );
+});
+
+describe('HOS-2179 D1 the shared activation refuses a held row', () => {
+    it.skipIf(skip)('fails closed when asked to activate with a charge a mark holds', async () => {
+        // Arrange: a divergent charge, held by DIVERGENCIA_DE_MONTO, on a waiting purchase.
+        const s = await pageSetup();
+        const { instance, paymentPageId } = await boughtPage(s);
+        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+        await pagePriceIs(instance.productId, 12000);
+        await confirmOneTimePagePayment(
+            { instanceId: instance.id, chargeId: paid.chargeId },
+            s.ports
+        );
+        const held = await onlyHeld(instance.id);
+
+        // Act: a caller that skipped its own check hands the held charge to the activation.
+        const attempt = activateOneTimeInstance(
+            {
+                instanceId: instance.id,
+                providerFactId: paid.chargeId,
+                amount: { amountMinor: 10000, currency: 'ARS' },
+                chargeCreatedAt: held.payment.factAt,
+                stillOurs: () => true
+            },
+            s.ports
+        );
+
+        // Assert
+        await expect(attempt).rejects.toThrow('held by a reconciliation mark');
+        expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        const [stored] = await getServiceTestDb()
+            .select()
+            .from(payments)
+            .where(eq(payments.id, held.payment.id));
+        expect(stored).toMatchObject({ status: 'SUCCEEDED', version: held.payment.version });
+        const credited = await getServiceTestDb()
+            .select()
+            .from(receipts)
+            .where(eq(receipts.paymentId, held.payment.id));
+        expect(credited).toHaveLength(0);
+    });
 });
 
 describe('HOS-2179 D1 safeguard 2: the revocation refunds the payment that activated', () => {
