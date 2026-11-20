@@ -1,17 +1,15 @@
 /**
- * HOS-2179 T-6 follow-up: a retry over the same owner's pending page purchase respects A3's
- * margin. Once the page stopped taking payments, the purchase is released before the margin
- * passes only when the search saw no payment at all; a seen payment that is not approved keeps it
- * waiting, because the search may answer only part of the matches (M4). The fake lies by default.
+ * HOS-2179 T-6 follow-up: a retry over the same owner's expired page purchase. The purchase is
+ * decided at the page expiry, without A3's margin: a declined payment is final on a binary-mode
+ * page. Races around that decision end in one purchase and one page, and a payment the search
+ * missed lands on the late-payment path. The fake lies by default.
  */
 import { addonInstances, and, eq, idempotencyKeys, ne } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { confirmOneTimePagePayment } from '../../../src/services/billing/addon/addon-instance-a2-one-time-page';
 import type * as occupiedModule from '../../../src/services/billing/addon/occupied-page-purchase';
 import { PAYMENT_PAGE_OPERATION } from '../../../src/services/billing/addon/one-time-payment-page';
-import { paymentPageTiming } from '../../../src/services/billing/addon/one-time-payment-page-deadline';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
-import { getCurrentBillingDeadlines } from '../../../src/services/billing/deadlines/billing-deadlines.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import {
@@ -56,15 +54,13 @@ async function boughtAndBack() {
     const s = await pageSetup();
     const bought = await boughtPage(s);
     if (!bought.instance.paymentPageExpiresAt) throw new Error('Page expiry missing');
-    const { windowMarginMs } = paymentPageTiming(await getCurrentBillingDeadlines());
     const expiry = bought.instance.paymentPageExpiresAt.getTime();
     const retry = () => ({ ...s.request, orderRequestId: crypto.randomUUID() });
     return {
         s,
         ...bought,
         retry,
-        insideMargin: new Date(expiry + windowMarginMs / 2),
-        afterMargin: new Date(expiry + windowMarginMs + 1)
+        justExpired: new Date(expiry + 1)
     };
 }
 
@@ -82,51 +78,14 @@ async function liveInstances(s: Awaited<ReturnType<typeof pageSetup>>) {
         );
 }
 
-describe('HOS-2179 T-6 follow-up: a retry inside A3 margin', () => {
+describe('HOS-2179 T-6 follow-up: a retry at the page expiry', () => {
     it.skipIf(skip)(
-        'keeps a purchase waiting when a partial search (M4) saw only a payment not approved',
+        'releases a purchase whose seen payment was declined without waiting for the margin',
         async () => {
-            const { s, instance, paymentPageId, retry, insideMargin } = await boughtAndBack();
-            const declined = s.f.fake.payOnPage({ paymentPageId, outcome: 'rejected' });
-            s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-            s.f.fake.takeDeliveries();
-            s.f.advanceTo(insideMargin);
-            // M4: the search answers a part of the matches without an error.
-            vi.spyOn(s.f.fake, 'searchCharges').mockResolvedValue({
-                chargeIds: [declined.chargeId]
-            });
-            const page = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-
-            const answer = await purchaseAddon(retry(), s.f.ports);
-
-            expect(answer).toEqual({
-                outcome: 'PENDING_ELSEWHERE',
-                instanceId: instance.id,
-                chargeKind: 'UNA_VEZ'
-            });
-            expect(page).not.toHaveBeenCalled();
-            expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
-            expect((await liveInstances(s)).map((row) => row.id)).toEqual([instance.id]);
-        }
-    );
-
-    it.skipIf(skip)('releases it when the search saw no payment at all', async () => {
-        const { s, instance, retry, insideMargin } = await boughtAndBack();
-        s.f.advanceTo(insideMargin);
-
-        const answer = await purchaseAddon(retry(), s.f.ports);
-
-        expect(answer).toMatchObject({ outcome: 'CREATED', checkoutUrl: expect.any(String) });
-        expect((await pageInstance(instance.id)).status).toBe('ABANDONED');
-    });
-
-    it.skipIf(skip)(
-        'after the margin, releases a purchase whose seen payments are not approved',
-        async () => {
-            const { s, instance, paymentPageId, retry, afterMargin } = await boughtAndBack();
+            const { s, instance, paymentPageId, retry, justExpired } = await boughtAndBack();
             s.f.fake.payOnPage({ paymentPageId, outcome: 'rejected' });
             s.f.fake.takeDeliveries();
-            s.f.advanceTo(afterMargin);
+            s.f.advanceTo(justExpired);
 
             const answer = await purchaseAddon(retry(), s.f.ports);
 
@@ -142,8 +101,8 @@ describe('HOS-2179 T-6 follow-up: races and late payments around the release', (
     it.skipIf(skip)(
         'two tabs retrying over an expired page end with one new purchase and one page',
         async () => {
-            const { s, instance, retry, afterMargin } = await boughtAndBack();
-            s.f.advanceTo(afterMargin);
+            const { s, instance, retry, justExpired } = await boughtAndBack();
+            s.f.advanceTo(justExpired);
             const page = vi.spyOn(s.f.fake, 'requestOneTimePayment');
 
             const answers = await Promise.allSettled([
@@ -176,10 +135,10 @@ describe('HOS-2179 T-6 follow-up: races and late payments around the release', (
     it.skipIf(skip)(
         'a payment the search missed lands in mark 23 with a held row once the purchase is released',
         async () => {
-            const { s, instance, paymentPageId, retry, insideMargin } = await boughtAndBack();
+            const { s, instance, paymentPageId, retry, justExpired } = await boughtAndBack();
             const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
             s.f.fake.takeDeliveries();
-            s.f.advanceTo(insideMargin);
+            s.f.advanceTo(justExpired);
             // M4 and M6: the search misses it and its notice has not arrived.
             vi.spyOn(s.f.fake, 'searchCharges').mockResolvedValueOnce({ chargeIds: [] });
             const answer = await purchaseAddon(retry(), s.f.ports);
