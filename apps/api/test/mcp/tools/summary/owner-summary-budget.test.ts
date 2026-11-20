@@ -85,7 +85,9 @@ describe('fitSummaryToBudget', () => {
 });
 
 /** A plan item with long includes, like a plan with many features. */
-const planItem = (vertical: 'accommodation' | 'venue'): MyPlanItem => ({
+const planItem = (
+    vertical: typeof VerticalEnum.ACCOMMODATION | typeof VerticalEnum.VENUE
+): MyPlanItem => ({
     vertical,
     verticalLabel: vertical,
     plan: { slug: `${vertical}-pro`, name: 'Pro', version: 'v-1' },
@@ -106,7 +108,10 @@ const planItem = (vertical: 'accommodation' | 'venue'): MyPlanItem => ({
 
 const withPlan = (count: number): OwnerSummary => ({
     ...summaryWith(count),
-    subscription: { accommodation: planItem('accommodation'), venue: planItem('venue') }
+    subscription: {
+        accommodation: planItem(VerticalEnum.ACCOMMODATION),
+        venue: planItem(VerticalEnum.VENUE)
+    }
 });
 
 describe('fitSummaryToBudget with a subscription block (HOS-2328)', () => {
@@ -127,8 +132,11 @@ describe('fitSummaryToBudget with a subscription block (HOS-2328)', () => {
         const trimmedIncludes = {
             ...summary,
             subscription: {
-                accommodation: { ...planItem('accommodation'), includes: SUMMARY_INCLUDES_OMITTED },
-                venue: { ...planItem('venue'), includes: SUMMARY_INCLUDES_OMITTED }
+                accommodation: {
+                    ...planItem(VerticalEnum.ACCOMMODATION),
+                    includes: SUMMARY_INCLUDES_OMITTED
+                },
+                venue: { ...planItem(VerticalEnum.VENUE), includes: SUMMARY_INCLUDES_OMITTED }
             }
         };
         const maxChars = measureResultChars({ value: trimmedIncludes }) + 10;
@@ -155,10 +163,13 @@ describe('fitSummaryToBudget with a subscription block (HOS-2328)', () => {
                     ...withPlan(3),
                     subscription: {
                         accommodation: {
-                            ...planItem('accommodation'),
+                            ...planItem(VerticalEnum.ACCOMMODATION),
                             includes: SUMMARY_INCLUDES_OMITTED
                         },
-                        venue: { ...planItem('venue'), includes: SUMMARY_INCLUDES_OMITTED }
+                        venue: {
+                            ...planItem(VerticalEnum.VENUE),
+                            includes: SUMMARY_INCLUDES_OMITTED
+                        }
                     }
                 }
             }) + 50;
