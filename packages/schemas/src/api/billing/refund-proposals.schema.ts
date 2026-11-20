@@ -22,8 +22,8 @@ export const ProposedRefundMarkSchema = z.object({
 
 /**
  * One refund a person proposed from a reconciliation mark and that still awaits action 13: either
- * `REQUESTED`, or `CONFIRMED` without a single provider call (so declining it cannot lose money
- * the provider already moved, but the panel must be checked first).
+ * `REQUESTED`, or `CONFIRMED` with no accepted or unanswered provider call (so declining it cannot
+ * lose money the provider already moved, but the panel must be checked first).
  */
 export const ProposedRefundSchema = z.object({
     refundId: z.string().uuid(),
@@ -36,7 +36,7 @@ export const ProposedRefundSchema = z.object({
         source: z.enum(['PAYMENT', 'MANUAL_PAYMENT']),
         id: z.string().uuid()
     }),
-    /** Number of provider calls already recorded; always 0 for the listed refunds. */
+    /** Provider calls recorded so far; only answered-without-id ones for a listed CONFIRMED refund. */
     providerCallCount: z.number().int().nonnegative(),
     /** True when decline would answer `REFUND_CLOSES_HELD_CHARGE`: a `REQUESTED` refund of a payment a page-charge mark holds (HOS-2179 D1). */
     closesHeldCharge: z.boolean(),

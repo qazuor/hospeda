@@ -74,6 +74,29 @@ async function proposalOnMarkedPayment(
     };
 }
 
+/** Persists one provider call of a refund, answered (idempotency result stored) or not. */
+async function addCall(input: {
+    refundId: string;
+    answered: boolean;
+    providerRefundId: string | null;
+}) {
+    const key = `hos2400-${crypto.randomUUID()}`;
+    await getServiceTestDb()
+        .insert(idempotencyKeys)
+        .values({
+            key,
+            operation: 'REFUND_CREATE',
+            subjectId: input.refundId,
+            ...(input.answered ? { result: { ok: true }, completedAt: new Date() } : {})
+        });
+    await getServiceTestDb().insert(refundCalls).values({
+        refundId: input.refundId,
+        idempotencyKey: key,
+        amount: 10000,
+        providerRefundId: input.providerRefundId
+    });
+}
+
 describe('HOS-2400 listProposedRefunds', () => {
     it.skipIf(skip)('lists a REQUESTED proposal with the mark that hangs its payment', async () => {
         // Arrange
@@ -108,7 +131,7 @@ describe('HOS-2400 listProposedRefunds', () => {
     });
 
     it.skipIf(skip)(
-        'leaves out a CONFIRMED proposal that already has a provider call',
+        'leaves out a CONFIRMED proposal with an unanswered provider call',
         async () => {
             // Arrange
             const seeded = await proposalOnMarkedPayment({ status: 'CONFIRMED' });
@@ -122,6 +145,38 @@ describe('HOS-2400 listProposedRefunds', () => {
 
             // Act + Assert
             expect(await listed(seeded.refundId)).toBeUndefined();
+        }
+    );
+
+    it.skipIf(skip)(
+        'leaves out a CONFIRMED proposal whose provider call was accepted',
+        async () => {
+            // Arrange
+            const seeded = await proposalOnMarkedPayment({ status: 'CONFIRMED' });
+            await addCall({
+                refundId: seeded.refundId,
+                answered: true,
+                providerRefundId: `prov-${crypto.randomUUID()}`
+            });
+
+            // Act + Assert
+            expect(await listed(seeded.refundId)).toBeUndefined();
+        }
+    );
+
+    it.skipIf(skip)(
+        'lists a CONFIRMED proposal whose provider call was answered without an id',
+        async () => {
+            // Arrange: a rejection kept confirmed; decline accepts it, so the list must show it.
+            const seeded = await proposalOnMarkedPayment({ status: 'CONFIRMED' });
+            await addCall({ refundId: seeded.refundId, answered: true, providerRefundId: null });
+
+            // Act
+            const item = await listed(seeded.refundId);
+
+            // Assert
+            expect(item?.status).toBe('CONFIRMED');
+            expect(item?.providerCallCount).toBe(1);
         }
     );
 

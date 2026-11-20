@@ -15,10 +15,10 @@ import {
     refunds
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import { notExists } from 'drizzle-orm';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { heldByPageChargeMark } from '../addon/one-time-page-charge-marks';
+import { refundHasLiveProviderCalls } from './refund-moved-money';
 
 /** The reconciliation mark behind a proposed refund. */
 export type ProposedRefundMark = {
@@ -53,8 +53,9 @@ const listInputSchema = z.object({
 
 /**
  * Lists the refunds proposed from a reconciliation mark (`MARK_PROPOSAL`) that wait for a person:
- * `REQUESTED`, plus `CONFIRMED` with no provider call recorded at all. A confirmed refund with any
- * call is excluded because it is already moving money and cannot be declined. Oldest first. Each
+ * `REQUESTED`, plus `CONFIRMED` ones for which {@link refundHasLiveProviderCalls} is false, the
+ * very predicate decline uses: a call the provider accepted or has not answered excludes the refund,
+ * while one the provider answered without an id (a rejection kept confirmed) does not. Oldest first. Each
  * item carries the marks that hang its payment, so the operator sees what originated it.
  *
  * @param input.page - One-based page
@@ -77,26 +78,7 @@ export async function listProposedRefunds(input: {
     const { page, pageSize } = parsed.data;
 
     return getDb().transaction(async (tx) => {
-        const waiting = and(
-            eq(refunds.reason, 'MARK_PROPOSAL'),
-            or(
-                eq(refunds.status, 'REQUESTED'),
-                and(
-                    eq(refunds.status, 'CONFIRMED'),
-                    notExists(
-                        tx
-                            .select({ id: refundCalls.id })
-                            .from(refundCalls)
-                            .where(eq(refundCalls.refundId, refunds.id))
-                    )
-                )
-            )
-        );
-        const [{ total = 0 } = {}] = await tx
-            .select({ total: count() })
-            .from(refunds)
-            .where(waiting);
-        const rows = await tx
+        const candidates = await tx
             .select({
                 refundId: refunds.id,
                 status: refunds.status,
@@ -109,10 +91,40 @@ export async function listProposedRefunds(input: {
             })
             .from(refunds)
             .leftJoin(payments, eq(payments.id, refunds.paymentId))
-            .where(waiting)
-            .orderBy(asc(refunds.createdAt), asc(refunds.id))
-            .limit(pageSize)
-            .offset((page - 1) * pageSize);
+            .where(
+                and(
+                    eq(refunds.reason, 'MARK_PROPOSAL'),
+                    inArray(refunds.status, ['REQUESTED', 'CONFIRMED'])
+                )
+            )
+            .orderBy(asc(refunds.createdAt), asc(refunds.id));
+        // The server's own decline predicate decides which CONFIRMED refunds wait for a person, so
+        // the list and the action can never disagree. It is per refund, hence the filter in code;
+        // proposals are few, so paginating after it is cheap.
+        const waiting: typeof candidates = [];
+        for (const row of candidates) {
+            if (
+                row.status === 'REQUESTED' ||
+                !(await refundHasLiveProviderCalls({ tx, refundId: row.refundId }))
+            )
+                waiting.push(row);
+        }
+        const total = waiting.length;
+        const rows = waiting.slice((page - 1) * pageSize, page * pageSize);
+        const callCounts = new Map<string, number>();
+        if (rows.length > 0) {
+            const counted = await tx
+                .select({ refundId: refundCalls.refundId, n: count() })
+                .from(refundCalls)
+                .where(
+                    inArray(
+                        refundCalls.refundId,
+                        rows.map((row) => row.refundId)
+                    )
+                )
+                .groupBy(refundCalls.refundId);
+            for (const entry of counted) callCounts.set(entry.refundId, Number(entry.n));
+        }
 
         const cardIds = rows.flatMap((row) => (row.paymentId ? [row.paymentId] : []));
         const manualIds = rows.flatMap((row) => (row.manualPaymentId ? [row.manualPaymentId] : []));
@@ -178,8 +190,7 @@ export async function listProposedRefunds(input: {
                 currency: row.currency,
                 requestedAt: row.requestedAt,
                 payment,
-                // The listing only admits refunds with no recorded call.
-                providerCallCount: 0,
+                providerCallCount: callCounts.get(row.refundId) ?? 0,
                 // Mirrors decline: a held page charge refuses it while REQUESTED; a CONFIRMED refund
                 // with no provider call can be declined (HOS-2179 D1, owner option 1).
                 closesHeldCharge: row.held === true && row.status === 'REQUESTED',
