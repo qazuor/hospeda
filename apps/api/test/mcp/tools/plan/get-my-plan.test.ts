@@ -40,12 +40,23 @@ vi.mock('../../../../src/services/listing-notices/listing-notices.service', () =
     readTrialSummary: (...args: unknown[]) => mocks.readTrialSummary(...args),
     readOwnTrialPlan: (...args: unknown[]) => mocks.readOwnTrialPlan(...args)
 }));
-vi.mock('../../../../src/utils/listing-access/ports', () => ({
-    getListingAccessPorts: () => ({
-        effectiveSet: (...args: unknown[]) => mocks.effectiveSet(...args),
-        billing: { coverage: (...args: unknown[]) => mocks.coverage(...args) }
-    })
-}));
+// The coverage port runs the contract's REAL input gate before the mock answers, as
+// the production port does: an extra key (HOS-2397: `locale`) throws instead of passing.
+vi.mock('../../../../src/utils/listing-access/ports', async () => {
+    const { CoverageArgsSchema } = await import('@repo/billing-verticals-contract');
+    return {
+        getListingAccessPorts: () => ({
+            effectiveSet: (...args: unknown[]) => mocks.effectiveSet(...args),
+            billing: {
+                coverage: (args: unknown) => {
+                    mocks.coverageInputs.push(args);
+                    CoverageArgsSchema.parse(args);
+                    return mocks.coverage(args);
+                }
+            }
+        })
+    };
+});
 vi.mock('../../../../src/services/plan-catalog/plan-of-version.service', () => ({
     readPlanOfVersion: (...args: unknown[]) => mocks.readPlanOfVersion(...args)
 }));
@@ -409,6 +420,23 @@ describe('get_my_plan', () => {
                     planVersionId === version ? { slug, name } : null
             );
         }
+
+        it('HOS-2397: asks billing for coverage with exactly the contract keys, never the locale', async () => {
+            // Arrange
+            arrangeVersion(GRANT_VERSION, 'owner-pro', 'Catalog pro');
+            extraSources.set('accommodation', [grantSource(GRANT_VERSION)]);
+            mocks.coverageInputs.length = 0;
+
+            // Act
+            const result = await myPlan({ vertical: 'accommodation' });
+
+            // Assert
+            expect(mocks.coverageInputs.length).toBeGreaterThan(0);
+            for (const input of mocks.coverageInputs) {
+                expect(Object.keys(input as object).sort()).toEqual(['userId', 'vertical']);
+            }
+            expect(result.items[0]?.status).toBe('PERMANENT_GRANT');
+        });
 
         it('a permanent grant only: the anchored plan, «Acceso permanente», no end date', async () => {
             // Arrange

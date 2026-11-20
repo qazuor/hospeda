@@ -218,7 +218,11 @@ async function readCoverageSources(input: {
     readonly vertical: MyPlanVertical;
 }): Promise<readonly CoverageSource[]> {
     try {
-        const coverage = await getListingAccessPorts().billing.coverage(input);
+        // Exactly the contract's keys: its strict gate rejects any extra one (HOS-2397).
+        const coverage = await getListingAccessPorts().billing.coverage({
+            userId: input.userId,
+            vertical: input.vertical
+        });
         return coverage.sources;
     } catch (error) {
         apiLogger.warn(
