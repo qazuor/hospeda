@@ -116,11 +116,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!--
 		  HOS-369 Wave D: the client translation dictionary, as a hashed
-		  immutable asset. It MUST live in <head>: a parser-inserted
-		  `<script defer>` only runs before the deferred module scripts that
-		  hydrate islands if it comes first in document order. From <body> it
-		  would sit after the islands rendered above it, and those would
-		  hydrate against an empty dictionary.
+		  immutable asset, loaded as a parser-BLOCKING script (HOS-2388). It
+		  MUST live in <head>: `client:load` islands start hydrating while the
+		  document is still being parsed, so from <body> the islands rendered
+		  above it would hydrate against an empty dictionary.
 		-->
 		<I18nClientData locale={locale} />
 

@@ -6,10 +6,8 @@
  *  1. Every standalone HTML shell renders `<I18nClientData>`, and renders it
  *     inside `<head>`. Client islands read their translations from the global
  *     that component's script assigns; a shell that forgets it renders raw keys
- *     in production, and a shell that emits it from `<body>` can place it AFTER
- *     an island's hydration module — a `<script defer>` only precedes deferred
- *     module scripts if it comes first in document order — so that island
- *     hydrates against an empty dictionary.
+ *     in production, and a shell that emits it from `<body>` lets an island
+ *     placed earlier in the document hydrate against an empty dictionary.
  *  2. `I18nClientData.astro` links the dictionary instead of inlining it. The
  *     inline form was ~632 KB of byte-identical HTML on every page.
  *
@@ -92,7 +90,7 @@ describe('I18nClientData coverage across HTML shells', () => {
 
             expect(
                 tagAt > headStart && tagAt < headEnd,
-                `${layout}: <I18nClientData> must render inside <head>. From <body> a \`<script defer>\` can land after an island's hydration module, and that island hydrates with an empty dictionary.`
+                `${layout}: <I18nClientData> must render inside <head>. From <body> an island placed earlier in the document hydrates with an empty dictionary.`
             ).toBe(true);
         });
     }
@@ -102,11 +100,25 @@ describe('I18nClientData.astro links the dictionary instead of inlining it', () 
     const source = readFileSync(COMPONENT_PATH, 'utf8');
     const { frontmatter, template } = splitAstro(source);
 
-    it('emits a deferred classic script pointing at the hashed asset', () => {
-        // The TAG, not a mention of it. `defer` + `src` + no `type="module"` is
-        // the contract: a classic script that assigns a global before any
-        // island hydrates, which is what keeps the reader synchronous.
-        expect(template).toContain('<script defer src={i18nAssetUrl(locale)} is:inline></script>');
+    it('emits a blocking classic script pointing at the hashed asset (HOS-2388)', () => {
+        // The TAG, not a mention of it. A parser-blocking classic script is the
+        // contract: Astro's `client:load` islands start their dynamic import()
+        // while the document is still being parsed, so a `defer`/`async` script
+        // can run AFTER an island has already rendered with an empty dictionary
+        // (raw keys on a cold first load, reproduced against staging).
+        expect(template).toContain('<script src={i18nAssetUrl(locale)} is:inline></script>');
+    });
+
+    it('the dictionary script tag is neither defer, async nor a module (HOS-2388)', () => {
+        const tags = stripComments({ source: template }).match(/<script\b[^>]*>/g) ?? [];
+
+        // Non-vacuity: exactly the one dictionary tag must be found.
+        expect(tags).toHaveLength(1);
+        const [tag = ''] = tags;
+        expect(tag).toContain('src={i18nAssetUrl(locale)}');
+        expect(tag).not.toMatch(/\bdefer\b/);
+        expect(tag).not.toMatch(/\basync\b/);
+        expect(tag).not.toMatch(/\btype\s*=/);
     });
 
     it('resolves that URL through the shared builder', () => {
