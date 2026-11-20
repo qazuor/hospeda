@@ -13,19 +13,29 @@
  * `one-time-page-charge-marks.ts`), or that function must be on the allowlist
  * (`scripts/guards/held-payment-readers.json`) with a reason. The enclosing function is the
  * nearest NAMED one (declaration, method, or a variable holding a function), so a reader inside
- * an anonymous transaction callback counts against the function that owns it. An allowlist
- * entry that no longer matches a reader, or that carries no reason, is an error too, so the
- * list cannot rot into a blanket exemption.
+ * an anonymous transaction callback counts against the function that owns it. The table is
+ * recognised under its own name, under an import alias from `@repo/db`
+ * (`import { payments as p }`), and through a namespace import (`import * as db`, then
+ * `db.payments.addonInstanceId`). An allowlist entry that no longer matches a reader, that
+ * carries no reason, or whose `readers` count differs from the reads found in that function is
+ * an error too, so the list cannot rot into a blanket exemption: a NEW read added to an
+ * allowlisted function changes its count and has to be looked at.
  *
  * ## What it does NOT see, so a green run is not read as more
  *
  * - Relational queries (`db.query.payments...`) and raw SQL naming `addon_instance_id`.
- * - An alias of the table (`const p = payments; p.addonInstanceId`).
+ * - A local alias of the table (`const p = payments; p.addonInstanceId`) or a re-export of it
+ *   under another name from a module other than `@repo/db`.
+ * - Readers that reach a held row by ANOTHER key, never naming `payments.addonInstanceId`: by
+ *   `payments.providerFactId` or `payments.id`, or through a join such as
+ *   `refunds.paymentId = payments.id`. Such a reader can still pick a held row; it is covered
+ *   only by its own tests (the refund path is meant to reach held rows, D1).
  * - A predicate that is called but neutralised (`or(notHeldByPageChargeMark(), sql\`true\`)`),
  *   or called in the function for another query than the one that reads the column.
  * - Test files, which are out of scope by design.
  *
- * Exit codes: 0 = clean; 1 = an unfiltered reader, or a stale or reasonless allowlist entry.
+ * Exit codes: 0 = clean; 1 = an unfiltered reader, or a stale, reasonless or miscounted
+ * allowlist entry.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -46,6 +56,8 @@ const PREDICATES = new Set(['notHeldByPageChargeMark', 'heldByPageChargeMark']);
 export interface HeldReaderAllowance {
     readonly file: string;
     readonly function: string;
+    /** How many reads of `payments.addonInstanceId` the function holds; a change fails. */
+    readonly readers: number;
     readonly reason: string;
 }
 
@@ -63,6 +75,7 @@ export interface HeldReaderFindings {
     readonly unfiltered: readonly HeldReader[];
     readonly stale: readonly HeldReaderAllowance[];
     readonly reasonless: readonly HeldReaderAllowance[];
+    readonly miscounted: readonly (HeldReaderAllowance & { readonly found: number })[];
 }
 
 /** The name of a function-like node, or undefined when it is anonymous. */
@@ -101,6 +114,31 @@ function callsPredicate(node: ts.Node): boolean {
     return found;
 }
 
+/** The local names the `payments` table of `@repo/db` goes by in one file. */
+function paymentsBindings(sf: ts.SourceFile): {
+    readonly tableNames: ReadonlySet<string>;
+    readonly namespaces: ReadonlySet<string>;
+} {
+    const tableNames = new Set(['payments']);
+    const namespaces = new Set<string>();
+    for (const statement of sf.statements) {
+        if (
+            !ts.isImportDeclaration(statement) ||
+            !ts.isStringLiteral(statement.moduleSpecifier) ||
+            statement.moduleSpecifier.text !== '@repo/db'
+        )
+            continue;
+        const bindings = statement.importClause?.namedBindings;
+        if (!bindings) continue;
+        if (ts.isNamespaceImport(bindings)) namespaces.add(bindings.name.text);
+        else
+            for (const element of bindings.elements)
+                if ((element.propertyName ?? element.name).text === 'payments')
+                    tableNames.add(element.name.text);
+    }
+    return { tableNames, namespaces };
+}
+
 /**
  * Finds every read of `payments.addonInstanceId` in one source file.
  *
@@ -110,13 +148,19 @@ function callsPredicate(node: ts.Node): boolean {
  */
 export function readersIn(input: { readonly file: string; readonly source: string }): HeldReader[] {
     const sf = ts.createSourceFile(input.file, input.source, ts.ScriptTarget.Latest, true);
+    const { tableNames, namespaces } = paymentsBindings(sf);
+    const isPaymentsTable = (expression: ts.Expression): boolean =>
+        (ts.isIdentifier(expression) && tableNames.has(expression.text)) ||
+        (ts.isPropertyAccessExpression(expression) &&
+            ts.isIdentifier(expression.expression) &&
+            namespaces.has(expression.expression.text) &&
+            expression.name.text === 'payments');
     const found: HeldReader[] = [];
     const visit = (node: ts.Node): void => {
         if (
             ts.isPropertyAccessExpression(node) &&
-            ts.isIdentifier(node.expression) &&
-            node.expression.text === 'payments' &&
-            node.name.text === 'addonInstanceId'
+            node.name.text === 'addonInstanceId' &&
+            isPaymentsTable(node.expression)
         ) {
             let owner: ts.Node | undefined = node.parent;
             let name = owner ? nameOf(owner) : undefined;
@@ -161,7 +205,13 @@ export function findHeldReaderProblems(input: {
                     (reader) => reader.file === entry.file && reader.function === entry.function
                 )
         ),
-        reasonless: input.allowlist.filter((entry) => entry.reason.trim().length === 0)
+        reasonless: input.allowlist.filter((entry) => entry.reason.trim().length === 0),
+        miscounted: input.allowlist.flatMap((entry) => {
+            const found = input.readers.filter(
+                (reader) => reader.file === entry.file && reader.function === entry.function
+            ).length;
+            return found > 0 && found !== entry.readers ? [{ ...entry, found }] : [];
+        })
     };
 }
 
@@ -227,7 +277,8 @@ export function run(args: { readonly root?: string } = {}): {
         ok:
             findings.unfiltered.length === 0 &&
             findings.stale.length === 0 &&
-            findings.reasonless.length === 0,
+            findings.reasonless.length === 0 &&
+            findings.miscounted.length === 0,
         findings
     };
 }
@@ -241,6 +292,10 @@ if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
     for (const entry of findings.stale)
         console.error(
             `HELD-ROWS: allowlist entry ${entry.file} (${entry.function}) matches no reader; remove it.`
+        );
+    for (const entry of findings.miscounted)
+        console.error(
+            `HELD-ROWS: allowlist entry ${entry.file} (${entry.function}) declares ${entry.readers} read(s) of payments.addonInstanceId but the function holds ${entry.found}. Review the new read, then update "readers".`
         );
     for (const entry of findings.reasonless)
         console.error(
