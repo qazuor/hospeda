@@ -16,6 +16,11 @@
  *   and `toEffectiveSetView`), so a catalog change shows with no code change;
  * - add-ons: `readOwnerAddonHoldings`, the read behind
  *   `GET /billing-addon/instances`;
+ * - inherited Tourist VIP (HOS-2398): the cached TOURIST effective set read the
+ *   same way, shown apart as `inheritedTouristVip` when the set says it is
+ *   inherited (`inheritsTouristVip`), never mixed into an owner item's includes;
+ * - the trial's «a paid plan also brings Tourist VIP» line (HOS-2398): the
+ *   sellable catalog the plans pages read (`readSellablePlanCatalog`);
  * - courtesy and permanent grant: billing's own `coverage(user, vertical)`
  *   (`getListingAccessPorts().billing.coverage`, contract §2), its `COURTESY`
  *   and `GRANT` sources, plus `readPlanOfVersion` for the plan they point at.
@@ -34,9 +39,8 @@
 
 import type { CoverageSource } from '@repo/billing-verticals-contract';
 import type { Locale } from '@repo/i18n';
-import { OwnSubscriptionsResponseSchema, TrialStatusEnum } from '@repo/schemas';
+import { OwnSubscriptionsResponseSchema, TrialStatusEnum, VerticalEnum } from '@repo/schemas';
 import { readOwnPlanState } from '@repo/service-core';
-import { translateCatalogKey } from '../../../services/ai-context/listing-labels';
 import {
     type OwnerAddonHolding,
     readOwnerAddonHoldings
@@ -53,6 +57,8 @@ import { getListingAccessPorts } from '../../../utils/listing-access/ports';
 import { apiLogger } from '../../../utils/logger';
 import { buildPortalUrl, type PortalLocale } from '../../portal/build-portal-url';
 import type { PortalDestination } from '../../portal/portal-routes';
+import { label, labelView } from './my-plan-labels';
+import { readInheritedTouristVip, readTouristVipOnUpgrade } from './my-plan-tourist-vip';
 import {
     MY_PLAN_VERTICALS,
     type MyPlanAddon,
@@ -77,15 +83,6 @@ const OwnSubscriptionStatusSchema =
 /** Verticals with a plans page in the portal. */
 const PLANS_PAGE_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
-/** A label from the catalogue, or the fallback when the key has none. */
-function label(input: {
-    readonly key: string;
-    readonly locale: Locale;
-    readonly fallback: string;
-}): string {
-    return translateCatalogKey({ key: input.key, locale: input.locale }).label ?? input.fallback;
-}
-
 function portalUrl(destination: PortalDestination, locale: PortalLocale): string {
     return buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL });
 }
@@ -103,15 +100,7 @@ async function readIncludes(input: {
     const { userId, vertical, locale } = input;
     try {
         const effective = await getListingAccessPorts().effectiveSet({ userId, vertical });
-        const view = toEffectiveSetView({ effective, userId, vertical });
-        const entitlements = Object.entries(view.entitlements)
-            .filter(([, value]) => value === 'Infinity' || value > 0)
-            .map(([key]) => label({ key: `billing.entitlement.${key}`, locale, fallback: key }));
-        const limits = Object.entries(view.limits).map(([key, value]) => ({
-            label: label({ key: `billing.comparison.limitLabel.${key}`, locale, fallback: key }),
-            value: value === 'Infinity' ? ('unlimited' as const) : value
-        }));
-        return { entitlements, limits };
+        return labelView(toEffectiveSetView({ effective, userId, vertical }), locale);
     } catch (error) {
         apiLogger.warn(
             { userId, vertical, error: error instanceof Error ? error.message : String(error) },
@@ -366,6 +355,10 @@ export async function readMyPlan(input: {
             const addons = holdings
                 .filter((holding) => holding.verticals.includes(vertical))
                 .map((holding) => toAddon(holding, locale));
+            const onUpgrade =
+                title.status === 'TRIAL'
+                    ? await readTouristVipOnUpgrade({ vertical, locale })
+                    : undefined;
             return {
                 vertical,
                 verticalLabel: label({
@@ -377,7 +370,8 @@ export async function readMyPlan(input: {
                 includes: await readIncludes({ userId, vertical, locale }),
                 addons,
                 actionUrl: portalUrl({ kind: 'subscription' }, locale),
-                ...(addons.length > 0 ? { addonsUrl: portalUrl({ kind: 'addons' }, locale) } : {})
+                ...(addons.length > 0 ? { addonsUrl: portalUrl({ kind: 'addons' }, locale) } : {}),
+                ...(onUpgrade ? { touristVipOnUpgrade: onUpgrade } : {})
             };
         })
     );
@@ -399,11 +393,16 @@ export async function readMyPlan(input: {
         unattributed.length > 0
             ? { unattributedAddons: unattributed, addonsUrl: portalUrl({ kind: 'addons' }, locale) }
             : {};
+    // A listed tourist item already shows the inherited benefits in its includes.
+    const inherited = shownVerticals.has(VerticalEnum.TOURIST)
+        ? undefined
+        : await readInheritedTouristVip({ userId, locale });
+    const inheritedPart = inherited ? { inheritedTouristVip: inherited } : {};
     if (items.length > 0) {
-        return { items, ...unattributedPart };
+        return { items, ...unattributedPart, ...inheritedPart };
     }
     const plans: MyPlanPlansLink[] = PLANS_PAGE_VERTICALS.filter((vertical) =>
         (verticals as readonly string[]).includes(vertical)
     ).map((vertical) => ({ vertical, url: portalUrl({ kind: 'plans', vertical }, locale) }));
-    return { items, plans, ...unattributedPart };
+    return { items, plans, ...unattributedPart, ...inheritedPart };
 }

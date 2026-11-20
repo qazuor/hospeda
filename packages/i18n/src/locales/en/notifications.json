@@ -46,5 +46,13 @@
         "introFirst": "We set up your Partner subscription. Here are the details of your first installment.",
         "introRenewal": "The installment for a new period of your Partner subscription is open.",
         "cta": "View my installment"
+    },
+    "latePaymentRefunded": {
+        "subject": "We refunded a payment that arrived late",
+        "heading": "We refunded your payment",
+        "intro": "Your payment for {{product}} reached us after the purchase had already closed, so the add-on was not activated.",
+        "refunded": "We refunded {{amount}}.",
+        "timing": "Depending on your payment method, it may take a few days to show up.",
+        "closing": "If you still want the add-on, you can buy it again from your account."
     }
 }
