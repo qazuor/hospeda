@@ -1,3 +1,4 @@
+import { isUnlimitedLimit } from '@/components/billing/plan-card-delta';
 import { type EntitlementsData, fetchEntitlementsUncached } from '@/lib/entitlements-cache';
 
 export const MAX_ACCOMMODATIONS_LIMIT_KEY = 'max_accommodations';
@@ -38,7 +39,7 @@ export function buildUsageBadge({
     if (
         effectiveSet.failed ||
         maxAllowed === undefined ||
-        maxAllowed === Infinity ||
+        isUnlimitedLimit({ value: maxAllowed }) ||
         maxAllowed <= 0
     )
         return null;
