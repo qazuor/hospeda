@@ -613,6 +613,22 @@ jobs:
       # app depends on too, which is the blind spot HOS-958's guard had.
       - name: Check apps/web raises no native browser dialog (HOS-957)
         run: pnpm check:no-native-dialogs
+      # GUARD: account breakpoints (HOS-2469, HOS-2413 T-008). Its own step,
+      # like every guard here: being listed in `pnpm check:guards` is NOT what
+      # makes a guard run in this job (see the note above). D6 «breakpoints
+      # cerrados» on the Mi Cuenta surface: only min-width 30/48/64/80rem in
+      # @media, rem in @container. Zero tolerance in the kit
+      # (components/account/ui/) and a frozen, shrink-only exceptions list for
+      # the legacy account files (OD-9).
+      - name: Check account breakpoints are the closed list (HOS-2469)
+        run: pnpm check:account-breakpoints
+      # GUARD: account CSS literals (HOS-2470, HOS-2413 T-009). Its own step,
+      # like every guard here (see the note above). No literal font size,
+      # radius, shadow or color in Mi Cuenta CSS, literal var() fallbacks
+      # included. Same zones and frozen, shrink-only exceptions list as the
+      # breakpoint guard.
+      - name: Check account CSS uses tokens, not literals (HOS-2470)
+        run: pnpm check:account-css-literals
       # Its own step, like every guard here: being listed in `pnpm check:guards`
       # is NOT what makes a guard run in this job (see the note above, F-6).
       # Fails naming the id on a duplicate live id, a live id that reuses a
