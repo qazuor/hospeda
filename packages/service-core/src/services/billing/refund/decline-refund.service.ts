@@ -1,7 +1,8 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { eq, getDb, idempotencyKeys, refundCalls, refunds } from '@repo/db';
+import { eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../../types';
+import { heldByPageChargeMark } from '../addon/one-time-page-charge-marks';
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
 import { failRefund } from './refund-fail';
 import { lockRefundSource } from './refund-source';
@@ -13,13 +14,18 @@ export const DECLINE_REFUND_REJECTIONS = [
     'ADMINISTRATIVE_ACTION_FORBIDDEN',
     'REFUND_NOT_OPEN',
     'REFUND_STATE_CHANGED',
-    'REFUND_HAS_PROVIDER_CALLS'
+    'REFUND_HAS_PROVIDER_CALLS',
+    'REFUND_CLOSES_HELD_CHARGE'
 ] as const;
 
 /** A typed rejection from declining a refund. */
 export type DeclineRefundRejection = (typeof DECLINE_REFUND_REJECTIONS)[number];
 
-/** Declines an open refund through RF5 without changing its payment. */
+/**
+ * Declines an open refund through RF5 without changing its payment. The proposed refund of a held
+ * page charge (`MARK_PROPOSAL` on a payment a page-charge mark holds, HOS-2179 D1) is refused with
+ * `REFUND_CLOSES_HELD_CHARGE`: it closes only by being confirmed, by a chargeback, or by action 14.
+ */
 export async function declineRefund(
     input: { readonly actor: Actor; readonly refundId: string; readonly correlationId?: string },
     ports: { readonly clock: Clock }
@@ -78,6 +84,22 @@ export async function declineRefund(
             addonInstanceId: locked.kind === 'PAYMENT' ? locked.payment.addonInstanceId : null
         });
         authorizeRefundAction({ actor: input.actor, subjectId });
+        if (refund.reason === 'MARK_PROPOSAL' && candidate.paymentId) {
+            const [held] = await tx
+                .select({ held: heldByPageChargeMark() })
+                .from(payments)
+                .where(eq(payments.id, candidate.paymentId))
+                .limit(1);
+            // A held page charge (HOS-2179 D1, owner): its proposed refund is never declined. It
+            // closes when a person confirms it, on a chargeback, or through action 14.
+            if (held?.held)
+                throw new ServiceError(
+                    ServiceErrorCode.ALREADY_EXISTS,
+                    'The refund of a held page charge cannot be declined',
+                    undefined,
+                    'REFUND_CLOSES_HELD_CHARGE'
+                );
+        }
         if (refund.status === 'CONFIRMED') {
             const calls = await tx
                 .select({

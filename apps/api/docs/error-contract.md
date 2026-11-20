@@ -636,6 +636,9 @@ An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider 
 | `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
 | `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
+| `REFUND_CLOSES_HELD_CHARGE` | 409 | `ALREADY_EXISTS` |
+
+`REFUND_CLOSES_HELD_CHARGE` refuses to decline the refund a page-charge mark proposes (`MARK_PROPOSAL` on a payment held by `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO` or `ORDEN_PAGADA_SIN_INSTANCIA` of a one-time addon, HOS-2179 D1). That money closes only when a person confirms the refund (action 13), when a chargeback resolves it, or through action 14 (a refund that failed for good, or one made by hand). It runs after the 403 check, so a person without permission still gets 403.
 
 ## Action 14 charge settlement rejections (B5.9)
 

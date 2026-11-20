@@ -33,7 +33,8 @@ const REJECTION_ANSWERS: Readonly<Record<DeclineRefundRejection, RejectionAnswer
     ADMINISTRATIVE_ACTION_FORBIDDEN: { status: 403, code: ServiceErrorCode.FORBIDDEN },
     REFUND_NOT_OPEN: CONFLICT,
     REFUND_STATE_CHANGED: CONFLICT,
-    REFUND_HAS_PROVIDER_CALLS: CONFLICT
+    REFUND_HAS_PROVIDER_CALLS: CONFLICT,
+    REFUND_CLOSES_HELD_CHARGE: CONFLICT
 };
 
 function isDeclineRefundRejection(reason: string | undefined): reason is DeclineRefundRejection {
