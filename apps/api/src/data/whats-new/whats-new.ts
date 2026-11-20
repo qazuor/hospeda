@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4584
+    {
+        id: '2026-11-19-checkout-shows-promo-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Al confirmar tu suscripción ves el precio con tu código promocional',
+            en: 'When you confirm your subscription you see the price with your promo code',
+            pt: 'Ao confirmar sua assinatura você vê o preço com seu código promocional'
+        },
+        body: {
+            es: 'Si ya canjeaste un código, la confirmación muestra lo que vas a pagar, con el precio de lista tachado y una línea con el código, cuántos cobros dura el descuento y cuánto pagás después.',
+            en: 'If you already redeemed a code, the confirmation shows what you will pay, with the list price struck through and a line with the code, how many charges the discount lasts and what you pay afterwards.',
+            pt: 'Se você já resgatou um código, a confirmação mostra quanto você vai pagar, com o preço de tabela riscado e uma linha com o código, por quantas cobranças dura o desconto e quanto você paga depois.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4585
     {
         id: '2026-11-19-queued-plan-change-stays-visible',
