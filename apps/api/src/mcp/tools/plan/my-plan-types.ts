@@ -64,13 +64,18 @@ export interface MyPlanItem {
     readonly verticalLabel: string;
     /** The plan; `null` only when the catalog row could not be identified. */
     readonly plan: MyPlanPlan | null;
-    /** The subscription status, or `TRIAL` for a running trial. */
+    /**
+     * The subscription status; `COURTESY` or `PERMANENT_GRANT` when that is what
+     * covers the vertical (AC-C16); `TRIAL` for a running trial.
+     */
     readonly status:
         | 'ACTIVE'
         | 'GRACE_PERIOD'
         | 'SUSPENDED'
         | 'CANCEL_SCHEDULED'
         | 'PAUSED'
+        | 'COURTESY'
+        | 'PERMANENT_GRANT'
         | 'TRIAL';
     /** The trial machine state when `status` is `TRIAL`; `null` otherwise. */
     readonly trialState: 'TRIAL_ACTIVE' | null;
@@ -84,6 +89,11 @@ export interface MyPlanItem {
     readonly graceEndsAt: string | null;
     /** Whole days left in the trial; `null` when the title is not a trial. */
     readonly trialDaysLeft: number | null;
+    /**
+     * When the courtesy ends (`COURTESY`); `null` for a permanent grant, which
+     * never ends, and for every other status. Never invented.
+     */
+    readonly coverageEndsAt: string | null;
     /** What the plan includes; `null` when it could not be read right now (never invented). */
     readonly includes: MyPlanIncludes | null;
     /** Recurring add-ons held in this vertical. */

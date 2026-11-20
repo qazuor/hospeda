@@ -759,7 +759,9 @@
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspendida",
                 "CANCEL_SCHEDULED": "Baja pedida",
-                "NOT_RENEWING": "No se renueva"
+                "NOT_RENEWING": "No se renueva",
+                "COURTESY": "Cortesía",
+                "PERMANENT_GRANT": "Acceso permanente"
             },
             "loadError": "No pudimos leer tus suscripciones. Recargá la página.",
             "scheduledUntil": "Diste de baja esta suscripción: seguís hasta el {{date}}.",

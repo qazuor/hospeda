@@ -759,7 +759,9 @@
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspensa",
                 "CANCEL_SCHEDULED": "Cancelamento solicitado",
-                "NOT_RENEWING": "Não será renovada"
+                "NOT_RENEWING": "Não será renovada",
+                "COURTESY": "Cortesia",
+                "PERMANENT_GRANT": "Acesso permanente"
             },
             "loadError": "Não conseguimos ler suas assinaturas. Recarregue a página.",
             "scheduledUntil": "Você cancelou esta assinatura: ela continua até {{date}}.",

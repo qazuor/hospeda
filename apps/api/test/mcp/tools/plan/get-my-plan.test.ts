@@ -17,6 +17,9 @@ import {
     arrangeSubscriptionAndTrial,
     catalog,
     context,
+    courtesySource,
+    extraSources,
+    grantSource,
     mocks,
     NOW,
     ownerActor,
@@ -39,8 +42,12 @@ vi.mock('../../../../src/services/listing-notices/listing-notices.service', () =
 }));
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        effectiveSet: (...args: unknown[]) => mocks.effectiveSet(...args)
+        effectiveSet: (...args: unknown[]) => mocks.effectiveSet(...args),
+        billing: { coverage: (...args: unknown[]) => mocks.coverage(...args) }
     })
+}));
+vi.mock('../../../../src/services/plan-catalog/plan-of-version.service', () => ({
+    readPlanOfVersion: (...args: unknown[]) => mocks.readPlanOfVersion(...args)
 }));
 
 import { buildToolInputJsonSchema } from '../../../../src/lib/mcp/bind-tool';
@@ -131,6 +138,7 @@ describe('get_my_plan', () => {
             serviceEndsAt: null,
             graceEndsAt: null,
             trialDaysLeft: null,
+            coverageEndsAt: null,
             includes: {
                 // In catalog key order (`CATALOG_KEY_DEFINITIONS`).
                 entitlements: ['Responder reseñas', 'Estadísticas básicas'],
@@ -148,6 +156,7 @@ describe('get_my_plan', () => {
             statusLabel: 'En prueba',
             nextChargeAt: null,
             trialDaysLeft: 7,
+            coverageEndsAt: null,
             includes: {
                 entitlements: ['Carta con secciones, platos y enlace a tu carta'],
                 limits: []
@@ -311,6 +320,132 @@ describe('get_my_plan', () => {
             plan: { name: 'Basic' }
         });
         expect(item?.includes?.entitlements).toContain('Basic statistics');
+    });
+
+    describe('AC-C16: a courtesy or a permanent grant counts as a plan', () => {
+        const GRANT_VERSION = '55555555-5555-4555-8555-555555555555';
+        const COURTESY_END = new Date('2027-02-01T00:00:00.000Z');
+
+        function arrangeVersion(version: string, slug: string, name: string): void {
+            catalog.set(version, {
+                entitlements: [{ key: 'view_basic_stats', planQuota: null }],
+                limits: [{ key: 'max_photos_per_accommodation', value: 30 }]
+            });
+            mocks.readPlanOfVersion.mockImplementation(
+                async ({ planVersionId }: { planVersionId: string }) =>
+                    planVersionId === version ? { slug, name } : null
+            );
+        }
+
+        it('a permanent grant only: the anchored plan, «Acceso permanente», no end date', async () => {
+            // Arrange
+            arrangeVersion(GRANT_VERSION, 'owner-pro', 'Catalog pro');
+            extraSources.set('accommodation', [grantSource(GRANT_VERSION)]);
+
+            // Act
+            const result = await myPlan({ vertical: 'accommodation' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]).toMatchObject({
+                vertical: 'accommodation',
+                plan: { slug: 'owner-pro', name: 'Profesional', version: GRANT_VERSION },
+                status: 'PERMANENT_GRANT',
+                statusLabel: 'Acceso permanente',
+                coverageEndsAt: null,
+                nextChargeAt: null,
+                trialState: null
+            });
+            expect(result.items[0]?.includes?.limits).toEqual([
+                { label: 'Fotos por alojamiento', value: 30 }
+            ]);
+            expect(result).not.toHaveProperty('plans');
+        });
+
+        it('a courtesy only: the paused plan, «Cortesía», ending when the courtesy ends', async () => {
+            // Arrange: a courtesy pauses the principal; billing reports a COURTESY source
+            arrangeVersion(ACCOMMODATION_VERSION, 'owner-basico', 'Catalog basic');
+            mocks.readOwnPlanState.mockResolvedValue({
+                subscriptions: [
+                    subscriptionRow({
+                        status: 'PAUSED',
+                        nextCharge: null,
+                        pause: { reason: 'COURTESY', expectedEndAt: COURTESY_END }
+                    })
+                ],
+                deferredCourtesies: []
+            });
+            extraSources.set('accommodation', [
+                courtesySource(ACCOMMODATION_VERSION, COURTESY_END)
+            ]);
+
+            // Act
+            const result = await myPlan({ vertical: 'accommodation' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]).toMatchObject({
+                plan: { slug: 'owner-basico', name: 'Básico', version: ACCOMMODATION_VERSION },
+                status: 'COURTESY',
+                statusLabel: 'Cortesía',
+                coverageEndsAt: COURTESY_END.toISOString(),
+                nextChargeAt: null
+            });
+        });
+
+        it('a live subscription plus a courtesy in the same vertical: one item, from the subscription', async () => {
+            // Arrange
+            arrangeSubscriptionAndTrial();
+            extraSources.set('accommodation', [
+                courtesySource(ACCOMMODATION_VERSION, COURTESY_END)
+            ]);
+
+            // Act
+            const result = await myPlan({ vertical: 'accommodation' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]).toMatchObject({
+                status: 'ACTIVE',
+                statusLabel: 'Activa',
+                coverageEndsAt: null
+            });
+        });
+
+        it('a permanent grant wins over a running trial in the same vertical', async () => {
+            // Arrange
+            arrangeSubscriptionAndTrial();
+            arrangeVersion(GRANT_VERSION, 'venue-pro', 'Catalog venue pro');
+            extraSources.set('venue', [grantSource(GRANT_VERSION)]);
+
+            // Act
+            const result = await myPlan({ vertical: 'venue' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]).toMatchObject({
+                status: 'PERMANENT_GRANT',
+                trialDaysLeft: null
+            });
+        });
+
+        it('labels the grant in the user locale (pt)', async () => {
+            // Arrange
+            arrangeVersion(GRANT_VERSION, 'owner-pro', 'Catalog pro');
+            extraSources.set('accommodation', [grantSource(GRANT_VERSION)]);
+
+            // Act
+            const outcome = await runTool({
+                definition: getMyPlanTool,
+                actor: ownerActor(),
+                input: { vertical: 'accommodation' },
+                context: { ...context, locale: 'pt' }
+            });
+
+            // Assert
+            const item = outcome.ok ? (outcome.data as MyPlanResult).items[0] : undefined;
+            expect(item?.statusLabel).toBe('Acesso permanente');
+        });
     });
 
     it('shows the grace and service-end dates of a subscription and no next charge outside ACTIVE', async () => {

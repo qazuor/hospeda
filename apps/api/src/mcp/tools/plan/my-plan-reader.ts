@@ -15,12 +15,24 @@
  * - includes: the cached effective set (`getListingAccessPorts().effectiveSet`
  *   and `toEffectiveSetView`), so a catalog change shows with no code change;
  * - add-ons: `readOwnerAddonHoldings`, the read behind
- *   `GET /billing-addon/instances`.
+ *   `GET /billing-addon/instances`;
+ * - courtesy and permanent grant: billing's own `coverage(user, vertical)`
+ *   (`getListingAccessPorts().billing.coverage`, contract §2), its `COURTESY`
+ *   and `GRANT` sources, plus `readPlanOfVersion` for the plan they point at.
+ *
+ * One item per vertical, by this precedence (AC-C16):
+ * 1. a live principal subscription, unless a courtesy is what pauses it;
+ * 2. a permanent grant (it never ends, and it is the floor the effective set uses);
+ * 3. a courtesy (it ends on a date);
+ * 4. a running trial;
+ * 5. a courtesy-paused subscription whose courtesy billing no longer reports
+ *    (shown as the `PAUSED` subscription it is).
  *
  * Labels come from `@repo/i18n` in the caller's locale. Plan names come from
  * the catalog row, never from a code map (HOS-1967).
  */
 
+import type { CoverageSource } from '@repo/billing-verticals-contract';
 import type { Locale } from '@repo/i18n';
 import { OwnSubscriptionsResponseSchema, TrialStatusEnum } from '@repo/schemas';
 import { readOwnPlanState } from '@repo/service-core';
@@ -34,6 +46,7 @@ import {
     readOwnTrialPlan,
     readTrialSummary
 } from '../../../services/listing-notices/listing-notices.service';
+import { readPlanOfVersion } from '../../../services/plan-catalog/plan-of-version.service';
 import { env } from '../../../utils/env';
 import { toEffectiveSetView } from '../../../utils/listing-access/effective-set-view';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports';
@@ -147,6 +160,7 @@ type TitlePart = Pick<
     | 'serviceEndsAt'
     | 'graceEndsAt'
     | 'trialDaysLeft'
+    | 'coverageEndsAt'
 >;
 
 /** A running trial of the vertical as a title, or `null` when there is none. */
@@ -192,7 +206,73 @@ async function readTrialTitle(input: {
         graceEndsAt: null,
         trialDaysLeft: endsAt
             ? Math.max(0, Math.ceil((endsAt.getTime() - now.getTime()) / DAY_MS))
-            : null
+            : null,
+        coverageEndsAt: null
+    };
+}
+
+/** Billing's sources for the vertical; empty (and logged) when they cannot be read. */
+async function readCoverageSources(input: {
+    readonly userId: string;
+    readonly vertical: MyPlanVertical;
+}): Promise<readonly CoverageSource[]> {
+    try {
+        const coverage = await getListingAccessPorts().billing.coverage(input);
+        return coverage.sources;
+    } catch (error) {
+        apiLogger.warn(
+            {
+                userId: input.userId,
+                vertical: input.vertical,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'get_my_plan: coverage could not be read'
+        );
+        return [];
+    }
+}
+
+/**
+ * A permanent grant or a courtesy of the vertical as a title (AC-C16), the
+ * grant first; `null` when billing reports neither.
+ */
+async function readGrantedTitle(input: {
+    readonly userId: string;
+    readonly vertical: MyPlanVertical;
+    readonly locale: Locale;
+}): Promise<TitlePart | null> {
+    const { locale } = input;
+    const sources = await readCoverageSources(input);
+    const source =
+        sources.find((candidate) => candidate.type === 'GRANT') ??
+        sources.find((candidate) => candidate.type === 'COURTESY');
+    if (source?.reference.kind !== 'PLAN_VERSION') {
+        return null;
+    }
+    const planVersionId = source.reference.planVersionId;
+    const catalogPlan = await readPlanOfVersion({ planVersionId });
+    const status = source.type === 'GRANT' ? 'PERMANENT_GRANT' : 'COURTESY';
+    return {
+        plan: catalogPlan
+            ? planOf({
+                  slug: catalogPlan.slug,
+                  name: catalogPlan.name,
+                  version: planVersionId,
+                  locale
+              })
+            : null,
+        status,
+        trialState: null,
+        statusLabel: label({
+            key: `account.subscription.mine.status.${status}`,
+            locale,
+            fallback: status
+        }),
+        nextChargeAt: null,
+        serviceEndsAt: null,
+        graceEndsAt: null,
+        trialDaysLeft: null,
+        coverageEndsAt: source.until instanceof Date ? source.until.toISOString() : null
     };
 }
 
@@ -206,8 +286,9 @@ async function readTrialTitle(input: {
  * @param input.vertical - Only this vertical; all of them when omitted.
  * @param input.locale - Locale of labels and links (`es` when omitted).
  * @param input.now - The caller's clock instant.
- * @returns One item per vertical with a live subscription or a running trial;
- *   with none, an empty list and the plans pages (AC-C15).
+ * @returns One item per vertical with a live subscription, a permanent grant,
+ *   a courtesy or a running trial (precedence in the file header); with none,
+ *   an empty list and the plans pages (AC-C15).
  */
 export async function readMyPlan(input: {
     readonly userId: string;
@@ -228,11 +309,17 @@ export async function readMyPlan(input: {
 
     const titles = await Promise.all(
         verticals.map(async (vertical): Promise<TitlePart | null> => {
-            // The newest live principal subscription of the vertical wins over a trial.
+            // The newest live principal subscription of the vertical wins,
+            // unless a courtesy is what pauses it (precedence in the file header).
             const subscription = planState.subscriptions
                 .filter((row) => row.vertical === vertical && isSubscriptionStatus(row.status))
                 .at(-1);
-            if (subscription && isSubscriptionStatus(subscription.status)) {
+            const courtesyPaused =
+                subscription?.status === 'PAUSED' && subscription.pause?.reason === 'COURTESY';
+            const subscriptionTitle = (): TitlePart | null => {
+                if (!subscription || !isSubscriptionStatus(subscription.status)) {
+                    return null;
+                }
                 return {
                     plan: planOf({
                         slug: subscription.plan.slug,
@@ -250,10 +337,18 @@ export async function readMyPlan(input: {
                     nextChargeAt: subscription.nextCharge?.at.toISOString() ?? null,
                     serviceEndsAt: subscription.serviceEndsAt?.toISOString() ?? null,
                     graceEndsAt: subscription.graceEndsAt?.toISOString() ?? null,
-                    trialDaysLeft: null
+                    trialDaysLeft: null,
+                    coverageEndsAt: null
                 };
+            };
+            if (subscription && !courtesyPaused) {
+                return subscriptionTitle();
             }
-            return readTrialTitle({ userId, vertical, locale, now });
+            return (
+                (await readGrantedTitle({ userId, vertical, locale })) ??
+                (await readTrialTitle({ userId, vertical, locale, now })) ??
+                subscriptionTitle()
+            );
         })
     );
 

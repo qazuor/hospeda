@@ -98,6 +98,7 @@ const planItem = (
     serviceEndsAt: null,
     graceEndsAt: null,
     trialDaysLeft: null,
+    coverageEndsAt: null,
     includes: {
         entitlements: Array.from({ length: 40 }, (_, n) => `Feature ${n} ${'y'.repeat(40)}`),
         limits: [{ label: 'Fotos por alojamiento', value: 15 }]

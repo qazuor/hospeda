@@ -17,6 +17,9 @@ import type { Actor } from '@repo/service-core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     arrangeSubscriptionAndTrial,
+    catalog,
+    extraSources,
+    grantSource,
     mocks as planMocks,
     resetWorld
 } from '../plan/my-plan.harness';
@@ -62,8 +65,12 @@ vi.mock('../../../../src/services/listing-notices/listing-notices.service', () =
 }));
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        effectiveSet: (...args: unknown[]) => planMocks.effectiveSet(...args)
+        effectiveSet: (...args: unknown[]) => planMocks.effectiveSet(...args),
+        billing: { coverage: (...args: unknown[]) => planMocks.coverage(...args) }
     })
+}));
+vi.mock('../../../../src/services/plan-catalog/plan-of-version.service', () => ({
+    readPlanOfVersion: (...args: unknown[]) => planMocks.readPlanOfVersion(...args)
 }));
 // The real reader, wrapped so the test sees which tool called it.
 vi.mock('../../../../src/mcp/tools/plan/my-plan-reader', async (importOriginal) => {
@@ -150,6 +157,33 @@ describe('get_owner_summary subscription block (HOS-2328)', () => {
         );
         expect(summary.subscription?.accommodation).toEqual(plan.items[0]);
         expect(summary.subscription?.venue).toEqual(plan.items[1]);
+    });
+
+    it('AC-C33 with a permanent grant: the block still equals the get_my_plan output', async () => {
+        // Arrange: an accommodation subscription and a venue covered by a grant
+        arrangeSubscriptionAndTrial();
+        const grantVersion = '55555555-5555-4555-8555-555555555555';
+        catalog.set(grantVersion, {
+            entitlements: [{ key: 'manage_venue_menu', planQuota: null }],
+            limits: []
+        });
+        planMocks.readTrialSummary.mockResolvedValue({ status: 'NONE' });
+        planMocks.readPlanOfVersion.mockResolvedValue({
+            slug: 'venue-pro',
+            name: 'Catalog venue pro'
+        });
+        extraSources.set('venue', [grantSource(grantVersion)]);
+        const actor = billingActor();
+
+        // Act
+        const summary = await run<OwnerSummary>(getOwnerSummaryTool, actor);
+        const plan = await run<MyPlanResult>(getMyPlanTool, actor);
+
+        // Assert
+        expect(plan.items.map((item) => item.status)).toEqual(['ACTIVE', 'PERMANENT_GRANT']);
+        expect(summary.subscription).toEqual(
+            Object.fromEntries(plan.items.map((item) => [item.vertical, item]))
+        );
     });
 
     it('AC-C15b: both tools call the one shared reader at run time', async () => {

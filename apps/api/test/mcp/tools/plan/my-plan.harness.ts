@@ -8,7 +8,9 @@
  * - `@repo/service-core` → `readOwnPlanState`;
  * - `services/billing-addon/owner-recurring-addons.service` → `readOwnerAddonHoldings`;
  * - `services/listing-notices/listing-notices.service` → `readTrialSummary`, `readOwnTrialPlan`;
- * - `utils/listing-access/ports` → `getListingAccessPorts().effectiveSet`.
+ * - `services/plan-catalog/plan-of-version.service` → `readPlanOfVersion`;
+ * - `utils/listing-access/ports` → `getListingAccessPorts().effectiveSet` and
+ *   `getListingAccessPorts().billing.coverage` ({@link coverageOf}).
  *
  * @module test/mcp/tools/plan/my-plan.harness
  */
@@ -31,7 +33,9 @@ export const mocks = {
     readOwnerAddonHoldings: vi.fn(),
     readTrialSummary: vi.fn(),
     readOwnTrialPlan: vi.fn(),
-    effectiveSet: vi.fn()
+    readPlanOfVersion: vi.fn(),
+    effectiveSet: vi.fn(),
+    coverage: vi.fn()
 };
 
 /** An owner actor; `billing` false drops `BILLING_VIEW_OWN`. */
@@ -77,6 +81,10 @@ const catalogReader = {
               }
             : null;
     },
+    /** Each in-test version is the current one of its own plan (`plan-<id>`), as the grant ratchet asks. */
+    async findCurrentPlanVersion({ planId }: { readonly planId: string }) {
+        return catalogReader.findPlanVersionSummary({ id: planId.replace(/^plan-/, '') });
+    },
     async findPlanVersionEffects({ id }: { readonly id: string }) {
         const version = catalog.get(id);
         return {
@@ -99,31 +107,65 @@ const catalogReader = {
 /** The source billing reports per vertical: a subscription or the base plan, by version. */
 export const coverageByVertical = new Map<string, string>();
 
+/** Extra billing sources per vertical (a courtesy, a permanent grant), beside {@link coverageByVertical}. */
+export const extraSources = new Map<string, unknown[]>();
+
+/** A courtesy source on a plan version, ending at `until`. */
+export function courtesySource(planVersionId: string, until: Date) {
+    return CoverageSourceSchema.parse({
+        type: 'COURTESY',
+        reference: { kind: 'PLAN_VERSION', planVersionId },
+        scope: 'VERTICAL',
+        target: null,
+        since: new Date('2026-11-01T00:00:00.000Z'),
+        until,
+        charged: null,
+        floor: null
+    });
+}
+
+/** A permanent-grant source anchored on a plan version (it never expires). */
+export function grantSource(planVersionId: string) {
+    return CoverageSourceSchema.parse({
+        type: 'GRANT',
+        reference: { kind: 'PLAN_VERSION', planVersionId },
+        scope: 'VERTICAL',
+        target: null,
+        since: new Date('2026-11-01T00:00:00.000Z'),
+        until: 'NEVER_EXPIRES',
+        charged: null,
+        floor: planVersionId
+    });
+}
+
+/** Billing's `coverage(user, vertical)` over the in-test world: one answer for the reader and the effective set. */
+export async function coverageOf({ vertical }: { readonly vertical: string }) {
+    const versionId = coverageByVertical.get(vertical);
+    const sources = [
+        ...(versionId
+            ? [
+                  CoverageSourceSchema.parse({
+                      type: 'SUBSCRIPTION',
+                      reference: { kind: 'PLAN_VERSION', planVersionId: versionId },
+                      scope: 'VERTICAL',
+                      target: null,
+                      since: new Date('2026-10-01T00:00:00.000Z'),
+                      until: new Date('2026-12-31T00:00:00.000Z'),
+                      charged: true,
+                      floor: null
+                  })
+              ]
+            : []),
+        ...(extraSources.get(vertical) ?? [])
+    ];
+    return { covered: sources.length > 0, sources } as never;
+}
+
 /** Resolves the effective set with the real resolver over {@link catalog}. */
 export function realEffectiveSet({ userId, vertical }: { userId: string; vertical: string }) {
     return readEffectiveSet({
         reader: catalogReader as never,
-        billing: {
-            coverage: async () => {
-                const versionId = coverageByVertical.get(vertical);
-                if (!versionId) return { covered: false, sources: [] } as never;
-                return {
-                    covered: true,
-                    sources: [
-                        CoverageSourceSchema.parse({
-                            type: 'SUBSCRIPTION',
-                            reference: { kind: 'PLAN_VERSION', planVersionId: versionId },
-                            scope: 'VERTICAL',
-                            target: null,
-                            since: new Date('2026-10-01T00:00:00.000Z'),
-                            until: new Date('2026-12-31T00:00:00.000Z'),
-                            charged: true,
-                            floor: null
-                        })
-                    ]
-                } as never;
-            }
-        },
+        billing: { coverage: () => coverageOf({ vertical }) },
         trials: { findTrial: async () => null },
         userId,
         vertical: vertical as never,
@@ -202,6 +244,7 @@ export function arrangeSubscriptionAndTrial(): void {
 export function resetWorld(): void {
     catalog.clear();
     coverageByVertical.clear();
+    extraSources.clear();
     mocks.readOwnPlanState.mockReset().mockResolvedValue({
         subscriptions: [],
         deferredCourtesies: []
@@ -209,5 +252,7 @@ export function resetWorld(): void {
     mocks.readOwnerAddonHoldings.mockReset().mockResolvedValue([]);
     mocks.readTrialSummary.mockReset().mockResolvedValue({ status: 'NONE' });
     mocks.readOwnTrialPlan.mockReset().mockResolvedValue(null);
+    mocks.readPlanOfVersion.mockReset().mockResolvedValue(null);
     mocks.effectiveSet.mockReset().mockImplementation(realEffectiveSet);
+    mocks.coverage.mockReset().mockImplementation(coverageOf);
 }
