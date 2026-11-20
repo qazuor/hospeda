@@ -18,6 +18,10 @@ import { createTranslations } from '@/lib/i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { formatPromotionBenefit } from '@/lib/promotions/format-benefit';
 import { buildUrl } from '@/lib/urls';
+import {
+    resolveVenuePromotionLimitPlanName,
+    type VenuePromotionLimitPlanOption
+} from '@/lib/venue/section-upsell-plan';
 import { VenuePromotionForm } from './VenuePromotionForm.client';
 import styles from './VenuePromotionsManager.module.css';
 
@@ -58,16 +62,27 @@ interface Props {
     readonly locale: SupportedLocale;
     readonly sectionState: 'locked' | 'available';
     readonly upsellPlanName: string | null;
+    readonly limitPlanOptions: readonly VenuePromotionLimitPlanOption[];
 }
 
 /** Owner editor for the venue's own promotions. */
-export function VenuePromotionsManager({ listingId, locale, sectionState, upsellPlanName }: Props) {
+export function VenuePromotionsManager({
+    listingId,
+    locale,
+    sectionState,
+    upsellPlanName,
+    limitPlanOptions
+}: Props) {
     const { t } = createTranslations(locale);
     const headingId = useId();
     const titleInputRef = useRef<HTMLInputElement>(null);
     const [items, setItems] = useState<readonly PromotionRow[]>([]);
     const [activeCount, setActiveCount] = useState(0);
     const [maxActive, setMaxActive] = useState(0);
+    const limitUpsellPlanName = resolveVenuePromotionLimitPlanName({
+        options: limitPlanOptions,
+        maxActive
+    });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [editing, setEditing] = useState<PromotionRow | null>(null);
@@ -307,11 +322,11 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                 !isUnlimitedLimit({ value: maxActive }) &&
                 activeCount >= maxActive && (
                     <p role="status">
-                        {upsellPlanName
+                        {limitUpsellPlanName
                             ? t(
                                   'venue.owner.editor.promotionsManager.limitReached',
                                   'Alcanzaste el tope. El plan {{plan}} permite más promociones.',
-                                  { plan: upsellPlanName }
+                                  { plan: limitUpsellPlanName }
                               )
                             : t(
                                   'venue.owner.editor.promotionsManager.limitReachedNoPlan',
