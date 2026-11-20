@@ -1,6 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
-import { and, eq, getDb, refunds } from '@repo/db';
+import { and, eq, getDb, payments, refunds } from '@repo/db';
+import type { PaymentProvider } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
@@ -15,6 +16,12 @@ import {
 import { readRefundCallTally } from './refund-call-tally';
 import { closeExecutedPaymentRefund } from './refund-closure';
 import { canRefundTransition, type RefundStatus } from './refund-machine';
+import {
+    assertRemainderAtProvider,
+    type ChargeRefundsRead,
+    creditedAcceptedAmount,
+    readChargeRefunds
+} from './refund-remainder-provider';
 import { assertRefundAmount, lockRefundSource } from './refund-source';
 
 /** Input of the remainder settlement (HOS-2406). */
@@ -32,7 +39,7 @@ export type SettleRefundRemainderInput = {
 export type SettleRefundRemainderResult = {
     readonly refundId: string;
     readonly subjectId: string | null;
-    /** Sum, in cents, of the provider calls the provider accepted. */
+    /** Sum, in cents, the provider reports credited for the accepted calls (what it returned, not what we asked). */
     readonly acceptedAmount: number;
     /** The remainder recorded from the provider panel, in cents. */
     readonly remainderAmount: number;
@@ -50,8 +57,10 @@ export const SETTLE_REFUND_REMAINDER_REJECTIONS = [
     'REFUND_NOT_CONFIRMED',
     'REFUND_CALL_UNANSWERED',
     'REFUND_HAS_NO_ACCEPTED_CALL',
+    'ACCEPTED_PART_NOT_ACCREDITED',
     'REMAINDER_AMOUNT_MISMATCH',
     'EXTERNAL_REFERENCE_ALREADY_SETTLED',
+    'REMAINDER_NOT_FOUND_AT_PROVIDER',
     'REFUND_STATE_CHANGED'
 ] as const;
 
@@ -81,14 +90,17 @@ function assertConfirmed(status: string): void {
 }
 
 /**
- * The provider answered every call, accepted at least one, and the remainder is exactly what the
- * accepted calls left unpaid. Returns the accepted sum.
+ * The provider answered every call, accepted at least one, every accepted call is credited on the
+ * charge (accepted is not credited), and the remainder is exactly what the credited part left
+ * unpaid. Returns the credited sum, as the provider reports it.
  */
-async function assertPartiallyAccepted(input: {
+async function assertPartiallyCredited(input: {
     readonly tx: DrizzleClient;
     readonly refundId: string;
     readonly refundAmount: number;
     readonly remainder: number;
+    readonly read: ChargeRefundsRead;
+    readonly currency: string;
 }): Promise<number> {
     const tally = await readRefundCallTally({ db: input.tx, refundId: input.refundId });
     if (tally.awaitingProviderAnswer)
@@ -103,14 +115,75 @@ async function assertPartiallyAccepted(input: {
             'The provider accepted no part of this refund',
             'REFUND_HAS_NO_ACCEPTED_CALL'
         );
-    const owed = input.refundAmount - tally.acceptedAmount;
+    const credited = creditedAcceptedAmount({
+        read: input.read,
+        acceptedIds: tally.acceptedIds,
+        currency: input.currency
+    });
+    const owed = input.refundAmount - credited;
     if (input.remainder !== owed)
         throw reject(
             ServiceErrorCode.VALIDATION_ERROR,
-            `The remainder must be ${owed}: the refund is ${input.refundAmount} and the provider accepted ${tally.acceptedAmount}`,
+            `The remainder must be ${owed}: the refund is ${input.refundAmount} and the provider credited ${credited}`,
             'REMAINDER_AMOUNT_MISMATCH'
         );
-    return tally.acceptedAmount;
+    return credited;
+}
+
+/** What the decision reads from the provider before its transaction; null when there is nothing to read. */
+type ProviderView = {
+    readonly paymentId: string;
+    readonly currency: string;
+    readonly read: ChargeRefundsRead;
+};
+
+/**
+ * Reads the payment's charge outside the transaction, like RF3. Returns null for a refund that is
+ * absent or not on a payment: the transaction then rejects it in the contract's order.
+ */
+async function readProviderView(input: {
+    readonly refundId: string;
+    readonly provider: PaymentProvider;
+    readonly clock: Clock;
+}): Promise<ProviderView | null> {
+    const db = getDb();
+    const [row] = await db
+        .select({ paymentId: refunds.paymentId })
+        .from(refunds)
+        .where(eq(refunds.id, input.refundId))
+        .limit(1);
+    if (!row?.paymentId) return null;
+    const [payment] = await db
+        .select({ providerFactId: payments.providerFactId, currency: payments.currency })
+        .from(payments)
+        .where(eq(payments.id, row.paymentId))
+        .limit(1);
+    if (!payment) return null;
+    const read = await readChargeRefunds({
+        chargeId: payment.providerFactId,
+        provider: input.provider,
+        clock: input.clock
+    });
+    return { paymentId: row.paymentId, currency: payment.currency, read };
+}
+
+/** The refund's source, or a typed 404 when a refund names neither a payment nor a manual payment. */
+function sourceOf(seen: {
+    readonly paymentId: string | null;
+    readonly manualPaymentId: string | null;
+}): { readonly kind: 'PAYMENT' | 'MANUAL_PAYMENT'; readonly id: string } {
+    if (seen.paymentId) return { kind: 'PAYMENT', id: seen.paymentId };
+    if (seen.manualPaymentId) return { kind: 'MANUAL_PAYMENT', id: seen.manualPaymentId };
+    // Unreachable while ck_refund_source holds (exactly one source); fail typed, never with ''.
+    throw reject(ServiceErrorCode.NOT_FOUND, 'Refund has no source', 'REFUND_SOURCE_NOT_FOUND');
+}
+
+function stateChanged(): ServiceError {
+    return reject(
+        ServiceErrorCode.ALREADY_EXISTS,
+        'Refund changed while it was being settled',
+        'REFUND_STATE_CHANGED'
+    );
 }
 
 /**
@@ -128,18 +201,23 @@ async function assertPartiallyAccepted(input: {
  * ({@link closeExecutedPaymentRefund}). No balance check is needed: the `CONFIRMED` row already
  * claims its full amount, and closing it does not change that.
  *
- * Everything runs in ONE transaction: the payment is locked `FOR UPDATE` before the refund (RF3's
+ * Accepted is not credited: before the transaction the charge is read by id, as RF3 reads it, and
+ * every accepted call must be a credited provider refund on it (the credited sums are the
+ * provider's, not what we asked), and the panel reference must be a credited provider refund of
+ * exactly the remainder.
+ *
+ * Everything else runs in ONE transaction: the payment is locked `FOR UPDATE` before the refund (RF3's
  * order), step 3 authorizes from ACC_14's own permission (never roles), and the close is a
  * versioned `UPDATE ... WHERE status = 'CONFIRMED' AND version = <read>`.
  *
  * @param input - The refund, the remainder and its panel reference.
- * @param ports - The clock.
+ * @param ports - The payment provider and the clock.
  * @returns The closed refund and its effect on the payment.
  * @throws ServiceError with a `reason` from `SETTLE_REFUND_REMAINDER_REJECTIONS`; never INTERNAL_ERROR for a rejection.
  */
 export async function settleRefundRemainder(
     input: SettleRefundRemainderInput,
-    ports: { readonly clock: Clock }
+    ports: { readonly provider: PaymentProvider; readonly clock: Clock }
 ): Promise<SettleRefundRemainderResult> {
     assertRefundAmount({ amount: input.amount });
     if (input.reference.length === 0 || input.reference.length > 255)
@@ -148,6 +226,11 @@ export async function settleRefundRemainder(
             'The external reference must be 1 to 255 characters',
             'EXTERNAL_REFERENCE_INVALID'
         );
+    const view = await readProviderView({
+        refundId: input.refundId,
+        provider: ports.provider,
+        clock: ports.clock
+    });
     try {
         return await getDb().transaction(async (tx: DrizzleClient) => {
             const [seen] = await tx
@@ -156,12 +239,7 @@ export async function settleRefundRemainder(
                 .where(eq(refunds.id, input.refundId))
                 .limit(1);
             if (!seen) throw refundNotFound();
-            const locked = await lockRefundSource({
-                tx,
-                source: seen.paymentId
-                    ? { kind: 'PAYMENT', id: seen.paymentId }
-                    : { kind: 'MANUAL_PAYMENT', id: seen.manualPaymentId ?? '' }
-            });
+            const locked = await lockRefundSource({ tx, source: sourceOf(seen) });
             const subjectId = await readRefundSubject({ tx, locked });
             authorizeRefundAction14({ actor: input.actor, subjectId });
             if (locked.kind !== 'PAYMENT')
@@ -177,14 +255,25 @@ export async function settleRefundRemainder(
                 .limit(1)
                 .for('update');
             if (!refund) throw refundNotFound();
+            // The source locked above must still be this refund's, and the one the provider read was for.
+            if (refund.paymentId !== locked.payment.id || view?.paymentId !== locked.payment.id)
+                throw stateChanged();
             assertConfirmed(refund.status);
-            const acceptedAmount = await assertPartiallyAccepted({
+            const acceptedAmount = await assertPartiallyCredited({
                 tx,
                 refundId: refund.id,
                 refundAmount: refund.amount,
-                remainder: input.amount
+                remainder: input.amount,
+                read: view.read,
+                currency: locked.payment.currency
             });
             await assertPanelReferenceUnused({ tx, reference: input.reference });
+            assertRemainderAtProvider({
+                read: view.read,
+                reference: input.reference,
+                remainder: input.amount,
+                currency: locked.payment.currency
+            });
             const [closed] = await tx
                 .update(refunds)
                 .set({
@@ -204,12 +293,7 @@ export async function settleRefundRemainder(
                     )
                 )
                 .returning({ id: refunds.id });
-            if (!closed)
-                throw reject(
-                    ServiceErrorCode.ALREADY_EXISTS,
-                    'Refund changed while it was being settled',
-                    'REFUND_STATE_CHANGED'
-                );
+            if (!closed) throw stateChanged();
             const applied = await closeExecutedPaymentRefund({
                 tx,
                 paymentId: locked.payment.id,

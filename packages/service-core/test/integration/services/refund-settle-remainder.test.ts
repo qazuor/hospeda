@@ -6,7 +6,11 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { paymentRow, refundById, seedAdminActor } from './support/refund-fixtures.js';
-import { partiallyAcceptedRefund, settleRemainder } from './support/refund-remainder-fixtures.js';
+import {
+    panelRefund,
+    partiallyAcceptedRefund,
+    settleRemainder
+} from './support/refund-remainder-fixtures.js';
 
 afterAll(closeServiceTestPool);
 
@@ -18,7 +22,7 @@ describe('HOS-2406 the manual remainder closes a partially accepted refund', () 
         async () => {
             // Arrange
             const arranged = await partiallyAcceptedRefund();
-            const reference = `mp-panel-${crypto.randomUUID()}`;
+            const reference = await panelRefund(arranged);
             const before = await refundById(arranged.refundId);
 
             // Act

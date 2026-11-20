@@ -1,5 +1,7 @@
-import { eq, idempotencyKeys, refundCalls, refunds } from '@repo/db';
+import { eq, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
+import { type PaymentProvider, PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
+import { creditPayment } from '../../../../src/services/billing/payment/credit-payment.service.js';
 import { requestRefund } from '../../../../src/services/billing/refund/request-refund.service.js';
 import {
     type SettleRefundRemainderInput,
@@ -7,11 +9,21 @@ import {
 } from '../../../../src/services/billing/refund/settle-refund-remainder.service.js';
 import type { Actor } from '../../../../src/types/index.js';
 import { getServiceTestDb } from '../helpers.js';
-import { type CreditedPayment, creditedPayment, seedAdminActor } from './refund-fixtures.js';
+import { paymentFixture } from './payment-fixtures.js';
+import { seedAdminActor } from './refund-fixtures.js';
 
-/** One provider call to persist on a refund: accepted (with an id), rejected or unanswered. */
+/**
+ * One provider call to persist on a refund: accepted (with an id), rejected or unanswered. An
+ * accepted call without `providerRefundId` is refunded for real at the fake, for `providerAmount`
+ * (what the provider returns) or else its own `amount` (what we asked).
+ */
 export type SeededCall =
-    | { readonly kind: 'ACCEPTED'; readonly amount: number; readonly providerRefundId?: string }
+    | {
+          readonly kind: 'ACCEPTED';
+          readonly amount: number;
+          readonly providerRefundId?: string;
+          readonly providerAmount?: number;
+      }
     | { readonly kind: 'REJECTED'; readonly amount: number }
     | { readonly kind: 'UNANSWERED'; readonly amount: number };
 
@@ -62,8 +74,88 @@ export async function seedProviderCalls(input: {
 }
 
 /**
- * A credited 10000 payment with a 6000 `CONFIRMED` refund whose provider calls are `calls`
- * (by default one accepted 4000 and one rejected 2000: the provider accepted only part).
+ * Refunds `amount` of a charge at the fake and returns the provider refund id. The first partial
+ * refund of a charge is refused as not refundable (lie M13, on), so it is asked once more.
+ */
+export async function refundAtFake(input: {
+    readonly provider: PaymentProvider;
+    readonly chargeId: string;
+    readonly amount: number;
+}): Promise<string> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            const { refundId } = await input.provider.refund({
+                chargeId: input.chargeId,
+                amount: { amountMinor: input.amount, currency: 'ARS' },
+                reference: `refund-${crypto.randomUUID()}`
+            });
+            return refundId;
+        } catch (error) {
+            const m13 =
+                error instanceof PaymentProviderError &&
+                error.refundRefusal === 'AMOUNT_NOT_ACCEPTED';
+            if (!m13 || attempt > 0) throw error;
+        }
+    }
+}
+
+/** A payment credited through P1 whose provider fact is a real approved charge in the fake. */
+export async function chargedCreditedPayment(amount = 10000) {
+    const fixture = await paymentFixture();
+    const charge = await fixture.provider.charge({
+        authorizationId: fixture.started.authorizationId,
+        amount: { amountMinor: amount, currency: 'ARS' },
+        reference: fixture.started.subscriptionId
+    });
+    const [pending] = await getServiceTestDb()
+        .insert(payments)
+        .values({
+            subscriptionId: fixture.started.subscriptionId,
+            amount,
+            currency: 'ARS',
+            status: 'PENDING',
+            provider: fixture.link.provider,
+            providerFactId: charge.chargeId,
+            factAt: fixture.clock.now()
+        })
+        .returning();
+    if (!pending) throw new Error('remainder fixture payment missing');
+    await creditPayment(
+        { paymentId: pending.id, chargeCreatedAt: fixture.clock.now() },
+        { clock: fixture.clock }
+    );
+    return { fixture, payment: pending };
+}
+
+/** A charged credited payment as returned by `chargedCreditedPayment`. */
+export type ChargedPayment = Awaited<ReturnType<typeof chargedCreditedPayment>>;
+
+/** Gives every accepted call without an id a real refund at the fake. */
+export async function refundAcceptedAtFake(input: {
+    readonly provider: PaymentProvider;
+    readonly chargeId: string;
+    readonly calls: readonly SeededCall[];
+}): Promise<readonly SeededCall[]> {
+    const resolved: SeededCall[] = [];
+    for (const call of input.calls) {
+        if (call.kind !== 'ACCEPTED' || call.providerRefundId) {
+            resolved.push(call);
+            continue;
+        }
+        const providerRefundId = await refundAtFake({
+            provider: input.provider,
+            chargeId: input.chargeId,
+            amount: call.providerAmount ?? call.amount
+        });
+        resolved.push({ ...call, providerRefundId });
+    }
+    return resolved;
+}
+
+/**
+ * A credited 10000 payment on a real fake charge with a 6000 `CONFIRMED` refund whose provider
+ * calls are `calls` (by default one accepted 4000, credited at the fake, and one rejected 2000:
+ * the provider accepted only part).
  */
 export async function partiallyAcceptedRefund(
     calls: readonly SeededCall[] = [
@@ -71,7 +163,7 @@ export async function partiallyAcceptedRefund(
         { kind: 'REJECTED', amount: 2000 }
     ]
 ) {
-    const credited = await creditedPayment(10000);
+    const credited = await chargedCreditedPayment(10000);
     const confirmer = await seedAdminActor([PermissionEnum.BILLING_REFUND]);
     const { refundId } = await requestRefund(
         {
@@ -84,27 +176,38 @@ export async function partiallyAcceptedRefund(
     const seeded = await seedProviderCalls({
         refundId,
         confirmedBy: confirmer.id,
-        calls,
+        calls: await refundAcceptedAtFake({
+            provider: credited.fixture.provider,
+            chargeId: credited.payment.providerFactId,
+            calls
+        }),
         at: credited.fixture.clock.now()
     });
     const settler = await seedAdminActor([PermissionEnum.BILLING_SETTLE_EXTERNAL]);
     return { credited, confirmer, settler, refundId, ...seeded };
 }
 
-/** The remainder settlement on a refund: 2000 with a fresh panel reference unless overridden. */
-export function settleRemainder(
+/** The remainder refunded by hand from the provider panel: a real refund at the fake. */
+export function panelRefund(arranged: { readonly credited: ChargedPayment }, amount = 2000) {
+    return refundAtFake({
+        provider: arranged.credited.fixture.provider,
+        chargeId: arranged.credited.payment.providerFactId,
+        amount
+    });
+}
+
+/**
+ * The remainder settlement on a refund: 2000, with the id of a fresh 2000 panel refund at the fake
+ * as its reference unless overridden.
+ */
+export async function settleRemainder(
     actor: Actor,
-    arranged: { readonly refundId: string; readonly credited: CreditedPayment },
+    arranged: { readonly refundId: string; readonly credited: ChargedPayment },
     overrides: Partial<SettleRefundRemainderInput> = {}
 ) {
+    const reference = overrides.reference ?? (await panelRefund(arranged));
     return settleRefundRemainder(
-        {
-            actor,
-            refundId: arranged.refundId,
-            amount: 2000,
-            reference: `mp-panel-${crypto.randomUUID()}`,
-            ...overrides
-        },
-        { clock: arranged.credited.fixture.clock }
+        { actor, refundId: arranged.refundId, amount: 2000, ...overrides, reference },
+        { provider: arranged.credited.fixture.provider, clock: arranged.credited.fixture.clock }
     );
 }
