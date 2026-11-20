@@ -2347,7 +2347,9 @@
                 "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se puede asentar el resto de una devolución confirmada.",
                 "REFUND_CALL_UNANSWERED": "Hay un pedido al proveedor sin respuesta. Este caso no se cierra desde acá: seguí la nota de devoluciones trabadas.",
                 "REFUND_HAS_NO_ACCEPTED_CALL": "El proveedor no aceptó ninguna parte de esta devolución. Rechazala y después asentala con la acción 14.",
-                "REMAINDER_AMOUNT_MISMATCH": "El resto no coincide con lo que falta devolver: monto de la devolución menos lo que aceptó el proveedor."
+                "REMAINDER_AMOUNT_MISMATCH": "El resto no coincide con lo que falta devolver: monto de la devolución menos lo que el proveedor acreditó.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "El proveedor no muestra acreditada la parte que había aceptado. Revisá el cobro en el panel del proveedor antes de registrar el resto.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "El proveedor no muestra en este cobro una devolución acreditada con esa referencia y ese monto."
             }
         }
     },

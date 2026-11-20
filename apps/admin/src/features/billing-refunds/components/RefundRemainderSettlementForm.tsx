@@ -29,7 +29,11 @@ const REMAINDER_REJECTION_KEYS: Readonly<Record<string, TranslationKey>> = {
     REFUND_HAS_NO_ACCEPTED_CALL:
         'admin-billing.proposedRefunds.remainder.rejections.REFUND_HAS_NO_ACCEPTED_CALL',
     REMAINDER_AMOUNT_MISMATCH:
-        'admin-billing.proposedRefunds.remainder.rejections.REMAINDER_AMOUNT_MISMATCH'
+        'admin-billing.proposedRefunds.remainder.rejections.REMAINDER_AMOUNT_MISMATCH',
+    ACCEPTED_PART_NOT_ACCREDITED:
+        'admin-billing.proposedRefunds.remainder.rejections.ACCEPTED_PART_NOT_ACCREDITED',
+    REMAINDER_NOT_FOUND_AT_PROVIDER:
+        'admin-billing.proposedRefunds.remainder.rejections.REMAINDER_NOT_FOUND_AT_PROVIDER'
 };
 
 const RefundIdSchema = z.string().uuid();
