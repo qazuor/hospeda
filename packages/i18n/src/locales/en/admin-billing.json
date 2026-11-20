@@ -2157,7 +2157,7 @@
             "COBRO_DUPLICADO": "Duplicate charge",
             "COBRO_DEL_PERIODO_SIN_RESOLVER": "Period charge unresolved",
             "PAUSA_NO_APLICADA": "Pause not applied",
-            "ORDEN_PAGADA_SIN_INSTANCIA": "Paid order with no add-on activated",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "One-time payment charged with no active add-on",
             "IMPORTE_COBRADO_DE_MAS": "Overcharged amount"
         },
         "proposal": "System proposal",
