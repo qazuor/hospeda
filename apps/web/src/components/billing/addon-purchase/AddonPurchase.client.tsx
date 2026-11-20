@@ -75,6 +75,9 @@ export function AddonPurchase(input: {
     // The purchase the screen waits on: the one the owner came back for, or the one a replay
     // answered without a link. A purchase another screen holds is not ours to read.
     const [pollOrderRequestId, setPollOrderRequestId] = useState(input.returnOrderRequestId);
+    // A purchase another screen holds (PENDING_ELSEWHERE) carries no order id this screen can
+    // read, so nothing would ever end its wait: it shows the "come back later" ending at once.
+    const [waitingElsewhere, setWaitingElsewhere] = useState(false);
     const [activeInstances, setActiveInstances] = useState<readonly ActiveAddonInstance[]>([]);
     const [liveSubscriptions, setLiveSubscriptions] = useState<
         readonly AddonSubscriptionTarget[] | null
@@ -154,6 +157,7 @@ export function AddonPurchase(input: {
         else if (state === 'CLOSED') setView('CLOSED');
     }, [poll.read]);
     const waitingKind = poll.read?.chargeKind ?? offer?.chargeKind ?? null;
+    const waitEnded = poll.exhausted || waitingElsewhere;
 
     const selectOffer = async (selected: Offer) => {
         setOffer(selected);
@@ -259,6 +263,7 @@ export function AddonPurchase(input: {
         setBusy(true);
         setError(null);
         setPurchasesPaused(false);
+        setWaitingElsewhere(false);
         const body = {
             productId: offer.productId,
             addonVersionId: offer.addonVersionId,
@@ -291,8 +296,8 @@ export function AddonPurchase(input: {
                         )(result.data.checkoutUrl);
                     else if (state === 'PROCESSING' || state === 'SETTLED') {
                         // Our own purchase without a link to follow: read it until it settles.
-                        if (result.data.outcome !== 'PENDING_ELSEWHERE')
-                            setPollOrderRequestId(orderRequestId);
+                        if (result.data.outcome === 'PENDING_ELSEWHERE') setWaitingElsewhere(true);
+                        else setPollOrderRequestId(orderRequestId);
                         setView('PROCESSING');
                     } else setView('CLOSED');
                 } else if (result.error.code === 'ADDON_PURCHASES_FROZEN') setPurchasesPaused(true);
@@ -406,10 +411,17 @@ export function AddonPurchase(input: {
             {view === 'PROCESSING' && (
                 <p
                     data-testid="addon-purchase-processing"
-                    data-exhausted={poll.exhausted ? 'true' : 'false'}
+                    data-exhausted={waitEnded ? 'true' : 'false'}
                     role="status"
                 >
-                    {t(processingCopyKey({ chargeKind: waitingKind, exhausted: poll.exhausted }))}
+                    {t(
+                        waitingElsewhere
+                            ? 'billing.addonPurchase.waitingPaymentLong'
+                            : processingCopyKey({
+                                  chargeKind: waitingKind,
+                                  exhausted: poll.exhausted
+                              })
+                    )}
                 </p>
             )}
             {view === 'PROCESSING' && poll.error && (
