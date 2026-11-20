@@ -18,6 +18,7 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { z } from 'zod';
+import { heldByPageChargeMark } from '../addon/one-time-page-charge-marks';
 
 const logger = createLogger('late-payment-refund-notice');
 
@@ -131,7 +132,11 @@ export async function enqueueLatePaymentRefundNotice(input: {
         .innerJoin(addonVersions, eq(addonVersions.id, addonInstances.addonVersionId))
         .innerJoin(addons, eq(addons.id, addonVersions.addonId))
         .innerJoin(users, eq(users.id, addonInstances.ownerId))
-        .where(and(eq(refunds.id, refundId), eq(refunds.paymentId, paymentId)))
+        // GUARD:HELD-ROWS: this reads the instance of a HELD row on purpose (the late charge mark
+        // 23 holds), never the purchase's own payment.
+        .where(
+            and(eq(refunds.id, refundId), eq(refunds.paymentId, paymentId), heldByPageChargeMark())
+        )
         .limit(1);
     if (!row) return { outcome: 'NOT_A_LATE_PAYMENT' };
     if (row.refundStatus !== 'EXECUTED') return { outcome: 'REFUND_NOT_EXECUTED' };
