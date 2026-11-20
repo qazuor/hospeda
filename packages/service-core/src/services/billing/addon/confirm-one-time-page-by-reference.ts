@@ -81,6 +81,8 @@ export async function confirmOneTimePageByReference(
             case 'ALREADY_CONFIRMED':
             case 'DUPLICATE_PAYMENT':
             case 'LATE_PAYMENT':
+            // Only a purchase that holds the charge reads charged back here; A3 never sees one.
+            case 'CHARGED_BACK':
                 return 'SETTLED';
             case 'UNKNOWN':
             case 'NOT_APPLICABLE':

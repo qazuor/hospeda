@@ -96,7 +96,8 @@ export interface OneTimePageMarkTrigger {
  * Whether a mark on the instance already holds this provider charge, so no other mark may open
  * for the same money: one payment raises at most one mark (§5.8-§5.10), even when a later re-read
  * would classify it differently (a price fixed after a divergence). No reason filter is needed:
- * ck_reconciliation_mark_instance_reasons admits only these three reasons on an instance. A charge is tied to its mark
+ * ck_reconciliation_mark_instance_reasons admits only these three reasons and `CONTRACARGO`
+ * (HOS-2391) on an instance, and every one of them names its charge. A charge is tied to its mark
  * only through the `provider.charge_id` of an opening event, because the open-mark uniqueness is
  * per (instance, reason) over OPEN marks only.
  *
