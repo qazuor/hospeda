@@ -6,6 +6,7 @@ import { actStartInstant, assertFreshForAct } from '@repo/payments';
 import { applyExecutedRefund } from '../payment/apply-executed-refund.service';
 import { resolveHungPaymentsBySettlement } from '../reconciliation/hung-payment-resolution';
 import type { ExecuteRefundInput, ExecuteRefundResult } from './execute-refund.service';
+import { enqueueLatePaymentRefundNotice } from './late-payment-refund-notice';
 import { canRefundTransition } from './refund-machine';
 import { lockRefundSource } from './refund-source';
 
@@ -15,7 +16,10 @@ type Result = (
     paymentEffect?: ExecuteRefundResult['paymentEffect']
 ) => ExecuteRefundResult;
 
-/** Complete TRANS:B:RF3 for an accredited row, preserving the payment transaction. */
+/**
+ * Complete TRANS:B:RF3 for an accredited row, preserving the payment transaction. A late
+ * one-time charge a mark 23 holds also mails its buyer, in the same transaction (HOS-2179 D3).
+ */
 export async function executeAccreditedRefund(input: {
     readonly input: ExecuteRefundInput;
     readonly candidate: SelectRefund;
@@ -65,6 +69,7 @@ export async function executeAccreditedRefund(input: {
             refundId: refund.id,
             at: clock.now()
         });
+        await enqueueLatePaymentRefundNotice({ tx, refundId: refund.id, paymentId });
         const paymentEffect = await applyExecutedRefund({ refundId: refund.id }, { clock, tx });
         return result(input.input, 'EXECUTED', paymentEffect);
     });

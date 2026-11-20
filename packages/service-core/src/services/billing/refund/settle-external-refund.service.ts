@@ -21,6 +21,7 @@ import {
     applyExecutedRefund
 } from '../payment/apply-executed-refund.service';
 import { resolveHungPaymentsBySettlement } from '../reconciliation/hung-payment-resolution.js';
+import { enqueueLatePaymentRefundNotice } from './late-payment-refund-notice.js';
 import { canRefundTransition, type RefundStatus, type Rf4Reason } from './refund-machine';
 import {
     assertRefundAmount,
@@ -366,6 +367,8 @@ async function applyEffects(
  * email). On a `manual_payment` with `TOTAL` scope, its open `covered_period`
  * is released. Every unresolved payment hung on a reconciliation mark for
  * this source is resolved with this refund (`resolved_at`, `refund_id`; HOS-1697).
+ * When the payment is a late one-time charge a mark 23 holds, the buyer is mailed that it
+ * was refunded (HOS-2179 D3, `enqueueLatePaymentRefundNotice`), in this same transaction.
  *
  * @param input - The settlement.
  * A `refundId` naming a `FAILED` row records a new RF4 row answering it; the
@@ -410,6 +413,8 @@ export async function settleExternalRefund(
                 refundId,
                 at: ports.clock.now()
             });
+            if (input.source.kind === 'PAYMENT')
+                await enqueueLatePaymentRefundNotice({ tx, refundId, paymentId: input.source.id });
             const effects = await applyEffects(tx, input, refundId, ports.clock);
             return {
                 refundId,
