@@ -34,7 +34,7 @@ Stage 1 of making Hospeda's emails editable. Four deliverables, all owner-approv
 | Changing send behaviour (who, when, which transport, retries, preferences) | Preview only. The previewer never sends |
 | A tokenized one-click unsubscribe | Separate feature if wanted (rejected for this spec in OQ-2) |
 | A "send me a test email" button | Not requested; real-client checks happen in the staging smoke (§11) |
-| Wiring the newsletter double opt-in emails | Found unwired (§2.6); a separate issue, not this spec |
+| Wiring the newsletter double opt-in emails | Found unwired (§2.6); tracked as HOS-2535, a child issue of HOS-2519 |
 
 ## 2. Current baseline (verified on `origin/staging`, 2026-11-20)
 
@@ -76,7 +76,7 @@ No email-ready logo exists. `apps/web/src/assets/images/logo.webp` is bundled by
 
 - **Some outbox copy is already localized**: `resolveManualInstallmentMailCopy`, `resolveLatePaymentRefundMailCopy`, `resolveOneTimeAddonActivatedMailCopy` and `resolvePartnerMailCopy` (`apps/api/src/utils/*-mail-copy.ts`) use `trans` from `@repo/i18n`, and conversation and alert-digest templates take a `locale`. So "Spanish-only" holds for most templates, not all. Scenarios may carry a locale (§7.1).
 - Some outbox renderers need runtime readers: `readListingNames`, `readReconciliationSubjects` (DB reads) and `issuePartnerClaimSecret`, which **writes** a claim secret. A preview must inject fakes, never the defaults (`buildOutboxSenderRender` already accepts them as inputs).
-- **The newsletter verify and welcome emails are never sent.** Both routes build `NewsletterSubscriberService` without a dispatcher (`apps/api/src/routes/newsletter/protected/_singletons.ts:46-52`, same in `profile/protected`), so the `NO_OP_DISPATCHER` runs. The templates and subjects exist. To be reported as a separate issue, not fixed here.
+- **The newsletter verify and welcome emails are never sent.** Both routes build `NewsletterSubscriberService` without a dispatcher (`apps/api/src/routes/newsletter/protected/_singletons.ts:46-52`, same in `profile/protected`), so the `NO_OP_DISPATCHER` runs. The templates and subjects exist. Tracked as HOS-2535 (child of HOS-2519), not fixed in this spec's PRs. When HOS-2535 lands, the two catalog entries flip to `wired: true`.
 - Template fixtures are inline in each test file (`packages/notifications/test/templates/*.test.tsx`, `test/services/outbox/*.test.tsx`); none are exported. `test/services/subject-placeholders.test.ts` already exercises the real subject path per type.
 - Admin has `CampaignPreview.tsx` (`apps/admin/src/routes/_authed/newsletter/campaigns/-components/`): a fake 600px email chrome around TipTap HTML injected through DOMPurify. It is not reusable for full email documents (it adds its own footer, and full documents must be isolated in an iframe), but its chrome styling can be borrowed.
 - The admin CSP is report-only and allows `img-src https:` (`apps/admin/src/lib/csp-helpers.ts:91`), so a remote logo loads inside a `srcdoc` iframe.
@@ -364,7 +364,7 @@ Smoke: `status-needs-smoke-staging`. Steps: (1) open `/platform/emails` as an ad
 - Codemod scope: `rg -l "from '../components/layout.js'" packages/notifications/src/templates` gives 115 files. Rewrite the import to `import { EmailLayout } from '@repo/email';` and `showUnsubscribe={true}` to `footerLink="preferences"`. Remove `showUnsubscribe={false}`, since `'none'` is the default. Run `biome check` with `--max-diagnostics=400`.
 - `templates/components/index.ts` drops its `layout` re-export. `Button`, `Heading` and `InfoRow` stay in notifications (out of scope).
 - `email-outbox-sender.job.ts` keeps exporting `buildOutboxSenderRender` with an unchanged signature, so existing job tests pass.
-- Follow-up issues to file (not this spec): the unwired newsletter double opt-in emails (§2.6); optionally, moving inline test fixtures to catalog scenarios.
+- Follow-ups: HOS-2535 (the unwired newsletter double opt-in emails, §2.6); optionally, moving inline test fixtures to catalog scenarios (not filed).
 
 ## 14. Linear
 
