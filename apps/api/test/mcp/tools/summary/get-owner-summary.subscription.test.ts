@@ -16,12 +16,14 @@ import { PermissionEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    ACCOMMODATION_VERSION,
     arrangeSubscriptionAndTrial,
     catalog,
     extraSources,
     grantSource,
     mocks as planMocks,
-    resetWorld
+    resetWorld,
+    TOURIST_VIP_VERSION
 } from '../plan/my-plan.harness';
 import {
     actorFor,
@@ -68,6 +70,9 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
         effectiveSet: (...args: unknown[]) => planMocks.effectiveSet(...args),
         billing: { coverage: (...args: unknown[]) => planMocks.coverage(...args) }
     })
+}));
+vi.mock('../../../../src/routes/plan-catalog/public/read-sellable-catalog', () => ({
+    readSellablePlanCatalog: (...args: unknown[]) => planMocks.readSellablePlanCatalog(...args)
 }));
 vi.mock('../../../../src/services/plan-catalog/plan-of-version.service', () => ({
     readPlanOfVersion: (...args: unknown[]) => planMocks.readPlanOfVersion(...args)
@@ -184,6 +189,69 @@ describe('get_owner_summary subscription block (HOS-2328)', () => {
         expect(summary.subscription).toEqual(
             Object.fromEntries(plan.items.map((item) => [item.vertical, item]))
         );
+    });
+
+    it('AC-C33 with inherited Tourist VIP (HOS-2398): the block equals the get_my_plan one, apart from the plans', async () => {
+        // Arrange: the accommodation plan version inherits Tourist VIP
+        arrangeSubscriptionAndTrial();
+        const accommodation = catalog.get(ACCOMMODATION_VERSION);
+        if (!accommodation) throw new Error('arrange: accommodation version missing');
+        catalog.set(ACCOMMODATION_VERSION, { ...accommodation, inheritsTouristVip: true });
+        catalog.set(TOURIST_VIP_VERSION, {
+            entitlements: [{ key: 'vip_promotions_access', planQuota: null }],
+            limits: [{ key: 'max_favorites', value: 100 }]
+        });
+        const actor = billingActor();
+
+        // Act
+        const summary = await run<OwnerSummary>(getOwnerSummaryTool, actor);
+        const plan = await run<MyPlanResult>(getMyPlanTool, actor);
+
+        // Assert
+        expect(plan.inheritedTouristVip).toEqual({
+            note: 'Por tener un plan pago también tenés Turista VIP',
+            entitlements: ['Acceso a promociones VIP'],
+            limits: [{ label: 'Favoritos', value: 100 }]
+        });
+        expect(summary.inheritedTouristVip).toEqual(plan.inheritedTouristVip);
+        expect(summary.subscription).toEqual(
+            Object.fromEntries(plan.items.map((item) => [item.vertical, item]))
+        );
+        expect(summary.subscription).not.toHaveProperty('tourist');
+    });
+
+    it('AC-C33 with the trial Tourist VIP line (HOS-2398): the trial item equals the get_my_plan one', async () => {
+        // Arrange: a venue trial whose vertical sells only versions that inherit
+        arrangeSubscriptionAndTrial();
+        planMocks.readSellablePlanCatalog.mockResolvedValue({
+            plans: [{ inheritsTouristVip: true }]
+        });
+        const actor = billingActor();
+
+        // Act
+        const summary = await run<OwnerSummary>(getOwnerSummaryTool, actor);
+        const plan = await run<MyPlanResult>(getMyPlanTool, actor);
+
+        // Assert
+        const venue = plan.items.find((item) => item.vertical === 'venue');
+        expect(venue?.touristVipOnUpgrade).toEqual({
+            note: 'Al pasar a un plan pago también tenés Turista VIP'
+        });
+        expect(summary.subscription?.venue).toEqual(venue);
+    });
+
+    it('no inheritance: neither tool carries the block', async () => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+        const actor = billingActor();
+
+        // Act
+        const summary = await run<OwnerSummary>(getOwnerSummaryTool, actor);
+        const plan = await run<MyPlanResult>(getMyPlanTool, actor);
+
+        // Assert
+        expect(plan).not.toHaveProperty('inheritedTouristVip');
+        expect(summary).not.toHaveProperty('inheritedTouristVip');
     });
 
     it('M1: add-ons that belong to no vertical reach the summary too', async () => {

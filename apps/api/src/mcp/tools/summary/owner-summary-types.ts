@@ -7,7 +7,12 @@
 
 import { PublicationStatusEnum } from '@repo/schemas';
 import type { ListingToolVertical } from '../listing/listing-services';
-import type { MyPlanAddon, MyPlanItem, MyPlanVertical } from '../plan/my-plan-types';
+import type {
+    MyPlanAddon,
+    MyPlanInheritedTouristVip,
+    MyPlanItem,
+    MyPlanVertical
+} from '../plan/my-plan-types';
 
 /** The views periods the summary offers: the two the portal's owner-wide stats offer. */
 export const OWNER_SUMMARY_PERIODS = ['7d', '30d'] as const;
@@ -174,6 +179,13 @@ export interface OwnerSummary {
     readonly subscription?: Readonly<Partial<Record<MyPlanVertical, SummaryPlanItem>>>;
     /** `get_my_plan`'s add-ons that belong to no vertical (HOS-2328 M1). Absent when none. */
     readonly unattributedAddons?: readonly MyPlanAddon[];
+    /**
+     * `get_my_plan`'s `inheritedTouristVip` (HOS-2398, AC-C33): Tourist VIP held
+     * because of a paid plan, apart from the plans. Absent when `get_my_plan`
+     * would not return it. Over the response budget it gives way before any
+     * plan's `includes`, replaced by {@link SummaryIncludesOmitted}.
+     */
+    readonly inheritedTouristVip?: MyPlanInheritedTouristVip | SummaryIncludesOmitted;
     /**
      * Summary blocks left out and why (today only `subscription`). Absent when
      * nothing was left out. Not the `omitted` of a metrics entry, which is

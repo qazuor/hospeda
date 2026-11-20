@@ -1,6 +1,41 @@
 import { LISTING_SECTIONS } from '@repo/schemas';
+import { isUnlimitedLimit } from '@/components/billing/plan-card-delta';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { getPlanName } from '@/lib/billing/plan-name';
+
+/** A catalog plan with its `max_active_promotions` limit, in price order. */
+export interface VenuePromotionLimitPlanOption {
+    readonly name: string;
+    readonly maxActive: number;
+}
+
+/** Map the ordered venue catalog to the promotion limits needed by the editor. */
+export function getVenuePromotionLimitPlanOptions({
+    plans,
+    t
+}: {
+    readonly plans: readonly PublicPlanData[];
+    readonly t: Translator;
+}): readonly VenuePromotionLimitPlanOption[] {
+    return plans.map((plan) => ({
+        name: getPlanName({ plan, t }),
+        maxActive: plan.limits.max_active_promotions ?? 0
+    }));
+}
+
+/** Return the cheapest catalog plan that strictly raises the current cap. */
+export function resolveVenuePromotionLimitPlanName(input: {
+    readonly options: readonly VenuePromotionLimitPlanOption[];
+    readonly maxActive: number;
+}): string | null {
+    if (isUnlimitedLimit({ value: input.maxActive })) return null;
+    return (
+        input.options.find(
+            (plan) =>
+                isUnlimitedLimit({ value: plan.maxActive }) || plan.maxActive > input.maxActive
+        )?.name ?? null
+    );
+}
 
 type Translator = (key: string, fallback?: string) => string;
 
