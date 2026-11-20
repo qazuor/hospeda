@@ -34,7 +34,9 @@ import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 /** The https origin the fake `init_point` advertises; the browser test forwards it (G10). */
 const FAKE_SCREEN_ORIGIN = 'https://payments-fake.invalid';
 const PURCHASE_PATH = '/api/v1/protected/billing/addons/purchases';
-const ONE_TIME_PRICE = /\$\s?1\.500(?:,00)?(?!\d)/;
+// The summary text runs the price straight into the duration ("$ 1.5007 días"), so the
+// price pattern cannot refuse a following digit; the duration is asserted on its own.
+const ONE_TIME_PRICE = /\$\s?1\.500(?:,00)?/;
 
 /**
  * A fake world whose lies are all ON: notices come late or never (M6), so the only way the
@@ -87,6 +89,7 @@ async function goToPaymentPage(args: {
     const summary = args.page.getByTestId('addon-purchase-summary');
     await expect(summary).toContainText('E2E HOS-2138 boost one-time accommodation');
     await expect(summary).toContainText(ONE_TIME_PRICE);
+    await expect(summary).toContainText('7 días');
     await expect(args.page.getByTestId('addon-one-time-summary')).toHaveText(
         esBilling.addonPurchase.oneTimeSummary
     );
