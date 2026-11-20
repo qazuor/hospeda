@@ -9,7 +9,7 @@ type PurchaseRead = z.infer<typeof AddonPurchaseReadResponseSchema>;
 
 /** Time between two reads of a waiting purchase. */
 export const POLL_INTERVAL_MS = 3000;
-/** Reads before the screen stops asking and says the result will come by mail (P-1). */
+/** Reads before the screen stops asking and tells the owner to come back later (P-1). */
 export const POLL_MAX_ATTEMPTS = 10;
 
 /**
@@ -48,23 +48,23 @@ export function useAddonPurchasePoll(input: {
     useEffect(() => {
         if (!orderRequestId || !enabled || settled || attempt >= POLL_MAX_ATTEMPTS) return;
         let alive = true;
+        const readOnce = async (): Promise<void> => {
+            try {
+                const result = await billingAddonApi.readPurchase({ orderRequestId });
+                if (!alive) return;
+                if (result.ok) {
+                    setRead(result.data);
+                    setError(null);
+                } else setError(visibleApiMessage({ error: result.error }) ?? loadError);
+            } catch (cause: unknown) {
+                if (!alive) return;
+                setError(cause instanceof Error ? cause.message : loadError);
+            }
+            setAttempt((value) => value + 1);
+        };
         const timer = window.setTimeout(
             () => {
-                void billingAddonApi
-                    .readPurchase({ orderRequestId })
-                    .then((result) => {
-                        if (!alive) return;
-                        if (result.ok) {
-                            setRead(result.data);
-                            setError(null);
-                        } else setError(visibleApiMessage({ error: result.error }) ?? loadError);
-                        setAttempt((value) => value + 1);
-                    })
-                    .catch((cause: unknown) => {
-                        if (!alive) return;
-                        setError(cause instanceof Error ? cause.message : loadError);
-                        setAttempt((value) => value + 1);
-                    });
+                void readOnce();
             },
             attempt === 0 ? 0 : POLL_INTERVAL_MS
         );

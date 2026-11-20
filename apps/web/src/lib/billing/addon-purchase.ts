@@ -37,7 +37,7 @@ export function hiddenListingNoticeKind(input: {
 
 /**
  * The copy of a purchase still being confirmed (HOS-2179 P-1): a one-time payment is
- * "being confirmed" and, once the screen stops asking, "we will email you"; a recurring
+ * "being confirmed" and, once the screen stops asking, "come back in a few minutes"; a recurring
  * checkout keeps its generic copy.
  */
 export function processingCopyKey(input: {
