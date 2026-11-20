@@ -64,6 +64,78 @@ export interface BuildStep3ChildEnvInput {
     readonly databaseUrl: string;
     /** Host process environment; only {@link STEP3_HOST_ENV_ALLOWLIST} is read. */
     readonly hostEnv: Readonly<Record<string, string | undefined>>;
+    /**
+     * Host-reachable `host:port` of the target's Redis. When given, the host:port
+     * of `HOSPEDA_REDIS_URL` is rewritten to it (HOS-2365); omit it only when the
+     * container has no Redis URL.
+     */
+    readonly redisHostPort?: string;
+}
+
+/** Container env key holding the Redis URL. */
+export const REDIS_URL_ENV_KEY = 'HOSPEDA_REDIS_URL';
+
+/**
+ * Replace only the host and port of a Redis URL, keeping scheme, user,
+ * password, db index and query. Never echoes the URL in errors.
+ *
+ * @param input - The container's Redis URL and the host-reachable `host:port`.
+ * @returns The rewritten URL.
+ * @throws when either input cannot be parsed.
+ */
+export function rewriteRedisUrlHost(input: {
+    readonly redisUrl: string;
+    readonly hostPort: string;
+}): string {
+    let url: URL;
+    try {
+        url = new URL(input.redisUrl);
+    } catch {
+        throw new Error(`${REDIS_URL_ENV_KEY} in the api container is not a valid URL.`);
+    }
+    const separator = input.hostPort.lastIndexOf(':');
+    if (separator <= 0) {
+        throw new Error(`Invalid Redis host:port '${input.hostPort}'.`);
+    }
+    url.hostname = input.hostPort.slice(0, separator);
+    url.port = input.hostPort.slice(separator + 1);
+    return url.toString();
+}
+
+/** Input for {@link resolveRedisHostPort}. */
+export interface ResolveRedisHostPortInput {
+    /** `Config.Env` entries from the target's api container. */
+    readonly containerEnv: ReadonlyArray<string>;
+    /** Looks up the Redis container's published `host:port` (`null` = not published). */
+    readonly lookupHostPort: () => Promise<string | null>;
+}
+
+/**
+ * Resolve the host-reachable Redis address for the cutover child env.
+ *
+ * Returns `undefined` when the api container has no Redis URL (nothing to
+ * rewrite). When it does and Redis publishes no port to the host, throws: the
+ * cutover must not run with a broken effective-set cache invalidation.
+ *
+ * @param input - Container env and the injected port lookup.
+ * @returns The `host:port`, or `undefined` when no Redis URL is configured.
+ * @throws with an actionable message when Redis is not published to the host.
+ */
+export async function resolveRedisHostPort(
+    input: ResolveRedisHostPortInput
+): Promise<string | undefined> {
+    const redisUrl = readContainerEnvValue({
+        containerEnv: input.containerEnv,
+        key: REDIS_URL_ENV_KEY
+    });
+    if (redisUrl === undefined || redisUrl.trim().length === 0) return undefined;
+    const hostPort = await input.lookupHostPort();
+    if (hostPort === null) {
+        throw new Error(
+            `Redis does not publish port 6379 to the host, so ${REDIS_URL_ENV_KEY} is unreachable from the VPS host and the cutover would run with a broken cache invalidation. Publish 127.0.0.1:6379 in Coolify (Redis service → Network → ports mapping) and retry.`
+        );
+    }
+    return hostPort;
 }
 
 /**
@@ -106,6 +178,13 @@ export function buildStep3ChildEnv(
         if (value !== undefined) env[key] = value;
     }
     env.HOSPEDA_DATABASE_URL = input.databaseUrl;
+    const redisUrl = env[REDIS_URL_ENV_KEY];
+    if (input.redisHostPort !== undefined && redisUrl !== undefined && redisUrl.length > 0) {
+        env[REDIS_URL_ENV_KEY] = rewriteRedisUrlHost({
+            redisUrl,
+            hostPort: input.redisHostPort
+        });
+    }
     return env;
 }
 

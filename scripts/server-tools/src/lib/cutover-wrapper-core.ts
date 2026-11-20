@@ -291,6 +291,8 @@ export interface ExecuteCutoverWrapperInput {
     readonly containerEnv: ReadonlyArray<string>;
     /** Host-reachable Postgres URL built from the target's Postgres container. */
     readonly databaseUrl: string;
+    /** Host-reachable Redis `host:port`; rewrites `HOSPEDA_REDIS_URL` (HOS-2365). */
+    readonly redisHostPort?: string;
     /** Host process environment; only the step-3 allowlist is forwarded. */
     readonly hostEnv: Readonly<Record<string, string | undefined>>;
     readonly readCheckoutSha: (input: { readonly repoRoot: string }) => Promise<string>;
@@ -354,7 +356,8 @@ export async function executeCutoverWrapper(
     const childEnv = buildStep3ChildEnv({
         containerEnv: input.containerEnv,
         databaseUrl: input.databaseUrl,
-        hostEnv: input.hostEnv
+        hostEnv: input.hostEnv,
+        redisHostPort: input.redisHostPort
     });
 
     input.log.info(`Target  : ${input.target}`);
