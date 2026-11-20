@@ -109,6 +109,12 @@ describe('AudiencePricingSections.astro renders the comparison table inline', ()
         expect(sectionsSrc).toContain('ctaHref={ctaHref}');
     });
 
+    it('HOS-2398 hands the table the Tourist VIP plan the page read from the catalog', () => {
+        // The owner "as tourist" group resolves inheriting plans against this
+        // plan. It comes from the same catalog read the cards use, never a map.
+        expect(sectionsSrc).toContain('touristVipPlan={touristVipBenefits?.plan ?? null}');
+    });
+
     it('uses CSS custom properties for the section heading', () => {
         expect(sectionsSrc).toContain('var(--');
     });
