@@ -3,6 +3,7 @@ import { getDb, type ReconciliationMarkReason, reconciliationCreditedPaymentMode
 import { createLogger } from '@repo/logger';
 import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
 import { ServiceError } from '../../../../types';
+import { markAddonPaymentChargeback } from '../../addon/addon-payment-chargeback';
 import type { CanChargeDeadlines } from '../../coverage/can-charge';
 import { claimedRefundAmount, lockRefundSource } from '../../refund/refund-source';
 import {
@@ -42,7 +43,7 @@ export interface CreditedPaymentsCheckFailure {
 export interface CreditedPaymentsCheckSummary {
     /** Payments re-read by id. */
     readonly examined: number;
-    /** Payments read charged back and handed to the chargeback interface. */
+    /** Payments read charged back and handed to the chargeback interface (page payments included). */
     readonly chargebacks: number;
     /** Reason-18 marks opened or accumulated. */
     readonly outOfFlowRefunds: number;
@@ -57,12 +58,42 @@ function errorMessage(error: unknown): string {
 }
 
 /**
+ * Re-reads one page payment by id and, when it reads charged back, hands it to the
+ * addon chargeback interface (HOS-2391). The read decides, never the listing.
+ */
+async function checkPagePaymentChargeback(input: {
+    readonly payment: {
+        readonly providerFactId: string;
+        readonly addonInstanceId: string;
+    };
+    readonly correlationId: string;
+    readonly ports: { readonly provider: PaymentProvider; readonly clock: Clock };
+}): Promise<'NOT_CHARGED_BACK' | 'MARKED' | 'UNKNOWN'> {
+    const act = { kind: 'decision' as const, startedAt: input.ports.clock.now() };
+    actStartInstant({ act });
+    const read = await input.ports.provider.readCharge({
+        chargeId: input.payment.providerFactId
+    });
+    const { snapshot } = assertFreshForAct({ read, act });
+    if (!snapshot.chargedBack) return 'NOT_CHARGED_BACK';
+    const marked = await markAddonPaymentChargeback({
+        chargeId: input.payment.providerFactId,
+        instanceId: input.payment.addonInstanceId,
+        trigger: { actor: 'job', correlationId: input.correlationId }
+    });
+    return marked.outcome === 'UNKNOWN' ? 'UNKNOWN' : 'MARKED';
+}
+
+/**
  * The credited-payments check of the daily sweep (AC:B11:12; the "by the check"
  * half of AC:B11:27): every credited subscription payment inside the PLAZO:18
  * window is re-read by id. Charged back → the internal chargeback interface and
  * nothing else. Otherwise, refunded by the provider beyond what our flow claims
  * (`REQUESTED` + `CONFIRMED` + `EXECUTED`, HOS-1605 H2) → S14 opens reason 18,
- * without suspending. It never moves a payment or a subscription, writes no
+ * without suspending. The payment of a one-time addon bought on a payment page is
+ * re-read too, for a chargeback only: one opens `CONTRACARGO` on its instance and
+ * leaves the instance as it is (HOS-2391). Reason 18 does not apply to it, since an
+ * instance cannot carry that reason. It never moves a payment or a subscription, writes no
  * refund, calls no refund or cancel and enqueues no mail. A payment that fails is
  * counted and the pass goes on; a window it cannot read fails closed.
  *
@@ -113,7 +144,20 @@ export async function runCreditedPaymentsCheck(
             await ports.heartbeat?.();
             const subscriptionId = payment.subscriptionId;
             try {
-                if (subscriptionId === null) continue;
+                if (subscriptionId === null) {
+                    if (payment.addonInstanceId === null) continue;
+                    const pageChargeback = await checkPagePaymentChargeback({
+                        payment: { ...payment, addonInstanceId: payment.addonInstanceId },
+                        correlationId: input.correlationId,
+                        ports
+                    });
+                    examined++;
+                    if (pageChargeback === 'NOT_CHARGED_BACK') continue;
+                    chargebacks++;
+                    if (pageChargeback === 'UNKNOWN')
+                        throw new Error('The chargeback mark of the page payment did not open');
+                    continue;
+                }
                 const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
                 actStartInstant({ act });
                 const read = await ports.provider.readCharge({ chargeId: payment.providerFactId });

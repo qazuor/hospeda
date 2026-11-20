@@ -1,6 +1,7 @@
 /**
- * Support for TEST:B11:11 (AC:B11:12): the credited-payments check lists only
- * subscription payments in a credited state inside the window, by keyset page.
+ * Support for TEST:B11:11 (AC:B11:12): the credited-payments check lists the
+ * subscription payments and, since HOS-2391, the one-time page payments in a
+ * credited state inside the window, by keyset page. Order payments stay out.
  * Every case runs in a rolled-back transaction and asserts only on its own ids.
  */
 import { afterAll, describe, expect, it } from 'vitest';
@@ -63,17 +64,30 @@ async function seed(tx: DrizzleClient) {
             status: 'ACTIVE'
         })
         .returning();
+    const [orderInstance] = await tx
+        .insert(addonInstances)
+        .values({
+            productId: product?.id as string,
+            addonVersionId: version?.id as string,
+            ownerId: user?.id as string,
+            status: 'ACTIVE',
+            providerOrderId: `b114-order-${crypto.randomUUID()}`.slice(0, 64)
+        })
+        .returning();
     const payment = async (input: {
         readonly status: string;
         readonly factAt: Date;
-        readonly ofInstance?: boolean;
+        /** `page` hangs it from a page purchase, `order` from an order purchase. */
+        readonly ofInstance?: 'page' | 'order';
     }) => {
         const [row] = await tx
             .insert(payments)
             .values({
-                ...(input.ofInstance
+                ...(input.ofInstance === 'page'
                     ? { addonInstanceId: instance?.id as string }
-                    : { subscriptionId: subscription?.id as string }),
+                    : input.ofInstance === 'order'
+                      ? { addonInstanceId: orderInstance?.id as string }
+                      : { subscriptionId: subscription?.id as string }),
                 amount: 10_000,
                 currency: 'ARS',
                 status: input.status,
@@ -114,7 +128,7 @@ describe('support for TEST:B11:11 — credited payments inside the window', () =
         });
     });
 
-    it('leaves out a one-time addon payment and a fact before the window, keeps the exact edge', async () => {
+    it('leaves out an order payment and a fact before the window, keeps the exact edge', async () => {
         await withTestTransaction(async (tx) => {
             const { payment } = await seed(tx);
             const edge = await payment({ status: 'SUCCEEDED', factAt: SINCE });
@@ -122,15 +136,41 @@ describe('support for TEST:B11:11 — credited payments inside the window', () =
                 status: 'SUCCEEDED',
                 factAt: new Date(SINCE.getTime() - 1)
             });
-            const ofInstance = await payment({
+            const ofOrder = await payment({
                 status: 'SUCCEEDED',
                 factAt: new Date('2026-05-01T00:00:00.000Z'),
-                ofInstance: true
+                ofInstance: 'order'
             });
 
-            const listed = await listedIds(tx, [edge, before, ofInstance]);
+            const listed = await listedIds(tx, [edge, before, ofOrder]);
 
             expect(listed).toEqual([edge]);
+        });
+    });
+
+    it('lists a credited page payment so its chargeback is seen (HOS-2391)', async () => {
+        await withTestTransaction(async (tx) => {
+            const { payment } = await seed(tx);
+            const inside = new Date('2026-05-01T00:00:00.000Z');
+            const credited = await payment({
+                status: 'SUCCEEDED',
+                factAt: inside,
+                ofInstance: 'page'
+            });
+            const pending = await payment({
+                status: 'PENDING',
+                factAt: inside,
+                ofInstance: 'page'
+            });
+            const before = await payment({
+                status: 'SUCCEEDED',
+                factAt: new Date(SINCE.getTime() - 1),
+                ofInstance: 'page'
+            });
+
+            const listed = await listedIds(tx, [credited, pending, before]);
+
+            expect(listed).toEqual([credited]);
         });
     });
 

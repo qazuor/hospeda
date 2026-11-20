@@ -26,7 +26,7 @@ export const reconciliationMarks = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         /** suscripción */
         subscriptionId: uuid('subscription_id').references(() => subscriptions.id),
-        /** instancia de addon UNA_VEZ: MOT:23, MOT:5 o MOT:20 (HOS-2179) */
+        /** instancia de addon UNA_VEZ: MOT:23, MOT:5, MOT:20 (HOS-2179) o MOT:17 (HOS-2391) */
         addonInstanceId: uuid('addon_instance_id').references(() => addonInstances.id),
         /** motivo */
         reason: varchar('reason', { length: 64 }).notNull(),
@@ -57,7 +57,8 @@ export const reconciliationMarks = pgTable(
         /**
          * MOT:23 always hangs from an addon instance, and an addon instance carries only the
          * reasons a one-time purchase can raise: MOT:23, plus MOT:5 (DIVERGENCIA_DE_MONTO, AC-8)
-         * and MOT:20 (COBRO_DUPLICADO, AC-11) since HOS-2179 (owner: "relax the CHECK").
+         * and MOT:20 (COBRO_DUPLICADO, AC-11) since HOS-2179 (owner: "relax the CHECK"), and
+         * MOT:17 (CONTRACARGO) since HOS-2391: a chargeback on the payment that activated it.
          */
         instanceReasons: check(
             'ck_reconciliation_mark_instance_reasons',

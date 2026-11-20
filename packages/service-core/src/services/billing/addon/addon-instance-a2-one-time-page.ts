@@ -6,6 +6,7 @@ import { z } from 'zod';
 import type { CoverageNotices } from '../payment/payment-ports';
 import { activateOneTimeInstance } from './addon-instance-a2-one-time-activation';
 import type { A5Ports } from './addon-instance-a5';
+import { markAddonPaymentChargeback } from './addon-payment-chargeback';
 import { closeOneTimePaymentPage } from './close-one-time-payment-page';
 import {
     type OneTimePageMarkTrigger,
@@ -45,7 +46,11 @@ export type ConfirmOneTimePagePaymentPorts = A5Ports & {
  * - `AMOUNT_MISMATCH`: approved with another amount or currency than the anchored price (AC-8),
  *   whatever state the purchase is in. It activates nothing, and `DIVERGENCIA_DE_MONTO` is
  *   already open on the instance when this is returned.
- * - `NOT_APPROVED`: rejected, pending or refunded; the purchase keeps waiting (AC-9).
+ * - `CHARGED_BACK`: the payer charged back the payment the purchase holds. The instance stays
+ *   as it is, and `CONTRACARGO` is already open on it (or a mark already names the charge) when
+ *   this is returned (HOS-2391).
+ * - `NOT_APPROVED`: rejected, pending or refunded, or charged back before it activated anything
+ *   (HOS-2391: the money went back, nothing to reconcile); the purchase keeps waiting (AC-9).
  * - `NOT_THIS_PURCHASE`: the payment carries another reference or hangs from an authorization.
  * - `UNKNOWN`: the provider did not answer the read, or the mark the payment raises could not be
  *   opened.
@@ -59,6 +64,7 @@ export type ConfirmOneTimePagePaymentResult =
               | 'DUPLICATE_PAYMENT'
               | 'LATE_PAYMENT'
               | 'AMOUNT_MISMATCH'
+              | 'CHARGED_BACK'
               | 'NOT_APPROVED'
               | 'NOT_THIS_PURCHASE'
               | 'UNKNOWN'
@@ -155,6 +161,31 @@ async function settleApprovedPayment(input: {
 }
 
 /**
+ * Settles a payment read charged back (HOS-2391, owner decision option 1). When the purchase
+ * holds it (it activated the purchase), `CONTRACARGO` opens on the instance and the instance
+ * stays as it is: a person decides from the mark. A chargeback on money the purchase does not
+ * hold (it never activated, or it was a second payment) is `NOT_APPROVED`: it activates nothing
+ * and opens nothing, since the money already went back to the payer. A failure to open the mark
+ * is `UNKNOWN`, so the notice comes again.
+ */
+async function settleChargedBackPayment(input: {
+    readonly instanceId: string;
+    readonly chargeId: string;
+    readonly trigger: OneTimePageMarkTrigger;
+}): Promise<{ readonly outcome: 'CHARGED_BACK' | 'NOT_APPROVED' | 'UNKNOWN' }> {
+    const marked = await markAddonPaymentChargeback(input);
+    if (marked.outcome === 'UNKNOWN') return { outcome: 'UNKNOWN' };
+    if (marked.outcome === 'NOT_APPLICABLE') {
+        logger.warn(
+            { instanceId: input.instanceId, chargeId: input.chargeId },
+            'Page payment was charged back before it activated anything; not activating'
+        );
+        return { outcome: 'NOT_APPROVED' };
+    }
+    return { outcome: 'CHARGED_BACK' };
+}
+
+/**
  * A2 one-time for a payment page (HOS-2179 §5.3): confirms ONE payment, named by id, against
  * one page purchase. The payment is re-read by id and the decision is taken only on that fresh
  * read (GUARD:G17, INV:D6); a notice body, a return URL or a search result never decide. It
@@ -216,6 +247,14 @@ export async function confirmOneTimePagePayment(
         snapshot.purpose !== 'charge'
     )
         return { outcome: 'NOT_THIS_PURCHASE' };
+    // A charged-back payment still reads `approved` (it did collect): it goes first, so it never
+    // activates the purchase nor raises another mark (HOS-2391).
+    if (snapshot.chargedBack)
+        return await settleChargedBackPayment({
+            instanceId: found.instance.id,
+            chargeId: snapshot.chargeId,
+            trigger
+        });
     if (snapshot.status !== 'approved') return { outcome: 'NOT_APPROVED' };
 
     // The amount goes first, whatever the purchase became: money of another amount is MOT:5
