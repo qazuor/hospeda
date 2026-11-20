@@ -378,9 +378,18 @@ export async function readMyPlan(input: {
         })
     );
 
-    // A charged add-on is never hidden: one that belongs to no vertical is listed apart.
+    // A charged add-on is never hidden: one in scope that no item shows (it belongs
+    // to no vertical, or none of its verticals has a title) is listed apart, once.
+    const shownVerticals = new Set<string>(items.map((item) => item.vertical));
     const unattributed = holdings
-        .filter((holding) => holding.verticals.length === 0)
+        .filter(
+            (holding) =>
+                holding.verticals.length === 0 ||
+                holding.verticals.some((vertical) =>
+                    (verticals as readonly string[]).includes(vertical)
+                )
+        )
+        .filter((holding) => !holding.verticals.some((vertical) => shownVerticals.has(vertical)))
         .map((holding) => toAddon(holding, locale));
     const unattributedPart =
         unattributed.length > 0

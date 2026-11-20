@@ -322,6 +322,39 @@ describe('get_my_plan', () => {
         expect(result.addonsUrl).toBe(`${SITE}/es/mi-cuenta/complementos/`);
     });
 
+    it('M1: a held add-on whose verticals produced no item is listed apart, not dropped nor duplicated', async () => {
+        // Arrange: accommodation has a subscription; experience has no title at all
+        arrangeSubscriptionAndTrial();
+        const holding = (verticals: string[]) => ({
+            slug: 'extra-photos-20',
+            name: 'Catalog photos pack',
+            status: 'ACTIVE',
+            endsAt: null,
+            verticals,
+            listingGone: false
+        });
+        mocks.readOwnerAddonHoldings.mockResolvedValue([
+            holding(['experience']),
+            holding(['accommodation', 'experience'])
+        ]);
+
+        // Act
+        const all = await myPlan();
+        const venueOnly = await myPlan({ vertical: 'venue' });
+
+        // Assert
+        const shown = {
+            name: 'Pack de fotos extra (+20 fotos)',
+            status: 'ACTIVE',
+            endsAt: null,
+            renewsWithSubscription: true
+        };
+        expect(all.unattributedAddons).toEqual([shown]);
+        expect(all.items[0]?.addons).toEqual([shown]);
+        // Out of the asked vertical: not this answer's add-on, so not listed apart.
+        expect(venueOnly).not.toHaveProperty('unattributedAddons');
+    });
+
     it('a TRIAL_ACTIVE trial whose clock already ended is not a running trial', async () => {
         // Arrange
         arrangeSubscriptionAndTrial();

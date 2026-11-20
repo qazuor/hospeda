@@ -125,9 +125,11 @@ export interface MyPlanResult {
      */
     readonly items: readonly MyPlanItem[];
     /**
-     * Add-ons the owner holds that belong to no single vertical (a listing
-     * add-on whose listing is gone and whose product fits several verticals).
-     * Present only when there is one; never spread over every vertical.
+     * Add-ons the owner holds that no item shows: they belong to no single
+     * vertical (a listing add-on whose listing is gone and whose product fits
+     * several), or none of their verticals has a title (it lapsed). Each is
+     * listed once, and only when it is in the asked scope. Present only when
+     * there is one; never spread over every vertical.
      */
     readonly unattributedAddons?: readonly MyPlanAddon[];
     /** The add-ons page, present with {@link unattributedAddons}. */
