@@ -2299,9 +2299,6 @@
                 "NOT_ACCEPTED_KEPT_CONFIRMED": "The provider has not accepted it yet. It stays confirmed so it can be retried.",
                 "PROVIDER_REJECTED_KEPT_CONFIRMED": "The provider rejected it for now. It stays confirmed so it can be retried.",
                 "PROVIDER_REJECTED_FAILED": "The provider rejected it and the refund failed.",
-                "ORDER_REFUND_HELD": "The order refund is held until the provider id is known.",
-                "PROVIDER_KEY_CONFLICT": "The provider reported a key conflict. Review it before retrying.",
-                "ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED": "The order cannot be refunded yet. It stays confirmed.",
                 "CHARGED_BACK": "The charge was already charged back. The refund was closed."
             }
         },
