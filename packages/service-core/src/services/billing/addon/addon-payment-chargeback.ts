@@ -11,7 +11,11 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
-import { chargeNamedByMark, type OneTimePageMarkTrigger } from './one-time-page-charge-marks';
+import {
+    chargeNamedByMark,
+    noteChargebackOnHeldCharge,
+    type OneTimePageMarkTrigger
+} from './one-time-page-charge-marks';
 
 const logger = createLogger('addon-payment-chargeback');
 
@@ -24,6 +28,8 @@ const CHARGEBACK_REASON = 'CONTRACARGO' as const satisfies ReconciliationMarkRea
  * - `MARKED`: `CONTRACARGO` is now open on the instance, naming the charge.
  * - `ALREADY_MARKED`: a mark of the instance already names the charge (open or lifted, of any
  *   reason), so nothing opened: one payment raises at most one mark, and a lift is never undone.
+ *   When that mark is an OPEN page-charge mark holding the charge's payment (HOS-2179 D1), one
+ *   event with `provider.charged_back: true` is added to it, once.
  * - `NOT_APPLICABLE`: no credited payment of an addon instance holds the charge. The money
  *   activated nothing, so there is nothing to reconcile.
  * - `UNKNOWN`: the mark could not be opened; the caller leaves the read undecided.
@@ -71,8 +77,16 @@ export async function markAddonPaymentChargeback(input: {
             .limit(1);
         const instanceId = payment?.addonInstanceId;
         if (!payment || !instanceId) return { outcome: 'NOT_APPLICABLE' };
-        if (await chargeNamedByMark({ instanceId, chargeId: input.chargeId }))
+        if (await chargeNamedByMark({ instanceId, chargeId: input.chargeId })) {
+            // D1: a charge an open page-charge mark holds gets the chargeback noted on that
+            // mark, so its refund proposal reads as stale. Any other naming mark stays as is.
+            await noteChargebackOnHeldCharge({
+                instanceId,
+                chargeId: input.chargeId,
+                trigger: input.trigger
+            });
             return { outcome: 'ALREADY_MARKED' };
+        }
         const opened = await openReconciliationMark({
             subject: { kind: 'ADDON_INSTANCE', addonInstanceId: instanceId },
             reason: 'CONTRACARGO' satisfies typeof CHARGEBACK_REASON,

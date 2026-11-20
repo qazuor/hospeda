@@ -9,6 +9,7 @@ import {
     getDb,
     inArray,
     isNotNull,
+    isNull,
     ne,
     or,
     payments,
@@ -138,6 +139,79 @@ export async function chargeNamedByMark(input: {
         )
         .limit(1);
     return named !== undefined;
+}
+
+/**
+ * Records, once, that a charge an OPEN page-charge mark holds (D1) was charged back: one more
+ * event on that mark, with `provider.charged_back: true`, so the person deciding it sees that the
+ * refund it proposes is stale (the money already went back through the bank). Nothing else
+ * changes: the mark stays open, its payment stays hung, and no other mark opens (one payment
+ * raises at most one mark). A lifted mark is never touched; neither is a charge whose open mark
+ * already carries the note, so a daily re-read adds no noise.
+ *
+ * @param input.instanceId - The one-time page purchase
+ * @param input.chargeId - The provider's id of the charged-back payment
+ * @param input.trigger - Who read the chargeback
+ * @returns `NOTED` when the event was added, `ALREADY_NOTED`, or `NO_OPEN_MARK`
+ */
+export async function noteChargebackOnHeldCharge(input: {
+    readonly instanceId: string;
+    readonly chargeId: string;
+    readonly trigger: OneTimePageMarkTrigger;
+}): Promise<'NOTED' | 'ALREADY_NOTED' | 'NO_OPEN_MARK'> {
+    const [held] = await getDb()
+        .select({ markId: reconciliationMarks.id, reason: reconciliationMarks.reason })
+        .from(payments)
+        .innerJoin(
+            reconciliationMarkPayments,
+            eq(reconciliationMarkPayments.paymentId, payments.id)
+        )
+        .innerJoin(
+            reconciliationMarks,
+            eq(reconciliationMarks.id, reconciliationMarkPayments.markId)
+        )
+        .where(
+            and(
+                eq(payments.providerFactId, input.chargeId),
+                eq(payments.addonInstanceId, input.instanceId),
+                isNull(reconciliationMarks.liftedAt),
+                inArray(reconciliationMarks.reason, [...ONE_TIME_PAGE_CHARGE_MARK_REASONS])
+            )
+        )
+        .limit(1);
+    const heldReason = ONE_TIME_PAGE_CHARGE_MARK_REASONS.find((known) => known === held?.reason);
+    if (!held || !heldReason) return 'NO_OPEN_MARK';
+    const [noted] = await getDb()
+        .select({ id: domainEvent.id })
+        .from(domainEvent)
+        .where(
+            and(
+                eq(domainEvent.eventType, 'reconciliation.mark_opened'),
+                eq(domainEvent.entityType, 'addon_instance'),
+                eq(domainEvent.entityId, input.instanceId),
+                sql`${domainEvent.changes} @> ${JSON.stringify([
+                    { field: 'reconciliation_mark.id', new: held.markId },
+                    { field: 'provider.charge_id', new: input.chargeId },
+                    { field: 'provider.charged_back', new: true }
+                ])}::jsonb`
+            )
+        )
+        .limit(1);
+    if (noted) return 'ALREADY_NOTED';
+    // A catalog-typed reason, as GUARD:G-R1-F (a) requires of every opening. It is the held
+    // mark's own reason, so S14 accumulates on that open mark.
+    const reason: ReconciliationMarkReason = heldReason;
+    await openReconciliationMark({
+        subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
+        reason,
+        actor: { type: input.trigger.actor },
+        correlationId: input.trigger.correlationId ?? randomUUID(),
+        detail: [
+            { field: 'provider.charge_id', new: input.chargeId },
+            { field: 'provider.charged_back', new: true }
+        ]
+    });
+    return 'NOTED';
 }
 
 /** The approved page charge a mark holds, as the fresh read by id gave it. */
