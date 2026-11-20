@@ -638,7 +638,9 @@ An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider 
 | `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
 | `REFUND_CLOSES_HELD_CHARGE` | 409 | `ALREADY_EXISTS` |
 
-`REFUND_CLOSES_HELD_CHARGE` refuses to decline the refund a page-charge mark proposes (`MARK_PROPOSAL` on a payment held by `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO` or `ORDEN_PAGADA_SIN_INSTANCIA` of a one-time addon, HOS-2179 D1). That money closes only when a person confirms the refund (action 13), when a chargeback resolves it, or through action 14 (a refund that failed for good, or one made by hand). It runs after the 403 check, so a person without permission still gets 403.
+`REFUND_CLOSES_HELD_CHARGE` refuses to decline the refund a page-charge mark proposes (`MARK_PROPOSAL` on a payment held by `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO` or `ORDEN_PAGADA_SIN_INSTANCIA` of a one-time addon, HOS-2179 D1) while it is `REQUESTED`, or `CONFIRMED` with a provider call that was accepted or is still unanswered. That money closes when the confirmed refund (action 13) executes, when a chargeback resolves it, or through action 14, which closes the `REQUESTED` proposal (for example past the provider's window) or answers it once it is `FAILED`; action 14 never answers a `CONFIRMED` refund. A `CONFIRMED` proposal with no such call (the charge read answered UNAVAILABLE before any call) can be declined, so action 14 can answer it. The refusal runs after the 403 check, so a person without permission still gets 403.
+
+Declining any `CONFIRMED` refund returns `warning: "VERIFY_NO_PROVIDER_REFUND"` beside `status: "FAILED"`: check the provider's panel that no refund left before refunding by hand. Our own calls are persisted before they are sent, so a call-less `CONFIRMED` never reached the provider through this API; the warning covers a refund made from the panel.
 
 ## Action 14 charge settlement rejections (B5.9)
 
