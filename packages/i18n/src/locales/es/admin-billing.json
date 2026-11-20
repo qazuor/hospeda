@@ -2279,7 +2279,7 @@
         "status": "Estado",
         "statuses": {
             "REQUESTED": "Esperando confirmación",
-            "CONFIRMED": "Confirmada, sin llamadas al proveedor"
+            "CONFIRMED": "Confirmada, sin devolución aceptada por el proveedor"
         },
         "origin": "Marca que la originó",
         "noMark": "No se encontró una marca asociada a este pago.",

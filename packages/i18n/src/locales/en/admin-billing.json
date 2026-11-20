@@ -2279,7 +2279,7 @@
         "status": "Status",
         "statuses": {
             "REQUESTED": "Waiting for confirmation",
-            "CONFIRMED": "Confirmed, no provider calls"
+            "CONFIRMED": "Confirmed, no refund accepted by the provider"
         },
         "origin": "Originating mark",
         "noMark": "No mark was found for this payment.",
