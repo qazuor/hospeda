@@ -37,13 +37,51 @@ These are not repeated below.
 
 ---
 
-## PR-1 · tokens + kit scaffold + Button / Section / fields
+## PR-1 · app tokens + kit delta + scaffold + Button / Section / fields + guards
 
-### T-001 · Kit token delta + D4 owner-decision contrast test
+### T-001 · App tokens in full (HOS-2454)
 
-- **Child:** HOS-2457, 2458 and 2460 (delta on top of HOS-2454).
-- **Depends on:** HOS-2454 merged into the epic branch (OQ-4).
-- **Goal.** Add the tokens the catalog needs that HOS-2454 does not define, in
+- **Child:** HOS-2454 (moved from phase 1 into PR-1 by the owner, OD-4).
+- **Depends on:** nothing.
+- **Goal.** Deliver HOS-2454 as written: the app tokens the account needs, in
+  `packages/design-tokens` only, consumed by nobody outside the kit yet.
+- **Files.**
+  - `src/themes/web-light.ts` and `src/themes/web-dark.ts`:
+    - role status tokens
+      `status-{success,warning,danger,info,neutral}-{bg,fg,border,solid}`,
+      with the catalog's values;
+    - `focus-ring`.
+  - `src/tokens/radius.ts`: `radius-control` 8px, `radius-surface` 12px and
+    `radius-pill`. `radius-card: 24px` stays for the public site.
+  - `src/tokens/layout.ts` (or a new `controls.ts`): `control-h-sm/md/lg`
+    36/40/44.
+  - `src/tokens/typography.ts`: app aliases `app-title`, `app-section`,
+    `app-card-title`, `app-stat`, `app-body`, `app-control`, `app-ui`,
+    `app-meta` and `app-caption`, mapped onto the existing font tokens with the
+    catalog's size, line height and weight, with a 12px floor.
+  - `brand-primary-link`: it already exists; verify its AA ratio and pin it.
+  - `seed/web-baseline.json`: additions only.
+  - New `src/tokens/app-tokens-contrast.test.ts`.
+- **AC (HOS-2454's own, kept verbatim in substance).**
+  - The tokens live only in `packages/design-tokens`.
+  - AA contrast tests pass in light and dark, including the link:
+    `status-*-fg` on `status-*-bg` (≥ 4.5:1), `status-*-solid` on card
+    (≥ 3:1), `focus-ring` on card, muted and popover (≥ 3:1), and
+    `brand-primary-link` on card (≥ 4.5:1).
+  - The typography aliases and the radius and control-height scales exist and
+    are exported from `src/index.ts`.
+  - Nothing outside `components/account/ui/` consumes them in this phase.
+  - `pnpm --filter @repo/design-tokens build` passes, including `validate`.
+- **Tests.** Contrast tests with the culori 8-bit pipeline (helpers copied, per
+  the sibling tests' rationale), a snapshot of the generated CSS for the new
+  names in both themes, and a scale test (radius, control heights, typography
+  floor of 12px).
+
+### T-002 · Kit token delta + D4 owner-decision contrast test
+
+- **Child:** HOS-2457, 2458 and 2460 (the kit's delta on top of T-001).
+- **Depends on:** T-001.
+- **Goal.** Add the tokens the catalog needs that HOS-2454 does not list, in
   `packages/design-tokens` only, and record D4 «color de acción» as a pinned
   owner decision.
 - **Files.**
@@ -84,7 +122,7 @@ These are not repeated below.
   following the sibling tests' rationale). They also check the alias equality
   and snapshot the generated CSS for the new names in both themes.
 
-### T-002 · Kit scaffold, `HelpAnchor`, i18n namespace, README
+### T-003 · Kit scaffold, `HelpAnchor`, i18n namespace, README
 
 - **Child:** HOS-2413.
 - **Depends on:** nothing.
@@ -107,10 +145,10 @@ These are not repeated below.
   - The anchor grammar table: valid and invalid cases.
   - `helpAttr` with and without an id.
 
-### T-003 · Button, LinkButton, TextLink
+### T-004 · Button, LinkButton, TextLink
 
 - **Child:** HOS-2457.
-- **Depends on:** T-001, T-002.
+- **Depends on:** T-002, T-003.
 - **Goal.** One button recipe and one link recipe (D4 «color de acción»).
 - **Files.** `ui/Button.tsx` + `.module.css`, `ui/LinkButton.tsx`,
   `ui/TextLink.tsx` + `.module.css`.
@@ -133,10 +171,10 @@ These are not repeated below.
   - TextLink external attributes and hidden text.
   - A type-level test (`@ts-expect-error`) for `iconOnly` without a label.
 
-### T-004 · Section with gradient top bar + nesting refusal
+### T-005 · Section with gradient top bar + nesting refusal
 
 - **Child:** HOS-2458.
-- **Depends on:** T-001, T-002.
+- **Depends on:** T-002, T-003.
 - **Goal.** The flat surface of D5 «secciones planas con barra degradé».
 - **Files.** `ui/Section.tsx` + `.module.css`, `ui/section-depth-context.ts`.
 - **AC.**
@@ -164,10 +202,10 @@ These are not repeated below.
   - A CSS-module assertion: no `box-shadow` and no `:hover` in
     `Section.module.css`, read as text.
 
-### T-005 · Field, TextInput, InputGroup, PhoneField
+### T-006 · Field, TextInput, InputGroup, PhoneField
 
 - **Child:** HOS-2459.
-- **Depends on:** T-001, T-002.
+- **Depends on:** T-002, T-003.
 - **Goal.** The form field wrapper and the single-line inputs.
 - **Files.** `ui/Field.tsx`, `ui/TextInput.tsx`, `ui/InputGroup.tsx`,
   `ui/PhoneField.tsx`, each with its `.module.css`. Reuse
@@ -193,10 +231,10 @@ These are not repeated below.
   - Regression: a placeholder never replaces the label (the audit's carta
     finding).
 
-### T-006 · Select, Textarea, Checkbox, Radio
+### T-007 · Select, Textarea, Checkbox, Radio
 
 - **Child:** HOS-2459.
-- **Depends on:** T-005.
+- **Depends on:** T-006.
 - **Goal.** The rest of the field family.
 - **Files.** `ui/Select.tsx`, `ui/Textarea.tsx`, `ui/Checkbox.tsx` (+
   `CheckboxGroup`), `ui/Radio.tsx` (+ `RadioGroup`, `OptionCard` variant), each
@@ -218,14 +256,62 @@ These are not repeated below.
   - The legend is present.
   - Disabled states.
 
+### T-008 · Account CSS scope + breakpoint guard
+
+- **Child:** HOS-2469.
+- **Depends on:** nothing. Lands in PR-1 (OD-8).
+- **Goal.** D6 «breakpoints cerrados», enforced.
+- **Files.**
+  - `scripts/lib/account-css-scope.ts`: the scope list, with a header that
+    documents how the import trace produced it.
+  - `scripts/check-account-breakpoints.ts` and
+    `scripts/__tests__/check-account-breakpoints.test.ts`.
+  - The root `package.json`: `check:account-breakpoints`, added to
+    `check:guards`.
+  - `.github/workflows/ci.yml`: its own step in `guards`, with a
+    `GUARD:` comment.
+  - A container-query example in the kit README (`ui/README.md`, created by
+    T-003).
+- **AC.** The rule in spec §6.7, plus:
+  - the strict zone refuses allowlist entries;
+  - the legacy zone is a FROZEN exceptions list (OD-9): count-pinned, a new
+    entry or a raised count fails, and a stale entry fails, so each file that
+    migrates in phases 3-5 leaves the list in its own PR;
+  - `--print-baseline` produces the initial allowlist;
+  - the header lists what the guard does not see.
+- **Tests (non-vacuity).**
+  - Each synthetic violation is flagged: `max-width` in the kit, 768px,
+    `min-width: 40rem`, `matchMedia('(min-width: 1024px)')`, and
+    `client:media` off the list.
+  - Allowed forms pass: the four values, range syntax, `prefers-*`, and
+    `@container` in rem.
+  - An allowlist entry under `components/account/ui/` is rejected.
+  - A stale count fails.
+
+### T-009 · CSS literals guard
+
+- **Child:** HOS-2470.
+- **Depends on:** T-008 (shared scope).
+- **Goal.** No literal font-size, radius, shadow or color in account CSS.
+- **Files.** `scripts/check-account-css-literals.ts` + test, the root script
+  `check:account-css-literals` (added to `check:guards`) and its own CI step.
+- **AC.**
+  - The rule table in spec §6.7, with per-category, per-file count pinning in
+    the frozen, shrink-only exceptions list (OD-9) and zero in the strict zone.
+  - Literal `var()` fallbacks count as literals.
+  - The generated baseline is committed.
+- **Tests.** One synthetic violation per category, a literal fallback, a
+  component-local custom property with a hex value, the allowed keywords
+  passing, the strict-zone refusal and a stale count.
+
 ---
 
 ## PR-2 · status + overlays + navigation primitives
 
-### T-007 · StatusPill, CountPill, `status-tone.ts`
+### T-010 · StatusPill, CountPill, `status-tone.ts`
 
 - **Child:** HOS-2460.
-- **Depends on:** T-001, T-002.
+- **Depends on:** T-002, T-003.
 - **Goal.** One status vocabulary.
 - **Files.** `ui/StatusPill.tsx`, `ui/CountPill.tsx` (+ CSS),
   `ui/status-tone.ts`.
@@ -243,11 +329,12 @@ These are not repeated below.
   - The text is always present.
   - CountPill caps at `max` and keeps the full count in its label.
 
-### T-008 · Dialog
+### T-011 · Dialog
 
 - **Child:** HOS-2461.
-- **Depends on:** T-003.
-- **Goal.** The kit's modal (OQ-3, recommended composition).
+- **Depends on:** T-004.
+- **Goal.** The kit's modal: the kit skin over the existing shared Dialog
+  (OD-3, owner). No native `<dialog>` primitive.
 - **Files.** `ui/Dialog.tsx` + `.module.css`. It composes
   `shared/ui/Dialog.client.tsx` or its mechanisms (focus trap, scroll lock,
   `useDialogHistoryBack`, `dialog-panel`).
@@ -267,10 +354,10 @@ These are not repeated below.
   - The `initialFocus` prop is honoured.
   - Long content gets the scroll container.
 
-### T-009 · Drawer
+### T-012 · Drawer
 
 - **Child:** HOS-2461.
-- **Depends on:** T-008.
+- **Depends on:** T-011.
 - **Goal.** A bottom sheet for mobile and a side panel for desktop.
 - **Files.** `ui/Drawer.tsx` + `.module.css`.
 - **AC.**
@@ -287,10 +374,10 @@ These are not repeated below.
   - The `side` class.
   - The handle has `aria-hidden`.
 
-### T-010 · ConfirmDialog + `useConfirm()`
+### T-013 · ConfirmDialog + `useConfirm()`
 
 - **Child:** HOS-2461.
-- **Depends on:** T-008, T-003.
+- **Depends on:** T-011, T-004.
 - **Goal.** One confirmation for destructive or irreversible actions.
 - **Files.** `ui/ConfirmDialog.tsx`, `ui/use-confirm.ts`. Decide in the task
   whether `useConfirm` wraps `lib/forms/show-confirmation-dialog.tsx` or
@@ -310,10 +397,10 @@ These are not repeated below.
   - Confirm resolves `true` after the async work.
   - A rejected `onConfirm` keeps the dialog open.
 
-### T-011 · Pagination
+### T-014 · Pagination
 
 - **Child:** HOS-2462.
-- **Depends on:** T-003.
+- **Depends on:** T-004.
 - **Goal.** One paginator replacing the seven implementations.
 - **Files.** `ui/Pagination.tsx` + `.module.css`; a pure helper
   `ui/pagination-range.ts`.
@@ -333,10 +420,10 @@ These are not repeated below.
   - Disabled bounds.
   - The loadMore announcement and focus move.
 
-### T-012 · Tabs + NavTabs
+### T-015 · Tabs + NavTabs
 
 - **Child:** HOS-2463.
-- **Depends on:** T-007.
+- **Depends on:** T-010.
 - **Goal.** Same-page tabs and URL tabs, with optional counts.
 - **Files.** `ui/Tabs.tsx`, `ui/NavTabs.tsx` + `.module.css`.
 - **AC.**
@@ -352,10 +439,10 @@ These are not repeated below.
   - NavTabs render `aria-current`.
   - The overflow container class.
 
-### T-013 · Switch + SwitchRow
+### T-016 · Switch + SwitchRow
 
 - **Child:** HOS-2464.
-- **Depends on:** T-001, T-002.
+- **Depends on:** T-002, T-003.
 - **Goal.** The single on/off control (D11 «ajustes en Preferencias»).
 - **Files.** `ui/Switch.tsx`, `ui/SwitchRow.tsx` + `.module.css`.
 - **AC.**
@@ -377,7 +464,7 @@ These are not repeated below.
 
 ## PR-3 · shell behind the switch + mobile bar + PageHeader
 
-### T-014 · Extract `account-nav-model.ts`
+### T-017 · Extract `account-nav-model.ts`
 
 - **Child:** HOS-2455.
 - **Depends on:** nothing.
@@ -400,10 +487,10 @@ These are not repeated below.
   - The overrides for the two inboxes.
   - Snapshot parity of the legacy render for one role set.
 
-### T-015 · `BaseLayout chrome`, AccountHeader, AccountFooter, no dock
+### T-018 · `BaseLayout chrome`, AccountHeader, AccountFooter, no dock
 
 - **Child:** HOS-2455.
-- **Depends on:** T-002.
+- **Depends on:** T-003.
 - **Goal.** D1 «marco compacto».
 - **Files.**
   - `layouts/BaseLayout.astro`: `chrome?: 'site' | 'account'`, default
@@ -420,13 +507,13 @@ These are not repeated below.
 - **Tests.** A render test that `MobileDock` is absent and AccountHeader and
   AccountFooter are present under `chrome="account"`, and that the site chrome
   is unchanged by default. Use whatever Astro component-render approach the
-  repo already uses; if none exists, assert through the T-029 e2e sweep and
+  repo already uses; if none exists, assert through the T-031 e2e sweep and
   note that in the PR.
 
-### T-016 · AccountSidebar
+### T-019 · AccountSidebar
 
 - **Child:** HOS-2455.
-- **Depends on:** T-007, T-014.
+- **Depends on:** T-010, T-017.
 - **Goal.** The sidebar as a kit piece.
 - **Files.** `ui/AccountSidebar.tsx` + `.module.css`.
 - **AC.**
@@ -445,11 +532,12 @@ These are not repeated below.
   - The locked item is still a link with its alternative text.
   - The group order follows the model.
 
-### T-017 · `AccountShell.astro` + templates + `AccountLayout` switch
+### T-020 · `AccountShell.astro` + templates + `AccountLayout` switch
 
 - **Child:** HOS-2455.
-- **Depends on:** T-015, T-016.
-- **Goal.** The new shell, landed dormant (OQ-1 option C).
+- **Depends on:** T-018, T-019.
+- **Goal.** The new shell, landed OFF (OD-1, owner: short-lived switch).
+  `AccountShell` is an Astro layout composing the React pieces (OD-2).
 - **Files.** New `layouts/AccountShell.astro` + its CSS Module.
   `AccountLayout.astro` gets `shell?: 'legacy' | 'account'`, default
   `'legacy'`.
@@ -463,12 +551,12 @@ These are not repeated below.
   - With the default (`legacy`) no page changes.
 - **Tests.** The template class mapping, and that `shell='account'` renders
   the shell landmarks. If `.astro` cannot be rendered in Vitest, the e2e check
-  runs on the kit gallery in T-027.
+  runs on the kit gallery in T-029.
 
-### T-018 · AccountBar + AccountDrawer
+### T-021 · AccountBar + AccountDrawer
 
 - **Child:** HOS-2456.
-- **Depends on:** T-009, T-016, T-017.
+- **Depends on:** T-012, T-019, T-020.
 - **Goal.** D3 «nav mobile única».
 - **Files.** `ui/AccountBar.tsx` + CSS. The drawer content reuses
   `AccountSidebar` (the same groups).
@@ -487,10 +575,10 @@ These are not repeated below.
   - The drawer lists the same groups as the sidebar for the same model.
   - The current label is shown.
 
-### T-019 · PageHeader
+### T-022 · PageHeader
 
 - **Child:** HOS-2465.
-- **Depends on:** T-003, T-007.
+- **Depends on:** T-004, T-010.
 - **Goal.** One page anatomy.
 - **Files.** `ui/PageHeader.tsx` + CSS.
 - **AC.**
@@ -508,12 +596,12 @@ These are not repeated below.
 
 ---
 
-## PR-4 · async states + save models + locked state
+## PR-4 · async states + Alert + Toast + save models + locked state
 
-### T-020 · Skeleton + EmptyState
+### T-023 · Skeleton + EmptyState
 
 - **Child:** HOS-2466.
-- **Depends on:** T-002.
+- **Depends on:** T-003.
 - **Goal.** Loading and empty states.
 - **Files.** `ui/Skeleton.tsx`, `ui/EmptyState.tsx` + CSS.
 - **AC.**
@@ -528,10 +616,10 @@ These are not repeated below.
   - The reduced-motion class.
   - The heading level of EmptyState.
 
-### T-021 · ErrorState + Alert + AsyncRegion
+### T-024 · ErrorState + Alert + AsyncRegion
 
 - **Child:** HOS-2466.
-- **Depends on:** T-003, T-020.
+- **Depends on:** T-004, T-023.
 - **Goal.** Make it impossible to show a failure as empty or zero.
 - **Files.** `ui/ErrorState.tsx`, `ui/Alert.tsx`, `ui/AsyncRegion.tsx`
   (+ the `AsyncResult<T>` type) + CSS.
@@ -551,10 +639,41 @@ These are not repeated below.
     `{status:'error'}` and renders ErrorState, never the empty piece and never
     `0`.
 
-### T-022 · StickySaveBar + `useSaveBar`
+### T-025 · Toast + AccountToastRegion
+
+- **Child:** HOS-2466 (OD-11: the owner asked for a new Toast in this phase).
+- **Depends on:** T-004, T-018.
+- **Goal.** The account Toast on the existing store (spec §6.12).
+- **Files.** `ui/Toast.tsx`, `ui/AccountToastRegion.tsx` + CSS.
+  `layouts/BaseLayout.astro`: under `chrome="account"`, mount
+  `AccountToastRegion` (with `client:idle`) instead of `ToastViewport`.
+- **AC.**
+  - It reads `store/toast-store.ts` through `useSyncExternalStore`. There is no
+    new store and no new API: callers keep calling `addToast`, and
+    `queueToastForNextPage` toasts drain on account pages.
+  - Tones `success`, `danger` and `info`; the store's `warning` maps to `info`
+    and `loading` shows a spinner. It honours the store's pause and resume on
+    hover, focus and window blur. A toast with an action does not
+    auto-dismiss.
+  - A permanent polite live region (`assertive` for `danger`). It never steals
+    focus, and the action is reachable with Tab.
+  - On mobile it sits above the StickySaveBar.
+  - Exactly one toast viewport per page: `chrome="account"` has
+    `AccountToastRegion` and no `ToastViewport`; `chrome="site"` is unchanged.
+  - `ToastViewport` itself is not modified (its future is FQ-1).
+- **Tests.**
+  - `addToast` renders through the region; `removeToast` removes it.
+  - The warning maps to info.
+  - An action toast stays.
+  - The live-region roles.
+  - Pause on hover through the store spies.
+  - The one-viewport rule per chrome (or in the T-031 e2e sweep if `.astro`
+    rendering is not available in Vitest).
+
+### T-026 · StickySaveBar + `useSaveBar`
 
 - **Child:** HOS-2467.
-- **Depends on:** T-003, T-010.
+- **Depends on:** T-004, T-013.
 - **Goal.** The explicit save model (D8 «dos modelos de guardado»).
 - **Files.** `ui/StickySaveBar.tsx` + CSS, `ui/use-save-bar.ts`.
 - **AC.**
@@ -577,10 +696,10 @@ These are not repeated below.
     `registerLeaveWarning`.
   - The spacer exists only while the bar is visible.
 
-### T-023 · AutoSaveChip
+### T-027 · AutoSaveChip
 
 - **Child:** HOS-2467.
-- **Depends on:** T-003.
+- **Depends on:** T-004.
 - **Goal.** The direct-action save signal.
 - **Files.** `ui/AutoSaveChip.tsx` + CSS.
 - **AC.**
@@ -592,10 +711,10 @@ These are not repeated below.
   - The retry callback.
   - The role switches on error.
 
-### T-024 · LockedState
+### T-028 · LockedState
 
 - **Child:** HOS-2468.
-- **Depends on:** T-003, T-007.
+- **Depends on:** T-004, T-010.
 - **Goal.** D9 «sin acceso único», with the D22 trial hook prepared.
 - **Files.** `ui/LockedState.tsx` + CSS.
 - **AC.**
@@ -616,63 +735,32 @@ These are not repeated below.
 
 ---
 
-## PR-5 · guards + kit gallery + visual regression + shell flip + docs
+## PR-5 · kit gallery + env var + visual regression + shell flip + docs
 
-### T-025 · Account CSS scope + breakpoint guard
-
-- **Child:** HOS-2469.
-- **Depends on:** nothing (it may move into PR-1, OQ-8).
-- **Goal.** D6 «breakpoints cerrados», enforced.
-- **Files.**
-  - `scripts/lib/account-css-scope.ts`: the scope list, with a header that
-    documents how the import trace produced it.
-  - `scripts/check-account-breakpoints.ts` and
-    `scripts/__tests__/check-account-breakpoints.test.ts`.
-  - The root `package.json`: `check:account-breakpoints`, added to
-    `check:guards`.
-  - `.github/workflows/ci.yml`: its own step in `guards`, with a
-    `GUARD:` comment.
-  - `apps/web` docs: a container-query example in the kit README.
-- **AC.** The rule in spec §6.7, plus:
-  - the strict zone refuses allowlist entries;
-  - the legacy zone is count-pinned, and stale entries fail;
-  - `--print-baseline` produces the initial allowlist;
-  - the header lists what the guard does not see.
-- **Tests (non-vacuity).**
-  - Each synthetic violation is flagged: `max-width` in the kit, 768px,
-    `min-width: 40rem`, `matchMedia('(min-width: 1024px)')`, and
-    `client:media` off the list.
-  - Allowed forms pass: the four values, range syntax, `prefers-*`, and
-    `@container` in rem.
-  - An allowlist entry under `components/account/ui/` is rejected.
-  - A stale count fails.
-
-### T-026 · CSS literals guard
-
-- **Child:** HOS-2470.
-- **Depends on:** T-025 (shared scope).
-- **Goal.** No literal font-size, radius, shadow or color in account CSS.
-- **Files.** `scripts/check-account-css-literals.ts` + test, the root script
-  `check:account-css-literals` (added to `check:guards`) and its own CI step.
-- **AC.**
-  - The rule table in spec §6.7, with per-category, per-file count pinning in
-    the legacy zone and zero in the strict zone.
-  - Literal `var()` fallbacks count as literals.
-  - The generated baseline is committed.
-- **Tests.** One synthetic violation per category, a literal fallback, a
-  component-local custom property with a hex value, the allowed keywords
-  passing, the strict-zone refusal and a stale count.
-
-### T-027 · Kit gallery page (gated)
+### T-029 · Kit gallery page (gated)
 
 - **Child:** HOS-2471.
-- **Depends on:** T-003…T-024.
+- **Depends on:** T-004…T-028.
 - **Goal.** One page rendering every kit component and state, for visual
   regression and review.
-- **Files.** `apps/web/src/pages/[lang]/mi-cuenta/kit/index.astro`, rendered
-  inside `AccountLayout shell="account"`. The gate follows OQ-6; with the
-  recommended option, the env var goes through the 5-step registry workflow
-  and the agent then stops for the owner.
+- **Files.**
+  - `apps/web/src/pages/[lang]/mi-cuenta/kit/index.astro`, rendered inside
+    `AccountLayout shell="account"`, answering 404 unless
+    `HOSPEDA_ACCOUNT_KIT_GALLERY` is true (OD-6).
+  - The env-var workflow from the project CLAUDE.md, all in this task:
+    1. `packages/config/src/env-registry.hospeda.ts`: the entry with
+       `description`, `type`, `required: false`, `secret: false`,
+       `defaultValue: 'false'`, `exampleValue`, `apps: ['web']` and
+       `category`;
+    2. Zod validation in `apps/web/src/env-schema.ts` / `env.ts`, with the
+       repo's boolean helper (`check:no-coerce-boolean` rejects
+       `z.coerce.boolean`);
+    3. `apps/web/.env.example`: `HOSPEDA_ACCOUNT_KIT_GALLERY=false`;
+    4. `docs/guides/environment-variables.md`: what it gates and that it is
+       off everywhere except E2E and local;
+    5. `apps/e2e/.env.e2e`: `HOSPEDA_ACCOUNT_KIT_GALLERY=true`.
+  - Coolify: nothing to set (owner, OD-6). The default keeps staging and
+    production at 404.
 - **AC.**
   - 404 when the gate is off.
   - Every component appears in all its states, each wrapped in an element
@@ -681,14 +769,15 @@ These are not repeated below.
     it (an open Dialog through a prop).
   - No session-dependent content. The page reads no `Astro.locals` beyond what
     the layout already reads.
-- **Tests.** The gate (404 vs 200) in an e2e test. The component list is
-  checked against `ui/index.ts` exports, so a new kit piece without a gallery
-  entry fails.
+- **Tests.** The gate (404 vs 200) in an e2e test. The env schema accepts the
+  var as true and false and defaults it to false. `pnpm env:check:registry`
+  passes. The component list is checked against `ui/index.ts` exports, so a new
+  kit piece without a gallery entry fails.
 
-### T-028 · Visual regression suite + CI step + approval docs
+### T-030 · Visual regression suite + CI step + approval docs + SPEC-153 retirement
 
 - **Child:** HOS-2471.
-- **Depends on:** T-027.
+- **Depends on:** T-029.
 - **Goal.** D18 «modo oscuro en alcance» protected.
 - **Files.**
   - `apps/e2e/tests/visual/kit.visual.spec.ts` (`@visual`).
@@ -699,20 +788,30 @@ These are not repeated below.
     P0 suite.
   - `apps/e2e/README.md`: «Approving a visual change».
   - Exclude `@visual` from the default `e2e:test`/`p0` runs.
+  - **Retire the dead SPEC-153 web config (OD-5):** delete
+    `apps/web/playwright-visual.config.ts` and `apps/web/tests/visual-snapshots/`
+    (capture spec, `diff-snapshots.cjs`, `.gitkeep`). Remove the
+    `test:visual`, `test:visual:baseline` and `test:visual:install` scripts
+    from `apps/web/package.json`. Grep for every reference first (`turbo.json`,
+    workflows, docs, `.gitignore`, `playwright-visual-report`) and fix each
+    one. `apps/admin`'s visual config stays.
 - **AC.**
   - Every `data-visual` block is shot in light and dark, at 1280 and 375.
   - `maxDiffPixelRatio` stays at the repo's existing 0.001 unless measured
     noise demands otherwise, and the PR states the measurement.
   - Fonts are awaited and animations disabled.
-  - CI fails on a diff. Baselines are generated in the pinned Playwright image
-    (OQ-7).
+  - CI fails on a diff and only compares. Baselines are regenerated by hand
+    inside the pinned Playwright image and committed in the same PR as the UI
+    change (OD-7).
+  - No reference to the retired SPEC-153 files remains (`rg` returns nothing
+    outside the git history).
 - **Tests.** The suite itself. A deliberately changed token on a throwaway
   branch must turn the step red; the PR records that this was done.
 
-### T-029 · Flip the shell, delete legacy, structural sweep, page baselines
+### T-031 · Flip the shell, delete legacy, structural sweep, page baselines
 
 - **Child:** HOS-2455, HOS-2471.
-- **Depends on:** T-017, T-018, T-028.
+- **Depends on:** T-020, T-021, T-030.
 - **Goal.** Every account page on the new shell, proven by CI.
 - **Files.**
   - `AccountLayout.astro`: the default becomes `'account'`; then remove the
@@ -736,16 +835,18 @@ These are not repeated below.
 - **Tests.** The two specs above. Run the existing account-related P0 specs
   and report the result in the PR.
 
-### T-030 · Docs
+### T-032 · Docs
 
 - **Child:** HOS-2413.
-- **Depends on:** T-029.
+- **Depends on:** T-031.
 - **Goal.** Leave the next phases a map.
 - **Files.**
   - `ui/README.md` (final): the catalog link, the rules, the save models,
     nesting, `data-help`, the guards and how to add a component, including a
     gallery entry and baselines.
   - `apps/web/docs/loading-states.md`: the account-area Skeleton row.
+  - `ui/README.md` also states that the account area uses `AccountToastRegion`
+    and that the site keeps `ToastViewport` until FQ-1 is decided.
   - `apps/web/CLAUDE.md`: a short pointer to the kit and its rules, committed
     separately from code per the repo convention.
 - **AC.** Docs match the merged code. `validate-docs` passes.

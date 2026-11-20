@@ -3,9 +3,11 @@ title: Mi Cuenta UI · Phase 2 · Foundations (account shell, mobile bar, compon
 linear: HOS-2413
 statusSource: linear
 created: 2026-11-20
+decisionsResolvedOn: 2026-11-20   # owner answered every open question (§11)
 type: feature
 parent: HOS-2409   # epic «rediseño visual de Mi Cuenta»
 children:
+  - HOS-2454   # app tokens (moved from phase 1 into PR-1 by the owner, 2026-11-20, OD-4)
   - HOS-2455   # account shell: compact header, one-line footer, no mobile dock
   - HOS-2456   # mobile/tablet account bar + drawer (< 1024px)
   - HOS-2457   # Button + action link
@@ -24,7 +26,6 @@ children:
   - HOS-2470   # CSS literals guard
   - HOS-2471   # visual regression, light + dark
 related:
-  - HOS-2454   # phase-1 app tokens (hard prerequisite, see OQ-4)
   - HOS-2410   # help center: owns the `data-help` convention this spec applies
   - HOS-2414   # phase 3: first page migrations (consumes this kit)
   - HOS-2435   # phase-1 a11y fix of the preferences switch
@@ -37,7 +38,7 @@ areas:
   - devops
 umbrellaBranch: epic/HOS-2409-mi-cuenta-ui
 smokeLabels:
-  # The shell switch (T-029) changes the chrome of every /mi-cuenta page at once:
+  # The shell switch (T-031) changes the chrome of every /mi-cuenta page at once:
   # compact header, one-line footer, no dock, new sidebar, account bar below
   # 64rem. CI renders it, but only a person on staging can confirm it against
   # real accounts of every role. The kit itself is not adopted by any page yet,
@@ -59,12 +60,15 @@ and no page content migrates yet:
   one-line account footer and no mobile dock (D1 «marco compacto»).
 - **Mobile navigation.** Below 64rem, one sticky bar «≡ Mi cuenta / sección» that
   opens a drawer with the sidebar groups (D3 «nav mobile única»).
+- **App tokens.** The app tokens HOS-2454 defined for phase 1 (role status
+  colors, focus ring, radius scale, control heights, app typography, AA link
+  color) move into this phase, plus the kit's own token delta (OD-4).
 - **Component kit.** One React component per piece in
   `apps/web/src/components/account/ui/`, styled with CSS Modules (D16 «un
   componente React por pieza», D17 «ubicación del kit»). The set: Button,
   Section, the form fields, StatusPill, Dialog, Drawer, ConfirmDialog,
-  Pagination, Tabs, Switch, PageHeader, the async states, StickySaveBar,
-  AutoSaveChip and LockedState.
+  Pagination, Tabs, Switch, PageHeader, the async states, Alert, a new account
+  Toast, StickySaveBar, AutoSaveChip and LockedState.
 - **Guards.** Two CI guards: a breakpoint allowlist (D6 «breakpoints cerrados»)
   and a CSS literals guard.
 - **Visual regression.** Light and dark, desktop and mobile (D18 «modo oscuro en
@@ -73,8 +77,8 @@ and no page content migrates yet:
 The approved component catalog (v5, owner 2026-11-20) is the visual source of
 truth: <https://claude.ai/artifact/26HuDrHSqJJ7jtDwbnfFzq>. Where this spec and
 the catalog disagree on something visual, the catalog wins. Where the catalog
-proposes an implementation that conflicts with the repo, this spec says so in
-§11 instead of choosing silently.
+proposes an implementation that conflicts with the repo, §11 records the owner's
+decision.
 
 ## 2. Problem
 
@@ -111,7 +115,7 @@ would fragment again.
   `AccountLayout` today (73 of 77 `.astro` files under `mi-cuenta/`). It
   follows D1 «marco compacto», D3 «nav mobile única» and D6 «breakpoints
   cerrados», and it is rolled out without breaking any of those pages (§6.6,
-  OQ-1).
+  OD-1).
 - **G-3.** Async regions have five explicit states (loading, error, empty,
   locked, content). A failure can never render as empty or zero.
 - **G-4.** Two save models, signalled: StickySaveBar for explicit saves,
@@ -140,13 +144,14 @@ would fragment again.
   query»).
 - **NG-4.** Data pieces the catalog lists that no phase-2 child asks for:
   Table, DataList, ListRow, InboxRow, StatCard, Avatar, Menu, Tooltip,
-  ChatBubble, UpsellCard and Toast. They are built in the phase whose first
-  page needs them (Toast: OQ-11).
+  ChatBubble and UpsellCard. They are built in the phase whose first page needs
+  them.
 - **NG-5.** `FocusShell` for the three focus pages (`agregar-contrasena`,
   `cambiar-contrasena`, `completar-perfil`). They keep `BaseLayout` in this
   phase; their migration belongs to phase 3.
 - **NG-6.** Applying the breakpoint allowlist or the literals guard to the public
-  site (OQ-9).
+  site (OD-9). Replacing the site-wide `ToastViewport` is a follow-up question,
+  not part of this phase (§11, FQ-1).
 - **NG-7.** Promoting the kit to `components/ui/` (D17: separate issue).
 - **NG-8.** New runtime dependencies. Everything is built on React, CSS Modules,
   `@repo/icons`, `@repo/i18n` and `@repo/design-tokens`. Tests use Vitest,
@@ -202,13 +207,12 @@ would fragment again.
     `radius-button: 8px`.
   - Shadow: `shadow-card`, `shadow-card-hover`, `shadow-overlay`.
 - **What is missing.** Role status tokens, focus ring, control heights, app
-  typography aliases and the radius scale. HOS-2454 (phase 1, Backlog) owns
-  those.
+  typography aliases and the radius scale. HOS-2454 defined them for phase 1;
+  the owner moved it into this phase, PR-1 (OD-4), and T-001 delivers it whole.
   - The catalog also uses `action-*`, `on-action-*`, `control-bg`,
     `control-border`, `nav-active-*`, `upsell-*`, `shadow-sticky` and the
-    layout widths (`sidebar-w`, `form-max`, `reading-max`, `editor-nav-w`). As
-    far as HOS-2454's text says, none of these are in its scope (T-001 covers
-    the delta).
+    layout widths (`sidebar-w`, `form-max`, `reading-max`, `editor-nav-w`).
+    HOS-2454's text does not list them, so T-002 adds them.
 
 ### 5.3 Reusable mechanisms the kit must compose, not re-implement
 
@@ -220,6 +224,7 @@ would fragment again.
 | Unsaved-changes guard | `lib/forms/use-unsaved-changes-guard.ts` + `leave-warning-registry.ts` (HOS-373, HOS-1018) | One capture-phase listener per page. It handles Astro `ClientRouter` soft navigation correctly; `astro:before-preparation` does not. StickySaveBar must register through it |
 | Invalid-field focus | `lib/forms/focus-first-invalid-field.ts`, `field-errors.ts`, `build-field-id.ts` | Field and StickySaveBar's «Ir al primer error» use these |
 | Plan gate data | `hooks/useListingPlanGate.ts` (`open` / `preTrial` / `plan`) + `lib/billing/*` catalog readers | LockedState is presentational. The caller resolves the reason from these sources |
+| Toast store | `store/toast-store.ts` (`addToast`, `updateToast`, `promiseToast`, `queueToastForNextPage`, `subscribe`, …) + `components/ui/ToastViewport.client.tsx`, mounted with `client:idle` in `BaseLayout`, `AuthLayout` and `ErrorLayout` | 38 files call the store. The account Toast renders the SAME store with the kit skin; it does not add a second store or a second API (§6.12) |
 | Loading convention | `apps/web/docs/loading-states.md` (SPEC-228) + `scripts/check-web-loading-patterns.sh` | The account Skeleton has to be documented there as the account-area pattern |
 
 ### 5.4 Guards and visual tooling
@@ -237,7 +242,7 @@ would fragment again.
   - `apps/web/playwright-visual.config.ts` + `tests/visual-snapshots/` (SPEC-153)
     exist. They use `toHaveScreenshot` and a theme switch via
     `localStorage.theme`, start `astro dev`, commit no baselines (`.gitkeep`)
-    and are not in CI.
+    and are not in CI. The owner decided to retire them (OD-5, T-030).
   - `apps/e2e` (Playwright `^1.65`) runs in `e2e-pr.yml` on PRs to
     `staging`/`main`/`epic/**`. It builds the three apps for production, migrates
     and seeds a DB, and runs `@p0`.
@@ -260,6 +265,7 @@ apps/web/src/components/account/ui/
   Pagination.tsx, Tabs.tsx, NavTabs.tsx, Switch.tsx, SwitchRow.tsx
   PageHeader.tsx
   Skeleton.tsx, EmptyState.tsx, ErrorState.tsx, Alert.tsx, AsyncRegion.tsx
+  Toast.tsx, AccountToastRegion.tsx
   StickySaveBar.tsx, use-save-bar.ts, AutoSaveChip.tsx
   LockedState.tsx
   AccountSidebar.tsx, AccountBar.tsx, AccountFooter.tsx
@@ -281,11 +287,11 @@ apps/web/src/components/account/ui/
 - **CSS.** CSS Modules colocated; tokens only (`var(--…)`, no literal
   font-size, radius, shadow or color). Page-layout media queries use only
   30/48/64/80rem `min-width`. Components respond to their container through
-  `@container`. Both rules are enforced by the T-025/T-026 guards.
+  `@container`. Both rules are enforced by the T-008/T-009 guards.
 - **Hydration.** Non-interactive pieces render from Astro with no `client:*`
   (React is already loaded site-wide by `BaseLayout`, D16). Interactive pieces
   (Dialog, Drawer, ConfirmDialog, client-mode Tabs, Switch, StickySaveBar,
-  AutoSaveChip retry, AccountBar, `loadMore` Pagination) are used either inside
+  AutoSaveChip retry, AccountBar, AccountToastRegion, `loadMore` Pagination) are used either inside
   an existing island or with the least eager directive that works
   (`client:idle`, `client:visible`, or `client:media` for AccountBar).
 - **Tests.** They live in `apps/web/test/components/account/ui/<Name>.test.tsx`
@@ -317,12 +323,27 @@ apps/web/src/components/account/ui/
   (2026-11-20) is stricter for sections, and this spec follows the owner. That
   costs nothing at runtime.
 
-### 6.3 Tokens (T-001)
+### 6.3 Tokens (T-001, T-002)
 
-Tokens live only in `packages/design-tokens`.
+Tokens live only in `packages/design-tokens`, and nothing outside the kit
+consumes them in this phase.
 
-- **What phase 2 adds.** Only the delta HOS-2454 does not cover, with the
-  catalog's names and values:
+- **T-001 · HOS-2454 in full (moved here by the owner, OD-4).** Its scope and
+  acceptance criteria are kept as written, with the catalog's names and values:
+  - role status tokens `status-{success,warning,danger,info,neutral}-{bg,fg,border,solid}`
+    in both themes;
+  - `focus-ring`;
+  - the radius scale `radius-control` 8px, `radius-surface` 12px,
+    `radius-pill`. The existing `radius-card: 24px` stays for the public site;
+  - control heights `control-h-sm/md/lg` (36/40/44);
+  - app typography aliases over the existing font tokens: `app-title`,
+    `app-section`, `app-card-title`, `app-stat`, `app-body`, `app-control`,
+    `app-ui`, `app-meta`, `app-caption`;
+  - the link color with AA contrast (`brand-primary-link`, which already
+    exists: verify it and pin it);
+  - AA contrast tests in light and dark, including the link.
+- **T-002 · the kit delta.** What HOS-2454 does not list, with the catalog's
+  names and values:
   - action tokens: `action-primary`, `action-primary-hover`,
     `on-action-primary`, `action-accent`, `action-accent-hover`,
     `on-action-accent`, `action-danger`, `on-action-danger`;
@@ -342,8 +363,11 @@ Tokens live only in `packages/design-tokens`.
     an exact alias of `brand-accent`, in both themes.
   - `on-action-primary` and `on-action-accent` are white.
   - No darker action token is added. White on these colors misses WCAG AA.
-  - The catalog states 3.56:1 (light) and 2.93:1 (dark) for blue, and 2.82:1
-    and 2.62:1 for orange. The owner's comment says 2.7:1 for orange in light.
+  - **The numbers do not agree.** The catalog states 3.56:1 (light) and 2.93:1
+    (dark) for blue, and 2.82:1 and 2.62:1 for orange. The owner's comment says
+    3.56:1 for blue and 2.7:1 for orange, in light. The binding values are the
+    ones computed from the repo's own theme tokens: T-002 records them in the
+    test, and the PR reports them next to the two quoted sets.
   - The test computes the real ratios from the repo's theme values, pins them
     as `OWNER_ACCEPTED_D4` with a comment citing the decision, and fails if
     either alias drifts or the ratio drops below the pinned value. A palette
@@ -369,6 +393,7 @@ Tokens live only in `packages/design-tokens`.
 | Switch / SwitchRow | `checked`, `onCheckedChange`, `disabled`; Row `label`, `description`, `saving?`, `error?`, `locked?` | `role="switch"` + `aria-checked`, visible focus, name via `aria-labelledby`, saving/error states |
 | PageHeader | `title`, `description?`, `breadcrumbs?`, `back?: {label, href}`, `status?`, `actions?`, `tabs?` | the page's only `h1`; back is a real labelled link; one primary action, full-width below 30rem |
 | Skeleton / EmptyState / ErrorState / Alert / AsyncRegion | §6.8 | failure never renders as empty or zero |
+| Toast / AccountToastRegion | §6.12 | same `toast-store`, kit skin, one viewport per page |
 | StickySaveBar / AutoSaveChip | §6.9 | §6.9 |
 | LockedState | §6.10 | §6.10 |
 
@@ -383,12 +408,13 @@ component rendering `<Section>` would pass a context check. Two layers:
    development and tests. In production it logs through `@repo/logger` and
    renders its children without the box, so a page never breaks.
 2. **DOM.** Every Section root carries `data-kit-section`. The structural e2e
-   sweep (T-029) asserts `[data-kit-section] [data-kit-section]` matches
+   sweep (T-031) asserts `[data-kit-section] [data-kit-section]` matches
    nothing on every account route. That check sees what context cannot.
 
-### 6.6 Shell and rollout (T-014…T-019, T-029; decision in OQ-1)
+### 6.6 Shell and rollout (T-017…T-022, T-031; OD-1, OD-2)
 
-- **`AccountShell.astro`** (new layout, OQ-2) composes:
+- **`AccountShell.astro`** is an Astro layout that composes the React kit pieces
+  (OD-2, owner). It contains:
   - `BaseLayout chrome="account"` (new prop, default `'site'`). It renders
     `AccountHeader` instead of `Header`, `AccountFooter` instead of `Footer`,
     and **no** `MobileDock`. `Header.astro` and `Footer.astro` do not grow:
@@ -412,20 +438,20 @@ component rendering `<Section>` would pass a context check. Two layers:
   the same model (one source, D3 «same groups as the sidebar»). Session reads
   stay exactly where they are today: the layout frontmatter. Per-user counts
   stay islands.
-- **Rollout (recommended, OQ-1 option C, "short-lived switch").**
-  `AccountLayout` gains `shell?: 'legacy' | 'account'`.
+- **Rollout (OD-1, owner: short-lived switch).** `AccountLayout` gains
+  `shell?: 'legacy' | 'account'`.
   - PR-3 lands the new shell with the default `'legacy'`, so no production page
-    changes. The kit gallery (T-027) and the shell's own tests render
+    changes. The kit gallery (T-029) and the shell's own tests render
     `'account'`.
-  - PR-5 (T-029) flips the default to `'account'` for all 73 pages at once.
+  - PR-5 (T-031) flips the default to `'account'` for all 73 pages at once.
     The same PR adds the structural sweep over every account route and the
     page baselines, and deletes the legacy markup and CSS from
     `AccountLayout.astro`, which leaves it as a thin delegating wrapper well
     under 500 lines.
-  - The prop is gone before phase 2 closes. The two shells never coexist into
-    phase 3.
+  - The prop and the old layout markup are gone before phase 2 closes. The two
+    shells never coexist into phase 3.
 
-### 6.7 Guards (T-025, T-026)
+### 6.7 Guards (T-008, T-009; land in PR-1 per OD-8)
 
 Both guards share `scripts/lib/account-css-scope.ts`, which defines the ACCOUNT
 SURFACE:
@@ -443,10 +469,14 @@ Inside the scope:
 - **Strict zone.** `components/account/ui/**`, `AccountShell.astro` and
   `AccountHeader.astro`: zero tolerance. The guard refuses any allowlist entry
   under these paths.
-- **Legacy zone.** The rest of the scope: count-pinned per file and per rule.
-  Counts may only go down; a stale entry fails, exactly as in
+- **Legacy zone (OD-9, owner).** The rest of the scope, listed in a FROZEN
+  exceptions list that can only shrink: count-pinned per file and per rule.
+  Counts may only go down, and a stale entry fails, exactly as in
   `check-css-relative-colors.cjs`. The initial counts are generated once by a
-  `--print-baseline` flag and committed.
+  `--print-baseline` flag and committed. **Each file that migrates to the kit
+  in phases 3-5 leaves the list in the same PR** (its count drops to zero and
+  the stale-entry check forces the removal). The guard rejects any new entry
+  and any raised count.
 
 Both guards:
 
@@ -467,7 +497,7 @@ Both guards:
 | `check:account-breakpoints` (HOS-2469) | width features in `@media`, `matchMedia`, `client:media` | `(min-width: 30rem\|48rem\|64rem\|80rem)` and the range form `(width >= …)`. The `client:media` / `matchMedia` complement `(max-width: 63.99rem)` is allowed only for the four values. Non-width features are free (`prefers-*`, `hover`, `pointer`, `forced-colors`, `print`). `@container` is free in value but must use `rem` |
 | `check:account-css-literals` (HOS-2470) | `font-size`/`font` size, `border-radius` + longhands, `box-shadow`, any color literal (`#hex`, `rgb[a]()`, `hsl[a]()`, `oklch()`, `oklab()`, named colors except `transparent`/`currentColor`), including literal `var()` fallbacks | `var(--token)` from `@repo/design-tokens`, `inherit`, `0`, `none`, `50%` (radius), `1em`/`100%` (font-size). Defining a component-local custom property with a literal color counts as a violation |
 
-### 6.8 Async regions (T-020, T-021)
+### 6.8 Async regions (T-023, T-024)
 
 - **Skeleton.** `text`, `title`, `circle` and `block` variants, plus
   `Skeleton.Row` and `Skeleton.Stat`. The container sets `aria-busy` and a
@@ -478,9 +508,9 @@ Both guards:
   «Reintentar» button. Focus returns after the retry. It never shows raw API
   text.
 - **Alert.** `info`, `success`, `warning` and `danger` tones; the `banner`
-  variant is optional. It is built here because ErrorState needs it (OQ-11).
-- **`AsyncRegion`.** This is the spec's reading of «ResultState» (OQ-10). It is
-  a renderer over a discriminated union:
+  variant is optional. ErrorState's inline variant uses it (OD-11).
+- **`AsyncRegion`.** «ResultState» in HOS-2466 means this renderer over the five
+  states (OD-10, owner). It is a renderer over a discriminated union:
 
   ```ts
   type AsyncResult<T> =
@@ -496,7 +526,7 @@ Both guards:
   regression test reproduces the HOS-2421/2422/2424 shape: a rejected fetch
   renders ErrorState, not EmptyState and not 0.
 
-### 6.9 Save models (T-022, T-023; D8 «dos modelos de guardado»)
+### 6.9 Save models (T-026, T-027; D8 «dos modelos de guardado»)
 
 - **`useSaveBar({ isDirty, onSave, onDiscard, errorCount, onJumpToError })`**
   composes `useUnsavedChangesGuard`. It never adds its own `beforeunload` or
@@ -518,7 +548,7 @@ Both guards:
   `@repo/i18n` formatting. The kit README documents that the two models never
   share a Section.
 
-### 6.10 LockedState (T-024; D9 «sin acceso único», D22 «prueba del turista»)
+### 6.10 LockedState (T-028; D9 «sin acceso único», D22 «prueba del turista»)
 
 - **Props.**
   - `feature: { title, description, icon? }`;
@@ -541,16 +571,24 @@ Both guards:
 - **Billing note.** No page adopts it in phase 2. Adoption on plan pages
   (phase 3) requires the staging billing smoke.
 
-### 6.11 Visual regression (T-027, T-028, T-029; tool in OQ-5)
+### 6.11 Visual regression (T-029, T-030, T-031; OD-5, OD-6, OD-7)
 
-- **Recommended tool.** Playwright `toHaveScreenshot` inside `apps/e2e`. It is
-  already a dependency, already builds production apps with a seeded DB and auth
-  fixtures, and `e2e-pr.yml` already runs on `epic/**`. No new dependency.
+- **Tool (OD-5, owner).** Playwright `toHaveScreenshot` inside `apps/e2e`, as its
+  own step of `e2e-pr.yml`. It is already a dependency, already builds
+  production apps with a seeded DB and auth fixtures, and `e2e-pr.yml` already
+  runs on `epic/**`. No new dependency.
+- **Retiring the dead SPEC-153 config (OD-5).** T-030 deletes
+  `apps/web/playwright-visual.config.ts`, `apps/web/tests/visual-snapshots/`
+  (the capture spec, `diff-snapshots.cjs`, `.gitkeep`) and the `test:visual*`
+  scripts of `apps/web/package.json`. Before deleting, it greps for references
+  (`turbo.json`, workflows, docs, `.gitignore`, `playwright-visual-report`) and
+  removes or rewrites each one. `apps/admin/playwright-visual.config.ts` is out
+  of scope and stays.
 - **Specs.** `apps/e2e/tests/visual/*.visual.spec.ts`, tagged `@visual`, run as
   their own step in `e2e-pr.yml`. The matrix is light + dark (theme set through
   `localStorage.theme` + reload, as SPEC-153 does) × desktop 1280 + mobile 375.
   Chromium only, `animations: 'disabled'`, `caret: 'hide'`, fonts awaited.
-- **Kit baselines.** One shot per component state on the kit gallery (T-027).
+- **Kit baselines.** One shot per component state on the kit gallery (T-029).
 - **Shell and page baselines.** The new shell on a representative set: the
   dashboard, `editar`, `preferencias`, `favoritos`, the accommodation list and
   one editor section. Every migrated page adds its own baselines in phases 3-5
@@ -558,10 +596,50 @@ Both guards:
 - **Structural sweep.** Over ALL account routes, without pixels: no horizontal
   overflow at 375/768/1280, no `MobileDock`, exactly one `h1`, no nested
   `[data-kit-section]`, AccountBar visible below 64rem and sidebar from 64rem.
-- **Approving a change.** The baselines are regenerated inside the pinned
-  Playwright image (same version as `@playwright/test`), never on a developer's
-  host fonts. The PNG diff is reviewed in the PR. CI never updates baselines on
-  its own. Documented in `apps/e2e/README.md` (OQ-7).
+- **Approving a change (OD-7, owner).** Whoever changes the UI regenerates the
+  baselines BY HAND inside the pinned Playwright image (the same version as
+  `@playwright/test`), never with a developer's host fonts, and commits the PNGs
+  in the SAME PR as the change. The reviewer reads the PNG diff. CI only
+  compares; it never updates or uploads baselines. Documented in
+  `apps/e2e/README.md`.
+
+### 6.12 Toast (T-025; OD-11)
+
+The owner asked for a NEW account Toast in this phase. What exists today:
+
+- `store/toast-store.ts` is the only toast API (`addToast`, `updateToast`,
+  `promiseToast`, `queueToastForNextPage`, `drainPendingToast`, pause and
+  resume timers). 38 files under `apps/web/src` call it, many of them account
+  islands.
+- `components/ui/ToastViewport.client.tsx` renders that store. It is mounted
+  once per page, with `client:idle`, in `BaseLayout` (line 268), `AuthLayout`
+  and `ErrorLayout`. `CompareBar` positions itself against its CSS.
+
+Design:
+
+- **One store, two skins.** The account Toast renders the SAME `toast-store`.
+  Callers keep calling `addToast`; no account island changes its import, and a
+  toast queued on a public page with `queueToastForNextPage` still shows after
+  landing on an account page.
+- **`Toast.tsx`** is the presentational piece, following the catalog:
+  `success`, `danger` and `info` tones (the store's `warning` maps to `info`,
+  and `loading` shows a spinner with a neutral tone). It has an optional
+  action, the `popover` surface and `shadow-overlay`. A toast with an action
+  never dismisses on its own.
+- **`AccountToastRegion.tsx`** subscribes to the store through
+  `useSyncExternalStore`, as the viewport does, and renders `Toast` items. It
+  keeps a permanent polite live region (`assertive` for `danger`), never steals
+  focus, keeps the action reachable with Tab, and sits above the StickySaveBar
+  on mobile so the two never overlap.
+- **One viewport per page.** `BaseLayout chrome="account"` mounts
+  `AccountToastRegion` INSTEAD of `ToastViewport`; `chrome="site"` keeps
+  `ToastViewport`. Two viewports subscribed to the same store would show every
+  toast twice, so a test asserts exactly one is mounted for each chrome.
+- **The account area uses the new one.** Once T-031 flips the shell, every
+  `/mi-cuenta` page gets `AccountToastRegion`. The site, auth and error pages
+  keep `ToastViewport`.
+- **Not decided here.** Replacing or removing the global `ToastViewport` is
+  follow-up question FQ-1 in §11.
 
 ## 7. Data model / contracts
 
@@ -571,10 +649,23 @@ Both guards:
 - **New tokens** (§6.3) in `packages/design-tokens`. The CSS regenerates through
   the package build. The `seed/web-baseline.json` round-trip validation must be
   updated for the added tokens only.
-- **Possible new env var** for the kit gallery gate (OQ-6). If chosen, it
-  follows the 5-step env workflow (registry, Zod, `.env.example`, docs). The
-  agent then stops and asks the owner to set it in Coolify; the recommended
-  default is «off», so production needs no value.
+- **New env var `HOSPEDA_ACCOUNT_KIT_GALLERY`** (OD-6, owner). It gates the
+  hidden `/[lang]/mi-cuenta/kit/` page and goes through the full workflow from
+  the project CLAUDE.md, in T-029:
+  1. registry entry in `packages/config/src/env-registry.hospeda.ts`
+     (`description`, `type: boolean`, `required: false`, `secret: false`,
+     `defaultValue: 'false'`, `exampleValue: 'false'`, `apps: ['web']`, a
+     dev/test category);
+  2. Zod validation in the web app env (`apps/web/src/env-schema.ts` /
+     `env.ts`), with the repo's boolean helper, not `z.coerce.boolean` (which
+     `check:no-coerce-boolean` rejects);
+  3. `apps/web/.env.example` with `HOSPEDA_ACCOUNT_KIT_GALLERY=false`;
+  4. docs in `docs/guides/environment-variables.md`;
+  5. set to `true` only in `apps/e2e/.env.e2e` (and therefore in `e2e-pr.yml`)
+     and locally. **Coolify needs nothing** (owner): the default is off, so
+     staging and production serve 404.
+
+  `pnpm env:check:registry` must stay green.
 
 ## 8. UX / UI behavior
 
@@ -599,6 +690,10 @@ voseo, sentence case, verb + object buttons) and states. Key behaviours:
 - **AC-2.** Every kit piece has Vitest + testing-library tests (AAA) covering
   its variants, keyboard behaviour where interactive, a11y attributes and
   `data-help`. `Section` without `helpId` fails `tsc`.
+- **AC-3a.** HOS-2454's acceptance criteria hold: the app tokens live only in
+  `packages/design-tokens`, AA contrast tests pass in light and dark (link
+  included), the typography aliases and the radius and control-height scales
+  exist, and nothing outside the kit consumes them yet.
 - **AC-3.** The D4 aliases and their accepted ratios are pinned in a
   design-tokens test citing the owner decision. Every other §6.3 pair passes
   AA in light and dark.
@@ -607,7 +702,7 @@ voseo, sentence case, verb + object buttons) and states. Key behaviours:
   - run as their own steps in the CI `Guards` job and in `pnpm check:guards`;
   - pass on the kit with zero allowlist entries in the strict zone;
   - fail on each synthetic violation in their tests.
-- **AC-5.** After T-029, every account route renders inside `AccountShell` with
+- **AC-5.** After T-031, every account route renders inside `AccountShell` with
   no `MobileDock`. The shell meets D1 «marco compacto» (compact header,
   one-line footer) and D3 «nav mobile única» (AccountBar + drawer below 64rem,
   focus trapped, Escape closes, focus returns). The structural sweep passes on
@@ -621,8 +716,15 @@ voseo, sentence case, verb + object buttons) and states. Key behaviours:
 - **AC-8.** No new session read in `src/pages`, the session-blind guard is
   untouched, every new file stays at or below 500 lines, and
   `AccountLayout.astro` ends below 500 lines.
+- **AC-10.** The account area renders toasts through `AccountToastRegion` on
+  the same `toast-store`, with exactly one toast viewport mounted per page.
+- **AC-11.** `HOSPEDA_ACCOUNT_KIT_GALLERY` is registered, validated, in
+  `.env.example` and documented. `/mi-cuenta/kit/` answers 404 unless it is
+  true.
+- **AC-12.** `apps/web/playwright-visual.config.ts` and
+  `apps/web/tests/visual-snapshots/` are gone, with no dangling reference.
 - **AC-9.** No new runtime or dev dependency, unless the owner approves one
-  through §11.
+  explicitly.
 
 ## 10. Risks
 
@@ -631,7 +733,15 @@ voseo, sentence case, verb + object buttons) and states. Key behaviours:
   viewport media queries may reflow. Mitigation: the structural sweep at three
   widths plus baselines on the representative set before the flip; the flip is
   one revertible commit.
-- **R-2.** HOS-2454 (phase 1) is not merged when PR-1 is ready (OQ-4).
+- **R-2.** PR-1 is the largest PR of the phase: HOS-2454's tokens, the kit
+  delta, the scaffold, four components and two guards. Mitigation: guards and
+  tokens are mostly generated or table-driven; if review stalls, the guards
+  split into their own PR, which still counts toward the 2-open-PRs limit.
+- **R-8.** Toast differences on account pages: a toast that relied on
+  `ToastViewport`-specific behaviour (swipe, progress bar, the `CompareBar`
+  offset) looks different under the account skin. Mitigation: the account
+  region keeps the store's timing and pause semantics, and the visual suite
+  shoots one toast per tone.
 - **R-3.** Screenshot flakiness: fonts, lazy images, time-based copy. Mitigation:
   wait for `document.fonts.ready`, use seeded deterministic data, a fixed clock
   for AutoSaveChip states, and mask dynamic regions.
@@ -647,92 +757,55 @@ voseo, sentence case, verb + object buttons) and states. Key behaviours:
   step; the kit gallery is one page; the page set is small. The run time is
   measured in PR-5 and reported on the PR.
 
-## 11. Open questions (each with a recommended option)
+## 11. Decisiones del owner (20/11/2026)
 
-Each needs an owner answer before the PR it gates. The recommended option is
-listed first.
+The owner answered every open question on 2026-11-20. These decisions are
+binding; their ids are `OD-n` (owner decision) and the rest of the spec cites
+them.
 
-- **OQ-1 · How the shell switch is rolled out** (gates PR-3/PR-5).
-  - **C — short-lived switch inside `AccountLayout` (recommended).** The new
-    shell lands behind `shell` (default legacy) in PR-3. PR-5 flips it for all
-    73 pages, with the sweep and baselines, and deletes the legacy path.
-    - *Pros:* reviewable in steps, the flip is one revertible commit proven by
-      CI, and the two shells never coexist past phase 2.
-    - *Cons:* about two weeks of a dormant code path.
-  - **A — all at once in PR-3.**
-    - *Pros:* simplest.
-    - *Cons:* the flip lands before the visual regression that would catch it.
-  - **B — per-page opt-in through phases 3-5.**
-    - *Pros:* lowest blast radius per PR.
-    - *Cons:* two shells and two navs live for 3+ months, the 810-line layout
-      survives until phase 5, and it contradicts HOS-2455's AC «todas las
-      páginas usan el shell nuevo».
-- **OQ-2 · What `AccountShell` is.** The catalog names `AccountShell.tsx`.
-  - **Astro layout composing React kit pieces (recommended).** The shell needs
-    `BaseLayout`'s head, SEO, `ClientRouter` and named slots, plus server-side
-    nav gating. Wrapping a whole page in a React root makes every island a
-    slotted child of a non-hydrated root for no gain. Sidebar, AccountBar,
-    footer and PageHeader stay React (D16).
-  - **Alternative:** a React shell as in the catalog.
-- **OQ-3 · How Dialog and Drawer are built.** The catalog says native `<dialog>`
-  with `showModal()`.
-  - **Compose the existing `shared/ui/Dialog.client.tsx` mechanisms
-    (recommended):** focus trap, scroll lock, back-button close (HOS-310) and
-    the `dialog-panel` classes `check:dialog-panel` enforces. The visual layer
-    (popover, `shadow-overlay`, scrim, sizes) is the catalog's.
-  - **Alternative:** new native-`<dialog>` primitives, which must re-prove all
-    of that and get added to the HOS-958 guard.
-- **OQ-4 · The HOS-2454 tokens dependency.**
-  - **Hard prerequisite (recommended).** PR-1 opens only after HOS-2454 is in
-    the epic branch, and T-001 adds only the delta. T-002…T-006 can be written
-    meanwhile.
-  - **Alternative:** phase 2 absorbs HOS-2454. One fewer PR, but it mixes
-    phase-1 scope into a phase-2 PR.
-- **OQ-5 · Visual regression tool and location.**
-  - **`apps/e2e` with `@visual` specs, run as their own step in `e2e-pr.yml`
-    (recommended).** It already builds production apps, seeds a DB and has auth
-    fixtures.
-  - **Alternative:** revive `apps/web/playwright-visual.config.ts` (SPEC-153),
-    switch it from `astro dev` to `astro build && astro preview`, and add a CI
-    job. Account pages need auth and a seeded API there, which that config does
-    not have.
-  - **Either way:** no new dependency.
-- **OQ-6 · How the kit gallery route is gated.** The page renders every kit
-  state for visual regression.
-  - **`/[lang]/mi-cuenta/kit/`, answering 404 unless a server env flag (for
-    example `HOSPEDA_ACCOUNT_KIT_GALLERY=true`) is set (recommended).** The flag
-    is set only in the E2E env and locally; off by default, so production needs
-    no value.
-  - **Alternative:** gate it by a staff permission. That ships a real page to
-    production.
-  - **Rejected:** a Storybook-like tool, which adds a dependency.
-- **OQ-7 · How baselines are approved.**
-  - **Regenerate inside the pinned `mcr.microsoft.com/playwright` image and
-    commit the PNGs (recommended).** The reviewer looks at the diff; CI never
-    updates baselines.
-  - **Alternative:** a `workflow_dispatch` job that regenerates and uploads them
-    as an artifact. More moving parts.
-- **OQ-8 · When the guards land.** The suggested grouping puts the guards last
-  (PR-5).
-  - **Move T-025/T-026 into PR-1 (recommended).** They are cheap and the strict
-    zone then protects the kit from its first component.
-  - **Alternative:** keep them in PR-5 and fix whatever the kit accumulated.
-- **OQ-9 · Guard scope.**
-  - **The account surface only (recommended).** It matches D6 «breakpoints
-    cerrados» and HOS-2470 («CSS de cuenta»).
-  - **Alternative:** all of `apps/web`. That multiplies the legacy baseline and
-    touches the public site, which the epic does not redesign.
-- **OQ-10 · What «ResultState» (HOS-2466) means.** The catalog has no such
-  piece.
-  - **Read it as `AsyncRegion`, the five-state renderer (recommended).**
-  - **Alternative:** a post-action «result» screen (success or failure after a
-    flow). If that is what was meant, it is a separate piece for the phase that
-    needs it.
-- **OQ-11 · Alert and Toast.** Both are in the catalog but in no phase-2 child.
-  - **Build Alert now and defer Toast (recommended).** ErrorState's inline
-    variant is an Alert. Toast waits for the first page that needs it; the
-    Switch error path uses SwitchRow's own error state plus AutoSaveChip.
-  - **Alternative:** build Toast too, with no consumer to prove it.
+- **OD-1 · Shell rollout: short-lived switch.** The shell lands OFF in PR-3
+  (`AccountLayout shell`, default `'legacy'`). PR-5 (T-031) turns it on for the
+  73 pages at once, with the route-structure sweep and the baselines, then
+  deletes the old layout markup and the switch before the phase closes.
+- **OD-2 · `AccountShell` is an Astro layout** that composes the React pieces
+  (sidebar, AccountBar, drawer, footer), not the catalog's `AccountShell.tsx`.
+- **OD-3 · Dialog and Drawer reuse the existing shared Dialog**
+  (`shared/ui/Dialog.client.tsx`: focus trap, HOS-310 back button, scroll lock,
+  `check:dialog-panel`) with the kit's skin. No native `<dialog>` primitive.
+- **OD-4 · HOS-2454 moves into phase 2, PR-1, on the umbrella.** It is no
+  longer a phase-1 prerequisite. T-001 delivers HOS-2454 in full; T-002 adds
+  the kit's own delta and the D4 test. In Linear, HOS-2454 now hangs from
+  HOS-2413 with the `ui-cuenta-f2` label.
+- **OD-5 · Visual regression in `apps/e2e`, as its own step of `e2e-pr.yml`.**
+  The dead SPEC-153 config in `apps/web` (`playwright-visual.config.ts` and
+  `tests/visual-snapshots/`) is retired in the same task (T-030).
+- **OD-6 · Hidden `/mi-cuenta/kit/` page behind a new env var**
+  (`HOSPEDA_ACCOUNT_KIT_GALLERY`), enabled only in E2E and locally, with the
+  full env-var workflow (§7). Coolify does not need it set.
+- **OD-7 · Baselines are regenerated by hand** in the pinned Playwright image and
+  committed in the same PR as the change. CI only compares.
+- **OD-8 · The guards land in PR-1** (T-008, T-009), so the strict zone protects
+  the kit from its first component.
+- **OD-9 · Guard scope: the account area only,** with a frozen exceptions list
+  that can only shrink. Each migrated file leaves the list (§6.7).
+- **OD-10 · «ResultState» is `AsyncRegion`** with the five states (loading,
+  error, empty, locked, ready).
+- **OD-11 · Build both Alert and a NEW Toast now, in PR-4.** This differs from
+  the original recommendation, which deferred Toast. The account area uses the
+  new Toast on the existing store (§6.12).
+
+### Follow-up questions (not decided)
+
+- **FQ-1 · What happens to the global `ToastViewport`.** Once the account
+  Toast exists, the site has two toast skins on one store. Options for a later
+  decision:
+  1. replace `ToastViewport` site-wide with the kit Toast (this belongs to the
+     D17 follow-up «promover el kit al sitio público»);
+  2. keep both skins, one per chrome;
+  3. trim `ToastViewport`'s features the account skin does not carry (swipe,
+     progress bar) to bring the two closer.
+
+  None of them is part of this phase.
 
 ## 12. Implementation notes
 
@@ -746,44 +819,46 @@ promotion PR. Titles use `[HOS-2413] <type>(web): …`.
 
 | PR | Scope | Tasks | Children |
 |---|---|---|---|
-| PR-1 | tokens + kit scaffold + Button/Section/fields | T-001…T-006 (+ T-025/T-026 if OQ-8 = PR-1) | 2457, 2458, 2459 (+ the delta to 2454) |
-| PR-2 | status + overlays + navigation primitives | T-007…T-013 | 2460, 2461, 2462, 2463, 2464 |
-| PR-3 | shell behind the switch + mobile bar + PageHeader | T-014…T-019 | 2455, 2456, 2465 |
-| PR-4 | async states + save models + locked state | T-020…T-024 | 2466, 2467, 2468 |
-| PR-5 | guards + kit gallery + visual regression + shell flip + docs | T-025…T-030 | 2469, 2470, 2471, 2455 |
+| PR-1 | app tokens + kit delta + scaffold + Button/Section/fields + both guards | T-001…T-009 | 2454, 2457, 2458, 2459, 2469, 2470 |
+| PR-2 | status + overlays + navigation primitives | T-010…T-016 | 2460, 2461, 2462, 2463, 2464 |
+| PR-3 | shell behind the switch (OFF) + mobile bar + PageHeader | T-017…T-022 | 2455, 2456, 2465 |
+| PR-4 | async states + Alert + Toast + save models + locked state | T-023…T-028 | 2466, 2467, 2468 |
+| PR-5 | kit gallery + env var + visual regression + SPEC-153 retirement + shell flip + docs | T-029…T-032 | 2471, 2455 |
 
 | Task | Title | Child | Depends on |
 |---|---|---|---|
-| T-001 | Kit token delta + D4 owner-decision contrast test | 2457/2458/2460 (2454 prerequisite) | HOS-2454 |
-| T-002 | Kit scaffold, `HelpAnchor`, `account.ui` i18n namespace, kit README | 2413 | — |
-| T-003 | Button, LinkButton, TextLink | 2457 | T-001, T-002 |
-| T-004 | Section with gradient bar + nesting refusal | 2458 | T-001, T-002 |
-| T-005 | Field, TextInput, InputGroup, PhoneField | 2459 | T-001, T-002 |
-| T-006 | Select, Textarea (counter), Checkbox(Group), Radio(Group/OptionCard) | 2459 | T-005 |
-| T-007 | StatusPill, CountPill, `status-tone.ts` | 2460 | T-001, T-002 |
-| T-008 | Dialog | 2461 | T-003 |
-| T-009 | Drawer (bottom / right) | 2461 | T-008 |
-| T-010 | ConfirmDialog + `useConfirm()` | 2461 | T-008, T-003 |
-| T-011 | Pagination (numbered / prevNext / loadMore) | 2462 | T-003 |
-| T-012 | Tabs + NavTabs | 2463 | T-007 |
-| T-013 | Switch + SwitchRow | 2464 | T-001, T-002 |
-| T-014 | Extract `account-nav-model.ts` from `AccountLayout` | 2455 | — |
-| T-015 | `BaseLayout chrome`, `AccountHeader`, `AccountFooter`, no dock | 2455 | T-002 |
-| T-016 | AccountSidebar | 2455 | T-007, T-014 |
-| T-017 | `AccountShell.astro` + templates + `AccountLayout shell` switch (default legacy) | 2455 | T-015, T-016 |
-| T-018 | AccountBar + AccountDrawer | 2456 | T-009, T-016, T-017 |
-| T-019 | PageHeader | 2465 | T-003, T-007 |
-| T-020 | Skeleton + EmptyState | 2466 | T-002 |
-| T-021 | ErrorState + Alert + AsyncRegion (+ regression test) | 2466 | T-003, T-020 |
-| T-022 | StickySaveBar + `useSaveBar` | 2467 | T-003, T-010 |
-| T-023 | AutoSaveChip | 2467 | T-003 |
-| T-024 | LockedState | 2468 | T-003, T-007 |
-| T-025 | Account CSS scope + breakpoint guard | 2469 | — |
-| T-026 | CSS literals guard | 2470 | T-025 |
-| T-027 | Kit gallery page (gated) | 2471 | T-003…T-024 |
-| T-028 | Visual regression suite + CI step + approval docs | 2471 | T-027 |
-| T-029 | Flip the shell default, delete legacy, structural sweep, page baselines | 2455, 2471 | T-017, T-018, T-028 |
-| T-030 | Docs: kit README, `loading-states.md`, `apps/web/CLAUDE.md` pointer | 2413 | T-029 |
+| T-001 | App tokens in full (HOS-2454): role status, focus ring, radius scale, control heights, app typography, AA link + contrast tests | 2454 | — |
+| T-002 | Kit token delta + D4 owner-decision contrast test | 2457/2458/2460 | T-001 |
+| T-003 | Kit scaffold, `HelpAnchor`, `account.ui` i18n namespace, kit README | 2413 | — |
+| T-004 | Button, LinkButton, TextLink | 2457 | T-002, T-003 |
+| T-005 | Section with gradient bar + nesting refusal | 2458 | T-002, T-003 |
+| T-006 | Field, TextInput, InputGroup, PhoneField | 2459 | T-002, T-003 |
+| T-007 | Select, Textarea (counter), Checkbox(Group), Radio(Group/OptionCard) | 2459 | T-006 |
+| T-008 | Account CSS scope + breakpoint guard (frozen, shrink-only exceptions) | 2469 | — |
+| T-009 | CSS literals guard (frozen, shrink-only exceptions) | 2470 | T-008 |
+| T-010 | StatusPill, CountPill, `status-tone.ts` | 2460 | T-002, T-003 |
+| T-011 | Dialog (skin over the shared Dialog) | 2461 | T-004 |
+| T-012 | Drawer (bottom / right) | 2461 | T-011 |
+| T-013 | ConfirmDialog + `useConfirm()` | 2461 | T-011, T-004 |
+| T-014 | Pagination (numbered / prevNext / loadMore) | 2462 | T-004 |
+| T-015 | Tabs + NavTabs | 2463 | T-010 |
+| T-016 | Switch + SwitchRow | 2464 | T-002, T-003 |
+| T-017 | Extract `account-nav-model.ts` from `AccountLayout` | 2455 | — |
+| T-018 | `BaseLayout chrome`, `AccountHeader`, `AccountFooter`, no dock | 2455 | T-003 |
+| T-019 | AccountSidebar | 2455 | T-010, T-017 |
+| T-020 | `AccountShell.astro` + templates + `AccountLayout shell` switch (default legacy) | 2455 | T-018, T-019 |
+| T-021 | AccountBar + AccountDrawer | 2456 | T-012, T-019, T-020 |
+| T-022 | PageHeader | 2465 | T-004, T-010 |
+| T-023 | Skeleton + EmptyState | 2466 | T-003 |
+| T-024 | ErrorState + Alert + AsyncRegion (+ regression test) | 2466 | T-004, T-023 |
+| T-025 | Toast + AccountToastRegion on `toast-store`; `chrome="account"` mounts it instead of `ToastViewport` | 2466 (OD-11) | T-004, T-018 |
+| T-026 | StickySaveBar + `useSaveBar` | 2467 | T-004, T-013 |
+| T-027 | AutoSaveChip | 2467 | T-004 |
+| T-028 | LockedState | 2468 | T-004, T-010 |
+| T-029 | Kit gallery page + `HOSPEDA_ACCOUNT_KIT_GALLERY` env workflow | 2471 | T-004…T-028 |
+| T-030 | Visual regression suite + CI step + approval docs + retire SPEC-153 web config | 2471 | T-029 |
+| T-031 | Flip the shell default, delete legacy + switch, structural sweep, page baselines | 2455, 2471 | T-020, T-021, T-030 |
+| T-032 | Docs: kit README, `loading-states.md`, `apps/web/CLAUDE.md` pointer | 2413 | T-031 |
 
 ### 12.2 Further notes
 
@@ -800,4 +875,4 @@ promotion PR. Titles use `[HOS-2413] <type>(web): …`.
 
 ## 13. Linear
 
-Canonical tracking: HOS-2413 (parent epic HOS-2409). Children HOS-2455…HOS-2471.
+Canonical tracking: HOS-2413 (parent epic HOS-2409). Children HOS-2454 (moved from phase 1, OD-4) and HOS-2455…HOS-2471.
