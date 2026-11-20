@@ -453,6 +453,12 @@
             "symbol": "chargeNamedByMark",
             "row": null,
             "why": "HOS-2179: un pago de página busca una marca (DIVERGENCIA_DE_MONTO, COBRO_DUPLICADO o 23) que ya nombre este mismo cobro del proveedor: A2 no abre otra si ya hay una levantada (no deshace la decisión de una persona) o una de otro motivo (la misma plata nunca levanta dos marcas, aunque el precio cambie), y el barrido saltea el cobro ante cualquier marca, abierta o levantada; lee lifted_at sólo como «una persona ya la resolvió», no como estado de origen."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/one-time-page-charge-marks.ts",
+            "symbol": "noteChargebackOnHeldCharge",
+            "row": null,
+            "why": "HOS-2179 D1: ante un contracargo sobre un cobro que una marca de cobro de página retiene (su fila de payment cuelga de ella), busca esa marca ABIERTA (lifted_at nula) para acumularle un evento con provider.charged_back: true, una sola vez. Una marca levantada no se toca: lee lifted_at sólo para no reabrir la decisión de una persona, no como estado de origen."
         }
     ],
     "cortesia_diferida": [
