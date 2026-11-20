@@ -459,6 +459,18 @@
             "symbol": "noteChargebackOnHeldCharge",
             "row": null,
             "why": "HOS-2179 D1: ante un contracargo sobre un cobro que una marca de cobro de página retiene (su fila de payment cuelga de ella), busca esa marca ABIERTA (lifted_at nula) para acumularle un evento con provider.charged_back: true, una sola vez. Una marca levantada no se toca: lee lifted_at sólo para no reabrir la decisión de una persona, no como estado de origen."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/refund/list-proposed-refunds.service.ts",
+            "symbol": "listProposedRefunds",
+            "row": null,
+            "why": "HOS-2400: shows the marks that hang the payment of a proposed refund, open or lifted, so the person sees what originated it. It reads lifted_at only to label each mark as open or lifted; it never decides from it and does not use it as an origin state."
+        },
+        {
+            "file": "apps/api/src/routes/billing-refund/admin/list-proposed.ts",
+            "symbol": "adminListProposedRefundsRoute",
+            "row": null,
+            "why": "HOS-2400: serializes the lifted_at of each mark returned by listProposedRefunds to ISO text for the admin screen; it only formats it, it never decides from it."
         }
     ],
     "cortesia_diferida": [
