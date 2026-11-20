@@ -1400,7 +1400,7 @@
             "events": ["addon_authorized"],
             "to": ["ACTIVE"],
             "guard": {},
-            "reads": ["addon_instance.status", "addon_instance.provider_order_id"],
+            "reads": ["addon_instance.status"],
             "inputs": ["provider:read_by_id", "contract:order_idempotency"],
             "writes": [
                 "addon_instance.status",
@@ -1417,11 +1417,7 @@
             "events": ["addon_authorization_window_expired"],
             "to": ["ABANDONED"],
             "guard": {},
-            "reads": [
-                "addon_instance.status",
-                "addon_instance.provider_order_id",
-                "addon_instance.order_request_id"
-            ],
+            "reads": ["addon_instance.status", "addon_instance.order_request_id"],
             "inputs": ["provider:read_by_id", "catalog:authorization_window"],
             "writes": ["addon_instance.status", "domain_event.changes"]
         },
@@ -1463,21 +1459,6 @@
             "reads": ["addon_instance.status", "addon_instance.target_id"],
             "inputs": ["contract:listing_purged", "provider:read_by_id"],
             "writes": ["addon_instance.status", "domain_event.changes"]
-        },
-        {
-            "id": "TRANS:B:A7",
-            "machine": "addon_instance",
-            "from": ["PENDING_AUTHORIZATION"],
-            "events": ["one_time_order_rejected"],
-            "to": ["ABANDONED"],
-            "guard": {},
-            "reads": ["addon_instance.status", "addon_instance.provider_order_id"],
-            "inputs": ["provider:order_by_id"],
-            "writes": [
-                "addon_instance.status",
-                "domain_event.changes",
-                "addon_instance.provider_order_id"
-            ]
         }
     ]
 }

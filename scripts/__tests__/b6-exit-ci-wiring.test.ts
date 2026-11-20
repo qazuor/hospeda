@@ -91,13 +91,8 @@ const CORTE_MAP: readonly CorteEntry[] = [
         [
             'packages/service-core/test/integration/services/refund-confirm-3.test.ts',
             'packages/service-core/test/integration/services/refund-execute-1.test.ts',
-            'packages/service-core/test/integration/services/one-time-order-send.test.ts',
-            'packages/payments/test/fake-order-charge.test.ts',
-            'packages/payments/test/mercadopago-order-charge.test.ts'
-        ],
-        [
-            'packages/payments/test/fake-order-charge.test.ts',
-            'packages/payments/test/mercadopago-order-charge.test.ts'
+            // HOS-2179 T-7 retired the card order; TEST:B6:10 / AC:B6:12 hold on the payment page.
+            'packages/service-core/test/integration/services/addon-purchase-identity.test.ts'
         ]
     ),
     clause(
@@ -107,10 +102,7 @@ const CORTE_MAP: readonly CorteEntry[] = [
         [
             // HOS-2179 T-7 retired the order refund channel: TEST:B6:6 now proves it is closed.
             'packages/service-core/test/integration/services/refund-order-retired.test.ts',
-            'packages/service-core/test/integration/services/refund-resend.test.ts',
-            'packages/payments/test/mercadopago-order-refund.test.ts',
-            'packages/payments/test/fake-order-refund.test.ts',
-            'packages/payments/test/fake-server-order-refund.test.ts'
+            'packages/service-core/test/integration/services/refund-resend.test.ts'
         ]
     ),
     clause(
@@ -393,7 +385,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
     });
 
     describe('(f) the fake provider has the measured lies and rules', () => {
-        it('maps M13 to TEST:B6:3 and includes RP14, RP15 and RP16 by id', () => {
+        it('maps M13 to TEST:B6:3; RP14, RP15 and RP16 left with the order path (HOS-2179 T-7)', () => {
             const fakeLists = JSON.parse(read('packages/payments/src/fake/fake-lists.json')) as {
                 readonly lies: readonly { readonly id: string; readonly defenseTest?: string }[];
                 readonly rules: readonly { readonly id: string }[];
@@ -402,7 +394,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
             const ruleIds = new Set(fakeLists.rules.map((entry) => entry.id));
             expect(m13?.defenseTest, 'M13 does not name TEST:B6:3').toBe('TEST:B6:3');
             for (const id of ['RP14', 'RP15', 'RP16'])
-                expect(ruleIds.has(id), `${id} is missing from fake-lists.json`).toBe(true);
+                expect(ruleIds.has(id), `${id} was retired and must not come back`).toBe(false);
         });
     });
 

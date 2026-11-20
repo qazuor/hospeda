@@ -109,10 +109,7 @@ export async function purchaseFixture(
             orderRequestId,
             expectedAddonVersionId: product.versionId,
             returnUrl: 'https://example.test/return',
-            payerEmail: 'payer@example.test',
-            // HOS-2179: the page is A1's default; these fixtures exercise the card order kept
-            // until T-7, so they name it. Page fixtures override it with PAGE.
-            oneTimeChannel: 'ORDER' as const
+            payerEmail: 'payer@example.test'
         })
     };
 }

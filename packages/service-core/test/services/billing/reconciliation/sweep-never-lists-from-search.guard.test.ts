@@ -75,21 +75,16 @@ function stripComments(source: string): string {
     return result;
 }
 
-// readOrder (HOS-1605) and readOneTimePayment (HOS-2179) are reads by id like readCharge, not searches.
-const READS_BY_ID: readonly string[] = [
-    'readAuthorization',
-    'readCharge',
-    'readOrder',
-    'readOneTimePayment'
-];
+// readOneTimePayment (HOS-2179) is a read by id like readCharge, not a search.
+const READS_BY_ID: readonly string[] = ['readAuthorization', 'readCharge', 'readOneTimePayment'];
 const searchMethods = CAPABILITY_METHODS.read.filter((name) => !READS_BY_ID.includes(name));
 
 /**
  * HOS-2179 §5.10: the page-payments check lists one-time page purchases from our base,
  * only LOCATES their payments by reference, and A2 decides on the re-read by id
  * (readCharge). The search is allowed in that one file and nowhere else. The paid-orders
- * check that searched orders the same way was retired with the order path (T-7), so
- * `searchOrders` is now forbidden in every sweep file.
+ * check that searched orders the same way was retired with the order path (T-7), and
+ * `searchOrders` left the interface with it.
  */
 const SEARCH_ALLOWED_IN: Readonly<Record<string, string>> = {
     searchCharges: join(SWEEP_DIR, 'page-payments-check.ts')
@@ -99,8 +94,7 @@ describe('TEST:B11:1 ningún barrido lista desde el buscador', () => {
     it('derives all search methods from the read capability and excludes them from the sweep sources', () => {
         expect(searchMethods).toContain('searchAuthorizations');
         expect(searchMethods).toContain('searchCharges');
-        expect(searchMethods).toContain('searchOrders');
-        expect(SEARCH_ALLOWED_IN).not.toHaveProperty('searchOrders');
+        expect(searchMethods).not.toContain('searchOrders');
         expect(searchMethods).not.toContain('readOneTimePayment');
         expect(searchMethods.length).toBeGreaterThan(0);
         const files = [...sourceFiles(SWEEP_DIR), JOB];

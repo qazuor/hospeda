@@ -82,13 +82,12 @@ describe('TEST:B8a:7 AC:B8a:7 S12 on a reread charged-back payment', () => {
             const mutations = [
                 vi.spyOn(fixture.provider, 'authorize'),
                 vi.spyOn(fixture.provider, 'charge'),
-                vi.spyOn(fixture.provider, 'chargeOnce'),
+                vi.spyOn(fixture.provider, 'requestOneTimePayment'),
                 vi.spyOn(fixture.provider, 'changeAmount'),
                 vi.spyOn(fixture.provider, 'pause'),
                 vi.spyOn(fixture.provider, 'resume'),
                 vi.spyOn(fixture.provider, 'cancel'),
-                vi.spyOn(fixture.provider, 'refund'),
-                vi.spyOn(fixture.provider, 'refundOrder')
+                vi.spyOn(fixture.provider, 'refund')
             ];
             const authorizationBefore = await fixture.provider.readAuthorization({
                 authorizationId: fixture.started.authorizationId

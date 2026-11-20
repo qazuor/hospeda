@@ -174,7 +174,14 @@ const CLAUSES: readonly Clause[] = [
         titles: [],
         seeded: [`${service}addon-purchase-identity.test.ts`, `${service}addon-a3-window.test.ts`]
     },
-    { clause: 14, owner: 'B10', titles: [], seeded: [`${service}addon-a7-declined.test.ts`] },
+    // HOS-2179 T-7: the declined card order (A7) is gone; the second attempt over an unpaid
+    // one-time purchase now resumes its payment page.
+    {
+        clause: 14,
+        owner: 'B10',
+        titles: [],
+        seeded: [`${service}addon-one-time-page-occupied.test.ts`]
+    },
     {
         clause: 15,
         owner: 'B8a',

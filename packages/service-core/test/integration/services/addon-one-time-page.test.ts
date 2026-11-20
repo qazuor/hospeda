@@ -157,7 +157,7 @@ async function refuseMarksFor(instanceId: string, run: () => Promise<void>) {
 async function setup() {
     const f = await purchaseFixture();
     await payingPrincipal(f);
-    const request = { ...f.input(), oneTimeChannel: 'PAGE' as const };
+    const request = f.input();
     const ports = {
         ...f.ports,
         beforeCancelNotice: outboxBeforeCancelNotice({ deliver: true }),
@@ -373,17 +373,6 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             expect(close).not.toHaveBeenCalled();
         }
     );
-
-    it.skipIf(skip)('keeps the order channel as the default', async () => {
-        const s = await setup();
-        const request = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
-        const result = await purchaseAddon(orderRequest, s.f.ports);
-        if (result.outcome !== 'CREATED') throw new Error(result.outcome);
-        expect(request).not.toHaveBeenCalled();
-        expect((await keysOf(result.instanceId)).map((k) => k.operation)).toEqual(['ORDER_CREATE']);
-        expect((await instanceOf(result.instanceId)).paymentPageId).toBeNull();
-    });
 
     it.skipIf(skip)('resumes a lost creation answer into one instance with one page', async () => {
         const s = await setup();
@@ -895,19 +884,6 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
             )
         ).toEqual({ outcome: 'UNKNOWN' });
         expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
-    });
-
-    it.skipIf(skip)('does not apply to an order purchase', async () => {
-        const s = await setup();
-        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
-        const result = await purchaseAddon(orderRequest, s.f.ports);
-        if (result.outcome !== 'CREATED') throw new Error(result.outcome);
-        expect(
-            await confirmOneTimePagePayment(
-                { instanceId: result.instanceId, chargeId: 'charge-x' },
-                s.ports
-            )
-        ).toEqual({ outcome: 'NOT_APPLICABLE' });
     });
 });
 
