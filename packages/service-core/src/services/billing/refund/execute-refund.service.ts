@@ -6,7 +6,7 @@ import { actStartInstant, assertFreshForAct } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import type { ApplyExecutedRefundResult } from '../payment/apply-executed-refund.service';
-import { executeAccreditedRefund, executeOrderRefund } from './execute-refund-order';
+import { executeAccreditedRefund } from './execute-accredited-refund';
 import { readAddonRefundChannel } from './refund-addon-channel';
 
 const logger = createLogger('execute-refund');
@@ -111,23 +111,15 @@ export async function executeRefundFromProviderRead(
     if (!payment) throw new Error('Confirmed refund payment is missing');
     if (payment.addonInstanceId !== null) {
         // HOS-2179 §5.11: a page-bought instance's payment is an ordinary charge and falls
-        // through to the charge read below; an old instance keeps the order path.
+        // through to the charge read below. The order channel was retired (T-7): any other
+        // instance is not ours to execute.
         const { channel } = await readAddonRefundChannel({
             db,
             addonInstanceId: payment.addonInstanceId
         });
-        if (channel === 'ORDER')
-            return executeOrderRefund({
-                input,
-                candidate,
-                payment,
-                acceptedIds,
-                awaitingProviderAnswer,
-                ports,
-                result
-            });
         if (channel === 'NONE') return result(input, 'NOT_APPLICABLE');
     }
+    // A call tied to an instance was an order refund call (T-7 retired them); never execute one.
     if (calls.some((call) => call.addonInstanceId !== null)) return result(input, 'NOT_APPLICABLE');
     if (!awaitingProviderAnswer && acceptedIds.length === 0)
         return result(input, 'NOTHING_ACCEPTED');

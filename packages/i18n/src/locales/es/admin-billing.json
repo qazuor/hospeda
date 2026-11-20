@@ -2300,9 +2300,6 @@
                 "NOT_ACCEPTED_KEPT_CONFIRMED": "El proveedor no la aceptó todavía. Queda confirmada para reintentar.",
                 "PROVIDER_REJECTED_KEPT_CONFIRMED": "El proveedor la rechazó por ahora. Queda confirmada para reintentar.",
                 "PROVIDER_REJECTED_FAILED": "El proveedor la rechazó y la devolución quedó fallida.",
-                "ORDER_REFUND_HELD": "La devolución de la orden quedó retenida hasta tener el id del proveedor.",
-                "PROVIDER_KEY_CONFLICT": "El proveedor informó un conflicto de clave. Revisala antes de reintentar.",
-                "ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED": "La orden todavía no admite devolución. Queda confirmada.",
                 "CHARGED_BACK": "El cobro ya tenía un contracargo. La devolución se cerró."
             }
         },
