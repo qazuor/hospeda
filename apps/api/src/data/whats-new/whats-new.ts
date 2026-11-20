@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4594, #4543, #4550
+    {
+        id: '2026-11-19-venue-pro-premium-promotions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Con el plan Profesional o Premium ya podés cargar promociones',
+            en: 'With the Professional or Premium plan you can now add promotions',
+            pt: 'Com o plano Profissional ou Premium você já pode cadastrar promoções'
+        },
+        body: {
+            es: 'En el editor de tu local, «Promociones» te deja crear descuentos y ofertas: hasta 5 activas a la vez con Profesional, sin tope con Premium. Si tu plan no las incluye, la sección te dice desde qué plan están disponibles y te lleva a comparar planes.',
+            en: 'In your venue editor, «Promotions» lets you create discounts and offers: up to 5 active at a time with Professional, no limit with Premium. If your plan does not include them, the section tells you which plan unlocks them and takes you to compare plans.',
+            pt: 'No editor do seu local, «Promoções» permite criar descontos e ofertas: até 5 ativas ao mesmo tempo com Profissional, sem limite com Premium. Se o seu plano não as inclui, a seção mostra a partir de qual plano estão disponíveis e leva você a comparar planos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4541
     {
         id: '2026-11-19-venue-promotion-happy-hour',
