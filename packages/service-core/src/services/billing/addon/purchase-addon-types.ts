@@ -12,8 +12,8 @@ export const PurchaseAddonInputSchema = z.strictObject({
     reason: z.string().min(1).optional(),
     /**
      * How a one-time (`UNA_VEZ`) purchase is paid (HOS-2179): `ORDER`, the card-token order
-     * (the default until T-6 moves the route), or `PAGE`, a provider payment page the customer
-     * is redirected to. Ignored for recurring products.
+     * (the default, kept only until T-7 removes it; no route sends it since T-6), or `PAGE`, a
+     * provider payment page the customer is redirected to. Ignored for recurring products.
      */
     oneTimeChannel: z.enum(['ORDER', 'PAGE']).optional()
 });

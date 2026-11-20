@@ -131,6 +131,20 @@ async function withPaymentPage(
             ...(context.deadlines ? { deadlines: context.deadlines } : {})
         }
     );
+    if (page.outcome === 'NOT_APPLICABLE') {
+        // HOS-2179 T-6: the purchase stopped waiting before its page could be opened. A
+        // concurrent refusal released it (instance ABANDONED, HOS-2321), so the screen must mint
+        // a new order id instead of replaying one that will never get a page. A purchase that
+        // was activated meanwhile is not abandoned: answer it as is, without a link to pay again.
+        const [current] = await getDb()
+            .select({ status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, result.instanceId))
+            .limit(1);
+        if (current?.status !== 'ACTIVE')
+            return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' };
+        return result;
+    }
     return 'checkoutUrl' in page && page.checkoutUrl
         ? { ...result, checkoutUrl: page.checkoutUrl }
         : result;

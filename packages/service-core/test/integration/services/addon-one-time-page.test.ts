@@ -279,16 +279,18 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             });
             const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
             const result = await purchaseAddon(s.request, s.f.ports);
-            expect(result).toMatchObject({ outcome: 'CREATED' });
-            expect('checkoutUrl' in result && result.checkoutUrl).toBeFalsy();
+            // T-6: the released purchase never gets a page, so the screen is told to mint a
+            // new order id rather than replay this one.
+            expect(result).toEqual({ outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' });
             expect(close).toHaveBeenCalledWith({ paymentPageId: received });
             const page = await s.f.fake.readOneTimePayment({ paymentPageId: received ?? '' });
             expect(Date.parse(page.snapshot.expiresAt ?? '')).toBeLessThanOrEqual(
                 s.f.ports.clock.now().getTime()
             );
-            const instance = await instanceOf(
-                result.outcome === 'CREATED' ? result.instanceId : ''
-            );
+            const [instance] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.orderRequestId, s.request.orderRequestId));
             expect(instance).toMatchObject({ status: 'ABANDONED', paymentPageId: null });
         }
     );
