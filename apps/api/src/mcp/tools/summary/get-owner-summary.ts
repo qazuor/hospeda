@@ -11,7 +11,9 @@
  *   the omission note and the plans link (D-9, AC-C30);
  * - `attention`: what waits on the owner, with the portal page that resolves
  *   each item (AC-C31), at most {@link OWNER_SUMMARY_ATTENTION_CAP};
- * - the subscription block arrives with HOS-2328 (after HOS-2066), not here.
+ * - `subscription`: per vertical, exactly the `get_my_plan` item (HOS-2328,
+ *   AC-C33), from the same reader (`readMyPlan`, AC-C15b). Present only when
+ *   the actor holds `BILLING_VIEW_OWN`, the permission `get_my_plan` requires.
  *
  * Every read is owner-wide or batched per vertical, so the number of queries
  * does not grow with the number of listings, and the serialized result is
@@ -19,11 +21,13 @@
  * is scoped to the actor by the service, and the tool takes no resource id.
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { getClock } from '../../../utils/clock';
 import { readMyListingRows } from '../listing/list-my-listings';
 import { LISTING_TOOL_VERTICALS, type ListingToolVertical } from '../listing/listing-services';
+import { readMyPlan } from '../plan/my-plan-reader';
+import type { MyPlanItem, MyPlanVertical } from '../plan/my-plan-types';
 import { defineTool, type ToolHandlerResult } from '../tool-definition';
 import {
     capAttention,
@@ -62,7 +66,7 @@ export const GetOwnerSummaryInputSchema = z
 export const getOwnerSummaryTool = defineTool({
     name: 'get_owner_summary',
     title: 'Resumen de mis publicaciones',
-    description: `Summarizes all the listings the connected Hospeda user owns in one call (use it instead of calling get_listing_stats per listing). Returns "listings": per vertical (accommodation, venue, experience) the total and the count per publication state (DRAFT, PUBLISHED, UNPUBLISHED_BY_BILLING, ARCHIVED, MODERATED; purged listings are not counted; "partial": true means the owner has more listings than one read covers). Returns "metrics": per vertical the owner has listings in, over all its listings: views and new reviews (every moderation state) in the period, and for accommodations inquiries per month with reply rate and time (scope all_my_accommodations), unanswered inquiries (waiting for the owner's reply, the same count list_inquiries gives for status PENDING_OWNER) and favorites (bookmarks summed over the accommodations, not distinct users; only with the plan's advanced stats). A metrics entry with "partial": true belongs to a vertical with more listings than one read covers: its newReviews and favorites cover only the listings read, while views and inquiries cover all of them, so tell the user the figures are partial. Metrics that are not available are left out and listed in "omitted", never reported as zero. If the plan of a vertical does not include statistics, that vertical's metrics are replaced by {"omitted": "NO_STATS_ENTITLEMENT", "note", "action"}: tell the user the note and give them the action url; the rest of the summary is still valid. Returns "attention": up to ${OWNER_SUMMARY_ATTENTION_CAP} things waiting on the user, most urgent first, each with "actionUrl", the page that resolves it: unanswered_inquiries (count), pending_benefit_usages (count; side host or provider), open_fix_request (Hospeda asked to fix a listing; reportedFixed true means the user already reported it fixed), incomplete (a draft missing the requirements in "missing") and missing_photos (a draft without its main photo). "more" counts the items left out. Plan and subscription details are not part of this summary.`,
+    description: `Summarizes all the listings the connected Hospeda user owns in one call (use it instead of calling get_listing_stats per listing). Returns "listings": per vertical (accommodation, venue, experience) the total and the count per publication state (DRAFT, PUBLISHED, UNPUBLISHED_BY_BILLING, ARCHIVED, MODERATED; purged listings are not counted; "partial": true means the owner has more listings than one read covers). Returns "metrics": per vertical the owner has listings in, over all its listings: views and new reviews (every moderation state) in the period, and for accommodations inquiries per month with reply rate and time (scope all_my_accommodations), unanswered inquiries (waiting for the owner's reply, the same count list_inquiries gives for status PENDING_OWNER) and favorites (bookmarks summed over the accommodations, not distinct users; only with the plan's advanced stats). A metrics entry with "partial": true belongs to a vertical with more listings than one read covers: its newReviews and favorites cover only the listings read, while views and inquiries cover all of them, so tell the user the figures are partial. Metrics that are not available are left out and listed in "omitted", never reported as zero. If the plan of a vertical does not include statistics, that vertical's metrics are replaced by {"omitted": "NO_STATS_ENTITLEMENT", "note", "action"}: tell the user the note and give them the action url; the rest of the summary is still valid. Returns "attention": up to ${OWNER_SUMMARY_ATTENTION_CAP} things waiting on the user, most urgent first, each with "actionUrl", the page that resolves it: unanswered_inquiries (count), pending_benefit_usages (count; side host or provider), open_fix_request (Hospeda asked to fix a listing; reportedFixed true means the user already reported it fixed), incomplete (a draft missing the requirements in "missing") and missing_photos (a draft without its main photo). "more" counts the items left out. Returns "subscription" (only when the user may see their billing): per vertical where the user has a live subscription or a running trial, the same item get_my_plan returns (plan, status, dates, trial days left, includes, add-ons, actionUrl); a vertical with no plan is absent. For the full detail of one vertical, use get_my_plan.`,
     inputSchema: GetOwnerSummaryInputSchema,
     isWrite: false,
     emailUnverifiedOperation: 'READ_OWN',
@@ -84,11 +88,14 @@ export const getOwnerSummaryTool = defineTool({
                 .map((row) => row.id);
         const now = getClock().clock.now();
 
-        const [unanswered, usages, fixRequests, drafts] = await Promise.all([
+        const [unanswered, usages, fixRequests, drafts, plan] = await Promise.all([
             readUnansweredInquiries({ actor }),
             readPendingUsageItems({ actor, locale }),
             readFixRequestItems({ ownerId: actor.id, verticals: verticalsWithListings, locale }),
-            readDraftAttention({ rows, locale })
+            readDraftAttention({ rows, locale }),
+            actor.permissions.includes(PermissionEnum.BILLING_VIEW_OWN)
+                ? readMyPlan({ userId: actor.id, ...(locale ? { locale } : {}), now })
+                : undefined
         ]);
         if (unanswered.error) {
             return { error: unanswered.error };
@@ -132,8 +139,17 @@ export const getOwnerSummaryTool = defineTool({
                 ...drafts
             ]
         });
+        const subscription: Partial<Record<MyPlanVertical, MyPlanItem>> | undefined = plan
+            ? Object.fromEntries(plan.items.map((item) => [item.vertical, item]))
+            : undefined;
         const fitted = fitSummaryToBudget({
-            summary: { listings, metrics, attention, more }
+            summary: {
+                listings,
+                metrics,
+                attention,
+                more,
+                ...(subscription ? { subscription } : {})
+            }
         });
         if (fitted === undefined) {
             return {

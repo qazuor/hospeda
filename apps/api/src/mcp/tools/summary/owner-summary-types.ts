@@ -7,6 +7,7 @@
 
 import { PublicationStatusEnum } from '@repo/schemas';
 import type { ListingToolVertical } from '../listing/listing-services';
+import type { MyPlanItem, MyPlanVertical } from '../plan/my-plan-types';
 
 /** The views periods the summary offers: the two the portal's owner-wide stats offer. */
 export const OWNER_SUMMARY_PERIODS = ['7d', '30d'] as const;
@@ -163,4 +164,9 @@ export interface OwnerSummary {
     readonly attention: readonly AttentionItem[];
     /** Attention items left out of `attention` (the cap, or the response budget). */
     readonly more: number;
+    /**
+     * Per vertical with a live subscription or a running trial, the
+     * `get_my_plan` item (HOS-2328, AC-C33). Absent without `BILLING_VIEW_OWN`.
+     */
+    readonly subscription?: Readonly<Partial<Record<MyPlanVertical, MyPlanItem>>>;
 }
