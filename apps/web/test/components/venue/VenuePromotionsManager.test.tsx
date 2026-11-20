@@ -252,6 +252,49 @@ describe('VenuePromotionsManager', () => {
         expect(screen.getByLabelText('Valor')).toHaveAttribute('max', '100');
     });
 
+    it('renders promotion window copy separately and uses the shared editor field classes', async () => {
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [], meta: { activeCount: 0, maxActive: 5 } }
+        });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+            />
+        );
+        fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
+        fireEvent.click(screen.getByLabelText('Activar franja semanal'));
+        fireEvent.click(screen.getByLabelText('Jue'));
+        fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '22:00' } });
+        fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '01:00' } });
+
+        const overnightHint = screen.getByText(
+            'Termina después de la medianoche, el día siguiente'
+        );
+        const preview = screen.getByText('Jue, 22 a 01');
+        const help = screen.getByText(
+            'Si es una entrada fija de tu agenda, cargala en Eventos. Acá va el beneficio.'
+        );
+        expect(overnightHint.tagName).toBe('SMALL');
+        expect(preview.tagName).toBe('SMALL');
+        expect(help.tagName).toBe('SMALL');
+        expect(new Set([overnightHint, preview, help]).size).toBe(3);
+
+        expect(screen.getByLabelText('Título')).toHaveClass('input');
+        expect(screen.getByLabelText('Beneficio')).toHaveClass('input');
+        expect(screen.getByLabelText('Valor')).toHaveClass('input');
+        expect(screen.getByLabelText('Condición')).toHaveClass('textarea');
+        expect(screen.getByLabelText('Activar franja semanal').closest('label')).toHaveClass(
+            'checkbox'
+        );
+        expect(screen.getByRole('group', { name: 'Solo en ciertos días y horas' })).toHaveClass(
+            'section'
+        );
+    });
+
     it('maps pause entitlement errors to localized catalog locked copy', async () => {
         listWithPromotion();
         mocks.patch.mockResolvedValue({
