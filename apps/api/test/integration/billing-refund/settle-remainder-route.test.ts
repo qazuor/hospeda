@@ -4,8 +4,9 @@
  * panel. Covers the error-contract order (401 → 403 → 400 → 404 → 409/422) and the audit record.
  */
 import { eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
+import { PaymentProviderError } from '@repo/payments';
 import { PermissionEnum } from '@repo/schemas';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { AuditEventType } from '../../../src/utils/audit-logger';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -44,15 +45,43 @@ const settle = (input: {
 const admin = (id: string, granted: readonly PermissionEnum[] = permissions) =>
     actorHeaders({ id, role: 'SUPER_ADMIN', permissions: granted });
 
-/** A 6000 refund on a 10000 charge, CONFIRMED with one accepted 4000 call and one rejected 2000. */
-async function seedPartiallyAccepted(calls: 'PARTIAL' | 'UNANSWERED' = 'PARTIAL') {
+/**
+ * Refunds `amount` of a charge at the fake and returns the provider refund id. The first partial
+ * refund of a charge is refused as not refundable (lie M13, on), so it is asked once more.
+ */
+async function refundAtFake(chargeId: string, amount: number): Promise<string> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            const { refundId } = await confirmFake.refund({
+                chargeId,
+                amount: { amountMinor: amount, currency: 'ARS' },
+                reference: `refund-${crypto.randomUUID()}`
+            });
+            return refundId;
+        } catch (error) {
+            const m13 =
+                error instanceof PaymentProviderError &&
+                error.refundRefusal === 'AMOUNT_NOT_ACCEPTED';
+            if (!m13 || attempt > 0) throw error;
+        }
+    }
+}
+
+/**
+ * A 6000 refund on a 10000 charge, CONFIRMED with one accepted 4000 call (credited at the fake
+ * unless `accepted` names another provider refund id) and one rejected (or unanswered) 2000 call.
+ */
+async function seedPartiallyAccepted(
+    calls: 'PARTIAL' | 'UNANSWERED' = 'PARTIAL',
+    acceptedId?: string
+) {
     const seeded = await seedConfirmRefund(10000, 6000);
     const db = getDb();
     await db
         .update(refunds)
         .set({ status: 'CONFIRMED', confirmedBy: seeded.adminId })
         .where(eq(refunds.id, seeded.refundId));
-    const accepted = `mp-accepted-${crypto.randomUUID()}`;
+    const accepted = acceptedId ?? (await refundAtFake(seeded.chargeId, 4000));
     const rows = [
         { amount: 4000, providerRefundId: accepted, result: { outcome: 'ACCEPTED' } },
         {
@@ -95,6 +124,10 @@ describe('HOS-2406 remainder settlement route', () => {
         validateApiEnv();
         app = initApp({ clock: confirmClock, paymentProvider: confirmFake });
     });
+    beforeEach(() => {
+        // The settlement reads the charge from the provider the route resolves.
+        injectPaymentProvider({ provider: confirmFake });
+    });
     afterEach(() => {
         confirmClock.set(NOW);
         injectPaymentProvider({ provider: baselineFake });
@@ -109,7 +142,7 @@ describe('HOS-2406 remainder settlement route', () => {
     it('closes the refund EXECUTED, squares the payment and audits like action 14', async () => {
         // Arrange
         const seeded = await seedPartiallyAccepted();
-        const reference = `mp-panel-${crypto.randomUUID()}`;
+        const reference = await refundAtFake(seeded.chargeId, 2000);
 
         // Act
         const response = await settle({
@@ -139,25 +172,33 @@ describe('HOS-2406 remainder settlement route', () => {
             status: 'PARTIALLY_REFUNDED',
             refundedAmount: 6000
         });
-        expect(audit).toHaveBeenCalledWith(
-            expect.objectContaining({
-                auditEvent: AuditEventType.BILLING_MUTATION,
-                actorId: seeded.adminId,
-                action: 'update',
-                resourceType: 'refund',
-                resourceId: seeded.refundId,
-                metadata: expect.objectContaining({
-                    administrativeAction: 'ACC_14',
-                    transition: 'RF3',
-                    settlement: 'PARTIAL_REFUND_REMAINDER',
-                    acceptedAmount: 4000,
-                    amount: 2000,
-                    channel: 'PROVIDER_PANEL',
-                    reference,
-                    note: 'refunded from the panel'
-                })
-            })
+        const mutations = audit.mock.calls.filter(
+            ([entry]) => entry.auditEvent === AuditEventType.BILLING_MUTATION
         );
+        expect(mutations).toEqual([
+            [
+                {
+                    auditEvent: AuditEventType.BILLING_MUTATION,
+                    actorId: seeded.adminId,
+                    action: 'update',
+                    resourceType: 'refund',
+                    resourceId: seeded.refundId,
+                    metadata: {
+                        administrativeAction: 'ACC_14',
+                        transition: 'RF3',
+                        settlement: 'PARTIAL_REFUND_REMAINDER',
+                        subjectId: seeded.ownerId,
+                        acceptedAmount: 4000,
+                        amount: 2000,
+                        channel: 'PROVIDER_PANEL',
+                        reference,
+                        paymentOutcome: 'P4',
+                        coverageReleased: false,
+                        note: 'refunded from the panel'
+                    }
+                }
+            ]
+        ]);
     });
 
     it('answers 401 without a session and 403 without billing.settleExternal', async () => {
@@ -270,5 +311,45 @@ describe('HOS-2406 remainder settlement route', () => {
             code: 'ALREADY_EXISTS',
             reason: 'REFUND_NOT_CONFIRMED'
         });
+    });
+
+    it('answers 409 ACCEPTED_PART_NOT_ACCREDITED when the provider does not credit the accepted part', async () => {
+        // Arrange
+        const seeded = await seedPartiallyAccepted('PARTIAL', `mp-ghost-${crypto.randomUUID()}`);
+
+        // Act
+        const response = await settle({
+            refundId: seeded.refundId,
+            headers: admin(seeded.adminId),
+            body: { amount: 2000, reference: await refundAtFake(seeded.chargeId, 2000) }
+        });
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'ACCEPTED_PART_NOT_ACCREDITED'
+        });
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('CONFIRMED');
+    });
+
+    it('answers 422 REMAINDER_NOT_FOUND_AT_PROVIDER for a reference the provider does not credit', async () => {
+        // Arrange
+        const seeded = await seedPartiallyAccepted();
+
+        // Act
+        const response = await settle({
+            refundId: seeded.refundId,
+            headers: admin(seeded.adminId),
+            body: { amount: 2000, reference: `mp-panel-${crypto.randomUUID()}` }
+        });
+
+        // Assert
+        expect(response.status).toBe(422);
+        expect((await response.json()).error).toMatchObject({
+            code: 'VALIDATION_ERROR',
+            reason: 'REMAINDER_NOT_FOUND_AT_PROVIDER'
+        });
+        expect(await paymentState(seeded.paymentId)).toMatchObject({ refundedAmount: 0 });
     });
 });

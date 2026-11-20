@@ -16,6 +16,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { getClock } from '../../../utils/clock';
+import { getPaymentProvider } from '../../../utils/payment-provider';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -37,6 +38,7 @@ const REJECTION_ANSWERS: Readonly<Record<SettleRefundRemainderRejection, Rejecti
     REFUND_AMOUNT_INVALID: UNPROCESSABLE,
     EXTERNAL_REFERENCE_INVALID: UNPROCESSABLE,
     REMAINDER_AMOUNT_MISMATCH: UNPROCESSABLE,
+    REMAINDER_NOT_FOUND_AT_PROVIDER: UNPROCESSABLE,
     REFUND_NOT_FOUND: NOT_FOUND,
     REFUND_SOURCE_NOT_FOUND: NOT_FOUND,
     ADMINISTRATIVE_ACTION_FORBIDDEN: { status: 403, code: ServiceErrorCode.FORBIDDEN },
@@ -44,6 +46,7 @@ const REJECTION_ANSWERS: Readonly<Record<SettleRefundRemainderRejection, Rejecti
     REFUND_CALL_UNANSWERED: CONFLICT,
     REFUND_HAS_NO_ACCEPTED_CALL: CONFLICT,
     EXTERNAL_REFERENCE_ALREADY_SETTLED: CONFLICT,
+    ACCEPTED_PART_NOT_ACCREDITED: CONFLICT,
     REFUND_STATE_CHANGED: CONFLICT
 };
 
@@ -90,7 +93,7 @@ export const adminSettleRefundRemainderRoute = createAdminRoute({
                     amount: input.amount,
                     reference: input.reference
                 },
-                { clock: getClock().clock }
+                { provider: getPaymentProvider(), clock: getClock().clock }
             );
             auditLog({
                 auditEvent: AuditEventType.BILLING_MUTATION,
