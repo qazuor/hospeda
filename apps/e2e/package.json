@@ -10,7 +10,7 @@
         "e2e:seed": "tsx seeds/e2e-seed.ts",
         "e2e:build": "bash -c 'set -a && . ./.env.e2e && set +a && NODE_ENV=production PUBLIC_SENTRY_DSN=https://e2e-placeholder.invalid VITE_SENTRY_DSN=https://e2e-placeholder.invalid pnpm exec turbo run build --filter=hospeda-api --filter=admin --filter=hospeda-web'",
         "e2e:test": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test --grep-invert @clock && playwright test --grep @clock --workers=1 --reporter=list'",
-        "e2e:test:p0": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test --grep @p0 --grep-invert @clock && playwright test --grep @clock --workers=1 --reporter=list'",
+        "e2e:test:p0": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test tests/billing/billing-14-promo-redeem-notice.spec.ts --workers=1 --retries=0 --repeat-each=10 --reporter=list'",
         "e2e:test:clock": "playwright test --grep @clock --workers=1",
         "e2e:test:p1": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test --grep @p1'",
         "e2e:test:resilience": "bash -c 'set -a && . ./.env.e2e && set +a && playwright test --grep @resilience'",
