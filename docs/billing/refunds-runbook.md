@@ -15,9 +15,9 @@ Every file reference below is `path:line` on `staging` at the time of writing.
 
 A provider refund call is recorded before its POST. `persistCall` inserts an `idempotency_key` row
 (`result` NULL) and a `refund_call` row (`provider_refund_id` NULL)
-(`packages/service-core/src/services/billing/refund/refund-provider-call.ts:43-79`). An answer is
+(`packages/service-core/src/services/billing/refund/refund-provider-call.ts:43-77`). An answer is
 written later by `completeCall`: it sets `idempotency_key.result` and `completed_at`, and on
-acceptance it also sets `refund_call.provider_refund_id` (`refund-provider-call.ts:82-108`).
+acceptance it also sets `refund_call.provider_refund_id` (`refund-provider-call.ts:80-106`).
 
 A call is **live** when the provider accepted it (`provider_refund_id` set) or never answered it
 (`idempotency_key.result` NULL) (`refund-moved-money.ts:21-32`). A `CONFIRMED` refund with a live
@@ -33,10 +33,10 @@ call:
   none is unanswered. The automatic execution (RF3) runs only on a charge notice for that payment
   (`notice/process-provider-notice.service.ts:272`, `notice/refund-execution-on-notice.ts:37-72`). It
   returns `AWAITING_PROVIDER_ANSWER` while any call is unanswered (`execute-refund.service.ts:107-109`,
-  `:141`), and `NOT_ACCREDITED_KEPT_CONFIRMED` when the accepted ids do not add up to
-  `refund.amount` (`:145-152`).
+  `:133`), and `NOT_ACCREDITED_KEPT_CONFIRMED` when the accepted ids do not add up to
+  `refund.amount` (`:137-144`).
 - **has no resend.** `resendUnansweredRefundCalls` exists but has no production caller
-  (`resend-refund-call.service.ts:48-49`; HOS-1636 will wire it).
+  (`resend-refund-call.service.ts:44-45`; HOS-1636 will wire it).
 
 Unless noted, the service paths above are under `packages/service-core/src/services/billing/`
 (`refund/` or `notice/`).
@@ -52,9 +52,12 @@ Unless noted, the service paths above are under `packages/service-core/src/servi
 - **Money units differ.** The database stores centavos (`refund.amount`, `refund_call.amount`,
   `payment.amount`). Mercado Pago shows pesos. The adapter sends `amount / 100`
   (`packages/payments/src/adapters/mercadopago/mercadopago-mutations.ts:61-71`).
-- **Order-channel refunds are out of scope.** If any `refund_call.addon_instance_id` of the refund
-  is not NULL, the call went through an add-on order (`refund-order-call.ts`). This note does not
-  cover it. Escalate.
+- **Order-channel refunds are out of scope.** The add-on order refund channel was retired (T-7).
+  Confirming a refund on such a payment now answers 409 `REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE`
+  (`confirm-refund.service.ts:138-155`, `apps/api/src/routes/billing-refund/admin/confirm.ts:44`).
+  RF3 never executes a call tied to an add-on instance (`execute-refund.service.ts:122-123`). So if
+  any `refund_call.addon_instance_id` of the refund is not NULL, it is a leftover order refund call
+  from before T-7. This note does not cover it. Escalate.
 
 ## 3. Tables and columns
 
@@ -71,7 +74,7 @@ All are singular tables under `packages/db/src/schemas/vertical/`.
 
 Three facts the procedures rely on:
 
-- The idempotency key of a call is `refund:<refund_id>:<n>` (`refund-provider-call.ts:61`). It is
+- The idempotency key of a call is `refund:<refund_id>:<n>` (`refund-provider-call.ts:60`). It is
   sent to Mercado Pago as `X-Idempotency-Key` (`mercadopago-mutations.ts:71`).
 - `payment.provider_fact_id` is the Mercado Pago payment id. Refunds are posted to
   `/v1/payments/<provider_fact_id>/refunds` (`mercadopago-mutations.ts:61`).
@@ -195,7 +198,7 @@ adapter makes (`mercadopago-charge-read.ts:74`). Never paste the token anywhere.
 
 **What it looks like.** Query 4.2 lists the refund. Mercado Pago shows refunds for less than the
 confirmed amount. The provider call path ends with `PROVIDER_REJECTED_KEPT_CONFIRMED`
-(`refund-provider-call.ts:294-297`).
+(`refund-provider-call.ts:292-295`).
 
 **What to check in Mercado Pago (section 6):**
 
@@ -213,7 +216,7 @@ this refund:
 | Action 13, decline (`POST /api/v1/admin/billing-refunds/{refundId}/decline`, `apps/api/src/routes/billing-refund/admin/decline.ts:49`) | Refused with `REFUND_HAS_PROVIDER_CALLS`, because the accepted call is live (`decline-refund.service.ts:119-128`). |
 | Action 14 naming the refund (`POST /api/v1/admin/billing-refunds/external` with `refundId`, `settle-external.ts:71-152`) | Refused with `REFUND_NOT_OPEN`. RF4 never leaves `CONFIRMED` (`settle-external-refund.service.ts:210-216`). |
 | Action 14 for the remainder, without `refundId` | Usually refused with `REFUND_EXCEEDS_BALANCE`. The `CONFIRMED` row still claims its full amount (`refund-source.ts:42`, `:201-222`). When it does fit, it is still wrong. It creates a second `EXECUTED` row, the `CONFIRMED` row stays open forever, and `payment.refunded_amount` never counts the part Mercado Pago accepted. That is because only `EXECUTED` rows count (`packages/service-core/src/services/billing/payment/apply-executed-refund.service.ts:50`). |
-| Automatic execution (RF3) | Returns `NOT_ACCREDITED_KEPT_CONFIRMED`, because the accepted ids do not add up to `refund.amount` (`execute-refund.service.ts:145-152`). |
+| Automatic execution (RF3) | Returns `NOT_ACCREDITED_KEPT_CONFIRMED`, because the accepted ids do not add up to `refund.amount` (`execute-refund.service.ts:137-144`). |
 | Lifting the mark (action 7, `POST /api/v1/admin/billing-reconciliation/marks/{markId}/lift`) | Refused while the payment is still hung (`MARK_HAS_UNRESOLVED_PAYMENTS`). On a held page charge it refuses to resolve the payment without a refund (`MARK_CLOSES_ONLY_BY_REFUND`, `lift-reconciliation-mark-by-admin.service.ts:134-140`). |
 
 **What to do:**
@@ -232,12 +235,12 @@ you to run it.** It is listed so the owner can decide with the risks in view, no
 
 1. Refund the remainder (`remaining_amount`) from the Mercado Pago panel.
 2. Insert by hand one `idempotency_key` row and one `refund_call` row that imitate `persistCall`
-   (`refund-provider-call.ts:43-79`): key `refund:<refund_id>:<n+1>`, operation `REFUND_CREATE`,
+   (`refund-provider-call.ts:43-77`): key `refund:<refund_id>:<n+1>`, operation `REFUND_CREATE`,
    `subject_id` the refund, `refund_call.amount` the remainder and `provider_refund_id` the new
    Mercado Pago refund id. Then complete them as `ACCEPTED`, as `completeCall` would
-   (`:82-108`).
+   (`:80-106`).
 3. Wait for a charge notice to trigger RF3. RF3 executes only if every accepted id is accredited and
-   Mercado Pago's amounts add up to `refund.amount` (`execute-refund.service.ts:145-152`).
+   Mercado Pago's amounts add up to `refund.amount` (`execute-refund.service.ts:137-144`).
 
 Why it is not safe:
 
@@ -258,8 +261,8 @@ instance) keeps the charge held. That is expected until the fix.
 
 **What it looks like.** Query 4.1 lists the call. It happens when the process died between
 `persistCall` and the POST, or when Mercado Pago never answered. A timeout is read as unavailable
-(`refund-provider-call.ts:161-169`). An empty replay body is read the same way (`:126-134`). The
-provider call path ends with `AWAITING_PROVIDER_ANSWER` (`refund-provider-call.ts:230`).
+(`refund-provider-call.ts:159-167`). An empty replay body is read the same way (`:124-132`). The
+provider call path ends with `AWAITING_PROVIDER_ANSWER` (`refund-provider-call.ts:228`).
 
 No admin action records an answer for an unanswered call. The resend has no caller (section 1). So
 this case needs one direct write, and only that write. Everything after it goes through the
@@ -281,9 +284,9 @@ is not enough. Use this table:
 | Any amount difference, a refund that could belong to more than one call, a status you do not recognise, or a chargeback on the payment | 8.3, escalate |
 
 **Why the bar for 8.2 is so high.** `completeCall` writes `ACCEPTED` whenever it has an id
-(`refund-provider-call.ts:82-108`). RF3 is stricter. It executes only when every accepted id is
+(`refund-provider-call.ts:80-106`). RF3 is stricter. It executes only when every accepted id is
 accredited in Mercado Pago and their Mercado Pago amounts add up to exactly `refund.amount`
-(`execute-refund.service.ts:145-152`). If you write `ACCEPTED` wrongly, for the wrong amount or
+(`execute-refund.service.ts:137-144`). If you write `ACCEPTED` wrongly, for the wrong amount or
 for a refund that never accredits, the call stays live forever. The refund can then never be
 declined (`refund-moved-money.ts:21-32`), and it turns into case A, which has no exit.
 
@@ -297,7 +300,7 @@ of `refund-moved-money.ts:21-32`, and then the existing actions apply.
 
 1. **Get the owner's OK** on the Linear issue.
 2. **Record the rejection.** This mirrors what `completeCall` writes for a rejection
-   (`refund-provider-call.ts:82-108`, shape at `:84-93`). RF3 reads `outcome = 'REJECTED'` as
+   (`refund-provider-call.ts:80-106`, shape at `:82-90`). RF3 reads `outcome = 'REJECTED'` as
    answered (`execute-refund.service.ts:14-21`, `:101-106`).
 
    ```bash
@@ -399,7 +402,7 @@ not decline, and do not refund again.
 
 1. **Get the owner's OK** on the Linear issue.
 2. **Record the acceptance.** This mirrors what `completeCall` writes for an acceptance
-   (`refund-provider-call.ts:82-108`): `refund_call.provider_refund_id` and an `ACCEPTED` result,
+   (`refund-provider-call.ts:80-106`): `refund_call.provider_refund_id` and an `ACCEPTED` result,
    in one statement.
 
    ```bash
@@ -433,12 +436,12 @@ not decline, and do not refund again.
    that Mercado Pago refund is already recorded on another call. Stop and escalate.
 3. **Inspect again** (section 5). Add up the **Mercado Pago** amounts of every refund now recorded
    in the refund's `provider_refund_id` values, as the panel shows them. Do not use `refund_call.amount`:
-   RF3 compares Mercado Pago's amounts (`execute-refund.service.ts:145-152`).
+   RF3 compares Mercado Pago's amounts (`execute-refund.service.ts:137-144`).
    - **Mercado Pago's amounts add up to `refund.amount`, all are `approved`, and no call is
      unanswered.** RF3 could now execute the refund, but it runs only on a NEW charge notice for
      that payment (`refund-execution-on-notice.ts:37-72`, `process-provider-notice.service.ts:272`).
      The notice for the refund itself was most likely already processed, while the call was still
-     unanswered, and RF3 answered `AWAITING_PROVIDER_ANSWER` then (`execute-refund.service.ts:141`).
+     unanswered, and RF3 answered `AWAITING_PROVIDER_ANSWER` then (`execute-refund.service.ts:133`).
      So in general the refund stays `CONFIRMED`, and no admin action can trigger the read. Escalate
      on HOS-2402. Do not settle it with action 14: it would refuse (`REFUND_NOT_OPEN`), and the
      money is already back.
