@@ -13,7 +13,7 @@ import {
     PANEL_REFERENCE_CONSTRAINT,
     readRefundSubject
 } from './refund-action14';
-import { readRefundCallTally } from './refund-call-tally';
+import { hasOtherUnansweredRefundCall, readRefundCallTally } from './refund-call-tally';
 import { closeExecutedPaymentRefund } from './refund-closure';
 import { canRefundTransition, type RefundStatus } from './refund-machine';
 import {
@@ -56,6 +56,7 @@ export const SETTLE_REFUND_REMAINDER_REJECTIONS = [
     'ADMINISTRATIVE_ACTION_FORBIDDEN',
     'REFUND_NOT_CONFIRMED',
     'REFUND_CALL_UNANSWERED',
+    'OTHER_REFUND_CALL_UNANSWERED',
     'REFUND_HAS_NO_ACCEPTED_CALL',
     'ACCEPTED_PART_NOT_ACCREDITED',
     'REMAINDER_AMOUNT_MISMATCH',
@@ -178,6 +179,46 @@ function sourceOf(seen: {
     throw reject(ServiceErrorCode.NOT_FOUND, 'Refund has no source', 'REFUND_SOURCE_NOT_FOUND');
 }
 
+/**
+ * The refund exists and the person may run action 14 on its subject. Runs in its own short
+ * transaction before the provider is read, so a missing refund answers 404 and a person without
+ * permission answers 403 without ever reaching the provider (error-contract order). The main
+ * transaction checks both again under its own locks.
+ */
+async function assertSettleable(input: SettleRefundRemainderInput): Promise<void> {
+    await getDb().transaction(async (tx: DrizzleClient) => {
+        const [seen] = await tx
+            .select({ paymentId: refunds.paymentId, manualPaymentId: refunds.manualPaymentId })
+            .from(refunds)
+            .where(eq(refunds.id, input.refundId))
+            .limit(1);
+        if (!seen) throw refundNotFound();
+        const locked = await lockRefundSource({ tx, source: sourceOf(seen) });
+        const subjectId = await readRefundSubject({ tx, locked });
+        authorizeRefundAction14({ actor: input.actor, subjectId });
+    });
+}
+
+/** No other refund of the payment may have a call the provider has not answered (HOS-2517). */
+async function assertNoOtherUnansweredCall(input: {
+    readonly tx: DrizzleClient;
+    readonly paymentId: string;
+    readonly refundId: string;
+}): Promise<void> {
+    if (
+        await hasOtherUnansweredRefundCall({
+            db: input.tx,
+            paymentId: input.paymentId,
+            exceptRefundId: input.refundId
+        })
+    )
+        throw reject(
+            ServiceErrorCode.ALREADY_EXISTS,
+            'Another refund of this payment has a provider call still unanswered',
+            'OTHER_REFUND_CALL_UNANSWERED'
+        );
+}
+
 function stateChanged(): ServiceError {
     return reject(
         ServiceErrorCode.ALREADY_EXISTS,
@@ -206,6 +247,11 @@ function stateChanged(): ServiceError {
  * provider's, not what we asked), and the panel reference must be a credited provider refund of
  * exactly the remainder.
  *
+ * The provider is read only after the refund is found and the person is authorized
+ * ({@link assertSettleable}, its own short transaction), so 404 and 403 never reach the provider.
+ * While another refund of the same payment has an unanswered provider call, nothing is settled:
+ * its refund may be the one cited as the remainder (HOS-2517).
+ *
  * Everything else runs in ONE transaction: the payment is locked `FOR UPDATE` before the refund (RF3's
  * order), step 3 authorizes from ACC_14's own permission (never roles), and the close is a
  * versioned `UPDATE ... WHERE status = 'CONFIRMED' AND version = <read>`.
@@ -226,6 +272,7 @@ export async function settleRefundRemainder(
             'The external reference must be 1 to 255 characters',
             'EXTERNAL_REFERENCE_INVALID'
         );
+    await assertSettleable(input);
     const view = await readProviderView({
         refundId: input.refundId,
         provider: ports.provider,
@@ -259,6 +306,11 @@ export async function settleRefundRemainder(
             if (refund.paymentId !== locked.payment.id || view?.paymentId !== locked.payment.id)
                 throw stateChanged();
             assertConfirmed(refund.status);
+            await assertNoOtherUnansweredCall({
+                tx,
+                paymentId: locked.payment.id,
+                refundId: refund.id
+            });
             const acceptedAmount = await assertPartiallyCredited({
                 tx,
                 refundId: refund.id,

@@ -1,5 +1,5 @@
 import type { DrizzleClient } from '@repo/db';
-import { eq, idempotencyKeys, refundCalls } from '@repo/db';
+import { and, eq, idempotencyKeys, ne, refundCalls, refunds } from '@repo/db';
 
 /** One persisted provider call of a refund, with its idempotency outcome. */
 export type RefundCallRow = {
@@ -72,4 +72,44 @@ export async function readRefundCallTally(input: {
             calls.some((call) => call.completedAt === null) ||
             accepted.length + rejectedCount !== calls.length
     };
+}
+
+/**
+ * True while the provider has not answered a call: it is not completed, or it completed without a
+ * provider refund id and not as a rejection (UNAVAILABLE, an empty body). Such a call may already
+ * have a refund at the provider whose id has not been written yet.
+ */
+function isUnanswered(call: Pick<RefundCallRow, 'providerRefundId' | 'completedAt' | 'result'>) {
+    if (call.completedAt === null) return true;
+    return call.providerRefundId === null && !isRejectedResult(call.result);
+}
+
+/**
+ * HOS-2517 — whether another refund of the same payment has a provider call still unanswered. Its
+ * provider refund may already be credited on the charge with no id written on our side, so a
+ * person could cite it as someone else's panel refund and the same money would count twice once
+ * `completeCall` or a resend writes the id. Read it under the payment lock: a call persisted by a
+ * transaction that holds the lock is seen once that transaction commits.
+ *
+ * @param input.db - The transaction holding the payment lock.
+ * @param input.paymentId - The payment whose refunds are read.
+ * @param input.exceptRefundId - The refund being decided, left out.
+ * @returns True when any other refund of the payment has an unanswered call.
+ */
+export async function hasOtherUnansweredRefundCall(input: {
+    readonly db: DrizzleClient;
+    readonly paymentId: string;
+    readonly exceptRefundId: string;
+}): Promise<boolean> {
+    const calls = await input.db
+        .select({
+            providerRefundId: refundCalls.providerRefundId,
+            completedAt: idempotencyKeys.completedAt,
+            result: idempotencyKeys.result
+        })
+        .from(refundCalls)
+        .innerJoin(refunds, eq(refundCalls.refundId, refunds.id))
+        .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
+        .where(and(eq(refunds.paymentId, input.paymentId), ne(refunds.id, input.exceptRefundId)));
+    return calls.some(isUnanswered);
 }
