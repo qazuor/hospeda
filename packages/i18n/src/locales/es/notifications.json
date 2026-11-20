@@ -46,5 +46,13 @@
         "introFirst": "Ya configuramos tu suscripción de Partner. Este es el detalle de tu primera cuota.",
         "introRenewal": "Se abrió la cuota de un nuevo período de tu suscripción de Partner.",
         "cta": "Ver mi cuota"
+    },
+    "latePaymentRefunded": {
+        "subject": "Te devolvimos un pago que llegó tarde",
+        "heading": "Devolvimos tu pago",
+        "intro": "Recibimos tu pago de {{product}} cuando la compra ya se había cerrado, así que no activamos el complemento.",
+        "refunded": "Te devolvimos {{amount}}.",
+        "timing": "Según tu medio de pago, puede tardar unos días en verse reflejado.",
+        "closing": "Si todavía querés el complemento, podés volver a comprarlo desde tu cuenta."
     }
 }
