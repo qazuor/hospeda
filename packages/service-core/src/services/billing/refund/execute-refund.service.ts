@@ -1,5 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { eq, getDb, idempotencyKeys, payments, refundCalls, refunds } from '@repo/db';
+import { eq, getDb, payments, refunds } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct } from '@repo/payments';
@@ -8,17 +8,9 @@ import { ServiceError } from '../../../types';
 import type { ApplyExecutedRefundResult } from '../payment/apply-executed-refund.service';
 import { executeAccreditedRefund, executeOrderRefund } from './execute-refund-order';
 import { readAddonRefundChannel } from './refund-addon-channel';
+import { readRefundCallTally } from './refund-call-tally';
 
 const logger = createLogger('execute-refund');
-
-function isRejectedResult(value: unknown): boolean {
-    return (
-        typeof value === 'object' &&
-        value !== null &&
-        'outcome' in value &&
-        value.outcome === 'REJECTED'
-    );
-}
 
 /** The id of a confirmed refund, optionally tied to a notice or sweep. */
 export type ExecuteRefundInput = { readonly refundId: string; readonly correlationId?: string };
@@ -85,28 +77,10 @@ export async function executeRefundFromProviderRead(
     if (candidate.manualPaymentId || !candidate.paymentId) return result(input, 'NOT_APPLICABLE');
     const paymentId = candidate.paymentId;
 
-    const calls = await db
-        .select({
-            providerRefundId: refundCalls.providerRefundId,
-            addonInstanceId: refundCalls.addonInstanceId,
-            completedAt: idempotencyKeys.completedAt,
-            result: idempotencyKeys.result
-        })
-        .from(refundCalls)
-        .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
-        .where(eq(refundCalls.refundId, input.refundId));
-    const acceptedIds = calls.flatMap((call) =>
-        call.providerRefundId === null ? [] : [call.providerRefundId]
-    );
-    const rejectedCount = calls.filter(
-        (call) =>
-            call.providerRefundId === null &&
-            call.completedAt !== null &&
-            isRejectedResult(call.result)
-    ).length;
-    const awaitingProviderAnswer =
-        calls.some((call) => call.completedAt === null) ||
-        acceptedIds.length + rejectedCount !== calls.length;
+    const { calls, acceptedIds, awaitingProviderAnswer } = await readRefundCallTally({
+        db,
+        refundId: input.refundId
+    });
     const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
     if (!payment) throw new Error('Confirmed refund payment is missing');
     if (payment.addonInstanceId !== null) {
