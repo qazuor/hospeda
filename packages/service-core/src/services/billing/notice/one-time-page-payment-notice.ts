@@ -16,7 +16,10 @@ import { executeConfirmedRefundsOnNotice } from './refund-execution-on-notice.js
  * - `ADDON_DUPLICATE_PAYMENT_MARKED`: a second payment on the same page; `COBRO_DUPLICADO` (AC-11).
  * - `ADDON_LATE_PAYMENT_MARKED`: money on a purchase that closed with no payment; mark 23 (AC-12).
  * - `ADDON_AMOUNT_DIVERGENCE_MARKED`: another amount; `DIVERGENCIA_DE_MONTO` (AC-8).
- * - `ADDON_PAYMENT_NOT_APPROVED`: rejected or pending; the purchase keeps waiting (AC-9).
+ * - `ADDON_CHARGEBACK_MARKED`: the payment that activated the purchase was charged back;
+ *   `CONTRACARGO` is open on the instance, which stays as it is (HOS-2391).
+ * - `ADDON_PAYMENT_NOT_APPROVED`: rejected or pending, or charged back before it activated
+ *   anything; the purchase keeps waiting (AC-9).
  */
 export type OneTimePagePaymentNoticeOutcome =
     | 'ADDON_PAYMENT_ACTIVATED'
@@ -24,6 +27,7 @@ export type OneTimePagePaymentNoticeOutcome =
     | 'ADDON_DUPLICATE_PAYMENT_MARKED'
     | 'ADDON_LATE_PAYMENT_MARKED'
     | 'ADDON_AMOUNT_DIVERGENCE_MARKED'
+    | 'ADDON_CHARGEBACK_MARKED'
     | 'ADDON_PAYMENT_NOT_APPROVED';
 
 /** The receiver's ports this routing reads. */
@@ -136,6 +140,8 @@ export async function routeOneTimePagePaymentNotice(
             return 'ADDON_LATE_PAYMENT_MARKED';
         case 'AMOUNT_MISMATCH':
             return 'ADDON_AMOUNT_DIVERGENCE_MARKED';
+        case 'CHARGED_BACK':
+            return 'ADDON_CHARGEBACK_MARKED';
         case 'NOT_APPROVED':
             return 'ADDON_PAYMENT_NOT_APPROVED';
         // The purchase carries the reference, yet the fresh read names another one or an

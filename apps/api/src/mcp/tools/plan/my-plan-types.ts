@@ -107,6 +107,34 @@ export interface MyPlanItem {
     readonly actionUrl: string;
     /** The add-ons page; present only when add-ons are held. */
     readonly addonsUrl?: string;
+    /**
+     * TRIAL items only (HOS-2398): present when every sellable paid version of
+     * the vertical has `inherits_tourist_vip`, so moving to a paid plan also
+     * brings Tourist VIP. The trial itself does not inherit it (owner decision).
+     * Absent otherwise, or when the catalog could not be read (never invented).
+     */
+    readonly touristVipOnUpgrade?: MyPlanTouristVipOnUpgrade;
+}
+
+/** The line a trial item carries when a paid plan of its vertical would bring Tourist VIP (HOS-2398). */
+export interface MyPlanTouristVipOnUpgrade {
+    /** Owner-facing line (`billing.vip.onUpgradeToPaidPlan`). */
+    readonly note: string;
+}
+
+/**
+ * Tourist VIP the owner holds by inheritance (HOS-2398): a live non-trial title
+ * in another vertical whose plan version has `inherits_tourist_vip`. Shown apart
+ * from the items, because it is not part of any owner plan: the owner's plan
+ * declares its own capabilities and the tourist ones arrive through this block.
+ */
+export interface MyPlanInheritedTouristVip {
+    /** Owner-facing line: "Because you have a paid plan you also have Tourist VIP" (`billing.vip.inheritedFromPaidPlan`). */
+    readonly note: string;
+    /** Tourist entitlements granted right now, as labels (`billing.entitlement.<key>`, else the key). */
+    readonly entitlements: readonly string[];
+    /** Tourist limits with their values. */
+    readonly limits: readonly MyPlanLimit[];
 }
 
 /** A plans page the owner can go to. */
@@ -132,6 +160,13 @@ export interface MyPlanResult {
      * there is one; never spread over every vertical.
      */
     readonly unattributedAddons?: readonly MyPlanAddon[];
+    /**
+     * Tourist VIP inherited from a paid plan (HOS-2398). Present only when the
+     * owner's TOURIST effective set says it is inherited and no `tourist` item
+     * is listed (that item's `includes` already show it). Absent when it is not
+     * inherited or the tourist set could not be read (never invented).
+     */
+    readonly inheritedTouristVip?: MyPlanInheritedTouristVip;
     /** The add-ons page, present with {@link unattributedAddons}. */
     readonly addonsUrl?: string;
     /** Present only when `items` is empty: the plans pages to choose a plan from. */

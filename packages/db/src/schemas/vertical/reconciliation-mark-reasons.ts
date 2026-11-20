@@ -32,11 +32,13 @@ export type ReconciliationMarkReason = (typeof RECONCILIATION_MARK_REASONS)[numb
 /**
  * The reasons a mark may carry when it hangs from a one-time addon instance instead of a
  * subscription (HOS-2179): the paid order or page without a live instance (MOT:23), an
- * approved payment of another amount (MOT:5, AC-8) and a second approved payment (MOT:20,
- * AC-11). MOT:23 hangs only from an instance; the other two may hang from either.
+ * approved payment of another amount (MOT:5, AC-8), a second approved payment (MOT:20,
+ * AC-11) and a chargeback on the payment that activated the instance (MOT:17, HOS-2391).
+ * MOT:23 hangs only from an instance; the other three may hang from either.
  */
 export const ADDON_INSTANCE_MARK_REASONS = [
     'DIVERGENCIA_DE_MONTO',
+    'CONTRACARGO',
     'COBRO_DUPLICADO',
     'ORDEN_PAGADA_SIN_INSTANCIA'
 ] as const satisfies readonly ReconciliationMarkReason[];

@@ -1,5 +1,6 @@
-import { and, asc, gt, gte, inArray, isNotNull } from 'drizzle-orm';
+import { and, asc, eq, exists, gt, gte, inArray, isNotNull, isNull, or } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
+import { addonInstances } from '../../schemas/vertical/addon-product.dbschema.ts';
 import { payments, type SelectPayment } from '../../schemas/vertical/payment.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 
@@ -14,7 +15,7 @@ export const CREDITED_PAYMENT_CHECK_STATUSES = [
     'REFUNDED'
 ] as const;
 
-/** Input for one keyset page of credited subscription payments inside the window. */
+/** Input for one keyset page of credited subscription and page payments inside the window. */
 export interface ListCreditedPaymentsInWindowPageInput {
     /** Inclusive lower bound on `fact_at` (now − deadline 18). */
     readonly since: Date;
@@ -29,9 +30,12 @@ export interface ListCreditedPaymentsInWindowPageInput {
 /** Read model for the credited-payments check of the reconciliation sweep (AC:B11:12). */
 export class ReconciliationCreditedPaymentModel {
     /**
-     * One keyset page of subscription payments in a credited state whose fact
-     * is inside the window, by id. A one-time addon payment (no subscription)
-     * is left out (HOS-1605 H8).
+     * One keyset page of payments in a credited state whose fact is inside the
+     * window, by id: every subscription payment, and the payment of a one-time
+     * addon bought on a payment page (its instance has no provider order), so
+     * the check can see a chargeback on it (HOS-2391). The payment of an order
+     * purchase stays out (HOS-1605 H8): its id is an order transaction, not a
+     * charge the provider reads by id.
      */
     async listCreditedPaymentsInWindowPage(
         input: ListCreditedPaymentsInWindowPageInput
@@ -42,7 +46,20 @@ export class ReconciliationCreditedPaymentModel {
             .from(payments)
             .where(
                 and(
-                    isNotNull(payments.subscriptionId),
+                    or(
+                        isNotNull(payments.subscriptionId),
+                        exists(
+                            db
+                                .select({ id: addonInstances.id })
+                                .from(addonInstances)
+                                .where(
+                                    and(
+                                        eq(addonInstances.id, payments.addonInstanceId),
+                                        isNull(addonInstances.providerOrderId)
+                                    )
+                                )
+                        )
+                    ),
                     inArray(payments.status, [...CREDITED_PAYMENT_CHECK_STATUSES]),
                     gte(payments.factAt, input.since),
                     input.afterPaymentId === undefined

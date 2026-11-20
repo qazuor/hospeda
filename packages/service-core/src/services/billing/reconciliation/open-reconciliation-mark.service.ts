@@ -92,8 +92,8 @@ export async function openReconciliationMark(
             'Reconciliation mark reason is not in the catalog',
             'MARK_REASON_NOT_IN_CATALOG'
         );
-    // MOT:23 hangs only from an addon instance; an addon instance carries only MOT:23, MOT:5
-    // and MOT:20 (HOS-2179). Mirrors ck_reconciliation_mark_instance_reasons.
+    // MOT:23 hangs only from an addon instance; an addon instance carries only MOT:23, MOT:5,
+    // MOT:20 (HOS-2179) and MOT:17 (HOS-2391). Mirrors ck_reconciliation_mark_instance_reasons.
     if (
         (input.reason === 'ORDEN_PAGADA_SIN_INSTANCIA' &&
             input.subject.kind !== 'ADDON_INSTANCE') ||

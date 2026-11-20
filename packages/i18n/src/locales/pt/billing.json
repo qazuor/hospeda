@@ -493,6 +493,8 @@
     },
     "vip": {
         "featureName": "Promoções VIP exclusivas",
+        "inheritedFromPaidPlan": "Por ter um plano pago, você também tem Turista VIP",
+        "onUpgradeToPaidPlan": "Ao passar para um plano pago, você também tem Turista VIP",
         "description": "Acesse descontos e ofertas exclusivas de acomodações apenas para membros VIP.",
         "available": {
             "title": "Promoções VIP Disponíveis",

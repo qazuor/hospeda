@@ -17,6 +17,7 @@ import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
 import { emitAddonCoverageAdded } from './addon-instance-a2';
 import type { A5Ports } from './addon-instance-a5';
+import { heldByPageChargeMark } from './one-time-page-charge-marks';
 
 /** Ports of the shared one-time activation. */
 export type OneTimeActivationPorts = A5Ports & {
@@ -32,7 +33,8 @@ export type OneTimeActivationResult =
 /**
  * A2 one-time, shared by the order and the payment page (HOS-2179 §5.3): under a lock on the
  * instance, inserts (or reuses) the `payment` hung from the instance for one provider fact,
- * moves `PENDING_AUTHORIZATION` → `ACTIVE` with the version's validity, and after commit
+ * refuses one held by a page-charge mark (HOS-2179 D1, fails closed), moves
+ * `PENDING_AUTHORIZATION` → `ACTIVE` with the version's validity, and after commit
  * credits the payment and emits the coverage notice. The caller has already confirmed the fact
  * by a fresh read by id; `stillOurs` re-checks, under the lock, that the instance is still the
  * one that read was about.
@@ -80,7 +82,7 @@ export async function activateOneTimeInstance(
                 ? new Date(now.getTime() + (version.validityDays ?? 0) * 86_400_000)
                 : null;
         const [existing] = await tx
-            .select({ id: payments.id })
+            .select({ id: payments.id, held: heldByPageChargeMark() })
             .from(payments)
             .where(
                 and(
@@ -89,6 +91,14 @@ export async function activateOneTimeInstance(
                 )
             )
             .limit(1);
+        // A charge a page-charge mark holds (HOS-2179 D1) is money pending a person's decision,
+        // never the purchase's payment: activating with it would credit it. Callers already
+        // refuse it before reaching here; this fails closed if one ever does not.
+        if (existing?.held)
+            throw new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                'A2 one-time refused a payment held by a reconciliation mark'
+            );
         const [payment] = existing
             ? [existing]
             : await tx
