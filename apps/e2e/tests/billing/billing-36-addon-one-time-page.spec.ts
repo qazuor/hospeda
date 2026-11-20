@@ -199,6 +199,37 @@ test.describe('HOS-2179 T-6 one-time addon on the payment page @p0 @billing @clo
         expect(await purchaseStatus(orderRequestId)).toBe('ACTIVE');
     });
 
+    test('leaving the page unpaid and buying again sends the owner back to the same page', async ({
+        page
+    }) => {
+        const first = await goToPaymentPage({
+            page,
+            productId: catalog.productId,
+            listingId
+        });
+        const firstPage = page.url();
+        // The owner leaves Mercado Pago without paying and starts over from the store, which
+        // mints a fresh order id: the screen must offer the same page, never "confirming".
+        const again = await goToPaymentPage({
+            page,
+            productId: catalog.productId,
+            listingId
+        });
+        expect(again.orderRequestId).not.toBe(first.orderRequestId);
+        expect(page.url()).toBe(firstPage);
+        await page.getByRole('button', { name: 'Aprobar pago' }).click();
+        // The page returns to the purchase it belongs to: the first order id.
+        await page.waitForURL(
+            (url) =>
+                url.origin === WEB_URL && url.searchParams.get('compra') === first.orderRequestId
+        );
+        await expect(page.getByTestId('addon-purchase-active')).toHaveText(
+            esBilling.addonPurchase.active
+        );
+        expect(await purchaseStatus(first.orderRequestId)).toBe('ACTIVE');
+        expect(await purchaseStatus(again.orderRequestId)).toBeUndefined();
+    });
+
     test('a rejected payment keeps the purchase waiting, and a retry on the page activates it', async ({
         page
     }) => {
