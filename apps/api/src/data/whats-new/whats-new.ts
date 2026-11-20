@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4634
+    {
+        id: '2026-11-20-unlimited-favorites-shown-as-unlimited',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Tus favoritos sin límite ahora se muestran como «ilimitado»',
+            en: 'Your unlimited favorites now show as «unlimited»',
+            pt: 'Seus favoritos sem limite agora aparecem como «ilimitado»'
+        },
+        body: {
+            es: 'Si tu plan de propietario te da los beneficios de Turista VIP, tu plan y el asistente muestran los favoritos y las alertas de precio como «ilimitado», en lugar de un número enorme sin sentido.',
+            en: 'If your owner plan gives you Tourist VIP benefits, your plan and the assistant now show favorites and price alerts as «unlimited» instead of a huge meaningless number.',
+            pt: 'Se o seu plano de proprietário dá os benefícios do Turista VIP, o seu plano e o assistente mostram os favoritos e os alertas de preço como «ilimitado», em vez de um número enorme sem sentido.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4629
     {
         id: '2026-11-20-screens-translated-on-first-load',
