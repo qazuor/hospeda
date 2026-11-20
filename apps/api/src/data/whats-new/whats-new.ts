@@ -170,6 +170,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4585
+    {
+        id: '2026-11-19-queued-plan-change-stays-visible',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Mi suscripción te muestra cuándo cambia tu plan',
+            en: 'My subscription shows when your plan changes',
+            pt: 'Minha assinatura mostra quando seu plano muda'
+        },
+        body: {
+            es: 'Si programaste un cambio a un plan más bajo, Mi suscripción muestra «Tu plan cambia el…» con la fecha, también cuando volvés a entrar o recargás la página.',
+            en: 'If you scheduled a change to a lower plan, My subscription shows "Your plan changes on…" with the date, also when you come back or reload the page.',
+            pt: 'Se você agendou uma troca para um plano menor, Minha assinatura mostra «Seu plano muda em…» com a data, também quando você volta ou recarrega a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4548
     {
         id: '2026-11-19-admin-restored-records-come-back-inactive',
