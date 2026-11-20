@@ -1,0 +1,35 @@
+{
+    "$comment": "GUARD:HELD-ROWS (HOS-2179 D1, scripts/check-held-payment-readers.ts). Readers of payments.addonInstanceId that deliberately do NOT tell a mark-held page-charge row from the purchase's payment. Each needs a reason; an entry that matches no reader fails the guard.",
+    "readers": [
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/sweep/page-payments-check.ts",
+            "function": "checkPurchase",
+            "reason": "Page-payments sweep: it only collects the charge ids that already have a row so it does not re-decide them. A held row must be skipped exactly like an activation row."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/notice/one-time-page-payment-notice.ts",
+            "function": "routeOneTimePagePaymentNotice",
+            "reason": "Notice routing: it finds the row of the notified charge to run RF3 on it. A held row is refunded through that same path (D1), so it must be found."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/addon-payment-chargeback.ts",
+            "function": "markAddonPaymentChargeback",
+            "reason": "Chargeback check: it looks up the row of one charge by id. For a held row the naming mark is found and the chargeback is noted on it instead of opening CONTRACARGO."
+        },
+        {
+            "file": "packages/db/src/models/reconciliation-inventory/reconciliation-credited-payment.model.ts",
+            "function": "listCreditedPaymentsInWindowPage",
+            "reason": "Chargeback check listing: rows are listed only to be re-read for a chargeback, never credited or moved. A held row must be re-read too. packages/db cannot import the service-core predicate."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/one-time-page-charge-marks.ts",
+            "function": "noteChargebackOnHeldCharge",
+            "reason": "Reads held rows on purpose: it joins the row to its open page-charge mark through reconciliation_mark_payment, which is what makes it held."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/reconciliation/revocation-refund-failed-notice.ts",
+            "function": "enqueueRevocationRefundFailedNotice",
+            "reason": "Refund: it reads the column of the payment a given refund already names, only to classify the subject. It never chooses a payment."
+        }
+    ]
+}
