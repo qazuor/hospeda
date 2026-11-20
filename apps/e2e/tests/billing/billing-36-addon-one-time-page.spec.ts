@@ -143,7 +143,16 @@ test.describe('HOS-2179 T-6 one-time addon on the payment page @p0 @billing @clo
         userIds.push(admin.id);
         await markAdminToursSeen({ userId: admin.id });
         // The principal is seeded, not bought: buying it would need the notices M6 withholds.
-        await seedActivePlanHolder({ userId: owner.id, slug: 'owner-basico' });
+        // A1 sells an addon only over a paying principal, so its credited charge is seeded too.
+        const { subscriptionId } = await seedActivePlanHolder({
+            userId: owner.id,
+            slug: 'owner-basico'
+        });
+        await execSQL(
+            `INSERT INTO payment (subscription_id, amount, currency, status, provider, provider_fact_id, fact_at)
+             VALUES ($1, 1500000, 'ARS', 'SUCCEEDED', 'TEST', $2, now())`,
+            [subscriptionId, `hos2179-t6-${owner.id}`]
+        );
         listingId = (
             await createAccommodation({
                 ownerId: owner.id,
