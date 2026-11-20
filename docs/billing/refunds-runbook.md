@@ -233,7 +233,8 @@ this refund:
 **The only conceivable path, for the owner to weigh. It is NOT safe, and this note does not ask
 you to run it.** It is listed so the owner can decide with the risks in view, not as a procedure:
 
-1. Refund the remainder (`remaining_amount`) from the Mercado Pago panel.
+1. Refund the remainder (`remaining_amount`) from the Mercado Pago panel, and wait until Mercado
+   Pago shows that refund `approved`. Never use a refund that is still in process.
 2. Insert by hand one `idempotency_key` row and one `refund_call` row that imitate `persistCall`
    (`refund-provider-call.ts:43-77`): key `refund:<refund_id>:<n+1>`, operation `REFUND_CREATE`,
    `subject_id` the refund, `refund_call.amount` the remainder and `provider_refund_id` the new
@@ -280,7 +281,8 @@ is not enough. Use this table:
 |---|---|
 | No refund at all | 8.1, record it as rejected |
 | A refund in status `rejected` or `cancelled` (no money moved) | 8.1, record it as rejected |
-| One refund in status `approved` (or still in process) **whose amount equals `refund_call.amount / 100` exactly**, that maps to this call and no other | 8.2, record it as accepted |
+| One refund in status `approved` **whose amount equals `refund_call.amount / 100` exactly**, that maps to this call and no other | 8.2, record it as accepted |
+| A refund Mercado Pago shows as still in process (not yet `approved`, `rejected` or `cancelled`) | Write nothing. Read Mercado Pago again later. If it does not resolve, go to 8.3 |
 | Any amount difference, a refund that could belong to more than one call, a status you do not recognise, or a chargeback on the payment | 8.3, escalate |
 
 **Why the bar for 8.2 is so high.** `completeCall` writes `ACCEPTED` whenever it has an id
@@ -397,8 +399,9 @@ query 5), an empty `resolveWithoutRefund` and a `note` that cites the Linear iss
 
 ### 8.2 An approved refund for exactly the call's amount
 
-Only come here through the table in step 2. The call moved money. Record what Mercado Pago did. Do
-not decline, and do not refund again.
+Only come here through the table in step 2. The refund must be `approved` when you read it just
+before the write. A refund still in process never comes here. The call moved money. Record what
+Mercado Pago did. Do not decline, and do not refund again.
 
 1. **Get the owner's OK** on the Linear issue.
 2. **Record the acceptance.** This mirrors what `completeCall` writes for an acceptance
@@ -445,8 +448,8 @@ not decline, and do not refund again.
      So in general the refund stays `CONFIRMED`, and no admin action can trigger the read. Escalate
      on HOS-2402. Do not settle it with action 14: it would refuse (`REFUND_NOT_OPEN`), and the
      money is already back.
-   - **They add up to less than `refund.amount`, or one is not `approved` yet.** It is now case A
-     (section 7), or it waits for accreditation. Escalate.
+   - **They add up to less than `refund.amount`, or a refund accepted earlier by our own code is
+     not `approved` yet.** It is now case A (section 7), or it waits for accreditation. Escalate.
 
 **Held charge or mark.** Nothing changes until RF3 executes the refund. Until then the payment
 stays hung and the mark stays open.
