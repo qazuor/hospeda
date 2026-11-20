@@ -218,15 +218,17 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
             kind: 'one-time',
             vertical: 'accommodation'
         });
+        // HOS-2179: a one-time boost is paid on its payment page and confirmed when the owner
+        // comes back (the read re-reads the payment by id), never by the card-token order.
+        const orderRequestId = randomUUID();
         const response = await fetch(`${API_URL}/api/v1/protected/billing/addons/purchases`, {
             method: 'POST',
             headers: { 'content-type': 'application/json', cookie: owner.sessionCookie },
             body: JSON.stringify({
                 productId: catalog.productId,
                 targetId: z.id,
-                orderRequestId: `hos2138-${randomUUID()}`,
-                addonVersionId: catalog.addonVersionId,
-                payment: { token: 'hos2138-card', brand: 'visa', kind: 'credit' }
+                orderRequestId,
+                addonVersionId: catalog.addonVersionId
             })
         });
         expect(response.status).toBe(201);
@@ -236,10 +238,30 @@ test.describe('TEST:HOS-2138:1-2 listing boost features the listing @p0 @billing
                     instanceId: zod.string().uuid(),
                     chargeKind: zod.literal('UNA_VEZ'),
                     processing: zod.literal(false),
-                    order: zod.object({ outcome: zod.literal('ACTIVATED') })
+                    checkoutUrl: zod.string().url()
                 })
             })
             .parse(await response.json()).data;
+        const [pageRow] = await execSQL<{ payment_page_id: string | null }>(
+            'SELECT payment_page_id FROM addon_instance WHERE id = $1',
+            [result.instanceId]
+        );
+        if (!pageRow?.payment_page_id)
+            throw new Error(`Missing payment page on ${result.instanceId}.`);
+        world.fakeServer.provider.payOnPage({
+            paymentPageId: pageRow.payment_page_id,
+            outcome: 'approved'
+        });
+        const returned = await fetch(
+            `${API_URL}/api/v1/protected/billing/addons/purchases/${orderRequestId}`,
+            { headers: { cookie: owner.sessionCookie } }
+        );
+        expect(returned.status).toBe(200);
+        expect(
+            zod
+                .object({ data: zod.object({ status: zod.literal('ACTIVE') }) })
+                .parse(await returned.json()).data.status
+        ).toBe('ACTIVE');
         const times = await execSQL<{ status: string; starts_at: Date; ends_at: Date }>(
             'SELECT status, starts_at, ends_at FROM addon_instance WHERE id = $1',
             [result.instanceId]

@@ -220,7 +220,7 @@ describe('HOS-2179 §5.3 path 1: the payment notice of a page purchase reaches A
 
     it.skipIf(skip)('leaves an order purchase on the order path', async () => {
         const s = await pageSetup();
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const order = await purchaseAddon(orderRequest, s.f.ports);
         if (order.outcome !== 'CREATED') throw new Error(order.outcome);
         // A payment carrying the order purchase's reference, with no authorization.

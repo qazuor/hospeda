@@ -156,3 +156,22 @@ describe('HOS-1761 reconciliation labels', () => {
         expect([payment, manual]).toEqual(['Acreditado', 'Registrado']);
     });
 });
+
+describe('HOS-2179 mark 23 names the one-time payment, not the order', () => {
+    it.each([
+        [esAdminBilling, 'Pago único cobrado sin complemento activo'],
+        [enAdminBilling, 'One-time payment charged with no active add-on'],
+        [ptAdminBilling, 'Pagamento único cobrado sem complemento ativo']
+    ])('labels ORDEN_PAGADA_SIN_INSTANCIA as a one-time payment (%#)', (locale, expected) => {
+        // Arrange
+        const translate = (key: string) => String(resolveKey(key, locale));
+        // Act
+        const label = reconciliationLabel({
+            map: RECONCILIATION_REASON_KEYS,
+            value: 'ORDEN_PAGADA_SIN_INSTANCIA',
+            t: translate
+        });
+        // Assert
+        expect(label).toBe(expected);
+    });
+});

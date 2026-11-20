@@ -2,7 +2,9 @@
  * @fileoverview
  * GUARD:HELD-ROWS (HOS-2179 D1) is green over the repo and red on purpose. Mutation: add a
  * reader of `payments.addonInstanceId` without the held-row predicate, and the guard reddens.
- * The allowlist cannot rot: an entry that matches no reader, or carries no reason, also fails.
+ * The allowlist cannot rot: an entry that matches no reader, carries no reason, or declares
+ * another count of reads than the function holds, also fails. Import aliases of the table and
+ * namespace imports of `@repo/db` are recognised.
  */
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -105,22 +107,88 @@ export async function owner(id: string) {
 
         const allowed = findHeldReaderProblems({
             readers,
-            allowlist: [{ file: 'c.ts', function: 'latestPaymentOf', reason: 'why' }]
+            allowlist: [{ file: 'c.ts', function: 'latestPaymentOf', readers: 1, reason: 'why' }]
         });
         const stale = findHeldReaderProblems({
             readers,
             allowlist: [
-                { file: 'c.ts', function: 'latestPaymentOf', reason: 'why' },
-                { file: 'gone.ts', function: 'gone', reason: 'why' }
+                { file: 'c.ts', function: 'latestPaymentOf', readers: 1, reason: 'why' },
+                { file: 'gone.ts', function: 'gone', readers: 1, reason: 'why' }
             ]
         });
         const reasonless = findHeldReaderProblems({
             readers,
-            allowlist: [{ file: 'c.ts', function: 'latestPaymentOf', reason: ' ' }]
+            allowlist: [{ file: 'c.ts', function: 'latestPaymentOf', readers: 1, reason: ' ' }]
         });
 
         expect(allowed.unfiltered).toEqual([]);
-        expect(stale.stale).toEqual([{ file: 'gone.ts', function: 'gone', reason: 'why' }]);
+        expect(stale.stale).toEqual([
+            { file: 'gone.ts', function: 'gone', readers: 1, reason: 'why' }
+        ]);
         expect(reasonless.reasonless).toHaveLength(1);
+    });
+});
+
+describe('GUARD:HELD-ROWS sees the table under other names', () => {
+    it('recognises an import alias of payments from @repo/db', () => {
+        const source = `
+import { eq, payments as paid } from '@repo/db';
+export async function aliased(id: string) {
+    return getDb().select().from(paid).where(eq(paid.addonInstanceId, id));
+}
+`;
+        expect(readersIn({ file: 'd.ts', source })).toEqual([
+            { file: 'd.ts', function: 'aliased', line: 4, filtered: false }
+        ]);
+    });
+
+    it('recognises payments imported from a @repo/db subpath, and no look-alike module', () => {
+        const source = `
+import { payments as fromSchemas } from '@repo/db/schemas';
+import { payments as lookalike } from '@repo/dbx';
+export async function subpathed(id: string) {
+    return getDb().select().from(fromSchemas).where(eq(fromSchemas.addonInstanceId, id));
+}
+export async function elsewhere(id: string) {
+    return lookalike.addonInstanceId;
+}
+`;
+        expect(readersIn({ file: 'f.ts', source })).toEqual([
+            { file: 'f.ts', function: 'subpathed', line: 5, filtered: false }
+        ]);
+    });
+
+    it('recognises a namespace import of @repo/db', () => {
+        const source = `
+import * as db from '@repo/db';
+export async function namespaced(id: string) {
+    return db.getDb().select().from(db.payments).where(db.eq(db.payments.addonInstanceId, id));
+}
+`;
+        expect(readersIn({ file: 'e.ts', source })).toEqual([
+            { file: 'e.ts', function: 'namespaced', line: 4, filtered: false }
+        ]);
+    });
+});
+
+describe('GUARD:HELD-ROWS counts the reads of an allowlisted function', () => {
+    it('fails when an allowlisted function gains a read', () => {
+        const source = `
+export async function twice(id: string) {
+    await getDb().select().from(payments).where(eq(payments.addonInstanceId, id));
+    return getDb().select({ id: payments.addonInstanceId }).from(payments);
+}
+`;
+        const readers = readersIn({ file: 'f.ts', source });
+
+        const findings = findHeldReaderProblems({
+            readers,
+            allowlist: [{ file: 'f.ts', function: 'twice', readers: 1, reason: 'why' }]
+        });
+
+        expect(findings.unfiltered).toEqual([]);
+        expect(findings.miscounted).toEqual([
+            { file: 'f.ts', function: 'twice', readers: 1, reason: 'why', found: 2 }
+        ]);
     });
 });

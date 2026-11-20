@@ -29,6 +29,7 @@ import {
     ownerHeaders,
     purchaseApp,
     purchaseCatalog,
+    purchasePageId,
     retirePurchaseRoutes
 } from './support/addon-purchase-route-fixtures';
 
@@ -267,7 +268,12 @@ describe('TEST:B13b:1 AC:B13b:1 the owner withdrawal route', () => {
             ownerId: foreign.ownerId,
             request: foreign.request()
         });
-        const onceId = await purchase({ app, ownerId: own.ownerId, request: own.request() });
+        const onceRequest = own.request();
+        const onceId = await purchase({ app, ownerId: own.ownerId, request: onceRequest });
+        // HOS-2179: a one-time addon is paid on its page and confirmed on the owner's return.
+        fake.payOnPage({ paymentPageId: await purchasePageId(onceId), outcome: 'approved' });
+        const returned = await call(app, own.ownerId, `/purchases/${onceRequest.orderRequestId}`);
+        expect((await returned.json()).data).toMatchObject({ status: 'ACTIVE' });
         const before = await getDb()
             .select()
             .from(addonInstances)

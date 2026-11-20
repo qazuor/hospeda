@@ -33,7 +33,7 @@ describe('TEST:B10:2 AC:B10:1 target contract and current addon policy', () => {
             idNamespace: crypto.randomUUID()
         });
         const authorize = vi.spyOn(fake, 'authorize');
-        const chargeOnce = vi.spyOn(fake, 'chargeOnce');
+        const page = vi.spyOn(fake, 'requestOneTimePayment');
         injectClock({ clock: routeClock });
         injectPaymentProvider({ provider: fake });
         const app = initApp({ clock: routeClock, paymentProvider: fake });
@@ -87,6 +87,6 @@ describe('TEST:B10:2 AC:B10:1 target contract and current addon policy', () => {
         });
         expect(await ownerInstances(fixture.ownerId)).toEqual([]);
         expect(authorize).toHaveBeenCalledTimes(0);
-        expect(chargeOnce).toHaveBeenCalledTimes(0);
+        expect(page).toHaveBeenCalledTimes(0);
     });
 });

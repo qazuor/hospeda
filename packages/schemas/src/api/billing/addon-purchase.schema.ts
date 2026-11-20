@@ -1,44 +1,31 @@
 import { z } from 'zod';
 
-/** Protected addon purchase request. */
+/**
+ * Protected addon purchase request. It carries no payment data (HOS-2179 §6.2): a one-time
+ * addon is paid on the provider's page and a recurring one at its checkout, so a `payment`,
+ * a card token or any other extra field fails the strict shape with a 400. `payerEmail` is
+ * only for a recurring addon; a one-time purchase neither asks for it nor sends it (P-8).
+ */
 export const AddonPurchaseRequestSchema = z.strictObject({
     productId: z.uuid(),
     targetId: z.uuid().nullable(),
     orderRequestId: z.string().min(1).max(64),
     addonVersionId: z.uuid(),
-    payerEmail: z.email().optional(),
-    payment: z
-        .strictObject({
-            token: z.string().min(1),
-            brand: z.string().min(1),
-            kind: z.enum(['credit', 'debit'])
-        })
-        .optional()
+    payerEmail: z.email().optional()
 });
 
-/** Protected addon purchase response. */
+/**
+ * Protected addon purchase response. Both charge kinds answer the same way (HOS-2179 §7.5):
+ * `checkoutUrl` is the sanitized provider link to redirect to, and `processing` says the
+ * purchase is waiting with no link to follow (another screen holds it, or its page could not
+ * be opened on this request).
+ */
 export const AddonPurchaseResponseSchema = z.strictObject({
     outcome: z.enum(['CREATED', 'EXISTING', 'PENDING_ELSEWHERE']),
     instanceId: z.uuid(),
     chargeKind: z.enum(['UNA_VEZ', 'PERIODICO']),
     processing: z.boolean(),
-    checkoutUrl: z.url().optional(),
-    order: z
-        .strictObject({
-            outcome: z.enum([
-                'ORDER_PLACED',
-                'ORDER_ALREADY_PLACED',
-                'ORDER_DECLINED',
-                'ORDER_REJECTED',
-                'PREVIOUS_PAYMENT_PROCESSING',
-                'AWAITING_PROVIDER_ANSWER',
-                'NOT_APPLICABLE',
-                'ACTIVATED',
-                'NOT_APPROVED',
-                'UNKNOWN'
-            ])
-        })
-        .optional()
+    checkoutUrl: z.url().optional()
 });
 
 /** Owner-only read of an addon purchase. */

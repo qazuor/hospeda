@@ -97,7 +97,9 @@ export async function activateOneTimeInstance(
         if (existing?.held)
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
-                'A2 one-time refused a payment held by a reconciliation mark'
+                'A2 one-time refused a payment held by a reconciliation mark',
+                undefined,
+                'HELD_PAYMENT_ACTIVATION_REFUSED'
             );
         const [payment] = existing
             ? [existing]
