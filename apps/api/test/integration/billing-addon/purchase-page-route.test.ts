@@ -14,7 +14,8 @@ import {
     purchaseApp,
     purchaseCatalog,
     purchasePageId,
-    retirePurchaseRoutes
+    retirePurchaseRoutes,
+    routeClock
 } from './support/addon-purchase-route-fixtures';
 
 const path = '/api/v1/protected/billing/addons/purchases';
@@ -89,19 +90,51 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
         expect(page).not.toHaveBeenCalled();
     });
 
-    it('answers another screen of the same purchase as processing, with no page (AC-4)', async () => {
+    it('answers a retry after coming back without paying with the same page link, never as processing', async () => {
         const { fixture, app, fake } = await payingOwner();
         const first = (await (await post(app, fixture.ownerId, fixture.request())).json()).data;
         const page = vi.spyOn(fake, 'requestOneTimePayment');
-        const elsewhere = await post(app, fixture.ownerId, fixture.request());
-        expect(elsewhere.status).toBe(200);
-        expect((await elsewhere.json()).data).toMatchObject({
-            outcome: 'PENDING_ELSEWHERE',
+        // A fresh order id: the screen reloaded after the owner left the page unpaid.
+        const retry = await post(app, fixture.ownerId, fixture.request());
+        expect(retry.status).toBe(200);
+        expect((await retry.json()).data).toEqual({
+            outcome: 'EXISTING',
             instanceId: first.instanceId,
-            processing: true
+            chargeKind: 'UNA_VEZ',
+            processing: false,
+            checkoutUrl: first.checkoutUrl
         });
         expect(page).not.toHaveBeenCalled();
         expect(await ownerInstances(fixture.ownerId)).toHaveLength(1);
+    });
+
+    it('answers a retry after the page expired unpaid with a new page', async () => {
+        const { fixture, app, fake } = await payingOwner();
+        const first = (await (await post(app, fixture.ownerId, fixture.request())).json()).data;
+        await getDb()
+            .update(addonInstances)
+            .set({
+                // The request clock, not the wall clock: the page stopped taking payments.
+                paymentPageExpiresAt: new Date(routeClock.now().getTime() - 60_000),
+                createdAt: new Date(routeClock.now().getTime() - 3 * 3_600_000)
+            })
+            .where(eq(addonInstances.id, first.instanceId));
+        const page = vi.spyOn(fake, 'requestOneTimePayment');
+        const retry = await post(app, fixture.ownerId, fixture.request());
+        expect(retry.status).toBe(201);
+        const data = (await retry.json()).data;
+        expect(data).toMatchObject({
+            outcome: 'CREATED',
+            processing: false,
+            checkoutUrl: expect.any(String)
+        });
+        expect(data.instanceId).not.toBe(first.instanceId);
+        expect(page).toHaveBeenCalledTimes(1);
+        const statuses = Object.fromEntries(
+            (await ownerInstances(fixture.ownerId)).map((row) => [row.id, row.status])
+        );
+        expect(statuses[first.instanceId]).toBe('ABANDONED');
+        expect(statuses[data.instanceId]).toBe('PENDING_AUTHORIZATION');
     });
 
     it('keeps the purchase waiting on a return with no approved payment (AC-7, AC-9)', async () => {
