@@ -2263,6 +2263,76 @@
             }
         }
     },
+    "proposedRefunds": {
+        "title": "Proposed refunds",
+        "description": "Refunds the system proposed from a reconciliation mark. They wait for a person to confirm or decline them.",
+        "loading": "Loading proposed refunds...",
+        "error": "Proposed refunds could not be loaded.",
+        "retry": "Retry",
+        "empty": "No refunds are waiting for confirmation.",
+        "pagination": "Refund pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "requestedAt": "Proposed on",
+        "amount": "Amount",
+        "payment": "Payment",
+        "status": "Status",
+        "statuses": {
+            "REQUESTED": "Waiting for confirmation",
+            "CONFIRMED": "Confirmed, no provider calls"
+        },
+        "origin": "Originating mark",
+        "noMark": "No mark was found for this payment.",
+        "markLifted": "lifted",
+        "markOpen": "open",
+        "marksLink": "See the open marks",
+        "confirm": {
+            "button": "Confirm and send",
+            "title": "Confirm the refund",
+            "description": "A refund of {{amount}} will be sent to the payment provider. It will be recorded under your name.",
+            "confirm": "Confirm and send",
+            "cancel": "Cancel",
+            "success": "Refund confirmed and sent.",
+            "outcomes": {
+                "SENT": "The provider accepted the refund.",
+                "AWAITING_PROVIDER_ANSWER": "Refund sent. The provider's answer is still missing.",
+                "NOT_ACCEPTED_KEPT_CONFIRMED": "The provider has not accepted it yet. It stays confirmed so it can be retried.",
+                "PROVIDER_REJECTED_KEPT_CONFIRMED": "The provider rejected it for now. It stays confirmed so it can be retried.",
+                "PROVIDER_REJECTED_FAILED": "The provider rejected it and the refund failed.",
+                "ORDER_REFUND_HELD": "The order refund is held until the provider id is known.",
+                "PROVIDER_KEY_CONFLICT": "The provider reported a key conflict. Review it before retrying.",
+                "ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED": "The order cannot be refunded yet. It stays confirmed.",
+                "CHARGED_BACK": "The charge was already charged back. The refund was closed."
+            }
+        },
+        "decline": {
+            "button": "Decline",
+            "title": "Decline the refund",
+            "description": "The refund of {{amount}} will be declined. The payment does not change and nothing is sent to the provider.",
+            "confirmedWarning": "This refund was already confirmed: check the MP panel to make sure no refund went out before declining.",
+            "confirm": "Decline refund",
+            "cancel": "Cancel",
+            "success": "Refund declined.",
+            "closesHeldCharge": "This refund cannot be declined: it refunds a charge held by a mark. It closes by confirming it, through a chargeback, or by recording it with action 14."
+        },
+        "rejections": {
+            "REFUND_NOT_FOUND": "The refund no longer exists.",
+            "REFUND_SOURCE_NOT_FOUND": "The refund's payment was not found.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "You do not have permission for this action.",
+            "REFUND_NOT_OPEN": "The refund is no longer open. Refresh the list.",
+            "REFUND_STATE_CHANGED": "The refund changed while you were reviewing it. Refresh the list.",
+            "PAYMENT_NOT_REFUNDABLE": "This payment does not accept a refund.",
+            "REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE": "This payment is not refunded through the provider.",
+            "RETAINED_PAYMENT_SUCCESSION_OPEN": "The retained payment has an open succession.",
+            "REFUND_EXCEEDS_BALANCE": "The refund exceeds the payment's available balance.",
+            "REFUND_PAST_PROVIDER_WINDOW": "The provider no longer accepts refunds for this payment.",
+            "REFUND_PROVIDER_ID_ALREADY_RECORDED": "The provider already has this refund recorded.",
+            "REFUND_HAS_PROVIDER_CALLS": "The refund already has provider calls and cannot be declined. Check the MP panel.",
+            "REFUND_CLOSES_HELD_CHARGE": "This refund cannot be declined: it refunds a charge held by a mark."
+        },
+        "genericError": "The action could not be completed. Try again.",
+        "serverError": "The server could not complete the action. Try again later."
+    },
     "subscriptionCancellation": {
         "title": "Cancel a subscription (no refund)",
         "loading": "Checking the subscription…",

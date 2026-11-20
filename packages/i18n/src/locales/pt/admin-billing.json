@@ -2263,6 +2263,76 @@
             }
         }
     },
+    "proposedRefunds": {
+        "title": "Reembolsos propostos",
+        "description": "Reembolsos que o sistema propôs a partir de uma marca de conciliação. Aguardam que uma pessoa os confirme ou os recuse.",
+        "loading": "Carregando reembolsos propostos...",
+        "error": "Não foi possível carregar os reembolsos propostos.",
+        "retry": "Tentar novamente",
+        "empty": "Não há reembolsos aguardando confirmação.",
+        "pagination": "Paginação de reembolsos",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "requestedAt": "Proposto em",
+        "amount": "Valor",
+        "payment": "Pagamento",
+        "status": "Estado",
+        "statuses": {
+            "REQUESTED": "Aguardando confirmação",
+            "CONFIRMED": "Confirmado, sem chamadas ao provedor"
+        },
+        "origin": "Marca de origem",
+        "noMark": "Nenhuma marca foi encontrada para este pagamento.",
+        "markLifted": "levantada",
+        "markOpen": "aberta",
+        "marksLink": "Ver as marcas abertas",
+        "confirm": {
+            "button": "Confirmar e enviar",
+            "title": "Confirmar o reembolso",
+            "description": "Um reembolso de {{amount}} será enviado ao provedor de pagamentos. Ficará em seu nome.",
+            "confirm": "Confirmar e enviar",
+            "cancel": "Cancelar",
+            "success": "Reembolso confirmado e enviado.",
+            "outcomes": {
+                "SENT": "O provedor aceitou o reembolso.",
+                "AWAITING_PROVIDER_ANSWER": "Reembolso enviado. Falta a resposta do provedor.",
+                "NOT_ACCEPTED_KEPT_CONFIRMED": "O provedor ainda não o aceitou. Continua confirmado para nova tentativa.",
+                "PROVIDER_REJECTED_KEPT_CONFIRMED": "O provedor o recusou por ora. Continua confirmado para nova tentativa.",
+                "PROVIDER_REJECTED_FAILED": "O provedor o recusou e o reembolso falhou.",
+                "ORDER_REFUND_HELD": "O reembolso do pedido ficou retido até haver o id do provedor.",
+                "PROVIDER_KEY_CONFLICT": "O provedor informou um conflito de chave. Revise antes de tentar novamente.",
+                "ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED": "O pedido ainda não admite reembolso. Continua confirmado.",
+                "CHARGED_BACK": "A cobrança já tinha um estorno. O reembolso foi encerrado."
+            }
+        },
+        "decline": {
+            "button": "Recusar",
+            "title": "Recusar o reembolso",
+            "description": "O reembolso de {{amount}} será recusado. O pagamento não muda e nada é enviado ao provedor.",
+            "confirmedWarning": "Este reembolso já estava confirmado: verifique no painel do MP que nenhum reembolso saiu antes de recusar.",
+            "confirm": "Recusar reembolso",
+            "cancel": "Cancelar",
+            "success": "Reembolso recusado.",
+            "closesHeldCharge": "Este reembolso não pode ser recusado: ele devolve uma cobrança retida por uma marca. Encerra-se confirmando-o, por um estorno ou registrando-o com a ação 14."
+        },
+        "rejections": {
+            "REFUND_NOT_FOUND": "O reembolso não existe mais.",
+            "REFUND_SOURCE_NOT_FOUND": "O pagamento do reembolso não foi encontrado.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "Você não tem permissão para esta ação.",
+            "REFUND_NOT_OPEN": "O reembolso não está mais aberto. Atualize a lista.",
+            "REFUND_STATE_CHANGED": "O reembolso mudou enquanto você o revisava. Atualize a lista.",
+            "PAYMENT_NOT_REFUNDABLE": "Este pagamento não admite reembolso.",
+            "REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE": "Este pagamento não é reembolsado pelo provedor.",
+            "RETAINED_PAYMENT_SUCCESSION_OPEN": "O pagamento retido tem uma sucessão aberta.",
+            "REFUND_EXCEEDS_BALANCE": "O reembolso excede o saldo disponível do pagamento.",
+            "REFUND_PAST_PROVIDER_WINDOW": "O provedor não aceita mais reembolsos deste pagamento.",
+            "REFUND_PROVIDER_ID_ALREADY_RECORDED": "O provedor já tem este reembolso registrado.",
+            "REFUND_HAS_PROVIDER_CALLS": "O reembolso já tem chamadas ao provedor e não pode ser recusado. Verifique o painel do MP.",
+            "REFUND_CLOSES_HELD_CHARGE": "Este reembolso não pode ser recusado: ele devolve uma cobrança retida por uma marca."
+        },
+        "genericError": "Não foi possível concluir a ação. Tente novamente.",
+        "serverError": "O servidor não conseguiu concluir a ação. Tente novamente mais tarde."
+    },
     "subscriptionCancellation": {
         "title": "Cancelar uma assinatura (sem reembolso)",
         "loading": "Verificando a assinatura…",
