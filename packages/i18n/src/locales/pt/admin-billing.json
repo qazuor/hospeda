@@ -2300,9 +2300,6 @@
                 "NOT_ACCEPTED_KEPT_CONFIRMED": "O provedor ainda não o aceitou. Continua confirmado para nova tentativa.",
                 "PROVIDER_REJECTED_KEPT_CONFIRMED": "O provedor o recusou por ora. Continua confirmado para nova tentativa.",
                 "PROVIDER_REJECTED_FAILED": "O provedor o recusou e o reembolso falhou.",
-                "ORDER_REFUND_HELD": "O reembolso do pedido ficou retido até haver o id do provedor.",
-                "PROVIDER_KEY_CONFLICT": "O provedor informou um conflito de chave. Revise antes de tentar novamente.",
-                "ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED": "O pedido ainda não admite reembolso. Continua confirmado.",
                 "CHARGED_BACK": "A cobrança já tinha um estorno. O reembolso foi encerrado."
             }
         },

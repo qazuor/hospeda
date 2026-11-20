@@ -59,38 +59,41 @@ describe('TEST:B6:1 admin action 13 route confirms and sends a refund', () => {
         await testDb.teardown();
     });
 
-    it('HOS-1553 TEST:B6:6 confirms a one-time order refund through the real route', async () => {
+    it('HOS-2179 T-7 refuses a one-time order refund through the real route and sends nothing', async () => {
+        // Arrange: an instance bought through the retired order path holds an order and no page.
         const seeded = await seedConfirmRefund();
         const { instanceId, paymentId } = await seedOneTimeOrphan({
             ownerId: seeded.ownerId,
             principalId: seeded.subscriptionId
         });
-        const { orderId } = confirmFake.placeOrder({
-            reference: `route-order-${crypto.randomUUID()}`,
-            paid: true,
-            amount: { amountMinor: 5000, currency: 'ARS' }
-        });
         await getDb()
             .update(addonInstances)
-            .set({ providerOrderId: orderId })
+            .set({ providerOrderId: `route-order-${crypto.randomUUID()}` })
             .where(eq(addonInstances.id, instanceId));
         const request = await requestRefund(
             { source: { kind: 'PAYMENT', id: paymentId }, amount: 5000, reason: 'REVOCATION' },
             { clock: confirmClock }
         );
         orderRefundIds.push(request.refundId);
+        const refundSpy = vi.spyOn(confirmFake, 'refund');
+
+        // Act
         const response = await confirmRequest(app, request.refundId, {
             id: seeded.adminId,
             role: 'SUPER_ADMIN',
             permissions
         });
-        expect(response.status).toBe(200);
-        expect((await response.json()).data).toMatchObject({
-            refundId: request.refundId,
-            status: 'CONFIRMED',
-            outcome: 'SENT'
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect((await response.json()).error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE'
         });
-        expect((await confirmRows(request.refundId)).calls).toHaveLength(1);
+        expect(refundSpy).toHaveBeenCalledTimes(0);
+        const rows = await confirmRows(request.refundId);
+        expect(rows.calls).toHaveLength(0);
+        expect(rows.refund?.status).toBe('REQUESTED');
     });
 
     it('AC:B6:1 records the confirmed provider call and its persisted key', async () => {

@@ -34,7 +34,13 @@ export function PendingAttemptPanel({
         locale
     });
     const cycle = t(SIGNUP_CYCLE_LABEL_KEY[attempt.plan.cycle]);
-    const date = formatSignupWindowEnd({ iso: attempt.authorizationWindowEndsAt, locale });
+    // The copy closes its sentence after `{{date}}`, and the es time format
+    // already ends in "p. m." — drop that trailing period so the sentence does
+    // not end in ".." (HOS-2388). Locales whose time ends otherwise are untouched.
+    const date = formatSignupWindowEnd({
+        iso: attempt.authorizationWindowEndsAt,
+        locale
+    }).replace(/\.$/, '');
 
     return (
         <div

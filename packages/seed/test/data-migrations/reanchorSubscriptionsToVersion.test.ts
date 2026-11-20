@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+    OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS,
+    OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS
+} from '../../src/catalog/next-version-entitlements.js';
+import {
     assertReanchorCompatible,
     type ReanchorVersionSnapshot,
     reanchorSubscriptionsToVersion,
@@ -9,6 +13,7 @@ import {
 const version = (overrides: Partial<ReanchorVersionSnapshot> = {}): ReanchorVersionSnapshot => ({
     planId: 'basic',
     vertical: 'accommodation',
+    inheritsTouristVip: true,
     options: [{ id: 'monthly-old', cycle: 'monthly', amount: 100, currency: 'ARS' }],
     entitlements: [{ key: 'listing', planQuota: 1, trialQuota: 1 }],
     limits: [{ key: 'photos', value: 10 }],
@@ -132,5 +137,132 @@ describe('reanchorSubscriptionsToVersion guards', () => {
                 toVersionId: 'same-version'
             })
         ).resolves.toEqual({ movedCount: 0, remappedScheduledChanges: 0, userIds: [] });
+    });
+});
+
+describe('HOS-2398 option B: owner versions may drop the inherited tourist keys', () => {
+    const touristEntitlements = OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS.map((key) => ({
+        key,
+        planQuota: null,
+        trialQuota: null
+    }));
+    const touristLimits = OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS.map((key) => ({
+        key,
+        value: 200
+    }));
+    const ownerFrom = (overrides: Partial<ReanchorVersionSnapshot> = {}) =>
+        version({
+            entitlements: [
+                { key: 'listing', planQuota: 1, trialQuota: 1 },
+                { key: 'ai_chat', planQuota: 50, trialQuota: 50 },
+                ...touristEntitlements
+            ],
+            limits: [
+                { key: 'photos', value: 10 },
+                { key: 'max_ai_chat_per_month', value: 50 },
+                ...touristLimits
+            ],
+            ...overrides
+        });
+    const ownerTo = (overrides: Partial<ReanchorVersionSnapshot> = {}) =>
+        version({
+            entitlements: [
+                { key: 'listing', planQuota: 1, trialQuota: 1 },
+                { key: 'ai_chat', planQuota: 50, trialQuota: 50 }
+            ],
+            limits: [
+                { key: 'photos', value: 10 },
+                { key: 'max_ai_chat_per_month', value: 50 }
+            ],
+            ...overrides
+        });
+
+    it('lists exactly the 15 entitlements and 7 limits of the owner decision, never ai_chat', () => {
+        expect(OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS).toHaveLength(15);
+        expect(OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS).toHaveLength(7);
+        expect(OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS).not.toContain('ai_chat');
+        for (const ownerChatLimit of [
+            'max_ai_chat_per_month',
+            'max_ai_chat_venue_per_month',
+            'max_ai_chat_experience_per_month'
+        ])
+            expect(OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS).not.toContain(ownerChatLimit);
+    });
+
+    it('accepts an owner target that drops every allowlisted tourist key', () => {
+        expect(() => assertReanchorCompatible({ from: ownerFrom(), to: ownerTo() })).not.toThrow();
+    });
+
+    it('still refuses dropping ai_chat', () => {
+        const to = ownerTo();
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom(),
+                to: { ...to, entitlements: to.entitlements.filter((e) => e.key !== 'ai_chat') }
+            })
+        ).toThrow('removes or reduces an entitlement');
+    });
+
+    it('still refuses dropping the owner chat limit', () => {
+        const to = ownerTo();
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom(),
+                to: {
+                    ...to,
+                    limits: to.limits.filter((l) => l.key !== 'max_ai_chat_per_month')
+                }
+            })
+        ).toThrow('removes or reduces a limit');
+    });
+
+    it('still refuses dropping any other entitlement or limit alongside the tourist keys', () => {
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom(),
+                to: ownerTo({ entitlements: [{ key: 'ai_chat', planQuota: 50, trialQuota: 50 }] })
+            })
+        ).toThrow('removes or reduces an entitlement');
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom(),
+                to: ownerTo({ limits: [{ key: 'max_ai_chat_per_month', value: 50 }] })
+            })
+        ).toThrow('removes or reduces a limit');
+    });
+
+    it('still refuses REDUCING an allowlisted tourist limit that the target keeps', () => {
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom(),
+                to: ownerTo({
+                    limits: [...ownerTo().limits, { key: 'max_favorites', value: 199 }]
+                })
+            })
+        ).toThrow('removes or reduces a limit');
+    });
+
+    it('refuses dropping the tourist keys on the Tourist vertical, where they are the product', () => {
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom({ vertical: 'tourist' }),
+                to: ownerTo({ vertical: 'tourist' })
+            })
+        ).toThrow('removes or reduces an entitlement');
+    });
+
+    it('refuses dropping the tourist keys when either version does not inherit Tourist VIP', () => {
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom(),
+                to: ownerTo({ inheritsTouristVip: false })
+            })
+        ).toThrow('removes or reduces an entitlement');
+        expect(() =>
+            assertReanchorCompatible({
+                from: ownerFrom({ inheritsTouristVip: false }),
+                to: ownerTo()
+            })
+        ).toThrow('removes or reduces an entitlement');
     });
 });

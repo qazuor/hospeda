@@ -43,8 +43,7 @@ function stateChanged(): ServiceError {
 export async function persistCall(
     refundId: string,
     payment: SelectPayment,
-    amount: number,
-    addonInstanceId: string | null = null
+    amount: number
 ): Promise<{ readonly key: string; readonly balance: number }> {
     return getDb().transaction(async (tx) => {
         const [refund] = await tx
@@ -71,8 +70,7 @@ export async function persistCall(
             refundId,
             idempotencyKey: key,
             amount,
-            providerRefundId: null,
-            addonInstanceId
+            providerRefundId: null
         });
         return { key, balance: payment.amount - claimed };
     });

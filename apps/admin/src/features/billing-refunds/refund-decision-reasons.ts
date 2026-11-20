@@ -61,10 +61,6 @@ export const CONFIRM_OUTCOME_KEYS: Readonly<Record<RefundConfirmationOutcome, Tr
         'admin-billing.proposedRefunds.confirm.outcomes.PROVIDER_REJECTED_KEPT_CONFIRMED',
     PROVIDER_REJECTED_FAILED:
         'admin-billing.proposedRefunds.confirm.outcomes.PROVIDER_REJECTED_FAILED',
-    ORDER_REFUND_HELD: 'admin-billing.proposedRefunds.confirm.outcomes.ORDER_REFUND_HELD',
-    PROVIDER_KEY_CONFLICT: 'admin-billing.proposedRefunds.confirm.outcomes.PROVIDER_KEY_CONFLICT',
-    ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED:
-        'admin-billing.proposedRefunds.confirm.outcomes.ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED',
     CHARGED_BACK: 'admin-billing.proposedRefunds.confirm.outcomes.CHARGED_BACK'
 };
 
