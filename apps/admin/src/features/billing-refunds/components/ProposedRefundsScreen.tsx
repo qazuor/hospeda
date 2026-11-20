@@ -7,7 +7,7 @@
 import type { TranslationKey } from '@repo/i18n';
 import { formatCurrency } from '@repo/i18n';
 import { PermissionEnum, type ProposedRefund } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -56,7 +56,15 @@ function ProposedRefundsBody() {
     const { t, locale } = useTranslations();
     const [page, setPage] = useState(1);
     const query = useProposedRefunds({ page, pageSize: PAGE_SIZE });
-    if (query.isLoading) return <p>{t('admin-billing.proposedRefunds.loading')}</p>;
+    const data = query.data;
+    // Resolving the last row of the last page leaves that page past the end: step back to the new
+    // last page instead of showing an empty list while earlier pages still hold refunds.
+    const lastPage = Math.max(data?.pagination.totalPages ?? 1, 1);
+    const pastTheEnd = data !== undefined && page > lastPage;
+    useEffect(() => {
+        if (pastTheEnd) setPage(lastPage);
+    }, [pastTheEnd, lastPage]);
+    if (query.isLoading || pastTheEnd) return <p>{t('admin-billing.proposedRefunds.loading')}</p>;
     if (query.isError)
         return (
             <div
@@ -69,7 +77,6 @@ function ProposedRefundsBody() {
                 </Button>
             </div>
         );
-    const data = query.data;
     if (!data || data.items.length === 0)
         return (
             <p data-testid="proposed-refunds-empty">{t('admin-billing.proposedRefunds.empty')}</p>

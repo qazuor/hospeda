@@ -5,7 +5,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import type { ProposedRefund } from '@repo/schemas';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -45,7 +45,12 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
     const declineMutation = useDeclineRefundMutation();
     const [dialog, setDialog] = useState<'confirm' | 'decline' | null>(null);
     const [errorKey, setErrorKey] = useState<TranslationKey | null>(null);
-    const [declineLocked, setDeclineLocked] = useState(refund.closesHeldCharge);
+    // True from the first click until its request settles: two clicks in the same tick, before
+    // React re-renders the buttons disabled, must send one POST.
+    const submitting = useRef(false);
+    const [lockedBy409, setLockedBy409] = useState(false);
+    const declineLocked = refund.closesHeldCharge || lockedBy409;
+    const canConfirm = refund.status === 'REQUESTED';
     const busy = confirmMutation.isPending || declineMutation.isPending;
 
     const close = () => {
@@ -54,7 +59,8 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
     };
 
     const confirm = async () => {
-        if (busy) return;
+        if (submitting.current) return;
+        submitting.current = true;
         setErrorKey(null);
         try {
             const result = await confirmMutation.mutateAsync({ refundId: refund.refundId });
@@ -68,11 +74,14 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
             });
         } catch (error) {
             setErrorKey(refundDecisionErrorKey({ error }));
+        } finally {
+            submitting.current = false;
         }
     };
 
     const decline = async () => {
-        if (busy) return;
+        if (submitting.current) return;
+        submitting.current = true;
         setErrorKey(null);
         try {
             const result = await declineMutation.mutateAsync({ refundId: refund.refundId });
@@ -92,11 +101,13 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
             );
         } catch (error) {
             if (readRefundDecisionReason({ error }) === 'REFUND_CLOSES_HELD_CHARGE') {
-                setDeclineLocked(true);
+                setLockedBy409(true);
                 close();
                 return;
             }
             setErrorKey(refundDecisionErrorKey({ error }));
+        } finally {
+            submitting.current = false;
         }
     };
 
@@ -106,13 +117,15 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
             data-testid="proposed-refund-actions"
         >
             <div className="flex flex-wrap gap-2">
-                <Button
-                    data-testid="proposed-refund-confirm"
-                    disabled={busy}
-                    onClick={() => setDialog('confirm')}
-                >
-                    {t('admin-billing.proposedRefunds.confirm.button')}
-                </Button>
+                {canConfirm ? (
+                    <Button
+                        data-testid="proposed-refund-confirm"
+                        disabled={busy}
+                        onClick={() => setDialog('confirm')}
+                    >
+                        {t('admin-billing.proposedRefunds.confirm.button')}
+                    </Button>
+                ) : null}
                 <Button
                     data-testid="proposed-refund-decline"
                     variant="outline"
@@ -125,6 +138,14 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
                     {t('admin-billing.proposedRefunds.decline.button')}
                 </Button>
             </div>
+            {canConfirm ? null : (
+                <p
+                    data-testid="proposed-refund-confirmed-only-decline"
+                    className="text-muted-foreground text-sm"
+                >
+                    {t('admin-billing.proposedRefunds.confirmedOnlyDecline')}
+                </p>
+            )}
             {declineLocked ? (
                 <p
                     id={`proposed-refund-locked-${refund.refundId}`}

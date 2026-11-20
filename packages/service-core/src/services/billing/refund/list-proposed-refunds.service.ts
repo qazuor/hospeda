@@ -18,7 +18,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { heldByPageChargeMark } from '../addon/one-time-page-charge-marks';
-import { refundHasLiveProviderCalls } from './refund-moved-money';
+import { noLiveProviderCallSql } from './refund-moved-money';
 
 /** The reconciliation mark behind a proposed refund. */
 export type ProposedRefundMark = {
@@ -53,7 +53,7 @@ const listInputSchema = z.object({
 
 /**
  * Lists the refunds proposed from a reconciliation mark (`MARK_PROPOSAL`) that wait for a person:
- * `REQUESTED`, plus `CONFIRMED` ones for which {@link refundHasLiveProviderCalls} is false, the
+ * `REQUESTED`, plus `CONFIRMED` ones for which {@link noLiveProviderCallSql} is false, the
  * very predicate decline uses: a call the provider accepted or has not answered excludes the refund,
  * while one the provider answered without an id (a rejection kept confirmed) does not. Oldest first. Each
  * item carries the marks that hang its payment, so the operator sees what originated it.
@@ -78,7 +78,20 @@ export async function listProposedRefunds(input: {
     const { page, pageSize } = parsed.data;
 
     return getDb().transaction(async (tx) => {
-        const candidates = await tx
+        // `noLiveProviderCallSql` is the same rule decline applies, so the list and the action
+        // cannot disagree; the database filters, counts and paginates.
+        const waiting = and(
+            eq(refunds.reason, 'MARK_PROPOSAL'),
+            or(
+                eq(refunds.status, 'REQUESTED'),
+                and(eq(refunds.status, 'CONFIRMED'), noLiveProviderCallSql(refunds.id))
+            )
+        );
+        const [{ total = 0 } = {}] = await tx
+            .select({ total: count() })
+            .from(refunds)
+            .where(waiting);
+        const rows = await tx
             .select({
                 refundId: refunds.id,
                 status: refunds.status,
@@ -91,26 +104,10 @@ export async function listProposedRefunds(input: {
             })
             .from(refunds)
             .leftJoin(payments, eq(payments.id, refunds.paymentId))
-            .where(
-                and(
-                    eq(refunds.reason, 'MARK_PROPOSAL'),
-                    inArray(refunds.status, ['REQUESTED', 'CONFIRMED'])
-                )
-            )
-            .orderBy(asc(refunds.createdAt), asc(refunds.id));
-        // The server's own decline predicate decides which CONFIRMED refunds wait for a person, so
-        // the list and the action can never disagree. It is per refund, hence the filter in code;
-        // proposals are few, so paginating after it is cheap.
-        const waiting: typeof candidates = [];
-        for (const row of candidates) {
-            if (
-                row.status === 'REQUESTED' ||
-                !(await refundHasLiveProviderCalls({ tx, refundId: row.refundId }))
-            )
-                waiting.push(row);
-        }
-        const total = waiting.length;
-        const rows = waiting.slice((page - 1) * pageSize, page * pageSize);
+            .where(waiting)
+            .orderBy(asc(refunds.createdAt), asc(refunds.id))
+            .limit(pageSize)
+            .offset((page - 1) * pageSize);
         const callCounts = new Map<string, number>();
         if (rows.length > 0) {
             const counted = await tx

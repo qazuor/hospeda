@@ -267,6 +267,59 @@ describe('HOS-2400 listProposedRefunds', () => {
         expect(item?.marks[0]).toMatchObject({ markId: seeded.markId, liftedAt });
     });
 
+    it.skipIf(skip)(
+        'paginates in the database with live CONFIRMED rows interleaved across pages',
+        async () => {
+            // Arrange: createdAt far ahead puts these rows last. Eligible rows (E) alternate with
+            // CONFIRMED ones whose provider call was accepted (L), which must never be listed.
+            const eligible: string[] = [];
+            const live: string[] = [];
+            for (let index = 0; index < 5; index++) {
+                const at = (offset: number) =>
+                    new Date(Date.UTC(2099, 0, 1, 0, 0, index * 2 + offset));
+                const e = await proposalOnMarkedPayment({
+                    status: index % 2 === 0 ? 'REQUESTED' : 'CONFIRMED',
+                    createdAt: at(0)
+                });
+                eligible.push(e.refundId);
+                if (index < 4) {
+                    const l = await proposalOnMarkedPayment({
+                        status: 'CONFIRMED',
+                        createdAt: at(1)
+                    });
+                    await addCall({
+                        refundId: l.refundId,
+                        answered: true,
+                        providerRefundId: `prov-${crypto.randomUUID()}`
+                    });
+                    live.push(l.refundId);
+                }
+            }
+
+            // Act: the whole list as ground truth, then the same list in pages of 2.
+            const whole = await listProposedRefunds({ page: 1, pageSize: 100 });
+            const paged: string[] = [];
+            let pageTwo: readonly string[] = [];
+            let totalByPage = -1;
+            for (let page = 1; page <= Math.ceil(whole.total / 2); page++) {
+                const result = await listProposedRefunds({ page, pageSize: 2 });
+                totalByPage = result.total;
+                paged.push(...result.items.map((item) => item.refundId));
+                if (page === 2) pageTwo = result.items.map((item) => item.refundId);
+            }
+
+            // Assert
+            const wholeIds = whole.items.map((item) => item.refundId);
+            expect(whole.total).toBe(wholeIds.length);
+            expect(totalByPage).toBe(whole.total);
+            expect(wholeIds.slice(-5)).toEqual(eligible);
+            for (const id of live) expect(wholeIds).not.toContain(id);
+            expect(paged).toEqual(wholeIds);
+            expect(pageTwo).toEqual(wholeIds.slice(2, 4));
+            expect((await listProposedRefunds({ page: 1, pageSize: 100 })).total).toBe(whole.total);
+        }
+    );
+
     it.skipIf(skip)('refuses invalid pagination with a typed error', async () => {
         await expect(listProposedRefunds({ page: 0, pageSize: 50 })).rejects.toMatchObject({
             reason: 'PROPOSED_REFUNDS_INPUT_INVALID'

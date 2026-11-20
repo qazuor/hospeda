@@ -2281,6 +2281,7 @@
             "REQUESTED": "Waiting for confirmation",
             "CONFIRMED": "Confirmed, no refund accepted by the provider"
         },
+        "confirmedOnlyDecline": "This refund is already confirmed and cannot be confirmed again. It can only be declined and then answered through action 14.",
         "origin": "Originating mark",
         "noMark": "No mark was found for this payment.",
         "markLifted": "lifted",

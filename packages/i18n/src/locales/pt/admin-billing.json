@@ -2281,6 +2281,7 @@
             "REQUESTED": "Aguardando confirmação",
             "CONFIRMED": "Confirmado, sem reembolso aceito pelo provedor"
         },
+        "confirmedOnlyDecline": "Este reembolso já está confirmado e não pode ser confirmado de novo. Só pode ser recusado e depois registrado pela ação 14.",
         "origin": "Marca de origem",
         "noMark": "Nenhuma marca foi encontrada para este pagamento.",
         "markLifted": "encerrada",
