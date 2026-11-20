@@ -2281,6 +2281,7 @@
             "REQUESTED": "Esperando confirmación",
             "CONFIRMED": "Confirmada, sin devolución aceptada por el proveedor"
         },
+        "confirmedOnlyDecline": "Esta devolución ya está confirmada y no se puede confirmar de nuevo. Solo se puede rechazar y después asentarla con la acción 14.",
         "origin": "Marca que la originó",
         "noMark": "No se encontró una marca asociada a este pago.",
         "markLifted": "levantada",
