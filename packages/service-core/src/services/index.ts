@@ -83,6 +83,7 @@ export * from './billing/addon/expire-addon-instances.service.js';
 export * from './billing/addon/includes-addons-anchor.js';
 export * from './billing/addon/listing-purged-addon-canceller.js';
 export * from './billing/addon/listing-purged-addons.service.js';
+export * from './billing/addon/one-time-addon-activated-notice.js';
 export * from './billing/addon/one-time-payment-page.js';
 export * from './billing/addon/purchase-addon.service.js';
 export * from './billing/addon/purchase-addon-complement.js';

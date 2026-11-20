@@ -10,6 +10,7 @@ import {
     payments,
     type SelectAddonInstance
 } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
 import { creditPayment } from '../payment/credit-payment.service';
@@ -17,7 +18,14 @@ import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment
 import { compatibleVerticalsOf, coverageVerticalsOf } from './addon-coverage-verticals';
 import { emitAddonCoverageAdded } from './addon-instance-a2';
 import type { A5Ports } from './addon-instance-a5';
+import {
+    enqueueOneTimeAddonActivatedNotice,
+    ONE_TIME_ADDON_LISTING_VERTICALS,
+    type OneTimeAddonListingVertical
+} from './one-time-addon-activated-notice';
 import { heldByPageChargeMark } from './one-time-page-charge-marks';
+
+const logger = createLogger('addon-a2-one-time-activation');
 
 /** Ports of the shared one-time activation. */
 export type OneTimeActivationPorts = A5Ports & {
@@ -29,6 +37,40 @@ export type OneTimeActivationPorts = A5Ports & {
 export type OneTimeActivationResult =
     | { readonly outcome: 'ACTIVATED'; readonly paymentId: string }
     | { readonly outcome: 'NOT_APPLICABLE' };
+
+/** The listing a `LISTING` instance targets, named by the owner mail; `null` for any other scope. */
+function noticeListing(input: {
+    readonly scopeType: string;
+    readonly targetId: string | null;
+    readonly coverageVerticals: readonly string[];
+}): { readonly id: string; readonly vertical: OneTimeAddonListingVertical } | null {
+    const vertical = ONE_TIME_ADDON_LISTING_VERTICALS.find(
+        (candidate) => candidate === input.coverageVerticals[0]
+    );
+    if (input.scopeType !== 'LISTING' || !input.targetId || !vertical) return null;
+    return { id: input.targetId, vertical };
+}
+
+/**
+ * Enqueues the owner mail (HOS-2405) in a savepoint of the activation transaction. A failure to
+ * enqueue rolls back only the savepoint and is logged: the mail never blocks the activation of a
+ * paid purchase (the same rule as the arrears suspension notice). Sending happens later, in the
+ * outbox sender, whose failures retry and escalate there and never touch the instance.
+ */
+async function enqueueOwnerNoticeWithoutBlocking(
+    input: Parameters<typeof enqueueOneTimeAddonActivatedNotice>[0]
+): Promise<void> {
+    try {
+        await input.tx.transaction(async (savepoint) => {
+            await enqueueOneTimeAddonActivatedNotice({ ...input, tx: savepoint });
+        });
+    } catch (error) {
+        logger.error(
+            { instanceId: input.instanceId, error },
+            'One-time add-on activated notice could not be enqueued; activating anyway'
+        );
+    }
+}
 
 /**
  * A2 one-time, shared by the order and the payment page (HOS-2179 §5.3): under a lock on the
@@ -44,6 +86,8 @@ export type OneTimeActivationResult =
  * @param input.amount - The amount and currency read back from the provider
  * @param input.chargeCreatedAt - When the provider created the payment, for the credit
  * @param input.stillOurs - Whether the locked instance still matches the confirmed read
+ * @param input.ownerNotice - Whether the owner is mailed that the add-on is active (HOS-2405: the
+ *   payment page purchase); enqueued in this transaction, never blocking it
  * @returns `ACTIVATED` with the payment, or `NOT_APPLICABLE` when the instance moved meanwhile
  */
 export async function activateOneTimeInstance(
@@ -53,6 +97,7 @@ export async function activateOneTimeInstance(
         readonly amount: { readonly amountMinor: number; readonly currency: string };
         readonly chargeCreatedAt: Date;
         readonly stillOurs: (instance: SelectAddonInstance) => boolean;
+        readonly ownerNotice?: boolean;
     },
     ports: OneTimeActivationPorts
 ): Promise<OneTimeActivationResult> {
@@ -119,10 +164,10 @@ export async function activateOneTimeInstance(
                   .returning({ id: payments.id });
         if (!payment)
             throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Addon payment insert failed');
+        const { scopeType } = await ports.addonPolicy({ addonVersionId: instance.addonVersionId });
         const coverageVerticals = await coverageVerticalsOf({
             tx,
-            scopeType: (await ports.addonPolicy({ addonVersionId: instance.addonVersionId }))
-                .scopeType,
+            scopeType,
             targetId: instance.targetId,
             compatibleVerticals: await compatibleVerticalsOf({ tx, productId: instance.productId }),
             ports
@@ -153,6 +198,16 @@ export async function activateOneTimeInstance(
             occurredAt: now,
             tx
         });
+        if (input.ownerNotice)
+            await enqueueOwnerNoticeWithoutBlocking({
+                tx,
+                instanceId: instance.id,
+                listing: noticeListing({
+                    scopeType,
+                    targetId: instance.targetId,
+                    coverageVerticals
+                })
+            });
         return {
             outcome: 'ACTIVATED' as const,
             paymentId: payment.id,

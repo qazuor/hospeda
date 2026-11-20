@@ -339,7 +339,8 @@ export async function confirmOneTimePagePayment(
             amount: snapshot.amount,
             chargeCreatedAt,
             stillOurs: (instance) =>
-                instance.providerOrderId === null && instance.orderRequestId === reference
+                instance.providerOrderId === null && instance.orderRequestId === reference,
+            ownerNotice: true
         },
         ports
     );
