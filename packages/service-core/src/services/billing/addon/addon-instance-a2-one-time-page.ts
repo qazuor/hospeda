@@ -8,6 +8,8 @@ import { activateOneTimeInstance } from './addon-instance-a2-one-time-activation
 import type { A5Ports } from './addon-instance-a5';
 import { closeOneTimePaymentPage } from './close-one-time-payment-page';
 import {
+    heldByPageChargeMark,
+    notHeldByPageChargeMark,
     type OneTimePageMarkTrigger,
     openOneTimePageChargeMark
 } from './one-time-page-charge-marks';
@@ -43,8 +45,12 @@ export type ConfirmOneTimePagePaymentPorts = A5Ports & {
  *   arrived after it closed (§5.9). It activates nothing, and mark 23 is already open on the
  *   instance (or was lifted for this charge) when this is returned (AC-12).
  * - `AMOUNT_MISMATCH`: approved with another amount or currency than the anchored price (AC-8),
- *   whatever state the purchase is in. It activates nothing, and `DIVERGENCIA_DE_MONTO` is
- *   already open on the instance when this is returned.
+ *   whatever state the purchase is in, or a waiting purchase's charge whose divergence still
+ *   holds its payment row (D1) although the price now matches it. It activates nothing, and
+ *   `DIVERGENCIA_DE_MONTO` is already open on the instance (or was lifted for this charge).
+ *
+ * Every mark outcome (`DUPLICATE_PAYMENT`, `LATE_PAYMENT`, `AMOUNT_MISMATCH`) leaves the charge
+ * with its own held `payment` row hung from the mark (D1, owner 2026-11-20), never credited.
  * - `NOT_APPROVED`: rejected, pending or refunded; the purchase keeps waiting (AC-9).
  * - `NOT_THIS_PURCHASE`: the payment carries another reference or hangs from an authorization.
  * - `UNKNOWN`: the provider did not answer the read, or the mark the payment raises could not be
@@ -68,7 +74,9 @@ export type ConfirmOneTimePagePaymentResult =
 /**
  * Classifies an approved payment of a purchase that no longer waits: the very payment it holds
  * (`ALREADY_CONFIRMED`), a second one beside the payment it holds (`DUPLICATE_PAYMENT`, §5.8),
- * or one for a purchase that closed with no payment at all (`LATE_PAYMENT`, §5.9).
+ * or one for a purchase that closed with no payment at all (`LATE_PAYMENT`, §5.9). Only the
+ * payment that activated the purchase counts: a payment a page-charge mark holds (D1) never
+ * made it active, so it neither confirms this charge nor turns a late one into a duplicate.
  */
 async function settledOutcome(input: {
     readonly instanceId: string;
@@ -77,10 +85,32 @@ async function settledOutcome(input: {
     const held = await getDb()
         .select({ providerFactId: payments.providerFactId })
         .from(payments)
-        .where(eq(payments.addonInstanceId, input.instanceId));
+        .where(and(eq(payments.addonInstanceId, input.instanceId), notHeldByPageChargeMark()));
     if (held.some((payment) => payment.providerFactId === input.chargeId))
         return 'ALREADY_CONFIRMED';
     return held.length > 0 ? 'DUPLICATE_PAYMENT' : 'LATE_PAYMENT';
+}
+
+/**
+ * How this charge already sits on the purchase: `ACTIVATED` when it is the payment that activated
+ * it, `HELD` when a page-charge mark holds its payment row (D1), `NONE` otherwise.
+ */
+async function chargeStanding(input: {
+    readonly instanceId: string;
+    readonly chargeId: string;
+}): Promise<'ACTIVATED' | 'HELD' | 'NONE'> {
+    const [row] = await getDb()
+        .select({ held: heldByPageChargeMark() })
+        .from(payments)
+        .where(
+            and(
+                eq(payments.addonInstanceId, input.instanceId),
+                eq(payments.providerFactId, input.chargeId)
+            )
+        )
+        .limit(1);
+    if (!row) return 'NONE';
+    return row.held ? 'HELD' : 'ACTIVATED';
 }
 
 /**
@@ -96,7 +126,9 @@ async function recordAmountMismatch(input: {
     readonly chargeId: string;
     readonly expected: { readonly amountMinor: number; readonly currency: string };
     readonly actual: { readonly amountMinor: number; readonly currency: string };
+    readonly chargeCreatedAt: Date;
     readonly trigger: OneTimePageMarkTrigger;
+    readonly clock: Clock;
 }): Promise<{ readonly outcome: 'AMOUNT_MISMATCH' | 'UNKNOWN' }> {
     logger.error(
         {
@@ -110,8 +142,10 @@ async function recordAmountMismatch(input: {
     const marked = await openOneTimePageChargeMark({
         instanceId: input.instanceId,
         chargeId: input.chargeId,
+        charge: { amount: input.actual, createdAt: input.chargeCreatedAt },
         reason: 'DIVERGENCIA_DE_MONTO',
         trigger: input.trigger,
+        clock: input.clock,
         detail: [
             { field: 'reconciliation_mark.expected_minor', new: input.expected.amountMinor },
             { field: 'reconciliation_mark.expected_currency', new: input.expected.currency },
@@ -134,7 +168,9 @@ async function settleApprovedPayment(input: {
     readonly instanceId: string;
     readonly chargeId: string;
     readonly amount: { readonly amountMinor: number; readonly currency: string };
+    readonly chargeCreatedAt: Date;
     readonly trigger: OneTimePageMarkTrigger;
+    readonly clock: Clock;
 }): Promise<{
     readonly outcome: 'ALREADY_CONFIRMED' | 'DUPLICATE_PAYMENT' | 'LATE_PAYMENT' | 'UNKNOWN';
 }> {
@@ -143,8 +179,10 @@ async function settleApprovedPayment(input: {
     const marked = await openOneTimePageChargeMark({
         instanceId: input.instanceId,
         chargeId: input.chargeId,
+        charge: { amount: input.amount, createdAt: input.chargeCreatedAt },
         reason: outcome === 'DUPLICATE_PAYMENT' ? 'COBRO_DUPLICADO' : 'ORDEN_PAGADA_SIN_INSTANCIA',
         trigger: input.trigger,
+        clock: input.clock,
         detail: [
             { field: 'provider.charge_amount_minor', new: input.amount.amountMinor },
             { field: 'provider.charge_currency', new: input.amount.currency },
@@ -217,6 +255,14 @@ export async function confirmOneTimePagePayment(
     )
         return { outcome: 'NOT_THIS_PURCHASE' };
     if (snapshot.status !== 'approved') return { outcome: 'NOT_APPROVED' };
+    const chargeCreatedAt = new Date(snapshot.createdAt);
+    const standing = await chargeStanding({
+        instanceId: found.instance.id,
+        chargeId: snapshot.chargeId
+    });
+    // The payment that activated this purchase, read again: a repeated notice, whatever the
+    // price became since. It must never be marked, or its own row would be hung from a mark.
+    if (standing === 'ACTIVATED') return { outcome: 'ALREADY_CONFIRMED' };
 
     // The amount goes first, whatever the purchase became: money of another amount is MOT:5
     // and only MOT:5, so the same payment never also raises MOT:20 or MOT:23 later.
@@ -229,22 +275,31 @@ export async function confirmOneTimePagePayment(
             chargeId: snapshot.chargeId,
             expected: { amountMinor: found.product.price, currency: found.product.currency },
             actual: snapshot.amount,
-            trigger
+            chargeCreatedAt,
+            trigger,
+            clock: ports.clock
         });
     if (found.instance.status !== 'PENDING_AUTHORIZATION')
         return await settleApprovedPayment({
             instanceId: found.instance.id,
             chargeId: snapshot.chargeId,
             amount: snapshot.amount,
-            trigger
+            chargeCreatedAt,
+            trigger,
+            clock: ports.clock
         });
+
+    // A charge a page-charge mark holds (D1) stays with the mark until a person refunds it or
+    // lifts it, even if the price now matches it: on a waiting purchase that is MOT:5 only. Its
+    // held row also keys the provider's id, so activation could not insert its own.
+    if (standing === 'HELD') return { outcome: 'AMOUNT_MISMATCH' };
 
     const activation = await activateOneTimeInstance(
         {
             instanceId: found.instance.id,
             providerFactId: snapshot.chargeId,
             amount: snapshot.amount,
-            chargeCreatedAt: new Date(snapshot.createdAt),
+            chargeCreatedAt,
             stillOurs: (instance) =>
                 instance.providerOrderId === null && instance.orderRequestId === reference
         },
@@ -263,7 +318,9 @@ export async function confirmOneTimePagePayment(
             instanceId: found.instance.id,
             chargeId: snapshot.chargeId,
             amount: snapshot.amount,
-            trigger
+            chargeCreatedAt,
+            trigger,
+            clock: ports.clock
         });
     }
     await closeOneTimePaymentPage({ instanceId: found.instance.id }, ports);
