@@ -375,14 +375,15 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
     );
 
     it.skipIf(skip)(
-        'TEST:B6:10 AC:B6:12 resumes a lost creation answer into one instance with one page',
+        'TEST:B6:10 AC:B6:12 resumes a lost creation answer into one instance with one stored page',
         async () => {
             const s = await setup();
             const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            let lostPageId = '';
             const request = vi
                 .spyOn(s.f.fake, 'requestOneTimePayment')
                 .mockImplementationOnce(async (input) => {
-                    await original(input);
+                    lostPageId = (await original(input)).paymentPageId;
                     throw new PaymentProviderError({
                         code: 'UNAVAILABLE',
                         capability: 'charge',
@@ -407,6 +408,15 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             const instance = await instanceOf(lost?.id ?? '');
             expect(instance.paymentPageId).not.toBeNull();
             expect((await keysOf(instance.id))[0]?.completedAt).not.toBeNull();
+            // EX-61 is unmeasured and the fake does not dedupe by key: the provider holds a
+            // second page, which is the stored one, sharing the lost page's reference.
+            expect(lostPageId).not.toBe('');
+            expect(instance.paymentPageId).not.toBe(lostPageId);
+            const stored = await s.f.fake.readOneTimePayment({
+                paymentPageId: instance.paymentPageId ?? ''
+            });
+            const lostPage = await s.f.fake.readOneTimePayment({ paymentPageId: lostPageId });
+            expect(stored.snapshot.reference).toBe(lostPage.snapshot.reference);
         }
     );
 
