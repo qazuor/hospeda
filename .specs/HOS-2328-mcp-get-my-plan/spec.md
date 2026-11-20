@@ -35,7 +35,7 @@ This spec is a delta on **HOS-2335 §6.3**, which already designs the tool. The 
     - entitlements as labels (`billing.json` `entitlement.<key>`);
     - limits as `{ label, value }` (`billing.json` `comparison.limitLabel.<key>`);
     - no raw key reaches the model when a label exists;
-  - `addons[]`: `{ name, status, endsAt | null }`;
+  - `addons[]`: `{ name, status, endsAt | null }`, plus `listingGone: true` on a listing add-on whose listing no longer exists or is no longer the owner's (it may still be charged until billing cancels it, so it is never hidden). Such an add-on goes to its product's only compatible vertical; when the product fits several, it goes to a top-level `unattributedAddons` with `addonsUrl`, never to every vertical;
   - `actionUrl`: the portal `subscription` destination. When add-ons are held it also carries `addonsUrl` (the portal `addons` destination).
 - **No title.** The result is an empty list with the `plans` link (AC-C15). It is not an error.
 

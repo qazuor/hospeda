@@ -332,6 +332,12 @@ Tool-specific rules:
   - A live recurring add-on with no `ends_at` (until HOS-2116 writes it) has
     `endsAt: null` and `renewsWithSubscription: true`; no date is invented. One still in
     `PENDING_AUTHORIZATION` does not renew.
+  - A listing add-on whose listing is gone keeps showing, flagged `listingGone: true`,
+    because billing may still charge it until the asynchronous cancel lands (the same
+    instance `/billing-addon/instances` lists with `targetName: null`). It goes to its
+    product's only compatible vertical, or to the top-level `unattributedAddons` (with
+    `addonsUrl`) when the product fits several. The owner summary carries
+    `unattributedAddons` too.
   - `includes` is `null` when the effective set cannot be read; it is never guessed.
 - `get_owner_summary` (HOS-2331, spec HOS-2335 §6.6). It is one call instead of one
   `get_listing_stats` per listing.
