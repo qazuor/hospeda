@@ -62,7 +62,8 @@ const mark = (reason: string, source: 'PAYMENT' | 'MANUAL_PAYMENT' = 'PAYMENT') 
     paymentCount: 1,
     totalAmount: [{ currency: 'ARS', amountMinor: 12550 }],
     unknownAmountCount: 0,
-    eventLink: null
+    eventLink: null,
+    liftRequiresRefund: false
 });
 const renderAction = (value: ReturnType<typeof mark>) => {
     const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });

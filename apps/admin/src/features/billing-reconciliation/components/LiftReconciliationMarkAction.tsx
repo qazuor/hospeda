@@ -89,6 +89,30 @@ export function LiftReconciliationMarkAction({ mark, locale }: LiftReconciliatio
         }
     };
 
+    // A page-charge mark that still holds its charge's payment closes only through a refund
+    // (HOS-2179 D1, owner option 3): the server refuses to lift it, so the action stays closed.
+    if (mark.liftRequiresRefund)
+        return (
+            <PermissionGate permissions={[PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK]}>
+                <div className="grid gap-1">
+                    <Button
+                        data-testid="reconciliation-mark-lift"
+                        disabled
+                        aria-describedby={`reconciliation-mark-lift-requires-refund-${mark.markId}`}
+                    >
+                        {t('admin-billing.reconciliationMarks.lift.button')}
+                    </Button>
+                    <p
+                        id={`reconciliation-mark-lift-requires-refund-${mark.markId}`}
+                        data-testid="reconciliation-mark-lift-requires-refund"
+                        className="text-muted-foreground text-sm"
+                    >
+                        {t('admin-billing.reconciliationMarks.lift.requiresRefund')}
+                    </p>
+                </div>
+            </PermissionGate>
+        );
+
     return (
         <PermissionGate permissions={[PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK]}>
             <AlertDialog

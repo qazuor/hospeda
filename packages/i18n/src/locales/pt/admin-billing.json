@@ -2245,6 +2245,7 @@
             "title": "Levantar esta marca",
             "description": "Somente esta marca será encerrada. As outras marcas da mesma linha continuam abertas, e o estado da assinatura não muda.",
             "withoutRefund": "Resolver sem reembolso",
+            "requiresRefund": "Esta marca retém uma cobrança que só se encerra com um reembolso. Confirme o reembolso proposto (ou registre-o com a ação 14); quando ele for liquidado, a marca poderá ser levantada.",
             "unresolvedNotice": "Há pagamentos pendentes sem resolução. Para reembolsá-los, registre o reembolso com a ação 14; se não forem reembolsados, marque-os como resolvidos sem reembolso.",
             "note": "Nota para auditoria (opcional)",
             "confirm": "Levantar",
@@ -2257,7 +2258,8 @@
                 "MARK_ALREADY_LIFTED": "A marca já foi levantada.",
                 "MARK_VERSION_CONFLICT": "A marca mudou desde que você a abriu. Revise-a e confirme novamente.",
                 "MARK_HAS_UNRESOLVED_PAYMENTS": "Ainda há pagamentos pendentes sem resolução.",
-                "MARK_PAYMENT_NOT_HUNG": "Um pagamento selecionado já não está pendente sem resolução nesta marca."
+                "MARK_PAYMENT_NOT_HUNG": "Um pagamento selecionado já não está pendente sem resolução nesta marca.",
+                "MARK_CLOSES_ONLY_BY_REFUND": "Esta marca retém uma cobrança que só se encerra reembolsando-a. Não pode ser resolvida sem reembolso."
             }
         }
     },
