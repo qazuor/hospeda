@@ -137,7 +137,8 @@ describe('readOwnerAddonHoldings (HOS-2328)', () => {
                 name: 'Extra photos',
                 status: 'ACTIVE',
                 endsAt: null,
-                verticals: ['accommodation', 'venue']
+                verticals: ['accommodation', 'venue'],
+                listingGone: false
             }
         ]);
         expect(selections[0]).toHaveProperty('endsAt');
@@ -167,12 +168,13 @@ describe('readOwnerAddonHoldings (HOS-2328)', () => {
         expect(holding?.endsAt).toBe(endsAt);
     });
 
-    it('drops a listing add-on whose listing is gone instead of spreading it to every compatible vertical', async () => {
-        // Arrange: the target join found no live listing (soft-deleted)
+    it('keeps a listing add-on whose listing is gone, flagged, in its only compatible vertical', async () => {
+        // Arrange: the target join found no live listing (soft-deleted); billing may still charge it
         rows.push(
             holdingRow({
                 scopeType: 'LISTING',
-                targetId: '4f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11'
+                targetId: '4f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11',
+                compatibleVerticals: ['venue']
             })
         );
 
@@ -182,7 +184,36 @@ describe('readOwnerAddonHoldings (HOS-2328)', () => {
         });
 
         // Assert
-        expect(result).toEqual([]);
+        expect(result).toEqual([
+            {
+                slug: 'extra-photos-20',
+                name: 'Extra photos',
+                status: 'ACTIVE',
+                endsAt: null,
+                verticals: ['venue'],
+                listingGone: true
+            }
+        ]);
+    });
+
+    it('keeps a listing add-on whose listing is gone with no vertical when its product fits several', async () => {
+        // Arrange
+        rows.push(
+            holdingRow({
+                scopeType: 'LISTING',
+                targetId: '4f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11',
+                compatibleVerticals: ['accommodation', 'venue']
+            })
+        );
+
+        // Act
+        const [holding] = await readOwnerAddonHoldings({
+            userId: '3f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11'
+        });
+
+        // Assert: never spread to every compatible vertical, never dropped
+        expect(holding?.verticals).toEqual([]);
+        expect(holding?.listingGone).toBe(true);
     });
 
     it('answers the instances route exactly as before: no holdings-only column leaks', async () => {

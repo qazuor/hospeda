@@ -128,7 +128,8 @@ function toAddon(holding: OwnerAddonHolding, locale: Locale): MyPlanAddon {
         endsAt: holding.endsAt?.toISOString() ?? null,
         // Only a live recurring add-on renews with the subscription; one whose
         // checkout is still open has not started, so it renews with nothing yet.
-        renewsWithSubscription: holding.status === 'ACTIVE' && holding.endsAt === null
+        renewsWithSubscription: holding.status === 'ACTIVE' && holding.endsAt === null,
+        ...(holding.listingGone ? { listingGone: true as const } : {})
     };
 }
 
@@ -377,11 +378,19 @@ export async function readMyPlan(input: {
         })
     );
 
+    // A charged add-on is never hidden: one that belongs to no vertical is listed apart.
+    const unattributed = holdings
+        .filter((holding) => holding.verticals.length === 0)
+        .map((holding) => toAddon(holding, locale));
+    const unattributedPart =
+        unattributed.length > 0
+            ? { unattributedAddons: unattributed, addonsUrl: portalUrl({ kind: 'addons' }, locale) }
+            : {};
     if (items.length > 0) {
-        return { items };
+        return { items, ...unattributedPart };
     }
     const plans: MyPlanPlansLink[] = PLANS_PAGE_VERTICALS.filter((vertical) =>
         (verticals as readonly string[]).includes(vertical)
     ).map((vertical) => ({ vertical, url: portalUrl({ kind: 'plans', vertical }, locale) }));
-    return { items, plans };
+    return { items, plans, ...unattributedPart };
 }

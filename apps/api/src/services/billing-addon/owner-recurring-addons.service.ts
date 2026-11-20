@@ -124,10 +124,17 @@ export interface OwnerAddonHolding {
     /**
      * Where it applies: the vertical of its target listing, or, for an add-on
      * with no listing target, the verticals its product is compatible with (the
-     * same rule billing's coverage source follows, contract §2.7). A listing
-     * add-on whose listing is gone is not returned at all.
+     * same rule billing's coverage source follows, contract §2.7). For a listing
+     * add-on whose listing is gone: its product's only compatible vertical, or
+     * none when it fits several (never every one of them).
      */
     readonly verticals: readonly string[];
+    /**
+     * A listing add-on whose listing no longer exists or is no longer the
+     * owner's. Still returned: billing cancels it asynchronously and may still
+     * charge it, and `/billing-addon/instances` lists it too (`targetName: null`).
+     */
+    readonly listingGone: boolean;
 }
 
 /**
@@ -142,14 +149,7 @@ export async function readOwnerAddonHoldings(input: {
     readonly userId: string;
 }): Promise<readonly OwnerAddonHolding[]> {
     const rows = await selectOwnerRecurringAddonRows({ userId: input.userId });
-    // A listing add-on whose listing is gone (soft-deleted, or not the owner's)
-    // applies nowhere: it is left out, never spread to every compatible vertical.
-    const live = rows.filter(
-        (row) =>
-            row.scopeType !== 'LISTING' ||
-            Boolean(row.accommodationId ?? row.venueId ?? row.experienceId)
-    );
-    return live.map((row) => {
+    return rows.map((row) => {
         const targetVertical = row.accommodationId
             ? 'accommodation'
             : row.venueId
@@ -157,15 +157,21 @@ export async function readOwnerAddonHoldings(input: {
               : row.experienceId
                 ? 'experience'
                 : null;
+        const listingGone = row.scopeType === 'LISTING' && targetVertical === null;
+        const verticals = listingGone
+            ? row.compatibleVerticals.length === 1
+                ? [...row.compatibleVerticals]
+                : []
+            : row.scopeType === 'LISTING' && targetVertical
+              ? [targetVertical]
+              : [...row.compatibleVerticals];
         return {
             slug: row.slug,
             name: row.name,
             status: row.status as OwnerAddonHolding['status'],
             endsAt: row.endsAt,
-            verticals:
-                row.scopeType === 'LISTING' && targetVertical
-                    ? [targetVertical]
-                    : [...row.compatibleVerticals]
+            verticals,
+            listingGone
         };
     });
 }

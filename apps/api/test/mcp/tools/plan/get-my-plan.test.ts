@@ -57,6 +57,7 @@ import { MCP_TOOL_DEFINITIONS } from '../../../../src/mcp/tools/registry';
 import { runTool } from '../../../../src/mcp/tools/run-tool';
 import { injectClock } from '../../../../src/utils/clock';
 import { validateApiEnv } from '../../../../src/utils/env';
+import { apiLogger } from '../../../../src/utils/logger';
 
 /** Runs the tool and returns its data, failing the test on a refusal. */
 async function myPlan(input: Record<string, unknown> = {}): Promise<MyPlanResult> {
@@ -282,6 +283,45 @@ describe('get_my_plan', () => {
         ]);
     });
 
+    it('M1: a charged add-on whose listing is gone is shown flagged, unattributed when no vertical fits', async () => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+        mocks.readOwnerAddonHoldings.mockResolvedValue([
+            {
+                slug: 'extra-photos-20',
+                name: 'Catalog photos pack',
+                status: 'ACTIVE',
+                endsAt: null,
+                verticals: [],
+                listingGone: true
+            },
+            {
+                slug: 'extra-photos-20',
+                name: 'Catalog photos pack',
+                status: 'ACTIVE',
+                endsAt: null,
+                verticals: ['accommodation'],
+                listingGone: true
+            }
+        ]);
+
+        // Act
+        const result = await myPlan();
+
+        // Assert
+        const flagged = {
+            name: 'Pack de fotos extra (+20 fotos)',
+            status: 'ACTIVE',
+            endsAt: null,
+            renewsWithSubscription: true,
+            listingGone: true
+        };
+        expect(result.items[0]?.addons).toEqual([flagged]);
+        expect(result.items[1]?.addons).toEqual([]);
+        expect(result.unattributedAddons).toEqual([flagged]);
+        expect(result.addonsUrl).toBe(`${SITE}/es/mi-cuenta/complementos/`);
+    });
+
     it('a TRIAL_ACTIVE trial whose clock already ended is not a running trial', async () => {
         // Arrange
         arrangeSubscriptionAndTrial();
@@ -427,6 +467,51 @@ describe('get_my_plan', () => {
                 status: 'PERMANENT_GRANT',
                 trialDaysLeft: null
             });
+        });
+
+        it('branch 5: a courtesy-paused subscription billing reports no courtesy for stays PAUSED', async () => {
+            // Arrange: the pause says COURTESY, coverage reports no COURTESY source
+            arrangeVersion(ACCOMMODATION_VERSION, 'owner-basico', 'Catalog basic');
+            mocks.readOwnPlanState.mockResolvedValue({
+                subscriptions: [
+                    subscriptionRow({
+                        status: 'PAUSED',
+                        nextCharge: null,
+                        pause: { reason: 'COURTESY', expectedEndAt: COURTESY_END }
+                    })
+                ],
+                deferredCourtesies: []
+            });
+
+            // Act
+            const result = await myPlan({ vertical: 'accommodation' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]).toMatchObject({
+                status: 'PAUSED',
+                statusLabel: 'Pausada',
+                plan: { slug: 'owner-basico' },
+                coverageEndsAt: null
+            });
+        });
+
+        it('a coverage failure falls back to the trial, and is logged', async () => {
+            // Arrange
+            arrangeSubscriptionAndTrial();
+            mocks.coverage.mockRejectedValue(new Error('coverage down'));
+            const warn = vi.spyOn(apiLogger, 'warn');
+
+            // Act
+            const result = await myPlan({ vertical: 'venue' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.items[0]?.status).toBe('TRIAL');
+            expect(warn).toHaveBeenCalledWith(
+                expect.objectContaining({ vertical: 'venue', error: 'coverage down' }),
+                expect.stringContaining('coverage could not be read')
+            );
         });
 
         it('labels the grant in the user locale (pt)', async () => {

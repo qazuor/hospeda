@@ -186,6 +186,30 @@ describe('get_owner_summary subscription block (HOS-2328)', () => {
         );
     });
 
+    it('M1: add-ons that belong to no vertical reach the summary too', async () => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+        planMocks.readOwnerAddonHoldings.mockResolvedValue([
+            {
+                slug: 'extra-photos-20',
+                name: 'Catalog photos pack',
+                status: 'ACTIVE',
+                endsAt: null,
+                verticals: [],
+                listingGone: true
+            }
+        ]);
+        const actor = billingActor();
+
+        // Act
+        const summary = await run<OwnerSummary>(getOwnerSummaryTool, actor);
+        const plan = await run<MyPlanResult>(getMyPlanTool, actor);
+
+        // Assert
+        expect(plan.unattributedAddons).toHaveLength(1);
+        expect(summary.unattributedAddons).toEqual(plan.unattributedAddons);
+    });
+
     it('AC-C15b: both tools call the one shared reader at run time', async () => {
         // Arrange
         arrangeSubscriptionAndTrial();

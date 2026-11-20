@@ -54,9 +54,14 @@ export interface MyPlanAddon {
     readonly endsAt: string | null;
     /** `true` when it has no end date and renews with the subscription. */
     readonly renewsWithSubscription: boolean;
+    /**
+     * Present (`true`) only on a listing add-on whose listing no longer exists or
+     * is no longer the owner's. It may still be charged until billing cancels it.
+     */
+    readonly listingGone?: true;
 }
 
-/** The owner's title in one vertical: a live subscription or a running trial. */
+/** The owner's title in one vertical: a live subscription, a permanent grant, a courtesy or a running trial. */
 export interface MyPlanItem {
     /** The vertical. */
     readonly vertical: MyPlanVertical;
@@ -114,8 +119,19 @@ export interface MyPlanPlansLink {
 
 /** Result of `get_my_plan`. */
 export interface MyPlanResult {
-    /** One item per vertical with a live title or a running trial. Empty when there is none. */
+    /**
+     * One item per vertical with a live subscription, a permanent grant, a
+     * courtesy or a running trial. Empty when there is none.
+     */
     readonly items: readonly MyPlanItem[];
+    /**
+     * Add-ons the owner holds that belong to no single vertical (a listing
+     * add-on whose listing is gone and whose product fits several verticals).
+     * Present only when there is one; never spread over every vertical.
+     */
+    readonly unattributedAddons?: readonly MyPlanAddon[];
+    /** The add-ons page, present with {@link unattributedAddons}. */
+    readonly addonsUrl?: string;
     /** Present only when `items` is empty: the plans pages to choose a plan from. */
     readonly plans?: readonly MyPlanPlansLink[];
 }
