@@ -897,6 +897,7 @@
         "processing": "Se está procesando tu compra.",
         "waitingPayment": "Estamos confirmando tu pago.",
         "waitingPaymentLong": "Todavía no tenemos la confirmación de Mercado Pago. Volvé a esta pantalla en unos minutos para ver el resultado.",
+        "waitingPaymentMail": "Todavía no tenemos la confirmación de Mercado Pago. Te avisamos por correo cuando se acredite.",
         "active": "Activo",
         "closed": "La compra terminó sin activarse.",
         "pageExpired": "La página de pago venció sin un pago aprobado. Podés volver a comprarlo.",

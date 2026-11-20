@@ -54,5 +54,14 @@
         "refunded": "We refunded {{amount}}.",
         "timing": "Depending on your payment method, it may take a few days to show up.",
         "closing": "If you still want the add-on, you can buy it again from your account."
+    },
+    "oneTimeAddonActivated": {
+        "subject": "Your boost is active",
+        "heading": "Your boost is active",
+        "intro": "{{product}} is now active on {{listing}}.",
+        "introWithoutListing": "{{product}} is now active.",
+        "endsAt": "It ends on {{date}}.",
+        "closing": "You can see your add-ons and their status from your account.",
+        "cta": "See my add-ons"
     }
 }
