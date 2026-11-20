@@ -13,6 +13,7 @@ import { abandonOneTimeAddon } from './expire-addon-authorization-windows-one-ti
 import { PAYMENT_PAGE_OPERATION } from './one-time-payment-page';
 import {
     type BillingDeadlinesRow,
+    type PaymentPageTiming,
     paymentPageExpiry,
     paymentPageTiming
 } from './one-time-payment-page-deadline';
@@ -25,30 +26,36 @@ import {
  *   removes that path). The caller keeps answering it as pending elsewhere.
  * - `RESUME`: its page still takes payments. The caller answers that page's link, resuming its
  *   creation with the stored body if the answer was lost, so the owner can pay it.
- * - `RETRY`: its page stopped taking payments and no approved payment was found, so it was
- *   released (`ABANDONED`); the caller retries the purchase once with the new request.
+ * - `CONFIRMING`: its page stopped taking payments but A3's margin has not passed, and the
+ *   search saw payments, none approved. One may still be confirming, or sit beside one the
+ *   search left out (M4), so nothing is released: the caller answers it as pending elsewhere and
+ *   opens no second page.
+ * - `RETRY`: its page stopped taking payments and it was released (`ABANDONED`): inside the
+ *   margin only when the search saw no payment at all, after it when none seen is approved. The
+ *   caller retries the purchase once with the new request.
  * - `ACTIVATED`: its page stopped taking payments and an approved payment was found and
  *   confirmed while answering, so the addon is active now.
  */
-export type OccupiedPagePurchaseDecision = 'NOT_A_PAGE' | 'RESUME' | 'RETRY' | 'ACTIVATED';
+export type OccupiedPagePurchaseDecision =
+    | 'NOT_A_PAGE'
+    | 'RESUME'
+    | 'CONFIRMING'
+    | 'RETRY'
+    | 'ACTIVATED';
 
 /**
- * Whether the occupant's page still takes payments: until the expiry the provider read back,
- * or, when the creation answer was lost, until the expiry the resume would send (createdAt
- * plus the page duration of PLAZO:21).
+ * When the occupant's page stops taking payments: the expiry the provider read back, or, when
+ * the creation answer was lost, the expiry the resume would send (createdAt plus the page
+ * duration of PLAZO:21).
  */
-function pageStillOpen(input: {
+function pageEnd(input: {
     readonly occupant: SelectAddonInstance;
-    readonly deadlines: BillingDeadlinesRow;
-    readonly now: Date;
-}): boolean {
-    const end =
+    readonly timing: PaymentPageTiming;
+}): Date {
+    return (
         input.occupant.paymentPageExpiresAt ??
-        paymentPageExpiry({
-            createdAt: input.occupant.createdAt,
-            timing: paymentPageTiming(input.deadlines)
-        });
-    return end.getTime() > input.now.getTime();
+        paymentPageExpiry({ createdAt: input.occupant.createdAt, timing: input.timing })
+    );
 }
 
 /**
@@ -58,9 +65,13 @@ function pageStillOpen(input: {
  *
  * A page that stopped taking payments is not reopened: its key and page id are one per instance
  * (§5.6), and a second page for the same reference would let two collections race. It is
- * decided now the way A3 would at the end of its margin: payments are searched by reference and
- * each id is re-read by id (A2). With none approved it is abandoned, and a payment that lands
- * after that follows the late-payment path (mark 23, refund). With one approved it activates.
+ * decided now: payments are searched by reference and each id is re-read by id (A2). An
+ * approved one activates it. Otherwise A3 itself would wait until the page expiry plus the
+ * window margin, because a payment made just before the expiry may still be confirming and the
+ * search may answer only part of the matches (M4). So inside that margin the purchase is
+ * released only when the search saw no payment at all; when it saw any, none approved, it stays
+ * waiting (`CONFIRMING`). After the margin, or with nothing seen, it is abandoned, and a payment
+ * that lands after that follows the late-payment path (mark 23, refund).
  *
  * @param input.occupant - The pending instance holding the identity; the caller already scoped
  *   it to the requesting owner
@@ -86,11 +97,14 @@ export async function decideOccupiedPagePurchase(
         .limit(1);
     if (!key) return 'NOT_A_PAGE';
     const now = ports.clock.now();
-    if (pageStillOpen({ occupant: input.occupant, deadlines: input.deadlines, now }))
-        return 'RESUME';
+    const timing = paymentPageTiming(input.deadlines);
+    const end = pageEnd({ occupant: input.occupant, timing });
+    if (end.getTime() > now.getTime()) return 'RESUME';
+    const insideMargin = end.getTime() + timing.windowMarginMs > now.getTime();
     const found = await confirmOneTimePageByReference({ instanceId: input.occupant.id }, ports);
     if (found === 'ACTIVATED') return 'ACTIVATED';
-    if (found === 'NONE_APPROVED') {
+    if (found === 'NONE_APPROVED' && insideMargin) return 'CONFIRMING';
+    if (found === 'NONE_FOUND' || found === 'NONE_APPROVED') {
         await abandonOneTimeAddon({
             instanceId: input.occupant.id,
             expectedProviderOrderId: null,

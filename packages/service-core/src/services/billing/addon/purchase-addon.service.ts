@@ -152,6 +152,37 @@ async function withPaymentPage(
 }
 
 /**
+ * Answers the link of the same owner's page that still takes payments (HOS-2179 T-6 review),
+ * resuming its creation when the answer was lost. When the purchase was activated between the
+ * decision and the open, the request answers `ALREADY_ACTIVE`: it carries another order id, so
+ * an `EXISTING` answer without a link would leave its screen reading a purchase that is not its
+ * own.
+ */
+async function resumeOccupiedPage(
+    occupant: SelectAddonInstance,
+    context: Parameters<typeof withPaymentPage>[1]
+): Promise<PurchaseAddonResult> {
+    const resumed = await withPaymentPage(
+        {
+            outcome: 'EXISTING',
+            instanceId: occupant.id,
+            chargeKind: 'UNA_VEZ',
+            checkoutUrl: await checkoutUrlOf(occupant)
+        },
+        context
+    );
+    if (resumed.outcome !== 'EXISTING' || resumed.checkoutUrl) return resumed;
+    const [current] = await getDb()
+        .select({ status: addonInstances.status })
+        .from(addonInstances)
+        .where(eq(addonInstances.id, occupant.id))
+        .limit(1);
+    return current?.status === 'ACTIVE'
+        ? { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' }
+        : resumed;
+}
+
+/**
  * A1: buys one addon with a durable purchase identity and a provider call after commit.
  *
  * A one-time (`UNA_VEZ`) addon is paid on a payment page unless the caller asks for the card
@@ -401,15 +432,7 @@ async function purchaseAddonOnce(
                 // again with a fresh order id. Answer a page to pay, never "confirming".
                 const decision = await decideOccupiedPagePurchase({ occupant, deadlines }, ports);
                 if (decision === 'RESUME')
-                    return withPaymentPage(
-                        {
-                            outcome: 'EXISTING',
-                            instanceId: occupant.id,
-                            chargeKind: 'UNA_VEZ',
-                            checkoutUrl: await checkoutUrlOf(occupant)
-                        },
-                        { request, ports, deadlines }
-                    );
+                    return resumeOccupiedPage(occupant, { request, ports, deadlines });
                 if (decision === 'ACTIVATED')
                     return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
                 if (decision === 'RETRY' && options.mayReleaseOccupant)
