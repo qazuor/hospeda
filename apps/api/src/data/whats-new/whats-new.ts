@@ -332,6 +332,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         },
         translations: { en: 'machine', pt: 'machine' }
     },
+    // origin: #4578
+    {
+        id: '2026-11-19-provider-sees-which-host-declared-a-usage',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Como proveedor, ahora ves qué anfitrión registró cada uso de tu beneficio',
+            en: 'As a provider, you now see which host registered each use of your benefit',
+            pt: 'Como fornecedor, agora você vê qual anfitrião registrou cada uso do seu benefício'
+        },
+        body: {
+            es: 'En tu ficha de proveedor, en la pestaña Usos, cada uso que registró un anfitrión muestra su nombre, así sabés a quién le confirmás o rechazás. Tu asistente de IA también te lo dice cuando le preguntás por tus usos.',
+            en: 'In your provider page, under the Uses tab, every use a host registered shows their name, so you know whom you are confirming or rejecting. Your AI assistant also tells you when you ask about your uses.',
+            pt: 'Na sua ficha de fornecedor, na aba Usos, cada uso que um anfitrião registrou mostra o nome dele, assim você sabe quem está confirmando ou recusando. Seu assistente de IA também informa quando você pergunta pelos seus usos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4479
     {
         id: '2026-11-17-assistant-reads-your-reviews',
