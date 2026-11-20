@@ -78,6 +78,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
 
@@ -102,6 +103,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
 
@@ -140,6 +142,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
         expect(await screen.findByText('Promociones activas: 2 · sin tope')).toBeInTheDocument();
@@ -157,6 +160,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="locked"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
         await waitFor(() => expect(mocks.list).toHaveBeenCalled());
@@ -178,6 +182,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="locked"
                 upsellPlanName="Plan Profesional"
+                limitPlanOptions={[]}
             />
         );
         expect(await screen.findByRole('status')).toHaveTextContent(
@@ -197,6 +202,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="locked"
                 upsellPlanName="Plan Profesional"
+                limitPlanOptions={[]}
             />
         );
 
@@ -219,14 +225,34 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName="Plan de locales"
+                limitPlanOptions={[{ name: 'Plan Premium', maxActive: 10 }]}
             />
         );
         expect(
             await screen.findByText(
-                'Alcanzaste el tope. El plan Plan de locales permite más promociones.'
+                'Alcanzaste el tope. El plan Plan Premium permite más promociones.'
             )
         ).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Nueva promoción' })).toBeDisabled();
+    });
+
+    it('shows the no-plan message at the cap when no catalog plan has a higher limit', async () => {
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [], meta: { activeCount: 5, maxActive: 5 } }
+        });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName="Plan Profesional"
+                limitPlanOptions={[{ name: 'Plan Profesional', maxActive: 5 }]}
+            />
+        );
+        expect(
+            await screen.findByText('Alcanzaste el tope de promociones de tu plan.')
+        ).toBeInTheDocument();
     });
 
     it('shows only the moderated free-text field for a special offer and caps percentages at 100', async () => {
@@ -240,6 +266,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName="Plan de locales"
+                limitPlanOptions={[]}
             />
         );
         fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
@@ -263,6 +290,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
         fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
@@ -307,6 +335,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
 
@@ -335,6 +364,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName="Plan de locales"
+                limitPlanOptions={[]}
             />
         );
 
@@ -358,6 +388,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
 
