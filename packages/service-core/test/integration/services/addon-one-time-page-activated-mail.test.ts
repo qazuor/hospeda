@@ -259,30 +259,37 @@ describe('HOS-2405 the owner is mailed once when a one-time page add-on activate
         expect(mail?.payload).toMatchObject({ locale: 'pt' });
     });
 
-    it.skipIf(skip)('a failure to enqueue the mail does not undo the activation', async () => {
-        // Arrange
-        const s = await pageSetup();
-        const { instance, paymentPageId } = await boughtPage(s);
-        const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-        const original = emailOutboxModel.enqueue.bind(emailOutboxModel);
-        vi.spyOn(emailOutboxModel, 'enqueue').mockImplementation(async (input, tx) => {
-            if (input.template === ONE_TIME_ADDON_ACTIVATED_TEMPLATE)
-                throw new Error('outbox unavailable');
-            return original(input, tx);
-        });
+    it.skipIf(skip)(
+        'a database error while enqueuing the mail does not undo the activation',
+        async () => {
+            // Arrange
+            const s = await pageSetup();
+            const { instance, paymentPageId } = await boughtPage(s);
+            const paid = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            const original = emailOutboxModel.enqueue.bind(emailOutboxModel);
+            vi.spyOn(emailOutboxModel, 'enqueue').mockImplementation(async (input, tx) => {
+                if (input.template !== ONE_TIME_ADDON_ACTIVATED_TEMPLATE)
+                    return original(input, tx);
+                if (!tx) throw new Error('the activated notice must enqueue inside a transaction');
+                // A Postgres error (22012) aborts the transaction it runs in: only a savepoint keeps
+                // the activation's own transaction usable (otherwise every later statement is 25P02).
+                await tx.execute(sql`select 1/0`);
+                throw new Error('unreachable: the division by zero must fail in the database');
+            });
 
-        // Act
-        const result = await confirmOneTimePagePayment(
-            { instanceId: instance.id, chargeId: paid.chargeId },
-            s.ports
-        );
+            // Act
+            const result = await confirmOneTimePagePayment(
+                { instanceId: instance.id, chargeId: paid.chargeId },
+                s.ports
+            );
 
-        // Assert
-        expect(result).toMatchObject({ outcome: 'ACTIVATED' });
-        expect((await pageInstance(instance.id)).status).toBe('ACTIVE');
-        const [payment] = await pagePayments(instance.id);
-        expect(payment?.providerFactId).toBe(paid.chargeId);
-        expect(payment?.status).toBe('SUCCEEDED');
-        expect(await activatedMails(instance)).toHaveLength(0);
-    });
+            // Assert
+            expect(result).toMatchObject({ outcome: 'ACTIVATED' });
+            expect((await pageInstance(instance.id)).status).toBe('ACTIVE');
+            const [payment] = await pagePayments(instance.id);
+            expect(payment?.providerFactId).toBe(paid.chargeId);
+            expect(payment?.status).toBe('SUCCEEDED');
+            expect(await activatedMails(instance)).toHaveLength(0);
+        }
+    );
 });
