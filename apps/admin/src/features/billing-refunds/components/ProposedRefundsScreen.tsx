@@ -19,6 +19,7 @@ import {
 } from '../../billing-reconciliation/reconciliation-labels';
 import { useProposedRefunds } from '../hooks/useProposedRefunds';
 import { ProposedRefundActions } from './ProposedRefundActions';
+import { RefundRemainderSettlementForm } from './RefundRemainderSettlementForm';
 
 const PAGE_SIZE = 50;
 
@@ -43,11 +44,20 @@ export function formatProposedRefundAmount({
         : formatCurrency({ value: amountMinor / 100, currency, locale });
 }
 
-/** Proposed-refund screen, gated by the permission of the action it feeds. */
+/**
+ * Proposed-refund screen, gated by the permission of the action it feeds. Below the list, a person
+ * who may run action 14 records the remainder of a partially accepted refund (HOS-2406): such a
+ * refund has an accepted provider call, so it is not in the list.
+ */
 export function ProposedRefundsScreen() {
     return (
         <PermissionGate permissions={[PermissionEnum.BILLING_REFUND]}>
-            <ProposedRefundsBody />
+            <div className="space-y-6">
+                <ProposedRefundsBody />
+                <PermissionGate permissions={[PermissionEnum.BILLING_SETTLE_EXTERNAL]}>
+                    <RefundRemainderSettlementForm />
+                </PermissionGate>
+            </div>
         </PermissionGate>
     );
 }

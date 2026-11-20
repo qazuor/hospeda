@@ -1,44 +1,32 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient, SelectRefund } from '@repo/db';
-import {
-    addonInstances,
-    and,
-    coveredPeriods,
-    eq,
-    getDb,
-    refundCalls,
-    refunds,
-    sql,
-    subscriptions
-} from '@repo/db';
+import { and, coveredPeriods, eq, getDb, refunds, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
 import { type Actor, ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
-import { isSystemActor } from '../../../utils/system-actor';
 import {
     type ApplyExecutedRefundResult,
     applyExecutedRefund
 } from '../payment/apply-executed-refund.service';
 import { resolveHungPaymentsBySettlement } from '../reconciliation/hung-payment-resolution.js';
 import { enqueueLatePaymentRefundNotice } from './late-payment-refund-notice.js';
+import {
+    assertPanelReferenceUnused,
+    authorizeRefundAction14,
+    externalReferenceAlreadySettled,
+    PANEL_REFERENCE_CONSTRAINT,
+    readRefundSubject
+} from './refund-action14';
 import { canRefundTransition, type RefundStatus, type Rf4Reason } from './refund-machine';
 import {
     assertRefundAmount,
     assertRefundable,
     assertRetainedPaymentRefundable,
     assertWithinBalance,
-    type LockedRefundSource,
     lockRefundSource,
     type RefundSource,
     refundSourceColumns
 } from './refund-source';
-
-/** The administrative action this service executes: one constant for the helper and the step (Coord-178). */
-const ACTION = 'ACC_14' as const;
-
-/** The partial unique index that keeps a provider panel reference on one row (notes H3). */
-const PANEL_REFERENCE_CONSTRAINT = 'uq_refund_provider_panel_reference';
 
 /** Where an out-of-flow refund was settled (notes H2). */
 export type ExternalRefundChannel = 'BANK_TRANSFER' | 'PROVIDER_PANEL';
@@ -102,52 +90,6 @@ function reject(
     return new ServiceError(code, message, undefined, reason);
 }
 
-/** Step b: the subject is the owner of the payment's subscription or add-on instance; `null` on a tombstone. */
-async function readSubject(tx: DrizzleClient, locked: LockedRefundSource): Promise<string | null> {
-    const subscriptionId =
-        locked.kind === 'PAYMENT'
-            ? locked.payment.subscriptionId
-            : locked.manualPayment.subscriptionId;
-    if (subscriptionId) {
-        // No row lock (HOS-2223): `subscription.user_id` is written once at insert and never
-        // updated, so there is nothing to protect. A lock here would be taken AFTER the payment
-        // lock, inverting the global order (subscription before payment) that P1, S1 and S19
-        // follow, and could deadlock against them on the same charge.
-        const [subscription] = await tx
-            .select({ userId: subscriptions.userId })
-            .from(subscriptions)
-            .where(eq(subscriptions.id, subscriptionId))
-            .limit(1);
-        return subscription?.userId ?? null;
-    }
-    const addonInstanceId = locked.kind === 'PAYMENT' ? locked.payment.addonInstanceId : null;
-    if (!addonInstanceId) return null;
-    const [instance] = await tx
-        .select({ ownerId: addonInstances.ownerId })
-        .from(addonInstances)
-        .where(eq(addonInstances.id, addonInstanceId))
-        .limit(1)
-        .for('share');
-    return instance?.ownerId ?? null;
-}
-
-/** Step c: step 3 of the administrative action, derived only from ACC_14's own permission. */
-function authorize(actor: Actor, subjectId: string | null): void {
-    const permitted = isAdministrativeActionPermitted({
-        action: ACTION,
-        actorPermissions: actor.permissions
-    });
-    const step = resolveAdministrativeActionStep({
-        action: ACTION,
-        actorId: actor.id,
-        subjectId,
-        permitted,
-        isSystemActor: isSystemActor(actor)
-    });
-    if (!step.allowed)
-        throw reject(ServiceErrorCode.FORBIDDEN, 'Forbidden', 'ADMINISTRATIVE_ACTION_FORBIDDEN');
-}
-
 /** Step d: the manual scope (H9) and the uniqueness of a provider panel reference (H3). */
 async function validateSettlement(
     tx: DrizzleClient,
@@ -166,30 +108,7 @@ async function validateSettlement(
             'MANUAL_PAYMENT_SCOPE_NOT_ALLOWED'
         );
     if (input.channel !== 'PROVIDER_PANEL') return;
-    const [settled] = await tx
-        .select({ id: refunds.id })
-        .from(refunds)
-        .where(
-            and(
-                eq(refunds.externalRef, input.reference),
-                eq(refunds.externalChannel, 'PROVIDER_PANEL')
-            )
-        )
-        .limit(1);
-    const [called] = await tx
-        .select({ id: refundCalls.id })
-        .from(refundCalls)
-        .where(eq(refundCalls.providerRefundId, input.reference))
-        .limit(1);
-    if (settled || called) throw alreadySettled();
-}
-
-function alreadySettled(): ServiceError {
-    return reject(
-        ServiceErrorCode.ALREADY_EXISTS,
-        'This provider panel reference is already settled',
-        'EXTERNAL_REFERENCE_ALREADY_SETTLED'
-    );
+    await assertPanelReferenceUnused({ tx, reference: input.reference });
 }
 
 /** Step e: the open `REQUESTED` to close, locked `FOR UPDATE` (H5). */
@@ -393,8 +312,8 @@ export async function settleExternalRefund(
     try {
         return await getDb().transaction(async (tx: DrizzleClient) => {
             const locked = await lockRefundSource({ tx, source: input.source });
-            const subjectId = await readSubject(tx, locked);
-            authorize(input.actor, subjectId);
+            const subjectId = await readRefundSubject({ tx, locked });
+            authorizeRefundAction14({ actor: input.actor, subjectId });
             assertRefundable({ locked });
             await assertRetainedPaymentRefundable({ tx, locked });
             await validateSettlement(tx, input);
@@ -427,7 +346,7 @@ export async function settleExternalRefund(
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
         if (cause?.code === '23505' && cause.constraint === PANEL_REFERENCE_CONSTRAINT)
-            throw alreadySettled();
+            throw externalReferenceAlreadySettled();
         throw error;
     }
 }

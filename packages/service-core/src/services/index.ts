@@ -245,6 +245,7 @@ export * from './billing/refund/refund-window.js';
 export * from './billing/refund/request-refund.service.js';
 export * from './billing/refund/resend-refund-call.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
+export * from './billing/refund/settle-refund-remainder.service.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';
 export * from './billing/subscription/activate-subscription.service.js';
 export * from './billing/subscription/admin-subscription-detail.service.js';
