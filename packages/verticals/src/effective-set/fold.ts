@@ -21,6 +21,11 @@
  * defined changes: `MAX` the highest, `MIN` the lowest, `BEST_DECLARED` the
  * best under the order the key declares.
  *
+ * Under `SUM` the catalog's "unlimited" sentinel ({@link UNLIMITED_LIMIT_VALUE})
+ * is ABSORBING (HOS-2403, clarification of M-ENT-01): one unlimited source makes
+ * the aggregate unlimited, so it folds to the sentinel itself, never to
+ * sentinel + n. `MAX` and `MIN` need no rule: they already pick one value.
+ *
  * `BEST_DECLARED` has no declared order in the catalog yet, so the fold refuses
  * it with the same {@link UndecidableKeyError} the change verdict uses
  * (Coord-12, 2026-10-08) instead of guessing one: inventing the order would be
@@ -28,7 +33,12 @@
  * be a silent hole. The key that adds the first `BEST_DECLARED` order replaces
  * this refusal with the comparison.
  */
-import { type AggregationStrategy, getCatalogKey } from '@repo/schemas';
+import {
+    type AggregationStrategy,
+    getCatalogKey,
+    isUnlimitedLimit,
+    UNLIMITED_LIMIT_VALUE
+} from '@repo/schemas';
 import { UndecidableKeyError } from '../plan-catalog/errors';
 import { ContradictoryStrategyError } from './errors';
 import { selectPlegableSources } from './plegable';
@@ -95,6 +105,9 @@ function foldKey(args: {
 }): number {
     switch (args.strategy) {
         case 'SUM':
+            if (args.values.some((value) => isUnlimitedLimit({ value }))) {
+                return UNLIMITED_LIMIT_VALUE;
+            }
             return args.values.reduce((total, value) => total + value, 0);
         case 'MAX':
             return Math.max(...args.values);
