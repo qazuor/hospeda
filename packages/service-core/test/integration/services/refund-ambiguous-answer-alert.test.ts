@@ -1,13 +1,12 @@
 import { registerCaptureHook, unregisterCaptureHook } from '@repo/logger';
-import type { OrderRefundInput, PaymentProvider } from '@repo/payments';
+import type { PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { AmbiguousRefundAnswerError } from '../../../src/services/billing/refund/ambiguous-refund-answer.error.js';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
 import { resendUnansweredRefundCalls } from '../../../src/services/billing/refund/resend-refund-call.service.js';
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
-import { refundConfirmFixture } from './support/refund-confirm-fixtures.js';
-import { orderRefundRows, refundOrderFixture } from './support/refund-order-fixtures.js';
+import { refundConfirmFixture, refundConfirmRows } from './support/refund-confirm-fixtures.js';
 
 afterAll(closeServiceTestPool);
 afterEach(unregisterCaptureHook);
@@ -51,144 +50,7 @@ function lostResponseProvider(provider: PaymentProvider) {
     return { wrapped, refund };
 }
 
-describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its refund, order or payment and candidates', () => {
-    it.skipIf(skip)(
-        'two unknown order refund ids: captures SEVERAL_NEW_ORDER_REFUNDS with both candidates',
-        async () => {
-            // Arrange
-            const seeded = await refundOrderFixture({ refundAmount: 4000 });
-            const captured = capturing();
-            let fakeRefundId = '';
-            const provider = new Proxy(seeded.fixture.provider, {
-                get(target, property, receiver) {
-                    if (property === 'refundOrder')
-                        return async (input: OrderRefundInput) => {
-                            const response = await target.refundOrder(input);
-                            fakeRefundId = response.refunds[0]!.refundId;
-                            return {
-                                refunds: [
-                                    ...response.refunds,
-                                    { refundId: 'unexpected', amountMinor: 4000, accredited: false }
-                                ]
-                            };
-                        };
-                    return Reflect.get(target, property, receiver);
-                }
-            });
-
-            // Act
-            const result = await confirmRefund(
-                { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider }
-            );
-            const rows = await orderRefundRows(seeded.refundId);
-            const matches = ambiguousFor(captured, seeded.refundId);
-            const error = matches[0]?.error;
-
-            // Assert
-            expect(matches).toHaveLength(1);
-            expect(error).toMatchObject({
-                kind: 'ORDER',
-                refundId: seeded.refundId,
-                orderId: seeded.orderId,
-                paymentId: seeded.payment.id,
-                providerFactId: seeded.payment.providerFactId,
-                expectedAmountMinor: 4000,
-                reason: 'SEVERAL_NEW_ORDER_REFUNDS',
-                refundCallKey: rows.keys[0]?.key,
-                candidateProviderRefundIds: [fakeRefundId, 'unexpected'].sort(),
-                candidateAmountsMinor: [4000, 4000],
-                candidateSummary: `${fakeRefundId}:4000,unexpected:4000`
-            });
-            expect(
-                error instanceof AmbiguousRefundAnswerError
-                    ? [...error.candidates].sort((a, b) =>
-                          a.providerRefundId.localeCompare(b.providerRefundId)
-                      )
-                    : []
-            ).toEqual(
-                [
-                    { providerRefundId: fakeRefundId, amountMinor: 4000 },
-                    { providerRefundId: 'unexpected', amountMinor: 4000 }
-                ].sort((a, b) => a.providerRefundId.localeCompare(b.providerRefundId))
-            );
-            expect(matches[0]?.extra.label).toBe(
-                error instanceof Error ? error.message : undefined
-            );
-            expect(result.outcome).toBe('AWAITING_PROVIDER_ANSWER');
-            expect(rows.keys[0]?.completedAt).toBeNull();
-        }
-    );
-
-    it.skipIf(skip)(
-        'one order refund id with another amount: captures ORDER_REFUND_AMOUNT_MISMATCH',
-        async () => {
-            // Arrange
-            const seeded = await refundOrderFixture({ refundAmount: 4000 });
-            const captured = capturing();
-            let fakeRefundId = '';
-            const provider = new Proxy(seeded.fixture.provider, {
-                get(target, property, receiver) {
-                    if (property === 'refundOrder')
-                        return async (input: OrderRefundInput) => {
-                            const response = await target.refundOrder(input);
-                            fakeRefundId = response.refunds[0]!.refundId;
-                            return {
-                                refunds: response.refunds.map((refund) => ({
-                                    ...refund,
-                                    amountMinor: 3999
-                                }))
-                            };
-                        };
-                    return Reflect.get(target, property, receiver);
-                }
-            });
-
-            // Act
-            await confirmRefund(
-                { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider }
-            );
-            const matches = ambiguousFor(captured, seeded.refundId);
-            expect(matches).toHaveLength(1);
-            const error = matches[0]?.error;
-
-            // Assert
-            expect(error).toMatchObject({ reason: 'ORDER_REFUND_AMOUNT_MISMATCH' });
-            expect(error instanceof AmbiguousRefundAnswerError ? error.candidates : []).toEqual([
-                { providerRefundId: fakeRefundId, amountMinor: 3999 }
-            ]);
-        }
-    );
-
-    it.skipIf(skip)(
-        'no new order refund id: captures NO_NEW_ORDER_REFUND with no candidates',
-        async () => {
-            // Arrange
-            const seeded = await refundOrderFixture({ refundAmount: 4000 });
-            const captured = capturing();
-            const provider = new Proxy(seeded.fixture.provider, {
-                get(target, property, receiver) {
-                    if (property === 'refundOrder') return async () => ({ refunds: [] });
-                    return Reflect.get(target, property, receiver);
-                }
-            });
-
-            // Act
-            await confirmRefund(
-                { actor: seeded.actor, refundId: seeded.refundId },
-                { clock: seeded.fixture.clock, provider }
-            );
-            const matches = ambiguousFor(captured, seeded.refundId);
-            expect(matches).toHaveLength(1);
-            const error = matches[0]?.error;
-
-            // Assert
-            expect(error).toMatchObject({ reason: 'NO_NEW_ORDER_REFUND' });
-            expect(error instanceof AmbiguousRefundAnswerError ? error.candidates : []).toEqual([]);
-        }
-    );
-
+describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its refund, payment and candidates', () => {
     it.skipIf(skip)(
         'two unnamed equal payment refunds on replay: captures SEVERAL_UNNAMED_PAYMENT_REFUNDS',
         async () => {
@@ -220,7 +82,7 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
                 { refundId: seeded.refundId },
                 { clock: seeded.fixture.clock, provider: lost.wrapped }
             );
-            const rows = await orderRefundRows(seeded.refundId);
+            const rows = await refundConfirmRows(seeded.refundId);
             const matches = ambiguousFor(captured, seeded.refundId);
             expect(matches).toHaveLength(1);
             const error = matches[0]?.error;
@@ -231,7 +93,6 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
             // Assert
             expect(error).toMatchObject({
                 kind: 'PAYMENT',
-                orderId: null,
                 paymentId: seeded.payment.id,
                 providerFactId: seeded.charge.chargeId,
                 expectedAmountMinor: 4000,
@@ -316,9 +177,9 @@ describe('HOS-2007 an ambiguous refund answer raises a Sentry capture with its r
         }
     );
 
-    it.skipIf(skip)('a single order refund with the right amount captures nothing', async () => {
+    it.skipIf(skip)('a single payment refund with the right amount captures nothing', async () => {
         // Arrange
-        const seeded = await refundOrderFixture({ refundAmount: 4000 });
+        const seeded = await refundConfirmFixture(10000, 4000);
         const captured = capturing();
 
         // Act

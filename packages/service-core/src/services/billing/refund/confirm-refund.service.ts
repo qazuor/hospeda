@@ -12,7 +12,6 @@ import { authorizeRefundAction, readRefundSubject } from './refund-action-author
 import { readAddonRefundChannel } from './refund-addon-channel';
 import { detectRefundChargeback } from './refund-chargeback';
 import { canRefundTransition } from './refund-machine';
-import { confirmOrderRefund } from './refund-order-call';
 import { sendRefundCalls } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
 import {
@@ -55,9 +54,6 @@ export type ConfirmRefundOutcome =
     | 'PROVIDER_REJECTED_KEPT_CONFIRMED'
     | 'PROVIDER_REJECTED_FAILED'
     | 'AWAITING_PROVIDER_ANSWER'
-    | 'ORDER_REFUND_HELD'
-    | 'PROVIDER_KEY_CONFLICT'
-    | 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
     | 'CHARGED_BACK';
 /** RF2 result consumed by the administrative route. */
 export type ConfirmRefundResult = {
@@ -87,7 +83,6 @@ async function confirmInTransaction(
     refund: SelectRefund;
     payment: SelectPayment;
     subjectId: string | null;
-    providerOrderId: string | null;
 }> {
     return getDb().transaction(async (tx) => {
         const [candidate] = await tx
@@ -140,9 +135,9 @@ async function confirmInTransaction(
                 'REFUND_NOT_OPEN'
             );
         /**
-         * An add-on payment is refunded through its order (AC:B6:8, instances bought before
-         * HOS-2179) or, when its instance was bought on a payment page, as a plain payment
-         * (HOS-2179 §5.11). An instance that proves neither is never sent.
+         * An add-on payment is refunded as a plain payment when its instance was bought on a
+         * payment page (HOS-2179 §5.11). Any other instance, including one bought through the
+         * retired order path (T-7), is never sent.
          */
         const addon =
             locked.payment.addonInstanceId === null
@@ -195,12 +190,7 @@ async function confirmInTransaction(
                 'Refund changed while confirming',
                 'REFUND_STATE_CHANGED'
             );
-        return {
-            refund: updated,
-            payment: locked.payment,
-            subjectId,
-            providerOrderId: addon?.providerOrderId ?? null
-        };
+        return { refund: updated, payment: locked.payment, subjectId };
     });
 }
 
@@ -227,16 +217,7 @@ export async function confirmRefund(
             );
         throw error;
     }
-    const { refund, payment, subjectId, providerOrderId } = confirmed;
-    if (providerOrderId !== null)
-        return confirmOrderRefund({
-            refund,
-            payment,
-            subjectId,
-            orderId: providerOrderId,
-            ports,
-            correlationId: input.correlationId
-        });
+    const { refund, payment, subjectId } = confirmed;
     const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
     actStartInstant({ act });
     let chargedBack: boolean;
