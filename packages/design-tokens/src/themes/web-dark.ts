@@ -19,6 +19,7 @@
 
 import type { OKLCH } from '../tokens/colors.js';
 import type { Theme } from './types.js';
+import { webAccountDark } from './web-account.js';
 
 /** Hand-tuned OKLCH not part of any palette (same helper as web-light.ts). */
 const oklchValue = (l: number, c: number, h: number): OKLCH => ({ l, c, h });
@@ -190,5 +191,8 @@ export const webDark: Theme = {
     'avatar-3-from': oklchValue(0.52, 0.11, 195),
     'avatar-3-to': oklchValue(0.68, 0.14, 195),
     'avatar-4-from': oklchValue(0.45, 0.13, 155),
-    'avatar-4-to': oklchValue(0.65, 0.17, 155)
+    'avatar-4-to': oklchValue(0.65, 0.17, 155),
+
+    // Mi Cuenta app tokens, dark (HOS-2413 PR-1).
+    ...webAccountDark
 };

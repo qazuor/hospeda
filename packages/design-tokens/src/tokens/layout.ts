@@ -94,3 +94,50 @@ export const layout = {
     container: layoutContainer,
     mediaOverrides: layoutMediaOverrides
 } as const;
+
+// ============================================================================
+// Account area — control heights, template widths, breakpoints
+// (HOS-2454 T-001 control heights; HOS-2413 T-002 layout widths)
+// ============================================================================
+
+/** Control heights for the Mi Cuenta kit. Web tokens `--control-h-{sm,md,lg}`. */
+export const controlHeight = {
+    /** Compact button (the touch target stays 44px through padding/margin). */
+    sm: '36px',
+    /** Default desktop button, sidebar item. */
+    md: '40px',
+    /** Inputs, selects, tabs, switch rows, mobile buttons. */
+    lg: '44px'
+} as const satisfies Record<string, string>;
+
+/** Name of a control height step. */
+export type ControlHeightName = keyof typeof controlHeight;
+
+/** Account shell and template widths. Web tokens `--sidebar-w`, `--editor-nav-w`, `--form-max`, `--reading-max`. */
+export const layoutAccount = {
+    /** AccountSidebar column from 64rem. */
+    'sidebar-w': '240px',
+    /** EditorSectionNav column. */
+    'editor-nav-w': '224px',
+    /** Max width of the `form` template (left-aligned). */
+    'form-max': '720px',
+    /** Max width of the `reading` template. */
+    'reading-max': '640px'
+} as const satisfies Record<string, string>;
+
+/** Name of an account layout width. */
+export type LayoutAccountName = keyof typeof layoutAccount;
+
+/**
+ * The closed list of account breakpoints in rem, mobile-first `min-width`
+ * only (D6 «breakpoints cerrados»). Documentation-only: custom properties
+ * cannot appear inside `@media` preludes, so `check:account-breakpoints`
+ * enforces these literal values and tests or `matchMedia` callers import them.
+ */
+export const ACCOUNT_BREAKPOINTS_REM = [30, 48, 64, 80] as const;
+
+/** One account breakpoint value in rem. */
+export type AccountBreakpointRem = (typeof ACCOUNT_BREAKPOINTS_REM)[number];
+
+/** Container width (rem) from which the editor section nav appears (D2). */
+export const CQ_EDITOR_NAV_REM = 60;
