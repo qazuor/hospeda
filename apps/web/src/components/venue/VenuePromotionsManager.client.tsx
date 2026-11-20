@@ -1,4 +1,5 @@
 import {
+    LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
     VenuePromotionCreateRequestSchema,
     type VenuePromotionListOutput
@@ -215,8 +216,8 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
         setMessage(cacheNotice);
     };
 
-    const changeState = async (item: PromotionRow, state: string) => {
-        if (state === 'ACTIVE' && sectionState === 'locked') {
+    const changeState = async (item: PromotionRow, state: LifecycleStatusEnum) => {
+        if (state === LifecycleStatusEnum.ACTIVE && sectionState === 'locked') {
             setMessage(lockedMessage());
             return;
         }
@@ -389,7 +390,9 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                                         variant="outline-primary"
                                         size="sm"
                                         shape="rounded"
-                                        onClick={() => void changeState(item, 'PAUSED')}
+                                        onClick={() =>
+                                            void changeState(item, LifecycleStatusEnum.INACTIVE)
+                                        }
                                         label={t(
                                             'venue.owner.editor.promotionsManager.actions.pause'
                                         )}
@@ -401,7 +404,9 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                                         variant="outline-primary"
                                         size="sm"
                                         shape="rounded"
-                                        onClick={() => void changeState(item, 'ACTIVE')}
+                                        onClick={() =>
+                                            void changeState(item, LifecycleStatusEnum.ACTIVE)
+                                        }
                                         label={t(
                                             'venue.owner.editor.promotionsManager.actions.activate'
                                         )}

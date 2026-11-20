@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum, LifecycleStatusEnumSchema } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -68,6 +69,51 @@ function listWithPromotion() {
 }
 
 describe('VenuePromotionsManager', () => {
+    it('pauses a promotion with a lifecycle state accepted by the shared schema', async () => {
+        listWithPromotion();
+        mocks.patch.mockResolvedValue({ ok: true, data: promotion });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+            />
+        );
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Pausar' }));
+
+        await waitFor(() => expect(mocks.patch).toHaveBeenCalled());
+        const [{ body }] = mocks.patch.mock.calls[0] as [{ body: { lifecycleState: unknown } }];
+        expect(body.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
+        expect(LifecycleStatusEnumSchema.safeParse(body.lifecycleState).success).toBe(true);
+    });
+
+    it('labels inactive promotions as paused and reactivates them with ACTIVE', async () => {
+        const inactivePromotion = { ...promotion, lifecycleState: 'INACTIVE' };
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [inactivePromotion], meta: { activeCount: 0, maxActive: 5 } }
+        });
+        mocks.patch.mockResolvedValue({ ok: true, data: promotion });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+            />
+        );
+
+        expect(await screen.findByText('Pausada')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Reactivar' }));
+
+        await waitFor(() => expect(mocks.patch).toHaveBeenCalled());
+        const [{ body }] = mocks.patch.mock.calls[0] as [{ body: { lifecycleState: unknown } }];
+        expect(body.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        expect(LifecycleStatusEnumSchema.safeParse(body.lifecycleState).success).toBe(true);
+    });
+
     it('does not assign an active or expired label before the client clock is set', () => {
         expect(
             resolvePromotionLifecycleState(

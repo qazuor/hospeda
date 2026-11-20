@@ -294,10 +294,13 @@ export function formatValidationMessage({ details }: { readonly details: unknown
     if (fields.length === 0) {
         return `${TOOL_VALIDATION_MESSAGE}.`;
     }
-    const parts = fields.map(({ field, message }) =>
-        field ? `campo «${field}»: ${message}` : message
-    );
-    return `${TOOL_VALIDATION_MESSAGE}: ${parts.join('; ')}.`;
+    const parts = fields.map(({ field, message }) => {
+        const text = message.replace(/[.\s]+$/u, '');
+        return field ? `campo «${field}»: ${text}` : text;
+    });
+    const joined = parts.join('; ');
+    // Messages already end with their own terminator, so only add the final period when absent.
+    return `${TOOL_VALIDATION_MESSAGE}: ${/[?!]$/u.test(joined) ? joined : `${joined}.`}`;
 }
 
 /** Arguments for {@link toToolFailure}. RO-RO. */
