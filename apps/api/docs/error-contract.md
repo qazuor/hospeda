@@ -610,16 +610,20 @@ The permission is the route's scope (`billing.settleExternal`); the subject, the
 | `REFUND_AMOUNT_INVALID` | 422 | `VALIDATION_ERROR` |
 | `EXTERNAL_REFERENCE_INVALID` | 422 | `VALIDATION_ERROR` |
 | `REMAINDER_AMOUNT_MISMATCH` | 422 | `VALIDATION_ERROR` |
+| `REMAINDER_NOT_FOUND_AT_PROVIDER` | 422 | `VALIDATION_ERROR` |
 | `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
 | `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
 | `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
 | `REFUND_NOT_CONFIRMED` | 409 | `ALREADY_EXISTS` |
 | `REFUND_CALL_UNANSWERED` | 409 | `ALREADY_EXISTS` |
 | `REFUND_HAS_NO_ACCEPTED_CALL` | 409 | `ALREADY_EXISTS` |
+| `ACCEPTED_PART_NOT_ACCREDITED` | 409 | `ALREADY_EXISTS` |
 | `EXTERNAL_REFERENCE_ALREADY_SETTLED` | 409 | `ALREADY_EXISTS` |
 | `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
 
-`REMAINDER_AMOUNT_MISMATCH` answers any `amount` other than the refund amount minus the sum of the calls the provider accepted. Its `message` carries the amount owed, which is 0 for a refund the provider accepted in full (RF3 closes that one on its own). `REFUND_CALL_UNANSWERED` answers a refund with a call the provider has not answered; that case stays in the refunds runbook. `REFUND_HAS_NO_ACCEPTED_CALL` answers a refund with no accepted call, including any manual payment refund: decline it, then use action 14 once it is `FAILED`.
+Accepted is not credited. Before its transaction the settlement reads the charge by id, as RF3 does (the read must be fresh for the act). `ACCEPTED_PART_NOT_ACCREDITED` answers a refund with an accepted call whose provider refund id the charge does not report as credited in the payment's currency: the accepted part never landed, so there is no remainder to record. `REMAINDER_NOT_FOUND_AT_PROVIDER` answers a `reference` that is not a credited provider refund on the same charge, in the payment's currency, for exactly `amount`. A provider read that fails propagates as an error, never as one of these reasons.
+
+`REMAINDER_AMOUNT_MISMATCH` answers any `amount` other than the refund amount minus what the provider credited for the accepted calls (the amounts the charge read reports, not the amounts the calls asked for). Its `message` carries the amount owed, which is 0 for a refund the provider accepted in full (RF3 closes that one on its own). `REFUND_CALL_UNANSWERED` answers a refund with a call the provider has not answered; that case stays in the refunds runbook. `REFUND_HAS_NO_ACCEPTED_CALL` answers a refund with no accepted call, including any manual payment refund: decline it, then use action 14 once it is `FAILED`.
 
 ## Action 13 rejections (B6.1)
 
