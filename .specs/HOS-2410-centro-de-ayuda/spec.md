@@ -269,6 +269,16 @@ see what applies to me first.
 
 ## 7. Phases and PR plan
 
+**Branching (owner, 2026-11-20).** All work goes through the integration branch
+`epic/HOS-2410-centro-de-ayuda`, cut from `staging`. Unit branches are cut from
+the epic and PR back into the epic. When a phase is complete, the epic itself is
+PR'd to `staging`. This is a deliberate variant of DEC-CI-001, which ships an
+umbrella once: here the epic ships once per phase, so `staging` only receives
+finished phases. Between phases, `staging` is merged into the epic. Because the
+branch is under `epic/`, `check-umbrella-branch-target.sh` discovers it
+automatically: it exempts the epic's own PR and blocks any other branch that
+carries unmerged epic commits from targeting `staging`.
+
 Titles carry `[HOS-2410]`. **Only the last PR to merge carries `Closes HOS-2410`.**
 Every other PR body must NOT contain a Linear magic word. The Linear title
 automation also fires on PR open and merge (CLAUDE.md, "Known-live footgun"):
