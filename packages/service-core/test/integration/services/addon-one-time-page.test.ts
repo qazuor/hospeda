@@ -30,6 +30,7 @@ import {
     purchaseNow,
     retirePurchaseFixtures
 } from './support/addon-purchase-fixtures';
+import { activationPagePayments, heldPagePayments } from './support/one-time-page-fixtures';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
 
 const MINUTE = 60_000;
@@ -601,7 +602,12 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
                 s.ports
             )
         ).toEqual({ outcome: 'DUPLICATE_PAYMENT' });
-        expect(await paymentsOf(instance.id)).toHaveLength(1);
+        expect((await activationPagePayments(instance.id)).map((p) => p.providerFactId)).toEqual([
+            first.chargeId
+        ]);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+        ).toEqual([second.chargeId]);
     });
 
     it.skipIf(skip)('classifies a payment on an abandoned purchase as late', async () => {
@@ -620,7 +626,10 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
             )
         ).toEqual({ outcome: 'LATE_PAYMENT' });
         expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
-        expect(await paymentsOf(instance.id)).toHaveLength(0);
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+        ).toEqual([paid.chargeId]);
     });
 
     it.skipIf(skip)('does not activate a payment of another amount', async () => {
@@ -638,7 +647,14 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
             )
         ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
         expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
-        expect(await paymentsOf(instance.id)).toHaveLength(0);
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => [
+                row.payment.providerFactId,
+                row.payment.amount,
+                row.reason
+            ])
+        ).toEqual([[paid.chargeId, 10000, 'DIVERGENCIA_DE_MONTO']]);
         expect(await marksOf(instance.id)).toEqual([
             { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
         ]);
@@ -720,9 +736,12 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
                 )
             ).toMatchObject({ outcome: 'ACTIVATED' });
             expect((await instanceOf(instance.id)).status).toBe('ACTIVE');
-            expect((await paymentsOf(instance.id)).map((p) => p.providerFactId)).toEqual([
-                correct.chargeId
-            ]);
+            expect(
+                (await activationPagePayments(instance.id)).map((p) => p.providerFactId)
+            ).toEqual([correct.chargeId]);
+            expect(
+                (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+            ).toEqual([divergent.chargeId]);
             expect(await marksOf(instance.id)).toEqual([
                 { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
             ]);
@@ -1022,7 +1041,8 @@ describe('HOS-2179 §5.4 A3 confirms by search and re-read, or abandons and clos
             s.f.advanceTo(windowEnd());
             await expireAddonAuthorizationWindows(100, s.ports);
             expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
-            expect(await paymentsOf(instance.id)).toHaveLength(0);
+            expect(await activationPagePayments(instance.id)).toHaveLength(0);
+            expect(await heldPagePayments(instance.id)).toHaveLength(1);
             expect(await marksOf(instance.id)).toEqual([
                 { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
             ]);
