@@ -35,7 +35,8 @@ export const mocks = {
     readOwnTrialPlan: vi.fn(),
     readPlanOfVersion: vi.fn(),
     effectiveSet: vi.fn(),
-    coverage: vi.fn()
+    coverage: vi.fn(),
+    coverageInputs: [] as unknown[]
 };
 
 /** An owner actor; `billing` false drops `BILLING_VIEW_OWN`. */
