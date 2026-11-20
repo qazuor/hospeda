@@ -894,7 +894,7 @@
         "attemptExpired": "That attempt is no longer valid. Please try again.",
         "processing": "Your purchase is being processed.",
         "waitingPayment": "We are confirming your payment.",
-        "waitingPaymentLong": "We don't have Mercado Pago's confirmation yet. We will email you once it is credited.",
+        "waitingPaymentLong": "We don't have Mercado Pago's confirmation yet. Come back to this screen in a few minutes to see the result.",
         "active": "Active",
         "closed": "The purchase ended without activation.",
         "pageExpired": "The payment page expired without an approved payment. You can buy it again.",

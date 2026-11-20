@@ -894,7 +894,7 @@
         "attemptExpired": "Essa tentativa não é mais válida. Tente novamente.",
         "processing": "Sua compra está sendo processada.",
         "waitingPayment": "Estamos confirmando seu pagamento.",
-        "waitingPaymentLong": "Ainda não temos a confirmação do Mercado Pago. Avisaremos você por e-mail quando for creditado.",
+        "waitingPaymentLong": "Ainda não temos a confirmação do Mercado Pago. Volte a esta tela em alguns minutos para ver o resultado.",
         "active": "Ativo",
         "closed": "A compra terminou sem ativação.",
         "pageExpired": "A página de pagamento expirou sem um pagamento aprovado. Você pode comprar de novo.",
