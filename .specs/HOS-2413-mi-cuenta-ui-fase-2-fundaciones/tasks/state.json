@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "App tokens in full (HOS-2454): role status, focus ring, radius scale, control heights, app typography, AA link + contrast tests",
             "description": "See docs/tasks.md §T-001 for goal, files, AC and tests (authoritative).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -16,21 +16,30 @@
             "tags": ["tokens"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-11-20T22:51:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Kit token delta + D4 owner-decision contrast test",
             "description": "See docs/tasks.md §T-002 for goal, files, AC and tests (authoritative).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005", "T-006", "T-010", "T-016"],
@@ -38,21 +47,30 @@
             "tags": ["tokens"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-11-20T22:51:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Kit scaffold, HelpAnchor, account.ui i18n namespace, kit README",
             "description": "See docs/tasks.md §T-003 for goal, files, AC and tests (authoritative).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-004", "T-005", "T-006", "T-010", "T-016", "T-018", "T-023"],
@@ -60,14 +78,23 @@
             "tags": ["web", "i18n"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-11-20T22:51:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
             }
         },
         {
@@ -173,7 +200,7 @@
             "id": "T-008",
             "title": "Account CSS scope + breakpoint guard (frozen, shrink-only exceptions)",
             "description": "See docs/tasks.md §T-008 for goal, files, AC and tests (authoritative).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-009"],
@@ -181,21 +208,30 @@
             "tags": ["guards", "ci"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-11-20T22:51:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "CSS literals guard (frozen, shrink-only exceptions)",
             "description": "See docs/tasks.md §T-009 for goal, files, AC and tests (authoritative).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": [],
@@ -203,14 +239,23 @@
             "tags": ["guards", "ci"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-11-20T23:14:29.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-11-20T22:51:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-11-20T23:14:29.000Z",
+                "completed": "2026-11-20T23:14:29.000Z"
             }
         },
         {
@@ -741,9 +786,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 32,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 3
     }

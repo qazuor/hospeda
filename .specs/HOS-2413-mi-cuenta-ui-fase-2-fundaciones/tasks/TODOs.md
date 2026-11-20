@@ -1,6 +1,6 @@
 # HOS-2413: Mi Cuenta UI · Phase 2 · Foundations
 
-## Progress: 0/32 tasks (0%)
+## Progress: 5/32 tasks (16%)
 
 Task detail (goal, files, AC, tests) is authoritative in [`../docs/tasks.md`](../docs/tasks.md); IDs match one-to-one. PR plan: spec §12.1.
 
@@ -10,19 +10,19 @@ Task detail (goal, files, AC, tests) is authoritative in [`../docs/tasks.md`](..
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 3) - App tokens in full (HOS-2454): role status, focus ring, radius scale, control heights, app typography, AA link + contrast tests
+- [x] **T-001** (complexity: 3) - App tokens in full (HOS-2454): role status, focus ring, radius scale, control heights, app typography, AA link + contrast tests [DONE]
   - Blocked by: none
   - Blocks: T-002
-- [ ] **T-002** (complexity: 3) - Kit token delta + D4 owner-decision contrast test
+- [x] **T-002** (complexity: 3) - Kit token delta + D4 owner-decision contrast test [DONE]
   - Blocked by: T-001
   - Blocks: T-004, T-005, T-006, T-010, T-016
-- [ ] **T-003** (complexity: 3) - Kit scaffold, HelpAnchor, account.ui i18n namespace, kit README
+- [x] **T-003** (complexity: 3) - Kit scaffold, HelpAnchor, account.ui i18n namespace, kit README [DONE]
   - Blocked by: none
   - Blocks: T-004, T-005, T-006, T-010, T-016, T-018, T-023
-- [ ] **T-008** (complexity: 3) - Account CSS scope + breakpoint guard (frozen, shrink-only exceptions)
+- [x] **T-008** (complexity: 3) - Account CSS scope + breakpoint guard (frozen, shrink-only exceptions) [DONE]
   - Blocked by: none
   - Blocks: T-009
-- [ ] **T-009** (complexity: 3) - CSS literals guard (frozen, shrink-only exceptions)
+- [x] **T-009** (complexity: 3) - CSS literals guard (frozen, shrink-only exceptions) [DONE]
   - Blocked by: T-008
   - Blocks: none
 
