@@ -219,7 +219,6 @@ export * from './billing/reconciliation/sweep/next-charge-sync.js';
 export * from './billing/reconciliation/sweep/notice-deferred-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/page-payments-check.js';
-export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/pause-gift.js';
 export * from './billing/reconciliation/sweep/pause-gift-check.js';
 export * from './billing/reconciliation/sweep/pending-first-charge-check.js';

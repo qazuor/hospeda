@@ -35,8 +35,8 @@ export class ReconciliationPagePaymentModel {
      * One keyset page, by instance id, of instances of a `UNA_VEZ` product with a
      * `PAYMENT_PAGE_CREATE` idempotency key, bought inside the window, that no longer wait for
      * their payment (any status but
-     * `PENDING_AUTHORIZATION`: a waiting purchase belongs to A3). Unlike the paid-orders read,
-     * an instance that already carries a mark is NOT left out: a page takes more than one
+     * `PENDING_AUTHORIZATION`: a waiting purchase belongs to A3). An instance that already carries
+     * a mark is NOT left out: a page takes more than one
      * payment (RP18), so a later payment is new money. The check skips, per charge, a payment
      * a mark already names.
      */
