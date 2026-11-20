@@ -2330,7 +2330,33 @@
             "REFUND_CLOSES_HELD_CHARGE": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca."
         },
         "genericError": "No se pudo completar la acción. Intentá de nuevo.",
-        "serverError": "El servidor no pudo completar la acción. Intentá de nuevo más tarde."
+        "serverError": "El servidor no pudo completar la acción. Intentá de nuevo más tarde.",
+        "providerRetry": {
+            "title": "Reintentar con Mercado Pago",
+            "description": "Para una devolución confirmada que quedó trabada porque MP no contestó una llamada (timeout, error o respuesta vacía). Se reenvía cada llamada sin respuesta con la misma clave de idempotencia, así MP no devuelve dos veces lo que ya había procesado.",
+            "refundId": "ID de la devolución",
+            "review": "Revisar",
+            "confirmText": "Se reenvían a Mercado Pago las llamadas sin respuesta de la devolución {{refundId}}, con su misma clave. Si MP la acredita, la devolución se cierra.",
+            "confirm": "Reintentar con MP",
+            "back": "Volver",
+            "summary": {
+                "EXECUTED": "MP aceptó y acreditó la devolución. Quedó ejecutada.",
+                "WAITING_ACCREDITATION": "MP aceptó la llamada pero todavía no figura acreditada. La devolución sigue confirmada y se cierra con el próximo aviso de MP.",
+                "FAILED": "MP rechazó la llamada. La devolución quedó fallida: revisá el panel de MP antes de devolver a mano (acción 14).",
+                "STILL_UNANSWERED": "Alguna llamada sigue sin una respuesta que se pueda usar. Reintentá más tarde o seguí el runbook de devoluciones (§8)."
+            },
+            "calls": {
+                "SENT": "aceptada por MP",
+                "AWAITING_PROVIDER_ANSWER": "sigue sin respuesta",
+                "PROVIDER_KEY_CONFLICT": "MP rechazó la clave por reutilizada: seguí el runbook de devoluciones (§8)",
+                "PROVIDER_REJECTED_FAILED": "rechazada por MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "La devolución no está confirmada. Solo se reintenta una devolución confirmada.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "La devolución no tiene llamadas sin respuesta: no hay nada que reintentar.",
+                "REFUND_PAST_PROVIDER_WINDOW": "Pasaron más de 180 días del cobro: MP rechazaría cualquier llamada sin decir si la primera salió. Revisá el panel de MP a mano (runbook de devoluciones, §8)."
+            }
+        }
     },
     "subscriptionCancellation": {
         "title": "Dar de baja una suscripción (sin devolución)",

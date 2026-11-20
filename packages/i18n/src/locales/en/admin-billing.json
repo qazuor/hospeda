@@ -2330,7 +2330,33 @@
             "REFUND_CLOSES_HELD_CHARGE": "This refund cannot be declined: it refunds a charge held by a mark."
         },
         "genericError": "The action could not be completed. Try again.",
-        "serverError": "The server could not complete the action. Try again later."
+        "serverError": "The server could not complete the action. Try again later.",
+        "providerRetry": {
+            "title": "Retry with Mercado Pago",
+            "description": "For a confirmed refund stuck because MP did not answer a call (timeout, error or empty response). Each unanswered call is sent again with the same idempotency key, so MP does not refund twice what it had already processed.",
+            "refundId": "Refund ID",
+            "review": "Review",
+            "confirmText": "The unanswered calls of refund {{refundId}} are sent again to Mercado Pago, with their same key. If MP credits it, the refund closes.",
+            "confirm": "Retry with MP",
+            "back": "Back",
+            "summary": {
+                "EXECUTED": "MP accepted and credited the refund. It is executed.",
+                "WAITING_ACCREDITATION": "MP accepted the call but does not show it credited yet. The refund stays confirmed and closes on MP's next notice.",
+                "FAILED": "MP rejected the call. The refund failed: check the MP panel before refunding by hand (action 14).",
+                "STILL_UNANSWERED": "A call still has no usable answer. Retry later or follow the refunds runbook (§8)."
+            },
+            "calls": {
+                "SENT": "accepted by MP",
+                "AWAITING_PROVIDER_ANSWER": "still unanswered",
+                "PROVIDER_KEY_CONFLICT": "MP refused the key as reused: follow the refunds runbook (§8)",
+                "PROVIDER_REJECTED_FAILED": "rejected by MP"
+            },
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund can be retried.",
+                "REFUND_HAS_NO_UNANSWERED_CALL": "The refund has no unanswered call: there is nothing to retry.",
+                "REFUND_PAST_PROVIDER_WINDOW": "More than 180 days have passed since the charge: MP would refuse any call without saying whether the first one went out. Check the MP panel by hand (refunds runbook, §8)."
+            }
+        }
     },
     "subscriptionCancellation": {
         "title": "Cancel a subscription (no refund)",
