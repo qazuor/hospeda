@@ -437,6 +437,7 @@ export async function runReconciliationSweep(
         ...(postLoop.terminalReturn ? { terminalReturn: postLoop.terminalReturn } : {}),
         ...(postLoop.creditedPayments ? { creditedPayments: postLoop.creditedPayments } : {}),
         ...(postLoop.paidOrders ? { paidOrders: postLoop.paidOrders } : {}),
+        ...(postLoop.pagePayments ? { pagePayments: postLoop.pagePayments } : {}),
         ...(postLoop.markEscalation ? { markEscalation: postLoop.markEscalation } : {}),
         ...(postLoop.pauseGifts ? { pauseGifts: postLoop.pauseGifts } : {}),
         outcome,
