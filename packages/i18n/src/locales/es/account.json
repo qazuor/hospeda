@@ -1854,5 +1854,13 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "accountNotice": "Vas a cambiar la contraseña de esta cuenta:"
+    },
+    "ui": {
+        "loading": "Cargando…",
+        "retry": "Reintentar",
+        "close": "Cerrar",
+        "required": "obligatorio",
+        "optional": "(opcional)",
+        "opensInNewTab": "(se abre en otra pestaña)"
     }
 }

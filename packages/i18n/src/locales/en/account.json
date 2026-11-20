@@ -1854,5 +1854,13 @@
         },
         "strengthLabel": "Seguridad de la contraseña",
         "accountNotice": "You are about to change the password for this account:"
+    },
+    "ui": {
+        "loading": "Loading…",
+        "retry": "Try again",
+        "close": "Close",
+        "required": "required",
+        "optional": "(optional)",
+        "opensInNewTab": "(opens in a new tab)"
     }
 }
