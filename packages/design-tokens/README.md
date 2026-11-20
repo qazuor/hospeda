@@ -75,6 +75,28 @@ Documented in `seed/web-baseline.json` under `outOfScope`:
 - `apps/web/src/styles/components.css` — BEM component classes. Consumer only, stays in `apps/web`.
 - `apps/web/src/styles/feedback-overrides.css` — FAB visual overrides. Consumer only, stays in `apps/web`.
 
+## Mi Cuenta app tokens (HOS-2413)
+
+`src/themes/web-account.ts` holds the account-area tokens. They are spread into `web-light.ts` and `web-dark.ts`:
+
+- **HOS-2454 (T-001)**: `status-{success,warning,danger,info,neutral}-{bg,fg,border,solid}`, `focus-ring`, `radius-control` / `radius-surface`, `control-h-{sm,md,lg}`, and the app typography aliases. Each alias is `--app-<role>` (a font shorthand) plus `-size`, `-leading`, `-weight` and, where the catalog sets one, `-tracking`.
+- **Kit delta (T-002)**: `action-*`, `on-action-*`, `control-bg`, `control-border`, `nav-active-*`, `upsell-*`, `shadow-sticky`, `sidebar-w`, `editor-nav-w`, `form-max` and `reading-max`. `ACCOUNT_BREAKPOINTS_REM` and `CQ_EDITOR_NAV_REM` are TS-only, because custom properties cannot be used inside `@media` / `@container` preludes.
+
+Nothing outside `apps/web/src/components/account/ui/` consumes them in this phase. The AA pairs are tested in `src/tokens/app-tokens-contrast.test.ts` and `src/tokens/account-kit-contrast.test.ts`. `seed/web-baseline.json` is not touched: it is the frozen extraction of `global.css`, and none of these names exist there.
+
+## Owner decisions
+
+### D4 «color de acción» (HOS-2409, owner comment 2026-11-20)
+
+`--action-primary` is an exact alias of `--brand-primary`, and `--action-accent` of `--brand-accent`, in both themes. Their `--on-action-*` text is white, and no darker action token is added. White on these colors misses WCAG AA; the owner accepted that. The ratios computed from this package's theme values are pinned as `OWNER_ACCEPTED_D4` in `src/tokens/account-kit-contrast.test.ts`:
+
+| Pair | Light | Dark |
+|---|---|---|
+| white on `--action-primary` | 3.56:1 | 2.93:1 |
+| white on `--action-accent` | 2.82:1 | 2.62:1 |
+
+The test fails if an alias drifts or a ratio drops below its pin. A palette change therefore forces someone to revisit the decision instead of silently worsening it.
+
 ## References
 
 - SPEC: `.qtm/specs/SPEC-153-admin-design-tokens/spec.md`
