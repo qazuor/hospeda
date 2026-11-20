@@ -87,10 +87,14 @@ const searchMethods = CAPABILITY_METHODS.read.filter((name) => !READS_BY_ID.incl
 /**
  * AC:B11:13 + EX-57 (HOS-1605): the paid-orders check lists its instances from our
  * base and only LOCATES an instance's order by its request id; the decision is the
- * re-read by id (readOrder). The search is allowed there and nowhere else.
+ * re-read by id (readOrder). The page-payments check (HOS-2179 §5.10) does the same
+ * for one-time page purchases: it lists them from our base, only LOCATES their payments
+ * by reference, and A2 decides on the re-read by id (readCharge). Each search is allowed
+ * in its one file and nowhere else.
  */
 const SEARCH_ALLOWED_IN: Readonly<Record<string, string>> = {
-    searchOrders: join(SWEEP_DIR, 'paid-orders-check.ts')
+    searchOrders: join(SWEEP_DIR, 'paid-orders-check.ts'),
+    searchCharges: join(SWEEP_DIR, 'page-payments-check.ts')
 };
 
 describe('TEST:B11:1 ningún barrido lista desde el buscador', () => {

@@ -449,10 +449,10 @@
             "why": "El mail de resumen de conciliación (HOS-1971) lee las marcas abiertas (levantada_en nula) de los sujetos que nombra, sólo para mostrar desde cuándo están abiertas y enlazar a su detalle en el panel; no decide nada con el término."
         },
         {
-            "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time-page.ts",
-            "symbol": "divergenceLiftedFor",
+            "file": "packages/service-core/src/services/billing/addon/one-time-page-charge-marks.ts",
+            "symbol": "chargeNamedByMark",
             "row": null,
-            "why": "HOS-2179: A2 de página busca una DIVERGENCIA_DE_MONTO ya levantada que nombre este mismo cobro del proveedor, para no reabrirla al releer el mismo cobro todavía aprobado; lee lifted_at sólo como «una persona ya la resolvió», no como estado de origen."
+            "why": "HOS-2179: un pago de página busca una marca (DIVERGENCIA_DE_MONTO, COBRO_DUPLICADO o 23) que ya nombre este mismo cobro del proveedor: A2 no abre otra si ya hay una levantada (no deshace la decisión de una persona) o una de otro motivo (la misma plata nunca levanta dos marcas, aunque el precio cambie), y el barrido saltea el cobro ante cualquier marca, abierta o levantada; lee lifted_at sólo como «una persona ya la resolvió», no como estado de origen."
         }
     ],
     "cortesia_diferida": [
