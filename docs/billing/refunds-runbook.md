@@ -93,9 +93,13 @@ join idempotency_key k on k.key = rc.idempotency_key
 where r.status = 'CONFIRMED'
   and k.result is null
   and rc.provider_refund_id is null
+  and rc.created_at < now() - interval '<N> hours'
 order by rc.created_at;
 SQL
 ```
+
+Replace `<N>` with the wait of section 8, step 1. Without that age filter, a call that is in
+flight right now would look stuck.
 
 ### 4.2 Partial acceptance (case A)
 
@@ -223,6 +227,28 @@ this refund:
 3. Leave the refund `CONFIRMED`. Do not edit `refund`, `refund_call` or `idempotency_key` by hand
    for this case.
 
+**The only conceivable path, for the owner to weigh. It is NOT safe, and this note does not ask
+you to run it.** It is listed so the owner can decide with the risks in view, not as a procedure:
+
+1. Refund the remainder (`remaining_amount`) from the Mercado Pago panel.
+2. Insert by hand one `idempotency_key` row and one `refund_call` row that imitate `persistCall`
+   (`refund-provider-call.ts:43-79`): key `refund:<refund_id>:<n+1>`, operation `REFUND_CREATE`,
+   `subject_id` the refund, `refund_call.amount` the remainder and `provider_refund_id` the new
+   Mercado Pago refund id. Then complete them as `ACCEPTED`, as `completeCall` would
+   (`:82-108`).
+3. Wait for a charge notice to trigger RF3. RF3 executes only if every accepted id is accredited and
+   Mercado Pago's amounts add up to `refund.amount` (`execute-refund.service.ts:145-152`).
+
+Why it is not safe:
+
+- **It fabricates a call our code never sent.** No POST with that idempotency key ever reached
+  Mercado Pago. The row claims a history that did not happen, and every later reader trusts it.
+- **There is a race.** The panel refund triggers its own charge notice. If that notice is processed
+  before the insert, RF3 runs on the old calls and answers `NOT_ACCREDITED_KEPT_CONFIRMED`. The
+  notice does not come again, so the refund stays stuck, now with the fabricated rows.
+- **A wrong amount or id makes it permanent.** The fabricated call is live (it has a
+  `provider_refund_id`), so the refund can still never be declined.
+
 **Held charge or mark.** While the refund stays `CONFIRMED`, the payment stays hung on its mark
 (`reconciliation_mark_payment.resolved_at` NULL) and the mark cannot be lifted. A page-charge mark
 (reasons `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO`, `ORDEN_PAGADA_SIN_INSTANCIA` on an add-on
@@ -241,11 +267,30 @@ existing actions.
 
 **Step 1. Wait, then read Mercado Pago.** Do not decide minutes after the call. Give Mercado Pago
 time to process a request that may have reached it (operational judgment: at least a few hours,
-not a code rule). Then look for a refund that matches each unanswered call (section 6).
+not a code rule). Use the same number of hours as `<N>` in query 4.1. Then look for a refund that
+matches each unanswered call (section 6).
 
-**Step 2. Branch on what Mercado Pago shows.**
+**Step 2. Branch on the state AND the amount of what Mercado Pago shows.** Whether a refund exists
+is not enough. Use this table:
 
-### 8.1 Mercado Pago shows no refund for the call
+| What Mercado Pago shows for the call | Go to |
+|---|---|
+| No refund at all | 8.1, record it as rejected |
+| A refund in status `rejected` or `cancelled` (no money moved) | 8.1, record it as rejected |
+| One refund in status `approved` (or still in process) **whose amount equals `refund_call.amount / 100` exactly**, that maps to this call and no other | 8.2, record it as accepted |
+| Any amount difference, a refund that could belong to more than one call, a status you do not recognise, or a chargeback on the payment | 8.3, escalate |
+
+**Why the bar for 8.2 is so high.** `completeCall` writes `ACCEPTED` whenever it has an id
+(`refund-provider-call.ts:82-108`). RF3 is stricter. It executes only when every accepted id is
+accredited in Mercado Pago and their Mercado Pago amounts add up to exactly `refund.amount`
+(`execute-refund.service.ts:145-152`). If you write `ACCEPTED` wrongly, for the wrong amount or
+for a refund that never accredits, the call stays live forever. The refund can then never be
+declined (`refund-moved-money.ts:21-32`), and it turns into case A, which has no exit.
+
+**When in doubt:** write `REJECTED` only if you are sure no money moved. Otherwise escalate. Never
+write `ACCEPTED` on a doubt.
+
+### 8.1 No money moved: no refund, or a rejected/cancelled one
 
 The call did not move money. Record it as rejected. That makes the refund call-free in the sense
 of `refund-moved-money.ts:21-32`, and then the existing actions apply.
@@ -261,7 +306,7 @@ of `refund-moved-money.ts:21-32`, and then the existing actions apply.
    set result = jsonb_build_object(
            'outcome', 'REJECTED',
            'code', 'MANUAL_VERIFIED_NOT_SENT',
-           'message', 'HOS-2402 runbook: no refund in Mercado Pago for this call. Verified by <operator> on <YYYY-MM-DD>. Linear <ISSUE-ID>.'
+           'message', 'HOS-2402 runbook: no money moved in Mercado Pago for this call (none, or rejected/cancelled). Verified by <operator> on <YYYY-MM-DD>. Linear <ISSUE-ID>.'
        ),
        completed_at = now()
    from refund_call rc
@@ -347,9 +392,10 @@ The mark itself stays open. Lift it with action 7 (`POST /api/v1/admin/billing-r
 query 5), an empty `resolveWithoutRefund` and a `note` that cites the Linear issue
 (`packages/schemas/src/api/billing/reconciliation-marks.schema.ts:43-49`).
 
-### 8.2 Mercado Pago shows a refund for the call
+### 8.2 An approved refund for exactly the call's amount
 
-The call moved money. Record what Mercado Pago did. Do not decline, and do not refund again.
+Only come here through the table in step 2. The call moved money. Record what Mercado Pago did. Do
+not decline, and do not refund again.
 
 1. **Get the owner's OK** on the Linear issue.
 2. **Record the acceptance.** This mirrors what `completeCall` writes for an acceptance
@@ -385,21 +431,32 @@ The call moved money. Record what Mercado Pago did. Do not decline, and do not r
 
    It must return exactly one row. A unique-violation on `uq_refund_call_provider_refund_id` means
    that Mercado Pago refund is already recorded on another call. Stop and escalate.
-3. **Inspect again** (section 5) and run query 4.2.
-   - **Accepted calls now add up to `refund.amount`, and none is unanswered.** RF3 executes the
-     refund on the next charge notice Mercado Pago sends for that payment
-     (`refund-execution-on-notice.ts:37-72`). No admin action can trigger that read. If the refund
-     is still `CONFIRMED` after a reasonable wait, escalate on HOS-2402. Do not settle it with
-     action 14: it would refuse (`REFUND_NOT_OPEN`), and the money is already back.
-   - **Accepted calls add up to less than `refund.amount`.** It is now case A (section 7).
+3. **Inspect again** (section 5). Add up the **Mercado Pago** amounts of every refund now recorded
+   in the refund's `provider_refund_id` values, as the panel shows them. Do not use `refund_call.amount`:
+   RF3 compares Mercado Pago's amounts (`execute-refund.service.ts:145-152`).
+   - **Mercado Pago's amounts add up to `refund.amount`, all are `approved`, and no call is
+     unanswered.** RF3 could now execute the refund, but it runs only on a NEW charge notice for
+     that payment (`refund-execution-on-notice.ts:37-72`, `process-provider-notice.service.ts:272`).
+     The notice for the refund itself was most likely already processed, while the call was still
+     unanswered, and RF3 answered `AWAITING_PROVIDER_ANSWER` then (`execute-refund.service.ts:141`).
+     So in general the refund stays `CONFIRMED`, and no admin action can trigger the read. Escalate
+     on HOS-2402. Do not settle it with action 14: it would refuse (`REFUND_NOT_OPEN`), and the
+     money is already back.
+   - **They add up to less than `refund.amount`, or one is not `approved` yet.** It is now case A
+     (section 7), or it waits for accreditation. Escalate.
 
 **Held charge or mark.** Nothing changes until RF3 executes the refund. Until then the payment
 stays hung and the mark stays open.
 
 ### 8.3 You cannot tell
 
-Several Mercado Pago refunds with the same amount, a refund you cannot tie to a call, or a payment
-that shows a chargeback: do not write anything. Escalate (section 9).
+Do not write anything, and escalate (section 9), when you see any of these:
+
+- several Mercado Pago refunds with the same amount;
+- a refund that could belong to more than one call;
+- a refund whose amount differs from `refund_call.amount / 100`;
+- a status you do not recognise;
+- a payment that shows a chargeback.
 
 ## 9. Audit trail
 
