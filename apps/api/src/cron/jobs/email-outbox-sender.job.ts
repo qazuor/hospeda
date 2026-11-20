@@ -36,6 +36,7 @@ import {
     createBillingLatePaymentRefundRenderers,
     createBillingManualInstallmentOpenedRenderers,
     createBillingManualPaymentRenderers,
+    createBillingOneTimeAddonActivatedRenderers,
     createBillingPlanMigrationRenderers,
     createBillingPromoRenderers,
     createBillingProviderWatchRenderers,
@@ -60,6 +61,7 @@ import {
 } from '@repo/notifications';
 import { resolveLatePaymentRefundMailCopy } from '../../utils/billing-late-payment-refund-mail-copy.js';
 import { resolveManualInstallmentMailCopy } from '../../utils/billing-manual-installment-mail-copy.js';
+import { resolveOneTimeAddonActivatedMailCopy } from '../../utils/billing-one-time-addon-activated-mail-copy.js';
 import { getClock } from '../../utils/clock.js';
 import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
 import { getEmailEnvironmentLabel, getEmailSender } from '../../utils/email-sender.js';
@@ -128,6 +130,11 @@ export function buildOutboxSenderRender(input: {
             }),
             ...createBillingLatePaymentRefundRenderers({
                 resolveCopy: resolveLatePaymentRefundMailCopy
+            }),
+            ...createBillingOneTimeAddonActivatedRenderers({
+                siteUrl: input.siteUrl,
+                readListingNames: input.readListingNames ?? readListingNames,
+                resolveCopy: resolveOneTimeAddonActivatedMailCopy
             }),
             ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
             ...createVerticalListingRenderers({
