@@ -829,9 +829,10 @@ proposal (DEC-RF-002).
 | `MARK_ALREADY_LIFTED` | 409 | `ALREADY_EXISTS` |
 | `MARK_VERSION_CONFLICT` | 409 | `ALREADY_EXISTS` |
 | `MARK_HAS_UNRESOLVED_PAYMENTS` | 409 | `ALREADY_EXISTS` |
+| `MARK_CLOSES_ONLY_BY_REFUND` | 409 | `ALREADY_EXISTS` |
 | `MARK_PAYMENT_NOT_HUNG` | 422 | `VALIDATION_ERROR` |
 
-A non-uuid `markId`, a body without an integer `expectedVersion` ≥ 1, an extra key, a repeated payment pair, or an empty or over-2000-character note is a 400 from the schema. The mark is read before the subject, so an unknown mark is 404 for an actor with the permission, as in actions 8 and 14; 403 can come from the route factory (permission) or the service (system actor, actor = subject). `MARK_HAS_UNRESOLVED_PAYMENTS` is a hung payment attached to the mark, unresolved, and not named in the request; `MARK_PAYMENT_NOT_HUNG` is a named payment that is not an unresolved hung payment on that mark; `MARK_VERSION_CONFLICT` means the mark changed since the person read it (for example, a new hung payment arrived): reread and confirm again. No rejection writes anything.
+A non-uuid `markId`, a body without an integer `expectedVersion` ≥ 1, an extra key, a repeated payment pair, or an empty or over-2000-character note is a 400 from the schema. The mark is read before the subject, so an unknown mark is 404 for an actor with the permission, as in actions 8 and 14; 403 can come from the route factory (permission) or the service (system actor, actor = subject). `MARK_HAS_UNRESOLVED_PAYMENTS` is a hung payment attached to the mark, unresolved, and not named in the request; `MARK_PAYMENT_NOT_HUNG` is a named payment that is not an unresolved hung payment on that mark; `MARK_VERSION_CONFLICT` means the mark changed since the person read it (for example, a new hung payment arrived): reread and confirm again. `MARK_CLOSES_ONLY_BY_REFUND` is a request that names payments to resolve without refund on a page-charge mark of a one-time addon (`DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO`, `ORDEN_PAGADA_SIN_INSTANCIA`): since HOS-2179 D1 that mark holds the charge's own payment, which closes only through a refund (owner decision, option 3). It can be lifted once the refund settles that payment (or a chargeback resolves it); the list marks it with `liftRequiresRefund: true` until then. No rejection writes anything.
 
 ## Action 24 (V8a.3, HOS-1494)
 

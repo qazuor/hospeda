@@ -19,10 +19,22 @@ const mark = (reasonNumber: number, eventLink: { markId: string } | null) => ({
     paymentCount: 0,
     totalAmount: [],
     unknownAmountCount: 0,
-    eventLink
+    eventLink,
+    liftRequiresRefund: false
 });
 
 describe('reconciliation mark schemas', () => {
+    it('requires the liftRequiresRefund flag (HOS-2179 D1)', () => {
+        const { liftRequiresRefund: _flag, ...withoutFlag } = mark(5, null);
+        expect(ActionableReconciliationMarkSchema.safeParse(withoutFlag).success).toBe(false);
+        expect(
+            ActionableReconciliationMarkSchema.safeParse({
+                ...mark(5, null),
+                liftRequiresRefund: true
+            }).success
+        ).toBe(true);
+    });
+
     it('accepts marks with and without an event link', () => {
         expect(
             ActionableReconciliationMarkSchema.safeParse(mark(7, { markId: uuid })).success

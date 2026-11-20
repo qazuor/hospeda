@@ -23,6 +23,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option.js';
+import { liftRequiresRefund } from './held-charge-mark.js';
 
 /** A payment attached to a reconciliation mark, with its live ledger status and amount. */
 export type ReconciliationMarkHungPayment = {
@@ -54,6 +55,11 @@ export type ActionableReconciliationMark = {
     readonly totalAmount: readonly { readonly currency: string; readonly amountMinor: number }[];
     readonly unknownAmountCount: number;
     readonly eventLink: { readonly markId: string } | null;
+    /**
+     * True while action 7 cannot close the mark: a page-charge mark of a one-time addon that still
+     * holds an unresolved payment, which is closed only through a refund (HOS-2179 D1).
+     */
+    readonly liftRequiresRefund: boolean;
 };
 
 /** One critical event belonging to a mark, including a recorded late-payment condition when present. */
@@ -273,7 +279,8 @@ export async function listActionableReconciliationMarks(input: {
                         amountMinor
                     })),
                     unknownAmountCount: unknownCount,
-                    eventLink: metadata.eventLink
+                    eventLink: metadata.eventLink,
+                    liftRequiresRefund: false
                 };
             return {
                 markId: row.markId,
@@ -295,7 +302,12 @@ export async function listActionableReconciliationMarks(input: {
                     amountMinor
                 })),
                 unknownAmountCount: unknownCount,
-                eventLink: metadata.eventLink
+                eventLink: metadata.eventLink,
+                liftRequiresRefund: liftRequiresRefund({
+                    reason,
+                    addonInstanceId: row.addonInstanceId,
+                    payments: markPayments
+                })
             };
         });
         return { items, total };
