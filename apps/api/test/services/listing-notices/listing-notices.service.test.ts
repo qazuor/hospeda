@@ -2,6 +2,7 @@ import { ServiceErrorCode, VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     listListingNotices,
+    readOwnTrialPlan,
     reportFixed
 } from '../../../src/services/listing-notices/listing-notices.service';
 
@@ -23,6 +24,7 @@ vi.mock('@repo/db', () => {
     const chain = {
         select: () => chain,
         from: () => chain,
+        innerJoin: () => chain,
         where: () => chain,
         limit: async () => mocks.trialRows
     };
@@ -35,6 +37,7 @@ vi.mock('@repo/db', () => {
         getDb: () => db,
         domainEvent: {},
         trials: {},
+        plans: {},
         trialRedemptions: {},
         listingNoticesModel: { readOwnerListingNotices: mocks.readOwnerListingNotices },
         listingPublicationModel: { readListing: mocks.readListing, lock: mocks.lock },
@@ -290,5 +293,30 @@ describe('TEST:V8a:7 reportFixed (row 30, H4)', () => {
                 await reportFixed({ vertical: VerticalEnum.EXPERIENCE, listingId: LISTING })
             ).toEqual({ ownerReportedFixedAt: at.toISOString() });
         });
+    });
+});
+
+describe('HOS-2328 readOwnTrialPlan', () => {
+    beforeEach(() => {
+        mocks.trialRows = [];
+    });
+
+    it('answers the catalog row of the trial plan, with the version in force at start', async () => {
+        // Arrange
+        mocks.trialRows = [{ slug: 'venue-basico', name: 'Venue trial', planVersionId: 'v-1' }];
+
+        // Act
+        const plan = await readOwnTrialPlan({ userId: OWNER, vertical: VerticalEnum.VENUE });
+
+        // Assert
+        expect(plan).toEqual({ slug: 'venue-basico', name: 'Venue trial', planVersionId: 'v-1' });
+    });
+
+    it('is null without a trial row', async () => {
+        // Act
+        const plan = await readOwnTrialPlan({ userId: OWNER, vertical: VerticalEnum.TOURIST });
+
+        // Assert
+        expect(plan).toBeNull();
     });
 });

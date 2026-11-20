@@ -467,6 +467,7 @@
             "tools": {
                 "list_my_listings": "View your listings",
                 "get_owner_summary": "View your account summary",
+                "get_my_plan": "View your plan and subscription",
                 "get_listing": "View a listing",
                 "update_listing_basic": "Edit a listing’s details",
                 "get_listing_amenities": "View a listing’s amenities",
