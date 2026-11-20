@@ -376,7 +376,7 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
     it.skipIf(skip)('keeps the order channel as the default', async () => {
         const s = await setup();
         const request = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const result = await purchaseAddon(orderRequest, s.f.ports);
         if (result.outcome !== 'CREATED') throw new Error(result.outcome);
         expect(request).not.toHaveBeenCalled();
@@ -880,7 +880,7 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
 
     it.skipIf(skip)('does not apply to an order purchase', async () => {
         const s = await setup();
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const result = await purchaseAddon(orderRequest, s.f.ports);
         if (result.outcome !== 'CREATED') throw new Error(result.outcome);
         expect(

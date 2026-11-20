@@ -21,6 +21,7 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { assertAddonPurchasesOpen, platformAddonPurchasesFreeze } from './addon-purchases-freeze';
 import { findIncludesAddonsAnchor } from './includes-addons-anchor';
+import { decideOccupiedPagePurchase } from './occupied-page-purchase';
 import {
     openOneTimePaymentPage,
     PAYMENT_PAGE_OPERATION,
@@ -150,10 +151,24 @@ async function withPaymentPage(
         : result;
 }
 
-/** A1: buys one addon with a durable purchase identity and a provider call after commit. */
+/**
+ * A1: buys one addon with a durable purchase identity and a provider call after commit.
+ *
+ * A one-time (`UNA_VEZ`) addon is paid on a payment page unless the caller asks for the card
+ * order explicitly (`oneTimeChannel: 'ORDER'`, kept only for T-7's removal), so a caller that
+ * names no channel can never reopen the order path.
+ */
 export async function purchaseAddon(
     input: PurchaseAddonInput,
     ports: PurchaseAddonPorts
+): Promise<PurchaseAddonResult> {
+    return purchaseAddonOnce(input, ports, { mayReleaseOccupant: true });
+}
+
+async function purchaseAddonOnce(
+    input: PurchaseAddonInput,
+    ports: PurchaseAddonPorts,
+    options: { readonly mayReleaseOccupant: boolean }
 ): Promise<PurchaseAddonResult> {
     const request = PurchaseAddonInputSchema.parse(input);
     const [product] = await getDb()
@@ -171,7 +186,7 @@ export async function purchaseAddon(
             'Target must be null for person or global addons'
         );
     const now = ports.clock.now();
-    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ' && request.oneTimeChannel === 'PAGE';
+    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ' && request.oneTimeChannel !== 'ORDER';
     const deadlines =
         chargeKindOf(product) === 'PERIODICO' || pagePurchase
             ? await getCurrentBillingDeadlines()
@@ -381,6 +396,25 @@ export async function purchaseAddon(
                     )
                 )
                 .limit(1);
+            if (occupant?.status === 'PENDING_AUTHORIZATION' && pagePurchase && deadlines) {
+                // HOS-2179 T-6 review: the owner came back from the page without paying and asks
+                // again with a fresh order id. Answer a page to pay, never "confirming".
+                const decision = await decideOccupiedPagePurchase({ occupant, deadlines }, ports);
+                if (decision === 'RESUME')
+                    return withPaymentPage(
+                        {
+                            outcome: 'EXISTING',
+                            instanceId: occupant.id,
+                            chargeKind: 'UNA_VEZ',
+                            checkoutUrl: await checkoutUrlOf(occupant)
+                        },
+                        { request, ports, deadlines }
+                    );
+                if (decision === 'ACTIVATED')
+                    return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
+                if (decision === 'RETRY' && options.mayReleaseOccupant)
+                    return purchaseAddonOnce(input, ports, { mayReleaseOccupant: false });
+            }
             if (occupant?.status === 'PENDING_AUTHORIZATION')
                 return {
                     outcome: 'PENDING_ELSEWHERE',
