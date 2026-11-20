@@ -85,9 +85,6 @@
         "buyMore": "Comprar más complementos"
     },
     "addonPurchaseApi": {
-        "oneTimePaymentRequired": "Para un complemento de pago único, ingresá los datos de pago.",
-        "recurringPaymentNotAccepted": "Los complementos recurrentes se pagan en el checkout del proveedor.",
-        "payerEmailRequired": "Ingresá el correo del pagador.",
         "purchaseNotFound": "No encontramos esa compra de complemento.",
         "freeProductNotFound": "No encontramos ese complemento.",
         "freeTargetNotFound": "No encontramos ese destino.",
@@ -98,6 +95,7 @@
         "freeOrderRequestReused": "Ese pedido ya se usó para otra elección.",
         "freeUnderGrant": "Este complemento está incluido gratis en tu beneficio. Elegilo sin pagar.",
         "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",
+        "pageRejected": "Mercado Pago no pudo abrir la página de pago. Volvé a intentar en unos minutos.",
         "providerBusy": "Mercado Pago está con mucha demanda en este momento. Esperá un minuto y volvé a intentar.",
         "providerUnavailable": "El proveedor de pagos no respondió. Probá de nuevo en unos minutos."
     },
@@ -882,17 +880,25 @@
         "days_one": "{{count}} día",
         "days_other": "{{count}} días",
         "hiddenListingRecurring": "Esta ficha no está publicada. El destaque se cobra igual aunque la ficha no se vea, hasta que lo des de baja.",
+        "hiddenListingOneTime": "Esta ficha no está publicada. El destaque corre igual aunque la ficha no se vea.",
         "chooseFree": "Elegir gratis",
         "payerEmailLabel": "Correo del pagador",
         "payerEmailInvalid": "Ingresá un correo válido del pagador.",
         "payerEmailHint": "Es el correo con el que vas a pagar en Mercado Pago. Lo declarás vos; el proveedor no lo confirma.",
         "confirmPurchase": "Confirmar compra",
+        "oneTimeSummary": "Pago único: se cobra una sola vez y no se renueva.",
+        "instantMethodsOnly": "Pagás en Mercado Pago con tarjeta de crédito, débito o dinero en cuenta. No se aceptan pagos en efectivo.",
+        "payWithMercadoPago": "Pagar con Mercado Pago",
         "loading": "Cargando complementos…",
         "loadError": "No pudimos cargar los complementos.",
         "attemptExpired": "Ese intento ya no es válido. Probá de nuevo.",
         "processing": "Se está procesando tu compra.",
+        "waitingPayment": "Estamos confirmando tu pago.",
+        "waitingPaymentLong": "Todavía no tenemos la confirmación de Mercado Pago. Te avisamos por correo cuando se acredite.",
         "active": "Activo",
         "closed": "La compra terminó sin activarse.",
+        "pageExpired": "La página de pago venció sin un pago aprobado. Podés volver a comprarlo.",
+        "paymentNotConfirmed": "No pudimos confirmar el pago de este complemento. Si querés, volvé a comprarlo.",
         "paused": {
             "title": "Compras pausadas",
             "body": "Por el momento pausamos las compras de complementos. Probá más tarde."
