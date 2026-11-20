@@ -4,13 +4,14 @@ import { abandonOneTimeAddon } from '../../../src/services/billing/addon/expire-
 import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
 import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import {
+    activationPagePayments,
     boughtPage,
     changeOf,
+    heldPagePayments,
     liftPageMarks,
     pageInstance,
     pageMarkEvents,
     pageMarks,
-    pagePayments,
     pagePriceIs,
     pageSetup,
     refusePageMarks,
@@ -65,7 +66,13 @@ describe('HOS-2179 §5.8 AC-11 a second payment on the same page opens COBRO_DUP
 
         expect(result).toEqual({ outcome: 'DUPLICATE_PAYMENT' });
         expect((await pageInstance(instance.id)).status).toBe('ACTIVE');
-        expect(await pagePayments(instance.id)).toHaveLength(1);
+        expect(await activationPagePayments(instance.id)).toHaveLength(1);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => [
+                row.payment.providerFactId,
+                row.reason
+            ])
+        ).toEqual([[second.chargeId, 'COBRO_DUPLICADO']]);
         expect(await pageMarks(instance.id)).toEqual([
             { reason: 'COBRO_DUPLICADO', liftedAt: null }
         ]);
@@ -180,7 +187,13 @@ describe('HOS-2179 §5.9 AC-12 a payment after the purchase closed opens mark 23
 
         expect(result).toEqual({ outcome: 'LATE_PAYMENT' });
         expect((await pageInstance(instance.id)).status).toBe('ABANDONED');
-        expect(await pagePayments(instance.id)).toHaveLength(0);
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => [
+                row.payment.providerFactId,
+                row.reason
+            ])
+        ).toEqual([[paid.chargeId, 'ORDEN_PAGADA_SIN_INSTANCIA']]);
         expect(await pageMarks(instance.id)).toEqual([
             { reason: 'ORDEN_PAGADA_SIN_INSTANCIA', liftedAt: null }
         ]);

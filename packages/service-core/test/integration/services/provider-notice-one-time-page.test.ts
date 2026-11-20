@@ -8,7 +8,9 @@ import { receiveProviderDelivery } from '../../../src/services/billing/notice/re
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { createProduct, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import {
+    activationPagePayments,
     boughtPage,
+    heldPagePayments,
     pageInstance,
     pageMarks,
     pagePayments,
@@ -122,9 +124,12 @@ describe('HOS-2179 §5.3 path 1: the payment notice of a page purchase reaches A
             for (const notice of notices) outcomes.push((await deliver(s, notice)).outcome);
 
             expect(outcomes).toEqual(['ADDON_PAYMENT_ACTIVATED', 'ADDON_DUPLICATE_PAYMENT_MARKED']);
-            expect((await pagePayments(instance.id)).map((p) => p.providerFactId)).toEqual([
-                second.chargeId
-            ]);
+            expect(
+                (await activationPagePayments(instance.id)).map((p) => p.providerFactId)
+            ).toEqual([second.chargeId]);
+            expect(
+                (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+            ).toEqual([first.chargeId]);
             expect(await pageMarks(instance.id)).toEqual([
                 { reason: 'COBRO_DUPLICADO', liftedAt: null }
             ]);
@@ -174,7 +179,8 @@ describe('HOS-2179 §5.3 path 1: the payment notice of a page purchase reaches A
                 outcome: 'ADDON_LATE_PAYMENT_MARKED'
             });
             expect((await pageInstance(instance.id)).status).toBe('ABANDONED');
-            expect(await pagePayments(instance.id)).toHaveLength(0);
+            expect(await activationPagePayments(instance.id)).toHaveLength(0);
+            expect(await heldPagePayments(instance.id)).toHaveLength(1);
             expect(await pageMarks(instance.id)).toEqual([
                 { reason: 'ORDEN_PAGADA_SIN_INSTANCIA', liftedAt: null }
             ]);
