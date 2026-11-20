@@ -167,6 +167,24 @@ describe('readOwnerAddonHoldings (HOS-2328)', () => {
         expect(holding?.endsAt).toBe(endsAt);
     });
 
+    it('drops a listing add-on whose listing is gone instead of spreading it to every compatible vertical', async () => {
+        // Arrange: the target join found no live listing (soft-deleted)
+        rows.push(
+            holdingRow({
+                scopeType: 'LISTING',
+                targetId: '4f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11'
+            })
+        );
+
+        // Act
+        const result = await readOwnerAddonHoldings({
+            userId: '3f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11'
+        });
+
+        // Assert
+        expect(result).toEqual([]);
+    });
+
     it('answers the instances route exactly as before: no holdings-only column leaks', async () => {
         // Arrange
         rows.push(holdingRow({}));

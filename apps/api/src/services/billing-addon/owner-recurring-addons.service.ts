@@ -124,7 +124,8 @@ export interface OwnerAddonHolding {
     /**
      * Where it applies: the vertical of its target listing, or, for an add-on
      * with no listing target, the verticals its product is compatible with (the
-     * same rule billing's coverage source follows, contract §2.7).
+     * same rule billing's coverage source follows, contract §2.7). A listing
+     * add-on whose listing is gone is not returned at all.
      */
     readonly verticals: readonly string[];
 }
@@ -141,7 +142,14 @@ export async function readOwnerAddonHoldings(input: {
     readonly userId: string;
 }): Promise<readonly OwnerAddonHolding[]> {
     const rows = await selectOwnerRecurringAddonRows({ userId: input.userId });
-    return rows.map((row) => {
+    // A listing add-on whose listing is gone (soft-deleted, or not the owner's)
+    // applies nowhere: it is left out, never spread to every compatible vertical.
+    const live = rows.filter(
+        (row) =>
+            row.scopeType !== 'LISTING' ||
+            Boolean(row.accommodationId ?? row.venueId ?? row.experienceId)
+    );
+    return live.map((row) => {
         const targetVertical = row.accommodationId
             ? 'accommodation'
             : row.venueId

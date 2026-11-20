@@ -29,6 +29,7 @@ import {
     type OwnerAddonHolding,
     readOwnerAddonHoldings
 } from '../../../services/billing-addon/owner-recurring-addons.service';
+import { isTrialRunning } from '../../../services/listing-notices/listing-notices.builder';
 import {
     readOwnTrialPlan,
     readTrialSummary
@@ -112,7 +113,9 @@ function toAddon(holding: OwnerAddonHolding, locale: Locale): MyPlanAddon {
         name: label({ key: `billing.addon.${holding.slug}.name`, locale, fallback: holding.name }),
         status: holding.status,
         endsAt: holding.endsAt?.toISOString() ?? null,
-        renewsWithSubscription: holding.endsAt === null
+        // Only a live recurring add-on renews with the subscription; one whose
+        // checkout is still open has not started, so it renews with nothing yet.
+        renewsWithSubscription: holding.status === 'ACTIVE' && holding.endsAt === null
     };
 }
 
@@ -155,11 +158,23 @@ async function readTrialTitle(input: {
 }): Promise<TitlePart | null> {
     const { userId, vertical, locale, now } = input;
     const summary = await readTrialSummary({ userId, vertical });
-    if (summary.status !== TrialStatusEnum.TRIAL_ACTIVE) {
+    if (summary.status === 'NONE') {
+        return null;
+    }
+    const endsAt = summary.endsAt ? new Date(summary.endsAt) : null;
+    // The rule of Mi cuenta row 2: TRIAL_ACTIVE and its clock not ended yet.
+    const { running } = isTrialRunning({
+        trial: {
+            status: summary.status,
+            startedAt: summary.startedAt ? new Date(summary.startedAt) : null,
+            endsAt
+        },
+        now
+    });
+    if (!running) {
         return null;
     }
     const trialPlan = await readOwnTrialPlan({ userId, vertical });
-    const endsAt = summary.endsAt ? new Date(summary.endsAt) : null;
     return {
         plan: trialPlan
             ? planOf({

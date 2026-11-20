@@ -246,6 +246,73 @@ describe('get_my_plan', () => {
         expect(venue).not.toHaveProperty('addonsUrl');
     });
 
+    it('AC-P2: an add-on whose checkout is still open does not renew with the subscription', async () => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+        mocks.readOwnerAddonHoldings.mockResolvedValue([
+            {
+                slug: 'extra-photos-20',
+                name: 'Catalog photos pack',
+                status: 'PENDING_AUTHORIZATION',
+                endsAt: null,
+                verticals: ['accommodation']
+            }
+        ]);
+
+        // Act
+        const [accommodation] = (await myPlan({ vertical: 'accommodation' })).items;
+
+        // Assert
+        expect(accommodation?.addons).toEqual([
+            {
+                name: 'Pack de fotos extra (+20 fotos)',
+                status: 'PENDING_AUTHORIZATION',
+                endsAt: null,
+                renewsWithSubscription: false
+            }
+        ]);
+    });
+
+    it('a TRIAL_ACTIVE trial whose clock already ended is not a running trial', async () => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+        mocks.readTrialSummary.mockResolvedValue({
+            status: 'TRIAL_ACTIVE',
+            startedAt: '2026-11-01T12:00:00.000Z',
+            endsAt: '2026-11-15T12:00:00.000Z',
+            totalDays: 14,
+            origins: { base: 14, promo: 0, support: 0 }
+        });
+
+        // Act
+        const result = await myPlan({ vertical: 'venue' });
+
+        // Assert
+        expect(result.items).toEqual([]);
+    });
+
+    it('labels in the user locale (en)', async () => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+
+        // Act
+        const outcome = await runTool({
+            definition: getMyPlanTool,
+            actor: ownerActor(),
+            input: { vertical: 'accommodation' },
+            context: { ...context, locale: 'en' }
+        });
+
+        // Assert
+        const item = outcome.ok ? (outcome.data as MyPlanResult).items[0] : undefined;
+        expect(item).toMatchObject({
+            verticalLabel: 'Accommodation',
+            statusLabel: 'Active',
+            plan: { name: 'Basic' }
+        });
+        expect(item?.includes?.entitlements).toContain('Basic statistics');
+    });
+
     it('shows the grace and service-end dates of a subscription and no next charge outside ACTIVE', async () => {
         // Arrange
         mocks.readOwnPlanState.mockResolvedValue({
