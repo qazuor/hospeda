@@ -636,6 +636,11 @@ An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider 
 | `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
 | `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
 | `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
+| `REFUND_CLOSES_HELD_CHARGE` | 409 | `ALREADY_EXISTS` |
+
+`REFUND_CLOSES_HELD_CHARGE` refuses to decline the refund a page-charge mark proposes (`MARK_PROPOSAL` on a payment held by `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO` or `ORDEN_PAGADA_SIN_INSTANCIA` of a one-time addon, HOS-2179 D1) while it is `REQUESTED`, or `CONFIRMED` with a provider call that was accepted or is still unanswered. That money closes when the confirmed refund (action 13) executes, when a chargeback resolves it, or through action 14, which closes the `REQUESTED` proposal (for example past the provider's window) or answers it once it is `FAILED`; action 14 never answers a `CONFIRMED` refund. A `CONFIRMED` proposal with no such call (the charge read answered UNAVAILABLE before any call) can be declined, so action 14 can answer it. The refusal runs after the 403 check, so a person without permission still gets 403.
+
+Declining any `CONFIRMED` refund returns `warning: "VERIFY_NO_PROVIDER_REFUND"` beside `status: "FAILED"`: check the provider's panel that no refund left before refunding by hand. Our own calls are persisted before they are sent, so a call-less `CONFIRMED` never reached the provider through this API; the warning covers a refund made from the panel.
 
 ## Action 14 charge settlement rejections (B5.9)
 
@@ -829,9 +834,10 @@ proposal (DEC-RF-002).
 | `MARK_ALREADY_LIFTED` | 409 | `ALREADY_EXISTS` |
 | `MARK_VERSION_CONFLICT` | 409 | `ALREADY_EXISTS` |
 | `MARK_HAS_UNRESOLVED_PAYMENTS` | 409 | `ALREADY_EXISTS` |
+| `MARK_CLOSES_ONLY_BY_REFUND` | 409 | `ALREADY_EXISTS` |
 | `MARK_PAYMENT_NOT_HUNG` | 422 | `VALIDATION_ERROR` |
 
-A non-uuid `markId`, a body without an integer `expectedVersion` ≥ 1, an extra key, a repeated payment pair, or an empty or over-2000-character note is a 400 from the schema. The mark is read before the subject, so an unknown mark is 404 for an actor with the permission, as in actions 8 and 14; 403 can come from the route factory (permission) or the service (system actor, actor = subject). `MARK_HAS_UNRESOLVED_PAYMENTS` is a hung payment attached to the mark, unresolved, and not named in the request; `MARK_PAYMENT_NOT_HUNG` is a named payment that is not an unresolved hung payment on that mark; `MARK_VERSION_CONFLICT` means the mark changed since the person read it (for example, a new hung payment arrived): reread and confirm again. No rejection writes anything.
+A non-uuid `markId`, a body without an integer `expectedVersion` ≥ 1, an extra key, a repeated payment pair, or an empty or over-2000-character note is a 400 from the schema. The mark is read before the subject, so an unknown mark is 404 for an actor with the permission, as in actions 8 and 14; 403 can come from the route factory (permission) or the service (system actor, actor = subject). `MARK_HAS_UNRESOLVED_PAYMENTS` is a hung payment attached to the mark, unresolved, and not named in the request; `MARK_PAYMENT_NOT_HUNG` is a named payment that is not an unresolved hung payment on that mark; `MARK_VERSION_CONFLICT` means the mark changed since the person read it (for example, a new hung payment arrived): reread and confirm again. `MARK_CLOSES_ONLY_BY_REFUND` is a request that names payments to resolve without refund on a page-charge mark of a one-time addon (`DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO`, `ORDEN_PAGADA_SIN_INSTANCIA`): since HOS-2179 D1 that mark holds the charge's own payment, which closes only through a refund (owner decision, option 3). It can be lifted once the refund settles that payment (or a chargeback resolves it); the list marks it with `liftRequiresRefund: true` until then. No rejection writes anything.
 
 ## Action 24 (V8a.3, HOS-1494)
 

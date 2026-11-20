@@ -2,10 +2,11 @@
 /** Tests for the permission gated, explicit action 7 confirmation. */
 
 import es from '@repo/i18n/locales/es/admin-billing.json';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, type ReconciliationMarkListResponseSchema } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { z } from 'zod';
 import { ApiError } from '@/lib/errors';
 import { LiftReconciliationMarkAction } from '../LiftReconciliationMarkAction';
 
@@ -34,7 +35,9 @@ vi.mock('../../hooks/useLiftReconciliationMark', () => ({
 
 const paymentId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
 const resolvedId = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
-const mark = {
+type Mark = z.infer<typeof ReconciliationMarkListResponseSchema>['items'][number];
+
+const mark: Mark = {
     markId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     version: 7,
     reason: 'PAGO_TARDIO_RECHAZADO',
@@ -70,10 +73,11 @@ const mark = {
     paymentCount: 2,
     totalAmount: [{ currency: 'ARS', amountMinor: 20500 }],
     unknownAmountCount: 0,
-    eventLink: null
+    eventLink: null,
+    liftRequiresRefund: false
 };
 
-function renderAction() {
+function renderAction(overrides: Partial<Mark> = {}) {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const invalidate = vi.spyOn(queryClient, 'invalidateQueries');
     return {
@@ -83,7 +87,7 @@ function renderAction() {
                 <article data-testid="reconciliation-mark">
                     <p data-testid="mark-neighbor">Marca visible</p>
                     <LiftReconciliationMarkAction
-                        mark={mark}
+                        mark={{ ...mark, ...overrides }}
                         locale="es"
                     />
                 </article>
@@ -223,6 +227,78 @@ describe('TEST:1697:13 AC:1697:5 lift action', () => {
             expect(view.invalidate).toHaveBeenCalledWith({
                 queryKey: ['billing-reconciliation', 'marks']
             })
+        );
+    });
+});
+
+describe('HOS-2179 D1 a held-charge mark closes only through a refund', () => {
+    const heldCharge = {
+        reason: 'COBRO_DUPLICADO',
+        reasonNumber: 20,
+        subject: {
+            kind: 'ADDON_INSTANCE' as const,
+            id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            status: 'ACTIVE'
+        },
+        liftRequiresRefund: true
+    };
+
+    it('disables the lift and explains that a refund closes it', () => {
+        // Arrange
+        state.permissions = [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK];
+
+        // Act
+        renderAction(heldCharge);
+        fireEvent.click(screen.getByTestId('reconciliation-mark-lift'));
+
+        // Assert
+        expect(screen.getByTestId('reconciliation-mark-lift')).toBeDisabled();
+        expect(screen.getByTestId('reconciliation-mark-lift-requires-refund')).toHaveTextContent(
+            tr('admin-billing.reconciliationMarks.lift.requiresRefund')
+        );
+        expect(screen.queryByTestId('reconciliation-mark-lift-dialog')).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId('reconciliation-mark-lift-without-refund')
+        ).not.toBeInTheDocument();
+        expect(state.mutateAsync).not.toHaveBeenCalled();
+    });
+
+    it('keeps the lift open for a mark without that flag', () => {
+        state.permissions = [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK];
+
+        renderAction({ ...heldCharge, liftRequiresRefund: false });
+
+        expect(screen.getByTestId('reconciliation-mark-lift')).toBeEnabled();
+        expect(
+            screen.queryByTestId('reconciliation-mark-lift-requires-refund')
+        ).not.toBeInTheDocument();
+    });
+
+    it('hides the disabled lift without its permission', () => {
+        state.permissions = [PermissionEnum.BILLING_SUBSCRIPTION_INSPECT];
+
+        renderAction(heldCharge);
+
+        expect(screen.queryByTestId('reconciliation-mark-lift')).not.toBeInTheDocument();
+    });
+
+    it('translates the server refusal if it still arrives', async () => {
+        state.permissions = [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK];
+        state.mutateAsync.mockRejectedValue(
+            new ApiError('Conflict', {
+                status: 409,
+                body: { error: { reason: 'MARK_CLOSES_ONLY_BY_REFUND' } }
+            })
+        );
+
+        renderAction();
+        fireEvent.click(screen.getByTestId('reconciliation-mark-lift'));
+        fireEvent.click(screen.getByTestId('reconciliation-mark-lift-confirm'));
+
+        await waitFor(() =>
+            expect(screen.getByTestId('reconciliation-mark-lift-error')).toHaveTextContent(
+                tr('admin-billing.reconciliationMarks.lift.reasons.MARK_CLOSES_ONLY_BY_REFUND')
+            )
         );
     });
 });

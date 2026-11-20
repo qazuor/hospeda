@@ -16,12 +16,18 @@ import {
     type ReconciliationMarkReason,
     reconciliationMarkPayments,
     reconciliationMarks,
+    refunds,
     sql
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { type AnyColumn, exists, notExists, type SQL } from 'drizzle-orm';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger';
+import { resolveHungPaymentsWithoutRefund } from '../reconciliation/hung-payment-resolution';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
+import { failRefund } from '../refund/refund-fail';
+import { refundHasLiveProviderCalls } from '../refund/refund-moved-money';
+import { lockRefundSource } from '../refund/refund-source';
+import { requestRefund } from '../refund/request-refund.service';
 
 const logger = createLogger('addon-one-time-page-charge-marks');
 
@@ -141,26 +147,56 @@ export async function chargeNamedByMark(input: {
     return named !== undefined;
 }
 
+/** What a chargeback did to the charge a page-charge mark holds. */
+export type HeldChargebackOutcome =
+    /** The held payment was resolved without a refund and its open refunds failed. */
+    | 'NOTED'
+    /** A `CONFIRMED` refund with an accepted or unanswered provider call owns it; only the note. */
+    | 'DEFERRED_TO_REFUND'
+    /** The held payment was already resolved (a refund executed, or an earlier chargeback). */
+    | 'ALREADY_SETTLED'
+    /** No open page-charge mark holds this charge. */
+    | 'NO_OPEN_MARK';
+
 /**
- * Records, once, that a charge an OPEN page-charge mark holds (D1) was charged back: one more
- * event on that mark, with `provider.charged_back: true`, so the person deciding it sees that the
- * refund it proposes is stale (the money already went back through the bank). Nothing else
- * changes: the mark stays open, its payment stays hung, and no other mark opens (one payment
- * raises at most one mark). A lifted mark is never touched; neither is a charge whose open mark
- * already carries the note, so a daily re-read adds no noise.
+ * Settles, once, a chargeback on a charge an OPEN page-charge mark holds (D1). The money went
+ * back through the bank, so the held payment is resolved without a refund (which is what lets the
+ * mark be lifted, since action 7 never resolves a held charge itself) and every refund of it that
+ * moved no money fails (RF5), so nobody refunds twice: the `REQUESTED` proposal, and a `CONFIRMED`
+ * one with no accepted and no unanswered provider call (for example a confirm whose charge read
+ * answered UNAVAILABLE). The mark gets one event with `provider.charged_back: true`, so the person
+ * sees why it closes. A refund already `FAILED` (a definitive provider rejection fails it inside
+ * action 13) never blocks this.
+ *
+ * It never resolves the payment "without a refund" while a refund may have moved money:
+ * - an `EXECUTED` refund already resolved it through `resolveHungPaymentsBySettlement`, so the
+ *   attachment reads resolved and nothing is written (`ALREADY_SETTLED`);
+ * - a `CONFIRMED` refund with an accepted or unanswered provider call (`refundHasLiveProviderCalls`,
+ *   the predicate decline uses) owns the outcome: only the note is added (`DEFERRED_TO_REFUND`)
+ *   and the payment stays hung. RF3 resolves it by settlement if that refund executes; the
+ *   `*_KEPT_CONFIRMED` outcomes keep the refund `CONFIRMED`, and this function does not close
+ *   them. Failing a call-less `CONFIRMED` is safe against a confirm in flight because every
+ *   provider call is persisted under the refund's row lock and only while it is `CONFIRMED`.
+ *
+ * Everything runs in one transaction, under the refund code's lock order: the payment, then its
+ * refunds `FOR UPDATE`, then the mark `FOR UPDATE`, re-reading under lock that the mark is still
+ * open and the attachment still unresolved. A lifted mark is never touched, and no other mark
+ * opens (one payment raises at most one mark).
  *
  * @param input.instanceId - The one-time page purchase
  * @param input.chargeId - The provider's id of the charged-back payment
  * @param input.trigger - Who read the chargeback
- * @returns `NOTED` when the event was added, `ALREADY_NOTED`, or `NO_OPEN_MARK`
+ * @param input.clock - The clock that stamps the resolution
+ * @returns What happened, see {@link HeldChargebackOutcome}
  */
 export async function noteChargebackOnHeldCharge(input: {
     readonly instanceId: string;
     readonly chargeId: string;
     readonly trigger: OneTimePageMarkTrigger;
-}): Promise<'NOTED' | 'ALREADY_NOTED' | 'NO_OPEN_MARK'> {
+    readonly clock: Clock;
+}): Promise<HeldChargebackOutcome> {
     const [held] = await getDb()
-        .select({ markId: reconciliationMarks.id, reason: reconciliationMarks.reason })
+        .select({ markId: reconciliationMarks.id, paymentId: payments.id })
         .from(payments)
         .innerJoin(
             reconciliationMarkPayments,
@@ -179,39 +215,97 @@ export async function noteChargebackOnHeldCharge(input: {
             )
         )
         .limit(1);
-    const heldReason = ONE_TIME_PAGE_CHARGE_MARK_REASONS.find((known) => known === held?.reason);
-    if (!held || !heldReason) return 'NO_OPEN_MARK';
-    const [noted] = await getDb()
-        .select({ id: domainEvent.id })
-        .from(domainEvent)
-        .where(
-            and(
-                eq(domainEvent.eventType, 'reconciliation.mark_opened'),
-                eq(domainEvent.entityType, 'addon_instance'),
-                eq(domainEvent.entityId, input.instanceId),
-                sql`${domainEvent.changes} @> ${JSON.stringify([
-                    { field: 'reconciliation_mark.id', new: held.markId },
+    if (!held) return 'NO_OPEN_MARK';
+    const correlationId = input.trigger.correlationId ?? randomUUID();
+    return getDb().transaction(async (tx): Promise<HeldChargebackOutcome> => {
+        await lockRefundSource({ tx, source: { kind: 'PAYMENT', id: held.paymentId } });
+        const paymentRefunds = await tx
+            .select()
+            .from(refunds)
+            .where(eq(refunds.paymentId, held.paymentId))
+            .orderBy(refunds.createdAt, refunds.id)
+            .for('update');
+        const [mark] = await tx
+            .select({ reason: reconciliationMarks.reason, liftedAt: reconciliationMarks.liftedAt })
+            .from(reconciliationMarks)
+            .where(eq(reconciliationMarks.id, held.markId))
+            .limit(1)
+            .for('update');
+        const heldReason = ONE_TIME_PAGE_CHARGE_MARK_REASONS.find(
+            (known) => known === mark?.reason
+        );
+        if (!mark || mark.liftedAt !== null || !heldReason) return 'NO_OPEN_MARK';
+        const [link] = await tx
+            .select({ resolvedAt: reconciliationMarkPayments.resolvedAt })
+            .from(reconciliationMarkPayments)
+            .where(
+                and(
+                    eq(reconciliationMarkPayments.markId, held.markId),
+                    eq(reconciliationMarkPayments.paymentId, held.paymentId)
+                )
+            )
+            .limit(1);
+        if (!link || link.resolvedAt !== null) return 'ALREADY_SETTLED';
+        if (paymentRefunds.some((refund) => refund.status === 'EXECUTED')) return 'ALREADY_SETTLED';
+        const open = paymentRefunds.filter(
+            (refund) => refund.status === 'REQUESTED' || refund.status === 'CONFIRMED'
+        );
+        let owning = false;
+        for (const refund of open)
+            if (
+                refund.status === 'CONFIRMED' &&
+                (await refundHasLiveProviderCalls({ tx, refundId: refund.id }))
+            )
+                owning = true;
+        const [noted] = await tx
+            .select({ id: domainEvent.id })
+            .from(domainEvent)
+            .where(
+                and(
+                    eq(domainEvent.eventType, 'reconciliation.mark_opened'),
+                    eq(domainEvent.entityType, 'addon_instance'),
+                    eq(domainEvent.entityId, input.instanceId),
+                    sql`${domainEvent.changes} @> ${JSON.stringify([
+                        { field: 'reconciliation_mark.id', new: held.markId },
+                        { field: 'provider.charge_id', new: input.chargeId },
+                        { field: 'provider.charged_back', new: true }
+                    ])}::jsonb`
+                )
+            )
+            .limit(1);
+        // A catalog-typed reason, as GUARD:G-R1-F (a) requires of every opening. It is the held
+        // mark's own reason, so S14 accumulates on that open mark.
+        const reason: ReconciliationMarkReason = heldReason;
+        if (!noted)
+            await openReconciliationMark({
+                subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
+                reason,
+                actor: { type: input.trigger.actor },
+                correlationId,
+                detail: [
                     { field: 'provider.charge_id', new: input.chargeId },
                     { field: 'provider.charged_back', new: true }
-                ])}::jsonb`
-            )
-        )
-        .limit(1);
-    if (noted) return 'ALREADY_NOTED';
-    // A catalog-typed reason, as GUARD:G-R1-F (a) requires of every opening. It is the held
-    // mark's own reason, so S14 accumulates on that open mark.
-    const reason: ReconciliationMarkReason = heldReason;
-    await openReconciliationMark({
-        subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
-        reason,
-        actor: { type: input.trigger.actor },
-        correlationId: input.trigger.correlationId ?? randomUUID(),
-        detail: [
-            { field: 'provider.charge_id', new: input.chargeId },
-            { field: 'provider.charged_back', new: true }
-        ]
+                ],
+                tx
+            });
+        if (owning) return 'DEFERRED_TO_REFUND';
+        for (const refund of open) {
+            const { failed } = await failRefund({
+                tx,
+                refund,
+                at: input.clock.now(),
+                correlationId
+            });
+            if (!failed) throw new Error('A locked open refund could not be failed');
+        }
+        await resolveHungPaymentsWithoutRefund({
+            tx,
+            markId: held.markId,
+            payments: [{ source: 'PAYMENT', id: held.paymentId }],
+            at: input.clock.now()
+        });
+        return 'NOTED';
     });
-    return 'NOTED';
 }
 
 /** The approved page charge a mark holds, as the fresh read by id gave it. */
@@ -289,7 +383,11 @@ async function heldPaymentFor(input: {
  * D1 of HOS-2179 (owner, 2026-11-20): in the same transaction the charge gets its held `payment`
  * row, hung from the mark through `reconciliation_mark_payment`, so a person can refund it
  * through RF1/RF2 and RF3 resolves the mark's payment once the refund executes. The row is never
- * credited (see {@link heldByPageChargeMark}). A charge already hung keeps its single row.
+ * credited (see {@link heldByPageChargeMark}). A charge already hung keeps its single row. The
+ * same transaction proposes the refund of the whole held amount (RF1, `MARK_PROPOSAL`), left
+ * `REQUESTED`: no money moves until a person confirms it (action 13). It closes when that refund
+ * executes, on a chargeback, or through action 14 (which closes the `REQUESTED` proposal or
+ * answers it once `FAILED`); a `REQUESTED` proposal cannot be declined.
  *
  * @param input.instanceId - The one-time page purchase
  * @param input.chargeId - The provider's id of the payment
@@ -341,6 +439,17 @@ export async function openOneTimePageChargeMark(input: {
                 },
                 { markPayments: createPaymentReconciliationMarkPayments(input.clock) }
             );
+            // The refund the mark proposes, waiting for a person (owner, D1 follow-up): created
+            // only by the entry that hung the payment, so a concurrent notice and sweep leave one.
+            if (held.hang)
+                await requestRefund(
+                    {
+                        source: { kind: 'PAYMENT', id: held.paymentId },
+                        amount: input.charge.amount.amountMinor,
+                        reason: 'MARK_PROPOSAL'
+                    },
+                    { clock: input.clock, tx }
+                );
         });
     } catch (error) {
         logger.error(

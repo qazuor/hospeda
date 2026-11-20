@@ -2,7 +2,8 @@
  * HOS-2179 D1 meets HOS-2391: a page charge a mark holds (its own `payment` row hung from
  * COBRO_DUPLICADO, mark 23 or a divergence) that the payer then charges back. No `CONTRACARGO`
  * opens (one payment raises at most one mark); instead the open mark gets one event with
- * `provider.charged_back: true`, so the person sees its refund proposal is stale. The
+ * `provider.charged_back: true`, and the held payment is resolved without a refund (the closing
+ * itself is covered by addon-one-time-page-held-refund-exits.test.ts). The
  * credited-payments check lists the held row only to re-read it for that chargeback, and never
  * credits it. Runs with the fake, lies on.
  */

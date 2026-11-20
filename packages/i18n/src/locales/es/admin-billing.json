@@ -2245,6 +2245,7 @@
             "title": "Levantar esta marca",
             "description": "Se cierra sólo esta marca. Las otras marcas de la misma fila siguen abiertas y no cambia el estado de la suscripción.",
             "withoutRefund": "Resolver sin devolver",
+            "requiresRefund": "Esta marca retiene un cobro que solo se cierra con una devolución. Confirmá la devolución propuesta (o asentala con la acción 14); cuando se liquide, la marca se va a poder levantar.",
             "unresolvedNotice": "Hay pagos colgados sin resolver. Para devolverlos, asentá la devolución con la acción 14; si no se devuelven, marcalos como resueltos sin devolver.",
             "note": "Nota para la auditoría (opcional)",
             "confirm": "Levantar",
@@ -2257,7 +2258,8 @@
                 "MARK_ALREADY_LIFTED": "La marca ya estaba levantada.",
                 "MARK_VERSION_CONFLICT": "La marca cambió desde que la abriste. Revisala y confirmá otra vez.",
                 "MARK_HAS_UNRESOLVED_PAYMENTS": "Quedan pagos colgados sin resolver.",
-                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca."
+                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca.",
+                "MARK_CLOSES_ONLY_BY_REFUND": "Esta marca retiene un cobro que solo se cierra devolviéndolo. No se puede resolver sin devolución."
             }
         }
     },
