@@ -336,7 +336,8 @@ Tool-specific rules:
     because billing may still charge it until the asynchronous cancel lands (the same
     instance `/billing-addon/instances` lists with `targetName: null`). It goes to its
     product's only compatible vertical, or to the top-level `unattributedAddons` (with
-    `addonsUrl`) when the product fits several. The owner summary carries
+    `addonsUrl`) when the product fits several. Any held add-on whose verticals have no
+    item (the title lapsed) goes there too, once, so no charged add-on is hidden. The owner summary carries
     `unattributedAddons` too.
   - `includes` is `null` when the effective set cannot be read; it is never guessed.
 - `get_owner_summary` (HOS-2331, spec HOS-2335 §6.6). It is one call instead of one
