@@ -35,8 +35,10 @@ call:
   returns `AWAITING_PROVIDER_ANSWER` while any call is unanswered (`execute-refund.service.ts:107-109`,
   `:133`), and `NOT_ACCREDITED_KEPT_CONFIRMED` when the accepted ids do not add up to
   `refund.amount` (`:137-144`).
-- **has no resend.** `resendUnansweredRefundCalls` exists but has no production caller
-  (`resend-refund-call.service.ts:44-45`; HOS-1636 will wire it).
+- **is resent from the admin (HOS-2516).** «Retry with MP» calls `resendUnansweredRefundCalls`
+  for one refund (`refund/retry-refund-provider-calls.service.ts`), with each call's original
+  idempotency key, and runs RF3 right after when every call comes back accepted. Section 8 starts
+  there.
 
 Unless noted, the service paths above are under `packages/service-core/src/services/billing/`
 (`refund/` or `notice/`).
@@ -265,9 +267,32 @@ instance) keeps the charge held. That is expected until the fix.
 (`refund-provider-call.ts:159-167`). An empty replay body is read the same way (`:124-132`). The
 provider call path ends with `AWAITING_PROVIDER_ANSWER` (`refund-provider-call.ts:228`).
 
-No admin action records an answer for an unanswered call. The resend has no caller (section 1). So
-this case needs one direct write, and only that write. Everything after it goes through the
-existing actions.
+**Step 0. Retry with MP first (HOS-2516).** In the admin, open **Billing → Reconciliation →
+Refunds**, paste the refund id in **Retry with Mercado Pago** and confirm. It is
+`POST /api/v1/admin/billing-refunds/<refund_id>/retry-provider-calls` with body
+`{"confirmed": true}` and permission `billing.refund`
+(`apps/api/src/routes/billing-refund/admin/retry-provider-calls.ts`; rejections in
+`apps/api/docs/error-contract.md`, «Action 13 provider call retry»). It resends every unanswered
+call with the SAME `X-Idempotency-Key` and amount, so a request Mercado Pago already processed comes
+back as the same refund instead of a second one. Wait the same `<N>` hours of query 4.1 first, so
+you do not race a call still in flight. Then read each call's answer:
+
+| Answer for a call | What happened | Next |
+|---|---|---|
+| `SENT` and `execution: "EXECUTED"` | Mercado Pago accepted it and the charge read shows it accredited for the full amount. The refund is `EXECUTED` | Nothing. Leave the audit trail (section 9) |
+| `SENT` and `execution: "NOT_ACCREDITED_KEPT_CONFIRMED"` | Accepted, not accredited yet (accepted is not accredited) | Nothing to write: the next charge notice executes it. If it does not within a day, it is case A (section 7) |
+| `SENT` and `execution: null` | Accepted, but the charge read after it failed | Nothing to write: the next charge notice executes it |
+| `PROVIDER_REJECTED_FAILED` | Mercado Pago rejected the call. The refund is `FAILED` (RF5) | Section 8.1 from step 5 (check Mercado Pago, then action 14 if still owed) |
+| `AWAITING_PROVIDER_ANSWER` | Still no answer, or an answer without id that matched no single refund (a Sentry alert names it) | Retry later. If it persists, steps 1-2 below |
+| `PROVIDER_KEY_CONFLICT` | Mercado Pago refused the key as reused | Steps 1-2 below |
+
+A 422 `REFUND_PAST_PROVIDER_WINDOW` means the charge is more than 180 days old: a refusal from
+Mercado Pago would not tell whether the lost call moved money, so the retry refuses to send. Go to
+steps 1-2 below. A call of the retired order channel (`refund_call.addon_instance_id` set) is never
+resent (section 2).
+
+Only when the retry cannot close it does this case need one direct write, and only that write.
+Everything after it goes through the existing actions.
 
 **Step 1. Wait, then read Mercado Pago.** Do not decide minutes after the call. Give Mercado Pago
 time to process a request that may have reached it (operational judgment: at least a few hours,
@@ -445,9 +470,10 @@ Mercado Pago did. Do not decline, and do not refund again.
      that payment (`refund-execution-on-notice.ts:37-72`, `process-provider-notice.service.ts:272`).
      The notice for the refund itself was most likely already processed, while the call was still
      unanswered, and RF3 answered `AWAITING_PROVIDER_ANSWER` then (`execute-refund.service.ts:133`).
-     So in general the refund stays `CONFIRMED`, and no admin action can trigger the read. Escalate
-     on HOS-2402. Do not settle it with action 14: it would refuse (`REFUND_NOT_OPEN`), and the
-     money is already back.
+     So in general the refund stays `CONFIRMED`. «Retry with MP» does not trigger the read here
+     either: after this write the refund has no unanswered call, so it answers
+     `REFUND_HAS_NO_UNANSWERED_CALL`. Escalate on HOS-2402. Do not settle it with action 14: it would
+     refuse (`REFUND_NOT_OPEN`), and the money is already back.
    - **They add up to less than `refund.amount`, or a refund accepted earlier by our own code is
      not `approved` yet.** It is now case A (section 7), or it waits for accreditation. Escalate.
 
@@ -473,6 +499,10 @@ Leave all three:
    - Action 14 writes the `EXECUTED` row with `settled_by`, `external_channel` and `external_ref`,
      and resolves `reconciliation_mark_payment.refund_id`.
    - Action 7 writes `reconciliation_mark.lifted_at` and `lifted_by`.
+   - «Retry with MP» writes each call's answer (`idempotency_key.result`, `completed_at`,
+     `refund_call.provider_refund_id`) and logs `AUDIT:BILLING_MUTATION` with
+     `administrativeAction: 'ACC_13'`, `operation: 'RETRY_PROVIDER_CALLS'`, the per-key outcomes and
+     RF3's `execution`.
    - The routes also log an `AUDIT:BILLING_MUTATION` entry with the actor and the request `note`
      (`settle-external.ts:108-131`, `lift-mark.ts:96`). That entry is a log line in the API logs
      (`apps/api/src/utils/audit-logger.ts:474-481`), not a database row. Read it with
@@ -511,6 +541,7 @@ own permission and refuses an admin acting on their own account
 
 ## 11. When this note stops applying
 
-HOS-2402 will add an exit for both cases (for example, action 14 recording the remainder, or a
-re-read of Mercado Pago for unanswered calls, HOS-1636). When it merges, update or retire this
-note in the same PR.
+HOS-2402 will add an exit for both cases. Case B got its first one in HOS-2516 («Retry with MP»,
+section 8, step 0); the direct writes of 8.1 and 8.2 remain only for what the retry cannot close.
+When the rest merges (for example, action 14 recording the remainder), update or retire this note in
+the same PR.
