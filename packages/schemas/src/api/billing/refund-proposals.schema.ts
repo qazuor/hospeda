@@ -38,7 +38,7 @@ export const ProposedRefundSchema = z.object({
     }),
     /** Number of provider calls already recorded; always 0 for the listed refunds. */
     providerCallCount: z.number().int().nonnegative(),
-    /** True when a page-charge mark holds the payment: the server refuses to decline it (HOS-2179 D1). */
+    /** True when decline would answer `REFUND_CLOSES_HELD_CHARGE`: a `REQUESTED` refund of a payment a page-charge mark holds (HOS-2179 D1). */
     closesHeldCharge: z.boolean(),
     marks: z.array(ProposedRefundMarkSchema)
 });

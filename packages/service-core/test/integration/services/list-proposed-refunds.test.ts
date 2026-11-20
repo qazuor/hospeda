@@ -173,6 +173,27 @@ describe('HOS-2400 listProposedRefunds', () => {
         }
     );
 
+    it.skipIf(skip)(
+        'does not flag a CONFIRMED proposal of a held charge: with no call it can be declined',
+        async () => {
+            // Arrange
+            const { held } = await heldChargeFor('COBRO_DUPLICADO');
+            const [proposal] = await refundsOf(held.payment.id);
+            if (!proposal) throw new Error('proposal missing');
+            await getServiceTestDb()
+                .update(refunds)
+                .set({ status: 'CONFIRMED' })
+                .where(eq(refunds.id, proposal.id));
+
+            // Act
+            const item = await listed(proposal.id);
+
+            // Assert
+            expect(item?.status).toBe('CONFIRMED');
+            expect(item?.closesHeldCharge).toBe(false);
+        }
+    );
+
     it.skipIf(skip)('keeps a lifted mark visible, marked as lifted', async () => {
         // Arrange
         const seeded = await proposalOnMarkedPayment();

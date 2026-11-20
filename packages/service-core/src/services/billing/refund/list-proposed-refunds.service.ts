@@ -180,7 +180,9 @@ export async function listProposedRefunds(input: {
                 payment,
                 // The listing only admits refunds with no recorded call.
                 providerCallCount: 0,
-                closesHeldCharge: row.held === true,
+                // Mirrors decline: a held page charge refuses it while REQUESTED; a CONFIRMED refund
+                // with no provider call can be declined (HOS-2179 D1, owner option 1).
+                closesHeldCharge: row.held === true && row.status === 'REQUESTED',
                 marks: marksByPayment.get(`${payment.source}:${payment.id}`) ?? []
             };
         });
