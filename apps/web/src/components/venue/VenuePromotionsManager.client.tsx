@@ -7,6 +7,7 @@ import { formatCalendarDate } from '@repo/utils';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { isUnlimitedLimit } from '@/components/billing/plan-card-delta';
 import fieldStyles from '@/components/listing/editor/editor-fields.module.css';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { venuePromotionsApi } from '@/lib/api/endpoints-protected';
 import type { ApiError } from '@/lib/api/types';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
@@ -320,12 +321,14 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
             {loading ? (
                 <p>{t('common.loading', 'Cargando…')}</p>
             ) : error ? (
-                <button
+                <GradientButton
+                    as="button"
                     type="button"
+                    variant="outline-primary"
+                    shape="rounded"
                     onClick={() => void load()}
-                >
-                    {t('common.retry', 'Reintentar')}
-                </button>
+                    label={t('common.retry', 'Reintentar')}
+                />
             ) : items.length === 0 ? (
                 <p>
                     {t(
@@ -365,47 +368,70 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                                       })
                                     : t('venue.detail.promotions.noEndDate', 'Sin fecha de fin')}
                             </small>
-                            {sectionState === 'available' && (
-                                <button
+                            <div className={styles.itemActions}>
+                                {sectionState === 'available' && (
+                                    <GradientButton
+                                        as="button"
+                                        type="button"
+                                        variant="outline-primary"
+                                        size="sm"
+                                        shape="rounded"
+                                        onClick={() => openEdit(item)}
+                                        label={t(
+                                            'venue.owner.editor.promotionsManager.actions.edit'
+                                        )}
+                                    />
+                                )}
+                                {item.lifecycleState === 'ACTIVE' ? (
+                                    <GradientButton
+                                        as="button"
+                                        type="button"
+                                        variant="outline-primary"
+                                        size="sm"
+                                        shape="rounded"
+                                        onClick={() => void changeState(item, 'PAUSED')}
+                                        label={t(
+                                            'venue.owner.editor.promotionsManager.actions.pause'
+                                        )}
+                                    />
+                                ) : sectionState === 'available' ? (
+                                    <GradientButton
+                                        as="button"
+                                        type="button"
+                                        variant="outline-primary"
+                                        size="sm"
+                                        shape="rounded"
+                                        onClick={() => void changeState(item, 'ACTIVE')}
+                                        label={t(
+                                            'venue.owner.editor.promotionsManager.actions.activate'
+                                        )}
+                                    />
+                                ) : null}
+                                <GradientButton
+                                    as="button"
                                     type="button"
-                                    onClick={() => openEdit(item)}
-                                >
-                                    {t('venue.owner.editor.promotionsManager.actions.edit')}
-                                </button>
-                            )}
-                            {item.lifecycleState === 'ACTIVE' ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void changeState(item, 'PAUSED')}
-                                >
-                                    {t('venue.owner.editor.promotionsManager.actions.pause')}
-                                </button>
-                            ) : sectionState === 'available' ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void changeState(item, 'ACTIVE')}
-                                >
-                                    {t('venue.owner.editor.promotionsManager.actions.activate')}
-                                </button>
-                            ) : null}
-                            <button
-                                type="button"
-                                onClick={() => void remove(item)}
-                            >
-                                {t('venue.owner.editor.promotionsManager.actions.delete')}
-                            </button>
+                                    variant="outline-accent"
+                                    size="sm"
+                                    shape="rounded"
+                                    className={styles.dangerButton}
+                                    onClick={() => void remove(item)}
+                                    label={t('venue.owner.editor.promotionsManager.actions.delete')}
+                                />
+                            </div>
                         </li>
                     ))}
                 </ul>
             )}
             {sectionState === 'available' && (
-                <button
+                <GradientButton
+                    as="button"
                     type="button"
+                    variant="accent"
+                    shape="rounded"
                     disabled={activeCount >= maxActive}
                     onClick={() => setFormOpen(true)}
-                >
-                    {t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
-                </button>
+                    label={t('venue.owner.editor.promotionsManager.create', 'Nueva promoción')}
+                />
             )}
             {message && <p role="status">{message}</p>}
             {(formOpen || editing) && (
