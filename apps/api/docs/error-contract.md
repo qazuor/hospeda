@@ -642,6 +642,8 @@ An expired confirmation answers `REFUND_PAST_PROVIDER_WINDOW` before a provider 
 
 Declining any `CONFIRMED` refund returns `warning: "VERIFY_NO_PROVIDER_REFUND"` beside `status: "FAILED"`: check the provider's panel that no refund left before refunding by hand. Our own calls are persisted before they are sent, so a call-less `CONFIRMED` never reached the provider through this API; the warning covers a refund made from the panel.
 
+`GET /api/v1/admin/billing-refunds/proposed` (HOS-2400) feeds the screen that confirms or declines these refunds. It lists `MARK_PROPOSAL` refunds that are `REQUESTED`, or `CONFIRMED` with no accepted or unanswered provider call (`refundHasLiveProviderCalls` is false, the predicate decline uses), oldest first, each with the marks that hang its payment and a `closesHeldCharge` flag that is true exactly when decline would answer `REFUND_CLOSES_HELD_CHARGE`. It is read-only and takes the same `billing.refund` permission as the actions it feeds. Checks run in this order: 401 authentication → 403 `billing.refund` permission → 400 pagination (`page` ≥ 1, `pageSize` 1 to 100). It has no 404 and no 409: an empty list is a 200.
+
 ## Action 14 charge settlement rejections (B5.9)
 
 `POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.

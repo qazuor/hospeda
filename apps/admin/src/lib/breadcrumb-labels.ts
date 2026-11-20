@@ -22,6 +22,7 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
     '/billing/owner-promotions': 'admin-menu.billing.ownerPromotions',
     '/billing/exchange-rates': 'admin-menu.billing.exchangeRates',
     '/billing/reconciliation': 'admin-menu.billing.reconciliation',
+    '/billing/reconciliation/refunds': 'admin-menu.billing.proposedRefunds',
     '/billing/promo-codes': 'admin-menu.billing.promoCodes',
     '/billing/deadlines': 'admin-menu.billing.deadlines',
     '/billing/settings': 'admin-menu.billing.settings',

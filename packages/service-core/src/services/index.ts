@@ -239,6 +239,7 @@ export * from './billing/refund/confirm-refund.service.js';
 export * from './billing/refund/decline-refund.service.js';
 export * from './billing/refund/execute-refund.service.js';
 export * from './billing/refund/late-payment-refund-notice.js';
+export * from './billing/refund/list-proposed-refunds.service.js';
 export * from './billing/refund/refund-machine.js';
 export * from './billing/refund/refund-window.js';
 export * from './billing/refund/request-refund.service.js';
