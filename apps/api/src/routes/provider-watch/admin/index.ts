@@ -25,6 +25,7 @@ import {
     checkAuthorizedAmount,
     previewAuthorization
 } from '../../../utils/provider-watch/provider-watch-authorization.js';
+import { ProviderWatchMeasurementIdSchema } from '../../../utils/provider-watch/provider-watch-measurement-id.js';
 import {
     acceptShape,
     listShapeReviews
@@ -211,7 +212,7 @@ export const adminAcceptProviderWatchShapeRoute = createAdminRoute({
         'Makes the shapes observed by the given completed run the accepted baseline of the measurement, recording who accepted and when.',
     tags: ['Provider watch'],
     requiredPermissions: [PermissionEnum.BILLING_PROVIDER_WATCH_MANAGE],
-    requestParams: { measurementId: z.string().regex(/^(?:M|RP)\d{1,2}$/) },
+    requestParams: { measurementId: ProviderWatchMeasurementIdSchema },
     requestBody: ProviderWatchAcceptShapeInputSchema,
     responseSchema: z.object({ acceptedAt: z.string().datetime({ offset: true }) }),
     handler: async (
