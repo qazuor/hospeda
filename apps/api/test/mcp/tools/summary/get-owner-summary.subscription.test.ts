@@ -202,3 +202,39 @@ describe('get_owner_summary subscription block (HOS-2328)', () => {
         expect(summary.subscription).toEqual({});
     });
 });
+
+describe('get_owner_summary when the plan read fails (HOS-2328)', () => {
+    beforeAll(() => {
+        validateApiEnv();
+        injectClock({ clock: { now: () => NOW } });
+    });
+
+    beforeEach(() => {
+        arrangeWorld(emptyWorld());
+        resetWorld();
+        readerSpy.calls = [];
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        resetMocks();
+    });
+
+    it.each([
+        ['an out-of-contract subscription', 'readOwnPlanState'],
+        ['an unknown trial status', 'readTrialSummary']
+    ] as const)('still answers, without the block, on %s', async (_case, reader) => {
+        // Arrange
+        arrangeSubscriptionAndTrial();
+        planMocks[reader].mockRejectedValue(new Error('Unknown billing option cycle'));
+
+        // Act
+        const summary = await run<OwnerSummary>(getOwnerSummaryTool, billingActor());
+
+        // Assert
+        expect(summary).not.toHaveProperty('subscription');
+        expect(summary.omitted).toEqual({ subscription: 'unavailable' });
+        expect(summary.listings.accommodation.total).toBe(0);
+        expect(Array.isArray(summary.attention)).toBe(true);
+    });
+});

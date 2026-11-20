@@ -166,7 +166,25 @@ export interface OwnerSummary {
     readonly more: number;
     /**
      * Per vertical with a live subscription or a running trial, the
-     * `get_my_plan` item (HOS-2328, AC-C33). Absent without `BILLING_VIEW_OWN`.
+     * `get_my_plan` item (HOS-2328, AC-C33). Absent without `BILLING_VIEW_OWN`
+     * or when the plan could not be read (then named in {@link omitted}). Over
+     * the response budget its `includes` give way first, each replaced by
+     * {@link SummaryIncludesOmitted}.
      */
-    readonly subscription?: Readonly<Partial<Record<MyPlanVertical, MyPlanItem>>>;
+    readonly subscription?: Readonly<Partial<Record<MyPlanVertical, SummaryPlanItem>>>;
+    /** Blocks left out and why. Absent when nothing was left out. */
+    readonly omitted?: Readonly<{ readonly subscription?: 'unavailable' }>;
 }
+
+/** What replaces a plan's `includes` in the summary when the response budget needs the room. */
+export interface SummaryIncludesOmitted {
+    /** Why the includes are not here. */
+    readonly omitted: 'over_budget';
+    /** Model-facing hint: where to read them. */
+    readonly hint: string;
+}
+
+/** A `get_my_plan` item as the summary carries it: whole, or with its includes trimmed. */
+export type SummaryPlanItem =
+    | MyPlanItem
+    | (Omit<MyPlanItem, 'includes'> & { readonly includes: SummaryIncludesOmitted });
