@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4541
+    {
+        id: '2026-11-19-venue-promotion-happy-hour',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Tus promos pueden valer solo en ciertos días y horas',
+            en: 'Your promotions can run only on certain days and hours',
+            pt: 'Suas promoções podem valer só em certos dias e horários'
+        },
+        body: {
+            es: 'Al cargar una promoción podés activar una franja semanal, por ejemplo jueves de 22 a 01, aunque pase la medianoche. La ficha muestra el horario y, mientras la franja está vigente, la tarjeta de tu local en el listado dice «Ahora».',
+            en: 'When you add a promotion you can turn on a weekly window, for example Thursday from 22 to 01, even past midnight. Your page shows the schedule and, while the window is on, your venue card in the listing says "Now".',
+            pt: 'Ao cadastrar uma promoção você pode ativar uma faixa semanal, por exemplo quinta das 22 à 01, mesmo depois da meia-noite. A página mostra o horário e, enquanto a faixa está vigente, o cartão do seu local na listagem diz «Agora».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4585
     {
         id: '2026-11-19-queued-plan-change-stays-visible',
