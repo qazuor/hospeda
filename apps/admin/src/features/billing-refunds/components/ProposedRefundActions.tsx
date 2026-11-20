@@ -75,12 +75,21 @@ export function ProposedRefundActions({ refund, amountLabel }: ProposedRefundAct
         if (busy) return;
         setErrorKey(null);
         try {
-            await declineMutation.mutateAsync({ refundId: refund.refundId });
+            const result = await declineMutation.mutateAsync({ refundId: refund.refundId });
             close();
-            addToast({
-                message: t('admin-billing.proposedRefunds.decline.success'),
-                variant: 'success'
-            });
+            // A declined CONFIRMED refund asks the person to check the provider's panel before
+            // settling it by hand, so that warning outlives the dialog as a warning toast.
+            addToast(
+                result.warning === 'VERIFY_NO_PROVIDER_REFUND'
+                    ? {
+                          message: t('admin-billing.proposedRefunds.decline.successVerify'),
+                          variant: 'warning'
+                      }
+                    : {
+                          message: t('admin-billing.proposedRefunds.decline.success'),
+                          variant: 'success'
+                      }
+            );
         } catch (error) {
             if (readRefundDecisionReason({ error }) === 'REFUND_CLOSES_HELD_CHARGE') {
                 setDeclineLocked(true);

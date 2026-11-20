@@ -2313,6 +2313,7 @@
             "confirm": "Rechazar devolución",
             "cancel": "Cancelar",
             "success": "Devolución rechazada.",
+            "successVerify": "Devolución rechazada. Antes de asentarla a mano (acción 14), verificá en el panel de MP que no salió ninguna devolución.",
             "closesHeldCharge": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca. Se cierra confirmándola, por un contracargo o asentándola con la acción 14."
         },
         "rejections": {

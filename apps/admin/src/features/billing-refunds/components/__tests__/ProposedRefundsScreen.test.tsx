@@ -228,6 +228,34 @@ describe('HOS-2400 decline (action 13 refusal)', () => {
         expect(state.decline).not.toHaveBeenCalled();
     });
 
+    it('keeps the verify-in-MP warning visible after declining a CONFIRMED refund', async () => {
+        listOf(refundWith({ status: 'CONFIRMED' }));
+        state.decline.mockResolvedValueOnce({
+            refundId: REFUND_ID,
+            status: 'FAILED',
+            warning: 'VERIFY_NO_PROVIDER_REFUND'
+        });
+        render(<ProposedRefundsScreen />);
+
+        fireEvent.click(screen.getByTestId('proposed-refund-decline'));
+        fireEvent.click(screen.getByTestId('proposed-refund-decline-submit'));
+
+        await waitFor(() =>
+            expect(state.addToast).toHaveBeenCalledWith({
+                message: tr('admin-billing.proposedRefunds.decline.successVerify'),
+                variant: 'warning'
+            })
+        );
+    });
+
+    it('lets a CONFIRMED refund of a held charge be declined (call-less, owner option 1)', () => {
+        listOf(refundWith({ status: 'CONFIRMED', closesHeldCharge: false }));
+        render(<ProposedRefundsScreen />);
+
+        expect(screen.getByTestId('proposed-refund-decline')).toBeEnabled();
+        expect(screen.queryByTestId('proposed-refund-decline-locked')).not.toBeInTheDocument();
+    });
+
     it('locks the button and explains it when the server answers REFUND_CLOSES_HELD_CHARGE', async () => {
         state.decline.mockRejectedValueOnce(conflict('REFUND_CLOSES_HELD_CHARGE'));
         render(<ProposedRefundsScreen />);

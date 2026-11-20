@@ -2313,6 +2313,7 @@
             "confirm": "Recusar reembolso",
             "cancel": "Cancelar",
             "success": "Reembolso recusado.",
+            "successVerify": "Reembolso recusado. Antes de registrá-lo manualmente (ação 14), verifique no painel do MP que nenhum reembolso saiu.",
             "closesHeldCharge": "Este reembolso não pode ser recusado: ele devolve uma cobrança retida por uma marca. Encerra-se confirmando-o, por um estorno ou registrando-o com a ação 14."
         },
         "rejections": {

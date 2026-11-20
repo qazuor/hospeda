@@ -2313,6 +2313,7 @@
             "confirm": "Decline refund",
             "cancel": "Cancel",
             "success": "Refund declined.",
+            "successVerify": "Refund declined. Before settling it by hand (action 14), check the MP panel to make sure no refund went out.",
             "closesHeldCharge": "This refund cannot be declined: it refunds a charge held by a mark. It closes by confirming it, through a chargeback, or by recording it with action 14."
         },
         "rejections": {
