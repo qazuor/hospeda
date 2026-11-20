@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4585
+    {
+        id: '2026-11-19-queued-plan-change-stays-visible',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Mi suscripción te muestra cuándo cambia tu plan',
+            en: 'My subscription shows when your plan changes',
+            pt: 'Minha assinatura mostra quando seu plano muda'
+        },
+        body: {
+            es: 'Si programaste un cambio a un plan más bajo, Mi suscripción muestra «Tu plan cambia el…» con la fecha, también cuando volvés a entrar o recargás la página.',
+            en: 'If you scheduled a change to a lower plan, My subscription shows "Your plan changes on…" with the date, also when you come back or reload the page.',
+            pt: 'Se você agendou uma troca para um plano menor, Minha assinatura mostra «Seu plano muda em…» com a data, também quando você volta ou recarrega a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4548
     {
         id: '2026-11-19-admin-restored-records-come-back-inactive',
@@ -311,6 +329,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'Si conectás el asistente de Claude con Hospeda y le preguntás «¿cómo subo fotos de mi ficha?», te responde con los pasos de Hospeda y links directos a la sección de fotos del editor de cada ficha. Si preguntás algo que no está en la ayuda, te comparte las preguntas frecuentes y el soporte, sin inventar pasos.',
             en: "If you connect the Claude assistant to Hospeda and ask «how do I upload photos to my listing?», it answers with Hospeda's own steps and direct links to the photos section of each listing's editor. If you ask something outside the help content, it shares the FAQ and support links without inventing steps.",
             pt: 'Se você conectar o assistente do Claude à Hospeda e perguntar «como envio fotos da minha ficha?», ele responde com os passos da Hospeda e links diretos para a seção de fotos do editor de cada ficha. Se você perguntar algo fora da ajuda, ele compartilha as perguntas frequentes e o suporte, sem inventar passos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4578
+    {
+        id: '2026-11-19-provider-sees-which-host-declared-a-usage',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Como proveedor, ahora ves qué anfitrión registró cada uso de tu beneficio',
+            en: 'As a provider, you now see which host registered each use of your benefit',
+            pt: 'Como fornecedor, agora você vê qual anfitrião registrou cada uso do seu benefício'
+        },
+        body: {
+            es: 'En tu ficha de proveedor, en la pestaña Usos, cada uso que registró un anfitrión muestra su nombre, así sabés a quién le confirmás o rechazás. Tu asistente de IA también te lo dice cuando le preguntás por tus usos.',
+            en: 'In your provider page, under the Uses tab, every use a host registered shows their name, so you know whom you are confirming or rejecting. Your AI assistant also tells you when you ask about your uses.',
+            pt: 'Na sua ficha de fornecedor, na aba Usos, cada uso que um anfitrião registrou mostra o nome dele, assim você sabe quem está confirmando ou recusando. Seu assistente de IA também informa quando você pergunta pelos seus usos.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
