@@ -4,15 +4,16 @@ import { addonInstances, eq } from '@repo/db';
 /**
  * How the payment of a one-time add-on instance is refunded (HOS-2179 §5.11, T-5).
  *
- * - `ORDER`: an instance bought before HOS-2179 through `/v1/orders`. It has a provider order
- *   and no payment page; its refund goes through the order (`refundOrder`, AC:B6:8).
  * - `PAYMENT`: an instance bought on a payment page. It has a page and no order; its payment
  *   is an ordinary provider charge refunded through `refund` and confirmed by re-reading the
  *   charge, exactly like a subscription payment.
- * - `NONE`: the instance has neither, or both. Nothing proves which channel holds the money,
- *   so the refund is not sent at all (fail closed).
+ * - `NONE`: anything else. An instance with a provider order was bought through `/v1/orders`;
+ *   the order refund channel was retired with the order path (HOS-2179 T-7, zero such
+ *   instances in staging and production when it was retired), so its refund is not sent and
+ *   a person settles it outside our flow (action 14). An instance with neither, or both,
+ *   proves no channel at all. Both fail closed.
  */
-export type AddonRefundChannel = 'ORDER' | 'PAYMENT' | 'NONE';
+export type AddonRefundChannel = 'PAYMENT' | 'NONE';
 
 /**
  * Chooses the refund channel from what the instance actually holds, never from its product
@@ -30,7 +31,6 @@ export function resolveAddonRefundChannel(input: {
 }): { readonly channel: AddonRefundChannel } {
     const hasOrder = input.providerOrderId !== null;
     const hasPage = input.paymentPageId !== null;
-    if (hasOrder && !hasPage) return { channel: 'ORDER' };
     if (hasPage && !hasOrder) return { channel: 'PAYMENT' };
     return { channel: 'NONE' };
 }
@@ -41,13 +41,13 @@ export function resolveAddonRefundChannel(input: {
  * @param input.db - The connection or transaction to read with
  * @param input.addonInstanceId - The instance the refunded payment hangs from
  * @param input.lock - `share` to hold the instance row until the caller's transaction ends
- * @returns The channel and, for `ORDER`, the provider order id
+ * @returns The channel
  */
 export async function readAddonRefundChannel(input: {
     readonly db: DrizzleClient;
     readonly addonInstanceId: string;
     readonly lock?: 'share';
-}): Promise<{ readonly channel: AddonRefundChannel; readonly providerOrderId: string | null }> {
+}): Promise<{ readonly channel: AddonRefundChannel }> {
     const query = input.db
         .select({
             providerOrderId: addonInstances.providerOrderId,
@@ -57,7 +57,6 @@ export async function readAddonRefundChannel(input: {
         .where(eq(addonInstances.id, input.addonInstanceId))
         .limit(1);
     const [instance] = input.lock === 'share' ? await query.for('share') : await query;
-    if (!instance) return { channel: 'NONE', providerOrderId: null };
-    const { channel } = resolveAddonRefundChannel(instance);
-    return { channel, providerOrderId: channel === 'ORDER' ? instance.providerOrderId : null };
+    if (!instance) return { channel: 'NONE' };
+    return resolveAddonRefundChannel(instance);
 }

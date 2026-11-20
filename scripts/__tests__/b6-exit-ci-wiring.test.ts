@@ -105,8 +105,8 @@ const CORTE_MAP: readonly CorteEntry[] = [
         ['AC:B6:8', 'AC:B6:10'],
         ['TEST:B6:6', 'TEST:B6:8'],
         [
-            'packages/service-core/test/integration/services/refund-order-confirm.test.ts',
-            'packages/service-core/test/integration/services/refund-order-execute.test.ts',
+            // HOS-2179 T-7 retired the order refund channel: TEST:B6:6 now proves it is closed.
+            'packages/service-core/test/integration/services/refund-order-retired.test.ts',
             'packages/service-core/test/integration/services/refund-resend.test.ts',
             'packages/payments/test/mercadopago-order-refund.test.ts',
             'packages/payments/test/fake-order-refund.test.ts',
@@ -118,7 +118,8 @@ const CORTE_MAP: readonly CorteEntry[] = [
         ['AC:B6:9'],
         ['TEST:B6:7', 'TEST:B6:11'],
         [
-            'packages/service-core/test/integration/services/refund-order-held.test.ts',
+            // HOS-2179 T-7: no call is tied to an instance any more; the index stays in the schema.
+            'packages/service-core/test/integration/services/refund-order-retired.test.ts',
             'packages/db/test/integration/b6-order-refund-index.test.ts'
         ]
     )
@@ -153,11 +154,6 @@ const DEFERRED_FUNCTIONS = [
         name: 'resendUnansweredRefundCalls',
         file: 'packages/service-core/src/services/billing/refund/resend-refund-call.service.ts',
         exportLine: "export * from './billing/refund/resend-refund-call.service.js';"
-    },
-    {
-        name: 'sendHeldOrderRefund',
-        file: 'packages/service-core/src/services/billing/refund/send-held-order-refund.service.ts',
-        exportLine: "export * from './billing/refund/send-held-order-refund.service.js';"
     }
 ] as const;
 
@@ -365,7 +361,7 @@ describe('TEST:B6:11 AC:B6:13 - B6 exit: LISTA:B6 evidence in the tree, the swee
     });
 
     describe('(e) the B11 sweep is deferred as data', () => {
-        it('records HOS-1636 phase 2 CT and keeps both sweep functions exported', () => {
+        it('records HOS-1636 phase 2 CT and keeps the resend function exported', () => {
             const entry = DEFERRED[0];
             expect(DEFERRED).toHaveLength(1);
             expect(entry).toEqual({

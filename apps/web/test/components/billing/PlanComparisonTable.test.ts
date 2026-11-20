@@ -31,7 +31,9 @@ const helperSrc = readFileSync(
 
 describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () => {
     it('imports the row model instead of declaring it inline', () => {
-        expect(src).toContain("from '@/components/billing/plan-comparison-rows'");
+        // HOS-2398: the cell resolver now comes through the source picker,
+        // which itself delegates to the shared row model's `resolveCell`.
+        expect(src).toContain("from '@/components/billing/plan-comparison-source'");
         expect(helperSrc).toContain("from '@/components/billing/plan-comparison-rows'");
         expect(helperSrc).toContain('OWNER_GROUPS');
         expect(helperSrc).toContain('TOURIST_GROUPS');
@@ -76,11 +78,18 @@ describe('PlanComparisonTable.astro — single source of truth (HOS-329)', () =>
     });
 
     it('resolves cells through the shared plan-driven resolver, not by index', () => {
-        expect(src).toMatch(/resolveCell\(\s*\{[^}]*cell:\s*row\.cell/);
+        expect(src).toMatch(/resolveGroupCell\(\s*\{[^}]*cell:\s*row\.cell[^}]*plan[^}]*\}/);
         // The old positional renderer and its column index must be gone.
         expect(src).not.toContain('getCellRendered');
         expect(src).not.toContain('planIndex');
         expect(src).not.toContain('activePlans.map((plan, idx)');
+    });
+
+    it('HOS-2398 resolves cells and row visibility against the Tourist VIP plan it is given', () => {
+        expect(src).toMatch(
+            /resolveGroupCell\(\{\s*group,\s*cell:\s*row\.cell,\s*plan,\s*touristVipPlan\s*\}\)/
+        );
+        expect(src).toMatch(/getVisibleRows\(\{[^}]*group,\s*touristVipPlan\s*\}\)/);
     });
 
     it('builds its columns with the shared active+sorted plan filter', () => {

@@ -42,8 +42,44 @@ describe('resolveTouristVipBenefitKeys', () => {
         });
 
         expect(resolveTouristVipBenefitKeys({ result: { ok: true, plans: [floor, vip] } })).toEqual(
-            { entitlements: new Set(['vip_feature']), limits: new Set(['vip_cap']) }
+            {
+                entitlements: new Set(['vip_feature']),
+                limits: new Set(['vip_cap']),
+                plan: { slug: 'vip', entitlements: ['vip_feature'], limits: { vip_cap: 10 } }
+            }
         );
+    });
+
+    it('HOS-2398 exposes the top sellable tier as the plan the inherited cells resolve against', () => {
+        // Arrange
+        const lower = {
+            ...plan({
+                slug: 'vip-lite',
+                entitlements: ['lite_feature'],
+                limits: { vip_cap: 5 },
+                billingOptions: { monthly: 'm1', annual: null }
+            }),
+            sortOrder: 1
+        };
+        const top = {
+            ...plan({
+                slug: 'tourist-vip',
+                entitlements: ['vip_feature'],
+                limits: { vip_cap: 10 },
+                billingOptions: { monthly: 'm2', annual: null }
+            }),
+            sortOrder: 3
+        };
+
+        // Act
+        const result = resolveTouristVipBenefitKeys({ result: { ok: true, plans: [lower, top] } });
+
+        // Assert
+        expect(result?.plan).toEqual({
+            slug: 'tourist-vip',
+            entitlements: ['vip_feature'],
+            limits: { vip_cap: 10 }
+        });
     });
 
     it('returns null when the catalog fails or has no sellable plans', () => {

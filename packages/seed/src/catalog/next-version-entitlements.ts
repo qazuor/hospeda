@@ -63,3 +63,62 @@ export const PRODUCTION_PLAN_NEXT_VERSION_QUOTA_GRANTS = [
 
 /** One metered entitlement plus the limit it raises, published as a next plan version. */
 export type NextVersionQuotaGrant = (typeof PRODUCTION_PLAN_NEXT_VERSION_QUOTA_GRANTS)[number];
+
+/**
+ * HOS-2398 (owner decisions, 2026-11-20 04:29): the tourist entitlements and the
+ * tourist limits come off the nine sellable owner plans. Read by migration 0188.
+ *
+ * Those rows only count in the owner vertical, where nobody reads them (every
+ * reader of these keys passes the TOURIST vertical). What an owner gets as a
+ * tourist arrives by Tourist VIP inheritance (`resolveTouristVipInheritance`),
+ * which grants the Tourist VIP plan's own rows, so removing them reduces nothing.
+ *
+ * `ai_chat` and the owner chat limits (`max_ai_chat_per_month`, `max_ai_chat_venue_per_month`,
+ * `max_ai_chat_experience_per_month`)
+ * are owner capabilities with their own quota and are deliberately NOT here.
+ */
+export const OWNER_PLAN_REMOVED_TOURIST_ENTITLEMENT_KEYS = [
+    'save_favorites',
+    'write_reviews',
+    'read_reviews',
+    'price_alerts',
+    'exclusive_deals',
+    'vip_support',
+    'vip_visibility_access',
+    'vip_promotions_access',
+    'can_compare_accommodations',
+    'can_attach_review_photos',
+    'can_view_search_history',
+    'can_view_recommendations',
+    'can_contact_whatsapp_display',
+    'can_contact_whatsapp_direct',
+    'can_use_collections'
+] as const;
+
+/** HOS-2398: the tourist limits removed from the owner plans together with their entitlements. */
+export const OWNER_PLAN_REMOVED_TOURIST_LIMIT_KEYS = [
+    'max_favorites',
+    'max_active_alerts',
+    'max_compare_items',
+    'max_ai_search_per_month',
+    'max_ai_chat_consumer_per_month',
+    'max_search_history_entries',
+    'max_collections'
+] as const;
+
+/** HOS-2398: the nine sellable owner plans that receive a version without the tourist keys. */
+export const PRODUCTION_PLAN_NEXT_VERSION_TOURIST_KEY_REMOVALS = [
+    { vertical: 'accommodation', slug: 'owner-basico' },
+    { vertical: 'accommodation', slug: 'owner-pro' },
+    { vertical: 'accommodation', slug: 'owner-premium' },
+    { vertical: 'venue', slug: 'venue-basico' },
+    { vertical: 'venue', slug: 'venue-pro' },
+    { vertical: 'venue', slug: 'venue-premium' },
+    { vertical: 'experience', slug: 'experience-basico' },
+    { vertical: 'experience', slug: 'experience-pro' },
+    { vertical: 'experience', slug: 'experience-premium' }
+] as const;
+
+/** One owner plan published without the tourist keys (HOS-2398, migration 0188). */
+export type NextVersionTouristKeyRemoval =
+    (typeof PRODUCTION_PLAN_NEXT_VERSION_TOURIST_KEY_REMOVALS)[number];

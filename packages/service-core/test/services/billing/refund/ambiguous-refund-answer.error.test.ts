@@ -8,14 +8,13 @@ describe('HOS-2007 the ambiguous refund answer error carries what the operator n
     it('names itself and states the refund and the reason in the message', () => {
         // Arrange
         const input: AmbiguousRefundAnswerInput = {
-            kind: 'ORDER',
+            kind: 'PAYMENT',
             refundId: 'r-1',
             refundCallKey: 'call-1',
             paymentId: 'payment-1',
             providerFactId: 'fact-1',
-            orderId: 'order-1',
             expectedAmountMinor: 4000,
-            reason: 'SEVERAL_NEW_ORDER_REFUNDS',
+            reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
             candidates: []
         };
 
@@ -25,7 +24,7 @@ describe('HOS-2007 the ambiguous refund answer error carries what the operator n
         // Assert
         expect(error.name).toBe('AmbiguousRefundAnswerError');
         expect(error.message).toBe(
-            'Refund r-1 has an ambiguous provider answer (SEVERAL_NEW_ORDER_REFUNDS); it waits for a manual settlement'
+            'Refund r-1 has an ambiguous provider answer (SEVERAL_UNNAMED_PAYMENT_REFUNDS); it waits for a manual settlement'
         );
         expect(error instanceof Error).toBe(true);
     });
@@ -39,7 +38,6 @@ describe('HOS-2007 the ambiguous refund answer error carries what the operator n
             refundCallKey: 'call-2',
             paymentId: 'payment-2',
             providerFactId: 'fact-2',
-            orderId: null,
             expectedAmountMinor: 4000,
             reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS',
             candidates
@@ -56,7 +54,6 @@ describe('HOS-2007 the ambiguous refund answer error carries what the operator n
             refundCallKey: 'call-2',
             paymentId: 'payment-2',
             providerFactId: 'fact-2',
-            orderId: null,
             expectedAmountMinor: 4000,
             reason: 'SEVERAL_UNNAMED_PAYMENT_REFUNDS'
         });
@@ -64,18 +61,18 @@ describe('HOS-2007 the ambiguous refund answer error carries what the operator n
         expect(error.candidateProviderRefundIds).toEqual(['provider-1']);
         expect(error.candidateAmountsMinor).toEqual([4000]);
         expect(error.candidateSummary).toBe('provider-1:4000');
+        expect(error).not.toHaveProperty('orderId');
     });
 
     it('keeps every own field flat for Sentry normalization', () => {
         const error = new AmbiguousRefundAnswerError({
-            kind: 'ORDER',
+            kind: 'PAYMENT',
             refundId: 'r',
             refundCallKey: 'k',
             paymentId: 'p',
             providerFactId: 'f',
-            orderId: null,
             expectedAmountMinor: 1,
-            reason: 'NO_NEW_ORDER_REFUND',
+            reason: 'NO_UNNAMED_PAYMENT_REFUND',
             candidates: []
         });
         for (const [key, value] of Object.entries(error)) {
