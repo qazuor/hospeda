@@ -2276,14 +2276,14 @@
         "requestedAt": "Proposto em",
         "amount": "Valor",
         "payment": "Pagamento",
-        "status": "Estado",
+        "status": "Situação",
         "statuses": {
             "REQUESTED": "Aguardando confirmação",
             "CONFIRMED": "Confirmado, sem chamadas ao provedor"
         },
         "origin": "Marca de origem",
         "noMark": "Nenhuma marca foi encontrada para este pagamento.",
-        "markLifted": "levantada",
+        "markLifted": "encerrada",
         "markOpen": "aberta",
         "marksLink": "Ver as marcas abertas",
         "confirm": {
