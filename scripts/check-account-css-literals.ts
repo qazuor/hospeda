@@ -147,7 +147,10 @@ function leftover(value: string, allowed: readonly string[]): string {
     let out = ` ${value} `;
     for (const word of allowed) {
         out = out.replace(
-            new RegExp(`(?<![\\w.-])${word.replace(/[.%]/g, '\\$&')}(?![\\w.%-])`, 'gi'),
+            new RegExp(
+                `(?<![\\w.-])${word.replace(/[\\^$.*+?()[\]{}|%-]/g, '\\$&')}(?![\\w.%-])`,
+                'gi'
+            ),
             ' '
         );
     }
