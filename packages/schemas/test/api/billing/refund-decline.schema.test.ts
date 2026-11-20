@@ -15,6 +15,17 @@ describe('Refund decline schemas', () => {
             refundId,
             status: 'FAILED'
         });
+        expect(
+            RefundDeclineResponseSchema.parse({
+                refundId,
+                status: 'FAILED',
+                warning: 'VERIFY_NO_PROVIDER_REFUND'
+            })
+        ).toEqual({ refundId, status: 'FAILED', warning: 'VERIFY_NO_PROVIDER_REFUND' });
+        expect(
+            RefundDeclineResponseSchema.safeParse({ refundId, status: 'FAILED', warning: 'OTHER' })
+                .success
+        ).toBe(false);
     });
 
     it('rejects malformed ids, false or extra decision fields, and non-FAILED responses', () => {

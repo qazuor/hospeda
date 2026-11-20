@@ -79,7 +79,11 @@ export const adminDeclineRefundRoute = createAdminRoute({
                     subjectId: result.subjectId
                 }
             });
-            return { refundId: result.refundId, status: result.status };
+            return {
+                refundId: result.refundId,
+                status: result.status,
+                ...(result.warning ? { warning: result.warning } : {})
+            };
         } catch (error) {
             if (error instanceof ServiceError && isDeclineRefundRejection(error.reason)) {
                 const answer = REJECTION_ANSWERS[error.reason];

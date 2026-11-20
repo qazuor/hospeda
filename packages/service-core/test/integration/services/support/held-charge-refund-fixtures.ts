@@ -11,7 +11,8 @@ import {
     reconciliationPagePaymentModel,
     refunds
 } from '@repo/db';
-import type { NoticeDelivery } from '@repo/payments';
+import type { NoticeDelivery, PaymentProvider } from '@repo/payments';
+import { PaymentProviderError } from '@repo/payments';
 import { FAKE_NOTICE_CHANNEL_HEADER } from '@repo/payments/fake';
 import { PermissionEnum } from '@repo/schemas';
 import { expect, vi } from 'vitest';
@@ -21,6 +22,7 @@ import { receiveProviderDelivery } from '../../../../src/services/billing/notice
 import { liftReconciliationMarkByAdmin } from '../../../../src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service';
 import { runCreditedPaymentsCheck } from '../../../../src/services/billing/reconciliation/sweep/credited-payments-check';
 import { runReconciliationSweep } from '../../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service';
+import { confirmRefund } from '../../../../src/services/billing/refund/confirm-refund.service';
 import { getServiceTestDb } from '../helpers';
 import { withSeededReconciliationInventory } from '../reconciliation-sweep-fixtures';
 import { purchaseNow } from './addon-purchase-fixtures';
@@ -219,4 +221,46 @@ export async function liftByAdmin(s: HeldChargeSetup, markId: string) {
         { actor: person, markId, expectedVersion: mark.version, resolveWithoutRefund: [] },
         { clock: s.f.ports.clock }
     );
+}
+
+/** The provider with its charge read answering UNAVAILABLE, everything else untouched. */
+export function withUnavailableChargeRead(provider: PaymentProvider): PaymentProvider {
+    return new Proxy(provider, {
+        get(target, property, receiver) {
+            if (property === 'readCharge')
+                return async () => {
+                    throw new PaymentProviderError({
+                        code: 'UNAVAILABLE',
+                        capability: 'read',
+                        message: 'Mercado Pago request failed (503)',
+                        cause: { status: 503, body: '' }
+                    });
+                };
+            return Reflect.get(target, property, receiver);
+        }
+    });
+}
+
+/**
+ * A held charge whose proposed refund a person confirmed while the charge read answered
+ * UNAVAILABLE: `CONFIRMED`, with no provider call at all.
+ */
+export async function heldWithCallLessConfirmedRefund(reason: HeldChargeCase) {
+    const arranged = await heldChargeFor(reason);
+    const [proposal] = await refundsOf(arranged.held.payment.id);
+    if (!proposal) throw new Error('proposal missing');
+    const person = await seedAdminActor([PermissionEnum.BILLING_REFUND]);
+    const confirmed = await confirmRefund(
+        { actor: person, refundId: proposal.id },
+        {
+            clock: arranged.s.f.ports.clock,
+            provider: withUnavailableChargeRead(arranged.s.f.fake)
+        }
+    );
+    expect(confirmed).toMatchObject({
+        status: 'CONFIRMED',
+        outcome: 'AWAITING_PROVIDER_ANSWER',
+        calls: []
+    });
+    return { ...arranged, proposal, person };
 }

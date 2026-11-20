@@ -1,6 +1,7 @@
 /**
  * HOS-2179 D1, owner follow-up: the refund a page-charge mark proposes is never declined. The
- * held money leaves the mark only by confirming that refund, by a chargeback, or by action 14.
+ * held money leaves the mark when that refund executes, by a chargeback, or by action 14 (which
+ * closes the REQUESTED proposal or answers a FAILED one).
  * - A chargeback (read by the notice, by the sweep, or by action 13 itself) resolves the held
  *   payment without a refund and fails the waiting proposal, so the mark can be lifted.
  * - Action 13's decline refuses with `REFUND_CLOSES_HELD_CHARGE`; any other refund still declines.
@@ -24,6 +25,7 @@ import {
     type HeldChargeSetup,
     heldChargeFor,
     heldLink,
+    heldWithCallLessConfirmedRefund,
     liftByAdmin,
     markRow,
     refundsOf,
@@ -148,6 +150,70 @@ describe('HOS-2179 D1 the proposed refund of a held charge is never declined', (
         expect(await refundsOf(held.payment.id)).toEqual([proposal]);
     });
 
+    it.skipIf(skip)(
+        'refuses a CONFIRMED proposal with an accepted provider call, and leaves it CONFIRMED',
+        async () => {
+            // Arrange
+            const { s, held, proposal } = await heldWithProposal('DIVERGENCIA_DE_MONTO');
+            const person = await seedAdminActor([PermissionEnum.BILLING_REFUND]);
+            const confirmed = await confirmRefund(
+                { actor: person, refundId: proposal.id },
+                { clock: s.f.ports.clock, provider: s.f.fake }
+            );
+            expect(confirmed.status).toBe('CONFIRMED');
+            expect(confirmed.calls.length).toBeGreaterThan(0);
+
+            // Act
+            const declined = declineRefund(
+                { actor: person, refundId: proposal.id },
+                { clock: s.f.ports.clock }
+            );
+
+            // Assert
+            await expect(declined).rejects.toMatchObject({ reason: 'REFUND_CLOSES_HELD_CHARGE' });
+            expect((await refundsOf(held.payment.id))[0]?.status).toBe('CONFIRMED');
+        }
+    );
+
+    it.skipIf(skip)(
+        'declines a CONFIRMED proposal that sent nothing, with the warning, and action 14 answers it',
+        async () => {
+            // Arrange
+            const { s, held, proposal, person } =
+                await heldWithCallLessConfirmedRefund('COBRO_DUPLICADO');
+
+            // Act
+            const declined = await declineRefund(
+                { actor: person, refundId: proposal.id },
+                { clock: s.f.ports.clock }
+            );
+
+            // Assert
+            expect(declined).toMatchObject({
+                refundId: proposal.id,
+                status: 'FAILED',
+                warning: 'VERIFY_NO_PROVIDER_REFUND'
+            });
+            const settler = await seedAdminActor([PermissionEnum.BILLING_SETTLE_EXTERNAL]);
+            const settled = await settleExternalRefund(
+                {
+                    actor: settler,
+                    source: { kind: 'PAYMENT', id: held.payment.id },
+                    amount: held.payment.amount,
+                    channel: 'BANK_TRANSFER',
+                    reference: `d1-${crypto.randomUUID()}`,
+                    reason: 'OUT_OF_FLOW_REFUND',
+                    refundId: proposal.id
+                },
+                { clock: s.f.ports.clock }
+            );
+            expect(settled.settledFailedRefundId).toBe(proposal.id);
+            expect(await heldLink(held.payment.id)).toMatchObject({ refundId: settled.refundId });
+            await liftByAdmin(s, held.markId);
+            expect((await markRow(held.markId)).liftedAt).not.toBeNull();
+        }
+    );
+
     it.skipIf(skip)('answers 403 first to a person without the refund permission', async () => {
         // Arrange
         const { s, proposal } = await heldWithProposal('MARK_23');
@@ -189,6 +255,8 @@ describe('HOS-2179 D1 the proposed refund of a held charge is never declined', (
             );
 
             // Assert
+            // A REQUESTED refund carries no warning.
+            expect(declined).not.toHaveProperty('warning');
             expect(declined).toMatchObject({ refundId, status: 'FAILED' });
         }
     );

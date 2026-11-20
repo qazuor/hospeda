@@ -16,6 +16,7 @@ import {
     deliver,
     heldChargeFor,
     heldLink,
+    heldWithCallLessConfirmedRefund,
     liftByAdmin,
     markRow,
     refundsOf,
@@ -151,4 +152,26 @@ describe('HOS-2179 D1 a chargeback never resolves a held charge a refund owns', 
         expect(links[0]?.resolvedAt).not.toBeNull();
         expect(links[0]?.refundId).toBe(proposal.id);
     });
+
+    it.skipIf(skip)(
+        'with a CONFIRMED refund that sent nothing (charge read UNAVAILABLE): fails it, resolves, and the mark lifts',
+        async () => {
+            // Arrange
+            const arranged = await heldWithCallLessConfirmedRefund('DIVERGENCIA_DE_MONTO');
+            const { s, held, proposal } = arranged;
+
+            // Act
+            const outcome = await chargeback(arranged);
+
+            // Assert
+            expect(outcome).toBe('NOTED');
+            expect(await refundsOf(held.payment.id)).toEqual([
+                expect.objectContaining({ id: proposal.id, status: 'FAILED' })
+            ]);
+            expect(await heldLink(held.payment.id)).toMatchObject({ refundId: null });
+            expect((await heldLink(held.payment.id)).resolvedAt).not.toBeNull();
+            await liftByAdmin(s, held.markId);
+            expect((await markRow(held.markId)).liftedAt).not.toBeNull();
+        }
+    );
 });
