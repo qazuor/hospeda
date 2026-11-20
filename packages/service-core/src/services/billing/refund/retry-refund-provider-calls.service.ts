@@ -1,21 +1,12 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import {
-    and,
-    eq,
-    getDb,
-    idempotencyKeys,
-    isNull,
-    manualPayments,
-    payments,
-    refundCalls,
-    refunds
-} from '@repo/db';
+import { eq, getDb, manualPayments, payments, refunds } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../../types';
 import { type ExecuteRefundResult, executeRefundFromProviderRead } from './execute-refund.service';
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
+import { readRefundCallTally } from './refund-call-tally';
 import { providerRefundWindow } from './refund-window';
 import {
     type ResendRefundCallOutcome,
@@ -126,17 +117,12 @@ async function assertRetryable(input: RetryRefundProviderCallsInput, clock: Cloc
             );
         // A call tied to an add-on instance belongs to the retired order channel: the resend never
         // replays it (HOS-2179 T-7), so it does not count as something this action can retry.
-        const unanswered = await tx
-            .select({ key: refundCalls.idempotencyKey })
-            .from(refundCalls)
-            .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
-            .where(
-                and(
-                    eq(refundCalls.refundId, refund.id),
-                    isNull(idempotencyKeys.completedAt),
-                    isNull(refundCalls.addonInstanceId)
-                )
-            );
+        // Only a call with no stored answer is replayed (the resend's own rule), so the tally's
+        // broader `awaitingProviderAnswer` is not the test here.
+        const { calls } = await readRefundCallTally({ db: tx, refundId: refund.id });
+        const unanswered = calls.filter(
+            (call) => call.completedAt === null && call.addonInstanceId === null
+        );
         if (unanswered.length === 0)
             throw reject(
                 ServiceErrorCode.ALREADY_EXISTS,
