@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4592
+    {
+        id: '2026-11-19-admin-partner-page-updates-right-away',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los cambios de un aliado se ven enseguida en su ficha pública',
+            en: "A partner's changes show up right away on its public page",
+            pt: 'As mudanças de um parceiro aparecem logo na sua página pública'
+        },
+        body: {
+            es: 'Si cambiás el tipo de un aliado o renombrás un tipo de aliado desde el panel, su ficha pública muestra la etiqueta nueva en segundos, en lugar de seguir mostrando la anterior durante varios minutos.',
+            en: "If you change a partner's type or rename a partner type from the panel, its public page shows the new label within seconds, instead of keeping the old one for several minutes.",
+            pt: 'Se você mudar o tipo de um parceiro ou renomear um tipo de parceiro pelo painel, a página pública dele mostra o novo rótulo em segundos, em vez de continuar exibindo o antigo por vários minutos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4551
     {
         id: '2026-11-19-partner-claim-warns-wrong-account',
