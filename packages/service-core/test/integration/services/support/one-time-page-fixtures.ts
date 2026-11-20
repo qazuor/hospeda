@@ -11,7 +11,9 @@ import {
     eq,
     isNull,
     payments,
-    reconciliationMarks
+    reconciliationMarkPayments,
+    reconciliationMarks,
+    refunds
 } from '@repo/db';
 import { vi } from 'vitest';
 import { purchaseAddon } from '../../../../src/services/billing/addon/purchase-addon.service';
@@ -64,6 +66,54 @@ export async function pagePayments(instanceId: string) {
         .select()
         .from(payments)
         .where(eq(payments.addonInstanceId, instanceId));
+}
+
+/**
+ * The payments of the instance hung from one of its marks (D1 of HOS-2179): one per charge a
+ * mark holds, with the attachment. Read through `reconciliation_mark_payment` directly, not
+ * through the code under test.
+ */
+export async function heldPagePayments(instanceId: string) {
+    return getServiceTestDb()
+        .select({
+            payment: payments,
+            markId: reconciliationMarkPayments.markId,
+            reason: reconciliationMarks.reason,
+            resolvedAt: reconciliationMarkPayments.resolvedAt,
+            refundId: reconciliationMarkPayments.refundId
+        })
+        .from(payments)
+        .innerJoin(
+            reconciliationMarkPayments,
+            eq(reconciliationMarkPayments.paymentId, payments.id)
+        )
+        .innerJoin(
+            reconciliationMarks,
+            eq(reconciliationMarks.id, reconciliationMarkPayments.markId)
+        )
+        .where(eq(payments.addonInstanceId, instanceId))
+        .orderBy(payments.createdAt, payments.id);
+}
+
+/**
+ * The refund a page-charge mark proposed for its held payment (HOS-2179 D1): created with the
+ * mark, `MARK_PROPOSAL`, for the whole held amount. Exactly one is expected.
+ */
+export async function proposedRefund(paymentId: string) {
+    const rows = await getServiceTestDb()
+        .select()
+        .from(refunds)
+        .where(and(eq(refunds.paymentId, paymentId), eq(refunds.reason, 'MARK_PROPOSAL')));
+    const [row] = rows;
+    if (!row || rows.length !== 1)
+        throw new Error(`expected one proposed refund for ${paymentId}, found ${rows.length}`);
+    return row;
+}
+
+/** The payments of the instance no mark holds: the one that activated it, if any. */
+export async function activationPagePayments(instanceId: string) {
+    const held = new Set((await heldPagePayments(instanceId)).map((row) => row.payment.id));
+    return (await pagePayments(instanceId)).filter((payment) => !held.has(payment.id));
 }
 
 /** Every mark of the instance, open or lifted, oldest first. */

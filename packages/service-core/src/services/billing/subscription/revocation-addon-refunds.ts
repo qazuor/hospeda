@@ -2,6 +2,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient } from '@repo/db';
 import { addonInstances, addonProducts, and, desc, eq, inArray, payments } from '@repo/db';
 import type { CancelledAddon } from '../addon/addon-instance-a5';
+import { notHeldByPageChargeMark } from '../addon/one-time-page-charge-marks';
 import { claimedRefundAmount, lockRefundSource } from '../refund/refund-source';
 import { requestRefund } from '../refund/request-refund.service';
 import { revocationWindowEndsAt } from './revocation-payment';
@@ -16,6 +17,11 @@ export interface OneTimeAddonRefund {
 
 /**
  * Requests an RF1 for each recently credited one-time addon payment A5 cancelled.
+ *
+ * The payment refunded is the one that activated the instance. A page charge a reconciliation
+ * mark holds (a duplicate, a late payment or another amount; D1 of HOS-2179) has its own
+ * `payment` row on the same instance, possibly newer, and is never picked here: that money goes
+ * back through its mark.
  *
  * @param input.tx - The enclosing S36 transaction
  * @param input.cancelled - The instances A5 cancelled in that transaction
@@ -47,7 +53,8 @@ export async function requestOneTimeAddonRefunds(input: {
             .where(
                 and(
                     eq(payments.addonInstanceId, instanceId),
-                    inArray(payments.status, ['SUCCEEDED', 'PARTIALLY_REFUNDED'])
+                    inArray(payments.status, ['SUCCEEDED', 'PARTIALLY_REFUNDED']),
+                    notHeldByPageChargeMark()
                 )
             )
             .orderBy(desc(payments.factAt), desc(payments.createdAt), desc(payments.id))

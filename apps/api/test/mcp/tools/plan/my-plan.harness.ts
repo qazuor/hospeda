@@ -9,6 +9,8 @@
  * - `services/billing-addon/owner-recurring-addons.service` → `readOwnerAddonHoldings`;
  * - `services/listing-notices/listing-notices.service` → `readTrialSummary`, `readOwnTrialPlan`;
  * - `services/plan-catalog/plan-of-version.service` → `readPlanOfVersion`;
+ * - `routes/plan-catalog/public/read-sellable-catalog` → `readSellablePlanCatalog`
+ *   (HOS-2398, the trial's Tourist VIP line);
  * - `utils/listing-access/ports` → `getListingAccessPorts().effectiveSet` and
  *   `getListingAccessPorts().billing.coverage` ({@link coverageOf}).
  *
@@ -26,6 +28,8 @@ export const NOW = new Date('2026-11-18T12:00:00.000Z');
 export const SITE = 'http://localhost:4321';
 export const ACCOMMODATION_VERSION = '22222222-2222-4222-8222-222222222222';
 export const VENUE_TRIAL_VERSION = '33333333-3333-4333-8333-333333333333';
+/** The sellable tourist VIP version the inheritance resolves to (HOS-2398). */
+export const TOURIST_VIP_VERSION = '66666666-6666-4666-8666-666666666666';
 export const context = { channel: 'mcp' } as const;
 
 export const mocks = {
@@ -34,8 +38,10 @@ export const mocks = {
     readTrialSummary: vi.fn(),
     readOwnTrialPlan: vi.fn(),
     readPlanOfVersion: vi.fn(),
+    readSellablePlanCatalog: vi.fn(),
     effectiveSet: vi.fn(),
-    coverage: vi.fn()
+    coverage: vi.fn(),
+    coverageInputs: [] as unknown[]
 };
 
 /** An owner actor; `billing` false drops `BILLING_VIEW_OWN`. */
@@ -54,6 +60,8 @@ export function ownerActor({ billing = true }: { readonly billing?: boolean } = 
 interface CatalogVersion {
     entitlements: { key: string; planQuota: number | null }[];
     limits: { key: string; value: number }[];
+    /** `plan_version.inherits_tourist_vip`; absent means it does not (HOS-2398). */
+    inheritsTouristVip?: boolean;
 }
 
 /** The in-test catalog. Tests edit it in place, like an admin edits catalog rows. */
@@ -67,7 +75,25 @@ function strategyOf(key: string) {
 
 const catalogReader = {
     async findPlanVersion({ id }: { readonly id: string }) {
-        return catalog.has(id) ? ({ id } as never) : null;
+        const version = catalog.get(id);
+        return version
+            ? ({ id, inheritsTouristVip: version.inheritsTouristVip === true } as never)
+            : null;
+    },
+    /** The tourist VIP version is the only sellable current tourist version, when it is in the catalog. */
+    async findSellableCurrentVersions({ vertical }: { readonly vertical: string }) {
+        return vertical === 'tourist' && catalog.has(TOURIST_VIP_VERSION)
+            ? [
+                  {
+                      id: TOURIST_VIP_VERSION,
+                      planId: `plan-${TOURIST_VIP_VERSION}`,
+                      vertical: 'tourist',
+                      rank: 2,
+                      sellable: true,
+                      current: true
+                  }
+              ]
+            : [];
     },
     async findPlanVersionSummary({ id }: { readonly id: string }) {
         return catalog.has(id)
@@ -165,7 +191,9 @@ export async function coverageOf({ vertical }: { readonly vertical: string }) {
 export function realEffectiveSet({ userId, vertical }: { userId: string; vertical: string }) {
     return readEffectiveSet({
         reader: catalogReader as never,
-        billing: { coverage: () => coverageOf({ vertical }) },
+        // The asked vertical, not the outer one: the Tourist VIP inheritance
+        // asks billing about every other vertical (HOS-2398).
+        billing: { coverage: (args: { readonly vertical: string }) => coverageOf(args) },
         trials: { findTrial: async () => null },
         userId,
         vertical: vertical as never,
@@ -253,6 +281,10 @@ export function resetWorld(): void {
     mocks.readTrialSummary.mockReset().mockResolvedValue({ status: 'NONE' });
     mocks.readOwnTrialPlan.mockReset().mockResolvedValue(null);
     mocks.readPlanOfVersion.mockReset().mockResolvedValue(null);
+    // The sellable catalog sells plans that do not inherit Tourist VIP (HOS-2398).
+    mocks.readSellablePlanCatalog
+        .mockReset()
+        .mockResolvedValue({ plans: [{ inheritsTouristVip: false }] });
     mocks.effectiveSet.mockReset().mockImplementation(realEffectiveSet);
     mocks.coverage.mockReset().mockImplementation(coverageOf);
 }

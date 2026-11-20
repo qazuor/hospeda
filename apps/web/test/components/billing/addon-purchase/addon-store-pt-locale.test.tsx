@@ -36,33 +36,40 @@ const offers = [
     }
 ];
 
+const recurringAddons = {
+    ok: true,
+    data: {
+        items: [
+            {
+                addonInstanceId: '4f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11',
+                slug: 'extra-experiences-1',
+                name: 'Extra Experience Listing (+1)',
+                chargeKind: 'PERIODICO',
+                cycle: 'monthly',
+                price: 120000,
+                currency: 'ARS',
+                status: 'ACTIVE',
+                targetId: null,
+                targetName: null
+            }
+        ]
+    }
+};
+
 beforeEach(() => {
     vi.clearAllMocks();
     window.__HOSPEDA_I18N__ = {};
     new Function('window', buildI18nAssetBody({ locale: 'pt', messages: trans.pt }))(window);
-    listRecurringAddons.mockResolvedValue({
-        ok: true,
-        data: {
-            items: [
-                {
-                    addonInstanceId: '4f0f3f6e-7d0b-4a55-9d0e-3d8f2a4b9c11',
-                    slug: 'extra-experiences-1',
-                    name: 'Extra Experience Listing (+1)',
-                    chargeKind: 'PERIODICO',
-                    cycle: 'monthly',
-                    price: 120000,
-                    currency: 'ARS',
-                    status: 'ACTIVE',
-                    targetId: null,
-                    targetName: null
-                }
-            ]
-        }
-    });
+    listRecurringAddons.mockResolvedValue(recurringAddons);
 });
 
 describe('HOS-2298 Portuguese addon store dictionary', () => {
     it('uses the production pt browser asset for offers and recurring addon controls', async () => {
+        // The recurring list arrives a moment after the offers render, as on a loaded CI runner:
+        // the controls must be awaited, not read right after the offer appears.
+        listRecurringAddons.mockImplementation(
+            () => new Promise((resolve) => setTimeout(() => resolve(recurringAddons), 50))
+        );
         const { t } = createTranslations('pt');
         render(
             <>
@@ -80,8 +87,8 @@ describe('HOS-2298 Portuguese addon store dictionary', () => {
 
         expect(await screen.findByText('Pacote de fotos extras (+20 fotos)')).toBeInTheDocument();
         expect(screen.getByText('Escolha um complemento')).toBeInTheDocument();
+        expect(await screen.findByText('Sem anúncio associado')).toBeInTheDocument();
         expect(document.body).toHaveTextContent('Mensal');
-        expect(screen.getByText('Sem anúncio associado')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
         expect(document.body.textContent).not.toMatch(/billing\./);
     });

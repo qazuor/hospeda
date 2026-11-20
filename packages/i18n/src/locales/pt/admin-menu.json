@@ -62,6 +62,7 @@
         "addons": "Complementos",
         "payments": "Pagamentos",
         "reconciliation": "Conciliação",
+        "proposedRefunds": "Reembolsos propostos",
         "invoices": "Faturas",
         "promoCodes": "Códigos Promocionais",
         "deadlines": "Prazos",

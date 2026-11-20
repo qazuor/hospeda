@@ -33,6 +33,7 @@ import {
     BrevoEmailTransport,
     createBillingCourtesyRenderers,
     createBillingGraceReminderRenderers,
+    createBillingLatePaymentRefundRenderers,
     createBillingManualInstallmentOpenedRenderers,
     createBillingManualPaymentRenderers,
     createBillingPlanMigrationRenderers,
@@ -57,6 +58,7 @@ import {
     processEmailOutboxBatch,
     type ReconciliationSubjectsReader
 } from '@repo/notifications';
+import { resolveLatePaymentRefundMailCopy } from '../../utils/billing-late-payment-refund-mail-copy.js';
 import { resolveManualInstallmentMailCopy } from '../../utils/billing-manual-installment-mail-copy.js';
 import { getClock } from '../../utils/clock.js';
 import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
@@ -123,6 +125,9 @@ export function buildOutboxSenderRender(input: {
             ...createBillingManualInstallmentOpenedRenderers({
                 siteUrl: input.siteUrl,
                 resolveCopy: resolveManualInstallmentMailCopy
+            }),
+            ...createBillingLatePaymentRefundRenderers({
+                resolveCopy: resolveLatePaymentRefundMailCopy
             }),
             ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
             ...createVerticalListingRenderers({

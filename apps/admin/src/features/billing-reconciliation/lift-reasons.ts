@@ -15,7 +15,8 @@ export const KNOWN_LIFT_REASONS = [
     'MARK_ALREADY_LIFTED',
     'MARK_VERSION_CONFLICT',
     'MARK_HAS_UNRESOLVED_PAYMENTS',
-    'MARK_PAYMENT_NOT_HUNG'
+    'MARK_PAYMENT_NOT_HUNG',
+    'MARK_CLOSES_ONLY_BY_REFUND'
 ] as const;
 
 /** A refusal reason the lift panel has translated copy for. */
@@ -30,7 +31,9 @@ export const LIFT_REASON_KEYS: Readonly<Record<KnownLiftReason, TranslationKey>>
     MARK_VERSION_CONFLICT: 'admin-billing.reconciliationMarks.lift.reasons.MARK_VERSION_CONFLICT',
     MARK_HAS_UNRESOLVED_PAYMENTS:
         'admin-billing.reconciliationMarks.lift.reasons.MARK_HAS_UNRESOLVED_PAYMENTS',
-    MARK_PAYMENT_NOT_HUNG: 'admin-billing.reconciliationMarks.lift.reasons.MARK_PAYMENT_NOT_HUNG'
+    MARK_PAYMENT_NOT_HUNG: 'admin-billing.reconciliationMarks.lift.reasons.MARK_PAYMENT_NOT_HUNG',
+    MARK_CLOSES_ONLY_BY_REFUND:
+        'admin-billing.reconciliationMarks.lift.reasons.MARK_CLOSES_ONLY_BY_REFUND'
 };
 
 /**

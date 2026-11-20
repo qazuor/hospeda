@@ -30,6 +30,7 @@ import {
     purchaseNow,
     retirePurchaseFixtures
 } from './support/addon-purchase-fixtures';
+import { activationPagePayments, heldPagePayments } from './support/one-time-page-fixtures';
 import { outboxBeforeCancelNotice } from './support/outbox-before-cancel-notice';
 
 const MINUTE = 60_000;
@@ -279,16 +280,18 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             });
             const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
             const result = await purchaseAddon(s.request, s.f.ports);
-            expect(result).toMatchObject({ outcome: 'CREATED' });
-            expect('checkoutUrl' in result && result.checkoutUrl).toBeFalsy();
+            // T-6: the released purchase never gets a page, so the screen is told to mint a
+            // new order id rather than replay this one.
+            expect(result).toEqual({ outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' });
             expect(close).toHaveBeenCalledWith({ paymentPageId: received });
             const page = await s.f.fake.readOneTimePayment({ paymentPageId: received ?? '' });
             expect(Date.parse(page.snapshot.expiresAt ?? '')).toBeLessThanOrEqual(
                 s.f.ports.clock.now().getTime()
             );
-            const instance = await instanceOf(
-                result.outcome === 'CREATED' ? result.instanceId : ''
-            );
+            const [instance] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.orderRequestId, s.request.orderRequestId));
             expect(instance).toMatchObject({ status: 'ABANDONED', paymentPageId: null });
         }
     );
@@ -374,7 +377,7 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
     it.skipIf(skip)('keeps the order channel as the default', async () => {
         const s = await setup();
         const request = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const result = await purchaseAddon(orderRequest, s.f.ports);
         if (result.outcome !== 'CREATED') throw new Error(result.outcome);
         expect(request).not.toHaveBeenCalled();
@@ -601,7 +604,12 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
                 s.ports
             )
         ).toEqual({ outcome: 'DUPLICATE_PAYMENT' });
-        expect(await paymentsOf(instance.id)).toHaveLength(1);
+        expect((await activationPagePayments(instance.id)).map((p) => p.providerFactId)).toEqual([
+            first.chargeId
+        ]);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+        ).toEqual([second.chargeId]);
     });
 
     it.skipIf(skip)('classifies a payment on an abandoned purchase as late', async () => {
@@ -620,7 +628,10 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
             )
         ).toEqual({ outcome: 'LATE_PAYMENT' });
         expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
-        expect(await paymentsOf(instance.id)).toHaveLength(0);
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+        ).toEqual([paid.chargeId]);
     });
 
     it.skipIf(skip)('does not activate a payment of another amount', async () => {
@@ -638,7 +649,14 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
             )
         ).toEqual({ outcome: 'AMOUNT_MISMATCH' });
         expect((await instanceOf(instance.id)).status).toBe('PENDING_AUTHORIZATION');
-        expect(await paymentsOf(instance.id)).toHaveLength(0);
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => [
+                row.payment.providerFactId,
+                row.payment.amount,
+                row.reason
+            ])
+        ).toEqual([[paid.chargeId, 10000, 'DIVERGENCIA_DE_MONTO']]);
         expect(await marksOf(instance.id)).toEqual([
             { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
         ]);
@@ -720,9 +738,12 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
                 )
             ).toMatchObject({ outcome: 'ACTIVATED' });
             expect((await instanceOf(instance.id)).status).toBe('ACTIVE');
-            expect((await paymentsOf(instance.id)).map((p) => p.providerFactId)).toEqual([
-                correct.chargeId
-            ]);
+            expect(
+                (await activationPagePayments(instance.id)).map((p) => p.providerFactId)
+            ).toEqual([correct.chargeId]);
+            expect(
+                (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+            ).toEqual([divergent.chargeId]);
             expect(await marksOf(instance.id)).toEqual([
                 { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
             ]);
@@ -878,7 +899,7 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
 
     it.skipIf(skip)('does not apply to an order purchase', async () => {
         const s = await setup();
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const result = await purchaseAddon(orderRequest, s.f.ports);
         if (result.outcome !== 'CREATED') throw new Error(result.outcome);
         expect(
@@ -1022,7 +1043,8 @@ describe('HOS-2179 §5.4 A3 confirms by search and re-read, or abandons and clos
             s.f.advanceTo(windowEnd());
             await expireAddonAuthorizationWindows(100, s.ports);
             expect((await instanceOf(instance.id)).status).toBe('ABANDONED');
-            expect(await paymentsOf(instance.id)).toHaveLength(0);
+            expect(await activationPagePayments(instance.id)).toHaveLength(0);
+            expect(await heldPagePayments(instance.id)).toHaveLength(1);
             expect(await marksOf(instance.id)).toEqual([
                 { reason: 'DIVERGENCIA_DE_MONTO', liftedAt: null }
             ]);

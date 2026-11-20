@@ -76,6 +76,14 @@ describe('effective-set snapshot', () => {
         ).toThrow();
     });
 
+    it('carries the inherited Tourist VIP flag through rehydration (HOS-2398)', () => {
+        for (const inheritsTouristVip of [true, false]) {
+            expect(
+                rehydrateEffectiveSet({ ...snapshot, inheritsTouristVip }).inheritsTouristVip
+            ).toBe(inheritsTouristVip);
+        }
+    });
+
     it('treats a corrupt cached value as a miss', async () => {
         const redis = new FakeRedis();
         const cache = createEffectiveSetCache({

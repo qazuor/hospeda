@@ -8,8 +8,10 @@ import { closeServiceTestPool, isServiceTestDbAvailable } from './helpers';
 import { withSeededReconciliationInventory } from './reconciliation-sweep-fixtures';
 import { purchaseNow, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import {
+    activationPagePayments,
     boughtPage,
     changeOf,
+    heldPagePayments,
     liftPageMarks,
     pageInstance,
     pageMarkEvents,
@@ -131,6 +133,12 @@ describe('HOS-2179 §5.10 the sweep searches page payments', () => {
         expect(event?.actorType).toBe('job');
         expect(changeOf(event ?? { changes: [] }, 'provider.charge_id')).toBe(paid.chargeId);
         expect((await pageInstance(instance.id)).status).toBe('ABANDONED');
+        // D1: the sweep hangs the charge's own payment row from the mark, never credited.
+        const held = await heldPagePayments(instance.id);
+        expect(
+            held.map((row) => [row.payment.providerFactId, row.reason, row.payment.status])
+        ).toEqual([[paid.chargeId, 'ORDEN_PAGADA_SIN_INSTANCIA', 'SUCCEEDED']]);
+        expect(await activationPagePayments(instance.id)).toHaveLength(0);
     });
 
     it.skipIf(skip)('does not mark the same payment again on the next run', async () => {
@@ -174,9 +182,13 @@ describe('HOS-2179 §5.10 the sweep searches page payments', () => {
             { reason: 'COBRO_DUPLICADO', liftedAt: null }
         ]);
         expect((await pageInstance(instance.id)).status).toBe('ACTIVE');
+        expect(
+            (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+        ).toEqual([second.chargeId]);
 
         await sweepPagePayments(s, [instance.id]);
         expect(await pageMarkEvents(instance.id)).toHaveLength(1);
+        expect(await heldPagePayments(instance.id)).toHaveLength(1);
     });
 
     it.skipIf(skip)('skips a payment that already carries the amount divergence', async () => {
