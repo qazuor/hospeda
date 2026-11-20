@@ -4,11 +4,14 @@
  * §5.3, AC-C32). The result is measured the way it travels (serialized JSON).
  * Listing counts and metrics are fixed-size. Two blocks can grow:
  *
- * 1. the `subscription` block (HOS-2328): its `includes` give way first, one
+ * 1. the `inheritedTouristVip` block (HOS-2398) gives way first, replaced by
+ *    {@link SUMMARY_INHERITED_VIP_OMITTED}: it is not part of any plan, so it
+ *    is the least needed list (`get_my_plan` still has it);
+ * 2. the `subscription` block (HOS-2328): its `includes` give way next, one
  *    vertical at a time from the last, each replaced by
  *    {@link SUMMARY_INCLUDES_OMITTED}, so a plan's feature list never crowds
  *    out a notice the owner must act on (`get_my_plan` still has them);
- * 2. the attention block (owner text, listing names): items are dropped from
+ * 3. the attention block (owner text, listing names): items are dropped from
  *    the least urgent end and counted in `more`.
  *
  * A summary that would still be over budget with neither left is never returned.
@@ -22,6 +25,23 @@ export const SUMMARY_INCLUDES_OMITTED: SummaryIncludesOmitted = Object.freeze({
     omitted: 'over_budget',
     hint: 'Call get_my_plan with this vertical for what the plan includes.'
 });
+
+/** The marker that replaces the `inheritedTouristVip` block when the summary is over budget (HOS-2398). */
+export const SUMMARY_INHERITED_VIP_OMITTED: SummaryIncludesOmitted = Object.freeze({
+    omitted: 'over_budget',
+    hint: 'Call get_my_plan for the Tourist VIP benefits inherited from a paid plan.'
+});
+
+/** The summary with its inherited Tourist VIP block trimmed, or `undefined` when there is none left to trim. */
+function trimInheritedTouristVip(summary: OwnerSummary): OwnerSummary | undefined {
+    if (
+        summary.inheritedTouristVip === undefined ||
+        summary.inheritedTouristVip === SUMMARY_INHERITED_VIP_OMITTED
+    ) {
+        return undefined;
+    }
+    return { ...summary, inheritedTouristVip: SUMMARY_INHERITED_VIP_OMITTED };
+}
 
 /** The summary with the includes of its last still-whole plan trimmed, or `undefined` when none is left. */
 function trimOneIncludes(summary: OwnerSummary): OwnerSummary | undefined {
@@ -56,7 +76,7 @@ export function fitSummaryToBudget({
 }): OwnerSummary | undefined {
     let fitted = summary;
     while (measureResultChars({ value: fitted }) > maxChars) {
-        const trimmed = trimOneIncludes(fitted);
+        const trimmed = trimInheritedTouristVip(fitted) ?? trimOneIncludes(fitted);
         if (trimmed) {
             fitted = trimmed;
             continue;
