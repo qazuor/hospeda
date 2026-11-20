@@ -92,7 +92,8 @@ const CORTE_MAP: readonly CorteEntry[] = [
             'packages/service-core/test/integration/services/refund-confirm-3.test.ts',
             'packages/service-core/test/integration/services/refund-execute-1.test.ts',
             // HOS-2179 T-7 retired the card order; TEST:B6:10 / AC:B6:12 hold on the payment page.
-            'packages/service-core/test/integration/services/addon-purchase-identity.test.ts'
+            'packages/service-core/test/integration/services/addon-purchase-identity.test.ts',
+            'packages/service-core/test/integration/services/addon-one-time-page.test.ts'
         ]
     ),
     clause(

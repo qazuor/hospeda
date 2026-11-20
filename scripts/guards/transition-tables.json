@@ -1401,7 +1401,7 @@
             "to": ["ACTIVE"],
             "guard": {},
             "reads": ["addon_instance.status"],
-            "inputs": ["provider:read_by_id", "contract:order_idempotency"],
+            "inputs": ["provider:read_by_id", "contract:payment_page_idempotency"],
             "writes": [
                 "addon_instance.status",
                 "domain_event.changes",

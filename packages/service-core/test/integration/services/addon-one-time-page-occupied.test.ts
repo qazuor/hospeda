@@ -33,23 +33,19 @@ async function boughtAndBack() {
 }
 
 describe('HOS-2179 T-6 review: a retry over the same owner pending page purchase', () => {
-    // TEST:B10:8 was the declined card order and its second attempt; HOS-2179 T-7 moved it here.
-    it.skipIf(skip)(
-        'TEST:B10:8 answers the open page link to pay it, opening no second page',
-        async () => {
-            const { s, instance, retry } = await boughtAndBack();
-            const page = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-            const answer = await purchaseAddon(retry, s.f.ports);
-            expect(answer).toEqual({
-                outcome: 'EXISTING',
-                instanceId: instance.id,
-                chargeKind: 'UNA_VEZ',
-                checkoutUrl: expect.stringMatching(/^https:\/\//)
-            });
-            expect(page).not.toHaveBeenCalled();
-            expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
-        }
-    );
+    it.skipIf(skip)('answers the open page link to pay it, opening no second page', async () => {
+        const { s, instance, retry } = await boughtAndBack();
+        const page = vi.spyOn(s.f.fake, 'requestOneTimePayment');
+        const answer = await purchaseAddon(retry, s.f.ports);
+        expect(answer).toEqual({
+            outcome: 'EXISTING',
+            instanceId: instance.id,
+            chargeKind: 'UNA_VEZ',
+            checkoutUrl: expect.stringMatching(/^https:\/\//)
+        });
+        expect(page).not.toHaveBeenCalled();
+        expect((await pageInstance(instance.id)).status).toBe('PENDING_AUTHORIZATION');
+    });
 
     it.skipIf(skip)(
         'releases a page that stopped taking payments with none approved and opens a new one',

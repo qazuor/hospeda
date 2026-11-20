@@ -374,38 +374,41 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
         }
     );
 
-    it.skipIf(skip)('resumes a lost creation answer into one instance with one page', async () => {
-        const s = await setup();
-        const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
-        const request = vi
-            .spyOn(s.f.fake, 'requestOneTimePayment')
-            .mockImplementationOnce(async (input) => {
-                await original(input);
-                throw new PaymentProviderError({
-                    code: 'UNAVAILABLE',
-                    capability: 'charge',
-                    message: 'simulated: the answer was lost'
+    it.skipIf(skip)(
+        'TEST:B6:10 AC:B6:12 resumes a lost creation answer into one instance with one page',
+        async () => {
+            const s = await setup();
+            const original = s.f.fake.requestOneTimePayment.bind(s.f.fake);
+            const request = vi
+                .spyOn(s.f.fake, 'requestOneTimePayment')
+                .mockImplementationOnce(async (input) => {
+                    await original(input);
+                    throw new PaymentProviderError({
+                        code: 'UNAVAILABLE',
+                        capability: 'charge',
+                        message: 'simulated: the answer was lost'
+                    });
                 });
+            await expect(purchaseAddon(s.request, s.f.ports)).rejects.toMatchObject({
+                code: 'UNAVAILABLE'
             });
-        await expect(purchaseAddon(s.request, s.f.ports)).rejects.toMatchObject({
-            code: 'UNAVAILABLE'
-        });
-        const [lost] = await getServiceTestDb()
-            .select()
-            .from(addonInstances)
-            .where(eq(addonInstances.orderRequestId, s.request.orderRequestId));
-        expect(lost).toMatchObject({ status: 'PENDING_AUTHORIZATION', paymentPageId: null });
-        expect((await keysOf(lost?.id ?? ''))[0]?.completedAt).toBeNull();
+            const [lost] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.orderRequestId, s.request.orderRequestId));
+            expect(lost).toMatchObject({ status: 'PENDING_AUTHORIZATION', paymentPageId: null });
+            expect((await keysOf(lost?.id ?? ''))[0]?.completedAt).toBeNull();
 
-        s.f.advanceTo(new Date(purchaseNow.getTime() + 10 * MINUTE));
-        const again = await purchaseAddon(s.request, s.f.ports);
-        expect(again).toMatchObject({ outcome: 'EXISTING', checkoutUrl: expect.any(String) });
-        expect(request).toHaveBeenCalledTimes(2);
-        expect(request.mock.calls[1]?.[0]).toEqual(request.mock.calls[0]?.[0]);
-        const instance = await instanceOf(lost?.id ?? '');
-        expect(instance.paymentPageId).not.toBeNull();
-        expect((await keysOf(instance.id))[0]?.completedAt).not.toBeNull();
-    });
+            s.f.advanceTo(new Date(purchaseNow.getTime() + 10 * MINUTE));
+            const again = await purchaseAddon(s.request, s.f.ports);
+            expect(again).toMatchObject({ outcome: 'EXISTING', checkoutUrl: expect.any(String) });
+            expect(request).toHaveBeenCalledTimes(2);
+            expect(request.mock.calls[1]?.[0]).toEqual(request.mock.calls[0]?.[0]);
+            const instance = await instanceOf(lost?.id ?? '');
+            expect(instance.paymentPageId).not.toBeNull();
+            expect((await keysOf(instance.id))[0]?.completedAt).not.toBeNull();
+        }
+    );
 
     it.skipIf(skip)(
         'resumes from another locale with the body stored before the lost call',
@@ -578,28 +581,31 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
         ).toMatchObject({ outcome: 'ACTIVATED' });
     });
 
-    it.skipIf(skip)('classifies a second approved payment as a duplicate', async () => {
-        const s = await setup();
-        const { instance, paymentPageId } = await bought(s);
-        const first = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-        const second = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
-        await confirmOneTimePagePayment(
-            { instanceId: instance.id, chargeId: first.chargeId },
-            s.ports
-        );
-        expect(
+    it.skipIf(skip)(
+        'TEST:B6:10 AC:B6:12 classifies a second approved payment as a duplicate (RP18)',
+        async () => {
+            const s = await setup();
+            const { instance, paymentPageId } = await bought(s);
+            const first = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
+            const second = s.f.fake.payOnPage({ paymentPageId, outcome: 'approved' });
             await confirmOneTimePagePayment(
-                { instanceId: instance.id, chargeId: second.chargeId },
+                { instanceId: instance.id, chargeId: first.chargeId },
                 s.ports
-            )
-        ).toEqual({ outcome: 'DUPLICATE_PAYMENT' });
-        expect((await activationPagePayments(instance.id)).map((p) => p.providerFactId)).toEqual([
-            first.chargeId
-        ]);
-        expect(
-            (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
-        ).toEqual([second.chargeId]);
-    });
+            );
+            expect(
+                await confirmOneTimePagePayment(
+                    { instanceId: instance.id, chargeId: second.chargeId },
+                    s.ports
+                )
+            ).toEqual({ outcome: 'DUPLICATE_PAYMENT' });
+            expect(
+                (await activationPagePayments(instance.id)).map((p) => p.providerFactId)
+            ).toEqual([first.chargeId]);
+            expect(
+                (await heldPagePayments(instance.id)).map((row) => row.payment.providerFactId)
+            ).toEqual([second.chargeId]);
+        }
+    );
 
     it.skipIf(skip)('classifies a payment on an abandoned purchase as late', async () => {
         const s = await setup();
