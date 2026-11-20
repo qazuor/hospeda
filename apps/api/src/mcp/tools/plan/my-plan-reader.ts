@@ -22,7 +22,7 @@
  */
 
 import type { Locale } from '@repo/i18n';
-import { TrialStatusEnum } from '@repo/schemas';
+import { OwnSubscriptionsResponseSchema, TrialStatusEnum } from '@repo/schemas';
 import { readOwnPlanState } from '@repo/service-core';
 import { translateCatalogKey } from '../../../services/ai-context/listing-labels';
 import {
@@ -52,15 +52,13 @@ import {
 
 const DAY_MS = 86_400_000;
 
-/** Subscription statuses the plan-state reader returns (its live principal set). */
-const LIVE_SUBSCRIPTION_STATUSES = [
-    'ACTIVE',
-    'GRACE_PERIOD',
-    'SUSPENDED',
-    'CANCEL_SCHEDULED',
-    'PAUSED'
-] as const;
-type SubscriptionStatus = (typeof LIVE_SUBSCRIPTION_STATUSES)[number];
+/**
+ * The status contract of Mi suscripción. The live set itself is the plan-state
+ * reader's (registered in the live-term inventory); this only narrows its
+ * `varchar` to the statuses the response contract declares.
+ */
+const OwnSubscriptionStatusSchema =
+    OwnSubscriptionsResponseSchema.shape.subscriptions.element.shape.status;
 
 /** Verticals with a plans page in the portal. */
 const PLANS_PAGE_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
@@ -78,8 +76,8 @@ function portalUrl(destination: PortalDestination, locale: PortalLocale): string
     return buildPortalUrl({ destination, locale, siteUrl: env.HOSPEDA_SITE_URL });
 }
 
-function isSubscriptionStatus(status: string): status is SubscriptionStatus {
-    return (LIVE_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
+function isSubscriptionStatus(status: string): status is MyPlanItem['status'] {
+    return OwnSubscriptionStatusSchema.safeParse(status).success;
 }
 
 /** The effective set of a vertical, as labelled includes; `null` when it cannot be read. */
