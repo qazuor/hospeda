@@ -36,6 +36,9 @@ export function purchaseApp() {
     const fake = new FakePaymentProvider({
         clock: routeClock,
         idNamespace: crypto.randomUUID(),
+        // The test env's site URL is http://localhost (test/setup.ts); NODE_ENV=test allows
+        // it in the real adapter too (HOS-2179, utils/payment-provider.ts).
+        allowLocalHttpReturnUrl: true,
         honestAbout: [{ lie: 'M1', why: 'route purchase fixture needs an applied preapproval' }]
     });
     injectClock({ clock: routeClock });
@@ -110,16 +113,8 @@ export async function purchaseCatalog(input: {
             addonVersionId: version.id,
             targetId,
             orderRequestId,
-            payerEmail: user.email,
-            ...(chargeKind === 'UNA_VEZ'
-                ? {
-                      payment: {
-                          token: `tok-${crypto.randomUUID()}`,
-                          brand: 'visa',
-                          kind: 'credit'
-                      }
-                  }
-                : {})
+            // A one-time purchase neither asks for the payer email nor sends it (HOS-2179 P-8).
+            ...(chargeKind === 'PERIODICO' ? { payerEmail: user.email } : {})
         })
     };
 }
@@ -252,4 +247,14 @@ export function ownerHeaders(ownerId: string) {
 /** Reads only the current fixture owner's addon rows. */
 export async function ownerInstances(ownerId: string) {
     return getDb().select().from(addonInstances).where(eq(addonInstances.ownerId, ownerId));
+}
+
+/** The payment page A1 recorded on a one-time purchase. */
+export async function purchasePageId(instanceId: string): Promise<string> {
+    const [row] = await getDb()
+        .select({ paymentPageId: addonInstances.paymentPageId })
+        .from(addonInstances)
+        .where(eq(addonInstances.id, instanceId));
+    if (!row?.paymentPageId) throw new Error(`No payment page on ${instanceId}`);
+    return row.paymentPageId;
 }
