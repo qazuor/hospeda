@@ -541,7 +541,8 @@ own permission and refuses an admin acting on their own account
 
 ## 11. When this note stops applying
 
-HOS-2402 will add an exit for both cases. Case B got its first one in HOS-2516 («Retry with MP»,
-section 8, step 0); the direct writes of 8.1 and 8.2 remain only for what the retry cannot close.
-When the rest merges (for example, action 14 recording the remainder), update or retire this note in
-the same PR.
+HOS-2402 asks for an exit for both cases. Case A got one in HOS-2406 (the remainder settlement on
+the refunds screen, `POST /api/v1/admin/billing-refunds/<refund_id>/settle-remainder`); section 7
+still describes the manual path and should be rewritten to point there. Case B got its first one in
+HOS-2516 («Retry with MP», section 8, step 0); the direct writes of 8.1 and 8.2 remain only for what
+the retry cannot close. Update or retire this note when the rest merges.
