@@ -293,6 +293,11 @@ export const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | 
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-refund/admin/settle-external-charge.ts',
                 route: 'adminSettleExternalChargeRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-refund/admin/settle-remainder.ts',
+                route: 'adminSettleRefundRemainderRoute'
             }
         ]
     },

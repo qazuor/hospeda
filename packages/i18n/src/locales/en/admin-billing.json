@@ -2331,6 +2331,27 @@
         },
         "genericError": "The action could not be completed. Try again.",
         "serverError": "The server could not complete the action. Try again later.",
+        "remainder": {
+            "title": "Settle the remainder of a partially accepted refund",
+            "description": "For a confirmed refund that Mercado Pago accepted only in part. Refund the rest from the MP panel and record it here: the refund closes and the payment balance squares.",
+            "refundId": "Refund ID",
+            "amount": "Remainder refunded by hand (in pesos)",
+            "reference": "Refund ID in the MP panel",
+            "note": "Note (optional)",
+            "review": "Review",
+            "confirmText": "This records that you refunded {{amount}} by hand from the MP panel (reference {{reference}}) for refund {{refundId}}. The refund closes under your name.",
+            "confirm": "Record the remainder",
+            "back": "Back",
+            "success": "Refund closed. MP had accepted {{accepted}} and the remainder of {{remainder}} was recorded.",
+            "rejections": {
+                "REFUND_NOT_CONFIRMED": "The refund is not confirmed. Only a confirmed refund's remainder can be settled.",
+                "REFUND_CALL_UNANSWERED": "A provider call is still unanswered. Use «Retry with Mercado Pago» on this screen first; if it does not close it, follow the stuck refunds runbook.",
+                "REFUND_HAS_NO_ACCEPTED_CALL": "The provider accepted no part of this refund. Decline it, then settle it with action 14.",
+                "REMAINDER_AMOUNT_MISMATCH": "The remainder does not match what is still owed: the refund amount minus what the provider credited.",
+                "ACCEPTED_PART_NOT_ACCREDITED": "The provider does not show the part it accepted as credited. Check the charge in the provider panel before recording the remainder.",
+                "REMAINDER_NOT_FOUND_AT_PROVIDER": "The provider shows no credited refund with that reference and amount on this charge."
+            }
+        },
         "providerRetry": {
             "title": "Retry with Mercado Pago",
             "description": "For a confirmed refund stuck because MP did not answer a call (timeout, error or empty response). Each unanswered call is sent again with the same idempotency key, so MP does not refund twice what it had already processed.",

@@ -37,6 +37,22 @@ describe('sweep serial lock planning', () => {
             ).toBe(true);
         expect(planSerialLocks({ source: 'expireAddonAuthorizationWindowsX(' })).toEqual([]);
     });
+    it('runs the global proposed-refund list alone against MARK_PROPOSAL writers (HOS-2406)', () => {
+        expect(planSerialLocks({ source: source('list-proposed-refunds.test.ts') })).toContainEqual(
+            {
+                key: 1_999_004,
+                mode: 'exclusive'
+            }
+        );
+        for (const file of [
+            'refund-settle-remainder-held.test.ts',
+            'addon-one-time-page-held-refund-exits.test.ts'
+        ])
+            expect(planSerialLocks({ source: source(file) }), file).toContainEqual({
+                key: 1_999_004,
+                mode: 'shared'
+            });
+    });
     it('guards every transitive fixture victim', () => {
         const support = path.join(here, 'support');
         const files = readdirSync(support).filter((file) => file.endsWith('.ts'));

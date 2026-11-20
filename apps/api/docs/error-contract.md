@@ -601,6 +601,30 @@ The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is
 
 The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
 
+## Action 14 remainder settlement (HOS-2406)
+
+`POST /api/v1/admin/billing-refunds/{refundId}/settle-remainder` records the remainder of a `CONFIRMED` refund the provider accepted only in part, once a person refunded the rest by hand from the provider panel. The body is `{ amount, reference, note? }`: `amount` is the remainder in cents and `reference` is the panel refund id. On success the refund closes `EXECUTED` for its full amount (`executed_via = 'EXTERNAL'`, `external_channel = 'PROVIDER_PANEL'`, `settled_by` the person) through RF3's close path: the payment's hung mark attachments resolve with this refund, and P3/P4/P5 applies it. The route maps `settleRefundRemainder` rejections exhaustively in `src/routes/billing-refund/admin/settle-remainder.ts`. Checks run in this order: 401 authentication → 403 `billing.settleExternal` → 400 request shape → 404 missing refund → 403 step 3 in the service → 409/422.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `REFUND_AMOUNT_INVALID` | 422 | `VALIDATION_ERROR` |
+| `EXTERNAL_REFERENCE_INVALID` | 422 | `VALIDATION_ERROR` |
+| `REMAINDER_AMOUNT_MISMATCH` | 422 | `VALIDATION_ERROR` |
+| `REMAINDER_NOT_FOUND_AT_PROVIDER` | 422 | `VALIDATION_ERROR` |
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REFUND_NOT_CONFIRMED` | 409 | `ALREADY_EXISTS` |
+| `REFUND_CALL_UNANSWERED` | 409 | `ALREADY_EXISTS` |
+| `REFUND_HAS_NO_ACCEPTED_CALL` | 409 | `ALREADY_EXISTS` |
+| `ACCEPTED_PART_NOT_ACCREDITED` | 409 | `ALREADY_EXISTS` |
+| `EXTERNAL_REFERENCE_ALREADY_SETTLED` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+
+Accepted is not credited. Before its transaction the settlement reads the charge by id, as RF3 does (the read must be fresh for the act). `ACCEPTED_PART_NOT_ACCREDITED` answers a refund with an accepted call whose provider refund id the charge does not report as credited in the payment's currency: the accepted part never landed, so there is no remainder to record. `REMAINDER_NOT_FOUND_AT_PROVIDER` answers a `reference` that is not a credited provider refund on the same charge, in the payment's currency, for exactly `amount`. A provider read that fails propagates as an error, never as one of these reasons.
+
+`REMAINDER_AMOUNT_MISMATCH` answers any `amount` other than the refund amount minus what the provider credited for the accepted calls (the amounts the charge read reports, not the amounts the calls asked for). Its `message` carries the amount owed, which is 0 for a refund the provider accepted in full (RF3 closes that one on its own). `REFUND_CALL_UNANSWERED` answers a refund with a call the provider has not answered; retry it first with the provider call retry (HOS-2516, «Action 13 provider call retry»), and the refunds runbook covers what the retry cannot close. `REFUND_HAS_NO_ACCEPTED_CALL` answers a refund with no accepted call, including any manual payment refund: decline it, then use action 14 once it is `FAILED`.
+
 ## Action 13 rejections (B6.1)
 
 `POST /api/v1/admin/billing-refunds/{refundId}/confirm` (ACC:13, RF2) maps every typed rejection from `confirmRefund` in `src/routes/billing-refund/admin/confirm.ts`. The declared `billing.refund` permission is checked before request shape; the service checks the action, subject and source in its transaction.
@@ -659,7 +683,7 @@ When every resent call comes back `SENT`, RF3 runs at once and its outcome is `e
 | `REFUND_HAS_PROVIDER_CALLS` | 409 | `ALREADY_EXISTS` |
 | `REFUND_CLOSES_HELD_CHARGE` | 409 | `ALREADY_EXISTS` |
 
-`REFUND_CLOSES_HELD_CHARGE` refuses to decline the refund a page-charge mark proposes (`MARK_PROPOSAL` on a payment held by `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO` or `ORDEN_PAGADA_SIN_INSTANCIA` of a one-time addon, HOS-2179 D1) while it is `REQUESTED`, or `CONFIRMED` with a provider call that was accepted or is still unanswered. That money closes when the confirmed refund (action 13) executes, when a chargeback resolves it, or through action 14, which closes the `REQUESTED` proposal (for example past the provider's window) or answers it once it is `FAILED`; action 14 never answers a `CONFIRMED` refund. A `CONFIRMED` proposal with no such call (the charge read answered UNAVAILABLE before any call) can be declined, so action 14 can answer it. The refusal runs after the 403 check, so a person without permission still gets 403.
+`REFUND_CLOSES_HELD_CHARGE` refuses to decline the refund a page-charge mark proposes (`MARK_PROPOSAL` on a payment held by `DIVERGENCIA_DE_MONTO`, `COBRO_DUPLICADO` or `ORDEN_PAGADA_SIN_INSTANCIA` of a one-time addon, HOS-2179 D1) while it is `REQUESTED`, or `CONFIRMED` with a provider call that was accepted or is still unanswered. That money closes when the confirmed refund (action 13) executes, when a chargeback resolves it, or through action 14, which closes the `REQUESTED` proposal (for example past the provider's window) or answers it once it is `FAILED`; `/external` never answers a `CONFIRMED` refund (a `CONFIRMED` refund the provider accepted only in part closes through the remainder settlement, HOS-2406). A `CONFIRMED` proposal with no such call (the charge read answered UNAVAILABLE before any call) can be declined, so action 14 can answer it. The refusal runs after the 403 check, so a person without permission still gets 403.
 
 Declining any `CONFIRMED` refund returns `warning: "VERIFY_NO_PROVIDER_REFUND"` beside `status: "FAILED"`: check the provider's panel that no refund left before refunding by hand. Our own calls are persisted before they are sent, so a call-less `CONFIRMED` never reached the provider through this API; the warning covers a refund made from the panel.
 
