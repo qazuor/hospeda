@@ -57,6 +57,9 @@ vi.mock('../../../../src/utils/listing-access/ports', async () => {
         })
     };
 });
+vi.mock('../../../../src/routes/plan-catalog/public/read-sellable-catalog', () => ({
+    readSellablePlanCatalog: (...args: unknown[]) => mocks.readSellablePlanCatalog(...args)
+}));
 vi.mock('../../../../src/services/plan-catalog/plan-of-version.service', () => ({
     readPlanOfVersion: (...args: unknown[]) => mocks.readPlanOfVersion(...args)
 }));
