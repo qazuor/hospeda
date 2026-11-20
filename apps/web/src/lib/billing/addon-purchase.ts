@@ -7,28 +7,63 @@ import type {
 } from '@repo/schemas';
 import type { z } from 'zod';
 
-/** Only recurring addons can be purchased from the web screen. */
+/**
+ * The offers the web screen sells: recurring addons, paid at the provider checkout, and
+ * one-time (`UNA_VEZ`) addons, paid on a Mercado Pago payment page (HOS-2179 D-4). Any other
+ * charge kind the API might add is left out until the screen knows how to sell it.
+ */
 export function purchasableOffers<T extends { readonly chargeKind: 'UNA_VEZ' | 'PERIODICO' }>(
     offers: readonly T[]
 ): T[] {
-    return offers.filter((offer) => offer.chargeKind === 'PERIODICO');
+    return offers.filter(
+        (offer) => offer.chargeKind === 'PERIODICO' || offer.chargeKind === 'UNA_VEZ'
+    );
 }
 
-/** Warn before confirming a paid recurring boost for a hidden listing. */
+/**
+ * Warn before confirming a paid boost for a hidden listing: a recurring one keeps charging,
+ * and a one-time one runs its days anyway (HOS-2290 AC-5, DEC-ADDON-001).
+ */
 export function hiddenListingNoticeKind(input: {
     readonly scopeType: 'LISTING' | 'VERTICAL_SUBSCRIPTION' | 'USER' | 'GLOBAL';
     readonly publicationStatus: PublicationStatusEnum;
     readonly chargeKind: 'UNA_VEZ' | 'PERIODICO';
     readonly free: boolean;
-}): 'RECURRING' | null {
-    if (
-        input.scopeType !== 'LISTING' ||
-        input.publicationStatus === 'PUBLISHED' ||
-        input.free ||
-        input.chargeKind !== 'PERIODICO'
-    )
+}): 'RECURRING' | 'ONE_TIME' | null {
+    if (input.scopeType !== 'LISTING' || input.publicationStatus === 'PUBLISHED' || input.free)
         return null;
-    return 'RECURRING';
+    return input.chargeKind === 'UNA_VEZ' ? 'ONE_TIME' : 'RECURRING';
+}
+
+/**
+ * The copy of a purchase still being confirmed (HOS-2179 P-1): a one-time payment is
+ * "being confirmed" and, once the screen stops asking, "we will email you"; a recurring
+ * checkout keeps its generic copy.
+ */
+export function processingCopyKey(input: {
+    readonly chargeKind: 'UNA_VEZ' | 'PERIODICO' | null;
+    readonly exhausted: boolean;
+}): string {
+    if (input.chargeKind !== 'UNA_VEZ') return 'billing.addonPurchase.processing';
+    return input.exhausted
+        ? 'billing.addonPurchase.waitingPaymentLong'
+        : 'billing.addonPurchase.waitingPayment';
+}
+
+/**
+ * The copy of a purchase that ended without activating: a one-time page that expired with no
+ * approved payment, any other unpaid one-time end, or a recurring checkout that closed.
+ */
+export function closedCopyKey(input: {
+    readonly read: {
+        readonly status: z.infer<typeof AddonPurchaseReadResponseSchema>['status'];
+        readonly chargeKind: 'UNA_VEZ' | 'PERIODICO';
+    } | null;
+}): string {
+    if (input.read?.chargeKind !== 'UNA_VEZ') return 'billing.addonPurchase.closed';
+    return input.read.status === 'ABANDONED'
+        ? 'billing.addonPurchase.pageExpired'
+        : 'billing.addonPurchase.paymentNotConfirmed';
 }
 
 /** Keep only owned listing notices from compatible verticals that permit a boost. */
@@ -101,11 +136,15 @@ export function orderIdentityReleased(input: {
     );
 }
 
-/** One screen decision from a purchase response or a fresh owner-only read. */
+/**
+ * One screen decision from a purchase response or a fresh owner-only read. A response with
+ * neither a link nor `processing` is a replay of a purchase that is no longer waiting (paid, or
+ * ended): `SETTLED` tells the screen to read it rather than send the owner to pay again.
+ */
 export function purchaseStateFrom(input: {
     readonly response?: z.infer<typeof AddonPurchaseResponseSchema>;
     readonly read?: z.infer<typeof AddonPurchaseReadResponseSchema>;
-}): 'REDIRECT' | 'PROCESSING' | 'ACTIVE' | 'CLOSED' | 'REFUSED' {
+}): 'REDIRECT' | 'PROCESSING' | 'SETTLED' | 'ACTIVE' | 'CLOSED' | 'REFUSED' {
     if (input.read) {
         if (input.read.status === 'ACTIVE') return 'ACTIVE';
         if (input.read.status === 'PENDING_AUTHORIZATION') return 'PROCESSING';
@@ -113,17 +152,9 @@ export function purchaseStateFrom(input: {
     }
     const response = input.response;
     if (!response) return 'REFUSED';
-    if (
-        response.order?.outcome === 'ORDER_DECLINED' ||
-        response.order?.outcome === 'ORDER_REJECTED' ||
-        response.order?.outcome === 'NOT_APPROVED'
-    )
-        return 'REFUSED';
-    if (response.order?.outcome === 'ACTIVATED') return 'ACTIVE';
-    if (response.order?.outcome === 'ORDER_ALREADY_PLACED' && !response.processing) return 'ACTIVE';
     if (response.outcome === 'PENDING_ELSEWHERE' || response.processing) return 'PROCESSING';
     if (response.checkoutUrl) return 'REDIRECT';
-    return 'PROCESSING';
+    return 'SETTLED';
 }
 
 /** A live principal subscription an owner can hang a recurring addon on. */

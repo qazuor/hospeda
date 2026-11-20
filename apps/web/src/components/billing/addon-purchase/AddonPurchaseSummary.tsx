@@ -8,7 +8,12 @@ import type { AddonTarget } from './AddonTargetPicker';
 type Offer = AddonOffersResponse['items'][number];
 type Translate = ReturnType<typeof createTranslations>['t'];
 
-/** Confirm a selected product and target, including the paid hidden-listing notice. */
+/**
+ * Confirm a selected product and target, including the paid hidden-listing notice. A one-time
+ * addon shows that it is charged once, that it is paid on Mercado Pago with a card or account
+ * money (cash is excluded, HOS-2179 D-3), and a button that sends the owner there. Price and
+ * duration come from the offer, never from code.
+ */
 export function AddonPurchaseSummary(input: {
     readonly offer: Offer;
     readonly target: AddonTarget | null;
@@ -63,8 +68,22 @@ export function AddonPurchaseSummary(input: {
                     data-testid="addon-hidden-listing-notice"
                     data-notice-kind={noticeKind}
                 >
-                    {t('billing.addonPurchase.hiddenListingRecurring')}
+                    {t(
+                        noticeKind === 'ONE_TIME'
+                            ? 'billing.addonPurchase.hiddenListingOneTime'
+                            : 'billing.addonPurchase.hiddenListingRecurring'
+                    )}
                 </p>
+            )}
+            {!free && offer.chargeKind === 'UNA_VEZ' && (
+                <>
+                    <p data-testid="addon-one-time-summary">
+                        {t('billing.addonPurchase.oneTimeSummary')}
+                    </p>
+                    <p data-testid="addon-instant-methods">
+                        {t('billing.addonPurchase.instantMethodsOnly')}
+                    </p>
+                </>
             )}
             {!free && offer.chargeKind === 'PERIODICO' && (
                 <label className={styles.emailField}>
@@ -98,7 +117,17 @@ export function AddonPurchaseSummary(input: {
                 >
                     {t('billing.addonPurchase.confirmPurchase')}
                 </button>
-            ) : null}
+            ) : (
+                <button
+                    type="button"
+                    className={styles.confirm}
+                    data-testid="addon-purchase-confirm"
+                    disabled={input.busy}
+                    onClick={input.onConfirm}
+                >
+                    {t('billing.addonPurchase.payWithMercadoPago')}
+                </button>
+            )}
         </section>
     );
 }
