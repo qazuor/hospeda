@@ -113,7 +113,7 @@ export async function expireOneTimePageAddon(
     z.object({ instanceId: z.uuid() }).parse(input);
     const found = await confirmOneTimePageByReference(input, ports);
     if (found === 'ACTIVATED') return 'ACTIVATED';
-    if (found !== 'NONE_APPROVED') return 'DEFERRED';
+    if (found !== 'NONE_APPROVED' && found !== 'NONE_FOUND') return 'DEFERRED';
     const abandoned = await abandonOneTimeAddon({
         instanceId: input.instanceId,
         expectedProviderOrderId: null,

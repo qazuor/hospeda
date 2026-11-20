@@ -7,9 +7,6 @@ import { createErrorResponse } from '../../utils/response-helpers';
 import { resolveReturnUrlLocale } from '../../utils/return-url-locale';
 
 type AddonPurchaseCopyKey =
-    | 'oneTimePaymentRequired'
-    | 'recurringPaymentNotAccepted'
-    | 'payerEmailRequired'
     | 'purchaseNotFound'
     | 'freeProductNotFound'
     | 'freeTargetNotFound'
@@ -20,6 +17,7 @@ type AddonPurchaseCopyKey =
     | 'freeOrderRequestReused'
     | 'freeUnderGrant'
     | 'providerRejected'
+    | 'pageRejected'
     | 'providerBusy'
     | 'providerUnavailable';
 
@@ -64,18 +62,28 @@ export function answerPurchaseRefusal(input: {
     );
 }
 
-/** Mirrors S1's provider rejection and transient failure contract. */
+/**
+ * Mirrors S1's provider rejection and transient failure contract, for the recurring checkout
+ * (`authorize`) and the one-time payment page (`charge`, HOS-2179). A refused page creation
+ * has already released the purchase, so the screen mints a new order id (HOS-2321).
+ */
 export function answerAddonProviderError(input: {
     readonly error: unknown;
     readonly ctx: Context;
 }): Response {
     const { error, ctx } = input;
-    if (error instanceof PaymentProviderError && error.capability === 'authorize') {
+    if (
+        error instanceof PaymentProviderError &&
+        (error.capability === 'authorize' || error.capability === 'charge')
+    ) {
         if (error.code === 'REJECTED')
             return createErrorResponse(
                 {
                     code: ServiceErrorCode.VALIDATION_ERROR,
-                    message: readAddonPurchaseCopy(ctx, 'providerRejected'),
+                    message: readAddonPurchaseCopy(
+                        ctx,
+                        error.capability === 'charge' ? 'pageRejected' : 'providerRejected'
+                    ),
                     reason: 'PROVIDER_REJECTED'
                 },
                 ctx,
