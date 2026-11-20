@@ -23,7 +23,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option.js';
-import { liftRequiresRefund } from './held-charge-mark.js';
+import { isHeldChargeMark, liftRequiresRefund } from './held-charge-mark.js';
 
 /** A payment attached to a reconciliation mark, with its live ledger status and amount. */
 export type ReconciliationMarkHungPayment = {
@@ -244,7 +244,12 @@ export async function listActionableReconciliationMarks(input: {
 
         const items = pageRows.map((row): ActionableReconciliationMark => {
             const reason = row.reason as ReconciliationMarkReason;
-            const metadata = actionableReconciliationMarkMetadata(reason, row.markId);
+            const catalogMetadata = actionableReconciliationMarkMetadata(reason, row.markId);
+            // A held page charge (HOS-2179 D1) is closed by refunding it, whatever its reason's
+            // catalog proposes (DIVERGENCIA_DE_MONTO proposes nothing for a subscription).
+            const metadata = isHeldChargeMark({ reason, addonInstanceId: row.addonInstanceId })
+                ? { ...catalogMetadata, defaultProposal: 'REFUND' as const }
+                : catalogMetadata;
             const markPayments = paymentByMark.get(row.markId) ?? [];
             const totals = new Map<string, number>();
             let unknownCount = 0;

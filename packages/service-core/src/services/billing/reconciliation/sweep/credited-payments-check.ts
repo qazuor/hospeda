@@ -79,7 +79,8 @@ async function checkPagePaymentChargeback(input: {
     const marked = await markAddonPaymentChargeback({
         chargeId: input.payment.providerFactId,
         instanceId: input.payment.addonInstanceId,
-        trigger: { actor: 'job', correlationId: input.correlationId }
+        trigger: { actor: 'job', correlationId: input.correlationId },
+        clock: input.ports.clock
     });
     return marked.outcome === 'UNKNOWN' ? 'UNKNOWN' : 'MARKED';
 }

@@ -207,6 +207,7 @@ async function settleChargedBackPayment(input: {
     readonly instanceId: string;
     readonly chargeId: string;
     readonly trigger: OneTimePageMarkTrigger;
+    readonly clock: Clock;
 }): Promise<{ readonly outcome: 'CHARGED_BACK' | 'NOT_APPROVED' | 'UNKNOWN' }> {
     const marked = await markAddonPaymentChargeback(input);
     if (marked.outcome === 'UNKNOWN') return { outcome: 'UNKNOWN' };
@@ -288,7 +289,8 @@ export async function confirmOneTimePagePayment(
         return await settleChargedBackPayment({
             instanceId: found.instance.id,
             chargeId: snapshot.chargeId,
-            trigger
+            trigger,
+            clock: ports.clock
         });
     if (snapshot.status !== 'approved') return { outcome: 'NOT_APPROVED' };
     const chargeCreatedAt = new Date(snapshot.createdAt);

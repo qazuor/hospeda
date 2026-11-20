@@ -16,12 +16,17 @@ import {
     type ReconciliationMarkReason,
     reconciliationMarkPayments,
     reconciliationMarks,
+    refunds,
     sql
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { type AnyColumn, exists, notExists, type SQL } from 'drizzle-orm';
 import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledger';
+import { resolveHungPaymentsWithoutRefund } from '../reconciliation/hung-payment-resolution';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
+import { failRefund } from '../refund/refund-fail';
+import { lockRefundSource } from '../refund/refund-source';
+import { requestRefund } from '../refund/request-refund.service';
 
 const logger = createLogger('addon-one-time-page-charge-marks');
 
@@ -142,25 +147,35 @@ export async function chargeNamedByMark(input: {
 }
 
 /**
- * Records, once, that a charge an OPEN page-charge mark holds (D1) was charged back: one more
- * event on that mark, with `provider.charged_back: true`, so the person deciding it sees that the
- * refund it proposes is stale (the money already went back through the bank). Nothing else
- * changes: the mark stays open, its payment stays hung, and no other mark opens (one payment
- * raises at most one mark). A lifted mark is never touched; neither is a charge whose open mark
- * already carries the note, so a daily re-read adds no noise.
+ * Settles, once, a chargeback on a charge an OPEN page-charge mark holds (D1). The money already
+ * went back through the bank, so in one transaction:
+ * - the mark gets one event with `provider.charged_back: true`, so the person sees why it closes;
+ * - the held payment is resolved without a refund (`resolveHungPaymentsWithoutRefund`), which is
+ *   what lets the mark be lifted, since action 7 never resolves a held charge itself;
+ * - the proposed refund still waiting for a person (`REQUESTED`) fails, so nobody refunds twice.
+ *
+ * No other mark opens (one payment raises at most one mark) and the mark is not lifted here. A
+ * lifted mark is never touched, and a re-read finds the note and the resolution already there.
  *
  * @param input.instanceId - The one-time page purchase
  * @param input.chargeId - The provider's id of the charged-back payment
  * @param input.trigger - Who read the chargeback
- * @returns `NOTED` when the event was added, `ALREADY_NOTED`, or `NO_OPEN_MARK`
+ * @param input.clock - The clock that stamps the resolution
+ * @returns `NOTED` when something was written, `ALREADY_NOTED`, or `NO_OPEN_MARK`
  */
 export async function noteChargebackOnHeldCharge(input: {
     readonly instanceId: string;
     readonly chargeId: string;
     readonly trigger: OneTimePageMarkTrigger;
+    readonly clock: Clock;
 }): Promise<'NOTED' | 'ALREADY_NOTED' | 'NO_OPEN_MARK'> {
     const [held] = await getDb()
-        .select({ markId: reconciliationMarks.id, reason: reconciliationMarks.reason })
+        .select({
+            markId: reconciliationMarks.id,
+            reason: reconciliationMarks.reason,
+            paymentId: payments.id,
+            resolvedAt: reconciliationMarkPayments.resolvedAt
+        })
         .from(payments)
         .innerJoin(
             reconciliationMarkPayments,
@@ -197,19 +212,39 @@ export async function noteChargebackOnHeldCharge(input: {
             )
         )
         .limit(1);
-    if (noted) return 'ALREADY_NOTED';
-    // A catalog-typed reason, as GUARD:G-R1-F (a) requires of every opening. It is the held
-    // mark's own reason, so S14 accumulates on that open mark.
-    const reason: ReconciliationMarkReason = heldReason;
-    await openReconciliationMark({
-        subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
-        reason,
-        actor: { type: input.trigger.actor },
-        correlationId: input.trigger.correlationId ?? randomUUID(),
-        detail: [
-            { field: 'provider.charge_id', new: input.chargeId },
-            { field: 'provider.charged_back', new: true }
-        ]
+    if (noted && held.resolvedAt !== null) return 'ALREADY_NOTED';
+    const correlationId = input.trigger.correlationId ?? randomUUID();
+    await getDb().transaction(async (tx) => {
+        // A catalog-typed reason, as GUARD:G-R1-F (a) requires of every opening. It is the held
+        // mark's own reason, so S14 accumulates on that open mark.
+        const reason: ReconciliationMarkReason = heldReason;
+        if (!noted)
+            await openReconciliationMark({
+                subject: { kind: 'ADDON_INSTANCE', addonInstanceId: input.instanceId },
+                reason,
+                actor: { type: input.trigger.actor },
+                correlationId,
+                detail: [
+                    { field: 'provider.charge_id', new: input.chargeId },
+                    { field: 'provider.charged_back', new: true }
+                ],
+                tx
+            });
+        if (held.resolvedAt !== null) return;
+        await lockRefundSource({ tx, source: { kind: 'PAYMENT', id: held.paymentId } });
+        const waiting = await tx
+            .select()
+            .from(refunds)
+            .where(and(eq(refunds.paymentId, held.paymentId), eq(refunds.status, 'REQUESTED')))
+            .for('update');
+        for (const refund of waiting)
+            await failRefund({ tx, refund, at: input.clock.now(), correlationId });
+        await resolveHungPaymentsWithoutRefund({
+            tx,
+            markId: held.markId,
+            payments: [{ source: 'PAYMENT', id: held.paymentId }],
+            at: input.clock.now()
+        });
     });
     return 'NOTED';
 }
@@ -289,7 +324,10 @@ async function heldPaymentFor(input: {
  * D1 of HOS-2179 (owner, 2026-11-20): in the same transaction the charge gets its held `payment`
  * row, hung from the mark through `reconciliation_mark_payment`, so a person can refund it
  * through RF1/RF2 and RF3 resolves the mark's payment once the refund executes. The row is never
- * credited (see {@link heldByPageChargeMark}). A charge already hung keeps its single row.
+ * credited (see {@link heldByPageChargeMark}). A charge already hung keeps its single row. The
+ * same transaction proposes the refund of the whole held amount (RF1, `MARK_PROPOSAL`), left
+ * `REQUESTED`: no money moves until a person confirms it (action 13). It closes only through that
+ * refund, a chargeback, or action 14; it cannot be declined.
  *
  * @param input.instanceId - The one-time page purchase
  * @param input.chargeId - The provider's id of the payment
@@ -341,6 +379,17 @@ export async function openOneTimePageChargeMark(input: {
                 },
                 { markPayments: createPaymentReconciliationMarkPayments(input.clock) }
             );
+            // The refund the mark proposes, waiting for a person (owner, D1 follow-up): created
+            // only by the entry that hung the payment, so a concurrent notice and sweep leave one.
+            if (held.hang)
+                await requestRefund(
+                    {
+                        source: { kind: 'PAYMENT', id: held.paymentId },
+                        amount: input.charge.amount.amountMinor,
+                        reason: 'MARK_PROPOSAL'
+                    },
+                    { clock: input.clock, tx }
+                );
         });
     } catch (error) {
         logger.error(

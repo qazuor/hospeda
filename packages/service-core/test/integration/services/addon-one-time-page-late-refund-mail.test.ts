@@ -20,7 +20,6 @@ import {
     enqueueLatePaymentRefundNotice,
     LATE_PAYMENT_REFUNDED_TEMPLATE
 } from '../../../src/services/billing/refund/late-payment-refund-notice';
-import { requestRefund } from '../../../src/services/billing/refund/request-refund.service';
 import { settleExternalRefund } from '../../../src/services/billing/refund/settle-external-refund.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { purchaseNow, retirePurchaseFixtures } from './support/addon-purchase-fixtures';
@@ -29,6 +28,7 @@ import {
     heldPagePayments,
     pagePriceIs,
     pageSetup,
+    proposedRefund,
     retirePageMarks
 } from './support/one-time-page-fixtures';
 import { seedAdminActor } from './support/refund-fixtures';
@@ -109,10 +109,10 @@ async function refundFromMark(
     amount: number,
     provider: PaymentProvider = s.f.fake
 ) {
-    const { refundId } = await requestRefund(
-        { source: { kind: 'PAYMENT', id: paymentId }, amount, reason: 'MARK_PROPOSAL' },
-        { clock: s.f.ports.clock }
-    );
+    // The mark proposed it when it held the charge; a person only confirms it.
+    const proposed = await proposedRefund(paymentId);
+    expect(proposed).toMatchObject({ status: 'REQUESTED', amount });
+    const refundId = proposed.id;
     s.f.fake.takeDeliveries();
     const person = await seedAdminActor([PermissionEnum.BILLING_REFUND]);
     const confirmed = await confirmRefund(

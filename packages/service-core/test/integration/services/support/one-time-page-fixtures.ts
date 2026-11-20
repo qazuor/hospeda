@@ -12,7 +12,8 @@ import {
     isNull,
     payments,
     reconciliationMarkPayments,
-    reconciliationMarks
+    reconciliationMarks,
+    refunds
 } from '@repo/db';
 import { vi } from 'vitest';
 import { purchaseAddon } from '../../../../src/services/billing/addon/purchase-addon.service';
@@ -92,6 +93,21 @@ export async function heldPagePayments(instanceId: string) {
         )
         .where(eq(payments.addonInstanceId, instanceId))
         .orderBy(payments.createdAt, payments.id);
+}
+
+/**
+ * The refund a page-charge mark proposed for its held payment (HOS-2179 D1): created with the
+ * mark, `MARK_PROPOSAL`, for the whole held amount. Exactly one is expected.
+ */
+export async function proposedRefund(paymentId: string) {
+    const rows = await getServiceTestDb()
+        .select()
+        .from(refunds)
+        .where(and(eq(refunds.paymentId, paymentId), eq(refunds.reason, 'MARK_PROPOSAL')));
+    const [row] = rows;
+    if (!row || rows.length !== 1)
+        throw new Error(`expected one proposed refund for ${paymentId}, found ${rows.length}`);
+    return row;
 }
 
 /** The payments of the instance no mark holds: the one that activated it, if any. */

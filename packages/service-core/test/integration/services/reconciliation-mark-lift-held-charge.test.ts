@@ -18,7 +18,6 @@ import { listActionableReconciliationMarks } from '../../../src/services/billing
 import { liftReconciliationMarkByAdmin } from '../../../src/services/billing/reconciliation/lift-reconciliation-mark-by-admin.service';
 import { openReconciliationMark } from '../../../src/services/billing/reconciliation/open-reconciliation-mark.service';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service';
-import { requestRefund } from '../../../src/services/billing/refund/request-refund.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
 import {
@@ -27,6 +26,7 @@ import {
     heldPagePayments,
     pagePriceIs,
     pageSetup,
+    proposedRefund,
     retirePageMarks
 } from './support/one-time-page-fixtures';
 import { seedAdminActor } from './support/refund-fixtures';
@@ -208,14 +208,7 @@ describe('HOS-2179 D1 a held-charge mark closes only through a refund', () => {
     it.skipIf(skip)('lifts the held-charge mark once a refund settles its payment', async () => {
         // Arrange
         const { s, held } = await heldChargeFor('COBRO_DUPLICADO');
-        const { refundId } = await requestRefund(
-            {
-                source: { kind: 'PAYMENT', id: held.payment.id },
-                amount: held.payment.amount,
-                reason: 'MARK_PROPOSAL'
-            },
-            { clock: s.f.ports.clock }
-        );
+        const { id: refundId } = await proposedRefund(held.payment.id);
         s.f.fake.takeDeliveries();
         const refunder = await seedAdminActor([PermissionEnum.BILLING_REFUND]);
         await confirmRefund(
