@@ -8,7 +8,10 @@ import { addonInstances, and, eq, idempotencyKeys, ne } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { confirmOneTimePagePayment } from '../../../src/services/billing/addon/addon-instance-a2-one-time-page';
 import type * as occupiedModule from '../../../src/services/billing/addon/occupied-page-purchase';
-import { PAYMENT_PAGE_OPERATION } from '../../../src/services/billing/addon/one-time-payment-page';
+import {
+    PAYMENT_PAGE_OPERATION,
+    paymentPageCheckoutUrlOf
+} from '../../../src/services/billing/addon/one-time-payment-page';
 import { purchaseAddon } from '../../../src/services/billing/addon/purchase-addon.service';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers';
 import { retirePurchaseFixtures } from './support/addon-purchase-fixtures';
@@ -105,7 +108,7 @@ describe('HOS-2179 T-6 follow-up: races and late payments around the release', (
             s.f.advanceTo(justExpired);
             const page = vi.spyOn(s.f.fake, 'requestOneTimePayment');
 
-            const answers = await Promise.allSettled([
+            const answers = await Promise.all([
                 purchaseAddon(retry(), s.f.ports),
                 purchaseAddon(retry(), s.f.ports)
             ]);
@@ -126,9 +129,15 @@ describe('HOS-2179 T-6 follow-up: races and late payments around the release', (
                 return expiresAt === null || Date.parse(expiresAt) > now;
             });
             expect(open.map((c) => c.paymentPageId)).toEqual([live[0]?.paymentPageId]);
-            expect(
-                answers.some((a) => a.status === 'fulfilled' && a.value.outcome === 'CREATED')
-            ).toBe(true);
+            // Neither tab fails: one created the purchase, and both carry the live page's link.
+            const liveUrl = await paymentPageCheckoutUrlOf({ instanceId: live[0]?.id ?? '' });
+            expect(liveUrl).toMatch(/^https:\/\//);
+            const outcomes = answers.map((a) => a.outcome).sort();
+            expect(outcomes[0]).toBe('CREATED');
+            expect(['CREATED', 'EXISTING']).toContain(outcomes[1]);
+            for (const answer of answers) {
+                expect(answer).toMatchObject({ instanceId: live[0]?.id, checkoutUrl: liveUrl });
+            }
         }
     );
 
