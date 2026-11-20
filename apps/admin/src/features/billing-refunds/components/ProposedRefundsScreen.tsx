@@ -19,6 +19,7 @@ import {
 } from '../../billing-reconciliation/reconciliation-labels';
 import { useProposedRefunds } from '../hooks/useProposedRefunds';
 import { ProposedRefundActions } from './ProposedRefundActions';
+import { RefundProviderCallRetryForm } from './RefundProviderCallRetryForm';
 
 const PAGE_SIZE = 50;
 
@@ -43,11 +44,18 @@ export function formatProposedRefundAmount({
         : formatCurrency({ value: amountMinor / 100, currency, locale });
 }
 
-/** Proposed-refund screen, gated by the permission of the action it feeds. */
+/**
+ * Proposed-refund screen, gated by the permission of the action it feeds. Below the list, «Retry with
+ * MP» (HOS-2516) resends the unanswered provider calls of a confirmed refund: such a refund has a
+ * live call, so it is not in the list.
+ */
 export function ProposedRefundsScreen() {
     return (
         <PermissionGate permissions={[PermissionEnum.BILLING_REFUND]}>
-            <ProposedRefundsBody />
+            <div className="space-y-6">
+                <ProposedRefundsBody />
+                <RefundProviderCallRetryForm />
+            </div>
         </PermissionGate>
     );
 }
