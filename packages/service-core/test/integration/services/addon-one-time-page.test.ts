@@ -280,16 +280,18 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
             });
             const close = vi.spyOn(s.f.fake, 'closeOneTimePayment');
             const result = await purchaseAddon(s.request, s.f.ports);
-            expect(result).toMatchObject({ outcome: 'CREATED' });
-            expect('checkoutUrl' in result && result.checkoutUrl).toBeFalsy();
+            // T-6: the released purchase never gets a page, so the screen is told to mint a
+            // new order id rather than replay this one.
+            expect(result).toEqual({ outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' });
             expect(close).toHaveBeenCalledWith({ paymentPageId: received });
             const page = await s.f.fake.readOneTimePayment({ paymentPageId: received ?? '' });
             expect(Date.parse(page.snapshot.expiresAt ?? '')).toBeLessThanOrEqual(
                 s.f.ports.clock.now().getTime()
             );
-            const instance = await instanceOf(
-                result.outcome === 'CREATED' ? result.instanceId : ''
-            );
+            const [instance] = await getServiceTestDb()
+                .select()
+                .from(addonInstances)
+                .where(eq(addonInstances.orderRequestId, s.request.orderRequestId));
             expect(instance).toMatchObject({ status: 'ABANDONED', paymentPageId: null });
         }
     );
@@ -375,7 +377,7 @@ describe('HOS-2179 §5.1 A1 opens a payment page for a one-time purchase', () =>
     it.skipIf(skip)('keeps the order channel as the default', async () => {
         const s = await setup();
         const request = vi.spyOn(s.f.fake, 'requestOneTimePayment');
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const result = await purchaseAddon(orderRequest, s.f.ports);
         if (result.outcome !== 'CREATED') throw new Error(result.outcome);
         expect(request).not.toHaveBeenCalled();
@@ -897,7 +899,7 @@ describe('HOS-2179 §5.3 A2 confirms a page payment only by a fresh read by id',
 
     it.skipIf(skip)('does not apply to an order purchase', async () => {
         const s = await setup();
-        const { oneTimeChannel: _channel, ...orderRequest } = s.request;
+        const orderRequest = { ...s.request, oneTimeChannel: 'ORDER' as const };
         const result = await purchaseAddon(orderRequest, s.f.ports);
         if (result.outcome !== 'CREATED') throw new Error(result.outcome);
         expect(

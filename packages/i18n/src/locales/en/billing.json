@@ -85,9 +85,6 @@
         "buyMore": "Buy more add-ons"
     },
     "addonPurchaseApi": {
-        "oneTimePaymentRequired": "Payment details are required for one-time addons.",
-        "recurringPaymentNotAccepted": "Recurring addons are paid for at the provider checkout.",
-        "payerEmailRequired": "Enter the payer's email address.",
         "purchaseNotFound": "We couldn't find that addon purchase.",
         "freeProductNotFound": "We couldn't find that addon.",
         "freeTargetNotFound": "We couldn't find that target.",
@@ -98,6 +95,7 @@
         "freeOrderRequestReused": "That request was already used for another choice.",
         "freeUnderGrant": "This addon is included for free in your benefit. Choose it without paying.",
         "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
+        "pageRejected": "Mercado Pago could not open the payment page. Try again in a few minutes.",
         "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
         "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes."
     },
@@ -884,17 +882,25 @@
         "days_one": "{{count}} day",
         "days_other": "{{count}} days",
         "hiddenListingRecurring": "This listing is not published. The boost is still charged while the listing is hidden, until you cancel it.",
+        "hiddenListingOneTime": "This listing is not published. The boost runs anyway, even while the listing is hidden.",
         "chooseFree": "Choose for free",
         "payerEmailLabel": "Payer email",
         "payerEmailInvalid": "Enter a valid payer email.",
         "payerEmailHint": "It is the email you will pay with on Mercado Pago. You declare it; the provider does not confirm it.",
         "confirmPurchase": "Confirm purchase",
+        "oneTimeSummary": "One-time payment: charged once and never renewed.",
+        "instantMethodsOnly": "You pay on Mercado Pago with a credit or debit card or your account balance. Cash payments are not accepted.",
+        "payWithMercadoPago": "Pay with Mercado Pago",
         "loading": "Loading add-ons…",
         "loadError": "We could not load the add-ons.",
         "attemptExpired": "That attempt is no longer valid. Please try again.",
         "processing": "Your purchase is being processed.",
+        "waitingPayment": "We are confirming your payment.",
+        "waitingPaymentLong": "We don't have Mercado Pago's confirmation yet. Come back to this screen in a few minutes to see the result.",
         "active": "Active",
         "closed": "The purchase ended without activation.",
+        "pageExpired": "The payment page expired without an approved payment. You can buy it again.",
+        "paymentNotConfirmed": "We could not confirm the payment for this add-on. You can buy it again if you want.",
         "paused": {
             "title": "Purchases paused",
             "body": "Addon purchases are temporarily paused. Please try again later."

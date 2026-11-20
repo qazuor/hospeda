@@ -295,7 +295,7 @@
     },
     {
         "file": "packages/service-core/src/services/billing/addon/purchase-addon.service.ts",
-        "symbol": "purchaseAddon",
+        "symbol": "purchaseAddonOnce",
         "table": "addonInstances",
         "effect": "neutral",
         "via": null,

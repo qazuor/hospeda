@@ -14,18 +14,26 @@ const request = {
 };
 
 describe('Addon purchase API schemas', () => {
-    it('accepts the payment shape and its optional payer email', () => {
+    it('accepts the request and its optional payer email', () => {
         expect(AddonPurchaseRequestSchema.safeParse(request).success).toBe(true);
         expect(
-            AddonPurchaseRequestSchema.safeParse({
-                ...request,
-                payerEmail: 'payer@example.test',
-                payment: { token: 'tok', brand: 'visa', kind: 'credit' }
-            }).success
+            AddonPurchaseRequestSchema.safeParse({ ...request, payerEmail: 'payer@example.test' })
+                .success
         ).toBe(true);
     });
 
-    it('rejects extra fields and malformed identifiers or payment details', () => {
+    it.each([
+        ['payment', { token: 'tok', brand: 'visa', kind: 'credit' }],
+        ['token', 'tok'],
+        ['cardToken', 'tok'],
+        ['paymentToken', 'tok']
+    ])('rejects card data in the request: %s (HOS-2179 AC-2)', (field, value) => {
+        expect(AddonPurchaseRequestSchema.safeParse({ ...request, [field]: value }).success).toBe(
+            false
+        );
+    });
+
+    it('rejects extra fields and malformed identifiers', () => {
         expect(AddonPurchaseRequestSchema.safeParse({ ...request, surprise: true }).success).toBe(
             false
         );
@@ -35,10 +43,21 @@ describe('Addon purchase API schemas', () => {
         expect(AddonPurchaseRequestSchema.safeParse({ ...request, targetId: 'bad' }).success).toBe(
             false
         );
+    });
+
+    it('answers a one-time purchase like a recurring one, with no order result', () => {
+        const created = {
+            outcome: 'CREATED',
+            instanceId: id,
+            chargeKind: 'UNA_VEZ',
+            processing: false,
+            checkoutUrl: 'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=1'
+        };
+        expect(AddonPurchaseResponseSchema.safeParse(created).success).toBe(true);
         expect(
-            AddonPurchaseRequestSchema.safeParse({
-                ...request,
-                payment: { token: 'tok', brand: 'visa', kind: 'cash' }
+            AddonPurchaseResponseSchema.safeParse({
+                ...created,
+                order: { outcome: 'ACTIVATED' }
             }).success
         ).toBe(false);
     });

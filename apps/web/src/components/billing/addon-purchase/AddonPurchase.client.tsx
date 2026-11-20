@@ -11,12 +11,14 @@ import { type ApiErrorShape, translateApiError, visibleApiMessage } from '@/lib/
 import {
     type ActiveAddonInstance,
     type AddonSubscriptionTarget,
+    closedCopyKey,
     eligibleSubscriptionTargets,
     eligibleTargets,
     isAddonActiveOnTarget,
     isOfferFullyActive,
     mintOrderRequestId,
     orderIdentityReleased,
+    processingCopyKey,
     purchasableOffers,
     purchaseStateFrom
 } from '@/lib/billing/addon-purchase';
@@ -27,6 +29,7 @@ import styles from './AddonPurchase.module.css';
 import { AddonPurchaseSummary } from './AddonPurchaseSummary';
 import { AddonSubscriptionPicker } from './AddonSubscriptionPicker';
 import { type AddonTarget, AddonTargetPicker } from './AddonTargetPicker';
+import { useAddonPurchasePoll } from './use-addon-purchase-poll';
 
 type Offer = AddonOffersResponse['items'][number];
 type View =
@@ -38,11 +41,14 @@ type View =
     | 'PROCESSING'
     | 'ACTIVE'
     | 'CLOSED';
-const POLL_INTERVAL_MS = 3000;
-const POLL_MAX_ATTEMPTS = 10;
 const PUBLISH_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
-/** Owner-only addon purchase screen. Billing reads happen in the browser. */
+/**
+ * Owner-only addon purchase screen. Billing reads happen in the browser, so the page itself
+ * stays session-blind. A recurring addon is paid at the provider checkout and a one-time one
+ * on a Mercado Pago payment page (HOS-2179); both redirect, and the return lands here with
+ * `?compra=<id>`, which the screen re-reads until it settles. No card data is ever asked for.
+ */
 export function AddonPurchase(input: {
     readonly locale: SupportedLocale;
     readonly returnOrderRequestId: string | null;
@@ -66,7 +72,9 @@ export function AddonPurchase(input: {
     const [error, setError] = useState<string | null>(null);
     const [purchasesPaused, setPurchasesPaused] = useState(false);
     const [payerEmail, setPayerEmail] = useState(input.accountEmail);
-    const [pollAttempt, setPollAttempt] = useState(0);
+    // The purchase the screen waits on: the one the owner came back for, or the one a replay
+    // answered without a link. A purchase another screen holds is not ours to read.
+    const [pollOrderRequestId, setPollOrderRequestId] = useState(input.returnOrderRequestId);
     const [activeInstances, setActiveInstances] = useState<readonly ActiveAddonInstance[]>([]);
     const [liveSubscriptions, setLiveSubscriptions] = useState<
         readonly AddonSubscriptionTarget[] | null
@@ -134,46 +142,18 @@ export function AddonPurchase(input: {
         void refreshActive();
     }, [refreshActive]);
 
+    const poll = useAddonPurchasePoll({
+        orderRequestId: pollOrderRequestId,
+        enabled: view === 'PROCESSING',
+        loadError: t('billing.addonPurchase.loadError')
+    });
     useEffect(() => {
-        if (
-            !input.returnOrderRequestId ||
-            view !== 'PROCESSING' ||
-            pollAttempt >= POLL_MAX_ATTEMPTS
-        )
-            return;
-        let alive = true;
-        const timer = window.setTimeout(() => {
-            void billingAddonApi
-                .readPurchase({ orderRequestId: input.returnOrderRequestId as string })
-                .then((result) => {
-                    if (!alive) return;
-                    if (result.ok) {
-                        const state = purchaseStateFrom({ read: result.data });
-                        if (state === 'ACTIVE') setView('ACTIVE');
-                        else if (state === 'CLOSED') setView('CLOSED');
-                    } else
-                        setError(
-                            visibleApiMessage({ error: result.error }) ??
-                                t('billing.addonPurchase.loadError')
-                        );
-                    setPollAttempt((attempt) => attempt + 1);
-                })
-                .catch((cause: unknown) => {
-                    if (alive) {
-                        setError(
-                            cause instanceof Error
-                                ? cause.message
-                                : t('billing.addonPurchase.loadError')
-                        );
-                        setPollAttempt((attempt) => attempt + 1);
-                    }
-                });
-        }, POLL_INTERVAL_MS);
-        return () => {
-            alive = false;
-            window.clearTimeout(timer);
-        };
-    }, [input.returnOrderRequestId, pollAttempt, t, view]);
+        if (!poll.read) return;
+        const state = purchaseStateFrom({ read: poll.read });
+        if (state === 'ACTIVE') setView('ACTIVE');
+        else if (state === 'CLOSED') setView('CLOSED');
+    }, [poll.read]);
+    const waitingKind = poll.read?.chargeKind ?? offer?.chargeKind ?? null;
 
     const selectOffer = async (selected: Offer) => {
         setOffer(selected);
@@ -290,15 +270,18 @@ export function AddonPurchase(input: {
                 const result = await billingAddonApi.chooseFree({ body });
                 if (result.ok) setView('ACTIVE');
                 else setError(purchaseErrorMessage({ error: result.error }));
-            } else if (offer.chargeKind === 'PERIODICO') {
-                const email = z.email().safeParse(payerEmail);
-                if (!email.success) {
-                    setError(t('billing.addonPurchase.payerEmailInvalid'));
-                    return;
+            } else {
+                // A one-time addon neither asks for the payer email nor sends it (P-8).
+                let payer: { payerEmail?: string } = {};
+                if (offer.chargeKind === 'PERIODICO') {
+                    const email = z.email().safeParse(payerEmail);
+                    if (!email.success) {
+                        setError(t('billing.addonPurchase.payerEmailInvalid'));
+                        return;
+                    }
+                    payer = { payerEmail: email.data };
                 }
-                const result = await billingAddonApi.purchase({
-                    body: { ...body, payerEmail: email.data }
-                });
+                const result = await billingAddonApi.purchase({ body: { ...body, ...payer } });
                 if (result.ok) {
                     const state = purchaseStateFrom({ response: result.data });
                     if (state === 'REDIRECT' && result.data.checkoutUrl)
@@ -306,9 +289,12 @@ export function AddonPurchase(input: {
                             input.navigateToCheckout ??
                             ((url: string) => window.location.assign(url))
                         )(result.data.checkoutUrl);
-                    else if (state === 'ACTIVE') setView('ACTIVE');
-                    else if (state === 'PROCESSING') setView('PROCESSING');
-                    else setView('CLOSED');
+                    else if (state === 'PROCESSING' || state === 'SETTLED') {
+                        // Our own purchase without a link to follow: read it until it settles.
+                        if (result.data.outcome !== 'PENDING_ELSEWHERE')
+                            setPollOrderRequestId(orderRequestId);
+                        setView('PROCESSING');
+                    } else setView('CLOSED');
                 } else if (result.error.code === 'ADDON_PURCHASES_FROZEN') setPurchasesPaused(true);
                 else {
                     // HOS-2321: the server released this order identity, so the next click must
@@ -420,13 +406,36 @@ export function AddonPurchase(input: {
             {view === 'PROCESSING' && (
                 <p
                     data-testid="addon-purchase-processing"
+                    data-exhausted={poll.exhausted ? 'true' : 'false'}
                     role="status"
                 >
-                    {t('billing.addonPurchase.processing')}
+                    {t(processingCopyKey({ chargeKind: waitingKind, exhausted: poll.exhausted }))}
                 </p>
             )}
-            {view === 'ACTIVE' && <p role="status">{t('billing.addonPurchase.active')}</p>}
-            {view === 'CLOSED' && <p role="status">{t('billing.addonPurchase.closed')}</p>}
+            {view === 'PROCESSING' && poll.error && (
+                <p
+                    role="alert"
+                    className={styles.error}
+                >
+                    {poll.error}
+                </p>
+            )}
+            {view === 'ACTIVE' && (
+                <p
+                    data-testid="addon-purchase-active"
+                    role="status"
+                >
+                    {t('billing.addonPurchase.active')}
+                </p>
+            )}
+            {view === 'CLOSED' && (
+                <p
+                    data-testid="addon-purchase-closed"
+                    role="status"
+                >
+                    {t(closedCopyKey({ read: poll.read }))}
+                </p>
+            )}
         </div>
     );
 }

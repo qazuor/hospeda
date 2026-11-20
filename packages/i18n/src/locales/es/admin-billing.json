@@ -2157,7 +2157,7 @@
             "COBRO_DUPLICADO": "Cobro duplicado",
             "COBRO_DEL_PERIODO_SIN_RESOLVER": "Cobro del período sin resolver",
             "PAUSA_NO_APLICADA": "Pausa no aplicada",
-            "ORDEN_PAGADA_SIN_INSTANCIA": "Orden pagada sin complemento activado",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "Pago único cobrado sin complemento activo",
             "IMPORTE_COBRADO_DE_MAS": "Se cobró de más"
         },
         "proposal": "Propuesta del sistema",
