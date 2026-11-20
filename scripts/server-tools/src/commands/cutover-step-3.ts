@@ -45,9 +45,10 @@ import {
     readCheckoutSha,
     WRITE_TRIALS_PROD_PHRASE
 } from '../lib/cutover-step-3-core.ts';
+import { resolveRedisHostPort } from '../lib/cutover-step-3-env.ts';
 import { dockerInspectEnv } from '../lib/docker.ts';
 import { die, log } from '../lib/log.ts';
-import { buildPostgresUrl } from '../lib/postgres.ts';
+import { buildPostgresUrl, getContainerHostPort } from '../lib/postgres.ts';
 import { promptText } from '../lib/prompt.ts';
 import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
@@ -202,6 +203,14 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         user: credentials.user,
         db: credentials.database
     });
+    const redisHostPort = await resolveRedisHostPort({
+        containerEnv,
+        lookupHostPort: async () =>
+            getContainerHostPort({
+                container: await findContainer('redis'),
+                containerPort: 6379
+            })
+    });
 
     const result = await executeCutoverStep3({
         runner,
@@ -210,6 +219,7 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         options,
         containerEnv,
         databaseUrl,
+        redisHostPort,
         hostEnv: process.env,
         readCheckoutSha: ({ repoRoot: checkoutRoot }) =>
             readCheckoutSha({ runner, repoRoot: checkoutRoot }),

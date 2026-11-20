@@ -19,6 +19,37 @@
     display: grid;
     gap: var(--space-2, 8px);
 }
+
+.formActions,
+.itemActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 8px);
+}
+
+.formActions {
+    margin-top: var(--space-2, 8px);
+}
+
+.formActions > *,
+.itemActions > * {
+    align-self: flex-start;
+}
+
+.dangerButton:global(.btn-gradient--outline-accent) {
+    color: var(--destructive);
+    border-color: var(--destructive-a35);
+}
+
+.dangerButton:global(.btn-gradient--outline-accent):hover:not(:disabled) {
+    border-color: var(--destructive);
+}
+
+.dangerButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 .form input,
 .form textarea,
 .form select {

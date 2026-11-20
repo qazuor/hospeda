@@ -65,6 +65,7 @@ export type McpActivityScope = z.infer<typeof McpActivityScopeSchema>;
 export const MCP_TOOL_NAMES = [
     'list_my_listings',
     'get_owner_summary',
+    'get_my_plan',
     'get_listing',
     'update_listing_basic',
     'get_listing_amenities',

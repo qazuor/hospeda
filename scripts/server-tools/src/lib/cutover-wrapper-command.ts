@@ -15,6 +15,7 @@ import { resolveApiEnv } from './api-env-source.ts';
 import { findContainer, getActiveTarget } from './container-lookup.ts';
 import { createCoolifyClient } from './coolify.ts';
 import { readCheckoutSha } from './cutover-step-3-core.ts';
+import { resolveRedisHostPort } from './cutover-step-3-env.ts';
 import {
     cutoverWrapperTargetRefusal,
     executeCutoverWrapper,
@@ -23,7 +24,7 @@ import {
 import type { CutoverWrapperSpec } from './cutover-wrapper-specs.ts';
 import { dockerInspectEnv } from './docker.ts';
 import { die, log } from './log.ts';
-import { buildPostgresUrl } from './postgres.ts';
+import { buildPostgresUrl, getContainerHostPort } from './postgres.ts';
 import { promptText } from './prompt.ts';
 import { resolveRepoRoot } from './repo-root.ts';
 import { runner } from './runner.ts';
@@ -81,6 +82,14 @@ export async function runCutoverWrapperCommand(input: {
         user: credentials.user,
         db: credentials.database
     });
+    const redisHostPort = await resolveRedisHostPort({
+        containerEnv,
+        lookupHostPort: async () =>
+            getContainerHostPort({
+                container: await findContainer('redis'),
+                containerPort: 6379
+            })
+    });
 
     const result = await executeCutoverWrapper({
         spec,
@@ -90,6 +99,7 @@ export async function runCutoverWrapperCommand(input: {
         options,
         containerEnv,
         databaseUrl,
+        redisHostPort,
         hostEnv: process.env,
         readCheckoutSha: ({ repoRoot: checkoutRoot }) =>
             readCheckoutSha({ runner, repoRoot: checkoutRoot }),

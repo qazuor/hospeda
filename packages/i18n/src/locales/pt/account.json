@@ -467,6 +467,7 @@
             "tools": {
                 "list_my_listings": "Ver seus anúncios",
                 "get_owner_summary": "Ver o resumo da sua conta",
+                "get_my_plan": "Ver seu plano e assinatura",
                 "get_listing": "Ver um anúncio",
                 "update_listing_basic": "Editar os dados de um anúncio",
                 "get_listing_amenities": "Ver as comodidades de um anúncio",
@@ -758,7 +759,9 @@
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspensa",
                 "CANCEL_SCHEDULED": "Cancelamento solicitado",
-                "NOT_RENEWING": "Não será renovada"
+                "NOT_RENEWING": "Não será renovada",
+                "COURTESY": "Cortesia",
+                "PERMANENT_GRANT": "Acesso permanente"
             },
             "loadError": "Não conseguimos ler suas assinaturas. Recarregue a página.",
             "scheduledUntil": "Você cancelou esta assinatura: ela continua até {{date}}.",

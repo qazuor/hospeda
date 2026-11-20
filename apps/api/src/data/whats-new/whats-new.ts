@@ -152,7 +152,7 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
-    // origin: #4594, #4543, #4550
+    // origin: #4594, #4543, #4550, #4607, #4609
     {
         id: '2026-11-19-venue-pro-premium-promotions',
         publishedAt: 'on-promotion',
@@ -164,13 +164,13 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'Com o plano Profissional ou Premium você já pode cadastrar promoções'
         },
         body: {
-            es: 'En el editor de tu local, «Promociones» te deja crear descuentos y ofertas: hasta 5 activas a la vez con Profesional, sin tope con Premium. Si tu plan no las incluye, la sección te dice desde qué plan están disponibles y te lleva a comparar planes.',
-            en: 'In your venue editor, «Promotions» lets you create discounts and offers: up to 5 active at a time with Professional, no limit with Premium. If your plan does not include them, the section tells you which plan unlocks them and takes you to compare plans.',
-            pt: 'No editor do seu local, «Promoções» permite criar descontos e ofertas: até 5 ativas ao mesmo tempo com Profissional, sem limite com Premium. Se o seu plano não as inclui, a seção mostra a partir de qual plano estão disponíveis e leva você a comparar planos.'
+            es: 'En el editor de tu local, «Promociones» te deja crear, pausar y reactivar descuentos y ofertas: hasta 5 activas a la vez con Profesional, sin tope con Premium. Las pausadas no cuentan para el tope. Si tu plan no las incluye, la sección te dice desde qué plan están disponibles y te lleva a comparar planes.',
+            en: 'In your venue editor, «Promotions» lets you create, pause and reactivate discounts and offers: up to 5 active at a time with Professional, no limit with Premium. Paused ones do not count toward the limit. If your plan does not include them, the section tells you which plan unlocks them and takes you to compare plans.',
+            pt: 'No editor do seu local, «Promoções» permite criar, pausar e reativar descontos e ofertas: até 5 ativas ao mesmo tempo com Profissional, sem limite com Premium. As pausadas não contam para o limite. Se o seu plano não as inclui, a seção mostra a partir de qual plano estão disponíveis e leva você a comparar planos.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
-    // origin: #4541
+    // origin: #4541, #4608
     {
         id: '2026-11-19-venue-promotion-happy-hour',
         publishedAt: 'on-promotion',
@@ -182,9 +182,27 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             pt: 'Suas promoções podem valer só em certos dias e horários'
         },
         body: {
-            es: 'Al cargar una promoción podés activar una franja semanal, por ejemplo jueves de 22 a 01, aunque pase la medianoche. La ficha muestra el horario y, mientras la franja está vigente, la tarjeta de tu local en el listado dice «Ahora».',
-            en: 'When you add a promotion you can turn on a weekly window, for example Thursday from 22 to 01, even past midnight. Your page shows the schedule and, while the window is on, your venue card in the listing says "Now".',
-            pt: 'Ao cadastrar uma promoção você pode ativar uma faixa semanal, por exemplo quinta das 22 à 01, mesmo depois da meia-noite. A página mostra o horário e, enquanto a faixa está vigente, o cartão do seu local na listagem diz «Agora».'
+            es: 'Al cargar una promoción podés activar una franja semanal, por ejemplo jueves de 22 a 01, aunque pase la medianoche. La ficha muestra el horario y, mientras la franja está vigente, tanto la ficha como la tarjeta de tu local en el listado dicen «Ahora».',
+            en: 'When you add a promotion you can turn on a weekly window, for example Thursday from 22 to 01, even past midnight. Your page shows the schedule and, while the window is on, both your page and your venue card in the listing say "Now".',
+            pt: 'Ao cadastrar uma promoção você pode ativar uma faixa semanal, por exemplo quinta das 22 à 01, mesmo depois da meia-noite. A página mostra o horário e, enquanto a faixa está vigente, tanto a página quanto o cartão do seu local na listagem dizem «Agora».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4592
+    {
+        id: '2026-11-19-admin-partner-page-updates-right-away',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los cambios de un aliado se ven enseguida en su ficha pública',
+            en: "A partner's changes show up right away on its public page",
+            pt: 'As mudanças de um parceiro aparecem logo na sua página pública'
+        },
+        body: {
+            es: 'Si cambiás el tipo de un aliado o renombrás un tipo de aliado desde el panel, su ficha pública muestra la etiqueta nueva en segundos, en lugar de seguir mostrando la anterior durante varios minutos.',
+            en: "If you change a partner's type or rename a partner type from the panel, its public page shows the new label within seconds, instead of keeping the old one for several minutes.",
+            pt: 'Se você mudar o tipo de um parceiro ou renomear um tipo de parceiro pelo painel, a página pública dele mostra o novo rótulo em segundos, em vez de continuar exibindo o antigo por vários minutos.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
