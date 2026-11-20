@@ -17,7 +17,7 @@ describe('isHelpAnchor', () => {
         'section:tourist.alerts'
     ])('accepts %s', (value) => {
         // Arrange + Act
-        const result = isHelpAnchor({ value });
+        const result = isHelpAnchor(value);
 
         // Assert
         expect(result).toBe(true);
@@ -42,7 +42,7 @@ describe('isHelpAnchor', () => {
         ['surrounding whitespace', ' section:venue.carta']
     ])('rejects %s', (_label, value) => {
         // Arrange + Act
-        const result = isHelpAnchor({ value });
+        const result = isHelpAnchor(value);
 
         // Assert
         expect(result).toBe(false);
@@ -55,7 +55,7 @@ describe('isHelpAnchor', () => {
         {},
         ['section:venue.carta']
     ])('rejects non-string %j', (value) => {
-        expect(isHelpAnchor({ value })).toBe(false);
+        expect(isHelpAnchor(value)).toBe(false);
     });
 });
 

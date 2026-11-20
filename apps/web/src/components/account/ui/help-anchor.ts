@@ -32,11 +32,13 @@ const HELP_ANCHOR_PATTERN = new RegExp(`^section:${SEGMENT}\\.${SEGMENT}(?:#${SE
 /**
  * Tells whether a value is a well-formed help anchor.
  *
- * @param input - Options object.
- * @param input.value - The candidate value.
+ * A positional parameter on purpose: TypeScript only lets a type predicate
+ * name a plain parameter, never a field of a destructured RO-RO object.
+ *
+ * @param value - The candidate value.
  * @returns `true` when `value` follows the anchor grammar.
  */
-export function isHelpAnchor({ value }: { readonly value: unknown }): value is HelpAnchor {
+export function isHelpAnchor(value: unknown): value is HelpAnchor {
     return typeof value === 'string' && HELP_ANCHOR_PATTERN.test(value);
 }
 
