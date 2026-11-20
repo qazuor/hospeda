@@ -1,4 +1,5 @@
 import {
+    LifecycleStatusEnum,
     OwnerPromotionDiscountTypeEnum,
     VenuePromotionCreateRequestSchema,
     type VenuePromotionListOutput
@@ -214,8 +215,8 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
         setMessage(cacheNotice);
     };
 
-    const changeState = async (item: PromotionRow, state: string) => {
-        if (state === 'ACTIVE' && sectionState === 'locked') {
+    const changeState = async (item: PromotionRow, state: LifecycleStatusEnum) => {
+        if (state === LifecycleStatusEnum.ACTIVE && sectionState === 'locked') {
             setMessage(lockedMessage());
             return;
         }
@@ -376,14 +377,18 @@ export function VenuePromotionsManager({ listingId, locale, sectionState, upsell
                             {item.lifecycleState === 'ACTIVE' ? (
                                 <button
                                     type="button"
-                                    onClick={() => void changeState(item, 'PAUSED')}
+                                    onClick={() =>
+                                        void changeState(item, LifecycleStatusEnum.INACTIVE)
+                                    }
                                 >
                                     {t('venue.owner.editor.promotionsManager.actions.pause')}
                                 </button>
                             ) : sectionState === 'available' ? (
                                 <button
                                     type="button"
-                                    onClick={() => void changeState(item, 'ACTIVE')}
+                                    onClick={() =>
+                                        void changeState(item, LifecycleStatusEnum.ACTIVE)
+                                    }
                                 >
                                     {t('venue.owner.editor.promotionsManager.actions.activate')}
                                 </button>
