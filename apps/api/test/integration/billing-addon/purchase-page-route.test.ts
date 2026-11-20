@@ -3,7 +3,7 @@
  * and the read route confirms it when the owner comes back. The fake lies by default; only M1
  * (a preapproval for the paying principal) is switched off by the shared fixture.
  */
-import { addonInstances, eq, getDb, payments } from '@repo/db';
+import { addonInstances, eq, getDb, idempotencyKeys, payments } from '@repo/db';
 import { PaymentProviderError } from '@repo/payments';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { testDb } from '../../e2e/setup/test-database';
@@ -279,6 +279,42 @@ describe('HOS-2179 T-6 one-time purchase through a payment page', () => {
         expect(released.status).toBe(409);
         expect(await released.json()).toMatchObject({
             error: { code: 'ADDON_ORDER_REQUEST_ABANDONED', reason: 'ORDER_REQUEST_ABANDONED' }
+        });
+    });
+
+    describe('the order channel is closed at the API (prod starts with zero order purchases)', () => {
+        const keysOf = async (instanceId: string) =>
+            (
+                await getDb()
+                    .select({ operation: idempotencyKeys.operation })
+                    .from(idempotencyKeys)
+                    .where(eq(idempotencyKeys.subjectId, instanceId))
+            ).map((row) => row.operation);
+
+        it('opens a page, never an order, for a request that names no channel', async () => {
+            const { fixture, app, fake } = await payingOwner();
+            const order = vi.spyOn(fake, 'chargeOnce');
+            const page = vi.spyOn(fake, 'requestOneTimePayment');
+            const created = await post(app, fixture.ownerId, fixture.request());
+            expect(created.status).toBe(201);
+            const { instanceId } = (await created.json()).data;
+            expect(await keysOf(instanceId)).toEqual(['PAYMENT_PAGE_CREATE']);
+            expect(page).toHaveBeenCalledTimes(1);
+            expect(order).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['oneTimeChannel', { oneTimeChannel: 'ORDER' }],
+            ['channel', { channel: 'ORDER' }]
+        ])('refuses a request that asks for the order channel (%s) with 400 and no purchase', async (_field, extra) => {
+            const { fixture, app, fake } = await payingOwner();
+            const order = vi.spyOn(fake, 'chargeOnce');
+            const page = vi.spyOn(fake, 'requestOneTimePayment');
+            const refused = await post(app, fixture.ownerId, { ...fixture.request(), ...extra });
+            expect(refused.status).toBe(400);
+            expect(await ownerInstances(fixture.ownerId)).toEqual([]);
+            expect(order).not.toHaveBeenCalled();
+            expect(page).not.toHaveBeenCalled();
         });
     });
 });
