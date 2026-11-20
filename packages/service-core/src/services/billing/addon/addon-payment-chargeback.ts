@@ -31,7 +31,8 @@ const CHARGEBACK_REASON = 'CONTRACARGO' as const satisfies ReconciliationMarkRea
  *   reason), so nothing opened: one payment raises at most one mark, and a lift is never undone.
  *   When that mark is an OPEN page-charge mark holding the charge's payment (HOS-2179 D1), the
  *   chargeback settles it once: an event with `provider.charged_back: true`, the held payment
- *   resolved without a refund, and its waiting proposed refund failed.
+ *   resolved without a refund, and its waiting proposed refund failed. A refund already sent to
+ *   the provider (`CONFIRMED`) or executed owns the outcome instead: then only the note.
  * - `NOT_APPLICABLE`: no credited payment of an addon instance holds the charge. The money
  *   activated nothing, so there is nothing to reconcile.
  * - `UNKNOWN`: the mark could not be opened; the caller leaves the read undecided.
