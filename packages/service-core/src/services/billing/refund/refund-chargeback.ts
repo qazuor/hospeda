@@ -17,6 +17,7 @@ import {
     type ChargebackDetection,
     createChargebackDetection
 } from '../reconciliation/chargeback/chargeback-detection';
+import { isHeldChargeMark } from '../reconciliation/held-charge-mark';
 import { resolveHungPaymentsWithoutRefund } from '../reconciliation/hung-payment-resolution';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
 import { failRefund } from './refund-fail';
@@ -80,7 +81,8 @@ export async function detectRefundChargeback(input: {
         const markRows = await tx
             .select({
                 markId: reconciliationMarkPayments.markId,
-                reason: reconciliationMarks.reason
+                reason: reconciliationMarks.reason,
+                addonInstanceId: reconciliationMarks.addonInstanceId
             })
             .from(reconciliationMarkPayments)
             .innerJoin(
@@ -100,7 +102,11 @@ export async function detectRefundChargeback(input: {
                         (row) =>
                             RECONCILIATION_MARK_REASON_CATALOG[
                                 row.reason as keyof typeof RECONCILIATION_MARK_REASON_CATALOG
-                            ]?.refundConfirmation === true
+                            ]?.refundConfirmation === true ||
+                            // A held page charge (HOS-2179 D1) closes on a chargeback whatever its
+                            // reason's catalog says: DIVERGENCIA_DE_MONTO asks no refund
+                            // confirmation, yet its mark could never be lifted otherwise.
+                            isHeldChargeMark(row)
                     )
                     .map((row) => row.markId)
             )

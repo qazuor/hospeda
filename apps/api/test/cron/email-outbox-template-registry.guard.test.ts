@@ -179,6 +179,9 @@ const ENQUEUE_SITES: Readonly<
     'packages/service-core/src/services/billing/payment/credit-payment.service.ts': [
         'billing.payment-credited'
     ],
+    'packages/service-core/src/services/billing/refund/late-payment-refund-notice.ts': [
+        'billing.late-payment-refunded'
+    ],
     'packages/service-core/src/services/listing/listing-support-edit.ts': [
         'verticals.listing-content-edited-by-support'
     ],

@@ -85,9 +85,6 @@
         "buyMore": "Comprar mais complementos"
     },
     "addonPurchaseApi": {
-        "oneTimePaymentRequired": "Para um complemento de pagamento único, informe os dados de pagamento.",
-        "recurringPaymentNotAccepted": "Complementos recorrentes são pagos no checkout do provedor.",
-        "payerEmailRequired": "Informe o e-mail do pagador.",
         "purchaseNotFound": "Não encontramos essa compra de complemento.",
         "freeProductNotFound": "Não encontramos esse complemento.",
         "freeTargetNotFound": "Não encontramos esse destino.",
@@ -98,6 +95,7 @@
         "freeOrderRequestReused": "Esse pedido já foi usado para outra escolha.",
         "freeUnderGrant": "Este complemento está incluído grátis no seu benefício. Escolha sem pagar.",
         "providerRejected": "O Mercado Pago não aceitou os dados do pagamento. Confira se o e-mail é o da sua conta do Mercado Pago e tente de novo.",
+        "pageRejected": "O Mercado Pago não conseguiu abrir a página de pagamento. Tente de novo em alguns minutos.",
         "providerBusy": "O Mercado Pago está com muita demanda neste momento. Aguarde um minuto e tente de novo.",
         "providerUnavailable": "O provedor de pagamentos não respondeu. Tente novamente em alguns minutos."
     },
@@ -495,6 +493,8 @@
     },
     "vip": {
         "featureName": "Promoções VIP exclusivas",
+        "inheritedFromPaidPlan": "Por ter um plano pago, você também tem Turista VIP",
+        "onUpgradeToPaidPlan": "Ao passar para um plano pago, você também tem Turista VIP",
         "description": "Acesse descontos e ofertas exclusivas de acomodações apenas para membros VIP.",
         "available": {
             "title": "Promoções VIP Disponíveis",
@@ -882,17 +882,25 @@
         "days_one": "{{count}} dia",
         "days_other": "{{count}} dias",
         "hiddenListingRecurring": "Este anúncio não está publicado. O destaque continua sendo cobrado mesmo que o anúncio não esteja visível, até você cancelá-lo.",
+        "hiddenListingOneTime": "Este anúncio não está publicado. O destaque vale mesmo com o anúncio oculto.",
         "chooseFree": "Escolher grátis",
         "payerEmailLabel": "E-mail do pagador",
         "payerEmailInvalid": "Digite um e-mail válido do pagador.",
         "payerEmailHint": "É o e-mail com o qual você vai pagar no Mercado Pago. Você o declara; o provedor não o confirma.",
         "confirmPurchase": "Confirmar compra",
+        "oneTimeSummary": "Pagamento único: cobrado uma só vez e sem renovação.",
+        "instantMethodsOnly": "Você paga no Mercado Pago com cartão de crédito, débito ou saldo em conta. Pagamentos em dinheiro não são aceitos.",
+        "payWithMercadoPago": "Pagar com Mercado Pago",
         "loading": "Carregando complementos…",
         "loadError": "Não foi possível carregar os complementos.",
         "attemptExpired": "Essa tentativa não é mais válida. Tente novamente.",
         "processing": "Sua compra está sendo processada.",
+        "waitingPayment": "Estamos confirmando seu pagamento.",
+        "waitingPaymentLong": "Ainda não temos a confirmação do Mercado Pago. Volte a esta tela em alguns minutos para ver o resultado.",
         "active": "Ativo",
         "closed": "A compra terminou sem ativação.",
+        "pageExpired": "A página de pagamento expirou sem um pagamento aprovado. Você pode comprar de novo.",
+        "paymentNotConfirmed": "Não conseguimos confirmar o pagamento deste complemento. Se quiser, compre de novo.",
         "paused": {
             "title": "Compras pausadas",
             "body": "As compras de complementos estão temporariamente pausadas. Tente novamente mais tarde."

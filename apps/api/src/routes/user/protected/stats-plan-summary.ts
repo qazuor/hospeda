@@ -4,7 +4,7 @@ import { ServiceError } from '@repo/service-core';
 import type { z } from 'zod';
 import { z as zod } from 'zod';
 
-/** Live principal statuses mirrored from read-own-subscriptions.ts. */
+/** Live principal statuses mirrored from service-core `read-own-plan-state.ts`. */
 const LIVE_STATUSES = ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED'] as const;
 const LiveStatusSchema = zod.enum(LIVE_STATUSES);
 

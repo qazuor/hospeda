@@ -29,7 +29,9 @@ export const ActionableReconciliationMarkSchema = z.object({
     paymentCount: z.number().int().nonnegative(),
     totalAmount: z.array(z.object({ currency: z.string(), amountMinor: z.number().int() })),
     unknownAmountCount: z.number().int().nonnegative(),
-    eventLink: z.object({ markId: z.string().uuid() }).nullable()
+    eventLink: z.object({ markId: z.string().uuid() }).nullable(),
+    /** True while action 7 cannot close it: a held page charge closes only through a refund (HOS-2179 D1). */
+    liftRequiresRefund: z.boolean()
 });
 
 /** A provider or manual payment explicitly resolved while lifting a mark. */

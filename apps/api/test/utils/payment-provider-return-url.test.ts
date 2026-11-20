@@ -2,13 +2,18 @@
  * HOS-2179 (owner decision): the composition root lets the adapter accept a plain-http page
  * return URL on localhost only outside production, reading the validated API env. Production
  * keeps https only.
+ *
+ * The validated env never holds an unset NODE_ENV: the schema defaults it to `development`.
+ * So production safety does not come from this check alone but from the API image, which
+ * pins `ENV NODE_ENV=production` in its runner stage. Both facts are asserted below.
  */
+import { readFileSync } from 'node:fs';
 import { createAdjustableClock } from '@repo/test-clock';
 import { describe, expect, it, vi } from 'vitest';
 
 const { env } = vi.hoisted(() => ({
     env: {
-        NODE_ENV: 'development' as 'development' | 'production' | 'test' | undefined,
+        NODE_ENV: 'development' as 'development' | 'production' | 'test',
         HOSPEDA_MERCADO_PAGO_API_BASE_URL: 'http://127.0.0.1:9/unreachable',
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token',
         HOSPEDA_MERCADO_PAGO_TIMEOUT: 200
@@ -19,6 +24,7 @@ vi.mock('../../src/utils/mp-traffic-governor', () => ({
     getMercadoPagoTrafficGovernor: () => undefined
 }));
 
+import { ApiEnvBaseSchema } from '../../src/utils/env-schema';
 import { defaultPaymentProvider } from '../../src/utils/payment-provider';
 
 const clock = createAdjustableClock({ start: new Date('2026-11-19T12:00:00.000Z') });
@@ -43,11 +49,8 @@ async function failureCodeFor(nodeEnv: typeof env.NODE_ENV): Promise<unknown> {
 }
 
 describe('default provider: local http return URL by environment (HOS-2179)', () => {
-    it.each([
-        'production',
-        undefined
-    ] as const)('refuses a localhost http return URL when NODE_ENV is %s, before any call', async (nodeEnv) => {
-        expect(await failureCodeFor(nodeEnv)).toBe('INVALID_INPUT');
+    it('refuses a localhost http return URL in production, before any call', async () => {
+        expect(await failureCodeFor('production')).toBe('INVALID_INPUT');
     });
 
     it.each([
@@ -57,5 +60,19 @@ describe('default provider: local http return URL by environment (HOS-2179)', ()
         const code = await failureCodeFor(nodeEnv);
         expect(code).not.toBe('INVALID_INPUT');
         expect(code).toBeDefined();
+    });
+});
+
+describe('what keeps production on https (HOS-2179)', () => {
+    it('an unset NODE_ENV validates as development, so the check alone would allow http', () => {
+        const shape = ApiEnvBaseSchema.shape.NODE_ENV;
+        expect(shape.parse(undefined)).toBe('development');
+    });
+
+    it('the API image pins NODE_ENV=production in the stage that runs the server', () => {
+        const dockerfile = readFileSync(new URL('../../Dockerfile', import.meta.url), 'utf8');
+        const runner = dockerfile.split(/^FROM /m).find((stage) => /\bAS runner\b/.test(stage));
+        expect(runner).toBeDefined();
+        expect(runner).toMatch(/^ENV NODE_ENV=production$/m);
     });
 });

@@ -21,6 +21,7 @@ import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { assertAddonPurchasesOpen, platformAddonPurchasesFreeze } from './addon-purchases-freeze';
 import { findIncludesAddonsAnchor } from './includes-addons-anchor';
+import { decideOccupiedPagePurchase } from './occupied-page-purchase';
 import {
     openOneTimePaymentPage,
     PAYMENT_PAGE_OPERATION,
@@ -131,15 +132,74 @@ async function withPaymentPage(
             ...(context.deadlines ? { deadlines: context.deadlines } : {})
         }
     );
+    if (page.outcome === 'NOT_APPLICABLE') {
+        // HOS-2179 T-6: the purchase stopped waiting before its page could be opened. A
+        // concurrent refusal released it (instance ABANDONED, HOS-2321), so the screen must mint
+        // a new order id instead of replaying one that will never get a page. A purchase that
+        // was activated meanwhile is not abandoned: answer it as is, without a link to pay again.
+        const [current] = await getDb()
+            .select({ status: addonInstances.status })
+            .from(addonInstances)
+            .where(eq(addonInstances.id, result.instanceId))
+            .limit(1);
+        if (current?.status !== 'ACTIVE')
+            return { outcome: 'REFUSED', reason: 'ORDER_REQUEST_ABANDONED' };
+        return result;
+    }
     return 'checkoutUrl' in page && page.checkoutUrl
         ? { ...result, checkoutUrl: page.checkoutUrl }
         : result;
 }
 
-/** A1: buys one addon with a durable purchase identity and a provider call after commit. */
+/**
+ * Answers the link of the same owner's page that still takes payments (HOS-2179 T-6 review),
+ * resuming its creation when the answer was lost. When the purchase was activated between the
+ * decision and the open, the request answers `ALREADY_ACTIVE`: it carries another order id, so
+ * an `EXISTING` answer without a link would leave its screen reading a purchase that is not its
+ * own.
+ */
+async function resumeOccupiedPage(
+    occupant: SelectAddonInstance,
+    context: Parameters<typeof withPaymentPage>[1]
+): Promise<PurchaseAddonResult> {
+    const resumed = await withPaymentPage(
+        {
+            outcome: 'EXISTING',
+            instanceId: occupant.id,
+            chargeKind: 'UNA_VEZ',
+            checkoutUrl: await checkoutUrlOf(occupant)
+        },
+        context
+    );
+    if (resumed.outcome !== 'EXISTING' || resumed.checkoutUrl) return resumed;
+    const [current] = await getDb()
+        .select({ status: addonInstances.status })
+        .from(addonInstances)
+        .where(eq(addonInstances.id, occupant.id))
+        .limit(1);
+    return current?.status === 'ACTIVE'
+        ? { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' }
+        : resumed;
+}
+
+/**
+ * A1: buys one addon with a durable purchase identity and a provider call after commit.
+ *
+ * A one-time (`UNA_VEZ`) addon is paid on a payment page unless the caller asks for the card
+ * order explicitly (`oneTimeChannel: 'ORDER'`, kept only for T-7's removal), so a caller that
+ * names no channel can never reopen the order path.
+ */
 export async function purchaseAddon(
     input: PurchaseAddonInput,
     ports: PurchaseAddonPorts
+): Promise<PurchaseAddonResult> {
+    return purchaseAddonOnce(input, ports, { mayReleaseOccupant: true });
+}
+
+async function purchaseAddonOnce(
+    input: PurchaseAddonInput,
+    ports: PurchaseAddonPorts,
+    options: { readonly mayReleaseOccupant: boolean }
 ): Promise<PurchaseAddonResult> {
     const request = PurchaseAddonInputSchema.parse(input);
     const [product] = await getDb()
@@ -157,7 +217,7 @@ export async function purchaseAddon(
             'Target must be null for person or global addons'
         );
     const now = ports.clock.now();
-    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ' && request.oneTimeChannel === 'PAGE';
+    const pagePurchase = chargeKindOf(product) === 'UNA_VEZ' && request.oneTimeChannel !== 'ORDER';
     const deadlines =
         chargeKindOf(product) === 'PERIODICO' || pagePurchase
             ? await getCurrentBillingDeadlines()
@@ -367,6 +427,17 @@ export async function purchaseAddon(
                     )
                 )
                 .limit(1);
+            if (occupant?.status === 'PENDING_AUTHORIZATION' && pagePurchase && deadlines) {
+                // HOS-2179 T-6 review: the owner came back from the page without paying and asks
+                // again with a fresh order id. Answer a page to pay, never "confirming".
+                const decision = await decideOccupiedPagePurchase({ occupant, deadlines }, ports);
+                if (decision === 'RESUME')
+                    return resumeOccupiedPage(occupant, { request, ports, deadlines });
+                if (decision === 'ACTIVATED')
+                    return { outcome: 'REFUSED', reason: 'ALREADY_ACTIVE' };
+                if (decision === 'RETRY' && options.mayReleaseOccupant)
+                    return purchaseAddonOnce(input, ports, { mayReleaseOccupant: false });
+            }
             if (occupant?.status === 'PENDING_AUTHORIZATION')
                 return {
                     outcome: 'PENDING_ELSEWHERE',

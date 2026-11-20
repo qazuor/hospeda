@@ -467,6 +467,7 @@
             "tools": {
                 "list_my_listings": "View your listings",
                 "get_owner_summary": "View your account summary",
+                "get_my_plan": "View your plan and subscription",
                 "get_listing": "View a listing",
                 "update_listing_basic": "Edit a listing’s details",
                 "get_listing_amenities": "View a listing’s amenities",
@@ -758,7 +759,9 @@
                 "PAUSED": "Paused",
                 "SUSPENDED": "Suspended",
                 "CANCEL_SCHEDULED": "Cancellation requested",
-                "NOT_RENEWING": "Not renewing"
+                "NOT_RENEWING": "Not renewing",
+                "COURTESY": "Courtesy",
+                "PERMANENT_GRANT": "Permanent access"
             },
             "loadError": "We could not read your subscriptions. Reload the page.",
             "scheduledUntil": "You cancelled this subscription: you keep it until {{date}}.",

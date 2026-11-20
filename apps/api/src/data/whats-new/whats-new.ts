@@ -152,6 +152,113 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #4594, #4543, #4550, #4607, #4609
+    {
+        id: '2026-11-19-venue-pro-premium-promotions',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Con el plan Profesional o Premium ya podés cargar promociones',
+            en: 'With the Professional or Premium plan you can now add promotions',
+            pt: 'Com o plano Profissional ou Premium você já pode cadastrar promoções'
+        },
+        body: {
+            es: 'En el editor de tu local, «Promociones» te deja crear, pausar y reactivar descuentos y ofertas: hasta 5 activas a la vez con Profesional, sin tope con Premium. Las pausadas no cuentan para el tope. Si tu plan no las incluye, la sección te dice desde qué plan están disponibles y te lleva a comparar planes.',
+            en: 'In your venue editor, «Promotions» lets you create, pause and reactivate discounts and offers: up to 5 active at a time with Professional, no limit with Premium. Paused ones do not count toward the limit. If your plan does not include them, the section tells you which plan unlocks them and takes you to compare plans.',
+            pt: 'No editor do seu local, «Promoções» permite criar, pausar e reativar descontos e ofertas: até 5 ativas ao mesmo tempo com Profissional, sem limite com Premium. As pausadas não contam para o limite. Se o seu plano não as inclui, a seção mostra a partir de qual plano estão disponíveis e leva você a comparar planos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4541, #4608
+    {
+        id: '2026-11-19-venue-promotion-happy-hour',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['VENUE_OWNER'],
+        title: {
+            es: 'Tus promos pueden valer solo en ciertos días y horas',
+            en: 'Your promotions can run only on certain days and hours',
+            pt: 'Suas promoções podem valer só em certos dias e horários'
+        },
+        body: {
+            es: 'Al cargar una promoción podés activar una franja semanal, por ejemplo jueves de 22 a 01, aunque pase la medianoche. La ficha muestra el horario y, mientras la franja está vigente, tanto la ficha como la tarjeta de tu local en el listado dicen «Ahora».',
+            en: 'When you add a promotion you can turn on a weekly window, for example Thursday from 22 to 01, even past midnight. Your page shows the schedule and, while the window is on, both your page and your venue card in the listing say "Now".',
+            pt: 'Ao cadastrar uma promoção você pode ativar uma faixa semanal, por exemplo quinta das 22 à 01, mesmo depois da meia-noite. A página mostra o horário e, enquanto a faixa está vigente, tanto a página quanto o cartão do seu local na listagem dizem «Agora».'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4592
+    {
+        id: '2026-11-19-admin-partner-page-updates-right-away',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los cambios de un aliado se ven enseguida en su ficha pública',
+            en: "A partner's changes show up right away on its public page",
+            pt: 'As mudanças de um parceiro aparecem logo na sua página pública'
+        },
+        body: {
+            es: 'Si cambiás el tipo de un aliado o renombrás un tipo de aliado desde el panel, su ficha pública muestra la etiqueta nueva en segundos, en lugar de seguir mostrando la anterior durante varios minutos.',
+            en: "If you change a partner's type or rename a partner type from the panel, its public page shows the new label within seconds, instead of keeping the old one for several minutes.",
+            pt: 'Se você mudar o tipo de um parceiro ou renomear um tipo de parceiro pelo painel, a página pública dele mostra o novo rótulo em segundos, em vez de continuar exibindo o antigo por vários minutos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4551
+    {
+        id: '2026-11-19-partner-claim-warns-wrong-account',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El link para reclamar tu Partner te avisa si entraste con otra cuenta',
+            en: 'The link to claim your Partner warns you if you signed in with another account',
+            pt: 'O link para reivindicar seu Partner avisa se você entrou com outra conta'
+        },
+        body: {
+            es: 'Si abrís el link con una cuenta distinta a la del correo donde lo recibiste, lo ves antes de tocar nada y podés cerrar sesión y seguir con la cuenta correcta en un solo paso.',
+            en: 'If you open the link with an account other than the one for the email where you received it, you see it before touching anything and can sign out and continue with the right account in one step.',
+            pt: 'Se você abrir o link com uma conta diferente da do e-mail onde o recebeu, verá isso antes de tocar em qualquer coisa e poderá sair e continuar com a conta certa em um único passo.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4584
+    {
+        id: '2026-11-19-checkout-shows-promo-price',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Al confirmar tu suscripción ves el precio con tu código promocional',
+            en: 'When you confirm your subscription you see the price with your promo code',
+            pt: 'Ao confirmar sua assinatura você vê o preço com seu código promocional'
+        },
+        body: {
+            es: 'Si ya canjeaste un código, la confirmación muestra lo que vas a pagar, con el precio de lista tachado y una línea con el código, cuántos cobros dura el descuento y cuánto pagás después.',
+            en: 'If you already redeemed a code, the confirmation shows what you will pay, with the list price struck through and a line with the code, how many charges the discount lasts and what you pay afterwards.',
+            pt: 'Se você já resgatou um código, a confirmação mostra quanto você vai pagar, com o preço de tabela riscado e uma linha com o código, por quantas cobranças dura o desconto e quanto você paga depois.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4585
+    {
+        id: '2026-11-19-queued-plan-change-stays-visible',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
+        title: {
+            es: 'Mi suscripción te muestra cuándo cambia tu plan',
+            en: 'My subscription shows when your plan changes',
+            pt: 'Minha assinatura mostra quando seu plano muda'
+        },
+        body: {
+            es: 'Si programaste un cambio a un plan más bajo, Mi suscripción muestra «Tu plan cambia el…» con la fecha, también cuando volvés a entrar o recargás la página.',
+            en: 'If you scheduled a change to a lower plan, My subscription shows "Your plan changes on…" with the date, also when you come back or reload the page.',
+            pt: 'Se você agendou uma troca para um plano menor, Minha assinatura mostra «Seu plano muda em…» com a data, também quando você volta ou recarrega a página.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #4548
     {
         id: '2026-11-19-admin-restored-records-come-back-inactive',
@@ -311,6 +418,24 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             es: 'Si conectás el asistente de Claude con Hospeda y le preguntás «¿cómo subo fotos de mi ficha?», te responde con los pasos de Hospeda y links directos a la sección de fotos del editor de cada ficha. Si preguntás algo que no está en la ayuda, te comparte las preguntas frecuentes y el soporte, sin inventar pasos.',
             en: "If you connect the Claude assistant to Hospeda and ask «how do I upload photos to my listing?», it answers with Hospeda's own steps and direct links to the photos section of each listing's editor. If you ask something outside the help content, it shares the FAQ and support links without inventing steps.",
             pt: 'Se você conectar o assistente do Claude à Hospeda e perguntar «como envio fotos da minha ficha?», ele responde com os passos da Hospeda e links diretos para a seção de fotos do editor de cada ficha. Se você perguntar algo fora da ajuda, ele compartilha as perguntas frequentes e o suporte, sem inventar passos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #4578
+    {
+        id: '2026-11-19-provider-sees-which-host-declared-a-usage',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['HOST'],
+        title: {
+            es: 'Como proveedor, ahora ves qué anfitrión registró cada uso de tu beneficio',
+            en: 'As a provider, you now see which host registered each use of your benefit',
+            pt: 'Como fornecedor, agora você vê qual anfitrião registrou cada uso do seu benefício'
+        },
+        body: {
+            es: 'En tu ficha de proveedor, en la pestaña Usos, cada uso que registró un anfitrión muestra su nombre, así sabés a quién le confirmás o rechazás. Tu asistente de IA también te lo dice cuando le preguntás por tus usos.',
+            en: 'In your provider page, under the Uses tab, every use a host registered shows their name, so you know whom you are confirming or rejecting. Your AI assistant also tells you when you ask about your uses.',
+            pt: 'Na sua ficha de fornecedor, na aba Usos, cada uso que um anfitrião registrou mostra o nome dele, assim você sabe quem está confirmando ou recusando. Seu assistente de IA também informa quando você pergunta pelos seus usos.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },

@@ -470,8 +470,9 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
                 correlationId: mismatchCorrelationId
             })
         ).rejects.toMatchObject({ reason: 'MARK_SUBJECT_REASON_MISMATCH' });
-        // HOS-2179: an addon instance also carries MOT:5 (AC-8) and MOT:20 (AC-11)...
-        for (const reason of ['DIVERGENCIA_DE_MONTO', 'COBRO_DUPLICADO'] as const) {
+        // HOS-2179: an addon instance also carries MOT:5 (AC-8) and MOT:20 (AC-11), and
+        // MOT:17 since HOS-2391 (a chargeback on the payment that activated it)...
+        for (const reason of ['DIVERGENCIA_DE_MONTO', 'COBRO_DUPLICADO', 'CONTRACARGO'] as const) {
             const opened = await openReconciliationMark({
                 subject: { kind: 'ADDON_INSTANCE', addonInstanceId },
                 reason,
@@ -484,7 +485,7 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
         await expect(
             openReconciliationMark({
                 subject: { kind: 'ADDON_INSTANCE', addonInstanceId },
-                reason: 'CONTRACARGO',
+                reason: 'REEMBOLSO_FUERA_DEL_FLUJO',
                 actor: actor(userId),
                 correlationId: crypto.randomUUID()
             })
@@ -492,7 +493,7 @@ describe('TEST:B3:14 S14 reconciliation marks', () => {
         // The CHECK holds the same rule below the service.
         await expect(
             getServiceTestPool().query(
-                "INSERT INTO reconciliation_mark (addon_instance_id, reason) VALUES ($1, 'CONTRACARGO')",
+                "INSERT INTO reconciliation_mark (addon_instance_id, reason) VALUES ($1, 'REEMBOLSO_FUERA_DEL_FLUJO')",
                 [addonInstanceId]
             )
         ).rejects.toMatchObject({

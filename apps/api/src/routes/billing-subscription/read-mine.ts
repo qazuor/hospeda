@@ -1,8 +1,9 @@
 import { OwnSubscriptionsResponseSchema, PermissionEnum } from '@repo/schemas';
+import { readOwnPlanState } from '@repo/service-core';
 import { getActorFromContext } from '../../utils/actor';
+import { getClock } from '../../utils/clock';
 import { createProtectedRoute } from '../../utils/route-factory';
 import { readOwnDeclinedSignups } from './read-own-declined-signups';
-import { readOwnDeferredCourtesies, readOwnSubscriptions } from './read-own-subscriptions';
 
 /** List only the authenticated owner's cancellable principal subscriptions. */
 export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
@@ -16,13 +17,14 @@ export const protectedReadOwnSubscriptionsRoute = createProtectedRoute({
     responseSchema: OwnSubscriptionsResponseSchema,
     handler: async (ctx) => {
         const userId = getActorFromContext(ctx).id;
-        const [subscriptions, deferredCourtesies, declined] = await Promise.all([
-            readOwnSubscriptions(userId),
-            readOwnDeferredCourtesies(userId),
+        // HOS-2328: the shared plan-state reader (also behind `get_my_plan`). Its
+        // `planVersionId` is for the assistant; this response does not carry it.
+        const [{ subscriptions, deferredCourtesies }, declined] = await Promise.all([
+            readOwnPlanState({ userId, now: getClock().clock.now() }),
             readOwnDeclinedSignups(userId)
         ]);
         return {
-            subscriptions: subscriptions.map((row) => ({
+            subscriptions: subscriptions.map(({ planVersionId: _planVersionId, ...row }) => ({
                 ...row,
                 serviceEndsAt: row.serviceEndsAt?.toISOString() ?? null,
                 graceEndsAt: row.graceEndsAt?.toISOString() ?? null,

@@ -449,10 +449,28 @@
             "why": "El mail de resumen de conciliación (HOS-1971) lee las marcas abiertas (levantada_en nula) de los sujetos que nombra, sólo para mostrar desde cuándo están abiertas y enlazar a su detalle en el panel; no decide nada con el término."
         },
         {
-            "file": "packages/service-core/src/services/billing/addon/addon-instance-a2-one-time-page.ts",
-            "symbol": "divergenceLiftedFor",
+            "file": "packages/service-core/src/services/billing/addon/one-time-page-charge-marks.ts",
+            "symbol": "chargeNamedByMark",
             "row": null,
-            "why": "HOS-2179: A2 de página busca una DIVERGENCIA_DE_MONTO ya levantada que nombre este mismo cobro del proveedor, para no reabrirla al releer el mismo cobro todavía aprobado; lee lifted_at sólo como «una persona ya la resolvió», no como estado de origen."
+            "why": "HOS-2179: un pago de página busca una marca (DIVERGENCIA_DE_MONTO, COBRO_DUPLICADO o 23) que ya nombre este mismo cobro del proveedor: A2 no abre otra si ya hay una levantada (no deshace la decisión de una persona) o una de otro motivo (la misma plata nunca levanta dos marcas, aunque el precio cambie), y el barrido saltea el cobro ante cualquier marca, abierta o levantada; lee lifted_at sólo como «una persona ya la resolvió», no como estado de origen."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/addon/one-time-page-charge-marks.ts",
+            "symbol": "noteChargebackOnHeldCharge",
+            "row": null,
+            "why": "HOS-2179 D1: ante un contracargo sobre un cobro que una marca de cobro de página retiene (su fila de payment cuelga de ella), busca esa marca ABIERTA (lifted_at nula) para acumularle un evento con provider.charged_back: true, una sola vez. Una marca levantada no se toca: lee lifted_at sólo para no reabrir la decisión de una persona, no como estado de origen."
+        },
+        {
+            "file": "packages/service-core/src/services/billing/refund/list-proposed-refunds.service.ts",
+            "symbol": "listProposedRefunds",
+            "row": null,
+            "why": "HOS-2400: shows the marks that hang the payment of a proposed refund, open or lifted, so the person sees what originated it. It reads lifted_at only to label each mark as open or lifted; it never decides from it and does not use it as an origin state."
+        },
+        {
+            "file": "apps/api/src/routes/billing-refund/admin/list-proposed.ts",
+            "symbol": "adminListProposedRefundsRoute",
+            "row": null,
+            "why": "HOS-2400: serializes the lifted_at of each mark returned by listProposedRefunds to ISO text for the admin screen; it only formats it, it never decides from it."
         }
     ],
     "cortesia_diferida": [
@@ -547,7 +565,7 @@
             "why": "El contrato de respuesta incluye el saldo en meses de la cortesía diferida para mostrarlo en Mi Suscripción (AC:B13a:8); no decide nada con el término."
         },
         {
-            "file": "apps/api/src/routes/billing-subscription/read-own-subscriptions.ts",
+            "file": "packages/service-core/src/services/billing/subscription/read-own-plan-state.ts",
             "symbol": "readOwnDeferredCourtesies",
             "row": 10,
             "why": "Mi Suscripción muestra la cortesía diferida del beneficiario con su condición, en la vertical de la suscripción que la firmó (AC:B13a:8, DEC-GRANT-012); no decide nada con el término."

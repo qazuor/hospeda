@@ -467,6 +467,7 @@
             "tools": {
                 "list_my_listings": "Ver tus publicaciones",
                 "get_owner_summary": "Ver el resumen de tu cuenta",
+                "get_my_plan": "Ver tu plan y suscripción",
                 "get_listing": "Ver una publicación",
                 "update_listing_basic": "Editar los datos de una publicación",
                 "get_listing_amenities": "Ver los servicios de una publicación",
@@ -758,7 +759,9 @@
                 "PAUSED": "Pausada",
                 "SUSPENDED": "Suspendida",
                 "CANCEL_SCHEDULED": "Baja pedida",
-                "NOT_RENEWING": "No se renueva"
+                "NOT_RENEWING": "No se renueva",
+                "COURTESY": "Cortesía",
+                "PERMANENT_GRANT": "Acceso permanente"
             },
             "loadError": "No pudimos leer tus suscripciones. Recargá la página.",
             "scheduledUntil": "Diste de baja esta suscripción: seguís hasta el {{date}}.",

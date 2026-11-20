@@ -2157,7 +2157,7 @@
             "COBRO_DUPLICADO": "Cobro duplicado",
             "COBRO_DEL_PERIODO_SIN_RESOLVER": "Cobro del período sin resolver",
             "PAUSA_NO_APLICADA": "Pausa no aplicada",
-            "ORDEN_PAGADA_SIN_INSTANCIA": "Orden pagada sin complemento activado",
+            "ORDEN_PAGADA_SIN_INSTANCIA": "Pago único cobrado sin complemento activo",
             "IMPORTE_COBRADO_DE_MAS": "Se cobró de más"
         },
         "proposal": "Propuesta del sistema",
@@ -2245,6 +2245,7 @@
             "title": "Levantar esta marca",
             "description": "Se cierra sólo esta marca. Las otras marcas de la misma fila siguen abiertas y no cambia el estado de la suscripción.",
             "withoutRefund": "Resolver sin devolver",
+            "requiresRefund": "Esta marca retiene un cobro que solo se cierra con una devolución. Confirmá la devolución propuesta (o asentala con la acción 14); cuando se liquide, la marca se va a poder levantar.",
             "unresolvedNotice": "Hay pagos colgados sin resolver. Para devolverlos, asentá la devolución con la acción 14; si no se devuelven, marcalos como resueltos sin devolver.",
             "note": "Nota para la auditoría (opcional)",
             "confirm": "Levantar",
@@ -2257,9 +2258,82 @@
                 "MARK_ALREADY_LIFTED": "La marca ya estaba levantada.",
                 "MARK_VERSION_CONFLICT": "La marca cambió desde que la abriste. Revisala y confirmá otra vez.",
                 "MARK_HAS_UNRESOLVED_PAYMENTS": "Quedan pagos colgados sin resolver.",
-                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca."
+                "MARK_PAYMENT_NOT_HUNG": "Un pago marcado ya no está colgado sin resolver de esta marca.",
+                "MARK_CLOSES_ONLY_BY_REFUND": "Esta marca retiene un cobro que solo se cierra devolviéndolo. No se puede resolver sin devolución."
             }
         }
+    },
+    "proposedRefunds": {
+        "title": "Devoluciones propuestas",
+        "description": "Devoluciones que el sistema propuso desde una marca de conciliación y esperan que una persona las confirme o las rechace.",
+        "loading": "Cargando devoluciones propuestas...",
+        "error": "No se pudieron cargar las devoluciones propuestas.",
+        "retry": "Reintentar",
+        "empty": "No hay devoluciones esperando confirmación.",
+        "pagination": "Paginación de devoluciones",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "requestedAt": "Propuesta el",
+        "amount": "Monto",
+        "payment": "Pago",
+        "status": "Estado",
+        "statuses": {
+            "REQUESTED": "Esperando confirmación",
+            "CONFIRMED": "Confirmada, sin devolución aceptada por el proveedor"
+        },
+        "confirmedOnlyDecline": "Esta devolución ya está confirmada y no se puede confirmar de nuevo. Solo se puede rechazar y después asentarla con la acción 14.",
+        "origin": "Marca que la originó",
+        "noMark": "No se encontró una marca asociada a este pago.",
+        "markLifted": "levantada",
+        "markOpen": "abierta",
+        "marksLink": "Ver las marcas abiertas",
+        "confirm": {
+            "button": "Confirmar y enviar",
+            "title": "Confirmar la devolución",
+            "description": "Se envía al proveedor de pagos la devolución de {{amount}}. Queda a tu nombre.",
+            "confirm": "Confirmar y enviar",
+            "cancel": "Cancelar",
+            "success": "Devolución confirmada y enviada.",
+            "outcomes": {
+                "SENT": "El proveedor aceptó la devolución.",
+                "AWAITING_PROVIDER_ANSWER": "Devolución enviada. Falta la respuesta del proveedor.",
+                "NOT_ACCEPTED_KEPT_CONFIRMED": "El proveedor no la aceptó todavía. Queda confirmada para reintentar.",
+                "PROVIDER_REJECTED_KEPT_CONFIRMED": "El proveedor la rechazó por ahora. Queda confirmada para reintentar.",
+                "PROVIDER_REJECTED_FAILED": "El proveedor la rechazó y la devolución quedó fallida.",
+                "ORDER_REFUND_HELD": "La devolución de la orden quedó retenida hasta tener el id del proveedor.",
+                "PROVIDER_KEY_CONFLICT": "El proveedor informó un conflicto de clave. Revisala antes de reintentar.",
+                "ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED": "La orden todavía no admite devolución. Queda confirmada.",
+                "CHARGED_BACK": "El cobro ya tenía un contracargo. La devolución se cerró."
+            }
+        },
+        "decline": {
+            "button": "Rechazar",
+            "title": "Rechazar la devolución",
+            "description": "Se rechaza la devolución de {{amount}}. El pago no cambia y no se envía nada al proveedor.",
+            "confirmedWarning": "Esta devolución ya estaba confirmada: verificá en el panel de MP que no salió ninguna devolución antes de rechazar.",
+            "confirm": "Rechazar devolución",
+            "cancel": "Cancelar",
+            "success": "Devolución rechazada.",
+            "successVerify": "Devolución rechazada. Antes de asentarla a mano (acción 14), verificá en el panel de MP que no salió ninguna devolución.",
+            "closesHeldCharge": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca. Se cierra confirmándola, por un contracargo o asentándola con la acción 14."
+        },
+        "rejections": {
+            "REFUND_NOT_FOUND": "La devolución ya no existe.",
+            "REFUND_SOURCE_NOT_FOUND": "No se encontró el pago de la devolución.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "No tenés permiso para esta acción.",
+            "REFUND_NOT_OPEN": "La devolución ya no está abierta. Actualizá la lista.",
+            "REFUND_STATE_CHANGED": "La devolución cambió mientras la revisabas. Actualizá la lista.",
+            "PAYMENT_NOT_REFUNDABLE": "Este pago no admite una devolución.",
+            "REFUND_SOURCE_NOT_PROVIDER_REFUNDABLE": "Este pago no se devuelve por el proveedor.",
+            "RETAINED_PAYMENT_SUCCESSION_OPEN": "El pago retenido tiene una sucesión abierta.",
+            "REFUND_EXCEEDS_BALANCE": "La devolución supera el saldo disponible del pago.",
+            "REFUND_PAST_PROVIDER_WINDOW": "El proveedor ya no admite devoluciones de este pago.",
+            "REFUND_PROVIDER_ID_ALREADY_RECORDED": "El proveedor ya tiene registrada esta devolución.",
+            "REFUND_HAS_PROVIDER_CALLS": "La devolución ya tiene llamadas al proveedor y no se puede rechazar. Revisá el panel de MP.",
+            "REFUND_CLOSES_HELD_CHARGE": "Esta devolución no se puede rechazar: devuelve un cobro retenido por una marca."
+        },
+        "genericError": "No se pudo completar la acción. Intentá de nuevo.",
+        "serverError": "El servidor no pudo completar la acción. Intentá de nuevo más tarde."
     },
     "subscriptionCancellation": {
         "title": "Dar de baja una suscripción (sin devolución)",

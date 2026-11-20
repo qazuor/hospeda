@@ -77,10 +77,20 @@ export type RecordChargeFactResult =
           readonly outcome: 'NO_SUBSCRIPTION';
           /**
            * The charge's authorization when it has one we do not link (an unknown
-           * preapproval, B11 §2.4), `null` for a charge with no authorization at all.
-           * The notice receiver hands a non-null id to `handleUnknownAuthorization`.
+           * preapproval, B11 §2.4). The notice receiver hands it to `handleUnknownAuthorization`.
            */
-          readonly authorizationId: string | null;
+          readonly authorizationId: string;
+      }
+    | {
+          readonly outcome: 'NO_SUBSCRIPTION';
+          /** A charge with no authorization at all: a one-time payment, for one. */
+          readonly authorizationId: null;
+          /**
+           * The charge's reference as this fresh read returned it (HOS-2179 §5.3): the notice
+           * receiver routes it to the one-time page purchase that carries it. It only routes;
+           * A2 re-reads the charge by id before deciding anything.
+           */
+          readonly reference: string | null;
       }
     | { readonly outcome: 'RECORDED_PENDING'; readonly paymentId: string }
     | {
@@ -133,7 +143,7 @@ export async function recordChargeFact(
     const { snapshot: charge } = assertFreshForAct({ read, act });
     if (charge.purpose === 'cardValidation') return { outcome: 'CARD_VALIDATION_IGNORED' };
     if (charge.authorizationId === null)
-        return { outcome: 'NO_SUBSCRIPTION', authorizationId: null };
+        return { outcome: 'NO_SUBSCRIPTION', authorizationId: null, reference: charge.reference };
 
     const [linked] = await getDb()
         .select({ subscription: subscriptions, providerLink: providerLinks })

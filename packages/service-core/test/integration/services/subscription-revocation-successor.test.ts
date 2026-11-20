@@ -2,7 +2,7 @@
 // DEC-SUB-006 has no credited payment, so S36 returns its predecessor's, found by
 // `sucedida_por` (I-5). The S19-retained payment (AC:B5:23) and the one-time add-on
 // (AC:B5:24) are other sheets.
-import { eq, providerLinks, refunds, subscriptions } from '@repo/db';
+import { eq, inArray, providerLinks, refunds, subscriptions } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { revokeSubscription } from '../../../src/services/billing/subscription/revoke-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
@@ -141,16 +141,27 @@ describe('TEST:B5:12 AC:B5:22 a successor living on credit returns its predecess
         });
     });
 
+    // HOS-2374: the window between S2 (the successor's activation commits) and S17+S18 (the
+    // post-commit settler, or the hourly reevaluation cron when S17 defers). Both rows are
+    // ACTIVE and only `sucede_a` is written. The predecessor's payment still pays its own live
+    // service, and revoking the successor leaves the predecessor alive (the dead-unclosed
+    // succession state), so R17's "the credit came from that payment" does not hold yet.
     it.skipIf(live)(
-        '(d) a succession IN PROGRESS (only sucede_a written): NO_CREDITED_PAYMENT, never through succeeds_id',
+        '(d) HOS-2374 a succession IN PROGRESS (only sucede_a written): NO_CREDITED_PAYMENT, never through succeeds_id',
         async () => {
-            // Arrange: the predecessor is still live and has no succeeded_by_id yet
+            // Arrange: ACTIVE successor with no payments; ACTIVE predecessor without succeeded_by_id
             const f = await revocationFixture();
             const successor = await seedSiblingPrincipal({
                 like: f,
                 status: 'ACTIVE',
                 succeedsId: f.subscriptionId
             });
+            const db = getServiceTestDb();
+            const [predecessorBefore] = await db
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, f.subscriptionId));
+            expect(predecessorBefore).toMatchObject({ status: 'ACTIVE', succeededById: null });
             f.at(f.day(5));
 
             // Act / Assert
@@ -161,11 +172,34 @@ describe('TEST:B5:12 AC:B5:22 a successor living on credit returns its predecess
                 )
             ).rejects.toMatchObject({ reason: 'REVOCATION_NO_CREDITED_PAYMENT' });
             expect(
-                await getServiceTestDb()
-                    .select()
-                    .from(refunds)
-                    .where(eq(refunds.paymentId, f.payment!.id))
+                await db.select().from(refunds).where(eq(refunds.paymentId, f.payment!.id))
             ).toEqual([]);
+            const rows = await db
+                .select({
+                    id: subscriptions.id,
+                    status: subscriptions.status,
+                    succeededById: subscriptions.succeededById,
+                    succeedsId: subscriptions.succeedsId
+                })
+                .from(subscriptions)
+                .where(inArray(subscriptions.id, [f.subscriptionId, successor.id]));
+            expect(rows).toHaveLength(2);
+            expect(rows).toEqual(
+                expect.arrayContaining([
+                    {
+                        id: f.subscriptionId,
+                        status: 'ACTIVE',
+                        succeededById: null,
+                        succeedsId: null
+                    },
+                    {
+                        id: successor.id,
+                        status: 'ACTIVE',
+                        succeededById: null,
+                        succeedsId: f.subscriptionId
+                    }
+                ])
+            );
         }
     );
 });

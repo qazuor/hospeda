@@ -1,3 +1,4 @@
+import { LifecycleStatusEnum, LifecycleStatusEnumSchema } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -68,6 +69,53 @@ function listWithPromotion() {
 }
 
 describe('VenuePromotionsManager', () => {
+    it('pauses a promotion with a lifecycle state accepted by the shared schema', async () => {
+        listWithPromotion();
+        mocks.patch.mockResolvedValue({ ok: true, data: promotion });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+                limitPlanOptions={[]}
+            />
+        );
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Pausar' }));
+
+        await waitFor(() => expect(mocks.patch).toHaveBeenCalled());
+        const [{ body }] = mocks.patch.mock.calls[0] as [{ body: { lifecycleState: unknown } }];
+        expect(body.lifecycleState).toBe(LifecycleStatusEnum.INACTIVE);
+        expect(LifecycleStatusEnumSchema.safeParse(body.lifecycleState).success).toBe(true);
+    });
+
+    it('labels inactive promotions as paused and reactivates them with ACTIVE', async () => {
+        const inactivePromotion = { ...promotion, lifecycleState: 'INACTIVE' };
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [inactivePromotion], meta: { activeCount: 0, maxActive: 5 } }
+        });
+        mocks.patch.mockResolvedValue({ ok: true, data: promotion });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+                limitPlanOptions={[]}
+            />
+        );
+
+        expect(await screen.findByText('Pausada')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Reactivar' }));
+
+        await waitFor(() => expect(mocks.patch).toHaveBeenCalled());
+        const [{ body }] = mocks.patch.mock.calls[0] as [{ body: { lifecycleState: unknown } }];
+        expect(body.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        expect(LifecycleStatusEnumSchema.safeParse(body.lifecycleState).success).toBe(true);
+    });
+
     it('does not assign an active or expired label before the client clock is set', () => {
         expect(
             resolvePromotionLifecycleState(
@@ -94,6 +142,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
         expect(await screen.findByText('Promociones activas: 2 · sin tope')).toBeInTheDocument();
@@ -111,6 +160,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="locked"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
         await waitFor(() => expect(mocks.list).toHaveBeenCalled());
@@ -132,6 +182,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="locked"
                 upsellPlanName="Plan Profesional"
+                limitPlanOptions={[]}
             />
         );
         expect(await screen.findByRole('status')).toHaveTextContent(
@@ -151,6 +202,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="locked"
                 upsellPlanName="Plan Profesional"
+                limitPlanOptions={[]}
             />
         );
 
@@ -173,14 +225,34 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName="Plan de locales"
+                limitPlanOptions={[{ name: 'Plan Premium', maxActive: 10 }]}
             />
         );
         expect(
             await screen.findByText(
-                'Alcanzaste el tope. El plan Plan de locales permite más promociones.'
+                'Alcanzaste el tope. El plan Plan Premium permite más promociones.'
             )
         ).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Nueva promoción' })).toBeDisabled();
+    });
+
+    it('shows the no-plan message at the cap when no catalog plan has a higher limit', async () => {
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [], meta: { activeCount: 5, maxActive: 5 } }
+        });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName="Plan Profesional"
+                limitPlanOptions={[{ name: 'Plan Profesional', maxActive: 5 }]}
+            />
+        );
+        expect(
+            await screen.findByText('Alcanzaste el tope de promociones de tu plan.')
+        ).toBeInTheDocument();
     });
 
     it('shows only the moderated free-text field for a special offer and caps percentages at 100', async () => {
@@ -194,6 +266,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName="Plan de locales"
+                limitPlanOptions={[]}
             />
         );
         fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
@@ -204,6 +277,50 @@ describe('VenuePromotionsManager', () => {
 
         fireEvent.change(type, { target: { value: 'percentage' } });
         expect(screen.getByLabelText('Valor')).toHaveAttribute('max', '100');
+    });
+
+    it('renders promotion window copy separately and uses the shared editor field classes', async () => {
+        mocks.list.mockResolvedValue({
+            ok: true,
+            data: { items: [], meta: { activeCount: 0, maxActive: 5 } }
+        });
+        render(
+            <VenuePromotionsManager
+                listingId="venue-id"
+                locale="es"
+                sectionState="available"
+                upsellPlanName={null}
+                limitPlanOptions={[]}
+            />
+        );
+        fireEvent.click(await screen.findByRole('button', { name: 'Nueva promoción' }));
+        fireEvent.click(screen.getByLabelText('Activar franja semanal'));
+        fireEvent.click(screen.getByLabelText('Jue'));
+        fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '22:00' } });
+        fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '01:00' } });
+
+        const overnightHint = screen.getByText(
+            'Termina después de la medianoche, el día siguiente'
+        );
+        const preview = screen.getByText('Jue, 22 a 01');
+        const help = screen.getByText(
+            'Si es una entrada fija de tu agenda, cargala en Eventos. Acá va el beneficio.'
+        );
+        expect(overnightHint.tagName).toBe('SMALL');
+        expect(preview.tagName).toBe('SMALL');
+        expect(help.tagName).toBe('SMALL');
+        expect(new Set([overnightHint, preview, help]).size).toBe(3);
+
+        expect(screen.getByLabelText('Título')).toHaveClass('input');
+        expect(screen.getByLabelText('Beneficio')).toHaveClass('input');
+        expect(screen.getByLabelText('Valor')).toHaveClass('input');
+        expect(screen.getByLabelText('Condición')).toHaveClass('textarea');
+        expect(screen.getByLabelText('Activar franja semanal').closest('label')).toHaveClass(
+            'checkbox'
+        );
+        expect(screen.getByRole('group', { name: 'Solo en ciertos días y horas' })).toHaveClass(
+            'section'
+        );
     });
 
     it('maps pause entitlement errors to localized catalog locked copy', async () => {
@@ -218,6 +335,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
 
@@ -246,6 +364,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName="Plan de locales"
+                limitPlanOptions={[]}
             />
         );
 
@@ -269,6 +388,7 @@ describe('VenuePromotionsManager', () => {
                 locale="es"
                 sectionState="available"
                 upsellPlanName={null}
+                limitPlanOptions={[]}
             />
         );
 

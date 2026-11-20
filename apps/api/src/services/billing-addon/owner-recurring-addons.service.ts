@@ -14,13 +14,16 @@ import { z } from 'zod';
 
 const inputSchema = OwnerRecurringAddonsQuerySchema.extend({ userId: z.uuid() });
 
-/** Reads only the actor's live recurring purchases in stable acquisition order. */
-export async function readOwnerRecurringAddons(input: {
+/**
+ * The one query behind both readers below: the actor's live recurring
+ * purchases in stable acquisition order, with every column either reader needs.
+ */
+async function selectOwnerRecurringAddonRows(input: {
     readonly userId: string;
     readonly listingId?: string;
-}): Promise<OwnerRecurringAddonsResponse> {
+}) {
     const parsed = inputSchema.parse(input);
-    const rows = await getDb()
+    return getDb()
         .select({
             addonInstanceId: addonInstances.id,
             slug: addons.slug,
@@ -34,7 +37,12 @@ export async function readOwnerRecurringAddons(input: {
             scopeType: addonVersions.scopeType,
             accommodationName: accommodations.name,
             venueName: venues.name,
-            experienceName: experiences.name
+            experienceName: experiences.name,
+            endsAt: addonInstances.endsAt,
+            compatibleVerticals: addonProducts.compatibleVerticals,
+            accommodationId: accommodations.id,
+            venueId: venues.id,
+            experienceId: experiences.id
         })
         .from(addonInstances)
         .innerJoin(addonProducts, eq(addonProducts.id, addonInstances.productId))
@@ -73,7 +81,14 @@ export async function readOwnerRecurringAddons(input: {
             )
         )
         .orderBy(asc(addonInstances.createdAt), asc(addonInstances.id));
+}
 
+/** Reads only the actor's live recurring purchases in stable acquisition order. */
+export async function readOwnerRecurringAddons(input: {
+    readonly userId: string;
+    readonly listingId?: string;
+}): Promise<OwnerRecurringAddonsResponse> {
+    const rows = await selectOwnerRecurringAddonRows(input);
     return {
         items: rows.map((row) => ({
             addonInstanceId: row.addonInstanceId,
@@ -91,4 +106,72 @@ export async function readOwnerRecurringAddons(input: {
                     : null
         }))
     };
+}
+
+/** One live recurring add-on the owner holds, with the verticals it applies to. */
+export interface OwnerAddonHolding {
+    /** Stable catalog key; resolves the localized name (`billing.addon.<slug>.name`). */
+    readonly slug: string;
+    /** Stored catalog name, used only when the slug has no label. */
+    readonly name: string;
+    /** Instance status. */
+    readonly status: 'PENDING_AUTHORIZATION' | 'ACTIVE';
+    /**
+     * When the instance ends. `null` on a recurring add-on whose end is not
+     * written yet (HOS-2116): it renews with the subscription.
+     */
+    readonly endsAt: Date | null;
+    /**
+     * Where it applies: the vertical of its target listing, or, for an add-on
+     * with no listing target, the verticals its product is compatible with (the
+     * same rule billing's coverage source follows, contract §2.7). For a listing
+     * add-on whose listing is gone: its product's only compatible vertical, or
+     * none when it fits several (never every one of them).
+     */
+    readonly verticals: readonly string[];
+    /**
+     * A listing add-on whose listing no longer exists or is no longer the
+     * owner's. Still returned: billing cancels it asynchronously and may still
+     * charge it, and `/billing-addon/instances` lists it too (`targetName: null`).
+     */
+    readonly listingGone: boolean;
+}
+
+/**
+ * The owner's live recurring add-ons for the assistant's `get_my_plan`
+ * (HOS-2328): the same read as {@link readOwnerRecurringAddons} (the reader
+ * behind `GET /billing-addon/instances`), with the end date and the verticals.
+ *
+ * @param input.userId - The owner.
+ * @returns The holdings, in acquisition order.
+ */
+export async function readOwnerAddonHoldings(input: {
+    readonly userId: string;
+}): Promise<readonly OwnerAddonHolding[]> {
+    const rows = await selectOwnerRecurringAddonRows({ userId: input.userId });
+    return rows.map((row) => {
+        const targetVertical = row.accommodationId
+            ? 'accommodation'
+            : row.venueId
+              ? 'venue'
+              : row.experienceId
+                ? 'experience'
+                : null;
+        const listingGone = row.scopeType === 'LISTING' && targetVertical === null;
+        const verticals = listingGone
+            ? row.compatibleVerticals.length === 1
+                ? [...row.compatibleVerticals]
+                : []
+            : row.scopeType === 'LISTING' && targetVertical
+              ? [targetVertical]
+              : [...row.compatibleVerticals];
+        return {
+            slug: row.slug,
+            name: row.name,
+            status: row.status as OwnerAddonHolding['status'],
+            endsAt: row.endsAt,
+            verticals,
+            listingGone
+        };
+    });
 }

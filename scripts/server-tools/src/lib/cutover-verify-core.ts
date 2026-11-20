@@ -96,6 +96,8 @@ export interface ExecuteCutoverVerifyInput {
     readonly containerEnv: ReadonlyArray<string>;
     /** Host-reachable Postgres URL of the target. */
     readonly databaseUrl: string;
+    /** Host-reachable Redis `host:port`; rewrites `HOSPEDA_REDIS_URL` (HOS-2365). */
+    readonly redisHostPort?: string;
     readonly hostEnv: Readonly<Record<string, string | undefined>>;
     readonly readCheckoutSha: (input: { readonly repoRoot: string }) => Promise<string>;
     readonly log: { info(message: string): void; warn(message: string): void };
@@ -130,7 +132,8 @@ export async function executeCutoverVerify(
     const env = buildStep3ChildEnv({
         containerEnv: input.containerEnv,
         databaseUrl: input.databaseUrl,
-        hostEnv: input.hostEnv
+        hostEnv: input.hostEnv,
+        redisHostPort: input.redisHostPort
     });
     const checks = [input.options.journal && 'journal', input.options.catalog && 'catalog']
         .filter(Boolean)

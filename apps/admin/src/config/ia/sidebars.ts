@@ -636,6 +636,19 @@ const comercialSidebar: SidebarInput = {
         },
         {
             type: 'link',
+            id: 'proposed-refunds',
+            label: {
+                es: 'Devoluciones propuestas',
+                en: 'Proposed refunds',
+                pt: 'Reembolsos propostos'
+            },
+            icon: 'DollarSignIcon',
+            route: '/billing/reconciliation/refunds',
+            permissions: ['BILLING_REFUND'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
             id: 'promo-codes',
             label: { es: 'Códigos promocionales', en: 'Promo codes', pt: 'Códigos promocionais' },
             icon: 'CouponsIcon',

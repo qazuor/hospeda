@@ -1,6 +1,8 @@
 import type { VenuePromotionListOutput } from '@repo/schemas';
 import { OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import type { Dispatch, FormEventHandler, RefObject, SetStateAction } from 'react';
+import fieldStyles from '@/components/listing/editor/editor-fields.module.css';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { formatPromotionWindow } from '@/lib/venue/promotion-window';
@@ -84,6 +86,7 @@ export function VenuePromotionForm({
             <label>
                 {t('venue.owner.editor.promotionsManager.name', 'Título')}
                 <input
+                    className={fieldStyles.input}
                     ref={titleInputRef}
                     required
                     maxLength={200}
@@ -94,6 +97,7 @@ export function VenuePromotionForm({
             <label>
                 {t('venue.owner.editor.promotionsManager.discountType', 'Beneficio')}
                 <select
+                    className={fieldStyles.input}
                     value={discountType}
                     onChange={(event) => {
                         const value = parseVenueDiscountType(event.target.value);
@@ -115,6 +119,7 @@ export function VenuePromotionForm({
                 <label>
                     {t('host.promotions.specialOffer.label', 'Contá el beneficio')}
                     <textarea
+                        className={fieldStyles.textarea}
                         required
                         maxLength={1000}
                         value={description}
@@ -137,6 +142,7 @@ export function VenuePromotionForm({
                     <label>
                         {t('venue.owner.editor.promotionsManager.value', 'Valor')}
                         <input
+                            className={fieldStyles.input}
                             required
                             type="number"
                             min="0"
@@ -148,6 +154,7 @@ export function VenuePromotionForm({
                     <label>
                         {t('venue.owner.editor.promotionsManager.condition', 'Condición')}
                         <textarea
+                            className={fieldStyles.textarea}
                             maxLength={1000}
                             value={description}
                             onChange={(event) => setDescription(event.target.value)}
@@ -158,6 +165,7 @@ export function VenuePromotionForm({
             <label>
                 {t('venue.owner.editor.promotionsManager.validFrom', 'Válida desde')}
                 <input
+                    className={fieldStyles.input}
                     required
                     type="date"
                     value={validFrom}
@@ -167,19 +175,20 @@ export function VenuePromotionForm({
             <label>
                 {t('venue.owner.editor.promotionsManager.validUntil', 'Válida hasta')}
                 <input
+                    className={fieldStyles.input}
                     type="date"
                     value={validUntil}
                     onChange={(event) => setValidUntil(event.target.value)}
                 />
             </label>
-            <fieldset>
+            <fieldset className={fieldStyles.section}>
                 <legend>
                     {t(
                         'venue.owner.editor.promotionsManager.window.title',
                         'Solo en ciertos días y horas'
                     )}
                 </legend>
-                <label>
+                <label className={fieldStyles.checkbox}>
                     <input
                         type="checkbox"
                         checked={windowEnabled}
@@ -194,7 +203,10 @@ export function VenuePromotionForm({
                     <>
                         <div className={styles.weekdays}>
                             {[1, 2, 3, 4, 5, 6, 0].map((weekday, index) => (
-                                <label key={weekday}>
+                                <label
+                                    key={weekday}
+                                    className={fieldStyles.checkbox}
+                                >
                                     <input
                                         type="checkbox"
                                         checked={windowWeekdays.includes(weekday)}
@@ -217,6 +229,7 @@ export function VenuePromotionForm({
                         <label>
                             {t('venue.owner.editor.promotionsManager.window.start', 'Desde')}
                             <input
+                                className={fieldStyles.input}
                                 type="time"
                                 value={windowStart}
                                 onChange={(event) => setWindowStart(event.target.value)}
@@ -225,13 +238,14 @@ export function VenuePromotionForm({
                         <label>
                             {t('venue.owner.editor.promotionsManager.window.end', 'Hasta')}
                             <input
+                                className={fieldStyles.input}
                                 type="time"
                                 value={windowEnd}
                                 onChange={(event) => setWindowEnd(event.target.value)}
                             />
                         </label>
                         {windowStart && windowEnd && windowEnd <= windowStart && (
-                            <small>
+                            <small className={fieldStyles.hint}>
                                 {t(
                                     'venue.owner.editor.promotionsManager.window.overnight',
                                     'Termina después de la medianoche, el día siguiente'
@@ -239,7 +253,7 @@ export function VenuePromotionForm({
                             </small>
                         )}
                         {windowWeekdays.length > 0 && windowStart && windowEnd && (
-                            <small>
+                            <small className={fieldStyles.hint}>
                                 {formatPromotionWindow({
                                     window: {
                                         weekdays: windowWeekdays,
@@ -252,20 +266,30 @@ export function VenuePromotionForm({
                         )}
                     </>
                 )}
-                <small>
+                <small className={fieldStyles.hint}>
                     {t(
                         'venue.owner.editor.promotionsManager.window.eventsHint',
                         'Si es una entrada fija de tu agenda, cargala en Eventos. Acá va el beneficio.'
                     )}
                 </small>
             </fieldset>
-            <button type="submit">{t('venue.owner.editor.promotionsManager.actions.save')}</button>
-            <button
-                type="button"
-                onClick={onCancel}
-            >
-                {t('common.cancel', 'Cancelar')}
-            </button>
+            <div className={styles.formActions}>
+                <GradientButton
+                    as="button"
+                    type="submit"
+                    variant="accent"
+                    shape="rounded"
+                    label={t('venue.owner.editor.promotionsManager.actions.save')}
+                />
+                <GradientButton
+                    as="button"
+                    type="button"
+                    variant="outline-primary"
+                    shape="rounded"
+                    onClick={onCancel}
+                    label={t('common.cancel', 'Cancelar')}
+                />
+            </div>
         </form>
     );
 }

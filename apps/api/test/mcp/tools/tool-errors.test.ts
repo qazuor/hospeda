@@ -248,6 +248,38 @@ describe('formatValidationMessage', () => {
         );
     });
 
+    it('joins translated messages that end in a period with a single punctuation mark (HOS-2389)', () => {
+        // Arrange
+        const details = [
+            { path: ['priceFrom'], message: 'zodError.experience.priceFrom.required' },
+            {
+                path: ['priceUnit'],
+                message: 'zodError.experience.priceUnit.requiredUnlessOnRequest'
+            }
+        ];
+
+        // Act
+        const message = formatValidationMessage({ details });
+
+        // Assert
+        expect(message).not.toContain('.;');
+        expect(message).not.toContain('..');
+        expect(message).toContain('«Precio a consultar»; campo «priceUnit»');
+        expect(message.endsWith('«Precio a consultar».')).toBe(true);
+    });
+
+    it('ends a single message that already has a period with exactly one period (HOS-2389)', () => {
+        expect(
+            formatValidationMessage({ details: [{ path: ['a'], message: 'Dato requerido.  ' }] })
+        ).toBe('Los datos enviados no son válidos: campo «a»: Dato requerido.');
+    });
+
+    it('keeps a message that ends in a question mark intact (HOS-2389)', () => {
+        expect(
+            formatValidationMessage({ details: [{ path: ['a'], message: 'Falta el dato?' }] })
+        ).toBe('Los datos enviados no son válidos: campo «a»: Falta el dato?');
+    });
+
     it('falls back to a generic Spanish phrase for a key with no translation', () => {
         // Act
         const message = formatValidationMessage({

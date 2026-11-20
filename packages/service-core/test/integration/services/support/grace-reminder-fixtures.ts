@@ -12,7 +12,11 @@ const values: BillingDeadlineValues = {
     '16': { days: 7 },
     '17': { days: 7 },
     '18': { days: 180 },
-    '19': { minutes: 60 }
+    '19': { minutes: 60 },
+    // Every live version carries PLAZO 21 since migration 0241. This version is committed and
+    // becomes current for every file sharing the database, so leaving 21 out made concurrent
+    // one-time page purchases fail with CONFIGURATION_ERROR (HOS-2179).
+    '21': { pageMinutes: 60, windowMarginMinutes: 60 }
 };
 
 export async function insertGraceReminderDeadline(input: {

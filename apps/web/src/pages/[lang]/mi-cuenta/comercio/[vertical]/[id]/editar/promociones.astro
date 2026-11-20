@@ -5,7 +5,10 @@ import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.ast
 import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
-import { resolveVenueUpsellPlans } from '@/lib/venue/section-upsell-plan';
+import {
+    getVenuePromotionLimitPlanOptions,
+    resolveVenueUpsellPlans
+} from '@/lib/venue/section-upsell-plan';
 
 export const prerender = false;
 const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'promociones' });
@@ -15,6 +18,7 @@ const { detail, locale, listingId, sectionId, registry, sectionStates } = resolu
 const { t } = createTranslations(locale);
 const plans = await fetchAudiencePlans({ audience: 'venue' });
 const upsellPlans = resolveVenueUpsellPlans({ plans, t });
+const promotionLimitPlans = getVenuePromotionLimitPlanOptions({ plans, t });
 const sectionState = sectionId ? sectionStates[sectionId]?.state ?? 'available' : 'available';
 ---
 
@@ -33,5 +37,6 @@ const sectionState = sectionId ? sectionStates[sectionId]?.state ?? 'available' 
         locale={locale}
         sectionState={sectionState === 'locked' ? 'locked' : 'available'}
         upsellPlanName={upsellPlans.promotions}
+        limitPlanOptions={promotionLimitPlans}
     />
 </ListingEditorSectionLayout>
