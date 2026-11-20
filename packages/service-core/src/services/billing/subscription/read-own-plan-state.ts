@@ -1,3 +1,19 @@
+/**
+ * @file read-own-plan-state.ts
+ * @description The owner's own plan state, read once for every surface that
+ * shows it (HOS-2328, spec HOS-2335 §6.3, C-6):
+ *
+ * - `GET /protected/billing-subscription/` (Mi suscripción), whose response is
+ *   built from {@link readOwnSubscriptions} and {@link readOwnDeferredCourtesies};
+ * - the assistant's `get_my_plan` tool and the `subscription` block of
+ *   `get_owner_summary`, through {@link readOwnPlanState};
+ * - the signup checkout notice, which reuses {@link readOwnSubscriptions}.
+ *
+ * Moved here from `apps/api/src/routes/billing-subscription/read-own-subscriptions.ts`
+ * with no change in what it reads. The clock is the caller's (`now`), because
+ * service-core does not own one.
+ */
+
 import {
     and,
     asc,
@@ -20,16 +36,13 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
-import {
-    computeCourtesyBalanceMonths,
-    createCutExpectedAmountPolicy,
-    PAID_AFTER_CANCELLATION_TEMPLATE,
-    readLivePromos,
-    readResumableCheckoutUrl,
-    ServiceError
-} from '@repo/service-core';
 import { z } from 'zod';
-import { getClock } from '../../utils/clock';
+import { ServiceError } from '../../../types';
+import { readLivePromos } from '../promo/live-promos';
+import { createCutExpectedAmountPolicy } from '../reconciliation/sweep/comparisons/expected-amount';
+import { computeCourtesyBalanceMonths } from './courtesy-balance';
+import { PAID_AFTER_CANCELLATION_TEMPLATE } from './paid-after-cancellation-notice';
+import { readResumableCheckoutUrl } from './resolve-live-commitment';
 
 const logger = createLogger('read-own-subscriptions');
 const arsCurrencySchema = z.literal('ARS');
@@ -40,8 +53,16 @@ const paidAfterCancellationPayloadSchema = z
     })
     .passthrough();
 
-/** Read the owner's principal subscriptions that have a self-service cancellation surface. */
-export async function readOwnSubscriptions(userId: string) {
+/**
+ * Reads the owner's principal subscriptions that have a self-service cancellation surface.
+ *
+ * @param input.userId - The owner; only their own rows are read.
+ * @param input.now - The caller's clock instant (live courtesy, promos, next charge).
+ * @returns One row per live principal subscription, oldest first.
+ * @throws ServiceError `INTERNAL_ERROR` on a billing option cycle or currency outside the contract.
+ */
+export async function readOwnSubscriptions(input: { readonly userId: string; readonly now: Date }) {
+    const { userId, now } = input;
     const statuses = SUBSCRIPTION_STATUSES.filter((status) =>
         ['ACTIVE', 'GRACE_PERIOD', 'SUSPENDED', 'CANCEL_SCHEDULED', 'PAUSED'].includes(status)
     );
@@ -55,6 +76,7 @@ export async function readOwnSubscriptions(userId: string) {
             serviceEndsAt: subscriptions.serviceEndsAt,
             graceEndsAt: subscriptions.graceEndsAt,
             createdAt: subscriptions.createdAt,
+            planVersionId: subscriptions.planVersionId,
             planSlug: plans.slug,
             planName: plans.name,
             optionAmount: billingOptions.amount,
@@ -198,7 +220,6 @@ export async function readOwnSubscriptions(userId: string) {
                           isNull(courtesyGrants.balanceClosedAt)
                       )
                   );
-    const now = getClock().clock.now();
     const liveCourtesyBySubscription = new Map<string, number>();
     for (const grant of liveCourtesy) {
         if (grant.startsAt > now || grant.endsAt <= now) continue;
@@ -273,6 +294,7 @@ export async function readOwnSubscriptions(userId: string) {
                 serviceEndsAt: row.serviceEndsAt,
                 graceEndsAt: row.graceEndsAt,
                 createdAt: row.createdAt,
+                planVersionId: row.planVersionId,
                 plan: {
                     slug: row.planSlug,
                     name: row.planName,
@@ -328,8 +350,14 @@ export function isNextChargeShown(input: {
     );
 }
 
-/** Read deferred courtesy terms belonging to the owner, for display only. */
-export async function readOwnDeferredCourtesies(userId: string) {
+/**
+ * Reads deferred courtesy terms belonging to the owner, for display only.
+ *
+ * @param input.userId - The beneficiary.
+ * @returns The open deferred courtesies, oldest first.
+ */
+export async function readOwnDeferredCourtesies(input: { readonly userId: string }) {
+    const { userId } = input;
     return getDb()
         .select({
             courtesyGrantId: courtesyGrants.id,
@@ -346,4 +374,38 @@ export async function readOwnDeferredCourtesies(userId: string) {
             )
         )
         .orderBy(asc(courtesyGrants.createdAt), asc(courtesyGrants.id));
+}
+
+/** One live principal subscription of the owner, as {@link readOwnSubscriptions} reads it. */
+export type OwnSubscriptionRow = Awaited<ReturnType<typeof readOwnSubscriptions>>[number];
+
+/** One open deferred courtesy of the owner, as {@link readOwnDeferredCourtesies} reads it. */
+export type OwnDeferredCourtesyRow = Awaited<ReturnType<typeof readOwnDeferredCourtesies>>[number];
+
+/** The owner's plan state: live principal subscriptions and open deferred courtesies. */
+export interface OwnPlanState {
+    /** Live principal subscriptions (`ACTIVE`, `GRACE_PERIOD`, `SUSPENDED`, `CANCEL_SCHEDULED`, `PAUSED`). */
+    readonly subscriptions: readonly OwnSubscriptionRow[];
+    /** Deferred courtesy terms the owner is the beneficiary of. */
+    readonly deferredCourtesies: readonly OwnDeferredCourtesyRow[];
+}
+
+/**
+ * The shared reader of the owner's plan state (HOS-2328, C-6). Mi suscripción,
+ * `get_my_plan` and the `get_owner_summary` subscription block all read through
+ * it, so none of them has a second implementation (AC-C15b).
+ *
+ * @param input.userId - The owner.
+ * @param input.now - The caller's clock instant.
+ * @returns Both reads, run in parallel.
+ */
+export async function readOwnPlanState(input: {
+    readonly userId: string;
+    readonly now: Date;
+}): Promise<OwnPlanState> {
+    const [ownSubscriptions, deferredCourtesies] = await Promise.all([
+        readOwnSubscriptions(input),
+        readOwnDeferredCourtesies({ userId: input.userId })
+    ]);
+    return { subscriptions: ownSubscriptions, deferredCourtesies };
 }

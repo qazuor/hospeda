@@ -7,6 +7,7 @@
 
 import { PublicationStatusEnum } from '@repo/schemas';
 import type { ListingToolVertical } from '../listing/listing-services';
+import type { MyPlanAddon, MyPlanItem, MyPlanVertical } from '../plan/my-plan-types';
 
 /** The views periods the summary offers: the two the portal's owner-wide stats offer. */
 export const OWNER_SUMMARY_PERIODS = ['7d', '30d'] as const;
@@ -163,4 +164,33 @@ export interface OwnerSummary {
     readonly attention: readonly AttentionItem[];
     /** Attention items left out of `attention` (the cap, or the response budget). */
     readonly more: number;
+    /**
+     * Per vertical with a live subscription, a permanent grant, a courtesy or a
+     * running trial, the `get_my_plan` item (HOS-2328, AC-C33). Absent without `BILLING_VIEW_OWN`
+     * or when the plan could not be read (then named in {@link omitted}). Over
+     * the response budget its `includes` give way first, each replaced by
+     * {@link SummaryIncludesOmitted}.
+     */
+    readonly subscription?: Readonly<Partial<Record<MyPlanVertical, SummaryPlanItem>>>;
+    /** `get_my_plan`'s add-ons that belong to no vertical (HOS-2328 M1). Absent when none. */
+    readonly unattributedAddons?: readonly MyPlanAddon[];
+    /**
+     * Summary blocks left out and why (today only `subscription`). Absent when
+     * nothing was left out. Not the `omitted` of a metrics entry, which is
+     * about that vertical's statistics.
+     */
+    readonly omitted?: Readonly<{ readonly subscription?: 'unavailable' }>;
 }
+
+/** What replaces a plan's `includes` in the summary when the response budget needs the room. */
+export interface SummaryIncludesOmitted {
+    /** Why the includes are not here. */
+    readonly omitted: 'over_budget';
+    /** Model-facing hint: where to read them. */
+    readonly hint: string;
+}
+
+/** A `get_my_plan` item as the summary carries it: whole, or with its includes trimmed. */
+export type SummaryPlanItem =
+    | MyPlanItem
+    | (Omit<MyPlanItem, 'includes'> & { readonly includes: SummaryIncludesOmitted });

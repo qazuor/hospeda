@@ -13,10 +13,14 @@ import {
     SignupNoticeResponseSchema,
     VerticalEnumSchema
 } from '@repo/schemas';
-import { readBillingChoice, readResumableCheckoutUrl, ServiceError } from '@repo/service-core';
+import {
+    readBillingChoice,
+    readOwnSubscriptions,
+    readResumableCheckoutUrl,
+    ServiceError
+} from '@repo/service-core';
 import { isTrialRunning } from '../../services/listing-notices/listing-notices.builder';
 import { getClock } from '../../utils/clock';
-import { readOwnSubscriptions } from './read-own-subscriptions';
 import { readPendingPromo } from './read-pending-promo';
 import {
     touristVipCancelledOnActivation,
@@ -59,7 +63,7 @@ export async function readSignupNotice(input: {
     const plan = samePendingPromo ? { ...listPlan, promo: samePendingPromo } : listPlan;
     // Reuse the own-subscriptions read, which verifies successor.succeedsId and
     // exposes the same deadline already shown in My Subscriptions.
-    const ownSubscriptions = await readOwnSubscriptions(input.userId);
+    const ownSubscriptions = await readOwnSubscriptions({ userId: input.userId, now });
     const successor = ownSubscriptions.find(
         (row) => row.vertical === vertical.data && row.succession?.checkoutOpen
     );

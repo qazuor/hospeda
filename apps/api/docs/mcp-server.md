@@ -257,12 +257,13 @@ texts stay Spanish: only the page the link opens changes.
 
 ## Tool catalog
 
-Twenty-one tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
+Twenty-two tools. `readOnlyHint` is derived from `isWrite`, so the two cannot disagree.
 
 | Tool | Kind | Annotations | Notes |
 |---|---|---|---|
 | `list_my_listings` | read | read-only | Accommodations, venues and experiences the user owns, in any state. At most 100 per vertical; `total` and `hasMore` say when the list is truncated. |
 | `get_owner_summary` | read | read-only | One summary of all the user's listings: counts per vertical and state, plan-gated metrics per vertical, and up to 10 "needs your attention" items with portal links. Period `7d` or `30d`. |
+| `get_my_plan` | read | read-only | The user's plan per vertical (live subscription, permanent grant, courtesy or running trial): catalog plan name and version, status with its label, next charge, service end, grace end, trial days left, labelled `includes`, recurring add-ons and the subscription page link. Optional `vertical`. Needs `BILLING_VIEW_OWN`. With no plan: an empty list and the plans pages. |
 | `get_listing` | read | read-only | Editable fields, amenities and features as `{ id, slug }`. |
 | `list_amenities_and_features` | read | read-only | Ids to use in `update_listing_basic`. Each entry carries its `category`. |
 | `get_listing_amenities` | read | read-only | The catalog of one listing grouped by category (amenity `type`, feature `category`) with `selected` marked, scoped to the listing's vertical. Truncates to the response budget and lists `omittedGroups`. |
@@ -306,9 +307,47 @@ Tool-specific rules:
   views are kept 120 days. Accommodations add a block with favorites (advanced stats
   only), inquiries of this listing, and owner-wide inquiry figures. Metrics a
   vertical does not have are omitted, never zero.
+- `get_my_plan` (HOS-2328, spec HOS-2335 §6.3). Read only; changing a plan or buying
+  an add-on is done on the linked page.
+  - Gate: `BILLING_VIEW_OWN`, the permission of `GET /protected/billing-subscription/`.
+    Without it the call is refused with the standard denial. `READ_OWN`.
+  - One reader, `readMyPlan` (`mcp/tools/plan/my-plan-reader.ts`), shared with the
+    `get_owner_summary` `subscription` block and meant for HOS-2184 AC-16. It is a thin
+    adapter: subscriptions from `readOwnPlanState` (service-core, the reader of
+    Mi suscripción), the trial from `readTrialSummary` and `readOwnTrialPlan`, `includes`
+    from the cached effective set (`toEffectiveSetView`), add-ons from
+    `readOwnerAddonHoldings` (the read behind `GET /billing-addon/instances`), a
+    courtesy or a permanent grant from billing's `coverage` (`COURTESY` and `GRANT`
+    sources) with the plan from `readPlanOfVersion`. No raw table is read in the tool,
+    and no plan name comes from code (HOS-1967).
+  - One item per vertical (AC-C16): a live subscription, unless a courtesy pauses it,
+    wins; then a permanent grant (`PERMANENT_GRANT`, «Acceso permanente»,
+    `coverageEndsAt: null`), then a courtesy (`COURTESY`, «Cortesía», `coverageEndsAt`
+    its end), then a running trial.
+  - Labels in `context.locale`: entitlements `billing.entitlement.<key>`, limits
+    `billing.comparison.limitLabel.<key>`, plans `billing.plan.<slug>.name` (else the
+    catalog name), add-ons `billing.addon.<slug>.name`, statuses
+    `account.subscription.mine.status.*` (`account.subscription.statusTrial` for a
+    trial), verticals `account.subscription.mine.vertical.*`.
+  - A live recurring add-on with no `ends_at` (until HOS-2116 writes it) has
+    `endsAt: null` and `renewsWithSubscription: true`; no date is invented. One still in
+    `PENDING_AUTHORIZATION` does not renew.
+  - A listing add-on whose listing is gone keeps showing, flagged `listingGone: true`,
+    because billing may still charge it until the asynchronous cancel lands (the same
+    instance `/billing-addon/instances` lists with `targetName: null`). It goes to its
+    product's only compatible vertical, or to the top-level `unattributedAddons` (with
+    `addonsUrl`) when the product fits several. Any held add-on whose verticals have no
+    item (the title lapsed) goes there too, once, so no charged add-on is hidden. The owner summary carries
+    `unattributedAddons` too.
+  - `includes` is `null` when the effective set cannot be read; it is never guessed.
 - `get_owner_summary` (HOS-2331, spec HOS-2335 §6.6). It is one call instead of one
-  `get_listing_stats` per listing. The subscription block is not here yet: it ships
-  with HOS-2328 after HOS-2066.
+  `get_listing_stats` per listing.
+  - `subscription` (HOS-2328, AC-C33): per vertical, the same item `get_my_plan`
+    returns, built by the same `readMyPlan`. Present only with `BILLING_VIEW_OWN`. If
+    the plan read fails, the block is left out and `omitted: { subscription:
+    'unavailable' }` says so; the rest of the summary still answers. Over the response
+    budget, each plan's `includes` gives way first (an `over_budget` marker pointing to
+    `get_my_plan`), before any attention item.
   - `listings`: counts per vertical and publication state. They are computed over the
     rows `list_my_listings` reads (`readMyListingRows`), so the two always agree.
     `PURGED` is not counted. `partial: true` means a vertical has more than 100
@@ -571,7 +610,7 @@ Code lives in `src/mcp/tools/`. A tool is transport-agnostic. The MCP binding is
 | HOS-2247 | MCP elicitation, to move reply confirmation to the user's side. |
 | Phase B | Entitlement gate on `/mcp`, plan status, ChatGPT directory. Blocked on HOS-1352 and HOS-2066. |
 | SDK `Server` | `createHospedaMcpServer` uses the low-level `Server`, which the SDK marks `@deprecated` ("advanced use"). It is deliberate: `McpServer` validates input in English and bypasses the Spanish message and the audit. Revisit on SDK upgrades. |
-| `get_owner_summary` subscription block | HOS-2328 (PR-9): `subscription` per vertical from the `get_my_plan` reader, and plan names in the `NO_STATS_ENTITLEMENT` note. Blocked on HOS-2066. |
+| `NO_STATS_ENTITLEMENT` plan names | The note still names no plan; reading which plan versions carry `view_basic_stats` from the catalog is pending (the `subscription` block itself shipped with HOS-2328). |
 | Billing refusal mapping | `set_listing_publication` maps billing refusals to reasons by matching service message text. There is no guard that fails if the text changes. |
 
 ## Related
