@@ -25,6 +25,7 @@ import { createPaymentReconciliationMarkPayments } from '../payment/payment-ledg
 import { resolveHungPaymentsWithoutRefund } from '../reconciliation/hung-payment-resolution';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import { failRefund } from '../refund/refund-fail';
+import { refundHasLiveProviderCalls } from '../refund/refund-moved-money';
 import { lockRefundSource } from '../refund/refund-source';
 import { requestRefund } from '../refund/request-refund.service';
 
@@ -148,9 +149,9 @@ export async function chargeNamedByMark(input: {
 
 /** What a chargeback did to the charge a page-charge mark holds. */
 export type HeldChargebackOutcome =
-    /** The held payment was resolved without a refund and its waiting proposal failed. */
+    /** The held payment was resolved without a refund and its open refunds failed. */
     | 'NOTED'
-    /** A refund already sent to the provider (`CONFIRMED`) owns the outcome; only the note. */
+    /** A `CONFIRMED` refund with an accepted or unanswered provider call owns it; only the note. */
     | 'DEFERRED_TO_REFUND'
     /** The held payment was already resolved (a refund executed, or an earlier chargeback). */
     | 'ALREADY_SETTLED'
@@ -160,17 +161,22 @@ export type HeldChargebackOutcome =
 /**
  * Settles, once, a chargeback on a charge an OPEN page-charge mark holds (D1). The money went
  * back through the bank, so the held payment is resolved without a refund (which is what lets the
- * mark be lifted, since action 7 never resolves a held charge itself) and the proposed refund
- * still waiting for a person (`REQUESTED`) fails, so nobody refunds twice. The mark gets one event
- * with `provider.charged_back: true`, so the person sees why it closes.
+ * mark be lifted, since action 7 never resolves a held charge itself) and every refund of it that
+ * moved no money fails (RF5), so nobody refunds twice: the `REQUESTED` proposal, and a `CONFIRMED`
+ * one with no accepted and no unanswered provider call (for example a confirm whose charge read
+ * answered UNAVAILABLE). The mark gets one event with `provider.charged_back: true`, so the person
+ * sees why it closes. A refund already `FAILED` (a definitive provider rejection fails it inside
+ * action 13) never blocks this.
  *
  * It never resolves the payment "without a refund" while a refund may have moved money:
  * - an `EXECUTED` refund already resolved it through `resolveHungPaymentsBySettlement`, so the
  *   attachment reads resolved and nothing is written (`ALREADY_SETTLED`);
- * - a `CONFIRMED` refund was already sent to the provider (or is being sent: action 13 marks it
- *   `CONFIRMED` before its calls leave), so it is not failed here. Only the note is added and the
- *   refund path settles it: RF3 executes it (resolution by settlement), or the provider rejects it
- *   and the next chargeback read (the daily credited-payments check) resolves the payment.
+ * - a `CONFIRMED` refund with an accepted or unanswered provider call (`refundHasLiveProviderCalls`,
+ *   the predicate decline uses) owns the outcome: only the note is added (`DEFERRED_TO_REFUND`)
+ *   and the payment stays hung. RF3 resolves it by settlement if that refund executes; the
+ *   `*_KEPT_CONFIRMED` outcomes keep the refund `CONFIRMED`, and this function does not close
+ *   them. Failing a call-less `CONFIRMED` is safe against a confirm in flight because every
+ *   provider call is persisted under the refund's row lock and only while it is `CONFIRMED`.
  *
  * Everything runs in one transaction, under the refund code's lock order: the payment, then its
  * refunds `FOR UPDATE`, then the mark `FOR UPDATE`, re-reading under lock that the mark is still
@@ -241,6 +247,16 @@ export async function noteChargebackOnHeldCharge(input: {
             .limit(1);
         if (!link || link.resolvedAt !== null) return 'ALREADY_SETTLED';
         if (paymentRefunds.some((refund) => refund.status === 'EXECUTED')) return 'ALREADY_SETTLED';
+        const open = paymentRefunds.filter(
+            (refund) => refund.status === 'REQUESTED' || refund.status === 'CONFIRMED'
+        );
+        let owning = false;
+        for (const refund of open)
+            if (
+                refund.status === 'CONFIRMED' &&
+                (await refundHasLiveProviderCalls({ tx, refundId: refund.id }))
+            )
+                owning = true;
         const [noted] = await tx
             .select({ id: domainEvent.id })
             .from(domainEvent)
@@ -272,16 +288,15 @@ export async function noteChargebackOnHeldCharge(input: {
                 ],
                 tx
             });
-        if (paymentRefunds.some((refund) => refund.status === 'CONFIRMED'))
-            return 'DEFERRED_TO_REFUND';
-        for (const refund of paymentRefunds.filter((row) => row.status === 'REQUESTED')) {
+        if (owning) return 'DEFERRED_TO_REFUND';
+        for (const refund of open) {
             const { failed } = await failRefund({
                 tx,
                 refund,
                 at: input.clock.now(),
                 correlationId
             });
-            if (!failed) throw new Error('A locked requested refund could not be failed');
+            if (!failed) throw new Error('A locked open refund could not be failed');
         }
         await resolveHungPaymentsWithoutRefund({
             tx,
@@ -370,8 +385,9 @@ async function heldPaymentFor(input: {
  * through RF1/RF2 and RF3 resolves the mark's payment once the refund executes. The row is never
  * credited (see {@link heldByPageChargeMark}). A charge already hung keeps its single row. The
  * same transaction proposes the refund of the whole held amount (RF1, `MARK_PROPOSAL`), left
- * `REQUESTED`: no money moves until a person confirms it (action 13). It closes only through that
- * refund, a chargeback, or action 14; it cannot be declined.
+ * `REQUESTED`: no money moves until a person confirms it (action 13). It closes when that refund
+ * executes, on a chargeback, or through action 14 (which closes the `REQUESTED` proposal or
+ * answers it once `FAILED`); a `REQUESTED` proposal cannot be declined.
  *
  * @param input.instanceId - The one-time page purchase
  * @param input.chargeId - The provider's id of the payment
