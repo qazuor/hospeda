@@ -12,7 +12,6 @@ import {
     eq,
     payments,
     receipts,
-    reconciliationCreditedPaymentModel,
     reconciliationMarks,
     refunds
 } from '@repo/db';
@@ -42,7 +41,6 @@ import {
 } from './support/one-time-page-fixtures';
 import { seedAdminActor } from './support/refund-fixtures';
 
-const DAY_MS = 86_400_000;
 const skip = !isServiceTestDbAvailable();
 
 afterEach(async () => {
@@ -444,40 +442,31 @@ describe('HOS-2179 D1 safeguard 2: the revocation refunds the payment that activ
 });
 
 describe('HOS-2179 D1 safeguard 3: the held row never counts as credited revenue', () => {
-    it.skipIf(skip)(
-        'issues no receipt or coverage and stays out of the credited-payment check',
-        async () => {
-            // Arrange
-            const { instance } = await activatedWithDuplicate();
-            const held = await onlyHeld(instance.id);
-            const [activation] = await activationPagePayments(instance.id);
-            if (!activation) throw new Error('activation payment missing');
-            const db = getServiceTestDb();
-            const receiptsOf = (paymentId: string) =>
-                db.select().from(receipts).where(eq(receipts.paymentId, paymentId));
-            const coverageOf = (paymentId: string) =>
-                db.select().from(coveredPeriods).where(eq(coveredPeriods.paymentId, paymentId));
+    it.skipIf(skip)('issues no receipt and no coverage, so it is never revenue', async () => {
+        // Arrange
+        const { instance } = await activatedWithDuplicate();
+        const held = await onlyHeld(instance.id);
+        const [activation] = await activationPagePayments(instance.id);
+        if (!activation) throw new Error('activation payment missing');
+        const db = getServiceTestDb();
+        const receiptsOf = (paymentId: string) =>
+            db.select().from(receipts).where(eq(receipts.paymentId, paymentId));
+        const coverageOf = (paymentId: string) =>
+            db.select().from(coveredPeriods).where(eq(coveredPeriods.paymentId, paymentId));
 
-            // Act
-            const credited =
-                await reconciliationCreditedPaymentModel.listCreditedPaymentsInWindowPage({
-                    since: new Date(held.payment.factAt.getTime() - DAY_MS),
-                    limit: 100_000
-                });
-
-            // Assert
-            // The activating payment went through P1: it has its receipt.
-            expect(await receiptsOf(activation.id)).toHaveLength(1);
-            expect(await receiptsOf(held.payment.id)).toHaveLength(0);
-            expect(await coverageOf(held.payment.id)).toHaveLength(0);
-            expect(held.payment.promoChargesRecorded).toBe(false);
-            expect(credited.map((payment) => payment.id)).not.toContain(held.payment.id);
-            const [stored] = await db
-                .select({ addonInstanceId: payments.addonInstanceId })
-                .from(payments)
-                .innerJoin(addonInstances, eq(addonInstances.id, payments.addonInstanceId))
-                .where(eq(payments.id, held.payment.id));
-            expect(stored?.addonInstanceId).toBe(instance.id);
-        }
-    );
+        // Assert
+        // The credited-payments check does list it since HOS-2391, but only to re-read it for
+        // a chargeback (addon-one-time-page-held-chargeback.test.ts); it never credits it.
+        // The activating payment went through P1: it has its receipt.
+        expect(await receiptsOf(activation.id)).toHaveLength(1);
+        expect(await receiptsOf(held.payment.id)).toHaveLength(0);
+        expect(await coverageOf(held.payment.id)).toHaveLength(0);
+        expect(held.payment.promoChargesRecorded).toBe(false);
+        const [stored] = await db
+            .select({ addonInstanceId: payments.addonInstanceId })
+            .from(payments)
+            .innerJoin(addonInstances, eq(addonInstances.id, payments.addonInstanceId))
+            .where(eq(payments.id, held.payment.id));
+        expect(stored?.addonInstanceId).toBe(instance.id);
+    });
 });
