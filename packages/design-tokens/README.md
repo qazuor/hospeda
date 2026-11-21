@@ -88,7 +88,7 @@ Nothing outside `apps/web/src/components/account/ui/` consumes them in this phas
 
 ### D4 «color de acción» (HOS-2409, owner comment 2026-11-20)
 
-`--action-primary` is an exact alias of `--brand-primary`, and `--action-accent` of `--brand-accent`, in both themes. Their `--on-action-*` text is white, and no darker action token is added. White on these colors misses WCAG AA; the owner accepted that. The ratios computed from this package's theme values are pinned as `OWNER_ACCEPTED_D4` in `src/tokens/account-kit-contrast.test.ts`:
+`--action-primary` is an exact alias of `--brand-primary`, and `--action-accent` of `--brand-accent`, in both themes. Their `--on-action-*` text is white, and the base fill is never replaced by a darker token. White on these colors misses WCAG AA; the owner accepted that. The ratios computed from this package's theme values are pinned as `OWNER_ACCEPTED_D4` in `src/tokens/account-kit-contrast.test.ts`:
 
 | Pair | Light | Dark |
 |---|---|---|
@@ -96,6 +96,13 @@ Nothing outside `apps/web/src/components/account/ui/` consumes them in this phas
 | white on `--action-accent` | 2.82:1 | 2.62:1 |
 
 The test fails if an alias drifts or a ratio drops below its pin. A palette change therefore forces someone to revisit the decision instead of silently worsening it.
+
+**Hover (owner decision, 2026-11-21).** `--action-primary-hover` and `--action-accent-hover` are the brand fill about 8% darker: OKLCH lightness × `ACTION_HOVER_LIGHTNESS_FACTOR` (0.92), same chroma and hue, in both themes. Darker means white text on hover measures at or above the base pair. The test pins these exactly as `OWNER_ACCEPTED_D4_HOVER`, and asserts each one is at least its base pair:
+
+| Pair | Light | Dark |
+|---|---|---|
+| white on `--action-primary-hover` | 4.38:1 | 3.61:1 |
+| white on `--action-accent-hover` | 3.48:1 | 3.26:1 |
 
 ## References
 
